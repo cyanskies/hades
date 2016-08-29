@@ -14,4 +14,4 @@
 
 ::Copy game data to xing/source so that the debug build can find it.
 
-::@XCOPY .\game .\Xing\source\ /s /y
+::@XCOPY .\game .\test\source\ /s /y

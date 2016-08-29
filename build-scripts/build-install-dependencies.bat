@@ -22,4 +22,12 @@
 @msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
 @msbuild INSTALL.vcxproj /p:Configuration=%mode%
 
+::Hades
+
+@cd ..\hades
+@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=%install-pfx%  -G %generator%
+@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
+@msbuild INSTALL.vcxproj /p:Configuration=%mode%
+
+
 @cd ../../build-scripts

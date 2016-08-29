@@ -15,4 +15,3 @@
 ::Game Assets
 @cd ..
 
-::XCOPY .\game\*.* .\Xing /s /y

@@ -7,7 +7,7 @@
 @set mode2=debug
 
 @call build-install-dependencies.bat
-@call build-install-hades-xing.bat
+@call build-install-example.bat
 
 ::copy deps back into source/debug so that the debug can be run without issue.
 @XCOPY .\dep-library\bin\*.* .\xing\source\Debug\ /y

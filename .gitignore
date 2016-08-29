@@ -217,9 +217,11 @@ pip-log.txt
 
 
 dep-library/
-example/CMakeCache.txt
-example/CMakeFiles/3.6.1/CompilerIdCXX/CMakeCXXCompilerId.cpp
 *.vcxproj
-example/CMakeFiles/3.6.1/CMakeSystem.cmake
-example/CMakeFiles/cmake.check_cache
-example/CMakeFiles/3.6.1/CompilerIdC/CMakeCCompilerId.c
+*.filters
+hades/CMakeCache.txt
+*.cmake
+*.bin
+*.sln
+hades/source/CMakeFiles/
+hades/CMakeFiles/

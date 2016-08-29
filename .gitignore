@@ -225,3 +225,5 @@ hades/CMakeCache.txt
 *.sln
 hades/source/CMakeFiles/
 hades/CMakeFiles/
+*.db
+hades/hades.VC.VC.opendb

@@ -1,11 +1,10 @@
 #include "Hades/ResourceManager.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <vector>
 
 #include "Hades/StandardPaths.hpp"
-
-//#include "boost/filesystem.hpp"
 
 namespace hades
 {
@@ -32,7 +31,7 @@ namespace hades
 
 	std::string TextFile::GetDirectory() const
 	{
-		auto path = boost::filesystem::path(name);
+		auto path = std::experimental::filesystem::path(name);
 		return path.parent_path().string() + "/";
 	}
 
@@ -66,7 +65,7 @@ namespace hades
 		
 		//bail if the directory doesn't exist
 		//it obviously cannot cantain the file
-		if (!boost::filesystem::is_directory(directory))
+		if (!std::experimental::filesystem::is_directory(directory))
 			return false;
 
 		listFilesInDir(directory, filesInDir);
@@ -93,17 +92,17 @@ namespace hades
 			
 			std::vector<std::string> list;
 			//user dir
-			if (boost::filesystem::is_directory(userDir + *i + relativeDirectory))
+			if (std::experimental::filesystem::is_directory(userDir + *i + relativeDirectory))
 				listFilesInDir(userDir + *i + relativeDirectory, list);
 			//user archive
-			if (boost::filesystem::exists(userDir + *i + HADES_ARCHIVE_EXT))
+			if (std::experimental::filesystem::exists(userDir + *i + HADES_ARCHIVE_EXT))
 				listFilesInZip(userDir + *i + HADES_ARCHIVE_EXT, relativeDirectory, list);
 			
 			//game dir
-			if (boost::filesystem::is_directory(*i + relativeDirectory))
+			if (std::experimental::filesystem::is_directory(*i + relativeDirectory))
 				listFilesInDir(*i + relativeDirectory, list);
 			//game archive
-			if (boost::filesystem::exists(userDir + *i + HADES_ARCHIVE_EXT))
+			if (std::experimental::filesystem::exists(userDir + *i + HADES_ARCHIVE_EXT))
 				listFilesInZip(*i + HADES_ARCHIVE_EXT, relativeDirectory, list);
 
 			for (auto &s : list)
@@ -126,11 +125,11 @@ namespace hades
 	void listFilesInDir(const std::string &dir, FileList &files)
 	{
 		//TODO: catch exception here if dir doesn't exist as a directory.
-		auto directory = boost::filesystem::directory_iterator(dir);
+		auto directory = std::experimental::filesystem::directory_iterator(dir);
 
-		while(directory != boost::filesystem::directory_iterator())
+		while(directory != std::experimental::filesystem::directory_iterator())
 		{
-			if(!boost::filesystem::is_directory(directory->path()))
+			if(!std::experimental::filesystem::is_directory(directory->path()))
 				files.push_back(normalisePath(directory->path().string()));
 
 			++directory;

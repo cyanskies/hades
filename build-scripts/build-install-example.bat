@@ -6,15 +6,8 @@
 @IF NOT DEFINED mode @set mode=Debug
 @set install-pfx=../dep-library/
 
-::Hades
-@cd ..\Hades
-@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX="%install-pfx%" -G %generator%
-
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
-
 ::Xing
-@cd ..\Xing
+@cd ..\example
 @cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX="%install-pfx%" -G %generator%
 
 @msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%

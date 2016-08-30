@@ -117,21 +117,30 @@ namespace hades
 	{
 		return false;
 
-		/*std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Property_Base> var;
-		if(GetValue(identifier, var))
+		//test to see the name hasn't been used for a variable
+		{
+			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+			std::shared_ptr<detail::Property_Base> var;
+			if (GetValue(identifier, var))
+			{
+				echo("Attempted definition of function: " + identifier + ", but name is already used for a variable.", ERROR);
+				return false;
+			}
+		}
+
+		std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		
+		auto funcIter = _consoleFunctions.find(identifier);
+
+		if (funcIter != _consoleFunctions.end())
 		{
 			echo("Attempted multiple definitions of function: " + identifier, ERROR);
 			return false;
 		}
-		else
-		{
-			std::shared_ptr<detail::Console_Type_Function> function = std::make_shared<detail::Console_Type_Function>();
-			function->function = func;
-			function->type = typeid(detail::Console_Type_Function); 
-			TypeMap[identifier] = function;
-			return true;
-		}*/
+
+		_consoleFunctions[identifier] = func;
+
+		return true;
 	}
 
 	bool Console::runCommand(const std::string &command)
@@ -202,20 +211,35 @@ namespace hades
 
 	bool Console::exists(const std::string &command) const
 	{
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Property_Base> var;
-		if (GetValue(command, var))
-			return true;
+		{
+			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+			std::shared_ptr<detail::Property_Base> var;
+			if (GetValue(command, var))
+				return true;
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			auto funcIter = _consoleFunctions.find(command);
+
+			if (funcIter != _consoleFunctions.end())
+				return true;
+		}
 
 		return false;
 	}
 
 	void Console::erase(const std::string &command)
 	{
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Property_Base> var;
-		if (TypeMap.erase(command) == 0)
-			echo("Failed to erase variable: " + command);			
+		{
+			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+			TypeMap.erase(command);
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			_consoleFunctions.erase(command);
+		}
 	}
 
 	const ConsoleStringBuffer Console::getRecentOutputFromBuffer(Console_String_Verbosity maxVerbosity)

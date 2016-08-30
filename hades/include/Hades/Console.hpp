@@ -13,12 +13,15 @@
 
 #include "Hades/Types.hpp"
 
+//Console is a unique engine object for holding game wide properties
+//it also exposes dev commands
+//it also provides logging functionality
+
 // =========
 // Type Base
 // =========
 namespace hades
 {
-	//enum Console_Type {FUNCTION, BOOL, INT, FLOAT, STRING};
 	namespace detail
 	{
 		struct Property_Base 
@@ -69,7 +72,9 @@ namespace hades
 
 		Console() : recentOutputPos(0) {}
 
-		bool registerFunction(const std::string &identifier, std::function<bool(std::string)> func);
+		typedef std::function<bool(std::string)> Console_Function;
+
+		bool registerFunction(const std::string &identifier, Console_Function func);
 
 		template<class T>
 		bool set(const std::string &identifier, const T &value);
@@ -94,7 +99,9 @@ namespace hades
 
 	private:
 		mutable std::mutex _consoleVariableMutex;
+		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
+		std::map<std::string, Console_Function> _consoleFunctions;
 		std::map<std::string, std::shared_ptr<detail::Property_Base> > TypeMap;
 		std::vector<Console_String> TextBuffer;
 		int recentOutputPos;

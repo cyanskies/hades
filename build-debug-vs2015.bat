@@ -10,7 +10,7 @@
 @call build-install-example.bat
 
 ::copy deps back into source/debug so that the debug can be run without issue.
-@XCOPY .\dep-library\bin\*.* .\xing\source\Debug\ /y
+@XCOPY .\dep-library\bin\*.* .\test\source\Debug\ /y
 
 ::Copy game data to xing/source so that the debug build can find it.
 

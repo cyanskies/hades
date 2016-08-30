@@ -2,18 +2,30 @@
 #include <mutex>
 #include <type_traits>
 
+#include "Hades/Types.hpp"
+
 namespace hades
 {
 	namespace detail
 	{
-		template<class T>
-		Console_Type_Variable<T>::Console_Type_Variable(const T &value) : value(std::make_shared<std::atomic<T> >(value))
+		template<>
+		struct Property<std::string> : public Property_Base
 		{
-			type = typeid(T);
-		}
+			explicit Property(const std::string &value);
+			std::shared_ptr<String> value;
+
+			virtual std::string to_string()
+			{
+				return value->load();
+			}
+		};
 
 		template<class T>
-		inline std::string Console_Type_Variable<T>::to_string()
+		Property<T>::Property(const T &value) : value(std::make_shared<std::atomic<T> >(value)), Property_Base(typeid(T))
+		{}
+
+		template<class T>
+		inline std::string Property<T>::to_string()
 		{
 			return std::to_string(value->load());
 		}
@@ -22,14 +34,10 @@ namespace hades
 	template<class T>
 	bool Console::set(const std::string &identifier, const T &value)
 	{
-		
-		//we don't want to set a value to a function ptr
-		assert(typeid(T) != typeid(detail::Console_Type_Function));
-
 		//we can only store integral types in std::atomic
-		assert(std::is_integral<T>::value || typeid(T) == typeid(std::string));
+		static_assert(types::hades_type<T>::value, "Attempting to store an illegal type in the console.");
 
-		std::shared_ptr<detail::Console_Type_Base> out;
+		std::shared_ptr<detail::Property_Base> out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(identifier, out))
 		{
@@ -37,13 +45,13 @@ namespace hades
 				return false;
 			else
 			{
-				std::shared_ptr<detail::Console_Type_Variable<T> > stored = std::static_pointer_cast<detail::Console_Type_Variable<T> >(out);
+				std::shared_ptr<detail::Property<T> > stored = std::static_pointer_cast<detail::Property<T> >(out);
 				stored->value->store(value);
 				return true;
 			}
 		}
 
-		auto var = std::make_shared<detail::Console_Type_Variable<T> >(value);
+		auto var = std::make_shared<detail::Property<T> >(value);
 
 		TypeMap.insert(std::make_pair(identifier, var));
 
@@ -54,13 +62,13 @@ namespace hades
 	ConsoleVariable<T> Console::getValue(const std::string &var)
 	{
 		
-		std::shared_ptr<detail::Console_Type_Base > out;
+		std::shared_ptr<detail::Property_Base > out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(var, out))
 		{
 			if(out->type == typeid(T))
 			{
-				auto value = std::static_pointer_cast<detail::Console_Type_Variable<T> > (out);
+				auto value = std::static_pointer_cast<detail::Property<T> > (out);
 				return value->value;
 			}
 			else

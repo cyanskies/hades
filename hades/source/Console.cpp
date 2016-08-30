@@ -30,14 +30,9 @@ namespace hades
 			std::lock_guard<std::mutex> mutex(_stringMutex);
 			_data = string;
 		}
-
-		std::string Console_Type_Function::to_string()
-		{
-			return "Console.cpp -> Console_Type_Function::to_string() \"We should never see this\"";
-		}
 	}
 
-	bool Console::GetValue(const std::string &var, std::shared_ptr<detail::Console_Type_Base> &out) const
+	bool Console::GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const
 	{
 		auto iter = TypeMap.find(var);
 		if(iter == TypeMap.end())
@@ -55,7 +50,7 @@ namespace hades
 		//or register specific functions for deefining variables dynamically
 		bool ret = false;
 
-		std::shared_ptr<detail::Console_Type_Base> var;
+		std::shared_ptr<detail::Property_Base> var;
 		if(GetValue(identifier, var))
 		{
 			if(value.empty())
@@ -64,13 +59,40 @@ namespace hades
 			}
 			else
 			{
-				if (var->type== typeid(int) )
-					ret = set(identifier, std::stoi(value));
-				else if (var->type== typeid(float) )
-					ret = set(identifier, std::stof(value));
+				using namespace types;
+
+				//flaots
+				if (var->type == typeid(float))
+					ret = set(identifier, stov<float>(value));
+				else if (var->type== typeid(double) )
+					ret = set(identifier, stov<double>(value));
+				else if (var->type == typeid(long double))
+					ret = set(identifier, stov<long double>(value));
+				//bool
 				else if (var->type== typeid(bool) )
-					ret = set(identifier, value != "0");
+					ret = set(identifier, stov<bool>(value));
+				//string
+				else if (var->type == typeid(std::string))
+					ret = set(identifier, value);
+				//integers
+				else if (var->type == typeid(int8))
+					ret = set(identifier, stov<int8>(value));
+				else if (var->type == typeid(uint8))
+					ret = set(identifier, stov<uint8>(value));
+				else if (var->type == typeid(int16))
+					ret = set(identifier, stov<int16>(value));
+				else if (var->type == typeid(uint16))
+					ret = set(identifier, stov<uint16>(value));
+				else if (var->type == typeid(int32))
+					ret = set(identifier, stov<int32>(value));
+				else if (var->type == typeid(uint32))
+					ret = set(identifier, stov<uint32>(value));
+				else if (var->type == typeid(int64))
+					ret = set(identifier, stov<int64>(value));
+				else if (var->type == typeid(uint64))
+					ret = set(identifier, stov<uint64>(value));
 				else
+					//must be an integer type
 					echo("Unsupported type for variable: " + identifier, ERROR);
 
 				echo(identifier + " " + value);
@@ -83,7 +105,7 @@ namespace hades
 
 	void Console::EchoVariable(const std::string &identifier)
 	{
-		std::shared_ptr<detail::Console_Type_Base> var;
+		std::shared_ptr<detail::Property_Base> var;
 
 		if(GetValue(identifier, var))
 		{
@@ -93,8 +115,10 @@ namespace hades
 
 	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func)
 	{
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Console_Type_Base> var;
+		return false;
+
+		/*std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		std::shared_ptr<detail::Property_Base> var;
 		if(GetValue(identifier, var))
 		{
 			echo("Attempted multiple definitions of function: " + identifier, ERROR);
@@ -107,54 +131,56 @@ namespace hades
 			function->type = typeid(detail::Console_Type_Function); 
 			TypeMap[identifier] = function;
 			return true;
-		}
+		}*/
 	}
 
 	bool Console::runCommand(const std::string &command)
 	{
-		std::string identifier, value;
-		int pos = command.find_first_of(" ");
+		return false;
 
-		if (pos == std::string::npos)
-		{
-			identifier = command;
-			value = "";
-		}
-		else
-		{
-			identifier = std::string(command, 0, pos);
-			value = std::string(command, ++pos, command.length() - pos);
-		}
+		//std::string identifier, value;
+		//int pos = command.find_first_of(" ");
 
-		detail::Console_Type_Function func;
-		bool isFunction = false;
+		//if (pos == std::string::npos)
+		//{
+		//	identifier = command;
+		//	value = "";
+		//}
+		//else
+		//{
+		//	identifier = std::string(command, 0, pos);
+		//	value = std::string(command, ++pos, command.length() - pos);
+		//}
 
-		{
-			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-			std::shared_ptr<detail::Console_Type_Base> var;
+		//detail::Console_Type_Function func;
+		//bool isFunction = false;
 
-			if (!GetValue(identifier, var))
-			{
-				echo("Command not found: \"" + identifier + "\"", NORMAL);
-				return false;
-			}
-			else if (var->type == typeid(detail::Console_Type_Function))
-			{
-				assert(std::dynamic_pointer_cast<detail::Console_Type_Function>(var) != nullptr);
-				isFunction = true;
-				// TODO: we already check that the type is a function, 
-				// we can save some time by doing a normal cast instead of dynamic
-				func = *std::dynamic_pointer_cast<detail::Console_Type_Function>(var);
-			}
-			else
-				SetVariable(identifier, value);
-		}
+		//{
+		//	std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		//	std::shared_ptr<detail::Console_Type_Base> var;
 
-		if (isFunction)
-		{
-			echo(command);
-			return func.function(value);
-		}
+		//	if (!GetValue(identifier, var))
+		//	{
+		//		echo("Command not found: \"" + identifier + "\"", NORMAL);
+		//		return false;
+		//	}
+		//	else if (var->type == typeid(detail::Console_Type_Function))
+		//	{
+		//		assert(std::dynamic_pointer_cast<detail::Console_Type_Function>(var) != nullptr);
+		//		isFunction = true;
+		//		// TODO: we already check that the type is a function, 
+		//		// we can save some time by doing a normal cast instead of dynamic
+		//		func = *std::dynamic_pointer_cast<detail::Console_Type_Function>(var);
+		//	}
+		//	else
+		//		SetVariable(identifier, value);
+		//}
+
+		//if (isFunction)
+		//{
+		//	echo(command);
+		//	return func.function(value);
+		//}
 
 		return true;
 	}
@@ -170,14 +196,14 @@ namespace hades
 		TextBuffer.push_back(message);
 
 		#ifdef _DEBUG
-		std::cerr << message.Text() << std::endl;
+			std::cerr << message.Text() << std::endl;
 		#endif
 	}
 
 	bool Console::exists(const std::string &command) const
 	{
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Console_Type_Base> var;
+		std::shared_ptr<detail::Property_Base> var;
 		if (GetValue(command, var))
 			return true;
 
@@ -187,9 +213,9 @@ namespace hades
 	void Console::erase(const std::string &command)
 	{
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		std::shared_ptr<detail::Console_Type_Base> var;
+		std::shared_ptr<detail::Property_Base> var;
 		if (TypeMap.erase(command) == 0)
-			echo("ERROR65554535");			
+			echo("Failed to erase variable: " + command);			
 	}
 
 	const ConsoleStringBuffer Console::getRecentOutputFromBuffer(Console_String_Verbosity maxVerbosity)

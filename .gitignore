@@ -227,3 +227,4 @@ hades/source/CMakeFiles/
 hades/CMakeFiles/
 *.db
 hades/hades.VC.VC.opendb
+hades/install_manifest.txt

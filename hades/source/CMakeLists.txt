@@ -12,6 +12,7 @@ set(HADES_SRC
 	State.cpp
 	StateManager.cpp
 	TimerManager.cpp
+	Types.cpp
 )
 
 # Library to build

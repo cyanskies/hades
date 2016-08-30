@@ -2,8 +2,6 @@
 #include <mutex>
 #include <type_traits>
 
-#include "Hades/Types.hpp"
-
 namespace hades
 {
 	namespace detail

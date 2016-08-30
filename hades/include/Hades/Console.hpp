@@ -11,7 +11,7 @@
 #include <string>
 #include <typeindex>
 
-#include "hades/Types.hpp"
+#include "Hades/Types.hpp"
 
 // =========
 // Type Base

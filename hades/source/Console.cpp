@@ -61,41 +61,49 @@ namespace hades
 			{
 				using namespace types;
 
-				//floats
-				if (var->type == typeid(float))
-					ret = set(identifier, stov<float>(value));
-				else if (var->type== typeid(double) )
-					ret = set(identifier, stov<double>(value));
-				else if (var->type == typeid(long double))
-					ret = set(identifier, stov<long double>(value));
-				//bool
-				else if (var->type== typeid(bool) )
-					ret = set(identifier, stov<bool>(value));
-				//string
-				else if (var->type == typeid(std::string))
-					ret = set(identifier, value);
-				//integers
-				else if (var->type == typeid(int8))
-					ret = set(identifier, stov<int8>(value));
-				else if (var->type == typeid(uint8))
-					ret = set(identifier, stov<uint8>(value));
-				else if (var->type == typeid(int16))
-					ret = set(identifier, stov<int16>(value));
-				else if (var->type == typeid(uint16))
-					ret = set(identifier, stov<uint16>(value));
-				else if (var->type == typeid(int32))
-					ret = set(identifier, stov<int32>(value));
-				else if (var->type == typeid(uint32))
-					ret = set(identifier, stov<uint32>(value));
-				else if (var->type == typeid(int64))
-					ret = set(identifier, stov<int64>(value));
-				else if (var->type == typeid(uint64))
-					ret = set(identifier, stov<uint64>(value));
-				else
-					//must be an integer type
-					echo("Unsupported type for variable: " + identifier, ERROR);
+				try
+				{
+					//floats
+					if (var->type == typeid(float))
+						ret = set(identifier, stov<float>(value));
+					else if (var->type == typeid(double))
+						ret = set(identifier, stov<double>(value));
+					else if (var->type == typeid(long double))
+						ret = set(identifier, stov<long double>(value));
+					//bool
+					else if (var->type == typeid(bool))
+						ret = set(identifier, stov<bool>(value));
+					//string
+					else if (var->type == typeid(std::string))
+						ret = set(identifier, value);
+					//integers
+					else if (var->type == typeid(int8))
+						ret = set(identifier, stov<int8>(value));
+					else if (var->type == typeid(uint8))
+						ret = set(identifier, stov<uint8>(value));
+					else if (var->type == typeid(int16))
+						ret = set(identifier, stov<int16>(value));
+					else if (var->type == typeid(uint16))
+						ret = set(identifier, stov<uint16>(value));
+					else if (var->type == typeid(int32))
+						ret = set(identifier, stov<int32>(value));
+					else if (var->type == typeid(uint32))
+						ret = set(identifier, stov<uint32>(value));
+					else if (var->type == typeid(int64))
+						ret = set(identifier, stov<int64>(value));
+					else if (var->type == typeid(uint64))
+						ret = set(identifier, stov<uint64>(value));
 
-				echo(identifier + " " + value);
+					echo(identifier + " " + value);
+				}
+				catch (std::invalid_argument)
+				{
+					echo("Unsupported type for variable: " + identifier, ERROR);
+				}
+				catch (std::out_of_range)
+				{
+					echo("Value is out of range for variable: " + identifier, ERROR);
+				}
 			}
 		}
 		else
@@ -111,6 +119,36 @@ namespace hades
 		{
 			echo(identifier + " " + var->to_string());
 		}
+	}
+
+	void Console::DisplayVariables()
+	{
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+
+		//TODO: display list as sorted
+		for (auto &t : TypeMap)
+			echo(t.first + " " + t.second->to_string());
+	}
+
+	void Console::DisplayFunctions()
+	{
+		std::vector<std::string> list;
+
+		{
+			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+
+			list.reserve(_consoleFunctions.size()+ 2);
+
+			for (auto &f : _consoleFunctions)
+				list.push_back(f.first);
+		}
+
+		list.push_back("vars");
+		list.push_back("funcs");
+		std::sort(list.begin(), list.end());
+
+		for (auto &s : list)
+			echo(s);
 	}
 
 	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func)
@@ -155,6 +193,17 @@ namespace hades
 		{
 			identifier = std::string(command, 0, pos);
 			value = std::string(command, ++pos, command.length() - pos);
+		}
+
+		if (command == "vars")
+		{
+			DisplayVariables();
+			return true;
+		}
+		else if (command == "funcs")
+		{
+			DisplayFunctions();
+			return true;
 		}
 
 		std::function<bool(std::string)> function;

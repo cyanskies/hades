@@ -58,6 +58,15 @@ void hades::ConsoleView::update()
 		_visibleOutput.emplace_back(s.Text(), *_font, *_charSize);
 		_visibleOutput.back().setPosition(SCREEN_LEFT, _currentYPos);
 
+		sf::Color col = sf::Color::White;
+		if (s.Verbosity() == Console::Console_String_Verbosity::WARNING)
+			col = sf::Color::Yellow;
+		else if (s.Verbosity() == Console::Console_String_Verbosity::ERROR)
+			col = sf::Color::Red;
+
+		_visibleOutput.back().setFillColor(col);
+		_visibleOutput.back().setOutlineColor(col);
+
 		_currentYPos -= *_charSize; // may have to add a charBuffer(con_charbuffer, or con_linespacing) so that each line has a gap between;
 	}
 

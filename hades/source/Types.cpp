@@ -1,42 +1,69 @@
 #include "Hades/Types.hpp"
 
+#include <limits>
+
 namespace hades {
 	namespace types {
 		// type conversion
 		template<>
 		int8 stov<int8>(std::string value)
 		{
-			return static_cast<int8>(std::stoi(value));
+			int32 val = std::stoi(value);
+
+			if (val <= std::numeric_limits<int8>::min() || val >= std::numeric_limits<int8>::max())
+				throw std::out_of_range("stov argument out of range");
+
+			return static_cast<int8>(val);
 		}
 
 		template<>
 		uint8 stov<uint8>(std::string value)
 		{
-			return static_cast<uint8>(stov<int8>(value));
+			int32 val = std::stoi(value);
+
+			if (val <= std::numeric_limits<uint8>::min() || val >= std::numeric_limits<uint8>::max())
+				throw std::out_of_range("stov argument out of range");
+
+			return static_cast<uint8>(val);
 		}
 
 		template<>
 		int16 stov<int16>(std::string value)
 		{
-			return static_cast<int16>(stov<int8>(value));
+			int32 val = std::stoi(value);
+
+			if (val <= std::numeric_limits<int16>::min() || val >= std::numeric_limits<int16>::max())
+				throw std::out_of_range("stov argument out of range");
+
+			return static_cast<int16>(val);
 		}
 
 		template<>
 		uint16 stov<uint16>(std::string value)
 		{
-			return static_cast<uint16>(stov<int8>(value));
+			int32 val = std::stoi(value);
+
+			if (val <= std::numeric_limits<uint16>::min() || val >= std::numeric_limits<uint16>::max())
+				throw std::out_of_range("stov argument out of range");
+
+			return static_cast<uint16>(val);
 		}
 
 		template<>
 		int32 stov<int32>(std::string value)
 		{
-			return std::stol(value);
+			return std::stoi(value);
 		}
 
 		template<>
 		uint32 stov<uint32>(std::string value)
 		{
-			return std::stoul(value);
+			int64 val = std::stoll(value);
+
+			if (val <= std::numeric_limits<uint32>::min() || val >= std::numeric_limits<uint32>::max())
+				throw std::out_of_range("stov argument out of range");
+
+			return static_cast<uint32>(val);
 		}
 
 		template<>

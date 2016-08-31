@@ -99,6 +99,8 @@ namespace hades
 		bool GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const;
 		bool SetVariable(const std::string &identifier, const std::string &value); //for unknown types stored as string, passed in by RunCommand
 		void EchoVariable(const std::string &identifier);
+		void DisplayVariables();
+		void DisplayFunctions();
 
 	private:
 		mutable std::mutex _consoleVariableMutex;

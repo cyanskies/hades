@@ -61,7 +61,6 @@ namespace hades
 	template<class T>
 	ConsoleVariable<T> Console::getValue(const std::string &var)
 	{
-		
 		std::shared_ptr<detail::Property_Base > out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(var, out))

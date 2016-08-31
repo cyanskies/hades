@@ -61,7 +61,7 @@ namespace hades
 			{
 				using namespace types;
 
-				//flaots
+				//floats
 				if (var->type == typeid(float))
 					ret = set(identifier, stov<float>(value));
 				else if (var->type== typeid(double) )
@@ -115,8 +115,6 @@ namespace hades
 
 	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func)
 	{
-		return false;
-
 		//test to see the name hasn't been used for a variable
 		{
 			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
@@ -145,51 +143,41 @@ namespace hades
 
 	bool Console::runCommand(const std::string &command)
 	{
-		return false;
+		std::string identifier, value;
+		int pos = command.find_first_of(" ");
 
-		//std::string identifier, value;
-		//int pos = command.find_first_of(" ");
+		if (pos == std::string::npos)
+		{
+			identifier = command;
+			value = "";
+		}
+		else
+		{
+			identifier = std::string(command, 0, pos);
+			value = std::string(command, ++pos, command.length() - pos);
+		}
 
-		//if (pos == std::string::npos)
-		//{
-		//	identifier = command;
-		//	value = "";
-		//}
-		//else
-		//{
-		//	identifier = std::string(command, 0, pos);
-		//	value = std::string(command, ++pos, command.length() - pos);
-		//}
+		std::function<bool(std::string)> function;
+		bool isFunction = false;
 
-		//detail::Console_Type_Function func;
-		//bool isFunction = false;
+		{
+			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			auto funcIter = _consoleFunctions.find(identifier);
 
-		//{
-		//	std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-		//	std::shared_ptr<detail::Console_Type_Base> var;
+			if (funcIter != _consoleFunctions.end())
+			{
+				function = funcIter->second;
+				isFunction = true;
+			}		
+		}
 
-		//	if (!GetValue(identifier, var))
-		//	{
-		//		echo("Command not found: \"" + identifier + "\"", NORMAL);
-		//		return false;
-		//	}
-		//	else if (var->type == typeid(detail::Console_Type_Function))
-		//	{
-		//		assert(std::dynamic_pointer_cast<detail::Console_Type_Function>(var) != nullptr);
-		//		isFunction = true;
-		//		// TODO: we already check that the type is a function, 
-		//		// we can save some time by doing a normal cast instead of dynamic
-		//		func = *std::dynamic_pointer_cast<detail::Console_Type_Function>(var);
-		//	}
-		//	else
-		//		SetVariable(identifier, value);
-		//}
-
-		//if (isFunction)
-		//{
-		//	echo(command);
-		//	return func.function(value);
-		//}
+		if (isFunction)
+		{
+			echo(command);
+			return function(value);
+		}
+		else
+			SetVariable(identifier, value);
 
 		return true;
 	}

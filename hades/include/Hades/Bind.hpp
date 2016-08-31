@@ -1,8 +1,8 @@
 #ifndef HADES_BIND_HPP
 #define HADES_BIND_HPP
 
-#include <map>
 #include <string>
+#include <unordered_map>
 
 #include "SFML/Window/Event.hpp"
 #include "SFML/Window/Window.hpp"
@@ -70,12 +70,11 @@ namespace hades
 		bool bindMouseString(int id, std::string modifier, std::string keyname);
 		bool bindMouse(int id, int modifier, sf::Mouse::Button button);
 		
+		//binds a joystick button for all joysticks,
+		//app must check the eventcontext to find the joystick that caused it
 		bool bindJoyString(int id, std::string modifier, std::string joyStickId, std::string keyname);
 		bool bindJoy(int id, int modifier, thor::JoystickButton joyButton);
 
-		//binds a joystick button for all joysticks,
-		//app must check the eventcontext to find the joystick that caused it
-		//bool bindAnyJoyString(int id, int modifier, int button);
 		bool bindMouseMove(int id);
 		bool bindTextEntered(int id);
 
@@ -92,8 +91,7 @@ namespace hades
 		bool bindAction(int id, thor::Action &action);
 		thor::Action::ActionType convertToActionType(int type);
 
-		//TODO: unordered map
-		std::map<std::string, int > _types;
+		std::unordered_map<std::string, int > _types;
 		thor::ActionMap<int> _actions;
 
 		std::shared_ptr<Console> _console;

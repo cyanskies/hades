@@ -2,6 +2,7 @@
 
 # C++ source files
 set(XING_SRC
+	ConsoleTestState.cpp
 	main.cpp
 )
 

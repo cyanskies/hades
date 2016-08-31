@@ -51,7 +51,7 @@ void hades::ConsoleView::init()
 void hades::ConsoleView::update()
 {
 	//TODO: support infolevel filters.
-	auto strings = console->getRecentOutputFromBuffer();
+	auto strings = console->getRecentOutputFromBuffer(Console::Console_String_Verbosity::WARNING);
 
 	for (auto s : strings)
 	{
@@ -104,7 +104,9 @@ void hades::ConsoleView::enterText(hades::EventContext context)
 		if (!_inputText.empty())
 			_inputText.pop_back();
 	}
-	else
+	//don't add special control characters
+	else if(text != "\n" && text != "\r" 
+		&& text != "`")
 		_inputText += text;
 }
 

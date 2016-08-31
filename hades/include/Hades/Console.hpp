@@ -42,6 +42,9 @@ namespace hades
 			virtual std::string to_string();
 		};
 
+		template<>
+		struct Property<std::string>;
+
 		class String
 		{
 		public:

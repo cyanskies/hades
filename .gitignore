@@ -228,3 +228,7 @@ hades/CMakeFiles/
 *.db
 hades/hades.VC.VC.opendb
 hades/install_manifest.txt
+test/CMakeCache.txt
+test/CMakeFiles/
+test/source/CMakeFiles/
+*.opendb

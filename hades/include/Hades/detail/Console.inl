@@ -9,7 +9,9 @@ namespace hades
 		template<>
 		struct Property<std::string> : public Property_Base
 		{
-			explicit Property(const std::string &value);
+			explicit Property(const std::string &value) : value(std::make_shared<String>(value)), Property_Base(typeid(std::string))
+			{}
+
 			std::shared_ptr<String> value;
 
 			virtual std::string to_string()

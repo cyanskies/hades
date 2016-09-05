@@ -6,6 +6,8 @@
 
 #include "Types.hpp"
 
+//A set of curve classes for single player games
+
 namespace hades {
 	template<typename Time, typename Data>
 	struct Keyframe
@@ -54,6 +56,7 @@ namespace hades {
 			auto d = GetRange(at);
 
 			//return lerp of d.first to d.second with at.
+			assert(false && "unimplemented");
 
 			return Data();
 		}

@@ -253,8 +253,8 @@ namespace hades
 
 				float ratio = static_cast<float>(width->load()) / static_cast<float>(height->load());
 				int intratio = static_cast<int>(ratio * 100);
-				
-				switch(intratio)
+
+				switch (intratio)
 				{
 				case RATIO3_4:
 					_console->set("vid_mode", 0);
@@ -281,5 +281,20 @@ namespace hades
 
 			_console->registerFunction("vid_reinit", vid_reinit);
 		}
+
+		//utility functions
+		{
+			std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
+				auto files = _resource->listFilesInDirectory(path);
+
+				for (auto f : files)
+					_console->echo(f);
+
+				return true;
+			};
+
+			_console->registerFunction("dir", util_dir);
+		}
+
 	}
 }//hades

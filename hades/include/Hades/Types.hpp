@@ -75,6 +75,9 @@ namespace hades {
 		template<>
 		struct hades_type<std::string> : std::is_same<std::string, typename std::remove_cv<std::string>::type> {};
 
+		template<typename T>
+		using approved_types<T> = hades_type<T>;
+
 		//string to value conversion
 		template<typename T>
 		T stov(std::string value)

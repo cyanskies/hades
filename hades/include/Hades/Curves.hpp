@@ -29,7 +29,7 @@ namespace hades {
 	public:
 		Curve()
 		{
-			static_assert(hades::types::hades_type<Data>::value, "Curves can only contain syncronisable data");
+			static_assert(hades::types::hades_type<Data>::value, "Curves can only contain approved data types");
 		}
 
 		Data Get(Time at) = 0;

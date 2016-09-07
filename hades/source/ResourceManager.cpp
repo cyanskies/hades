@@ -105,6 +105,7 @@ namespace hades
 			if (std::experimental::filesystem::exists(userDir + *i + HADES_ARCHIVE_EXT))
 				listFilesInZip(*i + HADES_ARCHIVE_EXT, relativeDirectory, list);
 
+			//remove resource dir prefixes from path names
 			for (auto &s : list)
 			{
 				auto pos = s.find_first_of(*i);

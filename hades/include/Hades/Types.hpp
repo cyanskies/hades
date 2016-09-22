@@ -6,8 +6,6 @@
 
 #include "SFML/Config.hpp"
 
-//FIXME: this generates multible defined symbol warning, but im not sure why?
-
 namespace hades {
 	namespace types {
 		//portable types for integers

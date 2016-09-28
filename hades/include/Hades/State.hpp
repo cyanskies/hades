@@ -18,9 +18,9 @@ namespace hades
 		virtual ~State();
 
 		//functions to ditermine whether the state should die
-		bool isAlive();
+		bool isAlive() const;
 
-		bool isInit();
+		bool isInit() const;
 		void initDone();
 
 		//manually kill it from within the state.
@@ -30,14 +30,14 @@ namespace hades
 		//calls resume
 		void activate();
 
-		bool isActive();
+		bool isActive() const;
 		//pauses state and skips it from now on
 		void deactivate();
 
 		void dropFocus();
 		
 		//tests if the state currently has focus
-		bool paused();
+		bool paused() const;
 		//pauses game timers and tells the app not to run logic updates for this state
 		void grabFocus();
 		
@@ -49,8 +49,10 @@ namespace hades
 		virtual void init() = 0; //start all the state logic
 		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
 		//virtual void input(int input) = 0;
+		[[depreciated("Constant update is depreciated, use update(dtime) instead.")]]
 		virtual void update(const sf::Window &window) = 0; //update at constant tickrate
 		virtual void update(sf::Time deltaTime) = 0; //update animations
+		//TODO: draw with dtime
 		virtual void draw(sf::RenderTarget &target) = 0; //draw
 		virtual void cleanup() = 0; //delete everything
 		
@@ -67,9 +69,11 @@ namespace hades
 
 	private:
 
+		//TODO: redo input system
 		CallbackSystem _callbacks;
 		std::map<int, std::function<void(thor::ActionContext<int>)> > _stateBinds;
 
+		//TODO: atomic
 		bool _alive, _init, _paused, _active;
 	};
 }//hades

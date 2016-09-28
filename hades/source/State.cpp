@@ -8,12 +8,12 @@ namespace hades
 	State::~State()
 	{}
 
-	bool State::isAlive()
+	bool State::isAlive() const
 	{
 		return _alive;
 	}
 
-	bool State::isInit()
+	bool State::isInit() const
 	{
 		return _init;
 	}
@@ -33,7 +33,7 @@ namespace hades
 		_active = true;
 	}
 
-	bool State::isActive()
+	bool State::isActive() const
 	{
 		return _active;
 	}
@@ -63,7 +63,7 @@ namespace hades
 			func->second(context);
 	}
 
-	bool State::paused()
+	bool State::paused() const
 	{
 		return _paused;
 	}

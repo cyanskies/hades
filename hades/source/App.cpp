@@ -136,6 +136,8 @@ namespace hades
 			sf::Time thisFrame = sf::Time::Zero;
 			sf::Time currentTime = time.getElapsedTime();
 			//perform additional logic updates if we're behind on logic
+			//TODO: depreciate update(_window)?
+			//but then what happens with this loop?
 			while( accumulator >= sf::milliseconds(tickRate->load()))
 			{
 				handleEvents(activeState);
@@ -146,7 +148,7 @@ namespace hades
 				thisFrame += sf::milliseconds(tickRate->load());
 			}
 
-			activeState->update(thisFrame.asSeconds());
+			activeState->update(thisFrame);
 			_window.clear();
 			activeState->draw(_window);
 

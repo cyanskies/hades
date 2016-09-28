@@ -50,7 +50,7 @@ namespace hades
 		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
 		//virtual void input(int input) = 0;
 		virtual void update(const sf::Window &window) = 0; //update at constant tickrate
-		virtual void update(float deltaTime) = 0; //update animations
+		virtual void update(sf::Time deltaTime) = 0; //update animations
 		virtual void draw(sf::RenderTarget &target) = 0; //draw
 		virtual void cleanup() = 0; //delete everything
 		

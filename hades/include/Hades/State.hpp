@@ -64,7 +64,6 @@ namespace hades
 		void bindCallback(int id, std::function<void(EventContext)> func);
 		void clearCallback(int id);
 		void clearCallbacks();
-		TimerManager timers;
 
 	private:
 

@@ -17,7 +17,7 @@ namespace hades
 		sf::Time currentTick;
 		{
 			std::lock_guard<std::mutex> wlock(_watchMutex);
-			currentTick = _watch.getElapsedTime();
+			currentTick = _time;
 		}
 
 		TimeEvent t = {function, repeating, duration, false, sf::Time(), currentTick + duration};
@@ -49,12 +49,12 @@ namespace hades
 	}
 
 
-	void TimerManager::update()
+	void TimerManager::update(sf::Time dtime)
 	{
 		sf::Time currentTick;
 		{
 			std::lock_guard<std::mutex> wlock(_watchMutex);
-			currentTick = _watch.getElapsedTime();
+			currentTick = _time += dtime;
 		}
 
 		timer_map t_map;
@@ -98,18 +98,6 @@ namespace hades
 		_add_list.clear();
 	}
 
-	void TimerManager::pause()
-	{
-		std::lock_guard<std::mutex> lock(_watchMutex);
-		_watch.stop();
-	}
-
-	void TimerManager::resume()
-	{
-		std::lock_guard<std::mutex> lock(_watchMutex);
-		_watch.start();
-	}
-
 	void TimerManager::pause(int id)
 	{
 		std::lock_guard<std::mutex> lock(_timerMutex);
@@ -127,7 +115,7 @@ namespace hades
 		sf::Time currentTick;
 		{
 			std::lock_guard<std::mutex> wlock(_watchMutex);
-			currentTick = _watch.getElapsedTime();
+			currentTick = _time;
 		}
 
 		std::lock_guard<std::mutex> tlock(_timerMutex);
@@ -144,7 +132,7 @@ namespace hades
 		sf::Time currentTick;
 		{
 			std::lock_guard<std::mutex> wlock(_watchMutex);
-			currentTick = _watch.getElapsedTime();
+			currentTick = _time;
 		}
 
 		std::lock_guard<std::mutex> tlock(_timerMutex);

@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "Thor/Time.hpp"
+#include "SFML/System/Time.hpp"
 
 namespace hades
 {
@@ -23,9 +23,7 @@ namespace hades
 		void dropAll();
 
 		// Controls for all timers.
-		void update();
-		void pause();
-		void resume();
+		void update(sf::Time dtime);
 
 		// Controls for a specific timer, using an identifier.
 		void pause(int id);
@@ -39,8 +37,6 @@ namespace hades
 		struct TimeEvent
 		{
 			std::function<bool(void)> function;
-			//asIScriptObject* object;
-			//asIScriptFunction* scriptFunction;
 			bool repeating;
 			sf::Time duration; //how long the time is set for, for repeating and so on.
 			bool paused;
@@ -49,9 +45,12 @@ namespace hades
 		};
 
 		int _timerCount;
-		thor::StopWatch _watch;
+		sf::Time _time; //total game watch
 
-		std::mutex _timerMutex, _removeMutex, _addMutex, _watchMutex;
+		std::mutex _timerMutex, //guards the timer_map
+			_removeMutex, //guards the timer _remove_list
+			_addMutex, //guards the timer _add_list
+			_watchMutex; //guards the total _time variable
 
 		using timer_map = std::unordered_map<int, TimeEvent>;
 		timer_map _timers,

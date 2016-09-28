@@ -46,7 +46,6 @@ namespace hades
 
 	void State::grabFocus()
 	{
-		timers.resume();
 		resume();
 		_paused = false;	
 	}
@@ -71,7 +70,6 @@ namespace hades
 	
 	void State::dropFocus()
 	{
-		timers.pause();
 		pause();
 		_paused = true;
 	}

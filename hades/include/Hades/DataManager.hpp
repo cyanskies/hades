@@ -1,13 +1,17 @@
 #ifndef HADES_DATAMANAGER_HPP
 #define HADES_DATAMANAGER_HPP
 
+#include <unordered_set>
 #include <string>
 
 #include "Types.hpp"
 
+#include "detail/DataManager.inl"
+
 namespace hades
 {
-	using UniqueId = types::uint64;
+
+	using UniqueId = UniqueId_t<hades::types::uint64>;
 
 	class CustomType;
 
@@ -32,6 +36,9 @@ namespace hades
 		UniqueId getUid(std::string name);
 
 	private:
+
+		//list of used names
+		std::unordered_set<std::string> _names;
 	};
 }
 

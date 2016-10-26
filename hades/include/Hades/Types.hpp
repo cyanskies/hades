@@ -109,21 +109,23 @@ namespace hades {
 		template<>
 		bool stov<bool>(std::string value);
 
-		//type ids
-		enum HadesType {
-			INT8, UINT8,
-			INT16, UINT16,
-			INT32, UINT32,
-			INT64, UINT64,
-			FLOAT, DOUBLE, LONGDOUBLE,
-			BOOL,
-			STRING, FUNCTION,
-			ERROR_TYPE
-		};
+		namespace names {
+			//type ids
+			enum HadesType {
+				INT8, UINT8,
+				INT16, UINT16,
+				INT32, UINT32,
+				INT64, UINT64,
+				FLOAT, DOUBLE, LONGDOUBLE,
+				BOOL,
+				STRING, FUNCTION,
+				ERROR_TYPE
+			};
+		}
 
 		//Type ditermination for storage
 		template<typename T>
-		HadesType Type() { return ERROR_TYPE; }
+		names::HadesType Type() { return ERROR_TYPE; }
 	}
 }
 

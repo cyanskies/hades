@@ -102,6 +102,8 @@ namespace hades {
 			return value != "0";
 		}
 
+		using namespace names;
+
 		//floats
 		template<>
 		HadesType Type<float>() { return FLOAT; }

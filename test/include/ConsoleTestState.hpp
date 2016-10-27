@@ -9,7 +9,7 @@ public:
 	void init();
 	bool handleEvent(sf::Event &windowEvent);
 	void update(const sf::Window &window);
-	void update(float deltaTime);
+	void update(sf::Time deltaTime);
 	void draw(sf::RenderTarget &target);
 	void cleanup();
 	void reinit();

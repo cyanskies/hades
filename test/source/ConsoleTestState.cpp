@@ -28,7 +28,7 @@ bool ConsoleTestState::handleEvent(sf::Event &windowEvent)
 void ConsoleTestState::update(const sf::Window &window)
 {}
 
-void ConsoleTestState::update(float deltaTime)
+void ConsoleTestState::update(sf::Time deltaTime)
 {}
 
 void ConsoleTestState::draw(sf::RenderTarget &target)

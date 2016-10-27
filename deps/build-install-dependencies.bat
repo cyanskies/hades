@@ -6,8 +6,8 @@
 @IF NOT DEFINED library (@set library=./dep-library) ELSE (@set library=../%library%)
 
 @setlocal
-IF [%1]==[] (@set prepath=./ )	ELSE (@set prepath=../%1)
-set install-pfx=%prepath%%library%
+@IF [%1]==[] (@set prepath=./ )	ELSE (@set prepath=../%1)
+@set install-pfx=%prepath%%library%
 
 ::SFML
 @cd ./sfml

@@ -16,9 +16,6 @@
 
 @cd ../hades
 
-echo ../%install-pfx%
-pause
-
 @cmake  -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx% -G %generator%
 
 @msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%

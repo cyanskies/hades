@@ -23,8 +23,18 @@ namespace hades
 
 	namespace data
 	{
+		class typeholder_base
+		{
+		public:
+			virtual ~typeholder_base() {}
+
+			virtual void load() = 0;
+
+			virtual const T const* get() const = 0;
+		};
+
 		template<typename T>
-		class typeholder
+		class typeholder : public typeholder_base
 		{
 		public:
 			void load();

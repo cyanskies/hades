@@ -7,3 +7,6 @@
 [submodule "deps/thor"]
 	path = deps/thor
 	url = https://github.com/cyanskies/Thor
+[submodule "deps/yaml-cpp"]
+	path = deps/yaml-cpp
+	url = http://github.com/cyanskies/yaml-cpp

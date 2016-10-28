@@ -34,6 +34,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	sfml-network
 	${SFML_MAIN_RELEASE}
 	thor
+	libyaml-cpp
 	)
 else()
 	target_link_libraries(${XING_EXE}
@@ -46,6 +47,7 @@ else()
 	sfml-network-d
 	${SFML_MAIN_DEBUG}
 	thor-d
+	libyaml-cppmdd
 	)
 endif()
 

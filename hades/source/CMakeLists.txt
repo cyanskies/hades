@@ -6,6 +6,7 @@ set(HADES_SRC
 	Bind.cpp
 	Console.cpp
 	ConsoleView.cpp
+	DataManager.cpp
 	main.cpp
 	parallel_jobs.cpp
 	ResourceManager.cpp

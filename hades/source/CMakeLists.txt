@@ -15,6 +15,7 @@ set(HADES_SRC
 	StateManager.cpp
 	TimerManager.cpp
 	Types.cpp
+	type_erasure.cpp
 )
 
 # Library to build

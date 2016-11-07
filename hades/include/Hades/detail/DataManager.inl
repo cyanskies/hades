@@ -1,4 +1,5 @@
 #include "Hades/Types.hpp"
+#include "Hades/type_erasure.hpp"
 
 namespace hades
 {
@@ -25,15 +26,13 @@ namespace hades
 
 	namespace data
 	{
-		class typeholder_base
+		class typeholder_base : public type_erasure::type_erased_base
 		{
 		public:
 			using CountType = types::uint16;
 
 			virtual ~typeholder_base() {}
 
-			virtual void load();
-			virtual T get() const = 0;
 			//virtual T const* get() const = 0;
 
 			CountType getGenCount() const;

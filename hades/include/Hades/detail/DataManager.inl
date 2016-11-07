@@ -7,7 +7,7 @@ namespace hades
 	class UniqueId_t
 	{
 	public:
-		UniqueId_t(id_type value) _value(value) {}
+		UniqueId_t(id_type value) : _value(value) {}
 
 		bool operator==(const UniqueId_t& rhs) const
 		{
@@ -32,8 +32,6 @@ namespace hades
 			using CountType = types::uint16;
 
 			virtual ~typeholder_base() {}
-
-			//virtual T const* get() const = 0;
 
 			CountType getGenCount() const;
 		private:

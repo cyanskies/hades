@@ -7,6 +7,7 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	main.cpp
+	parallel_jobs.cpp
 	ResourceManager.cpp
 	StandardPaths.cpp
 	State.cpp

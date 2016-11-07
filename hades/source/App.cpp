@@ -7,6 +7,7 @@
 #include "SFML/Window/Event.hpp"
 
 #include "Hades/Console.hpp"
+#include "Hades/parallel_jobs.hpp"
 #include "Hades/ResourceManager.hpp"
 
 namespace hades
@@ -92,7 +93,10 @@ namespace hades
 		_states.attach(_console);
 		_states.attach(_resource);
 
-		registerConsoleCommands();		
+		registerConsoleCommands();	
+
+		//initialise the job system
+		parallel_jobs::init();
 	}
 
 	void App::postInit(CommandList commands)

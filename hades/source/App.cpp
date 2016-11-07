@@ -185,6 +185,9 @@ namespace hades
 
 		//kill off any lingering states.
 		_states.drop();
+
+		//shutdown the job system
+		parallel_jobs::join();
 	}
 
 	void App::handleEvents(State *activeState)

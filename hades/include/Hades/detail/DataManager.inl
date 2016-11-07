@@ -1,3 +1,5 @@
+#include "Hades/Types.hpp"
+
 namespace hades
 {
 	template<typename id_type>
@@ -26,11 +28,18 @@ namespace hades
 		class typeholder_base
 		{
 		public:
+			using CountType = types::uint16;
+
 			virtual ~typeholder_base() {}
 
-			virtual void load() = 0;
+			virtual void load();
+			virtual T get() const = 0;
+			//virtual T const* get() const = 0;
 
-			virtual const T const* get() const = 0;
+			CountType getGenCount() const;
+		private:
+			CountType _typeid, _genCount = 0;
+			static CountType _nextTypeId;
 		};
 
 		template<typename T>

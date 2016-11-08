@@ -19,7 +19,9 @@ namespace hades {
 		class type_erased
 		{
 		public:
-			virtual T get() const { return _data; }
+			virtual T const& get() const { return _data; }
+
+			virtual void set(T &value) { _data = value; }
 
 			virtual type_erased_base::size_type get_type() const {
 				return _typeId;

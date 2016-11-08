@@ -58,9 +58,8 @@ namespace hades
 		public:
 			void load();
 		private:
-			bool _loaded = false;
 			//incremented if the data is reloaded.
-			types::uint8 _generation = 0;
+			types::uint8 _generation = 1;
 		};
 
 		template<class T>
@@ -108,10 +107,15 @@ namespace hades
 		T const * const get() const;
 
 	private:
-		//handle to resource
+		data::resource<T> *_r;
 		types::uint8 _generation = 0;
 	};
 
+	//default hades datamanager
+	//registers that following resource types:
+	//texture
+	//sound
+	//document
 	class DataManager : public data::data_manager
 	{
 	public:

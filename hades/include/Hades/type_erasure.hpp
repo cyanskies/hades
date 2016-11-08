@@ -8,7 +8,7 @@ namespace hades {
 		class type_erased_base
 		{
 		public:
-			using size_type = types::uint16;
+			using size_type = types::uint8;
 
 			virtual ~type_erased_base() {}
 

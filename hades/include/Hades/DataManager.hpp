@@ -57,16 +57,35 @@ namespace hades
 		{
 		public:
 			void load();
+
+			UniqueId getUid() const;
 		private:
 			//incremented if the data is reloaded.
+			UniqueId _id;
 			types::uint8 _generation = 1;
+			//store loader function;
 		};
 
 		template<class T>
-		class resource : public type_erasure::type_erased<T>
-		{};
+		class final resource : public type_erasure::type_erased<T>
+		{
+		public:
+			resource(UniqueId id) : _id(id) {}
+		};
 
 		using resource_ptr = std::unique_ptr<resource_base>;
+
+		template<class T>
+		class Resource
+		{
+		public:
+			bool is_ready() const;
+			T const * const get() const;
+
+		private:
+			data::resource<T> *_r;
+			types::uint8 _generation = 0;
+		};
 
 		class data_manager
 		{
@@ -79,8 +98,13 @@ namespace hades
 			//loader reads manifest and loads data from disk
 			void register_resource_type(std::string name, std::function<void(void)> parser, std::function<void(resource_ptr*)> loader);
 
+			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string game);
+			//mod is the name of a folder or archive containing a mod.yaml file
 			void add_mod(std::string mod);
+
+			template<class T>
+			Resource<T> get(UniqueId);
 
 			//register a new uid
 			UniqueId createUid(std::string name);
@@ -99,23 +123,12 @@ namespace hades
 		};
 	}
 
-	template<class T>
-	class Resource
-	{
-	public:
-		bool is_ready() const;
-		T const * const get() const;
-
-	private:
-		data::resource<T> *_r;
-		types::uint8 _generation = 0;
-	};
-
 	//default hades datamanager
 	//registers that following resource types:
 	//texture
 	//sound
 	//document
+	//string store
 	class DataManager : public data::data_manager
 	{
 	public:

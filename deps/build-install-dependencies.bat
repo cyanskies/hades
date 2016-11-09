@@ -31,17 +31,11 @@
 @msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
 @msbuild INSTALL.vcxproj /p:Configuration=%mode%
 
-::zlib
-
-@cd ../zlib
-@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx%  -G %generator%
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
-
 ::minizlib
+@cd ..
+@msbuild ./zlib/contrib/vstudio/vc11/zlibvc.vcxproj /p:Configuration=%mode%
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapid.dll" 
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapid.lib"
 
-@cd ./contrib/minizip
-@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../../../%install-pfx%  -G %generator%
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
-@cd ../../
+@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.dll" %install-pfx%\bin\zlibwapi.dll
+@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.lib" %install-pfx%\lib\zlibwapi.lib

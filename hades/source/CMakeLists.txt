@@ -47,7 +47,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	${SFML_MAIN_RELEASE}
 	thor
 	libyaml-cpp
-	zlib
+	zlibwapi
 	)
 else()
 	target_link_libraries(${HADES_LIB}
@@ -60,7 +60,7 @@ else()
 	${SFML_MAIN_DEBUG}
 	thor-d
 	libyaml-cppmdd
-	zlibd
+	zlibwapid
 	)
 endif()
 

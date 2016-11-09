@@ -23,9 +23,13 @@ namespace hades
 
 		//register a new uid
 		UniqueId data_manager::createUid(std::string name)
-		{}
+		{
+			return UniqueId(0);
+		}
 		//convert string to uid
 		UniqueId data_manager::getUid(std::string name)
-		{}
+		{
+			return UniqueId(0);
+		}
 	}
 }

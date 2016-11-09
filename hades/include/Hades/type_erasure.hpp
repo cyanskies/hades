@@ -1,6 +1,9 @@
 #ifndef HADES_TYPEERASURE_HPP
 #define HADES_TYPEERASURE_HPP
 
+#include <memory>
+#include <unordered_map>
+
 #include "Hades/Types.hpp"
 
 namespace hades {
@@ -19,6 +22,8 @@ namespace hades {
 		class type_erased
 		{
 		public:
+			using type_base = type_erased_base;
+
 			virtual T const& get() const { return _data; }
 
 			virtual void set(T &value) { _data = value; }
@@ -47,6 +52,22 @@ namespace hades {
 		class type_erased_simple : public type_erased<T>, type_erased_base 
 		{};
 	}
+
+	template<class Key, class type_base = type_erasure::type_erased_base>
+	class property_bag
+	{
+	public:
+		template<class T, class type_holder = type_erasure::type_erased_simple<T>>
+		void set(Key key, T &value);
+
+		template<class T, class type_holder = type_erasure::type_erased_simple<T>>
+		T const &get(Key key) const;
+
+	private:
+		std::unordered_map<Key, std::unique_ptr<type_base>> _bag;
+	};
 }
+
+#include "Hades/detail/type_erasure.inl"
 
 #endif // !HADES_TYPEERASURE_HPP

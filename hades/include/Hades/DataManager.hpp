@@ -67,7 +67,7 @@ namespace hades
 		};
 
 		template<class T>
-		class final resource : public type_erasure::type_erased<T>
+		class resource : public type_erasure::type_erased<T>
 		{
 		public:
 			resource(UniqueId id) : _id(id) {}
@@ -117,7 +117,7 @@ namespace hades
 			//map of names to Uids
 			std::unordered_map<std::string, UniqueId> _ids;
 			//map of uids to resources
-			std::unordered_map<UniqueId, resource_ptr> _resources;
+			property_bag<UniqueId, resource_base> _resources;
 			//list of unloaded resources
 			std::vector<resource_ptr*> _loadQueue;
 		};

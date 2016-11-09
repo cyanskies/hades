@@ -10,3 +10,6 @@
 [submodule "deps/yaml-cpp"]
 	path = deps/yaml-cpp
 	url = http://github.com/cyanskies/yaml-cpp
+[submodule "deps/zlib"]
+	path = deps/zlib
+	url = http://github.com/cyanskies/zlib

@@ -91,12 +91,15 @@ namespace hades
 		{
 		public:
 
+			using parserFunc = std::function<void(void)>;
+			using loaderFunc = std::function<void(resource_ptr*)>;
+
 			virtual ~data_manager();
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
-			void register_resource_type(std::string name, std::function<void(void)> parser);
+			void register_resource_type(std::string name, parserFunc parser);
 			//loader reads manifest and loads data from disk
-			void register_resource_type(std::string name, std::function<void(void)> parser, std::function<void(resource_ptr*)> loader);
+			void register_resource_type(std::string name, parserFunc parser, loaderFunc loader);
 
 			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string game);
@@ -112,6 +115,10 @@ namespace hades
 			UniqueId getUid(std::string name);
 
 		private:
+			//==parsing and loading data==
+			std::unordered_map<std::string, parserFunc> _resourceParsers;
+
+			//==stored resource data==
 			//list of used names
 			std::unordered_set<std::string> _names;
 			//map of names to Uids

@@ -6,7 +6,7 @@ namespace hades
 	{
 		void resource_base::load(data_manager* datamanager)
 		{
-			if(_resourceLoader(this, datamanager))
+			if(_resourceLoader && _resourceLoader(this, datamanager))
 				_generation++;
 		}
 
@@ -21,12 +21,14 @@ namespace hades
 		//loader reads manifest and loads data from disk
 		void data_manager::register_resource_type(std::string name, data_manager::parserFunc parser, loaderFunc loader)
 		{
-
+			_resourceParsers[name] = parser;
+			_resourceLoaders[name] = loader;
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
 		void data_manager::load_game(std::string game)
 		{}
+
 		//mod is the name of a folder or archive containing a mod.yaml file
 		void data_manager::add_mod(std::string mod)
 		{}

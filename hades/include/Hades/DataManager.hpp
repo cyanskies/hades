@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "SFML/Graphics/Texture.hpp"
+
 #include "type_erasure.hpp"
 #include "Types.hpp"
 
@@ -135,7 +137,7 @@ namespace hades
 		private:
 			//==parsing and loading data==
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
-			std::unordered_map<std::string, loaderFunc> _resourceloaders;
+			std::unordered_map<std::string, loaderFunc> _resourceLoaders;
 
 			//==stored resource data==
 			//list of used names
@@ -151,6 +153,11 @@ namespace hades
 
 	namespace resources
 	{
+		struct string
+		{
+			std::string value;
+		};
+
 		struct texture 
 		{
 			//max texture size is 512

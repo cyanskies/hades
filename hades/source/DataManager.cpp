@@ -4,6 +4,12 @@ namespace hades
 {
 	namespace data
 	{
+		void resource_base::load(data_manager* datamanager)
+		{
+			if(_resourceLoader(this, datamanager))
+				_generation++;
+		}
+
 		data_manager::~data_manager()
 		{}
 		//application registers the custom resource types
@@ -13,8 +19,10 @@ namespace hades
 			_resourceParsers[name] = parser;
 		}
 		//loader reads manifest and loads data from disk
-		void data_manager::register_resource_type(std::string name, data_manager::parserFunc parser, data_manager::loaderFunc loader)
-		{}
+		void data_manager::register_resource_type(std::string name, data_manager::parserFunc parser, loaderFunc loader)
+		{
+
+		}
 
 		//game is the name of a folder or archive containing a game.yaml file
 		void data_manager::load_game(std::string game)

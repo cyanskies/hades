@@ -51,21 +51,38 @@ namespace std {
 
 namespace hades
 {
+	namespace resources
+	{
+		struct resource_type
+		{
+			virtual ~resource_base() {}
+			std::string source;
+		};
+	}
+
 	namespace data
 	{
+		class data_manager;
+		class resource_base;
+
+		using loaderFunc = std::function<bool(resource_base*, data_manager*)>;
+
+		//type erased holder for a resource type
 		class resource_base : public type_erasure::type_erased_base
 		{
 		public:
-			void load();
+			void load(data_manager*);
 
 			UniqueId getUid() const;
 		private:
 			//incremented if the data is reloaded.
 			UniqueId _id;
 			types::uint8 _generation = 1;
-			//store loader function;
+			loaderFunc _resourceLoader;
 		};
 
+		//holds a resource type
+		//resource types hold information nessicary to load a resource
 		template<class T>
 		class resource : public type_erasure::type_erased<T>
 		{
@@ -92,8 +109,7 @@ namespace hades
 		public:
 
 			using parserFunc = std::function<void(void)>;
-			using loaderFunc = std::function<void(resource_ptr*)>;
-
+			
 			virtual ~data_manager();
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
@@ -106,6 +122,8 @@ namespace hades
 			//mod is the name of a folder or archive containing a mod.yaml file
 			void add_mod(std::string mod);
 
+			void load_resources();
+
 			template<class T>
 			Resource<T> get(UniqueId);
 
@@ -117,6 +135,7 @@ namespace hades
 		private:
 			//==parsing and loading data==
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
+			std::unordered_map<std::string, loaderFunc> _resourceloaders;
 
 			//==stored resource data==
 			//list of used names
@@ -130,6 +149,15 @@ namespace hades
 		};
 	}
 
+	namespace resources
+	{
+		struct texture 
+		{
+			//max texture size is 512
+			types::uint8 width, height;
+			sf::Texture tex;
+		};
+	}
 	//default hades datamanager
 	//registers that following resource types:
 	//texture

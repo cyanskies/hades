@@ -14,15 +14,12 @@ namespace hades
 			: _what(what), _code(code)
 		{}
 
-		struct unarchive
-		{
-			unzFile file;
-		};
-		
-		archive_stream::archive_stream(std::string archive) : _fileOpen(false), _archivePath(archive)
-		{
-			_archive = open_archive(archive);
-		}
+		//open a close unzip archives
+		unarchive open_archive(std::string path);
+		void close_archive(unarchive f);
+
+		archive_stream::archive_stream(std::string archive) : _fileOpen(false), _archive(open_archive(archive))
+		{}
 
 		archive_stream::~archive_stream() 
 		{
@@ -31,6 +28,8 @@ namespace hades
 
 			close_archive(&_archive); 
 		}
+
+		bool file_exists(unarchive, std::string);
 
 		bool archive_stream::open(std::string filename)
 		{
@@ -54,6 +53,9 @@ namespace hades
 		sf::Int64 archive_stream::read(void* data, sf::Int64 size)
 		{
 			assert(_fileOpen && data);
+			if(!_fileOpen)
+				throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
+
 			buffer buff(size);
 
 			assert(std::numeric_limits<unsigned int>::max() > size);
@@ -67,6 +69,8 @@ namespace hades
 		sf::Int64 archive_stream::seek(sf::Int64 position)
 		{
 			assert(_fileOpen);
+			if (!_fileOpen)
+				throw archive_exception("Tried to seek without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
 			unzCloseCurrentFile(_archive);
 			open(_fileName);
@@ -74,11 +78,15 @@ namespace hades
 			buffer buff(position);
 
 			return read(buff.data(), position);
+
+			//TODO: loop, continue reading if the read wasnt far enough
 		}
 
 		sf::Int64 archive_stream::tell()
 		{
 			assert(_fileOpen);
+			if (!_fileOpen)
+				throw archive_exception("Tried to tell without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
 			return unztell64(_archive);
 		}
@@ -86,6 +94,9 @@ namespace hades
 		sf::Int64 archive_stream::getSize()
 		{
 			assert(_fileOpen);
+			if (!_fileOpen)
+				throw archive_exception("Tried to get size without an open file", archive_exception::error_code::FILE_NOT_OPEN);
+
 			unz_file_info64 info;
 
 			auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
@@ -119,19 +130,46 @@ namespace hades
 				throw archive_exception("unable to close archive", archive_exception::error_code::FILE_CLOSE);
 		}
 
+		buffer read_file_from_archive(std::string archive, std::string path)
+		{
+			auto stream = stream_file_from_archive(archive, path);
+				
+			auto size = stream.getSize();
+			buffer buff(size);
+			stream.read(&buff[0], size);
+
+			return buff;
+		}
+
+		std::string read_text_from_archive(std::string archive, std::string path)
+		{
+			auto buf = read_file_from_archive(archive, path);
+
+			std::string out;
+			//convert buff to str
+			for (auto i : buf)
+				out.push_back(static_cast<char>(i));
+
+			return out;
+		}
+
+		archive_stream stream_file_from_archive(std::string archive, std::string path)
+		{
+			archive_stream str(archive);
+			str.open(path);
+			return str;
+		}
+
 		const int case_sensitivity_auto = 0,
 			case_sensitivity_sensitive = 1,
 			case_sensitivity_none = 2;
 
-		buffer read_file_from_archive(unarchive a, std::string path)
-		{
-			return buffer();
-		}
-
 		bool file_exists(std::string archive, std::string path)
 		{
 			auto a = open_archive(archive);
-			return file_exists(a, path);
+			auto ret = file_exists(a, path);
+			close_archive(a);
+			return ret;
 		}
 
 		bool file_exists(unarchive a, std::string path)

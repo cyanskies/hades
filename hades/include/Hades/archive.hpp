@@ -24,7 +24,8 @@ namespace hades
 				FILE_OPEN,
 				FILE_READ,
 				FILE_CLOSE,
-				FILE_ALREADY_OPEN
+				FILE_ALREADY_OPEN,
+				FILE_NOT_OPEN
 			};
 
 			archive_exception(const char* what, error_code code);
@@ -49,32 +50,24 @@ namespace hades
 			sf::Int64 tell();
 			sf::Int64 getSize();
 		private:
-			std::string _archivePath, _fileName;
+			std::string _fileName;
 			bool _fileOpen;
 			unarchive _archive;
 		};
 
-		using archive_stream_ptr = std::shared_ptr<archive_stream>;
 		using buffer = std::vector<types::uint8>;
-
-		//open a close unzip archives
-		unarchive open_archive(std::string path);
-		void close_archive(unarchive f);
 
 		//returns raw data
 		buffer read_file_from_archive(std::string archive, std::string path);
-		buffer read_file_from_archive(unarchive, std::string path);
 
 		//returns a file read as a string
 		std::string read_text_from_archive(std::string archive, std::string path);
-		std::string read_text_from_archive(unarchive, std::string path);
 
 		//returns streamable data
-		archive_stream_ptr stream_file_from_archive(std::string archive, std::string path);
+		archive_stream stream_file_from_archive(std::string archive, std::string path);
 
 		//ditermines if a file within an archive exists
 		bool file_exists(std::string archive, std::string path);
-		bool file_exists(unarchive, std::string path);
 
 		//compress_directory
 		bool compress_directory(std::string path);

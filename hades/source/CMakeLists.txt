@@ -3,6 +3,7 @@
 # C++ source files
 set(HADES_SRC
 	App.cpp
+	archive.cpp
 	Bind.cpp
 	Console.cpp
 	ConsoleView.cpp

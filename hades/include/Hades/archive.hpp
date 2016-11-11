@@ -1,6 +1,7 @@
 #ifndef HADES_ARCHIVE_HPP
 #define HADES_ARCHIVE_HPP
 
+#include <memory>
 #include <string>
 
 namespace hades
@@ -10,6 +11,8 @@ namespace hades
 		struct archive;
 
 		//open_archive;
+		std::shared_ptr<archive> open_archive(std::string path);
+		
 
 		//returns raw data
 		//read_file_from_archive;

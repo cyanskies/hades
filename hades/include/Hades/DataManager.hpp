@@ -139,6 +139,9 @@ namespace hades
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
 			std::unordered_map<std::string, loaderFunc> _resourceLoaders;
 
+			//archives
+			std::unordered_map<std::string, Archive*> _archives;
+
 			//==stored resource data==
 			//list of used names
 			std::unordered_set<std::string> _names;

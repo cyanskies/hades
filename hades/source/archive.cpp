@@ -27,7 +27,7 @@ namespace hades
 		archive_stream::~archive_stream() 
 		{
 			if (_fileOpen)
-				unzCloseCurrentFile(_archive.file);
+				unzCloseCurrentFile(_archive);
 
 			close_archive(&_archive); 
 		}
@@ -37,11 +37,11 @@ namespace hades
 			if(_fileOpen)
 				throw archive_exception("This stream already has a file open", archive_exception::error_code::FILE_ALREADY_OPEN);
 
-			if (file_exists(&_archive, filename))
+			if (file_exists(_archive, filename))
 				return false;
 
 			//open current file for reading
-			auto r = unzOpenCurrentFile(_archive.file);
+			auto r = unzOpenCurrentFile(_archive);
 			if (r != UNZ_OK)
 				return false;
 
@@ -57,7 +57,7 @@ namespace hades
 			buffer buff(size);
 
 			assert(std::numeric_limits<unsigned int>::max() > size);
-			auto amountRead = unzReadCurrentFile(_archive.file, &buff[0], size);
+			auto amountRead = unzReadCurrentFile(_archive, &buff[0], size);
 
 			memcpy(data, buff.data(), amountRead);
 
@@ -68,7 +68,7 @@ namespace hades
 		{
 			assert(_fileOpen);
 
-			unzCloseCurrentFile(_archive.file);
+			unzCloseCurrentFile(_archive);
 			open(_fileName);
 
 			buffer buff(position);
@@ -80,19 +80,28 @@ namespace hades
 		{
 			assert(_fileOpen);
 
-			return unztell64(_archive.file);
+			return unztell64(_archive);
 		}
 
+		sf::Int64 archive_stream::getSize()
+		{
+			assert(_fileOpen);
+			unz_file_info64 info;
 
-		//open_archive;
+			auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
+
+			assert(r == UNZ_OK);
+
+			return info.uncompressed_size;
+		}
+
 		unarchive open_archive(std::string path)
 		{
 			//test that archive exists
 			//open archive
-			unarchive a;
-			a.file = unzOpen(path.c_str());
+			unarchive a = unzOpen(path.c_str());
 
-			if (!a.file)
+			if (!a)
 			{
 				throw archive_exception((std::string("unable to open archive: ") + path.c_str()).c_str(), archive_exception::error_code::FILE_OPEN);
 			}
@@ -100,11 +109,11 @@ namespace hades
 			return a;
 		}
 
-		void close_archive(unarchive *f)
+		void close_archive(unarchive f)
 		{
 			assert(f);
 
-			auto r = unzClose(f->file);
+			auto r = unzClose(f);
 
 			if(r != UNZ_OK)
 				throw archive_exception("unable to close archive", archive_exception::error_code::FILE_CLOSE);
@@ -114,7 +123,7 @@ namespace hades
 			case_sensitivity_sensitive = 1,
 			case_sensitivity_none = 2;
 
-		buffer read_file_from_archive(unarchive *a, std::string path)
+		buffer read_file_from_archive(unarchive a, std::string path)
 		{
 			return buffer();
 		}
@@ -122,12 +131,12 @@ namespace hades
 		bool file_exists(std::string archive, std::string path)
 		{
 			auto a = open_archive(archive);
-			return file_exists(&a, path);
+			return file_exists(a, path);
 		}
 
-		bool file_exists(unarchive* a, std::string path)
+		bool file_exists(unarchive a, std::string path)
 		{
-			auto r = unzLocateFile(a->file, path.c_str(), case_sensitivity_auto);
+			auto r = unzLocateFile(a, path.c_str(), case_sensitivity_auto);
 			return r == UNZ_OK;
 		}
 	}

@@ -10,6 +10,7 @@
 
 #include "SFML/Graphics/Texture.hpp"
 
+#include "archive.hpp"
 #include "type_erasure.hpp"
 #include "Types.hpp"
 
@@ -57,7 +58,7 @@ namespace hades
 	{
 		struct resource_type
 		{
-			virtual ~resource_base() {}
+			virtual ~resource_type() {}
 			std::string source;
 		};
 	}
@@ -138,9 +139,6 @@ namespace hades
 			//==parsing and loading data==
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
 			std::unordered_map<std::string, loaderFunc> _resourceLoaders;
-
-			//archives
-			std::unordered_map<std::string, Archive*> _archives;
 
 			//==stored resource data==
 			//list of used names

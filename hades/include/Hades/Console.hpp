@@ -123,12 +123,20 @@ namespace hades
 	private:
 		std::string Message;
 		Console::Console_String_Verbosity Verb;
+		int Line;
+		std::string Function, File, Time;
 	public:
 		Console_String(const std::string &message, const Console::Console_String_Verbosity &verb = Console::NORMAL) : Message(message), Verb(verb)
 		{}
 
+		Console_String(const std::string &message, int line, const char* function, const char* file, const char* time, const Console::Console_String_Verbosity &verb = Console::NORMAL)
+			: Message(message), Verb(verb), Line(line), Function(function), Time(time)
+		{}
+
 		const std::string Text() const { return Message; }
 		const Console::Console_String_Verbosity Verbosity() const { return Verb; }
+
+		operator std::string() const { return "[" + Time + "]: " + File + Function + std::to_string(Line) + "\n" + Message; }
 	};
 
 	// ==================
@@ -144,8 +152,37 @@ namespace hades
 		bool operator()(const Console_String &string) const { return string.Verbosity() > CurrentVerb; }
 	};
 
-
+	extern Console *console;
 }//hades
+
+
+//logging macros, 
+//these use the global console ptr, 
+//they can be used
+
+#define HADESLOG(Message_, Verbosity_)          \
+  hades::console->echo(hades::Console_String(   \
+	Message_,									\
+	__LINE__,									\
+    __func__,									\
+    __FILE__,                                   \
+    Verbosity_									\
+  );
+
+#define LOG(Message_)									\
+  HADESLOG(Message_,									\
+	  hades::Console::Console_String_Verbosity::NORMAL  \
+  );
+
+#define LOGERROR(Message_)								\
+  HADESLOG(Message_,									\
+	  hades::Console::Console_String_Verbosity::ERROR	\
+  );
+
+#define LOGWARNING(Message_)							\
+  HADESLOG(Message_,									\
+	  hades::Console::Console_String_Verbosity::WARNING	\
+  );
 
 #include "detail/Console.inl"
 

@@ -72,6 +72,8 @@ namespace hades
 
 		//create console
 		_console = std::make_shared<Console>();
+		//record the global console for use
+		console = &*_console;
 
 		//load defualt console settings
 		registerVariables(_console);

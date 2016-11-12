@@ -14,6 +14,8 @@
 //==============
 namespace hades
 {
+	Console* console = nullptr;
+
 	namespace detail
 	{
 		String::String(std::string string) : _data(string)

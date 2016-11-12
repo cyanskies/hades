@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "yaml-cpp/node/node.h"
+
 #include "SFML/Graphics/Texture.hpp"
 
 #include "archive.hpp"
@@ -111,7 +113,7 @@ namespace hades
 		{
 		public:
 
-			using parserFunc = std::function<void(void)>;
+			using parserFunc = std::function<void(const char* mod, YAML::Node& node)>;
 			
 			virtual ~data_manager();
 			//application registers the custom resource types

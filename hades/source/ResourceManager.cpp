@@ -12,7 +12,6 @@ namespace std {
 
 namespace hades
 {
-
 	bool TextFile::loadFromFile(std::string filepath)
 	{
 		std::ifstream in(filepath, std::ios::in | std::ios::binary);

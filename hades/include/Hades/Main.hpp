@@ -4,8 +4,9 @@
 #include <memory>
 
 #include "Bind.hpp"
-#include "Hades/Console.hpp"
-#include "Hades/StateManager.hpp"
+#include "Console.hpp"
+#include "DataManager.hpp"
+#include "StateManager.hpp"
 
 namespace hades
 {
@@ -19,6 +20,14 @@ namespace hades
 ///	allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
 void defaultBindings(hades::Bind &bind);
+
+/////////////////////////////////////
+/// Called after defaultBindings
+/// 
+/// Allows the app to register its unique resource types.
+///	Apps must register both yaml parsers for the resource and loaders
+/////////////////////////////////////
+void resourceTypes(hades::DataManager &data);
 
 /////////////////////////////////////
 /// Called at the start of the app

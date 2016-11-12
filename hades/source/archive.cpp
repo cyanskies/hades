@@ -160,8 +160,11 @@ namespace hades
 			return str;
 		}
 
+		//no sensitivity on windows
 		const int case_sensitivity_auto = 0,
+			//case sensitivity everywhere
 			case_sensitivity_sensitive = 1,
+			//no sensitivity on any platform
 			case_sensitivity_none = 2;
 
 		bool file_exists(std::string archive, std::string path)

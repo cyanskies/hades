@@ -1,0 +1,19 @@
+#each mod archive can have a game and mod yaml file.
+#if loaded as a game the engine will use game
+#if loaded as a mod the engine will use mod
+
+#only one game can be loaded per engine instance.
+#for a game.yaml, the mods dependencies are auto loaded
+
+mod:
+	name:
+	#global names used in the document are only resolved to dependencies listed here
+	dependencies:
+		- dependency1
+
+#the rest of the yaml is parsed as resources
+#games register a resource handler to handle sections
+
+#eg a game section that contains game rules
+
+#hades includes default handlers for basic resources like textures

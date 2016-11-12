@@ -28,7 +28,8 @@ namespace hades
 		//game is the name of a folder or archive containing a game.yaml file
 		void data_manager::load_game(std::string game)
 		{
-			
+			//search for yaml in folder /game
+			//search for yaml in archive /game.*
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file

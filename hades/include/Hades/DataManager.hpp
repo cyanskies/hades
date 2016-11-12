@@ -26,7 +26,7 @@ namespace hades
 		public:
 			using type = id_type;
 
-			UniqueId_t(id_type value) : _value(value) {}
+			UniqueId_t() : _value(_count++) {}
 
 			bool operator==(const UniqueId_t& rhs) const
 			{
@@ -35,8 +35,12 @@ namespace hades
 
 			type get() const { return _value; }
 		private:
+			static type _count;
 			type _value;
 		};
+
+		template<typename id_type>
+		id_type UniqueId_t<id_type>::_count = 0;
 
 		using UniqueId = UniqueId_t<hades::types::uint64>;
 
@@ -56,21 +60,12 @@ namespace std {
 
 namespace hades
 {
-	namespace resources
-	{
-		struct resource_type
-		{
-			virtual ~resource_type() {}
-			std::string source;
-		};
-	}
-
 	namespace data
 	{
 		class data_manager;
 		class resource_base;
 
-		using loaderFunc = std::function<bool(resource_base*, data_manager*)>;
+		using loaderFunc = std::function<void(resource_base*, data_manager*)>;
 
 		//type erased holder for a resource type
 		class resource_base : public type_erasure::type_erased_base
@@ -114,7 +109,7 @@ namespace hades
 		public:
 
 			using parserFunc = std::function<void(const char* mod, YAML::Node& node)>;
-			
+
 			virtual ~data_manager();
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
@@ -132,8 +127,6 @@ namespace hades
 			template<class T>
 			Resource<T> get(UniqueId);
 
-			//register a new uid
-			UniqueId createUid(std::string name);
 			//convert string to uid
 			UniqueId getUid(std::string name);
 
@@ -156,12 +149,18 @@ namespace hades
 
 	namespace resources
 	{
-		struct string
+		struct resource_type
+		{
+			virtual ~resource_type() {}
+			std::string source;
+		};
+
+		struct string : public resource_type
 		{
 			std::string value;
 		};
 
-		struct texture 
+		struct texture : public resource_type
 		{
 			//max texture size is 512
 			types::uint8 width, height;
@@ -177,6 +176,9 @@ namespace hades
 	class DataManager : public data::data_manager
 	{
 	public:
+		DataManager();
+
+		data::UniqueId String, Texture;
 	};
 }
 

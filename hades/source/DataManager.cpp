@@ -36,15 +36,15 @@ namespace hades
 		void data_manager::add_mod(std::string mod)
 		{}
 
-		//register a new uid
-		UniqueId data_manager::createUid(std::string name)
-		{
-			return UniqueId(0);
-		}
 		//convert string to uid
 		UniqueId data_manager::getUid(std::string name)
 		{
-			return UniqueId(0);
+			return _ids[name];
 		}
+	}
+
+	DataManager::DataManager()
+	{
+		//register custom resource types
 	}
 }

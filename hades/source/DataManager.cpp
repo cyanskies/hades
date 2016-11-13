@@ -1,5 +1,7 @@
 #include "Hades/DataManager.hpp"
 
+#include "Hades/simple_resources.hpp"
+
 namespace hades
 {
 	namespace data
@@ -49,5 +51,11 @@ namespace hades
 	DataManager::DataManager()
 	{
 		//register custom resource types
+		register_resource_type("texture", resources::parseTexture, resources::loadTexture);
+	}
+
+	data::Resource<DataManager::Texture> DataManager::getTexture(data::UniqueId key) const
+	{
+		return get<Texture>(key);
 	}
 }

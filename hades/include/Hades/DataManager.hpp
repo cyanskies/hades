@@ -125,7 +125,10 @@ namespace hades
 			void load_resources();
 
 			template<class T>
-			Resource<T> get(UniqueId);
+			void set(UniqueId, T);
+
+			template<class T>
+			Resource<T> get(UniqueId) const;
 
 			//convert string to uid
 			UniqueId getUid(std::string name);
@@ -178,7 +181,8 @@ namespace hades
 	public:
 		DataManager();
 
-		data::UniqueId String, Texture;
+		using Texture = resources::texture;
+		data::Resource<Texture> getTexture(data::UniqueId) const;
 	};
 }
 

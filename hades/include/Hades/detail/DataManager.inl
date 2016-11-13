@@ -9,5 +9,11 @@ namespace hades
 		{
 			return lhs._value < rhs._value;
 		}
+
+		template<class T>
+		Resource<T> data_manager::get(UniqueId key) const
+		{
+			return _resources.get(key);
+		}
 	}
 }

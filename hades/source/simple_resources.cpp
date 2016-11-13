@@ -10,7 +10,6 @@ namespace hades
 
 		void loadTexture(data::resource_base*, data::data_manager*)
 		{
-			return false;
 		}
 	}
 }

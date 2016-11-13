@@ -6,8 +6,11 @@ namespace hades
 	{
 		void resource_base::load(data_manager* datamanager)
 		{
-			if(_resourceLoader && _resourceLoader(this, datamanager))
+			if (_resourceLoader)
+			{
+				_resourceLoader(this, datamanager);
 				_generation++;
+			}
 		}
 
 		data_manager::~data_manager()

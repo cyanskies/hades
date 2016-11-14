@@ -1,9 +1,12 @@
 #include "Hades/simple_resources.hpp"
+
+#include "Hades/DataManager.hpp"
+
 namespace hades
 {
 	namespace resources
 	{
-		void parseTexture(const char* mod, YAML::Node& node)
+		void parseTexture(data::UniqueId mod, YAML::Node& node)
 		{
 
 		}

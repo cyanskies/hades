@@ -60,6 +60,33 @@ namespace std {
 
 namespace hades
 {
+	namespace resources
+	{
+		template<class T>
+		struct resource_type
+		{
+			virtual ~resource_type() {}
+			//the file this resource should be loaded from
+			//the name of the mod for resources that are parsed and not loaded
+			std::string source;
+			//the actual resource
+			T value;
+			//the mod that the resource was most recently specified in
+			//not nessicarily the only mod to specify this resource.
+			data::UniqueId mod;
+		};
+
+		struct mod : public resource_type<int>
+		{
+			// source == the name of the archive containing the mode
+			// dependencies: a list of mods this mod depends on
+			std::vector<data::UniqueId> dependencies,
+				//names: unique id's provided by this mod
+				names;
+			int value = 0;
+		};
+	}
+
 	namespace data
 	{
 		class data_manager;
@@ -108,7 +135,7 @@ namespace hades
 		{
 		public:
 
-			using parserFunc = std::function<void(const char* mod, YAML::Node& node)>;
+			using parserFunc = std::function<void(UniqueId mod, YAML::Node& node)>;
 
 			virtual ~data_manager();
 			//application registers the custom resource types
@@ -134,6 +161,7 @@ namespace hades
 			UniqueId getUid(std::string name);
 
 		private:
+			bool _gameLoaded = false;
 			//==parsing and loading data==
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
 			std::unordered_map<std::string, loaderFunc> _resourceLoaders;
@@ -152,22 +180,13 @@ namespace hades
 
 	namespace resources
 	{
-		struct resource_type
-		{
-			virtual ~resource_type() {}
-			std::string source;
-		};
+		struct string : public resource_type<std::string>
+		{};
 
-		struct string : public resource_type
-		{
-			std::string value;
-		};
-
-		struct texture : public resource_type
+		struct texture : public resource_type<sf::Texture>
 		{
 			//max texture size is 512
 			types::uint8 width, height;
-			sf::Texture tex;
 		};
 	}
 	//default hades datamanager

@@ -1,7 +1,10 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
-#include "yaml-cpp/node/node.h"
+namespace YAML
+{
+	class Node;
+}
 
 namespace hades
 {

@@ -8,13 +8,16 @@
 #include <unordered_set>
 #include <vector>
 
-#include "yaml-cpp/node/node.h"
-
 #include "SFML/Graphics/Texture.hpp"
 
 #include "archive.hpp"
 #include "type_erasure.hpp"
 #include "Types.hpp"
+
+namespace YAML
+{
+	class Node;
+}
 
 namespace hades
 {

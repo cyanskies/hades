@@ -1,5 +1,8 @@
 #include "Hades/DataManager.hpp"
 
+#include "yaml-cpp/yaml.h"
+
+#include "Hades/archive.hpp"
 #include "Hades/simple_resources.hpp"
 
 namespace hades
@@ -31,22 +34,33 @@ namespace hades
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
-		void data_manager::load_game(std::string game)
+		bool data_manager::load_game(std::string game)
 		{
-			if (_gameLoaded)
-				throw std::logic_error("Tried to load more than one game");
+			if(!zip::file_exists(game, "game.yaml"))
+				throw std::runtime_error(game + "doesn't contain a game.yaml");
 
 			//open ./game.* as archive
-			//parse game.yaml
+			auto gameyaml = zip::read_text_from_archive(game, "game.yaml");
 
-			_gameLoaded = true;
+			//parse game.yaml
+			auto root = YAML::Load(gameyaml.c_str());
+			parseMod(game, root, std::bind(&data_manager::load_game, this, std::placeholders::_1));
+
+			return true;
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file
 		void data_manager::add_mod(std::string mod)
 		{
-			//open ./mod.* as archive
-			//parse mod.yaml
+			if (!zip::file_exists(mod, "mod.yaml"))
+				throw std::runtime_error("Failed to load requested mod");
+
+			//open ./game.* as archive
+			auto game = zip::read_text_from_archive(mod, "mod.yaml");
+
+			//parse game.yaml
+			auto root = YAML::Load(game.c_str());
+			parseMod(game, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
 		}
 
 		//convert string to uid

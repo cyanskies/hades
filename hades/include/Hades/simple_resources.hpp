@@ -1,6 +1,8 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
+#include "Hades/DataManager.hpp"
+
 namespace YAML
 {
 	class Node;
@@ -8,12 +10,6 @@ namespace YAML
 
 namespace hades
 {
-	namespace data
-	{
-		class resource_base;
-		class data_manager;
-	}
-
 	namespace resources
 	{
 		void parseTexture(data::UniqueId mod, YAML::Node& node);

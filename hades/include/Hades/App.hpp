@@ -74,8 +74,8 @@ namespace hades
 
 		Bind _bindings;								///< Used by the console to provide bindable input.
 		std::shared_ptr<Console> _console;			///< The appcations debug console.
-		hades::DataManager _dataMan;
-		std::shared_ptr<ResourceManager> _resource; ///< The resource manager for the entire application.
+		hades::DataManager _dataMan;				///< The applications resource loader
+		std::shared_ptr<ResourceManager> _resource; ///< The resource manager for the entire application.(depreciated)
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
 		
 		sf::RenderWindow _window;					///< SFML window object. 

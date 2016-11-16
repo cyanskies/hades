@@ -114,10 +114,12 @@ namespace hades
 		//holds a resource type
 		//resource types hold information nessicary to load a resource
 		template<class T>
-		class resource : public type_erasure::type_erased<T>
+		class resource : public resource_base, public type_erasure::type_erased<T>
 		{
 		public:
 			resource(UniqueId id) : _id(id) {}
+
+			using type_base = resource_base;
 		};
 
 		using resource_ptr = std::unique_ptr<resource_base>;
@@ -148,10 +150,14 @@ namespace hades
 			void register_resource_type(std::string name, parserFunc parser, loaderFunc loader);
 
 			//game is the name of a folder or archive containing a game.yaml file
-			void load_game(std::string game);
+			bool load_game(std::string game);
 			//mod is the name of a folder or archive containing a mod.yaml file
 			void add_mod(std::string mod);
 
+			//returns true if the mod or game with that name has been parsed
+			bool loaded(std::string mod) const;
+
+			//loads any queued resources
 			void load_resources();
 
 			template<class T>
@@ -164,7 +170,8 @@ namespace hades
 			UniqueId getUid(std::string name);
 
 		private:
-			bool _gameLoaded = false;
+			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
+
 			//==parsing and loading data==
 			std::unordered_map<std::string, parserFunc> _resourceParsers;
 			std::unordered_map<std::string, loaderFunc> _resourceLoaders;

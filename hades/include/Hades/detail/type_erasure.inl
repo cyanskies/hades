@@ -5,7 +5,7 @@
 namespace hades
 {
 	template<class Key, class type_base>
-	template<class T, class type_holder>
+	template<class T, template<typename> class type_holder>
 	void property_bag<Key, type_base>::set(Key key, T &value)
 	{
 		static_assert(type_holder<T>::type_base == type_base);
@@ -37,20 +37,23 @@ namespace hades
 	}
 
 	template<class Key, class type_base>
-	template<class T, class type_holder>
+	template<class T, template<typename> class type_holder>
 	T const &property_bag<Key, type_base>::get(Key key) const
 	{
-		static_assert(type_holder<T>::type_base == type_base);
-		static_assert(std::is_base_of<type_base, type_holder>);
+		//static_assert(typename type_holder<T>::type_base == type_base);
+		/*static_assert(std::is_base_of<type_base, type_holder<T>>, "");
 		static_assert(std::is_base_of<type_erased_base, type_base>);
-		static_assert(std::is_base_of<type_erased, type_holder>);
+		static_assert(std::is_base_of<type_erased, type_holder>);*/
 
-		auto iter = _bag.find(identifier);
+		auto iter = _bag.find(key);
 		if (iter == _bag.end())
 			throw std::logic_error("Tried to retrieve unassigned key.");
 
-		if (type_holder<T>::type_static() == iter->second->type())
-			return static_cast< type_holder<T>* >(&*iter->second)->get();
+		if (type_holder<T>::get_type_static() == iter->second->get_type())
+		{
+			auto *holder = static_cast<type_holder<T>*>(&*iter->second);
+			return holder->get();
+		}
 		else
 		{
 			throw std::logic_error("Tried to retrieve value from property_bag using wrong type.");

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <string>
+#include <sstream>
 
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
@@ -101,23 +102,66 @@ namespace hades
 		parallel_jobs::init();
 	}
 
+	//calls job on any command that contains command
+	void loadCommand(CommandList &commands, std::string command, std::function<void(CommandList::value_type)> job)
+	{
+		auto bit = commands.begin(), end = commands.end();
+		std::vector<CommandList::iterator> removeList;
+		while (bit != end)
+		{
+			if (bit->find(command))
+			{
+				removeList.push_back(bit);
+				job(*bit);
+			}
+		}
+
+		while (!removeList.empty())
+		{
+			commands.erase(removeList.back());
+			removeList.pop_back();
+		}
+	}
+
 	void App::postInit(CommandList commands)
 	{	
-		if(!_console->runCommand("vid_reinit"))
+		//pull -game and -mod commands from commands
+		//and load them in the datamanager.
+		auto &data = _dataMan;
+		loadCommand(commands, "-game", [&data](std::string command) {
+			std::stringstream params(command);
+			std::string value;
+			std::getline(params, value, ' ');
+			assert(value == "-game");
+
+			data.load_game(command);
+		});
+
+		loadCommand(commands, "-mod", [&data](std::string command) {
+			std::stringstream params(command);
+			std::string value;
+			std::getline(params, value, ' ');
+			assert(value == "-mod");
+
+			data.add_mod(command);
+		});
+
+		//proccess config files
+		//load saved bindings and whatnot from config files
+
+		//if hades main handles any of the commands then they will be removed from 'commands'
+		hadesMain(_states, _console, commands);
+
+
+		//process command lines
+		//pass the commands into the console to be fullfilled using the normal parser
+
+		if (!_console->runCommand("vid_reinit"))
 		{
 			_console->echo("Error setting video, falling back to default", Console::ERROR);
 			_console->runCommand("vid_default");
 			_console->runCommand("vid_reinit");
 		}
-
-		//if hades main handles any of the commands then they will be removed from 'commands'
-		hadesMain(_states, _console, commands);
-
-		//proccess config files
-		//load saved bindings and whatnot from config files
-
-		//process command lines
-		//pass the commands into the console to be fullfilled using the normal parser
 	}
 
 	bool App::run()

@@ -46,7 +46,7 @@ namespace hades {
 		}
 		
 		template<class T>
-		typename type_erased_base::size_type type_erased<T>::_typeId = ::type_count++;
+		typename type_erased_base::size_type type_erased<T>::_typeId = type_count++;
 
 		template<class T>
 		class type_erased_simple : public type_erased<T>, type_erased_base 
@@ -57,10 +57,10 @@ namespace hades {
 	class property_bag
 	{
 	public:
-		template<class T, class type_holder = type_erasure::type_erased_simple<T>>
+		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
 		void set(Key key, T &value);
 
-		template<class T, class type_holder = type_erasure::type_erased_simple<T>>
+		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
 		T const &get(Key key) const;
 
 	private:

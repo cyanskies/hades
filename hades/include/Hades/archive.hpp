@@ -32,7 +32,6 @@ namespace hades
 
 			error_code code() const;
 		private:
-			std::string _what;
 			error_code _code;
 		};
 

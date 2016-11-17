@@ -34,7 +34,7 @@ namespace hades
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
-		bool data_manager::load_game(std::string game)
+		void data_manager::load_game(std::string game)
 		{
 			if(!zip::file_exists(game, "game.yaml"))
 				throw std::runtime_error(game + "doesn't contain a game.yaml");
@@ -44,13 +44,11 @@ namespace hades
 
 			//parse game.yaml
 			auto root = YAML::Load(gameyaml.c_str());
-			parseMod(game, root, std::bind(&data_manager::load_game, this, std::placeholders::_1));
-
-			return true;
+			parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file
-		void data_manager::add_mod(std::string mod)
+		void data_manager::add_mod(std::string mod, bool autoLoad)
 		{
 			if (!zip::file_exists(mod, "mod.yaml"))
 				throw std::runtime_error("Failed to load requested mod");
@@ -60,7 +58,30 @@ namespace hades
 
 			//parse game.yaml
 			auto root = YAML::Load(game.c_str());
-			parseMod(game, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
+			if(autoLoad)
+				parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
+			else
+				parseMod(game, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
+		}
+
+		bool data_manager::loaded(std::string mod) const
+		{
+			//name hasn't even been used yet
+			if (_names.find(mod) == _names.end())
+				return false;
+
+			try
+			{
+				auto r = get<resources::mod>(getUid(mod));
+			}
+			//name has been used, but not for a mod
+			catch (std::runtime_error *e)
+			{
+				return false;
+			}
+
+			//name is used and is a mod
+			return true;
 		}
 
 		//convert string to uid
@@ -68,6 +89,21 @@ namespace hades
 		{
 			return _ids[name];
 		}
+
+		UniqueId data_manager::getUid(std::string name) const
+		{
+			auto i = _ids.find(name);
+			if (i == _ids.end())
+				throw std::runtime_error("Tried to get uniqueId that doesn't exist.");
+
+			return i->second;
+		}
+
+		void data_manager::parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency)
+		{
+			;
+		}
+
 	}
 
 	DataManager::DataManager()

@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "Hades/App.hpp"
+#include "Hades/archive.hpp"
+#include "Hades/Console.hpp"
 
 int main(int argc, char** argv)
 {
@@ -35,9 +37,17 @@ int main(int argc, char** argv)
 		hades::App app;
 
 		app.init();
-		app.postInit(commands);
+		try
+		{
+			app.postInit(commands);
 
-		returnCode = app.run();
+			returnCode = app.run();
+		}
+		catch(hades::zip::archive_exception e)
+		{
+			//failed to read a resource from an archive //probably loading a mod.yaml
+			LOGERROR(e.what());
+		}
 
 		app.cleanUp();
 	}

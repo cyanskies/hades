@@ -109,7 +109,9 @@ namespace hades
 		std::vector<CommandList::iterator> removeList;
 		while (bit != end)
 		{
-			if (bit->find(command))
+			auto com = bit->substr(0, command.length());
+
+			if (com == command)
 			{
 				removeList.push_back(bit);
 				job(*bit);
@@ -125,6 +127,8 @@ namespace hades
 
 	void App::postInit(CommandList commands)
 	{	
+		//add default game
+		commands.push_back("-game " + defaultGame());
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;

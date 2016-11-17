@@ -24,6 +24,13 @@ void defaultBindings(hades::Bind &bind);
 /////////////////////////////////////
 /// Called after defaultBindings
 /// 
+/// Allows the app to register its default game archive.
+/////////////////////////////////////
+std::string defaultGame();
+
+/////////////////////////////////////
+/// Called after defaultBindings
+/// 
 /// Allows the app to register its unique resource types.
 ///	Apps must register both yaml parsers for the resource and loaders
 /////////////////////////////////////

@@ -150,9 +150,9 @@ namespace hades
 			void register_resource_type(std::string name, parserFunc parser, loaderFunc loader);
 
 			//game is the name of a folder or archive containing a game.yaml file
-			bool load_game(std::string game);
+			void load_game(std::string game);
 			//mod is the name of a folder or archive containing a mod.yaml file
-			void add_mod(std::string mod);
+			void add_mod(std::string mod, bool autoLoad = false);
 
 			//returns true if the mod or game with that name has been parsed
 			bool loaded(std::string mod) const;
@@ -168,6 +168,7 @@ namespace hades
 
 			//convert string to uid
 			UniqueId getUid(std::string name);
+			UniqueId getUid(std::string name) const;
 
 		private:
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);

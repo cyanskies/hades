@@ -310,4 +310,9 @@ namespace hades
 		out.remove_if(predicate);
 		return out;
 	}
+
+	std::string time()
+	{
+		return "now";
+	}
 }//hades

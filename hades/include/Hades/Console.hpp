@@ -129,7 +129,7 @@ namespace hades
 		Console_String(const std::string &message, const Console::Console_String_Verbosity &verb = Console::NORMAL) : Message(message), Verb(verb)
 		{}
 
-		Console_String(const std::string &message, int line, const char* function, const char* file, const char* time, const Console::Console_String_Verbosity &verb = Console::NORMAL)
+		Console_String(const std::string &message, int line, const char* function, const char* file, const std::string time, const Console::Console_String_Verbosity &verb = Console::NORMAL)
 			: Message(message), Verb(verb), Line(line), Function(function), Time(time)
 		{}
 
@@ -153,6 +153,8 @@ namespace hades
 	};
 
 	extern Console *console;
+
+	std::string time();
 }//hades
 
 
@@ -165,9 +167,10 @@ namespace hades
 	Message_,									\
 	__LINE__,									\
     __func__,									\
-    __FILE__,                                   \
+    __FILE__,									\
+	hades::time(),								\
     Verbosity_									\
-  );
+  ));
 
 #define LOG(Message_)									\
   HADESLOG(Message_,									\

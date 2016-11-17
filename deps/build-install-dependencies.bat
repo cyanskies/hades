@@ -37,8 +37,8 @@
 
 ::Copy lib and dll files
 
-@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapid.dll" 
-@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapid.lib"
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll" 
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
 
 @IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.dll" %install-pfx%\bin\zlibwapi.dll
 @IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.lib" %install-pfx%\lib\zlibwapi.lib

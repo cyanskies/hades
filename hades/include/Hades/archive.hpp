@@ -31,7 +31,6 @@ namespace hades
 			archive_exception(const char* what, error_code code);
 
 			error_code code() const;
-			const char* what() const;
 		private:
 			std::string _what;
 			error_code _code;

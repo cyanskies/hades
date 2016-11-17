@@ -11,7 +11,7 @@ namespace hades
 	namespace zip
 	{
 		archive_exception::archive_exception(const char* what, error_code code)
-			: _what(what), _code(code)
+			: std::exception(what), _code(code)
 		{}
 
 		//open a close unzip archives

@@ -49,7 +49,7 @@ else()
 	${SFML_MAIN_DEBUG}
 	thor-d
 	libyaml-cppmdd
-	zlibwapid
+	zlibwapi
 	)
 endif()
 

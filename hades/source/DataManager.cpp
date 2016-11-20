@@ -3,6 +3,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/archive.hpp"
+#include "Hades/Console.hpp"
 #include "Hades/simple_resources.hpp"
 
 namespace hades
@@ -36,6 +37,14 @@ namespace hades
 		//game is the name of a folder or archive containing a game.yaml file
 		void data_manager::load_game(std::string game)
 		{
+			static bool game_loaded = false;
+
+			if (game_loaded)
+			{
+				LOG("Tried to load" + game + ", Already loaded a game, skipping");
+				return;//game already loaded ignore
+			}
+
 			if(!zip::file_exists(game, "game.yaml"))
 				throw std::runtime_error(game + "doesn't contain a game.yaml");
 
@@ -45,6 +54,8 @@ namespace hades
 			//parse game.yaml
 			auto root = YAML::Load(gameyaml.c_str());
 			parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
+
+			game_loaded = true;
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file

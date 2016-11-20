@@ -23,12 +23,31 @@ namespace hades
 		archive_stream::archive_stream(std::string archive) : _fileOpen(false), _archive(open_archive(archive))
 		{}
 
+		archive_stream::archive_stream(archive_stream&& rhs) : _fileOpen(rhs._fileOpen),
+			_archive(rhs._archive), _fileName(rhs._fileName)
+		{
+			rhs._archive = nullptr;
+			rhs._fileOpen = false;
+		}
+
+		archive_stream &archive_stream::operator=(archive_stream&& rhs)
+		{
+			_archive = rhs._archive;
+			rhs._archive = nullptr;
+			_fileOpen = rhs._fileOpen;
+			_fileOpen = false;
+			_fileName = std::move(rhs._fileName);
+
+			return *this;
+		}
+
 		archive_stream::~archive_stream() 
 		{
 			if (_fileOpen)
 				unzCloseCurrentFile(_archive);
 
-			close_archive(&_archive); 
+			if(_archive)
+				close_archive(_archive); 
 		}
 
 		bool file_exists(unarchive, std::string);
@@ -38,7 +57,7 @@ namespace hades
 			if(_fileOpen)
 				throw archive_exception("This stream already has a file open", archive_exception::error_code::FILE_ALREADY_OPEN);
 
-			if (file_exists(_archive, filename))
+			if (!file_exists(_archive, filename))
 				return false;
 
 			//open current file for reading
@@ -52,9 +71,14 @@ namespace hades
 			return _fileOpen;
 		}
 
+		bool archive_stream::is_open() const
+		{
+			return _fileOpen;
+		}
+
 		sf::Int64 archive_stream::read(void* data, sf::Int64 size)
 		{
-			assert(_fileOpen && data);
+			assert(data);
 			if(!_fileOpen)
 				throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
@@ -70,7 +94,6 @@ namespace hades
 
 		sf::Int64 archive_stream::seek(sf::Int64 position)
 		{
-			assert(_fileOpen);
 			if (!_fileOpen)
 				throw archive_exception("Tried to seek without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
@@ -86,7 +109,6 @@ namespace hades
 
 		sf::Int64 archive_stream::tell()
 		{
-			assert(_fileOpen);
 			if (!_fileOpen)
 				throw archive_exception("Tried to tell without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
@@ -95,7 +117,6 @@ namespace hades
 
 		sf::Int64 archive_stream::getSize()
 		{
-			assert(_fileOpen);
 			if (!_fileOpen)
 				throw archive_exception("Tried to get size without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 

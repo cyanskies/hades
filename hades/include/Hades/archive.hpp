@@ -39,10 +39,15 @@ namespace hades
 		{
 		public:
 			archive_stream(std::string archive);
+			archive_stream(archive_stream&&);
+			archive_stream(const archive_stream&) = delete;
+			archive_stream &operator=(archive_stream&&);
+			archive_stream &operator=(const archive_stream&) = delete;
 
 			virtual ~archive_stream();
 
 			bool open(std::string filename);
+			bool is_open() const;
 			sf::Int64 read(void* data, sf::Int64 size);
 			sf::Int64 seek(sf::Int64 position);
 			sf::Int64 tell();

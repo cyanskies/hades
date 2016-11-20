@@ -138,6 +138,13 @@ namespace hades
 			std::getline(params, value, ' ');
 			assert(value == "-game");
 
+			std::getline(params, command, '\0');
+
+			#ifndef NDEBUG
+				//if debug, load mod archives from the asset directory
+				command = "../game/" + command;
+			#endif
+
 			data.load_game(command);
 		});
 
@@ -146,6 +153,13 @@ namespace hades
 			std::string value;
 			std::getline(params, value, ' ');
 			assert(value == "-mod");
+
+			std::getline(params, command, '\0');
+
+			#ifndef NDEBUG
+				//if debug, load mod archives from the asset directory
+				command = "../game/" + command;
+			#endif
 
 			data.add_mod(command);
 		});

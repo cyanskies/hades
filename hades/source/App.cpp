@@ -142,7 +142,7 @@ namespace hades
 
 			#ifndef NDEBUG
 				//if debug, load mod archives from the asset directory
-				command = "../game/" + command;
+				command = "../../game/" + command;
 			#endif
 
 			data.load_game(command);
@@ -158,7 +158,7 @@ namespace hades
 
 			#ifndef NDEBUG
 				//if debug, load mod archives from the asset directory
-				command = "../game/" + command;
+				command = "../../game/" + command;
 			#endif
 
 			data.add_mod(command);

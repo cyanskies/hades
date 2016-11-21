@@ -181,6 +181,8 @@ namespace hades
 			//==stored resource data==
 			//list of used names
 			std::unordered_set<std::string> _names;
+			UniqueId _game;
+			std::vector<UniqueId> _mods;
 			//map of names to Uids
 			std::unordered_map<std::string, UniqueId> _ids;
 			//map of uids to resources

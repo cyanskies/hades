@@ -10,8 +10,6 @@ namespace hades
 {
 	namespace zip
 	{
-		const char extension[] = ".zip";
-
 		archive_exception::archive_exception(const char* what, error_code code)
 			: std::exception(what), _code(code)
 		{}
@@ -41,13 +39,14 @@ namespace hades
 			return *this;
 		}
 
-		archive_stream::~archive_stream() 
+		archive_stream::~archive_stream()
 		{
+			//use zlib directly, since our wrappers might throw
 			if (_fileOpen)
 				unzCloseCurrentFile(_archive);
 
-			if(_archive)
-				close_archive(_archive); 
+			if (_archive)
+				unzClose(_archive);
 		}
 
 		bool file_exists(unarchive, std::string);
@@ -134,7 +133,7 @@ namespace hades
 		{
 			//test that archive exists
 			//open archive
-			path += extension;
+			path;
 
 			unarchive a = unzOpen(path.c_str());
 

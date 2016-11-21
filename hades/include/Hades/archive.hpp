@@ -12,6 +12,8 @@
 
 namespace hades
 {
+	using buffer = std::vector<types::uint8>;
+
 	namespace zip
 	{
 		using unarchive = void*;
@@ -57,9 +59,7 @@ namespace hades
 			bool _fileOpen;
 			unarchive _archive;
 		};
-
-		using buffer = std::vector<types::uint8>;
-
+		
 		//returns raw data
 		buffer read_file_from_archive(std::string archive, std::string path);
 

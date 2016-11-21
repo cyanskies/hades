@@ -8,6 +8,7 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	DataManager.cpp
+	files.cpp
 	main.cpp
 	parallel_jobs.cpp
 	ResourceManager.cpp

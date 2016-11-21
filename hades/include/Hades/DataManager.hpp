@@ -86,6 +86,7 @@ namespace hades
 			std::vector<data::UniqueId> dependencies,
 				//names: unique id's provided by this mod
 				names;
+			//value is unused
 			int value = 0;
 		};
 	}

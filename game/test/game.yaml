@@ -1,0 +1,5 @@
+#each mod must have a mod header listing its name and dependencies
+
+mod: {
+    name: "test"
+}

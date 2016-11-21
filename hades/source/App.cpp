@@ -116,6 +116,7 @@ namespace hades
 				removeList.push_back(bit);
 				job(*bit);
 			}
+			++bit;
 		}
 
 		while (!removeList.empty())

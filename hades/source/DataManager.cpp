@@ -52,10 +52,17 @@ namespace hades
 			auto gameyaml = zip::read_text_from_archive(game, "game.yaml");
 
 			//parse game.yaml
-			auto root = YAML::Load(gameyaml.c_str());
-			parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
+			try
+			{
+				auto root = YAML::Load(gameyaml.c_str());
+				parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
 
-			game_loaded = true;
+				game_loaded = true;
+			}
+			catch (YAML::ParserException e)
+			{
+				LOGERROR("Parsing error while reading: " + game + "/game.yaml. Error reads: " + e.what());
+			}
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file

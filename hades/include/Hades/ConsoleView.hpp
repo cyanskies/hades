@@ -38,7 +38,8 @@ namespace hades
 		
 		float _currentYPos;
 		sf::View _view;
-		std::shared_ptr<const sf::Font> _font;
+		//std::shared_ptr<const sf::Font> _font;
+		sf::Font _font;
 		hades::ConsoleVariable<int> _charSize, _screenW, _screenH, _consoleFade;
 		std::string _inputText;
 		bool _active;

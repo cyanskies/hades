@@ -98,6 +98,7 @@ namespace hades
 				throw archive_exception("Tried to seek without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
 			unzCloseCurrentFile(_archive);
+			//TODO: check return val
 			open(_fileName);
 
 			buffer buff(position);
@@ -182,6 +183,7 @@ namespace hades
 		{
 			archive_stream str(archive);
 			str.open(path);
+			//TODO: check return val
 			return str;
 		}
 

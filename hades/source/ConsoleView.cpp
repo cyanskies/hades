@@ -5,6 +5,8 @@
 
 #include "Hades/ResourceManager.hpp"
 
+#include "Hades/resource/fonts.hpp"
+
 const float SCREEN_LEFT = 0.f;
 const std::string INPUT_SYMBOL = ":>";
 
@@ -33,7 +35,7 @@ void hades::ConsoleView::draw(sf::RenderTarget& target, sf::RenderStates states)
 void hades::ConsoleView::init()
 {
 	//_font = resource->getResource<sf::Font>(console->getValue<std::string>("con_characterfont")->load()); // this doesn't work, atomic<std::string is illigal.
-	_font = resource->getResource<sf::Font>("console/console.ttf");
+	_font.loadFromMemory(console_font::data, console_font::length);
 	_charSize = console->getValue<int>("con_charactersize");
 	_screenW = console->getValue<int>("vid_width");
 	_screenH = console->getValue<int>("vid_height");
@@ -41,11 +43,11 @@ void hades::ConsoleView::init()
 	
 	_view.reset(sf::FloatRect(0.f, 0.f, static_cast<float>(*_screenW), static_cast<float>(*_screenH)));
 
-	_currentInput.setFont(*_font);
+	_currentInput.setFont(_font);
 	_editLine.setFillColor(sf::Color::White);
 	_editLine.setOutlineColor(sf::Color::White);
 
-	assert(_font && _charSize);
+	assert(_charSize);
 }
 
 void hades::ConsoleView::update()
@@ -55,7 +57,7 @@ void hades::ConsoleView::update()
 
 	for (auto s : strings)
 	{
-		_visibleOutput.emplace_back(s.Text(), *_font, *_charSize);
+		_visibleOutput.emplace_back(s.Text(), _font, *_charSize);
 		_visibleOutput.back().setPosition(SCREEN_LEFT, _currentYPos);
 
 		sf::Color col = sf::Color::White;

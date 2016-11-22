@@ -153,7 +153,7 @@ namespace hades
 			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string game);
 			//mod is the name of a folder or archive containing a mod.yaml file
-			void add_mod(std::string mod, bool autoLoad = false);
+			void add_mod(std::string mod, bool autoLoad = false, std::string name = "mod.yaml");
 
 			//returns true if the mod or game with that name has been parsed
 			bool loaded(std::string mod) const;

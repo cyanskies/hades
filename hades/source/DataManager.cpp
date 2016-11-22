@@ -2,7 +2,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "Hades/archive.hpp"
+#include "Hades/files.hpp"
 #include "Hades/Console.hpp"
 #include "Hades/simple_resources.hpp"
 
@@ -45,41 +45,37 @@ namespace hades
 				return;//game already loaded ignore
 			}
 
-			if(!zip::file_exists(game, "game.yaml"))
-				throw std::runtime_error(game + "doesn't contain a game.yaml");
-
-			//open ./game.* as archive
-			auto gameyaml = zip::read_text_from_archive(game, "game.yaml");
-
-			//parse game.yaml
 			try
 			{
-				auto root = YAML::Load(gameyaml.c_str());
-				parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
-
+				add_mod(game, true, "game.yaml");
 				game_loaded = true;
 			}
-			catch (YAML::ParserException e)
+			catch (YAML::Exception &e)
 			{
-				LOGERROR("Parsing error while reading: " + game + "/game.yaml. Error reads: " + e.what());
+				LOGERROR(e.what());
 			}
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file
-		void data_manager::add_mod(std::string mod, bool autoLoad)
+		void data_manager::add_mod(std::string mod, bool autoLoad, std::string name)
 		{
-			if (!zip::file_exists(mod, "mod.yaml"))
-				throw std::runtime_error("Failed to load requested mod");
-
-			//open ./game.* as archive
-			auto game = zip::read_text_from_archive(mod, "mod.yaml");
+			std::string modyaml;
+			try
+			{
+				modyaml = files::as_string(mod, name);
+			}
+			catch (files::file_exception &f)
+			{
+				LOGERROR(f.what());
+				return;
+			}
 
 			//parse game.yaml
-			auto root = YAML::Load(game.c_str());
+			auto root = YAML::Load(modyaml.c_str());
 			if(autoLoad)
-				parseMod(game, root, [this](std::string s) {this->add_mod(s, true); return true;});
+				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true;});
 			else
-				parseMod(game, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
+				parseMod(mod, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
 		}
 
 		bool data_manager::loaded(std::string mod) const
@@ -93,7 +89,7 @@ namespace hades
 				auto r = get<resources::mod>(getUid(mod));
 			}
 			//name has been used, but not for a mod
-			catch (std::runtime_error *e)
+			catch (std::runtime_error &e)
 			{
 				return false;
 			}
@@ -119,7 +115,9 @@ namespace hades
 
 		void data_manager::parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency)
 		{
-			;
+			//read the mod header
+
+			//for every other headers, check for a header parser
 		}
 
 	}

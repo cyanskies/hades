@@ -117,7 +117,7 @@ namespace hades {
 				{
 					new(&_archiveStream) zip::archive_stream(archivepath);
 				}
-				catch (zip::archive_exception a)
+				catch (zip::archive_exception &a)
 				{
 					auto message = "Failed to open archive: " + archivepath + "." + a.what();
 					throw file_exception(message.c_str(), file_exception::error_code::ARCHIVE_INVALID);

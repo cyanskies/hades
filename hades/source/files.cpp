@@ -56,7 +56,7 @@ namespace hades {
 
 				//get archive name
 				auto namepos = modPath.find_last_of('/');
-				auto archive_name = modPath.substr(namepos, modPath.length() - namepos);
+				auto archive_name = modPath.substr(namepos + 1, modPath.length() - namepos);
 
 				for (auto d : directory)
 				{

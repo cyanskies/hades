@@ -24,9 +24,9 @@ namespace hades {
 		public:
 			using type_base = type_erased_base;
 
-			virtual T const& get() const { return _data; }
+			virtual T get() const { return _data; }
 
-			virtual void set(T &value) { _data = value; }
+			virtual void set(const T &value) { _data = value; }
 
 			virtual type_erased_base::size_type get_type() const {
 				return _typeId;
@@ -57,11 +57,14 @@ namespace hades {
 	class property_bag
 	{
 	public:
-		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
-		void set(Key key, T &value);
+		using key_type = Key;
+		using base_type = type_base;
 
 		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
-		T const &get(Key key) const;
+		void set(Key key, const T &value);
+
+		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
+		T get(Key key) const;
 
 	private:
 		std::unordered_map<Key, std::unique_ptr<type_base>> _bag;

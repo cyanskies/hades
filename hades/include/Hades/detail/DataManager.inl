@@ -13,13 +13,15 @@ namespace hades
 		template<class T>
 		void data_manager::set(UniqueId key, T value)
 		{
-			_resources.set<T, resource>(key, value);
+			set_resource(_resources, key, value);
 		}
 
 		template<class T>
 		Resource<T> data_manager::get(UniqueId key) const
 		{
-			return _resources.get<Resource<T>, resource>(key);
+			return Resource<T>();
+			//auto r = Resource<T>( get_resource<T>(_resources, key) );
+			//return r
 		}
 	}
 }

@@ -1,6 +1,8 @@
 #ifndef HADES_RESOURCEBAG_HPP
 #define HADES_RESOURCEBAG_HPP
 
+#include <functional>
+
 #include "Hades/type_erasure.hpp"
 #include "Hades/Types.hpp"
 #include "Hades/UniqueId.hpp"
@@ -57,17 +59,23 @@ namespace hades
 			T const * const get() const;
 
 		private:
-			data::resource<T> *_r;
+			resource<T> *_r;
 			types::uint8 _generation = 0;
 		};
 
 		using resource_bag = property_bag<UniqueId, resource_base>;
 
 		template<class T> 
-		T get_resource();
+		T get_resource(const resource_bag& bag, resource_bag::key_type key)
+		{
+			return bag.get<T, resource>(key);
+		}
 
 		template<class T> 
-		void set_resource(T value);
+		void set_resource(resource_bag& bag, resource_bag::key_type key, const T& value)
+		{
+			bag.set<T, resource>(key, value);
+		}
 	}
 
 }

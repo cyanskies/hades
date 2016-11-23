@@ -6,7 +6,7 @@ namespace hades
 {
 	template<class Key, class type_base>
 	template<class T, template<typename> class type_holder>
-	void property_bag<Key, type_base>::set(Key key, T &value)
+	void property_bag<Key, type_base>::set(Key key, const T &value)
 	{
 		/*static_assert(type_holder<T>::type_base == type_base);
 		static_assert(std::is_base_of<type_base, type_holder>);
@@ -39,7 +39,7 @@ namespace hades
 
 	template<class Key, class type_base>
 	template<class T, template<typename> class type_holder>
-	T const &property_bag<Key, type_base>::get(Key key) const
+	T property_bag<Key, type_base>::get(Key key) const
 	{
 		//static_assert(typename type_holder<T>::type_base == type_base);
 		/*static_assert(std::is_base_of<type_base, type_holder<T>>, "");

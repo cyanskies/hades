@@ -113,11 +113,53 @@ namespace hades
 			return i->second;
 		}
 
-		void data_manager::parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency)
+		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependency)
 		{
+			auto modKey = getUid(source);
+
+			//check that the mod isn't already loaded;
+			//TODO: 
+
 			//read the mod header
+			auto mod = modRoot["mod"];
+			if (mod.IsNull())
+			{
+				//missing mod header
+				LOGERROR("mod header missing for mod: " + source);
+				return;
+			}
+
+			//parse the mod header;
+			resources::mod mod_data;
+			mod_data.source = source;
+			auto mod_name = mod["name"];
+			if (mod_name.IsNull())
+			{
+				//missing mod name
+				LOGERROR("name missing for mod: " + source);
+				return;
+			}
+
+			mod_data.name = mod_name.as<std::string>();
+
+			//check mod dependencies
+			//TODO:
+
+			//store the data
+			set<resources::mod>(modKey, mod_data);
 
 			//for every other headers, check for a header parser
+			for (auto header : modRoot)
+			{
+				//skip the mod header
+				if (header.is(mod))
+					continue;
+
+				//load parser for specific resource type
+				//TODO:
+			}
+
+			LOG("Loaded mod: " + mod_data.name);
 		}
 
 	}

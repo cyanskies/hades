@@ -11,54 +11,14 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "archive.hpp"
+#include "Hades/ResourceBag.hpp"
 #include "type_erasure.hpp"
 #include "Types.hpp"
+#include "Hades/UniqueId.hpp"
 
 namespace YAML
 {
 	class Node;
-}
-
-namespace hades
-{
-	namespace data
-	{
-		template<typename id_type>
-		class UniqueId_t
-		{
-		public:
-			using type = id_type;
-
-			UniqueId_t() : _value(_count++) {}
-
-			bool operator==(const UniqueId_t& rhs) const
-			{
-				return _value == rhs._value;
-			}
-
-			type get() const { return _value; }
-		private:
-			static type _count;
-			type _value;
-		};
-
-		template<typename id_type>
-		id_type UniqueId_t<id_type>::_count = 0;
-
-		using UniqueId = UniqueId_t<hades::types::uint64>;
-
-	}
-}
-
-namespace std {
-	template <> struct hash<hades::data::UniqueId>
-	{
-		size_t operator()(const hades::data::UniqueId& key) const
-		{
-			std::hash<hades::data::UniqueId::type> h;
-			return h(key.get());
-		}
-	};
 }
 
 namespace hades
@@ -86,57 +46,25 @@ namespace hades
 			std::vector<data::UniqueId> dependencies,
 				//names: unique id's provided by this mod
 				names;
+
+			std::string name;
 			//value is unused
 			int value = 0;
+		};
+
+		//TODO: move these in another header
+		struct string : public resource_type<std::string>
+		{};
+
+		struct texture : public resource_type<sf::Texture>
+		{
+			//max texture size is 512
+			types::uint8 width, height;
 		};
 	}
 
 	namespace data
 	{
-		class data_manager;
-		class resource_base;
-
-		using loaderFunc = std::function<void(resource_base*, data_manager*)>;
-
-		//type erased holder for a resource type
-		class resource_base : public type_erasure::type_erased_base
-		{
-		public:
-			void load(data_manager*);
-
-			UniqueId getUid() const;
-		private:
-			//incremented if the data is reloaded.
-			UniqueId _id;
-			types::uint8 _generation = 1;
-			loaderFunc _resourceLoader;
-		};
-
-		//holds a resource type
-		//resource types hold information nessicary to load a resource
-		template<class T>
-		class resource : public resource_base, public type_erasure::type_erased<T>
-		{
-		public:
-			resource(UniqueId id) : _id(id) {}
-
-			using type_base = resource_base;
-		};
-
-		using resource_ptr = std::unique_ptr<resource_base>;
-
-		template<class T>
-		class Resource
-		{
-		public:
-			bool is_ready() const;
-			T const * const get() const;
-
-		private:
-			data::resource<T> *_r;
-			types::uint8 _generation = 0;
-		};
-
 		class data_manager
 		{
 		public:
@@ -186,23 +114,12 @@ namespace hades
 			//map of names to Uids
 			std::unordered_map<std::string, UniqueId> _ids;
 			//map of uids to resources
-			property_bag<UniqueId, resource_base> _resources;
+			resource_bag _resources;
 			//list of unloaded resources
-			std::vector<resource_ptr*> _loadQueue;
+			std::vector<resource_base*> _loadQueue;
 		};
 	}
 
-	namespace resources
-	{
-		struct string : public resource_type<std::string>
-		{};
-
-		struct texture : public resource_type<sf::Texture>
-		{
-			//max texture size is 512
-			types::uint8 width, height;
-		};
-	}
 	//default hades datamanager
 	//registers that following resource types:
 	//texture

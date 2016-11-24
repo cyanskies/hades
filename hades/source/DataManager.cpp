@@ -149,7 +149,7 @@ namespace hades
 			for (auto header : modRoot)
 			{
 				//skip the mod header
-				if (header.IsNull || header.is(mod));
+				if (header.IsNull() || header.is(mod));
 					continue;
 
 				//load parser for specific resource type

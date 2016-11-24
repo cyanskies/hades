@@ -67,6 +67,12 @@ namespace hades
 				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true;});
 			else
 				parseMod(mod, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
+
+			//record the list of loaded games/mods
+			if (name == "game.yaml")
+				_game = getUid(mod);
+			else
+				_mods.push_back(getUid(mod));
 		}
 
 		bool data_manager::loaded(std::string mod) const
@@ -143,7 +149,7 @@ namespace hades
 			for (auto header : modRoot)
 			{
 				//skip the mod header
-				if (header.is(mod))
+				if (header.IsNull || header.is(mod));
 					continue;
 
 				//load parser for specific resource type
@@ -152,7 +158,6 @@ namespace hades
 
 			LOG("Loaded mod: " + mod_data.name);
 		}
-
 	}
 
 	DataManager::DataManager()

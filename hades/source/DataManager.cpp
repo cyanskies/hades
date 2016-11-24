@@ -18,12 +18,6 @@ namespace hades
 		{
 			_resourceParsers[name] = parser;
 		}
-		//loader reads manifest and loads data from disk
-		void data_manager::register_resource_type(std::string name, data_manager::parserFunc parser, loaderFunc loader)
-		{
-			_resourceParsers[name] = parser;
-			_resourceLoaders[name] = loader;
-		}
 
 		//game is the name of a folder or archive containing a game.yaml file
 		void data_manager::load_game(std::string game)
@@ -146,7 +140,7 @@ namespace hades
 			set<resources::mod>(modKey, mod_data);
 			//for every other headers, check for a header parser
 
-			std::map<YAML::Node, parserFunc>
+			std::map<YAML::Node, parserFunc> k;
 			for (auto parser : _resourceParsers)
 			{
 				//for each parser, look for a header from that
@@ -177,10 +171,10 @@ namespace hades
 	DataManager::DataManager()
 	{
 		//register custom resource types
-		register_resource_type("texture", resources::parseTexture, resources::loadTexture);
+		register_resource_type("texture", resources::parseTexture);
 	}
 
-	data::Resource<DataManager::Texture> DataManager::getTexture(data::UniqueId key) const
+	DataManager::Texture const *DataManager::getTexture(data::UniqueId key) const
 	{
 		return get<Texture>(key);
 	}

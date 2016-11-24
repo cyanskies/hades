@@ -11,7 +11,6 @@ set(HADES_SRC
 	files.cpp
 	main.cpp
 	parallel_jobs.cpp
-	ResourceBag.cpp
 	ResourceManager.cpp
 	simple_resources.cpp
 	StandardPaths.cpp

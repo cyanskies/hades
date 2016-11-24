@@ -29,10 +29,17 @@ namespace hades
 
 	namespace resources
 	{
-		template<class T>
-		struct resource_type
+		struct resource_base
 		{
-			using loaderFunc = std::function<void(resource_type<T>*, data::data_manager*)>;
+			virtual ~resource_base() {}
+
+			virtual void load(data::data_manager*) = 0;
+		};
+
+		template<class T>
+		struct resource_type : public resource_base
+		{
+			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
 
 			virtual ~resource_type() {}
 
@@ -99,7 +106,7 @@ namespace hades
 			bool loaded(std::string mod) const;
 
 			//loads any queued resources
-			void load_resources();
+			void load_resources(types::uint8 count);
 
 			template<class T>
 			void set(UniqueId, T);
@@ -131,7 +138,7 @@ namespace hades
 			//map of uids to resources
 			property_bag<UniqueId> _resources;
 			//list of unloaded resources
-			std::vector<resource_base*> _loadQueue;
+			std::vector<resources::resource_base*> _loadQueue;
 		};
 	}
 

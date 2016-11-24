@@ -49,8 +49,14 @@ namespace hades {
 		typename type_erased_base::size_type type_erased<T>::_typeId = type_count++;
 
 		template<class T>
-		class type_erased_simple : public type_erased<T>, type_erased_base 
-		{};
+		class type_erased_simple : public type_erased<T>, public type_erased_base 
+		{
+		public:
+			type_erasure::type_erased_base::size_type get_type() const
+			{
+				return type_erasure::type_erased<T>::get_type();
+			}
+		};
 	}
 
 	template<class Key, class type_base = type_erasure::type_erased_base>
@@ -62,7 +68,7 @@ namespace hades {
 		using data_map = std::unordered_map<key_type, std::unique_ptr<type_base>>;
 		using iterator = typename data_map::iterator;
 		using value_type = type_base;
-		using reference = type_base&;
+		using ptr = type_base*;
 
 		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
 		void set(Key key, const T& value);
@@ -71,7 +77,7 @@ namespace hades {
 		T get(Key key) const;
 
 		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
-		reference get_reference(Key key);
+		ptr get_reference(Key key);
 
 		iterator begin();
 		iterator end();

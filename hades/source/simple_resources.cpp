@@ -6,13 +6,13 @@ namespace hades
 {
 	namespace resources
 	{
-		void parseTexture(data::UniqueId mod, YAML::Node& node)
+		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*)
 		{
 
 			//set the loader to loadTexture
 		}
 
-		void loadTexture(data::resource_base*, data::data_manager*)
+		void loadTexture(resources::resource_base*, data::data_manager*)
 		{
 		}
 	}

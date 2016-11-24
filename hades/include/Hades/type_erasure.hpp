@@ -59,15 +59,28 @@ namespace hades {
 	public:
 		using key_type = Key;
 		using base_type = type_base;
+		using data_map = std::unordered_map<key_type, std::unique_ptr<type_base>>;
+		using iterator = typename data_map::iterator;
+		using value_type = type_base;
+		using reference = type_base&;
 
 		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
-		void set(Key key, const T &value);
+		void set(Key key, const T& value);
 
 		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
 		T get(Key key) const;
 
+		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
+		reference get_reference(Key key);
+
+		iterator begin();
+		iterator end();
+
+		bool empty();
+
 	private:
-		std::unordered_map<Key, std::unique_ptr<type_base>> _bag;
+		
+		data_map _bag;
 	};
 }
 

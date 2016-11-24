@@ -60,4 +60,41 @@ namespace hades
 			throw std::logic_error("Tried to retrieve value from property_bag using wrong type.");
 		}
 	}
+
+	template<class Key, class type_base>
+	template<class T, template<typename> class type_holder>
+	typename property_bag<Key, type_base>::reference property_bag<Key, type_base>::get_reference(Key key)
+	{
+		auto iter = _bag.find(key);
+		if (iter == _bag.end())
+			throw std::logic_error("Tried to retrieve unassigned key.");
+
+		if (type_holder<T>::get_type_static() == iter->second->get_type())
+		{
+			auto *holder = static_cast<type_holder<T>*>(&*iter->second);
+			return holder->get();
+		}
+		else
+		{
+			throw std::logic_error("Tried to retrieve value from property_bag using wrong type.");
+		}
+	}
+
+	template<class Key, class type_base>
+	typename property_bag<Key, type_base>::iterator property_bag<Key, type_base>::begin()
+	{
+		return _bag.begin();
+	}
+
+	template<class Key, class type_base>
+	typename property_bag<Key, type_base>::iterator property_bag<Key, type_base>::end()
+	{
+		return _bag.end();
+	}
+
+	template<class Key, class type_base>
+	bool  property_bag<Key, type_base>::empty()
+	{
+		return _bag.empty();
+	}
 }

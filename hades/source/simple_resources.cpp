@@ -9,6 +9,7 @@ namespace hades
 		void parseTexture(data::UniqueId mod, YAML::Node& node)
 		{
 
+			//set the loader to loadTexture
 		}
 
 		void loadTexture(data::resource_base*, data::data_manager*)

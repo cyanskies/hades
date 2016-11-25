@@ -109,7 +109,9 @@ namespace hades
 			auto modKey = getUid(source);
 
 			//check that the mod isn't already loaded;
+			//if it is then warn and overwrite
 			//TODO: 
+
 
 			//read the mod header
 			auto mod = modRoot["mod"];

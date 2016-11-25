@@ -46,7 +46,7 @@ namespace hades
 			void load(data::data_manager*);
 			
 			//the file this resource should be loaded from
-			//the name of the mod for resources that are parsed and not loaded
+			//the path of the mod for resources that are parsed and not loaded
 			std::string source;
 			//the actual resource
 			T value;
@@ -103,7 +103,16 @@ namespace hades
 			void add_mod(std::string mod, bool autoLoad = false, std::string name = "mod.yaml");
 
 			//returns true if the mod or game with that name has been parsed
+			//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
 			bool loaded(std::string mod) const;
+
+			//TODO:
+			//re read data from all mods, starting with game, and doing them all in order
+			//void reParseAll();
+
+			//adds an object to the load queue
+			//note: this wont effect resources that are only parsed(strings and game parameters)
+			void queue(UniqueId);
 
 			//loads any queued resources
 			void load_resources(types::uint8 count);

@@ -8,6 +8,16 @@ namespace hades
 	{
 		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*)
 		{
+			//default texture yaml
+			//textures: {
+			//    default: {
+			//        width: 0 #0 = autodetect, no size checking will be done
+			//        height: 0 
+			//        source: #empty source, no file is specified, will always be default error texture
+			//        smooth: false
+			//        repeating: false
+			//    }
+			//}
 
 			//set the loader to loadTexture
 		}

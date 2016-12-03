@@ -1,6 +1,7 @@
 #ifndef HADES_TYPES_HPP
 #define HADES_TYPES_HPP
 
+#include <cstdint>
 #include <string>
 #include <type_traits>
 
@@ -9,72 +10,31 @@
 namespace hades {
 	namespace types {
 		//portable types for integers
-		using int8 = sf::Int8;
-		using uint8 = sf::Uint8;
+		using int8 = int_fast8_t;
+		using uint8 = uint_fast8_t;
 
-		using int16 = sf::Int16;
-		using uint16 = sf::Uint16;
+		using int16 = int_fast16_t;
+		using uint16 = uint_fast16_t;
 
-		using int32 = sf::Int32;
-		using uint32 = sf::Uint32;
+		using int32 = int_fast32_t;
+		using uint32 = uint_fast32_t;
 
-		using int64 = sf::Int64;
-		using uint64 = sf::Uint64;
+		using int64 = int_fast64_t;
+		using uint64 = uint_fast64_t;
 
-		//type trait to ditermine if types should be used in hades
-		//console vars, entity components and curves must be checked by this type
+		//defined names for common types
+		using string = std::string;
 
-		//test if(hades_type<T>::value == true)
-		//approved types are float, double, long double, string, the ints above
+		//using bool
+		//using float
+		//using double
+		//using long double
 		template<typename T>
-		struct hades_type : std::false_type {};
-
-		template<>
-		struct hades_type<float> : std::is_same<float, typename std::remove_cv<float>::type> {};
-
-		//float64
-		template<>
-		struct hades_type<double> : std::is_same<double, typename std::remove_cv<double>::type> {};
-
-		//float80
-		template<>
-		struct hades_type<long double> : std::is_same<long double, typename std::remove_cv<long double>::type> {};
-
-		//accepted integer types
-		template<>
-		struct hades_type<int8> : std::is_same<int8, typename std::remove_cv<int8>::type> {};
-
-		template<>
-		struct hades_type<uint8> : std::is_same<uint8, typename std::remove_cv<uint8>::type> {};
-
-		template<>
-		struct hades_type<int16> : std::is_same<int16, typename std::remove_cv<int16>::type> {};
-
-		template<>
-		struct hades_type<uint16> : std::is_same<uint16, typename std::remove_cv<uint16>::type> {};
-
-		template<>
-		struct hades_type<int32> : std::is_same<int32, typename std::remove_cv<int32>::type> {};
-
-		template<>
-		struct hades_type<uint32> : std::is_same<uint32, typename std::remove_cv<uint32>::type> {};
-
-		template<>
-		struct hades_type<int64> : std::is_same<int64, typename std::remove_cv<int64>::type> {};
-
-		template<>
-		struct hades_type<uint64> : std::is_same<uint64, typename std::remove_cv<uint64>::type> {};
-
-		//bool types
-		template<>
-		struct hades_type<bool> : std::is_same<bool, typename std::remove_cv<bool>::type> {};
-
-		//string types
-		template<>
-		struct hades_type<std::string> : std::is_same<std::string, typename std::remove_cv<std::string>::type> {};
-
-		template<typename T>
-		using approved_types = hades_type<T>;
+		constexpr bool hades_type()
+		{
+			//return true for the above types
+			return std::is_arithmetic<T>::value || std::is_same<T, string>::value;
+		}
 
 		//string to value conversion
 		template<typename T>
@@ -85,21 +45,21 @@ namespace hades {
 
 		// type conversion
 		template<>
-		int8 stov<int8>(std::string value);
+		signed char stov<signed char>(std::string value);
 		template<>
-		uint8 stov<uint8>(std::string value);
+		unsigned char stov<unsigned char>(std::string value);
 		template<>
-		int16 stov<int16>(std::string value);
+		short stov<short>(std::string value);
 		template<>
-		uint16 stov<uint16>(std::string value);
+		unsigned short stov<unsigned short>(std::string value);
 		template<>
-		int32 stov<int32>(std::string value);
+		int stov<int>(std::string value);
 		template<>
-		uint32 stov<uint32>(std::string value);
+		unsigned int stov<unsigned int>(std::string value);
 		template<>
-		int64 stov<int64>(std::string value);
+		long long stov<long long>(std::string value);
 		template<>
-		uint64 stov<uint64>(std::string value);
+		unsigned long long stov<unsigned long long>(std::string value);
 		template<>
 		float stov<float>(std::string value);
 		template<>
@@ -108,24 +68,6 @@ namespace hades {
 		long double stov<long double>(std::string value);
 		template<>
 		bool stov<bool>(std::string value);
-
-		namespace names {
-			//type ids
-			enum HadesType {
-				INT8, UINT8,
-				INT16, UINT16,
-				INT32, UINT32,
-				INT64, UINT64,
-				FLOAT, DOUBLE, LONGDOUBLE,
-				BOOL,
-				STRING, FUNCTION,
-				ERROR_TYPE
-			};
-		}
-
-		//Type ditermination for storage
-		template<typename T>
-		names::HadesType Type() { return ERROR_TYPE; }
 	}
 }
 

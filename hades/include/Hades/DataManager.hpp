@@ -78,8 +78,10 @@ namespace hades
 
 		struct texture : public resource_type<sf::Texture>
 		{
-			//max texture size is 512
-			types::uint8 width, height;
+			using size_type = types::uint16;
+			//max texture size for older hardware is 512
+			//max size for modern hardware is 8192 or higher
+			size_type width, height;
 			bool smooth, repeat;
 		};
 	}

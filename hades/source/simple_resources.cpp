@@ -20,7 +20,7 @@ namespace hades
 			//    }
 			//}
 
-			const types::uint8 d_width = 0, d_height = 0;
+			const texture::size_type d_width = 0, d_height = 0;
 			const bool default = false;
 
 			//set the loader to loadTexture

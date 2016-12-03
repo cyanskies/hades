@@ -35,7 +35,7 @@ namespace hades
 	bool Console::set(const std::string &identifier, const T &value)
 	{
 		//we can only store integral types in std::atomic
-		static_assert(types::hades_type<T>::value, "Attempting to store an illegal type in the console.");
+		static_assert(types::hades_type<T>(), "Attempting to store an illegal type in the console.");
 
 		std::shared_ptr<detail::Property_Base> out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);

@@ -1,6 +1,7 @@
 #include "Hades/simple_resources.hpp"
 
 #include "Hades/DataManager.hpp"
+#include "Hades/resource/texture.hpp"
 
 namespace hades
 {
@@ -18,6 +19,9 @@ namespace hades
 			//        repeating: false
 			//    }
 			//}
+
+			const types::uint8 d_width = 0, d_height = 0;
+			const bool default = false;
 
 			//set the loader to loadTexture
 		}

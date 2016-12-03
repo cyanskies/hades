@@ -3,7 +3,7 @@
 
 #include <shared_mutex>
 
-#include "value_guard.hpp""
+#include "value_guard.hpp"
 
 // a thread safe wrapper for arbitary value types.
 // support concurrent reads for values that do not change often

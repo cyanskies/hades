@@ -39,7 +39,7 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
+			using loaderFunc = std::function<void(resource_base*)>;
 
 			virtual ~resource_type() {}
 
@@ -61,6 +61,8 @@ namespace hades
 
 		struct mod : public resource_type<mod_t>
 		{
+			virtual void load(data::data_manager*) {}
+
 			// source == the name of the archive containing the mode
 			// dependencies: a list of mods this mod depends on
 			std::vector<data::UniqueId> dependencies,
@@ -82,7 +84,7 @@ namespace hades
 			//max texture size for older hardware is 512
 			//max size for modern hardware is 8192 or higher
 			size_type width, height;
-			bool smooth, repeat;
+			bool smooth, repeat, mips;
 		};
 	}
 

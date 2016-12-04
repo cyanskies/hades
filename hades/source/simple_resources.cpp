@@ -6,15 +6,14 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "Hades/DataManager.hpp"
-#include "Hades/resource/texture.hpp"
 
 namespace hades
 {
 	namespace resources
 	{
-		using colour_array = std::array<sf::Color&, 7>;
-		const colour_array colours =
-		{ 
+		const size_t colour_count = 7;
+
+		const std::array<sf::Color, colour_count> colours {
 			sf::Color::White,
 			sf::Color::Red,
 			sf::Color::Green,
@@ -24,8 +23,9 @@ namespace hades
 			sf::Color::Cyan
 		};
 
-		using texture_array = std::array<sf::Texture, 6>;
+		using texture_array = std::array<sf::Texture, colour_count>;
 		
+		//generates a group of 
 		texture_array generate_default_textures()
 		{
 			texture_array out;
@@ -68,10 +68,10 @@ namespace hades
 			//}
 
 			const texture::size_type d_width = 0, d_height = 0;
-			const std::string d_source();
+			const std::string d_source;
 			const bool d_smooth = false, d_repeating = false, d_mips = false;
 			
-			static const texture_array default_texture = generate_default_textures();
+			static const texture_array d_texture = generate_default_textures();
 			static texture_array::size_type texture_count = 0;
 
 			//for each node

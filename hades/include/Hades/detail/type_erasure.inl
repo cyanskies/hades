@@ -30,7 +30,7 @@ namespace hades
 		}
 		else
 		{
-			throw std::logic_error("Passed wrong type for this key to property_bag.");
+			throw type_erasure::value_wrong_type("Passed wrong type for this key to property_bag.");
 		}
 	}
 
@@ -45,7 +45,7 @@ namespace hades
 
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
-			throw std::logic_error("Tried to retrieve unassigned key.");
+			throw type_erasure::key_null("Tried to retrieve unassigned key.");
 
 		if (type_holder<T>::get_type_static() == iter->second->get_type())
 		{
@@ -54,7 +54,7 @@ namespace hades
 		}
 		else
 		{
-			throw std::logic_error("Tried to retrieve value from property_bag using wrong type.");
+			throw type_erasure::value_wrong_type("Tried to retrieve value from property_bag using wrong type.");
 		}
 	}
 
@@ -64,7 +64,7 @@ namespace hades
 	{
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
-			throw std::logic_error("Tried to retrieve unassigned key.");
+			throw type_erasure::key_null("Tried to retrieve unassigned key.");
 
 		if (type_holder<T>::get_type_static() == iter->second->get_type())
 		{
@@ -73,7 +73,7 @@ namespace hades
 		}
 		else
 		{
-			throw std::logic_error("Tried to retrieve value from property_bag using wrong type.");
+			throw type_erasure::value_wrong_type("Tried to retrieve value from property_bag using wrong type.");
 		}
 	}
 

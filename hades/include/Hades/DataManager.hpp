@@ -1,6 +1,7 @@
 #ifndef HADES_DATAMANAGER_HPP
 #define HADES_DATAMANAGER_HPP
 
+#include <exception>
 #include <functional>
 #include <memory>
 #include <string>
@@ -90,6 +91,20 @@ namespace hades
 
 	namespace data
 	{
+		//the requested resource doesn't exist
+		class resource_null : public std::runtime_error
+		{
+		public:
+			using std::runtime_error(const char*);
+		};
+
+		//the requested resource isn't of the type it is claimed to be
+		class resource_wrong_type : public std::runtime_error
+		{
+		public:
+			using std::runtime_error(const char*);
+		};
+
 		class data_manager
 		{
 		public:
@@ -122,7 +137,7 @@ namespace hades
 			void load_resources(types::uint8 count);
 
 			template<class T>
-			void set(UniqueId, T);
+			void set(UniqueId, std::unique_ptr<T>);
 
 			//returns a non-owning ptr to the resource
 			template<class T>

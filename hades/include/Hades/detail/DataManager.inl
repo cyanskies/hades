@@ -11,14 +11,24 @@ namespace hades
 		}
 
 		template<class T>
-		void data_manager::set(UniqueId key, T value)
+		void data_manager::set(UniqueId key, std::unique_ptr<T> value)
 		{
-			_resources.set(key, value);
+			try
+			{
+				_resources.set(key, value);
+			}
+			catch (type_erasure::value_wrong_type e)
+			{
+				throw resource_wrong_type(e.what());
+			}
 		}
 
 		template<class T>
 		T const *data_manager::get(UniqueId) const
 		{
+			//exception -- value no defined
+			//exception -- value is wrong type
+
 			return nullptr;
 			//auto r = Resource<T>( get_resource<T>(_resources, key) );
 			//return r

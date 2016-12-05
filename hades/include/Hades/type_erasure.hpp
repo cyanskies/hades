@@ -1,6 +1,7 @@
 #ifndef HADES_TYPEERASURE_HPP
 #define HADES_TYPEERASURE_HPP
 
+#include <exception>
 #include <memory>
 #include <unordered_map>
 
@@ -8,6 +9,19 @@
 
 namespace hades {
 	namespace type_erasure {
+		class key_null : public std::runtime_error
+		{
+		public:
+			using std::runtime_error(const char*);
+		};
+
+		//the requested resource isn't of the type it is claimed to be
+		class value_wrong_type : public std::runtime_error
+		{
+		public:
+			using std::runtime_error(const char*);
+		};
+
 		class type_erased_base
 		{
 		public:

@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "yaml-cpp/yaml.h"
+
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
@@ -80,6 +82,23 @@ namespace hades
 			//	load default error texture
 			//	add to load queue
 			//}
+
+			for (auto n : node)
+			{
+				//collect data from yaml
+				auto width = n["width"].as<texture::size_type>(d_width),
+					height = n["height"].as<texture::size_type>(d_height);
+
+				auto smooth = n["smooth"].as<bool>(d_smooth),
+					repeat = n["repeating"].as<bool>(d_repeating),
+					mips = n["mips"].as<bool>(d_mips);
+
+				auto source = n["source"].as<types::string>(d_source);
+
+				//load default texture in place
+
+				//otherwise store the data
+			}
 		}
 
 		void loadTexture(resources::resource_base*)

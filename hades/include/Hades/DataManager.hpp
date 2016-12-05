@@ -47,7 +47,7 @@ namespace hades
 			
 			//the file this resource should be loaded from
 			//the path of the mod for resources that are parsed and not loaded
-			std::string source;
+			types::string source;
 			//the actual resource
 			T value;
 			//the mod that the resource was most recently specified in

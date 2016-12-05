@@ -49,13 +49,14 @@ namespace hades
 
 				sf::Texture t;
 				t.loadFromImage(i);
+				t.setRepeated(true);
 				out[count++] = t;
 			}
 
 			return out;
 		}
 
-		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
 		{
 			//default texture yaml
 			//textures: {
@@ -85,6 +86,12 @@ namespace hades
 
 			for (auto n : node)
 			{
+				//get texture with this name if it has already been loaded
+				std::unique_ptr<texture> texture;
+				auto id = dataman->getUid(n.as<types::string>());
+
+
+				texture = dataman->get<texture>();
 				//collect data from yaml
 				auto width = n["width"].as<texture::size_type>(d_width),
 					height = n["height"].as<texture::size_type>(d_height);
@@ -96,8 +103,21 @@ namespace hades
 				auto source = n["source"].as<types::string>(d_source);
 
 				//load default texture in place
+				auto texture = std::make_unique<resources::texture>();
+				if (width == 0 || height == 0)
+					width = height = 0;
 
-				//otherwise store the data
+				texture->height = height;
+				texture->width = width;
+				texture->smooth = smooth;
+				texture->repeat = repeat;
+				texture->mips = mips;
+				texture->source = source;
+
+				texture->value = d_texture[texture_count++ % d_texture.size()];
+
+				//check unique name
+				data::UniqueId id = dataman->
 			}
 		}
 

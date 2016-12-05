@@ -141,11 +141,11 @@ namespace hades
 
 			//returns a non-owning ptr to the resource
 			template<class T>
-			T const *get(UniqueId) const;
+			T* get(UniqueId) const;
 
 			using Mod = resources::mod;
 
-			Mod const *getMod(UniqueId) const;
+			Mod* getMod(UniqueId) const;
 
 			//convert string to uid
 			UniqueId getUid(std::string name);

@@ -3,3 +3,11 @@
 mod: {
     name: "test"
 }
+
+textures: {
+    example: {
+        width: 10
+        height: 10
+        source: talon.png
+    }
+}

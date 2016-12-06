@@ -1,32 +1,32 @@
-#include "Hades/type_erasure.hpp"
-
 #include <exception>
 
 namespace hades
 {
-	template<class Key, class type_base>
-	template<class T, template<typename> class type_holder>
-	void property_bag<Key, type_base>::set(Key key, const T &value)
+	template<class Key>
+	template<class T>
+	void property_bag<Key>::set(Key key, T value)
 	{
 		/*static_assert(type_holder<T>::type_base == type_base);
 		static_assert(std::is_base_of<type_base, type_holder>);
 		static_assert(std::is_base_of<type_erased_base, type_base>);
 		static_assert(std::is_base_of<type_erased, type_holder>);*/
 
+		using type_holder = type_erasure::type_erased<T>;
+
 		auto iter = _bag.find(key);
 
 		if (iter == _bag.end())
 		{
 			//if the key hasn't been assigned yet, then make it);
-			std::unique_ptr<type_base> ptr(new type_holder<T>() );
+			std::unique_ptr<base_type> ptr(new type_holder() );
 			_bag.emplace(std::make_pair(key, std::move(ptr)));
 		}
 
 		//identifier already exsists(or has been created, ditermine if it is the same type as T, then assign it.
-		if (type_holder<T>::get_type_static() == iter->second->get_type())
-		{
-			auto currentVal = static_cast< type_holder<T>* >(&*iter->second)->get();
-			static_cast< type_holder<T>* >(&*iter->second)->set(value);
+		if (type_holder::get_type_static() == iter->second->get_type())
+		{		
+			type_holder* currentVal = static_cast< type_holder* >(&*iter->second);
+			static_cast< type_holder* >(&*iter->second)->set(std::move(value));
 		}
 		else
 		{
@@ -34,22 +34,24 @@ namespace hades
 		}
 	}
 
-	template<class Key, class type_base>
-	template<class T, template<typename> class type_holder>
-	T property_bag<Key, type_base>::get(Key key) const
+	template<class Key>
+	template<class T>
+	T property_bag<Key>::get(Key key) const
 	{
 		//static_assert(typename type_holder<T>::type_base == type_base);
 		/*static_assert(std::is_base_of<type_base, type_holder<T>>, "");
 		static_assert(std::is_base_of<type_erased_base, type_base>);
 		static_assert(std::is_base_of<type_erased, type_holder>);*/
 
+		using type_holder = type_erasure::type_erased<T>;
+
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
 			throw type_erasure::key_null("Tried to retrieve unassigned key.");
 
-		if (type_holder<T>::get_type_static() == iter->second->get_type())
+		if (type_holder::get_type_static() == iter->second->get_type())
 		{
-			auto *holder = static_cast<type_holder<T>*>(&*iter->second);
+			auto *holder = static_cast<type_holder*>(&*iter->second);
 			return holder->get();
 		}
 		else
@@ -58,18 +60,20 @@ namespace hades
 		}
 	}
 
-	template<class Key, class type_base>
-	template<class T, template<typename> class type_holder>
-	typename property_bag<Key, type_base>::ptr property_bag<Key, type_base>::get_reference(Key key)
+	template<class Key>
+	template<class T>
+	typename property_bag<Key>::ptr property_bag<Key>::get_reference(Key key)
 	{
+		using type_holder = type_erasure::type_erased<T>;
+
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
 			throw type_erasure::key_null("Tried to retrieve unassigned key.");
 
-		if (type_holder<T>::get_type_static() == iter->second->get_type())
+		if (type_holder::get_type_static() == iter->second->get_type())
 		{
-			auto *holder = static_cast<type_holder<T>*>(&*iter->second);
-			return holder->get();
+			auto *holder = static_cast<type_holder*>(&*iter->second);
+			return &holder->get();
 		}
 		else
 		{
@@ -77,20 +81,20 @@ namespace hades
 		}
 	}
 
-	template<class Key, class type_base>
-	typename property_bag<Key, type_base>::iterator property_bag<Key, type_base>::begin()
+	template<class Key>
+	typename property_bag<Key>::iterator property_bag<Key>::begin()
 	{
 		return _bag.begin();
 	}
 
-	template<class Key, class type_base>
-	typename property_bag<Key, type_base>::iterator property_bag<Key, type_base>::end()
+	template<class Key>
+	typename property_bag<Key>::iterator property_bag<Key>::end()
 	{
 		return _bag.end();
 	}
 
-	template<class Key, class type_base>
-	bool  property_bag<Key, type_base>::empty()
+	template<class Key>
+	bool  property_bag<Key>::empty()
 	{
 		return _bag.empty();
 	}

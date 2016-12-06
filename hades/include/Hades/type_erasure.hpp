@@ -12,14 +12,14 @@ namespace hades {
 		class key_null : public std::runtime_error
 		{
 		public:
-			using std::runtime_error(const char*);
+			key_null(const char* what) : std::runtime_error(what) {}
 		};
 
 		//the requested resource isn't of the type it is claimed to be
 		class value_wrong_type : public std::runtime_error
 		{
 		public:
-			using std::runtime_error(const char*);
+			value_wrong_type(const char* what) : std::runtime_error(what) {}
 		};
 
 		class type_erased_base
@@ -33,14 +33,14 @@ namespace hades {
 		};
 
 		template<class T>
-		class type_erased
+		class type_erased : public type_erased_base
 		{
 		public:
 			using type_base = type_erased_base;
 
-			virtual T get() const { return _data; }
+			T &get() const { return &_data; }
 
-			virtual void set(const T &value) { _data = value; }
+			void set(T value) { _data = std::move(value); }
 
 			virtual type_erased_base::size_type get_type() const {
 				return _typeId;
@@ -61,36 +61,26 @@ namespace hades {
 		
 		template<class T>
 		typename type_erased_base::size_type type_erased<T>::_typeId = type_count++;
-
-		template<class T>
-		class type_erased_simple : public type_erased<T>, public type_erased_base 
-		{
-		public:
-			type_erasure::type_erased_base::size_type get_type() const
-			{
-				return type_erasure::type_erased<T>::get_type();
-			}
-		};
 	}
 
-	template<class Key, class type_base = type_erasure::type_erased_base>
+	template<class Key>
 	class property_bag
 	{
 	public:
 		using key_type = Key;
-		using base_type = type_base;
-		using data_map = std::unordered_map<key_type, std::unique_ptr<type_base>>;
+		using base_type = type_erasure::type_erased_base;
+		using data_map = std::unordered_map<key_type, std::unique_ptr<base_type>>;
 		using iterator = typename data_map::iterator;
-		using value_type = type_base;
-		using ptr = type_base*;
+		using value_type = base_type;
+		using ptr = base_type*;
 
-		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
-		void set(Key key, const T& value);
+		template<class T>
+		void set(Key key, T value);
 
-		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
+		template<class T>
 		T get(Key key) const;
 
-		template<class T, template<typename> class type_holder = type_erasure::template type_erased_simple>
+		template<class T>
 		ptr get_reference(Key key);
 
 		iterator begin();

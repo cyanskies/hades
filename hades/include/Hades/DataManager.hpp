@@ -62,8 +62,6 @@ namespace hades
 
 		struct mod : public resource_type<mod_t>
 		{
-			virtual void load(data::data_manager*) {}
-
 			// source == the name of the archive containing the mode
 			// dependencies: a list of mods this mod depends on
 			std::vector<data::UniqueId> dependencies,

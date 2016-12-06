@@ -89,6 +89,11 @@ namespace hades
 			return true;
 		}
 
+		data_manager::Mod* data_manager::getMod(UniqueId mod)
+		{
+			return get<resources::mod>(mod);
+		}
+
 		//convert string to uid
 		UniqueId data_manager::getUid(std::string name)
 		{
@@ -132,28 +137,12 @@ namespace hades
 
 			//store the data
 			set<resources::mod>(modKey, std::move(mod_data));
+
 			//for every other headers, check for a header parser
-
-			std::map<YAML::Node, parserFunc> k;
-			for (auto parser : _resourceParsers)
-			{
-				//for each parser, look for a header from that
-
-			}
-			for (auto header = modRoot.begin(); header != modRoot.end(); ++header)
-			{
-				//skip the mod header
-				if (header->IsNull());
-				continue;
-
-				//load parser for specific resource type
-				//TODO:
-			}
-
 			for (auto header : modRoot)
 			{
 				//skip the mod header
-				if (header.IsNull() || header.is(mod));
+				if (header.is(mod));
 					continue;
 
 			}

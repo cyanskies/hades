@@ -2,6 +2,16 @@
 
 namespace hades
 {
+	namespace resources
+	{
+		template<typename T>
+		void resource_type<T>::load(data::data_manager* data)
+		{
+			if (_resourceLoader)
+				_resourceLoader(this, data);
+		}
+	}
+
 	namespace data
 	{
 		template<typename T>
@@ -17,7 +27,7 @@ namespace hades
 			{
 				_resources.set(key, std::move(value));
 			}
-			catch (type_erasure::value_wrong_type e)
+			catch (type_erasure::value_wrong_type &e)
 			{
 				throw resource_wrong_type(e.what());
 			}

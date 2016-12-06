@@ -4,10 +4,8 @@ mod: {
     name: "test"
 }
 
-textures: {
-    example: {
+textures:
+    example:
         width: 10
         height: 10
         source: talon.png
-    }
-}

@@ -19,7 +19,11 @@ namespace hades
 		{
 			//if the key hasn't been assigned yet, then make it);
 			std::unique_ptr<base_type> ptr(new type_holder() );
-			_bag.emplace(std::make_pair(key, std::move(ptr)));
+			auto e = _bag.emplace(std::make_pair(key, std::move(ptr)));
+			if (!e.second)
+				throw std::runtime_error("emplace into property_bag failed");
+
+			iter = e.first;
 		}
 
 		//identifier already exsists(or has been created, ditermine if it is the same type as T, then assign it.

@@ -40,7 +40,7 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			using loaderFunc = std::function<void(resource_base*)>;
+			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
 
 			virtual ~resource_type() {}
 

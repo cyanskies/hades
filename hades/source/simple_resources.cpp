@@ -9,6 +9,7 @@
 
 #include "Hades/Console.hpp"
 #include "Hades/DataManager.hpp"
+#include "Hades/files.hpp"
 
 namespace hades
 {
@@ -33,6 +34,7 @@ namespace hades
 
 			texture::size_type counter = 0;
 			sf::Color c = c1;
+
 			for (auto p : pixels)
 			{
 				p = c.toInteger();
@@ -106,8 +108,8 @@ namespace hades
 				{
 					//resource doens't exist yet, create it
 					auto texture_ptr = std::make_unique<texture>();
-					dataman->set<texture>(id, std::move(texture_ptr));
 					tex = &*texture_ptr;
+					dataman->set<texture>(id, std::move(texture_ptr));	
 
 					tex->height = d_height;
 					tex->width = d_width;
@@ -163,12 +165,38 @@ namespace hades
 			}
 		}
 
-		void loadTexture(resources::resource_base*)
+		void loadTexture(resources::resource_base* r, data::data_manager* dataman)
 		{
-			//if source is set
-			//	try to load
-			//else
-			//	do nothing
+			auto tex = static_cast<texture*>(r);
+			
+			if (!tex->source.empty())
+			{
+				//the mod not being available should be 'impossible'
+				auto mod = dataman->getMod(tex->mod);
+				sf::Texture t;
+
+				try
+				{
+					files::FileStream fstream(mod->source, tex->source);
+					t.loadFromStream(fstream);
+				}
+				catch (files::file_exception e)
+				{
+					LOGERROR("Failed to load texture: " + mod->source + "/" + tex->source + ". " + e.what());
+				}
+
+				//if the width or height are 0, then don't warn about size mismatch
+				//otherwise log unexpected size
+				auto size = t.getSize();
+				if (tex->width == 0 &&
+					size.x != tex->width || size.y != tex->height)
+				{
+					LOGWARNING("Loaded texture: " + mod->source + "/" + tex->source + ". Texture size different from requested. Requested(" +
+						std::to_string(tex->width) + ", " + std::to_string(tex->height) + "), Found(" + std::to_string(size.x) + ", " + std::to_string(size.y) + ")");
+				}
+
+				tex->value = t;
+			}
 		}
 	}
 }

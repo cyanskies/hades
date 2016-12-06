@@ -141,10 +141,15 @@ namespace hades
 			//for every other headers, check for a header parser
 			for (auto header : modRoot)
 			{
-				//skip the mod header
-				if (header.is(mod));
+				if(header.first.as<types::string>() == "mod")
 					continue;
 
+				auto type = header.first.as<types::string>();
+
+				//if this resource name has a parser then load it
+				auto parser = _resourceParsers[type];
+				if (parser)
+					parser(modKey, header.first, this);
 			}
 
 			LOG("Loaded mod: " + name);

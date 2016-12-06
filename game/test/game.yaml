@@ -1,8 +1,7 @@
 #each mod must have a mod header listing its name and dependencies
 
-mod: {
-    name: "test"
-}
+mod:
+    name: test
 
 textures:
     example:

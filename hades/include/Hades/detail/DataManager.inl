@@ -15,7 +15,7 @@ namespace hades
 		{
 			try
 			{
-				_resources.set(key, value);
+				_resources.set(key, std::move(value));
 			}
 			catch (type_erasure::value_wrong_type e)
 			{
@@ -24,7 +24,7 @@ namespace hades
 		}
 
 		template<class T>
-		T const *data_manager::get(UniqueId) const
+		T* data_manager::get(UniqueId)
 		{
 			//exception -- value no defined
 			//exception -- value is wrong type

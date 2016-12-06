@@ -69,7 +69,7 @@ namespace hades
 				_mods.push_back(getUid(mod));
 		}
 
-		bool data_manager::loaded(std::string mod) const
+		bool data_manager::loaded(std::string mod)
 		{
 			//name hasn't even been used yet
 			if (_names.find(mod) == _names.end())
@@ -95,15 +95,6 @@ namespace hades
 			return _ids[name];
 		}
 
-		UniqueId data_manager::getUid(std::string name) const
-		{
-			auto i = _ids.find(name);
-			if (i == _ids.end())
-				throw std::runtime_error("Tried to get uniqueId that doesn't exist.");
-
-			return i->second;
-		}
-
 		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependency)
 		{
 			auto modKey = getUid(source);
@@ -123,8 +114,8 @@ namespace hades
 			}
 
 			//parse the mod header;
-			resources::mod mod_data;
-			mod_data.source = source;
+			auto mod_data = std::make_unique<resources::mod>();
+			mod_data->source = source;
 			auto mod_name = mod["name"];
 			if (mod_name.IsNull())
 			{
@@ -133,13 +124,14 @@ namespace hades
 				return;
 			}
 
-			mod_data.name = mod_name.as<std::string>();
+			auto name = mod_name.as<types::string>();
+			mod_data->name = name;
 
 			//check mod dependencies
 			//TODO:
 
 			//store the data
-			set<resources::mod>(modKey, mod_data);
+			set<resources::mod>(modKey, std::move(mod_data));
 			//for every other headers, check for a header parser
 
 			std::map<YAML::Node, parserFunc> k;
@@ -166,7 +158,7 @@ namespace hades
 
 			}
 
-			LOG("Loaded mod: " + mod_data.name);
+			LOG("Loaded mod: " + name);
 		}
 	}
 
@@ -176,7 +168,7 @@ namespace hades
 		register_resource_type("texture", resources::parseTexture);
 	}
 
-	DataManager::Texture const *DataManager::getTexture(data::UniqueId key) const
+	DataManager::Texture* DataManager::getTexture(data::UniqueId key)
 	{
 		return get<Texture>(key);
 	}

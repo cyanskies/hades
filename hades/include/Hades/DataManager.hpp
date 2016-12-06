@@ -95,14 +95,14 @@ namespace hades
 		class resource_null : public std::runtime_error
 		{
 		public:
-			using std::runtime_error(const char*);
+			resource_null(const char* what) : std::runtime_error(what) {}
 		};
 
 		//the requested resource isn't of the type it is claimed to be
 		class resource_wrong_type : public std::runtime_error
 		{
 		public:
-			using std::runtime_error(const char*);
+			resource_wrong_type(const char* what) : std::runtime_error(what) {}
 		};
 
 		class data_manager
@@ -123,7 +123,7 @@ namespace hades
 
 			//returns true if the mod or game with that name has been parsed
 			//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
-			bool loaded(std::string mod) const;
+			bool loaded(std::string mod);
 
 			//TODO:
 			//re read data from all mods, starting with game, and doing them all in order
@@ -141,15 +141,14 @@ namespace hades
 
 			//returns a non-owning ptr to the resource
 			template<class T>
-			T* get(UniqueId) const;
+			T* get(UniqueId);
 
 			using Mod = resources::mod;
 
-			Mod* getMod(UniqueId) const;
+			Mod* getMod(UniqueId);
 
 			//convert string to uid
 			UniqueId getUid(std::string name);
-			UniqueId getUid(std::string name) const;
 
 		private:
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
@@ -182,7 +181,7 @@ namespace hades
 		DataManager();
 
 		using Texture = resources::texture;
-		Texture const * getTexture(data::UniqueId) const;
+		Texture* getTexture(data::UniqueId);
 	};
 }
 

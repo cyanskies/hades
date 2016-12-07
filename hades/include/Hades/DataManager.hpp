@@ -150,6 +150,7 @@ namespace hades
 			types::string as_string(UniqueId) const;
 
 		private:
+			void parseYaml(data::UniqueId, YAML::Node);
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
 
 			//==parsing and loading data==

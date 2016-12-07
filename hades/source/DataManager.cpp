@@ -111,7 +111,29 @@ namespace hades
 			return "ERROR_NO_UNIQUE_ID";
 		}
 
-		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependency)
+		void data_manager::parseYaml(data::UniqueId mod, YAML::Node root)
+		{
+			//loop though each of the root level nodes and pass them off
+			//too specialised handlers if present
+			for (auto header : root)
+			{
+				//don't try to read mod headers
+				if (header.first.as<types::string>() == "mod")
+					continue;
+
+				auto type = header.first.as<types::string>();
+
+				//if type is include, then open the file as pass it to parseyaml
+				//TODO:
+
+				//if this resource name has a parser then load it
+				auto parser = _resourceParsers[type];
+				if (parser)
+					parser(mod, header.second, this);
+			}
+		}
+
+		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
 		{
 			auto modKey = getUid(source);
 
@@ -150,18 +172,7 @@ namespace hades
 			set<resources::mod>(modKey, std::move(mod_data));
 
 			//for every other headers, check for a header parser
-			for (auto header : modRoot)
-			{
-				if(header.first.as<types::string>() == "mod")
-					continue;
-
-				auto type = header.first.as<types::string>();
-
-				//if this resource name has a parser then load it
-				auto parser = _resourceParsers[type];
-				if (parser)
-					parser(modKey, header.second, this);
-			}
+			parseYaml(modKey, modRoot);
 
 			LOG("Loaded mod: " + name);
 		}

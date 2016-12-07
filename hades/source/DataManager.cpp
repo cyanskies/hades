@@ -80,7 +80,7 @@ namespace hades
 				auto r = get<resources::mod>(getUid(mod));
 			}
 			//name has been used, but not for a mod
-			catch (std::runtime_error &e)
+			catch (std::runtime_error&)
 			{
 				return false;
 			}
@@ -98,6 +98,17 @@ namespace hades
 		UniqueId data_manager::getUid(std::string name)
 		{
 			return _ids[name];
+		}
+
+		types::string data_manager::as_string(UniqueId uid) const
+		{
+			for (auto id : _ids)
+			{
+				if (id.second == uid)
+					return id.first;
+			}
+
+			return "ERROR_NO_UNIQUE_ID";
 		}
 
 		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependency)
@@ -149,7 +160,7 @@ namespace hades
 				//if this resource name has a parser then load it
 				auto parser = _resourceParsers[type];
 				if (parser)
-					parser(modKey, header.first, this);
+					parser(modKey, header.second, this);
 			}
 
 			LOG("Loaded mod: " + name);
@@ -159,7 +170,7 @@ namespace hades
 	DataManager::DataManager()
 	{
 		//register custom resource types
-		register_resource_type("texture", resources::parseTexture);
+		register_resource_type("textures", resources::parseTexture);
 	}
 
 	DataManager::Texture* DataManager::getTexture(data::UniqueId key)

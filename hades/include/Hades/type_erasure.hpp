@@ -38,7 +38,7 @@ namespace hades {
 		public:
 			using type_base = type_erased_base;
 
-			T &get() const { return &_data; }
+			T &get() { return _data; }
 
 			void set(T value) { _data = std::move(value); }
 
@@ -81,7 +81,7 @@ namespace hades {
 		T get(Key key) const;
 
 		template<class T>
-		ptr get_reference(Key key);
+		T* get_reference(Key key);
 
 		iterator begin();
 		iterator end();

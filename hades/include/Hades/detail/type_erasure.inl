@@ -66,7 +66,7 @@ namespace hades
 
 	template<class Key>
 	template<class T>
-	typename property_bag<Key>::ptr property_bag<Key>::get_reference(Key key)
+	T* property_bag<Key>::get_reference(Key key)
 	{
 		using type_holder = type_erasure::type_erased<T>;
 

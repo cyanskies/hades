@@ -34,14 +34,24 @@ namespace hades
 		}
 
 		template<class T>
-		T* data_manager::get(UniqueId)
-		{
-			//exception -- value no defined
-			//exception -- value is wrong type
-
-			return nullptr;
-			//auto r = Resource<T>( get_resource<T>(_resources, key) );
-			//return r
+		T* data_manager::get(UniqueId uid)
+		{		
+			try
+			{
+				return _resources.get_reference<T>(uid);
+			}
+			catch (type_erasure::key_null&)
+			{
+				//exception -- value no defined
+				auto message = "Failed to find resource for unique_id: " + as_string(uid);
+				throw resource_null(message.c_str());
+			}
+			catch (type_erasure::value_wrong_type&)
+			{
+				//exception -- value is wrong type
+				auto message = "Tried to get resource using wrong type, unique_id was : " + as_string(uid);
+				throw resource_wrong_type(message.c_str());
+			}
 		}
 	}
 }

@@ -147,6 +147,7 @@ namespace hades
 
 			//convert string to uid
 			UniqueId getUid(std::string name);
+			types::string as_string(UniqueId) const;
 
 		private:
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);

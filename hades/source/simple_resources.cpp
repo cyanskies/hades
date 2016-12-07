@@ -97,7 +97,11 @@ namespace hades
 			for (auto n : node)
 			{
 				//get texture with this name if it has already been loaded
-				auto id = dataman->getUid(n.as<types::string>());
+				//first node holds the maps name
+				auto tnode = n.first;
+				//second holds the map children
+				auto tvariables = n.second;
+				auto id = dataman->getUid(tnode.as<types::string>());
 				texture* tex;
 
 				try
@@ -129,28 +133,28 @@ namespace hades
 				}
 
 				//only overwrite current values(or default if this is a new resource) if they are specified.
-				auto width = n["width"];
+				auto width = tvariables["width"];
 				if (!width.IsNull())
 					tex->width = width.as<texture::size_type>(d_width);
 
-				auto height = n["height"];
+				auto height = tvariables["height"];
 				if (!height.IsNull())
 					tex->height = height.as<texture::size_type>(d_height);
 
 				
-				auto smooth = n["smooth"];
+				auto smooth = tvariables["smooth"];
 				if (!smooth.IsNull())
 					tex->smooth = smooth.as<bool>(d_smooth);
 
-				auto repeat = n["repeating"];
+				auto repeat = tvariables["repeating"];
 				if (!repeat.IsNull())
 					tex->repeat = repeat.as<bool>(d_repeating);
 
-				auto mips = n["mips"];
+				auto mips = tvariables["mips"];
 				if (!mips.IsNull())
 					tex->mips = mips.as<bool>(d_mips);
 
-				auto source = n["source"];
+				auto source = tvariables["source"];
 				if (!source.IsNull())
 					tex->source = source.as<types::string>(d_source);
 

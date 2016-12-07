@@ -12,14 +12,14 @@ namespace hades {
 		class key_null : public std::runtime_error
 		{
 		public:
-			key_null(const char* what) : std::runtime_error(what) {}
+			using std::runtime_error::runtime_error;
 		};
 
 		//the requested resource isn't of the type it is claimed to be
 		class value_wrong_type : public std::runtime_error
 		{
 		public:
-			value_wrong_type(const char* what) : std::runtime_error(what) {}
+			using std::runtime_error::runtime_error;
 		};
 
 		class type_erased_base
@@ -72,7 +72,6 @@ namespace hades {
 		using data_map = std::unordered_map<key_type, std::unique_ptr<base_type>>;
 		using iterator = typename data_map::iterator;
 		using value_type = base_type;
-		using ptr = base_type*;
 
 		template<class T>
 		void set(Key key, T value);

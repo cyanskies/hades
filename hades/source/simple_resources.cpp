@@ -108,7 +108,7 @@ namespace hades
 				{
 					tex = dataman->get<texture>(id);
 				}
-				catch (data::resource_null r)
+				catch (data::resource_null&)
 				{
 					//resource doens't exist yet, create it
 					auto texture_ptr = std::make_unique<texture>();
@@ -122,7 +122,7 @@ namespace hades
 					tex->mips = d_mips;
 					tex->source = d_source;
 				}
-				catch (data::resource_wrong_type r)
+				catch (data::resource_wrong_type&)
 				{
 					//name is already used for something else, this cannnot be loaded
 					auto name = n.as<types::string>();

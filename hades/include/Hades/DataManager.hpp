@@ -93,14 +93,14 @@ namespace hades
 		class resource_null : public std::runtime_error
 		{
 		public:
-			resource_null(const char* what) : std::runtime_error(what) {}
+			using std::runtime_error::runtime_error;
 		};
 
 		//the requested resource isn't of the type it is claimed to be
 		class resource_wrong_type : public std::runtime_error
 		{
 		public:
-			resource_wrong_type(const char* what) : std::runtime_error(what) {}
+			using std::runtime_error::runtime_error;
 		};
 
 		class data_manager

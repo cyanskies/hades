@@ -182,6 +182,9 @@ namespace hades
 
 		using Texture = resources::texture;
 		Texture* getTexture(data::UniqueId);
+		
+		using String = resources::string;
+		String* getString(data::UniqueId)
 	};
 }
 

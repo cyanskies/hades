@@ -189,4 +189,9 @@ namespace hades
 	{
 		return get<Texture>(key);
 	}
+
+	DataManager::String* DataManager::getString(data::UniqueId key)
+	{
+		return get<String>(key);
+	}
 }

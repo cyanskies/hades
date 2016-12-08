@@ -72,16 +72,14 @@ namespace hades
 		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
 		{
 			//default texture yaml
-			//textures: {
-			//    default: {
+			//textures:
+			//    default:
 			//        width: 0 #0 = autodetect, no size checking will be done
 			//        height: 0 
 			//        source: #empty source, no file is specified, will always be default error texture
 			//        smooth: false
 			//        repeating: false
 			//        mips: false
-			//    }
-			//}
 
 			const texture::size_type d_width = 0, d_height = 0;
 			const std::string d_source;
@@ -207,6 +205,11 @@ namespace hades
 
 		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
 		{
+			//strings yaml
+			//strings: 
+			//    id: value
+			//    id2: value2
+
 			for (auto n : node)
 			{
 				//get texture with this name if it has already been loaded

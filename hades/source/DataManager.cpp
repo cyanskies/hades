@@ -114,7 +114,7 @@ namespace hades
 		void data_manager::parseYaml(data::UniqueId mod, YAML::Node root)
 		{
 			//loop though each of the root level nodes and pass them off
-			//too specialised handlers if present
+			//to specialised handlers if present
 			for (auto header : root)
 			{
 				//don't try to read mod headers
@@ -182,6 +182,7 @@ namespace hades
 	{
 		//register custom resource types
 		register_resource_type("textures", resources::parseTexture);
+		register_resource_type("strings", resources::parseString)
 	}
 
 	DataManager::Texture* DataManager::getTexture(data::UniqueId key)

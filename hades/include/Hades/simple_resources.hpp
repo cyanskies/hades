@@ -13,6 +13,7 @@ namespace hades
 	namespace resources
 	{
 		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*);
+		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 	}
 }
 

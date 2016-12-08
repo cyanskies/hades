@@ -132,6 +132,8 @@ namespace hades
 					continue;
 				}
 
+				tex->mod = mod;
+
 				//only overwrite current values(or default if this is a new resource) if they are specified.
 				auto width = tvariables["width"];
 				if (!width.IsNull())
@@ -200,6 +202,31 @@ namespace hades
 				}
 
 				tex->value = t;
+			}
+		}
+
+		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
+		{
+			for (auto n : node)
+			{
+				//get texture with this name if it has already been loaded
+				//first node holds the maps name
+				auto tnode = n.first;
+				//second holds the map children
+				auto string = n.second.as<types::string>();
+				auto id = dataman->getUid(tnode.as<types::string>());
+
+				auto string_ptr = std::make_unique<resources::string>();
+
+				string_ptr->mod = mod;
+
+				auto moddata = dataman->get<resources::mod>(mod);
+
+				string_ptr->source = moddata->source;
+
+				string_ptr->value = string;
+
+				dataman->set<resources::string>(id, std::move(string_ptr));
 			}
 		}
 	}

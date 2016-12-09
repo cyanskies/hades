@@ -5,6 +5,8 @@
 #include "SFML/Window/Joystick.hpp"
 #include "SFML/Window/Window.hpp"
 
+#include "TGUI/Gui.hpp"
+
 #include "Bind.hpp"
 #include "Stitches.hpp"
 #include "TimerManager.hpp"
@@ -43,6 +45,10 @@ namespace hades
 		
 		CallbackSystem &getCallbackHandler();
 		void handleInput(thor::ActionContext<int> context, int id);
+
+		void setGuiTarget(sf::RenderTarget &target);
+		void drawGui();
+
 		//functions for states to overide to define behaviour
 
 		//main state loop
@@ -62,13 +68,13 @@ namespace hades
 		virtual void resume() = 0; //restart any custom timers
 	
 	protected:
-
 		void bindCallback(int id, std::function<void(EventContext)> func);
 		void clearCallback(int id);
 		void clearCallbacks();
 
-	private:
+		tgui::Gui _gui;
 
+	private:
 		//TODO: redo input system
 		CallbackSystem _callbacks;
 		std::map<int, std::function<void(thor::ActionContext<int>)> > _stateBinds;

@@ -32,10 +32,19 @@ namespace hades
 		state->attach(console);
 		state->attach(resource);
 
+		assert(_target);
+		state->setGuiTarget(*_target);
+
 		if(!_states.empty())
 			_states.back()->dropFocus();
 
 		_states.push_back(std::move(state));
+	}
+
+	void StateManager::setGuiTarget(sf::RenderTarget &target)
+	{
+		assert(_target == nullptr);
+		_target = &target;
 	}
 
 	void StateManager::drop()

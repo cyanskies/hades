@@ -95,6 +95,7 @@ namespace hades
 		//load config files and overwrite any updated settings
 		_states.attach(_console);
 		_states.attach(_resource);
+		_states.setGuiTarget(_window);
 
 		registerConsoleCommands();	
 
@@ -220,6 +221,7 @@ namespace hades
 			activeState->update(thisFrame);
 			_window.clear();
 			activeState->draw(_window);
+			activeState->drawGui();
 
 			//render the console interface if it is active.
 			if (_consoleView.active())

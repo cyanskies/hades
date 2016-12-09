@@ -63,6 +63,16 @@ namespace hades
 			func->second(context);
 	}
 
+	void State::setGuiTarget(sf::RenderTarget &target)
+	{
+		_gui.setWindow(target);
+	}
+
+	void State::drawGui()
+	{
+		_gui.draw();
+	}
+
 	bool State::paused() const
 	{
 		return _paused;

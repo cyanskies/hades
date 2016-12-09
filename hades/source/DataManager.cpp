@@ -182,7 +182,7 @@ namespace hades
 	{
 		//register custom resource types
 		register_resource_type("textures", resources::parseTexture);
-		register_resource_type("strings", resources::parseString)
+		register_resource_type("strings", resources::parseString);
 	}
 
 	DataManager::Texture* DataManager::getTexture(data::UniqueId key)

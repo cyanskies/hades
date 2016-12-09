@@ -7,6 +7,8 @@
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "zlib/zlib.h" //for zlib version
+
 #include "Hades/Console.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/ResourceManager.hpp"
@@ -129,6 +131,17 @@ namespace hades
 
 	void App::postInit(CommandList commands)
 	{	
+		const auto hades_version_major = 0, 
+			hades_version_minor = 0,
+			hades_version_patch  = 0;
+
+		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
+		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
+		LOG("Thor " + std::to_string(THOR_VERSION_MAJOR) + "." + std::to_string(THOR_VERSION_MINOR));
+		LOG("TGUI " + std::to_string(TGUI_VERSION_MAJOR) + "." + std::to_string(TGUI_VERSION_MINOR) + "." + std::to_string(TGUI_VERSION_PATCH));
+		LOG("zlib " + types::string(ZLIB_VERSION));
+		//yaml-cpp doesn't currently have a version macro
+		LOG("yaml-cpp 0.5.3"); //TODO: base this off the version compiled
 		//add default game
 		commands.push_back("-game " + defaultGame());
 		//pull -game and -mod commands from commands

@@ -1,0 +1,19 @@
+#This mod loads all the resources needed for the snake game
+
+mod:
+    name: snake
+
+textures:
+    snake-body:
+        width: 10
+        height: 10
+        source: body.png
+    snake-head:
+        width: 10
+        height: 10
+        source: head.png
+    food-fruit:
+        width: 10
+        height: 10
+        source: fruit.png
+        

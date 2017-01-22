@@ -4,6 +4,7 @@
 set(XING_SRC
 	ConsoleTestState.cpp
 	main.cpp
+	Snake.cpp
 )
 
 # Library to build

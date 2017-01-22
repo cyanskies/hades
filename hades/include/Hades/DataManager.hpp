@@ -186,6 +186,8 @@ namespace hades
 		using String = resources::string;
 		String* getString(data::UniqueId);
 	};
+
+	DataManager* data_manager;
 }
 
 #include "detail/DataManager.inl"

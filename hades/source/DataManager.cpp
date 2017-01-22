@@ -8,6 +8,8 @@
 
 namespace hades
 {
+	DataManager data_manager* = nullptr;
+
 	namespace data
 	{
 		data_manager::~data_manager()

@@ -125,14 +125,29 @@ namespace hades
 
 			//TODO:
 			//re read data from all mods, starting with game, and doing them all in order
-			//void reParseAll();
+			//void reparse();
 
-			//adds an object to the load queue
+			//adds all objects into the load queue
 			//note: this wont effect resources that are only parsed(strings and game parameters)
-			void queue(UniqueId);
+			void refresh();
+			//adds a specific object into the load queue
+			void refresh(UniqueId);
+			//adds a range to the load queue
+			//template<Iter>
+			//void refresh(Iter first, Iter last);
 
-			//loads any queued resources
-			void load_resources(types::uint8 count);
+			//loads all queued resources
+			void load();
+			//loads a number of objects from the queue(no order specified)
+			void load(types::uint8 count);
+			//loads from the queue for a specified time
+			//returns the number of objects loaded
+			types::uint32 load(types::uint8 ms);
+			//loads a specific object(only if it is on the queue)
+			void load(UniqueId);
+			//loads a range of objects(only if they are on the queue)
+			//template<Iter>
+			//void load(Iter first, Iter last);
 
 			template<class T>
 			void set(UniqueId, std::unique_ptr<T>);

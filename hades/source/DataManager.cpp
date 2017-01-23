@@ -8,7 +8,7 @@
 
 namespace hades
 {
-	DataManager data_manager* = nullptr;
+	DataManager *data_manager = nullptr;
 
 	namespace data
 	{

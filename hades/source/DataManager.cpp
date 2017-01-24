@@ -117,10 +117,12 @@ namespace hades
 
 		void data_manager::refresh()
 		{
-			//TODO: needs access to resource base ptr
+			//note: load queue can be full of duplicates,
+			//the load functions resolve them
 			for (auto id : _ids)
 			{
-				;//nothing
+				auto r = get<resources::resource_base>(id.second);
+				_loadQueue.push_back(r);
 			}
 		}
 

@@ -123,9 +123,8 @@ namespace hades
 			//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
 			bool loaded(std::string mod);
 
-			//TODO:
-			//re read data from all mods, starting with game, and doing them all in order
-			//void reparse();
+			//reread data from all mods, starting with game, and doing them all in order
+			void reparse();
 
 			//adds all objects into the load queue
 			//note: this wont effect resources that are only parsed(strings and game parameters)

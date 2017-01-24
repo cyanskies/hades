@@ -60,8 +60,10 @@ namespace hades
 			//parse game.yaml
 			auto root = YAML::Load(modyaml.c_str());
 			if(autoLoad)
+				//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
 				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true;});
 			else
+				//otherwise bind to loaded, returns false if dependent mod is not loaded
 				parseMod(mod, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
 
 			//record the list of loaded games/mods
@@ -89,6 +91,37 @@ namespace hades
 
 			//name is used and is a mod
 			return true;
+		}
+
+		void data_manager::reparse()
+		{
+			//copy and clear the mod list, so that
+			// when add_mod readds them we don't double up
+			auto mods = _mods;
+
+			//reparse the game
+			auto game = getMod(_game)->name;
+			add_mod(game, true, "game.yaml");
+
+			_mods.clear();
+			//go through the mod list and reload them in the 
+			//same order as they were origionally loaded
+			//(this means we will parse the game and it's dependents again)
+			for (auto m : mods)
+			{
+				//for each mod reload it
+				auto name = getMod(m)->name;
+				add_mod(name);
+			}
+		}
+
+		void data_manager::refresh()
+		{
+			//TODO: needs access to resource base ptr
+			for (auto id : _ids)
+			{
+				;//nothing
+			}
 		}
 
 		data_manager::Mod* data_manager::getMod(UniqueId mod)

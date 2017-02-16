@@ -23,7 +23,11 @@ namespace hades
 		State *getActiveState();
 
 		void pop();
+		//Add state to the top of the stack
 		void push(std::unique_ptr<State> &state);
+		//Add state under the top of the stack
+		//This allows the current state to finish before transfering or for a loading state to be added between the two.
+		void pushUnder(std::unique_ptr<State> &state);
 
 		void setGuiTarget(sf::RenderTarget &target);
 

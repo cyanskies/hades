@@ -41,6 +41,15 @@ namespace hades
 		_states.push_back(std::move(state));
 	}
 
+	void StateManager::pushUnder(std::unique_ptr<State> &state)
+	{
+		//push this state
+		push(state);
+
+		//then swap it with the one underneath
+		std::iter_swap(_states.end(), _states.end() - 1);
+	}
+
 	void StateManager::setGuiTarget(sf::RenderTarget &target)
 	{
 		assert(_target == nullptr);

@@ -34,7 +34,7 @@ namespace hades
 		{
 			virtual ~resource_base() {}
 
-			virtual void load(data::data_manager*) = 0;
+			virtual void load(data::data_manager*) {}
 		};
 
 		template<class T>
@@ -141,7 +141,7 @@ namespace hades
 			void load(types::uint8 count);
 			//loads from the queue for a specified time
 			//returns the number of objects loaded
-			types::uint32 load(types::uint8 ms);
+			//>>types::uint32 load(Time ms);
 			//loads a specific object(only if it is on the queue)
 			void load(UniqueId);
 			//loads a range of objects(only if they are on the queue)
@@ -201,7 +201,7 @@ namespace hades
 		String* getString(data::UniqueId);
 	};
 
-	DataManager* data_manager;
+	extern DataManager* data_manager;
 }
 
 #include "detail/DataManager.inl"

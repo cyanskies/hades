@@ -81,10 +81,15 @@ namespace hades
 			if(!_fileOpen)
 				throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
-			buffer buff(size);
+			//unsigned int type used by zlib
+			auto usize = static_cast<unsigned int>(size);
 
+			buffer buff(static_cast<buffer::size_type>(usize));
+
+			//TODO: what to do if this fails in runtime? throw buffer too small exception
+			//will have to do the same everywhere buffer is created
 			assert(std::numeric_limits<unsigned int>::max() > size);
-			auto amountRead = unzReadCurrentFile(_archive, &buff[0], size);
+			auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
 
 			memcpy(data, buff.data(), amountRead);
 
@@ -100,7 +105,9 @@ namespace hades
 			//TODO: check return val
 			open(_fileName);
 
-			buffer buff(position);
+			//TODO: need to throw out of range exception(buffer cannot hold enough data for the file)
+			assert(std::numeric_limits<unsigned int>::max() > position);
+			buffer buff(static_cast<buffer::size_type>(position));
 
 			return read(buff.data(), position);
 
@@ -133,8 +140,6 @@ namespace hades
 		{
 			//test that archive exists
 			//open archive
-			path;
-
 			unarchive a = unzOpen(path.c_str());
 
 			if (!a)
@@ -160,7 +165,10 @@ namespace hades
 			auto stream = stream_file_from_archive(archive, path);
 				
 			auto size = stream.getSize();
-			buffer buff(size);
+
+			//TODO: need to throw out of range exception
+			assert(std::numeric_limits<unsigned int>::max() > size);
+			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
 
 			return buff;

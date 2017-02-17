@@ -22,6 +22,7 @@ namespace hades
 
 		State *getActiveState();
 
+		//Remove state from the top of the stack
 		void pop();
 		//Add state to the top of the stack
 		void push(std::unique_ptr<State> &state);
@@ -29,13 +30,17 @@ namespace hades
 		//This allows the current state to finish before transfering or for a loading state to be added between the two.
 		void pushUnder(std::unique_ptr<State> &state);
 
+		//Set the target to be used for Gui rendering
 		void setGuiTarget(sf::RenderTarget &target);
 
 		//deactivates the statemanager, this will drop all states, and drop utility handles to the console and resource manager
 		void drop();
 	private:
-		State *getValidState(std::vector< std::unique_ptr<State> >::reverse_iterator state);
-		std::vector< std::unique_ptr<State> > _states;
+		using state_vector = std::vector<std::unique_ptr<State>>;
+		using state_iter = state_vector::reverse_iterator;
+
+		State *getValidState(state_iter state);
+		state_vector _states;
 
 		sf::RenderTarget *_target;
 	};

@@ -2,7 +2,7 @@
 
 namespace hades
 {
-	State::State() : _alive(true), _init(false), _paused(false), _active(true)
+	State::State() : _alive(true), _init(false), _paused(false)
 	{}
 
 	State::~State()
@@ -28,21 +28,21 @@ namespace hades
 		_alive = false;
 	}
 
-	void State::activate()
-	{
-		_active = true;
-	}
+	//void State::activate()
+	//{
+	//	_active = true;
+	//}
 
-	bool State::isActive() const
-	{
-		return _active;
-	}
+	//bool State::isActive() const
+	//{
+	//	return _active;
+	//}
 
-	void State::deactivate()
-	{
-		_active = false;
-		dropFocus();
-	}
+	//void State::deactivate()
+	//{
+	//	_active = false;
+	//	dropFocus();
+	//}
 
 	void State::grabFocus()
 	{

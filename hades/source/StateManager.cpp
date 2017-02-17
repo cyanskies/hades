@@ -12,7 +12,7 @@ namespace hades
 		if(_states.empty())
 			return nullptr;
 
-		std::vector< std::unique_ptr<State> >::reverse_iterator state = _states.rbegin();
+		state_iter state = _states.rbegin();
 
 		return getValidState(state);
 	}
@@ -46,6 +46,9 @@ namespace hades
 		//push this state
 		push(state);
 
+		//this will end up being under the current state, so it won't have focus
+		state->dropFocus();
+
 		//then swap it with the one underneath
 		std::iter_swap(_states.rbegin(), _states.rbegin() + 1);
 	}
@@ -54,13 +57,16 @@ namespace hades
 	{
 		assert(_target == nullptr);
 		_target = &target;
+
+		//reset gui target for all current states
+		for (auto &s : _states)
+			s->setGuiTarget(target);
 	}
 
 	void StateManager::drop()
 	{
-		std::for_each(_states.begin(), _states.end(), [] (std::unique_ptr<hades::State> &state) {
-			state->cleanup();
-		});
+		for (auto &s : _states)
+			s->cleanup();
 
 		_states.clear();
 
@@ -68,23 +74,14 @@ namespace hades
 		resource = nullptr;
 	}
 
-	State *StateManager::getValidState(std::vector< std::unique_ptr<State> >::reverse_iterator state)
+	State *StateManager::getValidState(StateManager::state_iter state)
 	{
-		//if there are no states, return null
-		if(state == _states.rend())
-			return nullptr;
-
-		//if the last state is dead, clean it up
-		if(!(*state)->isAlive() && state == _states.rbegin())
+		//if the state is dead, clean it up and loop though to the next state
+		if(!(*state)->isAlive())
 		{
-			(*state)->cleanup();
 			pop();
 			return getActiveState();
 		}
-
-		//if the last state is inactive, skip it.
-		if(!(*state)->isActive())
-			return getValidState(++state);
 
 		//if this state isn't initialised, then init
 		if(!(*state)->isInit())
@@ -94,8 +91,11 @@ namespace hades
 		}
 
 		//if this state is paused, resume
-		if((*state)->paused())
+		if ((*state)->paused())
+		{
 			(*state)->grabFocus();
+			(*state)->reinit();
+		}
 
 		//return this state.
 		return &**state;

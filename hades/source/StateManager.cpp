@@ -47,7 +47,7 @@ namespace hades
 		push(state);
 
 		//then swap it with the one underneath
-		std::iter_swap(_states.end(), _states.end() - 1);
+		std::iter_swap(_states.rbegin(), _states.rbegin() + 1);
 	}
 
 	void StateManager::setGuiTarget(sf::RenderTarget &target)

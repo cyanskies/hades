@@ -77,7 +77,7 @@ namespace hades
 		//create console
 		_console = std::make_shared<Console>();
 		//record the global console as logger
-		log = &*_console;
+		console::log = &*_console;
 		//record the global resource controller
 		data_manager = &_dataMan;
 

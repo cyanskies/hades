@@ -2,7 +2,10 @@
 
 namespace hades
 {
-	console::logger* log = nullptr;
+	namespace console
+	{
+		logger* log = nullptr;
+	}
 
 	types::string time()
 	{

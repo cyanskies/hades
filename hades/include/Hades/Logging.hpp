@@ -45,11 +45,11 @@ namespace hades
 
 			operator types::string() const { return "[" + Time + "]: " + File + Function + std::to_string(Line) + "\n" + Message; }
 		};
+
+		extern logger *log;
 	}
 
 	types::string time();
-
-	extern console::logger *log;
 }//hades
 
 
@@ -58,9 +58,9 @@ namespace hades
 //they can be used to easily log with timestamps and function names/line numbers
 
 #define HADESLOG(Message_, Verbosity_)			\
-	if(hades::log)								\
+	if(hades::console::log)								\
 	{											\
-		hades::log->echo(hades::console::string(		\
+		hades::console::log->echo(hades::console::string(		\
 			Message_,							\
 			__LINE__,							\
 			__func__,							\

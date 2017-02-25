@@ -10,6 +10,7 @@
 #include "zlib/zlib.h" //for zlib version
 
 #include "Hades/Console.hpp"
+#include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/ResourceManager.hpp"
 
@@ -75,8 +76,8 @@ namespace hades
 
 		//create console
 		_console = std::make_shared<Console>();
-		//record the global console for use
-		console = &*_console;
+		//record the global console as logger
+		log = &*_console;
 		//record the global resource controller
 		data_manager = &_dataMan;
 

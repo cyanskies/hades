@@ -14,8 +14,6 @@
 //==============
 namespace hades
 {
-	Console* console = nullptr;
-
 	namespace detail
 	{
 		String::String(std::string string) : _data(string)
@@ -311,8 +309,4 @@ namespace hades
 		return out;
 	}
 
-	std::string time()
-	{
-		return "now";
-	}
 }//hades

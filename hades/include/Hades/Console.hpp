@@ -11,6 +11,7 @@
 #include <string>
 #include <typeindex>
 
+#include "Logging.hpp"
 #include "Hades/Types.hpp"
 
 //Console is a unique engine object for holding game wide properties
@@ -62,18 +63,20 @@ namespace hades
 	// ==================
 	// ---Main Console---
 	// ==================
-	class Console_String;
+	using Console_String = console::string;
 	class VerbPred;
 	typedef std::list<Console_String> ConsoleStringBuffer;
 	template<class T>
 	using ConsoleVariable = std::shared_ptr<const std::atomic<T>>;
 
-	class Console
+	class Console : public console::logger
 	{
 	public:
-		enum Console_String_Verbosity { NORMAL, ERROR, WARNING };
-
+		using Console_String_Verbosity = console::logger::LOG_VERBOSITY;
+		
 		Console() : recentOutputPos(0) {}
+
+		virtual ~Console() {}
 
 		typedef std::function<bool(std::string)> Console_Function;
 
@@ -86,8 +89,8 @@ namespace hades
 		ConsoleVariable<T> getValue(const std::string &var);
 
 		bool runCommand(const std::string &command);
-		void echo(const std::string &message, const Console_String_Verbosity verbosity = NORMAL);
-		void echo(const Console_String &message);
+		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);
+		virtual void echo(const Console_String &message);
 
 		bool exists(const std::string &command) const;
 		void erase(const std::string &command);
@@ -112,33 +115,6 @@ namespace hades
 		int recentOutputPos;
 	};
 
-	
-
-	// =================
-	// -Console Strings-
-	// =================
-
-	class Console_String
-	{
-	private:
-		std::string Message;
-		Console::Console_String_Verbosity Verb;
-		int Line;
-		std::string Function, File, Time;
-	public:
-		Console_String(const std::string &message, const Console::Console_String_Verbosity &verb = Console::NORMAL) : Message(message), Verb(verb)
-		{}
-
-		Console_String(const std::string &message, int line, const char* function, const char* file, const std::string time, const Console::Console_String_Verbosity &verb = Console::NORMAL)
-			: Message(message), Verb(verb), Line(line), Function(function), Time(time)
-		{}
-
-		const std::string Text() const { return Message; }
-		const Console::Console_String_Verbosity Verbosity() const { return Verb; }
-
-		operator std::string() const { return "[" + Time + "]: " + File + Function + std::to_string(Line) + "\n" + Message; }
-	};
-
 	// ==================
 	// -----Predicate----
 	// ==================
@@ -151,41 +127,7 @@ namespace hades
 		void SetVerb(const Console::Console_String_Verbosity &verb) { CurrentVerb = verb; }
 		bool operator()(const Console_String &string) const { return string.Verbosity() > CurrentVerb; }
 	};
-
-	extern Console *console;
-
-	std::string time();
 }//hades
-
-
-//logging macros, 
-//these use the global console ptr, 
-//they can be used
-
-#define HADESLOG(Message_, Verbosity_)          \
-  hades::console->echo(hades::Console_String(   \
-	Message_,									\
-	__LINE__,									\
-    __func__,									\
-    __FILE__,									\
-	hades::time(),								\
-    Verbosity_									\
-  ));
-
-#define LOG(Message_)									\
-  HADESLOG(Message_,									\
-	  hades::Console::Console_String_Verbosity::NORMAL  \
-  );
-
-#define LOGERROR(Message_)								\
-  HADESLOG(Message_,									\
-	  hades::Console::Console_String_Verbosity::ERROR	\
-  );
-
-#define LOGWARNING(Message_)							\
-  HADESLOG(Message_,									\
-	  hades::Console::Console_String_Verbosity::WARNING	\
-  );
 
 #include "detail/Console.inl"
 

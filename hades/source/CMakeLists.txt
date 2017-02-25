@@ -12,6 +12,7 @@ set(HADES_SRC
 	Logging.cpp
 	main.cpp
 	parallel_jobs.cpp
+	Properties.cpp
 	ResourceManager.cpp
 	simple_resources.cpp
 	StandardPaths.cpp

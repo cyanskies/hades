@@ -11,7 +11,8 @@
 #include <string>
 #include <typeindex>
 
-#include "Logging.hpp"
+#include "Hades/Logging.hpp"
+#include "Hades/Properties.hpp"
 #include "Hades/Types.hpp"
 
 //Console is a unique engine object for holding game wide properties
@@ -67,9 +68,9 @@ namespace hades
 	class VerbPred;
 	typedef std::list<Console_String> ConsoleStringBuffer;
 	template<class T>
-	using ConsoleVariable = std::shared_ptr<const std::atomic<T>>;
+	using ConsoleVariable = console::property<T>;
 
-	class Console : public console::logger
+	class Console : public console::logger, public console::properties
 	{
 	public:
 		using Console_String_Verbosity = console::logger::LOG_VERBOSITY;
@@ -85,8 +86,18 @@ namespace hades
 		template<class T>
 		bool set(const std::string &identifier, const T &value);
 
+		virtual bool set(const types::string&, types::int32);
+		virtual bool set(const types::string&, float);
+		virtual bool set(const types::string&, bool);
+		virtual bool set(const types::string&, const types::string&);
+
 		template<class T>
 		ConsoleVariable<T> getValue(const std::string &var);
+
+		virtual console::property<types::int32> getInt(const types::string&);
+		virtual console::property<float> getFloat(const types::string&);
+		virtual console::property<bool> getBool(const types::string&);
+		virtual console::property_str getString(const types::string&);
 
 		bool runCommand(const std::string &command);
 		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);

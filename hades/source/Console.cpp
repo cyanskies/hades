@@ -179,6 +179,59 @@ namespace hades
 		return true;
 	}
 
+	bool Console::set(const types::string& name, types::int32 val)
+	{
+		return set<types::int32>(name, val);
+	}
+
+	bool Console::set(const types::string& name, float val)
+	{
+		return set<float>(name, val);
+	}
+
+	bool Console::set(const types::string& name, bool val)
+	{
+		return set<bool>(name, val);
+	}
+
+	bool Console::set(const types::string& name, const types::string& val)
+	{
+		return set<types::string>(name, val);
+	}
+
+	console::property<types::int32> Console::getInt(const types::string& name)
+	{
+		return getValue<types::int32>(name);
+	}
+
+	console::property<float> Console::getFloat(const types::string& name)
+	{
+		return getValue<float>(name);
+	}
+
+	console::property<bool> Console::getBool(const types::string& name)
+	{
+		return getValue<bool>(name);
+	}
+
+	console::property_str Console::getString(const types::string& name)
+	{
+		std::shared_ptr<detail::Property_Base > out;
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		if (GetValue(name, out))
+		{
+			if (out->type == typeid(types::string))
+			{
+				auto value = std::static_pointer_cast<detail::Property<types::string> > (out);
+				return value->value;
+			}
+			else
+				return nullptr;
+		}
+
+		return nullptr;
+	}
+
 	bool Console::runCommand(const std::string &command)
 	{
 		std::string identifier, value;

@@ -7,16 +7,16 @@ namespace hades
 	namespace detail
 	{
 		template<>
-		struct Property<std::string> : public Property_Base
+		struct Property<types::string> : public Property_Base
 		{
-			explicit Property(const std::string &value) : value(std::make_shared<String>(value)), Property_Base(typeid(std::string))
+			explicit Property(const std::string &value) : value(std::make_shared<value_guard<types::string>>(value)), Property_Base(typeid(types::string))
 			{}
 
-			std::shared_ptr<String> value;
+			console::property_str value;
 
-			virtual std::string to_string()
+			virtual types::string to_string()
 			{
-				return value->load();
+				return *value;
 			}
 		};
 
@@ -46,7 +46,7 @@ namespace hades
 			else
 			{
 				std::shared_ptr<detail::Property<T> > stored = std::static_pointer_cast<detail::Property<T> >(out);
-				stored->value->store(value);
+				*stored->value = value;
 				return true;
 			}
 		}

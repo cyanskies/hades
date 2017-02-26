@@ -12,6 +12,7 @@
 #include "Hades/Console.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
+#include "Hades/Properties.hpp"
 #include "Hades/ResourceManager.hpp"
 
 namespace hades
@@ -78,6 +79,9 @@ namespace hades
 		_console = std::make_shared<Console>();
 		//record the global console as logger
 		console::log = &*_console;
+		//record the console as the property provider
+		console::property_provider = &*_console;
+
 		//record the global resource controller
 		data_manager = &_dataMan;
 

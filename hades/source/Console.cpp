@@ -14,24 +14,6 @@
 //==============
 namespace hades
 {
-	namespace detail
-	{
-		String::String(std::string string) : _data(string)
-		{}
-
-		std::string String::load()
-		{
-			std::lock_guard<std::mutex> mutex(_stringMutex);
-			return _data;
-		}
-
-		void String::store(std::string string)
-		{
-			std::lock_guard<std::mutex> mutex(_stringMutex);
-			_data = string;
-		}
-	}
-
 	bool Console::GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const
 	{
 		auto iter = TypeMap.find(var);
@@ -361,5 +343,4 @@ namespace hades
 		out.remove_if(predicate);
 		return out;
 	}
-
 }//hades

@@ -6,6 +6,25 @@ namespace hades
 {
 	namespace detail
 	{
+		template<class T>
+		struct Property : public Property_Base
+		{
+			explicit Property(const T &value);
+			std::shared_ptr<std::atomic<T> > value;
+
+			virtual std::string to_string();
+		};
+
+		template<class T>
+		Property<T>::Property(const T &value) : value(std::make_shared<std::atomic<T> >(value)), Property_Base(typeid(T))
+		{}
+
+		template<class T>
+		inline std::string Property<T>::to_string()
+		{
+			return std::to_string(value->load());
+		}
+
 		template<>
 		struct Property<types::string> : public Property_Base
 		{
@@ -19,16 +38,6 @@ namespace hades
 				return *value;
 			}
 		};
-
-		template<class T>
-		Property<T>::Property(const T &value) : value(std::make_shared<std::atomic<T> >(value)), Property_Base(typeid(T))
-		{}
-
-		template<class T>
-		inline std::string Property<T>::to_string()
-		{
-			return std::to_string(value->load());
-		}
 	}
 
 	template<class T>

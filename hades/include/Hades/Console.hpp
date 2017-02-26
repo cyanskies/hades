@@ -34,31 +34,6 @@ namespace hades
 
 			virtual std::string to_string() = 0;
 		};
-
-		template<class T>
-		struct Property : public Property_Base
-		{
-			explicit Property(const T &value);
-			std::shared_ptr<std::atomic<T> > value;
-
-			virtual std::string to_string();
-		};
-
-		template<>
-		struct Property<std::string>;
-
-		class String
-		{
-		public:
-			explicit String(std::string string);
-
-			std::string load();
-			void store(std::string string);
-
-		private:
-			std::mutex _stringMutex;
-			std::string _data;
-		};
 	}
 
 	// ==================

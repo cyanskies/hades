@@ -10,7 +10,7 @@ namespace hades {
 	class value_guard
 	{
 	public:
-		using exchange_token = std::unique_lock<mutex_type>;
+		using exchange_token = std::unique_lock<mutex>;
 		using lock_return = std::tuple<bool, exchange_token>;
 
 		value_guard() = default;
@@ -25,7 +25,7 @@ namespace hades {
 
 		void operator=(const value_guard&) = delete;
 
-		value operator value()
+		operator value()
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			return _value;
@@ -57,7 +57,7 @@ namespace hades {
 		//releases the lock that is already held, without commiting the changes
 		void exchange_release(exchange_token &&token) const {}
 		//releases the lock after exchanging the value
-		void exchange_resolve(value_type desired, exchange_token &&token)
+		void exchange_resolve(value desired, exchange_token &&token)
 		{
 			//TODO: assert that this is the right lock
 			_value = desired;

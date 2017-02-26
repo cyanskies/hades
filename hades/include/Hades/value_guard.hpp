@@ -1,7 +1,6 @@
 #ifndef HADES_VALUEGUARD_HPP
 #define HADES_VALUEGUARD_HPP
 
-#include <type_traits>
 #include <mutex>
 
 // a thread safe wrapper for arbitary value types.

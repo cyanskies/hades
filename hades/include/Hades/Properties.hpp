@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Hades/Types.hpp"
+#include "Hades/value_guard.hpp"
 
 //Properties is a collection of global key->value pairs
 namespace hades
@@ -14,18 +15,23 @@ namespace hades
 		template<class T>
 		using property = std::shared_ptr<std::atomic<T>>;
 
+		using property_str = std::shared_ptr<value_guard<types::string>>;
+
 		class properties {
+		public:
 			//assigns the value to the id
-			//reurns false if the type was wrong for that identifier.
-			virtual bool set(const types::string&, const types::int32&) = 0;
-			virtual bool set(const types::string&, const float&) = 0;
-			virtual bool set(const types::string&, const bool&) = 0;
+			//returns false if the type was wrong for that identifier.
+			virtual bool set(const types::string&, types::int32) = 0;
+			virtual bool set(const types::string&, float) = 0;
+			virtual bool set(const types::string&, bool) = 0;
 			virtual bool set(const types::string&, const types::string&) = 0;
 
+			//returns a ptr to the value of that id
+			//returns null if the id is unused or is of the wrong type
 			virtual property<types::int32> getInt(const types::string&) = 0;
-			virtual property<float> getFloat(const float&) = 0;
-			virtual property<bool> getBool(const bool&) = 0;
-			virtual property<types::string> getString(const types::string&) = 0;
+			virtual property<float> getFloat(const types::string&) = 0;
+			virtual property<bool> getBool(const types::string&) = 0;
+			virtual property_str getString(const types::string&) = 0;
 		};
 
 		extern properties *property_provider;
@@ -40,22 +46,10 @@ namespace hades
 		}
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
-		template<class T>
-		property<T> getProperty(const types::string &name, const T &default)
-		{
-			if (property_provider)
-			{
-				if (auto p = property_provider->get(name))
-					return p;
-				else
-				{
-					if(setProperty(name, default))
-						return property_provider->get(name);
-				}
-			}
-			
-			return std::make_shared<std::atomic<T>>(default);
-		}
+		property<types::int32> getInt(const types::string&, types::int32);
+		property<float> getFloat(const types::string&, float);
+		property<bool> getBool(const types::string&, bool);
+		property_str getString(const types::string&, const types::string&);
 	}
 }//hades
 

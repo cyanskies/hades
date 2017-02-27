@@ -4,7 +4,12 @@ mod:
     name: test
 
 textures:
+    #example is intentionaly missing, to show what happens if a texture is not present
     example:
         width: 10
         height: 10
-        source: talon.png
+        source: missing.png
+    ball:
+        width: 90
+        height: 90
+        source: ball.png

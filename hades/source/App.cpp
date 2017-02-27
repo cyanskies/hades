@@ -275,6 +275,10 @@ namespace hades
 
 		//shutdown the job system
 		parallel_jobs::join();
+
+		//unregister the global providers
+		console::log = nullptr;
+		console::property_provider = nullptr;
 	}
 
 	void App::handleEvents(State *activeState)

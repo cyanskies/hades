@@ -20,6 +20,18 @@ namespace hades
 	//true float values for common ratios * 100
 	const int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
 
+	//console variable names
+	//c_* client variables names
+	// for variables that control basic client behaviour: framerate, etc
+	//cons_* console variable names
+	// for console behaviour, font type, size and so on
+	//r_* render variable names
+	// none currently?
+	//s_* server variables
+	// server framerate and so on
+	//vid_* video settings variables
+	// resolution, colour depth, fullscreen, etc
+
 	void registerVariables(std::shared_ptr<Console> &console)
 	{
 		//console variables
@@ -28,7 +40,9 @@ namespace hades
 		console->set("con_fade", 180);
 
 		//app variables
-		console->set("tickrate", 30);
+		console->set("c_ticktime", 30);
+		console->set("c_maxticktime", 150); // 1.5 seconds is the maximum allowable tick time.
+
 	}
 
 	void registerVidVariables(std::shared_ptr<Console> &console)
@@ -206,15 +220,25 @@ namespace hades
 
 	bool App::run()
 	{
-		auto tickRate = _console->getValue<int>("tickrate"),
-			maxframetime  = _console->getValue<int>("s_maxframetime");
+		//We copy the famous gaffer on games timestep here.
+		//however we don't have a system to blend renderstates,
+		//we use curves instead.
 
-		assert(tickRate && "failed to get tick rate value from console");
+		//tickrate is the amount of time simulated at any one tick
+		auto tickrate = _console->getValue<int>("c_ticktime"),
+			maxframetime  = _console->getValue<int>("c_maxticktime");
+
+		assert(tickrate && "failed to get tick rate value from console");
 
 		sf::Clock time;
 		time.restart();
+
+		
+
 		bool running = true;
 
+		sf::Time t = sf::Time::Zero;
+		sf::Time currentTime = time.getElapsedTime();
 		sf::Time accumulator = sf::Time::Zero;
 
 		while(running && _window.isOpen())
@@ -223,23 +247,32 @@ namespace hades
 			if(!activeState)
 				break;
 
-			sf::Time thisFrame = sf::Time::Zero;
-			sf::Time currentTime = time.getElapsedTime();
+			sf::Time dt = sf::milliseconds(*tickrate);
+
+			sf::Time newTime = time.getElapsedTime();
+			sf::Time frameTime = newTime - currentTime;
+
+			if (frameTime > sf::milliseconds(*maxframetime))
+				frameTime = sf::milliseconds(*maxframetime);
+
+			currentTime = newTime;
+			accumulator += frameTime;
+
 			//perform additional logic updates if we're behind on logic
-			//TODO: depreciate update(_window)?
-			//but then what happens with this loop?
-			while( accumulator >= sf::milliseconds(tickRate->load()))
+
+			while( accumulator >= dt)
 			{
 				handleEvents(activeState);
 				_bindings.sendEvents(activeState->getCallbackHandler(), _window);
 
-				activeState->update(_window);
-				accumulator -= sf::milliseconds(tickRate->load());
-				thisFrame += sf::milliseconds(tickRate->load());
+				activeState->update(dt);
+				t += dt;
+				accumulator -= dt;
 			}
 
-			activeState->update(thisFrame);
 			_window.clear();
+			//drawing must pass the remaining accumulated time, so that the renderer can 
+			//interpolate between frames
 			activeState->draw(_window);
 			activeState->drawGui();
 
@@ -251,14 +284,6 @@ namespace hades
 			}
 
 			_window.display();
-
-			sf::Time maxFrameTime = sf::milliseconds(maxframetime->load());
-			//cap the maximum time between frames, to stop the accumulator expanding too high.
-			currentTime = time.getElapsedTime() - currentTime;
-			if (currentTime > maxFrameTime)
-				currentTime = maxFrameTime;
-
-			accumulator += currentTime;
 		}
 
 		return EXIT_SUCCESS;

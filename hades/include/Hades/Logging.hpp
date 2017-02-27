@@ -21,7 +21,7 @@ namespace hades
 
 			virtual ~logger() {}
 			
-			virtual void echo(const string&);
+			virtual void echo(const string&) = 0;
 		};
 
 		class string
@@ -47,6 +47,8 @@ namespace hades
 		};
 
 		extern logger *log;
+
+		void echo(const string&);
 	}
 
 	types::string time();
@@ -57,18 +59,15 @@ namespace hades
 //these use the global console ptr, 
 //they can be used to easily log with timestamps and function names/line numbers
 
-#define HADESLOG(Message_, Verbosity_)			\
-	if(hades::console::log)								\
-	{											\
-		hades::console::log->echo(hades::console::string(		\
-			Message_,							\
-			__LINE__,							\
-			__func__,							\
-			__FILE__,							\
+#define HADESLOG(Message_, Verbosity_)					\
+		hades::console::echo(hades::console::string(	\
+			Message_,									\
+			__LINE__,									\
+			__func__,									\
+			__FILE__,									\
 			hades::time(),								\
-			Verbosity_							\
-		));										\
-	};
+			Verbosity_									\
+	));													\
 
 #define LOG(Message_)									\
 	HADESLOG(Message_,									\

@@ -31,7 +31,7 @@ void ConsoleTestState::update(const sf::Window &window)
 void ConsoleTestState::update(sf::Time deltaTime)
 {}
 
-void ConsoleTestState::draw(sf::RenderTarget &target)
+void ConsoleTestState::draw(sf::RenderTarget &target, sf::Time deltaTime)
 {}
 
 void ConsoleTestState::cleanup()

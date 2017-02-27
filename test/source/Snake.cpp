@@ -20,7 +20,7 @@ void Snake::update(const sf::Window &window)
 void Snake::update(sf::Time deltaTime)
 {}
 
-void Snake::draw(sf::RenderTarget &target)
+void Snake::draw(sf::RenderTarget &target, sf::Time deltaTime)
 {}
 
 void Snake::cleanup()

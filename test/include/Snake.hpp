@@ -14,7 +14,7 @@ public:
 	bool handleEvent(sf::Event &windowEvent);
 	void update(const sf::Window &window);
 	void update(sf::Time deltaTime);
-	void draw(sf::RenderTarget &target);
+	void draw(sf::RenderTarget &target, sf::Time deltaTime);
 	void cleanup();
 	void reinit();
 	void pause();

@@ -237,7 +237,9 @@ namespace hades
 
 		bool running = true;
 
-		sf::Time t = sf::Time::Zero;
+		//t = total app running time,
+		// only counting completed game ticks
+		//sf::Time t = sf::Time::Zero;
 		sf::Time currentTime = time.getElapsedTime();
 		sf::Time accumulator = sf::Time::Zero;
 
@@ -260,20 +262,24 @@ namespace hades
 
 			//perform additional logic updates if we're behind on logic
 
+			//this frame the total amount of time this frame has taken.
+			sf::Time thisFrame = sf::Time::Zero;
+
 			while( accumulator >= dt)
 			{
 				handleEvents(activeState);
 				_bindings.sendEvents(activeState->getCallbackHandler(), _window);
 
 				activeState->update(dt);
-				t += dt;
+				//t += dt;
 				accumulator -= dt;
+				thisFrame += dt;
 			}
 
 			_window.clear();
-			//drawing must pass the remaining accumulated time, so that the renderer can 
+			//drawing must pass the frame time, so that the renderer can 
 			//interpolate between frames
-			activeState->draw(_window);
+			activeState->draw(_window, thisFrame + accumulator);
 			activeState->drawGui();
 
 			//render the console interface if it is active.

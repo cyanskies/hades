@@ -49,13 +49,13 @@ namespace hades
 		virtual void init() = 0; //start all the state logic, this is for setting up game state
 		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
 		//virtual void input(int input) = 0;
-		[[depreciated("Constant update is depreciated, use update(dtime) instead.")]]
-		virtual void update(const sf::Window &window) = 0; //update at constant tickrate
 		//tick game state with variable rate
+		//advance the game simulation by deltaTime ms
 		virtual void update(sf::Time deltaTime) = 0;
-		//TODO: draw with dtime
 		//update animations and draw
-		virtual void draw(sf::RenderTarget &target) = 0; //draw
+		//dtime is the last time since draw was called
+		//draw the game at the previous draw time + deltaTime
+		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) = 0; //draw
 		virtual void cleanup() = 0; //delete everything
 		
 		//support functions

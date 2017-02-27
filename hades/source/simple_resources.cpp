@@ -8,7 +8,7 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "Hades/Console.hpp"
-#include "Hades/DataManager.hpp"
+#include "Hades/data_manager.hpp"
 #include "Hades/files.hpp"
 
 namespace hades
@@ -166,6 +166,8 @@ namespace hades
 					tex->value = generate_default_texture();
 				else
 					tex->value = generate_default_texture(tex->width, tex->height);
+
+				dataman->refresh(id);
 			}
 		}
 

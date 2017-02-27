@@ -1,5 +1,3 @@
-#include "Hades/DataManager.hpp"
-
 namespace hades
 {
 	namespace resources
@@ -38,7 +36,7 @@ namespace hades
 		{		
 			try
 			{
-				return _resources.get_reference<T>(uid);
+				return &**_resources.get_reference<std::unique_ptr<T>>(uid);
 			}
 			catch (type_erasure::key_null&)
 			{

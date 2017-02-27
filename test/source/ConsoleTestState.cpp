@@ -22,7 +22,6 @@ void ConsoleTestState::init()
 	assert(*int8val == 5);
 
 	//assign the needed textures
-
 	auto missing_id = hades::data_manager->getUid("example"), ball_id = hades::data_manager->getUid("ball");
 
 	missing = hades::data_manager->getTexture(missing_id);
@@ -37,7 +36,7 @@ void ConsoleTestState::init()
 
 	ball_sprite.setPosition(330.f, 230.f);
 
-	rect.setPosition(20.f, 30.f);
+	rect.setPosition(20.f, 500.f);
 	rect.setFillColor(sf::Color::Blue);
 	rect.setSize({ 300.f, 90.f });
 }

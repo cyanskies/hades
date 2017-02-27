@@ -35,10 +35,10 @@ namespace hades
 			texture::size_type counter = 0;
 			sf::Color c = c1;
 
-			for (auto p : pixels)
+			for (auto &p : pixels)
 			{
 				p = c.toInteger();
-				if (counter++ == checker_scale)
+				if (counter++ % checker_scale == 0)
 				{
 					if (c == c1)
 						c = c2;
@@ -179,12 +179,11 @@ namespace hades
 			{
 				//the mod not being available should be 'impossible'
 				auto mod = dataman->getMod(tex->mod);
-				sf::Texture t;
-
+				
 				try
 				{
 					files::FileStream fstream(mod->source, tex->source);
-					t.loadFromStream(fstream);
+					tex->value.loadFromStream(fstream);
 				}
 				catch (files::file_exception e)
 				{
@@ -193,15 +192,13 @@ namespace hades
 
 				//if the width or height are 0, then don't warn about size mismatch
 				//otherwise log unexpected size
-				auto size = t.getSize();
+				auto size = tex->value.getSize();
 				if (tex->width == 0 &&
 					size.x != tex->width || size.y != tex->height)
 				{
 					LOGWARNING("Loaded texture: " + mod->source + "/" + tex->source + ". Texture size different from requested. Requested(" +
 						std::to_string(tex->width) + ", " + std::to_string(tex->height) + "), Found(" + std::to_string(size.x) + ", " + std::to_string(size.y) + ")");
 				}
-
-				tex->value = t;
 			}
 		}
 

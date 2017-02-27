@@ -6,8 +6,8 @@ mod:
 textures:
     #example is intentionaly missing, to show what happens if a texture is not present
     example:
-        width: 10
-        height: 10
+        width: 100
+        height: 100
         source: missing.png
     ball:
         width: 90

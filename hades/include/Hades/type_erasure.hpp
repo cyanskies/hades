@@ -82,6 +82,8 @@ namespace hades {
 		template<class T>
 		T* get_reference(Key key);
 
+		void* get_reference_void(Key key);
+
 		iterator begin();
 		iterator end();
 

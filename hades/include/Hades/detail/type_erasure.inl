@@ -1,3 +1,4 @@
+#include <cassert>
 #include <exception>
 
 namespace hades
@@ -29,6 +30,7 @@ namespace hades
 		//identifier already exsists(or has been created, ditermine if it is the same type as T, then assign it.
 		if (type_holder::get_type_static() == iter->second->get_type())
 		{		
+			assert(dynamic_cast<type_holder*>(&*iter->second));
 			type_holder* currentVal = static_cast< type_holder* >(&*iter->second);
 			static_cast< type_holder* >(&*iter->second)->set(std::move(value));
 		}
@@ -55,6 +57,7 @@ namespace hades
 
 		if (type_holder::get_type_static() == iter->second->get_type())
 		{
+			assert(dynamic_cast<type_holder*>(&*iter->second));
 			auto *holder = static_cast<type_holder*>(&*iter->second);
 			return holder->get();
 		}
@@ -76,6 +79,7 @@ namespace hades
 
 		if (type_holder::get_type_static() == iter->second->get_type())
 		{
+			assert(dynamic_cast<type_holder*>(&*iter->second));
 			auto *holder = static_cast<type_holder*>(&*iter->second);
 			return &holder->get();
 		}
@@ -83,6 +87,21 @@ namespace hades
 		{
 			throw type_erasure::value_wrong_type("Tried to retrieve value from property_bag using wrong type.");
 		}
+	}
+
+	template<class Key>
+	void* property_bag<Key>::get_reference_void(Key key)
+	{
+		using type_holder = type_erasure::type_erased<intptr_t>; //intptr_t is the platforms ptr size
+
+		auto iter = _bag.find(key);
+		if (iter == _bag.end())
+			throw type_erasure::key_null("Tried to retrieve unassigned key.");
+
+		//assert(dynamic_cast<type_holder*>(&*iter->second));
+
+		auto *holder = static_cast<type_holder*>(&*iter->second);
+		return static_cast<void*>(&holder->get());
 	}
 
 	template<class Key>

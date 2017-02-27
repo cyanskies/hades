@@ -8,6 +8,7 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	DataManager.cpp
+	data_manager.cpp
 	files.cpp
 	Logging.cpp
 	main.cpp

@@ -19,6 +19,8 @@ namespace hades
 
 		class properties {
 		public:
+			virtual ~properties() {}
+
 			//assigns the value to the id
 			//returns false if the type was wrong for that identifier.
 			virtual bool set(const types::string&, types::int32) = 0;
@@ -32,6 +34,8 @@ namespace hades
 			virtual property<float> getFloat(const types::string&) = 0;
 			virtual property<bool> getBool(const types::string&) = 0;
 			virtual property_str getString(const types::string&) = 0;
+
+			//TODO: exists + erase
 		};
 
 		extern properties *property_provider;

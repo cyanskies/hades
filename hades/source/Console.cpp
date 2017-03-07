@@ -133,7 +133,7 @@ namespace hades
 			echo(s);
 	}
 
-	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func)
+	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func, bool replace)
 	{
 		//test to see the name hasn't been used for a variable
 		{
@@ -150,7 +150,7 @@ namespace hades
 		
 		auto funcIter = _consoleFunctions.find(identifier);
 
-		if (funcIter != _consoleFunctions.end())
+		if (funcIter != _consoleFunctions.end() && !replace)
 		{
 			echo("Attempted multiple definitions of function: " + identifier, ERROR);
 			return false;

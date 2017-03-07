@@ -64,7 +64,7 @@ namespace hades
 		vid_default("");
 
 		//add a command so that this function can be called again
-		console->registerFunction("vid_default", vid_default);
+		console->registerFunction("vid_default", vid_default, true);
 	}
 
 	void registerServerVariables(std::shared_ptr<Console> &console)
@@ -95,6 +95,8 @@ namespace hades
 		console::log = &*_console;
 		//record the console as the property provider
 		console::property_provider = &*_console;
+		//record the console as the engine command line
+		console::system_object = &*_console;
 
 		//record the global resource controller
 		data_manager = &_dataMan;
@@ -310,6 +312,7 @@ namespace hades
 		//unregister the global providers
 		console::log = nullptr;
 		console::property_provider = nullptr;
+		console::system_object = nullptr;
 	}
 
 	void App::handleEvents(State *activeState)
@@ -358,10 +361,10 @@ namespace hades
 				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
-			_console->registerFunction("exit", exit);
-			_console->registerFunction("quit", exit);
+			_console->registerFunction("exit", exit, true);
+			_console->registerFunction("quit", exit, true);
 
-			_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1));
+			_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1), true);
 		}
 
 		//vid functions
@@ -410,7 +413,7 @@ namespace hades
 				return true;
 			};
 
-			_console->registerFunction("vid_reinit", vid_reinit);
+			_console->registerFunction("vid_reinit", vid_reinit, true);
 		}
 
 		//utility functions
@@ -424,7 +427,7 @@ namespace hades
 				return true;
 			};
 
-			_console->registerFunction("dir", util_dir);
+			_console->registerFunction("dir", util_dir, true);
 		}
 
 	}

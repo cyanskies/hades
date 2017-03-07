@@ -14,6 +14,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/Types.hpp"
+#include "Hades/System.hpp"
 
 //Console is a unique engine object for holding game wide properties
 //it also exposes dev commands
@@ -45,18 +46,17 @@ namespace hades
 	template<class T>
 	using ConsoleVariable = console::property<T>;
 
-	class Console : public console::logger, public console::properties
+	class Console : public console::logger, public console::properties, public console::system
 	{
 	public:
+		using Console_Function = console::function;
 		using Console_String_Verbosity = console::logger::LOG_VERBOSITY;
 		
 		Console() : recentOutputPos(0) {}
 
 		virtual ~Console() {}
 
-		typedef std::function<bool(std::string)> Console_Function;
-
-		bool registerFunction(const std::string &identifier, Console_Function func);
+		virtual bool registerFunction(const std::string &identifier, Console_Function func, bool replace);
 
 		template<class T>
 		bool set(const std::string &identifier, const T &value);
@@ -74,7 +74,7 @@ namespace hades
 		virtual console::property<bool> getBool(const types::string&);
 		virtual console::property_str getString(const types::string&);
 
-		bool runCommand(const std::string &command);
+		virtual bool runCommand(const std::string &command);
 		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);
 		virtual void echo(const Console_String &message);
 

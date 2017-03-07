@@ -19,6 +19,7 @@ set(HADES_SRC
 	StandardPaths.cpp
 	State.cpp
 	StateManager.cpp
+	System.cpp
 	TimerManager.cpp
 	Types.cpp
 )

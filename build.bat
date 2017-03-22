@@ -1,5 +1,7 @@
 @call "%vS140COMNTOOLS%vsvars32"
 
+@echo see https://blogs.msdn.microsoft.com/vcblog/2016/10/07/compiler-tools-layout-in-visual-studio-15/ for finding vscars for vs2017
+@echo this should do it https://github.com/Microsoft/vswhere/wiki
 
 @IF NOT DEFINED generator @set generator="Visual Studio 14 2015"
 @IF NOT DEFINED mode @set mode=Debug

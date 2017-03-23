@@ -1,10 +1,22 @@
 #ifndef HADES_GAMEINSTANCE_HPP
 #define HADES_GAMEINSTANCE_HPP
 
+#include <map>
+#include <memory>
+#include <vector>
+
 #include "SFML/System/Time.hpp"
+
+#include "Hades/Curves.hpp"
+#include "Hades/Types.hpp"
+#include "Hades/value_guard.hpp"
 
 namespace hades
 {
+	using EntityId = int;
+	using VariableId = int;
+	using CurveId = std::pair<EntityId, VariableId>;
+
 	//represents the logic side of an individual level or game
 	//TODO:
 	// support saving
@@ -21,7 +33,24 @@ namespace hades
 
 		//curve list
 		//a curve has an entity id,that it's attached too, and a name
-		//std::map<entityname_pair, curve*> curves
+		template<class T>
+		using GameCurve = Curve<sf::Time, T>;
+		template<class T>
+		using Curve_ptr = std::unique_ptr< value_guard< GameCurve<T> > >;
+		template<class T>
+		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
+
+		CurveMap<types::int32> _intCurves;
+		//no linear curves here
+		CurveMap<bool> _boolCurves;
+		CurveMap<types::string> _stringCurves;
+
+		//vector curves
+		//no linear curves for these either
+		CurveMap<std::vector<types::int32>> _intVectorCurves;
+		CurveMap<std::vector<bool>> _boolVectorCurves;
+		CurveMap<std::vector<types::string>> _stringVectorCurves;
+
 
 		//entity id next
 

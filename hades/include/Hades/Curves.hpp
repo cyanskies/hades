@@ -2,13 +2,16 @@
 #define HADES_CURVES_HPP
 
 #include <algorithm>
+#include <cassert>
 #include <set>
 
-#include "Types.hpp"
-
-//A set of curve classes for single player games
+//A set of curve classes for variables
+//curves allow values to interpolated by comparing keyframes
+//keyframes should be estimated in advance so that clients can use them for prediction
+//keyframes can be overridden as the simulation catches up to them for accuracy
 
 namespace hades {
+	//TODO: comparison function for this type
 	template<typename Time, typename Data>
 	struct Keyframe
 	{
@@ -26,14 +29,45 @@ namespace hades {
 	};
 
 	template<typename Time, typename Data>
-	class Curve {
+	class ConstCurve;
+	template<typename Time, typename Data>
+	class LinearCurve;
+	template<typename Time, typename Data>
+	class StepCurve;
+	template<typename Time, typename Data>
+	class PulseCurve;
+
+	template<typename Time, typename Data>
+	class Curve
+	{
 	public:
-		Curve()
+		Curve(CurveType type) : _type(type)
+		{}
+
+		virtual ~Curve() {}
+
+		//adds a keyframe
+		//when you add a keyframe, all keyframes after it are erased
+		virtual void set(Time at, Data value)
 		{
-			static_assert(hades::types::hades_type<Data>::value, "Curves can only contain approved data types");
+			auto at = data.insert({ at, value });
+
+			//if the insertion was successful and isn't the last element
+			//in the container
+			if (at.second && at.first != data.rbegin())
+				//erase everything after the newly inserted keyframe
+				data.erase(++at.first, data.end());
 		}
 
 		virtual Data get(Time at) = 0;
+
+		//For converting to the usable Curve Types
+		CurveType type() { return _type; }
+		ConstCurve<Time, Data>* asConst() { assert(_type == CurveType::CONST);return this; }
+		LinearCurve<Time, Data>* asLinear() { assert(_type == CurveType::LINEAR);return this; }
+		StepCurve<Time, Data>* asStep() { assert(_type == CurveType::STEP);return this; }
+		PulseCurve<Time, Data>* asPulse() { assert(_type == CurveType::PULSE);return this; }
+		
 	protected:
 		typedef std::set<Keyframe> DataType;
 		typedef std::pair<DataType::iterator, DataType::iterator> IterPair;
@@ -45,30 +79,37 @@ namespace hades {
 		}
 
 		DataType data;
+
+	private:
+		CurveType _type;
 	};
 
+	//Const Curve
+	//There is no actual curve, the value is constant across the entire curve
+	//returns the same result no matter what time is requested
 	template<typename Time, typename Data>
 	class ConstCurve final : public Curve<Time, Data>
 	{
 	public:
-		void set(Data value)
+		ConstCurve() : Curve<Time, Data>(CurveType::CONST) {}
+
+		virtual void set(Time at, Data value)
 		{
-			data = value;
+			data.insert({ Time(), value });
 		}
 
 		virtual Data get(Time at)
 		{
-			return data;
+			return data.begin();
 		}
-
-	private:
-		Data data;
 	};
 
 	template<typename Time, typename Data>
 	class LinearCurve final : public Curve<Time, Data>
 	{
 	public:
+		LinearCurve() : Curve<Time, Data>(CurveType::LINEAR) {}
+
 		virtual Data get(Time at) 
 		{
 			static_assert(std::is_arithmetic<Data>::value, "Only arithmatic types can be stored in a LinearCurve.");
@@ -88,6 +129,8 @@ namespace hades {
 	class StepCurve final : public Curve<Time, Data>
 	{
 	public:
+		StepCurve() : Curve<Time, Data>(CurveType::STEP) {}
+
 		virtual Data get(Time at)
 		{
 			auto d = GetRange(at);
@@ -100,7 +143,9 @@ namespace hades {
 	class PulseCurve final : public Curve<Time, Data>
 	{
 	public:
-		typedef std::pair<Time, Data> DataInfo;
+		using DataInfo =  std::pair<Time, Data>;
+
+		PulseCurve() : Curve<Time, Data>(CurveType::PULSE) {}
 
 		virtual Data get(Time at)
 		{

@@ -10,6 +10,7 @@ set(HADES_SRC
 	DataManager.cpp
 	data_manager.cpp
 	files.cpp
+	GameInstance.cpp
 	Logging.cpp
 	main.cpp
 	parallel_jobs.cpp

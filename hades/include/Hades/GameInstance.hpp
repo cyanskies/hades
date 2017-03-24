@@ -9,11 +9,13 @@
 
 #include "Hades/Curves.hpp"
 #include "Hades/Types.hpp"
+#include "Hades/UniqueId.hpp"
 #include "Hades/value_guard.hpp"
 
 namespace hades
 {
-	using EntityId = int;
+	//we use int32 as the id type so that entity id's can be stored in curves.
+	using EntityId = data::UniqueId_t<types::int32>;
 	using VariableId = int;
 	using CurveId = std::pair<EntityId, VariableId>;
 
@@ -41,6 +43,7 @@ namespace hades
 		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
 
 		CurveMap<types::int32> _intCurves;
+		CurveMap<EntityId> _entityCurves;
 		//no linear curves here
 		CurveMap<bool> _boolCurves;
 		CurveMap<types::string> _stringCurves;
@@ -48,6 +51,7 @@ namespace hades
 		//vector curves
 		//no linear curves for these either
 		CurveMap<std::vector<types::int32>> _intVectorCurves;
+		CurveMap<std::vector<EntityId>> _entityVectorCurves;
 		CurveMap<std::vector<bool>> _boolVectorCurves;
 		CurveMap<std::vector<types::string>> _stringVectorCurves;
 

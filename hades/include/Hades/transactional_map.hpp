@@ -15,7 +15,7 @@
 
 //get the component with auto c = comps.get(id);
 //run operations
-//then call exchangeLock on this an any other components you have
+//then call exchangeLock on this an any other components you have(even data from value_guard, shared_guard)
 // if(exchangeLock(id, oldc))
 //then call exchange resolve on all locked components
 

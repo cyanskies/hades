@@ -3,6 +3,7 @@
 # C++ source files
 set(XING_SRC
 	ConsoleTestState.cpp
+	ExampleJob.cpp
 	main.cpp
 	Snake.cpp
 )

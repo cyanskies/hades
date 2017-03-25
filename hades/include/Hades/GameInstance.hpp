@@ -15,7 +15,7 @@
 namespace hades
 {
 	//we use int32 as the id type so that entity id's can be stored in curves.
-	using EntityId = data::UniqueId_t<types::int32>;
+	using EntityId = types::int32;
 	using VariableId = int;
 	using CurveId = std::pair<EntityId, VariableId>;
 
@@ -28,6 +28,9 @@ namespace hades
 	{
 	public:
 		void tick(sf::Time dt);
+
+		//exports all the newest keyframes so that they can be transmitted across the network
+		void getChanges();
 
 	private:
 		//master entity(contains game settings and so on eg. timers, the terrain entity, references to important names entities for mission objectives)
@@ -55,9 +58,8 @@ namespace hades
 		CurveMap<std::vector<bool>> _boolVectorCurves;
 		CurveMap<std::vector<types::string>> _stringVectorCurves;
 
-
 		//entity id next
-
+		EntityId _next;
 		//systems(systems run logic by added keyframes to curves(and adding frame predictions)
 		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in
 	};

@@ -5,6 +5,7 @@ set(HADES_SRC
 	App.cpp
 	archive.cpp
 	Bind.cpp
+	Collision.cpp
 	Console.cpp
 	ConsoleView.cpp
 	DataManager.cpp

@@ -25,6 +25,7 @@ void defaultBindings(hades::Bind &bind);
 /// Called after defaultBindings
 /// 
 /// Allows the app to register its default game archive.
+/// eg. return "hades";, will load hades.zip
 /////////////////////////////////////
 std::string defaultGame();
 

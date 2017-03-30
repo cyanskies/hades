@@ -5,7 +5,8 @@
 
 #include "SFML/Graphics/Rect.hpp"
 
-//provides collision objects and detectors
+//provides collision objects and intersection detectors
+//NOTE: this isn't a physics class, just geometry for intersection detection
 namespace hades
 {
 	//base collision class, allows collision testing without needing exact types

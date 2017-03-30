@@ -4,6 +4,7 @@
 #include "Hades/State.hpp"
 
 #include "Hades/DataManager.hpp"
+#include "Hades/GameInstance.hpp"
 
 //A snake game
 
@@ -19,6 +20,9 @@ public:
 	void reinit();
 	void pause();
 	void resume();
+
+private:
+	hades::GameInstance _gameLogic;
 };
 
 namespace snake

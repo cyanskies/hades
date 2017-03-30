@@ -32,6 +32,7 @@ namespace hades
 		//the server that hosts actual game logic and update ticking.
 		//this should only be used for command interaction or ticking
 		//normal gameplay calls should go through game_server
+		//wraps GameInstance in the server API
 		template<class ClientAction>
 		class local_server : public game_server<ClientAction>
 		{};

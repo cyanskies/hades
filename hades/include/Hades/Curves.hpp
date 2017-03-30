@@ -21,6 +21,12 @@ namespace hades {
 		Data value;
 	};
 
+	template<typename Time, typename Data>
+	bool operator<(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	{
+		return lhs.t < rhs.t;
+	}
+
 	enum CurveType {
 		CONST, //data is constant for any keyframe
 		LINEAR, //data between keyframes is exactly the difference between them
@@ -69,8 +75,9 @@ namespace hades {
 		PulseCurve<Time, Data>* asPulse() { assert(_type == CurveType::PULSE);return this; }
 		
 	protected:
-		typedef std::set<Keyframe> DataType;
-		typedef std::pair<DataType::iterator, DataType::iterator> IterPair;
+		using FrameType = Keyframe<Time, Data>;
+		using DataType = std::set< FrameType >;
+		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
 		IterPair GetRange(Time at)
 		{

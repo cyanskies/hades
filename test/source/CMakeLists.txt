@@ -6,6 +6,7 @@ set(XING_SRC
 	ExampleJob.cpp
 	main.cpp
 	Snake.cpp
+	snake_loader.cpp
 )
 
 # Library to build

@@ -1,12 +1,15 @@
 #include "Snake.hpp"
 
+#include "Hades/Logging.hpp"
 #include "Hades/Types.hpp"
+
+#include "snake_loader.hpp"
 
 using namespace hades::types;
 
 void Snake::init()
 {
-	console->echo("Starting Snake");
+	LOG("Starting Snake");
 }
 
 bool Snake::handleEvent(sf::Event &windowEvent)

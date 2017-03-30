@@ -3,15 +3,19 @@
 mod:
     name: snake
 
+snake-game:
+    start-length: 2
+    snake-speed-ms: 3
+
 textures:
     snake-body:
         width: 10
         height: 10
         source: body.png
     snake-head:
-        width: 10
-        height: 10
-        source: head.png
+        width: 8
+        height: 8
+        source: snake_head.png
     food-fruit:
         width: 10
         height: 10

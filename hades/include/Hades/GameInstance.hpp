@@ -100,7 +100,7 @@ namespace hades
 		//a curve has an entity id,that it's attached too, and a name
 		using CurveId = std::pair<EntityId, VariableId>;
 		template<class T>
-		using Curve_ptr = std::unique_ptr<GameCurve>;
+		using Curve_ptr = std::unique_ptr<GameCurve<T>>;
 		template<class T>
 		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
 

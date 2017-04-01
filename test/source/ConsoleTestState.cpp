@@ -35,6 +35,7 @@ void ConsoleTestState::init()
 	missing_sprite.setPosition(20.f, 30.f);
 
 	ball_sprite.setPosition(330.f, 230.f);
+	ball_direction = -5.f;
 
 	rect.setPosition(20.f, 500.f);
 	rect.setFillColor(sf::Color::Blue);
@@ -52,11 +53,11 @@ void ConsoleTestState::update(const sf::Window &window)
 void ConsoleTestState::update(sf::Time deltaTime)
 {
 	if (ball_sprite.getPosition().x + ball_sprite.getLocalBounds().width > 800.f)
-		ball_direction = -30.f;
+		ball_direction = -5.f;
 	else if (ball_sprite.getPosition().x < 0)
-		ball_direction = 30.f;
-	else
-		ball_sprite.move(ball_direction, 0.f);
+		ball_direction = 5.f;
+
+	ball_sprite.move(ball_direction, 0.f);
 }
 
 void ConsoleTestState::draw(sf::RenderTarget &target, sf::Time deltaTime)

@@ -1,8 +1,11 @@
 #ifndef HADES_GAMEINSTANCE_HPP
 #define HADES_GAMEINSTANCE_HPP
 
+#include <atomic>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <vector>
 
 #include "SFML/System/Time.hpp"
@@ -18,36 +21,17 @@ namespace hades
 	using EntityId = types::int32;
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using VariableId = EntityId;
-	//represents the logic side of an individual level or game
-	//TODO:
-	// support saving
-	// support loading
-	// 
-	class GameInstance
+
+	//this is the interface that is available to jobs and systems
+	//it supports multi threading the whole way though
+	class GameInterface
 	{
 	public:
-		//triggers all systems with the specified time change
-		void tick(sf::Time dt);
+		virtual ~GameInterface() {}
 
-		//exports all the newest keyframes so that they can be transmitted across the network
-		//also sends the new variable id mappings
-		//also sends entity name mappings
-		//  t: how far back to go looking for keyframes?
-		void getChanges(sf::Time t);
-		//gets all data as packets
-		//this is useful for new players joining the game
-		//doesn't include all the curve history, only currently active entities
-		//and properties related to them
-		void getAll() const;
-		//returns all the game data, enough to rewatch the game from begining.
-		void getAllHistory() const;
-
+		//creates an entity with no curves or systems attached to it
 		EntityId createEntity();
-		//names are used for common entities to make finding them easy
-		// master: the games master entity, used to store game rules, whether the game as ended yet
-		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
-		void nameEntity(EntityId entity, const types::string &name);
-		EntityId getEntityId(const types::string &name);
+		EntityId getEntityId(const types::string &name) const;
 
 		template<class T>
 		using GameCurve = value_guard< Curve<sf::Time, T> >;
@@ -71,6 +55,77 @@ namespace hades
 
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);
+
+	protected:
+		using EntityNameMap = std::map<types::string, EntityId>;
+
+		//protected, since the ability to name entities is provided by a child.
+		mutable std::shared_mutex _entNameMutex;
+		EntityNameMap _entityNames;
+
+	private:
+		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min();
+
+		//CURVE VARIABLES
+		//curve list
+		//a curve has an entity id,that it's attached too, and a name
+		using CurveId = std::pair<EntityId, VariableId>;
+		template<class T>
+		using Curve_ptr = std::unique_ptr<GameCurve<T>>;
+		template<class T>
+		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
+
+		mutable std::shared_mutex _intCurveMutex, _boolCurveMutex, _stringCurveMutex;
+		CurveMap<types::int32> _intCurves;
+		//no linear curves here
+		CurveMap<bool> _boolCurves;
+		CurveMap<types::string> _stringCurves;
+
+		mutable std::shared_mutex _intVectMutex, _boolVectMutex, _stringVectMutex;
+		//vector curves
+		//no linear curves for these either
+		CurveMap<std::vector<types::int32>> _intVectorCurves;
+		CurveMap<std::vector<bool>> _boolVectorCurves;
+		CurveMap<std::vector<types::string>> _stringVectorCurves;
+
+		using VariableNameMap = std::map<types::string, VariableId>;
+
+		std::shared_mutex _variableIdMutex;
+		//mapping of names to variable ids
+		VariableNameMap _variableIds;
+
+		std::atomic<VariableId> _variableNext = std::numeric_limits<EntityId>::min();
+	};
+
+	//represents the logic side of an individual level or game
+	//TODO:
+	// support saving
+	// support loading
+	//non virutal functions might not be thread safe, and should not be used inside the job system
+	class GameInstance : public GameInterface
+	{
+	public:
+		//triggers all systems with the specified time change
+		void tick(sf::Time dt);
+
+		//exports all the newest keyframes so that they can be transmitted across the network
+		//also sends the new variable id mappings
+		//also sends entity name mappings
+		//  t: how far back to go looking for keyframes?
+		void getChanges(sf::Time t);
+		//gets all data as packets
+		//this is useful for new players joining the game
+		//doesn't include all the curve history, only currently active entities
+		//and properties related to them
+		void getAll() const;
+		//returns all the game data, enough to rewatch the game from begining.
+		void getAllHistory() const;
+
+		//names are used for common entities to make finding them easy
+		// master: the games master entity, used to store game rules, whether the game as ended yet
+		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
+		void nameEntity(EntityId entity, const types::string &name);
+		
 		types::string getVariableName(VariableId);
 
 		//systems
@@ -85,43 +140,6 @@ namespace hades
 		const sf::Time _startTime = sf::Time();
 		//the current time, this is the sum of all dt from the game ticks
 		sf::Time _currentTime = _startTime;
-
-		//ENTITY VARIABLES
-		//entity id next
-		EntityId _next = std::numeric_limits<EntityId>::min();
-
-		using EntityNameMap = std::map<types::string, EntityId>;
-
-		EntityNameMap _entityNames;
-		EntityNameMap _newEntityNames;
-
-		//CURVE VARIABLES
-		//curve list
-		//a curve has an entity id,that it's attached too, and a name
-		using CurveId = std::pair<EntityId, VariableId>;
-		template<class T>
-		using Curve_ptr = std::unique_ptr<GameCurve<T>>;
-		template<class T>
-		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
-
-		CurveMap<types::int32> _intCurves;
-		//no linear curves here
-		CurveMap<bool> _boolCurves;
-		CurveMap<types::string> _stringCurves;
-
-		//vector curves
-		//no linear curves for these either
-		CurveMap<std::vector<types::int32>> _intVectorCurves;
-		CurveMap<std::vector<bool>> _boolVectorCurves;
-		CurveMap<std::vector<types::string>> _stringVectorCurves;
-
-		using VariableNameMap = std::map<types::string, VariableId>;
-
-		//mapping of names to variable ids
-		VariableNameMap _variableIds;
-		VariableNameMap _newVariables;
-
-		VariableId _variableNext = std::numeric_limits<EntityId>::min();
 
 		//systems(systems run logic by added keyframes to curves(and adding frame predictions)
 		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in

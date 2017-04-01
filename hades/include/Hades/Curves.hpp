@@ -11,7 +11,6 @@
 //keyframes can be overridden as the simulation catches up to them for accuracy
 
 namespace hades {
-	//TODO: comparison function for this type
 	template<typename Time, typename Data>
 	struct Keyframe
 	{
@@ -35,46 +34,98 @@ namespace hades {
 	};
 
 	template<typename Time, typename Data>
-	class ConstCurve;
-	template<typename Time, typename Data>
-	class LinearCurve;
-	template<typename Time, typename Data>
-	class StepCurve;
-	template<typename Time, typename Data>
-	class PulseCurve;
-
-	template<typename Time, typename Data>
-	class Curve
+	class Curve final
 	{
 	public:
 		Curve(CurveType type) : _type(type)
 		{}
 
-		virtual ~Curve() {}
-
 		//adds a keyframe
 		//when you add a keyframe, all keyframes after it are erased
-		virtual void set(Time at, Data value)
+		void set(Time at, Data value)
 		{
-			auto at = data.insert({ at, value });
+			if (_type == CurveType::CONST)
+			{
+				//replace the only value with the new one
+				data.insert({ Time(), value });
+			}
+			else
+			{
+				auto at = data.insert({ at, value });
 
-			//if the insertion was successful and isn't the last element
-			//in the container
-			if (at.second && at.first != data.rbegin())
-				//erase everything after the newly inserted keyframe
-				data.erase(++at.first, data.end());
+				//if the insertion was successful and isn't the last element
+				//in the container
+				if (at.second && at.first != data.rbegin())
+					//erase everything after the newly inserted keyframe
+					data.erase(++at.first, data.end());
+			}
 		}
 
-		virtual Data get(Time at) = 0;
+		Data get(Time at)
+		{
+			if (_type == CurveType::CONST)
+			{
+				//TODO: handle unasigned curve
+				//will probably have to throw, or return Data();
+				return data.begin();
+			}
+			else if (_type == CurveType::LINEAR)
+			{
+				//TODO: handle returning from a time before the first frame, or after the last
+				static_assert(std::is_arithmetic<Data>::value, "Only arithmatic types can be stored in a LinearCurve.");
+				//TODO: provide a overridable lerp function for this to fall back on?
+
+				//linear imp goes here
+				auto d = GetRange(at);
+
+				//return lerp of d.first to d.second with at.
+				assert(false && "unimplemented");
+
+				return Data();
+			}
+			else if (_type == CurveType::PULSE)
+			{
+				assert(_type != CurveType::PULSE);
+
+				//throw, can use at for pulse
+			}
+			else if (_type == CurveType::STEP)
+			{
+				//todo: if at is past the end, return second
+				auto d = GetRange(at);
+
+				return *d.first;
+			}
+			else
+			{
+				//throw somthing?
+			}
+		}
+
+		//These are the only valid ways to get data from a Pulse
+		using DataInfo = std::pair<Time, Data>;
+		//returns the closest frame before at
+		DataInfo getPrevious(Time at)
+		{
+			//TODO: return <bool, Datainfo> tuple
+			//as thier might not be a previous
+			auto d = GetRange(at);
+
+			return d.first;
+		}
+		//returns the closest frame after at
+		DataInfo getNext(Time at)
+		{
+			//same as above, need to handle their being no frame after at
+			auto d = GetRange(at);
+
+			return d.second;
+		}
 
 		//For converting to the usable Curve Types
 		CurveType type() { return _type; }
-		ConstCurve<Time, Data>* asConst() { assert(_type == CurveType::CONST);return this; }
-		LinearCurve<Time, Data>* asLinear() { assert(_type == CurveType::LINEAR);return this; }
-		StepCurve<Time, Data>* asStep() { assert(_type == CurveType::STEP);return this; }
-		PulseCurve<Time, Data>* asPulse() { assert(_type == CurveType::PULSE);return this; }
-		
-	protected:
+
+	private:
 		using FrameType = Keyframe<Time, Data>;
 		using DataType = std::set< FrameType >;
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
@@ -89,84 +140,6 @@ namespace hades {
 
 	private:
 		CurveType _type;
-	};
-
-	//Const Curve
-	//There is no actual curve, the value is constant across the entire curve
-	//returns the same result no matter what time is requested
-	template<typename Time, typename Data>
-	class ConstCurve final : public Curve<Time, Data>
-	{
-	public:
-		ConstCurve() : Curve<Time, Data>(CurveType::CONST) {}
-
-		virtual void set(Time at, Data value)
-		{
-			data.insert({ Time(), value });
-		}
-
-		virtual Data get(Time at)
-		{
-			return data.begin();
-		}
-	};
-
-	template<typename Time, typename Data>
-	class LinearCurve final : public Curve<Time, Data>
-	{
-	public:
-		LinearCurve() : Curve<Time, Data>(CurveType::LINEAR) {}
-
-		virtual Data get(Time at) 
-		{
-			static_assert(std::is_arithmetic<Data>::value, "Only arithmatic types can be stored in a LinearCurve.");
-			//TODO: provide a overridable lerp function for this to fall back on?
-
-			//linear imp goes here
-			auto d = GetRange(at);
-
-			//return lerp of d.first to d.second with at.
-			assert(false && "unimplemented");
-
-			return Data();
-		}
-	};
-
-	template<typename Time, typename Data>
-	class StepCurve final : public Curve<Time, Data>
-	{
-	public:
-		StepCurve() : Curve<Time, Data>(CurveType::STEP) {}
-
-		virtual Data get(Time at)
-		{
-			auto d = GetRange(at);
-
-			return *d.first;
-		}
-	};
-
-	template<typename Time, typename Data>
-	class PulseCurve final : public Curve<Time, Data>
-	{
-	public:
-		using DataInfo =  std::pair<Time, Data>;
-
-		PulseCurve() : Curve<Time, Data>(CurveType::PULSE) {}
-
-		virtual Data get(Time at)
-		{
-			assert(false && "Calling get on Pulse curve doesn't really make sense, use getLast");
-			//pulse wont really work with this api will it
-		}
-
-		//returns the most recent pulse for that time
-		DataInfo getAt(Time at)
-		{
-			auto d = GetRange(at);
-
-			return d.first;
-		}
 	};
 }
 

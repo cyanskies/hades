@@ -42,7 +42,7 @@ namespace hades
 		{
 			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
 
-			resource_type(loaderFunc loader) : _resourceLoader(loader) {}
+			resource_type(loaderFunc loader = nullptr) : _resourceLoader(loader) {}
 
 			virtual ~resource_type() {}
 
@@ -64,7 +64,6 @@ namespace hades
 
 		struct mod : public resource_type<mod_t>
 		{
-			mod() : resource_type<mod_t>([](resource_base*, data::data_manager*) {}) {}
 			// source == the name of the archive containing the mode
 			// dependencies: a list of mods this mod depends on
 			std::vector<data::UniqueId> dependencies,

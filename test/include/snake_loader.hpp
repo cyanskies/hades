@@ -14,7 +14,7 @@ struct snake_rules : public hades::resources::resource_type<snake_game_t>
 };
 
 //global access to the game rules
-snake_rules *snake_game_rules = nullptr;
+extern snake_rules *snake_game_rules;
 
 //parser responsible for reading the rules from the mod file
 void parseSnakeRules(hades::data::UniqueId, YAML::Node&, hades::data::data_manager*);

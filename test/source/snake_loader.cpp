@@ -1,8 +1,10 @@
 #include "snake_loader.hpp"
 
-#include "yaml-cpp/node/node.h"
+#include "yaml-cpp/yaml.h"
 
 #include "Hades/Logging.hpp"
+
+snake_rules *snake_game_rules = nullptr;
 
 void parseSnakeRules(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager* dataman)
 {

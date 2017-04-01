@@ -17,9 +17,7 @@ namespace hades
 		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 
 		struct string : public resource_type<types::string>
-		{
-			string() : resource_type<types::string>([](resource_base*, data::data_manager*) {}) {}
-		};
+		{};
 
 		struct texture : public resource_type<sf::Texture>
 		{

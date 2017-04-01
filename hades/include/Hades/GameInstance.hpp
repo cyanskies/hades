@@ -22,6 +22,7 @@ namespace hades
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using VariableId = EntityId;
 
+	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
 	class GameInterface
@@ -41,17 +42,18 @@ namespace hades
 		// get a reference to the curve you need, and use it to modify the data
 		//Int, is for storing positions, health, entityId's, and so on
 		//Can be used for event pulses, just store the Id of the entity that contains the event data
-		GameCurve<types::int32>* getInt(EntityId, VariableId);
+		GameCurve<types::int32>* makeCurveInt(EntityId, VariableId, CurveType);
+		GameCurve<types::int32>* getInt(EntityId, VariableId) const;
 		//Bool is used for flags, or for event pulses
-		GameCurve<bool>* getBool(EntityId, VariableId);
+		GameCurve<bool>* getBool(EntityId, VariableId) const;
 		//string, not for dialogue, stuff like that should be stored in mod files
 		//use it to store, unique names, should have less of these than ints and bools
-		GameCurve<types::string>* getString(EntityId, VariableId);
+		GameCurve<types::string>* getString(EntityId, VariableId) const;
 
 		//Vector versions of the other variable types
-		GameCurve<std::vector<types::int32>>* getIntVector(EntityId, VariableId);
-		GameCurve<std::vector<bool>>* getBoolVector(EntityId, VariableId);
-		GameCurve<std::vector<types::string>>* getStringVector(EntityId, VariableId);
+		GameCurve<std::vector<types::int32>>* getIntVector(EntityId, VariableId) const;
+		GameCurve<std::vector<bool>>* getBoolVector(EntityId, VariableId) const;
+		GameCurve<std::vector<types::string>>* getStringVector(EntityId, VariableId) const;
 
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);

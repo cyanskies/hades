@@ -4,7 +4,11 @@ namespace hades
 {
 	void GameInstance::tick(sf::Time dt)
 	{
-		//run all systems on all attached entities
+		//run all systems on all attached 
+		for(auto &s : _systems)
+		{
+
+		}
 	}
 
 	void GameInstance::getChanges(sf::Time t) const

@@ -3,7 +3,8 @@
 
 #include "SFML/System/Time.hpp"
 
-#include "GameInterface.hpp"
+#include "Hades/GameInterface.hpp"
+#include "Hades/GameSystem.hpp"
 
 namespace hades
 {
@@ -46,7 +47,9 @@ namespace hades
 		//the current time, this is the sum of all dt from the game ticks
 		sf::Time _currentTime = _startTime;
 
-		//systems(systems run logic by added keyframes to curves(and adding frame predictions)
+		//systems(systems run logic by adding keyframes to curves(and adding frame predictions)
+		std::vector<GameSystem> _systems;
+
 		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in
 	};
 }

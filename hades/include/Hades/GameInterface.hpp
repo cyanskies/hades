@@ -85,6 +85,12 @@ namespace hades
 		mutable std::shared_mutex _entNameMutex;
 		EntityNameMap _entityNames;
 
+		using VariableNameMap = std::map<types::string, VariableId>;
+		//mapping of names to variable ids
+		mutable std::shared_mutex _variableIdMutex;
+		VariableNameMap _variableIds;
+		std::atomic<VariableId> _variableNext = std::numeric_limits<VariableId>::min();
+
 	private:
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min();
 
@@ -106,14 +112,6 @@ namespace hades
 		CurveMap<vector_data<types::int32>> _intVectorCurves;
 		CurveMap<vector_data<bool>> _boolVectorCurves;
 		CurveMap<vector_data<types::string>> _stringVectorCurves;
-
-		using VariableNameMap = std::map<types::string, VariableId>;
-
-		std::shared_mutex _variableIdMutex;
-		//mapping of names to variable ids
-		VariableNameMap _variableIds;
-
-		std::atomic<VariableId> _variableNext = std::numeric_limits<EntityId>::min();
 	};
 }
 

@@ -53,18 +53,30 @@ namespace hades
 		GameCurve<types::string>* makeString(EntityId, VariableId, CurveType);
 		GameCurve<types::string>* getString(EntityId, VariableId) const;
 
+		//helper to avoid template bloat with vector data in maps
+		////NOTE: solves warning C4503
+		template<class T>
+		struct vector_data
+		{
+			std::vector<T> data;
+		};
+
 		//Vector versions of the other variable types
-		GameCurve<std::vector<types::int32>>* makeIntVector(EntityId, VariableId, CurveType);
-		GameCurve<std::vector<types::int32>>* getIntVector(EntityId, VariableId) const;
+		GameCurve<vector_data<types::int32>>* makeIntVector(EntityId, VariableId, CurveType);
+		GameCurve<vector_data<types::int32>>* getIntVector(EntityId, VariableId) const;
 
-		GameCurve<std::vector<bool>>* makeBoolVector(EntityId, VariableId, CurveType);
-		GameCurve<std::vector<bool>>* getBoolVector(EntityId, VariableId) const;
+		GameCurve<vector_data<bool>>* makeBoolVector(EntityId, VariableId, CurveType);
+		GameCurve<vector_data<bool>>* getBoolVector(EntityId, VariableId) const;
 
-		GameCurve<std::vector<types::string>>* makeStringVector(EntityId, VariableId, CurveType);
-		GameCurve<std::vector<types::string>>* getStringVector(EntityId, VariableId) const;
+		GameCurve<vector_data<types::string>>* makeStringVector(EntityId, VariableId, CurveType);
+		GameCurve<vector_data<types::string>>* getStringVector(EntityId, VariableId) const;
 
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);
+
+		//TODO:
+		//void attach system
+		//void detach system
 
 	protected:
 		using EntityNameMap = std::map<types::string, EntityId>;
@@ -79,11 +91,8 @@ namespace hades
 		//CURVE VARIABLES
 		//curve list
 		//a curve has an entity id,that it's attached too, and a name
-		using CurveId = std::pair<EntityId, VariableId>;
 		template<class T>
-		using Curve_ptr = std::unique_ptr<GameCurve<T>>;
-		template<class T>
-		using CurveMap = std::map< CurveId, Curve_ptr<T> >;
+		using CurveMap = std::map< std::pair<EntityId, VariableId>, std::unique_ptr<GameCurve<T>> >;
 
 		mutable std::shared_mutex _intCurveMutex, _boolCurveMutex, _stringCurveMutex;
 		CurveMap<types::int32> _intCurves;
@@ -94,9 +103,9 @@ namespace hades
 		mutable std::shared_mutex _intVectMutex, _boolVectMutex, _stringVectMutex;
 		//vector curves
 		//no linear curves for these either
-		CurveMap<std::vector<types::int32>> _intVectorCurves;
-		CurveMap<std::vector<bool>> _boolVectorCurves;
-		CurveMap<std::vector<types::string>> _stringVectorCurves;
+		CurveMap<vector_data<types::int32>> _intVectorCurves;
+		CurveMap<vector_data<bool>> _boolVectorCurves;
+		CurveMap<vector_data<types::string>> _stringVectorCurves;
 
 		using VariableNameMap = std::map<types::string, VariableId>;
 

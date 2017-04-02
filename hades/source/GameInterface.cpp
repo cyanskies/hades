@@ -25,10 +25,10 @@ namespace hades
 		auto &c_ptr = curves[{ent, var}];
 		//if the curve already exists then error
 		if(c_ptr != nullptr)
-			throw curve_error("Tried to create curve for ent: " + ent + ", var: " + var + ", that already exists.");
+			throw curve_error(std::string("Tried to create curve for ent: " + std::to_string(ent) + ", var: " + std::to_string(var) + ", that already exists.").c_str());
 
 		//create curve and return
-		c_ptr = std::make_unique<Curve>(type);
+		c_ptr = std::make_unique<GameInterface::GameCurve<T>>(type);
 		return &*c_ptr;
 	}
 
@@ -44,7 +44,7 @@ namespace hades
 			return &*c->second;
 		else
 		{
-			throw curve_error("Requested curve, EntId: " + ent + ", Var: " + var + ", that doesn't exist, or is the wrong type");
+			throw curve_error(std::string("Requested curve, EntId: " + std::to_string(ent) + ", Var: " + std::to_string(var) + ", that doesn't exist, or is the wrong type").c_str());
 		}
 	}
 
@@ -78,14 +78,48 @@ namespace hades
 		return getCurve(ent, var, _stringCurves, _stringCurveMutex);
 	}
 
-	GameInterface::GameCurve<std::vector<types::int32>>* GameInterface::makeIntVector(EntityId ent, VariableId var, CurveType t)
+	GameInterface::GameCurve<GameInterface::vector_data<types::int32>>* GameInterface::makeIntVector(EntityId ent, VariableId var, CurveType t)
 	{
 		return makeCurve(ent, var, t, _intVectorCurves, _intVectMutex);
 	}
 
-	GameInterface::GameCurve<std::vector<types::int32>>* GameInterface::getIntVector(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<GameInterface::vector_data<types::int32>>* GameInterface::getIntVector(EntityId ent, VariableId var) const
 	{
 		return getCurve(ent, var, _intVectorCurves, _intVectMutex);
 	}
 
+	GameInterface::GameCurve<GameInterface::vector_data<bool>>* GameInterface::makeBoolVector(EntityId ent, VariableId var, CurveType t)
+	{
+		return makeCurve(ent, var, t, _boolVectorCurves, _boolVectMutex);
+	}
+
+	GameInterface::GameCurve<GameInterface::vector_data<bool>>* GameInterface::getBoolVector(EntityId ent, VariableId var) const
+	{
+		return getCurve(ent, var, _boolVectorCurves, _boolVectMutex);
+	}
+
+	GameInterface::GameCurve<GameInterface::vector_data<types::string>>* GameInterface::makeStringVector(EntityId ent, VariableId var, CurveType t)
+	{
+		return makeCurve(ent, var, t, _stringVectorCurves, _stringVectMutex);
+	}
+
+	GameInterface::GameCurve<GameInterface::vector_data<types::string>>* GameInterface::getStringVector(EntityId ent, VariableId var) const
+	{
+		return getCurve(ent, var, _stringVectorCurves, _stringVectMutex);
+	}
+
+	VariableId GameInterface::getVariableId(types::string s)
+	{
+		//try to get the value in shared mode
+		{
+			std::shared_lock<std::shared_mutex> sharedlk(_variableIdMutex);
+			auto v = _variableIds.find(s);
+			if (v != _variableIds.end())
+				return v->second;
+		}
+
+		//if it doesn't exist take a unique lock and create it
+		std::unique_lock<std::shared_mutex> lk(_variableIdMutex);
+		return _variableIds[s] = _variableNext++;
+	}
 }

@@ -22,21 +22,16 @@ namespace hades
 		//also sends the new variable id mappings
 		//also sends entity name mappings
 		//  t: how far back to go looking for keyframes?
-		void getChanges(sf::Time t);
-		//gets all data as packets
-		//this is useful for new players joining the game
-		//doesn't include all the curve history, only currently active entities
-		//and properties related to them
+		void getChanges(sf::Time t) const;
+		//gets all data for saving
 		void getAll() const;
-		//returns all the game data, enough to rewatch the game from begining.
-		void getAllHistory() const;
-
+		
 		//names are used for common entities to make finding them easy
 		// master: the games master entity, used to store game rules, whether the game as ended yet
 		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
 		void nameEntity(EntityId entity, const types::string &name);
 		
-		types::string getVariableName(VariableId);
+		types::string getVariableName(VariableId) const;
 
 		//systems
 		//systems use their UniqueId as their key

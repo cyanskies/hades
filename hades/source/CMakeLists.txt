@@ -12,6 +12,7 @@ set(HADES_SRC
 	data_manager.cpp
 	files.cpp
 	GameInstance.cpp
+	GameInterface.cpp
 	GameSystem.cpp
 	Logging.cpp
 	main.cpp

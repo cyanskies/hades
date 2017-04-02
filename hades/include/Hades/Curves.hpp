@@ -33,6 +33,12 @@ namespace hades {
 		PULSE // data between keyframes is null
 	};
 
+	class curve_error : public std::exception
+	{
+	public:
+		using std::exception::exception;
+	};
+
 	template<typename Time, typename Data>
 	class Curve final
 	{
@@ -98,7 +104,7 @@ namespace hades {
 			}
 			else
 			{
-				//throw somthing?
+				throw curve_error("Malformed curve, curvetype was: " + _type);
 			}
 		}
 
@@ -122,6 +128,12 @@ namespace hades {
 			return d.second;
 		}
 
+		//returns all keyframes between the specified times
+		std::vector<DataInfo> getBetween(Time first, Time second)
+		{
+			return std::vector<DataInfo>();
+		}
+
 		//For converting to the usable Curve Types
 		CurveType type() { return _type; }
 
@@ -130,6 +142,7 @@ namespace hades {
 		using DataType = std::set< FrameType >;
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
+		//returns the keyframes either side of 'at'
 		IterPair GetRange(Time at)
 		{
 			auto next = std::lower_bound(data.begin(), data.end(), at);

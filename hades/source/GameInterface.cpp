@@ -21,7 +21,7 @@ namespace hades
 	GameInterface::GameCurve<T>* makeCurve(EntityId ent, VariableId var, CurveType type,
 		GameInterface::CurveMap<T> &curves, mut &mutex)
 	{
-		std::unique_lock<mut> lk(mutex);
+		std::lock_guard<mut> lk(mutex);
 		auto &c_ptr = curves[{ent, var}];
 		//if the curve already exists then error
 		if(c_ptr != nullptr)
@@ -119,7 +119,7 @@ namespace hades
 		}
 
 		//if it doesn't exist take a unique lock and create it
-		std::unique_lock<std::shared_mutex> lk(_variableIdMutex);
+		std::lock_guard<std::shared_mutex> lk(_variableIdMutex);
 		return _variableIds[s] = _variableNext++;
 	}
 }

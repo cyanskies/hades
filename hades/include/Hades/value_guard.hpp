@@ -24,10 +24,15 @@ namespace hades {
 
 		void operator=(const value_guard&) = delete;
 
-		operator value()
+		value get()
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			return _value;
+		}
+
+		operator value()
+		{
+			return get();
 		}
 
 		bool compare_exhange(const value &expected, value desired)

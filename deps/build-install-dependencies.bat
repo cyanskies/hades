@@ -1,5 +1,3 @@
-@call "%vS140COMNTOOLS%vsvars32"
-
 @IF NOT DEFINED generator @set generator="Visual Studio 14 2015"
 @IF NOT DEFINED mode @set mode=Debug
 @IF NOT DEFINED mode2 @set mode2=debug
@@ -41,15 +39,15 @@
 
 ::minizlib
 @cd ..
-@msbuild ./zlib/contrib/vstudio/vc11/zlibvc.vcxproj /p:Configuration=%mode%
+@msbuild ./zlib/contrib/vstudio/vc15/zlibvc.vcxproj /p:Configuration=%mode%
 
 ::Copy lib and dll files
 
-@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll" 
-@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll" 
+@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
 
-@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.dll" %install-pfx%\bin\zlibwapi.dll
-@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc11\x86\ZlibDllRelease\zlibwapi.lib" %install-pfx%\lib\zlibwapi.lib
+@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.dll" %install-pfx%\bin\zlibwapi.dll
+@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.lib" %install-pfx%\lib\zlibwapi.lib
 
 ::copy headers to install dir
 @xcopy /Y ".\zlib\*.h" "%install-pfx%\include\zlib\"

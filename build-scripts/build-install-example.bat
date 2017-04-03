@@ -1,6 +1,3 @@
-::run the build and install scripts for each dep
-@call "%vS110COMNTOOLS%vsvars32"
-
 @IF NOT DEFINED generator @set generator="Visual Studio 11"
 @IF NOT DEFINED VisualStudioVersion @set VisualStudioVersion=11.0
 @IF NOT DEFINED mode @set mode=Debug

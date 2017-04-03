@@ -1,9 +1,12 @@
-@call "%vS140COMNTOOLS%vsvars32"
+@if not defined vsdir (
+	for /f "usebackq tokens=*" %%i in (`.\build-scripts\vswhere.exe -latest -version "[15.0,16.0)" -requires Microsoft.Component.MSBuild -property installationPath`) do (
+  	set vsdir=%%i
+	)
+)
 
-@echo see https://blogs.msdn.microsoft.com/vcblog/2016/10/07/compiler-tools-layout-in-visual-studio-15/ for finding vscars for vs2017
-@echo this should do it https://github.com/Microsoft/vswhere/wiki
+@call "%vsdir%\Common7\Tools\VsDevCmd.bat"
 
-@IF NOT DEFINED generator @set generator="Visual Studio 14 2015"
+@IF NOT DEFINED generator @set generator="Visual Studio 15 2017"
 @IF NOT DEFINED mode @set mode=Debug
 @IF NOT DEFINED mode2 @set mode2=debug
 @IF NOT DEFINED library (@set library=./dep-library)

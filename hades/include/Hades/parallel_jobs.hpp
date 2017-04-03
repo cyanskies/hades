@@ -17,6 +17,9 @@ namespace hades {
 		using job_data_ptr = std::unique_ptr<job_data>;
 		using job_function = std::function<bool(const job_data&)>;
 
+		//returns true if the system is safe to start,
+		//false if jobs are already running or the system has been joined/shut down
+		bool ready();
 		//create job
 		//returns a non-owning ptr
 		job* create(job_function function);

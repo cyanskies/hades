@@ -71,6 +71,12 @@ namespace hades {
 		void worker_init();
 		void worker_function();
 
+		bool ready()
+		{
+			lock_t jlk(joblist_mutex);
+			return !joined && g_joblist.empty();
+		}
+
 		//==system functions==
 		void init()
 		{

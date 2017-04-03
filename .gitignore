@@ -233,3 +233,5 @@ test/CMakeFiles/
 test/source/CMakeFiles/
 *.opendb
 test/install_manifest.txt
+hades/.vs/hades/v15/Solution.VC.db-shm
+hades/.vs/hades/v15/Solution.VC.db-wal

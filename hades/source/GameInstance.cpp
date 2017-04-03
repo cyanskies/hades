@@ -29,8 +29,10 @@ namespace hades
 
 				for (auto e : ents)
 				{
-					auto job_data = std::make_unique<system_job_data>(data);
+					auto job_data = std::make_unique<system_job_data>();
 					job_data->entity = e;
+					auto d = static_cast<const system_job_data*>(&data);
+					job_data->game_data = d->game_data;
 					*funciter = parallel_jobs::create(func, std::move(job_data));
 					++funciter;
 				}

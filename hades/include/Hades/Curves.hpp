@@ -73,16 +73,15 @@ namespace hades {
 			{
 				//TODO: handle unasigned curve
 				//will probably have to throw, or return Data();
-				return data.begin();
+				return (*data.begin()).value;
 			}
 			else if (_type == CurveType::LINEAR)
 			{
 				//TODO: handle returning from a time before the first frame, or after the last
-				static_assert(std::is_arithmetic<Data>::value, "Only arithmatic types can be stored in a LinearCurve.");
 				//TODO: provide a overridable lerp function for this to fall back on?
 
 				//linear imp goes here
-				auto d = GetRange(at);
+				//auto d = GetRange(at);
 
 				//return lerp of d.first to d.second with at.
 				assert(false && "unimplemented");
@@ -100,7 +99,7 @@ namespace hades {
 				//todo: if at is past the end, return second
 				auto d = GetRange(at);
 
-				return *d.first;
+				return (*d.first).value;
 			}
 			else
 			{
@@ -143,10 +142,11 @@ namespace hades {
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
 		//returns the keyframes either side of 'at'
-		IterPair GetRange(Time at)
+		IterPair GetRange(Time at) const
 		{
-			auto next = std::lower_bound(data.begin(), data.end(), at);
-			return IterPair(next - 1, next);
+			//auto next = std::lower_bound(data.begin(), data.end(), at);
+			//return IterPair(--next, next);
+			return IterPair();
 		}
 
 		DataType data;

@@ -11,6 +11,7 @@ namespace hades
 {
 	struct system_job_data : public parallel_jobs::job_data
 	{
+		EntityId entity;
 		GameInterface* game_data;
 	};
 

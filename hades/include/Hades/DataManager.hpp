@@ -13,8 +13,11 @@ namespace hades
 	//sound
 	//document
 	//string store
+	//systems
+	//scripts
 	using Texture = resources::texture;
 	using String = resources::string;
+	using System = resources::system;
 
 	class DataManager : public data::data_manager
 	{
@@ -23,6 +26,7 @@ namespace hades
 
 		Texture* getTexture(data::UniqueId);
 		String* getString(data::UniqueId);
+		System* getSystem(data::UniqueId);
 	};
 
 	extern DataManager* data_manager;

@@ -22,8 +22,15 @@ namespace hades
 
 			auto ents = s.attached_entities.get().get(_currentTime);
 
+			if (!s.system)
+			{
+				//empty system
+				//TODO: error
+				assert(s.system);
+			}
+
 			//create a job function that will call the systems job on each attached entity
-			*iter = parallel_jobs::create([ents, func = s.function](const parallel_jobs::job_data &data) { 
+			*iter = parallel_jobs::create([ents, func = s.system->value](const parallel_jobs::job_data &data) { 
 				std::vector<parallel_jobs::job*> jobs(ents.size());
 				auto funciter = jobs.begin();
 

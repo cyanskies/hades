@@ -15,8 +15,11 @@ namespace hades
 	//string store
 	//systems
 	//scripts
+	//holds a sfml texture objects
 	using Texture = resources::texture;
+	//holds a text string, used for dialogs and ui elements, can be overridden in mods to provide localisation
 	using String = resources::string;
+	//systems provide game logic on the server, or push sprites in the client.
 	using System = resources::system;
 
 	class DataManager : public data::data_manager

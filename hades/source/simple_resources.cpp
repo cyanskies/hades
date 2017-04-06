@@ -231,5 +231,18 @@ namespace hades
 				dataman->set<resources::string>(id, std::move(string_ptr));
 			}
 		}
+
+		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		{
+			assert(false && "mods cannot create systems untill scripting is introduced.");
+		}
+
+		void loadSystem(resource_base* r, data::data_manager* dataman)
+		{
+			//same as above
+			return;
+		}
+
+
 	}
 }

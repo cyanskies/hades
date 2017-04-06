@@ -18,6 +18,8 @@ namespace hades
 		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 		void loadTexture(resource_base* r, data::data_manager* dataman);
 		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager*);
+		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*);
+		void loadSystem(resource_base* r, data::data_manager* dataman);
 
 		struct texture : public resource_type<sf::Texture>
 		{

@@ -56,6 +56,7 @@ namespace hades {
 		using worker_queue = std::deque<job*>;
 		std::vector<worker_queue> g_worker_job_queues(g_thread_count + 1);
 		using lock_t = std::unique_lock<mutex_type>;
+		using lock_guard = std::lock_guard<mutex_type>;
 		using locked_queue = std::tuple<worker_queue*, lock_t>;
 		bool joined = false;
 
@@ -73,7 +74,7 @@ namespace hades {
 
 		bool ready()
 		{
-			lock_t jlk(joblist_mutex);
+			lock_guard jlk(joblist_mutex);
 			return !joined && g_joblist.empty();
 		}
 
@@ -118,7 +119,7 @@ namespace hades {
 			auto newjob = std::make_unique<job>( function );
 			job* jobptr = &*newjob;
 
-			std::lock_guard<std::mutex> guard(joblist_mutex);
+			lock_guard guard(joblist_mutex);
 			g_joblist.push_back(std::move(newjob));
 
 			//return ptr to the new job
@@ -207,12 +208,12 @@ namespace hades {
 			//clear all the thread queues
 			for (thread_id i = 0; i < g_thread_count; ++i)
 			{
-				lock_t qlk(g_worker_queue_mutexes[i]);
+				lock_guard qlk(g_worker_queue_mutexes[i]);
 				g_worker_job_queues[i].clear();
 			}
 
 			//clear the job list
-			lock_t jlk(joblist_mutex);
+			lock_guard jlk(joblist_mutex);
 			g_joblist.clear();
 		}
 

@@ -50,21 +50,13 @@ namespace hades {
 		//when you add a keyframe, all keyframes after it are erased
 		void set(Time at, Data value)
 		{
-			if (_type == CurveType::CONST)
-			{
-				//replace the only value with the new one
-				data.insert({ Time(), value });
-			}
-			else
-			{
-				auto at = data.insert({ at, value });
+			_insertFrame(at, value, true);
+		}
 
-				//if the insertion was successful and isn't the last element
-				//in the container
-				if (at.second && at.first != data.rbegin())
-					//erase everything after the newly inserted keyframe
-					data.erase(++at.first, data.end());
-			}
+		//inserting a keyframe doesn't remove other frames, but may replace a frame at the same time as the new frame.
+		void insert(Time at, Data value)
+		{
+			_insertFrame(at, value);
 		}
 
 		Data get(Time at)
@@ -73,7 +65,7 @@ namespace hades {
 			{
 				//TODO: handle unasigned curve
 				//will probably have to throw, or return Data();
-				return (*data.begin()).value;
+				return (*_data.begin()).value;
 			}
 			else if (_type == CurveType::LINEAR)
 			{
@@ -97,61 +89,87 @@ namespace hades {
 			else if (_type == CurveType::STEP)
 			{
 				//todo: if at is past the end, return second
-				auto d = GetRange(at);
+				auto d = _getRange(at);
 
 				return (*d.first).value;
 			}
-			else
-			{
-				throw curve_error("Malformed curve, curvetype was: " + _type);
-			}
+
+			throw curve_error("Malformed curve, curvetype was: " + _type);
 		}
 
 		//These are the only valid ways to get data from a Pulse
-		using DataInfo = std::pair<Time, Data>;
+		using FrameType = Keyframe<Time, Data>;
 		//returns the closest frame before at
-		DataInfo getPrevious(Time at)
+		FrameType getPrevious(Time at)
 		{
-			//TODO: return <bool, Datainfo> tuple
+			//TODO: return <bool, FrameType> tuple
 			//as thier might not be a previous
-			auto d = GetRange(at);
+			auto d = _getRange(at);
 
 			return d.first;
 		}
 		//returns the closest frame after at
-		DataInfo getNext(Time at)
+		FrameType getNext(Time at)
 		{
 			//same as above, need to handle their being no frame after at
-			auto d = GetRange(at);
+			auto d = _getRange(at);
 
 			return d.second;
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<DataInfo> getBetween(Time first, Time second)
+		std::vector<FrameType> getBetween(Time first, Time second)
 		{
-			return std::vector<DataInfo>();
+			return std::vector<FrameType>();
+		}
+
+		using DataType = std::set< FrameType >;
+		using const_iterator = typename DataType::const_iterator;
+
+		const_iterator begin() const
+		{
+			return _data.begin();
+		}
+
+		const_iterator end() const
+		{
+			return _data.end();
 		}
 
 		//For converting to the usable Curve Types
 		CurveType type() { return _type; }
 
 	private:
-		using FrameType = Keyframe<Time, Data>;
-		using DataType = std::set< FrameType >;
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
+		void _insertFrame(Time at, Data value, bool erase = false)
+		{
+			if (_type == CurveType::CONST)
+			{
+				//replace the only value with the new one
+				_data.insert({ Time(), value });
+			}
+			else
+			{
+				auto at = _data.insert({ at, value });
+
+				//if the insertion was successful and isn't the last element
+				//in the container
+				if (erase && at.second && at.first != data.rbegin())
+					//erase everything after the newly inserted keyframe
+					_data.erase(++at.first, data.end());
+			}
+		}
+
 		//returns the keyframes either side of 'at'
-		IterPair GetRange(Time at) const
+		IterPair _getRange(Time at) const
 		{
 			//auto next = std::lower_bound(data.begin(), data.end(), at);
 			//return IterPair(--next, next);
 			return IterPair();
 		}
 
-		DataType data;
-
-	private:
+		DataType _data;
 		CurveType _type;
 	};
 }

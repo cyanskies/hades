@@ -13,15 +13,9 @@ namespace hades
 		std::vector<parallel_jobs::job*> jobs(_systems.size());
 		auto iter = jobs.begin();
 
-		//create jobs for all systems on all attached
+		//create jobs for all systems to work on their entities
 		for(auto &s : _systems)
 		{
-			//create the job data, with a pointer to the game interface
-			auto data = std::make_unique<system_job_data>();
-			data->game_data = this;
-
-			auto ents = s.attached_entities.get().get(_currentTime);
-
 			if (!s.system)
 			{
 				//empty system
@@ -29,30 +23,15 @@ namespace hades
 				assert(s.system);
 			}
 
+			//create the job data, with a pointer to the game interface
+			auto job_data = std::make_unique<system_job_data>();
+			job_data->entities = s.attached_entities.get().get(_currentTime);
+			job_data->game_data = this;
+			job_data->current_time = _currentTime;
+			job_data->dt = dt;
+
 			//create a job function that will call the systems job on each attached entity
-			*iter = parallel_jobs::create([ents, func = s.system->value](const parallel_jobs::job_data &data) { 
-				std::vector<parallel_jobs::job*> jobs(ents.size());
-				auto funciter = jobs.begin();
-
-				for (auto e : ents)
-				{
-					auto job_data = std::make_unique<system_job_data>();
-					job_data->entity = e;
-					auto d = static_cast<const system_job_data*>(&data);
-					job_data->game_data = d->game_data;
-					*funciter = parallel_jobs::create(func, std::move(job_data));
-					++funciter;
-				}
-
-				for (auto j : jobs)
-					parallel_jobs::run(j);
-
-				for (auto j : jobs)
-					parallel_jobs::wait(j);
-
-				return true;
-			}, std::move(data));
-
+			*iter = parallel_jobs::create(s.system->value, std::move(job_data));
 			++iter;
 		}
 
@@ -64,7 +43,10 @@ namespace hades
 		for (auto j : jobs)
 			parallel_jobs::wait(j);
 
+		assert(parallel_jobs::ready());
+
 		//advance the game clock
+		//this is the only time the clock can be changed
 		_currentTime += dt;
 	}
 
@@ -80,14 +62,14 @@ namespace hades
 
 	void GameInstance::nameEntity(EntityId entity, const types::string &name)
 	{
-		std::lock_guard<std::shared_mutex> lk(_entNameMutex);
-		_entityNames[name] = entity;
+		std::lock_guard<std::shared_mutex> lk(EntNameMutex);
+		EntityNames[name] = entity;
 	}
 
 	types::string GameInstance::getVariableName(VariableId id) const
 	{
-		std::shared_lock<std::shared_mutex> lk(_variableIdMutex);
-		for (auto n : _variableIds)
+		std::shared_lock<std::shared_mutex> lk(VariableIdMutex);
+		for (auto n : VariableIds)
 		{
 			if (n.second == id)
 				return n.first;

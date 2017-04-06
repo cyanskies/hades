@@ -9,9 +9,9 @@ namespace hades
 
 	EntityId GameInterface::getEntityId(const types::string &name) const
 	{
-		std::shared_lock<std::shared_mutex> lk(_entNameMutex);
-		auto ename = _entityNames.find(name);
-		if (ename != _entityNames.end())
+		std::shared_lock<std::shared_mutex> lk(EntNameMutex);
+		auto ename = EntityNames.find(name);
+		if (ename != EntityNames.end())
 			return ename->second;
 
 		return NO_ENTITY;
@@ -112,14 +112,14 @@ namespace hades
 	{
 		//try to get the value in shared mode
 		{
-			std::shared_lock<std::shared_mutex> sharedlk(_variableIdMutex);
-			auto v = _variableIds.find(s);
-			if (v != _variableIds.end())
+			std::shared_lock<std::shared_mutex> sharedlk(VariableIdMutex);
+			auto v = VariableIds.find(s);
+			if (v != VariableIds.end())
 				return v->second;
 		}
 
 		//if it doesn't exist take a unique lock and create it
-		std::lock_guard<std::shared_mutex> lk(_variableIdMutex);
-		return _variableIds[s] = _variableNext++;
+		std::lock_guard<std::shared_mutex> lk(VariableIdMutex);
+		return VariableIds[s] = ++VariableNext;
 	}
 }

@@ -10,10 +10,16 @@
 
 namespace hades
 {
+	//data needed to run a system job
+	//the entities the system is operating on
+	//a reference to the game interface
+	//the current game time
+	//this frames dt
 	struct system_job_data : public parallel_jobs::job_data
 	{
-		EntityId entity;
+		std::vector<EntityId> entities;
 		GameInterface* game_data;
+		sf::Time current_time, dt;
 	};
 
 	//the interface for game systems.

@@ -23,7 +23,7 @@ namespace hades
 	using VariableId = EntityId;
 
 	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
-
+	const VariableId NO_VARIABLE = std::numeric_limits<VariableId>::min();
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
 	class GameInterface
@@ -82,14 +82,14 @@ namespace hades
 		using EntityNameMap = std::map<types::string, EntityId>;
 
 		//protected, since the ability to name entities is provided by a child.
-		mutable std::shared_mutex _entNameMutex;
-		EntityNameMap _entityNames;
+		mutable std::shared_mutex EntNameMutex;
+		EntityNameMap EntityNames;
 
 		using VariableNameMap = std::map<types::string, VariableId>;
 		//mapping of names to variable ids
-		mutable std::shared_mutex _variableIdMutex;
-		VariableNameMap _variableIds;
-		std::atomic<VariableId> _variableNext = std::numeric_limits<VariableId>::min();
+		mutable std::shared_mutex VariableIdMutex;
+		VariableNameMap VariableIds;
+		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min();
 
 	private:
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min();

@@ -10,6 +10,12 @@ using namespace hades::types;
 void Snake::init()
 {
 	LOG("Starting Snake");
+
+	//make game board
+
+	//reset gameinstance
+
+	//send starting data to the gamerenderer
 }
 
 bool Snake::handleEvent(sf::Event &windowEvent)

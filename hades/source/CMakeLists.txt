@@ -13,7 +13,6 @@ set(HADES_SRC
 	files.cpp
 	GameInstance.cpp
 	GameInterface.cpp
-	GameSystem.cpp
 	Logging.cpp
 	main.cpp
 	parallel_jobs.cpp

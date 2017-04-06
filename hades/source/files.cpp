@@ -29,7 +29,8 @@ namespace hades {
 			FileStream stream(modPath, fileName);
 
 			auto size = stream.getSize();
-			buffer buff(size);
+			assert(size >= 0 && size <= std::numeric_limits<buffer::size_type>::max());
+			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
 
 			return buff;

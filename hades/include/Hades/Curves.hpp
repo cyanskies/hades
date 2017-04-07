@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <set>
+#include <vector>
 
 //A set of curve classes for variables
 //curves allow values to interpolated by comparing keyframes
@@ -59,7 +60,7 @@ namespace hades {
 			_insertFrame(at, value);
 		}
 
-		Data get(Time at)
+		Data get(Time at) const
 		{
 			if (_type == CurveType::CONST)
 			{
@@ -100,7 +101,7 @@ namespace hades {
 		//These are the only valid ways to get data from a Pulse
 		using FrameType = Keyframe<Time, Data>;
 		//returns the closest frame before at
-		FrameType getPrevious(Time at)
+		FrameType getPrevious(Time at) const
 		{
 			//TODO: return <bool, FrameType> tuple
 			//as thier might not be a previous
@@ -109,7 +110,7 @@ namespace hades {
 			return d.first;
 		}
 		//returns the closest frame after at
-		FrameType getNext(Time at)
+		FrameType getNext(Time at) const
 		{
 			//same as above, need to handle their being no frame after at
 			auto d = _getRange(at);
@@ -118,9 +119,9 @@ namespace hades {
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<FrameType> getBetween(Time first, Time second)
+		std::vector<typename FrameType> getBetween(Time first, Time second) const
 		{
-			return std::vector<FrameType>();
+			return std::vector<typename FrameType>();
 		}
 
 		using DataType = std::set< FrameType >;
@@ -164,6 +165,7 @@ namespace hades {
 		//returns the keyframes either side of 'at'
 		IterPair _getRange(Time at) const
 		{
+			//TODO: fix this
 			//auto next = std::lower_bound(data.begin(), data.end(), at);
 			//return IterPair(--next, next);
 			return IterPair();

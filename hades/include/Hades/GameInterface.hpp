@@ -44,14 +44,14 @@ namespace hades
 		//Int, is for storing positions, health, entityId's, and so on
 		//Can be used for event pulses, just store the Id of the entity that contains the event data
 		GameCurve<types::int32>* makeInt(EntityId, VariableId, CurveType);
-		GameCurve<types::int32>* getInt(EntityId, VariableId) const;
+		GameCurve<types::int32>* getInt(EntityId, VariableId);
 		//Bool is used for flags, or for event pulses
 		GameCurve<bool>* makeBool(EntityId, VariableId, CurveType);
-		GameCurve<bool>* getBool(EntityId, VariableId) const;
+		GameCurve<bool>* getBool(EntityId, VariableId);
 		//string, not for dialogue, stuff like that should be stored in mod files
 		//use it to store, unique names, should have less of these than ints and bools
 		GameCurve<types::string>* makeString(EntityId, VariableId, CurveType);
-		GameCurve<types::string>* getString(EntityId, VariableId) const;
+		GameCurve<types::string>* getString(EntityId, VariableId);
 
 		//helper to avoid template bloat with vector data in maps
 		////NOTE: solves warning C4503
@@ -63,13 +63,13 @@ namespace hades
 
 		//Vector versions of the other variable types
 		GameCurve<vector_data<types::int32>>* makeIntVector(EntityId, VariableId, CurveType);
-		GameCurve<vector_data<types::int32>>* getIntVector(EntityId, VariableId) const;
+		GameCurve<vector_data<types::int32>>* getIntVector(EntityId, VariableId);
 
 		GameCurve<vector_data<bool>>* makeBoolVector(EntityId, VariableId, CurveType);
-		GameCurve<vector_data<bool>>* getBoolVector(EntityId, VariableId) const;
+		GameCurve<vector_data<bool>>* getBoolVector(EntityId, VariableId);
 
 		GameCurve<vector_data<types::string>>* makeStringVector(EntityId, VariableId, CurveType);
-		GameCurve<vector_data<types::string>>* getStringVector(EntityId, VariableId) const;
+		GameCurve<vector_data<types::string>>* getStringVector(EntityId, VariableId);
 
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);
@@ -98,7 +98,7 @@ namespace hades
 		//curve list
 		//a curve has an entity id,that it's attached too, and a name
 		template<class T>
-		using CurveMap = std::map< std::pair<EntityId, VariableId>, std::unique_ptr<GameCurve<T>> >;
+		using CurveMap = std::map< std::pair<EntityId, VariableId>, GameCurve<T> >;
 
 		mutable std::shared_mutex _intCurveMutex, _boolCurveMutex, _stringCurveMutex;
 		CurveMap<types::int32> _intCurves;

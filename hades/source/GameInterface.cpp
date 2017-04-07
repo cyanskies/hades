@@ -22,26 +22,32 @@ namespace hades
 		GameInterface::CurveMap<T> &curves, mut &mutex)
 	{
 		std::lock_guard<mut> lk(mutex);
-		auto &c_ptr = curves[{ent, var}];
+		auto c_iter = curves.find({ ent,var });
 		//if the curve already exists then error
-		if(c_ptr != nullptr)
+		if(c_iter != curves.end())
 			throw curve_error(std::string("Tried to create curve for ent: " + std::to_string(ent) + ", var: " + std::to_string(var) + ", that already exists.").c_str());
 
 		//create curve and return
-		c_ptr = std::make_unique<GameInterface::GameCurve<T>>(type);
-		return &*c_ptr;
+		//we do this step by step because it turns into voodoo otherwise.
+		using CurveType = GameInterface::GameCurve<T>; 
+		using KeyType = std::pair<EntityId, VariableId>;
+		using InsertType = std::pair<KeyType, CurveType>;
+		InsertType inserter({ ent, var }, CurveType({ type }));
+		auto pair = curves.insert(inserter);
+
+		return &pair.first->second;
 	}
 
 	template<class T, class mut>
 	GameInterface::GameCurve<T>* getCurve(EntityId ent, VariableId var, 
-		const GameInterface::CurveMap<T> &curves, mut &mutex)
+		GameInterface::CurveMap<T> &curves, mut &mutex)
 	{
 		std::shared_lock<mut> lk(mutex);
 
 		auto c = curves.find({ ent,var });
 
 		if (c != curves.end())
-			return &*c->second;
+			return &c->second;
 		else
 		{
 			throw curve_error(std::string("Requested curve, EntId: " + std::to_string(ent) + ", Var: " + std::to_string(var) + ", that doesn't exist, or is the wrong type").c_str());
@@ -53,7 +59,7 @@ namespace hades
 		return makeCurve(ent, var, t, _intCurves, _intCurveMutex);
 	}
 
-	GameInterface::GameCurve<types::int32>* GameInterface::getInt(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<types::int32>* GameInterface::getInt(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _intCurves, _intCurveMutex);
 	}
@@ -63,7 +69,7 @@ namespace hades
 		return makeCurve(ent, var, t, _boolCurves, _boolCurveMutex);
 	}
 
-	GameInterface::GameCurve<bool>* GameInterface::getBool(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<bool>* GameInterface::getBool(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _boolCurves, _boolCurveMutex);
 	}
@@ -73,7 +79,7 @@ namespace hades
 		return makeCurve(ent, var, t, _stringCurves, _stringCurveMutex);
 	}
 
-	GameInterface::GameCurve<types::string>* GameInterface::getString(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<types::string>* GameInterface::getString(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _stringCurves, _stringCurveMutex);
 	}
@@ -83,7 +89,7 @@ namespace hades
 		return makeCurve(ent, var, t, _intVectorCurves, _intVectMutex);
 	}
 
-	GameInterface::GameCurve<GameInterface::vector_data<types::int32>>* GameInterface::getIntVector(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<GameInterface::vector_data<types::int32>>* GameInterface::getIntVector(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _intVectorCurves, _intVectMutex);
 	}
@@ -93,7 +99,7 @@ namespace hades
 		return makeCurve(ent, var, t, _boolVectorCurves, _boolVectMutex);
 	}
 
-	GameInterface::GameCurve<GameInterface::vector_data<bool>>* GameInterface::getBoolVector(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<GameInterface::vector_data<bool>>* GameInterface::getBoolVector(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _boolVectorCurves, _boolVectMutex);
 	}
@@ -103,7 +109,7 @@ namespace hades
 		return makeCurve(ent, var, t, _stringVectorCurves, _stringVectMutex);
 	}
 
-	GameInterface::GameCurve<GameInterface::vector_data<types::string>>* GameInterface::getStringVector(EntityId ent, VariableId var) const
+	GameInterface::GameCurve<GameInterface::vector_data<types::string>>* GameInterface::getStringVector(EntityId ent, VariableId var)
 	{
 		return getCurve(ent, var, _stringVectorCurves, _stringVectMutex);
 	}

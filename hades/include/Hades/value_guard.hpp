@@ -14,7 +14,8 @@ namespace hades {
 
 		value_guard() = default;
 		value_guard(value desired) : _value(desired) {}
-		value_guard(const value_guard&) = delete;
+		value_guard(const value_guard& other) : _value(other.get()) {}
+		~value_guard() = default;
 
 		void operator=(value desired)
 		{
@@ -24,13 +25,13 @@ namespace hades {
 
 		void operator=(const value_guard&) = delete;
 
-		value get()
+		value get() const
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			return _value;
 		}
 
-		operator value()
+		operator value() const
 		{
 			return get();
 		}

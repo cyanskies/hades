@@ -14,13 +14,18 @@ namespace hades {
 	public:
 		shared_guard() = default;
 		constexpr shared_guard(value desired) : value_guard(desired) {}
-		shared_guard(const shared_guard&) = delete;
+		shared_guard(const shared_guard& other) : value_guard(other) {}
 		void operator=(const shared_guard&) = delete;
 
-		operator value()
+		value get() const
 		{
 			std::shared_lock<mutex>(_mutex);
 			return _value;
+		}
+
+		operator value() const
+		{
+			return get();
 		}
 	};
 }

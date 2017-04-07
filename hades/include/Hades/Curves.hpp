@@ -27,6 +27,18 @@ namespace hades {
 		return lhs.t < rhs.t;
 	}
 
+	template<typename Time, typename Data>
+	bool operator<(const Keyframe<Time, Data> &lhs, const Time &rhs)
+	{
+		return lhs.t < rhs;
+	}
+
+	template<typename Time, typename Data>
+	bool operator<(const Time &lhs, const Keyframe<Time, Data> &rhs)
+	{
+		return lhs < rhs.t;
+	}
+
 	enum CurveType {
 		CONST, //data is constant for any keyframe
 		LINEAR, //data between keyframes is exactly the difference between them
@@ -156,19 +168,17 @@ namespace hades {
 
 				//if the insertion was successful and isn't the last element
 				//in the container
-				if (erase && at.second && at.first != data.rbegin())
+				if (erase && at.second && at.first != _data.rbegin())
 					//erase everything after the newly inserted keyframe
-					_data.erase(++at.first, data.end());
+					_data.erase(++at.first, _data.end());
 			}
 		}
 
 		//returns the keyframes either side of 'at'
 		IterPair _getRange(Time at) const
 		{
-			//TODO: fix this
-			//auto next = std::lower_bound(data.begin(), data.end(), at);
-			//return IterPair(--next, next);
-			return IterPair();
+			auto next = std::lower_bound(_data.begin(), _data.end(), at);
+			return IterPair(--next, next);
 		}
 
 		DataType _data;

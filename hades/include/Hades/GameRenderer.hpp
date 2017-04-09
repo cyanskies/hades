@@ -27,12 +27,15 @@ namespace hades
 	class RendererInterface : public GameInterface
 	{
 	public:
-			//controlls for messing with sprites	
+		//controlls for messing with sprites
+		using SpriteMap = transactional_map<EntityId, sf::Sprite>;
+		SpriteMap &getSprites();
 	private:
 		//the time that should be drawn/generated
 		sf::Time _currentTime;
 
-		using SpriteMap = std::map<EntityId, sf::Sprite>;
+		using SpriteMap = transactional_map<EntityId, sf::Sprite>;
+		SpriteMap _sprites;
 	};
 
 	class GameRenderer : public sf::Drawable

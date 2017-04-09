@@ -32,6 +32,12 @@ namespace hades
 		//list of entities attached to this system, over time
 		value_guard<Curve<sf::Time, std::vector<EntityId>>> attached_entities;
 	};
+
+	//program provided systems should be attatched to the renderer or 
+	//gameinstance depending on what kind of system they are
+
+	//scripted systems should be listed in the GameSystem: and RenderSystem: lists in
+	//the mod files that added them
 }
 
 #endif //HADES_GAMESYSTEM_HPP

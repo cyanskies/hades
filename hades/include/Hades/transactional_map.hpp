@@ -23,13 +23,13 @@
 
 namespace hades {
 
-	template<typename Component, typename IdType>
+	template<typename Key, typename Value>
 	class transactional_map
 	{
 	public:
-		using value_type = Component;
-		using key_type = IdType;
-		using mutex_type = std::mutex;
+		using value_type = Value;
+		using key_type = Key;
+		using mutex_type = std::shared_mutex;
 		using exchange_token = std::unique_lock<mutex_type>;
 		using lock_return = std::tuple<bool, exchange_token>;
 
@@ -44,10 +44,11 @@ namespace hades {
 		bool exists(key_type id) const;
 
 		//Creates a new entry in the Vector for the id
-		//should never be called while systems are updating
+		//slow during system update
 		void create(key_type id, value_type value);
 		//removes an entry
-		//should never be called while systems are updating
+		//slow during system update
+		//should never really be done anyway
 		void erase(key_type id);
 
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value
@@ -56,24 +57,29 @@ namespace hades {
 		void exchange_release(key_type id, exchange_token &&token) const;
 		//releases the lock after exchanging the value
 		void exchange_resolve(key_type id, value_type desired, exchange_token &&token);
+
+		//get_data
+		//return vector of id's to values
+		using data_array = std::vector<std::pair<key_type, value_type>>;
+		data_array data() const;
 	private:
 
 		using size_type = std::size_t;
-		using dispatch_map = std::map<IdType, size_type>;
-		using shared_mutex = std::shared_mutex;
-		using component_array = std::vector<Component>;
-		using id_array = std::vector<IdType>;
+		using dispatch_map = std::map<key_type, size_type>;
+		using component_array = std::vector<value_type>;
+		using id_array = std::vector<key_type>;
 		using mutex_array = std::vector<mutex_type>;
-		using exclusive_lock = std::unique_lock<shared_mutex>;
-		using shared_lock = std::shared_lock<shared_mutex>;
+		using exclusive_lock = std::unique_lock<mutex_type>;
+		using read_lock = std::shared_lock<mutex_type>;
+		using write_lock = std::lock_guard<mutex_type>;
 
-		size_type _getIndex(IdType id) const;
+		size_type _getIndex(key_type id) const;
 
 		//guards access to the two vectors
 		//must be taken in exclusive mode to modify the size of the vectors(id_array, _components and _componentMutex)
-		mutable shared_mutex _vectorMutex;
+		mutable mutex_type _vectorMutex;
 		//guards access to the dispatch map // must be taken in exclusive mode to add or remove entries
-		mutable shared_mutex _dispatchMutex;
+		mutable mutex_type _dispatchMutex;
 
 		//a map to connect ids to array addresses
 		dispatch_map _idDispatch;
@@ -86,8 +92,6 @@ namespace hades {
 		//array of components, the main data held by this structure
 		component_array _components;
 	};
-
-	
 }
 
 #include "transactional_map.inl"

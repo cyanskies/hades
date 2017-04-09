@@ -5,22 +5,22 @@
 #include <numeric> // for std::iota
 
 namespace hades {
-	template<typename Component, typename IdType>
-	typename transactional_map<Component, IdType>::value_type transactional_map<Component, IdType>::get(key_type id) const
+	template<typename Key, typename Value>
+	typename transactional_map<Key, Value>::value_type transactional_map<Key, Value>::get(key_type id) const
 	{
 		if (!exists(id))
-			throw std::logic_error("id is not stored in this vector.");
+			throw std::runtime_error("id is not stored in this vector.");
 
 		auto index = _getIndex(id);
 
 		//always open a shared lock to the vectors before accessing them
-		shared_lock vectlk(_vectorMutex, std::defer_lock);
+		read_lock vectlk(_vectorMutex, std::defer_lock);
 		assert(index < _componentMutex.size());
 
-		//always open an exclusive lock to the component before accessing it.
+		//always open an exclusive lock to the Key before accessing it.
 		std::unique_lock<mutex_type> complk(_componentMutex[index], std::defer_lock);
 		std::lock(vectlk, complk);
-		assert(index < _components.size());
+		assert(index < _component.size());
 
 		return _components[index];
 	}
@@ -33,7 +33,7 @@ namespace hades {
 		const std::vector<T>& vec,
 		Compare& compare)
 	{
-		std::vector<std::size_t> p(vec.size());
+		std::vector<size_type> p(vec.size());
 		std::iota(p.begin(), p.end(), 0);
 		std::sort(p.begin(), p.end(),
 			[&](std::size_t i, std::size_t j) { return compare(vec[i], vec[j]); });
@@ -52,16 +52,16 @@ namespace hades {
 	}
 	//end functions from stack overflow
 
-	template<typename Component, typename IdType>
-	void transactional_map<Component, IdType>::sort()
+	template<typename Key, typename Value>
+	void transactional_map<Key, Value>::sort()
 	{
 		//take exclusive locks
-		std::lock_guard<shared_mutex, shared_mutex> guard{ _vectorMutex, _dispatchMutex };
+		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
 
 		//confirm that all of the mutexs are unlocked
 		for (auto &&m : _componentMutex)
 			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
-				throw std::logic_error("Cannot sort while any component mutexes are still being held.");
+				throw std::runtime_error("Cannot sort while any Key mutexes are still being held.");
 
 		//generate the sorting map
 		std::less<key_type> less;
@@ -76,21 +76,21 @@ namespace hades {
 			_idDispatch[_ids[i]] = i;
 	}
 
-	template<typename Component, typename IdType>
-	bool transactional_map<Component, IdType>::exists(key_type id) const
+	template<typename Key, typename Value>
+	bool transactional_map<Key, Value>::exists(key_type id) const
 	{
-		shared_lock lk(_dispatchMutex);
+		read_lock lk(_dispatchMutex);
 		return _idDispatch.find(id) != _idDispatch.end();
 	}
 
-	template<typename Component, typename IdType>
-	void transactional_map<Component, IdType>::create(key_type id, value_type value)
+	template<typename Key, typename Value>
+	void transactional_map<Key, Value>::create(key_type id, value_type value)
 	{
 		if (exists(id))
-			throw std::logic_error("Cannot create the same component more than once.");
+			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + std::to_string(id).c_str());
 
 		//exclusive locks
-		std::lock_guard<shared_mutex, shared_mutex> guard(_vectorMutex, _dispatchMutex);
+		std::lock_guard<mutex_type, mutex_type> guard(_vectorMutex, _dispatchMutex);
 
 		auto newpos = _components.size();
 		_components.emplace_back(value);
@@ -105,23 +105,23 @@ namespace hades {
 		}
 	}
 
-	template<typename Component, typename IdType>
-	void transactional_map<Component, IdType>::erase(key_type id)
+	template<typename Key, typename Value>
+	void transactional_map<Key, Value>::erase(key_type id)
 	{
 		if (!exists(id))
-			throw std::logic_error("Tried to remove id that isn't contained.");
+			throw std::runtime_error("Tried to remove id that isn't contained.");
 
 		auto index = _getIndex(id);
 
 		assert(index < _componentMutex.size());
 
 		//exclusive locks
-		std::lock_guard<shared_mutex, shared_mutex> guard{ _vectorMutex, _dispatchMutex };
+		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
 
 		//if index isn't the last entry, then swap it so that it's at the end
 		if (index < _components.size() - 1)
 		{
-			//always open an exclusive lock to the component before accessing it.
+			//always open an exclusive lock to the Key before accessing it.
 			std::lock_guard<mutex_type, mutex_type> complk(_componentMutex[index], _componentMutex.back());
 
 			//swap index and back
@@ -136,11 +136,11 @@ namespace hades {
 		_idDispatch.erase(id);
 	}
 
-	template<typename Component, typename IdType>
-	typename transactional_map<Component, IdType>::lock_return transactional_map<Component, IdType>::exchange_lock(key_type id, value_type expected) const
+	template<typename Key, typename Value>
+	typename transactional_map<Key, Value>::lock_return transactional_map<Key, Value>::exchange_lock(key_type id, value_type expected) const
 	{
 		if (!exists(id))
-			throw std::logic_error("id is not stored in this vector.");
+			throw std::runtime_error("id is not stored in this vector.");
 
 		auto index = _getIndex(id);
 
@@ -160,33 +160,33 @@ namespace hades {
 		}
 	}
 
-	template<typename Component, typename IdType>
-	void transactional_map<Component, IdType>::exchange_release(key_type id, exchange_token &&token) const
+	template<typename Key, typename Value>
+	void transactional_map<Key, Value>::exchange_release(key_type id, exchange_token &&token) const
 	{
 		if (!exists(id))
-			throw std::logic_error("id is not stored in this vector.");
+			throw std::runtime_error("id is not stored in this vector.");
 		else if (!token.owns_lock())
-			throw std::logic_error("token is invalid.");
+			throw std::runtime_error("token is invalid.");
 
 		auto tok = std::move(token);
 
 		auto index = _getIndex(id);
 
-		shared_lock vectlk(_vectorMutex);
+		read_lock vectlk(_vectorMutex);
 		assert(index < _components.size());
 
 		if (&*tok.mutex() != &_componentMutex[index])
-			throw std::logic_error("exchange token is not for this key.");
+			throw std::runtime_error("exchange token is not for this key.");
 		//let the token go out of scope to unlock the mutex
 	}
 
-	template<typename Component, typename IdType>
-	void transactional_map<Component, IdType>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
+	template<typename Key, typename Value>
+	void transactional_map<Key, Value>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
 	{
 		if (!exists(id))
-			throw std::logic_error("id is not stored in this vector.");
+			throw std::runtime_error("id is not stored in this vector.");
 		else if (!token.owns_lock())
-			throw std::logic_error("token is invalid.");
+			throw std::runtime_error("token is invalid.");
 
 		auto tok = std::move(token);
 
@@ -196,13 +196,32 @@ namespace hades {
 		assert(index < _components.size());
 
 		if (&*tok.mutex() != &_componentMutex[index])
-			throw std::logic_error("exchange token is not for this key.");
+			throw std::runtime_error("exchange token is not for this key.");
 
 		_components[index] = desired;
 	}
 
-	template<typename Component, typename IdType>
-	typename transactional_map<Component, IdType>::size_type transactional_map<Component, IdType>::_getIndex(IdType id) const
+	template<typename Key, typename Value>
+	typename transactional_map<Key, Value>::data_array transactional_map<Key, Value>::data() const
+	{
+		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
+
+		//confirm that all of the mutexs are unlocked
+		for (auto &&m : _componentMutex)
+			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
+				throw std::runtime_error("Cannot sort while any Key mutexes are still being held.");
+
+		data_array output;
+		output.reserve(_idDispatch.size());
+		//make a copy of the data;
+		for (auto key_data : _idDispatch)
+			output.push_back({ key_data.first, _components[key_data.second] });
+
+		return output;
+	}
+
+	template<typename Key, typename Value>
+	typename transactional_map<Key, Value>::size_type transactional_map<Key, Value>::_getIndex(Key id) const
 	{
 		//index is olny useful if the arrays are all the same size, so we'll check the invarient here.
 		assert((_components.size() == _ids.size()) &&

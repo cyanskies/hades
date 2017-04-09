@@ -6,6 +6,7 @@
 
 #include "Hades/GameInterface.hpp"
 #include "Hades/GameSystem.hpp"
+#include "Hades/transactional_map.hpp"
 
 namespace hades
 {
@@ -23,9 +24,19 @@ namespace hades
 		sf::Time current_time;
 	};
 
-	class GameRenderer : public GameInterface, public sf::Drawable
+	class RendererInterface : public GameInterface
 	{
 	public:
+			//controlls for messing with sprites	
+	private:
+		//the time that should be drawn/generated
+		sf::Time _currentTime;
+
+		using SpriteMap = std::map<EntityId, sf::Sprite>;
+	};
+
+	class GameRenderer : public sf::Drawable
+	{
 		//sets the current game clock
 		void setTime(sf::Time time);
 		//progresses the clock by dt
@@ -33,12 +44,6 @@ namespace hades
 
 		//insert curvestream
 		void insertFrames();
-		
-	private:
-		//the time that should be drawn/generated
-		sf::Time _currentTime;
-
-		using SpriteMap = std::map<EntityId, sf::Sprite>;
 	};
 }
 

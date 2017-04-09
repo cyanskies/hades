@@ -57,11 +57,11 @@ namespace hades
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);
 
-		void createSystem(resources::system* system);
-
 		//TODO:
 		//void attach system to entity
+		void attachSystem(EntityId, data::UniqueId, sf::Time t);
 		//void detach system from entity
+		void detachSystem(EntityId, data::UniqueId, sf::Time t);
 
 	protected:
 		using EntityNameMap = std::map<types::string, EntityId>;
@@ -75,6 +75,8 @@ namespace hades
 		mutable std::shared_mutex VariableIdMutex;
 		VariableNameMap VariableIds;
 		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min();
+
+		std::vector<GameSystem> Systems;
 
 	private:
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min();

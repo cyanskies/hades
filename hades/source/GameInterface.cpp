@@ -37,4 +37,13 @@ namespace hades
 		std::lock_guard<std::shared_mutex> lk(VariableIdMutex);
 		return VariableIds[s] = ++VariableNext;
 	}
+
+	void GameInterface::attachSystem(EntityId ent, data::UniqueId sys, sf::Time t)
+	{
+
+	}
+
+	void GameInterface::detachSystem(EntityId ent, data::UniqueId sys, sf::Time t)
+	{
+	}
 }

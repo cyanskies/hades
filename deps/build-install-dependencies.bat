@@ -39,7 +39,7 @@
 
 ::minizlib
 @cd ..
-@msbuild ./zlib/contrib/vstudio/vc15/zlibvc.vcxproj /p:Configuration=%mode%
+@msbuild ./zlib/contrib/vstudio/vc15/zlibvc.vcxproj /p:Configuration=%mode%;WindowsSdkVersion=%WindowsSdkVersion%
 
 ::Copy lib and dll files
 

@@ -48,6 +48,7 @@ namespace hades
 
 			void load(data::data_manager*);
 			
+			data::UniqueId id;
 			//the file this resource should be loaded from
 			//the path of the mod for resources that are parsed and not loaded
 			types::string source;

@@ -119,6 +119,7 @@ namespace hades
 					tex->repeat = d_repeating;
 					tex->mips = d_mips;
 					tex->source = d_source;
+					tex->id = id;
 				}
 				catch (data::resource_wrong_type&)
 				{
@@ -211,7 +212,7 @@ namespace hades
 
 			for (auto n : node)
 			{
-				//get texture with this name if it has already been loaded
+				//get string with this name if it has already been loaded
 				//first node holds the maps name
 				auto tnode = n.first;
 				//second holds the map children
@@ -225,7 +226,7 @@ namespace hades
 				auto moddata = dataman->get<resources::mod>(mod);
 
 				string_ptr->source = moddata->source;
-
+				string_ptr->id = id;
 				string_ptr->value = string;
 
 				dataman->set<resources::string>(id, std::move(string_ptr));
@@ -242,7 +243,5 @@ namespace hades
 			//same as above
 			return;
 		}
-
-
 	}
 }

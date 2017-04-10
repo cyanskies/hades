@@ -10,17 +10,18 @@ namespace hades
 	{
 		assert(parallel_jobs::ready());
 
-		std::vector<parallel_jobs::job*> jobs(_systems.size());
+		std::shared_lock<std::shared_mutex> system_lock(SystemsMutex);
+
+		std::vector<parallel_jobs::job*> jobs(Systems.size());
 		auto iter = jobs.begin();
 
 		//create jobs for all systems to work on their entities
-		for(auto &s : _systems)
+		for(auto &s : Systems)
 		{
 			if (!s.system)
 			{
-				//empty system
-				//TODO: error
 				assert(s.system);
+				throw system_null("Tried to run job from system, but the systems pointer was null");
 			}
 
 			//create the job data, with a pointer to the game interface
@@ -50,14 +51,11 @@ namespace hades
 		_currentTime += dt;
 	}
 
-	void GameInstance::getChanges(sf::Time t) const
+	ExportedCurves GameInstance::getChanges(sf::Time t) const
 	{
-		//return all frames after 't'
-	}
-
-	void GameInstance::getAll() const
-	{
-		//return all frames
+		//return all frames between currenttime - t and time.max
+		ExportedCurves output;		
+		return output;
 	}
 
 	void GameInstance::nameEntity(EntityId entity, const types::string &name)
@@ -75,7 +73,30 @@ namespace hades
 				return n.first;
 		}
 
-		//TODO: throw instead;
-		return types::string();
+		throw variable_without_name("Tried to find name for variable id: " + std::to_string(id) + "; but it had no recorded name");
+	}
+
+	void GameInstance::installSystem(resources::system *system)
+	{
+		assert(system);
+
+		std::lock_guard<std::shared_mutex> system_lock(SystemsMutex);
+
+		if (!system)
+			throw system_null("system pointer passed to GameInstance::installSystem was null");
+
+		auto id = system->id;
+
+		for (auto s : Systems)
+		{
+			if (s.system->id == id)
+				throw system_already_installed("tried to install system: <name>; that is already installed");
+		}
+
+		GameSystem s;
+		s.system = system;
+		Curve<sf::Time, std::vector<EntityId>> entities(CurveType::STEP);
+		entities.insert(sf::Time::Zero, {});
+		s.attached_entities = entities;
 	}
 }

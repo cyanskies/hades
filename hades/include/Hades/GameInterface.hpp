@@ -61,10 +61,8 @@ namespace hades
 		//creates a variable name if it didn't already exist
 		VariableId getVariableId(types::string);
 
-		//TODO:
-		//void attach system to entity
+		//attach/detach entities from systems
 		void attachSystem(EntityId, data::UniqueId, sf::Time t);
-		//void detach system from entity
 		void detachSystem(EntityId, data::UniqueId, sf::Time t);
 
 	protected:

@@ -4,13 +4,23 @@
 #include <functional>
 #include <vector>
 
-#include "Hades/GameInterface.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/value_guard.hpp"
 
 namespace hades
 {
+	class GameInterface;
+
+	//we use int32 as the id type so that entity id's can be stored in curves.
+	using EntityId = types::int32;
+	//we do the same with variable Ids since they also need to be unique and easily network transferrable
+	using VariableId = EntityId;
+
+	//these are earmarked as error values
+	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
+	const VariableId NO_VARIABLE = std::numeric_limits<VariableId>::min();
+
 	//data needed to run a system job
 	//the entities the system is operating on
 	//a reference to the game interface

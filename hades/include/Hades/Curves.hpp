@@ -16,6 +16,7 @@ namespace hades {
 	struct Keyframe
 	{
 		Keyframe(Time at) : t(at) {}
+		Keyframe(Time at, Data data) : t(at), value(data) {}
 
 		Time t;
 		Data value;
@@ -164,13 +165,13 @@ namespace hades {
 			}
 			else
 			{
-				auto at = _data.insert({ at, value });
+				auto iter = _data.insert({ at, value });
 
 				//if the insertion was successful and isn't the last element
 				//in the container
-				if (erase && at.second && at.first != _data.rbegin())
+				if (erase && iter.second && (iter.first != --_data.end()))
 					//erase everything after the newly inserted keyframe
-					_data.erase(++at.first, _data.end());
+					_data.erase(++iter.first, _data.end());
 			}
 		}
 

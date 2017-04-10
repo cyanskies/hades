@@ -12,20 +12,13 @@
 #include "SFML/System/Time.hpp"
 
 #include "Hades/Curves.hpp"
+#include "Hades/GameSystem.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 #include "Hades/transactional_map.hpp"
 
 namespace hades
 {
-	//we use int32 as the id type so that entity id's can be stored in curves.
-	using EntityId = types::int32;
-	//we do the same with variable Ids since they also need to be unique and easily network transferrable
-	using VariableId = EntityId;
-
-	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
-	const VariableId NO_VARIABLE = std::numeric_limits<VariableId>::min();
-
 	struct curve_data
 	{
 		template<class T>
@@ -41,6 +34,17 @@ namespace hades
 		CurveMap<std::vector<bool>> boolVectorCurves;
 		CurveMap<std::vector<types::string>> stringVectorCurves;
 	};
+
+	class system_already_attached : public std::exception
+	{
+		using std::exception::exception;
+	};
+
+	class system_not_attached : public std::exception
+	{
+		using std::exception::exception;
+	};
+
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
 	class GameInterface
@@ -76,6 +80,7 @@ namespace hades
 		VariableNameMap VariableIds;
 		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min();
 
+		mutable std::shared_mutex SystemsMutex;
 		std::vector<GameSystem> Systems;
 
 	private:

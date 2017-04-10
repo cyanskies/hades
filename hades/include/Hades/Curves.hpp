@@ -23,6 +23,18 @@ namespace hades {
 	};
 
 	template<typename Time, typename Data>
+	bool operator==(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	{
+		return lhs.t == rhs.t && lhs.value == rhs.value;
+	}
+
+	template<typename Time, typename Data>
+	bool operator!=(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	{
+		return !(lhs == rhs);
+	}
+
+	template<typename Time, typename Data>
 	bool operator<(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
 	{
 		return lhs.t < rhs.t;
@@ -153,6 +165,9 @@ namespace hades {
 		//For converting to the usable Curve Types
 		CurveType type() { return _type; }
 
+		friend bool operator==(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs);
+		friend bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs);
+
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
@@ -185,6 +200,18 @@ namespace hades {
 		DataType _data;
 		CurveType _type;
 	};
+
+	template<typename Time, typename Data>
+	bool operator==(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
+	{
+		return lhs._type == rhs._type && lhs._data == rhs._data;
+	}
+
+	template<typename Time, typename Data>
+	bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
+	{
+		return !(rhs == lhs);
+	}
 }
 
 #endif //HADES_CURVES_HPP

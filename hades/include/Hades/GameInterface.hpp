@@ -68,6 +68,8 @@ namespace hades
 		void detachSystem(EntityId, data::UniqueId, sf::Time t);
 
 	protected:
+		std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> FindSystem(data::UniqueId);
+
 		using EntityNameMap = std::map<types::string, EntityId>;
 
 		//protected, since the ability to name entities is provided by a child.

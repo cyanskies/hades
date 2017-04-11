@@ -243,5 +243,21 @@ namespace hades
 			//same as above
 			return;
 		}
+
+		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		{
+			//curves:
+			//		name:
+			//			type: default: step
+			//			value: default: int32
+			//			sync: default: false
+
+			//these are loaded into the game instance before anything else
+			//curves cannot change type/value once they have been created,
+			//the resource is used to created synced curves of the correct type
+			//on clients
+			//a blast of names to VariableIds must be sent on client connection
+			//so that we can refer to curves by id instead of by string
+		}
 	}
 }

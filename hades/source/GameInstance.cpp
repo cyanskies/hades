@@ -54,7 +54,8 @@ namespace hades
 	ExportedCurves GameInstance::getChanges(sf::Time t) const
 	{
 		//return all frames between currenttime - t and time.max
-		ExportedCurves output;		
+		ExportedCurves output;	
+
 		return output;
 	}
 

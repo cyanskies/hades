@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <exception>
 #include <set>
+#include <tuple>
 #include <vector>
 
 //A set of curve classes for variables
@@ -211,6 +213,21 @@ namespace hades {
 	bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
 	{
 		return !(rhs == lhs);
+	}
+
+	template<typename Time, typename Data>
+	std::vector<Keyframe<Time, Data>> GetRange(const Curve<Time, Data> &curve, Time first, Time second)
+	{
+		auto begin = curve.begin(), end = curve.end();
+		auto lower = std::lower_bound(begin, end, first);
+		auto upper = std::upper_bound(begin, end, second);
+
+		std::vector<Keyframe<Time,Data>> output;
+
+		while(lower != upper)
+			output.push_back(*lower);
+
+		return output;
 	}
 }
 

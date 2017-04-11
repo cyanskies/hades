@@ -13,3 +13,12 @@ textures:
         width: 90
         height: 90
         source: ball.png
+
+#curves are variables that entities might have, they must all be listed
+#up front in the mod that uses them
+#systems added in a mod can only reference curves added in the file or a dependent file
+curves:
+	test-curve:
+		type: step
+		value: int
+		sync: false

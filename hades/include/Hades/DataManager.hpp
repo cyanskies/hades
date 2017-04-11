@@ -22,6 +22,8 @@ namespace hades
 	//systems provide game logic on the server, or push sprites in the client.
 	using System = resources::system;
 
+	using CurveVariable = resources::curve;
+
 	class DataManager : public data::data_manager
 	{
 	public:
@@ -30,6 +32,7 @@ namespace hades
 		Texture* getTexture(data::UniqueId);
 		String* getString(data::UniqueId);
 		System* getSystem(data::UniqueId);
+		CurveVariable* getCurve(data::UniqueId);
 	};
 
 	extern DataManager* data_manager;

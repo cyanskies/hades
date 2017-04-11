@@ -22,4 +22,14 @@ namespace hades
 	{
 		return get<String>(key);
 	}
+
+	System* DataManager::getSystem(data::UniqueId key)
+	{
+		return get<System>(key);
+	}
+
+	CurveVariable* DataManager::getCurve(data::UniqueId key)
+	{
+		return get<CurveVariable>(key);
+	}
 }

@@ -45,6 +45,11 @@ namespace hades
 		using std::exception::exception;
 	};
 
+	class curve_not_registered : public std::logic_error
+	{
+		using std::logic_error::logic_error;
+	};
+
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
 	class GameInterface
@@ -58,8 +63,8 @@ namespace hades
 
 		curve_data &getCurves();
 
-		//creates a variable name if it didn't already exist
-		VariableId getVariableId(types::string);
+		//throws if the variable is not registered
+		VariableId getVariableId(data::UniqueId);
 
 		//attach/detach entities from systems
 		void attachSystem(EntityId, data::UniqueId, sf::Time t);
@@ -74,17 +79,17 @@ namespace hades
 		mutable std::shared_mutex EntNameMutex;
 		EntityNameMap EntityNames;
 
-		using VariableNameMap = std::map<types::string, VariableId>;
+		using VariableNameMap = std::map<data::UniqueId, VariableId>;
 		//mapping of names to variable ids
 		mutable std::shared_mutex VariableIdMutex;
 		VariableNameMap VariableIds;
-		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min();
+		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min() + 1;
 
 		mutable std::shared_mutex SystemsMutex;
 		std::vector<GameSystem> Systems;
 
 	private:
-		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min();
+		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min() + 1;
 
 		//CURVE VARIABLES
 		curve_data _curves;

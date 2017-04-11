@@ -47,6 +47,7 @@ namespace hades
 		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
 		void nameEntity(EntityId entity, const types::string &name);
 		
+		void registerVariable(data::UniqueId);
 		types::string getVariableName(VariableId) const;
 
 		//adds a system to this instance.,

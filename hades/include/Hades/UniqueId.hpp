@@ -21,12 +21,18 @@ namespace hades
 				assert(_count != std::numeric_limits<type>::max());
 			}
 
+			UniqueId_t(const UniqueId_t&) = default;
+			UniqueId_t(UniqueId_t&&) = default;
+			UniqueId_t &operator=(const UniqueId_t&) = default;
+
 			bool operator==(const UniqueId_t& rhs) const
 			{
 				return _value == rhs._value;
 			}
 
 			type get() const { return _value; }
+
+			friend bool operator<(const UniqueId_t<id_type>&, const UniqueId_t<id_type>&);
 		private:
 			//initialise the static counter with the types smallest value
 			static type _count;
@@ -35,6 +41,12 @@ namespace hades
 
 		template<typename id_type>
 		id_type UniqueId_t<id_type>::_count = std::numeric_limits<id_type>::min();
+
+		template<typename T>
+		bool operator<(const UniqueId_t<T>& lhs, const UniqueId_t<T>& rhs)
+		{
+			return lhs._value < rhs._value;
+		}
 
 		//process wide unique id
 		using UniqueId = UniqueId_t<hades::types::uint64>;

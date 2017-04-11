@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Hades/DataManager.hpp"
 #include "Hades/parallel_jobs.hpp"
 
 namespace hades 
@@ -65,13 +66,20 @@ namespace hades
 		EntityNames[name] = entity;
 	}
 
+	void GameInstance::registerVariable(data::UniqueId id)
+	{
+		std::lock_guard<std::shared_mutex> lk(VariableIdMutex);
+		VariableIds[id] = ++VariableNext;
+	}
+
+
 	types::string GameInstance::getVariableName(VariableId id) const
 	{
 		std::shared_lock<std::shared_mutex> lk(VariableIdMutex);
 		for (auto n : VariableIds)
 		{
 			if (n.second == id)
-				return n.first;
+				return data_manager->as_string(n.first);
 		}
 
 		throw variable_without_name("Tried to find name for variable id: " + std::to_string(id) + "; but it had no recorded name");

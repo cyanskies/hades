@@ -24,7 +24,6 @@ namespace hades
 		void loadSystem(resource_base* r, data::data_manager* dataman);
 		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 
-
 		struct texture : public resource_type<sf::Texture>
 		{
 			texture() : resource_type<sf::Texture>(loadTexture) {}
@@ -46,7 +45,7 @@ namespace hades
 			//if it's provided by the application, then source is empty, and no laoder function is provided.
 		};
 
-		enum VariableType {INT, BOOL, STRING, VECTOR_INT, VECTOR_BOOL, VECTOR_STRING};
+		enum VariableType {ERROR, INT, BOOL, STRING, VECTOR_INT};
 
 		struct curve_t {};
 
@@ -54,7 +53,8 @@ namespace hades
 		{
 			CurveType curve_type;
 			VariableType data_type;
-			bool sync;
+			bool sync,
+				save;
 		};
 	}
 }

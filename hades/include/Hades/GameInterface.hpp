@@ -31,8 +31,6 @@ namespace hades
 
 		//no linear curves here either
 		CurveMap<std::vector<types::int32>> intVectorCurves;
-		CurveMap<std::vector<bool>> boolVectorCurves;
-		CurveMap<std::vector<types::string>> stringVectorCurves;
 	};
 
 	class system_already_attached : public std::exception

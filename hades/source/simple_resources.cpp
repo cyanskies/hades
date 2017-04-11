@@ -244,13 +244,43 @@ namespace hades
 			return;
 		}
 
-		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		CurveType readCurveType(types::string s)
+		{
+			if (s == "const")
+				return CurveType::CONST;
+			else if (s == "step")
+				return CurveType::STEP;
+			else if (s == "linear")
+				return CurveType::LINEAR;
+			else if (s == "pulse")
+				return CurveType::PULSE;
+			else
+				return CurveType::ERROR;
+		}
+
+		VariableType readVariableType(types::string s)
+		{
+			if (s == "int")
+				return VariableType::INT;
+			else if (s == "bool")
+				return VariableType::BOOL;
+			else if (s == "string")
+				return VariableType::STRING;
+			else if (s == "int_vector")
+				return VariableType::VECTOR_INT;
+			else
+				return VariableType::ERROR;
+		}
+
+
+		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
 		{
 			//curves:
 			//		name:
 			//			type: default: step
 			//			value: default: int32
 			//			sync: default: false
+			//			save: default false
 
 			//these are loaded into the game instance before anything else
 			//curves cannot change type/value once they have been created,
@@ -258,6 +288,58 @@ namespace hades
 			//on clients
 			//a blast of names to VariableIds must be sent on client connection
 			//so that we can refer to curves by id instead of by string
+
+			for (auto n : node)
+			{
+				auto tnode = n.first;
+				auto curveInfo = n.second;
+				auto id = dataman->getUid(tnode.as<types::string>());
+				curve* c;
+
+				try
+				{
+					c = dataman->get<curve>(id);
+				}
+				catch (data::resource_null&)
+				{
+					auto curve_ptr = std::make_unique<curve>();
+					c = &*curve_ptr;
+					dataman->set<curve>(id, std::move(curve_ptr));
+
+					c->curve_type = CurveType::STEP;
+					c->data_type = VariableType::INT;
+					c->save = false;
+					c->sync = false;
+					c->id = id;
+				}
+				catch (data::resource_wrong_type&)
+				{
+					//name is already used for something else, this cannnot be loaded
+					auto name = n.as<types::string>();
+					auto mod_ptr = dataman->getMod(mod);
+					LOGERROR("Name collision with identifier: " + name + ", for curve while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
+					//skip the rest of this loop and check the next node
+					continue;
+				}
+
+				c->mod = mod;
+
+				auto type = curveInfo["type"];
+				if (!type.IsNull())
+					c->curve_type = readCurveType(type.as<types::string>());
+
+				auto var = curveInfo["value"];
+				if (var.IsNull())
+					c->data_type = readVariableType(var.as<types::string>());
+
+				auto sync = curveInfo["sync"];
+				if (sync.IsNull())
+					c->sync = sync.as<bool>();
+
+				auto save = curveInfo["save"];
+				if (save.IsNull())
+					c->save = save.as<bool>();
+			}
 		}
 	}
 }

@@ -30,6 +30,10 @@ namespace hades
 		std::vector<std::pair<VariableId, types::string>> variable_names;
 
 		//each curve type goes here
+		std::vector < ExportSet<types::int32>> intCurves;
+		std::vector < ExportSet<bool>> boolCurves;
+		std::vector < ExportSet<types::string>> stringCurves;
+		std::vector < ExportSet<std::vector<types::int32>>> intVectorCurves;
 	};
 }
 

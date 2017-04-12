@@ -22,11 +22,13 @@ namespace hades
 		{
 			EntityId entity;
 			VariableId variable;
-			CurveType type;
+			//the client will use the variableid to ditermine curveType
 			std::vector<Keyframe<sf::Time, T>> frames;
 		};
 
 		std::vector<std::pair<EntityId, types::string>> entity_names;
+
+		//TODO: this should be synced on connection only
 		std::vector<std::pair<VariableId, types::string>> variable_names;
 
 		//each curve type goes here

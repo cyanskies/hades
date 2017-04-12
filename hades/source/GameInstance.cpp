@@ -4,6 +4,7 @@
 
 #include "Hades/DataManager.hpp"
 #include "Hades/parallel_jobs.hpp"
+#include "Hades/simple_resources.hpp"
 
 namespace hades 
 {
@@ -52,10 +53,59 @@ namespace hades
 		_currentTime += dt;
 	}
 
+	template<typename T>
+	std::vector<ExportedCurves::ExportSet<T>> GetExportedSet(sf::Time t, typename transactional_map<std::pair<EntityId, VariableId>, \
+		Curve<sf::Time, T>>::data_array data, const std::map<VariableId, data::UniqueId> &variableIds)
+	{
+		std::vector<ExportedCurves::ExportSet<T>> output;
+		for (auto c : data)
+		{
+			ExportedCurves::ExportSet<T> s;
+			s.variable = c.first.second;
+			
+			//attempt early bailout if this curve isn't for syncing
+			auto curve_id = variableIds.find(s.variable);
+			assert(curve_id != variableIds.end());
+			auto curve = data_manager->getCurve(curve_id->second);
+			assert(curve);
+			//skip if this curve shouldn't sync to the client
+			if (!curve->sync)
+				continue;
+
+			//get the rest of the data
+			s.entity = c.first.first;
+			auto lower = std::lower_bound(c.second.begin(), c.second.end(), t);
+			while (lower != c.second.end())
+				s.frames.push_back(*lower++);
+
+			output.push_back(s);
+		}
+
+		return output;
+	}
+
 	ExportedCurves GameInstance::getChanges(sf::Time t) const
 	{
-		//return all frames between currenttime - t and time.max
-		ExportedCurves output;	
+		//return all frames between currenttime - t and time.max	
+		auto startTime = _currentTime - t;
+		auto &curves = getCurves();
+
+		ExportedCurves output;
+
+		std::map<VariableId, data::UniqueId> reverseIds;
+		{
+			std::shared_lock<std::shared_mutex> lk(VariableIdMutex);
+			for (auto i : VariableIds)
+				reverseIds.insert({ i.second, i.first });
+		}
+
+		//load all the frames from the specified time into the exported data
+		output.intCurves = GetExportedSet<types::int32>(startTime, curves.intCurves.data(), reverseIds);
+		output.boolCurves = GetExportedSet<bool>(startTime, curves.boolCurves.data(), reverseIds);
+		output.stringCurves = GetExportedSet<types::string>(startTime, curves.stringCurves.data(), reverseIds);
+		output.intVectorCurves = GetExportedSet<std::vector<types::int32>>(startTime, curves.intVectorCurves.data(), reverseIds);
+
+		//add in entityNames and variable Id mappings
 
 		return output;
 	}
@@ -64,6 +114,7 @@ namespace hades
 	{
 		std::lock_guard<std::shared_mutex> lk(EntNameMutex);
 		EntityNames[name] = entity;
+		_newEntityNames.push_back({ entity, name });
 	}
 
 	void GameInstance::registerVariable(data::UniqueId id)

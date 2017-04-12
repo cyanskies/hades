@@ -58,6 +58,10 @@ namespace hades
 		const sf::Time _startTime = sf::Time();
 		//the current time, this is the sum of all dt from the game ticks
 		sf::Time _currentTime = _startTime;
+
+		//diffs for the entitynames list
+		std::vector<std::pair<EntityId, types::string>> _newEntityNames;
+
 		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in
 	};
 }

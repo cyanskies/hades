@@ -24,6 +24,10 @@ namespace hades
 		return _curves;
 	}
 
+	const curve_data &GameInterface::getCurves() const
+	{
+		return _curves;
+	}
 
 	VariableId GameInterface::getVariableId(data::UniqueId id)
 	{

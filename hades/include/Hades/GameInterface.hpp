@@ -60,6 +60,7 @@ namespace hades
 		EntityId getEntityId(const types::string &name) const;
 
 		curve_data &getCurves();
+		const curve_data &getCurves() const;
 
 		//throws if the variable is not registered
 		VariableId getVariableId(data::UniqueId);

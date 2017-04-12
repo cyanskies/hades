@@ -33,6 +33,8 @@ namespace hades
 			type get() const { return _value; }
 
 			friend bool operator<(const UniqueId_t<id_type>&, const UniqueId_t<id_type>&);
+
+			static UniqueId_t<id_type> Zero;
 		private:
 			//initialise the static counter with the types smallest value
 			static type _count;

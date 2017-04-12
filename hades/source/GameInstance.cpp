@@ -106,8 +106,25 @@ namespace hades
 		output.intVectorCurves = GetExportedSet<std::vector<types::int32>>(startTime, curves.intVectorCurves.data(), reverseIds);
 
 		//add in entityNames and variable Id mappings
-
+		output.entity_names = _newEntityNames;
+		
 		return output;
+	}
+
+	void GameInstance::clearNewEntitiesNames()
+	{
+		_newEntityNames.clear();
+	}
+
+	std::vector<std::pair<EntityId, types::string>> GameInstance::getAllEntityNames() const
+	{
+		std::shared_lock<std::shared_mutex> lk(EntNameMutex);
+		std::vector<std::pair<EntityId, types::string>> out;
+
+		for (auto n : EntityNames)
+			out.push_back({ n.second, n.first });
+
+		return out;
 	}
 
 	void GameInstance::nameEntity(EntityId entity, const types::string &name)

@@ -141,6 +141,20 @@ namespace hades
 			return get<resources::mod>(mod);
 		}
 
+		bool data_manager::exists(UniqueId uid)
+		{
+			try
+			{
+				_resources.get_reference<std::unique_ptr<resources::resource_base>>(uid);
+			}
+			catch (type_erasure::key_null&)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
 		//convert string to uid
 		UniqueId data_manager::getUid(std::string name)
 		{

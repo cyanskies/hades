@@ -141,6 +141,8 @@ namespace hades
 			template<class T>
 			void set(UniqueId, std::unique_ptr<T>);
 
+			bool exists(UniqueId);
+
 			//returns a non-owning ptr to the resource
 			template<class T>
 			T* get(UniqueId);

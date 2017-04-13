@@ -102,16 +102,12 @@ namespace hades
 				auto id = dataman->getUid(tnode.as<types::string>());
 				texture* tex;
 
-				try
-				{
-					tex = dataman->get<texture>(id);
-				}
-				catch (data::resource_null&)
+				if (!dataman->exists(id))
 				{
 					//resource doens't exist yet, create it
 					auto texture_ptr = std::make_unique<texture>();
 					tex = &*texture_ptr;
-					dataman->set<texture>(id, std::move(texture_ptr));	
+					dataman->set<texture>(id, std::move(texture_ptr));
 
 					tex->height = d_height;
 					tex->width = d_width;
@@ -121,14 +117,26 @@ namespace hades
 					tex->source = d_source;
 					tex->id = id;
 				}
-				catch (data::resource_wrong_type&)
+				else
 				{
-					//name is already used for something else, this cannnot be loaded
-					auto name = n.as<types::string>();
-					auto mod_ptr = dataman->getMod(mod);
-					LOGERROR("Name collision with identifier: " + name + ", for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
-					//skip the rest of this loop and check the next node
-					continue;
+					//retrieve it from the data store
+					try
+					{
+						tex = dataman->get<texture>(id);
+					}
+					catch (data::resource_null&)
+					{
+
+					}
+					catch (data::resource_wrong_type&)
+					{
+						//name is already used for something else, this cannnot be loaded
+						auto name = n.as<types::string>();
+						auto mod_ptr = dataman->getMod(mod);
+						LOGERROR("Name collision with identifier: " + name + ", for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
+						//skip the rest of this loop and check the next node
+						continue;
+					}
 				}
 
 				tex->mod = mod;
@@ -296,11 +304,7 @@ namespace hades
 				auto id = dataman->getUid(tnode.as<types::string>());
 				curve* c;
 
-				try
-				{
-					c = dataman->get<curve>(id);
-				}
-				catch (data::resource_null&)
+				if (!dataman->exists(id))
 				{
 					auto curve_ptr = std::make_unique<curve>();
 					c = &*curve_ptr;
@@ -312,14 +316,21 @@ namespace hades
 					c->sync = false;
 					c->id = id;
 				}
-				catch (data::resource_wrong_type&)
+				else
 				{
-					//name is already used for something else, this cannnot be loaded
-					auto name = n.as<types::string>();
-					auto mod_ptr = dataman->getMod(mod);
-					LOGERROR("Name collision with identifier: " + name + ", for curve while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
-					//skip the rest of this loop and check the next node
-					continue;
+					try
+					{
+						c = dataman->get<curve>(id);
+					}
+					catch (data::resource_wrong_type&)
+					{
+						//name is already used for something else, this cannnot be loaded
+						auto name = n.as<types::string>();
+						auto mod_ptr = dataman->getMod(mod);
+						LOGERROR("Name collision with identifier: " + name + ", for curve while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
+						//skip the rest of this loop and check the next node
+						continue;
+					}
 				}
 
 				c->mod = mod;

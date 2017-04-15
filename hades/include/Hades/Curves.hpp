@@ -24,6 +24,12 @@ namespace hades {
 		Data value;
 	};
 
+	template<typename T>
+	T lerp(T first, T second, float aplha)
+	{
+		return (1 - alpha) * first + t * second;
+	}
+
 	template<typename Time, typename Data>
 	bool operator==(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
 	{
@@ -95,6 +101,8 @@ namespace hades {
 			if (_type == CurveType::PULSE)
 				throw curve_error("Don't use Curve::get() for a pulse curve. Use get* functions instead.");
 
+			//if we're before the start of the data or after the end
+			// then just return the closest keyframe
 			if (at < *_data.begin())
 				return _data.begin()->value;
 			else (at > *_data.end())
@@ -102,22 +110,19 @@ namespace hades {
 			
 			if (_type == CurveType::CONST)
 			{
-				//TODO: handle unasigned curve
-				//will probably have to throw, or return Data();
+				if (_data.empty())
+					throw curve_error("Tried to read from empty CONST curve");
+
 				return _data.begin()->value;
 			}
 			else if (_type == CurveType::LINEAR)
 			{
-				//TODO: handle returning from a time before the first frame, or after the last
-				//TODO: provide a overridable lerp function for this to fall back on?
+				auto d = _getRange(at);
 
-				//linear imp goes here
-				//auto d = GetRange(at);
+				assert(false & "needs more work");
+				//interp value = current - first(start of range) / second - first 
 
-				//return lerp of d.first to d.second with at.
-				assert(false && "unimplemented");
-
-				return Data();
+				return ::lerp(d.first->value, d.second->value, d.second->t - d.first->t)
 			}
 			else if (_type == CurveType::STEP)
 			{

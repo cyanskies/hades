@@ -270,12 +270,16 @@ namespace hades
 		{
 			if (s == "int")
 				return VariableType::INT;
+			else if (s == "float")
+				return VariableType::FLOAT;
 			else if (s == "bool")
 				return VariableType::BOOL;
 			else if (s == "string")
 				return VariableType::STRING;
 			else if (s == "int_vector")
 				return VariableType::VECTOR_INT;
+			else if (s == "float_vector")
+				return VariableType::VECTOR_FLOAT;
 			else
 				return VariableType::ERROR;
 		}

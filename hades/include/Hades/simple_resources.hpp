@@ -45,7 +45,7 @@ namespace hades
 			//if it's provided by the application, then source is empty, and no laoder function is provided.
 		};
 
-		enum VariableType {ERROR, INT, BOOL, STRING, VECTOR_INT};
+		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, VECTOR_INT, VECTOR_FLOAT};
 
 		struct curve_t {};
 

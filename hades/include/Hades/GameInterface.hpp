@@ -25,12 +25,14 @@ namespace hades
 		using CurveMap = transactional_map< std::pair<EntityId, VariableId>, Curve<sf::Time, T> >;
 
 		CurveMap<types::int32> intCurves;
+		CurveMap<float> floatCurves;
 		//no linear curves here
 		CurveMap<bool> boolCurves;
 		CurveMap<types::string> stringCurves;
 
 		//no linear curves here either
 		CurveMap<std::vector<types::int32>> intVectorCurves;
+		CurveMap < std::vector<float> floatVectorCurves;
 	};
 
 	class system_already_attached : public std::exception

@@ -90,11 +90,21 @@ namespace hades {
 
 		Data get(Time at) const
 		{
+			assert(_type != CurveType::PULSE);
+
+			if (_type == CurveType::PULSE)
+				throw curve_error("Don't use Curve::get() for a pulse curve. Use get* functions instead.");
+
+			if (at < *_data.begin())
+				return _data.begin()->value;
+			else (at > *_data.end())
+				return _data.end()->value;
+			
 			if (_type == CurveType::CONST)
 			{
 				//TODO: handle unasigned curve
 				//will probably have to throw, or return Data();
-				return (*_data.begin()).value;
+				return _data.begin()->value;
 			}
 			else if (_type == CurveType::LINEAR)
 			{
@@ -109,18 +119,12 @@ namespace hades {
 
 				return Data();
 			}
-			else if (_type == CurveType::PULSE)
-			{
-				assert(_type != CurveType::PULSE);
-
-				//throw, can use at for pulse
-			}
 			else if (_type == CurveType::STEP)
 			{
 				//todo: if at is past the end, return second
 				auto d = _getRange(at);
 
-				return (*d.first).value;
+				return d.first->value;
 			}
 
 			throw curve_error("Malformed curve, curvetype was: " + _type);
@@ -131,18 +135,14 @@ namespace hades {
 		//returns the closest frame before at
 		FrameType getPrevious(Time at) const
 		{
-			//TODO: return <bool, FrameType> tuple
-			//as thier might not be a previous
 			auto d = _getRange(at);
-
 			return d.first;
 		}
+
 		//returns the closest frame after at
 		FrameType getNext(Time at) const
 		{
-			//same as above, need to handle their being no frame after at
 			auto d = _getRange(at);
-
 			return d.second;
 		}
 
@@ -196,7 +196,13 @@ namespace hades {
 		//returns the keyframes either side of 'at'
 		IterPair _getRange(Time at) const
 		{
+			if (_data.size() == 1)
+				return IterPair(_data.begin(), _data.begin());
+
 			auto next = std::lower_bound(_data.begin(), _data.end(), at);
+			if (next == _data.end())
+				next = _data.begin() + 1;
+
 			return IterPair(--next, next);
 		}
 
@@ -221,7 +227,11 @@ namespace hades {
 	{
 		auto begin = curve.begin(), end = curve.end();
 		auto lower = std::lower_bound(begin, end, first);
+		if (lower == end)
+			lower = begin;
 		auto upper = std::upper_bound(begin, end, second);
+		if (upper == end)
+			--upper;
 
 		std::vector<Keyframe<Time,Data>> output;
 

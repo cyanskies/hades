@@ -344,15 +344,15 @@ namespace hades
 					c->curve_type = readCurveType(type.as<types::string>());
 
 				auto var = curveInfo["value"];
-				if (var.IsNull())
+				if (!var.IsNull())
 					c->data_type = readVariableType(var.as<types::string>());
 
 				auto sync = curveInfo["sync"];
-				if (sync.IsNull())
+				if (!sync.IsNull())
 					c->sync = sync.as<bool>();
 
 				auto save = curveInfo["save"];
-				if (save.IsNull())
+				if (!save.IsNull())
 					c->save = save.as<bool>();
 			}
 		}

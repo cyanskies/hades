@@ -58,11 +58,16 @@ namespace hades
 		class MultiPoint : public Collider
 		{
 		public:
-			MultiPoint(std::vector<sf::Vector2i> points) : Collider(CollideType::MULTIPOINT), _points(points) {}
+			enum Direction {UP, DOWN, LEFT, RIGHT, ALL};
+
+			MultiPoint(std::vector<sf::Vector2i> points, Direction d) : Collider(CollideType::MULTIPOINT), _points(points),
+			_direction(d) {}
 
 			std::vector<sf::Vector2i> getPoints() const { return _points; }
+			Direction getDirection() const { return _direction; }
 
 		private:
+			Direction _direction;
 			std::vector<sf::Vector2i> _points;
 		};
 

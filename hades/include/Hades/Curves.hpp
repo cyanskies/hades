@@ -25,9 +25,16 @@ namespace hades {
 	};
 
 	template<typename T>
-	T lerp(T first, T second, float aplha)
+	T lerp(T first, T second, float alpha)
 	{
 		return (1 - alpha) * first + t * second;
+	}
+
+	template<typename T>
+	std::vector<T> lerp(std::vector<T> first, std::vector<T> second, float alpha)
+	{
+		assert(false && "tried to store a vector in a linear curve");
+		return first;
 	}
 
 	template<typename Time, typename Data>
@@ -103,10 +110,12 @@ namespace hades {
 
 			//if we're before the start of the data or after the end
 			// then just return the closest keyframe
+			auto last = _data.end()--;
+
 			if (at < *_data.begin())
 				return _data.begin()->value;
-			else (at > *_data.end())
-				return _data.end()->value;
+			else if (*last < at)
+				return last->value;
 			
 			if (_type == CurveType::CONST)
 			{
@@ -119,10 +128,10 @@ namespace hades {
 			{
 				auto d = _getRange(at);
 
-				assert(false & "needs more work");
-				//interp value = current - first(start of range) / second - first 
+				auto interp = (at - d.first->t) / (d.second->t - d.first->t);
 
-				return ::lerp(d.first->value, d.second->value, d.second->t - d.first->t)
+				using hades::lerp;
+				return lerp(d.first->value, d.second->value, interp);
 			}
 			else if (_type == CurveType::STEP)
 			{
@@ -206,7 +215,7 @@ namespace hades {
 
 			auto next = std::lower_bound(_data.begin(), _data.end(), at);
 			if (next == _data.end())
-				next = _data.begin() + 1;
+				next = ++_data.begin();
 
 			return IterPair(--next, next);
 		}

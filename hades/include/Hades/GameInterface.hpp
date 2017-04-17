@@ -32,7 +32,7 @@ namespace hades
 
 		//no linear curves here either
 		CurveMap<std::vector<types::int32>> intVectorCurves;
-		CurveMap < std::vector<float> floatVectorCurves;
+		CurveMap <std::vector<float>> floatVectorCurves;
 	};
 
 	class system_already_attached : public std::exception

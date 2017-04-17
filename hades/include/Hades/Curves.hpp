@@ -8,6 +8,8 @@
 #include <tuple>
 #include <vector>
 
+#include "Logging.hpp"
+
 //A set of curve classes for variables
 //curves allow values to interpolated by comparing keyframes
 //keyframes should be estimated in advance so that clients can use them for prediction
@@ -34,6 +36,7 @@ namespace hades {
 	std::vector<T> lerp(std::vector<T> first, std::vector<T> second, float alpha)
 	{
 		assert(false && "tried to store a vector in a linear curve");
+		LOGERROR("Called lerp with a vector: don't store vectors in Linear Curves");
 		return first;
 	}
 

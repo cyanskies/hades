@@ -5,6 +5,8 @@
 
 #include "SFML/Graphics/Rect.hpp"
 
+#include "Hades/Types.hpp"
+
 //provides collision objects and intersection detectors
 //NOTE: this isn't a physics class, just geometry for intersection detection
 namespace hades
@@ -27,14 +29,18 @@ namespace hades
 
 	namespace collision {
 		//these return the collision vector, in the same scope as the collision data was sent in.
-		sf::Vector2i test(const Collider &first, const Collider &other);
-		sf::Vector2i test(const Collider &first, std::vector<const Collider*> other);
+		//if the size of the rect is 0, then no collision has been detected
+		//if only one side of the rect is non-zero, then it is just adjacent
+		//if the collision is detected, then the position of the rect, indicates where the collision starts
+		//the size of the rect, shows the total size of collided area
+		sf::IntRect test(const Collider &first, const Collider &other);
+		sf::IntRect test(const Collider &first, std::vector<const Collider*> other);
 
 		//axis aligned rectangle
 		class Rect : public Collider
 		{
 		public:
-			Rect(int left, int top, int width, int height) : Collider(CollideType::RECT), _rect(left, top, width, height) {}
+			Rect(types::int32 left, types::int32 top, types::int32 width, types::int32 height) : Collider(CollideType::RECT), _rect(left, top, width, height) {}
 			Rect(sf::Vector2i position, sf::Vector2i size) : Collider(CollideType::RECT), _rect(position, size) {}
 
 			sf::IntRect getRect() const { return _rect; }
@@ -46,7 +52,7 @@ namespace hades
 		class Point : public Collider
 		{
 		public:
-			Point(int x, int y) : Collider(CollideType::POINT), _position(x, y) {}
+			Point(types::int32 x, types::int32 y) : Collider(CollideType::POINT), _position(x, y) {}
 			Point(sf::Vector2i position) : Collider(CollideType::POINT), _position(position) {}
 
 			sf::Vector2i getPostition() const { return _position; }
@@ -75,14 +81,15 @@ namespace hades
 		class Circle : public Collider
 		{
 		public:
-			Circle(int x, int y, int radius) : Collider(CollideType::CIRCLE), _position(x, y), _radius(radius) {}
-			Circle(sf::Vector2i position, int radius) : Collider(CollideType::CIRCLE), _position(position), _radius(radius) {}
+			Circle(types::int32 x, types::int32 y, types::int32 radius) : Collider(CollideType::CIRCLE), _position(x, y), _radius(radius) {}
+			Circle(sf::Vector2i position, types::int32 radius) : Collider(CollideType::CIRCLE), _position(position), _radius(radius) {}
 
-			int getRadius() const { return _radius; }
+			sf::Vector2i getPosition() const { return _position; }
+			types::int32 getRadius() const { return _radius; }
 
 		private:
 			sf::Vector2i _position;
-			int _radius;
+			types::int32 _radius;
 		};
 	}
 }

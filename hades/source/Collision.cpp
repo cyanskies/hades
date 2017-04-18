@@ -3,81 +3,163 @@
 #include <algorithm>
 #include <cassert>
 
+#include "Thor/Vectors/VectorAlgebra2D.hpp"
+
+#include "Hades/Types.hpp"
+
 namespace hades
 {
 	namespace collision
 	{
 		//reverse the params if they don't match a cmoparison combination
 		template <class T, class U>
-		sf::Vector2i collisionTest(const T &lhs, const U &rhs)
+		sf::IntRect collisionTest(const T &lhs, const U &rhs)
 		{
-			return collisionTest(rhs, lhs);
+			assert(false && "don't call this again");
+			return sf::IntRect;
 		}
 
 		//test against themselves
 		template<>
-		sf::Vector2i collisionTest<Rect, Rect>(const Rect &lhs, const Rect &rhs)
+		sf::IntRect collisionTest<Rect, Rect>(const Rect &lhs, const Rect &rhs)
 		{
-			return sf::Vector2i();
+			sf::IntRect intersection;
+			lhs.getRect().intersects(rhs.getRect(), intersection);
+			return intersection;
 		}
 		
 		template<>
-		sf::Vector2i collisionTest<Point, Point>(const Point &lhs, const Point &rhs)
-		{
-			return sf::Vector2i();
+		sf::IntRect collisionTest<Point, Point>(const Point &lhs, const Point &rhs)
+		{ 
+			sf::IntRect rect;
+
+			if (lhs.getPostition() == rhs.getPostition())
+			{
+				rect.width = 1;
+				rect.height = 1;
+			}
+
+			return rect;
 		}
 
 		template<>
-		sf::Vector2i collisionTest<MultiPoint, MultiPoint>(const MultiPoint &lhs, const MultiPoint &rhs)
+		sf::IntRect collisionTest<MultiPoint, MultiPoint>(const MultiPoint &lhs, const MultiPoint &rhs)
 		{
-			return sf::Vector2i();
+			//rect position is the top leftmost point to collide
+			//rect size is the distance to the farthest one to collide
+			return sf::IntRect();
 		}
 
 		template<>
-		sf::Vector2i collisionTest<Circle, Circle>(const Circle &lhs, const Circle &rhs)
+		sf::IntRect collisionTest<Circle, Circle>(const Circle &lhs, const Circle &rhs)
 		{
-			return sf::Vector2i();
+			return sf::IntRect();
 		}
 
 		//test all the unique combinations
 		template<>
-		sf::Vector2i collisionTest<Rect, Point>(const Rect &lhs, const Point &rhs)
+		sf::IntRect collisionTest<Rect, Point>(const Rect &lhs, const Point &rhs)
 		{
-			return sf::Vector2i();
+			sf::IntRect rect;
+			if (lhs.getRect().contains(rhs.getPostition()))
+			{
+				rect = lhs.getRect();
+				auto right = rhs.getPostition();
+
+				rect.top = right.y - rect.top;
+				rect.left = right.x - rect.left;
+				rect.width = 1;
+				rect.height = 1;
+			}
+
+			return rect;
 		}
 
 		template<>
-		sf::Vector2i collisionTest<Rect, MultiPoint>(const Rect &lhs, const MultiPoint &rhs)
+		sf::IntRect collisionTest<Rect, MultiPoint>(const Rect &lhs, const MultiPoint &rhs)
 		{
-			return sf::Vector2i();
+			return sf::IntRect();
 		}
 
 		template<>
-		sf::Vector2i collisionTest<Rect, Circle>(const Rect &lhs, const Circle &rhs)
+		sf::IntRect collisionTest<Rect, Circle>(const Rect &lhs, const Circle &rhs)
 		{
-			return sf::Vector2i();
+			return sf::IntRect();
 		}
 
 		template<>
-		sf::Vector2i collisionTest<Point, MultiPoint>(const Point &lhs, const MultiPoint &rhs)
+		sf::IntRect collisionTest<Point, Rect>(const Point &lhs, const Rect &rhs)
 		{
-			return sf::Vector2i();
+			auto p = lhs.getPostition();
+			sf::IntRect rect(p.x, p.y, 0, 0);
+			if (rhs.getRect().contains(p))
+			{
+				rect.width = 1;
+				rect.height = 1;
+			}
+
+			return sf::IntRect();
 		}
 
 		template<>
-		sf::Vector2i collisionTest<Point, Circle>(const Point &lhs, const Circle &rhs)
+		sf::IntRect collisionTest<Point, MultiPoint>(const Point &lhs, const MultiPoint &rhs)
 		{
-			return sf::Vector2i();
+			return sf::IntRect();
 		}
 
 		template<>
-		sf::Vector2i collisionTest<MultiPoint, Circle>(const MultiPoint &lhs, const Circle &rhs)
+		sf::IntRect collisionTest<Point, Circle>(const Point &lhs, const Circle &rhs)
 		{
-			return sf::Vector2i();
+			return sf::IntRect();
+		}
+
+		template<>
+		sf::IntRect collisionTest<MultiPoint, Rect>(const MultiPoint &lhs, const Rect &rhs)
+		{
+			return sf::IntRect();
+		}
+
+		template<>
+		sf::IntRect collisionTest<MultiPoint, Point>(const MultiPoint &lhs, const Point &rhs)
+		{
+			return sf::IntRect();
+		}
+
+		template<>
+		sf::IntRect collisionTest<MultiPoint, Circle>(const MultiPoint &lhs, const Circle &rhs)
+		{
+			return sf::IntRect();
+		}
+
+		template<>
+		sf::IntRect collisionTest<Circle, Rect>(const Circle &lhs, const Rect &rhs)
+		{
+			return sf::IntRect();
+		}
+
+		template<>
+		sf::IntRect collisionTest<Circle, Point>(const Circle &lhs, const Point &rhs)
+		{
+			auto dist = lhs.getPosition() - rhs.getPostition();
+			sf::IntRect rect;
+			if (thor::length(static_cast<sf::Vector2f>(dist)) < lhs.getRadius())
+			{
+				rect.width = 1;
+				rect.height = 1;
+				//find the relative location of the intersections?
+			}
+
+			return rect;
+		}
+
+		template<>
+		sf::IntRect collisionTest<Circle, MultiPoint>(const Circle &lhs, const MultiPoint &rhs)
+		{
+			return sf::IntRect();
 		}
 
 		template<typename T>
-		sf::Vector2i secondTest(const T *first, const Collider &other)
+		sf::IntRect secondTest(const T *first, const Collider &other)
 		{
 			//second test tests the second parameter of test
 			//now we can dispatch to the correct function above
@@ -91,7 +173,7 @@ namespace hades
 				return collisionTest(*first, static_cast<const Circle&>(other));
 		}
 
-		sf::Vector2i test(const Collider &first, const Collider &other)
+		sf::IntRect test(const Collider &first, const Collider &other)
 		{
 			assert(first.type() != Collider::CollideType::NONE);
 			assert(other.type() != Collider::CollideType::NONE);
@@ -107,20 +189,21 @@ namespace hades
 				return secondTest(static_cast<const Circle*>(&first), other);
 		}
 
-		sf::Vector2i test(const Collider &first, std::vector<const Collider*> other)
+		sf::IntRect test(const Collider &first, std::vector<const Collider*> other)
 		{
-			sf::Vector2i collisionvect;
+			sf::IntRect collisionvect;
 
 			for (auto c : other)
 			{
 				auto collide = test(first, *c);
 
+				//TODO: return both position of intersect, and intersection area
 				//merge collide with collisionRect
-				if (std::abs(collisionvect.x) < std::abs(collide.x))
-					collisionvect.x = collide.x;
+				if (std::abs(collisionvect.left) < std::abs(collide.left))
+					collisionvect.left = collide.left;
 
-				if (std::abs(collisionvect.y) < std::abs(collide.y))
-					collisionvect.y = collide.y;
+				if (std::abs(collisionvect.top) < std::abs(collide.top))
+					collisionvect.top = collide.top;
 			}
 
 			return collisionvect;

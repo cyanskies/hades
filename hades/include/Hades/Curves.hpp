@@ -153,14 +153,14 @@ namespace hades {
 		FrameType getPrevious(Time at) const
 		{
 			auto d = _getRange(at);
-			return d.first;
+			return *d.first;
 		}
 
 		//returns the closest frame after at
 		FrameType getNext(Time at) const
 		{
 			auto d = _getRange(at);
-			return d.second;
+			return *d.second;
 		}
 
 		//returns all keyframes between the specified times

@@ -8,8 +8,33 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "Hades/Console.hpp"
+#include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/files.hpp"
+
+using namespace hades;
+
+//posts a standard error message if the requested resource is of the wrong type
+void resource_error(types::string resource_type, types::string resource_name, data::UniqueId mod)
+{
+	auto mod_ptr = data_manager->getMod(mod);
+	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: " 
+		+ mod_ptr->name + ". Name has already been used for a different resource type.");
+}
+
+//posts error message if the yaml node is the wrong type
+bool yaml_error(types::string resource_type, types::string resource_name,
+	types::string property_name, types::string requested_type, data::UniqueId mod, bool test)
+{
+	if (!test)
+	{
+		auto mod_ptr = data_manager->getMod(mod);
+		LOGERROR("Error parsing YAML, in mod: " + mod_ptr->name + ", type: " + resource_type + ", name: " 
+			+ resource_name + ", for property: " + property_name + ". value must be " + requested_type);
+	}
+	
+	return test;
+}
 
 namespace hades
 {
@@ -300,14 +325,33 @@ namespace hades
 			//on clients
 			//a blast of names to VariableIds must be sent on client connection
 			//so that we can refer to curves by id instead of by string
+			
+			//first check that our node is valid
+			//no point looping though if their are not children
+			static const types::string resource_type = "curve";
+			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+				return;
 
+			//then look through the children
 			for (auto n : node)
 			{
+				//if this entry isn't a map, then it cannot have any child values
+				if (!yaml_error(resource_type, n.as<types::string>(), "n/a", "map", mod, n.IsMap()))
+					continue;
+
+				//maps have a first and second value
+				//the first is the string label of the entry
+				//the second is the stored node
 				auto tnode = n.first;
 				auto curveInfo = n.second;
-				auto id = dataman->getUid(tnode.as<types::string>());
+
+				//record this nodes name
+				const types::string name = tnode.as<types::string>();
+
+				auto id = dataman->getUid(name);
 				curve* c;
 
+				//try to get this
 				if (!dataman->exists(id))
 				{
 					auto curve_ptr = std::make_unique<curve>();
@@ -329,9 +373,7 @@ namespace hades
 					catch (data::resource_wrong_type&)
 					{
 						//name is already used for something else, this cannnot be loaded
-						auto name = n.as<types::string>();
-						auto mod_ptr = dataman->getMod(mod);
-						LOGERROR("Name collision with identifier: " + name + ", for curve while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
+						resource_error(resource_type, name, mod);
 						//skip the rest of this loop and check the next node
 						continue;
 					}
@@ -339,33 +381,85 @@ namespace hades
 
 				c->mod = mod;
 
+				//checking a key will return the value accociated with it
+				//eg
+				//thisnode:
+				//	type: curve_type
+
+				//test that the type is a scalar, and not a container or map
 				auto type = curveInfo["type"];
-				if (!type.IsNull())
+				if (!type.IsNull() && yaml_error(resource_type, name, "type", "scalar", mod, type.IsScalar()))
 					c->curve_type = readCurveType(type.as<types::string>());
 
 				auto var = curveInfo["value"];
-				if (!var.IsNull())
+				if (!var.IsNull() && yaml_error(resource_type, name, "value", "scalar", mod, var.IsScalar()))
 					c->data_type = readVariableType(var.as<types::string>());
 
 				auto sync = curveInfo["sync"];
-				if (!sync.IsNull())
+				if (!sync.IsNull() && yaml_error(resource_type, name, "sync", "scalar", mod, sync.IsScalar()))
 					c->sync = sync.as<bool>();
 
 				auto save = curveInfo["save"];
-				if (!save.IsNull())
+				if (!save.IsNull() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
 					c->save = save.as<bool>();
 			}
 		}
 
-		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager* data)
 		{
 			//animations:
-			//	name:
-			//	duration:
-			//	texture:
-			//	frames:
-			//		-x, y, w, h, d
-			//		-x, y, w, h, d
+			//	example-animation:
+			//		duration: 1ms
+			//		texture: example-texture
+			//		size: [w, h]
+			//		frames:
+			//			- [x, y, d]
+			//			- [x, y, d]
+
+
+			for (auto n : node)
+			{
+				auto node = n.first;
+				auto animation_node = n.second;
+				auto id = data->getUid(node.as<types::string>());
+				animation* a;
+
+				static const types::string resource_type = "animation";
+				const types::string name = n.as<types::string>();
+
+				if (!data->exists(id))
+				{
+					auto animation_ptr = std::make_unique<animation>();
+					a = &*animation_ptr;
+					data->set<animation>(id, std::move(animation_ptr));
+
+					a->duration = 1;
+					a->id = id;
+					a->source = types::string();
+					a->texture = data::UniqueId::Zero;
+					a->value = std::vector<animation_frame>(0);
+				}
+				else
+				{
+					try
+					{
+						a = data->get<animation>(id);
+					}
+					catch (data::resource_wrong_type&)
+					{
+						//name is already used for something else, this cannnot be loaded
+						resource_error(resource_type, name, mod);
+						//skip the rest of this loop and check the next node
+						continue;
+					}
+				}
+
+				a->mod = mod;
+				
+				auto duration = animation_node["duration"];
+				if (!duration.IsNull() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
+					a->duration = duration.as<types::uint32>();
+			}
 		}
 	}
 }

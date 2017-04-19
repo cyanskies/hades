@@ -356,5 +356,16 @@ namespace hades
 					c->save = save.as<bool>();
 			}
 		}
+
+		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		{
+			//animations:
+			//	name:
+			//	duration:
+			//	texture:
+			//	frames:
+			//		-x, y, w, h, d
+			//		-x, y, w, h, d
+		}
 	}
 }

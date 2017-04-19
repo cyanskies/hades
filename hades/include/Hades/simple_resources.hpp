@@ -23,6 +23,7 @@ namespace hades
 		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 		void loadSystem(resource_base* r, data::data_manager* dataman);
 		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*);
+		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 
 		struct texture : public resource_type<sf::Texture>
 		{
@@ -55,6 +56,18 @@ namespace hades
 			VariableType data_type;
 			bool sync,
 				save;
+		};
+
+		struct animation_frame
+		{
+			//the rectangle for this frame and the duration relative to the rest of the frames in this animation
+			types::uint32 x, y, width, height, relative_duration;
+		};
+
+		struct animation : public resource_type<std::vector<animation_frame>>
+		{
+			data::UniqueId texture;
+			types::uint32 duration;
 		};
 	}
 }

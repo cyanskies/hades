@@ -2,6 +2,7 @@
 
 # C++ source files
 set(HADES_SRC
+	Animation.cpp
 	App.cpp
 	archive.cpp
 	Bind.cpp
@@ -10,7 +11,7 @@ set(HADES_SRC
 	ConsoleView.cpp
 	DataManager.cpp
 	data_manager.cpp
-        ExportedCurves.cpp
+    ExportedCurves.cpp
 	files.cpp
 	GameInstance.cpp
 	GameInterface.cpp

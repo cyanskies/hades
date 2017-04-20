@@ -61,13 +61,14 @@ namespace hades
 		struct animation_frame
 		{
 			//the rectangle for this frame and the duration relative to the rest of the frames in this animation
-			types::uint32 x, y, width, height, relative_duration;
+			types::uint32 x, y, width, height;
+			float duration;
 		};
 
 		struct animation : public resource_type<std::vector<animation_frame>>
 		{
 			data::UniqueId texture;
-			types::uint32 duration;
+			float duration;
 		};
 	}
 }

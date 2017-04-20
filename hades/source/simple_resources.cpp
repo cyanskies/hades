@@ -459,6 +459,9 @@ namespace hades
 				auto duration = animation_node["duration"];
 				if (!duration.IsNull() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
 					a->duration = duration.as<types::uint32>();
+
+
+				//normalise the 
 			}
 		}
 	}

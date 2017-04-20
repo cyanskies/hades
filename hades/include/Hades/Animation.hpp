@@ -7,7 +7,7 @@
 
 namespace hades
 {
-	void apply_animation(resources::animation *animation, float progress, sf::Sprite &target);
+	void apply_animation(const resources::animation* const animation, float progress, sf::Sprite &target);
 }
 
 #endif //HADES_ANIMATION_HPP

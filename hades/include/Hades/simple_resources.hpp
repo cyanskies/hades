@@ -61,7 +61,9 @@ namespace hades
 		struct animation_frame
 		{
 			//the rectangle for this frame and the duration relative to the rest of the frames in this animation
-			types::uint32 x, y, width, height;
+			animation_frame() = default;
+			animation_frame(types::uint16 nx, types::uint16 ny, float nd) : x(nx), y(ny), duration(nd) {}
+			types::uint16 x, y;
 			float duration;
 		};
 
@@ -69,6 +71,7 @@ namespace hades
 		{
 			data::UniqueId texture;
 			float duration;
+			types::int32 width, height;
 		};
 	}
 }

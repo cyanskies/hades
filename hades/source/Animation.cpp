@@ -44,7 +44,8 @@ namespace hades
 			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
 			if (progress <= 0.f)
 			{
-				target.setTextureRect({ frame.x, frame.y, frame.width, frame.height });
+				target.setTextureRect({ static_cast<types::int32>(frame.x), 
+					static_cast<types::int32>(frame.y), animation->width, animation->height });
 				//if (frame.applyOrigin)
 					//target.setOrigin(frame.origin);
 

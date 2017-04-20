@@ -409,22 +409,27 @@ namespace hades
 		{
 			//animations:
 			//	example-animation:
-			//		duration: 1ms
+			//		duration: 1.0s
 			//		texture: example-texture
 			//		size: [w, h]
 			//		frames:
 			//			- [x, y, d]
 			//			- [x, y, d]
 
+			static const types::string resource_type = "animation";
+			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+				return;
 
 			for (auto n : node)
 			{
+				if (!yaml_error(resource_type, n.as<types::string>(), "n/a", "map", mod, n.IsMap()))
+					continue;
+
 				auto node = n.first;
 				auto animation_node = n.second;
 				auto id = data->getUid(node.as<types::string>());
 				animation* a;
 
-				static const types::string resource_type = "animation";
 				const types::string name = n.as<types::string>();
 
 				if (!data->exists(id))
@@ -458,11 +463,52 @@ namespace hades
 				
 				auto duration = animation_node["duration"];
 				if (!duration.IsNull() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
-					a->duration = duration.as<types::uint32>();
+					a->duration = duration.as<float>();
 
+				auto texture_str = animation_node["texture"];
+				if (!texture_str.IsNull() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
+					a->texture = data_manager->getUid(texture_str.as<types::string>());
 
-				//normalise the 
-			}
-		}
-	}
-}
+				auto width = animation_node["width"];
+				if (!width.IsNull() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
+					a->width = width.as<types::int32>();
+
+				auto height = animation_node["height"];
+				if (!height.IsNull() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
+					a->height = height.as<types::int32>();
+
+				//now get all the frames
+				auto frames = animation_node["frames"];
+				if (!frames.IsNull() && yaml_error(resource_type, name, "frames", "sequence", mod, frames.IsSequence()))
+				{
+					std::vector<animation_frame> frame_vector;
+
+					bool bad_frames = false;
+					//frames is a sequence node
+					for (auto &frame : frames)
+					{
+						if (!yaml_error(resource_type, name, "frame", "sequence", mod, frame.IsSequence()))
+						{
+							bad_frames = true;
+							break;
+						}
+						else if(!yaml_error(resource_type, name, "frame", "[uint16, uint16, float]", mod, frame.size() == 3))
+						{
+							bad_frames = true;
+							break;
+						}
+
+						frame_vector.emplace_back( frame[0].as<types::uint16>(),	// X
+							frame[1].as<types::uint16>(),							// Y
+							frame[3].as<float>() );									// duration
+						
+						auto &f = frame_vector.back();
+						//check that the x and y values are within the limits of int32::max
+					}//for frame in frames
+				}//if frames not null
+
+				//normalise the frame times
+			}//for animations
+		}//parse animations
+	}//namespace resources
+}//namespace hades

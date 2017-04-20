@@ -44,6 +44,9 @@ namespace hades
 		template<typename id_type>
 		id_type UniqueId_t<id_type>::_count = std::numeric_limits<id_type>::min();
 
+		template<typename id_type>
+		UniqueId_t<id_type> UniqueId_t<id_type>::Zero;
+
 		template<typename T>
 		bool operator<(const UniqueId_t<T>& lhs, const UniqueId_t<T>& rhs)
 		{

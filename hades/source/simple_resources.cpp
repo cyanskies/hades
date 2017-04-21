@@ -438,7 +438,7 @@ namespace hades
 					a = &*animation_ptr;
 					data->set<animation>(id, std::move(animation_ptr));
 
-					a->duration = 1;
+					a->duration = 1.f;
 					a->id = id;
 					a->source = types::string();
 					a->texture = nullptr;
@@ -510,20 +510,33 @@ namespace hades
 						{
 							bad_frames = true;
 							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));
+							break;
 						}
 						else if (f.y + a->height > a->texture->height)
 						{
 							bad_frames = true;
 							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));
+							break;
 						}
-
 					}//for frame in frames
 
+					if (bad_frames)
+					{
+						LOGERROR("Animation had frames which contained an error. For animation: " + name + ", This animation will not be valid");
+						continue;
+					}
 
-					//revalue all the frame durations
+					//normalise all the frame durations
+					float sum = 0.f;
+					for (auto &f : frame_vector)
+						sum += f.duration;
+
+					assert(sum != 0.f);
+					for (auto &f : frame_vector)
+						f.duration /= sum;
+
+					a->value = std::move(frame_vector);
 				}//if frames not null
-
-				//normalise the frame times
 			}//for animations
 		}//parse animations
 	}//namespace resources

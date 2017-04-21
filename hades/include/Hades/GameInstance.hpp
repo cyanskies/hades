@@ -14,16 +14,6 @@ namespace hades
 		using std::logic_error::logic_error;
 	};
 
-	class system_already_installed : public std::logic_error
-	{
-		using std::logic_error::logic_error;
-	};
-
-	class system_null : public std::logic_error
-	{
-		using std::logic_error::logic_error;
-	};
-
 	//represents the logic side of an individual level or game
 	//TODO:
 	// support saving
@@ -52,8 +42,7 @@ namespace hades
 		void registerVariable(data::UniqueId);
 		types::string getVariableName(VariableId) const;
 
-		//adds a system to this instance.,
-		//systems should be added as soon as possible
+		//adds a system
 		void installSystem(resources::system *system);
 	private:
 		//the games starting time, is always 0

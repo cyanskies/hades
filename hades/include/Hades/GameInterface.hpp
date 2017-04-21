@@ -95,6 +95,18 @@ namespace hades
 		//CURVE VARIABLES
 		curve_data _curves;
 	};
+
+	class system_already_installed : public std::logic_error
+	{
+		using std::logic_error::logic_error;
+	};
+
+	class system_null : public std::logic_error
+	{
+		using std::logic_error::logic_error;
+	};
+
+	void InstallSystem(resources::system*, std::shared_mutex&, std::vector<GameSystem>&);
 }
 
 #endif //HADES_GAMEINTERFACE_HPP

@@ -138,4 +138,28 @@ namespace hades
 
 		return std::make_tuple(std::move(lk), system);
 	}
+
+	void InstallSystem(resources::system *system, std::shared_mutex &mutex, std::vector<GameSystem> &systems)
+	{
+		assert(system);
+
+		std::lock_guard<std::shared_mutex> system_lock(mutex);
+
+		if (!system)
+			throw system_null("system pointer passed to GameInstance::installSystem was null");
+
+		auto id = system->id;
+
+		for (auto s : systems)
+		{
+			if (s.system->id == id)
+				throw system_already_installed("tried to install system: <name>; that is already installed");
+		}
+
+		GameSystem s;
+		s.system = system;
+		Curve<sf::Time, std::vector<EntityId>> entities(CurveType::STEP);
+		entities.insert(sf::Time::Zero, {});
+		s.attached_entities = entities;
+	}
 }

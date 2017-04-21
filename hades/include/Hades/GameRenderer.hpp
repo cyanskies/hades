@@ -4,6 +4,7 @@
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
+#include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
 #include "Hades/GameSystem.hpp"
 #include "Hades/transactional_map.hpp"
@@ -27,18 +28,15 @@ namespace hades
 	class RendererInterface : public GameInterface
 	{
 	public:
-		//controlls for messing with sprites
+		//controls for messing with sprites
 		using SpriteMap = transactional_map<EntityId, sf::Sprite>;
 		SpriteMap &getSprites();
-	private:
-		//the time that should be drawn/generated
-		sf::Time _currentTime;
-
+	protected:
 		using SpriteMap = transactional_map<EntityId, sf::Sprite>;
 		SpriteMap _sprites;
 	};
 
-	class GameRenderer : public sf::Drawable
+	class GameRenderer : public sf::Drawable, public RendererInterface
 	{
 		//sets the current game clock
 		void setTime(sf::Time time);
@@ -46,7 +44,10 @@ namespace hades
 		void addTime(sf::Time dt);
 
 		//insert curvestream
-		void insertFrames();
+		void insertFrames(ExportedCurves import);
+	private:
+		//the time that should be drawn/generated
+		sf::Time _currentTime;
 	};
 }
 

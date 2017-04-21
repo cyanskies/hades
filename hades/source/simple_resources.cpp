@@ -523,6 +523,7 @@ namespace hades
 					if (bad_frames)
 					{
 						LOGERROR("Animation had frames which contained an error. For animation: " + name + ", This animation will not be valid");
+						a->value.clear();
 						continue;
 					}
 

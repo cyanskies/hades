@@ -19,6 +19,8 @@ namespace hades
 	{
 		assert(animation);
 
+		//todo: support wrapping looped durations
+
 		//test variants
 		if(progress > 1.f)
 		{
@@ -32,8 +34,7 @@ namespace hades
 		}
 
 		//set the texture
-		auto texture = data_manager->getTexture(animation->texture);
-		target.setTexture(texture->value);
+		target.setTexture(animation->texture->value);
 
 		auto rect = target.getTextureRect();
 		//calculate the progress to find the correct rect for this time

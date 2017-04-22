@@ -36,7 +36,8 @@ namespace hades
 			}
 			catch (YAML::Exception &e)
 			{
-				LOGERROR(e.what());
+				auto message = std::string(e.what()) + " while parsing: " + game + "/game.yaml";
+				LOGERROR(message);
 			}
 		}
 

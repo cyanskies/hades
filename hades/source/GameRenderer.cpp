@@ -26,10 +26,12 @@ namespace hades
 	{
 		for (auto &s : set)
 		{
-			auto c = nc = target.get({ s.entity, s.variable });
+			auto c = target.get({ s.entity, s.variable });
+			auto nc = c;
+			auto frames = s.frames;
 
-			std::sort(s.frames.begin(), s.frames.end());
-			for (auto &kf : s.frames)
+			std::sort(frames.begin(), frames.end());
+			for (auto &kf : frames)
 				nc.set(kf.t, kf.value);
 		}
 	}

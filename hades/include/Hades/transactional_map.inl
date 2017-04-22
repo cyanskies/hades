@@ -20,7 +20,7 @@ namespace hades {
 		//always open an exclusive lock to the Key before accessing it.
 		std::unique_lock<mutex_type> complk(_componentMutex[index], std::defer_lock);
 		std::lock(vectlk, complk);
-		assert(index < _component.size());
+		assert(index < _components.size());
 
 		return _components[index];
 	}
@@ -226,7 +226,7 @@ namespace hades {
 		//index is olny useful if the arrays are all the same size, so we'll check the invarient here.
 		assert((_components.size() == _ids.size()) &&
 			(_ids.size() == _componentMutex.size()));
-		shared_lock lk(_dispatchMutex);
+		read_lock lk(_dispatchMutex);
 		return _idDispatch.find(id)->second;
 	}
 }

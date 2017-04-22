@@ -13,15 +13,30 @@ namespace hades
 			"; while setting animation: " + data_manager->as_string(animation->id));
 	}
 
+	void apply_animation(const resources::animation* const animation, sf::Time t, sf::Sprite &target)
+	{
+		assert(animation);
+
+		auto d = sf::seconds(animation->duration);
+		if(t > d)
+		{
+			while (t > d)
+				t -= d;
+		}
+
+		auto progress = t.asSeconds() / d.asSeconds();
+
+		apply_animation(animation, progress, target);
+	}
+
 	//NOTE: based on the FrameAnimation algorithm from Thor C++
 	//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp
 	void apply_animation(const resources::animation* const animation, float progress, sf::Sprite &target)
 	{
 		assert(animation);
 
-		//todo: support wrapping looped durations
-
 		//test variants
+		//this version clamped and warned if the progress was outside of the range
 		if(progress > 1.f)
 		{
 			animation_error(progress, animation);
@@ -34,7 +49,15 @@ namespace hades
 		}
 
 		//set the texture
-		target.setTexture(animation->texture->value);
+		
+		if(animation->value.empty())
+			target.setTexture(animation->texture->value);
+		else
+		{
+			target.setTexture(animation->texture->value, true);
+			return;
+		}
+
 
 		auto rect = target.getTextureRect();
 		//calculate the progress to find the correct rect for this time

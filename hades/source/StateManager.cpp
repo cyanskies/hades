@@ -2,9 +2,6 @@
 
 #include <functional>
 
-#include "Hades/Console.hpp"
-#include "Hades/ResourceManager.hpp"
-
 namespace hades
 {
 	State *StateManager::getActiveState()
@@ -26,11 +23,10 @@ namespace hades
 		_states.pop_back();
 	}
 
-	void StateManager::push(std::unique_ptr<State> &state)
+	void StateManager::push(std::unique_ptr<State> state)
 	{
-		state->attach([this](std::unique_ptr<hades::State>& state) {this->push(state);});
-		state->attach(console);
-		state->attach(resource);
+		state->setStateManangerCallbacks([this](std::unique_ptr<hades::State> state) {this->push(std::move(state));},
+			[this](std::unique_ptr<hades::State> state) {this->pushUnder(std::move(state)); });
 
 		assert(_target);
 		state->setGuiTarget(*_target);
@@ -41,10 +37,10 @@ namespace hades
 		_states.push_back(std::move(state));
 	}
 
-	void StateManager::pushUnder(std::unique_ptr<State> &state)
+	void StateManager::pushUnder(std::unique_ptr<State> state)
 	{
 		//push this state
-		push(state);
+		push(std::move(state));
 
 		//this will end up being under the current state, so it won't have focus
 		state->dropFocus();
@@ -69,9 +65,6 @@ namespace hades
 			s->cleanup();
 
 		_states.clear();
-
-		console = nullptr;
-		resource = nullptr;
 	}
 
 	State *StateManager::getValidState(StateManager::state_iter state)

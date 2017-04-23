@@ -1,5 +1,7 @@
 #include "Hades/Main.hpp"
 
+#include <memory>
+
 #include "ConsoleTestState.hpp"
 #include "snake_loader.hpp"
 
@@ -21,6 +23,6 @@ void resourceTypes(hades::DataManager &data)
 void hadesMain(hades::StateManager &state, std::shared_ptr<hades::Console> console, hades::CommandList &commandLine)
 {
 	std::unique_ptr<hades::State> consolestate = std::make_unique<ConsoleTestState>();
-	state.push(consolestate);
+	state.push(std::move(consolestate));
 }
 

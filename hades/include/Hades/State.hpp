@@ -8,16 +8,19 @@
 #include "TGUI/Gui.hpp"
 
 #include "Bind.hpp"
-#include "Stitches.hpp"
 #include "TimerManager.hpp"
 
 namespace hades
 {
-	class State : public State_Uses
+	class State
 	{
 	public:
 		State();
 		virtual ~State();
+
+		using push_func = std::function<void(std::unique_ptr<State>)>;
+
+		void setStateManangerCallbacks(push_func push, push_func push_under);
 
 		//functions to ditermine whether the state should die
 		bool isAlive() const;
@@ -69,6 +72,8 @@ namespace hades
 		void clearCallbacks();
 
 		tgui::Gui _gui;
+
+		push_func PushState, PushStateUnder;
 
 	private:
 		//TODO: redo input system

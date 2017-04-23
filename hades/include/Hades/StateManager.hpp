@@ -2,10 +2,9 @@
 #define HADES_STATEMANAGER_HPP
 
 #include <memory>
-#include <stack>
+#include <vector>
 
 #include "State.hpp"
-#include "Stitches.hpp"
 
 namespace sf
 {
@@ -14,7 +13,7 @@ namespace sf
 
 namespace hades
 {
-	class StateManager : public State_Uses
+	class StateManager
 	{
 	public:
 		StateManager() : _target(nullptr) {}
@@ -24,10 +23,10 @@ namespace hades
 		//Remove state from the top of the stack
 		void pop();
 		//Add state to the top of the stack
-		void push(std::unique_ptr<State> &state);
+		void push(std::unique_ptr<State> state);
 		//Add state under the top of the stack
 		//This allows the current state to finish before transfering or for a loading state to be added between the two.
-		void pushUnder(std::unique_ptr<State> &state);
+		void pushUnder(std::unique_ptr<State> state);
 
 		//Set the target to be used for Gui rendering
 		void setGuiTarget(sf::RenderTarget &target);

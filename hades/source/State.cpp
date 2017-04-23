@@ -8,6 +8,12 @@ namespace hades
 	State::~State()
 	{}
 
+	void State::setStateManangerCallbacks(State::push_func push, State::push_func push_under)
+	{
+		PushState = push; PushStateUnder = push_under;
+	}
+
+
 	bool State::isAlive() const
 	{
 		return _alive;

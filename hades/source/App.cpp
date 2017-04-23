@@ -112,14 +112,9 @@ namespace hades
 		_resource->appendSystemPath("indev/");
 		_resource->appendSystemPath("common/");
 		
-		_consoleView.attach(_console);
-		_consoleView.attach(_resource);
-
 		_consoleView.init();
 
 		//load config files and overwrite any updated settings
-		_states.attach(_console);
-		_states.attach(_resource);
 		_states.setGuiTarget(_window);
 
 		registerConsoleCommands();	

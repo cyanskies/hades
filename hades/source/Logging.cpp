@@ -16,11 +16,15 @@ namespace hades
 		{
 			if (log)
 				return log->get_new_output(maxVerbosity);
+
+			return console::output_buffer();
 		}
 		console::output_buffer output(console::logger::LOG_VERBOSITY maxVerbosity)
 		{
 			if (log)
 				return log->get_output(maxVerbosity);
+
+			return console::output_buffer();
 		}
 	}
 

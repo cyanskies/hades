@@ -1,6 +1,8 @@
 #ifndef HADES_LOGGING_HPP
 #define HADES_LOGGING_HPP
 
+#include <list>
+
 #include "Hades/Types.hpp"
 
 //Interface and functions for global logging.
@@ -12,6 +14,8 @@ namespace hades
 	namespace console
 	{
 		class string;
+
+		using output_buffer = std::list<string>;
 		//logging interface
 		//this is implimented by hades::Console
 		class logger
@@ -22,6 +26,9 @@ namespace hades
 			virtual ~logger() {}
 			
 			virtual void echo(const string&) = 0;
+
+			virtual output_buffer get_new_output(LOG_VERBOSITY maxVerbosity) = 0;
+			virtual output_buffer get_output(LOG_VERBOSITY maxVerbosity) = 0;
 		};
 
 		class string
@@ -49,6 +56,11 @@ namespace hades
 		extern logger *log;
 
 		void echo(const string&);
+
+
+
+		console::output_buffer new_output(console::logger::LOG_VERBOSITY maxVerbosity = console::logger::LOG_VERBOSITY::NORMAL);
+		console::output_buffer output(console::logger::LOG_VERBOSITY maxVerbosity = console::logger::LOG_VERBOSITY::NORMAL);
 	}
 
 	types::string time();

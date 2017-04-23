@@ -3,9 +3,9 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/System/String.hpp"
 
-#include "Hades/ResourceManager.hpp"
-
+#include "Hades/Properties.hpp"
 #include "Hades/resource/fonts.hpp"
+#include "Hades/System.hpp"
 
 const float SCREEN_LEFT = 0.f;
 const std::string INPUT_SYMBOL = ":>";
@@ -36,10 +36,10 @@ void hades::ConsoleView::init()
 {
 	//_font = resource->getResource<sf::Font>(console->getValue<std::string>("con_characterfont")->load()); // this doesn't work, atomic<std::string is illigal.
 	_font.loadFromMemory(console_font::data, console_font::length);
-	_charSize = console->getValue<int>("con_charactersize");
-	_screenW = console->getValue<int>("vid_width");
-	_screenH = console->getValue<int>("vid_height");
-	_consoleFade = console->getValue<int>("con_fade");
+	_charSize = console::getInt("con_charactersize", 15);
+	_screenW = console::getInt("vid_width", 800);
+	_screenH = console::getInt("vid_height", 600);
+	_consoleFade = console::getInt("con_fade", 180);
 	
 	_view.reset(sf::FloatRect(0.f, 0.f, static_cast<float>(*_screenW), static_cast<float>(*_screenH)));
 
@@ -53,7 +53,7 @@ void hades::ConsoleView::init()
 void hades::ConsoleView::update()
 {
 	//TODO: support infolevel filters.
-	auto strings = console->getRecentOutputFromBuffer(Console::Console_String_Verbosity::WARNING);
+	auto strings = console::new_output(Console::Console_String_Verbosity::WARNING);
 
 	for (auto s : strings)
 	{
@@ -123,7 +123,7 @@ void hades::ConsoleView::enterText(hades::EventContext context)
 
 void hades::ConsoleView::sendCommand()
 {
-	console->runCommand(_inputText);
+	console::runCommand(_inputText);
 
 	_inputText.clear();
 }

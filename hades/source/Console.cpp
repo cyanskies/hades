@@ -314,7 +314,7 @@ namespace hades
 		}
 	}
 
-	const ConsoleStringBuffer Console::getRecentOutputFromBuffer(Console_String_Verbosity maxVerbosity)
+	ConsoleStringBuffer Console::get_new_output(Console_String_Verbosity maxVerbosity)
 	{
 		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
 		std::vector<Console_String>:: iterator iter = TextBuffer.begin() + recentOutputPos;
@@ -330,7 +330,7 @@ namespace hades
 		return out;
 	}
 
-	const ConsoleStringBuffer Console::getAllOutputFromBuffer(Console_String_Verbosity maxVerbosity)
+	ConsoleStringBuffer Console::get_output(Console_String_Verbosity maxVerbosity)
 	{
 		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
 		ConsoleStringBuffer out(TextBuffer.begin(), TextBuffer.end());

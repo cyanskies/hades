@@ -13,18 +13,15 @@
 
 #include "Hades/Bind.hpp"
 #include "Hades/Console.hpp"
-#include "Stitches.hpp"
 
 namespace hades
 {
-	class ConsoleView : public sf::Drawable, public hades::Common_Uses
+	class ConsoleView : public sf::Drawable
 	{
 	public:
 		ConsoleView();
 
 		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-		using hades::Common_Uses::attach;
 
 		void init();
 

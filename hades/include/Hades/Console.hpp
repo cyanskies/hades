@@ -42,7 +42,7 @@ namespace hades
 	// ==================
 	using Console_String = console::string;
 	class VerbPred;
-	typedef std::list<Console_String> ConsoleStringBuffer;
+	using ConsoleStringBuffer = console::output_buffer;
 	template<class T>
 	using ConsoleVariable = console::property<T>;
 
@@ -81,8 +81,8 @@ namespace hades
 		bool exists(const std::string &command) const;
 		void erase(const std::string &command);
 
-		const ConsoleStringBuffer getRecentOutputFromBuffer(Console_String_Verbosity maxVerbosity = NORMAL);
-		const ConsoleStringBuffer getAllOutputFromBuffer(Console_String_Verbosity maxVerbosity = NORMAL);
+		virtual ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = NORMAL);
+		virtual ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = NORMAL);
 
 	protected:
 		bool GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const;

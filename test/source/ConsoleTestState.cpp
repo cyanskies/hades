@@ -1,5 +1,7 @@
 #include "ConsoleTestState.hpp"
 
+#include "Hades/Logging.hpp"
+#include "Hades/Properties.hpp"
 #include "Hades/Types.hpp"
 
 using namespace hades::types;
@@ -8,17 +10,17 @@ void ConsoleTestState::init()
 {
 	hades::data_manager->load();
 
-	console->echo("Console test");
+	LOG("Console test");
 
-	console->set("int8", int8(5));
-	auto int8val = console->getValue<int8>("int8");
-	console->set("uint8", uint8(5));
-	auto uintval = console->getValue<uint8>("uint8");
-	console->set("uint8_under", uint8(-5));
+	hades::console::setProperty("int8", 5);
+	auto int8val = hades::console::getInt("int8", -1);
+	hades::console::setProperty("uint8", 5);
+	auto uintval = hades::console::getInt("uint8", -1);
+	hades::console::setProperty("uint8_under", -5);
 
 	assert(*uintval == 5);
 	//try to overwrite with wrong type
-	console->set("int8", int16(15));
+	hades::console::setProperty("int8", "error");
 	assert(*int8val == 5);
 
 	//assign the needed textures

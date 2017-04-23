@@ -10,9 +10,7 @@
 #include <typeindex>
 #include <vector>
 
-//#include "Archive.hpp"
-#include "Console.hpp"
-#include "Stitches.hpp"
+#include "Hades/Logging.hpp"
 
 namespace hades
 { 
@@ -50,7 +48,7 @@ namespace hades
 		};
 	}
 
-	class ResourceManager : public Uses<Console>
+	class ResourceManager
 	{
 	public:
 		typedef std::unordered_map<std::type_index, std::unique_ptr<detail::AnonymousHolder>> ResourceHolderMap;
@@ -88,8 +86,6 @@ namespace hades
 		bool fileExists(const std::string &relativeFilePath) const;
 
 	public:
-		using Uses<Console>::attach;
-
 		//Paths are searched in the order they were added.
 		//Standard paths are:
 		//Usr common folder(./common/): an per user folder(C:/users/myname/appdata/gamename/common/) that overrides files User common archive, and by extension all other common folders and archives.

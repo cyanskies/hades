@@ -1,3 +1,4 @@
+#include <cassert>
 
 #include "SFML/Graphics/Texture.hpp"
 
@@ -151,8 +152,7 @@ namespace hades
 
 		if(!r)
 		{
-			if(console)
-				console->echo("Could not find file: \"" + relativePath + "\"", Console::ERROR);
+			LOGERROR("Could not find file: \"" + relativePath + "\"");
 			return nullptr;
 		}
 

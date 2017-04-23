@@ -107,7 +107,6 @@ namespace hades
 		registerServerVariables(_console);
 
 		_resource = std::make_shared<ResourceManager>();
-		_resource->attach(_console);
 
 		_resource->appendSystemPath("indev/");
 		_resource->appendSystemPath("common/");

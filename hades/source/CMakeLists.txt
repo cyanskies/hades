@@ -20,7 +20,6 @@ set(HADES_SRC
 	main.cpp
 	parallel_jobs.cpp
 	Properties.cpp
-	ResourceManager.cpp
 	simple_resources.cpp
 	StandardPaths.cpp
 	State.cpp

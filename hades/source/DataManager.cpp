@@ -8,17 +8,24 @@ namespace hades
 
 	DataManager::DataManager()
 	{
-		//register custom resource types
-		register_resource_type("textures", resources::parseTexture);
+		//register custom resource types	
+		register_resource_type("actions", nullptr);
+		register_resource_type("animations", resources::parseAnimation);
+		register_resource_type("curves", resources::parseCurve);
 		register_resource_type("strings", resources::parseString);
 		register_resource_type("systems", resources::parseSystem);
-		register_resource_type("curves", resources::parseCurve);
+		register_resource_type("textures", resources::parseTexture);
 	}
 
-	Texture* DataManager::getTexture(data::UniqueId key)
+	Animation* DataManager::getAnimation(data::UniqueId key)
 	{
-		return get<Texture>(key);
+		return get<Animation>(key);
 	}
+
+	CurveVariable* DataManager::getCurve(data::UniqueId key)
+	{
+		return get<CurveVariable>(key);
+	}	
 
 	String* DataManager::getString(data::UniqueId key)
 	{
@@ -30,8 +37,8 @@ namespace hades
 		return get<System>(key);
 	}
 
-	CurveVariable* DataManager::getCurve(data::UniqueId key)
+	Texture* DataManager::getTexture(data::UniqueId key)
 	{
-		return get<CurveVariable>(key);
+		return get<Texture>(key);
 	}
 }

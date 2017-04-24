@@ -8,7 +8,6 @@
 #include "TGUI/Gui.hpp"
 
 #include "Bind.hpp"
-#include "TimerManager.hpp"
 
 namespace hades
 {

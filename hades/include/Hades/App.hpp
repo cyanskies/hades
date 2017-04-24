@@ -6,16 +6,15 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
-#include "Bind.hpp"
-#include "ConsoleView.hpp"
-#include "DataManager.hpp"
-#include "Main.hpp"
-#include "StateManager.hpp"
+#include "Hades/Bind.hpp"
+#include "Hades/ConsoleView.hpp"
+#include "Hades/DataManager.hpp"
+#include "Hades/Main.hpp"
+#include "Hades/StateManager.hpp"
 
 namespace hades
 {
 	class Console;
-	class ResourceManager;
 
 	////////////////////////////////////////////////////////////
 	/// \brief Main application class.
@@ -75,7 +74,6 @@ namespace hades
 		Bind _bindings;								///< Used by the console to provide bindable input.
 		std::shared_ptr<Console> _console;			///< The appcations debug console.
 		hades::DataManager _dataMan;				///< The applications resource loader
-		std::shared_ptr<ResourceManager> _resource; ///< The resource manager for the entire application.(depreciated)
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
 		
 		sf::RenderWindow _window;					///< SFML window object. 

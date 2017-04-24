@@ -105,11 +105,6 @@ namespace hades
 		registerVariables(_console);
 		registerVidVariables(_console);
 		registerServerVariables(_console);
-
-		_resource = std::make_shared<ResourceManager>();
-
-		_resource->appendSystemPath("indev/");
-		_resource->appendSystemPath("common/");
 		
 		_consoleView.init();
 
@@ -409,20 +404,5 @@ namespace hades
 
 			_console->registerFunction("vid_reinit", vid_reinit, true);
 		}
-
-		//utility functions
-		{
-			std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
-				auto files = _resource->listFilesInDirectory(path);
-
-				for (auto f : files)
-					_console->echo(f);
-
-				return true;
-			};
-
-			_console->registerFunction("dir", util_dir, true);
-		}
-
 	}
 }//hades

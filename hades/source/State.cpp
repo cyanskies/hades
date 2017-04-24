@@ -13,7 +13,6 @@ namespace hades
 		PushState = push; PushStateUnder = push_under;
 	}
 
-
 	bool State::isAlive() const
 	{
 		return _alive;
@@ -33,22 +32,6 @@ namespace hades
 	{
 		_alive = false;
 	}
-
-	//void State::activate()
-	//{
-	//	_active = true;
-	//}
-
-	//bool State::isActive() const
-	//{
-	//	return _active;
-	//}
-
-	//void State::deactivate()
-	//{
-	//	_active = false;
-	//	dropFocus();
-	//}
 
 	void State::grabFocus()
 	{

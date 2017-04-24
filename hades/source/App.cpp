@@ -13,7 +13,6 @@
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
-#include "Hades/ResourceManager.hpp"
 
 namespace hades
 {

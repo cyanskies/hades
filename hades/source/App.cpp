@@ -154,15 +154,15 @@ namespace hades
 		//yaml-cpp doesn't currently have a version macro
 		LOG("yaml-cpp 0.5.3"); //TODO: base this off the version compiled
 		//add default game
-		commands.push_back("-game " + defaultGame());
+		commands.push_back("game " + defaultGame());
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;
-		loadCommand(commands, "-game", [&data](std::string command) {
+		loadCommand(commands, "game", [&data](std::string command) {
 			std::stringstream params(command);
 			std::string value;
 			std::getline(params, value, ' ');
-			assert(value == "-game");
+			assert(value == "game");
 
 			std::getline(params, command, '\0');
 
@@ -174,11 +174,11 @@ namespace hades
 			data.load_game(command);
 		});
 
-		loadCommand(commands, "-mod", [&data](std::string command) {
+		loadCommand(commands, "mod", [&data](std::string command) {
 			std::stringstream params(command);
 			std::string value;
 			std::getline(params, value, ' ');
-			assert(value == "-mod");
+			assert(value == "mod");
 
 			std::getline(params, command, '\0');
 

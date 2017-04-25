@@ -16,6 +16,7 @@ set(HADES_SRC
 	GameInstance.cpp
 	GameInterface.cpp
 	GameRenderer.cpp
+	Input.cpp
 	Logging.cpp
 	main.cpp
 	parallel_jobs.cpp

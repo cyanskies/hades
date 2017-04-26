@@ -12,7 +12,7 @@ namespace hades {
 		std::default_random_engine random_generator(rd());
 	}
 
-	bool floatEqual(float a, float b)
+	inline bool floatEqual(float a, float b)
 	{
 		return fabs(a - b) <= std::numeric_limits<float>::epsilon() * 4;
 	}
@@ -30,9 +30,20 @@ namespace hades {
 		return random(random_generator);
 	}
 
-	bool random()
+	inline bool random()
 	{
 		return random(0, 1) != 0;
+	}
+
+	template<class T>
+	T clamp(T value, T max, T min)
+	{
+		if (value > max)
+			return max;
+		else if (value < min)
+			return min;
+		else
+			return value;
 	}
 }
 

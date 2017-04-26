@@ -24,6 +24,9 @@ namespace hades
 	//returns a vector that points 280 degrees of the origional vector
 	template<typename T>
 	std::tuple<T, T> vector_purpendicular_reverse(T x, T y);
+
+	template<typename T>
+	std::tuple<T, T> vector_clamp(T vx, T vy, T maxx, T maxy, T minx, T miny);
 }
 
 #include "Hades/vector_math.inl"

@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include "Hades/Utility.hpp"
+
 namespace hades
 {
 	template<typename T>
@@ -30,5 +32,11 @@ namespace hades
 	std::tuple<T, T> vector_purpendicular_reverse(T x, T y)
 	{
 		return std::make_tuple(x, y);
+	}
+
+	template<typename T>
+	std::tuple<T, T> vector_clamp(T vx, T vy, T maxx, T maxy, T minx, T miny)
+	{
+		return std::make_tuple(clamp(vx, maxx, minx), clamp(vy, maxy, miny));
 	}
 }

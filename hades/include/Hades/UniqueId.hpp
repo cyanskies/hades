@@ -32,7 +32,8 @@ namespace hades
 
 			type get() const { return _value; }
 
-			friend bool operator<(const UniqueId_t<id_type>&, const UniqueId_t<id_type>&);
+			template<typename T>
+			friend bool operator<(const UniqueId_t<T>&, const UniqueId_t<T>&);
 
 			static UniqueId_t<id_type> Zero;
 		private:

@@ -5,7 +5,7 @@
 #include "ConsoleTestState.hpp"
 #include "snake_loader.hpp"
 
-void defaultBindings(hades::Bind &bind)
+void defaultBindings(hades::InputSystem &bind)
 {
 
 }

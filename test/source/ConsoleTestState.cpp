@@ -49,10 +49,7 @@ bool ConsoleTestState::handleEvent(sf::Event &windowEvent)
 	return false;
 }
 
-void ConsoleTestState::update(const sf::Window &window)
-{}
-
-void ConsoleTestState::update(sf::Time deltaTime)
+void ConsoleTestState::update(sf::Time deltaTime, hades::InputSystem::action_set actions)
 {
 	if (ball_sprite.getPosition().x + ball_sprite.getLocalBounds().width > 800.f)
 		ball_direction = -5.f;

@@ -10,15 +10,14 @@
 class ConsoleTestState final : public hades::State
 {
 public:
-	void init();
-	bool handleEvent(sf::Event &windowEvent);
-	void update(const sf::Window &window);
-	void update(sf::Time deltaTime);
-	void draw(sf::RenderTarget &target, sf::Time deltaTime);
-	void cleanup();
-	void reinit();
-	void pause();
-	void resume();
+	void init() override;
+	bool handleEvent(sf::Event &windowEvent) override;
+	void update(sf::Time deltaTime, hades::InputSystem::action_set) override;
+	void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
+	void cleanup() override;
+	void reinit() override;
+	void pause() override;
+	void resume() override;
 private:
 
 	hades::resources::texture *ball, *missing;

@@ -23,10 +23,7 @@ bool Snake::handleEvent(sf::Event &windowEvent)
 	return false;
 }
 
-void Snake::update(const sf::Window &window)
-{}
-
-void Snake::update(sf::Time deltaTime)
+void Snake::update(sf::Time deltaTime, hades::InputSystem::action_set actions)
 {}
 
 void Snake::draw(sf::RenderTarget &target, sf::Time deltaTime)

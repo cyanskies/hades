@@ -26,6 +26,10 @@ namespace hades
 
 	struct Action
 	{
+		Action() = default;
+		Action(data::UniqueId uid) : id(uid)
+		{}
+
 		data::UniqueId id = data::UniqueId::Zero;
 		int x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
 		bool active = false; //always true for mouseposition and axis
@@ -34,6 +38,11 @@ namespace hades
 	inline bool operator<(const Action &lhs, const Action &rhs)
 	{
 		return lhs.id < rhs.id;
+	}
+
+	inline bool operator==(const Action &lhs, const Action &rhs)
+	{
+		return lhs.id == rhs.id;
 	}
 }
 

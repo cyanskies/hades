@@ -7,9 +7,10 @@
 #include "SFML/Window/Touch.hpp"
 #include "SFML/Window/Window.hpp"
 
+#include "Hades/UniqueId.hpp"
 #include "Hades/vector_math.hpp"
 
-namespace hades 
+namespace hades
 {
 	template<sf::Keyboard::Key k>
 	InputInterpretor Keyboard()
@@ -209,134 +210,136 @@ namespace hades
 		}} });
 	}
 
-void InputSystem::create(data::UniqueId action, bool rebindable)
-{
-	_bindable.insert({ action, rebindable });
-}
-
-void InputSystem::create(data::UniqueId action, bool rebindable, types::string defaultBinding)
-{
-	auto default = _interpretors.find(defaultBinding);
-	if (default == _interpretors.end())
+	void InputSystem::create(data::UniqueId action, bool rebindable)
 	{
-		default = _specialInterpretors.find(defaultBinding);
-		//TODO: throw logic error here
-		assert(default != _specialInterpretors.end());
+		_bindable.insert({ action, rebindable });
 	}
 
-	_inputMap.insert({ default->second, action });
-	_bindable.insert({ action, rebindable });
-}
-
-void InputSystem::addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f)
-{
-	InputInterpretor i;
-	i.eventCheck = e;
-	i.statusCheck = f;
-	i.id = data::UniqueId();
-
-	auto out = _specialInterpretors.insert({ name, i });
-
-	//already exists
-	if (!out.second)
-		throw std::logic_error("Tried to insert InputInterpretor with a name that has already been used: " + name);
-}
-
-bool InputSystem::bind(data::UniqueId action, types::string interpretor)
-{
-	if (_bindable.find(action) == _bindable.end())
-		return false;
-
-	auto inter = _interpretors.find(interpretor);
-	if (inter == _interpretors.end())
-		return false;
-
-	_inputMap.insert({ inter->second, action });
-	return true;
-}
-
-void InputSystem::unbind(data::UniqueId action, types::string input)
-{
-	auto inter = _interpretors.find(input);
-	if (inter == _interpretors.end())
-		return;
-
-	auto bindings = _inputMap.equal_range(inter->second);
-	_inputMap.erase(bindings.first, bindings.second);
-}
-
-void InputSystem::unbind(data::UniqueId action)
-{
-	std::vector<input_map::iterator> erasure_list;
-	for (auto it = _inputMap.begin(); it != _inputMap.end(); ++it)
+	void InputSystem::create(data::UniqueId action, bool rebindable, types::string defaultBinding)
 	{
-		if (it->second == action)
-			erasure_list.push_back(it);
-	}
-
-	for (auto &it : erasure_list)
-		_inputMap.erase(it);
-}
-
-void InputSystem::generateState(std::vector<sf::Event> unhandled)
-{
-	_inputState.clear();
-
-	for (auto &i : _inputMap)
-	{
-		bool event_handled = false;
-
-		for (auto &e : unhandled)
+		auto default = _interpretors.find(defaultBinding);
+		if (default == _interpretors.end())
 		{
-			auto action = i.first.eventCheck(e, i.second);
-			if (std::get<bool>(action))
+			default = _specialInterpretors.find(defaultBinding);
+			//TODO: throw logic error here
+			assert(default != _specialInterpretors.end());
+		}
+
+		_inputMap.insert({ default->second, action });
+		_bindable.insert({ action, rebindable });
+	}
+
+	void InputSystem::addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f)
+	{
+		InputInterpretor i;
+		i.eventCheck = e;
+		i.statusCheck = f;
+		i.id = data::UniqueId();
+
+		auto out = _specialInterpretors.insert({ name, i });
+
+		//already exists
+		if (!out.second)
+			throw std::logic_error("Tried to insert InputInterpretor with a name that has already been used: " + name);
+	}
+
+	bool InputSystem::bind(data::UniqueId action, types::string interpretor)
+	{
+		if (_bindable.find(action) == _bindable.end())
+			return false;
+
+		auto inter = _interpretors.find(interpretor);
+		if (inter == _interpretors.end())
+			return false;
+
+		_inputMap.insert({ inter->second, action });
+		return true;
+	}
+
+	void InputSystem::unbind(data::UniqueId action, types::string input)
+	{
+		auto inter = _interpretors.find(input);
+		if (inter == _interpretors.end())
+			return;
+
+		auto bindings = _inputMap.equal_range(inter->second);
+		_inputMap.erase(bindings.first, bindings.second);
+	}
+
+	void InputSystem::unbind(data::UniqueId action)
+	{
+		std::vector<input_map::iterator> erasure_list;
+		for (auto it = _inputMap.begin(); it != _inputMap.end(); ++it)
+		{
+			if (it->second == action)
+				erasure_list.push_back(it);
+		}
+
+		for (auto &it : erasure_list)
+			_inputMap.erase(it);
+	}
+
+	void InputSystem::generateState(std::vector<sf::Event> unhandled)
+	{
+		_inputState.clear();
+
+		for (auto &i : _inputMap)
+		{
+			bool event_handled = false;
+
+			for (auto &e : unhandled)
 			{
-				_inputState.push_back(std::get<Action>(action));
-				event_handled = true;
+				auto action = i.first.eventCheck(e, i.second);
+				if (std::get<bool>(action))
+				{
+					_inputState.push_back(std::get<Action>(action));
+					event_handled = true;
+				}
+			}
+
+			if (!event_handled)
+			{
+				auto action = i.first.statusCheck(i.second);
+				_inputState.push_back(action);
 			}
 		}
-
-		if (!event_handled)
-		{
-			auto action = i.first.statusCheck(i.second);
-			_inputState.push_back(action);
-		}
 	}
-}
 
-typename InputSystem::action_set InputSystem::getInputState() const
-{
-	InputSystem::action_set actionset;
-
-	std::sort(_inputState.begin(), _inputState.end());
-
-	for (auto iter = _inputState.begin(); iter != _inputState.end(); ++iter)
+	typename InputSystem::action_set InputSystem::getInputState() const
 	{
-		auto actionId = iter->id;
+		InputSystem::action_set actionset;
 
-		//get all instances of this action
-		auto actions = std::equal_range(iter, _inputState.end(), actionId);
+		auto state = _inputState;
+		std::sort(state.begin(), state.end());
 
-		Action action;
-		action.id = actionId;
-		
-		while (actions.first != actions.second)
+		for (auto iter = _inputState.begin(); iter != _inputState.end(); ++iter)
 		{
-			if (actions.first->active)
-				action.active = true;
+			auto actionId = iter->id;
 
-			if (actions.first->x_axis < action.x_axis)
-				action.x_axis = actions.first->x_axis;
+			//get all instances of this action
+			auto actions = std::equal_range(iter, _inputState.end(), actionId);
 
-			if (actions.first->y_axis < action.y_axis)
-				action.y_axis = actions.first->y_axis;
+			Action action;
+			action.id = actionId;
 
-			++actions.first;
+			while (actions.first != actions.second)
+			{
+				if (actions.first->active)
+					action.active = true;
+
+				if (actions.first->x_axis < action.x_axis)
+					action.x_axis = actions.first->x_axis;
+
+				if (actions.first->y_axis < action.y_axis)
+					action.y_axis = actions.first->y_axis;
+
+				++actions.first;
+			}
+
+			actionset.insert(action);
+			iter = actions.second;
 		}
 
-		actionset.insert(action);
-		iter = actions.second;
+		return std::move(actionset);
 	}
-
-	return std::move(actionset);
 }

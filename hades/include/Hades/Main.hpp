@@ -3,14 +3,15 @@
 
 #include <memory>
 
-#include "Bind.hpp"
-#include "Console.hpp"
-#include "DataManager.hpp"
-#include "StateManager.hpp"
+#include "Hades/Console.hpp"
+#include "Hades/DataManager.hpp"
+#include "Hades/Input.hpp"
+#include "Hades/StateManager.hpp"
+#include "Hades/Types.hpp"
 
 namespace hades
 {
-	typedef std::vector<std::string> CommandList;
+	typedef std::vector<types::string> CommandList;
 }
 
 /////////////////////////////////////
@@ -19,7 +20,7 @@ namespace hades
 /// Called before config files are loaded and command line parameters are parsed
 ///	allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
-void defaultBindings(hades::Bind &bind);
+void defaultBindings(hades::InputSystem &bindings);
 
 /////////////////////////////////////
 /// Called after defaultBindings
@@ -27,7 +28,7 @@ void defaultBindings(hades::Bind &bind);
 /// Allows the app to register its default game archive.
 /// eg. return "hades";, will load hades.zip
 /////////////////////////////////////
-std::string defaultGame();
+hades::types::string defaultGame();
 
 /////////////////////////////////////
 /// Called after defaultBindings

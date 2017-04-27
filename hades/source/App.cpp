@@ -74,19 +74,19 @@ namespace hades
 		console->set("s_portrange", 0); // unused
 	}
 
+	App::App() : _input(_window)
+	{}
+
 	void App::init()
 	{
-		//load config files
-		_bindings.attach(_window);
-
 		//bind console commands
-		_bindings.registerInputName(CONSOLE_TOGGLE, "console_toggle");
-		_bindings.registerInputName(TEXTENTERED, "text_entered");
+		//_bindings.registerInputName(CONSOLE_TOGGLE, "console_toggle");
+		//_bindings.registerInputName(TEXTENTERED, "text_entered");
 
-		_bindings.bindKey(CONSOLE_TOGGLE, Bind::PRESS, sf::Keyboard::Tilde);
-		_bindings.bindTextEntered(TEXTENTERED);
+		//_bindings.bindKey(CONSOLE_TOGGLE, Bind::PRESS, sf::Keyboard::Tilde);
+		//_bindings.bindTextEntered(TEXTENTERED);
 
-		defaultBindings(_bindings);
+		defaultBindings(_input);
 
 		//create console
 		_console = std::make_shared<Console>();
@@ -257,10 +257,10 @@ namespace hades
 
 			while( accumulator >= dt)
 			{
-				handleEvents(activeState);
-				_bindings.sendEvents(activeState->getCallbackHandler(), _window);
+				auto unhandled = handleEvents(activeState);
+				_input.generateState(unhandled);
 
-				activeState->update(dt);
+				activeState->update(dt, _input.getInputState());
 				//t += dt;
 				accumulator -= dt;
 				thisFrame += dt;
@@ -303,10 +303,12 @@ namespace hades
 		console::system_object = nullptr;
 	}
 
-	void App::handleEvents(State *activeState)
+	std::vector<sf::Event> App::handleEvents(State *activeState)
 	{
 		//drop events from last frame
-		_bindings.dropEvents();
+		//_bindings.dropEvents();
+
+		std::vector<sf::Event> events;
 
 		sf::Event e;
 		while (_window.pollEvent(e))
@@ -334,10 +336,12 @@ namespace hades
 					_consoleView.enterText(EventContext(&_window, &e, TEXTENTERED));
 			}
 			//input events
-			else if(!activeState->handleEvent(e)) // otherwise let the gamestate handle it
-				_bindings.update(e);				//if the state doesn't handle the event directly
+			else if (!activeState->handleEvent(e)) // otherwise let the gamestate handle it
+				events.push_back(e);				//if the state doesn't handle the event directly
 													// then let the binding manager pass it as user input
 		}
+
+		return events;
 	}
 
 	void App::registerConsoleCommands()
@@ -352,7 +356,7 @@ namespace hades
 			_console->registerFunction("exit", exit, true);
 			_console->registerFunction("quit", exit, true);
 
-			_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1), true);
+			//_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1), true);
 		}
 
 		//vid functions

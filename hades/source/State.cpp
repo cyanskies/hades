@@ -39,17 +39,9 @@ namespace hades
 		_paused = false;	
 	}
 
-	CallbackSystem &State::getCallbackHandler()
+	bool State::guiInput(sf::Event& event)
 	{
-		return _callbacks;
-	}
-
-	void State::handleInput(thor::ActionContext<int> context, int id)
-	{
-		auto func = _stateBinds.find(id);
-
-		if(func != _stateBinds.end())
-			func->second(context);
+		return _gui.handleEvent(event);
 	}
 
 	void State::setGuiTarget(sf::RenderTarget &target)
@@ -71,20 +63,5 @@ namespace hades
 	{
 		pause();
 		_paused = true;
-	}
-
-	void State::bindCallback(int id, std::function<void(EventContext)> func)
-	{
-		_callbacks.connect(id, func);
-	}
-
-	void State::clearCallback(int id)
-	{
-		_callbacks.clearConnections(id);
-	}
-
-	void State::clearCallbacks()
-	{
-		_callbacks.clearAllConnections();
 	}
 }//hades

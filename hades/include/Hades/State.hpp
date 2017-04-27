@@ -1,13 +1,15 @@
 #ifndef HADES_STATE_HPP
 #define HADES_STATE_HPP
 
+#include <atomic>
+
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Window/Joystick.hpp"
 #include "SFML/Window/Window.hpp"
 
 #include "TGUI/Gui.hpp"
 
-#include "Bind.hpp"
+#include "Hades/Input.hpp"
 
 namespace hades
 {
@@ -38,9 +40,7 @@ namespace hades
 		//resumes state
 		void grabFocus();
 		
-		CallbackSystem &getCallbackHandler();
-		void handleInput(thor::ActionContext<int> context, int id);
-
+		bool guiInput(sf::Event&);
 		void setGuiTarget(sf::RenderTarget &target);
 		//draw gui, called after normal draw.
 		void drawGui();
@@ -52,7 +52,7 @@ namespace hades
 		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
-		virtual void update(sf::Time deltaTime) = 0;
+		virtual void update(sf::Time deltaTime, InputSystem::action_set) = 0;
 		//update animations and draw
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime
@@ -65,19 +65,11 @@ namespace hades
 		virtual void resume() = 0; //restart any custom timers, this state is active again and being drawn, recieving input
 	
 	protected:
-		void bindCallback(int id, std::function<void(EventContext)> func);
-		void clearCallback(int id);
-		void clearCallbacks();
-
 		tgui::Gui _gui;
 
 		push_func PushState, PushStateUnder;
 
 	private:
-		//TODO: redo input system
-		CallbackSystem _callbacks;
-		std::map<int, std::function<void(thor::ActionContext<int>)> > _stateBinds;
-
 		std::atomic_bool _alive, _init, _paused;
 	};
 }//hades

@@ -6,9 +6,9 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
-#include "Hades/Bind.hpp"
 #include "Hades/ConsoleView.hpp"
 #include "Hades/DataManager.hpp"
+#include "Hades/Input.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
 
@@ -23,6 +23,8 @@ namespace hades
 	class App
 	{
 	public: 
+
+		App();
 
 		////////////////////////////////////////////////////////////
 		/// \brief Creates and starts most of the apps subsystems and config files.
@@ -59,7 +61,7 @@ namespace hades
 		///	\param activeState The state which will attempt to handle events.
 		///
 		////////////////////////////////////////////////////////////
-		void handleEvents(State *activeState);
+		std::vector<sf::Event> handleEvents(State *activeState);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Registers the engine provided console commands.
@@ -71,7 +73,7 @@ namespace hades
 		/// Member Data
 		////////////////////////////////////////////////////////////
 
-		Bind _bindings;								///< Used by the console to provide bindable input.
+		InputSystem _input;							///< Used by the console to provide bindable input.
 		std::shared_ptr<Console> _console;			///< The appcations debug console.
 		hades::DataManager _dataMan;				///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.

@@ -4,6 +4,7 @@
 set(XING_SRC
 	ConsoleTestState.cpp
 	ExampleJob.cpp
+	input_names.cpp
 	main.cpp
 	Snake.cpp
 	snake_loader.cpp

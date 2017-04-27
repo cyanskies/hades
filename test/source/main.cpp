@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "input_names.hpp"
 #include "ConsoleTestState.hpp"
 #include "snake_loader.hpp"
 
@@ -18,6 +19,9 @@ std::string defaultGame()
 void resourceTypes(hades::DataManager &data)
 {
 	data.register_resource_type("snake-rules", parseSnakeRules);
+
+	//get names for the input system
+	auto move_left = data.getUid("move_left");
 }
 
 void hadesMain(hades::StateManager &state, std::shared_ptr<hades::Console> console, hades::CommandList &commandLine)

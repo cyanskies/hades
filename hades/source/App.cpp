@@ -79,15 +79,6 @@ namespace hades
 
 	void App::init()
 	{
-		//bind console commands
-		//_bindings.registerInputName(CONSOLE_TOGGLE, "console_toggle");
-		//_bindings.registerInputName(TEXTENTERED, "text_entered");
-
-		//_bindings.bindKey(CONSOLE_TOGGLE, Bind::PRESS, sf::Keyboard::Tilde);
-		//_bindings.bindTextEntered(TEXTENTERED);
-
-		defaultBindings(_input);
-
 		//create console
 		_console = std::make_shared<Console>();
 		//record the global console as logger
@@ -99,6 +90,8 @@ namespace hades
 
 		//record the global resource controller
 		data_manager = &_dataMan;
+
+		resourceTypes(_dataMan);
 
 		//load defualt console settings
 		registerVariables(_console);
@@ -189,6 +182,8 @@ namespace hades
 
 			data.add_mod(command);
 		});
+
+		defaultBindings(_input);
 
 		//proccess config files
 		//load saved bindings and whatnot from config files

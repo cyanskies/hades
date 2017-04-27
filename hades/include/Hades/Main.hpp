@@ -15,9 +15,6 @@ namespace hades
 }
 
 /////////////////////////////////////
-/// Called at the start of the app
-/// 
-/// Called before config files are loaded and command line parameters are parsed
 ///	allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
 void defaultBindings(hades::InputSystem &bindings);
@@ -35,6 +32,8 @@ hades::types::string defaultGame();
 /// 
 /// Allows the app to register its unique resource types.
 ///	Apps must register both yaml parsers for the resource and loaders
+///
+/// Apps may register their Actions here
 /////////////////////////////////////
 void resourceTypes(hades::DataManager &data);
 

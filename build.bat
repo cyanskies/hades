@@ -23,8 +23,11 @@
 
 @cmake  -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx% -G %generator%
 
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
+::@cmake --build . --config %mode%
+::@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
+@cmake --build . --target install --config %mode%
+:: target install will automatically build if needed, then run install
+::@msbuild INSTALL.vcxproj /p:Configuration=%mode%
 
 @cd ../test
 

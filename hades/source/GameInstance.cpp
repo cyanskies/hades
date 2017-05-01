@@ -44,19 +44,25 @@ namespace hades
 			++iter;
 		}
 
+		parallel_jobs::run(parent_job);
+
 		//the jobs must be started after they are all created,
 		//in case any systems try to add or remove entities from other systems
 		for (auto j : jobs)
 			parallel_jobs::run(j);
 
-		for (auto j : jobs)
-			parallel_jobs::wait(j);
+		parallel_jobs::wait(parent_job);
 
 		assert(parallel_jobs::ready());
 
 		//advance the game clock
 		//this is the only time the clock can be changed
 		_currentTime += dt;
+	}
+
+	void GameInstance::insertInput(InputSystem::action_set input, sf::Time t)
+	{
+		_input.set(t, input);
 	}
 
 	template<typename T>

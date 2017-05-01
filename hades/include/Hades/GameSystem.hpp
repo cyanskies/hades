@@ -34,7 +34,7 @@ namespace hades
 		GameInterface* game_data;
 		//the current time, and the time to advance too(t + dt)
 		sf::Time current_time, dt;
-		//the input over time
+		//the input over time for systems to look at
 		const Curve<sf::Time, InputSystem::action_set> *actions;
 	};
 

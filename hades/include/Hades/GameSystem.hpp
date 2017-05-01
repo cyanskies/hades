@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 
+#include "Hades/Input.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/value_guard.hpp"
@@ -28,9 +29,13 @@ namespace hades
 	//this frames dt
 	struct system_job_data : public parallel_jobs::job_data
 	{
+		//the entities this system id attached too
 		std::vector<EntityId> entities;
 		GameInterface* game_data;
+		//the current time, and the time to advance too(t + dt)
 		sf::Time current_time, dt;
+		//the input over time
+		const Curve<sf::Time, InputSystem::action_set> *actions;
 	};
 
 	//the interface for game systems.

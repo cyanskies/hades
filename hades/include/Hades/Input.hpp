@@ -3,7 +3,7 @@
 
 #include <functional>
 #include <map>
-#include <unordered_set>
+#include <set>
 #include <tuple>
 #include <vector>
 
@@ -93,7 +93,7 @@ namespace hades
 		//load bindings config
 		//save binding config, //this only works for bindable actions
 		void generateState(std::vector<sf::Event> unhandled); //runs all the action test functions, including custom ones
-		using action_set = std::unordered_set<Action>;
+		using action_set = std::set<Action>;
 		action_set getInputState() const;
 	private:
 		//a map of interpretors to actions, this is used for generateStat

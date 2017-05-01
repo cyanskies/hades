@@ -233,6 +233,7 @@ namespace hades {
 		//worker init is called once at the start of the program
 		void worker_init()
 		{
+			auto id = std::this_thread::get_id();
 			t_thread_id = g_thread_id_next++;
 		}
 
@@ -327,11 +328,15 @@ namespace hades {
 			assert(job);
 			if (job->unfinished_children > 1)
 				ready_wait(job);
-			//if true, the job completed properly, if false, it wants another go later
-			if (job->function(*job->user_data))
-				finish(job);
-			else
-				run(job);//requeue the job
+
+			if (job->function)
+			{
+				//if true, the job completed properly, if false, it wants another go later
+				if (job->function(*job->user_data))
+					finish(job);
+				else
+					run(job);//requeue the job
+			}
 		}
 
 		void worker_function()

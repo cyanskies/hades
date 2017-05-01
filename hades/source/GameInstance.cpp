@@ -17,12 +17,17 @@ namespace hades
 		std::vector<parallel_jobs::job*> jobs(Systems.size());
 		auto iter = jobs.begin();
 
+		auto parent_job = parallel_jobs::create(parallel_jobs::job_function());
+
 		//create jobs for all systems to work on their entities
 		for(auto &s : Systems)
 		{
+			assert(s.system);
+
+			//TODO: remove this, is the system is null the input is invalid
 			if (!s.system)
 			{
-				assert(s.system);
+				//this is an unrecoverable error
 				throw system_null("Tried to run job from system, but the systems pointer was null");
 			}
 
@@ -32,9 +37,10 @@ namespace hades
 			job_data->game_data = this;
 			job_data->current_time = _currentTime;
 			job_data->dt = dt;
+			job_data->actions = &_input;
 
 			//create a job function that will call the systems job on each attached entity
-			*iter = parallel_jobs::create(s.system->value, std::move(job_data));
+			*iter = parallel_jobs::create_child(parent_job, s.system->value, std::move(job_data));
 			++iter;
 		}
 

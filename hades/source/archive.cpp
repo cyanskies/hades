@@ -1,10 +1,16 @@
 #include "Hades/archive.hpp"
 
 #include <cassert>
+#include <filesystem>
 #include <limits>
 #include <string>
 
+#include "zlib/zip.h"
 #include "zlib/unzip.h"
+
+#include "Hades/Logging.hpp"
+
+namespace fs = std::experimental::filesystem;
 
 namespace hades
 {
@@ -86,8 +92,9 @@ namespace hades
 
 			buffer buff(static_cast<buffer::size_type>(usize));
 
-			//TODO: what to do if this fails in runtime? throw buffer too small exception
-			//will have to do the same everywhere buffer is created
+			//NOTE: uint32 max worth of bytes is around 4gb, so we shouldn't have
+			// a problem unless someones trying to load something really big, but then the 
+			// assert should catch it.
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
 
@@ -101,17 +108,27 @@ namespace hades
 			if (!_fileOpen)
 				throw archive_exception("Tried to seek without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
-			unzCloseCurrentFile(_archive);
-			//TODO: check return val
-			open(_fileName);
+			//close and open the file to reset the seek ptr
+			if (unzCloseCurrentFile(_archive) == UNZ_CRCERROR)
+			{
+				//file closed but crc check indicates an error
+				LOGWARNING("CRC error in archive: " + _fileName);
+			}
 
-			//TODO: need to throw out of range exception(buffer cannot hold enough data for the file)
+			_fileOpen = false;
+
+			if(!open(_fileName))
+				throw archive_exception(("Failed to open file in archive: " + _fileName).c_str(), archive_exception::error_code::FILE_OPEN);
+
 			assert(std::numeric_limits<unsigned int>::max() > position);
 			buffer buff(static_cast<buffer::size_type>(position));
 
-			return read(buff.data(), position);
+			sf::Int64 total = 0;
 
-			//TODO: loop, continue reading if the read wasnt far enough
+			while(total < position)
+				total += read(buff.data(), position);
+
+			return total;
 		}
 
 		sf::Int64 archive_stream::tell()
@@ -138,13 +155,14 @@ namespace hades
 
 		unarchive open_archive(std::string path)
 		{
-			//test that archive exists
+			if(!fs::exists(path))
+				throw archive_exception(("archive not found: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
 			//open archive
 			unarchive a = unzOpen(path.c_str());
 
 			if (!a)
 			{
-				throw archive_exception((std::string("unable to open archive: ") + path.c_str()).c_str(), archive_exception::error_code::FILE_OPEN);
+				throw archive_exception(("unable to open archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
 			}
 
 			return a;
@@ -165,8 +183,7 @@ namespace hades
 			auto stream = stream_file_from_archive(archive, path);
 				
 			auto size = stream.getSize();
-
-			//TODO: need to throw out of range exception
+			
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
@@ -190,7 +207,6 @@ namespace hades
 		{
 			archive_stream str(archive);
 			str.open(path);
-			//TODO: check return val
 			return str;
 		}
 
@@ -213,6 +229,37 @@ namespace hades
 		{
 			auto r = unzLocateFile(a, path.c_str(), case_sensitivity_auto);
 			return r == UNZ_OK;
+		}
+
+		bool compress_directory(std::string path)
+		{
+			if (!fs::is_directory(path))
+				throw archive_exception(("path is not a directory: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+
+			if (!fs::exists(path))
+				throw archive_exception(("directory not found: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+
+			types::string new_zip_path;
+
+			fs::path fs_path(path);
+			auto root = fs_path.parent_path();
+			auto name = --fs_path.end();
+
+			//detect likely bug
+			//may need to do --(--fs_path.end())
+			assert(*name != ".");
+
+			auto zip = zipOpen((root.generic_string() + "/" + name->generic_string()).c_str(), APPEND_STATUS_CREATE);
+
+			//TODO: throw on error
+			assert(zip);
+			return false;
+		}
+
+		bool uncompress_archive(std::string path)
+		{
+			//TODO: impliment
+			return false;
 		}
 	}
 }

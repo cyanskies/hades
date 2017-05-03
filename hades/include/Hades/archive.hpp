@@ -12,6 +12,7 @@
 
 namespace hades
 {
+	//buffer of bytes
 	using buffer = std::vector<types::uint8>;
 
 	namespace zip
@@ -73,6 +74,8 @@ namespace hades
 		bool file_exists(std::string archive, std::string path);
 
 		//compress_directory
+		//path must be a directory
+		//will create a zip in the parent directory with the same name
 		bool compress_directory(std::string path);
 		//uncompress archive
 		bool uncompress_archive(std::string path);

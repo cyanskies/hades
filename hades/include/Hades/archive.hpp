@@ -26,9 +26,11 @@ namespace hades
 			{
 				FILE_OPEN,
 				FILE_READ,
+				FILE_WRITE,
 				FILE_CLOSE,
 				FILE_ALREADY_OPEN,
-				FILE_NOT_OPEN
+				FILE_NOT_OPEN,
+				FILE_NOT_FOUND
 			};
 
 			archive_exception(const char* what, error_code code);
@@ -41,7 +43,7 @@ namespace hades
 		class archive_stream : public sf::InputStream
 		{
 		public:
-			archive_stream(std::string archive);
+			archive_stream(types::string archive);
 			archive_stream(archive_stream&&);
 			archive_stream(const archive_stream&) = delete;
 			archive_stream &operator=(archive_stream&&);
@@ -49,36 +51,39 @@ namespace hades
 
 			virtual ~archive_stream();
 
-			bool open(std::string filename);
+			bool open(types::string filename);
 			bool is_open() const;
 			sf::Int64 read(void* data, sf::Int64 size);
 			sf::Int64 seek(sf::Int64 position);
 			sf::Int64 tell();
 			sf::Int64 getSize();
 		private:
-			std::string _fileName;
+			types::string _fileName;
 			bool _fileOpen;
 			unarchive _archive;
 		};
 		
 		//returns raw data
-		buffer read_file_from_archive(std::string archive, std::string path);
+		buffer read_file_from_archive(types::string archive, types::string path);
 
 		//returns a file read as a string
-		std::string read_text_from_archive(std::string archive, std::string path);
+		types::string read_text_from_archive(types::string archive, types::string path);
 
 		//returns streamable data
-		archive_stream stream_file_from_archive(std::string archive, std::string path);
+		archive_stream stream_file_from_archive(types::string archive, types::string path);
 
 		//ditermines if a file within an archive exists
-		bool file_exists(std::string archive, std::string path);
+		bool file_exists(types::string archive, types::string path);
+
+		//returns all files in the archive within the dir_path directory, can continue recursively
+		std::vector<types::string> list_files_in_archive(types::string archive, types::string dir_path, bool recursive = false);
 
 		//compress_directory
 		//path must be a directory
 		//will create a zip in the parent directory with the same name
-		void compress_directory(std::string path);
+		void compress_directory(types::string path);
 		//uncompress archive
-		void uncompress_archive(std::string path);
+		void uncompress_archive(types::string path);
 	}
 }
 

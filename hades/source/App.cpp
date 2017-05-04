@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <functional>
+#include <future>
 #include <string>
 #include <sstream>
 
@@ -417,16 +418,23 @@ namespace hades
 
 				std::function<bool(types::string)> compress_dir = [](types::string path)->bool
 				{
-					try {
+					//compress in a seperate thread to let the UI continue updating
+					std::thread t([path]() {
+						try {
 						zip::compress_directory(path);
 						return true;
-					}
-					catch (zip::archive_exception &e)
-					{
-						LOGERROR(e.what());
-					}
+						}
+						catch (zip::archive_exception &e)
+						{
+							LOGERROR(e.what());
+						}
 
-					return false;
+						return false;
+					});
+
+					t.detach();
+
+					return true;
 				};
 
 				_console->registerFunction("compress", compress_dir, true);
@@ -434,16 +442,23 @@ namespace hades
 
 				std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
 				{
-					try {
-						zip::uncompress_archive(path);
-						return true;
-					}
-					catch (zip::archive_exception &e)
-					{
-						LOGERROR(e.what());
-					}
+					//run uncompress func in a seperate thread to spare the UI
+					std::thread t([path]() {
+						try {
+							zip::uncompress_archive(path);
+							return true;
+						}
+						catch (zip::archive_exception &e)
+						{
+							LOGERROR(e.what());
+						}
 
-					return false;
+						return false;
+					});
+
+					t.detach();
+
+					return true;
 				};
 
 				_console->registerFunction("uncompress", uncompress_dir, true);

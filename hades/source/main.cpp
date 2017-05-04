@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 		cmdline.push_back(argv[i]);
 	}
 
-	std::vector<std::string> commands;
+	hades::CommandList commands;
 	int index = -1;
 
 	std::for_each(cmdline.begin(), cmdline.end(), [&commands, &index, COMMAND_DELIMITER] (std::string &s) {
@@ -30,6 +30,30 @@ int main(int argc, char** argv)
 		else if(index != -1)
 			commands[index] = commands[index] + " " + s;
 	});
+
+	auto command_length = commands.size();
+
+	//===special commands===
+	//these are invoked by using the engine as a normal command line program
+	//the engine will not actually open if invoked with these commands
+	try
+	{
+		hades::LoadCommand(commands, "compress", [](hades::CommandList::value_type param) {
+			hades::zip::compress_directory(param);
+		});
+
+		hades::LoadCommand(commands, "uncompress", [](hades::CommandList::value_type param) {
+			hades::zip::uncompress_archive(param);
+		});
+	}
+	catch (hades::zip::archive_exception &e)
+	{
+		LOGERROR(e.what());
+		return EXIT_FAILURE;
+	}
+
+	if (commands.size() != command_length)
+		return EXIT_SUCCESS;
 
 	int returnCode = EXIT_FAILURE;
 	{

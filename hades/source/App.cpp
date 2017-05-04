@@ -112,7 +112,7 @@ namespace hades
 	}
 
 	//calls job on any command that contains command
-	void loadCommand(CommandList &commands, std::string command, std::function<void(CommandList::value_type)> job)
+	void loadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
 	{
 		auto bit = commands.begin(), end = commands.end();
 		std::vector<CommandList::iterator> removeList;
@@ -133,6 +133,11 @@ namespace hades
 			commands.erase(removeList.back());
 			removeList.pop_back();
 		}
+	}
+
+	void LoadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
+	{
+		loadCommand(commands, command, job);
 	}
 
 	void App::postInit(CommandList commands)

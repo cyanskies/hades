@@ -83,6 +83,7 @@ namespace hades
 		ConsoleView _consoleView;					///< The console interation devtool.
 	};
 
+	void LoadCommand(CommandList&, types::string, std::function<void(CommandList::value_type)>);
 };//hades
 
 #endif //HADES_APP_HPP

@@ -188,5 +188,11 @@ namespace hades {
 			else
 				return _archiveStream.getSize();
 		}
+
+		std::vector<types::string> ListFilesInDirectory(types::string dir_path, bool recursive)
+		{
+			//TODO: this
+			return std::vector<types::string>();
+		}
 	}
 }

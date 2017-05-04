@@ -61,6 +61,8 @@ namespace hades
 		private:
 			error_code _code;
 		};
+
+		std::vector<types::string> ListFilesInDirectory(types::string dir_path, bool recursive = false);
 	}
 }
 

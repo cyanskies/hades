@@ -76,9 +76,9 @@ namespace hades
 		//compress_directory
 		//path must be a directory
 		//will create a zip in the parent directory with the same name
-		bool compress_directory(std::string path);
+		void compress_directory(std::string path);
 		//uncompress archive
-		bool uncompress_archive(std::string path);
+		void uncompress_archive(std::string path);
 	}
 }
 

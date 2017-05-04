@@ -1,6 +1,7 @@
 #include "Hades/App.hpp"
 
 #include <cassert>
+#include <functional>
 #include <string>
 #include <sstream>
 
@@ -401,6 +402,52 @@ namespace hades
 			};
 
 			_console->registerFunction("vid_reinit", vid_reinit, true);
+
+			{
+				/*std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
+					auto files = _resource->listFilesInDirectory(path);
+
+					for (auto f : files)
+						_console->echo(f);
+
+					return true;
+				};
+
+				_console->registerFunction("dir", util_dir, true);*/
+
+				std::function<bool(types::string)> compress_dir = [](types::string path)->bool
+				{
+					try {
+						zip::compress_directory(path);
+						return true;
+					}
+					catch (zip::archive_exception &e)
+					{
+						LOGERROR(e.what());
+					}
+
+					return false;
+				};
+
+				_console->registerFunction("compress", compress_dir, true);
+
+
+				std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
+				{
+					try {
+						zip::uncompress_archive(path);
+						return true;
+					}
+					catch (zip::archive_exception &e)
+					{
+						LOGERROR(e.what());
+					}
+
+					return false;
+				};
+
+				_console->registerFunction("uncompress", uncompress_dir, true);
+			}
 		}
 	}
 }//hades

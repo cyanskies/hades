@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <string>
 
@@ -9,8 +10,11 @@
 #include "zlib/unzip.h"
 
 #include "Hades/Logging.hpp"
+#include "Hades/Types.hpp"
 
 namespace fs = std::experimental::filesystem;
+
+const hades::types::string archive_ext = ".zip";
 
 namespace hades
 {
@@ -231,13 +235,17 @@ namespace hades
 			return r == UNZ_OK;
 		}
 
-		bool compress_directory(std::string path)
+		void compress_directory(std::string path)
 		{
 			if (!fs::is_directory(path))
 				throw archive_exception(("path is not a directory: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
 
 			if (!fs::exists(path))
 				throw archive_exception(("directory not found: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+
+			if (fs::exists(path + ".zip"))
+				throw archive_exception(("archive already exists: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+
 
 			types::string new_zip_path;
 
@@ -249,17 +257,80 @@ namespace hades
 			//may need to do --(--fs_path.end())
 			assert(*name != ".");
 
-			auto zip = zipOpen((root.generic_string() + "/" + name->generic_string()).c_str(), APPEND_STATUS_CREATE);
+			auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
 
-			//TODO: throw on error
 			assert(zip);
-			return false;
+
+			if(!zip)
+				throw archive_exception(("Error creating zip file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+
+			//for each file in dir
+			//create new zip file
+			for (auto &f : fs::recursive_directory_iterator(fs_path))
+			{
+				auto p = f.path();
+				if (fs::is_directory(p))
+					continue;
+
+				auto file_path = p.string();
+				auto directory = fs_path.string();
+				if (file_path.find(directory) == std::string::npos)
+					throw archive_exception("Directory path isn't a subset of the file path, unexpected error", archive_exception::error_code::FILE_READ);
+
+
+				auto file_name = file_path.substr(directory.length(), file_path.length() - directory.length());
+				
+				//remove leading /
+				file_name.erase(file_name.begin());
+				
+				auto date = fs::last_write_time(p);
+				auto t = date.time_since_epoch();
+
+				//NOTE: if this is firing, then we need to enable zip64 compression below
+				assert(fs::file_size(p) < 0xffffffff);
+
+				zip_fileinfo file_info{ tm_zip{}, static_cast<uLong>(t.count()), 0, 0 };
+				auto ret = zipOpenNewFileInZip(zip, file_name.c_str(), &file_info, nullptr, 0, nullptr, 0, nullptr,
+					Z_DEFLATED, // 0 = store, Z_DEFLATE = deflate
+					Z_DEFAULT_COMPRESSION);
+
+				if (ret != ZIP_OK)
+					throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+			
+				using char_buffer = std::vector<char>;
+
+				//NOTE:, the buffer size will have to be double checked if we move to zip64 compression
+				std::ifstream in(p.string(), std::ios::binary | std::ios::ate);
+				auto size = in.tellg();			
+
+				//if the file is size 0(like many git tag files are)
+				//then skip this whole thing and close the file.
+				if (size > 0)
+				{
+					char_buffer buf(static_cast<char_buffer::size_type>(size));
+					in.seekg(std::ios::beg);
+					in.read(&buf[0], size);
+
+					//NOTE: same as for the buffer, size is being truncated if larger than 32 bits
+					ret = zipWriteInFileInZip(zip, &buf[0], static_cast<unsigned int>(size.seekpos()));
+					if (ret != ZIP_OK)
+						throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+				}
+
+				ret = zipCloseFileInZip(zip);
+				if (ret != ZIP_OK)
+					throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+			}
+			
+			auto ret = zipClose(zip, nullptr);
+			if (ret != ZIP_OK)
+				throw archive_exception(("Error closing file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_CLOSE);
 		}
 
-		bool uncompress_archive(std::string path)
+		void uncompress_archive(std::string path)
 		{
 			//TODO: impliment
-			return false;
+			return;
 		}
 	}
 }

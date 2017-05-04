@@ -1,5 +1,7 @@
 #include "Hades/Logging.hpp"
 
+#include <iostream>
+
 namespace hades
 {
 	namespace console
@@ -10,6 +12,13 @@ namespace hades
 		{
 			if (log)
 				log->echo(val);
+			else
+			{
+				if (val.Verbosity() == console::logger::LOG_VERBOSITY::NORMAL)
+					std::cout << val.Text();
+				else
+					std::cerr << val.Text();
+			}
 		}
 
 		console::output_buffer new_output(console::logger::LOG_VERBOSITY maxVerbosity)

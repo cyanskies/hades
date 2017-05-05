@@ -5,6 +5,7 @@ set(HADES_SRC
 	Animation.cpp
 	App.cpp
 	archive.cpp
+	Debug.cpp
 	Bind.cpp
 	Collision.cpp
 	Console.cpp

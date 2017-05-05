@@ -437,7 +437,7 @@ namespace hades
 				std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);	
 
 				if (!file.is_open())
-					throw archive_exception(("Failed to create or open file: " + filename + " error code: " + std::strerror(errno)).c_str(), archive_exception::error_code::FILE_WRITE);
+					throw archive_exception(("Failed to create or open file: " + filename).c_str(), archive_exception::error_code::FILE_WRITE);
 
 				//write data to file
 				auto size = info.uncompressed_size;

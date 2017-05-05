@@ -81,6 +81,7 @@ namespace hades
 
 	void App::init()
 	{
+		//TODO: console could be moved onto the  stack?
 		//create console
 		_console = std::make_shared<Console>();
 		//record the global console as logger
@@ -90,6 +91,7 @@ namespace hades
 		//record the console as the engine command line
 		console::system_object = &*_console;
 
+		debug::overlay_manager = &_overlayMan;
 		//record the global resource controller
 		data_manager = &_dataMan;
 
@@ -303,6 +305,7 @@ namespace hades
 		console::log = nullptr;
 		console::property_provider = nullptr;
 		console::system_object = nullptr;
+		debug::overlay_manager = nullptr;
 	}
 
 	std::vector<sf::Event> App::handleEvents(State *activeState)
@@ -326,6 +329,9 @@ namespace hades
 				_console->set<int>("vid_width", e.size.width);
 				_console->set<int>("vid_height", e.size.height);
 				_console->set("vid_mode", -1);
+
+				_overlayMan.setWindowSize({ e.size.width, e.size.height });
+
 				_consoleView.init();
 				activeState->handleEvent(e);		// let the gamestate see the changed window size
 			}
@@ -403,6 +409,8 @@ namespace hades
 					_window.create(mode, "game", sf::Style::Fullscreen);
 				else
 					_window.create(mode, "game", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
+
+				_overlayMan.setWindowSize({ mode.width, mode.height });
 
 				return true;
 			};

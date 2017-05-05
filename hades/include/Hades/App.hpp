@@ -8,6 +8,7 @@
 
 #include "Hades/ConsoleView.hpp"
 #include "Hades/DataManager.hpp"
+#include "Hades/Debug.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
@@ -78,6 +79,7 @@ namespace hades
 		hades::DataManager _dataMan;				///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
 		
+		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
 		sf::RenderWindow _window;					///< SFML window object. 
 
 		ConsoleView _consoleView;					///< The console interation devtool.

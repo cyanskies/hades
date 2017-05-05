@@ -21,5 +21,13 @@ namespace hades
 
 			return false;
 		}
+
+		std::vector<types::string> getCommandHistory()
+		{
+			if (system_object)
+				return system_object->getCommandHistory();
+
+			return std::vector<types::string>();
+		}
 	}
 }//hades

@@ -2,6 +2,7 @@
 #define HADES_SYSTEM_HPP
 
 #include <functional>
+#include <vector>
 
 #include "Hades/Types.hpp"
 
@@ -13,7 +14,6 @@ namespace hades
 	namespace console
 	{
 		using function = std::function<bool(types::string)>;
-
 
 		class system
 		{
@@ -27,7 +27,10 @@ namespace hades
 			//returns true if the command was successful
 			virtual bool runCommand(const types::string &command) = 0;
 
-			//TODO: get system output
+			//returns the history of unique commands
+			//newest commands are at the back of the vector
+			//and the oldest at the front
+			virtual std::vector<types::string> getCommandHistory() const = 0;
 		};
 
 		extern system *system_object;
@@ -35,6 +38,8 @@ namespace hades
 		bool registerFunction(const types::string &identifier, function func, bool replace = false);
 
 		bool runCommand(const types::string &command);
+
+		std::vector<types::string> getCommandHistory();
 	}
 }//hades
 

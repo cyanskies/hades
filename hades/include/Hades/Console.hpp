@@ -76,6 +76,7 @@ namespace hades
 
 		bool runCommand(const std::string &command) override;
 
+		std::vector<types::string> getCommandHistory() const override;
 
 		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);
 		void echo(const Console_String &message) override;

@@ -216,6 +216,17 @@ namespace hades
 
 	bool Console::runCommand(const std::string &command)
 	{
+		//add to command history
+		{
+			std::lock_guard<std::mutex> lock(_histoyMutex);
+			auto entry = std::find(_commandHistory.begin(), _commandHistory.end(), command);
+
+			if (entry != _commandHistory.end())
+				_commandHistory.erase(entry);
+
+			_commandHistory.push_back(command);
+		}
+
 		std::string identifier, value;
 		int pos = command.find_first_of(" ");
 
@@ -264,6 +275,12 @@ namespace hades
 			SetVariable(identifier, value);
 
 		return true;
+	}
+
+	std::vector<types::string> Console::getCommandHistory() const
+	{
+		std::lock_guard<std::mutex> lock(_histoyMutex);
+		return _commandHistory;
 	}
 
 	void Console::echo(const std::string &message, const Console_String_Verbosity verbosity)

@@ -400,19 +400,80 @@ namespace hades
 		void uncompress_archive(types::string path)
 		{
 			//confirm is archive
+			fs::path fs_path(path);
+			if (!fs::exists(fs_path))
+				throw archive_exception(("Cannot open archive, file not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
 
 			//create directory if absent
+			auto root_dir = fs_path.parent_path() / fs_path.stem();
+
+			auto archive = open_archive(path);
+
+			auto ret = unzGoToFirstFile(archive);
+			if (ret != ZIP_OK)
+				throw archive_exception(("Error finding file in archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+
+			LOG("Uncompressing archive: " + path);
 
 			//for each file in directory
-			//{
-			//open file
-			//write data to file
+			do{
+				unz_file_info info;
+				unzGetCurrentFileInfo(archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
-			//close file
-			//}
-			//close archive
-			//TODO: impliment
-			return;
+				using char_buffer = std::vector<char>;
+				char_buffer name(info.size_filename);
+
+				ret = unzGetCurrentFileInfo(archive, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
+				if (ret != ZIP_OK)
+					throw archive_exception("Error reading file info from archive", archive_exception::error_code::FILE_OPEN);
+
+				types::string filename(name.begin(), name.end());
+
+				fs::path parent_dir(filename);
+				//create directory if it dosn't already exist
+				fs::create_directories(root_dir / parent_dir.parent_path()); //only creates missing directories
+
+				//open file
+				std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);	
+
+				if (!file.is_open())
+					throw archive_exception(("Failed to create or open file: " + filename + " error code: " + std::strerror(errno)).c_str(), archive_exception::error_code::FILE_WRITE);
+
+				//write data to file
+				auto size = info.uncompressed_size;
+
+				//if this is being triggered then we need to upgrade to zip64
+				if (std::numeric_limits<unsigned int>::max() < info.uncompressed_size)
+					throw archive_exception(("Cannot extract file from archive: " + filename + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
+
+				auto usize = static_cast<unsigned int>(size);
+				using char_buffer = std::vector<char>;
+				char_buffer buff(static_cast<buffer::size_type>(usize));
+
+				ret = unzOpenCurrentFile(archive);
+				if (ret != ZIP_OK)
+					throw archive_exception(("Failed to open file in archive: " + path + filename).c_str(), archive_exception::error_code::FILE_OPEN);
+
+				types::uint32 total_written = 0;
+
+				LOG("Uncompressing file: " + filename + " from archive: " + path);
+
+				//write the data to actual files
+				while (total_written < usize)
+				{
+					auto amount = unzReadCurrentFile(archive, &buff[0], usize);
+					file.write(buff.data(), amount);
+					total_written += amount;
+				}
+
+				ret = unzCloseCurrentFile(archive);
+				if (ret != ZIP_OK)
+					throw archive_exception(("Failed to close file in archive: " + path + filename).c_str(), archive_exception::error_code::FILE_CLOSE);
+			} while (unzGoToNextFile(archive) != UNZ_END_OF_LIST_OF_FILE);
+			
+			close_archive(archive);
+
+			LOG("Finished uncompressing archive: " + path);
 		}
 	}
 }

@@ -56,33 +56,35 @@ namespace hades
 
 		virtual ~Console() {}
 
-		virtual bool registerFunction(const std::string &identifier, Console_Function func, bool replace);
+		bool registerFunction(const std::string &identifier, Console_Function func, bool replace) override;
 
 		template<class T>
 		bool set(const std::string &identifier, const T &value);
 
-		virtual bool set(const types::string&, types::int32);
-		virtual bool set(const types::string&, float);
-		virtual bool set(const types::string&, bool);
-		virtual bool set(const types::string&, const types::string&);
+		bool set(const types::string&, types::int32) override;
+		bool set(const types::string&, float) override;
+		bool set(const types::string&, bool) override;
+		bool set(const types::string&, const types::string&) override;
 
 		template<class T>
 		ConsoleVariable<T> getValue(const std::string &var);
 
-		virtual console::property<types::int32> getInt(const types::string&);
-		virtual console::property<float> getFloat(const types::string&);
-		virtual console::property<bool> getBool(const types::string&);
-		virtual console::property_str getString(const types::string&);
+		console::property<types::int32> getInt(const types::string&) override;
+		console::property<float> getFloat(const types::string&) override;
+		console::property<bool> getBool(const types::string&) override;
+		console::property_str getString(const types::string&) override;
 
-		virtual bool runCommand(const std::string &command);
+		bool runCommand(const std::string &command) override;
+
+
 		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);
-		virtual void echo(const Console_String &message);
+		void echo(const Console_String &message) override;
 
 		bool exists(const std::string &command) const;
 		void erase(const std::string &command);
 
-		virtual ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = NORMAL);
-		virtual ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = NORMAL);
+		ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = NORMAL) override;
+		ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = NORMAL) override;
 
 	protected:
 		bool GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const;
@@ -95,9 +97,11 @@ namespace hades
 		mutable std::mutex _consoleVariableMutex;
 		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
+		mutable std::mutex _histoyMutex;
 		std::map<std::string, Console_Function> _consoleFunctions;
 		std::map<std::string, std::shared_ptr<detail::Property_Base> > TypeMap;
 		std::vector<Console_String> TextBuffer;
+		std::vector<types::string> _commandHistory;
 		int recentOutputPos;
 	};
 

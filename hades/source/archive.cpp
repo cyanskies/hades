@@ -355,7 +355,7 @@ namespace hades
 				if (fs::file_size(p) > 0xffffffff)
 					throw archive_exception(("Cannot store file in archive: " + file_name + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
 
-				zip_fileinfo file_info{ tm_zip{}, static_cast<uLong>(t.count()), 0, 0 };
+				zip_fileinfo file_info{ tm_zip{}, 0, 0, 0 };
 				auto ret = zipOpenNewFileInZip(zip, file_name.c_str(), &file_info, nullptr, 0, nullptr, 0, nullptr,
 					Z_DEFLATED, // 0 = store, Z_DEFLATE = deflate
 					Z_DEFAULT_COMPRESSION);

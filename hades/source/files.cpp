@@ -7,6 +7,7 @@
 #include "SFML/System/FileInputStream.hpp"
 
 #include "Hades/archive.hpp"
+#include "Hades/Logging.hpp"
 
 namespace fs = std::experimental::filesystem;
 
@@ -189,10 +190,19 @@ namespace hades {
 				return _archiveStream.getSize();
 		}
 
-		std::vector<types::string> ListFilesInDirectory(types::string dir_path, bool recursive)
+		std::vector<types::string> ListFilesInDirectory(types::string dir_path)
 		{
+			std::vector<types::string> output;
+
+			fs::path dir(dir_path);
+			if (!fs::is_directory(dir))
+			{
+				LOGERROR("\"" + dir_path + "\" is not a directory");
+				return output;
+			}
+
 			//TODO: this
-			return std::vector<types::string>();
+			return output;
 		}
 	}
 }

@@ -56,7 +56,7 @@ namespace hades
 			Point(types::int32 x, types::int32 y) : Collider(CollideType::POINT), _position(x, y) {}
 			Point(sf::Vector2i position) : Collider(CollideType::POINT), _position(position) {}
 
-			sf::Vector2i getPostition() const { return _position; }
+			sf::Vector2i getPosition() const { return _position; }
 
 		private:
 			sf::Vector2i _position;

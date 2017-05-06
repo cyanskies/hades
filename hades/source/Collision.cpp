@@ -32,7 +32,7 @@ namespace hades
 		{ 
 			sf::IntRect rect;
 
-			if (lhs.getPostition() == rhs.getPostition())
+			if (lhs.getPosition() == rhs.getPosition())
 			{
 				rect.width = 1;
 				rect.height = 1;
@@ -55,7 +55,7 @@ namespace hades
 			auto vector = static_cast<sf::Vector2f>(rhs.getPosition() - lhs.getPosition());
 			auto distance = vector_length(vector.x, vector.y);
 			auto range = distance - (lhs.getRadius() + rhs.getRadius());
-			if (range > 0.f)
+			if (range < 0.f)
 			{
 				float x, y;
 				std::tie(x, y) = vector_resize(vector.x, vector.y, range);
@@ -71,13 +71,13 @@ namespace hades
 		sf::IntRect collisionTest<Rect, Point>(const Rect &lhs, const Point &rhs)
 		{
 			sf::IntRect rect;
-			if (lhs.getRect().contains(rhs.getPostition()))
+			if (lhs.getRect().contains(rhs.getPosition()))
 			{
 				rect = lhs.getRect();
-				auto right = rhs.getPostition();
+				auto right = rhs.getPosition();
 
-				rect.top = right.y - rect.top;
-				rect.left = right.x - rect.left;
+				rect.top = rect.top - right.y;
+				rect.left = rect.left - right.x;
 				rect.width = 1;
 				rect.height = 1;
 			}
@@ -100,7 +100,7 @@ namespace hades
 		template<>
 		sf::IntRect collisionTest<Point, Rect>(const Point &lhs, const Rect &rhs)
 		{
-			auto p = lhs.getPostition();
+			auto p = lhs.getPosition();
 			sf::IntRect rect(p.x, p.y, 0, 0);
 			if (rhs.getRect().contains(p))
 			{
@@ -108,7 +108,7 @@ namespace hades
 				rect.height = 1;
 			}
 
-			return sf::IntRect();
+			return rect;
 		}
 
 		template<>
@@ -150,14 +150,15 @@ namespace hades
 		template<>
 		sf::IntRect collisionTest<Circle, Point>(const Circle &lhs, const Point &rhs)
 		{
-			auto dist = lhs.getPosition() - rhs.getPostition();
+			auto dist = rhs.getPosition() - lhs.getPosition();
 			sf::IntRect rect;
 			auto distf = static_cast<sf::Vector2f>(dist);
 			if (vector_length(distf.x, distf.y) < lhs.getRadius())
 			{
+				rect.left = dist.x;
+				rect.top = dist.y;
 				rect.width = 1;
 				rect.height = 1;
-				//find the relative location of the intersections?
 			}
 
 			return rect;

@@ -147,6 +147,11 @@ namespace hades
 			hades_version_minor = 0,
 			hades_version_patch  = 0;
 
+		//create a hidden window early to let us start making textures without
+		//creating GL errors
+		//this will be replaced with the proper window after the mods are loaded.
+		_window.create(sf::VideoMode(), "hades", sf::Style::None);
+
 		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
 		LOG("TGUI " + std::to_string(TGUI_VERSION_MAJOR) + "." + std::to_string(TGUI_VERSION_MINOR) + "." + std::to_string(TGUI_VERSION_PATCH));
@@ -201,7 +206,6 @@ namespace hades
 
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
-
 		if (!_console->runCommand("vid_reinit"))
 		{
 			_console->echo("Error setting video, falling back to default", Console::ERROR);
@@ -224,8 +228,6 @@ namespace hades
 
 		sf::Clock time;
 		time.restart();
-
-		
 
 		bool running = true;
 

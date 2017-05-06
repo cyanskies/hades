@@ -1,4 +1,4 @@
-@IF NOT DEFINED generator @set generator="Visual Studio 14 2015"
+@IF NOT DEFINED generator @set generator="Visual Studio 15 2017"
 @IF NOT DEFINED mode @set mode=Debug
 @IF NOT DEFINED mode2 @set mode2=debug
 @IF NOT DEFINED library @set library=./dep-library
@@ -10,32 +10,20 @@
 ::SFML
 @cd ./sfml
 @cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx% -G %generator%
-
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
-
-::Thor
-::depends on SFML
-
-@cd ../thor
-@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx%  -G %generator%
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
+@cmake --build . --target install --config %mode%
 
 ::TGUI
 ::depends on SFML
 
 @cd ../tgui
 @cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx%  -G %generator%
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
+@cmake --build . --target install --config %mode%
 
 ::yaml-cpp
 
 @cd ../yaml-cpp
 @cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx%  -G %generator%
-@msbuild ALL_BUILD.vcxproj /p:Configuration=%mode%
-@msbuild INSTALL.vcxproj /p:Configuration=%mode%
+@cmake --build . --target install --config %mode%
 
 ::minizlib
 @cd ..

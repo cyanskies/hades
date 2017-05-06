@@ -4,8 +4,6 @@
 #include <cassert>
 #include <set>
 
-#include "Thor/Time.hpp"
-
 namespace hades
 {
 	const int TimerManager::NO_TIMER = 0;

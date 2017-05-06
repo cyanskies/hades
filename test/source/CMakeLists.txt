@@ -37,7 +37,6 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	sfml-audio
 	sfml-network
 	${SFML_MAIN_RELEASE}
-	thor
 	tgui
 	libyaml-cpp
 	zlibwapi
@@ -52,7 +51,6 @@ else()
 	sfml-audio-d
 	sfml-network-d
 	${SFML_MAIN_DEBUG}
-	thor-d
 	tgui-d
 	libyaml-cppmdd
 	zlibwapi

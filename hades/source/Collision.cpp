@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <cassert>
 
-#include "Thor/Vectors/VectorAlgebra2D.hpp"
-
 #include "Hades/Types.hpp"
 #include "Hades/vector_math.hpp"
 

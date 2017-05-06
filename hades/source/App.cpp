@@ -9,8 +9,6 @@
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 
-#include "Thor/Config.hpp" // untill we depreciate thor entirely
-
 #include "zlib/zlib.h" //for zlib version
 
 #include "Hades/Console.hpp"
@@ -151,7 +149,6 @@ namespace hades
 
 		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
-		LOG("Thor " + std::to_string(THOR_VERSION_MAJOR) + "." + std::to_string(THOR_VERSION_MINOR));
 		LOG("TGUI " + std::to_string(TGUI_VERSION_MAJOR) + "." + std::to_string(TGUI_VERSION_MINOR) + "." + std::to_string(TGUI_VERSION_PATCH));
 		LOG("zlib " + types::string(ZLIB_VERSION));
 		//yaml-cpp doesn't currently have a version macro

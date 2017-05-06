@@ -168,28 +168,28 @@ namespace hades
 
 				//only overwrite current values(or default if this is a new resource) if they are specified.
 				auto width = tvariables["width"];
-				if (!width.IsNull())
+				if (width.IsDefined())
 					tex->width = width.as<texture::size_type>(d_width);
 
 				auto height = tvariables["height"];
-				if (!height.IsNull())
+				if (height.IsDefined())
 					tex->height = height.as<texture::size_type>(d_height);
 
 				
 				auto smooth = tvariables["smooth"];
-				if (!smooth.IsNull())
+				if (smooth.IsDefined())
 					tex->smooth = smooth.as<bool>(d_smooth);
 
 				auto repeat = tvariables["repeating"];
-				if (!repeat.IsNull())
+				if (repeat.IsDefined())
 					tex->repeat = repeat.as<bool>(d_repeating);
 
 				auto mips = tvariables["mips"];
-				if (!mips.IsNull())
+				if (mips.IsDefined())
 					tex->mips = mips.as<bool>(d_mips);
 
 				auto source = tvariables["source"];
-				if (!source.IsNull())
+				if (source.IsDefined())
 					tex->source = source.as<types::string>(d_source);
 
 				//if either size parameters are 0, then don't warn for size mismatch
@@ -336,7 +336,7 @@ namespace hades
 			for (auto n : node)
 			{
 				//if this entry isn't a map, then it cannot have any child values
-				if (!yaml_error(resource_type, n.as<types::string>(), "n/a", "map", mod, n.IsMap()))
+				if (!yaml_error(resource_type, n.first.as<types::string>(), "n/a", "map", mod, n.second.IsMap()))
 					continue;
 
 				//maps have a first and second value
@@ -388,19 +388,19 @@ namespace hades
 
 				//test that the type is a scalar, and not a container or map
 				auto type = curveInfo["type"];
-				if (!type.IsNull() && yaml_error(resource_type, name, "type", "scalar", mod, type.IsScalar()))
+				if (type.IsDefined() && yaml_error(resource_type, name, "type", "scalar", mod, type.IsScalar()))
 					c->curve_type = readCurveType(type.as<types::string>());
 
 				auto var = curveInfo["value"];
-				if (!var.IsNull() && yaml_error(resource_type, name, "value", "scalar", mod, var.IsScalar()))
+				if (var.IsDefined() && yaml_error(resource_type, name, "value", "scalar", mod, var.IsScalar()))
 					c->data_type = readVariableType(var.as<types::string>());
 
 				auto sync = curveInfo["sync"];
-				if (!sync.IsNull() && yaml_error(resource_type, name, "sync", "scalar", mod, sync.IsScalar()))
+				if (sync.IsDefined() && yaml_error(resource_type, name, "sync", "scalar", mod, sync.IsScalar()))
 					c->sync = sync.as<bool>();
 
 				auto save = curveInfo["save"];
-				if (!save.IsNull() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
+				if (save.IsDefined() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
 					c->save = save.as<bool>();
 			}
 		}
@@ -422,7 +422,7 @@ namespace hades
 
 			for (auto n : node)
 			{
-				if (!yaml_error(resource_type, n.as<types::string>(), "n/a", "map", mod, n.IsMap()))
+				if (!yaml_error(resource_type, n.first.as<types::string>(), "n/a", "map", mod, n.second.IsMap()))
 					continue;
 
 				auto node = n.first;
@@ -462,24 +462,24 @@ namespace hades
 				a->mod = mod;
 				
 				auto duration = animation_node["duration"];
-				if (!duration.IsNull() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
+				if (duration.IsDefined() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
 					a->duration = duration.as<float>();
 
 				auto texture_str = animation_node["texture"];
-				if (!texture_str.IsNull() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
+				if (texture_str.IsDefined() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
 					a->texture = data_manager->getTexture(data_manager->getUid(texture_str.as<types::string>()));
 
 				auto width = animation_node["width"];
-				if (!width.IsNull() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
+				if (width.IsDefined() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
 					a->width = width.as<types::int32>();
 
 				auto height = animation_node["height"];
-				if (!height.IsNull() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
+				if (height.IsDefined() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
 					a->height = height.as<types::int32>();
 
 				//now get all the frames
 				auto frames = animation_node["frames"];
-				if (!frames.IsNull() && yaml_error(resource_type, name, "frames", "sequence", mod, frames.IsSequence()))
+				if (frames.IsDefined() && yaml_error(resource_type, name, "frames", "sequence", mod, frames.IsSequence()))
 				{
 					std::vector<animation_frame> frame_vector;
 

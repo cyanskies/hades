@@ -206,6 +206,10 @@ namespace hades
 
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
+		for (auto &c : commands)
+			console::runCommand(c);
+
+		//create  the normal window
 		if (!_console->runCommand("vid_reinit"))
 		{
 			_console->echo("Error setting video, falling back to default", Console::ERROR);

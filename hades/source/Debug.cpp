@@ -11,25 +11,31 @@ namespace hades
 {
 	namespace debug
 	{
-		Overlay::Overlay(bool fullscreen) : _fullscreen(fullscreen)
+		Overlay::Overlay(bool fullscreen) : _fullscreen(fullscreen), _invalid(false)
 		{}
-
 
 		Overlay::~Overlay() {}
 
 		sf::Vector2f Overlay::getSize() const
 		{
+			_invalid = true;
 			return sf::Vector2f();
 		}
 
 		void Overlay::setFullscreenSize(sf::Vector2f)
 		{
 			//TODO: this being called should block the overlay from being rendered
+			_invalid = true;
 		}
 
 		bool Overlay::fullscreen() const
 		{
 			return _fullscreen;
+		}
+
+		bool Overlay::valid() const
+		{
+			return _invalid;
 		}
 
 		Overlay* OverlayManager::createOverlay(std::unique_ptr<Overlay> overlay)
@@ -41,7 +47,7 @@ namespace hades
 			return &*_overlays.back();
 		}
 
-		void OverlayManager::destroyOverlay(Overlay *&ptr)
+		Overlay* OverlayManager::destroyOverlay(Overlay *ptr)
 		{
 			auto loc = std::find_if(_overlays.begin(), _overlays.end(), [ptr](std::unique_ptr<Overlay> &e) {
 				return ptr == &*e;
@@ -49,9 +55,11 @@ namespace hades
 
 			if (loc != _overlays.end())
 			{
-				ptr = nullptr;
 				_overlays.erase(loc);
+				return nullptr;
 			}
+
+			return ptr;
 		}
 
 		void OverlayManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -96,11 +104,12 @@ namespace hades
 			return nullptr;
 		}
 
-		void DestroyOverlay(Overlay*& overlay)
+		Overlay* DestroyOverlay(Overlay* overlay)
 		{
 			if (overlay_manager)
 				return overlay_manager->destroyOverlay(overlay);
-		}
 
+			return overlay;
+		}
 	}//namespace debug
 }//namespace hades

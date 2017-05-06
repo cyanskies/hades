@@ -37,16 +37,18 @@ namespace hades
 
 			//if fullscreen then the size is specified by the window manager
 			bool fullscreen() const;
+			bool valid() const;
 
 		private:
 			bool _fullscreen;
+			mutable bool _invalid;
 		};
 
 		class OverlayManager : public sf::Drawable
 		{
 		public:
 			Overlay* createOverlay(std::unique_ptr<Overlay>);
-			void destroyOverlay(Overlay*&);
+			Overlay* destroyOverlay(Overlay*);
 
 			void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
 
@@ -63,7 +65,7 @@ namespace hades
 		Overlay *CreateOverlay(std::unique_ptr<Overlay> overlay);
 		//removes an overlay from the overlay list
 		//sets the passed overlay ptr to nullptr if successful
-		void DestroyOverlay(Overlay*&);
+		Overlay* DestroyOverlay(Overlay*);
 	}
 }
 

@@ -9,9 +9,13 @@
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "Thor/Config.hpp" // untill we depreciate thor entirely
+
 #include "zlib/zlib.h" //for zlib version
 
 #include "Hades/Console.hpp"
+#include "Hades/ConsoleView.hpp"
+#include "Hades/Debug.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
@@ -24,7 +28,7 @@ namespace hades
 	//console variable names
 	//c_* client variables names
 	// for variables that control basic client behaviour: framerate, etc
-	//cons_* console variable names
+	//con_* console variable names
 	// for console behaviour, font type, size and so on
 	//r_* render variable names
 	// none currently?
@@ -36,7 +40,6 @@ namespace hades
 	void registerVariables(std::shared_ptr<Console> &console)
 	{
 		//console variables
-		console->set<std::string>("con_characterfont", "console/console.ttf");
 		console->set("con_charactersize", 15);
 		console->set("con_fade", 180);
 
@@ -76,7 +79,7 @@ namespace hades
 		console->set("s_portrange", 0); // unused
 	}
 
-	App::App() : _input(_window)
+	App::App() : _consoleView(nullptr), _input(_window)
 	{}
 
 	void App::init()
@@ -102,8 +105,6 @@ namespace hades
 		registerVidVariables(_console);
 		registerServerVariables(_console);
 		
-		_consoleView.init();
-
 		//load config files and overwrite any updated settings
 		_states.setGuiTarget(_window);
 
@@ -277,11 +278,8 @@ namespace hades
 			activeState->drawGui();
 
 			//render the console interface if it is active.
-			if (_consoleView.active())
-			{
-				_consoleView.update();
-				_consoleView.draw(_window);
-			}
+			if (_consoleView)
+				_consoleView->update();
 
 			_window.draw(_overlayMan);
 
@@ -325,7 +323,12 @@ namespace hades
 				_window.close();
 			else if (e.type == sf::Event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
-				_consoleView.toggleActive();
+			{
+				if (_consoleView)
+					_consoleView = static_cast<ConsoleView*>(debug::DestroyOverlay(_consoleView));
+				else
+					_consoleView = static_cast<ConsoleView*>(debug::CreateOverlay(std::make_unique<ConsoleView>()));
+			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
 			{										// doesn't block resizing the window
 				_console->set<int>("vid_width", e.size.width);
@@ -334,16 +337,15 @@ namespace hades
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 
-				_consoleView.init();
 				activeState->handleEvent(e);		// let the gamestate see the changed window size
 			}
-			else if (_consoleView.active())	// if the console is active forward all input to it rather than the gamestate
+			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
 				if (e.type == sf::Event::KeyPressed &&
 					e.key.code == sf::Keyboard::Return)
-					_consoleView.sendCommand();
+					_consoleView->sendCommand();
 				else if (e.type == sf::Event::TextEntered)
-					_consoleView.enterText(EventContext(&_window, &e, TEXTENTERED));
+					_consoleView->enterText(e);
 			}
 			//input events
 			else if (!activeState->handleEvent(e)) // otherwise let the gamestate handle it

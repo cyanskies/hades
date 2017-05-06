@@ -6,7 +6,6 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
-#include "Hades/ConsoleView.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/Input.hpp"
@@ -16,6 +15,7 @@
 namespace hades
 {
 	class Console;
+	class ConsoleView;
 
 	////////////////////////////////////////////////////////////
 	/// \brief Main application class.
@@ -82,7 +82,7 @@ namespace hades
 		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
 		sf::RenderWindow _window;					///< SFML window object. 
 
-		ConsoleView _consoleView;					///< The console interation devtool.
+		ConsoleView *_consoleView;					///< The console interation devtool.
 	};
 
 	void LoadCommand(CommandList&, types::string, std::function<void(CommandList::value_type)>);

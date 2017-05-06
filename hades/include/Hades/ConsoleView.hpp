@@ -1,51 +1,53 @@
 #ifndef HADES_CONSOLEVIEW_HPP
 #define HADES_CONSOLEVIEW_HPP
 
-#include <string>
 #include <vector>
 
-#include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Window/Event.hpp"
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/Text.hpp"
-#include "SFML/Graphics/Transformable.hpp"
 #include "SFML/Graphics/View.hpp"
 
-#include "Hades/Bind.hpp"
-#include "Hades/Console.hpp"
+#include "Hades/Debug.hpp"
+#include "Hades/Logging.hpp"
+#include "Hades/Properties.hpp"
+#include "hades/Types.hpp"
 
 namespace hades
 {
-	class ConsoleView : public sf::Drawable
+	class ConsoleWrongEvent : public std::logic_error
+	{
+	public:
+		using std::logic_error::logic_error;
+	};
+
+	class ConsoleView : public debug::Overlay
 	{
 	public:
 		ConsoleView();
 
-		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const;
-
-		void init();
+		void setFullscreenSize(sf::Vector2f) override;
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
 
 		void update();
-		bool active() const;
-		bool toggleActive();
-		void enterText(hades::EventContext context);
+		void enterText(const sf::Event &context);
 		void sendCommand();
 
 	private:
-		
-		float _currentYPos;
-		sf::View _view;
-		//std::shared_ptr<const sf::Font> _font;
-		sf::Font _font;
-		hades::ConsoleVariable<int> _charSize, _screenW, _screenH, _consoleFade;
-		std::string _inputText;
-		bool _active;
+		void _reinit(sf::Vector2f);
+		void _addText(const console::string &s);
 
-		typedef std::vector<sf::Text> StringLinesList;
-		StringLinesList _visibleOutput;
-		sf::Transformable _transform;
+		sf::View _view;
+		sf::View _textView;
+
+		sf::Font _font;
+		std::vector<sf::Text> _previousOutput;
 		sf::Text _currentInput;
 		sf::RectangleShape _backdrop, _editLine;
+
+		console::property<types::int32> _charSize, _fade;
+		types::string _input;
 	};
 }
 

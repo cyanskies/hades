@@ -52,6 +52,17 @@ namespace hades
 		template<>
 		sf::IntRect collisionTest<Circle, Circle>(const Circle &lhs, const Circle &rhs)
 		{
+			auto vector = static_cast<sf::Vector2f>(rhs.getPosition() - lhs.getPosition());
+			auto distance = vector_length(vector.x, vector.y);
+			auto range = distance - (lhs.getRadius() + rhs.getRadius());
+			if (range > 0.f)
+			{
+				float x, y;
+				std::tie(x, y) = vector_resize(vector.x, vector.y, range);
+				return sf::IntRect(static_cast<int>(x), static_cast<int>(y),
+					static_cast<int>(distance), static_cast<int>(distance));
+			}
+
 			return sf::IntRect();
 		}
 

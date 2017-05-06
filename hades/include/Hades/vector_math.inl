@@ -19,7 +19,7 @@ namespace hades
 	template<typename T>
 	std::tuple<T, T> vector_resize(T x, T y, T length)
 	{
-		return std::make_tuple(x, Y);
+		return std::make_tuple(x, y);
 	}
 
 	template<typename T>

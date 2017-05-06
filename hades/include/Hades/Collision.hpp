@@ -31,7 +31,8 @@ namespace hades
 		//these return the collision vector, in the same scope as the collision data was sent in.
 		//if the size of the rect is 0, then no collision has been detected
 		//if only one side of the rect is non-zero, then it is just adjacent
-		//if the collision is detected, then the position of the rect, indicates where the collision starts
+		//if the collision is detected, then the position of the rect, indicates where the 
+		//collision starts in the first object(in that objects local space)
 		//the size of the rect, shows the total size of collided area
 		sf::IntRect test(const Collider &first, const Collider &other);
 		sf::IntRect test(const Collider &first, std::vector<const Collider*> other);

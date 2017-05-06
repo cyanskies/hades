@@ -6,6 +6,7 @@
 #include "Thor/Vectors/VectorAlgebra2D.hpp"
 
 #include "Hades/Types.hpp"
+#include "Hades/vector_math.hpp"
 
 namespace hades
 {
@@ -142,7 +143,8 @@ namespace hades
 		{
 			auto dist = lhs.getPosition() - rhs.getPostition();
 			sf::IntRect rect;
-			if (thor::length(static_cast<sf::Vector2f>(dist)) < lhs.getRadius())
+			auto distf = static_cast<sf::Vector2f>(dist);
+			if (vector_length(distf.x, distf.y) < lhs.getRadius())
 			{
 				rect.width = 1;
 				rect.height = 1;

@@ -70,6 +70,9 @@ namespace hades
 			if (!_input.empty())
 				_input.pop_back();
 		}
+		//'\033' is the octal code for ESC; clear the input
+		else if (text == "\033")
+			_input.clear();
 		//don't add special control characters
 		else if (text != "\n" && text != "\r"
 			&& text != "`")

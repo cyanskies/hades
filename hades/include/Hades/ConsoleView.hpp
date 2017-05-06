@@ -32,6 +32,8 @@ namespace hades
 
 		void update();
 		void enterText(const sf::Event &context);
+		void prev();
+		void next();
 		void sendCommand();
 
 	private:

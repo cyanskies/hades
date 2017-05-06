@@ -341,9 +341,15 @@ namespace hades
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
-				if (e.type == sf::Event::KeyPressed &&
-					e.key.code == sf::Keyboard::Return)
-					_consoleView->sendCommand();
+				if (e.type == sf::Event::KeyPressed)
+				{
+					if (e.key.code == sf::Keyboard::Up)
+						_consoleView->prev();
+					else if (e.key.code == sf::Keyboard::Down)
+						_consoleView->next();
+					else if (e.key.code == sf::Keyboard::Return)
+						_consoleView->sendCommand();
+				}
 				else if (e.type == sf::Event::TextEntered)
 					_consoleView->enterText(e);
 			}

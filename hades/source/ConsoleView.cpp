@@ -76,6 +76,38 @@ namespace hades
 			_input += text;
 	}
 
+	void ConsoleView::prev()
+	{
+		auto prev = console::getCommandHistory();
+
+		if (prev.empty())
+			return;
+
+		auto pos = std::find(prev.begin(), prev.end(), _input);
+		if (pos == prev.end())
+			_input = prev.back();
+		else if (pos != prev.begin())
+			_input = *--pos;
+		else
+			_input = *pos;
+	}
+
+	void ConsoleView::next()
+	{
+		auto prev = console::getCommandHistory();
+
+		if (prev.empty() || _input.empty())
+			return;
+
+		auto pos = std::find(prev.begin(), prev.end(), _input);
+		if (pos == prev.end())
+			_input = prev.front();
+		else if (pos != --prev.end())
+			_input = *++pos;
+		else
+			_input = *pos;
+	}
+
 	void ConsoleView::sendCommand()
 	{
 		console::runCommand(_input);

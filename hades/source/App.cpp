@@ -283,6 +283,8 @@ namespace hades
 				_consoleView.draw(_window);
 			}
 
+			_window.draw(_overlayMan);
+
 			_window.display();
 		}
 

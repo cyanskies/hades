@@ -34,7 +34,7 @@ namespace hades
 
 		bool Overlay::valid() const
 		{
-			return _invalid;
+			return !_invalid;
 		}
 
 		Overlay* OverlayManager::createOverlay(std::unique_ptr<Overlay> overlay)

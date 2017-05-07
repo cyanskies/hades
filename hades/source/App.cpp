@@ -11,7 +11,6 @@
 
 #include "zlib/zlib.h" //for zlib version
 
-#include "Hades/Console.hpp"
 #include "Hades/ConsoleView.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/Logging.hpp"
@@ -35,7 +34,7 @@ namespace hades
 	//vid_* video settings variables
 	// resolution, colour depth, fullscreen, etc
 
-	void registerVariables(std::shared_ptr<Console> &console)
+	void registerVariables(Console *console)
 	{
 		//console variables
 		console->set("con_charactersize", 15);
@@ -47,9 +46,9 @@ namespace hades
 
 	}
 
-	void registerVidVariables(std::shared_ptr<Console> &console)
+	void registerVidVariables(Console *console)
 	{
-		std::function<bool(std::string)> vid_default = [&console] (std::string)->bool {
+		std::function<bool(std::string)> vid_default = [console] (std::string)->bool {
 			//window
 			console->set("vid_fullscreen", false);
 			//resolution
@@ -69,7 +68,7 @@ namespace hades
 		console->registerFunction("vid_default", vid_default, true);
 	}
 
-	void registerServerVariables(std::shared_ptr<Console> &console)
+	void registerServerVariables(Console *console)
 	{
 		console->set("s_tickrate", 30);
 		console->set("s_maxframetime", 150); // 1.5 seconds is the maximum allowable frame time.
@@ -82,15 +81,12 @@ namespace hades
 
 	void App::init()
 	{
-		//TODO: console could be moved onto the  stack?
-		//create console
-		_console = std::make_shared<Console>();
 		//record the global console as logger
-		console::log = &*_console;
+		console::log = &_console;
 		//record the console as the property provider
-		console::property_provider = &*_console;
+		console::property_provider = &_console;
 		//record the console as the engine command line
-		console::system_object = &*_console;
+		console::system_object = &_console;
 
 		debug::overlay_manager = &_overlayMan;
 		//record the global resource controller
@@ -99,9 +95,9 @@ namespace hades
 		resourceTypes(_dataMan);
 
 		//load defualt console settings
-		registerVariables(_console);
-		registerVidVariables(_console);
-		registerServerVariables(_console);
+		registerVariables(&_console);
+		registerVidVariables(&_console);
+		registerServerVariables(&_console);
 		
 		//load config files and overwrite any updated settings
 		_states.setGuiTarget(_window);
@@ -210,11 +206,11 @@ namespace hades
 			console::runCommand(c);
 
 		//create  the normal window
-		if (!_console->runCommand("vid_reinit"))
+		if (!_console.runCommand("vid_reinit"))
 		{
-			_console->echo("Error setting video, falling back to default", Console::ERROR);
-			_console->runCommand("vid_default");
-			_console->runCommand("vid_reinit");
+			_console.echo("Error setting video, falling back to default", Console::ERROR);
+			_console.runCommand("vid_default");
+			_console.runCommand("vid_reinit");
 		}
 	}
 
@@ -225,8 +221,8 @@ namespace hades
 		//we use curves instead.
 
 		//tickrate is the amount of time simulated at any one tick
-		auto tickrate = _console->getValue<int>("c_ticktime"),
-			maxframetime  = _console->getValue<int>("c_maxticktime");
+		auto tickrate = _console.getValue<types::int32>("c_ticktime"),
+			maxframetime  = _console.getValue<types::int32>("c_maxticktime");
 
 		assert(tickrate && "failed to get tick rate value from console");
 
@@ -334,9 +330,9 @@ namespace hades
 			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
 			{										// doesn't block resizing the window
-				_console->set<int>("vid_width", e.size.width);
-				_console->set<int>("vid_height", e.size.height);
-				_console->set("vid_mode", -1);
+				_console.set<types::int32>("vid_width", e.size.width);
+				_console.set<types::int32>("vid_height", e.size.height);
+				_console.set("vid_mode", -1);
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 
@@ -374,8 +370,8 @@ namespace hades
 				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
-			_console->registerFunction("exit", exit, true);
-			_console->registerFunction("quit", exit, true);
+			_console.registerFunction("exit", exit, true);
+			_console.registerFunction("quit", exit, true);
 
 			//_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1), true);
 		}
@@ -383,18 +379,18 @@ namespace hades
 		//vid functions
 		{
 			std::function<bool(std::string)> vid_reinit = [this](std::string)->bool {
-				auto width = _console->getValue<int>("vid_width"),
-					height = _console->getValue<int>("vid_height"),
-					depth = _console->getValue<int>("vid_depth");
+				auto width = _console.getValue<types::int32>("vid_width"),
+					height = _console.getValue<types::int32>("vid_height"),
+					depth = _console.getValue<types::int32>("vid_depth");
 
-				auto fullscreen = _console->getValue<bool>("vid_fullscreen");
+				auto fullscreen = _console.getValue<bool>("vid_fullscreen");
 
 				sf::VideoMode mode(width->load(), height->load(), depth->load());
 
 				// if we're in fullscreen mode, then the videomode must be 'valid'
 				if (fullscreen->load() && !mode.isValid())
 				{
-					_console->echo("Attempted to set invalid video mode.", Console::ERROR);
+					_console.echo("Attempted to set invalid video mode.", Console::ERROR);
 					return false;
 				}
 
@@ -404,17 +400,17 @@ namespace hades
 				switch (intratio)
 				{
 				case RATIO3_4:
-					_console->set("vid_mode", 0);
+					_console.set("vid_mode", 0);
 					break;
 				case RATIO16_9:
-					_console->set("vid_mode", 1);
+					_console.set("vid_mode", 1);
 					break;
 				case RATIO16_10:
-					_console->set("vid_mode", 2);
+					_console.set("vid_mode", 2);
 					break;
 				default:
-					_console->set("vid_mode", -1);
-					_console->echo("Cannot ditermine video ratio.", Console::WARNING);
+					_console.set("vid_mode", -1);
+					_console.echo("Cannot determine video ratio.", Console::WARNING);
 					break;
 				}
 
@@ -428,7 +424,7 @@ namespace hades
 				return true;
 			};
 
-			_console->registerFunction("vid_reinit", vid_reinit, true);
+			_console.registerFunction("vid_reinit", vid_reinit, true);
 
 			{
 				/*std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
@@ -463,7 +459,7 @@ namespace hades
 					return true;
 				};
 
-				_console->registerFunction("compress", compress_dir, true);
+				_console.registerFunction("compress", compress_dir, true);
 
 
 				std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
@@ -487,7 +483,7 @@ namespace hades
 					return true;
 				};
 
-				_console->registerFunction("uncompress", uncompress_dir, true);
+				_console.registerFunction("uncompress", uncompress_dir, true);
 			}
 		}
 	}

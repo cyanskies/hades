@@ -44,6 +44,6 @@ void resourceTypes(hades::DataManager &data);
 /// Called after initial preperations and config files are loaded
 ///	allows users to set custom console functions and set the starting state
 /////////////////////////////////////
-void hadesMain(hades::StateManager &state, std::shared_ptr<hades::Console> console, hades::CommandList &commandLine);
+void hadesMain(hades::StateManager &state, hades::Console &console, hades::CommandList &commandLine);
 
 #endif //HADES_BEGIN_HPP

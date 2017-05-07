@@ -6,6 +6,7 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
+#include "Hades/Console.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/Input.hpp"
@@ -14,7 +15,6 @@
 
 namespace hades
 {
-	class Console;
 	class ConsoleView;
 
 	////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@ namespace hades
 		////////////////////////////////////////////////////////////
 
 		InputSystem _input;							///< Used by the console to provide bindable input.
-		std::shared_ptr<Console> _console;			///< The appcations debug console.
+		Console _console;							///< The appcations debug console.
 		hades::DataManager _dataMan;				///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
 		

@@ -107,9 +107,13 @@ namespace hades
 	{
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
-		//TODO: display list as sorted
+		std::vector<types::string> output;
 		for (auto &t : TypeMap)
-			echo(t.first + " " + t.second->to_string());
+			output.push_back(t.first + " " + t.second->to_string());
+
+		std::sort(output.begin(), output.end());
+		for (auto &s : output)
+			echo(s);
 	}
 
 	void Console::DisplayFunctions()

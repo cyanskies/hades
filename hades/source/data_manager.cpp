@@ -184,9 +184,24 @@ namespace hades
 					continue;
 
 				auto type = header.first.as<types::string>();
+				//if type is include, then open the file and pass it to parseyaml
+				if (type == "include")
+				{
+					auto value = header.second.as<types::string>();
+					std::string include_yaml;
+					auto mod_info = get<Mod>(mod);
+					try
+					{
+						include_yaml = files::as_string(mod_info->source, value);
+					}
+					catch (files::file_exception &f)
+					{
+						LOGERROR(f.what());
+						continue;
+					}
 
-				//if type is include, then open the file as pass it to parseyaml
-				//TODO:
+					parseYaml(mod, YAML::Load(include_yaml.c_str()));
+				}
 
 				//if this resource name has a parser then load it
 				auto parser = _resourceParsers[type];
@@ -201,7 +216,7 @@ namespace hades
 			
 			//read the mod header
 			auto mod = modRoot["mod"];
-			if (mod.IsNull())
+			if (mod.IsNull() || !mod.IsDefined())
 			{
 				//missing mod header
 				LOGERROR("mod header missing for mod: " + source);
@@ -212,7 +227,7 @@ namespace hades
 			auto mod_data = std::make_unique<resources::mod>();
 			mod_data->source = source;
 			auto mod_name = mod["name"];
-			if (mod_name.IsNull())
+			if (mod_name.IsNull() || !mod_name.IsDefined())
 			{
 				//missing mod name
 				LOGERROR("name missing for mod: " + source);
@@ -223,7 +238,23 @@ namespace hades
 			mod_data->name = name;
 
 			//check mod dependencies
-			//TODO:
+			auto dependencies = mod["depends"];
+			if (dependencies.IsDefined())
+			{
+				if (dependencies.IsSequence())
+				{
+					for (auto &d : dependencies)
+					{
+						if (!dependencycheck(d.as<types::string>()))
+						{
+							LOGERROR("One of mods: " + source + " dependencies has not been provided, was: " + d.as<types::string>());
+							continue;
+						}
+					}
+				}
+				else
+					LOGERROR("Tried to read dependencies for mod: " + source + ", but the depends entry did not contain a sequence");
+			}
 
 			//store the data
 			set<resources::mod>(modKey, std::move(mod_data));

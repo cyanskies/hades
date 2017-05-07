@@ -301,7 +301,7 @@ namespace hades
 			if (!fs::exists(path))
 				throw archive_exception(("Directory not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
 
-			//TODO: overwrite if already exists?
+			//overwrite if the file already exists
 			if (fs::exists(path + ".zip"))
 			{
 				LOGWARNING("Archive already exists overwriting: " + path + ".zip");

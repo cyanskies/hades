@@ -24,7 +24,6 @@ namespace hades
 
 		void Overlay::setFullscreenSize(sf::Vector2f)
 		{
-			//TODO: this being called should block the overlay from being rendered
 			_invalid = true;
 		}
 
@@ -68,6 +67,9 @@ namespace hades
 
 			for (auto &overlay : _overlays)
 			{
+				if (!overlay->valid())
+					continue;
+
 				if (!overlay->fullscreen())
 				{
 					//arrange the next view

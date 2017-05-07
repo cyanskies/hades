@@ -198,12 +198,7 @@ namespace hades
 		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
 		{
 			auto modKey = getUid(source);
-
-			//check that the mod isn't already loaded;
-			//if it is then warn and overwrite
-			//TODO: 
-
-
+			
 			//read the mod header
 			auto mod = modRoot["mod"];
 			if (mod.IsNull())

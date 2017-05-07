@@ -201,7 +201,9 @@ namespace hades {
 				return output;
 			}
 
-			//TODO: this
+			for (auto &e : fs::directory_iterator(dir))
+				output.push_back(e.path().filename().string());
+
 			return output;
 		}
 	}

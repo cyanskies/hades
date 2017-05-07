@@ -13,6 +13,7 @@
 
 #include "Hades/ConsoleView.hpp"
 #include "Hades/Debug.hpp"
+#include "Hades/files.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
@@ -43,7 +44,6 @@ namespace hades
 		//app variables
 		console->set("c_ticktime", 30);
 		console->set("c_maxticktime", 150); // 1.5 seconds is the maximum allowable tick time.
-
 	}
 
 	void registerVidVariables(Console *console)
@@ -76,7 +76,7 @@ namespace hades
 		console->set("s_portrange", 0); // unused
 	}
 
-	App::App() : _consoleView(nullptr), _input(_window)
+	App::App() : _consoleView(nullptr), _input(_window), _sfVSync(false)
 	{}
 
 	void App::init()
@@ -198,7 +198,6 @@ namespace hades
 
 		//if hades main handles any of the commands then they will be removed from 'commands'
 		hadesMain(_states, _console, commands);
-
 
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
@@ -426,65 +425,88 @@ namespace hades
 
 			_console.registerFunction("vid_reinit", vid_reinit, true);
 
-			{
-				/*std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
-					auto files = _resource->listFilesInDirectory(path);
+			auto vsync = [this](std::string value)->bool {
+				_window.setFramerateLimit(0);
+				_sfVSync = value == "true" || std::stoi(value) > 0;
+				_window.setVerticalSyncEnabled(_sfVSync);
+				return true;
+			};
 
-					for (auto f : files)
-						_console->echo(f);
+			_console.registerFunction("vid_vsync", vsync, true);
 
-					return true;
-				};
-
-				_console->registerFunction("dir", util_dir, true);*/
-
-				std::function<bool(types::string)> compress_dir = [](types::string path)->bool
+			auto framelimit = [this](std::string limitstr)->bool {
+				if (_sfVSync)
 				{
-					//compress in a seperate thread to let the UI continue updating
-					std::thread t([path]() {
-						try {
+					_sfVSync = false;
+					_window.setVerticalSyncEnabled(_sfVSync);
+				}
+				
+				auto limit = std::stoi(limitstr);
+				_window.setFramerateLimit(limit);
+
+				return true;
+			};
+
+			_console.registerFunction("vid_framelimit", framelimit, true);
+		}
+		//Filesystem functions
+		{
+			std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
+				auto files = files::ListFilesInDirectory(path);
+
+				for (auto f : files)
+					LOG(f);
+
+				return true;
+			};
+
+			_console.registerFunction("dir", util_dir, true);
+
+			std::function<bool(types::string)> compress_dir = [](types::string path)->bool
+			{
+				//compress in a seperate thread to let the UI continue updating
+				std::thread t([path]() {
+					try {
 						zip::compress_directory(path);
 						return true;
-						}
-						catch (zip::archive_exception &e)
-						{
-							LOGERROR(e.what());
-						}
+					}
+					catch (zip::archive_exception &e)
+					{
+						LOGERROR(e.what());
+					}
 
-						return false;
-					});
+					return false;
+				});
 
-					t.detach();
+				t.detach();
 
-					return true;
-				};
+				return true;
+			};
 
-				_console.registerFunction("compress", compress_dir, true);
+			_console.registerFunction("compress", compress_dir, true);
 
+			std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
+			{
+				//run uncompress func in a seperate thread to spare the UI
+				std::thread t([path]() {
+					try {
+						zip::uncompress_archive(path);
+						return true;
+					}
+					catch (zip::archive_exception &e)
+					{
+						LOGERROR(e.what());
+					}
 
-				std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
-				{
-					//run uncompress func in a seperate thread to spare the UI
-					std::thread t([path]() {
-						try {
-							zip::uncompress_archive(path);
-							return true;
-						}
-						catch (zip::archive_exception &e)
-						{
-							LOGERROR(e.what());
-						}
+					return false;
+				});
 
-						return false;
-					});
+				t.detach();
 
-					t.detach();
+				return true;
+			};
 
-					return true;
-				};
-
-				_console.registerFunction("uncompress", uncompress_dir, true);
-			}
+			_console.registerFunction("uncompress", uncompress_dir, true);
 		}
 	}
 }//hades

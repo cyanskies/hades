@@ -81,6 +81,7 @@ namespace hades
 		
 		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
 		sf::RenderWindow _window;					///< SFML window object. 
+		bool _sfVSync;								///< Flag for SFML sync
 
 		ConsoleView *_consoleView;					///< The console interation devtool.
 	};

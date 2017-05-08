@@ -34,6 +34,10 @@ namespace hades
 				add_mod(game, true, "game.yaml");
 				game_loaded = true;
 			}
+			catch (files::file_exception &f)
+			{
+				LOGERROR(f.what());
+			}
 			catch (YAML::Exception &e)
 			{
 				auto message = std::string(e.what()) + " while parsing: " + game + "/game.yaml";
@@ -44,16 +48,7 @@ namespace hades
 		//mod is the name of a folder or archive containing a mod.yaml file
 		void data_manager::add_mod(std::string mod, bool autoLoad, std::string name)
 		{
-			std::string modyaml;
-			try
-			{
-				modyaml = files::as_string(mod, name);
-			}
-			catch (files::file_exception &f)
-			{
-				LOGERROR(f.what());
-				return;
-			}
+			auto modyaml = files::as_string(mod, name);
 
 			//parse game.yaml
 			auto root = YAML::Load(modyaml.c_str());
@@ -82,7 +77,7 @@ namespace hades
 				auto r = get<resources::mod>(getUid(mod));
 			}
 			//name has been used, but not for a mod
-			catch (std::runtime_error&)
+			catch (resource_wrong_type&)
 			{
 				return false;
 			}

@@ -36,7 +36,7 @@ namespace hades
 		}
 		else
 		{
-			throw type_erasure::value_wrong_type("Passed wrong type for this key to property_bag.");
+			throw type_erasure::value_wrong_type((std::string("Passed wrong type for this key to property_bag, expected: ") + typeid(T).name()).c_str());
 		}
 	}
 

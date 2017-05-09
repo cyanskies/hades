@@ -427,7 +427,20 @@ namespace hades
 
 			auto vsync = [this](std::string value)->bool {
 				_window.setFramerateLimit(0);
-				_sfVSync = value == "true" || std::stoi(value) > 0;
+
+				try
+				{
+					_sfVSync = value == "true" || std::stoi(value) > 0;
+				}
+				catch (std::invalid_argument)
+				{
+					_sfVSync = false;
+				}
+				catch (std::out_of_range)
+				{
+					_sfVSync = false;
+				}
+
 				_window.setVerticalSyncEnabled(_sfVSync);
 				return true;
 			};
@@ -441,8 +454,21 @@ namespace hades
 					_window.setVerticalSyncEnabled(_sfVSync);
 				}
 				
-				auto limit = std::stoi(limitstr);
-				_window.setFramerateLimit(limit);
+				try
+				{
+					auto limit = std::stoi(limitstr);
+					_window.setFramerateLimit(limit);
+				}
+				catch (std::invalid_argument)
+				{
+					LOGWARNING("Invalid value for vid_framelimit setting to 0");
+					_window.setFramerateLimit(0);
+				}
+				catch (std::out_of_range)
+				{
+					LOGWARNING("Invalid value for vid_framelimit setting to 0");
+					_window.setFramerateLimit(0);
+				}
 
 				return true;
 			};

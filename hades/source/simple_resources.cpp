@@ -122,7 +122,7 @@ namespace hades
 				//get texture with this name if it has already been loaded
 				//first node holds the maps name
 				auto tnode = n.first;
-				auto name = n.as<types::string>();
+				auto name = tnode.as<types::string>();
 				//second holds the map children
 				auto tvariables = n.second;
 				auto id = dataman->getUid(tnode.as<types::string>());

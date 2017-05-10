@@ -107,7 +107,7 @@ namespace hades
 			//        mips: false
 
 			const texture::size_type d_width = 0, d_height = 0;
-			const std::string d_source;
+			const types::string d_source, resource_type = "textures";
 			const bool d_smooth = false, d_repeating = false, d_mips = false;
 
 			//for each node
@@ -122,6 +122,7 @@ namespace hades
 				//get texture with this name if it has already been loaded
 				//first node holds the maps name
 				auto tnode = n.first;
+				auto name = n.as<types::string>();
 				//second holds the map children
 				auto tvariables = n.second;
 				auto id = dataman->getUid(tnode.as<types::string>());
@@ -156,7 +157,6 @@ namespace hades
 					catch (data::resource_wrong_type&)
 					{
 						//name is already used for something else, this cannnot be loaded
-						auto name = n.as<types::string>();
 						auto mod_ptr = dataman->getMod(mod);
 						LOGERROR("Name collision with identifier: " + name + ", for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
 						//skip the rest of this loop and check the next node
@@ -168,28 +168,27 @@ namespace hades
 
 				//only overwrite current values(or default if this is a new resource) if they are specified.
 				auto width = tvariables["width"];
-				if (width.IsDefined())
+				if (width.IsDefined() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
 					tex->width = width.as<texture::size_type>(d_width);
 
 				auto height = tvariables["height"];
-				if (height.IsDefined())
+				if (height.IsDefined() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
 					tex->height = height.as<texture::size_type>(d_height);
 
-				
 				auto smooth = tvariables["smooth"];
-				if (smooth.IsDefined())
+				if (smooth.IsDefined() && yaml_error(resource_type, name, "smooth", "scalar", mod, smooth.IsScalar()))
 					tex->smooth = smooth.as<bool>(d_smooth);
 
 				auto repeat = tvariables["repeating"];
-				if (repeat.IsDefined())
+				if (repeat.IsDefined() && yaml_error(resource_type, name, "repeating", "scalar", mod, repeat.IsScalar()))
 					tex->repeat = repeat.as<bool>(d_repeating);
 
 				auto mips = tvariables["mips"];
-				if (mips.IsDefined())
+				if (mips.IsDefined() && yaml_error(resource_type, name, "mips", "scalar", mod, mips.IsScalar()))
 					tex->mips = mips.as<bool>(d_mips);
 
 				auto source = tvariables["source"];
-				if (source.IsDefined())
+				if (source.IsDefined() && yaml_error(resource_type, name, "source", "scalar", mod, source.IsScalar()))
 					tex->source = source.as<types::string>(d_source);
 
 				//if either size parameters are 0, then don't warn for size mismatch
@@ -242,6 +241,10 @@ namespace hades
 			//strings: 
 			//    id: value
 			//    id2: value2
+
+			types::string resource_type = "strings";
+			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+				return;
 
 			for (auto n : node)
 			{

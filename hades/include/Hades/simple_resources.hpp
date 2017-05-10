@@ -13,6 +13,9 @@ namespace YAML
 	class Node;
 }
 
+bool yaml_error(hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::types::string requested_type, hades::data::UniqueId mod, bool test);
+
 namespace hades
 {
 	namespace resources

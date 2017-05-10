@@ -150,10 +150,6 @@ namespace hades
 					{
 						tex = dataman->get<texture>(id);
 					}
-					catch (data::resource_null&)
-					{
-
-					}
 					catch (data::resource_wrong_type&)
 					{
 						//name is already used for something else, this cannnot be loaded

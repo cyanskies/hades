@@ -209,6 +209,11 @@ namespace hades
 		{
 			auto modKey = getUid(source);
 			
+			//mod:
+			//    name: 
+			//    depends:
+			//        -other_mod
+
 			//read the mod header
 			auto mod = modRoot["mod"];
 			if (mod.IsNull() || !mod.IsDefined())

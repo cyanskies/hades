@@ -334,6 +334,7 @@ namespace hades
 				_console.set("vid_mode", -1);
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
+				_states.getActiveState()->reinit();
 
 				activeState->handleEvent(e);		// let the gamestate see the changed window size
 			}

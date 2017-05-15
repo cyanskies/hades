@@ -232,8 +232,21 @@ namespace hades
 	void InputSystem::addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f)
 	{
 		InputInterpretor i;
-		i.eventCheck = e;
-		i.statusCheck = f;
+		if (e)
+			i.eventCheck = e;
+		else
+		{
+			i.eventCheck = [](sf::Event, data::UniqueId i = data::UniqueId::Zero)
+			{ return std::make_tuple(false, hades::Action()); };
+		}
+		if (f)
+			i.statusCheck = f;
+		else
+		{
+			i.statusCheck = [](data::UniqueId i = data::UniqueId::Zero)
+			{ return hades::Action(); };
+		}
+
 		i.id = data::UniqueId();
 
 		auto out = _specialInterpretors.insert({ name, i });

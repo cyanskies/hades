@@ -315,12 +315,12 @@ namespace hades
 		auto state = _inputState;
 		std::sort(state.begin(), state.end());
 
-		for (auto iter = _inputState.begin(); iter != _inputState.end(); iter++)
+		for (auto iter = state.begin(); iter != state.end(); ++iter)
 		{
 			auto actionId = iter->id;
 
 			//get all instances of this action
-			auto actions = std::equal_range(iter, _inputState.end(), actionId);
+			auto actions = std::equal_range(iter, state.end(), actionId);
 
 			Action action;
 			action.id = actionId;
@@ -340,7 +340,7 @@ namespace hades
 			}
 
 			actionset.insert(action);
-			iter = actions.second;
+			iter = --actions.second;
 		}
 
 		return std::move(actionset);

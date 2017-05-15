@@ -322,8 +322,7 @@ namespace hades
 			//get all instances of this action
 			auto actions = std::equal_range(iter, state.end(), actionId);
 
-			Action action;
-			action.id = actionId;
+			Action action = *actions.first++;
 
 			while (actions.first != actions.second)
 			{

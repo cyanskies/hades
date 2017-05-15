@@ -315,7 +315,7 @@ namespace hades
 		auto state = _inputState;
 		std::sort(state.begin(), state.end());
 
-		for (auto iter = _inputState.begin(); iter != _inputState.end(); ++iter)
+		for (auto iter = _inputState.begin(); iter != _inputState.end(); iter++)
 		{
 			auto actionId = iter->id;
 

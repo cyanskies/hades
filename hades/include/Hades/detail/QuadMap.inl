@@ -1,11 +1,11 @@
 namespace hades
 {
 	template<class Rect, class Key, class Value>
-	QuadNode::QuadNode(const sRect &map, types::uint8 max_density) : _map(map), _max_density(density)
+	QuadNode<Rect, Key, Value>::QuadNode(const Rect &map, types::uint8 max_density) : _map(map), _max_density(density)
 	{}
 
 	template<class Rect, class Key, class Value>
-	std::vector<QuadData<Rect, Key, Value>> QuadNode::find_collisions(const Rect &rect) const
+	std::vector<QuadData<Rect, Key, Value>> QuadNode<Rect, Key, Value>::find_collisions(const Rect &rect) const
 	{
 		std::vector<const QuadNode<Rect, Key, Value>*> nodes;
 
@@ -30,7 +30,7 @@ namespace hades
 	}
 
 	template<class Rect, class Key, class Value>
-	void QuadNode::insert(const QuadData<Rect, Key, Value> &data)
+	void QuadNode<Rect, Key, Value>::insert(const QuadData<Rect, Key, Value> &data)
 	{
 		//no chilren, insert into this node
 		if (_children.empty() && _data.size() < _max_density)
@@ -87,7 +87,7 @@ namespace hades
 	}
 
 	template<class Rect, class Key, class Value>
-	void QuadNode::remove(Key id)
+	void QuadNode<Rect, Key, Value>::remove(Key id)
 	{
 		//remove if from children, if present
 		auto s = _stored.find(id);
@@ -109,7 +109,7 @@ namespace hades
 	}
 
 	template<class Rect, class Key, class Value>
-	void QuadMap::setMapSize(const Rect &map)
+	void QuadMap<Rect, Key, Value>::setAreaSize(const Rect &map)
 	{
 		auto children = _rootNode.find_collisions(_rootNode.getArea());
 		auto density = std::min(map.width / 2, map.height / 2);
@@ -121,20 +121,20 @@ namespace hades
 	}
 
 	template<class Rect, class Key, class Value>
-	std::vector<QuadData<Rect, Key, Value>> QuadMap::find_collisions(const Rect &rect) const
+	std::vector<QuadData<Rect, Key, Value>> QuadMap<Rect, Key, Value>::find_collisions(const Rect &rect) const
 	{
 		return _rootNode.find_collisions(rect);
 	}
 
 	template<class Rect, class Key, class Value>
-	void QuadMap::insert(const QuadData<Rect, Key, Value> &data)
+	void QuadMap<Rect, Key, Value>::insert(Rect r, Key k, Value v)
 	{
-		_rootNode.remove(data.id);
-		_rootNode.insert(data);
+		_rootNode.remove(k);
+		_rootNode.insert({r, k, v});
 	}
 
 	template<class Rect, class Key, class Value>
-	void QuadMap::remove(Key id)
+	void QuadMap<Rect, Key, Value>::remove(Key id)
 	{
 		_rootNode.remove(id);
 	}

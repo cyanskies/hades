@@ -27,13 +27,12 @@ namespace hades
 		using rect_type = Rect;
 		using key_type = Key;
 		using stored_type = Value;
-		using value_type = QuadData<rect_type, key_type, value_type>;
+		using value_type = QuadData<rect_type, key_type, stored_type>;
 
 		QuadNode() {}
 
 		explicit QuadNode(const rect_type &area, types::uint8 max_density);
 
-		void setMapSize(const rect_type &area);
 		rect_type getArea() const;
 
 		std::vector<value_type> find_collisions(const rect_type &rect) const;
@@ -67,8 +66,8 @@ namespace hades
 		// This returns possible collisions, by generating a list of nearby rects. You still need to check for actual intersections manually.
 		std::vector<value_type> find_collisions(const rect_type &rect) const;
 
-		void insert(const key_type, const value_type, const rect_type);
-		void remove(int id);
+		void insert(const rect_type, const key_type, const stored_type);
+		void remove(key_type id);
 
 	private:
 		node_type _rootNode;

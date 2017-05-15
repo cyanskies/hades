@@ -15,11 +15,6 @@ namespace hades
 }
 
 /////////////////////////////////////
-///	allows users to define the ui for the game, both list commands and provide default binds for them.
-/////////////////////////////////////
-void defaultBindings(hades::InputSystem &bindings);
-
-/////////////////////////////////////
 /// Called after defaultBindings
 /// 
 /// Allows the app to register its default game archive.
@@ -28,7 +23,7 @@ void defaultBindings(hades::InputSystem &bindings);
 hades::types::string defaultGame();
 
 /////////////////////////////////////
-/// Called after defaultBindings
+/// Called before HadesMain defaultBindings
 /// 
 /// Allows the app to register its unique resource types.
 ///	Apps must register both yaml parsers for the resource and loaders
@@ -43,7 +38,9 @@ void resourceTypes(hades::DataManager &data);
 ///
 /// Called after initial preperations and config files are loaded
 ///	allows users to set custom console functions and set the starting state
+///
+///	Allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
-void hadesMain(hades::StateManager &state, hades::Console &console, hades::CommandList &commandLine);
+void hadesMain(hades::StateManager &state, hades::InputSystem &bindings, hades::CommandList &commandLine);
 
 #endif //HADES_BEGIN_HPP

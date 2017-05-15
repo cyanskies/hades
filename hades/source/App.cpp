@@ -140,7 +140,7 @@ namespace hades
 	void App::postInit(CommandList commands)
 	{	
 		const auto hades_version_major = 0, 
-			hades_version_minor = 0,
+			hades_version_minor = 1,
 			hades_version_patch  = 0;
 
 		//create a hidden window early to let us start making textures without
@@ -191,13 +191,11 @@ namespace hades
 			data.add_mod(command);
 		});
 
-		defaultBindings(_input);
+		//if hades main handles any of the commands then they will be removed from 'commands'
+		hadesMain(_states, _input, commands);
 
 		//proccess config files
 		//load saved bindings and whatnot from config files
-
-		//if hades main handles any of the commands then they will be removed from 'commands'
-		hadesMain(_states, _console, commands);
 
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser

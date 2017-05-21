@@ -6,6 +6,8 @@
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
 
+#ifndef HADES_NO_MAIN
+
 int main(int argc, char** argv)
 {
 	//new commands start with a '-'.
@@ -77,3 +79,5 @@ int main(int argc, char** argv)
 
 	return returnCode;
 }
+
+#endif // !HADES_NO_MAIN

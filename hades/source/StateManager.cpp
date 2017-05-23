@@ -1,6 +1,8 @@
 #include "Hades/StateManager.hpp"
 
-#include <functional>
+//#include <functional>
+
+#include "Hades/Properties.hpp"
 
 namespace hades
 {
@@ -81,6 +83,9 @@ namespace hades
 		{
 			(*state)->init();
 			(*state)->initDone();
+			//make sure the gui has the correct view size
+			auto w = console::getInt("vid_width", 800), h = console::getInt("vid_height", 600);
+			(*state)->setGuiView(sf::View({ 0.f, 0.f, static_cast<float>(*w), static_cast<float>(*h) }));
 		}
 
 		//if this state is paused, resume
@@ -88,6 +93,9 @@ namespace hades
 		{
 			(*state)->grabFocus();
 			(*state)->reinit();
+			//make sure the gui has the correct view size
+			auto w = console::getInt("vid_width", 800), h = console::getInt("vid_height", 600);
+			(*state)->setGuiView(sf::View({ 0.f, 0.f, static_cast<float>(*w), static_cast<float>(*h) }));
 		}
 
 		//return this state.

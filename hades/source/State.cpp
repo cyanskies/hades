@@ -49,6 +49,11 @@ namespace hades
 		_gui.setWindow(target);
 	}
 
+	void State::setGuiView(sf::View v)
+	{
+		_gui.setView(v);
+	}
+
 	void State::drawGui()
 	{
 		_gui.draw();

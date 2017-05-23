@@ -42,6 +42,7 @@ namespace hades
 		
 		bool guiInput(sf::Event&);
 		void setGuiTarget(sf::RenderTarget &target);
+		void setGuiView(sf::View v);
 		//draw gui, called after normal draw.
 		void drawGui();
 

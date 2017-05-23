@@ -267,6 +267,7 @@ namespace hades
 				thisFrame += dt;
 			}
 
+			//_window.setActive();
 			_window.clear();
 			//drawing must pass the frame time, so that the renderer can 
 			//interpolate between frames
@@ -333,7 +334,7 @@ namespace hades
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
-
+				_states.getActiveState()->setGuiView(sf::View({0.f , 0.f, static_cast<float>(e.size.width), static_cast<float>(e.size.height)}));
 				activeState->handleEvent(e);		// let the gamestate see the changed window size
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
@@ -351,7 +352,7 @@ namespace hades
 					_consoleView->enterText(e);
 			}
 			//input events
-			else if (!activeState->handleEvent(e)) // otherwise let the gamestate handle it
+			else if (!activeState->guiInput(e) && !activeState->handleEvent(e)) // otherwise let the gamestate handle it
 				events.push_back(e);				//if the state doesn't handle the event directly
 													// then let the binding manager pass it as user input
 		}

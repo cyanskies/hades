@@ -12,6 +12,7 @@ namespace hades
 		register_resource_type("actions", nullptr);
 		register_resource_type("animations", resources::parseAnimation);
 		register_resource_type("curves", resources::parseCurve);
+		register_resource_type("fonts", resources::parseFont);
 		register_resource_type("strings", resources::parseString);
 		register_resource_type("systems", resources::parseSystem);
 		register_resource_type("textures", resources::parseTexture);
@@ -25,7 +26,12 @@ namespace hades
 	CurveVariable* DataManager::getCurve(data::UniqueId key)
 	{
 		return get<CurveVariable>(key);
-	}	
+	}
+
+	Font* DataManager::getFont(data::UniqueId key)
+	{
+		return get<Font>(key);
+	}
 
 	String* DataManager::getString(data::UniqueId key)
 	{

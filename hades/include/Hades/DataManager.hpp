@@ -19,6 +19,8 @@ namespace hades
 	using CurveVariable = resources::curve;
 	//animations decribe visible sprites and changes that occur to them over time
 	using Animation = resources::animation;
+	//fonts can be drawn with the sf::text class
+	using Font = resources::font;
 	//actions define input names that are used by the gameinstance
 	//using Action = ///;
 
@@ -35,6 +37,7 @@ namespace hades
 
 		Animation* getAnimation(data::UniqueId);
 		CurveVariable* getCurve(data::UniqueId);
+		Font* getFont(data::UniqueId);
 		String* getString(data::UniqueId);
 		System* getSystem(data::UniqueId);
 		Texture* getTexture(data::UniqueId);

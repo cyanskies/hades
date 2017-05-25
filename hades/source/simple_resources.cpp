@@ -11,6 +11,7 @@
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/files.hpp"
+#include "Hades/resource/fonts.hpp"
 
 using namespace hades;
 
@@ -247,21 +248,41 @@ namespace hades
 				//get string with this name if it has already been loaded
 				//first node holds the maps name
 				auto tnode = n.first;
+				auto name = tnode.as<types::string>();
+
 				//second holds the map children
 				auto string = n.second.as<types::string>();
 				auto id = dataman->getUid(tnode.as<types::string>());
 
-				auto string_ptr = std::make_unique<resources::string>();
+				resources::string *str = nullptr;// = std::make_unique<resources::string>();
 
-				string_ptr->mod = mod;
+				if (!dataman->exists(id))
+				{
+					auto string_ptr = std::make_unique <resources::string> ();
+					str = &*string_ptr;
+					dataman->set<resources::string>(id, std::move(string_ptr));
 
+					str->id = id;
+				}
+				else
+				{
+					try
+					{
+						str = dataman->get<resources::string>(id);
+					}
+					catch (data::resource_wrong_type&)
+					{
+						//name is already used for something else, this cannnot be loaded
+						resource_error(resource_type, name, mod);
+						//skip the rest of this loop and check the next node
+						continue;
+					}
+				}
+
+				str->mod = mod;
 				auto moddata = dataman->get<resources::mod>(mod);
-
-				string_ptr->source = moddata->source;
-				string_ptr->id = id;
-				string_ptr->value = string;
-
-				dataman->set<resources::string>(id, std::move(string_ptr));
+				str->source = moddata->source;
+				str->value = string;
 			}
 		}
 
@@ -539,5 +560,73 @@ namespace hades
 				}//if frames not null
 			}//for animations
 		}//parse animations
+
+		void loadFont(resource_base* r, data::data_manager* data)
+		{
+			assert(dynamic_cast<font*>(r));
+			auto f = static_cast<font*>(r);
+			auto mod = data->getMod(f->mod);
+
+			try
+			{
+				files::FileStream fstream(mod->source, f->source);
+				f->value.loadFromStream(fstream);
+			}
+			catch (files::file_exception e)
+			{
+				LOGERROR("Failed to load font: " + mod->source + "/" + f->source + ". " + e.what());
+			}
+		}
+
+		void parseFont(data::UniqueId mod, YAML::Node& node, data::data_manager* data)
+		{
+			//fonts yaml
+			//fonts: 
+			//    name: source
+			//    name2: source2
+
+			types::string resource_type = "fonts";
+			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+				return;
+
+			for (auto n : node)
+			{
+				//get string with this name if it has already been loaded
+				//first node holds the maps name
+				auto tnode = n.first;
+				//second holds the map children
+				auto source = n.second.as<types::string>();
+				auto id = data->getUid(tnode.as<types::string>());
+				auto name = tnode.as<types::string>();
+				font *f = nullptr;
+
+				if (!data->exists(id))
+				{
+					auto font_ptr = std::make_unique<font>();
+					f = &*font_ptr;
+					data->set<font>(id, std::move(font_ptr));
+
+					f->id = id;
+					f->value.loadFromMemory(console_font::data, console_font::length);
+				}
+				else
+				{
+					try
+					{
+						f = data->get<font>(id);
+					}
+					catch (data::resource_wrong_type&)
+					{
+						//name is already used for something else, this cannnot be loaded
+						resource_error(resource_type, name, mod);
+						//skip the rest of this loop and check the next node
+						continue;
+					}
+				}
+
+				f->mod = mod;
+				f->source = source;
+			}
+		}
 	}//namespace resources
 }//namespace hades

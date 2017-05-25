@@ -1,5 +1,7 @@
 #include "Hades/data_manager.hpp"
 
+#include <algorithm>
+
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/files.hpp"
@@ -124,12 +126,39 @@ namespace hades
 
 			_loadQueue.push_back(r);
 		}
+
 		void data_manager::load()
 		{
+			std::sort(_loadQueue.begin(), _loadQueue.end());
+			std::unique(_loadQueue.begin(), _loadQueue.end());
+
 			for (auto r : _loadQueue)
 				r->load(this);
+		}
 
-			_loadQueue.clear();
+		void data_manager::load(data::UniqueId id)
+		{
+			auto it = std::find_if(_loadQueue.begin(), _loadQueue.end(), [id](const resources::resource_base* r) {return r->id == id; });
+			auto resource = *it;
+			if (it == _loadQueue.end())
+				return;
+
+			//erase all the matching id's
+			_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), *it), _loadQueue.end());
+
+			resource->load(this);
+		}
+
+		void data_manager::load(types::uint8 count)
+		{
+			std::sort(_loadQueue.begin(), _loadQueue.end());
+			std::unique(_loadQueue.begin(), _loadQueue.end());
+
+			while (count-- > 0)
+			{
+				_loadQueue.back()->load(this);
+				_loadQueue.pop_back();
+			}
 		}
 
 		data_manager::Mod* data_manager::getMod(UniqueId mod)

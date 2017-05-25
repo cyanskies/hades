@@ -16,6 +16,9 @@
 #include "Hades/Types.hpp"
 #include "Hades/UniqueId.hpp"
 
+//Data manager is a resource management class.
+//The class is not thread safe
+
 namespace YAML
 {
 	class Node;
@@ -35,6 +38,14 @@ namespace hades
 			virtual ~resource_base() {}
 
 			virtual void load(data::data_manager*) {}
+
+			data::UniqueId id;
+			//the file this resource should be loaded from
+			//the path of the mod for resources that are parsed and not loaded
+			types::string source;
+			//the mod that the resource was most recently specified in
+			//not nessicarily the only mod to specify this resource.
+			data::UniqueId mod;
 		};
 
 		template<class T>
@@ -47,16 +58,8 @@ namespace hades
 			virtual ~resource_type() {}
 
 			void load(data::data_manager*);
-			
-			data::UniqueId id;
-			//the file this resource should be loaded from
-			//the path of the mod for resources that are parsed and not loaded
-			types::string source;
 			//the actual resource
 			T value;
-			//the mod that the resource was most recently specified in
-			//not nessicarily the only mod to specify this resource.
-			data::UniqueId mod;
 		protected:
 			loaderFunc _resourceLoader;
 		};

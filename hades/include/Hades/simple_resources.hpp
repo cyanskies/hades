@@ -1,6 +1,8 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
+#include "SFML/Graphics/Font.hpp"
+
 #include "Hades/Curves.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/parallel_jobs.hpp"
@@ -27,6 +29,8 @@ namespace hades
 		void loadSystem(resource_base* r, data::data_manager* dataman);
 		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager*);
+		void loadFont(resource_base* r, data::data_manager* data);
+		void parseFont(data::UniqueId mod, YAML::Node& node, data::data_manager*);
 
 		struct texture : public resource_type<sf::Texture>
 		{
@@ -75,6 +79,11 @@ namespace hades
 			texture* texture;
 			float duration;
 			types::int32 width, height;
+		};
+
+		struct font : public resource_type<sf::Font>
+		{
+			font() : resource_type<sf::Font>(loadFont) {}
 		};
 	}
 }

@@ -170,7 +170,7 @@ namespace hades
 		{
 			try
 			{
-				_resources.get_reference<std::unique_ptr<resources::resource_base>>(uid);
+				_resources.get_reference_void(uid);
 			}
 			catch (type_erasure::key_null&)
 			{
@@ -197,6 +197,24 @@ namespace hades
 			return "ERROR_NO_UNIQUE_ID";
 		}
 
+		template<typename GETMOD, typename YAMLPARSER>
+		void parseInclude(data::UniqueId mod, types::string file, GETMOD getMod, YAMLPARSER yamlParser)
+		{
+			std::string include_yaml;
+			auto mod_info = getMod(mod);
+			try
+			{
+				include_yaml = files::as_string(mod_info->source, file);
+			}
+			catch (files::file_exception &f)
+			{
+				LOGERROR(f.what());
+				return;
+			}
+
+			yamlParser(mod, YAML::Load(include_yaml.c_str()));
+		}
+
 		void data_manager::parseYaml(data::UniqueId mod, YAML::Node root)
 		{
 			//loop though each of the root level nodes and pass them off
@@ -211,20 +229,17 @@ namespace hades
 				//if type is include, then open the file and pass it to parseyaml
 				if (type == "include")
 				{
-					auto value = header.second.as<types::string>();
-					std::string include_yaml;
-					auto mod_info = get<Mod>(mod);
-					try
+					if (header.second.IsScalar())
 					{
-						include_yaml = files::as_string(mod_info->source, value);
+						auto value = header.second.as<types::string>();
+						parseInclude(mod, value, [this](data::UniqueId mod) {return get<resources::mod>(mod); }, [this](data::UniqueId mod, YAML::Node root) {parseYaml(mod, root); });	
 					}
-					catch (files::file_exception &f)
+					else if (header.second.IsSequence())
 					{
-						LOGERROR(f.what());
-						continue;
+						;
 					}
 
-					parseYaml(mod, YAML::Load(include_yaml.c_str()));
+					
 				}
 
 				//if this resource name has a parser then load it

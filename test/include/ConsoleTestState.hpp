@@ -12,7 +12,7 @@ class ConsoleTestState final : public hades::State
 public:
 	void init() override;
 	bool handleEvent(sf::Event &windowEvent) override;
-	void update(sf::Time deltaTime, hades::InputSystem::action_set) override;
+	void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
 	void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 	void cleanup() override;
 	void reinit() override;

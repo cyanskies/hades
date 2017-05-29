@@ -53,7 +53,7 @@ namespace hades
 		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
-		virtual void update(sf::Time deltaTime, InputSystem::action_set) = 0;
+		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, InputSystem::action_set) = 0;
 		//update animations and draw
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime

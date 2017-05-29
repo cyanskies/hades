@@ -261,7 +261,7 @@ namespace hades
 				auto unhandled = handleEvents(activeState);
 				_input.generateState(unhandled);
 
-				activeState->update(dt, _input.getInputState());
+				activeState->update(dt, _window, _input.getInputState());
 				//t += dt;
 				accumulator -= dt;
 				thisFrame += dt;

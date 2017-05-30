@@ -7,6 +7,7 @@
 #include "SFML/Window/Touch.hpp"
 #include "SFML/Window/Window.hpp"
 
+#include "Hades/App.hpp"
 #include "Hades/UniqueId.hpp"
 #include "Hades/vector_math.hpp"
 
@@ -16,33 +17,18 @@ namespace hades
 	InputInterpretor InputSystem::Keyboard()
 	{
 		InputInterpretor i;
-		i.id = data::UniqueId();
-
-		/*i.statusCheck = [](data::UniqueId id) {
-			Action a;
-			a.id = id;
-			a.active = sf::Keyboard::isKeyPressed(k);
-			return a;
-		};*/
 
 		const auto &state = _previousState;
-
-		i.eventCheck = [&state](const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [&state](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
 
-			if (e.type == sf::Event::KeyPressed && e.key.code == k)
+			if (!handled && e.type == sf::Event::KeyPressed && e.key.code == k)
 				a.active = true;
 			else if (e.type == sf::Event::KeyReleased && e.key.code == k)
 				a.active = false;
 			else
-			{
-				auto prev = state.find(id);
-				if (prev == state.end())
-					a.active = false;
-				else
-					a.active = prev->active;
-			}
+				return std::make_tuple(false, a);
 
 			return std::make_tuple(true, a);
 		};
@@ -64,23 +50,13 @@ namespace hades
 	InputInterpretor InputSystem::MouseButton(const sf::Window &window)
 	{
 		InputInterpretor i;
-		i.id = data::UniqueId();
-
-		/*i.statusCheck = [&window](data::UniqueId id) {
-			Action a;
-			a.id = id;
-			a.active = sf::Mouse::isButtonPressed(b);
-			std::tie(a.x_axis, a.y_axis) = MousePos(window);
-			return a;
-		};*/
 
 		const auto &state = _previousState;
-
-		i.eventCheck = [&window, &state](const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [&window, &state](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
 
-			if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
+			if (!handled && e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
 			{
 				a.active = true;
 				std::tie(a.x_axis, a.y_axis) = vector_clamp(e.mouseButton.x, e.mouseButton.y,
@@ -91,16 +67,7 @@ namespace hades
 			else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == b)
 				a.active = false;
 			else
-			{
-				auto prev = state.find(id);
-				if (prev == state.end())
-					a.active = false;
-				else
-				{
-					a.active = prev->active;
-					std::tie(a.x_axis, a.y_axis) = MousePos(window);
-				}
-			}
+				return std::make_tuple(false, a);
 
 			return std::make_tuple(true, a);
 		};
@@ -329,64 +296,47 @@ namespace hades
 			_inputMap.erase(it);
 	}
 
-	void InputSystem::generateState(std::vector<sf::Event> unhandled)
+	void InputSystem::generateState(const std::vector<Event> &events)
 	{
-		std::vector<Action> inputState;
+		InputSystem::action_set actionset;
 
 		for (auto &i : _inputMap)
 		{
-			bool eventHandled = false;
 			if (i.first.eventCheck)
 			{
-				for (auto &e : unhandled)
+				bool handled = false;
+				for (auto &e : events)
 				{
-					auto action = i.first.eventCheck(e, i.second);
+					auto action = i.first.eventCheck(std::get<bool>(e), std::get<sf::Event>(e), i.second);
 					if (std::get<bool>(action))
 					{
-						inputState.push_back(std::get<Action>(action));
-						eventHandled = true;
+						actionset.insert(std::get<Action>(action));
+						handled = true;
 					}
 				}
-			}
 
-			if(!eventHandled && i.first.statusCheck)
+				if (!handled)
+				{
+					auto prev = _previousState.find(i.second);
+					if (prev == _previousState.end())
+					{
+						Action a;
+						a.id = i.second;
+						a.active = false;
+						actionset.insert(a);
+					}
+					else
+						actionset.insert(*prev);
+				}
+			}
+			else if(i.first.statusCheck)
 			{
 				auto action = i.first.statusCheck(i.second);
-				inputState.push_back(action);
+				actionset.insert(action);
 			}
 		}
 
-		InputSystem::action_set actionset;
-		std::sort(inputState.begin(), inputState.end());
-
-		for (auto iter = inputState.begin(); iter != inputState.end(); ++iter)
-		{
-			auto actionId = iter->id;
-
-			//get all instances of this action
-			auto actions = std::equal_range(iter, inputState.end(), actionId);
-
-			Action action = *actions.first++;
-
-			while (actions.first != actions.second)
-			{
-				if (actions.first->active)
-					action.active = true;
-
-				if (actions.first->x_axis < action.x_axis)
-					action.x_axis = actions.first->x_axis;
-
-				if (actions.first->y_axis < action.y_axis)
-					action.y_axis = actions.first->y_axis;
-
-				++actions.first;
-			}
-
-			actionset.insert(action);
-			iter = --actions.second;
-		}
-
-		_previousState.swap(actionset);
+		actionset.swap(_previousState);
 	}
 
 	typename InputSystem::action_set InputSystem::getInputState() const

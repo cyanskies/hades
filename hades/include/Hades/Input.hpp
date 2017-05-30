@@ -62,10 +62,12 @@ namespace std {
 
 namespace hades
 {
+	using Event = std::tuple<bool, sf::Event>;
+
 	struct InputInterpretor
 	{
 		data::UniqueId id = data::UniqueId::Zero;
-		using event_function = std::function<std::tuple<bool, Action>(const sf::Event&, data::UniqueId)>;
+		using event_function = std::function<std::tuple<bool, Action>(bool handled, const sf::Event&, data::UniqueId)>;
 		event_function eventCheck;
 		using function = std::function<Action(data::UniqueId)>;
 		function statusCheck;
@@ -94,7 +96,7 @@ namespace hades
 		void unbind(data::UniqueId);
 		//load bindings config
 		//save binding config, //this only works for bindable actions
-		void generateState(std::vector<sf::Event> unhandled); //runs all the action test functions, including custom ones
+		void generateState(const std::vector<Event>&); //runs all the action test functions, including custom ones
 		using action_set = std::set<Action>;
 		action_set getInputState() const;
 	private:

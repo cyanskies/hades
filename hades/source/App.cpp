@@ -258,8 +258,8 @@ namespace hades
 
 			while( accumulator >= dt)
 			{
-				auto unhandled = handleEvents(activeState);
-				_input.generateState(unhandled);
+				auto events = handleEvents(activeState);
+				_input.generateState(events);
 
 				activeState->update(dt, _window, _input.getInputState());
 				//t += dt;
@@ -305,16 +305,17 @@ namespace hades
 		debug::overlay_manager = nullptr;
 	}
 
-	std::vector<sf::Event> App::handleEvents(State *activeState)
+	std::vector<Event> App::handleEvents(State *activeState)
 	{
 		//drop events from last frame
 		//_bindings.dropEvents();
 
-		std::vector<sf::Event> events;
+		std::vector<Event> events;
 
 		sf::Event e;
 		while (_window.pollEvent(e))
 		{
+			bool handled = false;
 			//window events
 			if (e.type == sf::Event::Closed) // if the app is closed, then disappear without a fuss
 				_window.close();
@@ -335,7 +336,7 @@ namespace hades
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
 				_states.getActiveState()->setGuiView(sf::View({0.f , 0.f, static_cast<float>(e.size.width), static_cast<float>(e.size.height)}));
-				activeState->handleEvent(e);		// let the gamestate see the changed window size
+				activeState->handleEvent(std::make_tuple(true, e));		// let the gamestate see the changed window size
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
@@ -352,9 +353,15 @@ namespace hades
 					_consoleView->enterText(e);
 			}
 			//input events
-			else if (!activeState->guiInput(e) && !activeState->handleEvent(e)) // otherwise let the gamestate handle it
-				events.push_back(e);				//if the state doesn't handle the event directly
-													// then let the binding manager pass it as user input
+			else
+			{
+				if (activeState->guiInput(e))
+					handled = true;
+				if (activeState->handleEvent(std::make_tuple(handled, e)))
+					handled = true;
+
+				events.push_back(std::make_tuple(handled, e));
+			}
 		}
 
 		return events;

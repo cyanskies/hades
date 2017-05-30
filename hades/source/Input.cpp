@@ -13,18 +13,38 @@
 namespace hades
 {
 	template<sf::Keyboard::Key k>
-	InputInterpretor Keyboard()
+	InputInterpretor InputSystem::Keyboard()
 	{
 		InputInterpretor i;
 		i.id = data::UniqueId();
 
-		auto key = k;
-
-		i.statusCheck = [key](data::UniqueId id) {
+		/*i.statusCheck = [](data::UniqueId id) {
 			Action a;
 			a.id = id;
 			a.active = sf::Keyboard::isKeyPressed(k);
 			return a;
+		};*/
+
+		const auto &state = _previousState;
+
+		i.eventCheck = [&state](const sf::Event &e, data::UniqueId id) {
+			Action a;
+			a.id = id;
+
+			if (e.type == sf::Event::KeyPressed && e.key.code == k)
+				a.active = true;
+			else if (e.type == sf::Event::KeyReleased && e.key.code == k)
+				a.active = false;
+			else
+			{
+				auto prev = state.find(id);
+				if (prev == state.end())
+					a.active = false;
+				else
+					a.active = prev->active;
+			}
+
+			return std::make_tuple(true, a);
 		};
 
 		return i;
@@ -41,19 +61,48 @@ namespace hades
 	}
 
 	template<sf::Mouse::Button b>
-	InputInterpretor MouseButton(const sf::Window &window)
+	InputInterpretor InputSystem::MouseButton(const sf::Window &window)
 	{
 		InputInterpretor i;
 		i.id = data::UniqueId();
 
-		auto button = b;
-
-		i.statusCheck = [button, &window](data::UniqueId id) {
+		/*i.statusCheck = [&window](data::UniqueId id) {
 			Action a;
 			a.id = id;
 			a.active = sf::Mouse::isButtonPressed(b);
 			std::tie(a.x_axis, a.y_axis) = MousePos(window);
 			return a;
+		};*/
+
+		const auto &state = _previousState;
+
+		i.eventCheck = [&window, &state](const sf::Event &e, data::UniqueId id) {
+			Action a;
+			a.id = id;
+
+			if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
+			{
+				a.active = true;
+				std::tie(a.x_axis, a.y_axis) = vector_clamp(e.mouseButton.x, e.mouseButton.y,
+					static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y),
+					0, 0);
+			}
+			else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == b)
+				a.active = false;
+			else
+			{
+				auto prev = state.find(id);
+				if (prev == state.end())
+					a.active = false;
+				else
+				{
+					a.active = prev->active;
+					std::tie(a.x_axis, a.y_axis) = MousePos(window);
+				}
+			}
+
+			return std::make_tuple(true, a);
 		};
 
 		return i;
@@ -187,6 +236,7 @@ namespace hades
 
 			return a;
 		} } });
+		//mouseMoveRelative
 		//=====joy buttons=====
 		//TODO: impliment for joystick
 		//must set the 'current joystick'
@@ -281,12 +331,11 @@ namespace hades
 
 	void InputSystem::generateState(std::vector<sf::Event> unhandled)
 	{
-		_inputState.clear();
+		std::vector<Action> inputState;
 
 		for (auto &i : _inputMap)
 		{
-			bool event_handled = false;
-
+			bool eventHandled = false;
 			if (i.first.eventCheck)
 			{
 				for (auto &e : unhandled)
@@ -294,33 +343,28 @@ namespace hades
 					auto action = i.first.eventCheck(e, i.second);
 					if (std::get<bool>(action))
 					{
-						_inputState.push_back(std::get<Action>(action));
-						event_handled = true;
+						inputState.push_back(std::get<Action>(action));
+						eventHandled = true;
 					}
 				}
 			}
 
-			if (!event_handled)
+			if(!eventHandled && i.first.statusCheck)
 			{
 				auto action = i.first.statusCheck(i.second);
-				_inputState.push_back(action);
+				inputState.push_back(action);
 			}
 		}
-	}
 
-	typename InputSystem::action_set InputSystem::getInputState() const
-	{
 		InputSystem::action_set actionset;
+		std::sort(inputState.begin(), inputState.end());
 
-		auto state = _inputState;
-		std::sort(state.begin(), state.end());
-
-		for (auto iter = state.begin(); iter != state.end(); ++iter)
+		for (auto iter = inputState.begin(); iter != inputState.end(); ++iter)
 		{
 			auto actionId = iter->id;
 
 			//get all instances of this action
-			auto actions = std::equal_range(iter, state.end(), actionId);
+			auto actions = std::equal_range(iter, inputState.end(), actionId);
 
 			Action action = *actions.first++;
 
@@ -342,6 +386,11 @@ namespace hades
 			iter = --actions.second;
 		}
 
-		return std::move(actionset);
+		_previousState.swap(actionset);
+	}
+
+	typename InputSystem::action_set InputSystem::getInputState() const
+	{
+		return _previousState;
 	}
 }

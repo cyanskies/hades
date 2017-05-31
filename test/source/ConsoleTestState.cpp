@@ -44,7 +44,7 @@ void ConsoleTestState::init()
 	rect.setSize({ 300.f, 90.f });
 }
 
-bool ConsoleTestState::handleEvent(sf::Event &windowEvent)
+bool ConsoleTestState::handleEvent(const hades::Event &windowEvent)
 {
 	return false;
 }

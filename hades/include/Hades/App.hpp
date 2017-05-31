@@ -61,8 +61,11 @@ namespace hades
 		///
 		///	\param activeState The state which will attempt to handle events.
 		///
+		/// \return A list of events, if the first value is true, then the event 
+		///  has already been handled elsewhere
+		///
 		////////////////////////////////////////////////////////////
-		std::vector<sf::Event> handleEvents(State *activeState);
+		std::vector<Event> handleEvents(State *activeState);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Registers the engine provided console commands.

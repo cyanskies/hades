@@ -50,7 +50,7 @@ namespace hades
 
 		//main state loop
 		virtual void init() = 0; //start all the state logic, this is for setting up game state
-		virtual bool handleEvent(sf::Event &windowEvent) = 0; //handle any events you want
+		virtual bool handleEvent(const Event&) = 0; //handle any events you want
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, InputSystem::action_set) = 0;

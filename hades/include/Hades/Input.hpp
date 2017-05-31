@@ -8,9 +8,11 @@
 #include <vector>
 
 #include "SFML/Window/Event.hpp"
+#include "SFML/Window/Window.hpp"
 
 #include "Hades/Types.hpp"
 #include "Hades/UniqueId.hpp"
+#include "Hades/vector_math.hpp"
 
 namespace hades
 {
@@ -60,10 +62,12 @@ namespace std {
 
 namespace hades
 {
+	using Event = std::tuple<bool, sf::Event>;
+
 	struct InputInterpretor
 	{
 		data::UniqueId id = data::UniqueId::Zero;
-		using event_function = std::function<std::tuple<bool, Action>(const sf::Event&, data::UniqueId)>;
+		using event_function = std::function<std::tuple<bool, Action>(bool handled, const sf::Event&, data::UniqueId)>;
 		event_function eventCheck;
 		using function = std::function<Action(data::UniqueId)>;
 		function statusCheck;
@@ -92,10 +96,17 @@ namespace hades
 		void unbind(data::UniqueId);
 		//load bindings config
 		//save binding config, //this only works for bindable actions
-		void generateState(std::vector<sf::Event> unhandled); //runs all the action test functions, including custom ones
+		void generateState(const std::vector<Event>&); //runs all the action test functions, including custom ones
 		using action_set = std::set<Action>;
 		action_set getInputState() const;
 	private:
+
+		template<sf::Keyboard::Key k>
+		InputInterpretor Keyboard();
+
+		template<sf::Mouse::Button b>
+		InputInterpretor MouseButton(const sf::Window &window);
+
 		//a map of interpretors to actions, this is used for generateStat
 		using input_map = std::multimap<InputInterpretor, data::UniqueId>;
 		input_map _inputMap;
@@ -103,7 +114,7 @@ namespace hades
 		std::map<data::UniqueId, bool> _bindable;
 		std::map<types::string, InputInterpretor> _interpretors;
 		std::map<types::string, InputInterpretor> _specialInterpretors;
-		std::vector<Action> _inputState;
+		action_set _previousState;
 	};
 }
 

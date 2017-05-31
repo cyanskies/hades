@@ -7,24 +7,30 @@
 #include "SFML/Window/Touch.hpp"
 #include "SFML/Window/Window.hpp"
 
+#include "Hades/App.hpp"
 #include "Hades/UniqueId.hpp"
 #include "Hades/vector_math.hpp"
 
 namespace hades
 {
 	template<sf::Keyboard::Key k>
-	InputInterpretor Keyboard()
+	InputInterpretor InputSystem::Keyboard()
 	{
 		InputInterpretor i;
-		i.id = data::UniqueId();
 
-		auto key = k;
-
-		i.statusCheck = [key](data::UniqueId id) {
+		const auto &state = _previousState;
+		i.eventCheck = [&state](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
-			a.active = sf::Keyboard::isKeyPressed(k);
-			return a;
+
+			if (!handled && e.type == sf::Event::KeyPressed && e.key.code == k)
+				a.active = true;
+			else if (e.type == sf::Event::KeyReleased && e.key.code == k)
+				a.active = false;
+			else
+				return std::make_tuple(false, a);
+
+			return std::make_tuple(true, a);
 		};
 
 		return i;
@@ -41,19 +47,29 @@ namespace hades
 	}
 
 	template<sf::Mouse::Button b>
-	InputInterpretor MouseButton(const sf::Window &window)
+	InputInterpretor InputSystem::MouseButton(const sf::Window &window)
 	{
 		InputInterpretor i;
-		i.id = data::UniqueId();
 
-		auto button = b;
-
-		i.statusCheck = [button, &window](data::UniqueId id) {
+		const auto &state = _previousState;
+		i.eventCheck = [&window, &state](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
-			a.active = sf::Mouse::isButtonPressed(b);
-			std::tie(a.x_axis, a.y_axis) = MousePos(window);
-			return a;
+
+			if (!handled && e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
+			{
+				a.active = true;
+				std::tie(a.x_axis, a.y_axis) = vector_clamp(e.mouseButton.x, e.mouseButton.y,
+					static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y),
+					0, 0);
+			}
+			else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == b)
+				a.active = false;
+			else
+				return std::make_tuple(false, a);
+
+			return std::make_tuple(true, a);
 		};
 
 		return i;
@@ -187,6 +203,7 @@ namespace hades
 
 			return a;
 		} } });
+		//mouseMoveRelative
 		//=====joy buttons=====
 		//TODO: impliment for joystick
 		//must set the 'current joystick'
@@ -279,69 +296,51 @@ namespace hades
 			_inputMap.erase(it);
 	}
 
-	void InputSystem::generateState(std::vector<sf::Event> unhandled)
+	void InputSystem::generateState(const std::vector<Event> &events)
 	{
-		_inputState.clear();
+		InputSystem::action_set actionset;
 
 		for (auto &i : _inputMap)
 		{
-			bool event_handled = false;
-
 			if (i.first.eventCheck)
 			{
-				for (auto &e : unhandled)
+				bool handled = false;
+				for (auto &e : events)
 				{
-					auto action = i.first.eventCheck(e, i.second);
+					auto action = i.first.eventCheck(std::get<bool>(e), std::get<sf::Event>(e), i.second);
 					if (std::get<bool>(action))
 					{
-						_inputState.push_back(std::get<Action>(action));
-						event_handled = true;
+						actionset.insert(std::get<Action>(action));
+						handled = true;
 					}
 				}
-			}
 
-			if (!event_handled)
+				if (!handled)
+				{
+					auto prev = _previousState.find(i.second);
+					if (prev == _previousState.end())
+					{
+						Action a;
+						a.id = i.second;
+						a.active = false;
+						actionset.insert(a);
+					}
+					else
+						actionset.insert(*prev);
+				}
+			}
+			else if(i.first.statusCheck)
 			{
 				auto action = i.first.statusCheck(i.second);
-				_inputState.push_back(action);
+				actionset.insert(action);
 			}
 		}
+
+		actionset.swap(_previousState);
 	}
 
 	typename InputSystem::action_set InputSystem::getInputState() const
 	{
-		InputSystem::action_set actionset;
-
-		auto state = _inputState;
-		std::sort(state.begin(), state.end());
-
-		for (auto iter = state.begin(); iter != state.end(); ++iter)
-		{
-			auto actionId = iter->id;
-
-			//get all instances of this action
-			auto actions = std::equal_range(iter, state.end(), actionId);
-
-			Action action = *actions.first++;
-
-			while (actions.first != actions.second)
-			{
-				if (actions.first->active)
-					action.active = true;
-
-				if (actions.first->x_axis < action.x_axis)
-					action.x_axis = actions.first->x_axis;
-
-				if (actions.first->y_axis < action.y_axis)
-					action.y_axis = actions.first->y_axis;
-
-				++actions.first;
-			}
-
-			actionset.insert(action);
-			iter = --actions.second;
-		}
-
-		return std::move(actionset);
+		return _previousState;
 	}
 }

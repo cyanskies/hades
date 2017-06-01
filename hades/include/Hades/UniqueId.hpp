@@ -30,6 +30,11 @@ namespace hades
 				return _value == rhs._value;
 			}
 
+			bool operator!=(const UniqueId_t& rhs) const
+			{
+				reutrn !(_value == rhs._value);
+			}
+
 			type get() const { return _value; }
 
 			template<typename T>

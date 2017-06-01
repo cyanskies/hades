@@ -25,14 +25,14 @@ namespace hades
 			UniqueId_t(UniqueId_t&&) = default;
 			UniqueId_t &operator=(const UniqueId_t&) = default;
 
-			bool operator==(const UniqueId_t& rhs) const
+			bool operator==(const UniqueId_t &rhs) const
 			{
 				return _value == rhs._value;
 			}
 
-			bool operator!=(const UniqueId_t& rhs) const
+			bool operator!=(const UniqueId_t &rhs) const
 			{
-				reutrn !(_value == rhs._value);
+				return !(_value == rhs._value);
 			}
 
 			type get() const { return _value; }
@@ -40,7 +40,7 @@ namespace hades
 			template<typename T>
 			friend bool operator<(const UniqueId_t<T>&, const UniqueId_t<T>&);
 
-			static UniqueId_t<id_type> Zero;
+			static const UniqueId_t<id_type> Zero;
 		private:
 			//initialise the static counter with the types smallest value
 			static type _count;
@@ -51,7 +51,7 @@ namespace hades
 		id_type UniqueId_t<id_type>::_count = std::numeric_limits<id_type>::min();
 
 		template<typename id_type>
-		UniqueId_t<id_type> UniqueId_t<id_type>::Zero;
+		const UniqueId_t<id_type> UniqueId_t<id_type>::Zero;
 
 		template<typename T>
 		bool operator<(const UniqueId_t<T>& lhs, const UniqueId_t<T>& rhs)

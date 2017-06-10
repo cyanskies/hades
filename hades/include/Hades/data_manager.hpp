@@ -29,6 +29,8 @@ namespace hades
 	namespace data
 	{
 		class data_manager;
+
+		extern types::string no_id_string;
 	}
 
 	namespace resources
@@ -101,6 +103,8 @@ namespace hades
 		public:
 
 			using parserFunc = std::function<void(UniqueId mod, YAML::Node& node, data_manager*)>;
+
+			data_manager();
 
 			virtual ~data_manager();
 			//application registers the custom resource types

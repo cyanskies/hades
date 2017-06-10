@@ -11,6 +11,13 @@ namespace hades
 {
 	namespace data
 	{
+		types::string no_id_string = "ERROR_NO_UNIQUE_ID";
+
+		data_manager::data_manager()
+		{
+			_ids.insert({ no_id_string, UniqueId::Zero });
+		}
+
 		data_manager::~data_manager()
 		{}
 		//application registers the custom resource types
@@ -194,7 +201,7 @@ namespace hades
 					return id.first;
 			}
 
-			return "ERROR_NO_UNIQUE_ID";
+			return no_id_string;
 		}
 
 		template<typename GETMOD, typename YAMLPARSER>

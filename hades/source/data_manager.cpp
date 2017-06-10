@@ -11,8 +11,6 @@ namespace hades
 {
 	namespace data
 	{
-		types::string no_id_string = "ERROR_NO_UNIQUE_ID";
-
 		data_manager::data_manager()
 		{
 			_ids.insert({ no_id_string, UniqueId::Zero });

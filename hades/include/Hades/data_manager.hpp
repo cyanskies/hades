@@ -30,7 +30,7 @@ namespace hades
 	{
 		class data_manager;
 
-		extern types::string no_id_string;
+		const types::string no_id_string = "ERROR_NO_UNIQUE_ID";
 	}
 
 	namespace resources

@@ -127,9 +127,9 @@ namespace hades
 		{
 			//_resources stores unique_ptrs to resources
 			//so we void ptr cast to get it out of the type erased property bag
-			resources::resource_base* r = &**static_cast<std::unique_ptr<resources::resource_base>*>(_resources.get_reference_void(id));
+			auto* r = static_cast<std::unique_ptr<resources::resource_base>*>(_resources.get_reference_void(id));
 
-			_loadQueue.push_back(r);
+			_loadQueue.push_back(&**r);
 		}
 
 		void data_manager::load()
@@ -152,6 +152,7 @@ namespace hades
 			_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), *it), _loadQueue.end());
 
 			resource->load(this);
+			resource->loaded = true;
 		}
 
 		void data_manager::load(types::uint8 count)
@@ -275,6 +276,7 @@ namespace hades
 			//parse the mod header;
 			auto mod_data = std::make_unique<resources::mod>();
 			mod_data->source = source;
+			mod_data->id = modKey;
 			auto mod_name = mod["name"];
 			if (mod_name.IsNull() || !mod_name.IsDefined())
 			{

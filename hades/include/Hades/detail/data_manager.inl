@@ -18,6 +18,9 @@ namespace hades
 			try
 			{
 				_resources.set(key, std::move(value));
+				//set the values unique id, incase the calling code didn't
+				auto v = &**_resources.get_reference<std::unique_ptr<T>>(key);
+				v->id = key;
 			}
 			catch (type_erasure::value_wrong_type &e)
 			{
@@ -30,7 +33,15 @@ namespace hades
 		{		
 			try
 			{
-				return &**_resources.get_reference<std::unique_ptr<T>>(uid);
+				auto value = &**_resources.get_reference<std::unique_ptr<T>>(uid);
+
+				if (!value->loaded)
+				{
+					refresh(value->id);
+					load(value->id);
+				}
+
+				return value;
 			}
 			catch (type_erasure::key_null&)
 			{

@@ -48,6 +48,7 @@ namespace hades
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
 			data::UniqueId mod;
+			bool loaded = false;
 		};
 
 		template<class T>
@@ -151,6 +152,7 @@ namespace hades
 			bool exists(UniqueId);
 
 			//returns a non-owning ptr to the resource
+			//will load the resource if it has never been loaded before
 			template<class T>
 			T* get(UniqueId);
 

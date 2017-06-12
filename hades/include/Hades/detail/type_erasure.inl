@@ -98,8 +98,6 @@ namespace hades
 		if (iter == _bag.end())
 			throw type_erasure::key_null("Tried to retrieve unassigned key.");
 
-		//assert(dynamic_cast<type_holder*>(&*iter->second));
-
 		auto *holder = static_cast<type_holder*>(&*iter->second);
 		return static_cast<void*>(&holder->get());
 	}

@@ -7,8 +7,12 @@
 #include <limits>
 #include <string>
 
+#define ZLIB_WINAPI 1
+
 #include "zlib/zip.h"
 #include "zlib/unzip.h"
+
+#undef ERROR
 
 #include "Hades/Logging.hpp"
 #include "Hades/Types.hpp"

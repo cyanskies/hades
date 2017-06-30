@@ -38,7 +38,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	sfml-network
 	${SFML_MAIN_RELEASE}
 	tgui
-	libyaml-cpp
+	libyaml-cppmd
 	zlibwapi
 	)
 else()

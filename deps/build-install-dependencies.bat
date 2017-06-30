@@ -34,8 +34,8 @@
 @IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll" 
 @IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
 
-@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.dll" %install-pfx%\bin\zlibwapi.dll
-@IF NOT %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.lib" %install-pfx%\lib\zlibwapi.lib
+@IF %mode%==Release @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll"
+@IF %mode%==Release @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
 
 ::copy headers to install dir
 @xcopy /Y ".\zlib\*.h" "%install-pfx%\include\zlib\"

@@ -172,7 +172,7 @@ namespace hades
 				command = "../../game/" + command;
 			#endif
 
-			data.load_game(command);
+			data.load_game("./" + command);
 		});
 
 		loadCommand(commands, "mod", [&data](std::string command) {
@@ -188,7 +188,7 @@ namespace hades
 				command = "../../game/" + command;
 			#endif
 
-			data.add_mod(command);
+			data.add_mod("./" + command);
 		});
 
 		//if hades main handles any of the commands then they will be removed from 'commands'

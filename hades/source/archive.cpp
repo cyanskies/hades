@@ -7,7 +7,9 @@
 #include <limits>
 #include <string>
 
-#define ZLIB_WINAPI 1
+#ifdef NDEBUG
+	#define ZLIB_WINAPI 1
+#endif
 
 #include "zlib/zip.h"
 #include "zlib/unzip.h"

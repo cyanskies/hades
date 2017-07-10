@@ -214,6 +214,11 @@ namespace hades
 				{
 					files::FileStream fstream(mod->source, tex->source);
 					tex->value.loadFromStream(fstream);
+					tex->value.setSmooth(tex->smooth);
+					tex->value.setRepeated(tex->repeat);
+
+					if (tex->mips && !tex->value.generateMipmap())
+						LOGWARNING("Failed to generate MipMap for texture: " + hades::data_manager->as_string(tex->id));
 				}
 				catch (files::file_exception e)
 				{
@@ -328,7 +333,6 @@ namespace hades
 			else
 				return VariableType::ERROR;
 		}
-
 
 		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
 		{

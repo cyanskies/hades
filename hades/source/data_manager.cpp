@@ -52,11 +52,18 @@ namespace hades
 			}
 		}
 
+		inline bool ContainsTab(types::string yaml)
+		{
+			return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
+		}
+
 		//mod is the name of a folder or archive containing a mod.yaml file
 		void data_manager::add_mod(std::string mod, bool autoLoad, std::string name)
 		{
 			auto modyaml = files::as_string(mod, name);
 
+			if (ContainsTab(modyaml))
+				LOGWARNING("Yaml file: " + mod + "/" + name + " contains tabs, expect errors.");
 			//parse game.yaml
 			auto root = YAML::Load(modyaml.c_str());
 			if(autoLoad)
@@ -218,6 +225,9 @@ namespace hades
 				return;
 			}
 
+			if (ContainsTab(include_yaml))
+				LOGWARNING("Yaml file: " + mod_info->name + "/" + file + " contains tabs, expect errors.");
+			
 			yamlParser(mod, YAML::Load(include_yaml.c_str()));
 		}
 

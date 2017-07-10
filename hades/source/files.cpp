@@ -39,14 +39,6 @@ namespace hades {
 
 		FileStream::FileStream(const std::string &modPath, const std::string &fileName)
 		{
-			//check that path points to a directory or archive
-			std::error_code ec;
-			if (!fs::exists(modPath, ec))
-			{
-				auto message = "Cannot find archive or directory: " + modPath;
-				throw file_exception(message.c_str(), file_exception::error_code::PATH_NOT_FOUND);
-			}
-
 			//check if modPath exists as a archive or directory
 			bool pathArchive = false, pathDirectory = false;
 			std::string archiveExt;

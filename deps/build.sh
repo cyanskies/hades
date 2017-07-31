@@ -60,7 +60,12 @@ make
 #@IF %mode%==Release @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
 
 #copy headers to install dir
-cp *.h $installpfx/include/zlib
+mkdir "$installpfx/include/zlib"
+cp *.h "$installpfx/include/zlib"
+cp ./contrib/minizip/*.h "$installpfx/include/zlib"
 
+#copy lib files
+cp *.a "$installpfx/lib"
+cp *.so.* "$installpfx/lib"
 #@xcopy /Y ".\zlib\*.h" "%install-pfx%\include\zlib\"
 #@xcopy /Y ".\zlib\contrib\minizip\*.h" "%install-pfx%\include\zlib\"

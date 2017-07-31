@@ -1,0 +1,20 @@
+Building on linux requires:
+
+build-essentials
+
+    freetype
+    jpeg
+    x11
+    xrandr
+    xcb
+    x11-xcb
+    xcb-randr
+    xcb-image
+    opengl
+    flac
+    ogg
+    vorbis
+    vorbisenc
+    vorbisfile
+    openal
+    pthread

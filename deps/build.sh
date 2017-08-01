@@ -1,23 +1,22 @@
 generator=$1
 mode=$2
 library=$3
-prepath="../"$4
+prepath=$4
 
-if [ -z ${generator+""}  ] ;
+if [ -z ${generator}  ] ;
 then generator="Unix Makefiles"
 fi
 
-if [ -z ${mode+""} ] ;
+if [ -z ${mode} ] ;
 then mode="Debug"
 fi
 
-if [ -z ${library+""} ] ;
+if [ -z ${library} ] ;
 then library="./dep-library"
 fi
 
-if [ -z ${prepath+""} ] ;
+if [ -z ${prepath} ] ;
 then prepath="./"
-else prepath="../$prepath"
 fi
 
 installpfx="$prepath$library"
@@ -25,6 +24,8 @@ installpfx="$prepath$library"
 if [ ! -d "$installpfx" ]; then
 mkdir "$installpfx"
 fi
+
+echo NOTE: $installpfx
 
 #SFML
 cd ./sfml

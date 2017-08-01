@@ -40,7 +40,9 @@ namespace hades {
 		template<typename T>
 		T stov(std::string value)
 		{
-			static_assert(false, "Tried to convert type not covered by stov");
+            //TODO: gcc is too eager to interpret static asserts, need a different solution here
+			//static_assert(false, "Tried to convert type not covered by stov");
+			return T();
 		}
 
 		// type conversion

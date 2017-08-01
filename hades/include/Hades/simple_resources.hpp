@@ -76,7 +76,7 @@ namespace hades
 
 		struct animation : public resource_type<std::vector<animation_frame>>
 		{
-			texture* texture;
+			texture* tex;
 			float duration;
 			types::int32 width, height;
 		};

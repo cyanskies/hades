@@ -12,7 +12,7 @@
 #include "Hades/Debug.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
-#include "hades/Types.hpp"
+#include "Hades/Types.hpp"
 
 namespace hades
 {

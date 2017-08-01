@@ -29,7 +29,7 @@ namespace hades {
 	template<typename T>
 	T lerp(T first, T second, float alpha)
 	{
-		return (1 - alpha) * first + t * second;
+		return (1 - alpha) * first + alpha * second;
 	}
 
 	template<typename T>
@@ -119,7 +119,7 @@ namespace hades {
 				return _data.begin()->value;
 			else if (*last < at)
 				return last->value;
-			
+
 			if (_type == CurveType::CONST)
 			{
 				if (_data.empty())
@@ -164,10 +164,11 @@ namespace hades {
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<typename FrameType> getBetween(Time first, Time second) const
-		{
-			return std::vector<typename FrameType>();
-		}
+		//doesn't build on linux :S
+//		std::vector<FrameType> getBetween(Time first, Time second) const
+//		{
+//			return std::vector<FrameType>();
+//		}
 
 		using DataType = std::set< FrameType >;
 		using const_iterator = typename DataType::const_iterator;

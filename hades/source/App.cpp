@@ -3,6 +3,7 @@
 #include <cassert>
 #include <functional>
 #include <future>
+#include <memory>
 #include <string>
 #include <sstream>
 
@@ -98,11 +99,11 @@ namespace hades
 		registerVariables(&_console);
 		registerVidVariables(&_console);
 		registerServerVariables(&_console);
-		
+
 		//load config files and overwrite any updated settings
 		_states.setGuiTarget(_window);
 
-		registerConsoleCommands();	
+		registerConsoleCommands();
 
 		//initialise the job system
 		parallel_jobs::init();
@@ -138,8 +139,8 @@ namespace hades
 	}
 
 	void App::postInit(CommandList commands)
-	{	
-		const auto hades_version_major = 0, 
+	{
+		const auto hades_version_major = 0,
 			hades_version_minor = 1,
 			hades_version_patch  = 0;
 
@@ -269,7 +270,7 @@ namespace hades
 
 			//_window.setActive();
 			_window.clear();
-			//drawing must pass the frame time, so that the renderer can 
+			//drawing must pass the frame time, so that the renderer can
 			//interpolate between frames
 			activeState->draw(_window, thisFrame + accumulator);
 			activeState->drawGui();
@@ -328,7 +329,7 @@ namespace hades
 					_consoleView = static_cast<ConsoleView*>(debug::CreateOverlay(std::make_unique<ConsoleView>()));
 			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
-			{										// doesn't block resizing the window
+			{									// doesn't block resizing the window
 				_console.set<types::int32>("vid_width", e.size.width);
 				_console.set<types::int32>("vid_height", e.size.height);
 				_console.set("vid_mode", -1);
@@ -460,7 +461,7 @@ namespace hades
 					_sfVSync = false;
 					_window.setVerticalSyncEnabled(_sfVSync);
 				}
-				
+
 				try
 				{
 					auto limit = std::stoi(limitstr);

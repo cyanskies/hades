@@ -9,7 +9,7 @@ namespace hades
 {
 	void animation_error(float progress, const resources::animation* const animation)
 	{
-		LOGWARNING("Animation progress parameter must be in the range (0, 1) was: " + std::to_string(progress) + 
+		LOGWARNING("Animation progress parameter must be in the range (0, 1) was: " + std::to_string(progress) +
 			"; while setting animation: " + data_manager->as_string(animation->id));
 	}
 
@@ -43,18 +43,18 @@ namespace hades
 			progress = 1.f;
 		}
 		else if(progress < 0.f)
-		{ 
+		{
 			animation_error(progress, animation);
 			progress = 0.f;
 		}
 
 		//set the texture
-		
+
 		if(animation->value.empty())
-			target.setTexture(animation->texture->value);
+			target.setTexture(animation->tex->value);
 		else
 		{
-			target.setTexture(animation->texture->value, true);
+			target.setTexture(animation->tex->value, true);
 			return;
 		}
 
@@ -68,7 +68,7 @@ namespace hades
 			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
 			if (progress <= 0.f)
 			{
-				target.setTextureRect({ static_cast<types::int32>(frame.x), 
+				target.setTextureRect({ static_cast<types::int32>(frame.x),
 					static_cast<types::int32>(frame.y), animation->width, animation->height });
 				//if (frame.applyOrigin)
 					//target.setOrigin(frame.origin);

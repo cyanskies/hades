@@ -465,7 +465,7 @@ namespace hades
 					a->duration = 1.f;
 					a->id = id;
 					a->source = types::string();
-					a->texture = nullptr;
+					a->tex = nullptr;
 					a->value = std::vector<animation_frame>(0);
 				}
 				else
@@ -491,7 +491,7 @@ namespace hades
 
 				auto texture_str = animation_node["texture"];
 				if (texture_str.IsDefined() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
-					a->texture = data_manager->getTexture(data_manager->getUid(texture_str.as<types::string>()));
+					a->tex = data_manager->getTexture(data_manager->getUid(texture_str.as<types::string>()));
 
 				auto width = animation_node["width"];
 				if (width.IsDefined() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
@@ -530,13 +530,13 @@ namespace hades
 						
 						auto &f = frame_vector.back();
 						//check that the x and y values are within the limits of int32::max
-						if (f.x + a->width > a->texture->width)
+						if (f.x + a->width > a->tex->width)
 						{
 							bad_frames = true;
 							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));
 							break;
 						}
-						else if (f.y + a->height > a->texture->height)
+						else if (f.y + a->height > a->tex->height)
 						{
 							bad_frames = true;
 							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));

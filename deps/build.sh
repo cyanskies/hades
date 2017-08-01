@@ -45,27 +45,34 @@ cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -G "$ge
 cmake --build . --target install --config "$mode"
 
 #minizlib
+
+#build zlib
 cd ../zlib
 ./configure
 make
-cd ../zlib/contrib/minizip
-make
 
-#Copy lib and dll files
+#build minizip
+cd ./contrib/minizip
+make -f hades_makefile
 
-#@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll" 
-#@IF %mode%==Debug @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllDebug\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
-
-#@IF %mode%==Release @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.dll" "%install-pfx%\bin\zlibwapi.dll"
-#@IF %mode%==Release @copy /Y ".\zlib\contrib\vstudio\vc15\x86\ZlibDllRelease\zlibwapi.lib" "%install-pfx%\lib\zlibwapi.lib"
+#go back to the zlib root
+cd ../../
 
 #copy headers to install dir
-mkdir "$installpfx/include/zlib"
-cp *.h "$installpfx/include/zlib"
-cp ./contrib/minizip/*.h "$installpfx/include/zlib"
+
+zlibheaderdir="../$installpfx/include/zlib"
+
+if [ ! -d "$zlibheaderdir" ]; then
+mkdir "$zlibheaderdir"
+fi
+
+cp *.h "$zlibheaderdir"
+cp ./contrib/minizip/*.h "$zlibheaderdir"
 
 #copy lib files
-cp *.a "$installpfx/lib"
-cp *.so.* "$installpfx/lib"
-#@xcopy /Y ".\zlib\*.h" "%install-pfx%\include\zlib\"
-#@xcopy /Y ".\zlib\contrib\minizip\*.h" "%install-pfx%\include\zlib\"
+#not sure if we need the zlib.a files
+cp *.a "../$installpfx/lib"
+cp ./contrib/minizip/*.so "../$installpfx/lib"
+
+#back to the build.sh root folder
+cd ../

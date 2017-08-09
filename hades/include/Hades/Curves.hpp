@@ -70,12 +70,14 @@ namespace hades {
 		return lhs < rhs.t;
 	}
 
+	#undef ERROR
+	#undef CONST
 	enum CurveType {
 		ERROR, //something is wrong
 		CONST, //data is constant for any keyframe
 		LINEAR, //data between keyframes is exactly the difference between them
 		STEP, // data between keyframes is identical to the previous keyframe
-		PULSE, // data between keyframes is null
+		PULSE // data between keyframes is null
 	};
 
 	class curve_error : public std::exception

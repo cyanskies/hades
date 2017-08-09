@@ -9,6 +9,8 @@
 #include "winerror.h"
 
 #include "Hades/Properties.hpp"
+#include "Hades/Main.hpp"
+#include "Hades/Types.hpp"
 
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
@@ -33,14 +35,16 @@ std::string getWindowsDirectory(REFKNOWNFOLDERID target)
 	return std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(stream.str());	
 }
 
-//returns C:\\users\\<name>\\documents/
-std::string getUserCustomFileDirectory()
+namespace hades
 {
-	static const auto portable = hades::console::getBool("file_portable", false);
+	//returns C:\\users\\<name>\\documents/gamename/
+	types::string getUserCustomFileDirectory()
+	{
+		static const auto portable = hades::console::getBool("file_portable", false);
 
-	if (portable)
-		return "";
-	else
-		return getWindowsDirectory(FOLDERID_Documents) + "/";
+		if (portable)
+			return "";
+		else
+			return getWindowsDirectory(FOLDERID_Documents) + "/" + defaultGame() + "/";
+	}
 }
-

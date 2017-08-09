@@ -16,6 +16,7 @@ namespace hades
 		class FileStream : public sf::InputStream
 		{
 		public:
+			FileStream() {}
 			FileStream(const std::string &modPath, const std::string &fileName);
 			
 			~FileStream();
@@ -25,13 +26,20 @@ namespace hades
 			FileStream &operator=(FileStream&&) = delete;
 			FileStream &operator=(const FileStream&) = delete;
 
+			void open(const std::string &modPath, const std::string &fileName);
+
+			bool is_open() const
+			{
+				return _open;
+			}
+
 			sf::Int64 read(void* data, sf::Int64 size);
 			sf::Int64 seek(sf::Int64 position);
 			sf::Int64 tell();
 			sf::Int64 getSize();
 
 		private:
-			bool archive = false, file = false;
+			bool archive = false, file = false, _open = false;
 
 			union 
 			{
@@ -49,6 +57,7 @@ namespace hades
 				FILE_NOT_FOUND,
 				PATH_NOT_FOUND,
 				ARCHIVE_INVALID,
+				FILE_NOT_OPEN
 			};
 
 			file_exception(const char* what, error_code code) : std::runtime_error(what), _code(code) {}

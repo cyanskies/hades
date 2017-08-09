@@ -21,6 +21,7 @@ namespace hades
 		class logger
 		{
 		public:
+			#undef ERROR
 			enum LOG_VERBOSITY { NORMAL, ERROR, WARNING };
 
 			virtual ~logger() {}

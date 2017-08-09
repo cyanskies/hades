@@ -8,6 +8,7 @@
 
 #include "Hades/archive.hpp"
 #include "Hades/Logging.hpp"
+#include "Hades/StandardPaths.hpp"
 
 namespace fs = std::experimental::filesystem;
 
@@ -27,7 +28,20 @@ namespace hades {
 
 		buffer as_raw(const std::string &modPath, const std::string &fileName)
 		{
-			FileStream stream(modPath, fileName);
+			static const auto custom_path = hades::GetUserCustomFileDirectory();
+
+			bool found = true;
+
+			FileStream stream;
+
+			try
+			{
+				stream.open(custom_path + modPath, fileName);
+			}
+			catch (file_exception &e)
+			{
+				found = false;
+			}
 
 			auto size = stream.getSize();
 			assert(size >= 0 && size <= std::numeric_limits<buffer::size_type>::max());
@@ -38,6 +52,20 @@ namespace hades {
 		}
 
 		FileStream::FileStream(const std::string &modPath, const std::string &fileName)
+		{
+			open(modPath, fileName);
+		}
+
+		FileStream::~FileStream()
+		{
+			assert(file || archive);
+			if (file)
+				_fileStream.~FileInputStream();
+			else
+				_archiveStream.~archive_stream();
+		}
+
+		void FileStream::open(const std::string &modPath, const std::string &fileName)
 		{
 			//check if modPath exists as a archive or directory
 			bool pathArchive = false, pathDirectory = false;
@@ -56,7 +84,7 @@ namespace hades {
 				{
 					if (d.path().stem() == archive_name)
 					{
-						if(fs::is_directory(d))
+						if (fs::is_directory(d))
 							pathDirectory = true;
 						else
 						{
@@ -126,25 +154,20 @@ namespace hades {
 
 			if (!found)
 			{
-				auto message = "Cannot find file: " + fileName +",  in mod location: " + modPath;
+				auto message = "Cannot find file: " + fileName + ",  in mod location: " + modPath;
 				throw file_exception(message.c_str(), file_exception::error_code::FILE_NOT_FOUND);
 			}
 
 			assert(file != archive);
-		}
-
-		FileStream::~FileStream()
-		{
-			assert(file || archive);
-			if (file)
-				_fileStream.~FileInputStream();
-			else
-				_archiveStream.~archive_stream();
+			_open = true;
 		}
 
 		sf::Int64 FileStream::read(void* data, sf::Int64 size)
 		{
 			assert(file || archive);
+
+			if (!_open)
+				throw std::logic_error("FileStream tried to call access function with file not open");
 
 			if (file)
 				return _fileStream.read(data, size);
@@ -156,6 +179,9 @@ namespace hades {
 		{
 			assert(file || archive);
 
+			if (!_open)
+				throw std::logic_error("FileStream tried to call access function with file not open");
+
 			if (file)
 				return _fileStream.seek(position);
 			else
@@ -166,6 +192,9 @@ namespace hades {
 		{
 			assert(file || archive);
 
+			if (!_open)
+				throw std::logic_error("FileStream tried to call access function with file not open");
+
 			if (file)
 				return _fileStream.tell();
 			else
@@ -175,6 +204,9 @@ namespace hades {
 		sf::Int64 FileStream::getSize()
 		{
 			assert(file || archive);
+
+			if (!_open)
+				throw std::logic_error("FileStream tried to call access function with file not open");
 
 			if (file)
 				return _fileStream.getSize();

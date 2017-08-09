@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "Hades/Console.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/StateManager.hpp"

@@ -1,4 +1,4 @@
-#include "Hades\StandardPaths.hpp"
+#include "Hades/StandardPaths.hpp"
 
 #include <assert.h>
 #include <codecvt>
@@ -8,6 +8,7 @@
 #include "Shlobj.h"
 #include "winerror.h"
 
+#include "Hades/Properties.hpp"
 
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
@@ -19,7 +20,8 @@ std::string getWindowsDirectory(REFKNOWNFOLDERID target)
 
 	if(result != S_OK)
 	{
-		assert("invalid arg or invalid folder ID in getUserCustomFileDirectory on windows");
+		assert(false);
+		throw std::logic_error("invalid arg or invalid folder ID in getUserCustomFileDirectory on windows");
 	}
 
 	std::wstringstream stream;
@@ -31,9 +33,14 @@ std::string getWindowsDirectory(REFKNOWNFOLDERID target)
 	return std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(stream.str());	
 }
 
-//returns C:\\users\name\documents/
+//returns C:\\users\\<name>\\documents/
 std::string getUserCustomFileDirectory()
 {
-	return getWindowsDirectory(FOLDERID_Documents) + "/";
+	static const auto portable = hades::console::getBool("file_portable", false);
+
+	if (portable)
+		return "";
+	else
+		return getWindowsDirectory(FOLDERID_Documents) + "/";
 }
 

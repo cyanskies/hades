@@ -6,9 +6,13 @@
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
 
-#ifndef HADES_NO_MAIN
-
+//TODO: remove this
 int main(int argc, char** argv)
+{
+	return hades_main(argc, argv);
+}
+
+int hades_main(int argc, char** argv)
 {
 	//new commands start with a '-'.
 	const char COMMAND_DELIMITER = '-';
@@ -79,5 +83,3 @@ int main(int argc, char** argv)
 
 	return returnCode;
 }
-
-#endif // !HADES_NO_MAIN

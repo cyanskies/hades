@@ -35,6 +35,7 @@ namespace hades
 	// server framerate and so on
 	//vid_* video settings variables
 	// resolution, colour depth, fullscreen, etc
+	//file_* for file path settings and read/write settings
 
 	void registerVariables(Console *console)
 	{
@@ -45,6 +46,7 @@ namespace hades
 		//app variables
 		console->set("c_ticktime", 30);
 		console->set("c_maxticktime", 150); // 1.5 seconds is the maximum allowable tick time.
+		console->set("file_portable", false); // activates portable mode, where files are only read/writen to the game directory
 	}
 
 	void registerVidVariables(Console *console)

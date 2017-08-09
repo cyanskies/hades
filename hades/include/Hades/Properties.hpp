@@ -50,6 +50,7 @@ namespace hades
 		}
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
+		//TODO: add default values for these
 		property<types::int32> getInt(const types::string&, types::int32);
 		property<float> getFloat(const types::string&, float);
 		property<bool> getBool(const types::string&, bool);

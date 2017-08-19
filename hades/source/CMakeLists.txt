@@ -9,6 +9,7 @@ set(HADES_SRC
 	Collision.cpp
 	Console.cpp
 	ConsoleView.cpp
+	common_input.cpp
 	DataManager.cpp
 	data_manager.cpp
     ExportedCurves.cpp
@@ -29,6 +30,12 @@ set(HADES_SRC
 	System.cpp
 	TimerManager.cpp
 	Types.cpp
+	OrthoTerrain/editor.cpp
+	OrthoTerrain/serialise.cpp
+	OrthoTerrain/terrain.cpp
+	OrthoTerrain/utility.cpp
+	OrthoTerrain/generator.cpp
+	OrthoTerrain/resources.cpp
 )
 
 # Library to build

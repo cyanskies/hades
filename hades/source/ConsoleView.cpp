@@ -17,8 +17,8 @@ namespace hades
 	ConsoleView::ConsoleView() : Overlay(true)
 	{
 		_font.loadFromMemory(console_font::data, console_font::length);
-		_fade = console::getInt("con_fade", 180);
-		_charSize = console::getInt("con_charactersize", 15);
+		_fade = console::GetInt("con_fade", 180);
+		_charSize = console::GetInt("con_charactersize", 15);
 	}
 
 	void ConsoleView::setFullscreenSize(sf::Vector2f size)

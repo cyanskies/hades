@@ -12,15 +12,15 @@ void ConsoleTestState::init()
 
 	LOG("Console test");
 
-	hades::console::setProperty("int8", 5);
-	auto int8val = hades::console::getInt("int8", -1);
-	hades::console::setProperty("uint8", 5);
-	auto uintval = hades::console::getInt("uint8", -1);
-	hades::console::setProperty("uint8_under", -5);
+	hades::console::SetProperty("int8", 5);
+	auto int8val = hades::console::GetInt("int8", -1);
+	hades::console::SetProperty("uint8", 5);
+	auto uintval = hades::console::GetInt("uint8", -1);
+	hades::console::SetProperty("uint8_under", -5);
 
 	assert(*uintval == 5);
 	//try to overwrite with wrong type
-	hades::console::setProperty("int8", "error");
+	hades::console::SetProperty("int8", "error");
 	assert(*int8val == 5);
 
 	//assign the needed textures

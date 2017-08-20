@@ -15,7 +15,7 @@ namespace hades
 					return p;
 				else
 				{
-					if (setProperty(name, default))
+					if (SetProperty(name, default))
 						return func(name);
 				}
 			}
@@ -23,22 +23,22 @@ namespace hades
 			return std::make_shared<std::atomic<V>>(default);
 		}
 
-		property<types::int32> getInt(const types::string &name, types::int32 default)
+		property<types::int32> GetInt(const types::string &name, types::int32 default)
 		{
 			return get<property<types::int32>>(name, [](types::string n) { return property_provider->getInt(n);}, default);
 		}
 
-		property<float> getFloat(const types::string &name, float default)
+		property<float> GetFloat(const types::string &name, float default)
 		{
 			return get<property<float>>(name, [](types::string n) { return property_provider->getFloat(n);}, default);
 		}
 
-		property<bool> getInt(const types::string &name, bool default)
+		property<bool> GetBool(const types::string &name, bool default)
 		{
 			return get<property<bool>>(name, [](types::string n) { return property_provider->getBool(n);}, default);
 		}
 
-		property_str getString(const types::string &name, const types::string &default)
+		property_str GetString(const types::string &name, const types::string &default)
 		{
 			if (property_provider)
 			{
@@ -46,7 +46,7 @@ namespace hades
 					return p;
 				else
 				{
-					if (setProperty(name, default))
+					if (SetProperty(name, default))
 						return property_provider->getString(name);
 				}
 			}

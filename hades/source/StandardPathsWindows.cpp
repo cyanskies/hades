@@ -38,9 +38,9 @@ std::string getWindowsDirectory(REFKNOWNFOLDERID target)
 namespace hades
 {
 	//returns C:\\users\\<name>\\documents/gamename/
-	types::string getUserCustomFileDirectory()
+	types::string GetUserCustomFileDirectory()
 	{
-		static const auto portable = hades::console::getBool("file_portable", false);
+		static const auto portable = hades::console::GetBool("file_portable", false);
 
 		if (portable)
 			return "";

@@ -1,4 +1,4 @@
-#include "common-input.hpp"
+#include "Hades/common-input.hpp"
 
 namespace hades
 {

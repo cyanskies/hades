@@ -9,10 +9,10 @@ set(HADES_SRC
 	Collision.cpp
 	Console.cpp
 	ConsoleView.cpp
-	common_input.cpp
+	common-input.cpp
 	DataManager.cpp
 	data_manager.cpp
-    ExportedCurves.cpp
+  	ExportedCurves.cpp
 	files.cpp
 	GameInstance.cpp
 	GameInterface.cpp

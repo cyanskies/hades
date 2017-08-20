@@ -17,7 +17,7 @@
 #include "yaml-cpp/node/node.h"
 #include "yaml-cpp/node/parse.h"
 
-#include "common-input.hpp"
+#include "Hades/common-input.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/files.hpp"
 #include "Hades/Properties.hpp"
@@ -99,8 +99,8 @@ namespace ortho_terrain
 
 	void terrain_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
 	{
-		static auto window_width = console::getInt("vid_width", 640),
-			window_height = console::getInt("vid_height", 480);
+		static auto window_width = console::GetInt("vid_width", 640),
+			window_height = console::GetInt("vid_height", 480);
 
 		auto mousePos = input.find(hades::input::PointerPosition);
 		if (mousePos != input.end() && mousePos->active)
@@ -156,11 +156,11 @@ namespace ortho_terrain
 		//set up the editor rendering
 		//=========================
 		//generate the view
-		auto cheight = hades::console::getInt("editor_height", editor::view_height);
+		auto cheight = hades::console::GetInt("editor_height", editor::view_height);
 
 		//current window size
-		auto wwidth = console::getInt("vid_width", 640),
-			wheight = console::getInt("vid_height", 480);
+		auto wwidth = console::GetInt("vid_width", 640),
+			wheight = console::GetInt("vid_height", 480);
 
 		float screenRatio = *wwidth / static_cast<float>(*wheight);
 
@@ -594,7 +594,7 @@ namespace ortho_terrain
 		output << YAML::EndMap;
 
 		//write over the target
-		const auto &target = getUserCustomFileDirectory() + Mod + Filename;
+		const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
 
 		std::ofstream file(target, std::ios_base::out);
 

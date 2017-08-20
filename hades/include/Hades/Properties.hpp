@@ -41,7 +41,7 @@ namespace hades
 		extern properties *property_provider;
 
 		template<class T>
-		bool setProperty(const types::string &name, const T &value)
+		bool SetProperty(const types::string &name, const T &value)
 		{
 			if (property_provider)
 				return property_provider->set(name, value);
@@ -51,10 +51,10 @@ namespace hades
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
 		//TODO: add default values for these
-		property<types::int32> getInt(const types::string&, types::int32);
-		property<float> getFloat(const types::string&, float);
-		property<bool> getBool(const types::string&, bool);
-		property_str getString(const types::string&, const types::string&);
+		property<types::int32> GetInt(const types::string&, types::int32);
+		property<float> GetFloat(const types::string&, float);
+		property<bool> GetBool(const types::string&, bool);
+		property_str GetString(const types::string&, const types::string&);
 	}
 }//hades
 

@@ -17,9 +17,4 @@ namespace hades
 	types::string GetUserSaveDirectory();
 }
 
-//for compatability
-[[deprecated("Use hades::GetUserCustomFileDirectory() instead")]]
-hades::types::string getUserCustomFileDirectory();
-
-
 #endif //HADES_STANDARDPATHS_HPP

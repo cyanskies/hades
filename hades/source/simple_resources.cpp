@@ -196,8 +196,6 @@ namespace hades
 					tex->value = generate_default_texture();
 				else
 					tex->value = generate_default_texture(tex->width, tex->height);
-
-				dataman->refresh(id);
 			}
 		}
 

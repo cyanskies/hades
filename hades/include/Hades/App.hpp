@@ -13,9 +13,6 @@
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
 
-//handles application startup and command line parameters
-int hades_main(int argc, char** argv);
-
 namespace hades
 {
 	class ConsoleView;

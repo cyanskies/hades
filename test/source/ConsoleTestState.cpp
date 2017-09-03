@@ -8,6 +8,7 @@ using namespace hades::types;
 
 void ConsoleTestState::init()
 {
+	hades::data_manager->refresh();
 	hades::data_manager->load();
 
 	LOG("Console test");

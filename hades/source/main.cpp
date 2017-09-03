@@ -6,12 +6,6 @@
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
 
-//TODO: remove this
-int main(int argc, char** argv)
-{
-	return hades_main(argc, argv);
-}
-
 int hades_main(int argc, char** argv)
 {
 	//new commands start with a '-'.

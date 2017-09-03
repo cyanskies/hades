@@ -6,6 +6,11 @@
 #include "ConsoleTestState.hpp"
 #include "snake_loader.hpp"
 
+int main(int argc, char **argv)
+{
+	return hades_main(argc, argv);
+}
+
 std::string defaultGame()
 {
 	return "test";

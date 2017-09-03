@@ -204,12 +204,14 @@ namespace hades {
 	template<typename Key, typename Value>
 	typename transactional_map<Key, Value>::data_array transactional_map<Key, Value>::data() const
 	{
-		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
+		std::lock(_vectorMutex, _dispatchMutex);
+		std::lock_guard<mutex_type> vectorGuard( _vectorMutex, std::adopt_lock ),
+			dispatchGuard( _dispatchMutex, std::adopt_lock );
 
 		//confirm that all of the mutexs are unlocked
 		for (auto &&m : _componentMutex)
 			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
-				throw std::runtime_error("Cannot sort while any Key mutexes are still being held.");
+				throw std::runtime_error("Cannot copy data while any Key mutexes are still being held.");
 
 		data_array output;
 		output.reserve(_idDispatch.size());

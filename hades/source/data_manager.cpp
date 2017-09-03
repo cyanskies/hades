@@ -132,20 +132,23 @@ namespace hades
 
 		void data_manager::refresh(UniqueId id)
 		{
-			//_resources stores unique_ptrs to resources
-			//so we void ptr cast to get it out of the type erased property bag
-			auto* r = static_cast<std::unique_ptr<resources::resource_base>*>(_resources.get_reference_void(id));
+			if (exists(id))
+			{
+				//_resources stores unique_ptrs to resources
+				//so we void ptr cast to get it out of the type erased property bag
+				auto* r = static_cast<std::unique_ptr<resources::resource_base>*>(_resources.get_reference_void(id));
 
-			_loadQueue.push_back(&**r);
+				_loadQueue.push_back(&**r);
+			}
 		}
 
 		void data_manager::load()
 		{
-			std::sort(_loadQueue.begin(), _loadQueue.end());
-			std::unique(_loadQueue.begin(), _loadQueue.end());
+			const std::set<resources::resource_base*> queue{ _loadQueue.begin(), _loadQueue.end() };
+			_loadQueue.clear();
 
-			for (auto r : _loadQueue)
-				r->load(this);
+			for (auto r : queue)
+				r->load(this);			
 		}
 
 		void data_manager::load(data::UniqueId id)
@@ -159,7 +162,6 @@ namespace hades
 			_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), *it), _loadQueue.end());
 
 			resource->load(this);
-			resource->loaded = true;
 		}
 
 		void data_manager::load(types::uint8 count)
@@ -167,7 +169,7 @@ namespace hades
 			std::sort(_loadQueue.begin(), _loadQueue.end());
 			std::unique(_loadQueue.begin(), _loadQueue.end());
 
-			while (count-- > 0)
+			while (count-- > 0 && !_loadQueue.empty())
 			{
 				_loadQueue.back()->load(this);
 				_loadQueue.pop_back();

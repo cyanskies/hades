@@ -10,7 +10,7 @@ namespace ortho_terrain
 			assert(terrain);
 			TileArray tiles(size.x * size.y);
 
-			for (auto i = 0; i < tiles.size(); ++i)
+			for (TileArray::size_type i = 0; i < tiles.size(); ++i)
 				tiles[i] = RandomTile(terrain->tiles);
 
 			return { tiles, size.x };

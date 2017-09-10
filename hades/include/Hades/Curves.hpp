@@ -35,10 +35,14 @@ namespace hades {
 	template<typename T>
 	std::vector<T> lerp(std::vector<T> first, std::vector<T> second, float alpha)
 	{
-		assert(false && "tried to store a vector in a linear curve");
+		assert(false && "tried to call lerp on a vector");
 		LOGERROR("Called lerp with a vector: don't store vectors in Linear Curves");
 		return first;
 	}
+
+	//lerping on a string is forbidden, same as above
+	template<>
+	types::string lerp(types::string first, types::string second, float alpha);
 
 	template<typename Time, typename Data>
 	bool operator==(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
@@ -90,7 +94,7 @@ namespace hades {
 	class Curve final
 	{
 	public:
-		Curve(CurveType type) : _type(type)
+		explicit Curve(CurveType type) : _type(type)
 		{}
 
 		//adds a keyframe
@@ -140,9 +144,11 @@ namespace hades {
 			}
 			else if (_type == CurveType::STEP)
 			{
-				//todo: if at is past the end, return second
 				auto d = _getRange(at);
 
+				if (d.second->t <= at)
+					return d.second->value;
+				
 				return d.first->value;
 			}
 
@@ -166,11 +172,24 @@ namespace hades {
 		}
 
 		//returns all keyframes between the specified times
-		//doesn't build on linux :S
-//		std::vector<FrameType> getBetween(Time first, Time second) const
-//		{
-//			return std::vector<FrameType>();
-//		}
+		std::vector<typename FrameType> getBetween(Time first, Time second) const
+		{
+			auto begin = begin(), end = end();
+			auto lower = std::lower_bound(begin, end, first);
+			if (lower == end)
+				lower = begin;
+			auto upper = std::upper_bound(begin, end, second);
+			if (upper == end &&
+				lower != upper)
+				--upper;
+
+			std::vector<Keyframe<Time, Data>> output;
+
+			while (lower != upper)
+				output.push_back(*lower++);
+
+			return output;
+		}
 
 		using DataType = std::set< FrameType >;
 		using const_iterator = typename DataType::const_iterator;
@@ -240,25 +259,6 @@ namespace hades {
 	bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
 	{
 		return !(rhs == lhs);
-	}
-
-	template<typename Time, typename Data>
-	std::vector<Keyframe<Time, Data>> GetRange(const Curve<Time, Data> &curve, Time first, Time second)
-	{
-		auto begin = curve.begin(), end = curve.end();
-		auto lower = std::lower_bound(begin, end, first);
-		if (lower == end)
-			lower = begin;
-		auto upper = std::upper_bound(begin, end, second);
-		if (upper == end)
-			--upper;
-
-		std::vector<Keyframe<Time,Data>> output;
-
-		while(lower != upper)
-			output.push_back(*lower);
-
-		return output;
 	}
 }
 

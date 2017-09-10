@@ -10,6 +10,7 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	common-input.cpp
+	Curves.cpp
 	DataManager.cpp
 	data_manager.cpp
   	ExportedCurves.cpp

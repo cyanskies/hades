@@ -68,37 +68,37 @@ namespace hades
 
 		struct shader : public resource_type<sf::Shader>
 		{
-			enum class shader_type { VERTEX, GEOMETRY, FRAGMENT, SHADER_ERROR };
-			shader_type type = SHADER_ERROR;
-			enum class uniform_type {
-				FLOAT, // a floating point value
-				VEC2, //a vector2f
-				VEC3, //vector3f
-				VEC4, //vector4f
-				INT, //Interger value
-				IVEC2, //a vector2i
-				IVEC3, //vector3i
-				IVEC4, //vector4i
-				BOOL, //boolean value
-				BVEC2, //a vector of 2 bools
-				BVEC3, //vector3b
-				BVEC4, //vector4b
-				MAT3, //a float 3x3 matrix
-				MAT4, //4x4 float matrix
-				SAMPLER2D, //a texture or other map
-				SAMPLE_CURRENT, //sets the currently bound texture as a SAMPLER2D
-				//Array types
-				ARRAY_FLOAT,
-				ARRAY_VEC2, 
-				ARRAY_VEC3,
-				ARRAY_VEC4,
-				ARRAY_MAT3,
-				ARRAY_MAT4
-			};
-			//map of uniforms used by the shader
-			//pairs of name to uniform type
-			using uniform_entry = std::tuple<types::string, uniform_type>;
-			std::vector<uniform_entry> uniforms;
+			//enum class uniform_type {
+			//	FLOAT, // a floating point value
+			//	VEC2, //a vector2f
+			//	VEC3, //vector3f
+			//	VEC4, //vector4f
+			//	INT, //Interger value
+			//	IVEC2, //a vector2i
+			//	IVEC3, //vector3i
+			//	IVEC4, //vector4i
+			//	BOOL, //boolean value
+			//	BVEC2, //a vector of 2 bools
+			//	BVEC3, //vector3b
+			//	BVEC4, //vector4b
+			//	MAT3, //a float 3x3 matrix
+			//	MAT4, //4x4 float matrix
+			//	SAMPLER2D, //a texture or other map
+			//	SAMPLE_CURRENT, //sets the currently bound texture as a SAMPLER2D
+			//	//Array types
+			//	ARRAY_FLOAT,
+			//	ARRAY_VEC2, 
+			//	ARRAY_VEC3,
+			//	ARRAY_VEC4,
+			//	ARRAY_MAT3,
+			//	ARRAY_MAT4
+			//};
+			////map of uniforms used by the shader
+			////pairs of name to uniform type
+			//using uniform_entry = std::tuple<types::string, uniform_type>;
+			//std::vector<uniform_entry> uniforms;
+
+			types::string vert_source, geo_source;
 		};
 
 		struct animation_frame
@@ -116,7 +116,7 @@ namespace hades
 			texture* tex;
 			float duration;
 			types::int32 width, height;
-			std::vector<data::UniqueId> shaders;
+			data::UniqueId shader = data::UniqueId::Zero;
 		};
 
 		struct font : public resource_type<sf::Font>

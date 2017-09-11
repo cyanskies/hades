@@ -13,22 +13,6 @@ namespace hades
 			"; while setting animation: " + data_manager->as_string(animation->id));
 	}
 
-	void apply_animation(const resources::animation* const animation, sf::Time t, sf::Sprite &target)
-	{
-		assert(animation);
-
-		auto d = sf::seconds(animation->duration);
-		if(t > d)
-		{
-			while (t > d)
-				t -= d;
-		}
-
-		auto progress = t.asSeconds() / d.asSeconds();
-
-		apply_animation(animation, progress, target);
-	}
-
 	//NOTE: based on the FrameAnimation algorithm from Thor C++
 	//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp
 	void apply_animation(const resources::animation* const animation, float progress, sf::Sprite &target)
@@ -49,15 +33,13 @@ namespace hades
 		}
 
 		//set the texture
-
-		if(animation->value.empty())
+		if(!animation->value.empty())
 			target.setTexture(animation->tex->value);
 		else
 		{
 			target.setTexture(animation->tex->value, true);
 			return;
 		}
-
 
 		auto rect = target.getTextureRect();
 		//calculate the progress to find the correct rect for this time

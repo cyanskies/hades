@@ -26,6 +26,7 @@ namespace hades {
 		Data value;
 	};
 
+	//TODO: move lerp into a subnamespace
 	template<typename T>
 	T lerp(T first, T second, float alpha)
 	{

@@ -25,6 +25,7 @@ set(HADES_SRC
 	parallel_jobs.cpp
 	Properties.cpp
 	simple_resources.cpp
+	SpriteBatch.cpp
 	StandardPaths.cpp
 	State.cpp
 	StateManager.cpp

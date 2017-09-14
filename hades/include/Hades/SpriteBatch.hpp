@@ -9,11 +9,18 @@
 //the object also manages animation times.
 
 namespace hades {
-	class SpriteBatch
+	class SpriteBatch // drawable
 	{
 	public:
 		using sprite_id = types::uint64;
-		sprite_id createAnimation();
+		sprite_id createSprite(/*animation*/);
+		void  destroySprite();
+
+		void setAnimation();
+		void setPosition();
+		void setLayer();
+
+		void setUniform();
 	};
 }
 

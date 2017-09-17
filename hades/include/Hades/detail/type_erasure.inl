@@ -103,15 +103,45 @@ namespace hades
 	}
 
 	template<class Key>
-	typename property_bag<Key>::iterator property_bag<Key>::begin()
+	typename property_bag<Key>::iterator property_bag<Key>::begin() noexcept
 	{
 		return _bag.begin();
 	}
 
 	template<class Key>
-	typename property_bag<Key>::iterator property_bag<Key>::end()
+	typename property_bag<Key>::iterator property_bag<Key>::end() noexcept
 	{
 		return _bag.end();
+	}
+
+	template<class Key>
+	typename property_bag<Key>::const_iterator property_bag<Key>::begin() const noexcept
+	{
+		return cbegin();
+	}
+
+	template<class Key>
+	typename property_bag<Key>::const_iterator property_bag<Key>::end() const noexcept
+	{
+		return cend();
+	}
+
+	template<class Key>
+	typename property_bag<Key>::const_iterator property_bag<Key>::cbegin() const noexcept
+	{
+		return _bag.cbegin();
+	}
+
+	template<class Key>
+	typename property_bag<Key>::const_iterator property_bag<Key>::cend() const noexcept
+	{
+		return _bag.cend();
+	}
+
+	template<class Key>
+	typename property_bag<Key>::size_type property_bag<Key>::size() const noexcept
+	{
+		return _bag.size();
 	}
 
 	template<class Key>

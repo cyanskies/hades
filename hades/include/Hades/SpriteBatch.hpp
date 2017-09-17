@@ -9,13 +9,14 @@
 
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
-#include "Hades/type_erasure.hpp"
 
 //A thread safe collection of animated sprites
 //the object manages batching draw calls to render more efficiently
 //the object also manages animation times.
 
 namespace hades {
+	struct ShaderUniformBase;
+
 	//NOTE: this current impl does have any performance benifits over using sprites
 	// the purpose here is to delop the API for the SpriteBatch
 	class SpriteBatch : public sf::Drawable
@@ -44,41 +45,15 @@ namespace hades {
 		void sort_by_layer();
 		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
 
+		using uniform_map = std::unordered_map<types::string, std::unique_ptr<ShaderUniformBase>>;
+
 	private:
-		struct ShaderUniformBase
-		{
-			virtual ~ShaderUniformBase() {}
-			virtual void apply(const types::string&, sf::Shader&) const = 0;
-		};
-
-		template<typename T>
-		struct ShaderUniform final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				s.setUniform(n, uniform);
-			}
-
-			T uniform;
-		};
-
-		template<typename T>
-		struct ShaderUniformArray final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				s.setUniformArray(n, uniform.data(), uniform.size());
-			}
-
-			std::vector<T> uniform;
-		};
-
 		struct Sprite
 		{
 			std::mutex mut;
 			types::int16 layer;
 			sf::Sprite sprite;
-			property_bag<types::string> uniforms;
+			uniform_map uniforms;
 		};
 
 		mutable std::mutex _collectionMutex; //mutex to ensure two threads don't try to add/search/erase from the two collections at the same time

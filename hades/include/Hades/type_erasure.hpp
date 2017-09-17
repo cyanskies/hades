@@ -25,7 +25,7 @@ namespace hades {
 		class type_erased_base
 		{
 		public:
-			using size_type = types::uint8;
+			using size_type = types::uint32;
 
 			virtual ~type_erased_base() {}
 
@@ -39,6 +39,8 @@ namespace hades {
 			using type_base = type_erased_base;
 
 			T &get() { return _data; }
+
+			const T &get() const { return _data; }
 
 			void set(T value) { _data = std::move(value); }
 
@@ -71,7 +73,9 @@ namespace hades {
 		using base_type = type_erasure::type_erased_base;
 		using data_map = std::unordered_map<key_type, std::unique_ptr<base_type>>;
 		using iterator = typename data_map::iterator;
+		using const_iterator = typename data_map::const_iterator;
 		using value_type = base_type;
+		using size_type = typename data_map::size_type;
 
 		template<class T>
 		void set(Key key, T value);
@@ -84,8 +88,16 @@ namespace hades {
 
 		void* get_reference_void(Key key);
 
-		iterator begin();
-		iterator end();
+		iterator begin() noexcept;
+		iterator end() noexcept;
+
+		const_iterator begin() const noexcept;
+		const_iterator end() const noexcept;
+
+		const_iterator cbegin() const noexcept;
+		const_iterator cend() const noexcept;
+
+		size_type size() const noexcept;
 
 		bool empty();
 

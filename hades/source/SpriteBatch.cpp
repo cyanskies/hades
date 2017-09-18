@@ -1,5 +1,7 @@
 #include "Hades/SpriteBatch.hpp"
 
+#include "Hades/Animation.hpp"
+
 namespace hades
 {
 	using type_id = types::uint32;
@@ -126,4 +128,28 @@ namespace hades
 	}
 
 	//NOTE: STORE unique ptrs to ShaderUniformBase in propertyBag
+	typename SpriteBatch::sprite_id SpriteBatch::createSprite(sf::Vector2f position, layer_t l, const resources::animation *a, sf::Time t)
+	{	
+		auto s = std::make_unique<Sprite>();
+		s->layer = l;
+		s->sprite = sf::Sprite(a->tex->value);
+		s->sprite.setPosition(position);
+
+		auto id = _id_count++;
+
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+		_sprites.emplace(id, std::move(s));
+
+		return id;
+	}
+
+	void  SpriteBatch::destroySprite(typename SpriteBatch::sprite_id id)
+	{
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+		auto it = _sprites.find(id);
+		if (it != std::end(_sprites))
+		{
+			_sprites.erase(it);
+		}
+	}
 }

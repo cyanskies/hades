@@ -132,11 +132,12 @@ namespace hades
 	{	
 		auto s = std::make_unique<Sprite>();
 		s->layer = l;
+		s->animation = a;
 		s->sprite = sf::Sprite(a->tex->value);
 		s->sprite.setPosition(position);
+		apply_animation(a, t, s->sprite);
 
 		auto id = _id_count++;
-
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
 		_sprites.emplace(id, std::move(s));
 
@@ -150,6 +151,25 @@ namespace hades
 		if (it != std::end(_sprites))
 		{
 			_sprites.erase(it);
+		}
+	}
+
+	bool SpriteBatch::exists(typename SpriteBatch::sprite_id id) const
+	{
+		return _sprites.find(id) != std::end(_sprites);
+	}
+
+	void SpriteBatch::changeAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
+	{
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+		auto it = _sprites.find(id);
+		if (it == std::end(_sprites))
+			return; //TODO: throw error
+
+		{
+			std::lock_guard<std::mutex> slk(it->second->mut);
+			it->second->animation = a;
+			apply_animation(a, t, it->second->sprite);
 		}
 	}
 }

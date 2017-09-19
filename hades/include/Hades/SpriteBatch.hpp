@@ -31,8 +31,9 @@ namespace hades {
 		sprite_id createSprite(sf::Vector2f position, layer_t l, const resources::animation *a, sf::Time t);
 		void destroySprite(sprite_id id);
 
+		bool exists(sprite_id id) const;
+
 		void changeAnimation(sprite_id id, const resources::animation *a, sf::Time t);
-		void setAnimationProgress(sprite_id id);
 
 		void setPosition(sprite_id id, sf::Vector2f pos);
 		void setLayer(sprite_id id, layer_t l);
@@ -52,11 +53,14 @@ namespace hades {
 		using uniform_map = std::unordered_map<types::string, std::unique_ptr<ShaderUniformBase>>;
 
 	private:
+		//for the vertex batch method, store all sprite details(anim, anim progress)
+		//and push them into a vetex buffer each frame that most efficiently reduces draw calls.
 		struct Sprite
 		{
 			std::mutex mut;
 			layer_t layer;
 			sf::Sprite sprite;
+			const resources::animation *animation;
 			uniform_map uniforms;
 		};
 

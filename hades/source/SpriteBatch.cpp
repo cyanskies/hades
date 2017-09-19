@@ -147,11 +147,8 @@ namespace hades
 	void  SpriteBatch::destroySprite(typename SpriteBatch::sprite_id id)
 	{
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
-		auto it = _sprites.find(id);
-		if (it != std::end(_sprites))
-		{
-			_sprites.erase(it);
-		}
+		auto it = sprite_utility::GetElement(_sprites, id);
+		_sprites.erase(it);
 	}
 
 	bool SpriteBatch::exists(typename SpriteBatch::sprite_id id) const
@@ -162,14 +159,34 @@ namespace hades
 	void SpriteBatch::changeAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
 	{
 		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = _sprites.find(id);
-		if (it == std::end(_sprites))
-			return; //TODO: throw error
+		auto it = sprite_utility::GetElement(_sprites, id);
 
 		{
 			std::lock_guard<std::mutex> slk(it->second->mut);
 			it->second->animation = a;
 			apply_animation(a, t, it->second->sprite);
+		}
+	}
+
+	void SpriteBatch::setPosition(typename SpriteBatch::sprite_id id, sf::Vector2f pos)
+	{
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+		auto it = sprite_utility::GetElement(_sprites, id);
+
+		{
+			std::lock_guard<std::mutex> slk(it->second->mut);
+			it->second->sprite.setPosition(pos);
+		}
+	}
+
+	void SpriteBatch::setLayer(typename SpriteBatch::sprite_id id, typename SpriteBatch::layer_t l)
+	{
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+		auto it = sprite_utility::GetElement(_sprites, id);
+
+		{
+			std::lock_guard<std::mutex> slk(it->second->mut);
+			it->second->layer = l;
 		}
 	}
 }

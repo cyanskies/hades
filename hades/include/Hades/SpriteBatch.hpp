@@ -17,6 +17,18 @@
 //the object also manages animation times.
 
 namespace hades {
+	namespace sprite_utility
+	{
+		//throws spritebatch exception or something if trying to modify a missing sprite
+		template<class K, class V>
+		std::map<K, V>::iterator GetElement(std::map<K, V> &m, K id)
+		{
+			auto it = m.find(id);
+			if (it == std::end(m))
+				return; //TODO: throw error
+		}
+	}
+
 	struct ShaderUniformBase;
 
 	//NOTE: this current impl does have any performance benifits over using sprites

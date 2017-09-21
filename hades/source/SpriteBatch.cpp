@@ -1,136 +1,68 @@
 #include "Hades/SpriteBatch.hpp"
 
+#include "SFML/Graphics/RenderTarget.hpp"
+
 #include "Hades/Animation.hpp"
 
 namespace hades
 {
-	using type_id = types::uint32;
-
-	struct ShaderUniformBase
+	namespace sprite_utility
 	{
-		virtual ~ShaderUniformBase() {}
-		virtual void apply(const types::string&, sf::Shader&) const = 0;
-		virtual bool operator==(const ShaderUniformBase& other) const = 0;
-
-		virtual type_id getType() const = 0;
-	};
-
-	namespace
-	{
-		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs)
-		{
-			return !(lhs == rhs);
-		}
-
-		template<typename T>
-		struct ShaderUniform final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				s.setUniform(n, uniform);
-			}
-
-			virtual bool operator==(const ShaderUniformBase& other) const
-			{
-				if (other.getType() != type)
-					return false;
-
-				ShaderUniform<T> &ref = static_cast<ShaderUniform<T>&>(other);
-
-				return ref.uniform == uniform;
-			}
-
-			virtual type_id getType() const
-			{
-				return type;
-			}
-
-			T uniform;
-			static type_id type;
-		};
-
-		template<typename T>
-		type_id ShaderUniform<T>::type = type_count++;
-
-		template<typename T>
-		struct ShaderUniformArray final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				s.setUniformArray(n, uniform.data(), uniform.size());
-			}
-
-			virtual bool operator==(const ShaderUniformBase& other) const
-			{
-				if (other.getType() != type)
-					return false;
-
-				ShaderUniformArray<T> &ref = static_cast<ShaderUniformArray<T>&>(other);
-
-				return ref.uniform == uniform;
-			}
-
-			virtual type_id getType() const
-			{
-				return type;
-			}
-
-			std::vector<T> uniform;
-			static type_id type;
-		};
-
-		template<typename T>
-		type_id ShaderUniformArray<T>::type = type_count++;
-
 		types::uint32 type_count = 0;
+	}
 
-		using uniform_map = SpriteBatch::uniform_map;
+	using uniform_map = sprite_utility::uniform_map;
 
-		//compare if two sets of uniforms are identical
-		bool ShaderUniformsEqual(const uniform_map &lhs, const uniform_map &rhs)
+	//compare if two sets of uniforms are identical
+	bool ShaderUniformsEqual(const uniform_map &lhs, const uniform_map &rhs)
+	{
+		if (lhs.size() != rhs.size())
+			return false;
+
+		auto lhs_it = lhs.begin(), rhs_it = rhs.begin();
+
+		while (lhs_it != lhs.end())
 		{
-			if (lhs.size() != rhs.size())
+			if (lhs_it->first != rhs_it->first)
 				return false;
 
-			auto lhs_it = lhs.begin(), rhs_it = rhs.begin();
+			const sprite_utility::ShaderUniformBase *lhs_base = nullptr, *rhs_base = nullptr;
+			lhs_base = &*(lhs_it->second);
+			rhs_base = &*(rhs_it->second);
 
-			while (lhs_it != lhs.end())
-			{
-				if (lhs_it->first != rhs_it->first)
-					return false;
+			if (*lhs_base != *rhs_base)
+				return false;
 
-				const ShaderUniformBase *lhs_base, *rhs_base;
-				lhs_base = &*(lhs_it->second);
-				rhs_base = &*(rhs_it->second);
-
-				if (*lhs_base != *rhs_base)
-					return false;
-
-				lhs_it++; rhs_it++;
-			}
-
-			return true;
+			lhs_it++; rhs_it++;
 		}
 
-		//apply all the uniforms to the shader
-		//TODO: error checking/handling
-		void ApplyUniforms(const uniform_map &uniforms, sf::Shader &shader)
+		return true;
+	}
+
+	//apply all the uniforms to the shader
+	//TODO: error checking/handling
+	void ApplyUniforms(const uniform_map &uniforms, sf::Shader &shader)
+	{
+		auto uniforms_it = uniforms.begin();
+		while (uniforms_it != uniforms.end())
 		{
-			auto uniforms_it = uniforms.begin();
-			while (uniforms_it != uniforms.end())
-			{
-				ShaderUniformBase *uniform_base;
-				uniform_base = &*(uniforms_it->second);
-				uniform_base->apply(uniforms_it->first, shader);
-				uniforms_it++;
-			}
+			sprite_utility::ShaderUniformBase *uniform_base = nullptr;
+			uniform_base = &*(uniforms_it->second);
+			uniform_base->apply(uniforms_it->first, shader);
+			uniforms_it++;
 		}
 	}
 
+	void SpriteBatch::cleanUniforms()
+	{
+		for (auto &s : _sprites)
+			s.second->uniforms.clear();
+	}
+
 	//NOTE: STORE unique ptrs to ShaderUniformBase in propertyBag
-	typename SpriteBatch::sprite_id SpriteBatch::createSprite(sf::Vector2f position, layer_t l, const resources::animation *a, sf::Time t)
+	typename SpriteBatch::sprite_id SpriteBatch::createSprite(sf::Vector2f position, sprite_utility::layer_t l, const resources::animation *a, sf::Time t)
 	{	
-		auto s = std::make_unique<Sprite>();
+		auto s = std::make_unique<sprite_utility::Sprite>();
 		s->layer = l;
 		s->animation = a;
 		s->sprite = sf::Sprite(a->tex->value);
@@ -179,7 +111,7 @@ namespace hades
 		}
 	}
 
-	void SpriteBatch::setLayer(typename SpriteBatch::sprite_id id, typename SpriteBatch::layer_t l)
+	void SpriteBatch::setLayer(typename SpriteBatch::sprite_id id, sprite_utility::layer_t l)
 	{
 		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
 		auto it = sprite_utility::GetElement(_sprites, id);
@@ -187,6 +119,46 @@ namespace hades
 		{
 			std::lock_guard<std::mutex> slk(it->second->mut);
 			it->second->layer = l;
+		}
+	}
+
+	bool SortSpritePtr(sprite_utility::Sprite *lhs, sprite_utility::Sprite *rhs)
+	{
+		assert(lhs && rhs);
+
+		//draw lowest layer first
+		if (lhs->layer == rhs->layer)
+		{
+			auto lpos = lhs->sprite.getPosition(),
+				rpos = rhs->sprite.getPosition();
+			//if the layer is the same, then draw lowest y value first, or lowest x value first
+			if (lpos.y == rpos.y)
+				return lpos.x < rpos.x;
+			else
+				return rpos.y < rpos.y;
+
+		}
+		else
+			return lhs->layer < rhs->layer;
+	}
+
+	void SpriteBatch::prepare()
+	{
+		std::sort(_draw_list.begin(), _draw_list.end(), SortSpritePtr);
+	}
+
+	void SpriteBatch::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	{
+		for (auto &s : _draw_list)
+		{
+			sf::Shader *shader = nullptr;
+			if (s->animation->shader && s->animation->shader->loaded)
+				shader = &s->animation->shader->value;
+
+			if (shader)
+				target.draw(s->sprite, shader);
+			else
+				target.draw(s->sprite);
 		}
 	}
 }

@@ -99,7 +99,154 @@ namespace hades
 			//std::vector<uniform_entry> uniforms;
 
 			types::string vert_source, geo_source;
+			data::UniqueId vert_mod = data::UniqueId::Zero, 
+				geo_mod = data::UniqueId::Zero;
+			//source and mod refeer to the fragment shader source and mod
+
+			template<typename T>
+			static constexpr bool valid_type()
+			{
+				return false;
+			}
+
+			template<typename T>
+			static constexpr bool valid_array_type()
+			{
+				return false;
+			}
 		};
+
+		template<>
+		static constexpr bool shader::valid_type<float>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Vec2>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Vec3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Vec4>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<int>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Ivec2>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Ivec3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Ivec4>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<bool>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Bvec2>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Bvec3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Bvec4>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Mat3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Glsl::Mat4>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Texture>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_type<sf::Shader::CurrentTextureType>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<float>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<sf::Glsl::Vec2>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<sf::Glsl::Vec3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<sf::Glsl::Vec4>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<sf::Glsl::Mat3>()
+		{
+			return true;
+		}
+
+		template<>
+		static constexpr bool shader::valid_array_type<sf::Glsl::Mat4>()
+		{
+			return true;
+		}
 
 		struct animation_frame
 		{
@@ -113,10 +260,10 @@ namespace hades
 		//TODO: add field for fragment shaders
 		struct animation : public resource_type<std::vector<animation_frame>>
 		{
-			texture* tex;
+			texture* tex = nullptr;
 			float duration;
 			types::int32 width, height;
-			data::UniqueId shader = data::UniqueId::Zero;
+			shader *shader = nullptr;
 		};
 
 		struct font : public resource_type<sf::Font>

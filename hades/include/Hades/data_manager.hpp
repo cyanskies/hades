@@ -47,7 +47,7 @@ namespace hades
 			types::string source;
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
-			data::UniqueId mod;
+			data::UniqueId mod = data::UniqueId::Zero;
 			bool loaded = false;
 		};
 

@@ -17,7 +17,7 @@ namespace hades
 			virtual ~game_server() {}
 
 			//allows this client to send input
-			virtual void sendAction(client_action action);
+			virtual void sendAction(client_action action) = 0;
 			//gets entity updates
 			void getCurveUpdates();
 			//returns the unique id of the player entity.
@@ -25,7 +25,7 @@ namespace hades
 		};
 
 		//the implementation for a server running in a seperate instance
-		template<ClientAction>
+		template<class ClientAction>
 		class remote_server : public game_server<ClientAction>
 		{};
 

@@ -15,6 +15,9 @@ namespace hades
 
 	//we use int32 as the id type so that entity id's can be stored in curves.
 	using EntityId = types::int32;
+	//TODO: variableId needs to be a uniqueId so that they can be syncronised across networks
+	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
+	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using VariableId = EntityId;
 

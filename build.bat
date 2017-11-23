@@ -4,6 +4,9 @@
 	)
 )
 
+::we need this to tell the VSCMD_END batch not to change our current directory to the default git repo dir. VS2017.15.4.3
+@set VSCMD_START_DIR=%cd%
+
 @call "%vsdir%\Common7\Tools\VsDevCmd.bat"
 
 @IF NOT DEFINED generator @set generator="Visual Studio 15 2017"

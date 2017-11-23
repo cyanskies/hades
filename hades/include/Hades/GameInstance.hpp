@@ -18,7 +18,6 @@ namespace hades
 	//TODO:
 	// support saving
 	// support loading
-	//non virutal functions might not be thread safe, and should not be used inside the job system
 	class GameInstance : public GameInterface
 	{
 	public:

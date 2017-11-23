@@ -40,6 +40,14 @@ set(HADES_SRC
 	OrthoTerrain/resources.cpp
 )
 
+source_group("OrthoTerrain" FILES
+	OrthoTerrain/editor.cpp
+	OrthoTerrain/serialise.cpp
+	OrthoTerrain/terrain.cpp
+	OrthoTerrain/utility.cpp
+	OrthoTerrain/generator.cpp
+	OrthoTerrain/resources.cpp)
+
 # Library to build
 set(HADES_LIB ${PROJECT_NAME})
 

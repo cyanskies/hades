@@ -336,10 +336,10 @@ namespace hades
 		{
 			//curves:
 			//		name:
-			//			type: default: step
-			//			value: default: int32
-			//			sync: default: false
-			//			save: default false
+			//			type: default: step //determines how the values are read between keyframes
+			//			value: default: int32 //determines the value type
+			//			sync: default: false //true if this should be syncronised to the client
+			//			save: default false //true if this should be saved when creating a save file
 
 			//these are loaded into the game instance before anything else
 			//curves cannot change type/value once they have been created,

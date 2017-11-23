@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cassert>
+#include <condition_variable>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -32,42 +33,45 @@ namespace hades {
 		using mutex_type = std::mutex;
 		mutex_type joblist_mutex;
 		//storage for jobs
-		std::vector<std::unique_ptr<job>> g_joblist;
+		static std::vector<std::unique_ptr<job>> g_joblist;
 		//contains the number of extra threads we have available(doesn't count the main thread)
 		//note: hardware_concurrency can return 0 as an error condition.
 		//std::max ensures the lowest value we can get is 0.
-		const types::uint32 g_thread_count = static_cast<types::uint32>(std::max(static_cast<types::int32>(std::thread::hardware_concurrency()) - 1, 0));
+		static const types::uint32 g_thread_count = static_cast<types::uint32>(std::max(static_cast<types::int32>(std::thread::hardware_concurrency()) - 1, 0));
 		//thread id type
 		using thread_id = std::size_t;
 		using thread_idle_t = std::size_t;
 		//the next unique thread id
-		std::atomic<thread_id> g_thread_id_next = 0;
+		static std::atomic<thread_id> g_thread_id_next = 0;
 		//the system will set this to false to make all the threads joinable
-		std::atomic_bool g_workers_enabled = true;
-		//threads increment this when they have no work. if g_idle_threads == g_thread_count then the whole system is idle
-		std::atomic<thread_idle_t> g_idle_threads = 0;
+		static std::atomic_bool g_workers_enabled = true;
 		//a pool of threads that we can use.
 		using thread_pool = std::vector<std::thread>;
-		thread_pool g_threads(g_thread_count);
+		static thread_pool g_threads(g_thread_count);
 		//a vector of mutexs to guard access to the per thread queues
-		std::vector<std::mutex> g_worker_queue_mutexes(g_thread_count + 1);
+		static std::vector<std::mutex> g_worker_queue_mutexes(g_thread_count + 1);
 		//each worker thread gets a queue to work with
 		//the queue is in g_worker_job_queues[thread_id]
 		using worker_queue = std::deque<job*>;
-		std::vector<worker_queue> g_worker_job_queues(g_thread_count + 1);
+		static std::vector<worker_queue> g_worker_job_queues(g_thread_count + 1);
 		using lock_t = std::unique_lock<mutex_type>;
 		using lock_guard = std::lock_guard<mutex_type>;
 		using locked_queue = std::tuple<worker_queue*, lock_t>;
-		bool joined = false;
+
+		//for sleeping threads when there is no work.
+		static std::mutex cv_mut;
+		static std::condition_variable cv;
+
+		static bool joined = false;
 
 		//==per thread data==
 		//the job the thread is currently working on
-		thread_local job* t_current_job;
+		static thread_local job* t_current_job;
 		//the threads unique id(so it can look up it's queue in the job queue
 		//workers are threads 0 - thread_count, main thread is thread_count + 1
-		thread_local thread_id t_thread_id;
+		static thread_local thread_id t_thread_id;
 		//lets the thread ditermine if it is asleap
-		thread_local bool t_sleep = false;
+		static thread_local bool t_sleep = false;
 
 		void worker_init();
 		void worker_function();
@@ -75,7 +79,9 @@ namespace hades {
 		bool ready()
 		{
 			lock_guard jlk(joblist_mutex);
-			return !joined && g_joblist.empty();
+			//test that none of the workers are holding the condition variable lock
+			std::unique_lock<std::mutex> cv_lock(cv_mut, std::try_to_lock);
+			return !joined && g_joblist.empty() && cv_lock.owns_lock();
 		}
 
 		//==system functions==
@@ -97,10 +103,13 @@ namespace hades {
 		{
 			//assert that the system is running.
 			assert(std::all_of(g_threads.begin(), g_threads.end(), [](const std::thread &t) {return t.joinable();}));
+			assert(ready());
 			//once the system has shut down that's it, no more init or rejoin
 			assert(!joined);
 
 			g_workers_enabled = false;
+
+			cv.notify_all();
 
 			for (auto &t : g_threads)
 			{
@@ -179,6 +188,9 @@ namespace hades {
 		void wait(const job* job)
 		{
 			assert(job);
+			assert(ready());
+			cv.notify_all();
+
 			while (!is_finished(job))
 			{
 				//find another job to run
@@ -204,7 +216,7 @@ namespace hades {
 		void clear()
 		{
 			//the work should have already stopped when this is called.
-			assert(g_idle_threads == g_thread_count);
+			assert(ready());
 			//clear all the thread queues
 			for (thread_id i = 0; i < g_thread_count; ++i)
 			{
@@ -287,27 +299,6 @@ namespace hades {
 				}
 			}
 
-			if (j)
-			{
-				//set active
-				if (t_sleep)
-				{
-					t_sleep = false;
-					--g_idle_threads;
-				}		
-			}
-			else
-			{
-				//set inactive
-				if (!t_sleep)
-				{
-					t_sleep = true;
-					++g_idle_threads;
-				}
-				//if we still can't find a job go idle
-				std::this_thread::yield();
-			}
-
 			return j;
 		}
 
@@ -349,6 +340,11 @@ namespace hades {
 				auto j = find_job();
 				if (j)
 					execute(j);
+				else
+				{
+					std::unique_lock<std::mutex> lock(cv_mut);
+					cv.wait(lock);
+				}
 			}
 		}	
 	}

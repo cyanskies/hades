@@ -29,7 +29,8 @@ namespace hades {
 		job* create_child(job* parent, job_function function, job_data_ptr);
 		//run job(add to job queue)
 		void run(job* job);
-		//wait for job to finish(do other jobs in mean time)
+		//wait for job to finish(do other jobs in mean time),
+		//waiting causes the worker threads to start; the system is idle until then.
 		void wait(const job* job);
 		//end the frame, clean up all the jobs
 		//a job ptr will remain valid until this is called
@@ -38,7 +39,7 @@ namespace hades {
 		//==system functions==
 		//init the system, should only be called once per proccess
 		void init();
-		//end all the job systems threads
+		//end all the job systems threads; shuts down the system
 		void join();
 	}
 }

@@ -29,17 +29,6 @@ namespace hades
 		return _curves;
 	}
 
-	VariableId GameInterface::getVariableId(data::UniqueId id)
-	{
-		//try to get the value in shared mode
-		std::shared_lock<std::shared_mutex> sharedlk(VariableIdMutex);
-		auto v = VariableIds.find(id);
-		if (v != VariableIds.end())
-			return v->second;
-		else
-			throw curve_not_registered("Tried to get VariableId for curve that is not registered, curve was: " +  data_manager->as_string(id));
-	}
-
 	void GameInterface::attachSystem(EntityId entity, data::UniqueId sys, sf::Time t)
 	{
 		std::shared_lock<std::shared_mutex> lk;

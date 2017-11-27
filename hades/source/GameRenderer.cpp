@@ -45,13 +45,6 @@ namespace hades
 
 		ent_name_lock.unlock();
 
-		//TODO: variables shouldn't be synced along with the frames,
-		// they should just be synced once on connection
-		std::unique_lock<std::shared_mutex> var_name_lock(VariableIdMutex);
-		for (auto v : import.variable_names)
-			VariableIds.insert({data_manager->getUid(v.second), v.first });
-		var_name_lock.unlock();
-
 		auto &curves = getCurves();
 		ImportSet(curves.boolCurves, import.boolCurves);
 		ImportSet(curves.intCurves, import.intCurves);

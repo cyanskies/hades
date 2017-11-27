@@ -19,11 +19,11 @@ namespace hades
 	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
 	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
-	using VariableId = EntityId;
+	using VariableId = data::UniqueId;
 
 	//these are earmarked as error values
 	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
-	const VariableId NO_VARIABLE = std::numeric_limits<VariableId>::min();
+	const VariableId NO_VARIABLE = VariableId::Zero;
 
 	//data needed to run a system job
 	//the entities the system is operating on

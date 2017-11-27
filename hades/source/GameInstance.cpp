@@ -67,7 +67,7 @@ namespace hades
 
 	template<typename T>
 	std::vector<ExportedCurves::ExportSet<T>> GetExportedSet(sf::Time t, typename transactional_map<std::pair<EntityId, VariableId>, \
-		Curve<sf::Time, T>>::data_array data, const std::map<VariableId, data::UniqueId> &variableIds)
+		Curve<sf::Time, T>>::data_array data)
 	{
 		std::vector<ExportedCurves::ExportSet<T>> output;
 		for (auto c : data)
@@ -75,10 +75,7 @@ namespace hades
 			ExportedCurves::ExportSet<T> s;
 			s.variable = c.first.second;
 			
-			//attempt early bailout if this curve isn't for syncing
-			auto curve_id = variableIds.find(s.variable);
-			assert(curve_id != variableIds.end());
-			auto curve = data_manager->getCurve(curve_id->second);
+			auto curve = data_manager->getCurve(s.variable);
 			assert(curve);
 			//skip if this curve shouldn't sync to the client
 			if (!curve->sync)
@@ -104,18 +101,11 @@ namespace hades
 
 		ExportedCurves output;
 
-		std::map<VariableId, data::UniqueId> reverseIds;
-		{
-			std::shared_lock<std::shared_mutex> lk(VariableIdMutex);
-			for (auto i : VariableIds)
-				reverseIds.insert({ i.second, i.first });
-		}
-
 		//load all the frames from the specified time into the exported data
-		output.intCurves = GetExportedSet<types::int32>(startTime, curves.intCurves.data(), reverseIds);
-		output.boolCurves = GetExportedSet<bool>(startTime, curves.boolCurves.data(), reverseIds);
-		output.stringCurves = GetExportedSet<types::string>(startTime, curves.stringCurves.data(), reverseIds);
-		output.intVectorCurves = GetExportedSet<std::vector<types::int32>>(startTime, curves.intVectorCurves.data(), reverseIds);
+		output.intCurves = GetExportedSet<types::int32>(startTime, curves.intCurves.data());
+		output.boolCurves = GetExportedSet<bool>(startTime, curves.boolCurves.data());
+		output.stringCurves = GetExportedSet<types::string>(startTime, curves.stringCurves.data());
+		output.intVectorCurves = GetExportedSet<std::vector<types::int32>>(startTime, curves.intVectorCurves.data());
 
 		//add in entityNames and variable Id mappings
 		output.entity_names = _newEntityNames;
@@ -144,25 +134,6 @@ namespace hades
 		std::lock_guard<std::shared_mutex> lk(EntNameMutex);
 		EntityNames[name] = entity;
 		_newEntityNames.push_back({ entity, name });
-	}
-
-	void GameInstance::registerVariable(data::UniqueId id)
-	{
-		std::lock_guard<std::shared_mutex> lk(VariableIdMutex);
-		VariableIds[id] = ++VariableNext;
-	}
-
-
-	types::string GameInstance::getVariableName(VariableId id) const
-	{
-		std::shared_lock<std::shared_mutex> lk(VariableIdMutex);
-		for (auto n : VariableIds)
-		{
-			if (n.second == id)
-				return data_manager->as_string(n.first);
-		}
-
-		throw variable_without_name("Tried to find name for variable id: " + std::to_string(id) + "; but it had no recorded name");
 	}
 
 	void GameInstance::installSystem(resources::system *system)

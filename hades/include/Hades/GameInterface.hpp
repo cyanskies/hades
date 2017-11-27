@@ -64,9 +64,6 @@ namespace hades
 		curve_data &getCurves();
 		const curve_data &getCurves() const;
 
-		//throws if the variable is not registered
-		VariableId getVariableId(data::UniqueId);
-
 		//attach/detach entities from systems
 		void attachSystem(EntityId, data::UniqueId, sf::Time t);
 		void detachSystem(EntityId, data::UniqueId, sf::Time t);
@@ -79,12 +76,6 @@ namespace hades
 		//protected, since the ability to name entities is provided by a child.
 		mutable std::shared_mutex EntNameMutex;
 		EntityNameMap EntityNames;
-
-		using VariableNameMap = std::map<data::UniqueId, VariableId>;
-		//mapping of names to variable ids
-		mutable std::shared_mutex VariableIdMutex;
-		VariableNameMap VariableIds;
-		std::atomic<VariableId> VariableNext = std::numeric_limits<VariableId>::min() + 1;
 
 		mutable std::shared_mutex SystemsMutex;
 		std::vector<GameSystem> Systems;

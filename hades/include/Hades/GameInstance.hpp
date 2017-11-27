@@ -39,9 +39,6 @@ namespace hades
 		// master: the games master entity, used to store game rules, whether the game as ended yet
 		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
 		void nameEntity(EntityId entity, const types::string &name);
-		
-		void registerVariable(data::UniqueId);
-		types::string getVariableName(VariableId) const;
 
 		//adds a system
 		void installSystem(resources::system *system);

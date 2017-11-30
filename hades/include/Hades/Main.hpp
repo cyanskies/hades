@@ -14,7 +14,7 @@ namespace hades
 }
 
 //handles application startup and command line parameters
-int hades_main(int argc, char** argv);
+int hades_main(int argc, char* argv[]);
 
 /////////////////////////////////////
 /// Called after defaultBindings

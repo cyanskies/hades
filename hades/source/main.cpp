@@ -5,8 +5,9 @@
 #include "Hades/App.hpp"
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
+#include "Hades/Main.hpp"
 
-int hades_main(int argc, char** argv)
+int hades_main(int argc, char* argv[])
 {
 	//new commands start with a '-'.
 	const char COMMAND_DELIMITER = '-';

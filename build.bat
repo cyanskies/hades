@@ -36,3 +36,5 @@
 
 @cmake  -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx% -G %generator%
 @cmake --build . --target install --config %mode%
+
+@IF [%1]==[] (@xcopy ../dep-library/bin ./source/Debug /y)

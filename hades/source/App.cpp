@@ -114,26 +114,23 @@ namespace hades
 	//calls job on any command that contains command
 	bool LoadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
 	{
-		auto bit = commands.begin(), end = commands.end();
-		std::vector<CommandList::iterator> removeList;
-		while (bit != end)
+		//FIXME: why is this called bit?
+		auto bit = commands.begin();
+		bool ret = false;
+		while (bit != std::end(commands))
 		{
 			auto com = bit->substr(0, command.length());
 
 			if (com == command)
 			{
-				removeList.push_back(bit);
-				job(*bit);
+				std::string params;
+				std::copy(bit->begin() + command.length() + 1, bit->end(), std::back_inserter(params));
+				job(params);
+				bit = commands.erase(bit);
+				ret = true;
 			}
-			++bit;
-		}
-
-		bool ret = !removeList.empty();
-
-		while (!removeList.empty())
-		{
-			commands.erase(removeList.back());
-			removeList.pop_back();
+			else
+				++bit;
 		}
 
 		return ret;
@@ -162,34 +159,10 @@ namespace hades
 		//and load them in the datamanager.
 		auto &data = _dataMan;
 		LoadCommand(commands, "game", [&data](std::string command) {
-			std::stringstream params(command);
-			std::string value;
-			std::getline(params, value, ' ');
-			assert(value == "game");
-
-			std::getline(params, command, '\0');
-
-			#ifndef NDEBUG
-				//if debug, load mod archives from the asset directory
-				command = "../../game/" + command;
-			#endif
-
 			data.load_game("./" + command);
 		});
 
 		LoadCommand(commands, "mod", [&data](std::string command) {
-			std::stringstream params(command);
-			std::string value;
-			std::getline(params, value, ' ');
-			assert(value == "mod");
-
-			std::getline(params, command, '\0');
-
-			#ifndef NDEBUG
-				//if debug, load mod archives from the asset directory
-				command = "../../game/" + command;
-			#endif
-
 			data.add_mod("./" + command);
 		});
 

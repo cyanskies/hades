@@ -49,7 +49,16 @@ namespace ortho_terrain
 		if (!data_manager->exists(settings_id))
 			LOGERROR("Missing important settings for orthographic terrain");
 
-		_tile_settings = hades::data_manager->get<ortho_terrain::resources::terrain_settings>(settings_id);
+		try
+		{
+			_tile_settings = hades::data_manager->get<ortho_terrain::resources::terrain_settings>(settings_id);
+		}
+		catch (data::resource_null &e)
+		{
+			LOGERROR("Tile Settings hasn't been defined: " + std::string(e.what()));
+			kill();
+			return;
+		}
 
 		//_filename is empty if the editor is created without a target file to open
 		if (Filename.empty())
@@ -423,7 +432,7 @@ namespace ortho_terrain
 
 		std::vector<tile> used_tiles;
 
-		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size, data_mutex](std::vector<ortho_terrain::tile> tiles) {
+		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size](std::vector<ortho_terrain::tile> tiles) {
 			for (auto &t : tiles)
 			{
 				//skip if needed data is missing.

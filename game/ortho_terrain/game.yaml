@@ -11,7 +11,7 @@ textures:
         height: 32 
         source: "terrain/indev-ascending.png"
     indev2-tex:
-        width: 40
+        width: 72
         height: 32
         source: "terrain/indev2-brigid.png"
     indev3-tex:

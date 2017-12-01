@@ -1,3 +1,4 @@
+#include "Hades/App.hpp"
 #include "Hades/Main.hpp"
 
 #include <memory>
@@ -13,7 +14,7 @@ int main(int argc, char **argv)
 
 std::string defaultGame()
 {
-	return "test";
+	return "example";
 }
 
 void resourceTypes(hades::DataManager &data)

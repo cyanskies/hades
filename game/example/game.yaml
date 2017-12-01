@@ -1,7 +1,9 @@
 #each mod must have a mod header listing its name and dependencies
 
 mod:
-    name: test
+    name: example
+    depends:
+        - ortho_terrain
 
 textures:
     #example is intentionaly missing, to show what happens if a texture is not present

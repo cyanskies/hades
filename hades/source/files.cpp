@@ -20,35 +20,40 @@ namespace hades {
 
 			std::string out;
 			//convert buff to str
-			for (auto i : buf)
-				out.push_back(static_cast<char>(i));
+			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out), 
+				[](auto i) { return static_cast<char>(i); });
 
 			return out;
 		}
 
 		buffer as_raw(const std::string &modPath, const std::string &fileName)
 		{
-			static const auto custom_path = hades::GetUserCustomFileDirectory();
-
-			bool found = true;
-
-			FileStream stream;
-
-			try
-			{
-				stream.open(custom_path + modPath, fileName);
-			}
-			catch (file_exception &e)
-			{
-				found = false;
-			}
-
+			auto stream = make_stream(modPath, fileName);
 			auto size = stream.getSize();
 			assert(size >= 0 && size <= std::numeric_limits<buffer::size_type>::max());
 			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
 
 			return buff;
+		}
+
+		FileStream make_stream(const std::string &modPath, const std::string &fileName)
+		{
+			static const auto custom_path = hades::GetUserCustomFileDirectory();
+
+			try 
+			{
+				return std::move(FileStream(custom_path + modPath, fileName));
+			}
+			catch (file_exception&)
+			{
+
+				#ifndef NDEBUG
+					return std::move(FileStream("../../game/" + modPath, fileName));
+				#else
+					return std::move(FileStream(modPath, filename));
+				#endif
+			}
 		}
 
 		FileStream::FileStream(const std::string &modPath, const std::string &fileName)
@@ -58,11 +63,57 @@ namespace hades {
 
 		FileStream::~FileStream()
 		{
-			assert(file || archive);
 			if (file)
 				_fileStream.~FileInputStream();
-			else
+			else if (archive)
 				_archiveStream.~archive_stream();
+		}
+
+		FileStream::FileStream(FileStream&& rhs) : file(rhs.file), archive(rhs.archive),
+			_open(rhs._open), _mod_path(rhs._mod_path), _file_path(rhs._file_path)
+		{
+			if (file)
+			{
+				rhs._fileStream.~FileInputStream();
+				new(&_fileStream) sf::FileInputStream();
+				_fileStream.open(_mod_path + "/" + _file_path);
+			}
+			else if (archive)
+			{
+				new(&_archiveStream) zip::archive_stream(std::move(rhs._archiveStream));
+				rhs._archiveStream.~archive_stream();
+			}
+
+			rhs.file = rhs.archive = rhs._open = false;
+			rhs._mod_path.clear(); rhs._file_path.clear();
+		}
+
+		FileStream& FileStream::operator=(FileStream&& rhs)
+		{
+			if (file)
+				_fileStream.~FileInputStream();
+			else if (archive)
+				_archiveStream.~archive_stream();
+
+			file = rhs.file; archive = rhs.archive; _open = rhs._open;
+			_mod_path = rhs._mod_path; _file_path = rhs._file_path;
+
+			if (file)
+			{
+				rhs._fileStream.~FileInputStream();
+				new(&_fileStream) sf::FileInputStream();
+				_fileStream.open(_mod_path + "/" + _file_path);
+			}
+			else if (archive)
+			{
+				new(&_archiveStream) zip::archive_stream(std::move(rhs._archiveStream));
+				rhs._archiveStream.~archive_stream();
+			}
+
+			rhs.file = rhs.archive = rhs._open = false;
+			rhs._mod_path.clear(); rhs._file_path.clear();
+
+			return *this;
 		}
 
 		void FileStream::open(const std::string &modPath, const std::string &fileName)
@@ -118,6 +169,9 @@ namespace hades {
 						throw file_exception(message.c_str(), file_exception::error_code::UNREADABLE_FILE);
 					}
 
+					_mod_path = modPath;
+					_file_path = fileName;
+
 					//file successfully opened, construction complete
 				}
 			}
@@ -150,6 +204,9 @@ namespace hades {
 					auto message = "Cannot read file: " + fileName + ",  in mod archive: " + archivepath;
 					throw file_exception(message.c_str(), file_exception::error_code::UNREADABLE_FILE);
 				}
+
+				_mod_path = archivepath;
+				_file_path = fileName;
 			}
 
 			if (!found)

@@ -10,8 +10,11 @@ namespace hades
 {
 	namespace files
 	{
+		class FileStream;
+
 		std::string as_string(const std::string &modPath, const std::string &fileName);
 		buffer as_raw(const std::string &modPath, const std::string &fileName);
+		FileStream make_stream(const std::string &modPath, const std::string &fileName);
 
 		class FileStream : public sf::InputStream
 		{
@@ -21,9 +24,9 @@ namespace hades
 			
 			~FileStream();
 
-			FileStream(FileStream&&) = delete;
+			FileStream(FileStream&&);
 			FileStream(const FileStream&) = delete;
-			FileStream &operator=(FileStream&&) = delete;
+			FileStream &operator=(FileStream&&);
 			FileStream &operator=(const FileStream&) = delete;
 
 			void open(const std::string &modPath, const std::string &fileName);
@@ -40,6 +43,7 @@ namespace hades
 
 		private:
 			bool archive = false, file = false, _open = false;
+			std::string _mod_path, _file_path;
 
 			union 
 			{

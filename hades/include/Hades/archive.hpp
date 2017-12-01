@@ -58,6 +58,8 @@ namespace hades
 			sf::Int64 tell();
 			sf::Int64 getSize();
 		private:
+			void _close();
+
 			types::string _fileName;
 			bool _fileOpen;
 			unarchive _archive;

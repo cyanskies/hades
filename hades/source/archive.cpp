@@ -49,6 +49,8 @@ namespace hades
 
 		archive_stream &archive_stream::operator=(archive_stream&& rhs)
 		{
+			_close();
+
 			_archive = rhs._archive;
 			rhs._archive = nullptr;
 			_fileOpen = rhs._fileOpen;
@@ -61,11 +63,7 @@ namespace hades
 		archive_stream::~archive_stream()
 		{
 			//use zlib directly, since our wrappers might throw
-			if (_fileOpen)
-				unzCloseCurrentFile(_archive);
-
-			if (_archive)
-				unzClose(_archive);
+			_close();
 		}
 
 		bool file_exists(unarchive, types::string);
@@ -164,6 +162,15 @@ namespace hades
 			assert(r == UNZ_OK);
 
 			return info.uncompressed_size;
+		}
+
+		void archive_stream::_close()
+		{
+			if (_fileOpen)
+				unzCloseCurrentFile(_archive);
+
+			if (_archive)
+				unzClose(_archive);
 		}
 
 		unarchive open_archive(types::string path)

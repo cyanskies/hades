@@ -237,3 +237,5 @@ hades/.vs/hades/v15/Solution.VC.db-shm
 hades/.vs/hades/v15/Solution.VC.db-wal
 test/.vs/xing/v15/Solution.VC.db-shm
 test/.vs/xing/v15/Solution.VC.db-wal
+*.db-shm
+*.db-wal

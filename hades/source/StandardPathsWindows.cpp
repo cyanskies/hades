@@ -42,7 +42,7 @@ namespace hades
 	{
 		static const auto portable = hades::console::GetBool("file_portable", false);
 
-		if (portable)
+		if (*portable)
 			return "";
 		else
 			return getWindowsDirectory(FOLDERID_Documents) + "/" + defaultGame() + "/";

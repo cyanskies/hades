@@ -33,7 +33,7 @@ void resourceTypes(hades::DataManager &data)
 
 void hadesMain(hades::StateManager &state, hades::InputSystem &bind, hades::CommandList &commandLine)
 {
-	hades::RegisterMouseInput(bind, hades::data_manager);
+	hades::RegisterMouseInput(bind);
 
 	state.push(std::make_unique<ortho_terrain::terrain_editor>());
 	return;

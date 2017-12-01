@@ -8,8 +8,9 @@ namespace hades
 		InputId PointerLeft = InputId::Zero;
 	}
 
-	void RegisterMouseInput(InputSystem &bind, DataManager* data)
+	void RegisterMouseInput(InputSystem &bind)
 	{
+		auto data = data_manager;
 		//collect unique names for actions
 		input::PointerPosition = data->getUid("mouse");
 		input::PointerLeft = data->getUid("mouseleft");

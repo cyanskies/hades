@@ -226,11 +226,15 @@ namespace hades
 				//if the width or height are 0, then don't warn about size mismatch
 				//otherwise log unexpected size
 				auto size = tex->value.getSize();
-				if (tex->width == 0 &&
-					size.x != tex->width || size.y != tex->height)
+				if (tex->width != 0 &&
+					(size.x != tex->width || size.y != tex->height))
 				{
 					LOGWARNING("Loaded texture: " + mod->source + "/" + tex->source + ". Texture size different from requested. Requested(" +
 						std::to_string(tex->width) + ", " + std::to_string(tex->height) + "), Found(" + std::to_string(size.x) + ", " + std::to_string(size.y) + ")");
+					//NOTE: if the texture is the wrong size
+					// then enable repeating, to avoid leaving
+					// gaps in the world(between tiles and other such stuff).
+					tex->value.setRepeated(true);
 				}
 
 				tex->loaded = true;

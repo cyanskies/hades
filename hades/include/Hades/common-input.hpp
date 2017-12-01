@@ -19,7 +19,7 @@ namespace hades
 	//such as mouse position and buttons:
 	// mouse - mouse position
 	// mouseleft - mouse button 1
-	void RegisterMouseInput(InputSystem &bind, DataManager* data);
+	void RegisterMouseInput(InputSystem &bind);
 }
 
 

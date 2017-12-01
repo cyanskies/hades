@@ -14,65 +14,7 @@ namespace ortho_terrain
 {
 	namespace
 	{
-		std::vector<hades::data::UniqueId> ConvertTerrain(const std::vector<tile>& tiles)
-		{
-			std::vector<hades::data::UniqueId> out;
-
-			for (auto &t : tiles)
-				out.push_back(t.terrain);
-
-			return out;
-		}
-
-		const VertexArray::size_type VertexPerTile = 6;
-	}
-
-	std::vector<hades::data::UniqueId> ConvertToTerrain(const std::vector<tile_count_t>& tiles, const std::vector<hades::data::UniqueId> &tilesets)
-	{
-		return ConvertTerrain(ConvertToTile(tiles, tilesets));
-	}
-
-	std::vector<hades::data::UniqueId> ConvertToTerrain(const std::vector<tile>& tiles)
-	{
-		return ConvertTerrain(tiles);
-	}
-
-	std::vector<tile> ConvertToTile(const std::vector<tile_count_t>&tiles, const std::vector<hades::data::UniqueId> &tilesets)
-	{
-		using namespace resources;
-		std::vector<tileset*> sets;
-
-		for (auto &s : tilesets)
-			sets.push_back(hades::data_manager->get<tileset>(s));
-
-		std::vector<tile> out;
-		out.reserve(tiles.size());
-
-		const auto terrain_settings_id = hades::data_manager->getUid(resources::terrain_settings_name);
-		const auto terrain_settings = hades::data_manager->get<resources::terrain_settings>(terrain_settings_id);
-		const auto error_terrain = hades::data_manager->get<resources::terrain>(terrain_settings->error_tile);
-
-		for (auto &t : tiles)
-		{
-			//find the tileset that contains this tile
-			//minus the size of each tileset from the tile id
-			//until we're less than the length of a tileset
-			auto pos = static_cast<std::vector<tile>::size_type>(t);
-			auto iter = sets.begin();
-			while (iter != sets.end() && pos > (*iter)->tiles.size())
-			{
-				assert((*iter)->tiles.size());
-				pos -= (*iter)->tiles.size();
-				++iter;
-			}
-
-			if (iter == sets.end())
-				out.push_back(RandomTile(error_terrain->tiles));//bad
-			else
-				out.push_back((*iter)->tiles[pos]);
-		}
-
-		return out;
+		static const VertexArray::size_type VertexPerTile = 6;
 	}
 
 	MapData ConvertToTiles(const TerrainVertex&, tile_count_t vertexPerRow)

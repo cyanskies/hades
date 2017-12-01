@@ -112,7 +112,7 @@ namespace hades
 	}
 
 	//calls job on any command that contains command
-	void loadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
+	bool LoadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
 	{
 		auto bit = commands.begin(), end = commands.end();
 		std::vector<CommandList::iterator> removeList;
@@ -128,16 +128,15 @@ namespace hades
 			++bit;
 		}
 
+		bool ret = !removeList.empty();
+
 		while (!removeList.empty())
 		{
 			commands.erase(removeList.back());
 			removeList.pop_back();
 		}
-	}
 
-	void LoadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
-	{
-		loadCommand(commands, command, job);
+		return ret;
 	}
 
 	void App::postInit(CommandList commands)
@@ -162,7 +161,7 @@ namespace hades
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;
-		loadCommand(commands, "game", [&data](std::string command) {
+		LoadCommand(commands, "game", [&data](std::string command) {
 			std::stringstream params(command);
 			std::string value;
 			std::getline(params, value, ' ');
@@ -178,7 +177,7 @@ namespace hades
 			data.load_game("./" + command);
 		});
 
-		loadCommand(commands, "mod", [&data](std::string command) {
+		LoadCommand(commands, "mod", [&data](std::string command) {
 			std::stringstream params(command);
 			std::string value;
 			std::getline(params, value, ' ');

@@ -232,6 +232,8 @@ namespace hades
 					LOGWARNING("Loaded texture: " + mod->source + "/" + tex->source + ". Texture size different from requested. Requested(" +
 						std::to_string(tex->width) + ", " + std::to_string(tex->height) + "), Found(" + std::to_string(size.x) + ", " + std::to_string(size.y) + ")");
 				}
+
+				tex->loaded = true;
 			}
 		}
 

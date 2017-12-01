@@ -423,7 +423,7 @@ namespace ortho_terrain
 
 		std::vector<tile> used_tiles;
 
-		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size](std::vector<ortho_terrain::tile> tiles) {
+		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size, data_mutex](std::vector<ortho_terrain::tile> tiles) {
 			for (auto &t : tiles)
 			{
 				//skip if needed data is missing.
@@ -450,11 +450,13 @@ namespace ortho_terrain
 			}
 		};
 
-		std::thread tile_work([tileLayout, tileContainer, tilesets, settings, make_tiles]() {
+		auto data_mutex = std::make_shared<std::mutex>();
+		std::thread tile_work([tileLayout, tileContainer, tilesets, settings, make_tiles, data_mutex]() {
 			//place available tiles in the "tiles" container
 			for (auto t : tilesets)
 			{
 				//TODO: make sure error tile isn't included
+				std::lock_guard<std::mutex> lock(*data_mutex);
 				if (data_manager->exists(t) && t != settings->error_tile)
 				{
 					auto tileset = data_manager->get<ortho_terrain::resources::tileset>(t);
@@ -506,10 +508,11 @@ namespace ortho_terrain
 		auto terrainLayout = tgui::HorizontalWrap::create();
 		terrainLayout->setSize("&.w", "&.h");
 		
-		std::thread terrain_work([this, terrainLayout, terrainContainer, terrains, settings, tile_button_size]() {
+		std::thread terrain_work([this, terrainLayout, terrainContainer, terrains, settings, tile_button_size, data_mutex]() {
 			//place available terrain in the "terrain" container
 			for (auto t : terrains)
 			{
+				std::lock_guard<std::mutex> lock(*data_mutex);
 				if (data_manager->exists(t) && t != settings->error_tile)
 				{
 					auto terrain = data_manager->get<ortho_terrain::resources::terrain>(t);

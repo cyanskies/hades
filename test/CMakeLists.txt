@@ -15,7 +15,7 @@ if(CMAKE_CONFIGURATION_TYPES)
 	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
 endif()
 
-project(xing)
+project(example)
 
 # Global preprocessor and include options
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_INSTALL_PREFIX}/include)

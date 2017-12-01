@@ -18,14 +18,6 @@ namespace ortho_terrain
 {
 	using tile_count_t = hades::types::uint32;
 
-	//deprecated, no need to convert tiles or tile id's into terrain
-	[[deprecated]] std::vector<hades::data::UniqueId> ConvertToTerrain(const std::vector<tile_count_t>&, const std::vector<hades::data::UniqueId>&);
-	[[deprecated]] std::vector<hades::data::UniqueId> ConvertToTerrain(const std::vector<tile>&);
-
-	//converts the tile ids into tiles using the provided tilesets uids
-	[[deprecated("use CreateMapData from the serialise header instead")]]
-	std::vector<tile> ConvertToTile(const std::vector<tile_count_t>&, const std::vector<hades::data::UniqueId>&);
-
 	//an array of tiles, can be converted into a tilemap to draw
 	using TileArray = std::vector<tile>;
 	using VertexArray = std::vector<sf::Vertex>;

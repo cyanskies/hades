@@ -38,7 +38,13 @@ set(HADES_SRC
 	OrthoTerrain/utility.cpp
 	OrthoTerrain/generator.cpp
 	OrthoTerrain/resources.cpp
+	Tiles/resources.cpp
+	Tiles/tiles.cpp
 )
+
+source_group("Tiles" FILES
+	Tiles/resources.cpp
+	Tiles/tiles.cpp)
 
 source_group("OrthoTerrain" FILES
 	OrthoTerrain/editor.cpp

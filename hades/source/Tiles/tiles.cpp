@@ -495,9 +495,8 @@ namespace tiles
 		//this is a big error
 		if (firstVert == vertArray.size())
 		{
-			//TODO: log, throw logic_error
-			assert(false);
-			return;
+			LOGERROR("TileMap; unable to find vertex for modification");
+			throw std::logic_error("failed to find needed vertex");
 		}
 
 		auto newQuad = CreateTile(vertPosition.x, vertPosition.y, t.left, t.top, _tile_size);

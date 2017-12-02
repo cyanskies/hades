@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/Transformable.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "Hades/Types.hpp"
@@ -16,8 +18,9 @@ namespace tiles
 
 	//raw map data, is a stream of tile_count id's
 	//and a map of tilesets along with thier first id's
+	// and also a width
 	using TileSetInfo = std::tuple<hades::data::UniqueId, tile_count_t>;
-	using RawMap = std::tuple<std::vector<TileSetInfo>, std::vector<tile_count_t>>;
+	using RawMap = std::tuple<std::vector<TileSetInfo>, std::vector<tile_count_t>, tile_count_t>;
 
 	//an array of tiles, can be converted into a tilemap to draw
 	using TileArray = std::vector<tile>;
@@ -29,6 +32,11 @@ namespace tiles
 	//converts mapdata back into a raw map
 	RawMap as_rawmap(const MapData & map);
 
+	//converts tile positions in the flat map to a 2d position on the screen
+	//NOTE: this returns a pixel position with the maps origin in the top left corner.
+	std::tuple<hades::types::int32, hades::types::int32> GetGridPosition(hades::types::uint32 tile_number,
+		hades::types::uint32 tiles_per_row, hades::types::uint32 tile_size);
+
 	//thrown by tile maps for unrecoverable errors
 	class tile_map_exception : public std::exception
 	{
@@ -38,9 +46,50 @@ namespace tiles
 	};
 
 	//a class for rendering MapData as a tile map
-	class TileMap;
+	class TileMap : public sf::Drawable, public sf::Transformable
+	{
+	public:
+		TileMap() = default;
+		TileMap(const MapData&);
+
+		virtual ~TileMap() {}
+
+		virtual void create(const MapData&);
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+		sf::FloatRect getLocalBounds() const;
+
+	protected:
+		using vArray = std::pair<hades::resources::texture*, VertexArray>;
+		std::vector<vArray> Chunks;
+	};
+
 	//an expanded upon TileMap, that allows changing the map on the fly
-	class MutableTileMap;
+	class MutableTileMap : public TileMap
+	{
+	public:
+		MutableTileMap() = default;
+		MutableTileMap(const MapData&);
+
+		void create(const MapData&) override;
+		//draw over a tile
+		//amount is the number of rows of adjacent tiles to replace as well.
+		//eg amount = 1, draws over 9 tiles worth,
+		void replace(const tile&, const sf::Vector2u &position, hades::types::uint8 amount = 0, bool updateVertex = false);
+
+		MapData getMap() const;
+
+	private:
+		void _replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t);
+		void _removeTile(VertexArray &a, const sf::Vector2u &position);
+		void _addTile(VertexArray &a, const sf::Vector2u &position, const tile& t);
+
+		tile_size_t _tile_size;
+		tile_count_t _width;
+		TileArray _tiles;
+		tile_count_t _vertex_width;
+	};
 }
 
 #endif // !TILES_TILES_HPP

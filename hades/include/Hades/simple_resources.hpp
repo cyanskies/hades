@@ -4,6 +4,8 @@
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/Shader.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include "Hades/Curves.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/parallel_jobs.hpp"
@@ -11,13 +13,34 @@
 
 //This header provides resources for built in types
 
-namespace YAML
-{
-	class Node;
-}
-
 bool yaml_error(hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::types::string requested_type, hades::data::UniqueId mod, bool test);
+
+template<class T>
+T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::data::UniqueId mod, T default_value)
+{
+	auto value_node = node[property_name];
+	if (value_node.IsDefined() && yaml_error(resource_type, name, property_name, "scalar", mod, value_node.IsScalar()))
+		return value_node.as<T>(default_value);
+	else
+		return default_value;
+}
+
+template<class T>
+std::vector<T> yaml_get_sequence(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::data::UniqueId mod)
+{
+	std::vector<T> output;
+	auto seq = node[property_name];
+	if (seq.IsDefined() && yaml_error(resource_type, name, property_name, "sequence", mod, seq.IsSequence()))
+	{
+		for (auto &i : seq)
+			output.push_back(i.as<T>());
+	}
+
+	return output;
+}
 
 namespace hades
 {

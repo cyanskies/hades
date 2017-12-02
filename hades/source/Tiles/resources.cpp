@@ -70,7 +70,25 @@ namespace tiles
 				settings->tile_size = size.as<tile_size_t>(default_size);
 		}
 
-		void parseTiles(tileset& tset, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count);
+		void parseTiles(tileset& tset, hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
+		{
+			tile_count_t row = 1, column = 1;
+			while (count > 0)
+			{
+				tile t;
+				t.texture = texture;
+				t.traits = traits;
+				t.left = column * left;
+				t.top = row * top;
+
+				if (column < width)
+					column++;
+				else
+					row++;
+
+				tset.tiles.push_back(t);
+			}
+		}
 
 		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager *data)
 		{
@@ -82,7 +100,7 @@ namespace tiles
 			//        top: <// pixel left of tileset
 			//        tiles_per_row: <// number of tiles per row
 			//        tile_count: <// total amount of tiles in tileset;
-
+			//        traits: <// a list of trait tags that get added to the tiles in this tileset
 
 			static const hades::types::string resource_type = "tileset";
 
@@ -135,18 +153,24 @@ namespace tiles
 
 				auto texid = data->getUid(tex.as<hades::types::string>());
 
-				tile_size_t left = 0, top = 0;
-				tile_count_t width = 0, count = 0;
+				tile_size_t left = yaml_get_scalar<tile_size_t>(node, resource_type, name, "left", mod, 0),
+					top = yaml_get_scalar<tile_size_t>(node, resource_type, name, "top", mod, 0);
+				tile_count_t width = yaml_get_scalar<tile_count_t>(node, resource_type, name, "tiles_per_row", mod, 0),
+					count = yaml_get_scalar<tile_count_t>(node, resource_type, name, "tile_count", mod, 0);
 
-				auto leftn = node["left"];
-				if (leftn.IsDefined() && yaml_error(resource_type, name, "left", "scalar", mod, leftn.IsScalar()))
-					left = leftn.as<tile_size_t>(left);
+				auto traits_str = yaml_get_sequence<hades::types::string>(node, resource_type, name, "traits", mod);
+				traits_list traits;
 
-				auto leftn = node["left"];
-				if (leftn.IsDefined() && yaml_error(resource_type, name, "left", "scalar", mod, leftn.IsScalar()))
-					left = leftn.as<tile_size_t>(left);
+				std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
+					return hades::data_manager->getUid(s);
+				});
+
+				//get tile size
+				auto tile_settings_id = data->getUid(tile_settings_name);
+				auto tile_settings = data->get<resources::tile_settings>(tile_settings_id);
+
+				parseTiles(*tset, texid, tile_settings->tile_size, top, left, width, count, traits);
 			}
 		}
-
 	}
 }

@@ -10,12 +10,14 @@ namespace tiles
 
 	//tile sizes are capped by the data type used for texture sizes
 	using tile_size_t = hades::resources::texture::size_type;
+	using traits_list = std::vector<hades::data::UniqueId>;
 
-	//data needed to render a tile
+	//data needed to render and interact with a tile
 	struct tile
 	{
 		hades::data::UniqueId texture = hades::data::UniqueId::Zero;
 		tile_size_t left, top;
+		traits_list traits;
 	};
 
 	bool operator==(const tile &lhs, const tile &rhs);

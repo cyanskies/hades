@@ -4,8 +4,8 @@
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
-#include "OrthoTerrain/terrain.hpp"
-#include "OrthoTerrain/serialise.hpp"
+#include "Tiles/resources.hpp"
+#include "Tiles/tiles.hpp"
 
 //a simple tile editor
 //this allows the creation of tile levels with objects placed on them
@@ -16,27 +16,26 @@ namespace tiles
 	namespace editor
 	{
 		//screen view height
+		// set editor_height to override this
 		const hades::types::int32 view_height = 240;
 
 		enum class EditMode {
 			NONE, //no editing
 			TILE, //draw a specific tile, no cleanup
-			TERRAIN, //draw a terrain tile with transition fixups
 		};
 	}
 
 	class tile_editor : public hades::State
 	{
 	public:
-		terrain_editor() = default;
-		explicit terrain_editor(const hades::types::string&);
+		tile_editor() = default;
 		//generate random map if not already
 		void init() override; 
 
 		void generate();
 		
-		void load(const OrthoSave&);
-		OrthoSave save_terrain() const;
+		//void load(const OrthoSave&);
+		//OrthoSave save_terrain() const;
 		
 		bool handleEvent(const hades::Event &windowEvent) override; 
 		void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
@@ -63,32 +62,27 @@ namespace tiles
 		hades::types::string Mod, Filename;
 
 	private:
-		void _generatePreview(ortho_terrain::resources::terrain *terrain, sf::Vector2u vposition, hades::types::uint8 size);
-
 		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
 		void _load(const hades::types::string&, const hades::types::string&);
 		void _save() const;
 
 		//editor settings
 		editor::EditMode _editMode = editor::EditMode::NONE;
-		ortho_terrain::resources::terrain_settings *_tile_settings;
+		resources::tile_settings *_tile_settings;
 		//default save is a file called new.lvl that stored alongside the mod archives
 		bool _loaded = false;
 
-		//shared drawing variables
+		//preview drawing variables
 		sf::Vector2u _terrainPosition;
-		ortho_terrain::EditMap _terrainPlacement;
+		MutableTileMap _terrainPlacement;
 
 		//tile placement mode variables
-		ortho_terrain::tile _tileInfo;
+		tile _tileInfo;
 		hades::types::uint8 _tile_draw_size = 1;
 
-		//terrain placement mode variables
-		ortho_terrain::resources::terrain *_terrainInfo = nullptr;
-		hades::types::uint8 _terrain_draw_size = 1;
-	
+		//core map drawing variables
 		sf::View _gameView;
-		ortho_terrain::EditMap _terrain;
+		MutableTileMap _terrain;
 	};
 }
 

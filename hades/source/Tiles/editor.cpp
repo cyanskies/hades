@@ -13,9 +13,7 @@
 #include "TGUI/Widgets/Picture.hpp"
 #include "TGUI/Widgets/MenuBar.hpp"
 
-#include "yaml-cpp/emitter.h"
-#include "yaml-cpp/node/node.h"
-#include "yaml-cpp/node/parse.h"
+#include "yaml-cpp/yaml.h"
 
 #include "Hades/common-input.hpp"
 #include "Hades/data_manager.hpp"
@@ -23,15 +21,15 @@
 #include "Hades/Properties.hpp"
 #include "Hades/StandardPaths.hpp"
 
-#include "OrthoTerrain/generator.hpp"
-#include "OrthoTerrain/resources.hpp"
-#include "OrthoTerrain/serialise.hpp"
+#include "Tiles/generator.hpp"
+#include "Tiles/resources.hpp"
+#include "Tiles/tiles.hpp"
 
 using namespace hades;
 
-const auto terrain_editor_window = "editor-window";
-const auto terrain_editor_tabs = "editor-tabs";
-const auto terrain_editor_layout = "editor-layout";
+const auto tile_editor_window = "editor-window";
+const auto tile_editor_tabs = "editor-tabs";
+const auto tile_editor_layout = "editor-layout";
 
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
@@ -40,18 +38,18 @@ const hades::types::uint32 map_height = 100, map_width = 100;
 const hades::types::int32 scroll_margin = 20,
 scroll_rate = 4;
 
-namespace ortho_terrain
+namespace tiles
 {
-	void terrain_editor::init()
+	void tile_editor::init()
 	{
-		auto settings_id = hades::data_manager->getUid(ortho_terrain::resources::terrain_settings_name);
+		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
 
 		if (!data_manager->exists(settings_id))
 			LOGERROR("Missing important settings for orthographic terrain");
 
 		try
 		{
-			_tile_settings = hades::data_manager->get<ortho_terrain::resources::terrain_settings>(settings_id);
+			_tile_settings = hades::data_manager->get<resources::tile_settings>(settings_id);
 		}
 		catch (data::resource_null &e)
 		{
@@ -69,15 +67,15 @@ namespace ortho_terrain
 		reinit();
 	}
 
-	void terrain_editor::generate()
+	void tile_editor::generate()
 	{
-		//TODO: handle lack of terrains
-		auto terrain = hades::data_manager->get<resources::terrain>(resources::Terrains[1]);
-		const auto map = generator::Blank({ map_height, map_width }, terrain);
+		//TODO: throw if no tiles have been registered
+		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
+		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
 		_terrain.create(map);
 	}
 
-	void terrain_editor::load(const OrthoSave& data)
+	/*void tile_editor::load(const OrthoSave& data)
 	{
 		std::vector<hades::data::UniqueId> tilesets;
 		tilesets.reserve(data.tilesets.size());
@@ -90,12 +88,12 @@ namespace ortho_terrain
 		_loaded = true;
 	}
 
-	OrthoSave terrain_editor::save_terrain() const
+	OrthoSave tile_editor::save_terrain() const
 	{
 		return CreateOrthoSave(_terrain.getMap());
-	}
+	}*/
 
-	bool terrain_editor::handleEvent(const hades::Event &windowEvent)
+	bool tile_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
 		if (std::get<sf::Event>(windowEvent).type == sf::Event::EventType::Resized)
 		{
@@ -106,7 +104,7 @@ namespace ortho_terrain
 		return false; 
 	}
 
-	void terrain_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
+	void tile_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
 	{
 		static auto window_width = console::GetInt("vid_width", 640),
 			window_height = console::GetInt("vid_height", 480);
@@ -148,7 +146,7 @@ namespace ortho_terrain
 			PasteTerrain(input);
 	}
 	
-	void terrain_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
+	void tile_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	{
 		target.setView(_gameView);
 		target.draw(_terrain);
@@ -157,9 +155,9 @@ namespace ortho_terrain
 			target.draw(_terrainPlacement);
 	}
 
-	void terrain_editor::cleanup(){}
+	void tile_editor::cleanup(){}
 
-	void terrain_editor::reinit() 
+	void tile_editor::reinit() 
 	{
 		//=========================
 		//set up the editor rendering
@@ -178,18 +176,18 @@ namespace ortho_terrain
 		_gameView.setCenter({ 100.f,100.f });
 
 		//====================
-		//set up the terrain_editor UI
+		//set up the tile_editor UI
 		//====================
 
 		_gui.removeAllWidgets();
 
 		//==================
-		//load the terrain_editor UI
+		//load the tile_editor UI
 		//==================
-		auto layout_id = data_manager->getUid(terrain_editor_layout);
+		auto layout_id = data_manager->getUid(tile_editor_layout);
 		if (!data_manager->exists(layout_id))
 		{
-			LOGERROR("No GUI layout exists for " + std::string(terrain_editor_layout));
+			LOGERROR("No GUI layout exists for " + std::string(tile_editor_layout));
 			kill();
 			return;
 		}
@@ -329,10 +327,10 @@ namespace ortho_terrain
 		});
 	}
 
-	void terrain_editor::pause() {}
-	void terrain_editor::resume() {}
+	void tile_editor::pause() {}
+	void tile_editor::resume() {}
 
-	void terrain_editor::GenerateTerrainPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
+	void tile_editor::GenerateTerrainPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
 	{
 		auto mousePos = input.find(hades::input::PointerPosition);
 		if (mousePos != input.end() && mousePos->active)
@@ -354,17 +352,11 @@ namespace ortho_terrain
 					_terrainPlacement.replace(_tileInfo, _terrainPosition, _tile_draw_size, true);
 				}
 			}
-			else if (_editMode == editor::EditMode::TERRAIN)
-			{
-				auto vertPos = sf::Vector2f{ std::round(truePos.x / tile_size), std::round(truePos.y / tile_size) };
-				_generatePreview(_terrainInfo, static_cast<sf::Vector2u>(vertPos),
-					_terrain_draw_size);
-			}
 		}
 	}
 
 	//pastes the currently selected tile or terrain onto the map
-	void terrain_editor::PasteTerrain(const hades::InputSystem::action_set &input)
+	void tile_editor::PasteTerrain(const hades::InputSystem::action_set &input)
 	{
 		auto mouseLeft = input.find(input::PointerLeft);
 		if (mouseLeft != input.end() && mouseLeft->active)
@@ -374,14 +366,10 @@ namespace ortho_terrain
 				//place the tile in the tile map
 				_terrain.replace(_tileInfo, _terrainPosition, _tile_draw_size, true);
 			}
-			else if (_editMode == editor::EditMode::TERRAIN)
-			{
-				_terrain.replace(*_terrainInfo, _terrainPosition, _terrain_draw_size);
-			}
 		}
 	}
 
-	void terrain_editor::FillTileList(const std::vector<hades::data::UniqueId> &terrains, const std::vector<hades::data::UniqueId> &tilesets)
+	void tile_editor::FillTileList(const std::vector<hades::data::UniqueId> &terrains, const std::vector<hades::data::UniqueId> &tilesets)
 	{
 		auto settings_id = hades::data_manager->getUid(ortho_terrain::resources::terrain_settings_name);
 
@@ -422,7 +410,7 @@ namespace ortho_terrain
 
 		if (!tileContainer)
 		{
-			LOGERROR("Colony terrain_editor Gui failed, missing container for 'tiles'");
+			LOGERROR("Colony tile_editor Gui failed, missing container for 'tiles'");
 			kill();
 			return;
 		}
@@ -439,7 +427,7 @@ namespace ortho_terrain
 				if (!data_manager->exists(t.texture))
 				{
 					continue;
-					LOGERROR("terrain_editor UI skipping tile because texture is missing: " + data_manager->as_string(t.texture));
+					LOGERROR("tile_editor UI skipping tile because texture is missing: " + data_manager->as_string(t.texture));
 				}
 
 				auto texture = data_manager->getTexture(t.texture);
@@ -509,7 +497,7 @@ namespace ortho_terrain
 
 		if (!terrainContainer)
 		{
-			LOGERROR("Colony terrain_editor Gui failed, missing container for 'terrain'");
+			LOGERROR("Colony tile_editor Gui failed, missing container for 'terrain'");
 			kill();
 			return;
 		}
@@ -533,7 +521,7 @@ namespace ortho_terrain
 					if (!data_manager->exists(tile.texture))
 					{
 						continue;
-						LOGERROR("terrain_editor UI skipping tile because texture is missing: " + data_manager->as_string(tile.texture));
+						LOGERROR("tile_editor UI skipping tile because texture is missing: " + data_manager->as_string(tile.texture));
 					}
 
 					auto texture = data_manager->getTexture(terrain->tiles[0].texture);
@@ -560,58 +548,46 @@ namespace ortho_terrain
 		terrain_work.detach();
 	}
 
-	void terrain_editor::_generatePreview(ortho_terrain::resources::terrain *terrain, sf::Vector2u vert_position,
-		hades::types::uint8 size)
-	{
-		if (vert_position == _terrainPosition)
-			return;
-
-		_terrainPosition = vert_position;
-
-		_terrainPlacement = _terrain;
-		_terrainPlacement.replace(*terrain, vert_position, size);
-	}
-
-	void terrain_editor::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
+	void tile_editor::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
 	{
 		//TODO: handle case of missing terrain
-		auto terrain = hades::data_manager->get<resources::terrain>(resources::Terrains[1]);
-		const auto map = generator::Blank({ width, height }, terrain);
+		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
+		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
 		_terrain.create(map);
 
 		Mod = mod;
 		Filename = filename;
 	}
 
-	void terrain_editor::_load(const hades::types::string& mod, const hades::types::string& filename)
-	{
-		auto file = hades::files::as_string(mod, filename);
-		auto yamlRoot = YAML::Load(file);
+	//void tile_editor::_load(const hades::types::string& mod, const hades::types::string& filename)
+	//{
+	//	auto file = hades::files::as_string(mod, filename);
+	//	auto yamlRoot = YAML::Load(file);
 
-		auto saveData = Load(yamlRoot);
-		load(saveData);
+	//	auto saveData = Load(yamlRoot);
+	//	load(saveData);
 
-		Mod = mod;
-		Filename = filename;
-	}
+	//	Mod = mod;
+	//	Filename = filename;
+	//}
 
-	void terrain_editor::_save() const
-	{
-		//generate the output string
-		const auto saveData = save_terrain();
+	//void tile_editor::_save() const
+	//{
+	//	//generate the output string
+	//	const auto saveData = save_terrain();
 
-		YAML::Emitter output;
-		output << YAML::BeginMap;
-		output << saveData;
-		output << YAML::EndMap;
+	//	YAML::Emitter output;
+	//	output << YAML::BeginMap;
+	//	output << saveData;
+	//	output << YAML::EndMap;
 
-		//write over the target
-		const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
+	//	//write over the target
+	//	const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
 
-		std::ofstream file(target, std::ios_base::out);
+	//	std::ofstream file(target, std::ios_base::out);
 
-		file << output.c_str();
+	//	file << output.c_str();
 
-		LOG("Wrote map to file: " + target);
-	}
+	//	LOG("Wrote map to file: " + target);
+	//}
 }

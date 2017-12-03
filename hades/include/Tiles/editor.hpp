@@ -56,8 +56,7 @@ namespace tiles
 		//fills the 'terrain' and 'tiles' gui containers 
 		//with selectable terrain and tiles.
 		//assumes the state _gui object has been already been filled
-		void FillTileList(const std::vector<hades::data::UniqueId> &terrains,
-			const std::vector<hades::data::UniqueId> &tilesets);
+		void FillTileList(const std::vector<hades::data::UniqueId> &tilesets);
 
 		hades::types::string Mod, Filename;
 

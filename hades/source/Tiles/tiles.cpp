@@ -7,6 +7,11 @@
 
 namespace tiles
 {
+	namespace
+	{
+		static const VertexArray::size_type VertexPerTile = 6;
+	}
+
 	MapData as_mapdata(const RawMap &map)
 	{
 		const auto data = hades::data_manager;

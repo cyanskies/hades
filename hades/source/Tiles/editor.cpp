@@ -205,7 +205,7 @@ namespace tiles
 		}
 
 		//pass all available terrain to the tile picker UI
-		FillTileList(resources::Terrains, resources::Tilesets);
+		FillTileList(resources::Tilesets);
 
 		//===========
 		//add menubar
@@ -369,14 +369,14 @@ namespace tiles
 		}
 	}
 
-	void tile_editor::FillTileList(const std::vector<hades::data::UniqueId> &terrains, const std::vector<hades::data::UniqueId> &tilesets)
+	void tile_editor::FillTileList(const std::vector<hades::data::UniqueId> &tilesets)
 	{
-		auto settings_id = hades::data_manager->getUid(ortho_terrain::resources::terrain_settings_name);
+		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
 
 		if (!data_manager->exists(settings_id))
 			LOGERROR("Missing important settings for orthographic terrain");
 
-		const auto settings = hades::data_manager->get<ortho_terrain::resources::terrain_settings>(settings_id);
+		const auto settings = hades::data_manager->get<resources::tile_settings>(settings_id);
 
 		auto tile_size = settings->tile_size;
 		auto tile_button_size = tile_size * 3;
@@ -420,7 +420,7 @@ namespace tiles
 
 		std::vector<tile> used_tiles;
 
-		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size](std::vector<ortho_terrain::tile> tiles) {
+		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size](std::vector<tile> tiles) {
 			for (auto &t : tiles)
 			{
 				//skip if needed data is missing.
@@ -454,9 +454,9 @@ namespace tiles
 			{
 				//TODO: make sure error tile isn't included
 				std::lock_guard<std::mutex> lock(*data_mutex);
-				if (data_manager->exists(t) && t != settings->error_tile)
+				if (data_manager->exists(t))
 				{
-					auto tileset = data_manager->get<ortho_terrain::resources::tileset>(t);
+					auto tileset = data_manager->get<resources::tileset>(t);
 					assert(tileset);
 
 					//for each tile in the terrain, add it to the tile picker
@@ -467,85 +467,7 @@ namespace tiles
 			tileContainer->add(tileLayout);
 		});
 
-		 //================================
-		 //fill the terrain selector window
-		 //================================
-
-		static const auto terrain_size = "terrain-size";
-		auto terrainSize = _gui.get<tgui::EditBox>(terrain_size, true);
-		if (terrainSize)
-		{
-			terrainSize->connect("TextChanged", [this, terrainSize]() {
-				try
-				{
-					auto value = std::stoi(terrainSize->getText().toAnsiString());
-					if (value >= 0)
-						_terrain_draw_size = value;
-				}
-				//throws invalid_argument and out_of_range, 
-				//we can't do anything about either of these
-				//in this case we just leave the terrain edit size as it was
-				catch (...)
-				{
-					return;
-				}
-			});
-		}
-
-		static const auto terrain_container = "terrain";
-		auto terrainContainer = _gui.get<tgui::Container>(terrain_container, true);
-
-		if (!terrainContainer)
-		{
-			LOGERROR("Colony tile_editor Gui failed, missing container for 'terrain'");
-			kill();
-			return;
-		}
-
-		auto terrainLayout = tgui::HorizontalWrap::create();
-		terrainLayout->setSize("&.w", "&.h");
-		
-		std::thread terrain_work([this, terrainLayout, terrainContainer, terrains, settings, tile_button_size, data_mutex]() {
-			//place available terrain in the "terrain" container
-			for (auto t : terrains)
-			{
-				std::lock_guard<std::mutex> lock(*data_mutex);
-				if (data_manager->exists(t) && t != settings->error_tile)
-				{
-					auto terrain = data_manager->get<ortho_terrain::resources::terrain>(t);
-					assert(terrain);
-
-					auto tile = terrain->tiles[0];
-
-					//skip if needed data is missing.
-					if (!data_manager->exists(tile.texture))
-					{
-						continue;
-						LOGERROR("tile_editor UI skipping tile because texture is missing: " + data_manager->as_string(tile.texture));
-					}
-
-					auto texture = data_manager->getTexture(terrain->tiles[0].texture);
-					auto tex = tgui::Texture(texture->value, { static_cast<int>(tile.left), static_cast<int>(tile.top),
-						static_cast<int>(settings->tile_size), static_cast<int>(settings->tile_size) });
-
-					auto tileButton = tgui::Picture::create();
-					tileButton->setTexture(tex);
-					tileButton->setSize(tile_button_size, tile_button_size);
-
-					tileButton->connect("clicked", [this, terrain]() {
-						_editMode = editor::EditMode::TERRAIN;
-						_terrainInfo = terrain;
-					});
-
-					terrainLayout->add(tileButton);
-				}//if exists
-
-			}//for Terrains
-			terrainContainer->add(terrainLayout);
-		});
-
 		tile_work.detach();
-		terrain_work.detach();
 	}
 
 	void tile_editor::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)

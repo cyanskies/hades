@@ -29,7 +29,6 @@ using namespace hades;
 
 const auto tile_editor_window = "editor-window";
 const auto tile_editor_tabs = "editor-tabs";
-const auto tile_editor_layout = "editor-layout";
 
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
@@ -62,7 +61,7 @@ namespace tiles
 		if (Filename.empty())
 			generate();
 		else
-			_load(Mod, Filename);
+			;//_load(Mod, Filename);
 
 		reinit();
 	}
@@ -184,10 +183,10 @@ namespace tiles
 		//==================
 		//load the tile_editor UI
 		//==================
-		auto layout_id = data_manager->getUid(tile_editor_layout);
+		auto layout_id = data_manager->getUid(editor::tile_editor_layout);
 		if (!data_manager->exists(layout_id))
 		{
-			LOGERROR("No GUI layout exists for " + std::string(tile_editor_layout));
+			LOGERROR("No GUI layout exists for " + std::string(editor::tile_editor_layout));
 			kill();
 			return;
 		}
@@ -246,7 +245,7 @@ namespace tiles
 					load_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 				}
 				else if (menu[1] == save_menu)
-					_save();
+					;//_save();
 			}
 		});
 
@@ -278,7 +277,7 @@ namespace tiles
 
 			types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
 			types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
-			_load(mod, file);
+			//_load(mod, file);
 
 			auto load_container = _gui.get<tgui::Container>("load_dialog", true);
 			load_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
@@ -405,8 +404,7 @@ namespace tiles
 			});
 		}
 
-		static const auto tile_container = "tiles";
-		auto tileContainer = _gui.get<tgui::Container>(tile_container, true);
+		auto tileContainer = _gui.get<tgui::Container>(editor::tile_selector_panel, true);
 
 		if (!tileContainer)
 		{
@@ -452,7 +450,6 @@ namespace tiles
 			//place available tiles in the "tiles" container
 			for (auto t : tilesets)
 			{
-				//TODO: make sure error tile isn't included
 				std::lock_guard<std::mutex> lock(*data_mutex);
 				if (data_manager->exists(t))
 				{

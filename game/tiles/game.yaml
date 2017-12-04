@@ -1,5 +1,5 @@
 mod:
-    name: ortho_terrain
+    name: tiles
 
 textures:
     tiles-tex:
@@ -7,17 +7,21 @@ textures:
         height: 32
         source: "terrain/tiles-example.png"
 
-terrain-settings:
+tile-settings:
     tile-size: 8
 
-include: gui_layouts.yaml
-    
 tilesets:
-    error-terrain-tileset:
-        texture: "error-tileset-tex"
-        # a list of terrain types provided by the tileset
-        # a terrain type
-        terrain:
-            error-terrain:
-                left: 0
-                top: 0
+    example-tileset:
+        texture: tiles-tex
+        tiles:
+            top: 0
+            left: 0
+            tiles_per_row: 1
+            tile_count: 1
+    example-tileset2:
+        texture: tiles-tex
+        tiles:
+            top: 0
+            left: 8
+            tiles_per_row: 8
+            tile_count: 32

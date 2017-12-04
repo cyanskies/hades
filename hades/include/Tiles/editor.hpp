@@ -15,6 +15,9 @@ namespace tiles
 {
 	namespace editor
 	{
+		const hades::types::string tile_editor_layout = "editor-layout",
+			tile_selector_panel = "tile-selector";
+
 		//screen view height
 		// set editor_height to override this
 		const hades::types::int32 view_height = 240;

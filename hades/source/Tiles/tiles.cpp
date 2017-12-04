@@ -517,4 +517,27 @@ namespace tiles
 		for (const auto &q : newQuad)
 			a.push_back(q);
 	}
+
+	const resources::tile_settings &GetTileSettings()
+	{
+		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
+		auto data_manager = hades::data_manager;
+		if (!data_manager->exists(settings_id))
+		{
+			auto message = "tile-settings undefined.";
+			LOGERROR(message)
+			throw tile_map_exception(message);
+		}
+
+		try
+		{
+			return *hades::data_manager->get<resources::tile_settings>(settings_id);
+		}
+		catch (hades::data::resource_wrong_type&)
+		{
+			auto message = "The UID for the tile settings has been reused for another resource type";
+			LOGERROR(message);
+			throw tile_map_exception(message);
+		}
+	}
 }

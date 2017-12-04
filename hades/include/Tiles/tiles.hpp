@@ -90,6 +90,8 @@ namespace tiles
 		TileArray _tiles;
 		tile_count_t _vertex_width;
 	};
+	//throws tile_map_exception if the settings cannot be retrieved for any reason.
+	const resources::tile_settings &GetTileSettings();
 }
 
 #endif // !TILES_TILES_HPP

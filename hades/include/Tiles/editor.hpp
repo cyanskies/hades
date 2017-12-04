@@ -9,7 +9,6 @@
 
 //a simple tile editor
 //this allows the creation of tile levels with objects placed on them
-//TODO: object support
 
 namespace tiles
 {
@@ -22,9 +21,10 @@ namespace tiles
 		// set editor_height to override this
 		const hades::types::int32 view_height = 240;
 
-		enum class EditMode {
+		enum EditMode {
 			NONE, //no editing
 			TILE, //draw a specific tile, no cleanup
+			TILE_EDIT_END
 		};
 	}
 
@@ -32,51 +32,57 @@ namespace tiles
 	{
 	public:
 		tile_editor() = default;
-		//generate random map if not already
-		void init() override; 
+		virtual void init() override; 
 
 		void generate();
 		
 		//void load(const OrthoSave&);
 		//OrthoSave save_terrain() const;
 		
-		bool handleEvent(const hades::Event &windowEvent) override; 
-		void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
-		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
+		virtual bool handleEvent(const hades::Event &windowEvent) override; 
+		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
+		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
-		void cleanup() override;
+		virtual void cleanup() override;
 						
-		void reinit() override;
-		void pause() override;
-		void resume() override;
+		virtual void reinit() override;
+		virtual void pause() override;
+		virtual	void resume() override;
 
 	protected:
+		//==initialisation functions==
+		//loads the gui from the editor-layout resource
+		//then sets up all the generic UI elements
+		void CreateGui();
+		//fills the 'tiles' gui containers 
+		//with selectable tiles.
+		void FillTileSelector();
 
-		//generates the current terrain that will be pasted
-		void GenerateTerrainPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
-		//pastes the currently selected tile or terrain onto the map
-		void PasteTerrain(const hades::InputSystem::action_set&);
-		//fills the 'terrain' and 'tiles' gui containers 
-		//with selectable terrain and tiles.
-		//assumes the state _gui object has been already been filled
-		void FillTileList(const std::vector<hades::data::UniqueId> &tilesets);
-
+		//==map editing functions==
+		//generates the current tile that will be pasted
+		void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
+		//check and draw the new tiles over the current map
+		void TryDraw(const hades::InputSystem::action_set&);
+		
+		//map file info
 		hades::types::string Mod, Filename;
+
+		//editing variables
+		using EditMode_t = hades::types::uint8;
+		EditMode_t EditMode;
+		const resources::tile_settings *TileSettings;
+
+		//core map variables
+		MutableTileMap Map;
 
 	private:
 		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
 		void _load(const hades::types::string&, const hades::types::string&);
 		void _save() const;
 
-		//editor settings
-		editor::EditMode _editMode = editor::EditMode::NONE;
-		resources::tile_settings *_tile_settings;
-		//default save is a file called new.lvl that stored alongside the mod archives
-		bool _loaded = false;
-
 		//preview drawing variables
-		sf::Vector2u _terrainPosition;
-		MutableTileMap _terrainPlacement;
+		sf::Vector2u _tilePosition;
+		MutableTileMap _tilePreview;
 
 		//tile placement mode variables
 		tile _tileInfo;
@@ -84,7 +90,6 @@ namespace tiles
 
 		//core map drawing variables
 		sf::View _gameView;
-		MutableTileMap _terrain;
 	};
 }
 

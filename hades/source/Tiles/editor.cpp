@@ -41,27 +41,9 @@ namespace tiles
 {
 	void tile_editor::init()
 	{
-		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
+		TileSettings = &GetTileSettings();
 
-		if (!data_manager->exists(settings_id))
-			LOGERROR("Missing important settings for orthographic terrain");
-
-		try
-		{
-			_tile_settings = hades::data_manager->get<resources::tile_settings>(settings_id);
-		}
-		catch (data::resource_null &e)
-		{
-			LOGERROR("Tile Settings hasn't been defined: " + std::string(e.what()));
-			kill();
-			return;
-		}
-
-		//_filename is empty if the editor is created without a target file to open
-		if (Filename.empty())
-			generate();
-		else
-			;//_load(Mod, Filename);
+		generate();
 
 		reinit();
 	}
@@ -71,7 +53,7 @@ namespace tiles
 		//TODO: throw if no tiles have been registered
 		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		_terrain.create(map);
+		Map.create(map);
 	}
 
 	/*void tile_editor::load(const OrthoSave& data)
@@ -123,7 +105,7 @@ namespace tiles
 				_gameView.move({ 0.f, static_cast<float>(scroll_rate) });
 
 			auto viewPosition = _gameView.getCenter();
-			auto terrainSize = _terrain.getLocalBounds();
+			auto terrainSize = Map.getLocalBounds();
 			//clamp the gameview after moving it
 			if (viewPosition.x < terrainSize.left)
 				viewPosition.x = terrainSize.left;
@@ -137,21 +119,21 @@ namespace tiles
 
 			_gameView.setCenter(viewPosition);
 
-			if (_editMode != editor::EditMode::NONE)
-				GenerateTerrainPreview(window, input);
+			if (EditMode != editor::EditMode::NONE)
+				GenerateDrawPreview(window, input);
 		}
 
-		if (_editMode != editor::EditMode::NONE)
-			PasteTerrain(input);
+		if (EditMode != editor::EditMode::NONE)
+			TryDraw(input);
 	}
 	
 	void tile_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	{
 		target.setView(_gameView);
-		target.draw(_terrain);
+		target.draw(Map);
 
-		if (_editMode != editor::EditMode::NONE)
-			target.draw(_terrainPlacement);
+		if (EditMode != editor::EditMode::NONE)
+			target.draw(_tilePreview);
 	}
 
 	void tile_editor::cleanup(){}
@@ -174,6 +156,14 @@ namespace tiles
 		_gameView.setSize(*cheight * screenRatio, static_cast<float>(*cheight));
 		_gameView.setCenter({ 100.f,100.f });
 
+		CreateGui();
+	}
+
+	void tile_editor::pause() {}
+	void tile_editor::resume() {}
+
+	void tile_editor::CreateGui()
+	{
 		//====================
 		//set up the tile_editor UI
 		//====================
@@ -204,7 +194,7 @@ namespace tiles
 		}
 
 		//pass all available terrain to the tile picker UI
-		FillTileList(resources::Tilesets);
+		FillTileSelector();
 
 		//===========
 		//add menubar
@@ -311,7 +301,7 @@ namespace tiles
 
 			auto value_x = std::stoi(size_x_str.toAnsiString());
 			auto value_y = std::stoi(size_y_str.toAnsiString());
-			
+
 			if (value_x < 1)
 				value_x = 1;
 
@@ -326,50 +316,43 @@ namespace tiles
 		});
 	}
 
-	void tile_editor::pause() {}
-	void tile_editor::resume() {}
-
-	void tile_editor::GenerateTerrainPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
+	void tile_editor::GenerateDrawPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
 	{
 		auto mousePos = input.find(hades::input::PointerPosition);
-		if (mousePos != input.end() && mousePos->active)
+		if (EditMode == editor::EditMode::TILE && mousePos != input.end() && mousePos->active)
 		{
-			const auto tile_size = _tile_settings->tile_size;
+			const auto tile_size = TileSettings->tile_size;
 
 			auto truePos = window.mapPixelToCoords({ mousePos->x_axis, mousePos->y_axis }, _gameView);
 			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
 
-			if (_editMode == editor::EditMode::TILE)
+			auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
+				static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
+			auto position = sf::Vector2u(snapPos) / tile_size;
+			if (_tilePosition != position)
 			{
-				auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
-					static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
-				auto position = sf::Vector2u(snapPos) / tile_size;
-				if (_terrainPosition != position)
-				{
-					_terrainPosition = position;
-					_terrainPlacement = _terrain;
-					_terrainPlacement.replace(_tileInfo, _terrainPosition, _tile_draw_size, true);
-				}
+				_tilePosition = position;
+				_tilePreview = Map;
+				_tilePreview.replace(_tileInfo, _tilePosition, _tile_draw_size, true);
 			}
 		}
 	}
 
 	//pastes the currently selected tile or terrain onto the map
-	void tile_editor::PasteTerrain(const hades::InputSystem::action_set &input)
+	void tile_editor::TryDraw(const hades::InputSystem::action_set &input)
 	{
 		auto mouseLeft = input.find(input::PointerLeft);
-		if (mouseLeft != input.end() && mouseLeft->active)
+		if (EditMode == editor::EditMode::TILE && mouseLeft != input.end() && mouseLeft->active)
 		{
-			if (_editMode == editor::EditMode::TILE)
-			{
-				//place the tile in the tile map
-				_terrain.replace(_tileInfo, _terrainPosition, _tile_draw_size, true);
-			}
+			//place the tile in the tile map
+			Map.replace(_tileInfo, _tilePosition, _tile_draw_size, true);
 		}
 	}
 
-	void tile_editor::FillTileList(const std::vector<hades::data::UniqueId> &tilesets)
+	void tile_editor::FillTileSelector()
 	{
+		const auto &tilesets = resources::Tilesets;
+
 		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
 
 		if (!data_manager->exists(settings_id))
@@ -437,7 +420,7 @@ namespace tiles
 				tileButton->setSize(tile_button_size, tile_button_size);
 
 				tileButton->connect("clicked", [this, t, tile_size]() {
-					_editMode = editor::EditMode::TILE;
+					EditMode = editor::EditMode::TILE;
 					_tileInfo = t;
 				});
 
@@ -472,7 +455,7 @@ namespace tiles
 		//TODO: handle case of missing terrain
 		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		_terrain.create(map);
+		Map.create(map);
 
 		Mod = mod;
 		Filename = filename;

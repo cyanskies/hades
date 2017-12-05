@@ -33,24 +33,23 @@ namespace tiles
 				Resizable = true;
 				Title = "ToolBox";
 
-				ScrollablePanel {
-					VerticalLayout {
+				SimpleVerticalLayout {
+					Position = (5, 0);
+
+					Label {
+						Text = "Tiles";
+					}
+
+					Label {
+						Text = "Size:";
+					}
+
+					EditBox."draw-size" {
+						Size = ("&.w - 10", 25);
+					}
+
+					Panel."tile-selector" { 
 						Size = ("&.w", "&.h");
-
-						Label {
-							Text = "Tiles";
-						}
-
-						Label {
-							Text = "Size:";
-						}
-
-						EditBox."draw-size" {
-						}
-
-						Panel."tile-selector"{
-							Size = ("&.w", "&.h");
-						}  
 					}
 				}
 			}

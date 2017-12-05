@@ -384,17 +384,14 @@ namespace tiles
 
 		if (!tileContainer)
 		{
-			LOGERROR("Colony tile_editor Gui failed, missing container for 'tiles'");
+			LOGERROR("tile_editor Gui failed, missing container for 'tiles'");
 			kill();
 			return;
 		}
 
 		auto tileLayout = tgui::HorizontalWrap::create();
-		tileLayout->setSize("&.w", "&.h");
 
-		std::vector<tile> used_tiles;
-
-		auto make_tiles = [this, &used_tiles, tileLayout, tile_size, tile_button_size](std::vector<tile> tiles) {
+		auto make_tiles = [this, tileLayout, tile_size, tile_button_size](std::vector<tile> tiles) {
 			for (auto &t : tiles)
 			{
 				//skip if needed data is missing.

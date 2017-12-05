@@ -32,6 +32,8 @@ set(HADES_SRC
 	System.cpp
 	TimerManager.cpp
 	Types.cpp
+	Gui/Gui.cpp
+	Gui/SimpleVerticalLayout.cpp
 	OrthoTerrain/editor.cpp
 	OrthoTerrain/serialise.cpp
 	OrthoTerrain/terrain.cpp
@@ -44,6 +46,10 @@ set(HADES_SRC
 	Tiles/serialise.cpp
 	Tiles/tiles.cpp
 )
+
+source_group("Gui" FILES
+	Gui/Gui.cpp
+	Gui/SimpleVerticalLayout.cpp)
 
 source_group("Tiles" FILES
 	Tiles/editor.cpp

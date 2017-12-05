@@ -18,6 +18,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
+#include "Gui/Gui.hpp"
 
 namespace hades
 {
@@ -96,6 +97,9 @@ namespace hades
 		data_manager = &_dataMan;
 
 		resourceTypes(_dataMan);
+
+		//register custom TGUI widgets
+		gui::RegisterGuiElements();
 
 		//load defualt console settings
 		registerVariables(&_console);

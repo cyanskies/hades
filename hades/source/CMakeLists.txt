@@ -41,6 +41,7 @@ set(HADES_SRC
 	Tiles/editor.cpp
 	Tiles/generator.cpp
 	Tiles/resources.cpp
+	Tiles/serialise.cpp
 	Tiles/tiles.cpp
 )
 
@@ -48,6 +49,7 @@ source_group("Tiles" FILES
 	Tiles/editor.cpp
 	Tiles/generator.cpp
 	Tiles/resources.cpp
+	Tiles/serialise.cpp
 	Tiles/tiles.cpp)
 
 source_group("OrthoTerrain" FILES

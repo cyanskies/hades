@@ -36,8 +36,8 @@ namespace tiles
 
 		void generate();
 		
-		//void load(const OrthoSave&);
-		//OrthoSave save_terrain() const;
+		void load_map(const MapData&);
+		MapData save_map() const;
 		
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;

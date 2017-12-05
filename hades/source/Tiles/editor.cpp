@@ -23,6 +23,7 @@
 
 #include "Tiles/generator.hpp"
 #include "Tiles/resources.hpp"
+#include "Tiles/serialise.hpp"
 #include "Tiles/tiles.hpp"
 
 using namespace hades;
@@ -56,23 +57,15 @@ namespace tiles
 		Map.create(map);
 	}
 
-	/*void tile_editor::load(const OrthoSave& data)
+	void tile_editor::load_map(const MapData& data)
 	{
-		std::vector<hades::data::UniqueId> tilesets;
-		tilesets.reserve(data.tilesets.size());
-
-		for (const auto &tileset : data.tilesets)
-			tilesets.push_back(hades::data_manager->getUid(std::get<types::string>(tileset)));
-
-		auto map_data = CreateMapData(data);
-		_terrain.create(map_data);
-		_loaded = true;
+		Map.create(data);
 	}
 
-	OrthoSave tile_editor::save_terrain() const
+	MapData tile_editor::save_map() const
 	{
-		return CreateOrthoSave(_terrain.getMap());
-	}*/
+		return Map.getMap();
+	}
 
 	bool tile_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
@@ -132,7 +125,7 @@ namespace tiles
 		target.setView(_gameView);
 		target.draw(Map);
 
-		if (EditMode != editor::EditMode::NONE)
+		if (EditMode == editor::EditMode::TILE)
 			target.draw(_tilePreview);
 	}
 
@@ -366,7 +359,7 @@ namespace tiles
 		//=============================
 		//fill the tile selector window
 		//=============================
-		static const auto tilesize_label = "tile-size";
+		static const auto tilesize_label = "draw-size";
 		auto tileSize = _gui.get<tgui::EditBox>(tilesize_label, true);
 		if (tileSize)
 		{
@@ -461,35 +454,37 @@ namespace tiles
 		Filename = filename;
 	}
 
-	//void tile_editor::_load(const hades::types::string& mod, const hades::types::string& filename)
-	//{
-	//	auto file = hades::files::as_string(mod, filename);
-	//	auto yamlRoot = YAML::Load(file);
+	void tile_editor::_load(const hades::types::string& mod, const hades::types::string& filename)
+	{
+		auto file = hades::files::as_string(mod, filename);
+		auto yamlRoot = YAML::Load(file);
 
-	//	auto saveData = Load(yamlRoot);
-	//	load(saveData);
+		auto saveData = Load(yamlRoot);
+		auto map_data = CreateMapData(saveData);
+		load_map(map_data);
 
-	//	Mod = mod;
-	//	Filename = filename;
-	//}
+		Mod = mod;
+		Filename = filename;
+	}
 
-	//void tile_editor::_save() const
-	//{
-	//	//generate the output string
-	//	const auto saveData = save_terrain();
+	void tile_editor::_save() const
+	{
+		//generate the output string
+		const auto map_data = save_map();
+		const auto saveData = CreateMapSaveData(map_data);
 
-	//	YAML::Emitter output;
-	//	output << YAML::BeginMap;
-	//	output << saveData;
-	//	output << YAML::EndMap;
+		YAML::Emitter output;
+		output << YAML::BeginMap;
+		output << saveData;
+		output << YAML::EndMap;
 
-	//	//write over the target
-	//	const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
+		//write over the target
+		const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
 
-	//	std::ofstream file(target, std::ios_base::out);
+		std::ofstream file(target, std::ios_base::out);
 
-	//	file << output.c_str();
+		file << output.c_str();
 
-	//	LOG("Wrote map to file: " + target);
-	//}
+		LOG("Wrote map to file: " + target);
+	}
 }

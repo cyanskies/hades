@@ -333,11 +333,9 @@ namespace tiles
 		using namespace resources;
 		auto settings_id = data->getUid(tile_settings_name);
 
-		if (!data->exists(settings_id))
-			throw tile_map_exception("Missing tile settings resource");
+		auto tile_settings = GetTileSettings();
 
-		auto settings = data->get<tile_settings>(settings_id);
-		auto tile_size = settings->tile_size;
+		_tile_size = tile_settings.tile_size;
 
 		TileMap::create(map_data);
 	}

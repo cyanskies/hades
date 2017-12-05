@@ -76,7 +76,7 @@ namespace tiles
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const tile&, const sf::Vector2u &position, hades::types::uint8 amount = 0, bool updateVertex = false);
+		void replace(const tile&, const sf::Vector2u &position, hades::types::uint8 amount = 0);
 
 		MapData getMap() const;
 

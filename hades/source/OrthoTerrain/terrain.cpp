@@ -16,8 +16,13 @@ namespace ortho_terrain
 {
 	namespace
 	{
-		static const VertexArray::size_type VertexPerTile = 6;
+		static const tiles::VertexArray::size_type VertexPerTile = 6;
 	}
+
+	using tiles::MapData;
+	using tiles::tile_count_t;
+	using tiles::TileArray;
+	using tiles::tile;
 
 	MapData ConvertToTiles(const TerrainVertex&, tile_count_t vertexPerRow)
 	{
@@ -26,7 +31,7 @@ namespace ortho_terrain
 		return std::make_tuple<TileArray, tile_size_t>(TileArray(), 0);
 	}
 
-	VertexData ConvertToVertex(const MapData& map)
+	VertexMapData ConvertToVertex(const MapData& map)
 	{
 		auto &tiles = std::get<TileArray>(map);
 		auto tilesPerRow = std::get<tile_count_t>(map);
@@ -56,171 +61,19 @@ namespace ortho_terrain
 		return std::make_tuple(out, ++tilesPerRow);
 	}
 
-	TileMap::TileMap(const MapData &map)
+	MutableTerrainMap::MutableTerrainMap(const MapData &map)
 	{
 		create(map);
 	}
 
-	std::array<sf::Vertex, VertexPerTile> CreateTile(hades::types::int32 left, hades::types::int32 top, hades::types::int32 texLeft, hades::types::int32 texTop, hades::types::uint16 tile_size)
-	{
-		std::array<sf::Vertex, VertexPerTile> output;
-		// top-left
-		output[0] = { { static_cast<float>(left), static_cast<float>(top) }, { static_cast<float>(texLeft), static_cast<float>(texTop) } };
-		//top-right
-		output[1] = { { static_cast<float>(left + tile_size), static_cast<float>(top) }, { static_cast<float>(texLeft + tile_size), static_cast<float>(texTop) } };
-		//bottom-right
-		output[2] = { { static_cast<float>(left + tile_size), static_cast<float>(top + tile_size) },
-		{ static_cast<float>(texLeft + tile_size), static_cast<float>(texTop + tile_size) } };
-		//bottom-left
-		output[3] = { { static_cast<float>(left), static_cast<float>(top + tile_size) }, { static_cast<float>(texLeft), static_cast<float>(texTop + tile_size) } };
-		output[4] = output[0];
-		output[5] = output[2];
-
-		return output;
-	}
-
-	void TileMap::create(const MapData &map_data)
-	{
-		auto &tiles = std::get<TileArray>(map_data);
-		auto width = std::get<tile_count_t>(map_data);
-
-		//generate a drawable array
-		Chunks.clear();
-
-		auto settings = tiles::GetTileSettings();
-		auto tile_size = settings.tile_size;
-
-		tile_count_t count = 0;
-
-		struct Tile {
-			hades::types::int32 x, y;
-			tile t;
-		};
-
-		std::vector<std::pair<hades::resources::texture*, Tile>> map;
-		std::vector<hades::resources::texture*> tex_cache;
-		for (auto &t : tiles)
-		{
-			if (t.terrain != hades::data::UniqueId::Zero)
-			{
-				hades::resources::texture* texture = nullptr;
-
-				for (auto &c : tex_cache)
-				{
-					if (c->id == t.texture)
-						texture = c;
-				}
-
-				if (!texture)
-				{
-					texture = hades::data_manager->getTexture(t.texture);
-					tex_cache.push_back(texture);
-				}
-
-				assert(texture);
-
-				hades::types::int32 x, y;
-
-				std::tie(x, y) = tiles::GetGridPosition(count, width, tile_size);
-
-				Tile ntile;
-				ntile.x = x;
-				ntile.y = y;
-				ntile.t = t;
-
-				map.push_back(std::make_pair(texture, ntile));
-			}
-			count++;
-		}
-
-		//sort the tiles by texture;
-		std::sort(map.begin(), map.end(), [](const auto &lhs, const auto &rhs) {
-			return lhs.first < rhs.first;
-		});
-
-		auto current_tex = map.front().first;
-		VertexArray array;
-
-		for (auto &t : map)
-		{
-			//change array
-			if (t.first != current_tex)
-			{
-				Chunks.push_back(std::make_pair(current_tex, array));
-				current_tex = t.first;
-				array.clear();
-			}
-
-			//set vertex position and tex coordinates
-			auto vertex_tile = CreateTile(t.second.x, t.second.y, t.second.t.left, t.second.t.top, tile_size);
-			for(const auto& v : vertex_tile)
-				array.push_back(v);
-		}
-
-		Chunks.push_back(std::make_pair(current_tex, array));
-	}
-
-	void TileMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
-	{
-		for (auto &s : Chunks)
-		{
-			states.texture = &s.first->value;
-			states.transform * getTransform();
-			target.draw(s.second.data(), s.second.size(), sf::Triangles, states);
-		}
-	}
-
-	sf::FloatRect TileMap::getLocalBounds() const
-	{
-		if (Chunks.empty() || Chunks[0].second.empty())
-			return sf::FloatRect();
-
-		const auto &first = Chunks[0].second[0].position;
-
-		float top = first.y,
-			left = first.x, 
-			right = first.x, 
-			bottom = first.y;
-
-		for (const auto &varray : Chunks)
-		{
-			for (const auto &v : varray.second)
-			{
-				if (v.position.x > right)
-					right = v.position.x;
-				else if (v.position.x < left)
-					left = v.position.x;
-
-				if (v.position.y > bottom)
-					bottom = v.position.y;
-				else if (v.position.y < top)
-					top = v.position.y;
-			}
-		}
-
-		return sf::FloatRect(left, top, right - left, bottom - top);
-	}
-
-	EditMap::EditMap(const MapData &map)
-	{
-		create(map);
-	}
-
-	void EditMap::create(const MapData &map_data)
+	void MutableTerrainMap::create(const MapData &map_data)
 	{
 		//create the vertex map
 		auto vert = ConvertToVertex(map_data);
 		_vertex = std::get<TerrainVertex>(vert);
 		_vertex_width = std::get<tile_count_t>(vert);
 
-		//store the tiles and width
-		_tiles = std::get<TileArray>(map_data);
-		_width = std::get<tile_count_t>(map_data);
-
-		auto settings = tiles::GetTileSettings();
-		_tile_size = settings.tile_size;
-
-		TileMap::create(map_data);
+		MutableTileMap::create(map_data);
 	}
 
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2u &position, hades::types::uint8 amount)
@@ -304,7 +157,7 @@ namespace ortho_terrain
 		return changed;
 	}
 
-	void EditMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
+	void MutableTerrainMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
 	{	
 		if (t.terrain == hades::data::UniqueId::Zero)
 			return;
@@ -404,7 +257,7 @@ namespace ortho_terrain
 		}
 	}
 
-	void EditMap::replace(const resources::terrain& terrain, const sf::Vector2u &position, hades::types::uint8 amount)
+	void MutableTerrainMap::replace(const resources::terrain& terrain, const sf::Vector2u &position, hades::types::uint8 amount)
 	{
 		auto positions = AllPositions(position, amount);
 
@@ -438,13 +291,8 @@ namespace ortho_terrain
 
 		_cleanTransitions({ smallest_x, smallest_y }, { largest_x - smallest_x, largest_y - smallest_y });
 	}
-
-	MapData EditMap::getMap() const
-	{
-		return { _tiles, _width };
-	}
-
-	void EditMap::_cleanTransitions(const sf::Vector2u &position, sf::Vector2u size)
+	
+	void MutableTerrainMap::_cleanTransitions(const sf::Vector2u &position, sf::Vector2u size)
 	{
 		//for each vertex in the area
 		std::vector<sf::Vector2u> vert_list;
@@ -488,60 +336,6 @@ namespace ortho_terrain
 			replace(tile, static_cast<sf::Vector2u>(pos));
 		}
 	}
-	
-	void EditMap::_removeTile(VertexArray &a, const sf::Vector2u &position)
-	{
-		auto pixelPos = position * _tile_size;
-		VertexArray::const_iterator target = a.cend();
-
-		for (auto iter = a.cbegin(); iter != a.cend(); iter += VertexPerTile)
-		{
-			if (pixelPos == static_cast<sf::Vector2u>(iter->position))
-			{
-				target = iter;
-				break;
-			}
-		}
-
-		a.erase(target, target + VertexPerTile);
-	}
-
-	void EditMap::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
-	{
-		auto &vertArray = a;
-		std::size_t firstVert = vertArray.size();
-		auto vertPosition = position * _tile_size;
-		for (std::size_t i = 0; i < firstVert; i += VertexPerTile)
-		{
-			if (static_cast<sf::Vector2u>(vertArray[i].position) == vertPosition)
-			{
-				firstVert = i;
-				break;
-			}
-		}
-
-		//vertex position not found
-		//this is a big error
-		if (firstVert == vertArray.size())
-		{
-			//TODO: log, throw logic_error
-			assert(false);
-			return;
-		}
-
-		auto newQuad = CreateTile(vertPosition.x, vertPosition.y, t.left, t.top, _tile_size);
-		for (auto i = firstVert; i < firstVert + VertexPerTile; ++i)
-			vertArray[i] = newQuad[i - firstVert];
-	}
-
-	void EditMap::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
-	{
-		auto pixelPos = position * _tile_size;
-		auto newQuad = CreateTile(pixelPos.x, pixelPos.y, t.left, t.top, _tile_size);
-
-		for (const auto &q : newQuad)
-			a.push_back(q);
-	}
 
 	const resources::terrain_settings &GetTerrainSettings()
 	{
@@ -584,6 +378,6 @@ namespace ortho_terrain
 		if (it == std::end(TerrainLookup))
 			return terrain_info();
 
-		return *it;
+		return it->second;
 	}
 }

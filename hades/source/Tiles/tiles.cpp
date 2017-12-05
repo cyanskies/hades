@@ -385,7 +385,7 @@ namespace tiles
 		return changed;
 	}
 
-	void MutableTileMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
+	void MutableTileMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount)
 	{
 		auto positions = AllPositions(position, amount);
 

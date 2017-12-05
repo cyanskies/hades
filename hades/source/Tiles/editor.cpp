@@ -405,7 +405,7 @@ namespace tiles
 				auto tex = tgui::Texture(texture->value, { static_cast<int>(t.left), static_cast<int>(t.top),
 					static_cast<int>(tile_size), static_cast<int>(tile_size) });
 
-				auto tileButton = tgui::Picture::create();
+				auto tileButton = tgui::Picture::create(tex);
 				tileButton->setSize(tile_button_size, tile_button_size);
 
 				tileButton->onClick.connect([this, t, tile_size]() {

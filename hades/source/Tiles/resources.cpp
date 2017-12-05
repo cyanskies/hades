@@ -32,24 +32,25 @@ namespace tiles
 				Visible = true;
 				Resizable = true;
 				Title = "ToolBox";
+				TitleButtons = None;
 
-				SimpleVerticalLayout {
-					Position = (5, 0);
+				ScrollablePanel {
+					SimpleVerticalLayout {
+						Label {
+							Text = "Tiles";
+						}
 
-					Label {
-						Text = "Tiles";
-					}
+						Label {
+							Text = "Size:";
+						}
 
-					Label {
-						Text = "Size:";
-					}
+						EditBox."draw-size" {
+							Size = ("&.w - 15", 25);
+						}
 
-					EditBox."draw-size" {
-						Size = ("&.w - 10", 25);
-					}
-
-					Panel."tile-selector" { 
-						Size = ("&.w", "&.h");
+						Panel."tile-selector" { 
+							Size = ("&.w - 5", "&.h");
+						}
 					}
 				}
 			}
@@ -57,7 +58,6 @@ namespace tiles
 			ChildWindow."load_dialog" {
 				Position = (200, 200);
 				Title = "Load...";
-
 				Label."load_mod_label" {
 					Position = (5, 5);
 					Text = "Mod:";
@@ -65,13 +65,13 @@ namespace tiles
 
 				EditBox."load_mod" {
 					Position = (5, "load_mod_label.y + load_mod_label.h + 5");
-					Size = (100, "h");
+					Size = (100, 30);
 					DefaultText = "./";
 				}
 
 				EditBox."load_filename" {
 					Position = ("load_mod.x + load_mod.w + 10", "load_mod.y");
-					Size = (100, "h");
+					Size = (100, 30);
 					DefaultText = "new.lvl";
 				}
 
@@ -99,14 +99,14 @@ namespace tiles
 
 				EditBox."new_mod" {
 					Position = (5, "new_mod_label.x + new_mod_label.h + 10");
-					Size = (100, "h");
+					Size = (100, 30);
 					DefaultText = "./";
                 
 				}
 
 				EditBox."new_filename" {
 					Position = ("new_mod.x + new_mod.w + 10", "new_mod.y");
-					Size = (100, "h");
+					Size = (100, 30);
 					DefaultText = "new.lvl";
 				}
 
@@ -122,7 +122,7 @@ namespace tiles
 
 				EditBox."new_sizex" {
 					Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
-					Size = (50, "h");
+					Size = (50, 30);
 					DefaultText = "25";
 				}
 
@@ -133,7 +133,7 @@ namespace tiles
 
 				EditBox."new_sizey" {
 					Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
-					Size = (50, "h");
+					Size = (50, 30);
 					DefaultText = "25";
 				}
 

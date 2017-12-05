@@ -106,16 +106,14 @@ namespace ortho_terrain
 
 			const types::string resource_type = "terrain";
 
-			std::vector<tiles::tile> out;
+			terrain* t = nullptr;
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, terrainNode.IsMap()))
-				return out;
+				return t;
 
 			auto terrain_str = terrainNode.as<hades::types::string>();
 			
-			auto id = data->getUid(name);
-
-			terrain* t = nullptr;
+			auto id = data->getUid(terrain_str);
 
 			if (!data->exists(id))
 			{
@@ -137,17 +135,19 @@ namespace ortho_terrain
 				{
 					//name is already used for something else, this cannnot be loaded
 					auto modname = data->as_string(mod);
-					LOGERROR("Failed to get terrain with id: " + name + ", in mod: " + modname + ", name has already been used for a different resource type.");
+					LOGERROR("Failed to get terrain with id: " + terrain_str + ", in mod: " + modname + ", name has already been used for a different resource type.");
 					//skip the rest of this loop and check the next node
-					return tiles::tile();
+					return nullptr;
 				}
 			}
 
 			t->mod = mod;
-			t->tiles.push_back(ntile);
+			return t;
 		}
 
-		std::vector<tiles::tile> parseLayout(terrain_transition* transitions, data::UniqueId texture, data::UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order, tile_size_t left, tile_size_t top, tile_size_t columns)
+		std::vector<tiles::tile> parseLayout(terrain_transition* transitions, data::UniqueId texture,
+			data::UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order, 
+			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits)
 		{
 			std::vector<tiles::tile> out;
 
@@ -165,25 +165,30 @@ namespace ortho_terrain
 				//ofset by the position given
 				ntile.left += left;
 				ntile.top += top;
-				ntile.type = static_cast<transition2::TransitionTypes>(t);
 
-				if (ntile.type == transition2::NONE)
-					ntile.terrain = terrain1;
-				else if (ntile.type == transition2::ALL)
+				std::copy(std::begin(traits), std::end(traits), std::back_inserter(ntile.traits));
+
+				terrain_info info;
+				info.type = static_cast<transition2::TransitionTypes>(t);
+
+				if (info.type == transition2::NONE)
+					info.terrain = terrain1;
+				else if (info.type == transition2::ALL)
 				{
-					ntile.type = transition2::NONE;
-					ntile.terrain = terrain2;
+					info.type = transition2::NONE;
+					info.terrain = terrain2;
 				}
 				else
 				{
-					ntile.terrain = terrain1;
-					ntile.terrain2 = terrain2;
+					info.terrain = terrain1;
+					info.terrain2 = terrain2;
 				}
 				
-				auto &transition_vector = GetTransition(ntile.type, *transitions);
+				auto &transition_vector = GetTransition(info.type, *transitions);
 				transition_vector.push_back(ntile);
 
 				out.push_back(ntile);
+				TerrainLookup.insert({ ntile, info });
 			}
 
 			return out;
@@ -199,141 +204,120 @@ namespace ortho_terrain
 					//layout: ascending
 					//left:
 					//top:
-					//width: <// how many tiles in each coloumn of the layout; default: 4
+					//width: <// how many tiles in each coloumn of the layout;
 					//traits:
 
-			
-			std::vector<tiles::tile> out;
+			auto v = transitions;
+			const auto name = "n/a";
+			hades::data::UniqueId id;
 
-			if (!yaml_error(transition2_resource_type, "n/a", "n/a", "map", mod, transitions.IsMap()))
-				return out;
+			auto terrain1_id = yaml_get_uid(v, transition2_resource_type, name, "terrain1", mod);
+			auto terrain2_id = yaml_get_uid(v, transition2_resource_type, name, "terrain2", mod);
 
-			for (auto &n : transitions)
+			terrain_transition* t = nullptr;
+
+			if (!Transitions.empty())
 			{
-				auto namenode = n.first;
-				auto name = namenode.as<types::string>();
-				auto v = n.second;
-
-				auto id = data->getUid(name);
-
-				auto terrain1_id = data::UniqueId::Zero;
-				auto terrain1 = v["terrain1"];
-				if (terrain1.IsDefined() && yaml_error(transition2_resource_type, name, "terrain1", "scalar", mod, terrain1.IsScalar()))
-					terrain1_id = data->getUid(terrain1.as<types::string>());
-
-				auto terrain2_id = data::UniqueId::Zero;
-				auto terrain2 = v["terrain2"];
-				if (terrain2.IsDefined() && yaml_error(transition2_resource_type, name, "terrain2", "scalar", mod, terrain2.IsScalar()))
-					terrain2_id = data->getUid(terrain2.as<types::string>());
-
-				terrain_transition* t = nullptr;
-
-				if (!Transitions.empty())
+				//search transition list for a matching candidate
+				auto either = [](data::UniqueId first, data::UniqueId second, terrain_transition* t)->bool
 				{
-					//search transition list for a matching candidate
-					auto either = [](data::UniqueId first, data::UniqueId second, terrain_transition* t)->bool
-					{
-						if ((first == t->terrain1 &&
-							second == t->terrain2) ||
-							(first == t->terrain2 &&
-								second == t->terrain1))
-							return true;
-						else
-							return false;
-					};
+					if ((first == t->terrain1 &&
+						second == t->terrain2) ||
+						(first == t->terrain2 &&
+							second == t->terrain1))
+						return true;
+					else
+						return false;
+				};
 
-					for (auto &t_id : Transitions)
-					{
-						auto *trans = data->get<terrain_transition>(t_id);
-
-						if (either(terrain1_id, terrain2_id, trans))
-							t = trans;
-					}
-				}
-
-				//create if no matching transition exists
-				if (t == nullptr)
+				for (auto &t_id : Transitions)
 				{
-					t = FindOrCreate<terrain_transition>(id, mod, data);
-					t->terrain1 = terrain1_id;
-					t->terrain2 = terrain2_id;
-					Transitions.push_back(t->id);
+					auto *trans = data->get<terrain_transition>(t_id);
+
+					if (either(terrain1_id, terrain2_id, trans))
+						t = trans;
 				}
-
-				//if we fail to create then skip
-				if (t == nullptr)
-					continue;
-
-				terrain1_id = t->terrain1;
-				terrain2_id = t->terrain2;
-				t->mod = mod;
-
-				bool custom_layout = false;
-				auto layout = v["layout"];
-
-				std::vector<tile_size_t> layout_order;
-				
-				using namespace transition2;
-
-				static const std::vector<tile_size_t> ascending = 
-				{ TOP_RIGHT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT,
-					BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
-					TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT, TOP_LEFT_RIGHT, 
-					TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
-					TOP_LEFT_RIGHT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT},
-					brigids_cross = 
-				{ BOTTOM_LEFT, TOP_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT_RIGHT, BOTTOM_LEFT_RIGHT,
-					TOP_LEFT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT,
-					TOP_RIGHT, TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
-					TOP_RIGHT_BOTTOM_LEFT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT, TOP_LEFT};
-
-				if (layout.IsDefined() && layout.IsSequence())
-				{
-					for (auto &i : layout)
-						layout_order.push_back(i.as<tile_size_t>());
-				}
-				else if (layout.IsDefined() && layout.IsScalar() &&
-					layout.as<types::string>() == "brigid")
-				{
-					layout_order = brigids_cross;
-				}
-				else
-				{
-					//default layout
-					layout_order = ascending;
-				}
-
-				tile_size_t toppos = 0;
-				auto top = v["top"];
-				if (top.IsDefined() && yaml_error(transition2_resource_type, name, "top", "scalar", mod, top.IsScalar()))
-					toppos = top.as<tile_size_t>();
-
-				tile_size_t leftpos = 0;
-				auto left = v["left"];
-				if (left.IsDefined() && yaml_error(transition2_resource_type, name, "left", "scalar", mod, left.IsScalar()))
-					leftpos = left.as<tile_size_t>();
-
-				tile_size_t tiles_per_row = 0;
-				auto row_length = v["width"];
-				if (row_length.IsDefined() && yaml_error(transition2_resource_type, name, "width", "scalar", mod, left.IsScalar()))
-					tiles_per_row = row_length.as<tile_size_t>(4);
-
-				auto tiles = parseLayout(t, texture, terrain1_id, terrain2_id, layout_order, leftpos, toppos, tiles_per_row);
-
-				//add the transition to each of the terrains
-				if (data_manager->exists(terrain1_id))
-					data_manager->get<terrain>(terrain1_id)->transitions.push_back(t->id);
-
-				if (data_manager->exists(terrain2_id))
-					data_manager->get<terrain>(terrain2_id)->transitions.push_back(t->id);
-
-				out.insert(out.end(), tiles.begin(), tiles.end());
 			}
 
-			return out;
+			//create if no matching transition exists
+			if (t == nullptr)
+			{
+				t = FindOrCreate<terrain_transition>(id, mod, data);
+				//if we fail to create then skip
+				if (t == nullptr)
+					return std::vector<tiles::tile>();
+
+				t->terrain1 = terrain1_id;
+				t->terrain2 = terrain2_id;
+				Transitions.push_back(t->id);
+			}
+
+			terrain1_id = t->terrain1;
+			terrain2_id = t->terrain2;
+			t->mod = mod;
+
+			auto layout = v["layout"];
+
+			std::vector<tile_size_t> layout_order;
+				
+			using namespace transition2;
+
+			static const std::vector<tile_size_t> ascending = 
+			{ TOP_RIGHT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT,
+				BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
+				TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT, TOP_LEFT_RIGHT, 
+				TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
+				TOP_LEFT_RIGHT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT},
+				brigids_cross = 
+			{ BOTTOM_LEFT, TOP_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT_RIGHT, BOTTOM_LEFT_RIGHT,
+				TOP_LEFT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT,
+				TOP_RIGHT, TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
+				TOP_RIGHT_BOTTOM_LEFT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT, TOP_LEFT};
+
+			if (layout.IsDefined() && layout.IsSequence())
+			{
+				for (auto &i : layout)
+					layout_order.push_back(i.as<tile_size_t>());
+			}
+			else if (layout.IsDefined() && layout.IsScalar() &&
+				layout.as<types::string>() == "brigid")
+			{
+				layout_order = brigids_cross;
+			}
+			else
+			{
+				//default layout
+				layout_order = ascending;
+			}
+
+			tile_size_t toppos = yaml_get_scalar<tile_size_t>(v, transition2_resource_type, name, "top", mod, 0);
+			tile_size_t leftpos = yaml_get_scalar<tile_size_t>(v, transition2_resource_type, name, "left", mod, 0);
+			tile_size_t tiles_per_row = yaml_get_scalar<tile_size_t>(v, transition2_resource_type, name, "width", mod, 0);
+
+			auto traits_str = yaml_get_sequence<hades::types::string>(v, transition2_resource_type, name, "traits", mod);
+			tiles::traits_list traits;
+
+			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
+				return hades::data_manager->getUid(s);
+			});
+
+			auto tiles = parseLayout(t, texture, terrain1_id, terrain2_id, layout_order, leftpos, toppos, tiles_per_row, traits);
+
+			//add the transition to each of the terrains
+			//TODO: this should be done when creating the transition, not when a new sheet is added too it.
+			// check transition3 for this error as well.
+			if (data_manager->exists(terrain1_id))
+				data_manager->get<terrain>(terrain1_id)->transitions.push_back(t->id);
+
+			if (data_manager->exists(terrain2_id))
+				data_manager->get<terrain>(terrain2_id)->transitions.push_back(t->id);
+
+			return tiles;
 		}
 
-		std::vector<tiles::tile> parseLayout(terrain_transition3* transitions, data::UniqueId texture, data::UniqueId terrain1, data::UniqueId terrain2, data::UniqueId terrain3, std::vector<tile_size_t> tile_order, tile_size_t left, tile_size_t top, tile_size_t columns)
+		std::vector<tiles::tile> parseLayout(terrain_transition3* transitions, data::UniqueId texture,
+			data::UniqueId terrain1, data::UniqueId terrain2, data::UniqueId terrain3, std::vector<tile_size_t> tile_order,
+			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits)
 		{
 			std::vector<tiles::tile> out;
 
@@ -351,34 +335,39 @@ namespace ortho_terrain
 				//ofset by the position given
 				ntile.left += left;
 				ntile.top += top;
-				ntile.type3 = static_cast<transition3::Types>(t);
 
-				if (ntile.type3 == transition3::T1_NONE)
+				std::copy(std::begin(traits), std::end(traits), std::back_inserter(ntile.traits));
+
+				terrain_info info;
+				info.type3 = static_cast<transition3::Types>(t);
+
+				if (info.type3 == transition3::T1_NONE)
 				{
-					ntile.type = transition2::NONE;
-					ntile.terrain = terrain1;
+					info.type = transition2::NONE;
+					info.terrain = terrain1;
 				}
-				else if (ntile.type == transition3::T2_NONE)
+				else if (info.type == transition3::T2_NONE)
 				{
-					ntile.type = transition2::NONE;
-					ntile.terrain = terrain2;
+					info.type = transition2::NONE;
+					info.terrain = terrain2;
 				}
-				else if (ntile.type == transition3::T3_NONE)
+				else if (info.type == transition3::T3_NONE)
 				{
-					ntile.type = transition2::NONE;
-					ntile.terrain = terrain3;
+					info.type = transition2::NONE;
+					info.terrain = terrain3;
 				}
 				else
 				{
-					ntile.terrain = terrain1;
-					ntile.terrain2 = terrain2;
-					ntile.terrain3 = terrain3;
+					info.terrain = terrain1;
+					info.terrain2 = terrain2;
+					info.terrain3 = terrain3;
 				}
 
-				auto &transition_vector = GetTransition(ntile.type3, *transitions);
+				auto &transition_vector = GetTransition(info.type3, *transitions);
 				transition_vector.push_back(ntile);
 
 				out.push_back(ntile);
+				TerrainLookup.insert({ ntile, info });
 			}
 
 			return out;
@@ -388,191 +377,159 @@ namespace ortho_terrain
 
 		std::vector<tiles::tile> parseTransition3(hades::data::UniqueId mod, hades::data::UniqueId texture, YAML::Node& transitions, hades::data::data_manager* data)
 		{
-			//terrain - transitions:
-				//#the name of the transition isn't important and can be duplicated or 
-				//#changed, but any transition with the same terrain1 and terrain2 will be considered the same
-				//#even if the order is swapped, the cannonical order is the one first supplied
-				//sand - dirt - water:
-					//terrain1 : sand
-					//terrain2 : dirt
-					//terrain3 : water
-					//#a transition is expected to take up 6 * tilesize by 6 * tilesize pixels
-					//layout: ascending
-					//#this just specifies. the top left corner of the transition grid
-					//#any transition tile that is entirely alpha is assumed to be empty and
-					//#ignored for autofill purposes, but still uses up an id
-					//left:
-					//top:
-					//width: <// how many tiles in each coloumn of the layout; default: 6
+			//transition3:
+				//terrain1 : sand
+				//terrain2 : dirt
+				//terrain3 : grass
+				//layout: ascending
+				//left:
+				//top:
+				//width: <// how many tiles in each coloumn of the layout;
+				//traits:
 
-			std::vector<tiles::tile> out;
+			auto name = "n/a";
+			auto v = transitions;
 
-			if (!yaml_error(transition3_resource_type, "n/a", "n/a", "map", mod, transitions.IsMap()))
-				return out;
+			auto id = data->getUid(name);
 
-			for (auto &n : transitions)
+			auto terrain1_id = yaml_get_uid(v, transition3_resource_type, name, "terrain1", mod);
+			auto terrain2_id = yaml_get_uid(v, transition3_resource_type, name, "terrain2", mod);
+			auto terrain3_id = yaml_get_uid(v, transition3_resource_type, name, "terrain3", mod);
+
+			terrain_transition3* t3 = nullptr;
+
+			static std::vector<hades::data::UniqueId> Transitions;
+
+			if (!Transitions.empty())
 			{
-				auto namenode = n.first;
-				auto name = namenode.as<types::string>();
-				auto v = n.second;
+				//FIXME: this doesnt seem finished
+				std::vector<std::array<data::UniqueId, 3>> combinations = {
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+					{ terrain1_id, terrain2_id, terrain3_id },
+				};
 
-				auto id = data->getUid(name);
-
-				auto terrain1_id = data::UniqueId::Zero;
-				auto terrain1 = v["terrain1"];
-				if (terrain1.IsDefined() && yaml_error(transition3_resource_type, name, "terrain1", "scalar", mod, terrain1.IsScalar()))
-					terrain1_id = data->getUid(terrain1.as<types::string>());
-
-				auto terrain2_id = data::UniqueId::Zero;
-				auto terrain2 = v["terrain2"];
-				if (terrain2.IsDefined() && yaml_error(transition3_resource_type, name, "terrain2", "scalar", mod, terrain2.IsScalar()))
-					terrain2_id = data->getUid(terrain2.as<types::string>());
-
-				auto terrain3_id = data::UniqueId::Zero;
-				auto terrain3 = v["terrain3"];
-				if (terrain3.IsDefined() && yaml_error(transition3_resource_type, name, "terrain2", "scalar", mod, terrain2.IsScalar()))
-					terrain3_id = data->getUid(terrain3.as<types::string>());
-
-				terrain_transition3* t3 = nullptr;
-
-				static std::vector<hades::data::UniqueId> Transitions;
-
-				if (!Transitions.empty())
+				auto either3 = [&combinations](terrain_transition3* t)->bool const
 				{
-					std::vector<std::array<data::UniqueId, 3>> combinations = {
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-						{ terrain1_id, terrain2_id, terrain3_id },
-					};
+					return false;
+				};
 
-					auto either3 = [&combinations](terrain_transition3* t)->bool const
-					{
-						return false;
-					};
-
-					for (auto &t_id : Transitions)
-					{
-						auto *trans = data->get<terrain_transition3>(t_id);
-
-						if (either3(trans))
-							t3 = trans;
-					}
-				}
-
-				//create if no matching transition exists
-				if (t3 == nullptr)
+				for (auto &t_id : Transitions)
 				{
-					t3 = FindOrCreate<terrain_transition3>(id, mod, data);
-					t3->terrain1 = terrain1_id;
-					t3->terrain2 = terrain2_id;
-					t3->terrain3 = terrain3_id;
+					auto *trans = data->get<terrain_transition3>(t_id);
 
-					//attach transition 2 references
-					auto terrain1 = hades::data_manager->get<terrain>(terrain1_id),
-						terrain2 = hades::data_manager->get<terrain>(terrain2_id);
-
-					for (auto &t : terrain1->transitions)
-					{
-						auto transition = hades::data_manager->get<terrain_transition>(t);
-						if (transition->terrain1 == terrain1_id &&
-							transition->terrain2 == terrain2_id)
-						{
-							t3->transition_1_2 = t;
-						}
-						else if(transition->terrain1 == terrain1_id &&
-							transition->terrain2 == terrain3_id)
-						{
-							t3->transition_1_3 = t;
-						}
-					}
-
-					for (auto &t : terrain2->transitions)
-					{
-						auto transition = hades::data_manager->get<terrain_transition>(t);
-						if (transition->terrain1 == terrain2_id &&
-							transition->terrain2 == terrain3_id)
-						{
-							t3->transition_2_3 = t;
-							break;
-						}
-					}
-
-					Transitions.push_back(t3->id);
+					if (either3(trans))
+						t3 = trans;
 				}
-
-				//if we fail to create then skip
-				if (t3 == nullptr)
-					continue;
-
-				terrain1_id = t3->terrain1;
-				terrain2_id = t3->terrain2;
-				terrain3_id = t3->terrain3;
-				t3->mod = mod;
-
-				bool custom_layout = false;
-				auto layout = v["layout"];
-
-				std::vector<tile_size_t> layout_order;
-
-				//these values corrispond to entries in transition3::Types
-				static const std::vector<tile_size_t> ascending = 
-				  {  5,  7, 11, 14, 15, 16,
-					17, 19, 21, 22, 23, 25,
-					29, 32, 33, 34, 35, 38,
-					42, 45, 46, 47, 48, 51,
-					55, 57, 58, 59, 61, 63, 
-					64, 65, 66, 69, 73, 75 };
-
-				if (layout.IsDefined() && layout.IsSequence())
-				{
-					for (auto &i : layout)
-						layout_order.push_back(i.as<tile_size_t>());
-				}
-				else
-				{
-					//default layout
-					layout_order = ascending;
-				}
-
-				tile_size_t toppos = 0;
-				auto top = v["top"];
-				if (top.IsDefined() && yaml_error(transition3_resource_type, name, "top", "scalar", mod, top.IsScalar()))
-					toppos = top.as<tile_size_t>(0);
-
-				tile_size_t leftpos = 0;
-				auto left = v["left"];
-				if (left.IsDefined() && yaml_error(transition3_resource_type, name, "left", "scalar", mod, left.IsScalar()))
-					leftpos = left.as<tile_size_t>(0);
-
-				tile_size_t tiles_per_row = 6;
-				auto row_length = v["width"];
-				if (row_length.IsDefined() && yaml_error(transition3_resource_type, name, "width", "scalar", mod, left.IsScalar()))
-					tiles_per_row = row_length.as<tile_size_t>(6);
-
-				auto tiles = parseLayout(t3, texture, terrain1_id, terrain2_id, terrain3_id, layout_order, leftpos, toppos, tiles_per_row);
-
-				//add the transition to each of the terrains
-				//TODO: this should be done when creating the transition, not when a new sheet is added too it.
-				// check transition2 for this error as well.
-				if (data_manager->exists(terrain1_id))
-					data_manager->get<terrain>(terrain1_id)->transitions3.push_back(t3->id);
-
-				if (data_manager->exists(terrain2_id))
-					data_manager->get<terrain>(terrain2_id)->transitions3.push_back(t3->id);
-
-				if (data_manager->exists(terrain3_id))
-					data_manager->get<terrain>(terrain3_id)->transitions3.push_back(t3->id);
-
-				out.insert(out.end(), tiles.begin(), tiles.end());
 			}
 
-			return out;
+			//create if no matching transition exists
+			if (t3 == nullptr)
+			{
+				t3 = FindOrCreate<terrain_transition3>(id, mod, data);
+				t3->terrain1 = terrain1_id;
+				t3->terrain2 = terrain2_id;
+				t3->terrain3 = terrain3_id;
+
+				//attach transition 2 references
+				auto terrain1 = hades::data_manager->get<terrain>(terrain1_id),
+					terrain2 = hades::data_manager->get<terrain>(terrain2_id);
+
+				for (auto &t : terrain1->transitions)
+				{
+					auto transition = hades::data_manager->get<terrain_transition>(t);
+					if (transition->terrain1 == terrain1_id &&
+						transition->terrain2 == terrain2_id)
+					{
+						t3->transition_1_2 = t;
+					}
+					else if(transition->terrain1 == terrain1_id &&
+						transition->terrain2 == terrain3_id)
+					{
+						t3->transition_1_3 = t;
+					}
+				}
+
+				for (auto &t : terrain2->transitions)
+				{
+					auto transition = hades::data_manager->get<terrain_transition>(t);
+					if (transition->terrain1 == terrain2_id &&
+						transition->terrain2 == terrain3_id)
+					{
+						t3->transition_2_3 = t;
+						break;
+					}
+				}
+
+				Transitions.push_back(t3->id);
+			}
+
+			//if we fail to create then skip
+			if (t3 == nullptr)
+				return std::vector<tiles::tile>();
+
+			terrain1_id = t3->terrain1;
+			terrain2_id = t3->terrain2;
+			terrain3_id = t3->terrain3;
+			t3->mod = mod;
+
+			bool custom_layout = false;
+			auto layout = v["layout"];
+
+			std::vector<tile_size_t> layout_order;
+
+			//these values corrispond to entries in transition3::Types
+			static const std::vector<tile_size_t> ascending = 
+				{  5,  7, 11, 14, 15, 16,
+				17, 19, 21, 22, 23, 25,
+				29, 32, 33, 34, 35, 38,
+				42, 45, 46, 47, 48, 51,
+				55, 57, 58, 59, 61, 63, 
+				64, 65, 66, 69, 73, 75 };
+
+			if (layout.IsDefined() && layout.IsSequence())
+			{
+				for (auto &i : layout)
+					layout_order.push_back(i.as<tile_size_t>());
+			}
+			else
+			{
+				//default layout
+				layout_order = ascending;
+			}
+
+			tile_size_t toppos = yaml_get_scalar<tile_size_t>(v, transition3_resource_type, name, "top", mod, 0);
+			tile_size_t leftpos = yaml_get_scalar<tile_size_t>(v, transition3_resource_type, name, "left", mod, 0);
+			tile_size_t tiles_per_row = yaml_get_scalar<tile_size_t>(v, transition3_resource_type, name, "width", mod, 0);
+
+			auto traits_str = yaml_get_sequence<hades::types::string>(v, transition2_resource_type, name, "traits", mod);
+			tiles::traits_list traits;
+
+			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
+				return hades::data_manager->getUid(s);
+			});
+
+			auto tiles = parseLayout(t3, texture, terrain1_id, terrain2_id, terrain3_id, layout_order, leftpos, toppos, tiles_per_row, traits);
+
+			//add the transition to each of the terrains
+			//TODO: this should be done when creating the transition, not when a new sheet is added too it.
+			// check transition2 for this error as well.
+			if (data_manager->exists(terrain1_id))
+				data_manager->get<terrain>(terrain1_id)->transitions3.push_back(t3->id);
+
+			if (data_manager->exists(terrain2_id))
+				data_manager->get<terrain>(terrain2_id)->transitions3.push_back(t3->id);
+
+			if (data_manager->exists(terrain3_id))
+				data_manager->get<terrain>(terrain3_id)->transitions3.push_back(t3->id);
+
+			return tiles;
 		}
 
 		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager *data)

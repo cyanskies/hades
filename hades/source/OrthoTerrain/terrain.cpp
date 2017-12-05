@@ -577,4 +577,13 @@ namespace ortho_terrain
 	{
 		tiles::traits_list out;
 	}
+
+	terrain_info GetTerrainInfo(const tiles::tile &tile)
+	{
+		auto it = TerrainLookup.find(tile);
+		if (it == std::end(TerrainLookup))
+			return terrain_info();
+
+		return *it;
+	}
 }

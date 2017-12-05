@@ -10,6 +10,8 @@
 
 namespace ortho_terrain
 {
+	using tiles::tile;
+
 	tile RandomTile(const std::vector<tile>& tiles)
 	{
 		if (tiles.empty())
@@ -111,9 +113,11 @@ namespace ortho_terrain
 			return RandomTile(tiles);
 		}
 
-		hades::data::UniqueId TerrainInCorner2(const tile& t, Corner corner)
+		hades::data::UniqueId TerrainInCorner2(const tile& tile, Corner corner)
 		{
 			using namespace transition2::transition_corners;
+
+			auto t = GetTerrainInfo(tile);
 
 			switch (corner)
 			{
@@ -256,13 +260,9 @@ namespace ortho_terrain
 
 		tile PickTile3Corner(const std::array<hades::data::UniqueId, 4> &corners)
 		{
-			auto setting_id = hades::data_manager->getUid(ortho_terrain::resources::terrain_settings_name);
-			assert(hades::data_manager->exists(setting_id));
-			auto settings = hades::data_manager->get<resources::terrain_settings>(setting_id);
-
 			std::set<hades::data::UniqueId> unique_terrain(corners.begin(), corners.end());
 			unique_terrain.erase(hades::data::UniqueId::Zero);
-			unique_terrain.erase(settings->error_tile);
+			unique_terrain.erase(GetErrorTerrain());
 
 			if (unique_terrain.size() != 3)
 				return transition2::PickTile2Corner(corners);
@@ -338,9 +338,11 @@ namespace ortho_terrain
 			return RandomTile(tiles);
 		}
 
-		hades::data::UniqueId TerrainInCorner3(const tile& t, Corner corner)
+		hades::data::UniqueId TerrainInCorner3(const tile& tile, Corner corner)
 		{
 			using namespace transition3::transition_corners;
+
+			auto t = GetTerrainInfo(tile);
 
 			switch (corner)
 			{
@@ -406,12 +408,14 @@ namespace ortho_terrain
 		return transition3::PickTile3Corner(corners);
 	}
 
-	hades::data::UniqueId TerrainInCorner(const tile& t, Corner corner)
+	hades::data::UniqueId TerrainInCorner(const tile& tile, Corner corner)
 	{
+		auto t = GetTerrainInfo(tile);
+
 		if (t.terrain3 != hades::data::UniqueId::Zero)
-			return transition3::TerrainInCorner3(t, corner);
+			return transition3::TerrainInCorner3(tile, corner);
 		else if (t.terrain2 != hades::data::UniqueId::Zero)
-			return transition2::TerrainInCorner2(t, corner);
+			return transition2::TerrainInCorner2(tile, corner);
 		else
 			return t.terrain;
 	}

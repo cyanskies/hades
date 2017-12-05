@@ -221,7 +221,7 @@ namespace tiles
 				settings->tile_size = size.as<tile_size_t>(default_size);
 		}
 
-		std::vector<tile> parseTiles(tileset& tset, hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
+		std::vector<tile> parseTiles(hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
 		{
 			std::vector<tile> out;
 			tile_count_t row = 0, column = 0;
@@ -340,7 +340,7 @@ namespace tiles
 						continue;
 					}
 
-					auto tile_list = ParseTilesSection(*tset, texid, tile_settings->tile_size, tiles_sections, resource_type, name, mod);
+					auto tile_list = ParseTilesSection(texid, tile_settings.tile_size, tiles_section, resource_type, name, mod);
 					std::copy(std::begin(tile_list), std::end(tile_list), std::back_inserter(tset->tiles);
 				}
 				catch (tile_map_exception&)

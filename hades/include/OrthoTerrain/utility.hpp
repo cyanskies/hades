@@ -7,10 +7,7 @@
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
-namespace tiles
-{
-	struct tile;
-}
+#include "Tiles/resources.hpp"
 
 //contains utility functions for arranging and picking tiles from transitions
 namespace ortho_terrain
@@ -24,14 +21,14 @@ namespace ortho_terrain
 	}
 
 	//returns an error tile(configurable in game.yaml)
-	std::vector<tile> *ErrorTransition();
+	std::vector<tiles::tile> *ErrorTransition();
 	//returns a random tile from the selection
-	tile RandomTile(const std::vector<tile>& tiles);
+	tiles::tile RandomTile(const std::vector<tiles::tile>& tiles);
 
 	//Picks a tile that seemlessly fits between the 4 corner verticies
-	tile PickTile(const std::array<const resources::terrain*, 4> &vertex);
+	tiles::tile PickTile(const std::array<const resources::terrain*, 4> &vertex);
 	//Picks a tile that seemlessly fits between the 4 corner tiles provided
-	tile PickTile(const std::array<tiles::tile, 4> &corner_tiles);
+	tiles::tile PickTile(const std::array<tiles::tile, 4> &corner_tiles);
 
 	//returns the terrain type in a corner of the tile
 	//NOTE: the numerical value of these is important
@@ -39,7 +36,7 @@ namespace ortho_terrain
 	// as they are used by the AsVertex/AsTiles functions in terrain.cpp
 	// and the pick tile functions above
 	enum Corner { TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT, CORNER_LAST};
-	hades::data::UniqueId TerrainInCorner(const tile& t, Corner corner);
+	hades::data::UniqueId TerrainInCorner(const tiles::tile& t, Corner corner);
 
 	namespace transition2
 	{
@@ -55,8 +52,8 @@ namespace ortho_terrain
 		};
 	}
 
-	std::vector<tile>& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition);
-	const std::vector<tile>& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition);
+	std::vector<tiles::tile>& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition);
+	const std::vector<tiles::tile>& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition);
 
 	namespace transition3
 	{
@@ -99,8 +96,8 @@ namespace ortho_terrain
 		};
 	}
 
-	std::vector<tile>& GetTransition(transition3::Types type, resources::terrain_transition3& transition);
-	const std::vector<tile>& GetTransition(transition3::Types type, const resources::terrain_transition3& transition);
+	std::vector<tiles::tile>& GetTransition(transition3::Types type, resources::terrain_transition3& transition);
+	const std::vector<tiles::tile>& GetTransition(transition3::Types type, const resources::terrain_transition3& transition);
 }
 
 #endif // !ORTHO_UTILITY_HPP

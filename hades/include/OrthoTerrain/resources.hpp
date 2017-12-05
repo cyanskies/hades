@@ -49,7 +49,7 @@ namespace ortho_terrain
 
 		struct terrain_transition_t {};
 
-		//a list of tiles used for terrain transitions for a particular pair
+		//a list of tiles used for terrain transitions for a particular pair of terrain
 		struct terrain_transition : public hades::resources::resource_type<terrain_transition_t>
 		{
 			hades::data::UniqueId terrain1 = hades::data::UniqueId::Zero, terrain2 = hades::data::UniqueId::Zero;

@@ -97,6 +97,7 @@ namespace ortho_terrain
 
 	hades::data::UniqueId GetErrorTerrain();
 	tiles::traits_list GetTerrainTraits(const tiles::tile &tile);
+	terrain_info GetTerrainInfo(const tiles::tile &tile);
 }
 
 #endif // !ORTHO_TERRAIN_HPP

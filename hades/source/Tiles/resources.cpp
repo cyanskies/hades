@@ -221,8 +221,9 @@ namespace tiles
 				settings->tile_size = size.as<tile_size_t>(default_size);
 		}
 
-		void parseTiles(tileset& tset, hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
+		std::vector<tile> parseTiles(tileset& tset, hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
 		{
+			std::vector<tile> out;
 			tile_count_t row = 0, column = 0;
 			while (count > 0)
 			{
@@ -240,12 +241,14 @@ namespace tiles
 					++row;
 				}
 
-				tset.tiles.push_back(t);
+				out.push_back(t);
 				--count;
 			}
+
+			return out;
 		}
 
-		void ParseTilesSection(tileset& tset, hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
+		std::vector<tile> ParseTilesSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
 			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod)
 		{
 			tile_size_t left = yaml_get_scalar<tile_size_t>(tiles_node, resource_type, name, "left", mod, 0),
@@ -260,7 +263,7 @@ namespace tiles
 				return hades::data_manager->getUid(s);
 			});
 
-			parseTiles(tset, texture, tile_size, top, left, width - 1 /* make width 0 based */, count, traits);
+			return parseTiles(texture, tile_size, top, left, width - 1 /* make width 0 based */, count, traits);
 		}
 
 		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager *data)
@@ -328,20 +331,19 @@ namespace tiles
 
 				try
 				{
-					//get tile size
-					auto tile_settings_id = data->getUid(tile_settings_name);
-					auto tile_settings = data->get<resources::tile_settings>(tile_settings_id);
+					auto tile_settings = GetTileSettings();
 
-					auto tiles_sections = v["tiles"];
-					if (!tiles_sections.IsDefined())
+					auto tiles_section = v["tiles"];
+					if (!tiles_section.IsDefined())
 					{
 						LOGERROR("Cannot parse tiles section, skipping");
 						continue;
 					}
 
-					ParseTilesSection(*tset, texid, tile_settings->tile_size, tiles_sections, resource_type, name, mod);
+					auto tile_list = ParseTilesSection(*tset, texid, tile_settings->tile_size, tiles_sections, resource_type, name, mod);
+					std::copy(std::begin(tile_list), std::end(tile_list), std::back_inserter(tset->tiles);
 				}
-				catch (hades::data::resource_null&)
+				catch (tile_map_exception&)
 				{
 					LOGERROR("Cannot load tileset: " + name + ", missing tile-settings resource.");
 					continue;

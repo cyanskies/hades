@@ -5,23 +5,15 @@
 
 #include "OrthoTerrain/resources.hpp"
 
+#include "OrthoTerrain/terrain.hpp"
+#include "Tiles/tiles.hpp"
+
 namespace ortho_terrain
 {
-	std::vector<tile> *ErrorTransition()
-	{
-		using namespace resources;
-		auto settings_id = hades::data_manager->getUid(terrain_settings_name);
-		auto settings = hades::data_manager->get<terrain_settings>(settings_id);
-
-		auto error_tile = hades::data_manager->get<terrain>(settings->error_tile);
-
-		return &error_tile->tiles;
-	}
-
 	tile RandomTile(const std::vector<tile>& tiles)
 	{
 		if (tiles.empty())
-			return RandomTile(*ErrorTransition());
+			return tiles::GetErrorTile();
 
 		auto max = tiles.size() - 1;
 		auto pos = hades::random(0u, max);
@@ -52,13 +44,9 @@ namespace ortho_terrain
 		{
 			std::set<hades::data::UniqueId> unique_terrain(corners.begin(), corners.end());
 
-			auto setting_id = hades::data_manager->getUid(ortho_terrain::resources::terrain_settings_name);
-			assert(hades::data_manager->exists(setting_id));
-			auto settings = hades::data_manager->get<resources::terrain_settings>(setting_id);
-
 			//remove null or error tiles, to avoid propagating them
 			unique_terrain.erase(hades::data::UniqueId::Zero);
-			unique_terrain.erase(settings->error_tile);
+			unique_terrain.erase(GetErrorTerrain());
 
 			if (unique_terrain.size() == 1)
 			{
@@ -95,7 +83,7 @@ namespace ortho_terrain
 
 			//no transition exists for this combination
 			if (!transition)
-				return RandomTile(*ErrorTransition());
+				return tiles::GetErrorTile();
 
 			//now work out which terrain type is the background(terrain1)
 			if (transition->terrain1 != terrain1)
@@ -405,7 +393,7 @@ namespace ortho_terrain
 		return transition3::PickTile3Corner(corners);
 	}
 
-	tile PickTile(const std::array<tile, 4> &corner_tiles)
+	tile PickTile(const std::array<tiles::tile, 4> &corner_tiles)
 	{
 		//check the adjacent tiles to see which terrains they have
 		std::array<hades::data::UniqueId, 4> corners;

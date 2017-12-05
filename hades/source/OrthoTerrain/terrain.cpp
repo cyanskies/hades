@@ -10,6 +10,8 @@
 #include "OrthoTerrain/utility.hpp"
 #include "OrthoTerrain/resources.hpp"
 
+#include "Tiles/tiles.hpp"
+
 namespace ortho_terrain
 {
 	namespace
@@ -85,11 +87,8 @@ namespace ortho_terrain
 		//generate a drawable array
 		Chunks.clear();
 
-		//TODO: check data->exists before using
-		using namespace resources;
-		auto settings_id = hades::data_manager->getUid(terrain_settings_name);
-		auto settings = hades::data_manager->get<terrain_settings>(settings_id);
-		auto tile_size = settings->tile_size;
+		auto settings = tiles::GetTileSettings();
+		auto tile_size = settings.tile_size;
 
 		tile_count_t count = 0;
 
@@ -122,7 +121,7 @@ namespace ortho_terrain
 
 				hades::types::int32 x, y;
 
-				std::tie(x, y) = GetGridPosition(count, width, tile_size);
+				std::tie(x, y) = tiles::GetGridPosition(count, width, tile_size);
 
 				Tile ntile;
 				ntile.x = x;
@@ -218,11 +217,8 @@ namespace ortho_terrain
 		_tiles = std::get<TileArray>(map_data);
 		_width = std::get<tile_count_t>(map_data);
 
-		//TODO: check data->exists before using
-		using namespace resources;
-		auto settings_id = hades::data_manager->getUid(terrain_settings_name);
-		auto settings = hades::data_manager->get<terrain_settings>(settings_id);
-		_tile_size = settings->tile_size;
+		auto settings = tiles::GetTileSettings();
+		_tile_size = settings.tile_size;
 
 		TileMap::create(map_data);
 	}
@@ -545,5 +541,40 @@ namespace ortho_terrain
 
 		for (const auto &q : newQuad)
 			a.push_back(q);
+	}
+
+	const resources::terrain_settings &GetTerrainSettings()
+	{
+		auto settings_id = hades::data_manager->getUid(resources::terrain_settings_name);
+		auto data_manager = hades::data_manager;
+		if (!data_manager->exists(settings_id))
+		{
+			auto message = "terrain-settings undefined.";
+			LOGERROR(message)
+				throw exception(message);
+		}
+
+		try
+		{
+			return *hades::data_manager->get<resources::terrain_settings>(settings_id);
+		}
+		catch (hades::data::resource_wrong_type&)
+		{
+			auto message = "The UID for the tile settings has been reused for another resource type";
+			LOGERROR(message);
+			throw exception(message);
+		}
+	}
+
+	hades::data::UniqueId GetErrorTerrain()
+	{
+		auto settings = GetTerrainSettings();
+		return settings.error_terrain;
+	}
+
+
+	tiles::traits_list GetTerrainTraits(const tiles::tile &tile)
+	{
+		tiles::traits_list out;
 	}
 }

@@ -92,6 +92,8 @@ namespace tiles
 	};
 	//throws tile_map_exception if the settings cannot be retrieved for any reason.
 	const resources::tile_settings &GetTileSettings();
+	const std::vector<tile> &GetErrorTileset();
+	tile GetErrorTile();
 }
 
 #endif // !TILES_TILES_HPP

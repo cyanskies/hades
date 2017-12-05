@@ -4,6 +4,7 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "Hades/data_manager.hpp"
+#include "Hades/Utility.hpp"
 
 namespace tiles
 {
@@ -522,7 +523,7 @@ namespace tiles
 		auto data_manager = hades::data_manager;
 		if (!data_manager->exists(settings_id))
 		{
-			auto message = "tile-settings undefined.";
+			auto message = "tile-settings undefined. GetTileSettings()";
 			LOGERROR(message)
 			throw tile_map_exception(message);
 		}
@@ -537,5 +538,23 @@ namespace tiles
 			LOGERROR(message);
 			throw tile_map_exception(message);
 		}
+	}
+
+	const std::vector<tile> &GetErrorTileset()
+	{
+		auto settings = GetTileSettings();
+		auto tset = hades::data_manager->get<resources::tileset>(settings.error_tileset);
+
+		return tset->tiles;
+	}
+
+	tile GetErrorTile()
+	{
+		auto tset = GetErrorTileset();
+		if (tset.empty())
+			return tile();
+
+		auto i = hades::random(0u, tset.size() - 1);
+		return tset[i];
 	}
 }

@@ -7,11 +7,15 @@
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
+namespace tiles
+{
+	struct tile;
+}
+
 //contains utility functions for arranging and picking tiles from transitions
 namespace ortho_terrain
 {
 	//forward declarations
-	struct tile;
 	namespace resources
 	{
 		struct terrain;
@@ -27,7 +31,7 @@ namespace ortho_terrain
 	//Picks a tile that seemlessly fits between the 4 corner verticies
 	tile PickTile(const std::array<const resources::terrain*, 4> &vertex);
 	//Picks a tile that seemlessly fits between the 4 corner tiles provided
-	tile PickTile(const std::array<tile, 4> &corner_tiles);
+	tile PickTile(const std::array<tiles::tile, 4> &corner_tiles);
 
 	//returns the terrain type in a corner of the tile
 	//NOTE: the numerical value of these is important

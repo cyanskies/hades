@@ -27,6 +27,9 @@ T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::t
 		return default_value;
 }
 
+hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::data::UniqueId mod);
+
 template<class T>
 std::vector<T> yaml_get_sequence(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod)

@@ -12,7 +12,7 @@
 
 namespace hades
 {
-	std::shared_ptr<sf::Image> ImgLoader(const sf::String&);
+	std::unique_ptr<sf::Image> ImgLoader(const sf::String&);
 	tgui::ObjectConverter FontLoader(const std::string&);
 
 	void ReplaceTGuiLoaders()
@@ -23,8 +23,7 @@ namespace hades
 		tgui::Deserializer::setFunction(tgui::ObjectConverter::Type::Font, FontLoader);
 	}
 
-	//TODO: these only provide copies of the resources, not access to the managed ones.
-	std::shared_ptr<sf::Image> ImgLoader(const sf::String& name)
+	std::unique_ptr<sf::Image> ImgLoader(const sf::String& name)
 	{
 		auto id = data_manager->getUid(name);
 		assert(data_manager->exists(id));
@@ -33,7 +32,7 @@ namespace hades
 		data_manager->load(id);
 
 		auto img = data_manager->getTexture(id);
-		return std::make_shared<sf::Image>(img->value.copyToImage());
+		return std::make_unique<sf::Image>(img->value.copyToImage());
 	}
 
 	tgui::ObjectConverter FontLoader(const std::string& name)

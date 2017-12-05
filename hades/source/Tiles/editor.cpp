@@ -6,7 +6,7 @@
 				  // async building of tile selector ui
 
 #include "TGUI/Animation.hpp"
-#include "TGUI/HorizontalWrap.hpp"
+#include "TGUI/Widgets/HorizontalWrap.hpp"
 #include "TGUI/Widgets/ChildWindow.hpp"
 #include "TGUI/Widgets/ComboBox.hpp"
 #include "TGUI/Widgets/EditBox.hpp"
@@ -211,7 +211,7 @@ namespace tiles
 
 		auto fadeTime = sf::milliseconds(100);
 
-		menu_bar->connect("MenuItemClicked", [this, file_menu, new_menu, load_menu, save_menu, fadeTime](std::vector<sf::String> menu) {
+		menu_bar->onMenuItemClick.connect([this, file_menu, new_menu, load_menu, save_menu, fadeTime](std::vector<sf::String> menu) {
 			//check the options available
 			//menu[0] == file
 			assert(menu.size() == 2);
@@ -219,12 +219,12 @@ namespace tiles
 			{
 				if (menu[1] == new_menu)
 				{
-					auto new_dialog = _gui.get<tgui::Container>("new_dialog", true);
+					auto new_dialog = _gui.get<tgui::Container>("new_dialog");
 					new_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 				}
 				else if (menu[1] == load_menu)
 				{
-					auto load_dialog = _gui.get<tgui::Container>("load_dialog", true);
+					auto load_dialog = _gui.get<tgui::Container>("load_dialog");
 					load_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 				}
 				else if (menu[1] == save_menu)
@@ -235,59 +235,59 @@ namespace tiles
 		//===============
 		//FILE LOADING UI
 		//===============
-		auto load_dialog_container = _gui.get<tgui::Container>("load_dialog", true);
+		auto load_dialog_container = _gui.get<tgui::Container>("load_dialog");
 		//hide the container
 		load_dialog_container->hide();
 
 		//set the default name to be the currently loaded file
-		auto load_dialog_filename = load_dialog_container->get<tgui::EditBox>("load_filename", true);
+		auto load_dialog_filename = load_dialog_container->get<tgui::EditBox>("load_filename");
 		if (!Filename.empty())
 			load_dialog_filename->setText(Filename);
 		else
 			Filename = load_dialog_filename->getDefaultText();
 
-		auto load_dialog_modname = load_dialog_container->get<tgui::EditBox>("load_mod", true);
+		auto load_dialog_modname = load_dialog_container->get<tgui::EditBox>("load_mod");
 		if (!Mod.empty())
 			load_dialog_modname->setText(Mod);
 		else
 			Mod = load_dialog_modname->getDefaultText();
 
 		//rig up the load button
-		auto load_dialog_button = load_dialog_container->get<tgui::Button>("load_button", true);
-		load_dialog_button->connect("pressed", [this, fadeTime]() {
-			auto filename = _gui.get<tgui::EditBox>("load_filename", true);
-			auto modname = _gui.get<tgui::EditBox>("load_mod", true);
+		auto load_dialog_button = load_dialog_container->get<tgui::Button>("load_button");
+		load_dialog_button->onPress.connect([this, fadeTime]() {
+			auto filename = _gui.get<tgui::EditBox>("load_filename");
+			auto modname = _gui.get<tgui::EditBox>("load_mod");
 
 			types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
 			types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
 			//_load(mod, file);
 
-			auto load_container = _gui.get<tgui::Container>("load_dialog", true);
+			auto load_container = _gui.get<tgui::Container>("load_dialog");
 			load_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
 
 		//==========
 		//New map UI
 		//==========
-		auto new_dialog_container = _gui.get<tgui::Container>("new_dialog", true);
+		auto new_dialog_container = _gui.get<tgui::Container>("new_dialog");
 		//hide the container
 		new_dialog_container->hide();
 
 		//add generators
-		auto new_generator = new_dialog_container->get<tgui::ComboBox>("new_gen", true);
+		auto new_generator = new_dialog_container->get<tgui::ComboBox>("new_gen");
 		new_generator->addItem("generator_blank", "Blank");
 
 		//rig up the load button
-		auto new_dialog_button = new_dialog_container->get<tgui::Button>("new_button", true);
-		new_dialog_button->connect("pressed", [this, fadeTime]() {
-			auto filename = _gui.get<tgui::EditBox>("new_filename", true);
-			auto modname = _gui.get<tgui::EditBox>("new_mod", true);
+		auto new_dialog_button = new_dialog_container->get<tgui::Button>("new_button");
+		new_dialog_button->onPress.connect([this, fadeTime]() {
+			auto filename = _gui.get<tgui::EditBox>("new_filename");
+			auto modname = _gui.get<tgui::EditBox>("new_mod");
 
 			auto mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
 			auto file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
 
-			auto size_x = _gui.get<tgui::EditBox>("new_sizex", true);
-			auto size_y = _gui.get<tgui::EditBox>("new_sizey", true);
+			auto size_x = _gui.get<tgui::EditBox>("new_sizex");
+			auto size_y = _gui.get<tgui::EditBox>("new_sizey");
 
 			auto size_x_str = size_x->getText().isEmpty() ? size_x->getDefaultText() : size_x->getText();
 			auto size_y_str = size_y->getText().isEmpty() ? size_y->getDefaultText() : size_y->getText();
@@ -304,7 +304,7 @@ namespace tiles
 			//only one generator is available, so we don't really need to check it.
 			_new(mod, file, value_x, value_y);
 
-			auto new_container = _gui.get<tgui::Container>("new_dialog", true);
+			auto new_container = _gui.get<tgui::Container>("new_dialog");
 			new_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
 	}
@@ -360,10 +360,10 @@ namespace tiles
 		//fill the tile selector window
 		//=============================
 		static const auto tilesize_label = "draw-size";
-		auto tileSize = _gui.get<tgui::EditBox>(tilesize_label, true);
+		auto tileSize = _gui.get<tgui::EditBox>(tilesize_label);
 		if (tileSize)
 		{
-			tileSize->connect("TextChanged", [this, tileSize]() {
+			tileSize->onTextChange.connect([this, tileSize]() {
 				try
 				{
 					auto value = std::stoi(tileSize->getText().toAnsiString());
@@ -380,7 +380,7 @@ namespace tiles
 			});
 		}
 
-		auto tileContainer = _gui.get<tgui::Container>(editor::tile_selector_panel, true);
+		auto tileContainer = _gui.get<tgui::Container>(editor::tile_selector_panel);
 
 		if (!tileContainer)
 		{
@@ -409,10 +409,9 @@ namespace tiles
 					static_cast<int>(tile_size), static_cast<int>(tile_size) });
 
 				auto tileButton = tgui::Picture::create();
-				tileButton->setTexture(tex);
 				tileButton->setSize(tile_button_size, tile_button_size);
 
-				tileButton->connect("clicked", [this, t, tile_size]() {
+				tileButton->onClick.connect([this, t, tile_size]() {
 					EditMode = editor::EditMode::TILE;
 					_tileInfo = t;
 				});

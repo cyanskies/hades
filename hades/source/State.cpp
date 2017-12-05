@@ -46,7 +46,7 @@ namespace hades
 
 	void State::setGuiTarget(sf::RenderTarget &target)
 	{
-		_gui.setWindow(target);
+		_gui.setTarget(target);
 	}
 
 	void State::setGuiView(sf::View v)

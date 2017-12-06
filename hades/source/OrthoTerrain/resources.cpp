@@ -38,38 +38,40 @@ namespace ortho_terrain
 				Title = "ToolBox";
 				TitleButtons = None;
 
-				ScrollablePanel {
-					SimpleVerticalLayout {
-						Label {
-							Text = "Terrain";
-						}
+				SimpleVerticalLayout {
+					Label {
+						Text = "Terrain";
+					}
 
-						Label {
-							Text = "Size:";
-						}
+					Label {
+						Text = "Size:";
+					}
 
-						EditBox."terrain-size" {
-							Size = ("&.w - 15", 25);
-						}
+					EditBox."terrain-size" {
+						Size = ("&.w - 15", 25);
+					}
 
-						Panel."terrain-selector" { 
-							Size = ("&.w - 5", "&.h");
+					ScrollablePanel {
+						Size = ("95%", "25%");
+						Panel."terrain-selector" {
 						}
+					}
 
-						Label {
-							Text = "Tiles";
-						}
+					Label {
+						Text = "Tiles";
+					}
 
-						Label {
-							Text = "Size:";
-						}
+					Label {
+						Text = "Size:";
+					}
 
-						EditBox."draw-size" {
-							Size = ("&.w - 15", 25);
-						}
+					EditBox."draw-size" {
+						Size = ("&.w - 15", 25);
+					}
 
-						Panel."tile-selector" { 
-							Size = ("&.w - 5", "&.h");
+					ScrollablePanel {
+						Size = ("95%", "25%");
+						Panel."tile-selector" {
 						}
 					}
 				}

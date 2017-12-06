@@ -52,6 +52,7 @@ namespace tiles
 	void tile_editor_base::generate()
 	{
 		//TODO: throw if no tiles have been registered
+		//TODO: don't use error tiles in this
 		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
 		load_map(map);

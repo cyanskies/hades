@@ -33,7 +33,7 @@ namespace tiles
 	public:
 		void init() override; 
 
-		void generate();
+		virtual void generate();
 		
 		virtual void load_map(const MapData&) = 0;
 		virtual MapData save_map() const = 0;

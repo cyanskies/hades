@@ -23,7 +23,7 @@ namespace ortho_terrain
 	class terrain_editor : public tiles::tile_editor_t<MutableTerrainMap>
 	{
 	public:
-		void generate();
+		void generate() override;
 		///void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 

@@ -1,27 +1,21 @@
 #include "OrthoTerrain/editor.hpp"
 
-#include <cmath> //std::round
-#include <fstream>
+//#include <cmath> //std::round
+//#include <fstream>
 #include <thread> //see: FillTileList()
 				  // async building of tile selector ui
 
-#include "TGUI/Animation.hpp"
+//#include "TGUI/Animation.hpp"
 #include "TGUI/Widgets/HorizontalWrap.hpp"
-#include "TGUI/Widgets/ChildWindow.hpp"
-#include "TGUI/Widgets/ComboBox.hpp"
 #include "TGUI/Widgets/EditBox.hpp"
 #include "TGUI/Widgets/Picture.hpp"
-#include "TGUI/Widgets/MenuBar.hpp"
-
-#include "yaml-cpp/emitter.h"
-#include "yaml-cpp/node/node.h"
-#include "yaml-cpp/node/parse.h"
+#include "TGUI/Widgets/ScrollablePanel.hpp"
 
 #include "Hades/common-input.hpp"
 #include "Hades/data_manager.hpp"
-#include "Hades/files.hpp"
-#include "Hades/Properties.hpp"
-#include "Hades/StandardPaths.hpp"
+//#include "Hades/files.hpp"
+//#include "Hades/Properties.hpp"
+//#include "Hades/StandardPaths.hpp"
 
 #include "OrthoTerrain/generator.hpp"
 #include "OrthoTerrain/resources.hpp"
@@ -36,8 +30,21 @@ namespace ortho_terrain
 {
 	void terrain_editor::generate()
 	{
+		auto error_terrain = GetErrorTerrain();
+
+		auto t_id = hades::data::UniqueId::Zero;
+
+		for (auto t : resources::Terrains)
+		{
+			if (t != error_terrain)
+			{
+				t_id = t;
+				break;
+			}
+		}
+
 		//TODO: handle lack of terrains
-		auto terrain = hades::data_manager->get<resources::terrain>(resources::Terrains[1]);
+		auto terrain = hades::data_manager->get<resources::terrain>(t_id);
 		const auto map = generator::Blank({ map_height, map_width }, terrain);
 		Map.create(map);
 	}
@@ -97,6 +104,8 @@ namespace ortho_terrain
 
 	void terrain_editor::FillTileSelector()
 	{
+		tiles::tile_editor_t<MutableTerrainMap>::FillTileSelector();
+
 		const auto settings = tiles::GetTileSettings();
 		auto tile_size = settings.tile_size;
 		auto tile_button_size = tile_size * 3;
@@ -137,10 +146,10 @@ namespace ortho_terrain
 		}
 
 		auto terrainLayout = tgui::HorizontalWrap::create();
-		terrainLayout->setSize("&.w", "&.h");
-		
 		auto terrains = resources::Terrains;
 
+		//TODO: add mutex here make this a protected variable
+		// it isn't being used by the terrain-selector worker
 		std::thread terrain_work([this, terrainLayout, terrainContainer, terrains, settings, tile_button_size]() {
 			//place available terrain in the "terrain" container
 			for (auto t : terrains)
@@ -178,6 +187,7 @@ namespace ortho_terrain
 				}//if exists
 
 			}//for Terrains
+			terrainLayout->setSize({ "80%", "100%" });
 			terrainContainer->add(terrainLayout);
 		});
 

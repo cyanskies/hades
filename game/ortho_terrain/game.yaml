@@ -46,7 +46,7 @@ tilesets:
             left: 0
             tiles_per_row: 1
             tile_count: 1
-    indev-orage-tileset:
+    indev-orange-tileset:
         texture: indev-tex
         terrain: indev-orange
         tiles:
@@ -75,6 +75,11 @@ tilesets:
     indev-green-tileset:
         texture: indev2-tex
         terrain: indev-green
+        tiles:
+            top: 0
+            left: 0
+            tiles_per_row: 1
+            tile_count: 1
         transition2:
             terrain1: indev-grey
             terrain2: indev-green

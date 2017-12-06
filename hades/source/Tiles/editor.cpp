@@ -78,17 +78,17 @@ namespace tiles
 		{
 			//move the view
 			if (mousePos->x_axis < scroll_margin)
-				_gameView.move({ -static_cast<float>(scroll_rate), 0.f });
+				GameView.move({ -static_cast<float>(scroll_rate), 0.f });
 			else if (mousePos->x_axis > *window_width - scroll_margin)
-				_gameView.move({ static_cast<float>(scroll_rate), 0.f });
+				GameView.move({ static_cast<float>(scroll_rate), 0.f });
 
 			if (mousePos->y_axis < scroll_margin)
-				_gameView.move({ 0.f, -static_cast<float>(scroll_rate) });
+				GameView.move({ 0.f, -static_cast<float>(scroll_rate) });
 			else if (mousePos->y_axis > *window_height - scroll_margin)
-				_gameView.move({ 0.f, static_cast<float>(scroll_rate) });
+				GameView.move({ 0.f, static_cast<float>(scroll_rate) });
 
-			auto viewPosition = _gameView.getCenter();
-			auto terrainSize = Map.getLocalBounds();
+			auto viewPosition = GameView.getCenter();
+			auto terrainSize = GetMapBounds();
 			//clamp the gameview after moving it
 			if (viewPosition.x < terrainSize.left)
 				viewPosition.x = terrainSize.left;
@@ -100,7 +100,7 @@ namespace tiles
 			else if (viewPosition.y > terrainSize.top + terrainSize.height)
 				viewPosition.y = terrainSize.top + terrainSize.height;		
 
-			_gameView.setCenter(viewPosition);
+			GameView.setCenter(viewPosition);
 
 			if (EditMode != editor::EditMode::NONE)
 				GenerateDrawPreview(window, input);
@@ -127,8 +127,8 @@ namespace tiles
 		float screenRatio = *wwidth / static_cast<float>(*wheight);
 
 		//set the view
-		_gameView.setSize(*cheight * screenRatio, static_cast<float>(*cheight));
-		_gameView.setCenter({ 100.f,100.f });
+		GameView.setSize(*cheight * screenRatio, static_cast<float>(*cheight));
+		GameView.setCenter({ 100.f,100.f });
 
 		CreateGui();
 	}
@@ -316,7 +316,7 @@ namespace tiles
 				{
 					auto value = std::stoi(tileSize->getText().toAnsiString());
 					if (value >= 0)
-						_tile_draw_size = value;
+						Tile_draw_size = value;
 				}
 				//throws invalid_argument and out_of_range, 
 				//we can't do anything about either of these
@@ -358,13 +358,15 @@ namespace tiles
 
 				tileButton->onClick.connect([this, t, tile_size]() {
 					EditMode = editor::EditMode::TILE;
-					_tileInfo = t;
+					TileInfo = t;
 				});
 
 				tileLayout->add(tileButton);
 			}
 		};
 
+		//TODO: make this a protected variable
+		// it isn't being used by the terrain-selector worker
 		auto data_mutex = std::make_shared<std::mutex>();
 		std::thread tile_work([tileLayout, tileContainer, tilesets, settings, make_tiles, data_mutex]() {
 			//place available tiles in the "tiles" container

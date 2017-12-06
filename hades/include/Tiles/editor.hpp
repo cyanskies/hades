@@ -31,7 +31,7 @@ namespace tiles
 	class tile_editor_base : public hades::State
 	{
 	public:
-		virtual void init() override; 
+		void init() override; 
 
 		void generate();
 		
@@ -55,8 +55,9 @@ namespace tiles
 		void CreateGui();
 		//fills the 'tiles' gui containers 
 		//with selectable tiles.
-		void FillTileSelector();
+		virtual void FillTileSelector();
 
+		virtual sf::FloatRect GetMapBounds() const = 0;
 		//==map editing functions==
 		//generates the current tile that will be pasted
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) = 0;
@@ -70,38 +71,45 @@ namespace tiles
 		using EditMode_t = hades::types::uint8;
 		EditMode_t EditMode;
 		const resources::tile_settings *TileSettings;
+
+		//tile placement mode variables
+		hades::types::uint8 Tile_draw_size = 1;
+		tile TileInfo;
+
+		//core map drawing variables
+		sf::View GameView;
 	private:
 		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
 		void _load(const hades::types::string&, const hades::types::string&);
 		void _save() const;
-
-		//preview drawing variables
-		sf::Vector2u _tilePosition;
-		MutableTileMap _tilePreview;
-
-		//tile placement mode variables
-		tile _tileInfo;
-		hades::types::uint8 _tile_draw_size = 1;
-
-		//core map drawing variables
-		sf::View _gameView;
 	};
 
 	template<class MapClass = tiles::MutableTileMap>
-	class tile_editor : public tile_editor_base
+	class tile_editor_t : public tile_editor_base
 	{
 	public:
+		tile_editor_t() = default;
+
 		virtual void load_map(const MapData&) override;
 		virtual MapData save_map() const override;
 
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 	protected:
+
+		virtual sf::FloatRect GetMapBounds() const;
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) override;
 		virtual void TryDraw(const hades::InputSystem::action_set&) override;
 
 		//core map variables
 		MapClass Map;
+	private:
+		//preview drawing variables
+		sf::Vector2u _tilePosition;
+		MapClass _tilePreview;
+
 	};
+
+	using tile_editor = tile_editor_t<MutableTileMap>;
 }
 
 #include "Tiles/editor.inl"

@@ -6,15 +6,181 @@
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
+#include "Tiles/editor.hpp"
 #include "Tiles/tiles.hpp"
 
 namespace ortho_terrain
 {
+	void makeDefaultLayout(hades::data::data_manager* data)
+	{
+		auto layout_id = data->getUid(tiles::editor::tile_editor_layout);
+
+		hades::resources::string *layout = nullptr;
+
+		if (!data->exists(layout_id))
+		{
+			//resource doens't exist yet, create it
+			auto layout_ptr = std::make_unique<hades::resources::string>();
+			layout = &*layout_ptr;
+			data->set<hades::resources::string>(layout_id, std::move(layout_ptr));
+		}
+		else
+		{
+			layout = data->get<hades::resources::string>(layout_id);
+		}
+
+		layout->value =
+			R"(ChildWindow {
+				Position = (20, 20);
+				Size = ("&.w / 6", "&.h / 1.5");
+				Visible = true;
+				Resizable = true;
+				Title = "ToolBox";
+				TitleButtons = None;
+
+				ScrollablePanel {
+					SimpleVerticalLayout {
+						Label {
+							Text = "Terrain";
+						}
+
+						Label {
+							Text = "Size:";
+						}
+
+						EditBox."terrain-size" {
+							Size = ("&.w - 15", 25);
+						}
+
+						Panel."terrain-selector" { 
+							Size = ("&.w - 5", "&.h");
+						}
+
+						Label {
+							Text = "Tiles";
+						}
+
+						Label {
+							Text = "Size:";
+						}
+
+						EditBox."draw-size" {
+							Size = ("&.w - 15", 25);
+						}
+
+						Panel."tile-selector" { 
+							Size = ("&.w - 5", "&.h");
+						}
+					}
+				}
+			}
+
+			ChildWindow."load_dialog" {
+				Position = (200, 200);
+				Title = "Load...";
+				Label."load_mod_label" {
+					Position = (5, 5);
+					Text = "Mod:";
+				}
+
+				EditBox."load_mod" {
+					Position = (5, "load_mod_label.y + load_mod_label.h + 5");
+					Size = (100, 30);
+					DefaultText = "./";
+				}
+
+				EditBox."load_filename" {
+					Position = ("load_mod.x + load_mod.w + 10", "load_mod.y");
+					Size = (100, 30);
+					DefaultText = "new.lvl";
+				}
+
+				Label {
+					Position = ("load_filename.x", 5);
+					Text = "Filename:";
+				}
+
+				Button."load_button" {
+					Position = ("load_filename.x + load_filename.w + 10" , "load_mod.y");
+					Text = "Load";
+				}
+
+				Size = ("load_button.x + load_button.w + 5", "load_filename.y + load_filename.h + 5");
+			}
+
+			ChildWindow."new_dialog" {
+				Position = (150, 150);
+				Title = "New...";
+
+				Label."new_mod_label" {
+					Text = "Mod:";
+					Position = (5, 5);
+				}
+
+				EditBox."new_mod" {
+					Position = (5, "new_mod_label.x + new_mod_label.h + 10");
+					Size = (100, 30);
+					DefaultText = "./";
+                
+				}
+
+				EditBox."new_filename" {
+					Position = ("new_mod.x + new_mod.w + 10", "new_mod.y");
+					Size = (100, 30);
+					DefaultText = "new.lvl";
+				}
+
+				Label {
+					Position = ("new_filename.x", "new_mod_label.y");
+					Text = "Filename:";
+				}
+
+				Label."new_sizex_label" {
+					Position = ("new_mod_label.x", "new_filename.y + new_filename.h + 10");
+					Text = "Width:";
+				}
+
+				EditBox."new_sizex" {
+					Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
+					Size = (50, 30);
+					DefaultText = "25";
+				}
+
+				Label."new_sizey_label" {
+					Position = ("new_sizex.x + new_sizex.w + 10", "new_sizex_label.y");
+					Text = "Height:";
+				}
+
+				EditBox."new_sizey" {
+					Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
+					Size = (50, 30);
+					DefaultText = "25";
+				}
+
+				Label."new_gen_label" {
+					Position = ("new_sizex_label.x", "new_sizey.y + new_sizey.h + 10");
+					Text = "Generator:";
+				}
+
+				ComboBox."new_gen" {
+					Position = ("new_gen_label.x + new_gen_label.w + 10", "new_gen_label.y");
+				}
+
+				Button."new_button" {
+					Position = ("new_filename.x + new_filename.w + 10", "new_filename.y");
+					Text = "Create";
+				}
+
+				Size = ("new_button.x + new_button.w + 5", "new_gen.y + new_gen.h + 5");
+			})";
+	}
+
 	void RegisterOrthoTerrainResources(hades::data::data_manager* data)
 	{
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);
 
+		makeDefaultLayout(data);
 		data->register_resource_type("terrain-settings", ortho_terrain::resources::parseTerrainSettings);
 		data->register_resource_type("tilesets", ortho_terrain::resources::parseTileset);
 	}
@@ -632,7 +798,11 @@ namespace ortho_terrain
 					ter = parseTerrain(mod, texid, terrain, data);
 
 				auto traits = yaml_get_sequence<hades::types::string>(v, resource_type, name, "terrain-traits", mod);
-				std::copy(std::begin(traits), std::end(traits), std::back_inserter(ter->traits));
+
+				std::transform(std::begin(traits), std::end(traits), std::back_inserter(ter->traits),
+					[](hades::types::string s) {
+					return hades::data_manager->getUid(s);
+				});
 
 				auto tiles_section = v["tiles"];
 				if (tiles_section.IsDefined())

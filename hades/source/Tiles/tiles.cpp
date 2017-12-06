@@ -540,7 +540,7 @@ namespace tiles
 		}
 	}
 
-	const std::vector<tile> &GetErrorTileset()
+	TileArray &GetErrorTileset()
 	{
 		auto settings = GetTileSettings();
 		auto tset = hades::data_manager->get<resources::tileset>(settings.error_tileset);

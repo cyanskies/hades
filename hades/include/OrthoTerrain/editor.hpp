@@ -5,25 +5,22 @@
 #include "Hades/Types.hpp"
 
 #include "OrthoTerrain/terrain.hpp"
-#include "OrthoTerrain/serialise.hpp"
+#include "Tiles/editor.hpp"
 
 //a simple terrain editor
-
 namespace ortho_terrain
 {
 	namespace editor
 	{
-		//screen view height
-		const hades::types::int32 view_height = 240;
+		const hades::types::string terrain_selector_panel = "terrain-selector";
 
 		enum class EditMode {
-			NONE, //no editing
-			TILE, //draw a specific tile, no cleanup
-			TERRAIN, //draw a terrain tile with transition fixups
+			TERRAIN = tiles::editor::TILE_EDIT_END + 1, //draw a terrain tile with transition fixups
+			TERRAIN_EDIT_END
 		};
 	}
 
-	class terrain_editor : public hades::State
+	class terrain_editor : public tiles::tile_editor<MutableTerrainMap>
 	{
 	public:
 		terrain_editor() = default;

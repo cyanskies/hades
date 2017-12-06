@@ -28,20 +28,19 @@ namespace tiles
 		};
 	}
 
-	class tile_editor : public hades::State
+	class tile_editor_base : public hades::State
 	{
 	public:
-		tile_editor() = default;
 		virtual void init() override; 
 
 		void generate();
 		
-		void load_map(const MapData&);
-		MapData save_map() const;
+		virtual void load_map(const MapData&) = 0;
+		virtual MapData save_map() const = 0;
 		
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
-		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
+		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override = 0;
 
 		virtual void cleanup() override;
 						
@@ -60,9 +59,9 @@ namespace tiles
 
 		//==map editing functions==
 		//generates the current tile that will be pasted
-		void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
+		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) = 0;
 		//check and draw the new tiles over the current map
-		void TryDraw(const hades::InputSystem::action_set&);
+		virtual void TryDraw(const hades::InputSystem::action_set&) = 0;
 		
 		//map file info
 		hades::types::string Mod, Filename;
@@ -71,10 +70,6 @@ namespace tiles
 		using EditMode_t = hades::types::uint8;
 		EditMode_t EditMode;
 		const resources::tile_settings *TileSettings;
-
-		//core map variables
-		MutableTileMap Map;
-
 	private:
 		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
 		void _load(const hades::types::string&, const hades::types::string&);
@@ -91,6 +86,24 @@ namespace tiles
 		//core map drawing variables
 		sf::View _gameView;
 	};
+
+	template<class MapClass = tiles::MutableTileMap>
+	class tile_editor : public tile_editor_base
+	{
+	public:
+		virtual void load_map(const MapData&) override;
+		virtual MapData save_map() const override;
+
+		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
+	protected:
+		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) override;
+		virtual void TryDraw(const hades::InputSystem::action_set&) override;
+
+		//core map variables
+		MapClass Map;
+	};
 }
+
+#include "Tiles/editor.inl"
 
 #endif // !TILES_EDITOR_HPP

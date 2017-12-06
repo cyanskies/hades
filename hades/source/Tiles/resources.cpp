@@ -175,6 +175,17 @@ namespace tiles
 		return !(lhs == rhs);
 	}
 
+	bool operator<(const tile &lhs, const tile &rhs)
+	{
+		if (lhs.texture != rhs.texture)
+			return lhs.texture < rhs.texture;
+		else if(lhs.left != rhs.left)
+			return lhs.left < rhs.left;
+		else
+			return lhs.top < rhs.top;
+	}
+
+
 	namespace resources
 	{
 		std::vector<hades::data::UniqueId> Tilesets;

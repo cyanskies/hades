@@ -28,8 +28,8 @@
 
 using namespace hades;
 
-const auto tile_editor_window = "editor-window";
-const auto tile_editor_tabs = "editor-tabs";
+const auto tile_editor_base_window = "editor-window";
+const auto tile_editor_base_tabs = "editor-tabs";
 
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
@@ -40,7 +40,7 @@ scroll_rate = 4;
 
 namespace tiles
 {
-	void tile_editor::init()
+	void tile_editor_base::init()
 	{
 		TileSettings = &GetTileSettings();
 
@@ -49,25 +49,15 @@ namespace tiles
 		reinit();
 	}
 
-	void tile_editor::generate()
+	void tile_editor_base::generate()
 	{
 		//TODO: throw if no tiles have been registered
 		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		Map.create(map);
+		load_map(map);
 	}
 
-	void tile_editor::load_map(const MapData& data)
-	{
-		Map.create(data);
-	}
-
-	MapData tile_editor::save_map() const
-	{
-		return Map.getMap();
-	}
-
-	bool tile_editor::handleEvent(const hades::Event &windowEvent)
+	bool tile_editor_base::handleEvent(const hades::Event &windowEvent)
 	{ 
 		if (std::get<sf::Event>(windowEvent).type == sf::Event::EventType::Resized)
 		{
@@ -78,7 +68,7 @@ namespace tiles
 		return false; 
 	}
 
-	void tile_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
+	void tile_editor_base::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
 	{
 		static auto window_width = console::GetInt("vid_width", 640),
 			window_height = console::GetInt("vid_height", 480);
@@ -119,19 +109,10 @@ namespace tiles
 		if (EditMode != editor::EditMode::NONE)
 			TryDraw(input);
 	}
-	
-	void tile_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
-	{
-		target.setView(_gameView);
-		target.draw(Map);
 
-		if (EditMode == editor::EditMode::TILE)
-			target.draw(_tilePreview);
-	}
+	void tile_editor_base::cleanup(){}
 
-	void tile_editor::cleanup(){}
-
-	void tile_editor::reinit() 
+	void tile_editor_base::reinit() 
 	{
 		//=========================
 		//set up the editor rendering
@@ -152,19 +133,19 @@ namespace tiles
 		CreateGui();
 	}
 
-	void tile_editor::pause() {}
-	void tile_editor::resume() {}
+	void tile_editor_base::pause() {}
+	void tile_editor_base::resume() {}
 
-	void tile_editor::CreateGui()
+	void tile_editor_base::CreateGui()
 	{
 		//====================
-		//set up the tile_editor UI
+		//set up the tile_editor_base UI
 		//====================
 
 		_gui.removeAllWidgets();
 
 		//==================
-		//load the tile_editor UI
+		//load the tile_editor_base UI
 		//==================
 		auto layout_id = data_manager->getUid(editor::tile_editor_layout);
 		if (!data_manager->exists(layout_id))
@@ -309,40 +290,7 @@ namespace tiles
 		});
 	}
 
-	void tile_editor::GenerateDrawPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
-	{
-		auto mousePos = input.find(hades::input::PointerPosition);
-		if (EditMode == editor::EditMode::TILE && mousePos != input.end() && mousePos->active)
-		{
-			const auto tile_size = TileSettings->tile_size;
-
-			auto truePos = window.mapPixelToCoords({ mousePos->x_axis, mousePos->y_axis }, _gameView);
-			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
-
-			auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
-				static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
-			auto position = sf::Vector2u(snapPos) / tile_size;
-			if (_tilePosition != position)
-			{
-				_tilePosition = position;
-				_tilePreview = Map;
-				_tilePreview.replace(_tileInfo, _tilePosition, _tile_draw_size, true);
-			}
-		}
-	}
-
-	//pastes the currently selected tile or terrain onto the map
-	void tile_editor::TryDraw(const hades::InputSystem::action_set &input)
-	{
-		auto mouseLeft = input.find(input::PointerLeft);
-		if (EditMode == editor::EditMode::TILE && mouseLeft != input.end() && mouseLeft->active)
-		{
-			//place the tile in the tile map
-			Map.replace(_tileInfo, _tilePosition, _tile_draw_size, true);
-		}
-	}
-
-	void tile_editor::FillTileSelector()
+	void tile_editor_base::FillTileSelector()
 	{
 		const auto &tilesets = resources::Tilesets;
 
@@ -384,7 +332,7 @@ namespace tiles
 
 		if (!tileContainer)
 		{
-			LOGERROR("tile_editor Gui failed, missing container for 'tiles'");
+			LOGERROR("tile_editor_base Gui failed, missing container for 'tiles'");
 			kill();
 			return;
 		}
@@ -398,7 +346,7 @@ namespace tiles
 				if (!data_manager->exists(t.texture))
 				{
 					continue;
-					LOGERROR("tile_editor UI skipping tile because texture is missing: " + data_manager->as_string(t.texture));
+					LOGERROR("tile_editor_base UI skipping tile because texture is missing: " + data_manager->as_string(t.texture));
 				}
 
 				auto texture = data_manager->getTexture(t.texture);
@@ -439,18 +387,18 @@ namespace tiles
 		tile_work.detach();
 	}
 
-	void tile_editor::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
+	void tile_editor_base::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
 	{
 		//TODO: handle case of missing terrain
 		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		Map.create(map);
-
+		load_map(map);
+		
 		Mod = mod;
 		Filename = filename;
 	}
 
-	void tile_editor::_load(const hades::types::string& mod, const hades::types::string& filename)
+	void tile_editor_base::_load(const hades::types::string& mod, const hades::types::string& filename)
 	{
 		auto file = hades::files::as_string(mod, filename);
 		auto yamlRoot = YAML::Load(file);
@@ -463,7 +411,7 @@ namespace tiles
 		Filename = filename;
 	}
 
-	void tile_editor::_save() const
+	void tile_editor_base::_save() const
 	{
 		//generate the output string
 		const auto map_data = save_map();

@@ -23,6 +23,8 @@ namespace tiles
 	bool operator==(const tile &lhs, const tile &rhs);
 	bool operator!=(const tile &lhs, const tile &rhs);
 
+	bool operator<(const tile &lhs, const tile &rhs);
+
 	namespace resources
 	{
 		void parseTileSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);

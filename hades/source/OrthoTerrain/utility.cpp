@@ -526,11 +526,8 @@ namespace ortho_terrain
 		}
 		default:
 			LOGWARNING("'Type' passed to GetTransition was outside expected range[0,15] was: " + std::to_string(type));
-			auto setting_id = hades::data_manager->getUid(resources::terrain_settings_name);
-			assert(hades::data_manager->exists(setting_id));
-			auto error_id = hades::data_manager->get<resources::terrain_settings>(setting_id)->error_tile;
-			auto error_terrain = hades::data_manager->get<resources::terrain>(error_id);
-			return error_terrain->tiles;
+			
+			return tiles::GetErrorTileset();
 		}
 	}
 
@@ -654,11 +651,7 @@ namespace ortho_terrain
 			else
 			{
 				LOGWARNING("'Type' passed to GetTransition was outside expected range[0,80] was: " + std::to_string(type));
-				auto setting_id = hades::data_manager->getUid(resources::terrain_settings_name);
-				assert(hades::data_manager->exists(setting_id));
-				auto error_id = hades::data_manager->get<resources::terrain_settings>(setting_id)->error_tile;
-				auto error_terrain = hades::data_manager->get<resources::terrain>(error_id);
-				return error_terrain->tiles;
+				return tiles::GetErrorTileset();
 			}
 		};
 	}

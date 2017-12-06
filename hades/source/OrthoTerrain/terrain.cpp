@@ -159,100 +159,33 @@ namespace ortho_terrain
 
 	void MutableTerrainMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
 	{	
-		if (t.terrain == hades::data::UniqueId::Zero)
+		MutableTileMap::replace(t, position, amount);
+
+		if (!updateVertex)
 			return;
 
 		auto positions = AllPositions(position, amount);
-
 		for (const auto &p : positions)
 		{
 			auto position = sf::Vector2u(p);
-			//tried to place a tile outside the map
-			if (!IsWithin(_tiles, position, _width))
-				continue;
+			//assert that the size of the corners enum hasnt been changed
+			assert(CORNER_LAST == 4);
 
-			//find the array to place it in
-			vArray *targetArray = nullptr;
-
-			for (auto &a : Chunks)
+			auto verts = AsVertex(position);
+			for(auto i = 0; i < CORNER_LAST; ++i)
 			{
-				if (a.first->id == t.texture)
-				{
-					targetArray = &a;
-					break;
-				}
-			}
+				if (!IsWithin(_vertex, verts[i], _vertex_width))
+					continue;
 
-			//create a new vertex array if needed
-			if (!targetArray && hades::data_manager->exists(t.texture))
-			{
-				auto texture = hades::data_manager->getTexture(t.texture);
-				Chunks.push_back({ texture, VertexArray() });
-				targetArray = &Chunks.back();
-			}
-			else if (!targetArray)
-			{
-				//the texture doesn't exist,
-				//this should be impossible at this point,
-				//as it should be checked when adding tiles/terrain
-				//to the tile selector
-				assert(false);
-			}
-
-			//find the location of the current tile
-			vArray *currentArray = nullptr;
-
-			const auto pixelPos = position * _tile_size;
-
-			for (auto &a : Chunks)
-			{
-				assert(a.second.size() % VertexPerTile == 0);
-				for (std::size_t i = 0; i != a.second.size(); i += VertexPerTile)
-				{
-					if (static_cast<sf::Vector2u>(a.second[i].position) == pixelPos)
-					{
-						currentArray = &a;
-						break;
-					}
-				}
-			}
-
-			assert(currentArray);
-
-			//if the arrays are the same, then replace the quad
-			//otherwise remove the quad from the old array and insert into the new one
-			if (currentArray == targetArray)
-				_replaceTile(targetArray->second, position, t);
-			else
-			{
-				_removeTile(currentArray->second, position);
-				_addTile(targetArray->second, position, t);
-			}
-
-			//write the tile to the tile vector
-			Write(_tiles, position, _width, t);
-			
-			if (updateVertex)
-			{
-				//assert that the size of the corners enum hasnt been changed
-				assert(CORNER_LAST == 4);
-
-				auto verts = AsVertex(position);
-				for(auto i = 0; i < CORNER_LAST; ++i)
-				{
-					if (!IsWithin(_vertex, verts[i], _vertex_width))
-						continue;
-
-					//get terrain
-					//assert that i is in the correct range
-					//for accessing the 4 element array
-					assert(i >= 0 && i < 4);
-					auto t_id = TerrainInCorner(t, static_cast<Corner>(i));
-					//convert to resource
-					const auto *terrain = hades::data_manager->get<resources::terrain>(t_id);
-					//write to vertex
-					Write(_vertex, verts[i], _vertex_width, terrain);
-				}
+				//get terrain
+				//assert that i is in the correct range
+				//for accessing the 4 element array
+				assert(i >= 0 && i < 4);
+				auto t_id = TerrainInCorner(t, static_cast<Corner>(i));
+				//convert to resource
+				const auto *terrain = hades::data_manager->get<resources::terrain>(t_id);
+				//write to vertex
+				Write(_vertex, verts[i], _vertex_width, terrain);
 			}
 		}
 	}
@@ -369,7 +302,21 @@ namespace ortho_terrain
 
 	tiles::traits_list GetTerrainTraits(const tiles::tile &tile)
 	{
-		tiles::traits_list out;
+		const auto terrain = GetTerrainInfo(tile);
+		auto out = tile.traits;
+		const auto terrain_list = { terrain.terrain, terrain.terrain2, terrain.terrain3, terrain.terrain4 };
+
+		for (auto &t_id : terrain_list)
+		{
+			if (t_id == hades::data::UniqueId::Zero ||
+				!hades::data_manager->exists(t_id))
+				continue;
+
+			auto t = hades::data_manager->get<resources::terrain>(t_id);
+			std::copy(std::begin(t->traits), std::end(t->traits), std::back_inserter(out));
+		}
+
+		return out;
 	}
 
 	terrain_info GetTerrainInfo(const tiles::tile &tile)

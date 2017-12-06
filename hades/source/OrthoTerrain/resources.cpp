@@ -177,11 +177,13 @@ namespace ortho_terrain
 
 	void RegisterOrthoTerrainResources(hades::data::data_manager* data)
 	{
+		data->register_resource_type("terrain-settings", ortho_terrain::resources::parseTerrainSettings);
+
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);
 
+		//override the default layout and the tilesets parser
 		makeDefaultLayout(data);
-		data->register_resource_type("terrain-settings", ortho_terrain::resources::parseTerrainSettings);
 		data->register_resource_type("tilesets", ortho_terrain::resources::parseTileset);
 	}
 
@@ -257,12 +259,9 @@ namespace ortho_terrain
 				}
 			}
 
-			auto tile_settings = tiles::GetTileSettings();
+			tiles::resources::parseTileSettings(mod, node, data_manager);
 
 			settings->mod = mod;
-
-			tile_settings.tile_size = yaml_get_scalar<tiles::tile_size_t>(node, resource_type, "terrain-settings", "tile-size", mod, 8u);
-			tile_settings.error_tileset = yaml_get_uid(node, resource_type, "terrain-settings", "error-tileset", mod);
 			settings->error_terrain = yaml_get_uid(node, resource_type, "terrain-settings", "error-terrain", mod);
 		}
 
@@ -270,17 +269,11 @@ namespace ortho_terrain
 		{
 			//terrain: name <// a map of terrains in this tileset
 
-			const types::string resource_type = "terrain";
-
-			terrain* t = nullptr;
-
-			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, terrainNode.IsMap()))
-				return t;
-
 			auto terrain_str = terrainNode.as<hades::types::string>();
 			
 			auto id = data->getUid(terrain_str);
 
+			terrain* t = nullptr;
 			if (!data->exists(id))
 			{
 				auto terrain_ptr = std::make_unique<terrain>();
@@ -810,16 +803,19 @@ namespace ortho_terrain
 					auto settings = tiles::GetTileSettings();
 					auto tiles = tiles::resources::ParseTileSection(texid, settings.tile_size, tiles_section, resource_type, name, mod);
 					std::copy(std::begin(tiles), std::end(tiles), std::back_inserter(tset->tiles));
-					std::copy(std::begin(tiles), std::end(tiles), std::back_inserter(ter->tiles));
-
-					//insert info for these tiles into the terrain lookup table
-					for (const auto &t : tiles)
+					if (ter)
 					{
-						terrain_info i;
-						i.terrain = ter->id;
-						i.type = transition2::NONE;
+						std::copy(std::begin(tiles), std::end(tiles), std::back_inserter(ter->tiles));
 
-						TerrainLookup.insert({ t, i });
+						//insert info for these tiles into the terrain lookup table
+						for (const auto &t : tiles)
+						{
+							terrain_info i;
+							i.terrain = ter->id;
+							i.type = transition2::NONE;
+
+							TerrainLookup.insert({ t, i });
+						}
 					}
 				}
 

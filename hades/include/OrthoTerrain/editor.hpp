@@ -24,7 +24,7 @@ namespace ortho_terrain
 	{
 	public:
 		void generate();
-		void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
+		///void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 	private:

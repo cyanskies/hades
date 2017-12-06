@@ -62,7 +62,7 @@ namespace ortho_terrain
 			//no support for wang 3corner or anything like that
 			//also return error if we don't have any terrain_ids for any reason
 			else if (unique_terrain.size() != 2)
-				return RandomTile(*ErrorTransition());
+				return tiles::GetErrorTile();
 
 			auto terrain1 = *unique_terrain.begin(),
 				terrain2 = *++unique_terrain.begin();

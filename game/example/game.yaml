@@ -3,7 +3,7 @@
 mod:
     name: example
     depends:
-        - tiles
+        - ortho_terrain
 
 textures:
     #example is intentionaly missing, to show what happens if a texture is not present

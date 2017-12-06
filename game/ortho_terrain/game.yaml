@@ -21,77 +21,83 @@ textures:
 
 terrain-settings:
     tile-size: 8
-    error-tile: error-terrain
-
-include: gui_layouts.yaml
-    
+    error-tileset: error-terrain-tileset
+    error-terrain: error-terrain
+ 
 tilesets:
     error-terrain-tileset:
-        texture: "error-tileset-tex"
+        texture: error-tileset-tex
         # a list of terrain types provided by the tileset
         # a terrain type
-        terrain:
-            error-terrain:
-                left: 0
-                top: 0
+        terrain: error-terrain
+        tiles:
+            top: 0
+            left: 0
+            tiles_per_row: 1
+            tile_count: 1
     #each tileset represents a terrain texture
-    indev:
-        texture: "indev-tex"
+    indev-grey-tileset:
+        texture: indev-tex
         # a list of terrain types provided by the tileset
         # a terrain type
-        terrain:
-            indev-grey:
-                left: 0
-                top: 0
-            #duplicates provide random tile replacements
-            indev-orange:
-                left: 0
-                top: 8
+        terrain: indev-grey
+        tiles:
+            top: 0
+            left: 0
+            tiles_per_row: 1
+            tile_count: 1
+    indev-orage-tileset:
+        texture: indev-tex
+        terrain: indev-orange
+        tiles:
+            top: 8
+            left: 0
+            tiles_per_row: 1
+            tile_count: 1
         transition2:
             #the name of the transition isn't important and can be duplicated or 
             #changed, but any transition with the same terrain1 and terrain2 will be considered the same
             #even if the order is swapped, the cannonical order is the one first supplied
-            terrain-grey-orange:
-                terrain1: indev-grey
-                #if terrain2 is absent then the transition can be drawn over any terrain
-                #this can be used for terrain that sits on top of other terrains, like concrete
-                #such a transition is expected to have some transparent area to see the other terrain through,
-                # may just have a hard edge
-                terrain2: indev-orange
-                #a transition is expected to take up 4* tilesize by 6*tilesize pixels
-                #this just specifies the top left corner of the transition grid
-                #any transition tile that is entirely alpha is assumed to be empty and 
-                #ignored for autofill purposes, but still uses up an id
-                left: 8
-                top: 0
-                width: 4
-                layout: accending
-    indev2:
-        texture: "indev2-tex"
-        terrain:
-            indev-green:
-                left: 0
-                top: 0
+            terrain1: indev-grey
+            #if terrain2 is absent then the transition can be drawn over any terrain
+            #this can be used for terrain that sits on top of other terrains, like concrete
+            #such a transition is expected to have some transparent area to see the other terrain through,
+            # may just have a hard edge
+            terrain2: indev-orange
+            #a transition is expected to take up 4* tilesize by 6*tilesize pixels
+            #this just specifies the top left corner of the transition grid
+            #any transition tile that is entirely alpha is assumed to be empty and 
+            #ignored for autofill purposes, but still uses up an id
+            left: 8
+            top: 0
+            width: 4
+            layout: accending
+    indev-green-tileset:
+        texture: indev2-tex
+        terrain: indev-green
         transition2:
-            terrain-grey-green:
-                terrain1: indev-grey
-                terrain2: indev-green
-                left: 8
-                top: 0
-                width: 4
-                layout: brigid
-            terrain-orange-green:
-                terrain1: indev-orange
-                terrain2: indev-green
-                left: 40
-                top: 0
-                width: 4
-                layout: brigid
+            terrain1: indev-grey
+            terrain2: indev-green
+            left: 8
+            top: 0
+            width: 4
+            layout: brigid
+    indev-green-tileset2:
+        texture: indev2-tex
+        transition2:
+            terrain1: indev-orange
+            terrain2: indev-green
+            left: 40
+            top: 0
+            width: 4
+            layout: brigid
     indev3:
-        texture: "indev3-tex"
+        texture: indev3-tex
         transition3:
-            terrain-grey-orange-green:
-                terrain1: indev-grey
-                terrain2: indev-orange
-                terrain3: indev-green
-                layout: ascending
+            terrain1: indev-grey
+            terrain2: indev-orange
+            terrain3: indev-green
+            left: 0
+            top: 0
+            width: 6
+            layout: ascending

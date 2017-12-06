@@ -259,7 +259,7 @@ namespace tiles
 			return out;
 		}
 
-		std::vector<tile> ParseTilesSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
+		std::vector<tile> ParseTileSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
 			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod)
 		{
 			tile_size_t left = yaml_get_scalar<tile_size_t>(tiles_node, resource_type, name, "left", mod, 0),
@@ -351,7 +351,7 @@ namespace tiles
 						continue;
 					}
 
-					auto tile_list = ParseTilesSection(texid, tile_settings.tile_size, tiles_section, resource_type, name, mod);
+					auto tile_list = ParseTileSection(texid, tile_settings.tile_size, tiles_section, resource_type, name, mod);
 					std::copy(std::begin(tile_list), std::end(tile_list), std::back_inserter(tset->tiles));
 				}
 				catch (tile_map_exception&)

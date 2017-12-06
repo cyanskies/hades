@@ -150,6 +150,9 @@ namespace ortho_terrain
 					auto terrain = hades::data_manager->get<resources::terrain>(t);
 					assert(terrain);
 
+					if (terrain->tiles.empty())
+						continue;
+
 					auto tile = terrain->tiles[0];
 
 					//skip if needed data is missing.

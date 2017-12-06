@@ -5,8 +5,8 @@
 #include "Hades/App.hpp"
 #include "Hades/common-input.hpp"
 
-#include "Tiles/editor.hpp"
-#include "Tiles/resources.hpp"
+#include "OrthoTerrain/editor.hpp"
+#include "OrthoTerrain/resources.hpp"
 
 #include "input_names.hpp"
 #include "ConsoleTestState.hpp"
@@ -24,7 +24,7 @@ std::string defaultGame()
 
 void resourceTypes(hades::DataManager &data)
 {
-	tiles::RegisterTileResources(&data);
+	ortho_terrain::RegisterOrthoTerrainResources(&data);
 	//data.register_resource_type("snake-rules", parseSnakeRules);
 
 	//get names for the input system
@@ -35,7 +35,7 @@ void hadesMain(hades::StateManager &state, hades::InputSystem &bind, hades::Comm
 {
 	hades::RegisterMouseInput(bind);
 
-	state.push(std::make_unique<tiles::tile_editor>());
+	state.push(std::make_unique<ortho_terrain::terrain_editor>());
 	return;
 
 	std::unique_ptr<hades::State> consolestate = std::make_unique<ConsoleTestState>();

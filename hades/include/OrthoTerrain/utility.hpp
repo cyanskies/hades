@@ -20,8 +20,6 @@ namespace ortho_terrain
 		struct terrain_transition3;
 	}
 
-	//returns an error tile(configurable in game.yaml)
-	std::vector<tiles::tile> *ErrorTransition();
 	//returns a random tile from the selection
 	tiles::tile RandomTile(const std::vector<tiles::tile>& tiles);
 

@@ -22,7 +22,7 @@
 ::yaml-cpp
 
 @cd ../yaml-cpp
-@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx%  -G %generator%
+@cmake -DCMAKE_BUILD_TYPE=%mode% -DCMAKE_INSTALL_PREFIX=../%install-pfx% -DBUILD_GMOCK=false -DYAML_CPP_BUILD_TESTS=false -G %generator%
 @cmake --build . --target install --config %mode%
 
 ::minizlib

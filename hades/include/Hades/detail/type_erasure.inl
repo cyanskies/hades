@@ -88,6 +88,8 @@ namespace hades
 			throw type_erasure::value_wrong_type("Tried to retrieve value from property_bag using wrong type.");
 		}
 	}
+	
+	const auto key_null_message = "Tried to retrieve unassigned key.";
 
 	template<class Key>
 	void* property_bag<Key>::get_reference_void(Key key)
@@ -96,10 +98,23 @@ namespace hades
 
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
-			throw type_erasure::key_null("Tried to retrieve unassigned key.");
+			throw type_erasure::key_null(key_null_message);
 
 		auto *holder = static_cast<type_holder*>(&*iter->second);
 		return static_cast<void*>(&holder->get());
+	}
+
+	template<class Key>
+	const void* property_bag<Key>::get_reference_void(Key key) const
+	{
+		using type_holder =  const type_erasure::type_erased<intptr_t>; //intptr_t is the platforms ptr size
+
+		auto iter = _bag.find(key);
+		if (iter == _bag.end())
+			throw type_erasure::key_null(key_null_message);
+
+		auto *holder = static_cast<type_holder*>(&*iter->second);
+		return static_cast<const void*>(&holder->get());
 	}
 
 	template<class Key>

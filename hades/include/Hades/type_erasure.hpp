@@ -87,6 +87,7 @@ namespace hades {
 		T* get_reference(Key key);
 
 		void* get_reference_void(Key key);
+		const void* get_reference_void(Key key) const;
 
 		iterator begin() noexcept;
 		iterator end() noexcept;

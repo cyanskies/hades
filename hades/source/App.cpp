@@ -13,6 +13,7 @@
 #include "zlib/zlib.h" //for zlib version
 
 #include "Hades/ConsoleView.hpp"
+#include "Hades/Data.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/files.hpp"
 #include "Hades/Logging.hpp"
@@ -95,6 +96,7 @@ namespace hades
 		debug::overlay_manager = &_overlayMan;
 		//record the global resource controller
 		data_manager = &_dataMan;
+		data::detail::SetDataManagerPtr(data_manager);
 
 		resourceTypes(_dataMan);
 

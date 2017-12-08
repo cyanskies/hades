@@ -4,8 +4,9 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "Hades/files.hpp"
 #include "Hades/Console.hpp"
+#include "Hades/Data.hpp"
+#include "Hades/files.hpp"
 
 namespace hades
 {
@@ -176,23 +177,22 @@ namespace hades
 			}
 		}
 
-		data_manager::Mod* data_manager::getMod(UniqueId mod)
+		const data_manager::Mod* data_manager::getMod(UniqueId mod)
 		{
 			return get<resources::mod>(mod);
 		}
 
-		bool data_manager::exists(UniqueId uid)
+		bool data_manager::exists(UniqueId uid) const
 		{
 			try
 			{
-				_resources.get_reference_void(uid);
+				auto ptr = _resources.get_reference_void(uid);
+				return ptr != nullptr;
 			}
 			catch (type_erasure::key_null&)
 			{
 				return false;
 			}
-
-			return true;
 		}
 
 		//convert string to uid

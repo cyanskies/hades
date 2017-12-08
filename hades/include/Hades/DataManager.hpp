@@ -1,5 +1,5 @@
-#ifndef HADES_DATA_HPP
-#define HADES_DATA_HPP
+#ifndef HADES_DATAMANAGER_EX_HPP
+#define HADES_DATAMANAGER_EX_HPP
 
 #include "Hades/data_manager.hpp"
 #include "Hades/simple_resources.hpp"
@@ -46,4 +46,4 @@ namespace hades
 	extern DataManager* data_manager;
 }
 
-#endif // hades_data_hpp
+#endif // !hades_datamanager_ex_hpp

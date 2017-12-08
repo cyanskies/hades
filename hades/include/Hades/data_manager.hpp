@@ -149,7 +149,7 @@ namespace hades
 			template<class T>
 			void set(UniqueId, std::unique_ptr<T>);
 
-			bool exists(UniqueId);
+			bool exists(UniqueId) const;
 
 			//returns a non-owning ptr to the resource
 			//will load the resource if it has never been loaded before
@@ -157,8 +157,7 @@ namespace hades
 			T* get(UniqueId);
 
 			using Mod = resources::mod;
-
-			Mod* getMod(UniqueId);
+			const Mod* getMod(UniqueId);
 
 			//convert string to uid
 			UniqueId getUid(std::string name);

@@ -19,9 +19,8 @@ namespace tiles
 	{
 		target.setView(GameView);
 		target.draw(Map);
-
-		if (EditMode == editor::EditMode::TILE)
-			target.draw(_tilePreview);
+		
+		DrawTilePreview(target);
 	}
 
 	template<class MapClass>
@@ -63,5 +62,12 @@ namespace tiles
 			//place the tile in the tile map
 			Map.replace(TileInfo, _tilePosition, Tile_draw_size);
 		}
+	}
+
+	template<class MapClass>
+	void tile_editor_t<MapClass>::DrawTilePreview(sf::RenderTarget& target) const
+	{
+		if (EditMode == editor::EditMode::TILE)
+			target.draw(_tilePreview);
 	}
 }

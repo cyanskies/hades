@@ -99,6 +99,7 @@ namespace tiles
 		virtual sf::FloatRect GetMapBounds() const;
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) override;
 		virtual void TryDraw(const hades::InputSystem::action_set&) override;
+		void DrawTilePreview(sf::RenderTarget&) const;
 
 		//core map variables
 		MapClass Map;

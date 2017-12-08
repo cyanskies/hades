@@ -38,7 +38,7 @@ namespace ortho_terrain
 		sf::Vector2u _terrainPosition;
 		MutableTerrainMap _terrainPreview;
 
-		resources::terrain *_terrainInfo = nullptr;
+		const resources::terrain *_terrainInfo = nullptr;
 		hades::types::uint8 _terrain_draw_size = 1;
 	};
 }

@@ -1,7 +1,5 @@
 #include "OrthoTerrain/editor.hpp"
 
-//#include <cmath> //std::round
-//#include <fstream>
 #include <thread> //see: FillTileList()
 				  // async building of tile selector ui
 
@@ -9,9 +7,9 @@
 #include "TGUI/Widgets/HorizontalWrap.hpp"
 #include "TGUI/Widgets/EditBox.hpp"
 #include "TGUI/Widgets/Picture.hpp"
-#include "TGUI/Widgets/ScrollablePanel.hpp"
 
 #include "Hades/common-input.hpp"
+#include "Hades/Data.hpp"
 #include "Hades/data_manager.hpp"
 //#include "Hades/files.hpp"
 //#include "Hades/Properties.hpp"
@@ -44,7 +42,7 @@ namespace ortho_terrain
 		}
 
 		//TODO: handle lack of terrains
-		auto terrain = hades::data_manager->get<resources::terrain>(t_id);
+		auto terrain = hades::data::Get<resources::terrain>(t_id);
 		const auto map = generator::Blank({ map_height, map_width }, terrain);
 		Map.create(map);
 	}
@@ -54,8 +52,10 @@ namespace ortho_terrain
 		target.setView(GameView);
 		target.draw(Map);
 
-		if (EditMode != tiles::editor::EditMode::NONE)
+		if (EditMode == editor::TERRAIN)
 			target.draw(_terrainPreview);
+		else
+			DrawTilePreview(target);
 	}
 
 	void terrain_editor::GenerateDrawPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
@@ -154,9 +154,9 @@ namespace ortho_terrain
 			//place available terrain in the "terrain" container
 			for (auto t : terrains)
 			{
-				if (hades::data_manager->exists(t) && t != GetErrorTerrain())
+				if (hades::data::Exists(t) && t != GetErrorTerrain())
 				{
-					auto terrain = hades::data_manager->get<resources::terrain>(t);
+					auto terrain = hades::data::Get<resources::terrain>(t);
 					assert(terrain);
 
 					if (terrain->tiles.empty())
@@ -165,13 +165,13 @@ namespace ortho_terrain
 					auto tile = terrain->tiles[0];
 
 					//skip if needed data is missing.
-					if (!hades::data_manager->exists(tile.texture))
+					if (!hades::data::Exists(tile.texture))
 					{
 						continue;
-						LOGERROR("terrain_editor UI skipping tile because texture is missing: " + hades::data_manager->as_string(tile.texture));
+						LOGERROR("terrain_editor UI skipping tile because texture is missing: " + hades::data::GetAsString(tile.texture));
 					}
 
-					auto texture = hades::data_manager->getTexture(terrain->tiles[0].texture);
+					auto texture = hades::data::Get<hades::resources::texture>(terrain->tiles[0].texture);
 					auto tex = tgui::Texture(texture->value, { static_cast<int>(tile.left), static_cast<int>(tile.top),
 						static_cast<int>(settings.tile_size), static_cast<int>(settings.tile_size) });
 

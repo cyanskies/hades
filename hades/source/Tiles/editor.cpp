@@ -16,7 +16,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/common-input.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/Data.hpp"
 #include "Hades/files.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/StandardPaths.hpp"
@@ -53,7 +53,7 @@ namespace tiles
 	{
 		//TODO: throw if no tiles have been registered
 		//TODO: don't use error tiles in this
-		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
+		auto first_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
 		load_map(map);
 	}
@@ -148,15 +148,15 @@ namespace tiles
 		//==================
 		//load the tile_editor_base UI
 		//==================
-		auto layout_id = data_manager->getUid(editor::tile_editor_layout);
-		if (!data_manager->exists(layout_id))
+		auto layout_id = data::GetUid(editor::tile_editor_layout);
+		if (!data::Exists(layout_id))
 		{
 			LOGERROR("No GUI layout exists for " + std::string(editor::tile_editor_layout));
 			kill();
 			return;
 		}
 
-		auto layout = data_manager->getString(layout_id);
+		auto layout = data::Get<hades::resources::string>(layout_id);
 		try
 		{
 			_gui.loadWidgetsFromStream(std::stringstream(layout->value));
@@ -295,12 +295,12 @@ namespace tiles
 	{
 		const auto &tilesets = resources::Tilesets;
 
-		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
+		auto settings_id = hades::data::GetUid(resources::tile_settings_name);
 
-		if (!data_manager->exists(settings_id))
+		if (!data::Exists(settings_id))
 			LOGERROR("Missing important settings for orthographic terrain");
 
-		const auto settings = hades::data_manager->get<resources::tile_settings>(settings_id);
+		const auto settings = hades::data::Get<resources::tile_settings>(settings_id);
 
 		auto tile_size = settings->tile_size;
 		auto tile_button_size = tile_size * 3;
@@ -344,13 +344,13 @@ namespace tiles
 			for (auto &t : tiles)
 			{
 				//skip if needed data is missing.
-				if (!data_manager->exists(t.texture))
+				if (!hades::data::Exists(t.texture))
 				{
 					continue;
-					LOGERROR("tile_editor_base UI skipping tile because texture is missing: " + data_manager->as_string(t.texture));
+					LOGERROR("tile_editor_base UI skipping tile because texture is missing: " + data::GetAsString(t.texture));
 				}
 
-				auto texture = data_manager->getTexture(t.texture);
+				auto texture = data::Get<hades::resources::texture>(t.texture);
 				auto tex = tgui::Texture(texture->value, { static_cast<int>(t.left), static_cast<int>(t.top),
 					static_cast<int>(tile_size), static_cast<int>(tile_size) });
 
@@ -374,9 +374,9 @@ namespace tiles
 			for (auto t : tilesets)
 			{
 				std::lock_guard<std::mutex> lock(*data_mutex);
-				if (data_manager->exists(t))
+				if (data::Exists(t))
 				{
-					auto tileset = data_manager->get<resources::tileset>(t);
+					auto tileset = data::Get<resources::tileset>(t);
 					assert(tileset);
 
 					//for each tile in the terrain, add it to the tile picker
@@ -393,7 +393,7 @@ namespace tiles
 	void tile_editor_base::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
 	{
 		//TODO: handle case of missing terrain
-		auto first_tileset = hades::data_manager->get<resources::tileset>(resources::Tilesets.front());
+		auto first_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
 		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
 		load_map(map);
 		

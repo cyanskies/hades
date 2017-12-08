@@ -1,72 +1,21 @@
 #ifndef HADES_DATAMANAGER_HPP
 #define HADES_DATAMANAGER_HPP
 
-#include <exception>
-#include <functional>
-#include <memory>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
-#include "SFML/Graphics/Texture.hpp"
+#include "yaml-cpp/yaml.h"
 
-#include "Hades/archive.hpp"
 #include "Hades/type_erasure.hpp"
-#include "Hades/Types.hpp"
-#include "Hades/UniqueId.hpp"
+#include "Hades/resource_base.hpp"
 
 //Data manager is a resource management class.
 //The class is not thread safe
 
-namespace YAML
-{
-	class Node;
-}
-
 namespace hades
 {
-	namespace data
-	{
-		class data_manager;
-
-		const types::string no_id_string = "ERROR_NO_UNIQUE_ID";
-	}
-
 	namespace resources
 	{
-		struct resource_base
-		{
-			virtual ~resource_base() {}
-
-			virtual void load(data::data_manager*) {}
-
-			data::UniqueId id;
-			//the file this resource should be loaded from
-			//the path of the mod for resources that are parsed and not loaded
-			types::string source;
-			//the mod that the resource was most recently specified in
-			//not nessicarily the only mod to specify this resource.
-			data::UniqueId mod = data::UniqueId::Zero;
-			bool loaded = false;
-		};
-
-		template<class T>
-		struct resource_type : public resource_base
-		{
-			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
-
-			resource_type(loaderFunc loader = nullptr) : _resourceLoader(loader) {}
-
-			virtual ~resource_type() {}
-
-			void load(data::data_manager*);
-			//the actual resource
-			T value;
-		protected:
-			loaderFunc _resourceLoader;
-		};
-
 		struct mod_t {};
 
 		struct mod : public resource_type<mod_t>
@@ -85,32 +34,17 @@ namespace hades
 
 	namespace data
 	{
-		//the requested resource doesn't exist
-		class resource_null : public std::runtime_error
-		{
-		public:
-			using std::runtime_error::runtime_error;
-		};
-
-		//the requested resource isn't of the type it is claimed to be
-		class resource_wrong_type : public std::runtime_error
-		{
-		public:
-			using std::runtime_error::runtime_error;
-		};
+		const types::string no_id_string = "ERROR_NO_UNIQUE_ID";
 
 		class data_manager
 		{
 		public:
-
-			using parserFunc = std::function<void(UniqueId mod, YAML::Node& node, data_manager*)>;
-
 			data_manager();
 
 			virtual ~data_manager();
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
-			void register_resource_type(std::string name, parserFunc parser);
+			void register_resource_type(std::string name, resources::parserFunc parser);
 	
 			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string game);
@@ -168,7 +102,7 @@ namespace hades
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
 
 			//==parsing and loading data==
-			std::unordered_map<std::string, parserFunc> _resourceParsers;
+			std::unordered_map<std::string, resources::parserFunc> _resourceParsers;
 			//==stored resource data==
 			//list of used names
 			std::unordered_set<std::string> _names;

@@ -1,11 +1,8 @@
 #include "Hades/data_manager.hpp"
 
-#include <algorithm>
-
 #include "yaml-cpp/yaml.h"
 
-#include "Hades/Console.hpp"
-#include "Hades/Data.hpp"
+#include "Hades/Logging.hpp"
 #include "Hades/files.hpp"
 
 namespace hades
@@ -21,7 +18,7 @@ namespace hades
 		{}
 		//application registers the custom resource types
 		//parser must convert yaml into a resource manifest object
-		void data_manager::register_resource_type(std::string name, data_manager::parserFunc parser)
+		void data_manager::register_resource_type(std::string name, resources::parserFunc parser)
 		{
 			_resourceParsers[name] = parser;
 		}

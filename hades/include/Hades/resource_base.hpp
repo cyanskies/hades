@@ -8,6 +8,11 @@
 
 //resource primatives
 
+namespace YAML
+{
+	class Node;
+}
+
 namespace hades
 {
 	namespace data

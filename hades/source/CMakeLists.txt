@@ -36,6 +36,7 @@ set(HADES_SRC
 	Gui/Gui.cpp
 	Gui/SimpleVerticalLayout.cpp
 	Objects/Objects.cpp
+	Objects/resources.cpp
 	OrthoTerrain/editor.cpp
 	OrthoTerrain/terrain.cpp
 	OrthoTerrain/utility.cpp
@@ -60,7 +61,8 @@ source_group("Tiles" FILES
 	Tiles/tiles.cpp)
 
 source_group("Objects" FILES
-	Objects/Objects.cpp)
+	Objects/Objects.cpp
+	Objects/resources.cpp)
 
 source_group("OrthoTerrain" FILES
 	OrthoTerrain/editor.cpp

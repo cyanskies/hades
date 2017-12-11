@@ -118,7 +118,7 @@ namespace hades {
 
 		using layer_t = types::int16;
 
-		using uniform_map = std::unordered_map<types::string, std::unique_ptr<sprite_utility::ShaderUniformBase>>;
+		using uniform_map = std::map<types::string, std::unique_ptr<sprite_utility::ShaderUniformBase>>;
 
 		struct Sprite
 		{

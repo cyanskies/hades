@@ -1,5 +1,6 @@
 #include "OrthoTerrain/utility.hpp"
 
+#include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
 

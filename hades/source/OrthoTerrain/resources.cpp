@@ -2,6 +2,8 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/DataManager.hpp"
+#include "Hades/data_manager.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"

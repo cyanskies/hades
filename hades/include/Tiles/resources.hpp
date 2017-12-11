@@ -1,7 +1,8 @@
 #ifndef TILES_RESOURCES_HPP
 #define TILES_RESOURCES_HPP
 
-#include "Hades/DataManager.hpp"
+#include "Hades/resource_base.hpp"
+#include "Hades/simple_resources.hpp"
 
 namespace tiles
 {

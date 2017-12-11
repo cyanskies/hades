@@ -2,6 +2,8 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/DataManager.hpp"
+
 #include "OrthoTerrain/resources.hpp"
 
 //map yaml format

@@ -10,6 +10,8 @@
 
 namespace objects
 {
+	void RegisterObjectResources(hades::data::data_manager*);
+
 	namespace resources
 	{
 		struct object

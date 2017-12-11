@@ -23,34 +23,6 @@ void resource_error(types::string resource_type, types::string resource_name, da
 		+ mod_ptr->name + ". Name has already been used for a different resource type.");
 }
 
-//posts error message if the yaml node is the wrong type
-bool yaml_error(types::string resource_type, types::string resource_name,
-	types::string property_name, types::string requested_type, data::UniqueId mod, bool test)
-{
-	if (!test)
-	{
-		auto mod_ptr = data_manager->getMod(mod);
-		LOGERROR("Error parsing YAML, in mod: " + mod_ptr->name + ", type: " + resource_type + ", name: " 
-			+ resource_name + ", for property: " + property_name + ". value must be " + requested_type);
-	}
-	
-	return test;
-}
-
-hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod)
-{
-	auto value_node = node[property_name];
-	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))
-	{
-		auto str = value_node.as<hades::types::string>();
-		if(!str.empty())
-			return hades::data_manager->getUid(str);
-	}
-	
-	return hades::data::UniqueId::Zero;
-}
-
 namespace hades
 {
 	namespace resources

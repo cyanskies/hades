@@ -19,6 +19,8 @@ namespace hades
 	{
 		class data_manager;
 
+		//TODO: move the exceptions to data.hpp
+
 		//the requested resource doesn't exist
 		class resource_null : public std::runtime_error
 		{

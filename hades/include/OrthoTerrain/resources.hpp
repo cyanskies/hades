@@ -1,7 +1,7 @@
 #ifndef ORTHO_TERRAIN_RESOURCES_HPP
 #define ORTHO_TERRAIN_RESOURCES_HPP
 
-#include "Hades/DataManager.hpp"
+#include "Hades/resource_base.hpp"
 
 #include "OrthoTerrain/utility.hpp"
 #include "Tiles/resources.hpp"

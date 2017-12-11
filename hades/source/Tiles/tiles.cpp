@@ -3,6 +3,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
+#include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
 

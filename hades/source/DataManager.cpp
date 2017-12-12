@@ -9,13 +9,7 @@ namespace hades
 	DataManager::DataManager()
 	{
 		//register custom resource types	
-		register_resource_type("actions", nullptr);
-		register_resource_type("animations", resources::parseAnimation);
-		register_resource_type("curves", resources::parseCurve);
-		register_resource_type("fonts", resources::parseFont);
-		register_resource_type("strings", resources::parseString);
-		register_resource_type("systems", resources::parseSystem);
-		register_resource_type("textures", resources::parseTexture);
+		RegisterCommonResources(this);
 	}
 
 	Animation* DataManager::getAnimation(data::UniqueId key)

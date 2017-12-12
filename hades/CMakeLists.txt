@@ -23,6 +23,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Global preprocessor and include options
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_INSTALL_PREFIX}/include)
+add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
 
 # C++ source code
 add_subdirectory(source)

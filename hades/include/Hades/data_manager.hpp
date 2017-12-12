@@ -128,14 +128,14 @@ bool yaml_error(hades::types::string resource_type, hades::types::string resourc
 	hades::types::string property_name, hades::types::string requested_type, hades::data::UniqueId mod, bool test);
 
 template<class T>
-T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod, T default_value);
 
-hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+hades::data::UniqueId yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod, hades::data::UniqueId default_value = hades::data::UniqueId::Zero);
 
 template<class T>
-std::vector<T> yaml_get_sequence(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod);
 
 #include "detail/data_manager.inl"

@@ -33,7 +33,6 @@ namespace ortho_terrain
 	using terrain_lookup = std::map<tiles::tile, terrain_info>;
 	extern terrain_lookup TerrainLookup;
 
-
 	namespace resources
 	{	
 		const hades::types::string terrain_settings_name = "terrain-settings";
@@ -44,8 +43,6 @@ namespace ortho_terrain
 		{
 			hades::data::UniqueId error_terrain = hades::data::UniqueId::Zero;
 		};
-
-		void parseTerrainSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);
 
 		struct terrain_transition_t {};
 
@@ -120,9 +117,6 @@ namespace ortho_terrain
 		//global list of terrains for the editor to show in the ui
 		//editor can access individual tiles and transition tiles from in here as well
 		extern std::vector<hades::data::UniqueId> Terrains;
-		
-		//overrides the tileset parser provieded by tiles::, this one support loading terrain transitions as well.
-		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);
 	}
 }
 

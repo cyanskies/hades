@@ -1,8 +1,6 @@
 #include "Hades/StandardPaths.hpp"
 
-#include <assert.h>
-#include <codecvt>
-#include <sstream>
+#include <cassert>
 
 #include "Objbase.h"
 #include "Shlobj.h"
@@ -12,10 +10,28 @@
 #include "Hades/Main.hpp"
 #include "Hades/Types.hpp"
 
+hades::types::string Utf16ToUtf8(std::wstring input)
+{
+	assert(!input.empty());
+
+	//get buffer size by omitting output param
+	auto buffer_size = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
+	std::vector<char> buffer(buffer_size);
+	//write output into buffer
+	auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), buffer.size(), NULL, NULL);
+	assert(written_amount == buffer_size);
+
+	//copy output into a string
+	hades::types::string out;
+	std::copy(std::begin(buffer), std::end(buffer), std::back_inserter(out));
+
+	return out;
+}
+
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
 //https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457(v=vs.85).aspx
-std::string getWindowsDirectory(REFKNOWNFOLDERID target)
+hades::types::string getWindowsDirectory(REFKNOWNFOLDERID target)
 {
 	PWSTR path = NULL;
 	auto result = SHGetKnownFolderPath(target, 0, NULL, &path);
@@ -26,13 +42,10 @@ std::string getWindowsDirectory(REFKNOWNFOLDERID target)
 		throw std::logic_error("invalid arg or invalid folder ID in getUserCustomFileDirectory on windows");
 	}
 
-	std::wstringstream stream;
-	stream << path;
+	std::wstring str(path);
 
 	CoTaskMemFree(path);
-	//stackoverflow voodoo to convert utf16 to utf8:
-	// https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
-	return std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(stream.str());	
+	return Utf16ToUtf8(str);
 }
 
 namespace hades

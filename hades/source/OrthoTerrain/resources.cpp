@@ -13,6 +13,13 @@
 
 namespace ortho_terrain
 {
+	namespace resources
+	{
+		//overrides the tileset parser provieded by tiles::, this one support loading terrain transitions as well.
+		void parseTileset(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager*);
+		void parseTerrainSettings(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager*);
+	}
+
 	void makeDefaultLayout(hades::data::data_manager* data)
 	{
 		auto layout_id = data->getUid(tiles::editor::tile_editor_layout);
@@ -191,7 +198,7 @@ namespace ortho_terrain
 		std::vector<hades::data::UniqueId> Terrains;
 		std::vector<hades::data::UniqueId> Transitions;
 
-		void parseTerrainSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager* data_manager)
+		void parseTerrainSettings(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager* data_manager)
 		{
 			//terrain-settings:
 			//    tile-size: 32
@@ -610,7 +617,7 @@ namespace ortho_terrain
 			return tiles;
 		}
 
-		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager *data)
+		void parseTileset(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager *data)
 		{
 
 			//==old 'tiles' tilesets(still compatible)

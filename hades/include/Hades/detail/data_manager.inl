@@ -96,7 +96,7 @@ namespace hades
 }
 
 template<class T>
-T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod, T default_value)
 {
 	auto value_node = node[property_name];
@@ -107,7 +107,7 @@ T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::t
 }
 
 template<class T>
-std::vector<T> yaml_get_sequence(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod)
 {
 	std::vector<T> output;

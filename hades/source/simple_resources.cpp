@@ -27,6 +27,33 @@ namespace hades
 {
 	namespace resources
 	{
+		void parseTexture(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void loadTexture(resource_base* r, data::data_manager* dataman);
+		void parseString(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseSystem(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void loadSystem(resource_base* r, data::data_manager* dataman);
+		void parseCurve(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void loadFont(resource_base* r, data::data_manager* data);
+		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+	}
+
+	void RegisterCommonResources(hades::data::data_manager *data)
+	{
+		data->register_resource_type("actions", nullptr);
+		data->register_resource_type("animations", resources::parseAnimation);
+		data->register_resource_type("curves", resources::parseCurve);
+		data->register_resource_type("fonts", resources::parseFont);
+		data->register_resource_type("strings", resources::parseString);
+		data->register_resource_type("systems", resources::parseSystem);
+		data->register_resource_type("textures", resources::parseTexture);
+	}
+
+	namespace resources
+	{
+		texture::texture() : resource_type<sf::Texture>(loadTexture) {}
+		font::font() : resource_type<sf::Font>(loadFont) {}
+
 		const size_t colour_count = 7;
 
 		const std::array<sf::Color, colour_count> colours {
@@ -81,7 +108,7 @@ namespace hades
 			return t;
 		}
 
-		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
+		void parseTexture(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//default texture yaml
 			//textures:
@@ -169,7 +196,7 @@ namespace hades
 			}
 		}
 
-		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
+		void parseString(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//strings yaml
 			//strings: 
@@ -203,7 +230,7 @@ namespace hades
 			}
 		}
 
-		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*)
+		void parseSystem(data::UniqueId mod, const YAML::Node& node, data::data_manager*)
 		{
 			assert(false && "mods cannot create systems until scripting is introduced.");
 		}
@@ -250,7 +277,7 @@ namespace hades
 				return VariableType::ERROR;
 		}
 
-		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager* dataman)
+		void parseCurve(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//curves:
 			//		name:
@@ -320,7 +347,7 @@ namespace hades
 			}
 		}
 
-		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager* data)
+		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//animations:
 			//	example-animation:
@@ -440,7 +467,7 @@ namespace hades
 			}
 		}
 
-		void parseFont(data::UniqueId mod, YAML::Node& node, data::data_manager* data)
+		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//fonts yaml
 			//fonts: 

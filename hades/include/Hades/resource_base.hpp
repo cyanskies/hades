@@ -38,7 +38,7 @@ namespace hades
 
 	namespace resources
 	{
-		using parserFunc = std::function<void(data::UniqueId mod, YAML::Node& node, data::data_manager*)>;
+		using parserFunc = std::function<void(data::UniqueId mod, const YAML::Node& node, data::data_manager*)>;
 
 		struct resource_base
 		{

@@ -28,11 +28,10 @@ namespace tiles
 
 	namespace resources
 	{
-		void parseTileSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);
+		void parseTileSettings(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
 		std::vector<tile> ParseTileSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
 			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod);
-		void parseTileset(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);
-
+		
 		const hades::types::string tile_settings_name = "tile-settings";
 		extern std::vector<hades::data::UniqueId> Tilesets;
 

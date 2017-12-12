@@ -2,7 +2,7 @@
 #define HADES_SIMPLERESOURCE_HPP
 
 #include <variant>
-#include <utility>
+
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/Shader.hpp"
 
@@ -15,21 +15,13 @@
 
 namespace hades
 {
+	void RegisterCommonResources(hades::data::data_manager*);
+
 	namespace resources
 	{
-		void parseTexture(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-		void loadTexture(resource_base* r, data::data_manager* dataman);
-		void parseString(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-		void loadSystem(resource_base* r, data::data_manager* dataman);
-		void parseCurve(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-		void parseAnimation(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-		void loadFont(resource_base* r, data::data_manager* data);
-		void parseFont(data::UniqueId mod, YAML::Node& node, data::data_manager*);
-
 		struct texture : public resource_type<sf::Texture>
 		{
-			texture() : resource_type<sf::Texture>(loadTexture) {}
+			texture();
 
 			using size_type = types::uint16;
 			//max texture size for older hardware is 512
@@ -59,7 +51,6 @@ namespace hades
 				bool, hades::types::string, hades::data::UniqueId, std::vector<int_t>,
 				std::vector<float>, std::vector<hades::data::UniqueId>>;
 
-			//TODO: manually specify the default value(needs C++17)
 			curve_value value;
 		};
 
@@ -276,7 +267,7 @@ namespace hades
 
 		struct font : public resource_type<sf::Font>
 		{
-			font() : resource_type<sf::Font>(loadFont) {}
+			font();
 		};
 	}
 }

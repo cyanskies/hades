@@ -1,6 +1,6 @@
 # Directory Xing
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 # Specify default build type if none provided (before project() command)
 if(NOT CMAKE_BUILD_TYPE)
@@ -17,17 +17,15 @@ endif()
 
 project(example)
 
+# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Global preprocessor and include options
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_INSTALL_PREFIX}/include)
 
 link_directories(${CMAKE_INSTALL_PREFIX}/lib)
-
-# Compiler-specific flags and definitions
-if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
-endif()
 
 # C++ source code
 add_subdirectory(source)

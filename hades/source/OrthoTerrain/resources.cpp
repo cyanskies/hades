@@ -2,6 +2,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Logging.hpp"
@@ -178,11 +179,11 @@ namespace ortho_terrain
 	}
 
 	void RegisterOrthoTerrainResources(hades::data::data_manager* data)
-	{
-		data->register_resource_type("terrain-settings", ortho_terrain::resources::parseTerrainSettings);
-
+	{	
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);
+
+		data->register_resource_type("terrain-settings", ortho_terrain::resources::parseTerrainSettings);
 
 		//override the default layout and the tilesets parser
 		makeDefaultLayout(data);
@@ -197,6 +198,20 @@ namespace ortho_terrain
 
 		std::vector<hades::data::UniqueId> Terrains;
 		std::vector<hades::data::UniqueId> Transitions;
+
+		tiles::TileArray& GetMutableErrorTileset(hades::data::data_manager *data)
+		{
+			auto settings = hades::data::FindOrCreate<tiles::resources::tile_settings>(hades::data::GetUid(tiles::resources::tile_settings_name), hades::EmptyId, data);
+			auto error_tileset = hades::data::FindOrCreate<tiles::resources::tileset>(settings->error_tileset, hades::EmptyId, data);
+
+			if (!error_tileset)
+			{
+				LOGERROR("No error-tileset as been set, forced to return random tileset, expect errors");
+				//instead return the first tileset we can find
+			}
+
+			return error_tileset->tiles;
+		}
 
 		void parseTerrainSettings(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager* data_manager)
 		{
@@ -232,7 +247,7 @@ namespace ortho_terrain
 
 		std::vector<tiles::tile> parseLayout(terrain_transition* transitions, data::UniqueId texture,
 			data::UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order, 
-			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits)
+			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits, hades::data::data_manager *data)
 		{
 			std::vector<tiles::tile> out;
 
@@ -269,7 +284,8 @@ namespace ortho_terrain
 					info.terrain2 = terrain2;
 				}
 				
-				auto &transition_vector = GetTransition(info.type, *transitions);
+				//TODO: exception handling here
+				auto &transition_vector = GetTransition(info.type, *transitions, data);
 				transition_vector.push_back(ntile);
 
 				out.push_back(ntile);
@@ -383,26 +399,26 @@ namespace ortho_terrain
 			tiles::traits_list traits;
 
 			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
-				return hades::data_manager->getUid(s);
+				return hades::data::GetUid(s);
 			});
 
-			auto tiles = parseLayout(t, texture, terrain1_id, terrain2_id, layout_order, leftpos, toppos, tiles_per_row, traits);
+			auto tiles = parseLayout(t, texture, terrain1_id, terrain2_id, layout_order, leftpos, toppos, tiles_per_row, traits, data);
 
 			//add the transition to each of the terrains
 			//TODO: this should be done when creating the transition, not when a new sheet is added too it.
 			// check transition3 for this error as well.
-			if (data_manager->exists(terrain1_id))
-				data_manager->get<terrain>(terrain1_id)->transitions.push_back(t->id);
+			if (hades::data::Exists(terrain1_id))
+				data->get<terrain>(terrain1_id)->transitions.push_back(t->id);
 
-			if (data_manager->exists(terrain2_id))
-				data_manager->get<terrain>(terrain2_id)->transitions.push_back(t->id);
+			if (data->exists(terrain2_id))
+				data->get<terrain>(terrain2_id)->transitions.push_back(t->id);
 
 			return tiles;
 		}
 
 		std::vector<tiles::tile> parseLayout(terrain_transition3* transitions, data::UniqueId texture,
 			data::UniqueId terrain1, data::UniqueId terrain2, data::UniqueId terrain3, std::vector<tile_size_t> tile_order,
-			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits)
+			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits, hades::data::data_manager *data)
 		{
 			std::vector<tiles::tile> out;
 
@@ -448,7 +464,8 @@ namespace ortho_terrain
 					info.terrain3 = terrain3;
 				}
 
-				auto &transition_vector = GetTransition(info.type3, *transitions);
+				//TODO: excpetion handling here
+				auto &transition_vector = GetTransition(info.type3, *transitions, data);
 				transition_vector.push_back(ntile);
 
 				out.push_back(ntile);
@@ -523,12 +540,12 @@ namespace ortho_terrain
 				t3->terrain3 = terrain3_id;
 
 				//attach transition 2 references
-				auto terrain1 = hades::data_manager->get<terrain>(terrain1_id),
-					terrain2 = hades::data_manager->get<terrain>(terrain2_id);
+				auto terrain1 = data->get<terrain>(terrain1_id),
+					terrain2 = data->get<terrain>(terrain2_id);
 
 				for (auto &t : terrain1->transitions)
 				{
-					auto transition = hades::data_manager->get<terrain_transition>(t);
+					auto transition = data->get<terrain_transition>(t);
 					if (transition->terrain1 == terrain1_id &&
 						transition->terrain2 == terrain2_id)
 					{
@@ -543,7 +560,7 @@ namespace ortho_terrain
 
 				for (auto &t : terrain2->transitions)
 				{
-					auto transition = hades::data_manager->get<terrain_transition>(t);
+					auto transition = data->get<terrain_transition>(t);
 					if (transition->terrain1 == terrain2_id &&
 						transition->terrain2 == terrain3_id)
 					{
@@ -597,22 +614,22 @@ namespace ortho_terrain
 			tiles::traits_list traits;
 
 			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
-				return hades::data_manager->getUid(s);
+				return hades::data::GetUid(s);
 			});
 
-			auto tiles = parseLayout(t3, texture, terrain1_id, terrain2_id, terrain3_id, layout_order, leftpos, toppos, tiles_per_row, traits);
+			auto tiles = parseLayout(t3, texture, terrain1_id, terrain2_id, terrain3_id, layout_order, leftpos, toppos, tiles_per_row, traits, data);
 
 			//add the transition to each of the terrains
 			//TODO: this should be done when creating the transition, not when a new sheet is added too it.
 			// check transition2 for this error as well.
-			if (data_manager->exists(terrain1_id))
-				data_manager->get<terrain>(terrain1_id)->transitions3.push_back(t3->id);
+			if (data->exists(terrain1_id))
+				data->get<terrain>(terrain1_id)->transitions3.push_back(t3->id);
 
-			if (data_manager->exists(terrain2_id))
-				data_manager->get<terrain>(terrain2_id)->transitions3.push_back(t3->id);
+			if (data->exists(terrain2_id))
+				data->get<terrain>(terrain2_id)->transitions3.push_back(t3->id);
 
-			if (data_manager->exists(terrain3_id))
-				data_manager->get<terrain>(terrain3_id)->transitions3.push_back(t3->id);
+			if (data->exists(terrain3_id))
+				data->get<terrain>(terrain3_id)->transitions3.push_back(t3->id);
 
 			return tiles;
 		}
@@ -695,7 +712,7 @@ namespace ortho_terrain
 
 				std::transform(std::begin(traits), std::end(traits), std::back_inserter(ter->traits),
 					[](hades::types::string s) {
-					return hades::data_manager->getUid(s);
+					return hades::data::GetUid(s);
 				});
 
 				auto tiles_section = v["tiles"];

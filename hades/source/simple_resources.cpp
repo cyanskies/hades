@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "Hades/Console.hpp"
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/files.hpp"
@@ -18,7 +19,7 @@ using namespace hades;
 //posts a standard error message if the requested resource is of the wrong type
 void resource_error(types::string resource_type, types::string resource_name, data::UniqueId mod)
 {
-	auto mod_ptr = data_manager->getMod(mod);
+	auto mod_ptr = data::Get<resources::mod>(mod);
 	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: " 
 		+ mod_ptr->name + ". Name has already been used for a different resource type.");
 }
@@ -171,7 +172,7 @@ namespace hades
 					tex->value.setRepeated(tex->repeat);
 
 					if (tex->mips && !tex->value.generateMipmap())
-						LOGWARNING("Failed to generate MipMap for texture: " + hades::data_manager->as_string(tex->id));
+						LOGWARNING("Failed to generate MipMap for texture: " + dataman->as_string(tex->id));
 				}
 				catch (files::file_exception e)
 				{
@@ -381,7 +382,7 @@ namespace hades
 
 				auto texture_str = animation_node["texture"];
 				if (texture_str.IsDefined() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
-					a->tex = data_manager->getTexture(data_manager->getUid(texture_str.as<types::string>()));
+					a->tex = data->get<resources::texture>(data->getUid(texture_str.as<types::string>()));
 
 				a->width = yaml_get_scalar(animation_node, resource_type, name, "width", mod, a->width);
 				a->height = yaml_get_scalar(animation_node, resource_type, name, "height", mod, a->height);

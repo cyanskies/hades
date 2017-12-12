@@ -4,6 +4,7 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
@@ -43,11 +44,11 @@ namespace ortho_terrain
 		for (auto &t : tiles)
 		{
 			//TODO: error handling
-			out.push_back(hades::data_manager->get<resources::terrain>(TerrainInCorner(t, Corner::TOPLEFT)));
+			out.push_back(hades::data::Get<resources::terrain>(TerrainInCorner(t, Corner::TOPLEFT)));
 
 			if (count++ == tilesPerRow)
 			{
-				out.push_back(hades::data_manager->get<resources::terrain>(TerrainInCorner(t, Corner::TOPRIGHT)));
+				out.push_back(hades::data::Get<resources::terrain>(TerrainInCorner(t, Corner::TOPRIGHT)));
 				count = 0;
 			}
 		}
@@ -55,9 +56,9 @@ namespace ortho_terrain
 		//add the bottoms of the last row
 		auto iterator = tiles.cend() - tilesPerRow;
 		for (iterator; iterator != tiles.cend(); ++iterator)
-			out.push_back(hades::data_manager->get<resources::terrain>(TerrainInCorner(*iterator, Corner::BOTTOMLEFT)));
+			out.push_back(hades::data::Get<resources::terrain>(TerrainInCorner(*iterator, Corner::BOTTOMLEFT)));
 
-		out.push_back(hades::data_manager->get<resources::terrain>(TerrainInCorner(*tiles.crbegin(), Corner::BOTTOMLEFT)));
+		out.push_back(hades::data::Get<resources::terrain>(TerrainInCorner(*tiles.crbegin(), Corner::BOTTOMLEFT)));
 
 		return std::make_tuple(out, ++tilesPerRow);
 	}
@@ -184,7 +185,7 @@ namespace ortho_terrain
 				assert(i >= 0 && i < 4);
 				auto t_id = TerrainInCorner(t, static_cast<Corner>(i));
 				//convert to resource
-				const auto *terrain = hades::data_manager->get<resources::terrain>(t_id);
+				const auto *terrain = hades::data::Get<resources::terrain>(t_id);
 				//write to vertex
 				Write(_vertex, verts[i], _vertex_width, terrain);
 			}
@@ -273,9 +274,8 @@ namespace ortho_terrain
 
 	const resources::terrain_settings &GetTerrainSettings()
 	{
-		auto settings_id = hades::data_manager->getUid(resources::terrain_settings_name);
-		auto data_manager = hades::data_manager;
-		if (!data_manager->exists(settings_id))
+		auto settings_id = hades::data::GetUid(resources::terrain_settings_name);
+		if (!hades::data::Exists(settings_id))
 		{
 			auto message = "terrain-settings undefined.";
 			LOGERROR(message)
@@ -284,7 +284,7 @@ namespace ortho_terrain
 
 		try
 		{
-			return *hades::data_manager->get<resources::terrain_settings>(settings_id);
+			return *hades::data::Get<resources::terrain_settings>(settings_id);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{
@@ -310,10 +310,10 @@ namespace ortho_terrain
 		for (auto &t_id : terrain_list)
 		{
 			if (t_id == hades::data::UniqueId::Zero ||
-				!hades::data_manager->exists(t_id))
+				!hades::data::Exists(t_id))
 				continue;
 
-			auto t = hades::data_manager->get<resources::terrain>(t_id);
+			auto t = hades::data::Get<resources::terrain>(t_id);
 			std::copy(std::begin(t->traits), std::end(t->traits), std::back_inserter(out));
 		}
 

@@ -1,5 +1,6 @@
 #include "OrthoTerrain/utility.hpp"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
@@ -56,8 +57,8 @@ namespace ortho_terrain
 				//return a main tile of the terrain found
 				//equivelent to NONE or ALL
 				auto terrainid = *unique_terrain.begin();
-				assert(hades::data_manager->exists(terrainid));
-				auto terrain = hades::data_manager->get<resources::terrain>(terrainid);
+				assert(hades::data::Exists(terrainid));
+				auto terrain = hades::data::Get<resources::terrain>(terrainid);
 				return RandomTile(terrain->tiles);
 			}
 			//no support for wang 3corner or anything like that
@@ -69,13 +70,13 @@ namespace ortho_terrain
 				terrain2 = *++unique_terrain.begin();
 
 			//find a transition that has both these terrains
-			auto terrain1_obj = hades::data_manager->get<resources::terrain>(terrain1);
+			auto terrain1_obj = hades::data::Get<resources::terrain>(terrain1);
 
-			resources::terrain_transition *transition = nullptr;
+			const resources::terrain_transition *transition = nullptr;
 
 			for (auto &transid : terrain1_obj->transitions)
 			{
-				auto trans = hades::data_manager->get<resources::terrain_transition>(transid);
+				auto trans = hades::data::Get<resources::terrain_transition>(transid);
 				if ((trans->terrain1 == terrain1 && trans->terrain2 == terrain2) ||
 					(trans->terrain1 == terrain2 && trans->terrain2 == terrain1))
 				{
@@ -275,10 +276,10 @@ namespace ortho_terrain
 				terrain3 = *iter;
 
 			//pick a transition that contains the three terrains
-			ortho_terrain::resources::terrain_transition3 *transition = nullptr;
+			const ortho_terrain::resources::terrain_transition3 *transition = nullptr;
 			const std::array<hades::data::UniqueId, 3> terrain_group = { terrain1, terrain2, terrain3 };
 
-			auto match = [&terrain_group](resources::terrain_transition3 *transition)->bool {
+			auto match = [&terrain_group](const resources::terrain_transition3 *transition)->bool {
 				const std::array<hades::data::UniqueId, 3> terrains =
 				{ transition->terrain1, transition->terrain2, transition->terrain3 };
 
@@ -298,10 +299,10 @@ namespace ortho_terrain
 				return count == 3;
 			};
 
-			auto terrain1_obj = hades::data_manager->get<resources::terrain>(terrain1);
+			auto terrain1_obj = hades::data::Get<resources::terrain>(terrain1);
 			for (auto &transid : terrain1_obj->transitions3)
 			{
-				auto trans = hades::data_manager->get<resources::terrain_transition3>(transid);
+				auto trans = hades::data::Get<resources::terrain_transition3>(transid);
 				if (match(trans))
 				{
 					transition = trans;
@@ -480,8 +481,8 @@ namespace ortho_terrain
 		return static_cast<transition3::Types>(type);
 	}
 
-	template<class U = std::vector<tile>, class V = resources::terrain_transition>
-	U& GetTransition(transition2::TransitionTypes type, V& transitions)
+	template<class U = tiles::TileArray , class V = resources::terrain_transition, class W = resources::terrain >
+	U& GetTransition(transition2::TransitionTypes type, V& transitions, std::function<W*(hades::UniqueId)> GetResourceFunc, U& default_val)
 	{
 		using namespace transition2;
 
@@ -489,7 +490,7 @@ namespace ortho_terrain
 		{
 		case NONE:
 		{
-			auto terrain1 = hades::data_manager->get<resources::terrain>(transitions.terrain1);
+			auto terrain1 = GetResourceFunc(transitions.terrain1);
 			return terrain1->tiles;
 		}
 		case TOP_RIGHT:
@@ -522,28 +523,30 @@ namespace ortho_terrain
 			return transitions.top_right_circle;
 		case ALL:
 		{
-			auto terrain2 = hades::data_manager->get<resources::terrain>(transitions.terrain2);
+			auto terrain2 = GetResourceFunc(transitions.terrain2);
 			return terrain2->tiles;
 		}
 		default:
 			LOGWARNING("'Type' passed to GetTransition was outside expected range[0,15] was: " + std::to_string(type));
 			
-			return tiles::GetErrorTileset();
+			return default_val;
 		}
 	}
 
-	std::vector<tile>& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition)
+	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_manager *data)
 	{
-		return GetTransition<std::vector<tile>, resources::terrain_transition>(type, transition);
+		return GetTransition<tiles::TileArray, resources::terrain_transition, resources::terrain>(type, transition, 
+			[data](hades::UniqueId id) {return data->get<resources::terrain>(id); }, resources::GetMutableErrorTileset(data));
 	}
 
-	const std::vector<tile>& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition)
+	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition)
 	{
-		return GetTransition<const std::vector<tile>, const resources::terrain_transition>(type, transition);
+		return GetTransition<const tiles::TileArray, const resources::terrain_transition, const resources::terrain>(type,
+			transition, hades::data::Get<resources::terrain>, tiles::GetErrorTileset());
 	}
 
-	template<class U = std::vector<tile>, class V = resources::terrain_transition3>
-	U& GetTransition(transition3::Types type, V& transitions)
+	template<class U = std::vector<tile>, class V = resources::terrain_transition3, class W = resources::terrain_transition, class X = resources::terrain>
+	U& GetTransition(transition3::Types type, V& transitions, std::function<W*(hades::data::UniqueId)> GetTransitionFunc, std::function<X*(hades::data::UniqueId)> GetTerrainFunc, U& default_val)
 	{
 		using namespace transition3;
 		//check 3 tile interactions
@@ -636,34 +639,37 @@ namespace ortho_terrain
 
 			if (setting == ConvertSetting::TERRAIN1_2)
 			{
-				auto trans = hades::data_manager->get<resources::terrain_transition>(transitions.transition_1_2);
-				return GetTransition(type2, *trans);
+				auto trans = GetTransitionFunc(transitions.transition_1_2);
+				return GetTransition(type2, *trans, GetTerrainFunc, default_val);
 			}
 			else if (setting == ConvertSetting::TERRAIN2_3)
 			{
-				auto trans = hades::data_manager->get<resources::terrain_transition>(transitions.transition_2_3);
-				return GetTransition(type2, *trans);
+				auto trans = GetTransitionFunc(transitions.transition_2_3);
+				return GetTransition(type2, *trans, GetTerrainFunc, default_val);
 			}
 			else if (setting == ConvertSetting::TERRAIN1_3)
 			{
-				auto trans = hades::data_manager->get<resources::terrain_transition>(transitions.transition_1_3);
-				return GetTransition(type2, *trans);
+				auto trans = GetTransitionFunc(transitions.transition_1_3);
+				return GetTransition(type2, *trans, GetTerrainFunc, default_val);
 			}
 			else
 			{
 				LOGWARNING("'Type' passed to GetTransition was outside expected range[0,80] was: " + std::to_string(type));
-				return tiles::GetErrorTileset();
+				return default_val;
 			}
 		};
 	}
 
-	std::vector<tile>& GetTransition(transition3::Types type, resources::terrain_transition3& transition)
+	tiles::TileArray& GetTransition(transition3::Types type, resources::terrain_transition3& transition, hades::data::data_manager *data)
 	{
-		return GetTransition<std::vector<tile>, resources::terrain_transition3>(type, transition);
+		return GetTransition<tiles::TileArray, resources::terrain_transition3, resources::terrain_transition, resources::terrain>(type, transition,
+			[data](hades::UniqueId id) {return data->get<resources::terrain_transition>(id); }, [data](hades::UniqueId id) {return data->get<resources::terrain>(id); },
+			resources::GetMutableErrorTileset(data));
 	}
 
-	const std::vector<tile>& GetTransition(transition3::Types type, const resources::terrain_transition3& transition)
+	const tiles::TileArray& GetTransition(transition3::Types type, const resources::terrain_transition3& transition)
 	{
-		return GetTransition<const std::vector<tile>, const resources::terrain_transition3>(type, transition);
+		return GetTransition<const tiles::TileArray, const resources::terrain_transition3, const resources::terrain_transition, const resources::terrain>(type,
+			transition, hades::data::Get<resources::terrain_transition>, hades::data::Get<resources::terrain>, tiles::GetErrorTileset());
 	}
 }

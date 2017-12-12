@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/Logging.hpp"
 
@@ -10,7 +11,7 @@ namespace hades
 	void animation_error(float progress, const resources::animation* const animation)
 	{
 		LOGWARNING("Animation progress parameter must be in the range (0, 1) was: " + std::to_string(progress) +
-			"; while setting animation: " + data_manager->as_string(animation->id));
+			"; while setting animation: " + data::GetAsString(animation->id));
 	}
 
 	//NOTE: based on the FrameAnimation algorithm from Thor C++

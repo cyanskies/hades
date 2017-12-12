@@ -1,5 +1,6 @@
 #include "ConsoleTestState.hpp"
 
+#include "Hades/Data.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/Types.hpp"
@@ -8,9 +9,6 @@ using namespace hades::types;
 
 void ConsoleTestState::init()
 {
-	hades::data_manager->refresh();
-	hades::data_manager->load();
-
 	LOG("Console test");
 
 	hades::console::SetProperty("int8", 5);
@@ -25,10 +23,10 @@ void ConsoleTestState::init()
 	assert(*int8val == 5);
 
 	//assign the needed textures
-	auto missing_id = hades::data_manager->getUid("example"), ball_id = hades::data_manager->getUid("ball");
+	auto missing_id = hades::data::GetUid("example"), ball_id = hades::data::GetUid("ball");
 
-	missing = hades::data_manager->getTexture(missing_id);
-	ball = hades::data_manager->getTexture(ball_id);
+	missing = hades::data::Get<hades::resources::texture>(missing_id);
+	ball = hades::data::Get<hades::resources::texture>(ball_id);
 
 	assert(missing && ball);
 

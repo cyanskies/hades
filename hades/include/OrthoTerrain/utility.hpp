@@ -2,12 +2,14 @@
 #define ORTHO_UTILITY_HPP
 
 #include <array>
+#include <exception>
 #include <vector>
 
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
 #include "Tiles/resources.hpp"
+#include "Tiles/tiles.hpp"
 
 //contains utility functions for arranging and picking tiles from transitions
 namespace ortho_terrain
@@ -50,8 +52,18 @@ namespace ortho_terrain
 		};
 	}
 
-	std::vector<tiles::tile>& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition);
-	const std::vector<tiles::tile>& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition);
+	class error_tileset_unavailable : public std::exception
+	{
+	public:
+		using std::exception::exception;
+		using std::exception::what;
+	};
+
+	//throws error_tileset_unavailable
+	// throws if an error tileset hasn't been assigned to the tile-settings or terrain-settings object
+	// NOTE: only throws for the non-const version
+	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_manager*);
+	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition);
 
 	namespace transition3
 	{
@@ -94,8 +106,9 @@ namespace ortho_terrain
 		};
 	}
 
-	std::vector<tiles::tile>& GetTransition(transition3::Types type, resources::terrain_transition3& transition);
-	const std::vector<tiles::tile>& GetTransition(transition3::Types type, const resources::terrain_transition3& transition);
+	//throws error_tileset_unavailable as above
+	tiles::TileArray& GetTransition(transition3::Types type, resources::terrain_transition3& transition, hades::data::data_manager*);
+	const tiles::TileArray& GetTransition(transition3::Types type, const resources::terrain_transition3& transition);
 }
 
 #endif // !ORTHO_UTILITY_HPP

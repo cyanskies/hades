@@ -19,6 +19,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
+#include "Hades/simple_resources.hpp"
 #include "Gui/Gui.hpp"
 
 namespace hades
@@ -94,9 +95,9 @@ namespace hades
 		console::system_object = &_console;
 
 		debug::overlay_manager = &_overlayMan;
-		//record the global resource controller
-		data_manager = &_dataMan;
-		data::detail::SetDataManagerPtr(data_manager);
+
+		RegisterCommonResources(&_dataMan);
+		data::detail::SetDataManagerPtr(&_dataMan);
 
 		resourceTypes(_dataMan);
 

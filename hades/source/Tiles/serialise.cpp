@@ -2,6 +2,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 
 #include "OrthoTerrain/resources.hpp"
@@ -27,7 +28,7 @@ namespace tiles
 		save.map_width = std::get<tile_count_t>(terrain);
 
 		//a list of tilesets, to tilesets starting id
-		std::vector<std::pair<resources::tileset*, tile_count_t>> tilesets;
+		std::vector<std::pair<const resources::tileset*, tile_count_t>> tilesets;
 
 		//for each tile, add its tileset to the tilesets list, 
 		// and record the highest tile_id used from that tileset.
@@ -36,7 +37,7 @@ namespace tiles
 		for (const auto &t : tiles)
 		{
 			//the target tileset will be stored here
-			resources::tileset* tset = nullptr;
+			const resources::tileset* tset = nullptr;
 			tile_count_t tileset_start_id = 0;
 			tile_count_t tile_id = 0;
 			//check tilesets cache for id
@@ -65,7 +66,7 @@ namespace tiles
 				//check Tilesets for the containing tileset
 				for (const auto &s_id : resources::Tilesets)
 				{
-					const auto s = hades::data_manager->get<resources::tileset>(s_id);
+					const auto s = hades::data::Get<resources::tileset>(s_id);
 					const auto &set_tiles = s->tiles;
 					for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
 					{
@@ -99,7 +100,7 @@ namespace tiles
 		}
 
 		for (const auto &s : tilesets)
-			save.tilesets.push_back({ hades::data_manager->as_string(s.first->id),
+			save.tilesets.push_back({ hades::data::GetAsString(s.first->id),
 				s.second });
 
 		return save;
@@ -110,7 +111,7 @@ namespace tiles
 		MapData out;
 		std::get<tile_count_t>(out) = save.map_width;
 
-		using Tileset = std::tuple<resources::tileset*, tile_count_t>;
+		using Tileset = std::tuple<const resources::tileset*, tile_count_t>;
 		std::vector<Tileset> tilesets;
 
 		//get all the tilesets
@@ -119,8 +120,8 @@ namespace tiles
 			auto tileset_name = std::get<hades::types::string>(t);
 			auto start_id = std::get<tile_count_t>(t);
 
-			auto tileset_id = hades::data_manager->getUid(tileset_name);
-			auto tileset = hades::data_manager->get<resources::tileset>(tileset_id);
+			auto tileset_id = hades::data::GetUid(tileset_name);
+			auto tileset = hades::data::Get<resources::tileset>(tileset_id);
 			assert(tileset);
 			tilesets.push_back({ tileset, start_id });
 		}
@@ -139,7 +140,7 @@ namespace tiles
 					break;
 			}
 
-			auto tileset = std::get<resources::tileset*>(tset);
+			auto tileset = std::get<const resources::tileset*>(tset);
 			auto count = std::get<tile_count_t>(tset);
 			assert(tileset);
 			count = t - count;

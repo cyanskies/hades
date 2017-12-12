@@ -7,7 +7,7 @@
 #include "SFML/Graphics/RenderWindow.hpp"
 
 #include "Hades/Console.hpp"
-#include "Hades/DataManager.hpp"
+#include "Hades/data_manager.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/Main.hpp"
@@ -79,7 +79,7 @@ namespace hades
 
 		InputSystem _input;							///< Used by the console to provide bindable input.
 		Console _console;							///< The appcations debug console.
-		hades::DataManager _dataMan;				///< The applications resource loader
+		hades::data::data_manager _dataMan;				///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
 		
 		debug::OverlayManager _overlayMan;			///< The debug overlay manager.

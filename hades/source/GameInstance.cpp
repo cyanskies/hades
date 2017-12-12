@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/simple_resources.hpp"
@@ -75,7 +76,7 @@ namespace hades
 			ExportedCurves::ExportSet<T> s;
 			s.variable = c.first.second;
 			
-			auto curve = data_manager->getCurve(s.variable);
+			auto curve = data::Get<resources::curve>(s.variable);
 			assert(curve);
 			//skip if this curve shouldn't sync to the client
 			if (!curve->sync)

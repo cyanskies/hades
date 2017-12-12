@@ -22,7 +22,7 @@ std::string defaultGame()
 	return "example";
 }
 
-void resourceTypes(hades::DataManager &data)
+void resourceTypes(hades::data::data_manager &data)
 {
 	ortho_terrain::RegisterOrthoTerrainResources(&data);
 	//data.register_resource_type("snake-rules", parseSnakeRules);

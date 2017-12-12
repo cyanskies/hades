@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "Hades/DataManager.hpp"
+#include "Hades/data_manager.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/StateManager.hpp"
 #include "Hades/Types.hpp"
@@ -32,7 +32,7 @@ hades::types::string defaultGame();
 ///
 /// Apps may register their Actions here
 /////////////////////////////////////
-void resourceTypes(hades::DataManager &data);
+void resourceTypes(hades::data::data_manager &data);
 
 /////////////////////////////////////
 /// Called at the start of the app

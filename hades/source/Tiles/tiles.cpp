@@ -3,6 +3,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
@@ -16,12 +17,10 @@ namespace tiles
 
 	MapData as_mapdata(const RawMap &map)
 	{
-		const auto data = hades::data_manager;
-
 		MapData out;
 		std::get<tile_count_t>(out) = std::get<tile_count_t>(map);
 
-		using Tileset = std::tuple<resources::tileset*, tile_count_t>;
+		using Tileset = std::tuple<const resources::tileset*, tile_count_t>;
 		std::vector<Tileset> tilesets;
 
 		//get all the tilesets
@@ -29,7 +28,7 @@ namespace tiles
 		{
 			auto start_id = std::get<tile_count_t>(t);
 			auto tileset_id = std::get<hades::data::UniqueId>(t);
-			auto tileset = hades::data_manager->get<resources::tileset>(tileset_id);
+			auto tileset = hades::data::Get<resources::tileset>(tileset_id);
 			assert(tileset);
 			tilesets.push_back({ tileset, start_id });
 		}
@@ -49,7 +48,7 @@ namespace tiles
 					break;
 			}
 
-			auto tileset = std::get<resources::tileset*>(tset);
+			auto tileset = std::get<const resources::tileset*>(tset);
 			auto count = std::get<tile_count_t>(tset);
 			assert(tileset);
 			count = t - count;
@@ -64,8 +63,6 @@ namespace tiles
 
 	RawMap as_rawmap(const MapData &map)
 	{
-		const auto data = hades::data_manager;
-
 		RawMap output;
 
 		assert(std::get<0>(map).size() % std::get<1>(map) == 0);
@@ -73,7 +70,7 @@ namespace tiles
 		std::get<tile_count_t>(output) = std::get<tile_count_t>(map);
 
 		//a list of tilesets, to tilesets starting id
-		std::vector<std::pair<resources::tileset*, tile_count_t>> tilesets;
+		std::vector<std::pair<const resources::tileset*, tile_count_t>> tilesets;
 
 		//for each tile, add its tileset to the tilesets list, 
 		// and record the highest tile_id used from that tileset.
@@ -83,7 +80,7 @@ namespace tiles
 		for (const auto &t : tiles)
 		{
 			//the target tileset will be stored here
-			resources::tileset* tset = nullptr;
+			const resources::tileset* tset = nullptr;
 			tile_count_t tileset_start_id = 0;
 			tile_count_t tile_id = 0;
 			//check tilesets cache for id
@@ -112,7 +109,7 @@ namespace tiles
 				//check Tilesets for the containing tileset
 				for (const auto &s_id : resources::Tilesets)
 				{
-					const auto s = data->get<resources::tileset>(s_id);
+					const auto s = hades::data::Get<resources::tileset>(s_id);
 					const auto &set_tiles = s->tiles;
 					for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
 					{
@@ -195,15 +192,13 @@ namespace tiles
 		//generate a drawable array
 		Chunks.clear();
 
-		const auto &data = hades::data_manager;
-
 		using namespace resources;
-		auto settings_id = data->getUid(tile_settings_name);
+		auto settings_id = hades::data::GetUid(tile_settings_name);
 
-		if (!data->exists(settings_id))
+		if (!hades::data::Exists(settings_id))
 			throw tile_map_exception("Missing tile settings resource");
 
-		auto settings = data->get<tile_settings>(settings_id);
+		auto settings = hades::data::Get<tile_settings>(settings_id);
 		auto tile_size = settings->tile_size;
 
 		tile_count_t count = 0;
@@ -213,11 +208,11 @@ namespace tiles
 			tile t;
 		};
 
-		std::vector<std::pair<hades::resources::texture*, Tile>> map;
-		std::vector<hades::resources::texture*> tex_cache;
+		std::vector<std::pair<const hades::resources::texture*, Tile>> map;
+		std::vector<const hades::resources::texture*> tex_cache;
 		for (auto &t : tiles)
 		{
-			hades::resources::texture* texture = nullptr;
+			const hades::resources::texture* texture = nullptr;
 
 			for (auto &c : tex_cache)
 			{
@@ -227,7 +222,7 @@ namespace tiles
 
 			if (!texture)
 			{
-				texture = hades::data_manager->getTexture(t.texture);
+				texture = hades::data::Get<hades::resources::texture>(t.texture);
 				tex_cache.push_back(texture);
 			}
 
@@ -330,13 +325,7 @@ namespace tiles
 		_tiles = std::get<TileArray>(map_data);
 		_width = std::get<tile_count_t>(map_data);
 
-		const auto &data = hades::data_manager;
-
-		using namespace resources;
-		auto settings_id = data->getUid(tile_settings_name);
-
 		auto tile_settings = GetTileSettings();
-
 		_tile_size = tile_settings.tile_size;
 
 		TileMap::create(map_data);
@@ -410,9 +399,9 @@ namespace tiles
 			}
 
 			//create a new vertex array if needed
-			if (!targetArray && hades::data_manager->exists(t.texture))
+			if (!targetArray && hades::data::Exists(t.texture))
 			{
-				auto texture = hades::data_manager->getTexture(t.texture);
+				auto texture = hades::data::Get<hades::resources::texture>(t.texture);
 				Chunks.push_back({ texture, VertexArray() });
 				targetArray = &Chunks.back();
 			}
@@ -520,9 +509,8 @@ namespace tiles
 
 	const resources::tile_settings &GetTileSettings()
 	{
-		auto settings_id = hades::data_manager->getUid(resources::tile_settings_name);
-		auto data_manager = hades::data_manager;
-		if (!data_manager->exists(settings_id))
+		auto settings_id = hades::data::GetUid(resources::tile_settings_name);
+		if (!hades::data::Exists(settings_id))
 		{
 			auto message = "tile-settings undefined. GetTileSettings()";
 			LOGERROR(message)
@@ -531,7 +519,7 @@ namespace tiles
 
 		try
 		{
-			return *hades::data_manager->get<resources::tile_settings>(settings_id);
+			return *hades::data::Get<resources::tile_settings>(settings_id);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{
@@ -541,10 +529,16 @@ namespace tiles
 		}
 	}
 
-	TileArray &GetErrorTileset()
+	const TileArray &GetErrorTileset()
 	{
 		auto settings = GetTileSettings();
-		auto tset = hades::data_manager->get<resources::tileset>(settings.error_tileset);
+		auto tset = hades::data::Get<resources::tileset>(settings.error_tileset);
+
+		if (!tset)
+		{
+			LOGWARNING("No error tileset");
+			tset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
+		}
 
 		return tset->tiles;
 	}

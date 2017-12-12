@@ -61,7 +61,7 @@ namespace tiles
 		sf::FloatRect getLocalBounds() const;
 
 	protected:
-		using vArray = std::pair<hades::resources::texture*, VertexArray>;
+		using vArray = std::pair<const hades::resources::texture*, VertexArray>;
 		std::vector<vArray> Chunks;
 	};
 
@@ -92,7 +92,7 @@ namespace tiles
 	};
 	//throws tile_map_exception if the settings cannot be retrieved for any reason.
 	const resources::tile_settings &GetTileSettings();
-	TileArray &GetErrorTileset();
+	const TileArray &GetErrorTileset();
 	tile GetErrorTile();
 }
 

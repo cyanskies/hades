@@ -20,7 +20,7 @@ public:
 	void resume() override;
 private:
 
-	hades::resources::texture *ball, *missing;
+	const hades::resources::texture *ball, *missing;
 	sf::Sprite ball_sprite, missing_sprite;
 	sf::RectangleShape rect;
 

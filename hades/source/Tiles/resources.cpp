@@ -2,6 +2,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/Data.hpp"
 #include "Hades/DataManager.hpp"
 #include "Hades/data_manager.hpp"
 
@@ -192,13 +193,15 @@ namespace tiles
 			static const hades::types::string resource_type = tile_settings_name;
 			static const hades::types::uint8 default_size = 8;
 			auto id = data_manager->getUid(resource_type);
-			
+
 			auto settings = hades::data::FindOrCreate<tile_settings>(id, mod, data_manager);
 
 			if (!settings)
 				return;
 
-			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);		}
+			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);
+			settings->error_tileset = yaml_get_uid(node, resource_type, "n/a", "error-tileset", mod, settings->error_tileset);
+		}
 
 		std::vector<tile> parseTiles(hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
 		{
@@ -239,7 +242,7 @@ namespace tiles
 			traits_list traits;
 
 			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
-				return hades::data_manager->getUid(s);
+				return hades::data::GetUid(s);
 			});
 
 			return parseTiles(texture, tile_size, top, left, width - 1 /* make width 0 based */, count, traits);

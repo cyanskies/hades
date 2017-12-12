@@ -45,7 +45,7 @@ namespace hades
 		Texture* getTexture(data::UniqueId);
 	};
 
-	extern DataManager* data_manager;
+	//extern DataManager* data_manager;
 }
 
 #endif // !hades_datamanager_ex_hpp

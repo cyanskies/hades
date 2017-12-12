@@ -8,7 +8,8 @@
 
 #include "TGUI/Loading/Deserializer.hpp"
 
-#include"Hades/DataManager.hpp"
+#include "Hades/Data.hpp"
+#include "Hades/DataManager.hpp"
 
 namespace hades
 {
@@ -25,25 +26,26 @@ namespace hades
 
 	std::unique_ptr<sf::Image> ImgLoader(const sf::String& name)
 	{
-		auto id = data_manager->getUid(name);
-		assert(data_manager->exists(id));
+		auto id = data::GetUid(name);
+		assert(data::Exists(id));
 
-		data_manager->refresh(id);
-		data_manager->load(id);
+		//TODO:
+		//data_manager->refresh(id);
+		//data_manager->load(id);
 
-		auto img = data_manager->getTexture(id);
+		auto img = data::Get<resources::texture>(id);
 		return std::make_unique<sf::Image>(img->value.copyToImage());
 	}
 
 	tgui::ObjectConverter FontLoader(const std::string& name)
 	{
-		auto id = data_manager->getUid(name);
-		assert(data_manager->exists(id));
+		auto id = data::GetUid(name);
+		assert(data::Exists(id));
 
-		data_manager->refresh(id);
-		data_manager->load(id);
+		//data_manager->refresh(id);
+		//data_manager->load(id);
 
-		auto font = data_manager->getFont(id);
+		auto font = data::Get<resources::font>(id);
 
 		return std::make_shared<sf::Font>(font->value);
 	}

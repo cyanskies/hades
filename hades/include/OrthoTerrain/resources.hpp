@@ -35,6 +35,8 @@ namespace ortho_terrain
 
 	namespace resources
 	{	
+		tiles::TileArray& GetMutableErrorTileset(hades::data::data_manager*);
+
 		const hades::types::string terrain_settings_name = "terrain-settings";
 
 		struct terrain_settings_t {};

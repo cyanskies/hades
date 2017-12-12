@@ -1,5 +1,7 @@
 #include "Hades/common-input.hpp"
 
+#include "Hades/Data.hpp"
+
 namespace hades
 {
 	namespace input
@@ -10,10 +12,9 @@ namespace hades
 
 	void RegisterMouseInput(InputSystem &bind)
 	{
-		auto data = data_manager;
 		//collect unique names for actions
-		input::PointerPosition = data->getUid("mouse");
-		input::PointerLeft = data->getUid("mouseleft");
+		input::PointerPosition = data::GetUid("mouse");
+		input::PointerLeft = data::GetUid("mouseleft");
 
 		//bind them
 		bind.create(input::PointerPosition, false, "mouse");

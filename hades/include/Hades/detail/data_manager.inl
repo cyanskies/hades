@@ -65,6 +65,12 @@ namespace hades
 		{
 			T* r = nullptr;
 
+			if (target == hades::EmptyId)
+			{
+				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
+				return r;
+			}
+
 			if (!data->exists(target))
 			{
 				auto new_ptr = std::make_unique<T>();
@@ -83,7 +89,7 @@ namespace hades
 				{
 					//name is already used for something else, this cannnot be loaded
 					auto modname = data->as_string(mod);
-					LOGERROR("Failed to get " + std::string(typeid(T).name()) + " with id: " + data->as_string(target) + ", in mod: " + modname + ", name has already been used for a different resource type.");
+					LOGERROR("Failed to get " + types::string(typeid(T).name()) + " with id: " + data->as_string(target) + ", in mod: " + modname + ", name has already been used for a different resource type.");
 				}
 			}
 

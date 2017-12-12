@@ -14,5 +14,7 @@ namespace objects
 	//			-curve_id(no default value)
 	//		systems: [system_id, ...]
 	//		client-systems : [system_id, ...]
+
+		auto resource_type = "objects";
 	}
 }

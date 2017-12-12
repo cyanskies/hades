@@ -238,10 +238,14 @@ namespace hades
 				return VariableType::BOOL;
 			else if (s == "string")
 				return VariableType::STRING;
+			else if (s == "unique")
+				return VariableType::UNIQUE;
 			else if (s == "int_vector")
 				return VariableType::VECTOR_INT;
 			else if (s == "float_vector")
 				return VariableType::VECTOR_FLOAT;
+			else if (s == "unique_vector")
+				return VariableType::VECTOR_UNIQUE;
 			else
 				return VariableType::ERROR;
 		}
@@ -254,6 +258,8 @@ namespace hades
 			//			value: default: int32 //determines the value type
 			//			sync: default: false //true if this should be syncronised to the client
 			//			save: default false //true if this should be saved when creating a save file
+			//	TODO:	trim: default false
+			//	TODO:	default: value, [value1, value2, value3, ...] etc
 
 			//these are loaded into the game instance before anything else
 			//curves cannot change type/value once they have been created,

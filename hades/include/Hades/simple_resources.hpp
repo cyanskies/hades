@@ -1,6 +1,8 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
+#include <variant>
+#include <utility>
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/Shader.hpp"
 
@@ -46,7 +48,20 @@ namespace hades
 			//if it's provided by the application, then source is empty, and no laoder function is provided.
 		};
 
-		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, VECTOR_INT, VECTOR_FLOAT};
+		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_UNIQUE};
+
+		struct curve_default_value
+		{
+			bool set = false;
+
+			using int_t = hades::types::int32;
+			using curve_value = std::variant<int_t, float,
+				bool, hades::types::string, hades::data::UniqueId, std::vector<int_t>,
+				std::vector<float>, std::vector<hades::data::UniqueId>>;
+
+			//TODO: manually specify the default value(needs C++17)
+			curve_value value;
+		};
 
 		struct curve_t {};
 
@@ -56,6 +71,7 @@ namespace hades
 			VariableType data_type = VariableType::ERROR;
 			bool sync = false,
 				save = false;
+			curve_default_value default_value;
 		};
 
 		struct shader : public resource_type<sf::Shader>

@@ -17,19 +17,10 @@ namespace ortho_terrain
 	{
 		auto layout_id = data->getUid(tiles::editor::tile_editor_layout);
 
-		hades::resources::string *layout = nullptr;
+		hades::resources::string *layout = hades::data::FindOrCreate<hades::resources::string>(layout_id, hades::data::UniqueId::Zero, data);
 
-		if (!data->exists(layout_id))
-		{
-			//resource doens't exist yet, create it
-			auto layout_ptr = std::make_unique<hades::resources::string>();
-			layout = &*layout_ptr;
-			data->set<hades::resources::string>(layout_id, std::move(layout_ptr));
-		}
-		else
-		{
-			layout = data->get<hades::resources::string>(layout_id);
-		}
+		if (!layout)
+			return;
 
 		layout->value =
 			R"(ChildWindow {
@@ -200,36 +191,6 @@ namespace ortho_terrain
 		std::vector<hades::data::UniqueId> Terrains;
 		std::vector<hades::data::UniqueId> Transitions;
 
-		template<class T>
-		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data)
-		{
-			T* r = nullptr;
-
-			if (!data->exists(target))
-			{
-				auto new_ptr = std::make_unique<T>();
-				r = &*new_ptr;
-				data->set<T>(target, std::move(new_ptr));
-
-				r->id = target;
-			}
-			else
-			{
-				try
-				{
-					r = data->get<T>(target);
-				}
-				catch (data::resource_wrong_type&)
-				{
-					//name is already used for something else, this cannnot be loaded
-					auto modname = data->as_string(mod);
-					LOGERROR("Failed to get " + std::string(typeid(T).name()) + " with id: " + data->as_string(target) + ", in mod: " + modname + ", name has already been used for a different resource type.");
-				}
-			}
-
-			return r;
-		}
-
 		void parseTerrainSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager* data_manager)
 		{
 			//terrain-settings:
@@ -237,36 +198,14 @@ namespace ortho_terrain
 			const types::string resource_type = terrain_settings_name;
 			const types::uint8 default_size = 8;
 			auto id = data_manager->getUid(resource_type);
-			terrain_settings *settings = nullptr;
-			if (!data_manager->exists(id))
-			{
-				//resource doens't exist yet, create it
-				auto settings_ptr = std::make_unique<terrain_settings>();
-				settings = &*settings_ptr;
-				data_manager->set<terrain_settings>(id, std::move(settings_ptr));
-				settings->id = id;
-			}
-			else
-			{
-				//retrieve it from the data store
-				try
-				{
-					settings = data_manager->get<terrain_settings>(id);
-				}
-				catch (data::resource_wrong_type&)
-				{
-					//name is already used for something else, this cannnot be loaded
-					auto mod_ptr = data_manager->getMod(mod);
-					LOGERROR("Name collision with identifier: terrain-settings, for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
-					//skip the rest of this loop and check the next node
-					return;
-				}
-			}
+			terrain_settings *settings = hades::data::FindOrCreate<terrain_settings>(id, mod, data_manager);
+
+			if (!settings)
+				return;
 
 			tiles::resources::parseTileSettings(mod, node, data_manager);
 
-			settings->mod = mod;
-			settings->error_terrain = yaml_get_uid(node, resource_type, "terrain-settings", "error-terrain", mod);
+			settings->error_terrain = yaml_get_uid(node, resource_type, "terrain-settings", "error-terrain", mod, settings->error_terrain);
 		}
 
 		terrain *parseTerrain(hades::data::UniqueId mod, hades::data::UniqueId texture, YAML::Node& terrainNode, hades::data::data_manager *data)
@@ -277,34 +216,10 @@ namespace ortho_terrain
 			
 			auto id = data->getUid(terrain_str);
 
-			terrain* t = nullptr;
-			if (!data->exists(id))
-			{
-				auto terrain_ptr = std::make_unique<terrain>();
-				t = &*terrain_ptr;
-				data->set<terrain>(id, std::move(terrain_ptr));
-
-				t->id = id;
-
+			terrain* t = hades::data::FindOrCreate<terrain>(id, mod, data);
+			if (t)
 				Terrains.push_back(id);
-			}
-			else
-			{
-				try
-				{
-					t = data->get<terrain>(id);
-				}
-				catch (data::resource_wrong_type&)
-				{
-					//name is already used for something else, this cannnot be loaded
-					auto modname = data->as_string(mod);
-					LOGERROR("Failed to get terrain with id: " + terrain_str + ", in mod: " + modname + ", name has already been used for a different resource type.");
-					//skip the rest of this loop and check the next node
-					return nullptr;
-				}
-			}
-
-			t->mod = mod;
+			
 			return t;
 		}
 
@@ -403,9 +318,9 @@ namespace ortho_terrain
 			}
 
 			//create if no matching transition exists
-			if (t == nullptr)
+			if (!t)
 			{
-				t = FindOrCreate<terrain_transition>(id, mod, data);
+				t = data::FindOrCreate<terrain_transition>(id, mod, data);
 				//if we fail to create then skip
 				if (t == nullptr)
 					return std::vector<tiles::tile>();
@@ -595,7 +510,7 @@ namespace ortho_terrain
 			//create if no matching transition exists
 			if (t3 == nullptr)
 			{
-				t3 = FindOrCreate<terrain_transition3>(id, mod, data);
+				t3 = data::FindOrCreate<terrain_transition3>(id, mod, data);
 				t3->terrain1 = terrain1_id;
 				t3->terrain2 = terrain2_id;
 				t3->terrain3 = terrain3_id;
@@ -747,35 +662,10 @@ namespace ortho_terrain
 
 				using tileset = tiles::resources::tileset;
 
-				tileset* tset = nullptr;
+				tileset* tset = hades::data::FindOrCreate<tileset>(id, mod, data);
 
-				if (!data->exists(id))
-				{
-					auto tileset_ptr = std::make_unique<tileset>();
-					tset = &*tileset_ptr;
-					data->set<tileset>(id, std::move(tileset_ptr));
-
-					tset->id = id;
-
-					tiles::resources::Tilesets.push_back(id);
-				}
-				else
-				{
-					try
-					{
-						tset = data->get<tileset>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						auto modname = data->as_string(mod);
-						LOGERROR("Failed to get tileset with id: " + name + ", in mod: " + modname + ", name has already been used for a different resource type.");
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
-
-				tset->mod = mod;
+				if (!tset)
+					continue;
 
 				auto v = n.second;
 				auto tex = v["texture"];

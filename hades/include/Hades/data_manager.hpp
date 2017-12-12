@@ -115,6 +115,12 @@ namespace hades
 			//list of unloaded resources
 			std::vector<resources::resource_base*> _loadQueue;
 		};
+
+		//gets the requested resource, or creates it if not already
+		// sets the resources most recent mod to the passed value
+		// returns nullptr if unable to return a valid resource
+		template<class T>
+		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data);
 	}
 }
 
@@ -126,7 +132,7 @@ T yaml_get_scalar(YAML::Node& node, hades::types::string resource_type, hades::t
 	hades::types::string property_name, hades::data::UniqueId mod, T default_value);
 
 hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod);
+	hades::types::string property_name, hades::data::UniqueId mod, hades::data::UniqueId default_value = hades::data::UniqueId::Zero);
 
 template<class T>
 std::vector<T> yaml_get_sequence(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,

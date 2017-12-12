@@ -93,16 +93,7 @@ namespace hades
 			//        repeating: false
 			//        mips: false
 
-			const texture::size_type d_width = 0, d_height = 0;
 			const types::string d_source, resource_type = "textures";
-			const bool d_smooth = false, d_repeating = false, d_mips = false;
-
-			//for each node
-			//{
-			//	parse values
-			//	load default error texture
-			//	add to load queue
-			//}
 
 			for (auto n : node)
 			{
@@ -113,66 +104,17 @@ namespace hades
 				//second holds the map children
 				auto tvariables = n.second;
 				auto id = dataman->getUid(tnode.as<types::string>());
-				texture* tex;
+				auto tex = data::FindOrCreate<texture>(id, mod, dataman);
 
-				if (!dataman->exists(id))
-				{
-					//resource doens't exist yet, create it
-					auto texture_ptr = std::make_unique<texture>();
-					tex = &*texture_ptr;
-					dataman->set<texture>(id, std::move(texture_ptr));
+				if (!tex)
+					continue;
 
-					tex->height = d_height;
-					tex->width = d_width;
-					tex->smooth = d_smooth;
-					tex->repeat = d_repeating;
-					tex->mips = d_mips;
-					tex->source = d_source;
-					tex->id = id;
-				}
-				else
-				{
-					//retrieve it from the data store
-					try
-					{
-						tex = dataman->get<texture>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						auto mod_ptr = dataman->getMod(mod);
-						LOGERROR("Name collision with identifier: " + name + ", for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
-
-				tex->mod = mod;
-
-				//only overwrite current values(or default if this is a new resource) if they are specified.
-				auto width = tvariables["width"];
-				if (width.IsDefined() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
-					tex->width = width.as<texture::size_type>(d_width);
-
-				auto height = tvariables["height"];
-				if (height.IsDefined() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
-					tex->height = height.as<texture::size_type>(d_height);
-
-				auto smooth = tvariables["smooth"];
-				if (smooth.IsDefined() && yaml_error(resource_type, name, "smooth", "scalar", mod, smooth.IsScalar()))
-					tex->smooth = smooth.as<bool>(d_smooth);
-
-				auto repeat = tvariables["repeating"];
-				if (repeat.IsDefined() && yaml_error(resource_type, name, "repeating", "scalar", mod, repeat.IsScalar()))
-					tex->repeat = repeat.as<bool>(d_repeating);
-
-				auto mips = tvariables["mips"];
-				if (mips.IsDefined() && yaml_error(resource_type, name, "mips", "scalar", mod, mips.IsScalar()))
-					tex->mips = mips.as<bool>(d_mips);
-
-				auto source = tvariables["source"];
-				if (source.IsDefined() && yaml_error(resource_type, name, "source", "scalar", mod, source.IsScalar()))
-					tex->source = source.as<types::string>(d_source);
+				tex->width = yaml_get_scalar(tvariables, resource_type, name, "width", mod, tex->width);
+				tex->height = yaml_get_scalar(tvariables, resource_type, name, "height", mod, tex->height);
+				tex->smooth = yaml_get_scalar(tvariables, resource_type, name, "smooth", mod, tex->smooth);
+				tex->repeat = yaml_get_scalar(tvariables, resource_type, name, "repeating", mod, tex->repeat);
+				tex->mips = yaml_get_scalar(tvariables, resource_type, name, "mips", mod, tex->mips);
+				tex->source = yaml_get_scalar(tvariables, resource_type, name, "source", mod, tex->source);
 
 				//if either size parameters are 0, then don't warn for size mismatch
 				if (tex->width == 0 || tex->height == 0)
@@ -249,30 +191,10 @@ namespace hades
 				auto string = n.second.as<types::string>();
 				auto id = dataman->getUid(tnode.as<types::string>());
 
-				resources::string *str = nullptr;// = std::make_unique<resources::string>();
-
-				if (!dataman->exists(id))
-				{
-					auto string_ptr = std::make_unique <resources::string> ();
-					str = &*string_ptr;
-					dataman->set<resources::string>(id, std::move(string_ptr));
-
-					str->id = id;
-				}
-				else
-				{
-					try
-					{
-						str = dataman->get<resources::string>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						resource_error(resource_type, name, mod);
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
+				auto str = data::FindOrCreate<resources::string>(id, mod, dataman);// = std::make_unique<resources::string>();
+				
+				if (!str)
+					continue;
 
 				str->mod = mod;
 				auto moddata = dataman->get<resources::mod>(mod);
@@ -283,7 +205,7 @@ namespace hades
 
 		void parseSystem(data::UniqueId mod, YAML::Node& node, data::data_manager*)
 		{
-			assert(false && "mods cannot create systems untill scripting is introduced.");
+			assert(false && "mods cannot create systems until scripting is introduced.");
 		}
 
 		void loadSystem(resource_base* r, data::data_manager* dataman)
@@ -363,37 +285,10 @@ namespace hades
 				const types::string name = tnode.as<types::string>();
 
 				auto id = dataman->getUid(name);
-				curve* c;
+				curve* c = hades::data::FindOrCreate<curve>(id, mod, dataman);
 
-				//try to get this
-				if (!dataman->exists(id))
-				{
-					auto curve_ptr = std::make_unique<curve>();
-					c = &*curve_ptr;
-					dataman->set<curve>(id, std::move(curve_ptr));
-
-					c->curve_type = CurveType::STEP;
-					c->data_type = VariableType::INT;
-					c->save = false;
-					c->sync = false;
-					c->id = id;
-				}
-				else
-				{
-					try
-					{
-						c = dataman->get<curve>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						resource_error(resource_type, name, mod);
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
-
-				c->mod = mod;
+				if (!c)
+					continue;
 
 				//checking a key will return the value accociated with it
 				//eg
@@ -442,54 +337,21 @@ namespace hades
 				auto node = n.first;
 				auto animation_node = n.second;
 				auto id = data->getUid(node.as<types::string>());
-				animation* a;
+				animation* a = data::FindOrCreate<animation>(id, mod, data);
+
+				if (!a)
+					continue;
 
 				const types::string name = n.as<types::string>();
 
-				if (!data->exists(id))
-				{
-					auto animation_ptr = std::make_unique<animation>();
-					a = &*animation_ptr;
-					data->set<animation>(id, std::move(animation_ptr));
-
-					a->duration = 1.f;
-					a->id = id;
-					a->source = types::string();
-					a->tex = nullptr;
-					a->value = std::vector<animation_frame>(0);
-				}
-				else
-				{
-					try
-					{
-						a = data->get<animation>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						resource_error(resource_type, name, mod);
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
-
-				a->mod = mod;
-				
-				auto duration = animation_node["duration"];
-				if (duration.IsDefined() && yaml_error(resource_type, name, "duration", "scalar", mod, duration.IsScalar()))
-					a->duration = duration.as<float>();
+				a->duration = yaml_get_scalar(animation_node, resource_type, name, "duration", mod, a->duration);
 
 				auto texture_str = animation_node["texture"];
 				if (texture_str.IsDefined() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
 					a->tex = data_manager->getTexture(data_manager->getUid(texture_str.as<types::string>()));
 
-				auto width = animation_node["width"];
-				if (width.IsDefined() && yaml_error(resource_type, name, "width", "scalar", mod, width.IsScalar()))
-					a->width = width.as<types::int32>();
-
-				auto height = animation_node["height"];
-				if (height.IsDefined() && yaml_error(resource_type, name, "height", "scalar", mod, height.IsScalar()))
-					a->height = height.as<types::int32>();
+				a->width = yaml_get_scalar(animation_node, resource_type, name, "width", mod, a->width);
+				a->height = yaml_get_scalar(animation_node, resource_type, name, "height", mod, a->height);
 
 				//now get all the frames
 				auto frames = animation_node["frames"];
@@ -592,33 +454,11 @@ namespace hades
 				auto source = n.second.as<types::string>();
 				auto id = data->getUid(tnode.as<types::string>());
 				auto name = tnode.as<types::string>();
-				font *f = nullptr;
-
-				if (!data->exists(id))
-				{
-					auto font_ptr = std::make_unique<font>();
-					f = &*font_ptr;
-					data->set<font>(id, std::move(font_ptr));
-
-					f->id = id;
-					f->value.loadFromMemory(console_font::data, console_font::length);
-				}
-				else
-				{
-					try
-					{
-						f = data->get<font>(id);
-					}
-					catch (data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						resource_error(resource_type, name, mod);
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
-
-				f->mod = mod;
+				font *f = data::FindOrCreate<font>(id, mod, data);
+				
+				if (!f)
+					continue;
+				
 				f->source = source;
 			}
 		}

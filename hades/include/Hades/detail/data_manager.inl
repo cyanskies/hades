@@ -56,6 +56,42 @@ namespace hades
 				throw resource_wrong_type(message.c_str());
 			}
 		}
+
+		//gets the requested resource, or creates it if not already
+		// sets the resources most recent mod to the passed value
+		// returns nullptr if unable to return a valid resource
+		template<class T>
+		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data)
+		{
+			T* r = nullptr;
+
+			if (!data->exists(target))
+			{
+				auto new_ptr = std::make_unique<T>();
+				r = &*new_ptr;
+				data->set<T>(target, std::move(new_ptr));
+
+				r->id = target;
+			}
+			else
+			{
+				try
+				{
+					r = data->get<T>(target);
+				}
+				catch (data::resource_wrong_type&)
+				{
+					//name is already used for something else, this cannnot be loaded
+					auto modname = data->as_string(mod);
+					LOGERROR("Failed to get " + std::string(typeid(T).name()) + " with id: " + data->as_string(target) + ", in mod: " + modname + ", name has already been used for a different resource type.");
+				}
+			}
+
+			if (r)
+				r->mod = mod;
+
+			return r;
+		}
 	}
 }
 

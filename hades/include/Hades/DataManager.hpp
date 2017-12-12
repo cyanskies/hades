@@ -4,6 +4,8 @@
 #include "Hades/data_manager.hpp"
 #include "Hades/simple_resources.hpp"
 
+//TODO: remove this header
+
 namespace hades
 {
 	//default hades datamanager

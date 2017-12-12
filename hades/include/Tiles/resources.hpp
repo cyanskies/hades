@@ -17,7 +17,7 @@ namespace tiles
 	struct tile
 	{
 		hades::data::UniqueId texture = hades::data::UniqueId::Zero;
-		tile_size_t left, top;
+		tile_size_t left = 0, top = 0;
 		traits_list traits;
 	};
 
@@ -40,8 +40,8 @@ namespace tiles
 
 		struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 		{
-			hades::resources::texture::size_type tile_size;
-			hades::data::UniqueId error_tileset;
+			hades::resources::texture::size_type tile_size = 0;
+			hades::data::UniqueId error_tileset = hades::data::UniqueId::Zero;
 		};
 
 		struct tileset_t {};

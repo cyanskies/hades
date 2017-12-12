@@ -14,20 +14,7 @@ namespace tiles
 	{
 		auto layout_id = data->getUid(editor::tile_editor_layout);
 
-		hades::resources::string *layout = nullptr;
-
-		if (!data->exists(layout_id))
-		{
-			//resource doens't exist yet, create it
-			auto layout_ptr = std::make_unique<hades::resources::string>();
-			layout = &*layout_ptr;
-			data->set<hades::resources::string>(layout_id, std::move(layout_ptr));
-		}
-		else
-		{
-			layout = data->get<hades::resources::string>(layout_id);
-		}
-
+		auto layout = hades::data::FindOrCreate<hades::resources::string>(layout_id, hades::data::UniqueId::Zero, data);
 		layout->value =
 			R"(ChildWindow {
 				Position = (20, 20);
@@ -200,40 +187,13 @@ namespace tiles
 			static const hades::types::string resource_type = tile_settings_name;
 			static const hades::types::uint8 default_size = 8;
 			auto id = data_manager->getUid(resource_type);
-			tile_settings *settings = nullptr;
-			if (!data_manager->exists(id))
-			{
-				//resource doens't exist yet, create it
-				auto settings_ptr = std::make_unique<tile_settings>();
-				settings = &*settings_ptr;
-				data_manager->set<tile_settings>(id, std::move(settings_ptr));
+			
+			auto settings = hades::data::FindOrCreate<tile_settings>(id, mod, data_manager);
 
-				settings->tile_size = default_size;
-				settings->id = id;
-			}
-			else
-			{
-				//retrieve it from the data store
-				try
-				{
-					settings = data_manager->get<tile_settings>(id);
-				}
-				catch (hades::data::resource_wrong_type&)
-				{
-					//name is already used for something else, this cannnot be loaded
-					auto mod_ptr = data_manager->getMod(mod);
-					LOGERROR("Name collision with identifier: tile-settings, for tile-settings while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
-					//skip the rest of this loop and check the next node
-					return;
-				}
-			}
+			if (!settings)
+				return;
 
-			settings->mod = mod;
-
-			auto size = node["tile-size"];
-			if (size.IsDefined() && yaml_error(resource_type, "n/a", "tile-size", "scalar", mod, size.IsScalar()))
-				settings->tile_size = size.as<tile_size_t>(default_size);
-		}
+			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);		}
 
 		std::vector<tile> parseTiles(hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
 		{
@@ -303,32 +263,10 @@ namespace tiles
 				auto name = namenode.as<hades::types::string>();
 				auto id = data->getUid(name);
 
-				tileset* tset = nullptr;
+				auto tset = hades::data::FindOrCreate<tileset>(id, mod, data);
 
-				if (!data->exists(id))
-				{
-					auto tileset_ptr = std::make_unique<tileset>();
-					tset = &*tileset_ptr;
-					data->set<tileset>(id, std::move(tileset_ptr));
-
-					tset->id = id;
-					Tilesets.push_back(id);
-				}
-				else
-				{
-					try
-					{
-						tset = data->get<tileset>(id);
-					}
-					catch (hades::data::resource_wrong_type&)
-					{
-						//name is already used for something else, this cannnot be loaded
-						auto modname = data->as_string(mod);
-						LOGERROR("Failed to get tileset with id: " + name + ", in mod: " + modname + ", name has already been used for a different resource type.");
-						//skip the rest of this loop and check the next node
-						continue;
-					}
-				}
+				if (!tset)
+					continue;
 
 				tset->mod = mod;
 

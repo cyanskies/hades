@@ -42,7 +42,7 @@ namespace ortho_terrain
 
 		struct terrain_settings : public hades::resources::resource_type<terrain_settings_t>
 		{
-			hades::data::UniqueId error_terrain;
+			hades::data::UniqueId error_terrain = hades::data::UniqueId::Zero;
 		};
 
 		void parseTerrainSettings(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager*);

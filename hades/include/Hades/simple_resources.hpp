@@ -32,8 +32,8 @@ namespace hades
 			using size_type = types::uint16;
 			//max texture size for older hardware is 512
 			//max size for modern hardware is 8192 or higher
-			size_type width, height;
-			bool smooth, repeat, mips;
+			size_type width = 0, height = 0;
+			bool smooth = false, repeat = false, mips = false;
 		};
 
 		struct string : public resource_type<types::string>
@@ -52,10 +52,10 @@ namespace hades
 
 		struct curve : public resource_type<curve_t>
 		{
-			CurveType curve_type;
-			VariableType data_type;
-			bool sync,
-				save;
+			CurveType curve_type = CurveType::ERROR;
+			VariableType data_type = VariableType::ERROR;
+			bool sync = false,
+				save = false;
 		};
 
 		struct shader : public resource_type<sf::Shader>
@@ -245,16 +245,16 @@ namespace hades
 			//the rectangle for this frame and the duration relative to the rest of the frames in this animation
 			animation_frame() = default;
 			animation_frame(types::uint16 nx, types::uint16 ny, float nd) : x(nx), y(ny), duration(nd) {}
-			types::uint16 x, y;
-			float duration;
+			types::uint16 x = 0, y = 0;
+			float duration = 0.f;
 		};
 
 		//TODO: add field for fragment shaders
 		struct animation : public resource_type<std::vector<animation_frame>>
 		{
 			texture* tex = nullptr;
-			float duration;
-			types::int32 width, height;
+			float duration = 0.f;
+			types::int32 width = 0, height = 0;
 			shader *shader = nullptr;
 		};
 

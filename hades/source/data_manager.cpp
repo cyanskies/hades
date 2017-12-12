@@ -345,7 +345,7 @@ bool yaml_error(types::string resource_type, types::string resource_name,
 }
 
 hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod)
+	hades::types::string property_name, hades::data::UniqueId mod, hades::data::UniqueId default_value)
 {
 	auto value_node = node[property_name];
 	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))
@@ -355,5 +355,5 @@ hades::data::UniqueId yaml_get_uid(YAML::Node& node, hades::types::string resour
 			return hades::data::GetUid(str);
 	}
 
-	return hades::data::UniqueId::Zero;
+	return default_value;
 }

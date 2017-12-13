@@ -131,6 +131,7 @@ namespace hades
 			if (com == command)
 			{
 				std::string params;
+				//replace with std::move
 				std::copy(bit->begin() + command.length() + 1, bit->end(), std::back_inserter(params));
 				job(params);
 				bit = commands.erase(bit);

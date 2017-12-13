@@ -221,12 +221,11 @@ namespace objects
 				auto anim_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "editor-anim", mod);
 				
 				auto anims = convert_string_to_resource<hades::resources::animation>(std::begin(anim_list_ids), std::end(anim_list_ids), data);
-				std::copy(std::begin(anims), std::end(anims), std::back_inserter(obj->editor_anims));
+				std::move(std::begin(anims), std::end(anims), std::back_inserter(obj->editor_anims));
 
 				//remove any duplicates
 				std::sort(std::begin(obj->editor_anims), std::end(obj->editor_anims));
 				obj->editor_anims.erase(std::unique(std::begin(obj->editor_anims), std::end(obj->editor_anims)), std::end(obj->editor_anims));
-
 				//===============================
 				//get the base objects
 				//===============================

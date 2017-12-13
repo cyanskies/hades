@@ -1,5 +1,6 @@
 #include "Objects/resources.hpp"
 
+#include "Hades/Data.hpp"
 #include "Hades/data_manager.hpp"
 
 namespace objects
@@ -16,7 +17,159 @@ namespace objects
 
 	namespace resources
 	{
-		object::curve_obj ParseCurveObj();
+		template<class T>
+		hades::resources::curve_default_value ParseValue(const YAML::Node &node)
+		{
+			hades::resources::curve_default_value out;
+			try
+			{
+				out.set = true;
+				std::get<T>(out.value) = node.as<T>();
+			}
+			catch (YAML::InvalidNode&)
+			{
+				return hades::resources::curve_default_value();
+			}
+
+			return out;
+		}
+
+		template<>
+		hades::resources::curve_default_value ParseValue<hades::data::UniqueId>(const YAML::Node &node)
+		{
+			hades::resources::curve_default_value out;
+			try
+			{
+				auto s = node.as<hades::types::string>();
+				auto u = hades::data::GetUid(s);
+				if (u == hades::EmptyId)
+					return out;
+
+				out.set = true;
+				std::get<hades::UniqueId>(out.value) = u;
+			}
+			catch (YAML::InvalidNode&)
+			{
+				return hades::resources::curve_default_value();
+			}
+
+			return out;
+		}
+
+		template<class T>
+		hades::resources::curve_default_value ParseValueVector(const YAML::Node &node)
+		{
+			hades::resources::curve_default_value out;
+			try
+			{
+				std::vector<T> vec;
+				for (auto v : node)
+					vec.push_back(node.as<T>());
+
+				out.set = true;
+				std::get<std::vector<T>>(out.value) = vec;
+			}
+			catch (YAML::InvalidNode&)
+			{
+				return hades::resources::curve_default_value();
+			}
+
+			return out;
+		}
+
+		template<>
+		hades::resources::curve_default_value ParseValueVector<hades::data::UniqueId>(const YAML::Node &node)
+		{
+			hades::resources::curve_default_value out;
+			try
+			{
+				std::vector<hades::UniqueId> vec;
+				for (auto v : node)
+				{
+					auto s = node.as<hades::types::string>();
+					auto u = hades::data::GetUid(s);
+					if (u != hades::EmptyId)
+						vec.push_back(u);
+				}
+
+				out.set = true;
+				std::get<std::vector<hades::UniqueId>>(out.value) = vec;
+			}
+			catch (YAML::InvalidNode&)
+			{
+				return hades::resources::curve_default_value();
+			}
+
+			return out;
+		}
+
+		hades::resources::curve_default_value ParseDefaultValue(const YAML::Node &node, const hades::resources::curve* c)
+		{
+			if (c == nullptr)
+				return hades::resources::curve_default_value();
+
+			using hades::resources::VariableType;
+
+			switch (c->data_type)
+			{
+			case VariableType::BOOL:
+				return ParseValue<bool>(node);
+			case VariableType::INT:
+				return ParseValue<hades::types::int32>(node);
+			case VariableType::FLOAT:
+				return ParseValue<float>(node);
+			case VariableType::STRING:
+				return ParseValue<hades::types::string>(node);
+			case VariableType::UNIQUE:
+				return ParseValue<hades::UniqueId>(node);
+			case VariableType::VECTOR_INT:
+				return ParseValueVector<hades::types::int32>(node);
+			case VariableType::VECTOR_FLOAT:
+				return ParseValueVector<float>(node);
+			case VariableType::VECTOR_UNIQUE:
+				return ParseValueVector<hades::UniqueId>(node);
+			}
+
+			return hades::resources::curve_default_value();
+		}
+
+		object::curve_obj ParseCurveObj(const YAML::Node &node, hades::data::data_manager *data)
+		{
+			object::curve_obj c;
+
+			std::get<0>(c) = nullptr;
+
+			static auto getPtr = [data](hades::types::string s)->hades::resources::curve* {
+				if (s.empty())
+					return nullptr;
+				
+				auto id = data->getUid(s);
+				return data->get<hades::resources::curve>(id);
+			};
+
+			if (node.IsScalar())
+			{
+				auto id_str = node.as<hades::types::string>("");
+				std::get<0>(c) = getPtr(id_str);
+			}
+			else if (node.IsSequence())
+			{
+				auto first = node[0];
+				if (!first.IsDefined())
+					return c;
+
+				auto id_str = first.as<hades::types::string>("");
+				std::get<0>(c) = getPtr(id_str);
+
+				auto second = node[1];
+				if (!second.IsDefined())
+					return c;
+
+				std::get<1>(c) = ParseDefaultValue(second, std::get<0>(c));
+			}
+
+			return c;
+		}
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
 		{
@@ -90,7 +243,27 @@ namespace objects
 				//get the curves
 				//=================
 
+				auto curvesNode = v["curves"];
+				if (yaml_error(resource_type, name, "curves", "map", mod, node.IsMap()))
+				{
+					for (auto c : curvesNode)
+					{
+						auto curve = ParseCurveObj(c, data);
 
+						auto curve_ptr = std::get<0>(curve);
+
+						//if the curve already exists then replace it's default value
+						auto target = std::find_if(std::begin(obj->curves), std::end(obj->curves), [curve_ptr](object::curve_obj c) {
+							return curve_ptr == std::get<0>(c);
+						});
+
+						if (target == std::end(obj->curves))
+							obj->curves.push_back(curve);
+						else
+							*target = curve;
+					}
+				}
+				
 				//TODO:
 				//=================
 				//get the systems

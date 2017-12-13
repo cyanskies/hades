@@ -1,11 +1,11 @@
 #include "Tiles/tiles.hpp"
 
+#include <array>
+
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
-#include "Hades/data_manager.hpp"
 #include "Hades/Utility.hpp"
 
 namespace tiles

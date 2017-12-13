@@ -258,7 +258,7 @@ namespace hades
 
 		VariableType readVariableType(types::string s)
 		{
-			if (s == "int")
+			if (s == "int" || s == "int32")
 				return VariableType::INT;
 			else if (s == "float")
 				return VariableType::FLOAT;

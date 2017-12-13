@@ -9,7 +9,7 @@
 #include "TGUI/Loading/Deserializer.hpp"
 
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
+#include "Hades/simple_resources.hpp"
 
 namespace hades
 {

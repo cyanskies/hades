@@ -16,7 +16,10 @@ namespace objects
 
 	namespace resources
 	{
-		struct object
+		struct object_t
+		{};
+
+		struct object : public hades::resources::resource_type<object_t>
 		{
 			//editor icon, used in the object picker
 			const hades::resources::animation *editor_icon = nullptr;

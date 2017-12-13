@@ -3,7 +3,6 @@
 #include <cassert>
 
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
 #include "Hades/Logging.hpp"
 
 namespace hades

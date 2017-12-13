@@ -125,7 +125,7 @@ namespace hades
 }
 
 template<class T, class Iter>
-std::vector<T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager*);
+std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager*);
 
 //TODO: bool yaml_is_map
 bool yaml_error(hades::types::string resource_type, hades::types::string resource_name,

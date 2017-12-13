@@ -103,31 +103,31 @@ namespace hades
 }
 
 template<class T, class Iter>
-std::vector<T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager*)
+std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager *data)
 {
 	//convert strings into ids
 	std::vector<hades::data::UniqueId> ids;
-	std::transform(first, last, std::back_inserter(anim_ids),
+	std::transform(first, last, std::back_inserter(ids),
 		[data](hades::types::string input) {
 		if (input.empty()) return hades::data::UniqueId::Zero;
 		else return data->getUid(input);
 	});
 
 	//get objects
-	std::vector<T*> objs;
+	std::vector<const T*> objs;
 	std::transform(std::begin(ids), std::end(ids), std::back_inserter(objs),
-		[data](hades::data::UniqueId id)->const hades::resources::animation*{
+		[data](hades::data::UniqueId id)->const T*{
 			if (id == hades::data::UniqueId::Zero)
 			return nullptr;
 			else
-				return data->get<hades::resources::animation>(id);
+				return data->get<T>(id);
 		});
 
 	//remove any null_ptrs
 	objs.erase(std::remove_if(std::begin(objs), std::end(objs),
-		[](const hades::resources::animation* a) {
+		[](const T* a) {
 		return a == nullptr;
-	}), std::end(obj->editor_anims));
+	}), std::end(objs));
 
 	return objs;
 }

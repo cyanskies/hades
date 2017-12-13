@@ -1,3 +1,5 @@
+#include "Hades/data_manager.hpp"
+
 namespace hades
 {
 	namespace data

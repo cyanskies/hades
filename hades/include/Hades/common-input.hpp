@@ -1,7 +1,6 @@
 #ifndef HADES_COMMON_INPUT_HPP
 #define HADES_COMMON_INPUT_HPP
 
-#include "Hades/DataManager.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/UniqueId.hpp"
 

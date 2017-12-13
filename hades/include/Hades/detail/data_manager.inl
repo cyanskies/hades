@@ -60,6 +60,7 @@ namespace hades
 		//gets the requested resource, or creates it if not already
 		// sets the resources most recent mod to the passed value
 		// returns nullptr if unable to return a valid resource
+		// also sets the id and mod ptr
 		template<class T>
 		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data)
 		{
@@ -101,6 +102,36 @@ namespace hades
 	}
 }
 
+template<class T, class Iter>
+std::vector<T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager*)
+{
+	//convert strings into ids
+	std::vector<hades::data::UniqueId> ids;
+	std::transform(first, last, std::back_inserter(anim_ids),
+		[data](hades::types::string input) {
+		if (input.empty()) return hades::data::UniqueId::Zero;
+		else return data->getUid(input);
+	});
+
+	//get objects
+	std::vector<T*> objs;
+	std::transform(std::begin(ids), std::end(ids), std::back_inserter(objs),
+		[data](hades::data::UniqueId id)->const hades::resources::animation*{
+			if (id == hades::data::UniqueId::Zero)
+			return nullptr;
+			else
+				return data->get<hades::resources::animation>(id);
+		});
+
+	//remove any null_ptrs
+	objs.erase(std::remove_if(std::begin(objs), std::end(objs),
+		[](const hades::resources::animation* a) {
+		return a == nullptr;
+	}), std::end(obj->editor_anims));
+
+	return objs;
+}
+
 template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod, T default_value)
@@ -118,10 +149,16 @@ std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string re
 {
 	std::vector<T> output;
 	auto seq = node[property_name];
-	if (seq.IsDefined() && yaml_error(resource_type, resource_name, property_name, "sequence", mod, seq.IsSequence()))
+
+	if(seq.IsDefined())
+	if (seq.IsSequence())
 	{
 		for (auto &i : seq)
 			output.push_back(i.as<T>());
+	}
+	else if (seq.IsScalar())
+	{
+		output.push_back(seq.as<T>(T()));
 	}
 
 	return output;

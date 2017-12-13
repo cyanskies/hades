@@ -19,16 +19,17 @@ namespace objects
 		struct object
 		{
 			//editor icon, used in the object picker
-			hades::resources::animation *editor_icon = nullptr;
+			const hades::resources::animation *editor_icon = nullptr;
 			//editor anim list
 			//used for placed objects
-			using animation_list = std::vector<hades::resources::animation*>;
+			using animation_list = std::vector<const hades::resources::animation*>;
 			animation_list editor_anims;
 			//base objects, curves and systems are inherited from these
-			using base_list = std::vector<object*>;
+			using base_list = std::vector<const object*>;
 			base_list base;
 			//list of curves
-			using curve_list = std::vector<std::tuple<hades::resources::curve*, hades::resources::curve_default_value>>;
+			using curve_obj = std::tuple<const hades::resources::curve*, hades::resources::curve_default_value>;
+			using curve_list = std::vector<curve_obj>;
 			curve_list curves;
 			//systems
 			//client system

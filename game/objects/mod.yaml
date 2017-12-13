@@ -1,0 +1,4 @@
+mod:
+    name: objects
+
+include: game.yaml

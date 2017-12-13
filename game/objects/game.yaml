@@ -1,0 +1,20 @@
+mod:
+    name: objects
+
+curves:
+    health:
+        type: step 
+        value: int32
+    speed:
+        type: linear
+        value: float
+    cool:
+        type: const
+        value: bool
+
+objects:
+    test:
+        curves:
+            - health
+            - speed
+            - [cool, true]

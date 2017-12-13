@@ -24,7 +24,7 @@ namespace objects
 			try
 			{
 				out.set = true;
-				std::get<T>(out.value) = node.as<T>();
+				out.value.emplace<T>(node.as<T>());
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -46,7 +46,7 @@ namespace objects
 					return out;
 
 				out.set = true;
-				std::get<hades::UniqueId>(out.value) = u;
+				out.value.emplace<hades::UniqueId>(u);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -67,7 +67,7 @@ namespace objects
 					vec.push_back(node.as<T>());
 
 				out.set = true;
-				std::get<std::vector<T>>(out.value) = vec;
+				out.value.emplace<std::vector<T>>(vec);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -93,7 +93,7 @@ namespace objects
 				}
 
 				out.set = true;
-				std::get<std::vector<hades::UniqueId>>(out.value) = vec;
+				out.value.emplace<std::vector<hades::UniqueId>>(vec);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -136,7 +136,6 @@ namespace objects
 		object::curve_obj ParseCurveObj(const YAML::Node &node, hades::data::data_manager *data)
 		{
 			object::curve_obj c;
-
 			std::get<0>(c) = nullptr;
 
 			static auto getPtr = [data](hades::types::string s)->hades::resources::curve* {

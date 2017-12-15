@@ -35,6 +35,7 @@ set(HADES_SRC
 	Types.cpp
 	Gui/Gui.cpp
 	Gui/SimpleVerticalLayout.cpp
+	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
 	OrthoTerrain/editor.cpp
@@ -61,6 +62,7 @@ source_group("Tiles" FILES
 	Tiles/tiles.cpp)
 
 source_group("Objects" FILES
+	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp)
 
@@ -73,7 +75,6 @@ source_group("OrthoTerrain" FILES
 
 # Library to build
 set(HADES_LIB ${PROJECT_NAME})
-
 
 # Determine library suffixes depending on static/shared configuration
 add_library(${HADES_LIB} STATIC ${HADES_SRC})

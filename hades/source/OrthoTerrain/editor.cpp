@@ -148,8 +148,6 @@ namespace ortho_terrain
 		auto terrainLayout = tgui::HorizontalWrap::create();
 		auto terrains = resources::Terrains;
 
-		//TODO: add mutex here make this a protected variable
-		// it isn't being used by the terrain-selector worker
 		std::thread terrain_work([this, terrainLayout, terrainContainer, terrains, settings, tile_button_size]() {
 			//place available terrain in the "terrain" container
 			for (auto t : terrains)
@@ -187,7 +185,6 @@ namespace ortho_terrain
 				}//if exists
 
 			}//for Terrains
-			terrainLayout->setSize({ "80%", "100%" });
 			terrainContainer->add(terrainLayout);
 		});
 

@@ -36,17 +36,6 @@ namespace hades {
 		return random(0, 1) != 0;
 	}
 
-	template<class T>
-	T clamp(T value, T max, T min)
-	{
-		if (value > max)
-			return max;
-		else if (value < min)
-			return min;
-		else
-			return value;
-	}
-
 	//pass a back_inserter to result
 	template<typename Out>
 	void split(const std::string &s, char delim, Out result) {

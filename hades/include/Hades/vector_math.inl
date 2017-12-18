@@ -35,8 +35,8 @@ namespace hades
 	}
 
 	template<typename T>
-	std::tuple<T, T> vector_clamp(T vx, T vy, T maxx, T maxy, T minx, T miny)
+	std::tuple<T, T> vector_clamp(T vx, T vy, T minx, T miny, T maxx, T maxy)
 	{
-		return std::make_tuple(clamp(vx, maxx, minx), clamp(vy, maxy, miny));
+		return std::make_tuple(std::clamp(vx, minx, maxx), std::clamp(vy, miny, maxy));
 	}
 }

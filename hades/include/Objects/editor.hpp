@@ -4,6 +4,7 @@
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
+#include "Objects/Objects.hpp"
 #include "Objects/resources.hpp"
 
 //this allows the creation of levels with objects placed on them
@@ -25,22 +26,20 @@ namespace objects
 		};
 
 		enum ObjectMode {
-			SELECT,
-			DRAG,
-			PLACE
+			NONE, // nothing selected
+			SELECT, // something selected
+			DRAG, // dragging is taking place
+			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
 	}
 
 	class object_editor : public hades::State
 	{
 	public:
-		void init() override; 
+		virtual void init() override; 
 
-		virtual void generate();
-		
-		virtual void load_map(const MapData&) = 0;
-		virtual MapData save_map() const = 0;
-		
+		virtual void loadLevel();
+
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override = 0;
@@ -53,38 +52,37 @@ namespace objects
 
 	protected:
 		//==initialisation functions==
-		//loads the gui from the editor-layout resource
-		//then sets up all the generic UI elements
-		void CreateGui();
 		//fills the 'tiles' gui containers 
 		//with selectable tiles.
-		virtual void FillTileSelector();
+		virtual void FillGui();
 
-		virtual sf::FloatRect GetMapBounds() const = 0;
+		sf::Vector2i GetMapBounds() const;
 		//==map editing functions==
-		//generates the current tile that will be pasted
-		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) = 0;
-		//check and draw the new tiles over the current map
-		virtual void TryDraw(const hades::InputSystem::action_set&) = 0;
-		
+		//generates the preview to be drawn over the map
+		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
+		virtual void OnClick();
+		virtual void SaveLevel() const;
+		//these also save and load the map size parameters
+		void SaveObjects(level &l) const;
+		void LoadObjects(const level &l);
+
 		//map file info
 		hades::types::string Mod, Filename;
 
 		//editing variables
 		using EditMode_t = hades::types::uint8;
-		EditMode_t EditMode;
-		const resources::tile_settings *TileSettings;
-
-		//tile placement mode variables
-		hades::types::uint8 Tile_draw_size = 1;
-		tile TileInfo;
-
+		EditMode_t EditMode = editor::OBJECT;
+		
 		//core map drawing variables
 		sf::View GameView;
 	private:
-		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
-		void _load(const hades::types::string&, const hades::types::string&);
-		void _save() const;
+		//loads the gui from the editor-layout resource
+		//then sets up all the generic UI elements
+		void _createGui();
+
+		EditMode_t _objectMode = editor::NONE;
+
+		sf::Vector2i _mapSize;
 	};
 }
 

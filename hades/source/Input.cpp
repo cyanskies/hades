@@ -41,9 +41,9 @@ namespace hades
 		auto mpos = sf::Mouse::getPosition(window);
 		auto size = window.getSize();
 		return vector_clamp(mpos.x, mpos.y,
+			0, 0,
 			static_cast<types::int32>(size.x),
-			static_cast<types::int32>(size.y),
-			0, 0);
+			static_cast<types::int32>(size.y));
 	}
 
 	template<sf::Mouse::Button b>
@@ -60,9 +60,9 @@ namespace hades
 			{
 				a.active = true;
 				std::tie(a.x_axis, a.y_axis) = vector_clamp(e.mouseButton.x, e.mouseButton.y,
+					0, 0,
 					static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y),
-					0, 0);
+					static_cast<types::int32>(window.getSize().y));
 			}
 			else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == b)
 				a.active = false;
@@ -220,9 +220,9 @@ namespace hades
 			auto pos = sf::Touch::getPosition(0, window);
 			auto size = window.getSize();
 			std::tie(a.x_axis, a.y_axis) = vector_clamp(pos.x, pos.y,
+				0, 0,
 				static_cast<types::int32>(size.x),
-				static_cast<types::int32>(size.y),
-				0, 0);
+				static_cast<types::int32>(size.y));
 			return a;
 		}} });
 	}

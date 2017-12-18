@@ -1,64 +1,33 @@
 #include "Objects/editor.hpp"
 
-#include <cmath> //std::round
-#include <fstream>
-#include <thread> //see: FillTileList()
-				  // async building of tile selector ui
-
 #include "TGUI/Animation.hpp"
-#include "TGUI/Widgets/HorizontalWrap.hpp"
-#include "TGUI/Widgets/ChildWindow.hpp"
-#include "TGUI/Widgets/ComboBox.hpp"
-#include "TGUI/Widgets/EditBox.hpp"
-#include "TGUI/Widgets/Picture.hpp"
 #include "TGUI/Widgets/MenuBar.hpp"
-
-#include "yaml-cpp/yaml.h"
+#include "TGUI/Widgets/Button.hpp"
+#include "TGUI/Widgets/EditBox.hpp"
 
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
-#include "Hades/files.hpp"
+#include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
-#include "Hades/StandardPaths.hpp"
 
-#include "Tiles/generator.hpp"
-#include "Tiles/resources.hpp"
-#include "Tiles/serialise.hpp"
-#include "Tiles/tiles.hpp"
-
-using namespace hades;
-
-const auto tile_editor_base_window = "editor-window";
-const auto tile_editor_base_tabs = "editor-tabs";
+const auto object_editor_window = "editor-window";
+const auto object_editor_tabs = "editor-tabs";
 
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
 
 //scrolling values
 const hades::types::int32 scroll_margin = 20,
-scroll_rate = 4;
+					scroll_rate = 4;
 
-namespace tiles
+namespace objects
 {
-	void tile_editor_base::init()
+	void object_editor::init()
 	{
-		TileSettings = &GetTileSettings();
-
-		generate();
-
 		reinit();
 	}
 
-	void tile_editor_base::generate()
-	{
-		//TODO: throw if no tiles have been registered
-		//TODO: don't use error tiles in this
-		auto first_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
-		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		load_map(map);
-	}
-
-	bool tile_editor_base::handleEvent(const hades::Event &windowEvent)
+	bool object_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
 		if (std::get<sf::Event>(windowEvent).type == sf::Event::EventType::Resized)
 		{
@@ -69,10 +38,10 @@ namespace tiles
 		return false; 
 	}
 
-	void tile_editor_base::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
+	void object_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
 	{
-		static auto window_width = console::GetInt("vid_width", 640),
-			window_height = console::GetInt("vid_height", 480);
+		static auto window_width = hades::console::GetInt("vid_width", 640),
+			window_height = hades::console::GetInt("vid_height", 480);
 
 		auto mousePos = input.find(hades::input::PointerPosition);
 		if (mousePos != input.end() && mousePos->active)
@@ -90,30 +59,24 @@ namespace tiles
 
 			auto viewPosition = GameView.getCenter();
 			auto terrainSize = GetMapBounds();
-			//clamp the gameview after moving it
-			if (viewPosition.x < terrainSize.left)
-				viewPosition.x = terrainSize.left;
-			else if (viewPosition.x > terrainSize.left + terrainSize.width)
-				viewPosition.x = terrainSize.left + terrainSize.width;
 
-			if (viewPosition.y < terrainSize.top)
-				viewPosition.y = terrainSize.top;
-			else if (viewPosition.y > terrainSize.top + terrainSize.height)
-				viewPosition.y = terrainSize.top + terrainSize.height;		
+			//clamp the gameview after moving it
+			viewPosition.x = std::clamp(viewPosition.x, 0.f, static_cast<decltype(viewPosition.x)>(_mapSize.x));
+			viewPosition.y = std::clamp(viewPosition.y, 0.f, static_cast<decltype(viewPosition.y)>(_mapSize.y));
 
 			GameView.setCenter(viewPosition);
 
-			if (EditMode != editor::EditMode::NONE)
-				GenerateDrawPreview(window, input);
+			GenerateDrawPreview(window, input);
 		}
 
-		if (EditMode != editor::EditMode::NONE)
-			TryDraw(input);
+		auto mouseLeft = input.find(hades::input::PointerLeft);
+		if (mouseLeft != input.end() && mouseLeft->active)
+			OnClick();
 	}
 
-	void tile_editor_base::cleanup(){}
+	void object_editor::cleanup(){}
 
-	void tile_editor_base::reinit() 
+	void object_editor::reinit() 
 	{
 		//=========================
 		//set up the editor rendering
@@ -122,8 +85,8 @@ namespace tiles
 		auto cheight = hades::console::GetInt("editor_height", editor::view_height);
 
 		//current window size
-		auto wwidth = console::GetInt("vid_width", 640),
-			wheight = console::GetInt("vid_height", 480);
+		auto wwidth = hades::console::GetInt("vid_width", 640),
+			wheight = hades::console::GetInt("vid_height", 480);
 
 		float screenRatio = *wwidth / static_cast<float>(*wheight);
 
@@ -131,32 +94,32 @@ namespace tiles
 		GameView.setSize(*cheight * screenRatio, static_cast<float>(*cheight));
 		GameView.setCenter({ 100.f,100.f });
 
-		CreateGui();
+		_createGui();
 	}
 
-	void tile_editor_base::pause() {}
-	void tile_editor_base::resume() {}
+	void object_editor::pause() {}
+	void object_editor::resume() {}
 
-	void tile_editor_base::CreateGui()
+	void object_editor::_createGui()
 	{
 		//====================
-		//set up the tile_editor_base UI
+		//set up the object_editor UI
 		//====================
 
 		_gui.removeAllWidgets();
 
 		//==================
-		//load the tile_editor_base UI
+		//load the object_editor UI
 		//==================
-		auto layout_id = data::GetUid(editor::tile_editor_layout);
-		if (!data::Exists(layout_id))
+		auto layout_id = hades::data::GetUid(editor::object_editor_layout);
+		if (!hades::data::Exists(layout_id))
 		{
-			LOGERROR("No GUI layout exists for " + std::string(editor::tile_editor_layout));
+			LOGERROR("No GUI layout exists for " + std::string(editor::object_editor_layout));
 			kill();
 			return;
 		}
 
-		auto layout = data::Get<hades::resources::string>(layout_id);
+		auto layout = hades::data::Get<hades::resources::string>(layout_id);
 		try
 		{
 			_gui.loadWidgetsFromStream(std::stringstream(layout->value));
@@ -168,8 +131,8 @@ namespace tiles
 			return;
 		}
 
-		//pass all available terrain to the tile picker UI
-		FillTileSelector();
+		//let child classes start adding their own elements
+		FillGui();
 
 		//===========
 		//add menubar
@@ -240,8 +203,8 @@ namespace tiles
 			auto filename = _gui.get<tgui::EditBox>("load_filename");
 			auto modname = _gui.get<tgui::EditBox>("load_mod");
 
-			types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
+			//types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
+			//types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
 			//_load(mod, file);
 
 			auto load_container = _gui.get<tgui::Container>("load_dialog");
@@ -256,8 +219,8 @@ namespace tiles
 		new_dialog_container->hide();
 
 		//add generators
-		auto new_generator = new_dialog_container->get<tgui::ComboBox>("new_gen");
-		new_generator->addItem("generator_blank", "Blank");
+		//auto new_generator = new_dialog_container->get<tgui::ComboBox>("new_gen");
+		//new_generator->addItem("generator_blank", "Blank");
 
 		//rig up the load button
 		auto new_dialog_button = new_dialog_container->get<tgui::Button>("new_button");
@@ -284,154 +247,10 @@ namespace tiles
 				value_y = 1;
 
 			//only one generator is available, so we don't really need to check it.
-			_new(mod, file, value_x, value_y);
+			//_new(mod, file, value_x, value_y);
 
 			auto new_container = _gui.get<tgui::Container>("new_dialog");
 			new_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
-	}
-
-	void tile_editor_base::FillTileSelector()
-	{
-		const auto &tilesets = resources::Tilesets;
-
-		auto settings_id = hades::data::GetUid(resources::tile_settings_name);
-
-		if (!data::Exists(settings_id))
-			LOGERROR("Missing important settings for orthographic terrain");
-
-		const auto settings = hades::data::Get<resources::tile_settings>(settings_id);
-
-		auto tile_size = settings->tile_size;
-		auto tile_button_size = tile_size * 3;
-
-		//=============================
-		//fill the tile selector window
-		//=============================
-		static const auto tilesize_label = "draw-size";
-		auto tileSize = _gui.get<tgui::EditBox>(tilesize_label);
-		if (tileSize)
-		{
-			tileSize->onTextChange.connect([this, tileSize]() {
-				try
-				{
-					auto value = std::stoi(tileSize->getText().toAnsiString());
-					if (value >= 0)
-						Tile_draw_size = value;
-				}
-				//throws invalid_argument and out_of_range, 
-				//we can't do anything about either of these
-				//leave the tile edit size the same
-				catch (...)
-				{
-					return;
-				}
-			});
-		}
-
-		auto tileContainer = _gui.get<tgui::Container>(editor::tile_selector_panel);
-
-		if (!tileContainer)
-		{
-			LOGERROR("tile_editor_base Gui failed, missing container for 'tiles'");
-			kill();
-			return;
-		}
-
-		auto tileLayout = tgui::HorizontalWrap::create();
-
-		auto make_tiles = [this, tileLayout, tile_size, tile_button_size](std::vector<tile> tiles) {
-			for (auto &t : tiles)
-			{
-				//skip if needed data is missing.
-				if (!hades::data::Exists(t.texture))
-				{
-					continue;
-					LOGERROR("tile_editor_base UI skipping tile because texture is missing: " + data::GetAsString(t.texture));
-				}
-
-				auto texture = data::Get<hades::resources::texture>(t.texture);
-				auto tex = tgui::Texture(texture->value, { static_cast<int>(t.left), static_cast<int>(t.top),
-					static_cast<int>(tile_size), static_cast<int>(tile_size) });
-
-				auto tileButton = tgui::Picture::create(tex);
-				tileButton->setSize(tile_button_size, tile_button_size);
-
-				tileButton->onClick.connect([this, t, tile_size]() {
-					EditMode = editor::EditMode::TILE;
-					TileInfo = t;
-				});
-
-				tileLayout->add(tileButton);
-			}
-		};
-
-		//TODO: make this a protected variable
-		// it isn't being used by the terrain-selector worker
-		auto data_mutex = std::make_shared<std::mutex>();
-		std::thread tile_work([tileLayout, tileContainer, tilesets, settings, make_tiles, data_mutex]() {
-			//place available tiles in the "tiles" container
-			for (auto t : tilesets)
-			{
-				std::lock_guard<std::mutex> lock(*data_mutex);
-				if (data::Exists(t))
-				{
-					auto tileset = data::Get<resources::tileset>(t);
-					assert(tileset);
-
-					//for each tile in the terrain, add it to the tile picker
-					make_tiles(tileset->tiles);
-				}
-			}// !for tilesets
-
-			tileContainer->add(tileLayout);
-		});
-
-		tile_work.detach();
-	}
-
-	void tile_editor_base::_new(const hades::types::string& mod, const hades::types::string& filename, tile_count_t width, tile_count_t height)
-	{
-		//TODO: handle case of missing terrain
-		auto first_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
-		const auto map = generator::Blank({ map_height, map_width }, first_tileset->tiles.front());
-		load_map(map);
-		
-		Mod = mod;
-		Filename = filename;
-	}
-
-	void tile_editor_base::_load(const hades::types::string& mod, const hades::types::string& filename)
-	{
-		auto file = hades::files::as_string(mod, filename);
-		auto yamlRoot = YAML::Load(file);
-
-		auto saveData = Load(yamlRoot);
-		auto map_data = CreateMapData(saveData);
-		load_map(map_data);
-
-		Mod = mod;
-		Filename = filename;
-	}
-
-	void tile_editor_base::_save() const
-	{
-		//generate the output string
-		const auto map_data = save_map();
-		const auto saveData = CreateMapSaveData(map_data);
-
-		YAML::Emitter output;
-		output << YAML::BeginMap;
-		output << saveData;
-		output << YAML::EndMap;
-
-		//write over the target
-		const auto &target = hades::GetUserCustomFileDirectory() + Mod + Filename;
-
-		std::ofstream file(target, std::ios_base::out);
-
-		file << output.c_str();
-
-		LOG("Wrote map to file: " + target);
 	}
 }

@@ -3,6 +3,8 @@
 #include "Hades/Data.hpp"
 #include "Hades/data_manager.hpp"
 
+#include "Objects/editor.hpp"
+
 namespace objects
 {
 	namespace resources
@@ -10,9 +12,140 @@ namespace objects
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
 	}
 
+	void makeDefaultLayout(hades::data::data_manager* data)
+	{
+		auto layout_id = data->getUid(editor::object_editor_layout);
+
+		hades::resources::string *layout = hades::data::FindOrCreate<hades::resources::string>(layout_id, hades::data::UniqueId::Zero, data);
+
+		if (!layout)
+			return;
+
+		layout->value =
+			R"(MenuBar.MenuBar {
+					MinimumSubMenuWidth = 125;
+					Size = (&.size, 20);
+					TextSize = 13;
+
+					Menu {
+						Items = ["New...", "Load", "Save", "Exit"];
+						Name = "File";
+					}
+
+					Menu {
+						Items = ["Edit"];
+						Name = "Themes";
+					}
+				}
+
+
+				ChildWindow {
+					Position = (20, 20);
+					Size = ("&.w / 6", "&.h / 1.5");
+					Visible = true;
+					Resizable = true;
+					Title = "ToolBox";
+					TitleButtons = None;
+
+					SimpleVerticalLayout {
+					}
+				}
+
+				ChildWindow."load_dialog" {
+					Position = (200, 200);
+					Title = "Load...";
+					Label."load_mod_label" {
+						Position = (5, 5);
+						Text = "Mod:";
+					}
+
+					EditBox."load_mod" {
+						Position = (5, "load_mod_label.y + load_mod_label.h + 5");
+						Size = (100, 30);
+						DefaultText = "./";
+					}
+
+					EditBox."load_filename" {
+						Position = ("load_mod.x + load_mod.w + 10", "load_mod.y");
+						Size = (100, 30);
+						DefaultText = "new.lvl";
+					}
+
+					Label {
+						Position = ("load_filename.x", 5);
+						Text = "Filename:";
+					}
+
+					Button."load_button" {
+						Position = ("load_filename.x + load_filename.w + 10" , "load_mod.y");
+						Text = "Load";
+					}
+
+					Size = ("load_button.x + load_button.w + 5", "load_filename.y + load_filename.h + 5");
+				}
+
+				ChildWindow."new_dialog" {
+					Position = (150, 150);
+					Title = "New...";
+
+					Label."new_mod_label" {
+						Text = "Mod:";
+						Position = (5, 5);
+					}
+
+					EditBox."new_mod" {
+						Position = (5, "new_mod_label.x + new_mod_label.h + 10");
+						Size = (100, 30);
+						DefaultText = "./";
+                
+					}
+
+					EditBox."new_filename" {
+						Position = ("new_mod.x + new_mod.w + 10", "new_mod.y");
+						Size = (100, 30);
+						DefaultText = "new.lvl";
+					}
+
+					Label {
+						Position = ("new_filename.x", "new_mod_label.y");
+						Text = "Filename:";
+					}
+
+					Label."new_sizex_label" {
+						Position = ("new_mod_label.x", "new_filename.y + new_filename.h + 10");
+						Text = "Width:";
+					}
+
+					EditBox."new_sizex" {
+						Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
+						Size = (50, 30);
+						DefaultText = "25";
+					}
+
+					Label."new_sizey_label" {
+						Position = ("new_sizex.x + new_sizex.w + 10", "new_sizex_label.y");
+						Text = "Height:";
+					}
+
+					EditBox."new_sizey" {
+						Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
+						Size = (50, 30);
+						DefaultText = "25";
+					}
+
+					Button."new_button" {
+						Position = ("new_filename.x + new_filename.w + 10", "new_filename.y");
+						Text = "Create";
+					}
+
+					Size = ("new_button.x + new_button.w + 5", "new_button.y + new_button.h + 5");
+				})";
+	}
+
 	void RegisterObjectResources(hades::data::data_manager *data)
 	{
-		data->register_resource_type("objects", resources::ParseObject);		
+		data->register_resource_type("objects", resources::ParseObject);
+		makeDefaultLayout(data);
 	}
 
 	namespace resources

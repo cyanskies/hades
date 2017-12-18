@@ -26,7 +26,7 @@ namespace hades
 	std::tuple<T, T> vector_purpendicular_reverse(T x, T y);
 
 	template<typename T>
-	std::tuple<T, T> vector_clamp(T vx, T vy, T maxx, T maxy, T minx, T miny);
+	std::tuple<T, T> vector_clamp(T vx, T vy, T minx, T miny, T maxx, T maxy);
 }
 
 #include "Hades/vector_math.inl"

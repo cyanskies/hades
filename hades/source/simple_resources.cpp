@@ -266,14 +266,18 @@ namespace hades
 				return VariableType::BOOL;
 			else if (s == "string")
 				return VariableType::STRING;
-			else if (s == "unique")
-				return VariableType::UNIQUE;
+			else if (s == "obj_ref")
+				return VariableType::OBJECT_REF;
+			//else if (s == "unique")
+				//return VariableType::UNIQUE;
 			else if (s == "int_vector")
 				return VariableType::VECTOR_INT;
 			else if (s == "float_vector")
 				return VariableType::VECTOR_FLOAT;
-			else if (s == "unique_vector")
-				return VariableType::VECTOR_UNIQUE;
+			else if (s == "obj_ref_vector")
+				return VariableType::VECTOR_OBJECT_REF;
+			//else if (s == "unique_vector")
+				//return VariableType::VECTOR_UNIQUE;
 			else
 				return VariableType::ERROR;
 		}

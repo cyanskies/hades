@@ -38,11 +38,14 @@ namespace objects
 	public:
 		virtual void init() override; 
 
+		// called when the load command is issued
+		// overide to parse extra elements from the level
+		// then call the LoadX functions to parse all the subsequent parts
 		virtual void loadLevel();
 
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
-		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override = 0;
+		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 		virtual void cleanup() override;
 						
@@ -65,6 +68,9 @@ namespace objects
 		//these also save and load the map size parameters
 		void SaveObjects(level &l) const;
 		void LoadObjects(const level &l);
+
+		void DrawBackground(sf::RenderTarget &target) const;
+		void DrawObjects(sf::RenderTarget &target) const;
 
 		//map file info
 		hades::types::string Mod, Filename;

@@ -10,9 +10,6 @@
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
 
-const auto object_editor_window = "editor-window";
-const auto object_editor_tabs = "editor-tabs";
-
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
 
@@ -26,6 +23,8 @@ namespace objects
 	{
 		reinit();
 	}
+
+	void object_editor::loadLevel(){}
 
 	bool object_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
@@ -74,6 +73,12 @@ namespace objects
 			OnClick();
 	}
 
+	void object_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
+	{
+		DrawBackground(target);
+		DrawObjects(target);
+	}
+
 	void object_editor::cleanup(){}
 
 	void object_editor::reinit() 
@@ -100,12 +105,39 @@ namespace objects
 	void object_editor::pause() {}
 	void object_editor::resume() {}
 
+	void object_editor::FillGui()
+	{
+		//create all the object entries
+
+		//get the object-selector panel
+		//add the object group combobox
+		//rig up the function for filling the object list
+	}
+
+	sf::Vector2i object_editor::GetMapBounds() const
+	{
+		return _mapSize;
+	}
+
+	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&)
+	{}
+
+	void object_editor::OnClick()
+	{}
+
+	void object_editor::SaveLevel() const
+	{}
+
+	void object_editor::DrawBackground(sf::RenderTarget &target) const {}
+	void object_editor::DrawObjects(sf::RenderTarget &target) const {}
+
 	void object_editor::_createGui()
 	{
 		//====================
 		//set up the object_editor UI
 		//====================
 
+		// remove any gui that might currently be loaded
 		_gui.removeAllWidgets();
 
 		//==================
@@ -137,22 +169,13 @@ namespace objects
 		//===========
 		//add menubar
 		//===========
-		//NOTE: cannot be specified in data files. :(
-		// maybe in a later version of TGUI
-
-		auto menu_bar = tgui::MenuBar::create();
 
 		const auto file_menu = "File";
 		const auto new_menu = "New...";
-		const auto load_menu = "Load";
+		const auto load_menu = "Load...";
 		const auto save_menu = "Save";
 
-		//add menu entries;
-		menu_bar->addMenu(file_menu);
-		menu_bar->addMenuItem(file_menu, new_menu);
-		menu_bar->addMenuItem(file_menu, load_menu);
-		menu_bar->addMenuItem(file_menu, save_menu);
-		_gui.add(menu_bar);
+		auto menu_bar = _gui.get<tgui::MenuBar>("MenuBar");
 
 		auto fadeTime = sf::milliseconds(100);
 
@@ -217,10 +240,6 @@ namespace objects
 		auto new_dialog_container = _gui.get<tgui::Container>("new_dialog");
 		//hide the container
 		new_dialog_container->hide();
-
-		//add generators
-		//auto new_generator = new_dialog_container->get<tgui::ComboBox>("new_gen");
-		//new_generator->addItem("generator_blank", "Blank");
 
 		//rig up the load button
 		auto new_dialog_button = new_dialog_container->get<tgui::Button>("new_button");

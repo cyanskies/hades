@@ -16,6 +16,8 @@ namespace objects
 
 	namespace resources
 	{
+		const auto editor_settings_name = "editor";
+
 		struct object_t
 		{};
 
@@ -37,6 +39,14 @@ namespace objects
 			//systems
 			//client system
 		};
+
+		struct object_group
+		{
+			hades::types::string name = "OBJECT_GROUP_NAME";
+			std::vector<const object*> obj_list;
+		};
+
+		std::vector<object_group> ObjectGroups;
 	}
 }
 

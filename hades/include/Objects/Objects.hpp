@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "Hades/GameSystem.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
@@ -10,7 +11,8 @@ namespace objects
 {
 	struct object_info
 	{
-		hades::data::UniqueId id;
+		hades::data::UniqueId obj_type;
+		hades::EntityId id;
 		using curve_pair = std::tuple<hades::data::UniqueId, hades::resources::curve_default_value>;
 		std::vector<curve_pair> curves;
 	};

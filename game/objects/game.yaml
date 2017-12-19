@@ -1,6 +1,10 @@
 mod:
     name: objects
 
+editor:
+    object-groups:
+        example-group: test
+
 curves:
     health:
         type: step 

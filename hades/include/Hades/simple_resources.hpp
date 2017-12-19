@@ -40,7 +40,7 @@ namespace hades
 			//if it's provided by the application, then source is empty, and no laoder function is provided.
 		};
 
-		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_UNIQUE};
+		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE};
 
 		struct curve_default_value
 		{
@@ -61,7 +61,8 @@ namespace hades
 			CurveType curve_type = CurveType::ERROR;
 			VariableType data_type = VariableType::ERROR;
 			bool sync = false,
-				save = false;
+				save = false,
+				trim = false;
 			curve_default_value default_value;
 		};
 

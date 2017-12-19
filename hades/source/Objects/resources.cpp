@@ -9,6 +9,7 @@ namespace objects
 {
 	namespace resources
 	{
+		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
 	}
 
@@ -28,7 +29,7 @@ namespace objects
 					TextSize = 13;
 
 					Menu {
-						Items = ["New...", "Load", "Save", "Exit"];
+						Items = ["New...", "Load...", "Save", "Save As...", "Exit"];
 						Name = "File";
 					}
 
@@ -150,6 +151,11 @@ namespace objects
 
 	namespace resources
 	{
+		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
+		{
+
+		}
+
 		template<class T>
 		hades::resources::curve_default_value ParseValue(const YAML::Node &node)
 		{
@@ -248,6 +254,8 @@ namespace objects
 			case VariableType::BOOL:
 				return ParseValue<bool>(node);
 			case VariableType::INT:
+				[[fallthrough]];
+			case VariableType::OBJECT_REF:
 				return ParseValue<hades::types::int32>(node);
 			case VariableType::FLOAT:
 				return ParseValue<float>(node);
@@ -256,6 +264,8 @@ namespace objects
 			case VariableType::UNIQUE:
 				return ParseValue<hades::UniqueId>(node);
 			case VariableType::VECTOR_INT:
+				[[fallthrough]];
+			case VariableType::VECTOR_OBJECT_REF:
 				return ParseValueVector<hades::types::int32>(node);
 			case VariableType::VECTOR_FLOAT:
 				return ParseValueVector<float>(node);
@@ -302,6 +312,9 @@ namespace objects
 
 			return c;
 		}
+
+		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
+		{}
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
 		{

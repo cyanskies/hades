@@ -64,7 +64,9 @@ namespace objects
 		reinit();
 	}
 
-	void object_editor::loadLevel(){}
+	void object_editor::loadLevel(const hades::types::string &mod, const hades::types::string &filename)
+	{
+	}
 
 	bool object_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
@@ -203,6 +205,39 @@ namespace objects
 	void object_editor::DrawBackground(sf::RenderTarget &target) const {}
 	void object_editor::DrawObjects(sf::RenderTarget &target) const {}
 
+	namespace menu_names
+	{
+		const auto menu_bar = "MenuBar";
+
+		const auto file_menu = "File";
+
+		const auto new_menu = "New...";
+		const auto load_menu = "Load...";
+		const auto save_menu = "Save";
+		const auto save_as_menu = "Save...";
+
+		const auto view_menu = "View";
+
+		const auto reset_gui = "Reset Gui";
+	}
+
+	namespace dialog_names
+	{
+		const auto new_dialog = "new_dialog"; // <-- this should move to the header too
+		const auto load = "load_dialog";
+		const auto save = "save_dialog";
+	}
+
+	//TODO: move these names to the header, so they can be used by others
+	namespace new_dialog
+	{
+		const auto button = "new_button";
+		const auto mod = "new_mod";
+		const auto filename = "new_filename";
+		const auto size_x = "new_sizex";
+		const auto size_y = "new_sizey";
+	}
+
 	void object_editor::_createGui()
 	{
 		//====================
@@ -240,42 +275,44 @@ namespace objects
 
 		//===========
 		//add menubar
-		//===========
-
-		const auto file_menu = "File";
-		const auto new_menu = "New...";
-		const auto load_menu = "Load...";
-		const auto save_menu = "Save";
-
-		auto menu_bar = _gui.get<tgui::MenuBar>("MenuBar");
+		//===========	
+		auto menu_bar = _gui.get<tgui::MenuBar>(menu_names::menu_bar);
 
 		auto fadeTime = sf::milliseconds(100);
 
-		menu_bar->onMenuItemClick.connect([this, file_menu, new_menu, load_menu, save_menu, fadeTime](std::vector<sf::String> menu) {
-			//check the options available
-			//menu[0] == file
-			assert(menu.size() == 2);
-			if (menu[0] == file_menu)
+		//TODO: turn the lambda into a protected virtual function
+		// so that others can add extra menu items and override
+		menu_bar->onMenuItemClick.connect([this, fadeTime](sf::String menu) {
+			if (menu == menu_names::new_menu)
 			{
-				if (menu[1] == new_menu)
-				{
-					auto new_dialog = _gui.get<tgui::Container>("new_dialog");
-					new_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
-				}
-				else if (menu[1] == load_menu)
-				{
-					auto load_dialog = _gui.get<tgui::Container>("load_dialog");
-					load_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
-				}
-				else if (menu[1] == save_menu)
-					;//_save();
+				auto new_dialog = _gui.get<tgui::Container>(dialog_names::new_dialog);
+				new_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 			}
+			else if (menu == menu_names::load_menu)
+			{
+				auto load_dialog = _gui.get<tgui::Container>(dialog_names::load);
+				load_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+			}
+			else if (menu == menu_names::save_menu)
+				SaveLevel();
+			else if (menu == menu_names::save_as_menu)
+			{
+				auto save_dialog = _gui.get<tgui::Container>(dialog_names::save);
+				save_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+			}
+			else if (menu == menu_names::reset_gui)
+				reinit();
 		});
+
+		//TODO: everything below here:
+		//		check the result of the _gui.get functions(return nullptr on failure)
+		//		handle nullptr properly as users could provide malformed
+		//		editor layouts to trigger null pointer exceptions and access violations
 
 		//===============
 		//FILE LOADING UI
 		//===============
-		auto load_dialog_container = _gui.get<tgui::Container>("load_dialog");
+		auto load_dialog_container = _gui.get<tgui::Container>(dialog_names::load);
 		//hide the container
 		load_dialog_container->hide();
 
@@ -298,32 +335,66 @@ namespace objects
 			auto filename = _gui.get<tgui::EditBox>("load_filename");
 			auto modname = _gui.get<tgui::EditBox>("load_mod");
 
-			//types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			//types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
-			//_load(mod, file);
+			hades::types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
+			hades::types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
+			loadLevel(mod, file);
 
-			auto load_container = _gui.get<tgui::Container>("load_dialog");
+			auto load_container = _gui.get<tgui::Container>(dialog_names::load);
 			load_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+		});
+
+		//===============
+		//SAVE UI
+		//===============
+		auto save_dialog_container = _gui.get<tgui::Container>(dialog_names::save);
+		//hide the container
+		save_dialog_container->hide();
+
+		//set the default name to be the currently saved file
+		auto save_dialog_filename = save_dialog_container->get<tgui::EditBox>("save_filename");
+		if (!Filename.empty())
+			save_dialog_filename->setText(Filename);
+		else
+			Filename = save_dialog_filename->getDefaultText();
+
+		auto save_dialog_modname = save_dialog_container->get<tgui::EditBox>("save_mod");
+		if (!Mod.empty())
+			save_dialog_modname->setText(Mod);
+		else
+			Mod = save_dialog_modname->getDefaultText();
+
+		//rig up the save button
+		auto save_dialog_button = save_dialog_container->get<tgui::Button>("save_button");
+		save_dialog_button->onPress.connect([this, fadeTime]() {
+			auto filename = _gui.get<tgui::EditBox>("save_filename");
+			auto modname = _gui.get<tgui::EditBox>("save_mod");
+
+			hades::types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
+			hades::types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
+			SaveLevel();
+
+			auto save_container = _gui.get<tgui::Container>(dialog_names::save);
+			save_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
 
 		//==========
 		//New map UI
 		//==========
-		auto new_dialog_container = _gui.get<tgui::Container>("new_dialog");
+		auto new_dialog_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
 		//hide the container
 		new_dialog_container->hide();
 
-		//rig up the load button
-		auto new_dialog_button = new_dialog_container->get<tgui::Button>("new_button");
+		//rig up the save button
+		auto new_dialog_button = new_dialog_container->get<tgui::Button>(new_dialog::button);
 		new_dialog_button->onPress.connect([this, fadeTime]() {
-			auto filename = _gui.get<tgui::EditBox>("new_filename");
-			auto modname = _gui.get<tgui::EditBox>("new_mod");
+			auto filename = _gui.get<tgui::EditBox>(new_dialog::filename);
+			auto modname = _gui.get<tgui::EditBox>(new_dialog::mod);
 
 			auto mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
 			auto file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
 
-			auto size_x = _gui.get<tgui::EditBox>("new_sizex");
-			auto size_y = _gui.get<tgui::EditBox>("new_sizey");
+			auto size_x = _gui.get<tgui::EditBox>(new_dialog::size_x);
+			auto size_y = _gui.get<tgui::EditBox>(new_dialog::size_y);
 
 			auto size_x_str = size_x->getText().isEmpty() ? size_x->getDefaultText() : size_x->getText();
 			auto size_y_str = size_y->getText().isEmpty() ? size_y->getDefaultText() : size_y->getText();
@@ -340,7 +411,7 @@ namespace objects
 			//only one generator is available, so we don't really need to check it.
 			//_new(mod, file, value_x, value_y);
 
-			auto new_container = _gui.get<tgui::Container>("new_dialog");
+			auto new_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
 			new_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
 	}

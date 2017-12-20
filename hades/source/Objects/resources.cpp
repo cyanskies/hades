@@ -34,11 +34,10 @@ namespace objects
 					}
 
 					Menu {
-						Items = ["Edit"];
-						Name = "Themes";
+						Items = ["Reset Gui"];
+						Name = "View";
 					}
 				}
-
 
 				ChildWindow {
 					Position = (20, 20);
@@ -83,6 +82,39 @@ namespace objects
 					}
 
 					Size = ("load_button.x + load_button.w + 5", "load_filename.y + load_filename.h + 5");
+				}
+
+				ChildWindow."save_dialog" {
+					Position = (200, 200);
+					Title = "Save...";
+					Label."save_mod_label" {
+						Position = (5, 5);
+						Text = "Mod:";
+					}
+
+					EditBox."save_mod" {
+						Position = (5, "save_mod_label.y + save_mod_label.h + 5");
+						Size = (100, 30);
+						DefaultText = "./";
+					}
+
+					EditBox."save_filename" {
+						Position = ("save_mod.x + save_mod.w + 10", "save_mod.y");
+						Size = (100, 30);
+						DefaultText = "new.lvl";
+					}
+
+					Label {
+						Position = ("save_filename.x", 5);
+						Text = "Filename:";
+					}
+
+					Button."save_button" {
+						Position = ("save_filename.x + save_filename.w + 10" , "save_mod.y");
+						Text = "Save As";
+					}
+
+					Size = ("save_button.x + save_button.w + 5", "save_filename.y + save_filename.h + 5");
 				}
 
 				ChildWindow."new_dialog" {

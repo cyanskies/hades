@@ -47,7 +47,7 @@ namespace objects
 		// called when the load command is issued
 		// overide to parse extra elements from the level
 		// then call the LoadX functions to parse all the subsequent parts
-		virtual void loadLevel();
+		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
 
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;

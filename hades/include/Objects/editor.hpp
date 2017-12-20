@@ -1,6 +1,8 @@
 #ifndef OBJECT_EDITOR_HPP
 #define OBJECT_EDITOR_HPP
 
+#include "TGUI/Widgets/ClickableWidget.hpp"
+
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
@@ -14,6 +16,8 @@ namespace objects
 	namespace editor
 	{
 		const hades::types::string object_editor_layout = "editor-layout",
+			//object selector must be a container, the app will place the object type combobox in it,
+			// and objects beneath it.
 			object_selector_panel = "object-selector";
 
 		//screen view height
@@ -31,6 +35,8 @@ namespace objects
 			DRAG, // dragging is taking place
 			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
+
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
 	}
 
 	class object_editor : public hades::State
@@ -85,7 +91,8 @@ namespace objects
 		//loads the gui from the editor-layout resource
 		//then sets up all the generic UI elements
 		void _createGui();
-
+		void _addObjects(std::vector<const resources::object*> objects);
+		void _setHeldObject(const resources::object*);
 		EditMode_t _objectMode = editor::NONE;
 
 		sf::Vector2i _mapSize;

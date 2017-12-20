@@ -67,7 +67,7 @@ namespace hades
 		s->animation = a;
 		s->sprite = sf::Sprite(a->tex->value);
 		s->sprite.setPosition(position);
-		apply_animation(a, t, s->sprite);
+		animation::Apply(a, t, s->sprite);
 
 		auto id = _id_count++;
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
@@ -96,7 +96,7 @@ namespace hades
 		{
 			std::lock_guard<std::mutex> slk(it->second->mut);
 			it->second->animation = a;
-			apply_animation(a, t, it->second->sprite);
+			animation::Apply(a, t, it->second->sprite);
 		}
 	}
 

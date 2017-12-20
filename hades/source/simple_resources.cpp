@@ -392,6 +392,8 @@ namespace hades
 				a->height = yaml_get_scalar(animation_node, resource_type, name, "height", mod, a->height);
 
 				//now get all the frames
+				//TODO: redo this section, support a single frame as a scalar instead of mandating a sequence
+				// log error if an animation has no frames
 				auto frames = animation_node["frames"];
 				if (frames.IsDefined() && yaml_error(resource_type, name, "frames", "sequence", mod, frames.IsSequence()))
 				{

@@ -48,7 +48,7 @@ namespace objects
 					Title = "ToolBox";
 					TitleButtons = None;
 
-					SimpleVerticalLayout {
+					SimpleVerticalLayout.object-selector {
 					}
 				}
 
@@ -151,10 +151,8 @@ namespace objects
 
 	namespace resources
 	{
-		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
-		{
-
-		}
+		std::vector<const object*> Objects;
+		std::vector<object_group> ObjectGroups;
 
 		template<class T>
 		hades::resources::curve_default_value ParseValue(const YAML::Node &node)
@@ -314,7 +312,51 @@ namespace objects
 		}
 
 		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
-		{}
+		{
+			//editor:
+			//    object-groups:
+			//        <group-name>: object or [object1, object2, ...]
+
+			static const auto resource_type = "editor";
+
+			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+				return;
+
+			auto groups = node["object-groups"];
+
+			for (auto n : groups)
+			{
+				auto namenode = n.first;
+				auto gname = namenode.as<hades::types::string>();
+				
+				auto g = std::find_if(std::begin(ObjectGroups), std::end(ObjectGroups), [gname](object_group g) {
+					return g.name == gname;
+				});
+
+				if (g == std::end(ObjectGroups))
+				{
+					object_group new_g;
+					new_g.name = gname;
+					ObjectGroups.emplace_back(new_g);
+					g = --std::end(ObjectGroups);
+				}
+
+				auto v = n.second;
+
+				auto add_to_group = [g, gname, mod](const YAML::Node& n) {
+					auto obj_str = n.as<hades::types::string>();
+					auto obj_id = hades::data::GetUid(obj_str);
+					auto obj = hades::data::Get<object>(obj_id);
+					g->obj_list.push_back(obj);
+				};
+
+				if (v.IsScalar())
+					add_to_group(v);
+				else if (v.IsSequence())
+					for (auto o : v)
+						add_to_group(o);
+			}//for object groups
+		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
 		{
@@ -344,6 +386,8 @@ namespace objects
 
 				if (!obj)
 					continue;
+
+				Objects.push_back(obj);
 
 				auto v = n.second;
 

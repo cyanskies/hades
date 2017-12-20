@@ -46,7 +46,8 @@ namespace objects
 			std::vector<const object*> obj_list;
 		};
 
-		std::vector<object_group> ObjectGroups;
+		extern std::vector<const object*> Objects;
+		extern std::vector<object_group> ObjectGroups;
 	}
 }
 

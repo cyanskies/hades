@@ -1,14 +1,22 @@
 #include "Objects/editor.hpp"
 
 #include "TGUI/Animation.hpp"
+#include "TGUI/Widgets/ComboBox.hpp"
 #include "TGUI/Widgets/MenuBar.hpp"
 #include "TGUI/Widgets/Button.hpp"
 #include "TGUI/Widgets/EditBox.hpp"
+#include "TGUI/Widgets/HorizontalWrap.hpp"
+#include "TGUI/Widgets/Label.hpp"
+#include "TGUI/Widgets/Panel.hpp"
+#include "TGUI/Widgets/Picture.hpp"
 
+#include "Hades/Animation.hpp"
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
+
+#include "Objects/resources.hpp"
 
 //map size in tiles
 const hades::types::uint32 map_height = 100, map_width = 100;
@@ -19,6 +27,38 @@ const hades::types::int32 scroll_margin = 20,
 
 namespace objects
 {
+	namespace editor
+	{
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
+		{
+			tgui::ClickableWidget::Ptr p;
+			//TODO: editor-button-size console vars
+			auto button_size = 40;
+			if (icon)
+			{
+				auto [tex, x ,y , w, h] = hades::animation::GetFrame(icon, sf::Time::Zero);
+				auto texture = tgui::Texture(tex->value, { x, y, w, h });
+				p = tgui::Picture::create(texture);
+			}
+			else
+				p = tgui::Button::create(name);
+
+			p->setSize({ button_size, button_size });
+			
+			//if we have a name set it as a tooltip
+			if (!name.empty())
+			{
+				auto panel = tgui::Panel::create();
+				auto lbl = tgui::Label::create(name);
+				panel->add(lbl);
+				panel->setSize({tgui::bindWidth(lbl), tgui::bindHeight(lbl)});
+				p->setToolTip(panel);
+			}
+
+			return p;
+		}
+	}
+
 	void object_editor::init()
 	{
 		reinit();
@@ -105,13 +145,45 @@ namespace objects
 	void object_editor::pause() {}
 	void object_editor::resume() {}
 
+	const hades::types::string object_button_container = "object-button-container";
+
 	void object_editor::FillGui()
 	{
-		//create all the object entries
-
-		//get the object-selector panel
+		auto object_sel_panel = _gui.get<tgui::Container>(editor::object_selector_panel);
+		
 		//add the object group combobox
+		auto object_combox = tgui::ComboBox::create();
+		auto groups = resources::ObjectGroups;
+		
+		object_combox->setSize({ "&.w", 20 });
+
+		const auto all_str = "all";
+
+		object_combox->addItem(all_str);
+
+		//add all the group names
+		for (auto g : groups)
+			object_combox->addItem(g.name);
+
 		//rig up the function for filling the object list
+		object_combox->onItemSelect.connect([this, all_str](sf::String str) { 
+			auto groups = resources::ObjectGroups;
+			auto g = std::find_if(std::begin(groups), std::end(groups),
+				[str](resources::object_group group) {return group.name == str; });
+
+			if (g != std::end(groups))
+				_addObjects(g->obj_list);
+			else if (str == all_str)
+				_addObjects(resources::Objects);
+		});
+
+		object_sel_panel->add(object_combox);
+
+		auto object_container = tgui::HorizontalWrap::create();
+		object_container->setSize({ "&.w", tgui::bindHeight(object_sel_panel) - tgui::bindHeight(object_combox) });
+		object_sel_panel->add(object_container, object_button_container);
+
+		object_combox->setSelectedItem(all_str);
 	}
 
 	sf::Vector2i object_editor::GetMapBounds() const
@@ -271,5 +343,25 @@ namespace objects
 			auto new_container = _gui.get<tgui::Container>("new_dialog");
 			new_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
 		});
+	}
+
+	void object_editor::_addObjects(std::vector<const resources::object*> objects)
+	{
+		auto container = _gui.get<tgui::Container>(object_button_container);
+
+		for (auto o : objects)
+		{
+			auto b = editor::MakeObjectButton(hades::data::GetAsString(o->id), o->editor_icon);
+			b->onClick.connect([this, o]() {
+				_setHeldObject(o);
+			});
+
+			container->add(b);
+		}
+	}
+
+	void object_editor::_setHeldObject(const resources::object *o)
+	{
+
 	}
 }

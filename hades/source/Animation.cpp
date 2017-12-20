@@ -13,50 +13,45 @@ namespace hades
 			"; while setting animation: " + data::GetAsString(animation->id));
 	}
 
-	//NOTE: based on the FrameAnimation algorithm from Thor C++
-	//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp
-	void apply_animation(const resources::animation* const animation, float progress, sf::Sprite &target)
+	namespace animation
 	{
-		assert(animation);
-
-		//test variants
-		//this version clamped and warned if the progress was outside of the range
-		if(progress > 1.f)
+		animation_frame GetFrame(const resources::animation* animation, float progress)
 		{
-			animation_error(progress, animation);
-			progress = 1.f;
-		}
-		else if(progress < 0.f)
-		{
-			animation_error(progress, animation);
-			progress = 0.f;
-		}
+			if (progress > 1.f || progress < 0.f)
+				animation_error(progress, animation);
 
-		//set the texture
-		if(!animation->value.empty())
-			target.setTexture(animation->tex->value);
-		else
-		{
-			target.setTexture(animation->tex->value, true);
-			return;
-		}
+			auto prog = std::clamp(progress, 0.f, 1.f);
 
-		auto rect = target.getTextureRect();
-		//calculate the progress to find the correct rect for this time
-		for (auto &frame : animation->value)
-		{
-			progress -= frame.duration;
-
-			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
-			if (progress <= 0.f)
+			//calculate the progress to find the correct rect for this time
+			for (auto &frame : animation->value)
 			{
-				target.setTextureRect({ static_cast<types::int32>(frame.x),
-					static_cast<types::int32>(frame.y), animation->width, animation->height });
-				//if (frame.applyOrigin)
-					//target.setOrigin(frame.origin);
+				prog -= frame.duration;
 
-				break;
+				// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
+				if (prog <= 0.f)
+					return std::make_tuple(animation->tex, frame.x, frame.y, animation->width, animation->height);
 			}
+
+			LOGWARNING("Unable to find correct frame for animation " + data::GetAsString(animation->id) +
+				"animation progress was: " + std::to_string(progress));
+			return std::make_tuple(animation->tex, 0, 0, 0, 0);
+		}
+
+		animation_frame GetFrame(const resources::animation* animation, sf::Time t)
+		{
+			assert(animation);
+			return GetFrame(animation, ConvertToRatio(t, animation->duration));
+		}
+
+		//NOTE: based on the FrameAnimation algorithm from Thor C++
+		//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp
+		void Apply(const resources::animation* animation, float progress, sf::Sprite &target)
+		{
+			assert(animation);
+
+			auto [tex, x, y, w, h] = GetFrame(animation, progress);
+			target.setTexture(tex->value);
+			target.setTextureRect({ x, y , w, h });
 		}
 	}
 }

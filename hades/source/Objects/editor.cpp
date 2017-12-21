@@ -99,11 +99,10 @@ namespace objects
 				GameView.move({ 0.f, static_cast<float>(scroll_rate) });
 
 			auto viewPosition = GameView.getCenter();
-			auto terrainSize = GetMapBounds();
 
 			//clamp the gameview after moving it
-			viewPosition.x = std::clamp(viewPosition.x, 0.f, static_cast<decltype(viewPosition.x)>(_mapSize.x));
-			viewPosition.y = std::clamp(viewPosition.y, 0.f, static_cast<decltype(viewPosition.y)>(_mapSize.y));
+			viewPosition.x = std::clamp(viewPosition.x, 0.f, static_cast<decltype(viewPosition.x)>(MapSize.x));
+			viewPosition.y = std::clamp(viewPosition.y, 0.f, static_cast<decltype(viewPosition.y)>(MapSize.y));
 
 			GameView.setCenter(viewPosition);
 
@@ -151,6 +150,13 @@ namespace objects
 
 	void object_editor::FillGui()
 	{
+		//===================
+		// Add ToolBar Icons
+		//===================
+
+		//==============
+		// Add Objects
+		//==============
 		auto object_sel_panel = _gui.get<tgui::Container>(editor::object_selector_panel);
 		
 		//add the object group combobox
@@ -188,15 +194,13 @@ namespace objects
 		object_combox->setSelectedItem(all_str);
 	}
 
-	sf::Vector2i object_editor::GetMapBounds() const
-	{
-		return _mapSize;
-	}
-
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&)
 	{}
 
 	void object_editor::OnClick()
+	{}
+
+	void object_editor::NewLevel()
 	{}
 
 	void object_editor::SaveLevel() const
@@ -278,6 +282,7 @@ namespace objects
 		//===========	
 		auto menu_bar = _gui.get<tgui::MenuBar>(menu_names::menu_bar);
 
+		menu_bar->moveToFront();
 		auto fadeTime = sf::milliseconds(100);
 
 		//TODO: turn the lambda into a protected virtual function
@@ -419,6 +424,8 @@ namespace objects
 	void object_editor::_addObjects(std::vector<const resources::object*> objects)
 	{
 		auto container = _gui.get<tgui::Container>(object_button_container);
+
+		container->removeAllWidgets();
 
 		for (auto o : objects)
 		{

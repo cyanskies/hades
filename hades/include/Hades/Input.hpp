@@ -33,7 +33,7 @@ namespace hades
 		{}
 
 		data::UniqueId id = data::UniqueId::Zero;
-		int x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
+		hades::types::int32 x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
 		bool active = false; //always true for mouseposition and axis
 	};
 

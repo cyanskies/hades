@@ -18,7 +18,8 @@ namespace objects
 		const hades::types::string object_editor_layout = "editor-layout",
 			//object selector must be a container, the app will place the object type combobox in it,
 			// and objects beneath it.
-			object_selector_panel = "object-selector";
+			object_selector_panel = "object-selector",
+			toolbar_panel = "toolbar-container";
 
 		//screen view height
 		// set editor_height to override this
@@ -61,15 +62,18 @@ namespace objects
 
 	protected:
 		//==initialisation functions==
-		//fills the 'tiles' gui containers 
-		//with selectable tiles.
+		//first call your paren't classes impl of this function
+		// then add whatever you want to the gui
+		// ToolBar buttons
+		// Menu Options
 		virtual void FillGui();
 
-		sf::Vector2i GetMapBounds() const;
+		//sf::Vector2i GetMapBounds() const;
 		//==map editing functions==
 		//generates the preview to be drawn over the map
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
 		virtual void OnClick();
+		virtual void NewLevel();
 		virtual void SaveLevel() const;
 		//these also save and load the map size parameters
 		void SaveObjects(level &l) const;
@@ -79,7 +83,8 @@ namespace objects
 		void DrawObjects(sf::RenderTarget &target) const;
 
 		//map file info
-		hades::types::string Mod, Filename;
+		hades::types::string Mod = "./", Filename = "new.lvl";
+		sf::Vector2i MapSize = { 200, 200 };
 
 		//editing variables
 		using EditMode_t = hades::types::uint8;
@@ -95,7 +100,9 @@ namespace objects
 		void _setHeldObject(const resources::object*);
 		EditMode_t _objectMode = editor::NONE;
 
-		sf::Vector2i _mapSize;
+		hades::types::int32 _pointer_min_x;
+		hades::types::int32 _pointer_min_y;
+		//sf::Vector2i _mapSize;
 	};
 }
 

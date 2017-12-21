@@ -39,11 +39,18 @@ namespace objects
 					}
 				}
 
+				Panel.ToolBar {
+					Position = (0, "MenuBar.y + MenuBar.h");
+					Size = (&.size, 35);
+					SimpleHorizontalLayout.toolbar-container {
+					}
+				}
+
 				ChildWindow {
-					Position = (20, 20);
-					Size = ("&.w / 6", "&.h / 1.5");
+					Position = (0, "ToolBar.y + ToolBar.h");
+					Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h - 20");
 					Visible = true;
-					Resizable = true;
+					Resizable = false;
 					Title = "ToolBox";
 					TitleButtons = None;
 
@@ -152,7 +159,7 @@ namespace objects
 					EditBox."new_sizex" {
 						Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
 						Size = (50, 30);
-						DefaultText = "25";
+						DefaultText = "200";
 					}
 
 					Label."new_sizey_label" {
@@ -163,7 +170,7 @@ namespace objects
 					EditBox."new_sizey" {
 						Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
 						Size = (50, 30);
-						DefaultText = "25";
+						DefaultText = "200";
 					}
 
 					Button."new_button" {
@@ -171,12 +178,13 @@ namespace objects
 						Text = "Create";
 					}
 
-					Size = ("new_button.x + new_button.w + 5", "new_button.y + new_button.h + 5");
+					Size = ("new_button.x + new_button.w + 5", "new_sizey.y + new_sizey.h + 5");
 				})";
 	}
 
 	void RegisterObjectResources(hades::data::data_manager *data)
 	{
+		data->register_resource_type("editor", resources::ParseEditor);
 		data->register_resource_type("objects", resources::ParseObject);
 		makeDefaultLayout(data);
 	}
@@ -375,10 +383,10 @@ namespace objects
 
 				auto v = n.second;
 
-				auto add_to_group = [g, gname, mod](const YAML::Node& n) {
+				auto add_to_group = [g, gname, mod, data](const YAML::Node& n) {
 					auto obj_str = n.as<hades::types::string>();
 					auto obj_id = hades::data::GetUid(obj_str);
-					auto obj = hades::data::Get<object>(obj_id);
+					auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);// hades::data::Get<object>(obj_id);
 					g->obj_list.push_back(obj);
 				};
 

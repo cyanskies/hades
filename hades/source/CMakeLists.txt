@@ -34,6 +34,7 @@ set(HADES_SRC
 	TimerManager.cpp
 	Types.cpp
 	Gui/Gui.cpp
+	Gui/SimpleHorizontalLayout.cpp
 	Gui/SimpleVerticalLayout.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp
@@ -52,6 +53,7 @@ set(HADES_SRC
 
 source_group("Gui" FILES
 	Gui/Gui.cpp
+	Gui/SimpleHorizontalLayout.cpp
 	Gui/SimpleVerticalLayout.cpp)
 
 source_group("Tiles" FILES

@@ -19,6 +19,7 @@ set(HADES_SRC
 	GameInstance.cpp
 	GameInterface.cpp
 	GameRenderer.cpp
+	GridArea.cpp
 	GuiLoaders.cpp
 	Input.cpp
 	Logging.cpp

@@ -7,17 +7,12 @@ namespace hades
 {
 	//limits drawing to the desired area
 	//NOTE: This is a performance optimisation, 
-	//so the draw edge isn't going to be smooth
-	//use ScissorDraw to limit drawing with a smooth edge
-	/*struct LimitedDraw
+	//so the draw edge isn't going to be smooth.
+	struct Camera2dDrawClamp
 	{
-		void SetDrawArea(const sf::FloatRect &worldCoords) = 0;
-	};*/
-
-	/*struct ScissorDraw
-	{
-		void SetScissorArea(const sf::FloatRect &worldCoords) = 0;
-	};*/
+		//specifies the 2d area within the camera
+		virtual void set2dDrawArea(const sf::FloatRect &worldCoords) = 0;
+	};
 }
 
 #endif //HADES_LIMITED_DRAW_HPP

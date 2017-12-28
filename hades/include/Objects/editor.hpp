@@ -1,8 +1,11 @@
 #ifndef OBJECT_EDITOR_HPP
 #define OBJECT_EDITOR_HPP
 
+#include "SFML/Graphics/RectangleShape.hpp"
+
 #include "TGUI/Widgets/ClickableWidget.hpp"
 
+#include "Hades/GridArea.hpp"
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
@@ -50,8 +53,8 @@ namespace objects
 		// then call the LoadX functions to parse all the subsequent parts
 		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
 
-		virtual bool handleEvent(const hades::Event &windowEvent) override; 
-		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
+		virtual bool handleEvent(const hades::Event &windowEvent) override final; 
+		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override final;
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 		virtual void cleanup() override;
@@ -81,6 +84,7 @@ namespace objects
 
 		void DrawBackground(sf::RenderTarget &target) const;
 		void DrawObjects(sf::RenderTarget &target) const;
+		void DrawGrid(sf::RenderTarget &target) const;
 
 		//map file info
 		hades::types::string Mod = "./", Filename = "new.lvl";
@@ -96,6 +100,7 @@ namespace objects
 		//loads the gui from the editor-layout resource
 		//then sets up all the generic UI elements
 		void _createGui();
+		void _newMap();
 		void _addObjects(std::vector<const resources::object*> objects);
 		void _setHeldObject(const resources::object*);
 		EditMode_t _objectMode = editor::NONE;
@@ -103,6 +108,9 @@ namespace objects
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
 		//sf::Vector2i _mapSize;
+		sf::View _backgroundView;
+		sf::RectangleShape _editorBackground, _mapBackground;
+		hades::GridArea _grid;
 	};
 }
 

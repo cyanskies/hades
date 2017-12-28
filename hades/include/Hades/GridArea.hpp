@@ -29,7 +29,7 @@ namespace hades
 	private:
 		sf::Vector2f _size = { 0.f, 0.f };
 		sf::Color _colour = sf::Color::White;
-		types::uint32 _cellSize = 0u;
+		types::uint32 _cellSize = 8u;
 
 		std::vector<sf::RectangleShape> _lines;
 		sf::FloatRect _worldClampRegion;

@@ -105,6 +105,7 @@ namespace objects
 			viewPosition.y = std::clamp(viewPosition.y, 0.f, static_cast<decltype(viewPosition.y)>(MapSize.y));
 
 			GameView.setCenter(viewPosition);
+			_grid.set2dDrawArea({ viewPosition - GameView.getSize() / 2.f, GameView.getSize() });
 
 			GenerateDrawPreview(window, input);
 		}
@@ -118,6 +119,7 @@ namespace objects
 	{
 		DrawBackground(target);
 		DrawObjects(target);
+		DrawGrid(target);
 	}
 
 	void object_editor::cleanup(){}
@@ -137,8 +139,18 @@ namespace objects
 		float screenRatio = *wwidth / static_cast<float>(*wheight);
 
 		//set the view
-		GameView.setSize(*cheight * screenRatio, static_cast<float>(*cheight));
+		sf::Vector2f size = { *cheight * screenRatio, static_cast<float>(*cheight) };
+		GameView.setSize(size);
+		_backgroundView.reset({ { 0.f, 0.f }, size });
 		GameView.setCenter({ 100.f,100.f });
+
+		_editorBackground.setSize({ static_cast<float>(*wwidth), static_cast<float>(*wheight) });
+		_editorBackground.setFillColor(sf::Color(127, 127, 127, 255));
+
+		_mapBackground.setSize(static_cast<sf::Vector2f>(MapSize));
+		_mapBackground.setFillColor(sf::Color::Black);
+
+		_grid.setSize(static_cast<sf::Vector2f>(MapSize));
 
 		_createGui();
 	}
@@ -206,8 +218,24 @@ namespace objects
 	void object_editor::SaveLevel() const
 	{}
 
-	void object_editor::DrawBackground(sf::RenderTarget &target) const {}
-	void object_editor::DrawObjects(sf::RenderTarget &target) const {}
+	void object_editor::DrawBackground(sf::RenderTarget &target) const
+	{
+		target.setView(_backgroundView);
+		target.draw(_editorBackground);
+		target.setView(GameView);
+		target.draw(_mapBackground);
+	}
+
+	void object_editor::DrawObjects(sf::RenderTarget &target) const 
+	{
+		//TODO:
+	}
+
+	void object_editor::DrawGrid(sf::RenderTarget &target) const 
+	{
+		target.draw(_grid);
+		//TODO draw highlighted grid square
+	}
 
 	namespace menu_names
 	{
@@ -374,8 +402,8 @@ namespace objects
 			auto filename = _gui.get<tgui::EditBox>("save_filename");
 			auto modname = _gui.get<tgui::EditBox>("save_mod");
 
-			hades::types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			hades::types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
+			Mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
+			Filename = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
 			SaveLevel();
 
 			auto save_container = _gui.get<tgui::Container>(dialog_names::save);

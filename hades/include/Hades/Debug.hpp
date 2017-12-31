@@ -33,7 +33,7 @@ namespace hades
 			//if fullscreen is true, then the overlay must provide it's own view
 			//otherwise the view is already arranged for the overlay
 			//and is the size returned by getSize()
-			virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const = 0;
+			virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override = 0;
 
 			//if fullscreen then the size is specified by the window manager
 			bool fullscreen() const;

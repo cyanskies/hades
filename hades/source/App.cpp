@@ -39,6 +39,8 @@ namespace hades
 	//vid_* video settings variables
 	// resolution, colour depth, fullscreen, etc
 	//file_* for file path settings and read/write settings
+	//a_* for audio settings
+	//n_* for network settings
 
 	void registerVariables(Console *console)
 	{
@@ -177,6 +179,8 @@ namespace hades
 		//if hades main handles any of the commands then they will be removed from 'commands'
 		hadesMain(_states, _input, commands);
 
+		//TODO: handle autoconsole files
+		//TODO: handle config settings files
 		//proccess config files
 		//load saved bindings and whatnot from config files
 
@@ -211,9 +215,7 @@ namespace hades
 
 		bool running = true;
 
-		//t = total app running time,
-		// only counting completed game ticks
-		//sf::Time t = sf::Time::Zero;
+		//currentTime is the total running time of the application
 		sf::Time currentTime = time.getElapsedTime();
 		sf::Time accumulator = sf::Time::Zero;
 
@@ -234,23 +236,20 @@ namespace hades
 			currentTime = newTime;
 			accumulator += frameTime;
 
-			//perform additional logic updates if we're behind on logic
-
-			//this frame the total amount of time this frame has taken.
+			//the total amount of time this frame has taken.
 			sf::Time thisFrame = sf::Time::Zero;
 
+			//perform additional logic updates if we're behind on logic
 			while( accumulator >= dt)
 			{
 				auto events = handleEvents(activeState);
 				_input.generateState(events);
 
 				activeState->update(dt, _window, _input.getInputState());
-				//t += dt;
 				accumulator -= dt;
 				thisFrame += dt;
 			}
 
-			//_window.setActive();
 			_window.clear();
 			//drawing must pass the frame time, so that the renderer can
 			//interpolate between frames
@@ -290,9 +289,6 @@ namespace hades
 
 	std::vector<Event> App::handleEvents(State *activeState)
 	{
-		//drop events from last frame
-		//_bindings.dropEvents();
-
 		std::vector<Event> events;
 
 		sf::Event e;
@@ -361,8 +357,6 @@ namespace hades
 			//exit and quit allow states, players or scripts to close the engine.
 			_console.registerFunction("exit", exit, true);
 			_console.registerFunction("quit", exit, true);
-
-			//_console->registerFunction("bind", std::bind(&Bind::bindControl, &_bindings, std::placeholders::_1), true);
 		}
 
 		//vid functions
@@ -410,6 +404,8 @@ namespace hades
 
 				_overlayMan.setWindowSize({ mode.width, mode.height });
 
+				//TODO: restore vsync/framelimit settings to window
+
 				return true;
 			};
 
@@ -422,11 +418,11 @@ namespace hades
 				{
 					_sfVSync = value == "true" || std::stoi(value) > 0;
 				}
-				catch (std::invalid_argument)
+				catch (std::invalid_argument&)
 				{
 					_sfVSync = false;
 				}
-				catch (std::out_of_range)
+				catch (std::out_of_range&)
 				{
 					_sfVSync = false;
 				}
@@ -449,12 +445,12 @@ namespace hades
 					auto limit = std::stoi(limitstr);
 					_window.setFramerateLimit(limit);
 				}
-				catch (std::invalid_argument)
+				catch (std::invalid_argument&)
 				{
 					LOGWARNING("Invalid value for vid_framelimit setting to 0");
 					_window.setFramerateLimit(0);
 				}
-				catch (std::out_of_range)
+				catch (std::out_of_range&)
 				{
 					LOGWARNING("Invalid value for vid_framelimit setting to 0");
 					_window.setFramerateLimit(0);

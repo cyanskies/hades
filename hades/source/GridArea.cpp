@@ -6,21 +6,26 @@ namespace hades
 {
 	std::vector<sf::RectangleShape> CreateGrid(const sf::Vector2f &size, const sf::Color &c, types::uint32 cellSize)
 	{
-		float thickness = 1.f;
+		const float thickness = 1.f;
 		std::vector<sf::RectangleShape> lines;
 
-		for (auto x = 0; x <= size.x; x += cellSize)
-		{
-			auto line = sf::RectangleShape({ thickness, size.y });
-			line.setPosition({ static_cast<float>(x), 0.f });
-			lines.emplace_back(std::move(line));
-		}
+		const auto max = std::max(size.x, size.y);
 
-		for (auto y = 0; y <= size.y; y += cellSize)
+		for (auto i = 0; i <= max; i += cellSize)
 		{
-			auto line = sf::RectangleShape({ size.x, thickness });
-			line.setPosition({ 0.f, static_cast<float>(y) });
-			lines.emplace_back(std::move(line));
+			if (i <= size.x)
+			{
+				auto line = sf::RectangleShape({ thickness, size.y });
+				line.setPosition({ static_cast<float>(i), 0.f });
+				lines.emplace_back(std::move(line));
+			}
+
+			if (i <= size.y)
+			{
+				auto line = sf::RectangleShape({ size.x, thickness });
+				line.setPosition({ 0.f, static_cast<float>(i) });
+				lines.emplace_back(std::move(line));
+			}
 		}
 
 		return lines;
@@ -31,6 +36,7 @@ namespace hades
 		_size = size;
 		_lines = CreateGrid(_size, _colour, _cellSize);
 	}
+
 	void GridArea::setColour(const sf::Color &c)
 	{
 		_colour = c;

@@ -29,7 +29,7 @@ namespace objects
 {
 	namespace editor
 	{
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon, OnClickFunc func)
 		{
 			tgui::ClickableWidget::Ptr p;
 			//TODO: editor-button-size console vars
@@ -39,6 +39,7 @@ namespace objects
 				auto [tex, x ,y , w, h] = hades::animation::GetFrame(icon, sf::Time::Zero);
 				auto texture = tgui::Texture(tex->value, { x, y, w, h });
 				p = tgui::Picture::create(texture);
+				//TODO: create button pressed effect for icon buttons
 			}
 			else
 				p = tgui::Button::create(name);
@@ -55,6 +56,8 @@ namespace objects
 				p->setToolTip(panel);
 			}
 
+			//TODO: set action on click?
+
 			return p;
 		}
 	}
@@ -70,12 +73,6 @@ namespace objects
 
 	bool object_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
-		if (std::get<sf::Event>(windowEvent).type == sf::Event::EventType::Resized)
-		{
-			//call reinit in resize in order to keep the view accurate
-			reinit();
-			return true;
-		}
 		return false; 
 	}
 
@@ -165,6 +162,20 @@ namespace objects
 		//===================
 		// Add ToolBar Icons
 		//===================
+
+		//get the toolbar container
+		auto toolbar_panel = _gui.get<tgui::Container>(editor::toolbar_panel);
+
+		//empty mouse button
+		//TODO: get icon for this button
+		auto empty_button = editor::MakeObjectButton("empty");
+
+		empty_button->onClick.connect([this]() {
+			EditMode = editor::EditMode::OBJECT;
+			_objectMode = editor::ObjectMode::NONE;
+		});
+
+		toolbar_panel->add(empty_button);
 
 		//==============
 		// Add Objects

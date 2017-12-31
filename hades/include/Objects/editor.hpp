@@ -40,7 +40,9 @@ namespace objects
 			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
 
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
+		using OnClickFunc = std::function<void(void)>;
+
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr, OnClickFunc = OnClickFunc());
 	}
 
 	class object_editor : public hades::State

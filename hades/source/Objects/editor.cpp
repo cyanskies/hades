@@ -479,6 +479,8 @@ namespace objects
 
 	void object_editor::_setHeldObject(const resources::object *o)
 	{
-
+		EditMode = editor::EditMode::OBJECT;
+		_objectMode = editor::ObjectMode::PLACE;
+		_heldObject = o;
 	}
 }

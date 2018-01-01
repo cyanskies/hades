@@ -12,8 +12,10 @@
 
 namespace objects
 {
-	void RegisterObjectResources(hades::data::data_manager*);
+	const auto editor_snaptogrid = "editor_snaptogrid";
 
+	void RegisterObjectResources(hades::data::data_manager*);
+	
 	namespace resources
 	{
 		const auto editor_settings_name = "editor";

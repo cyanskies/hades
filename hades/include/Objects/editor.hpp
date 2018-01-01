@@ -104,12 +104,21 @@ namespace objects
 		void _createGui();
 		void _newMap();
 		void _addObjects(std::vector<const resources::object*> objects);
+		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
+		//when the mouse is released this object will be placed in the pointers position
+		void _setDragObject(const resources::object* o);
 		EditMode_t _objectMode = editor::NONE;
 
+		//object placement and drawing
+		const resources::object *_heldObject = nullptr;
+
+		//the limits of the pointer scroll
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
-		//sf::Vector2i _mapSize;
+
+		//drawing the out of bounds background
+		//and grid
 		sf::View _backgroundView;
 		sf::RectangleShape _editorBackground, _mapBackground;
 		hades::GridArea _grid;

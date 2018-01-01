@@ -2,6 +2,7 @@
 
 #include "Hades/Data.hpp"
 #include "Hades/data_manager.hpp"
+#include "Hades/Properties.hpp"
 
 #include "Objects/editor.hpp"
 
@@ -41,7 +42,7 @@ namespace objects
 
 				Panel.ToolBar {
 					Position = (0, "MenuBar.y + MenuBar.h");
-					Size = (&.size, 35);
+					Size = (&.size, 40);
 					SimpleHorizontalLayout.toolbar-container {
 					}
 				}
@@ -182,8 +183,16 @@ namespace objects
 				})";
 	}
 
+	void DefineObjectConsoleVars()
+	{
+		//object editor variables
+		hades::console::SetProperty(editor_snaptogrid, 1);
+	}
+
 	void RegisterObjectResources(hades::data::data_manager *data)
 	{
+		DefineObjectConsoleVars();
+
 		data->register_resource_type("editor", resources::ParseEditor);
 		data->register_resource_type("objects", resources::ParseObject);
 		makeDefaultLayout(data);
@@ -356,6 +365,7 @@ namespace objects
 			//editor:
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
+			//    snap-to-grid: enabled, disabled, force-enabled
 
 			static const auto resource_type = "editor";
 
@@ -396,6 +406,27 @@ namespace objects
 					for (auto o : v)
 						add_to_group(o);
 			}//for object groups
+
+			auto snap = node["snap-to-grid"];
+			if (snap.IsDefined() && snap.IsScalar())
+			{
+				auto intval = snap.as<hades::types::int32>(-1);
+
+				if (intval <= -1 || intval > 2)
+				{
+					//intval is out of range, check to see if its a valid string
+					const auto str = snap.as<hades::types::string>(hades::types::string());
+					if (str == "disabled")
+						intval = 0;
+					else if (str == "enabled")
+						intval = 1;
+					else if (str == "forced-enabled")
+						intval = 2;
+				}
+
+				if(intval >= 0 && intval <= 2)
+					hades::console::SetProperty(editor_snaptogrid, intval);
+			}
 		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)

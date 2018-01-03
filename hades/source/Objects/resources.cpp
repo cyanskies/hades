@@ -365,7 +365,7 @@ namespace objects
 			//editor:
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
-			//    snap-to-grid: enabled, disabled, force-enabled
+			//    snap-to-grid: [0, 1, 2], [disabled, enabled, force-enabled]
 
 			static const auto resource_type = "editor";
 

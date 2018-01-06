@@ -55,13 +55,15 @@ namespace hades
 
 		extern properties *property_provider;
 
+		// Property global functions are required to work even when the property provider is absent
+		// as such SetProperty doesn't provide any success feedback
+		// and Get* functions return the provided default if possible
+
 		template<class T>
-		bool SetProperty(std::string_view name, const T &value)
+		void SetProperty(std::string_view name, const T &value)
 		{
 			if (property_provider)
-				return property_provider->set(name, value);
-			else 
-				return false;
+				property_provider->set(name, value);
 		}
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)

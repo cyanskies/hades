@@ -2,6 +2,7 @@
 #define HADES_EXCEPTIONS_HPP
 
 #include <exception>
+#include <stdexcept>
 
 //defines commonly used exceptions
 

@@ -16,8 +16,8 @@ namespace hades
 					return p;
 				else
 				{
-					if (SetProperty(name, default))
-						return func(name);
+					SetProperty(name, default);
+					return func(name);
 				}
 			}
 
@@ -26,17 +26,17 @@ namespace hades
 
 		property_int GetInt(std::string_view name, types::int32 default)
 		{
-			return get<property<types::int32>>(name, [](types::string n) { return property_provider->getInt(n);}, default);
+			return get<property<types::int32>>(name, [](std::string_view n) { return property_provider->getInt(n);}, default);
 		}
 
 		property_float GetFloat(std::string_view name, float default)
 		{
-			return get<property<float>>(name, [](types::string n) { return property_provider->getFloat(n);}, default);
+			return get<property<float>>(name, [](std::string_view n) { return property_provider->getFloat(n);}, default);
 		}
 
 		property_bool GetBool(std::string_view name, bool default)
 		{
-			return get<property<bool>>(name, [](types::string n) { return property_provider->getBool(n);}, default);
+			return get<property<bool>>(name, [](std::string_view n) { return property_provider->getBool(n);}, default);
 		}
 
 		property_str GetString(std::string_view name, std::string_view default)
@@ -47,12 +47,12 @@ namespace hades
 					return p;
 				else
 				{
-					if (SetProperty(name, default))
-						return property_provider->getString(name);
+					SetProperty(name, default);
+					return property_provider->getString(name);
 				}
 			}
 
-			return std::make_shared<value_guard<types::string>>(default);
+			return std::make_shared<value_guard<types::string>>(to_string(default));
 		}
 	}
 }//hades

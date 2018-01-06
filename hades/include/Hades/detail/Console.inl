@@ -99,7 +99,7 @@ namespace hades
 			}
 			else
 				throw console::property_wrong_type("name: " + to_string(var) + ", requested type: " + 
-					typeid(T).name + ", stored(actual) type: " + out->type.name);
+					to_string(typeid(T).name()) + ", stored(actual) type: " + to_string(out->type.name()));
 		}
 
 		return nullptr;

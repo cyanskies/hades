@@ -14,9 +14,9 @@
 //==============
 namespace hades
 {
-	bool Console::GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const
+	bool Console::GetValue(std::string_view var, std::shared_ptr<detail::Property_Base> &out) const
 	{
-		auto iter = TypeMap.find(var);
+		auto iter = TypeMap.find(types::string(var));
 		if(iter == TypeMap.end())
 			return false;
 		else
@@ -29,7 +29,7 @@ namespace hades
 		//ditermine type;
 		//first check if indentifer exists, and use it's type;
 		//second nothing, don't let end users define variables, easy!
-		//or register specific functions for deefining variables dynamically
+		//or register specific functions for defining variables dynamically
 		bool ret = false;
 
 		std::shared_ptr<detail::Property_Base> var;
@@ -45,36 +45,18 @@ namespace hades
 
 				try
 				{
-					//floats
+					//float
 					if (var->type == typeid(float))
-						ret = set(identifier, stov<float>(value));
-					else if (var->type == typeid(double))
-						ret = set(identifier, stov<double>(value));
-					else if (var->type == typeid(long double))
-						ret = set(identifier, stov<long double>(value));
+						ret = set<float>(identifier, stov<float>(value));
 					//bool
 					else if (var->type == typeid(bool))
-						ret = set(identifier, stov<bool>(value));
+						ret = set<bool>(identifier, stov<bool>(value));
 					//string
-					else if (var->type == typeid(std::string))
-						ret = set(identifier, value);
+					else if (var->type == typeid(types::string))
+						ret = set<types::string>(identifier, value);
 					//integers
-					else if (var->type == typeid(int8))
-						ret = set(identifier, stov<int8>(value));
-					else if (var->type == typeid(uint8))
-						ret = set(identifier, stov<uint8>(value));
-					else if (var->type == typeid(int16))
-						ret = set(identifier, stov<int16>(value));
-					else if (var->type == typeid(uint16))
-						ret = set(identifier, stov<uint16>(value));
-					else if (var->type == typeid(int32))
-						ret = set(identifier, stov<int32>(value));
-					else if (var->type == typeid(uint32))
-						ret = set(identifier, stov<uint32>(value));
-					else if (var->type == typeid(int64))
-						ret = set(identifier, stov<int64>(value));
-					else if (var->type == typeid(uint64))
-						ret = set(identifier, stov<uint64>(value));
+					else if (var->type == typeid(types::int32))
+						ret = set<types::int32>(identifier, stov<types::int32>(value));
 
 					echo(identifier + " " + value);
 				}
@@ -165,42 +147,46 @@ namespace hades
 		return true;
 	}
 
-	bool Console::set(const types::string& name, types::int32 val)
+	void Console::set(std::string_view name, types::int32 val)
 	{
-		return set<types::int32>(name, val);
+		if (!set<types::int32>(name, val))
+			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
 	}
 
-	bool Console::set(const types::string& name, float val)
+	void Console::set(std::string_view name, float val)
 	{
-		return set<float>(name, val);
+		if(!set<float>(name, val))
+			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
 	}
 
-	bool Console::set(const types::string& name, bool val)
+	void Console::set(std::string_view name, bool val)
 	{
-		return set<bool>(name, val);
+		if (!set<bool>(name, val))
+			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
 	}
 
-	bool Console::set(const types::string& name, const types::string& val)
+	void Console::set(std::string_view name, std::string_view val)
 	{
-		return set<types::string>(name, val);
+		if (!set<types::string>(name, std::string(val)))
+			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
 	}
 
-	console::property<types::int32> Console::getInt(const types::string& name)
+	console::property<types::int32> Console::getInt(std::string_view name)
 	{
 		return getValue<types::int32>(name);
 	}
 
-	console::property<float> Console::getFloat(const types::string& name)
+	console::property<float> Console::getFloat(std::string_view name)
 	{
 		return getValue<float>(name);
 	}
 
-	console::property<bool> Console::getBool(const types::string& name)
+	console::property<bool> Console::getBool(std::string_view name)
 	{
 		return getValue<bool>(name);
 	}
 
-	console::property_str Console::getString(const types::string& name)
+	console::property_str Console::getString(std::string_view name)
 	{
 		std::shared_ptr<detail::Property_Base > out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);

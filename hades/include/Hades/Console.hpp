@@ -59,20 +59,20 @@ namespace hades
 		bool registerFunction(const std::string &identifier, Console_Function func, bool replace) override;
 
 		template<class T>
-		bool set(const std::string &identifier, const T &value);
+		bool set(std::string_view identifier, const T &value);
 
-		bool set(const types::string&, types::int32) override;
-		bool set(const types::string&, float) override;
-		bool set(const types::string&, bool) override;
-		bool set(const types::string&, const types::string&) override;
+		void set(std::string_view, types::int32) override;
+		void set(std::string_view, float) override;
+		void set(std::string_view, bool) override;
+		void set(std::string_view, std::string_view) override;
 
 		template<class T>
-		ConsoleVariable<T> getValue(const std::string &var);
+		ConsoleVariable<T> getValue(std::string_view var);
 
-		console::property<types::int32> getInt(const types::string&) override;
-		console::property<float> getFloat(const types::string&) override;
-		console::property<bool> getBool(const types::string&) override;
-		console::property_str getString(const types::string&) override;
+		console::property_int getInt(std::string_view) override;
+		console::property_float getFloat(std::string_view) override;
+		console::property_bool getBool(std::string_view) override;
+		console::property_str getString(std::string_view) override;
 
 		bool runCommand(const std::string &command) override;
 
@@ -88,7 +88,8 @@ namespace hades
 		ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = NORMAL) override;
 
 	protected:
-		bool GetValue(const std::string &var, std::shared_ptr<detail::Property_Base> &out) const;
+		//returns false if var was not found; true if out contains the requested value
+		bool GetValue(std::string_view var, std::shared_ptr<detail::Property_Base> &out) const;
 		bool SetVariable(const std::string &identifier, const std::string &value); //for unknown types stored as string, passed in by RunCommand
 		void EchoVariable(const std::string &identifier);
 		void DisplayVariables();
@@ -100,7 +101,7 @@ namespace hades
 		mutable std::mutex _consoleBufferMutex;
 		mutable std::mutex _histoyMutex;
 		std::map<std::string, Console_Function> _consoleFunctions;
-		std::map<std::string, std::shared_ptr<detail::Property_Base> > TypeMap;
+		std::map<types::string, std::shared_ptr<detail::Property_Base> > TypeMap;
 		std::vector<Console_String> TextBuffer;
 		std::vector<types::string> _commandHistory;
 		int recentOutputPos;

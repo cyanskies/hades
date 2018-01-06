@@ -187,6 +187,7 @@ namespace objects
 	{
 		//object editor variables
 		hades::console::SetProperty(editor_snaptogrid, 1);
+		hades::console::SetProperty(editor_grid_size, 8);
 	}
 
 	void RegisterObjectResources(hades::data::data_manager *data)
@@ -366,6 +367,7 @@ namespace objects
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
 			//    snap-to-grid: [0, 1, 2], [disabled, enabled, force-enabled]
+			//    grid-size: default 8 or something, defines the small  
 
 			static const auto resource_type = "editor";
 
@@ -412,21 +414,30 @@ namespace objects
 			{
 				auto intval = snap.as<hades::types::int32>(-1);
 
-				if (intval <= -1 || intval > 2)
+				if (intval < GRIDSNAP_DISABLED || intval > GRIDSNAP_FORCE_ENABLED)
 				{
 					//intval is out of range, check to see if its a valid string
 					const auto str = snap.as<hades::types::string>(hades::types::string());
 					if (str == "disabled")
-						intval = 0;
+						intval = GRIDSNAP_DISABLED;
 					else if (str == "enabled")
-						intval = 1;
+						intval = GRIDSNAP_ENABLED;
 					else if (str == "forced-enabled")
-						intval = 2;
+						intval = GRIDSNAP_FORCE_ENABLED;
 				}
 
-				if(intval >= 0 && intval <= 2)
+				if(intval >= GRIDSNAP_DISABLED && intval <= GRIDSNAP_FORCE_ENABLED)
 					hades::console::SetProperty(editor_snaptogrid, intval);
 			}
+
+			// Get the minimum grid size for the editor(this should be the same value the game uses if it uses
+			// grid based game logic
+			hades::types::int32 current_grid_size = *hades::console::GetInt(editor_grid_size, editor_grid_default);
+			auto grid_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "grid-size", mod, current_grid_size);
+
+			if (grid_size != current_grid_size)
+				hades::console::SetProperty(editor_grid_size, grid_size);
+
 		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)

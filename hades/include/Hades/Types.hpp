@@ -71,6 +71,24 @@ namespace hades {
 		template<>
 		bool stov<bool>(std::string value);
 	}
+
+	template<typename T>
+	types::string to_string(T value)
+	{
+		return std::to_string(value);
+	}
+
+	template<>
+	types::string to_string<types::string>(types::string value)
+	{
+		return value;
+	}
+
+	template<>
+	types::string to_string<std::string_view>(std::string_view value)
+	{
+		return types::string(value);
+	}
 }
 
 #endif //HADES_TYPES_HPP

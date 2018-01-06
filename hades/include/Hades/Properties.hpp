@@ -2,8 +2,11 @@
 #define HADES_PROPERTIES_HPP
 
 #include <atomic>
+#include <exception>
 #include <memory>
+#include <string_view>
 
+#include "Hades/exceptions.hpp"
 #include "Hades/Types.hpp"
 #include "Hades/value_guard.hpp"
 
@@ -12,9 +15,19 @@ namespace hades
 {
 	namespace console
 	{
+		class property_wrong_type : std::logic_error
+		{
+		public:
+			using std::logic_error::logic_error;
+			using std::logic_error::what;
+		};
+
 		template<class T>
 		using property = std::shared_ptr<std::atomic<T>>;
 
+		using property_int = property<types::int32>;
+		using property_float = property<float>;
+		using property_bool = property<bool>;
 		using property_str = std::shared_ptr<value_guard<types::string>>;
 
 		class properties {
@@ -22,18 +35,19 @@ namespace hades
 			virtual ~properties() {}
 
 			//assigns the value to the id
-			//returns false if the type was wrong for that identifier.
-			virtual bool set(const types::string&, types::int32) = 0;
-			virtual bool set(const types::string&, float) = 0;
-			virtual bool set(const types::string&, bool) = 0;
-			virtual bool set(const types::string&, const types::string&) = 0;
+			//throws property_wrong_type if the type doesn't match the property name
+			virtual void set(std::string_view, types::int32) = 0;
+			virtual void set(std::string_view, float) = 0;
+			virtual void set(std::string_view, bool) = 0;
+			virtual void set(std::string_view, std::string_view) = 0;
 
 			//returns a ptr to the value of that id
-			//returns null if the id is unused or is of the wrong type
-			virtual property<types::int32> getInt(const types::string&) = 0;
-			virtual property<float> getFloat(const types::string&) = 0;
-			virtual property<bool> getBool(const types::string&) = 0;
-			virtual property_str getString(const types::string&) = 0;
+			//returns nullptr if the property is undefined
+			//throws property_wrong_type if the type doesn't match the property name
+			virtual property_int getInt(std::string_view) = 0;
+			virtual property_float getFloat(std::string_view) = 0;
+			virtual property_bool getBool(std::string_view) = 0;
+			virtual property_str getString(std::string_view) = 0;
 
 			//TODO: exists + erase
 		};
@@ -41,7 +55,7 @@ namespace hades
 		extern properties *property_provider;
 
 		template<class T>
-		bool SetProperty(const types::string &name, const T &value)
+		bool SetProperty(std::string_view name, const T &value)
 		{
 			if (property_provider)
 				return property_provider->set(name, value);
@@ -50,11 +64,11 @@ namespace hades
 		}
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
-		//TODO: version that doesn't have defaults, throws fatal errors instead
-		property<types::int32> GetInt(const types::string&, types::int32);
-		property<float> GetFloat(const types::string&, float);
-		property<bool> GetBool(const types::string&, bool);
-		property_str GetString(const types::string&, const types::string&);
+		//if the requested type doesn't match the type stored then throws console::property_wrong_type
+		property_int GetInt(std::string_view, types::int32);
+		property_float GetFloat(std::string_view, float);
+		property_bool GetBool(std::string_view, bool);
+		property_str GetString(std::string_view, std::string_view);
 	}
 }//hades
 

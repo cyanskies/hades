@@ -64,6 +64,10 @@ namespace objects
 
 	void object_editor::init()
 	{
+		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
+		_gridCurrentSize = *_gridMinSize;
+		//_grid.setCellSize();
+
 		reinit();
 	}
 
@@ -218,7 +222,19 @@ namespace objects
 	}
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&)
-	{}
+	{
+		if (EditMode != editor::EditMode::OBJECT)
+			return;
+	
+		// if an object is held for placement
+		// then we draw the preview in the nearest valid position
+		// rounded to the nearest pixel pos if editor-snap = false
+		// otherwise rounded to &game_grid_size
+		if (_objectMode == editor::ObjectMode::PLACE)
+		{
+
+		}
+	}
 
 	void object_editor::OnClick()
 	{}

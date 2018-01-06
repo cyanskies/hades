@@ -12,7 +12,13 @@
 
 namespace objects
 {
-	const auto editor_snaptogrid = "editor_snaptogrid";
+	const auto editor_snaptogrid = "editor_snaptogrid",
+		editor_grid_size = "editor_grid_size";
+
+	enum SnapToGrid { GRIDSNAP_DISABLED = 0, GRIDSNAP_ENABLED, GRIDSNAP_FORCE_ENABLED };
+
+	const auto editor_snap_default = GRIDSNAP_ENABLED;
+	const auto editor_grid_default = 8;
 
 	void RegisterObjectResources(hades::data::data_manager*);
 	

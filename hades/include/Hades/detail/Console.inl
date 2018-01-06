@@ -41,17 +41,18 @@ namespace hades
 	}
 
 	template<class T>
-	bool Console::set(const std::string &identifier, const T &value)
+	bool Console::set(std::string_view identifier, const T &value)
 	{
 		//we can only store integral types in std::atomic
+		//TODO: limit console property types to (int32, float, bool and string)
 		static_assert(types::hades_type<T>(), "Attempting to store an illegal type in the console.");
 
 		std::shared_ptr<detail::Property_Base> out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(identifier, out))
 		{
-			if(out->type != typeid(T))
-				return false;
+			if (out->type != typeid(T))
+				throw console::property_wrong_type("name: " + std::string(identifier) + ", value: " + to_string(value));
 			else
 			{
 				std::shared_ptr<detail::Property<T> > stored = std::static_pointer_cast<detail::Property<T> >(out);
@@ -68,19 +69,22 @@ namespace hades
 	}
 
 	template<class T>
-	ConsoleVariable<T> Console::getValue(const std::string &var)
+	ConsoleVariable<T> Console::getValue(std::string_view var)
 	{
+		//TODO: static_assert value console types
+
 		std::shared_ptr<detail::Property_Base > out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(var, out))
 		{
-			if(out->type == typeid(T))
+			if (out->type == typeid(T))
 			{
-				auto value = std::static_pointer_cast<detail::Property<T> > (out);
+				auto value = std::static_pointer_cast<detail::Property<T>> (out);
 				return value->value;
 			}
 			else
-				return nullptr;
+				throw console::property_wrong_type("name: " + to_string(var) + ", requested type: " + 
+					typeid(T).name + ", stored(actual) type: " + out->type.name);
 		}
 
 		return nullptr;

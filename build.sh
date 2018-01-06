@@ -1,3 +1,5 @@
+#!/bin/bash
+
 generator=$1
 mode=$2
 library=$3

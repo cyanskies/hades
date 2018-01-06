@@ -1,6 +1,12 @@
 #include "Hades/Logging.hpp"
 
+#include <chrono>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
+
+#include <time.h>
 
 namespace hades
 {
@@ -39,6 +45,15 @@ namespace hades
 
 	types::string time()
 	{
-		return "now";
+		auto t = std::chrono::system_clock::now();
+		auto ct = std::chrono::system_clock::to_time_t(t);
+		//Use the updated C version of localtime
+		//for better threading security
+		tm time;
+		localtime_s(&time, &ct);
+		//use stream to collect formatted time
+		std::stringstream ss;
+		ss << std::put_time(&time, "%T");
+		return ss.str();
 	}
 }//hades

@@ -41,24 +41,22 @@ namespace hades
 			types::string Function, File, Time;
 
 		public:
-			string(const types::string &message, const logger::LOG_VERBOSITY &verb = logger::NORMAL) : Message(message), Verb(verb)
+			explicit string(std::string_view message, const logger::LOG_VERBOSITY &verb = logger::NORMAL) : Message(message), Verb(verb)
 			{}
 
-			string(const types::string &message, int line, const char* function, const char* file, const types::string time, const logger::LOG_VERBOSITY &verb = logger::NORMAL)
+			string(std::string_view message, int line, std::string_view function, std::string_view file, std::string_view time, const logger::LOG_VERBOSITY &verb = logger::NORMAL)
 				: Message(message), Verb(verb), Line(line), Function(function), Time(time)
 			{}
 
 			const types::string Text() const { return Message; }
 			const logger::LOG_VERBOSITY Verbosity() const { return Verb; }
 
-			operator types::string() const { return "[" + Time + "]: " + File + Function + std::to_string(Line) + "\n" + Message; }
+			operator types::string() const { return "[" + Time + "]: " + File + Function + to_string(Line) + "\n" + Message; }
 		};
 
 		extern logger *log;
 
 		void echo(const string&);
-
-
 
 		console::output_buffer new_output(console::logger::LOG_VERBOSITY maxVerbosity = console::logger::LOG_VERBOSITY::NORMAL);
 		console::output_buffer output(console::logger::LOG_VERBOSITY maxVerbosity = console::logger::LOG_VERBOSITY::NORMAL);

@@ -56,7 +56,8 @@ namespace hades
 
 		virtual ~Console() {}
 
-		bool registerFunction(const std::string &identifier, Console_Function func, bool replace) override;
+		bool registerFunction(std::string_view identifier, Console_Function func, bool replace) override;
+		void eraseFunction(std::string_view identifier) override;
 
 		template<class T>
 		bool set(std::string_view identifier, const T &value);
@@ -74,11 +75,11 @@ namespace hades
 		console::property_bool getBool(std::string_view) override;
 		console::property_str getString(std::string_view) override;
 
-		bool runCommand(const std::string &command) override;
+		bool runCommand(std::string_view command) override;
 
 		std::vector<types::string> getCommandHistory() const override;
 
-		void echo(const types::string &message, const Console_String_Verbosity verbosity = NORMAL);
+		void echo(std::string_view message, Console_String_Verbosity verbosity = NORMAL);
 		void echo(const Console_String &message) override;
 
 		bool exists(const std::string &command) const;
@@ -90,17 +91,18 @@ namespace hades
 	protected:
 		//returns false if var was not found; true if out contains the requested value
 		bool GetValue(std::string_view var, std::shared_ptr<detail::Property_Base> &out) const;
-		bool SetVariable(const std::string &identifier, const std::string &value); //for unknown types stored as string, passed in by RunCommand
-		void EchoVariable(const std::string &identifier);
-		void DisplayVariables();
-		void DisplayFunctions();
+		//for unknown types stored as string, passed in by RunCommand
+		bool SetVariable(std::string_view identifier, const std::string &value); 
+		void EchoVariable(std::string_view identifier);
+		void DisplayVariables(std::string_view arg);
+		void DisplayFunctions(std::string_view arg);
 
 	private:
 		mutable std::mutex _consoleVariableMutex;
 		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
-		mutable std::mutex _histoyMutex;
-		std::map<std::string, Console_Function> _consoleFunctions;
+		mutable std::mutex _historyMutex;
+		std::map<types::string, Console_Function> _consoleFunctions;
 		std::map<types::string, std::shared_ptr<detail::Property_Base> > TypeMap;
 		std::vector<Console_String> TextBuffer;
 		std::vector<types::string> _commandHistory;

@@ -46,6 +46,7 @@ namespace hades {
 		}
 
 		// type conversion
+		// TODO: remove all but the specialisations needed by console
 		template<>
 		signed char stov<signed char>(std::string value);
 		template<>

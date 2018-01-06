@@ -7,7 +7,7 @@
 #include "Hades/Types.hpp"
 
 // system provides support for running command line's into the engines console
-// also supports regestering global functions for more complicated commands.
+// also supports registering global functions for more complicated commands.
 
 namespace hades
 {
@@ -22,10 +22,12 @@ namespace hades
 
 			//registers a function with the provided name, if replace = true, then any function with the same name will be replaced with this one
 			// note: this should not overwrite properties with the same name
-			virtual bool registerFunction(const types::string &identifier, function func, bool replace) = 0;
+			virtual bool registerFunction(std::string_view, function func, bool replace) = 0;
+			//removes a function with the provided name
+			virtual void eraseFunction(std::string_view) = 0;
 
 			//returns true if the command was successful
-			virtual bool runCommand(const types::string &command) = 0;
+			virtual bool runCommand(std::string_view) = 0;
 
 			//returns the history of unique commands
 			//newest commands are at the back of the vector
@@ -35,11 +37,10 @@ namespace hades
 
 		extern system *system_object;
 
-		bool registerFunction(const types::string &identifier, function func, bool replace = false);
-
-		bool runCommand(const types::string &command);
-
-		std::vector<types::string> getCommandHistory();
+		bool RegisterFunction(std::string_view, function func, bool replace = false);
+		void EraseFunction(std::string_view);
+		bool RunCommand(std::string_view);
+		std::vector<types::string> GetCommandHistory();
 	}
 }//hades
 

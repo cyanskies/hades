@@ -187,7 +187,7 @@ namespace hades
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
 		for (auto &c : commands)
-			console::runCommand(c);
+			console::RunCommand(c);
 
 		//create  the normal window
 		if (!_console.runCommand("vid_reinit"))

@@ -6,7 +6,7 @@ namespace hades
 	{
 		system* system_object = nullptr;
 
-		bool registerFunction(const types::string &identifier, function func, bool replace) 
+		bool RegisterFunction(std::string_view identifier, function func, bool replace)
 		{
 			if(system_object)
 				return system_object->registerFunction(identifier, func, replace);
@@ -14,7 +14,13 @@ namespace hades
 			return false;
 		};
 
-		bool runCommand(const types::string &command)
+		void EraseFunction(std::string_view identifier)
+		{
+			if (system_object)
+				system_object->eraseFunction(identifier);
+		}
+
+		bool RunCommand(std::string_view command)
 		{
 			if(system_object)
 				return system_object->runCommand(command);
@@ -22,7 +28,7 @@ namespace hades
 			return false;
 		}
 
-		std::vector<types::string> getCommandHistory()
+		std::vector<types::string> GetCommandHistory()
 		{
 			if (system_object)
 				return system_object->getCommandHistory();

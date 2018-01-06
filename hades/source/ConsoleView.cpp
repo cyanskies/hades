@@ -81,7 +81,7 @@ namespace hades
 
 	void ConsoleView::prev()
 	{
-		auto prev = console::getCommandHistory();
+		auto prev = console::GetCommandHistory();
 
 		if (prev.empty())
 			return;
@@ -97,7 +97,7 @@ namespace hades
 
 	void ConsoleView::next()
 	{
-		auto prev = console::getCommandHistory();
+		auto prev = console::GetCommandHistory();
 
 		if (prev.empty() || _input.empty())
 			return;
@@ -113,7 +113,7 @@ namespace hades
 
 	void ConsoleView::sendCommand()
 	{
-		console::runCommand(_input);
+		console::RunCommand(_input);
 		_input.clear();
 	}
 

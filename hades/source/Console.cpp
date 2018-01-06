@@ -24,7 +24,7 @@ namespace hades
 		return true;
 	}
 
-	bool Console::SetVariable(const std::string &identifier, const std::string &value)
+	bool Console::SetVariable(std::string_view identifier, const std::string &value)
 	{
 		//ditermine type;
 		//first check if indentifer exists, and use it's type;
@@ -41,52 +41,51 @@ namespace hades
 			}
 			else
 			{
-				using namespace types;
-
 				try
 				{
 					//float
 					if (var->type == typeid(float))
-						ret = set<float>(identifier, stov<float>(value));
+						ret = set<float>(identifier, types::stov<float>(value));
 					//bool
 					else if (var->type == typeid(bool))
-						ret = set<bool>(identifier, stov<bool>(value));
+						ret = set<bool>(identifier, types::stov<bool>(value));
 					//string
 					else if (var->type == typeid(types::string))
 						ret = set<types::string>(identifier, value);
-					//integers
+					//integer
 					else if (var->type == typeid(types::int32))
-						ret = set<types::int32>(identifier, stov<types::int32>(value));
+						ret = set<types::int32>(identifier, types::stov<types::int32>(value));
 
-					echo(identifier + " " + value);
+					echo(to_string(identifier) + " " + value);
 				}
-				catch (std::invalid_argument)
+				catch (std::invalid_argument&)
 				{
-					echo("Unsupported type for variable: " + identifier, ERROR);
+					echo("Unsupported type for variable: " + to_string(identifier), ERROR);
 				}
-				catch (std::out_of_range)
+				catch (std::out_of_range&)
 				{
-					echo("Value is out of range for variable: " + identifier, ERROR);
+					echo("Value is out of range for variable: " + to_string(identifier), ERROR);
 				}
 			}
 		}
 		else
-			echo("Attemped to set undefined variable: " + identifier, WARNING);
+			echo("Attemped to set undefined variable: " + to_string(identifier), WARNING);
 		return ret;
 	}
 
-	void Console::EchoVariable(const std::string &identifier)
+	void Console::EchoVariable(std::string_view identifier)
 	{
 		std::shared_ptr<detail::Property_Base> var;
 
 		if(GetValue(identifier, var))
 		{
-			echo(identifier + " " + var->to_string());
+			echo(to_string(identifier) + " " + var->to_string());
 		}
 	}
 
-	void Console::DisplayVariables()
+	void Console::DisplayVariables(std::string_view arg)
 	{
+		//TODO: only list vars starting with arg
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
 		std::vector<types::string> output;
@@ -98,8 +97,9 @@ namespace hades
 			echo(s);
 	}
 
-	void Console::DisplayFunctions()
+	void Console::DisplayFunctions(std::string_view arg)
 	{
+		//TODO: only list funcs starting with arg
 		std::vector<std::string> list;
 
 		{
@@ -119,7 +119,7 @@ namespace hades
 			echo(s);
 	}
 
-	bool Console::registerFunction(const std::string &identifier, std::function<bool(std::string)> func, bool replace)
+	bool Console::registerFunction(std::string_view identifier, std::function<bool(std::string)> func, bool replace)
 	{
 		//test to see the name hasn't been used for a variable
 		{
@@ -127,24 +127,32 @@ namespace hades
 			std::shared_ptr<detail::Property_Base> var;
 			if (GetValue(identifier, var))
 			{
-				echo("Attempted definition of function: " + identifier + ", but name is already used for a variable.", ERROR);
+				echo("Attempted definition of function: " + to_string(identifier) + ", but name is already used for a variable.", ERROR);
 				return false;
 			}
 		}
 
+		auto id_str = to_string(identifier);
+
 		std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		
-		auto funcIter = _consoleFunctions.find(identifier);
+		auto funcIter = _consoleFunctions.find(id_str);
 
 		if (funcIter != _consoleFunctions.end() && !replace)
 		{
-			echo("Attempted multiple definitions of function: " + identifier, ERROR);
+			echo("Attempted multiple definitions of function: " + id_str, ERROR);
 			return false;
 		}
 
-		_consoleFunctions[identifier] = func;
+		_consoleFunctions[id_str] = func;
 
 		return true;
+	}
+
+	void Console::eraseFunction(std::string_view identifier)
+	{
+		std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		_consoleFunctions.erase(to_string(identifier));
 	}
 
 	void Console::set(std::string_view name, types::int32 val)
@@ -204,41 +212,40 @@ namespace hades
 		return nullptr;
 	}
 
-	bool Console::runCommand(const std::string &command)
+	bool Console::runCommand(std::string_view command)
 	{
 		//add to command history
 		{
-			std::lock_guard<std::mutex> lock(_histoyMutex);
+			std::lock_guard<std::mutex> lock(_historyMutex);
 			auto entry = std::find(_commandHistory.begin(), _commandHistory.end(), command);
 
 			if (entry != _commandHistory.end())
 				_commandHistory.erase(entry);
 
-			_commandHistory.push_back(command);
+			_commandHistory.push_back(to_string(command));
 		}
 
-		std::string identifier, value;
-		int pos = command.find_first_of(" ");
+		std::string_view identifier, value;
 
-		if (pos == std::string::npos)
+		if (int pos = command.find_first_of(" "); pos == std::string_view::npos)
 		{
 			identifier = command;
 			value = "";
 		}
 		else
 		{
-			identifier = std::string(command, 0, pos);
-			value = std::string(command, ++pos, command.length() - pos);
+			identifier = command.substr(0, pos);
+			value = command.substr(pos + 1, command.length() - pos);
 		}
 
-		if (command == "vars")
+		if (identifier == "vars")
 		{
-			DisplayVariables();
+			DisplayVariables(value);
 			return true;
 		}
-		else if (command == "funcs")
+		else if (identifier == "funcs")
 		{
-			DisplayFunctions();
+			DisplayFunctions(value);
 			return true;
 		}
 
@@ -247,7 +254,7 @@ namespace hades
 
 		{
 			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			auto funcIter = _consoleFunctions.find(identifier);
+			auto funcIter = _consoleFunctions.find(to_string(identifier));
 
 			if (funcIter != _consoleFunctions.end())
 			{
@@ -256,24 +263,24 @@ namespace hades
 			}		
 		}
 
-		if (isFunction)
+		if (auto str_value = to_string(value); isFunction)
 		{
 			echo(command);
-			return function(value);
+			return function(str_value);
 		}
 		else
-			SetVariable(identifier, value);
+			SetVariable(identifier, str_value);
 
 		return true;
 	}
 
 	std::vector<types::string> Console::getCommandHistory() const
 	{
-		std::lock_guard<std::mutex> lock(_histoyMutex);
+		std::lock_guard<std::mutex> lock(_historyMutex);
 		return _commandHistory;
 	}
 
-	void Console::echo(const std::string &message, const Console_String_Verbosity verbosity)
+	void Console::echo(std::string_view message, Console_String_Verbosity verbosity)
 	{
 		echo(Console_String(message, verbosity));
 	}
@@ -315,10 +322,7 @@ namespace hades
 			TypeMap.erase(command);
 		}
 
-		{
-			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			_consoleFunctions.erase(command);
-		}
+		eraseFunction(command);
 	}
 
 	ConsoleStringBuffer Console::get_new_output(Console_String_Verbosity maxVerbosity)

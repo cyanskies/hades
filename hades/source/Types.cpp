@@ -99,7 +99,7 @@ namespace hades {
 		template<>
 		bool stov<bool>(std::string value)
 		{
-			return value != "0";
+			return value != "0" && value != "false";
 		}
 	}
 

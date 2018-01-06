@@ -15,6 +15,7 @@ namespace hades
 {
 	namespace console
 	{
+		//logic error, requesting the wrong type represents a code bug
 		class property_wrong_type : std::logic_error
 		{
 		public:

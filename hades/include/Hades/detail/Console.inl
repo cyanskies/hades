@@ -41,11 +41,26 @@ namespace hades
 	}
 
 	template<class T>
+	struct valid_console_type : public std::false_type {};
+
+	template<>
+	struct valid_console_type<types::int32> : public std::true_type {};
+
+	template<>
+	struct valid_console_type<float> : public std::true_type {};
+
+	template<>
+	struct valid_console_type<bool> : public std::true_type {};
+
+	template<>
+	struct valid_console_type<types::string> : public std::true_type {};
+
+	template<class T>
 	bool Console::set(std::string_view identifier, const T &value)
 	{
 		//we can only store integral types in std::atomic
 		//TODO: limit console property types to (int32, float, bool and string)
-		static_assert(types::hades_type<T>(), "Attempting to store an illegal type in the console.");
+		static_assert(valid_console_type<T>::value, "Attempting to store an illegal type in the console.");
 
 		std::shared_ptr<detail::Property_Base> out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
@@ -71,7 +86,7 @@ namespace hades
 	template<class T>
 	ConsoleVariable<T> Console::getValue(std::string_view var)
 	{
-		//TODO: static_assert value console types
+		static_assert(valid_console_type<T>::value, "Attempting to get an illegal type from the console.");
 
 		std::shared_ptr<detail::Property_Base > out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);

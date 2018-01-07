@@ -3,6 +3,7 @@
 #include <shared_mutex>
 
 #include "Hades/data_manager.hpp"
+#include "Hades/exceptions.hpp"
 
 namespace hades
 {
@@ -23,7 +24,9 @@ namespace hades
 		
 			data_manager_exclusive GetDataManagerPtrExclusive()
 			{
-				assert(Ptr);
+				if (Ptr == nullptr)
+					throw provider_unavailable("data_manager provider unavailable");
+
 				lock_t lock(Mutex);
 				return std::make_tuple(Ptr, std::move(lock));
 			}
@@ -32,7 +35,9 @@ namespace hades
 
 			data_manager_shared GetDataManagerPtrShared()
 			{
-				assert(Ptr);
+				if (Ptr == nullptr)
+					throw provider_unavailable("data_manager provider unavailable");
+
 				shared_lock_t lock(Mutex);
 				return std::make_tuple(Ptr, std::move(lock));
 			}
@@ -59,7 +64,7 @@ namespace hades
 			return data->as_string(id);
 		}
 
-		UniqueId GetUid(const types::string &name)
+		UniqueId GetUid(std::string_view name)
 		{
 			data_manager* data = nullptr;
 			lock_t lock;

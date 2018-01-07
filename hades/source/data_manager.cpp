@@ -194,9 +194,9 @@ namespace hades
 		}
 
 		//convert string to uid
-		UniqueId data_manager::getUid(std::string name)
+		UniqueId data_manager::getUid(std::string_view name)
 		{
-			return _ids[name];
+			return _ids[types::string(name)];
 		}
 
 		types::string data_manager::as_string(UniqueId uid) const

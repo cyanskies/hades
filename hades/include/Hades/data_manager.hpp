@@ -87,14 +87,20 @@ namespace hades
 
 			//returns a non-owning ptr to the resource
 			//will load the resource if it has never been loaded before
+			//throws: 
+			//    resource_null
+			//    resource_wrong_type
 			template<class T>
 			T* get(UniqueId);
 
 			using Mod = resources::mod;
+			//throws: 
+			//    resource_null
+			//    resource_wrong_type
 			const Mod* getMod(UniqueId);
 
 			//convert string to uid
-			UniqueId getUid(std::string name);
+			UniqueId getUid(std::string_view name);
 			types::string as_string(UniqueId) const;
 
 		private:

@@ -41,7 +41,7 @@ namespace hades
 
 		//returns the uid associated with this name
 		//or associates the name with a new id if it isn't already
-		UniqueId GetUid(const types::string &name);
+		UniqueId GetUid(std::string_view name);
 	}
 }//hades
 

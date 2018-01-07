@@ -7,7 +7,9 @@ namespace hades
 		template<class T>
 		const T* Get(UniqueId id)
 		{
-			auto [data, lock] = detail::GetDataManagerPtrExclusive();
+			data_manager* data = nullptr;
+			std::unique_lock<std::shared_mutex> lock;
+			std::tie(data, lock) = detail::GetDataManagerPtrExclusive();
 			return data->get<T>(id);
 		}
 	}

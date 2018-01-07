@@ -26,7 +26,7 @@ namespace hades
 
 	std::unique_ptr<sf::Image> ImgLoader(const sf::String& name)
 	{
-		auto id = data::GetUid(name);
+		auto id = data::GetUid(static_cast<std::string>(name));
 		assert(data::Exists(id));
 
 		//TODO:

@@ -163,14 +163,20 @@ namespace hades
 		LOG("zlib " + types::string(ZLIB_VERSION));
 		//yaml-cpp doesn't currently have a version macro
 		LOG("yaml-cpp 0.5.3"); //TODO: base this off the version compiled
-		//add default game
-		commands.push_back("game " + defaultGame());
+		
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;
-		LoadCommand(commands, "game", [&data](std::string command) {
+		auto load_game = [&data](std::string command) {
 			data.load_game("./" + command);
-		});
+		};
+
+		if (!LoadCommand(commands, "game", load_game))
+		{
+			//add default game if one isnt specified
+			commands.push_back("game " + defaultGame());
+			LoadCommand(commands, "game", load_game);
+		}
 
 		LoadCommand(commands, "mod", [&data](std::string command) {
 			data.add_mod("./" + command);

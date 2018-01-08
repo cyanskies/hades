@@ -46,6 +46,28 @@ namespace hades {
 			*(result++) = item;
 		}
 	}
+
+	template <typename Out>
+	void split(std::string_view sv, char delim, Out result) {
+		while (!sv.empty())
+		{
+			std::string_view output;
+			auto delim_pos = sv.find_first_of(delim);
+			if (delim_pos == std::string_view::npos)
+			{
+				output = sv;
+				sv = std::string_view();
+			}
+			else
+			{
+				//grab the chunk before the delim
+				output = sv.substr(0, delim_pos);
+				sv = sv.substr(delim_pos + 1, sv.length() - delim_pos);
+			}
+
+			*(result++) = output;
+		}
+	}
 }
 
 #endif // !HADES_UTILITY_HPP

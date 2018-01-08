@@ -102,8 +102,10 @@ namespace hades
 		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
 		mutable std::mutex _historyMutex;
-		std::map<types::string, Console_Function> _consoleFunctions;
-		std::map<types::string, std::shared_ptr<detail::Property_Base> > TypeMap;
+		using ConsoleFunctionMap = std::map<types::string, Console_Function>;
+		ConsoleFunctionMap _consoleFunctions;
+		using ConsoleVariableMap = std::map<types::string, std::shared_ptr<detail::Property_Base> >;
+		ConsoleVariableMap TypeMap;
 		std::vector<Console_String> TextBuffer;
 		std::vector<types::string> _commandHistory;
 		int recentOutputPos;

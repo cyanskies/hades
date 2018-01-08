@@ -9,6 +9,8 @@
 #include <iostream>
 #endif
 
+#include "Hades/Utility.hpp"
+
 //==============
 // Console
 //==============
@@ -85,12 +87,34 @@ namespace hades
 
 	void Console::DisplayVariables(std::string_view arg)
 	{
-		//TODO: only list vars starting with arg
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
+		std::vector<std::string_view> args;
+		split(arg, ' ', std::back_inserter(args));
+		
 		std::vector<types::string> output;
-		for (auto &t : TypeMap)
-			output.push_back(t.first + " " + t.second->to_string());
+
+		auto insert = [&output](const ConsoleVariableMap::value_type &v) {
+			output.push_back(v.first + " " + v.second->to_string());
+		};
+
+		for (auto &var : TypeMap)
+		{
+			if (args.empty())
+				insert(var);
+			else
+			{
+				for (auto arg : args)
+				{
+					if (var.first.find(arg) 
+						!= ConsoleVariableMap::value_type::first_type::npos)
+					{
+						insert(var);
+						break;
+					}
+				}
+			}
+		}
 
 		std::sort(output.begin(), output.end());
 		for (auto &s : output)
@@ -99,23 +123,37 @@ namespace hades
 
 	void Console::DisplayFunctions(std::string_view arg)
 	{
-		//TODO: only list funcs starting with arg
-		std::vector<std::string> list;
+		//split arg if it contains spaces
+		std::vector<std::string_view> args;
+		split(arg, ' ', std::back_inserter(args));
 
+		std::vector<types::string> funcs;
 		{
 			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-
-			list.reserve(_consoleFunctions.size()+ 2);
-
-			for (auto &f : _consoleFunctions)
-				list.push_back(f.first);
+			std::transform(std::begin(_consoleFunctions), std::end(_consoleFunctions), std::back_inserter(funcs),
+				[](const ConsoleFunctionMap::value_type &f) { return f.first; });
 		}
 
-		list.push_back("vars");
-		list.push_back("funcs");
-		std::sort(list.begin(), list.end());
+		funcs.push_back("vars");
+		funcs.push_back("funcs");
 
-		for (auto &s : list)
+		//erase everthing we won't be listing
+		funcs.erase(std::remove_if(std::begin(funcs), std::end(funcs),
+			[&args](const types::string &f)->bool {
+			if (args.empty()) return false;
+
+			for (auto arg : args)
+			{
+				if (f.find(arg) != types::string::npos)
+					return false;
+			}
+
+			return true;
+		}), std::end(funcs));
+
+		std::sort(std::begin(funcs), std::end(funcs));
+
+		for (auto &s : funcs)
 			echo(s);
 	}
 

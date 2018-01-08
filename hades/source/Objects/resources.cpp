@@ -23,164 +23,167 @@ namespace objects
 		if (!layout)
 			return;
 
-		layout->value =
-			R"(MenuBar.MenuBar {
-					MinimumSubMenuWidth = 125;
-					Size = (&.size, 20);
-					TextSize = 13;
+        layout->value =
+            R"(MenuBar.MenuBar {
+                    MinimumSubMenuWidth = 125;
+                    Size = (&.size, 20);
+                    TextSize = 13;
 
-					Menu {
-						Items = ["New...", "Load...", "Save", "Save As...", "Exit"];
-						Name = "File";
-					}
+                    Menu {
+                        Items = ["New...", "Load...", "Save", "Save As...", "Exit"];
+                        Name = "File";
+                    }
 
-					Menu {
-						Items = ["Reset Gui"];
-						Name = "View";
-					}
-				}
+                    Menu {
+                        Items = ["Reset Gui"];
+                        Name = "View";
+                    }
+                }
 
-				Panel.ToolBar {
-					Position = (0, "MenuBar.y + MenuBar.h");
-					Size = (&.size, 40);
-					SimpleHorizontalLayout.toolbar-container {
-					}
-				}
+                Panel.ToolBar {
+                    Position = (0, "MenuBar.y + MenuBar.h");
+                    Size = (&.size, 40);
+                    SimpleHorizontalLayout.toolbar-container {
+                    }
+                }
 
-				ChildWindow {
-					Position = (0, "ToolBar.y + ToolBar.h");
-					Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h - 20");
-					Visible = true;
-					Resizable = false;
-					Title = "ToolBox";
-					TitleButtons = None;
+                ChildWindow {
+                    Position = (0, "ToolBar.y + ToolBar.h");
+                    Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h - 20");
+                    Visible = true;
+                    Resizable = false;
+                    Title = "ToolBox";
+                    TitleButtons = None;
 
-					SimpleVerticalLayout.object-selector {
-					}
-				}
+                    SimpleVerticalLayout.object-selector {
+                    }
+                }
 
-				ChildWindow."load_dialog" {
-					Position = (200, 200);
-					Title = "Load...";
-					Label."load_mod_label" {
-						Position = (5, 5);
-						Text = "Mod:";
-					}
+                ChildWindow."load_dialog" {
+                    Position = (200, 200);
+                    Title = "Load...";
+                    TitleButtons = Minimize;
+                    Label."load_mod_label" {
+                        Position = (5, 5);
+                        Text = "Mod:";
+                    }
 
-					EditBox."load_mod" {
-						Position = (5, "load_mod_label.y + load_mod_label.h + 5");
-						Size = (100, 30);
-						DefaultText = "./";
-					}
+                    EditBox."load_mod" {
+                        Position = (5, "load_mod_label.y + load_mod_label.h + 5");
+                        Size = (100, 30);
+                        DefaultText = "./";
+                    }
 
-					EditBox."load_filename" {
-						Position = ("load_mod.x + load_mod.w + 10", "load_mod.y");
-						Size = (100, 30);
-						DefaultText = "new.lvl";
-					}
+                    EditBox."load_filename" {
+                        Position = ("load_mod.x + load_mod.w + 10", "load_mod.y");
+                        Size = (100, 30);
+                        DefaultText = "new.lvl";
+                    }
 
-					Label {
-						Position = ("load_filename.x", 5);
-						Text = "Filename:";
-					}
+                    Label {
+                        Position = ("load_filename.x", 5);
+                        Text = "Filename:";
+                    }
 
-					Button."load_button" {
-						Position = ("load_filename.x + load_filename.w + 10" , "load_mod.y");
-						Text = "Load";
-					}
+                    Button."load_button" {
+                        Position = ("load_filename.x + load_filename.w + 10" , "load_mod.y");
+                        Text = "Load";
+                    }
 
-					Size = ("load_button.x + load_button.w + 5", "load_filename.y + load_filename.h + 5");
-				}
+                    Size = ("load_button.x + load_button.w + 5", "load_filename.y + load_filename.h + 5");
+                }
 
-				ChildWindow."save_dialog" {
-					Position = (200, 200);
-					Title = "Save...";
-					Label."save_mod_label" {
-						Position = (5, 5);
-						Text = "Mod:";
-					}
+                ChildWindow."save_dialog" {
+                    Position = (200, 200);
+                    Title = "Save...";
+                    TitleButtons = Minimize;
+                    Label."save_mod_label" {
+                        Position = (5, 5);
+                        Text = "Mod:";
+                    }
 
-					EditBox."save_mod" {
-						Position = (5, "save_mod_label.y + save_mod_label.h + 5");
-						Size = (100, 30);
-						DefaultText = "./";
-					}
+                    EditBox."save_mod" {
+                        Position = (5, "save_mod_label.y + save_mod_label.h + 5");
+                        Size = (100, 30);
+                        DefaultText = "./";
+                    }
 
-					EditBox."save_filename" {
-						Position = ("save_mod.x + save_mod.w + 10", "save_mod.y");
-						Size = (100, 30);
-						DefaultText = "new.lvl";
-					}
+                    EditBox."save_filename" {
+                        Position = ("save_mod.x + save_mod.w + 10", "save_mod.y");
+                        Size = (100, 30);
+                        DefaultText = "new.lvl";
+                    }
 
-					Label {
-						Position = ("save_filename.x", 5);
-						Text = "Filename:";
-					}
+                    Label {
+                        Position = ("save_filename.x", 5);
+                        Text = "Filename:";
+                    }
 
-					Button."save_button" {
-						Position = ("save_filename.x + save_filename.w + 10" , "save_mod.y");
-						Text = "Save As";
-					}
+                    Button."save_button" {
+                        Position = ("save_filename.x + save_filename.w + 10" , "save_mod.y");
+                        Text = "Save As";
+                    }
 
-					Size = ("save_button.x + save_button.w + 5", "save_filename.y + save_filename.h + 5");
-				}
+                    Size = ("save_button.x + save_button.w + 5", "save_filename.y + save_filename.h + 5");
+                }
 
-				ChildWindow."new_dialog" {
-					Position = (150, 150);
-					Title = "New...";
+                ChildWindow."new_dialog" {
+                    Position = (150, 150);
+                    Title = "New...";
+                    TitleButtons = Minimize;
 
-					Label."new_mod_label" {
-						Text = "Mod:";
-						Position = (5, 5);
-					}
+                    Label."new_mod_label" {
+                        Text = "Mod:";
+                        Position = (5, 5);
+                    }
 
-					EditBox."new_mod" {
-						Position = (5, "new_mod_label.x + new_mod_label.h + 10");
-						Size = (100, 30);
-						DefaultText = "./";
+                    EditBox."new_mod" {
+                        Position = (5, "new_mod_label.x + new_mod_label.h + 10");
+                        Size = (100, 30);
+                        DefaultText = "./";
                 
-					}
+                    }
 
-					EditBox."new_filename" {
-						Position = ("new_mod.x + new_mod.w + 10", "new_mod.y");
-						Size = (100, 30);
-						DefaultText = "new.lvl";
-					}
+                    EditBox."new_filename" {
+                        Position = ("new_mod.x + new_mod.w + 10", "new_mod.y");
+                        Size = (100, 30);
+                        DefaultText = "new.lvl";
+                    }
 
-					Label {
-						Position = ("new_filename.x", "new_mod_label.y");
-						Text = "Filename:";
-					}
+                    Label {
+                        Position = ("new_filename.x", "new_mod_label.y");
+                        Text = "Filename:";
+                    }
 
-					Label."new_sizex_label" {
-						Position = ("new_mod_label.x", "new_filename.y + new_filename.h + 10");
-						Text = "Width:";
-					}
+                    Label."new_sizex_label" {
+                        Position = ("new_mod_label.x", "new_filename.y + new_filename.h + 10");
+                        Text = "Width:";
+                    }
 
-					EditBox."new_sizex" {
-						Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
-						Size = (50, 30);
-						DefaultText = "200";
-					}
+                    EditBox."new_sizex" {
+                        Position = ("new_sizex_label.x + new_sizex_label.w + 10", "new_sizex_label.y");
+                        Size = (50, 30);
+                        DefaultText = "200";
+                    }
 
-					Label."new_sizey_label" {
-						Position = ("new_sizex.x + new_sizex.w + 10", "new_sizex_label.y");
-						Text = "Height:";
-					}
+                    Label."new_sizey_label" {
+                        Position = ("new_sizex.x + new_sizex.w + 10", "new_sizex_label.y");
+                        Text = "Height:";
+                    }
 
-					EditBox."new_sizey" {
-						Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
-						Size = (50, 30);
-						DefaultText = "200";
-					}
+                    EditBox."new_sizey" {
+                        Position = ("new_sizey_label.x + new_sizey_label.w + 10", "new_sizey_label.y");
+                        Size = (50, 30);
+                        DefaultText = "200";
+                    }
 
-					Button."new_button" {
-						Position = ("new_filename.x + new_filename.w + 10", "new_filename.y");
-						Text = "Create";
-					}
+                    Button."new_button" {
+                        Position = ("new_filename.x + new_filename.w + 10", "new_filename.y");
+                        Text = "Create";
+                    }
 
-					Size = ("new_button.x + new_button.w + 5", "new_sizey.y + new_sizey.h + 5");
-				})";
+                    Size = ("new_button.x + new_button.w + 5", "new_sizey.y + new_sizey.h + 5");
+                })";
 	}
 
 	void DefineObjectConsoleVars()

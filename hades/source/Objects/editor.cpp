@@ -1,6 +1,7 @@
 #include "Objects/editor.hpp"
 
 #include "TGUI/Animation.hpp"
+#include "TGUI/Widgets/ChildWindow.hpp"
 #include "TGUI/Widgets/ComboBox.hpp"
 #include "TGUI/Widgets/MenuBar.hpp"
 #include "TGUI/Widgets/Button.hpp"
@@ -372,9 +373,12 @@ namespace objects
 		//===============
 		//FILE LOADING UI
 		//===============
-		auto load_dialog_container = _gui.get<tgui::Container>(dialog_names::load);
+		auto load_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::load);
 		//hide the container
 		load_dialog_container->hide();
+		load_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
+			w->hide();
+		});
 
 		//set the default name to be the currently loaded file
 		auto load_dialog_filename = load_dialog_container->get<tgui::EditBox>("load_filename");
@@ -406,9 +410,12 @@ namespace objects
 		//===============
 		//SAVE UI
 		//===============
-		auto save_dialog_container = _gui.get<tgui::Container>(dialog_names::save);
+		auto save_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::save);
 		//hide the container
 		save_dialog_container->hide();
+		save_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
+			w->hide();
+		});
 
 		//set the default name to be the currently saved file
 		auto save_dialog_filename = save_dialog_container->get<tgui::EditBox>("save_filename");
@@ -440,9 +447,12 @@ namespace objects
 		//==========
 		//New map UI
 		//==========
-		auto new_dialog_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
+		auto new_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::new_dialog);
 		//hide the container
 		new_dialog_container->hide();
+		new_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
+			w->hide();
+		});
 
 		//rig up the save button
 		auto new_dialog_button = new_dialog_container->get<tgui::Button>(new_dialog::button);

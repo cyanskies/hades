@@ -86,13 +86,13 @@ namespace hades
 		if (prev.empty())
 			return;
 
-		auto pos = std::find(prev.begin(), prev.end(), _input);
+		auto pos = std::find(prev.begin(), prev.end(), Command(_input));
 		if (pos == prev.end())
-			_input = prev.back();
+			_input = to_string(prev.back());
 		else if (pos != prev.begin())
-			_input = *--pos;
+			_input = to_string(*--pos);
 		else
-			_input = *pos;
+			_input = to_string(*pos);
 	}
 
 	void ConsoleView::next()
@@ -102,18 +102,18 @@ namespace hades
 		if (prev.empty() || _input.empty())
 			return;
 
-		auto pos = std::find(prev.begin(), prev.end(), _input);
+		auto pos = std::find(prev.begin(), prev.end(), Command(_input));
 		if (pos == prev.end())
-			_input = prev.front();
+			_input = to_string(prev.front());
 		else if (pos != --prev.end())
-			_input = *++pos;
+			_input = to_string(*++pos);
 		else
-			_input = *pos;
+			_input = to_string(*pos);
 	}
 
 	void ConsoleView::sendCommand()
 	{
-		console::RunCommand(_input);
+		console::RunCommand(Command(_input));
 		_input.clear();
 	}
 

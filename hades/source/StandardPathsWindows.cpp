@@ -58,6 +58,6 @@ namespace hades
 		if (*portable)
 			return "";
 		else
-			return getWindowsDirectory(FOLDERID_Documents) + "/" + defaultGame() + "/";
+			return getWindowsDirectory(FOLDERID_Documents) + "/" + to_string(defaultGame()) + "/";
 	}
 }

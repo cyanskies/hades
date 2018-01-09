@@ -10,7 +10,26 @@
 
 namespace hades
 {
-	typedef std::vector<types::string> CommandList;
+	using ArgumentList = std::vector<std::string_view>;
+
+	struct Command
+	{
+		Command() {}
+		Command(std::string_view sv);
+		Command(std::string_view command, ArgumentList args) : command(command),
+			arguments(args)
+		{}
+
+		std::string_view command;
+		ArgumentList arguments;
+	};
+
+	bool operator<(const Command& lhs, const Command &rhs);
+	bool operator==(const Command& lhs, const Command &rhs);
+
+	types::string to_string(const Command&);
+
+	typedef std::vector<Command> CommandList;
 }
 
 //handles application startup and command line parameters
@@ -22,7 +41,7 @@ int hades_main(int argc, char* argv[]);
 /// Allows the app to register its default game archive.
 /// eg. return "hades";, will load hades.zip
 /////////////////////////////////////
-hades::types::string defaultGame();
+std::string_view defaultGame();
 
 /////////////////////////////////////
 /// Called before HadesMain defaultBindings

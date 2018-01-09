@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 	return hades_main(argc, argv);
 }
 
-std::string defaultGame()
+std::string_view defaultGame()
 {
 	return "objects";
 }

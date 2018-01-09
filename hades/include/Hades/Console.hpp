@@ -50,6 +50,7 @@ namespace hades
 	{
 	public:
 		using Console_Function = console::function;
+		using Console_Function_No_Arg = console::function_no_argument;
 		using Console_String_Verbosity = console::logger::LOG_VERBOSITY;
 		
 		Console() : recentOutputPos(0) {}
@@ -57,6 +58,7 @@ namespace hades
 		virtual ~Console() {}
 
 		bool registerFunction(std::string_view identifier, Console_Function func, bool replace) override;
+		bool registerFunction(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
 		void eraseFunction(std::string_view identifier) override;
 
 		template<class T>
@@ -75,9 +77,9 @@ namespace hades
 		console::property_bool getBool(std::string_view) override;
 		console::property_str getString(std::string_view) override;
 
-		bool runCommand(std::string_view command) override;
+		bool runCommand(const Command &command) override;
 
-		std::vector<types::string> getCommandHistory() const override;
+		CommandList getCommandHistory() const override;
 
 		void echo(std::string_view message, Console_String_Verbosity verbosity = NORMAL);
 		void echo(const Console_String &message) override;
@@ -94,8 +96,8 @@ namespace hades
 		//for unknown types stored as string, passed in by RunCommand
 		bool SetVariable(std::string_view identifier, const std::string &value); 
 		void EchoVariable(std::string_view identifier);
-		void DisplayVariables(std::string_view arg);
-		void DisplayFunctions(std::string_view arg);
+		void DisplayVariables(std::vector<std::string_view> args);
+		void DisplayFunctions(std::vector<std::string_view> args);
 
 	private:
 		mutable std::mutex _consoleVariableMutex;
@@ -107,7 +109,7 @@ namespace hades
 		using ConsoleVariableMap = std::map<types::string, std::shared_ptr<detail::Property_Base> >;
 		ConsoleVariableMap TypeMap;
 		std::vector<Console_String> TextBuffer;
-		std::vector<types::string> _commandHistory;
+		CommandList _commandHistory;
 		int recentOutputPos;
 	};
 

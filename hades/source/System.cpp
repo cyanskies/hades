@@ -20,7 +20,7 @@ namespace hades
 				system_object->eraseFunction(identifier);
 		}
 
-		bool RunCommand(std::string_view command)
+		bool RunCommand(const Command &command)
 		{
 			if(system_object)
 				return system_object->runCommand(command);
@@ -28,12 +28,12 @@ namespace hades
 			return false;
 		}
 
-		std::vector<types::string> GetCommandHistory()
+		CommandList GetCommandHistory()
 		{
 			if (system_object)
 				return system_object->getCommandHistory();
 
-			return std::vector<types::string>();
+			return CommandList();
 		}
 	}
 }//hades

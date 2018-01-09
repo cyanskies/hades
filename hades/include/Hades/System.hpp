@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 
+#include "Hades/Main.hpp"
 #include "Hades/Types.hpp"
 
 // system provides support for running command line's into the engines console
@@ -13,7 +14,8 @@ namespace hades
 {
 	namespace console
 	{
-		using function = std::function<bool(types::string)>;
+		using function_no_argument = std::function<bool(void)>;
+		using function = std::function<bool(const ArgumentList&)>;
 
 		class system
 		{
@@ -23,24 +25,25 @@ namespace hades
 			//registers a function with the provided name, if replace = true, then any function with the same name will be replaced with this one
 			// note: this should not overwrite properties with the same name
 			virtual bool registerFunction(std::string_view, function func, bool replace) = 0;
+			virtual bool registerFunction(std::string_view, function_no_argument func, bool replace) = 0;
 			//removes a function with the provided name
 			virtual void eraseFunction(std::string_view) = 0;
 
 			//returns true if the command was successful
-			virtual bool runCommand(std::string_view) = 0;
+			virtual bool runCommand(const Command&) = 0;
 
 			//returns the history of unique commands
 			//newest commands are at the back of the vector
 			//and the oldest at the front
-			virtual std::vector<types::string> getCommandHistory() const = 0;
+			virtual CommandList getCommandHistory() const = 0;
 		};
 
 		extern system *system_object;
 
 		bool RegisterFunction(std::string_view, function func, bool replace = false);
 		void EraseFunction(std::string_view);
-		bool RunCommand(std::string_view);
-		std::vector<types::string> GetCommandHistory();
+		bool RunCommand(const Command&);
+		CommandList GetCommandHistory();
 	}
 }//hades
 

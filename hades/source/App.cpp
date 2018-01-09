@@ -56,7 +56,7 @@ namespace hades
 
 	void registerVidVariables(Console *console)
 	{
-		std::function<bool(std::string)> vid_default = [console] (std::string)->bool {
+		auto vid_default = [console] ()->bool {
 			//window
 			console->set("vid_fullscreen", false);
 			//resolution
@@ -70,7 +70,7 @@ namespace hades
 		};
 
 		//set the default now
-		vid_default("");
+		vid_default();
 
 		//add a command so that this function can be called again
 		console->registerFunction("vid_default", vid_default, true);
@@ -121,26 +121,20 @@ namespace hades
 	}
 
 	//calls job on any command that contains command
-	bool LoadCommand(CommandList &commands, types::string command, std::function<void(CommandList::value_type)> job)
+	bool LoadCommand(CommandList &commands, std::string_view command, console::function job)
 	{
-		//FIXME: why is this called bit?
-		auto bit = commands.begin();
+		auto com_iter = commands.begin();
 		bool ret = false;
-		while (bit != std::end(commands))
+		while (com_iter != std::end(commands))
 		{
-			auto com = bit->substr(0, command.length());
-
-			if (com == command)
+			if (com_iter->command == command)
 			{
-				std::string params;
-				//replace with std::move
-				std::copy(bit->begin() + command.length() + 1, bit->end(), std::back_inserter(params));
-				job(params);
-				bit = commands.erase(bit);
+				job(com_iter->arguments);
+				com_iter = commands.erase(com_iter);
 				ret = true;
 			}
 			else
-				++bit;
+				++com_iter;
 		}
 
 		return ret;
@@ -167,19 +161,38 @@ namespace hades
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;
-		auto load_game = [&data](std::string command) {
-			data.load_game("./" + command);
+		auto load_game = [&data](const ArgumentList &command) {
+			if (command.size() != 1)
+			{
+				LOGERROR("game command expects a single argument");
+				return false;
+			}
+
+			data.load_game("./" + to_string(command.front()));
+
+			return true;
 		};
 
 		if (!LoadCommand(commands, "game", load_game))
 		{
 			//add default game if one isnt specified
-			commands.push_back("game " + defaultGame());
+			Command com;
+			com.command = "game";
+			com.arguments.push_back(defaultGame());
+
+			commands.push_back(com);
 			LoadCommand(commands, "game", load_game);
 		}
 
-		LoadCommand(commands, "mod", [&data](std::string command) {
-			data.add_mod("./" + command);
+		LoadCommand(commands, "mod", [&data](const ArgumentList &command) {
+			if (command.size() != 1)
+			{
+				LOGERROR("game command expects a single argument");
+				return false;
+			}
+
+			data.add_mod("./" + to_string(command.front()));
+			return true;
 		});
 
 		//if hades main handles any of the commands then they will be removed from 'commands'
@@ -196,11 +209,11 @@ namespace hades
 			console::RunCommand(c);
 
 		//create  the normal window
-		if (!_console.runCommand("vid_reinit"))
+		if (!_console.runCommand(Command("vid_reinit")))
 		{
 			_console.echo("Error setting video, falling back to default", Console::ERROR);
-			_console.runCommand("vid_default");
-			_console.runCommand("vid_reinit");
+			_console.runCommand(Command("vid_default"));
+			_console.runCommand(Command("vid_reinit"));
 		}
 	}
 
@@ -356,7 +369,7 @@ namespace hades
 	{
 		//general functions
 		{
-			std::function<bool(std::string)> exit = [this](std::string)->bool {
+			auto exit = [this]()->bool {
 				_window.close();
 				return true;
 			};
@@ -367,7 +380,7 @@ namespace hades
 
 		//vid functions
 		{
-			std::function<bool(std::string)> vid_reinit = [this](std::string)->bool {
+			auto vid_reinit = [this]()->bool {
 				auto width = _console.getValue<types::int32>("vid_width"),
 					height = _console.getValue<types::int32>("vid_height"),
 					depth = _console.getValue<types::int32>("vid_depth");
@@ -417,12 +430,15 @@ namespace hades
 
 			_console.registerFunction("vid_reinit", vid_reinit, true);
 
-			auto vsync = [this](std::string value)->bool {
+			auto vsync = [this](const ArgumentList &args)->bool {
+				if (args.size() != 1)
+					throw invalid_argument("Uncompress function expects one argument");
+
 				_window.setFramerateLimit(0);
 
 				try
 				{
-					_sfVSync = value == "true" || std::stoi(value) > 0;
+					_sfVSync = args.front() == "true" || std::stoi(to_string(args.front())) > 0;
 				}
 				catch (std::invalid_argument&)
 				{
@@ -439,7 +455,10 @@ namespace hades
 
 			_console.registerFunction("vid_vsync", vsync, true);
 
-			auto framelimit = [this](std::string limitstr)->bool {
+			auto framelimit = [this](const ArgumentList &args)->bool {
+				if (args.size() != 1)
+					throw invalid_argument("framelimit function expects one argument");
+
 				if (_sfVSync)
 				{
 					_sfVSync = false;
@@ -448,7 +467,7 @@ namespace hades
 
 				try
 				{
-					auto limit = std::stoi(limitstr);
+					auto limit = std::stoi(to_string(args.front()));
 					_window.setFramerateLimit(limit);
 				}
 				catch (std::invalid_argument&)
@@ -469,8 +488,11 @@ namespace hades
 		}
 		//Filesystem functions
 		{
-			std::function<bool(std::string)> util_dir = [this](std::string path)->bool {
-				auto files = files::ListFilesInDirectory(path);
+			auto util_dir = [this](const ArgumentList &args)->bool {
+				if (args.size() != 1)
+					throw invalid_argument("Dir function expects one argument");
+
+				auto files = files::ListFilesInDirectory(to_string(args.front()));
 
 				for (auto f : files)
 					LOG(f);
@@ -480,12 +502,17 @@ namespace hades
 
 			_console.registerFunction("dir", util_dir, true);
 
-			std::function<bool(types::string)> compress_dir = [](types::string path)->bool
+			auto compress_dir = [](const ArgumentList &args)->bool
 			{
+				if (args.size() != 1)
+					throw invalid_argument("Compress function expects one argument");
+
+				auto path = args.front();
+
 				//compress in a seperate thread to let the UI continue updating
 				std::thread t([path]() {
 					try {
-						zip::compress_directory(path);
+						zip::compress_directory(to_string(path));
 						return true;
 					}
 					catch (zip::archive_exception &e)
@@ -503,12 +530,17 @@ namespace hades
 
 			_console.registerFunction("compress", compress_dir, true);
 
-			std::function<bool(types::string)> uncompress_dir = [](types::string path)->bool
+			auto uncompress_dir = [](const ArgumentList &args)->bool
 			{
+				if (args.size() != 1)
+					throw invalid_argument("Uncompress function expects one argument");
+
+				auto path = args.front();
+
 				//run uncompress func in a seperate thread to spare the UI
 				std::thread t([path]() {
 					try {
-						zip::uncompress_archive(path);
+						zip::uncompress_archive(to_string(path));
 						return true;
 					}
 					catch (zip::archive_exception &e)

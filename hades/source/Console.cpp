@@ -85,13 +85,10 @@ namespace hades
 		}
 	}
 
-	void Console::DisplayVariables(std::string_view arg)
+	void Console::DisplayVariables(std::vector<std::string_view> args)
 	{
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
-		std::vector<std::string_view> args;
-		split(arg, ' ', std::back_inserter(args));
-		
 		std::vector<types::string> output;
 
 		auto insert = [&output](const ConsoleVariableMap::value_type &v) {
@@ -121,15 +118,12 @@ namespace hades
 			echo(s);
 	}
 
-	void Console::DisplayFunctions(std::string_view arg)
+	void Console::DisplayFunctions(std::vector<std::string_view> args)
 	{
-		//split arg if it contains spaces
-		std::vector<std::string_view> args;
-		split(arg, ' ', std::back_inserter(args));
-
 		std::vector<types::string> funcs;
 		{
 			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			funcs.reserve(_consoleFunctions.size());
 			std::transform(std::begin(_consoleFunctions), std::end(_consoleFunctions), std::back_inserter(funcs),
 				[](const ConsoleFunctionMap::value_type &f) { return f.first; });
 		}
@@ -157,7 +151,7 @@ namespace hades
 			echo(s);
 	}
 
-	bool Console::registerFunction(std::string_view identifier, std::function<bool(std::string)> func, bool replace)
+	bool Console::registerFunction(std::string_view identifier, console::function func, bool replace)
 	{
 		//test to see the name hasn't been used for a variable
 		{
@@ -185,6 +179,11 @@ namespace hades
 		_consoleFunctions[id_str] = func;
 
 		return true;
+	}
+
+	bool Console::registerFunction(std::string_view identifier, Console_Function_No_Arg func, bool replace) 
+	{
+		return registerFunction(identifier, [func](const ArgumentList&)->bool { return func(); }, replace);
 	}
 
 	void Console::eraseFunction(std::string_view identifier)
@@ -250,7 +249,7 @@ namespace hades
 		return nullptr;
 	}
 
-	bool Console::runCommand(std::string_view command)
+	bool Console::runCommand(const Command &command)
 	{
 		//add to command history
 		{
@@ -260,39 +259,26 @@ namespace hades
 			if (entry != _commandHistory.end())
 				_commandHistory.erase(entry);
 
-			_commandHistory.push_back(to_string(command));
+			_commandHistory.push_back(command);
 		}
 
-		std::string_view identifier, value;
-
-		if (int pos = command.find_first_of(" "); pos == std::string_view::npos)
+		if (command.command == "vars")
 		{
-			identifier = command;
-			value = "";
-		}
-		else
-		{
-			identifier = command.substr(0, pos);
-			value = command.substr(pos + 1, command.length() - pos);
-		}
-
-		if (identifier == "vars")
-		{
-			DisplayVariables(value);
+			DisplayVariables(command.arguments);
 			return true;
 		}
-		else if (identifier == "funcs")
+		else if (command.command == "funcs")
 		{
-			DisplayFunctions(value);
+			DisplayFunctions(command.arguments);
 			return true;
 		}
 
-		std::function<bool(std::string)> function;
+		console::function function;
 		bool isFunction = false;
 
 		{
 			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			auto funcIter = _consoleFunctions.find(to_string(identifier));
+			auto funcIter = _consoleFunctions.find(to_string(command.command));
 
 			if (funcIter != _consoleFunctions.end())
 			{
@@ -301,18 +287,18 @@ namespace hades
 			}		
 		}
 
-		if (auto str_value = to_string(value); isFunction)
+		if (isFunction)
 		{
-			echo(command);
-			return function(str_value);
+			echo(to_string(command));
+			return function(command.arguments);
 		}
 		else
-			SetVariable(identifier, str_value);
+			SetVariable(command.command, to_string(std::begin(command.arguments), std::end(command.arguments)));
 
 		return true;
 	}
 
-	std::vector<types::string> Console::getCommandHistory() const
+	CommandList Console::getCommandHistory() const
 	{
 		std::lock_guard<std::mutex> lock(_historyMutex);
 		return _commandHistory;

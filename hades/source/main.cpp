@@ -6,32 +6,77 @@
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
 #include "Hades/Main.hpp"
+#include "Hades/Types.hpp"
+
+namespace hades
+{
+	Command::Command(std::string_view sv)
+	{
+		if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
+		{
+			command = sv;
+			return;
+		}
+		else
+		{
+			command = sv.substr(0, pos);
+			sv = sv.substr(pos + 1, sv.size() - pos);
+		}
+
+		while (!sv.empty())
+		{
+			if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
+			{
+				arguments.push_back(sv);
+				return;
+			}
+			else
+			{
+				arguments.push_back(sv.substr(0, pos));
+				sv = sv.substr(pos + 1, sv.size() - pos);
+			}
+		}
+	}
+
+	bool operator==(const Command& lhs, const Command &rhs)
+	{
+		return lhs.command == lhs.command && lhs.arguments == rhs.arguments;
+	}
+
+	types::string to_string(const Command& c)
+	{
+		return to_string(c.command) + " " + to_string(std::begin(c.arguments), std::end(c.arguments));
+	}
+}
 
 int hades_main(int argc, char* argv[])
 {
 	//new commands start with a '-'.
 	const char COMMAND_DELIMITER = '-';
 
-	std::vector<std::string> cmdline;
-	for(int i = 0; i < argc; ++i)
-	{
-		cmdline.push_back(argv[i]);
-	}
+	std::vector<std::string_view> cmdline;
+	cmdline.reserve(argc);
+
+	//convert cmdline to string_view
+	std::copy(argv, argv + argc, std::back_inserter(cmdline));
 
 	hades::CommandList commands;
 	int index = -1;
 
-	std::for_each(cmdline.begin(), cmdline.end(), [&commands, &index, COMMAND_DELIMITER] (std::string &s) {
-		if(s[0] == COMMAND_DELIMITER)
+	for (auto &s : cmdline)
+	{
+		if (s[0] == COMMAND_DELIMITER)
 		{
 			s = s.substr(1, s.size());
-			commands.push_back(s);
+			hades::Command com;
+			com.command = s;
+			commands.push_back(com);
 			index++;
 		}
-		else if(index != -1)
-			commands[index] = commands[index] + " " + s;
-	});
-
+		else if (index != -1)
+			commands[index].arguments.push_back(s);
+	}
+	
 	auto command_length = commands.size();
 
 	//===special commands===
@@ -39,12 +84,24 @@ int hades_main(int argc, char* argv[])
 	//the engine will not actually open if invoked with these commands
 	try
 	{
-		hades::LoadCommand(commands, "compress", [](hades::CommandList::value_type param) {
-			hades::zip::compress_directory(param);
+		hades::LoadCommand(commands, "compress", [](const hades::ArgumentList &command) {
+			if (command.size() != 1)
+			{
+				LOGERROR("game command expects a single argument");
+				return false;
+			}
+			hades::zip::compress_directory(hades::to_string(command.front()));
+			return true;
 		});
 
-		hades::LoadCommand(commands, "uncompress", [](hades::CommandList::value_type param) {
-			hades::zip::uncompress_archive(param);
+		hades::LoadCommand(commands, "uncompress", [](const hades::ArgumentList &command) {
+			if (command.size() != 1)
+			{
+				LOGERROR("game command expects a single argument");
+				return false;
+			}
+			hades::zip::uncompress_archive(hades::to_string(command.front()));
+			return true;
 		});
 	}
 	catch (hades::zip::archive_exception &e)

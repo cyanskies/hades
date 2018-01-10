@@ -36,14 +36,20 @@ namespace hades
 		return i;
 	}
 
-	std::tuple<types::int32, types::int32> MousePos(const sf::Window &window)
+	std::tuple<types::int32, types::int32, bool> MousePos(const sf::Window &window)
 	{
 		auto mpos = sf::Mouse::getPosition(window);
 		auto size = window.getSize();
-		return vector_clamp(mpos.x, mpos.y,
+		auto inside_window = false;
+		if (sf::IntRect(0, 0, size.x, size.y).contains(mpos))
+			inside_window = true;
+
+		auto [mx, my] = vector_clamp(mpos.x, mpos.y,
 			0, 0,
 			static_cast<types::int32>(size.x),
 			static_cast<types::int32>(size.y));
+
+		return std::make_tuple(mx, my, inside_window);
 	}
 
 	template<sf::Mouse::Button b>
@@ -198,8 +204,7 @@ namespace hades
 		i.insert({ "mouse", {data::UniqueId(), nullptr, [&window](data::UniqueId id) {
 			Action a;
 			a.id = id;
-			a.active = true;
-			std::tie(a.x_axis, a.y_axis) = MousePos(window);
+			std::tie(a.x_axis, a.y_axis, a.active) = MousePos(window);
 
 			return a;
 		} } });

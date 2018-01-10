@@ -28,6 +28,8 @@ namespace objects
 		//sequence of object
 		    //list of curve values, not including defaults
 		std::vector<object_info> objects;
+		//the id of the next entity to be placed, or spawned in-game
+		hades::EntityId next_id = hades::NO_ENTITY;
 	};
 }
 

@@ -87,7 +87,8 @@ namespace objects
 			window_height = hades::console::GetInt("vid_height", 480);
 
 		auto mousePos = input.find(hades::input::PointerPosition);
-		if (mousePos != input.end() && mousePos->active)
+		assert(mousePos != std::end(input));
+		if (mousePos->active)
 		{
 			//move the view
 			if (mousePos->x_axis < scroll_margin)
@@ -113,8 +114,29 @@ namespace objects
 		}
 
 		auto mouseLeft = input.find(hades::input::PointerLeft);
-		if (mouseLeft != input.end() && mouseLeft->active)
-			OnClick();
+		assert(mouseLeft != std::end(input));
+		if (mouseLeft->active)
+		{
+			if (!_pointerLeft)
+			{
+				OnClick({ mouseLeft->x_axis, mouseLeft->y_axis });
+				_pointerLeft = true;
+			}
+			else if (_pointerLeft)
+			{
+				OnDragStart({ mouseLeft->x_axis, mouseLeft->y_axis });
+				_pointerDrag = true;
+			}
+			else if (_pointerDrag)
+			{
+				OnDrag({ mouseLeft->x_axis, mouseLeft->y_axis });
+			}
+		}
+		else if (_pointerLeft && _pointerDrag)
+		{
+			OnDragEnd({ mouseLeft->x_axis, mouseLeft->y_axis });
+			_pointerLeft = _pointerDrag = false;
+		}
 	}
 
 	void object_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
@@ -237,7 +259,17 @@ namespace objects
 		}
 	}
 
-	void object_editor::OnClick()
+	void object_editor::OnClick(object_editor::MousePos)
+	{}
+
+	void object_editor::OnDragStart(MousePos)
+	{}
+	void object_editor::OnDrag(MousePos)
+	{}
+	void object_editor::OnDragEnd(MousePos)
+	{}
+
+	bool object_editor::ObjectValidLocation() const
 	{}
 
 	void object_editor::NewLevel()

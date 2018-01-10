@@ -56,7 +56,7 @@ namespace objects
 		// then call the LoadX functions to parse all the subsequent parts
 		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
 
-		virtual bool handleEvent(const hades::Event &windowEvent) override final; 
+		virtual bool handleEvent(const hades::Event &windowEvent) override; 
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override final;
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
@@ -76,10 +76,21 @@ namespace objects
 
 		//sf::Vector2i GetMapBounds() const;
 		//==map editing functions==
-		//generates the preview to be drawn over the map
+		//generates the preview to be drawn over the map for the current editing mode
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
-		virtual void OnClick();
+		//responds to user input(place object, place terrain tile, etc)
+		using MousePos = std::tuple<hades::types::int32, hades::types::int32>;
+		virtual void OnClick(MousePos);
+		//respond to mouse drag
+		virtual void OnDragStart(MousePos);
+		virtual void OnDrag(MousePos);
+		virtual void OnDragEnd(MousePos);
+		//override to check if a location on the map is valid for the provided object
+		//ie. depending on terrain, or other objects
+		virtual bool ObjectValidLocation() const;
+		//function for creating a new level
 		virtual void NewLevel();
+		//function for saving the level, call provided Save<NAME> functions
 		virtual void SaveLevel() const;
 		//these also save and load the map size parameters
 		void SaveObjects(level &l) const;
@@ -117,7 +128,8 @@ namespace objects
 		//the limits of the pointer scroll
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
-
+		//true if mouse was down in the previous frame
+		bool _pointerLeft = false, _pointerDrag = false;
 		//drawing the out of bounds background
 		//and grid
 		sf::View _backgroundView;

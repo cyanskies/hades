@@ -34,8 +34,8 @@ namespace objects
 			OBJECT_MODE_END
 		};
 
-		enum ObjectMode {
-			NONE, // nothing selected
+		enum class ObjectMode {
+			NONE_SELECTED, // nothing selected
 			SELECT, // something selected
 			DRAG, // dragging is taking place
 			PLACE // an object has been chosen from the picker and is being held by the mouse
@@ -53,7 +53,7 @@ namespace objects
 
 		// called when the load command is issued
 		// overide to parse extra elements from the level
-		// then call the LoadX functions to parse all the subsequent parts
+		// then call the Protected LoadX functions to parse all the subsequent parts
 		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
 
 		virtual bool handleEvent(const hades::Event &windowEvent) override; 
@@ -74,7 +74,6 @@ namespace objects
 		// Menu Options
 		virtual void FillGui();
 
-		//sf::Vector2i GetMapBounds() const;
 		//==map editing functions==
 		//generates the preview to be drawn over the map for the current editing mode
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
@@ -120,10 +119,12 @@ namespace objects
 		void _setHeldObject(const resources::object*);
 		//when the mouse is released this object will be placed in the pointers position
 		void _setDragObject(const resources::object* o);
-		EditMode_t _objectMode = editor::NONE;
+		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing
 		const resources::object *_heldObject = nullptr;
+		std::variant<sf::RectangleShape,
+			sf::Sprite> _objectPreview;
 
 		//the limits of the pointer scroll
 		hades::types::int32 _pointer_min_x;

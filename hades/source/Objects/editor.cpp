@@ -199,7 +199,7 @@ namespace objects
 
 		empty_button->onClick.connect([this]() {
 			EditMode = editor::EditMode::OBJECT;
-			_objectMode = editor::ObjectMode::NONE;
+			_objectMode = editor::ObjectMode::NONE_SELECTED;
 		});
 
 		toolbar_panel->add(empty_button);

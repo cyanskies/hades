@@ -270,7 +270,9 @@ namespace objects
 	{}
 
 	bool object_editor::ObjectValidLocation() const
-	{}
+	{
+		return false;
+	}
 
 	void object_editor::NewLevel()
 	{}

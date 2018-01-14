@@ -7,15 +7,26 @@
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
+#include "Objects/resources.hpp"
+
 namespace objects
 {
+	//represents an instance of an object in a level file
 	struct object_info
 	{
-		hades::data::UniqueId obj_type;
+		resources::object *obj_type;
 		hades::EntityId id;
-		using curve_pair = std::tuple<hades::data::UniqueId, hades::resources::curve_default_value>;
-		std::vector<curve_pair> curves;
+		resources::object::curve_list curves;
 	};
+
+	//functions for getting info from objects
+	//checks base classes if the requested info isn't available in the current class
+	resources::object::curve_list::value_type GetCurve(const object_info &o, hades::data::UniqueId c);
+	resources::object::curve_list::value_type GetCurve(const resources::object *o, hades::data::UniqueId c);
+	resources::object::curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
+	resources::object::curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
+	const hades::resources::animation *GetEditorIcon(const resources::object *o);
+	resources::object::animation_list GetEditorAnimations(const resources::object *o);
 
 	using level_size_t = hades::types::uint32;
 

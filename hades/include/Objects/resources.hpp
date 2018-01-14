@@ -13,7 +13,7 @@
 namespace objects
 {
 	const auto editor_snaptogrid = "editor_snaptogrid",
-		editor_grid_size = "editor_grid_size";
+		editor_grid_size = "editor_grid_min_size";
 
 	enum SnapToGrid { GRIDSNAP_DISABLED = 0, GRIDSNAP_ENABLED, GRIDSNAP_FORCE_ENABLED };
 

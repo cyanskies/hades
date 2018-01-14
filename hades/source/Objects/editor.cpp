@@ -65,9 +65,10 @@ namespace objects
 
 	void object_editor::init()
 	{
+		_object_snap = hades::console::GetBool(editor_snaptogrid, editor_snap_default);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
 		_gridCurrentSize = *_gridMinSize;
-		//_grid.setCellSize();
+		_grid.setCellSize(_gridCurrentSize);
 
 		reinit();
 	}
@@ -256,7 +257,8 @@ namespace objects
 		if (_objectMode == editor::ObjectMode::PLACE 
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
-
+			sf::Transformable *object = nullptr;
+			if(_heldObject->)
 		}
 	}
 

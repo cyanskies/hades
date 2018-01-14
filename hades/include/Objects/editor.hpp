@@ -126,6 +126,7 @@ namespace objects
 		const resources::object *_heldObject = nullptr;
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
+		hades::console::property_bool _object_snap;
 
 		//the limits of the pointer scroll
 		hades::types::int32 _pointer_min_x;

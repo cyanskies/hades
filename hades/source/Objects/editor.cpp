@@ -110,7 +110,7 @@ namespace objects
 			GameView.setCenter(viewPosition);
 			_grid.set2dDrawArea({ viewPosition - GameView.getSize() / 2.f, GameView.getSize() });
 
-			GenerateDrawPreview(window, input);
+			GenerateDrawPreview(window, { mousePos->x_axis, mousePos->y_axis });
 		}
 
 		auto mouseLeft = input.find(hades::input::PointerLeft);
@@ -244,7 +244,7 @@ namespace objects
 		object_combox->setSelectedItem(all_str);
 	}
 
-	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&)
+	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, MousePos m_pos)
 	{
 		if (EditMode != editor::EditMode::OBJECT)
 			return;
@@ -253,7 +253,8 @@ namespace objects
 		// then we draw the preview in the nearest valid position
 		// rounded to the nearest pixel pos if editor-snap = false
 		// otherwise rounded to &game_grid_size
-		if (_objectMode == editor::ObjectMode::PLACE)
+		if (_objectMode == editor::ObjectMode::PLACE 
+			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 
 		}

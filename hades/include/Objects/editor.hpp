@@ -2,6 +2,7 @@
 #define OBJECT_EDITOR_HPP
 
 #include "SFML/Graphics/RectangleShape.hpp"
+#include "SFML/Graphics/Sprite.hpp"
 
 #include "TGUI/Widgets/ClickableWidget.hpp"
 
@@ -74,11 +75,11 @@ namespace objects
 		// Menu Options
 		virtual void FillGui();
 
+		using MousePos = std::tuple<hades::types::int32, hades::types::int32>;
 		//==map editing functions==
 		//generates the preview to be drawn over the map for the current editing mode
-		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&);
+		virtual void GenerateDrawPreview(const sf::RenderTarget&, MousePos);
 		//responds to user input(place object, place terrain tile, etc)
-		using MousePos = std::tuple<hades::types::int32, hades::types::int32>;
 		virtual void OnClick(MousePos);
 		//respond to mouse drag
 		virtual void OnDragStart(MousePos);

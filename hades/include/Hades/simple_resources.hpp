@@ -42,6 +42,20 @@ namespace hades
 
 		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE};
 
+		namespace curve_types
+		{
+			using int_t = hades::types::int32;
+			using float_t = float;
+			using bool_t = bool;
+			using string = hades::types::string;
+			using object_ref = int; //? entity ID
+			using unique = hades::data::UniqueId;
+			using vector_int = std::vector<int_t>;
+			using vector_float = std::vector<float_t>;
+			using vector_object_ref = std::vector<object_ref>;
+			using vector_unique = std::vector<unique>;
+		}
+
 		struct curve_default_value
 		{
 			bool set = false;

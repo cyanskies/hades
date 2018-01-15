@@ -258,7 +258,31 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 			sf::Transformable *object = nullptr;
-			if(_heldObject->)
+			//if we have one or more idle animations then place the dummy represented by them
+			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())
+			{
+				sf::Sprite s;
+				hades::animation::Apply(anims[0], 0.f, s);
+				_objectPreview = s;
+				object = &std::get<sf::Sprite>(_objectPreview);
+			}
+			// otherwise we place an appropriatly sized rect
+			else
+			{
+				sf::RectangleShape r;
+				static auto size_id = hades::data::GetUid("size");
+				auto [size_c, size_v] = GetCurve(_heldObject, size_id);
+
+				auto size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
+				assert(size.size() == 2);
+				r.setSize({ size[0], size[1] });
+				r.setFillColor(sf::Color::Cyan);
+				r.setOutlineColor(sf::Color::Blue);
+				_objectPreview = r;
+				object = &std::get<sf::RectangleShape>(_objectPreview);
+			}
+
+			object->setPosition({ std::get<0>(m_pos), std::get<1>(m_pos) });
 		}
 	}
 

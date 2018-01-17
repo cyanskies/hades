@@ -369,10 +369,13 @@ namespace objects
 			//editor:
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
-			//    snap-to-grid: [0, 1, 2], [disabled, enabled, force-enabled]
+			//    snap-to-grid: [-1, 0, 1, 2], [force-disabled, disabled, enabled, force-enabled]
 			//    grid-min-size: default 8 or something, defines the small  
+			//	  show-grid-settings: true
+			//    show-grid-snap: true
 
 			static const auto resource_type = "editor";
+			static const auto editor_id = data->getUid(resource_type);
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
@@ -417,11 +420,13 @@ namespace objects
 			{
 				auto intval = snap.as<hades::types::int32>(-1);
 
-				if (intval < GRIDSNAP_DISABLED || intval > GRIDSNAP_FORCE_ENABLED)
+				if (intval < GRIDSNAP_FORCE_DISABLED || intval > GRIDSNAP_FORCE_ENABLED)
 				{
 					//intval is out of range, check to see if its a valid string
 					const auto str = snap.as<hades::types::string>(hades::types::string());
-					if (str == "disabled")
+					if (str == "force-disabled")
+						intval = GRIDSNAP_FORCE_DISABLED;
+					else if (str == "disabled")
 						intval = GRIDSNAP_DISABLED;
 					else if (str == "enabled")
 						intval = GRIDSNAP_ENABLED;
@@ -429,7 +434,7 @@ namespace objects
 						intval = GRIDSNAP_FORCE_ENABLED;
 				}
 
-				if(intval >= GRIDSNAP_DISABLED && intval <= GRIDSNAP_FORCE_ENABLED)
+				if(intval >= GRIDSNAP_FORCE_DISABLED && intval <= GRIDSNAP_FORCE_ENABLED)
 					hades::console::SetProperty(editor_snaptogrid, intval);
 			}
 
@@ -441,6 +446,14 @@ namespace objects
 			if (grid_size != current_grid_size)
 				hades::console::SetProperty(editor_grid_size, grid_size);
 
+			//========
+			// editor settings object
+			//========
+
+			auto editor_obj = hades::data::FindOrCreate<editor>(editor_id, mod, data);
+
+			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-settings", mod, editor_obj->show_grid_settings);
+			editor_obj->show_grid_snap = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-snap", mod, editor_obj->show_grid_snap);
 		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)

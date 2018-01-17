@@ -8,7 +8,9 @@ namespace objects
 	}
 
 	resources::object::curve_list::value_type GetCurve(const resources::object *o, hades::data::UniqueId c)
-	{}
+	{
+		assert(o);
+	}
 
 	resources::object::curve_list GetAllCurves(const object_info &o)
 	{
@@ -16,7 +18,9 @@ namespace objects
 	}
 
 	resources::object::curve_list GetAllCurves(const resources::object *o)
-	{}
+	{
+		assert(o);
+	}
 
 	const hades::resources::animation *GetEditorIcon(const resources::object *o)
 	{

@@ -15,7 +15,7 @@ namespace objects
 	const auto editor_snaptogrid = "editor_snaptogrid",
 		editor_grid_size = "editor_grid_min_size";
 
-	enum SnapToGrid { GRIDSNAP_DISABLED = 0, GRIDSNAP_ENABLED, GRIDSNAP_FORCE_ENABLED };
+	enum SnapToGrid { GRIDSNAP_FORCE_DISABLED = -1, GRIDSNAP_DISABLED, GRIDSNAP_ENABLED, GRIDSNAP_FORCE_ENABLED };
 
 	const auto editor_snap_default = GRIDSNAP_ENABLED;
 	const auto editor_grid_default = 8;
@@ -25,6 +25,15 @@ namespace objects
 	namespace resources
 	{
 		const auto editor_settings_name = "editor";
+
+		struct editor_t 
+		{};
+
+		struct editor : public hades::resources::resource_type<object_t>
+		{
+			bool show_grid_settings = true,
+				show_grid_snap = true;
+		};
 
 		struct object_t
 		{};

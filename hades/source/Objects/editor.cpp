@@ -187,10 +187,11 @@ namespace objects
 
 	void object_editor::FillGui()
 	{
+		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
+
 		//===================
 		// Add ToolBar Icons
 		//===================
-
 		//get the toolbar container
 		auto toolbar_panel = _gui.get<tgui::Container>(editor::toolbar_panel);
 
@@ -204,6 +205,22 @@ namespace objects
 		});
 
 		toolbar_panel->add(empty_button);
+
+		//=========================
+		// Toolbar Grid Settings
+		//=========================
+		if (editor_settings->show_grid_settings)
+		{
+			//show grid toggle
+
+			//shrink grid size
+
+			//expand grid size
+			if (editor_settings->show_grid_snap)
+			{
+				//snap to grid
+			}
+		}
 
 		//==============
 		// Add Objects
@@ -258,6 +275,12 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 			sf::Transformable *object = nullptr;
+			static auto size_id = hades::data::GetUid("size");
+			auto[size_c, size_v] = GetCurve(_heldObject, size_id);
+
+			auto size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
+			assert(size.size() == 2);
+
 			//if we have one or more idle animations then place the dummy represented by them
 			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())
 			{
@@ -270,11 +293,6 @@ namespace objects
 			else
 			{
 				sf::RectangleShape r;
-				static auto size_id = hades::data::GetUid("size");
-				auto [size_c, size_v] = GetCurve(_heldObject, size_id);
-
-				auto size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
-				assert(size.size() == 2);
 				r.setSize({ size[0], size[1] });
 				r.setFillColor(sf::Color::Cyan);
 				r.setOutlineColor(sf::Color::Blue);
@@ -282,7 +300,15 @@ namespace objects
 				object = &std::get<sf::RectangleShape>(_objectPreview);
 			}
 
-			object->setPosition({ std::get<0>(m_pos), std::get<1>(m_pos) });
+			//if snap-to-grid = false
+			auto [pos_x, pos_y] = m_pos;
+			auto max_x = MapSize.x - size[0],
+				max_y = MapSize.y - size[1];
+
+			pos_x = std::clamp(pos_x, 0, max_x);
+			pos_y = std::clamp(pos_y, 0, max_y);
+
+			object->setPosition({ pos_x, pos_y });
 		}
 	}
 
@@ -364,7 +390,7 @@ namespace objects
 		//====================
 		//set up the object_editor UI
 		//====================
-
+		
 		// remove any gui that might currently be loaded
 		_gui.removeAllWidgets();
 

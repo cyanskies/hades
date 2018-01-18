@@ -44,7 +44,8 @@ namespace objects
 
 		using OnClickFunc = std::function<void(void)>;
 
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr, OnClickFunc = OnClickFunc());
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc, const hades::resources::animation *icon = nullptr);
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
 	}
 
 	class object_editor : public hades::State
@@ -85,6 +86,7 @@ namespace objects
 		virtual void OnDragStart(MousePos);
 		virtual void OnDrag(MousePos);
 		virtual void OnDragEnd(MousePos);
+		virtual void OnMenuClick(sf::String);
 		//override to check if a location on the map is valid for the provided object
 		//ie. depending on terrain, or other objects
 		virtual bool ObjectValidLocation() const;
@@ -126,7 +128,7 @@ namespace objects
 		const resources::object *_heldObject = nullptr;
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
-		hades::console::property_bool _object_snap;
+		hades::console::property_int _object_snap;
 
 		//the limits of the pointer scroll
 		hades::types::int32 _pointer_min_x;
@@ -137,7 +139,8 @@ namespace objects
 		//and grid
 		sf::View _backgroundView;
 		sf::RectangleShape _editorBackground, _mapBackground;
-		hades::console::property_int _gridMinSize;
+		hades::console::property_int _gridMinSize, _gridSize;
+		hades::console::property_bool _gridEnabled;
 		hades::types::int32 _gridCurrentSize;
 		hades::GridArea _grid;
 	};

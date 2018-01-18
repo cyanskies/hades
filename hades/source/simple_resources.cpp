@@ -242,6 +242,12 @@ namespace hades
 			return;
 		}
 
+		bool operator==(const curve_default_value &lhs, const curve_default_value &rhs)
+		{
+			return lhs.set == rhs.set
+				&& lhs.value == rhs.value;
+		}
+
 		CurveType readCurveType(types::string s)
 		{
 			if (s == "const")

@@ -21,10 +21,13 @@ namespace objects
 
 	//functions for getting info from objects
 	//checks base classes if the requested info isn't available in the current class
-	resources::object::curve_list::value_type GetCurve(const object_info &o, hades::data::UniqueId c);
-	resources::object::curve_list::value_type GetCurve(const resources::object *o, hades::data::UniqueId c);
-	resources::object::curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
-	resources::object::curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
+	//NOTE: performs a depth first search for the requested data
+	using curve_obj = resources::object::curve_obj;
+	using curve_list = resources::object::curve_list;
+	curve_obj GetCurve(const object_info &o, hades::data::UniqueId c);
+	curve_obj GetCurve(const resources::object *o, hades::data::UniqueId c);
+	curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
+	curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
 	const hades::resources::animation *GetEditorIcon(const resources::object *o);
 	resources::object::animation_list GetEditorAnimations(const resources::object *o);
 

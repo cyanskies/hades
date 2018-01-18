@@ -191,6 +191,8 @@ namespace objects
 		//object editor variables
 		hades::console::SetProperty(editor_snaptogrid, 1);
 		hades::console::SetProperty(editor_grid_size, 8);
+		hades::console::SetProperty(editor_grid_enabled, true);
+		hades::console::SetProperty(editor_grid_size_multiple, 1);
 	}
 
 	void RegisterObjectResources(hades::data::data_manager *data)
@@ -371,8 +373,8 @@ namespace objects
 			//        <group-name>: object or [object1, object2, ...]
 			//    snap-to-grid: [-1, 0, 1, 2], [force-disabled, disabled, enabled, force-enabled]
 			//    grid-min-size: default 8 or something, defines the small  
-			//	  show-grid-settings: true
-			//    show-grid-snap: true
+			//	  show-grid-settings: true // hides the toolbar buttons for modifying the grid
+			//    show-grid: false // defines whether the grid should be turned on by default
 
 			static const auto resource_type = "editor";
 			static const auto editor_id = data->getUid(resource_type);
@@ -404,7 +406,7 @@ namespace objects
 				auto add_to_group = [g, gname, mod, data](const YAML::Node& n) {
 					auto obj_str = n.as<hades::types::string>();
 					auto obj_id = hades::data::GetUid(obj_str);
-					auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);// hades::data::Get<object>(obj_id);
+					auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);
 					g->obj_list.push_back(obj);
 				};
 
@@ -444,7 +446,13 @@ namespace objects
 			auto grid_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "grid-min-size", mod, current_grid_size);
 
 			if (grid_size != current_grid_size)
+			{
 				hades::console::SetProperty(editor_grid_size, grid_size);
+				hades::console::SetProperty(editor_grid_size_multiple, grid_size);
+			}
+
+			bool grid_enabled = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid", mod, false);
+			hades::console::SetProperty(editor_grid_enabled, grid_enabled);
 
 			//========
 			// editor settings object
@@ -453,7 +461,9 @@ namespace objects
 			auto editor_obj = hades::data::FindOrCreate<editor>(editor_id, mod, data);
 
 			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-settings", mod, editor_obj->show_grid_settings);
-			editor_obj->show_grid_snap = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-snap", mod, editor_obj->show_grid_snap);
+
+			//TODO:
+			//toolbar icons
 		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)

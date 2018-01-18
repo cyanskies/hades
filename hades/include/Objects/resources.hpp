@@ -13,9 +13,11 @@
 namespace objects
 {
 	const auto editor_snaptogrid = "editor_snaptogrid",
-		editor_grid_size = "editor_grid_min_size";
+		editor_grid_size = "editor_grid_min_size",
+		editor_grid_enabled = "editor_show_grid",
+		editor_grid_size_multiple = "editor_grid_size";
 
-	enum SnapToGrid { GRIDSNAP_FORCE_DISABLED = -1, GRIDSNAP_DISABLED, GRIDSNAP_ENABLED, GRIDSNAP_FORCE_ENABLED };
+	enum SnapToGrid { GRIDSNAP_FORCE_DISABLED = -1, GRIDSNAP_DISABLED, GRIDSNAP_ENABLED,  GRIDSNAP_FORCE_ENABLED };
 
 	const auto editor_snap_default = GRIDSNAP_ENABLED;
 	const auto editor_grid_default = 8;
@@ -29,10 +31,17 @@ namespace objects
 		struct editor_t 
 		{};
 
-		struct editor : public hades::resources::resource_type<object_t>
+		struct editor : public hades::resources::resource_type<editor_t>
 		{
 			bool show_grid_settings = true,
 				show_grid_snap = true;
+
+			//toolbar icons
+			hades::resources::animation *selection_mode_icon = nullptr,
+				*grid_show_icon = nullptr,
+				*grid_shrink_icon = nullptr,
+				*grid_grow_icon = nullptr,
+				*grid_snap_icon = nullptr;
 		};
 
 		struct object_t
@@ -53,6 +62,7 @@ namespace objects
 			using curve_obj = std::tuple<const hades::resources::curve*, hades::resources::curve_default_value>;
 			using curve_list = std::vector<curve_obj>;
 			curve_list curves;
+			//TODO:
 			//systems
 			//client system
 		};

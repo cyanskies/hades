@@ -68,6 +68,8 @@ namespace hades
 			curve_value value;
 		};
 
+		bool operator==(const curve_default_value &lhs, const curve_default_value &rhs);
+
 		struct curve_t {};
 
 		struct curve : public resource_type<curve_t>

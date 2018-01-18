@@ -30,7 +30,10 @@ namespace objects
 {
 	namespace editor
 	{
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon, OnClickFunc func)
+
+		//TODO: the only way to accept function as reference without blocking 
+		//lambdas is to move this to the header and accept the function by template
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 		{
 			tgui::ClickableWidget::Ptr p;
 			//TODO: editor-button-size console vars
@@ -57,15 +60,21 @@ namespace objects
 				p->setToolTip(panel);
 			}
 
-			//TODO: set action on click?
+			if(func)
+				p->onClick.connect(func);
 
 			return p;
+		}
+		
+		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
+		{
+			return MakeObjectButton(name, OnClickFunc(), icon);
 		}
 	}
 
 	void object_editor::init()
 	{
-		_object_snap = hades::console::GetBool(editor_snaptogrid, editor_snap_default);
+		_object_snap = hades::console::GetInt(editor_snaptogrid, editor_snap_default);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
 		_gridCurrentSize = *_gridMinSize;
 		_grid.setCellSize(_gridCurrentSize);
@@ -196,13 +205,11 @@ namespace objects
 		auto toolbar_panel = _gui.get<tgui::Container>(editor::toolbar_panel);
 
 		//empty mouse button
-		//TODO: get icon for this button
-		auto empty_button = editor::MakeObjectButton("empty");
-
-		empty_button->onClick.connect([this]() {
+		auto empty_icon = editor_settings->selection_mode_icon;
+		auto empty_button = editor::MakeObjectButton("empty", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
-		});
+		}, empty_icon);
 
 		toolbar_panel->add(empty_button);
 
@@ -216,9 +223,10 @@ namespace objects
 			//shrink grid size
 
 			//expand grid size
-			if (editor_settings->show_grid_snap)
+			if (*_object_snap == SnapToGrid::GRIDSNAP_DISABLED
+				|| *_object_snap == SnapToGrid::GRIDSNAP_ENABLED)
 			{
-				//snap to grid
+				//snap to grid button
 			}
 		}
 
@@ -276,7 +284,8 @@ namespace objects
 		{
 			sf::Transformable *object = nullptr;
 			static auto size_id = hades::data::GetUid("size");
-			auto[size_c, size_v] = GetCurve(_heldObject, size_id);
+			auto size_curve = GetCurve(_heldObject, size_id);
+			auto size_v = std::get<hades::resources::curve_default_value>(size_curve);
 
 			auto size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
 			assert(size.size() == 2);
@@ -285,7 +294,9 @@ namespace objects
 			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())
 			{
 				sf::Sprite s;
-				hades::animation::Apply(anims[0], 0.f, s);
+				
+				auto index = hades::random(0u, anims.size() - 1);
+				hades::animation::Apply(anims[index], 0.f, s);
 				_objectPreview = s;
 				object = &std::get<sf::Sprite>(_objectPreview);
 			}
@@ -293,64 +304,44 @@ namespace objects
 			else
 			{
 				sf::RectangleShape r;
-				r.setSize({ size[0], size[1] });
+				r.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
 				r.setFillColor(sf::Color::Cyan);
 				r.setOutlineColor(sf::Color::Blue);
 				_objectPreview = r;
 				object = &std::get<sf::RectangleShape>(_objectPreview);
 			}
 
-			//if snap-to-grid = false
-			auto [pos_x, pos_y] = m_pos;
-			auto max_x = MapSize.x - size[0],
-				max_y = MapSize.y - size[1];
+			if (*_object_snap <= SnapToGrid::GRIDSNAP_DISABLED)
+			{
+				//snap to pixel
+				auto[pos_x, pos_y] = m_pos;
+				auto max_x = MapSize.x - size[0],
+					max_y = MapSize.y - size[1];
 
-			pos_x = std::clamp(pos_x, 0, max_x);
-			pos_y = std::clamp(pos_y, 0, max_y);
+				pos_x = std::clamp(pos_x, 0, max_x);
+				pos_y = std::clamp(pos_y, 0, max_y);
 
-			object->setPosition({ pos_x, pos_y });
+				object->setPosition({ static_cast<float>(pos_x), static_cast<float>(pos_y) });
+			}
+			else
+			{
+				//snap to grid enabled
+				//places objects in the top left of the nearest grid cell
+			}
 		}
 	}
 
-	void object_editor::OnClick(object_editor::MousePos)
+	void object_editor::OnClick(object_editor::MousePos pos)
 	{}
 
-	void object_editor::OnDragStart(MousePos)
-	{}
-	void object_editor::OnDrag(MousePos)
-	{}
-	void object_editor::OnDragEnd(MousePos)
+	void object_editor::OnDragStart(MousePos pos)
 	{}
 
-	bool object_editor::ObjectValidLocation() const
-	{
-		return false;
-	}
-
-	void object_editor::NewLevel()
+	void object_editor::OnDrag(MousePos pos)
 	{}
 
-	void object_editor::SaveLevel() const
+	void object_editor::OnDragEnd(MousePos pos)
 	{}
-
-	void object_editor::DrawBackground(sf::RenderTarget &target) const
-	{
-		target.setView(_backgroundView);
-		target.draw(_editorBackground);
-		target.setView(GameView);
-		target.draw(_mapBackground);
-	}
-
-	void object_editor::DrawObjects(sf::RenderTarget &target) const 
-	{
-		//TODO:
-	}
-
-	void object_editor::DrawGrid(sf::RenderTarget &target) const 
-	{
-		target.draw(_grid);
-		//TODO draw highlighted grid square
-	}
 
 	namespace menu_names
 	{
@@ -383,6 +374,61 @@ namespace objects
 		const auto filename = "new_filename";
 		const auto size_x = "new_sizex";
 		const auto size_y = "new_sizey";
+	}
+
+	void object_editor::OnMenuClick(sf::String menu)
+	{
+		if (menu == menu_names::new_menu)
+		{
+			auto new_dialog = _gui.get<tgui::Container>(dialog_names::new_dialog);
+			new_dialog->show();
+		}
+		else if (menu == menu_names::load_menu)
+		{
+			auto load_dialog = _gui.get<tgui::Container>(dialog_names::load);
+			load_dialog->show();
+		}
+		else if (menu == menu_names::save_menu)
+		{
+			SaveLevel();
+		}
+		else if (menu == menu_names::save_as_menu)
+		{
+			auto save_dialog = _gui.get<tgui::Container>(dialog_names::save);
+			save_dialog->show();
+		}
+		else if (menu == menu_names::reset_gui)
+			reinit();
+	}
+
+	bool object_editor::ObjectValidLocation() const
+	{
+		return false;
+	}
+
+	void object_editor::NewLevel()
+	{}
+
+	void object_editor::SaveLevel() const
+	{}
+
+	void object_editor::DrawBackground(sf::RenderTarget &target) const
+	{
+		target.setView(_backgroundView);
+		target.draw(_editorBackground);
+		target.setView(GameView);
+		target.draw(_mapBackground);
+	}
+
+	void object_editor::DrawObjects(sf::RenderTarget &target) const 
+	{
+		//TODO:
+	}
+
+	void object_editor::DrawGrid(sf::RenderTarget &target) const 
+	{
+		target.draw(_grid);
+		//TODO draw highlighted grid square
 	}
 
 	void object_editor::_createGui()
@@ -426,31 +472,8 @@ namespace objects
 		auto menu_bar = _gui.get<tgui::MenuBar>(menu_names::menu_bar);
 
 		menu_bar->moveToFront();
-		auto fadeTime = sf::milliseconds(100);
-
-		//TODO: turn the lambda into a protected virtual function
-		// so that others can add extra menu items and override
-		menu_bar->onMenuItemClick.connect([this, fadeTime](sf::String menu) {
-			if (menu == menu_names::new_menu)
-			{
-				auto new_dialog = _gui.get<tgui::Container>(dialog_names::new_dialog);
-				new_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
-			}
-			else if (menu == menu_names::load_menu)
-			{
-				auto load_dialog = _gui.get<tgui::Container>(dialog_names::load);
-				load_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
-			}
-			else if (menu == menu_names::save_menu)
-				SaveLevel();
-			else if (menu == menu_names::save_as_menu)
-			{
-				auto save_dialog = _gui.get<tgui::Container>(dialog_names::save);
-				save_dialog->showWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
-			}
-			else if (menu == menu_names::reset_gui)
-				reinit();
-		});
+	
+		menu_bar->onMenuItemClick.connect([this](const sf::String s) { OnMenuClick(s); });
 
 		//TODO: everything below here:
 		//		check the result of the _gui.get functions(return nullptr on failure)
@@ -482,7 +505,7 @@ namespace objects
 
 		//rig up the load button
 		auto load_dialog_button = load_dialog_container->get<tgui::Button>("load_button");
-		load_dialog_button->onPress.connect([this, fadeTime]() {
+		load_dialog_button->onPress.connect([this]() {
 			auto filename = _gui.get<tgui::EditBox>("load_filename");
 			auto modname = _gui.get<tgui::EditBox>("load_mod");
 
@@ -491,7 +514,7 @@ namespace objects
 			loadLevel(mod, file);
 
 			auto load_container = _gui.get<tgui::Container>(dialog_names::load);
-			load_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+			load_container->hide();
 		});
 
 		//===============
@@ -519,7 +542,7 @@ namespace objects
 
 		//rig up the save button
 		auto save_dialog_button = save_dialog_container->get<tgui::Button>("save_button");
-		save_dialog_button->onPress.connect([this, fadeTime]() {
+		save_dialog_button->onPress.connect([this]() {
 			auto filename = _gui.get<tgui::EditBox>("save_filename");
 			auto modname = _gui.get<tgui::EditBox>("save_mod");
 
@@ -528,7 +551,7 @@ namespace objects
 			SaveLevel();
 
 			auto save_container = _gui.get<tgui::Container>(dialog_names::save);
-			save_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+			save_container->hide();
 		});
 
 		//==========
@@ -543,7 +566,7 @@ namespace objects
 
 		//rig up the save button
 		auto new_dialog_button = new_dialog_container->get<tgui::Button>(new_dialog::button);
-		new_dialog_button->onPress.connect([this, fadeTime]() {
+		new_dialog_button->onPress.connect([this]() {
 			auto filename = _gui.get<tgui::EditBox>(new_dialog::filename);
 			auto modname = _gui.get<tgui::EditBox>(new_dialog::mod);
 
@@ -569,7 +592,7 @@ namespace objects
 			//_new(mod, file, value_x, value_y);
 
 			auto new_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
-			new_container->hideWithEffect(tgui::ShowAnimationType::Fade, fadeTime);
+			new_container->hide();
 		});
 	}
 
@@ -581,10 +604,9 @@ namespace objects
 
 		for (auto o : objects)
 		{
-			auto b = editor::MakeObjectButton(hades::data::GetAsString(o->id), o->editor_icon);
-			b->onClick.connect([this, o]() {
+			auto b = editor::MakeObjectButton(hades::data::GetAsString(o->id), [this, o]() {
 				_setHeldObject(o);
-			});
+			}, o->editor_icon);
 
 			container->add(b);
 		}

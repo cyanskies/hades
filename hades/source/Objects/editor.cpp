@@ -154,6 +154,7 @@ namespace objects
 		DrawBackground(target);
 		DrawObjects(target);
 		DrawGrid(target);
+		DrawPreview(target);
 	}
 
 	void object_editor::cleanup(){}
@@ -184,6 +185,7 @@ namespace objects
 		_mapBackground.setSize(static_cast<sf::Vector2f>(MapSize));
 		_mapBackground.setFillColor(sf::Color::Black);
 
+		//TODO: set grid color for editor settings
 		_grid.setSize(static_cast<sf::Vector2f>(MapSize));
 
 		_createGui();
@@ -435,6 +437,20 @@ namespace objects
 	{
 		target.draw(_grid);
 		//TODO draw highlighted grid square
+	}
+
+	void object_editor::DrawPreview(sf::RenderTarget &target) const
+	{
+		//if we're in the drag or place mode
+		//then draw the current preview
+		if (EditMode == editor::EditMode::OBJECT
+			&& (_objectMode == editor::ObjectMode::DRAG
+				|| _objectMode == editor::ObjectMode::PLACE))
+		{
+			std::visit([&target](auto &&drawable){
+				target.draw(drawable);
+			}, _objectPreview);
+		}
 	}
 
 	void object_editor::_createGui()

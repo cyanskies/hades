@@ -35,6 +35,8 @@ namespace objects
 		{
 			bool show_grid_settings = true,
 				show_grid_snap = true;
+			//grid colour
+			//grid highlight colour
 
 			//toolbar icons
 			hades::resources::animation *selection_mode_icon = nullptr,
@@ -42,6 +44,9 @@ namespace objects
 				*grid_shrink_icon = nullptr,
 				*grid_grow_icon = nullptr,
 				*grid_snap_icon = nullptr;
+
+			//editor
+			//map default size
 		};
 
 		struct object_t

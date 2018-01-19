@@ -101,6 +101,8 @@ namespace objects
 		void DrawBackground(sf::RenderTarget &target) const;
 		void DrawObjects(sf::RenderTarget &target) const;
 		void DrawGrid(sf::RenderTarget &target) const;
+		//draw the preview generated in GenerateDrawPreview
+		virtual void DrawPreview(sf::RenderTarget &target) const;
 
 		//map file info
 		hades::types::string Mod = "./", Filename = "new.lvl";

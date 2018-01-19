@@ -279,16 +279,22 @@ namespace objects
 		// then we draw the preview in the nearest valid position
 		// rounded to the nearest pixel pos if editor-snap = false
 		// otherwise rounded to &game_grid_size
-		if (_objectMode == editor::ObjectMode::PLACE 
+		if (_objectMode == editor::ObjectMode::PLACE
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 			sf::Transformable *object = nullptr;
 			static auto size_id = hades::data::GetUid("size");
-			auto size_curve = GetCurve(_heldObject, size_id);
-			auto size_v = std::get<hades::resources::curve_default_value>(size_curve);
+			auto[size_c, size_v] = GetCurve(_heldObject, size_id);
 
-			auto size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
-			assert(size.size() == 2);
+			hades::resources::curve_types::vector_int size;
+
+			if (size_c && size_v.set)
+			{
+				size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
+				assert(size.size() == 2);
+			}
+			else //TODO: default object size in editor settings
+				size = { 1, 1 };
 
 			//if we have one or more idle animations then place the dummy represented by them
 			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())

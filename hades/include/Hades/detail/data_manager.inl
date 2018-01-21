@@ -1,3 +1,5 @@
+#include "Hades/Data.hpp"
+
 namespace hades
 {
 	namespace resources
@@ -30,7 +32,7 @@ namespace hades
 
 		template<class T>
 		T* data_manager::get(UniqueId uid)
-		{		
+		{
 			try
 			{
 				auto value = &**_resources.get_reference<std::unique_ptr<T>>(uid);
@@ -66,7 +68,7 @@ namespace hades
 		{
 			T* r = nullptr;
 
-			if (target == hades::EmptyId)
+			if (target == EmptyId)
 			{
 				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
 				return r;

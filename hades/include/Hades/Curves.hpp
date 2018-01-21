@@ -149,7 +149,7 @@ namespace hades {
 
 				if (d.second->t <= at)
 					return d.second->value;
-				
+
 				return d.first->value;
 			}
 
@@ -173,7 +173,7 @@ namespace hades {
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<typename FrameType> getBetween(Time first, Time second) const
+		std::vector<FrameType> getBetween(Time first, Time second) const
 		{
 			auto begin = begin(), end = end();
 			auto lower = std::lower_bound(begin, end, first);
@@ -208,8 +208,10 @@ namespace hades {
 		//For converting to the usable Curve Types
 		CurveType type() { return _type; }
 
-		friend bool operator==(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs);
-		friend bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs);
+		template<typename T, typename D>
+		friend bool operator==(const Curve<T, D> &lhs, const Curve<Time, Data> &rhs);
+		template<typename T, typename D>
+		friend bool operator!=(const Curve<T, D> &lhs, const Curve<Time, Data> &rhs);
 
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;

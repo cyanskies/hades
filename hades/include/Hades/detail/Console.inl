@@ -78,7 +78,7 @@ namespace hades
 
 		auto var = std::make_shared<detail::Property<T> >(value);
 
-		TypeMap.insert(std::make_pair(identifier, var));
+		TypeMap.insert(std::make_pair(types::string{identifier}, var));
 
 		return true;
 	}
@@ -98,7 +98,7 @@ namespace hades
 				return value->value;
 			}
 			else
-				throw console::property_wrong_type("name: " + to_string(var) + ", requested type: " + 
+				throw console::property_wrong_type("name: " + to_string(var) + ", requested type: " +
 					to_string(typeid(T).name()) + ", stored(actual) type: " + to_string(out->type.name()));
 		}
 

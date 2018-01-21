@@ -103,7 +103,7 @@ namespace hades
 			//	SAMPLE_CURRENT, //sets the currently bound texture as a SAMPLER2D
 			//	//Array types
 			//	ARRAY_FLOAT,
-			//	ARRAY_VEC2, 
+			//	ARRAY_VEC2,
 			//	ARRAY_VEC3,
 			//	ARRAY_VEC4,
 			//	ARRAY_MAT3,
@@ -115,7 +115,7 @@ namespace hades
 			//std::vector<uniform_entry> uniforms;
 
 			types::string vert_source, geo_source;
-			data::UniqueId vert_mod = data::UniqueId::Zero, 
+			data::UniqueId vert_mod = data::UniqueId::Zero,
 				geo_mod = data::UniqueId::Zero;
 			//source and mod refeer to the fragment shader source and mod
 
@@ -133,133 +133,133 @@ namespace hades
 		};
 
 		template<>
-		static constexpr bool shader::valid_type<float>()
+		constexpr bool shader::valid_type<float>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Vec2>()
+		constexpr bool shader::valid_type<sf::Glsl::Vec2>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Vec3>()
+		constexpr bool shader::valid_type<sf::Glsl::Vec3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Vec4>()
+		constexpr bool shader::valid_type<sf::Glsl::Vec4>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<int>()
+		constexpr bool shader::valid_type<int>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Ivec2>()
+		constexpr bool shader::valid_type<sf::Glsl::Ivec2>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Ivec3>()
+		constexpr bool shader::valid_type<sf::Glsl::Ivec3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Ivec4>()
+		constexpr bool shader::valid_type<sf::Glsl::Ivec4>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<bool>()
+		constexpr bool shader::valid_type<bool>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Bvec2>()
+		constexpr bool shader::valid_type<sf::Glsl::Bvec2>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Bvec3>()
+		constexpr bool shader::valid_type<sf::Glsl::Bvec3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Bvec4>()
+		constexpr bool shader::valid_type<sf::Glsl::Bvec4>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Mat3>()
+		constexpr bool shader::valid_type<sf::Glsl::Mat3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Glsl::Mat4>()
+		constexpr bool shader::valid_type<sf::Glsl::Mat4>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Texture>()
+		constexpr bool shader::valid_type<sf::Texture>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_type<sf::Shader::CurrentTextureType>()
+		constexpr bool shader::valid_type<sf::Shader::CurrentTextureType>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<float>()
+		constexpr bool shader::valid_array_type<float>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<sf::Glsl::Vec2>()
+		constexpr bool shader::valid_array_type<sf::Glsl::Vec2>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<sf::Glsl::Vec3>()
+		constexpr bool shader::valid_array_type<sf::Glsl::Vec3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<sf::Glsl::Vec4>()
+		constexpr bool shader::valid_array_type<sf::Glsl::Vec4>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<sf::Glsl::Mat3>()
+		constexpr bool shader::valid_array_type<sf::Glsl::Mat3>()
 		{
 			return true;
 		}
 
 		template<>
-		static constexpr bool shader::valid_array_type<sf::Glsl::Mat4>()
+		constexpr bool shader::valid_array_type<sf::Glsl::Mat4>()
 		{
 			return true;
 		}
@@ -279,7 +279,7 @@ namespace hades
 			texture* tex = nullptr;
 			float duration = 0.f;
 			types::int32 width = 0, height = 0;
-			shader *shader = nullptr;
+			shader *anim_shader = nullptr;
 		};
 
 		struct font : public resource_type<sf::Font>

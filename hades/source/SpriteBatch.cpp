@@ -152,8 +152,8 @@ namespace hades
 		for (auto &s : _draw_list)
 		{
 			sf::Shader *shader = nullptr;
-			if (s->animation->shader && s->animation->shader->loaded)
-				shader = &s->animation->shader->value;
+			if (s->animation->anim_shader && s->animation->anim_shader->loaded)
+				shader = &s->animation->anim_shader->value;
 
 			if (shader)
 				target.draw(s->sprite, shader);

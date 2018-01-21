@@ -209,9 +209,9 @@ namespace hades {
 		CurveType type() { return _type; }
 
 		template<typename T, typename D>
-		friend bool operator==(const Curve<T, D> &lhs, const Curve<Time, Data> &rhs);
+		friend bool operator==(const Curve<T, D> &lhs, const Curve<T, D> &rhs);
 		template<typename T, typename D>
-		friend bool operator!=(const Curve<T, D> &lhs, const Curve<Time, Data> &rhs);
+		friend bool operator!=(const Curve<T, D> &lhs, const Curve<T, D> &rhs);
 
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
@@ -252,14 +252,14 @@ namespace hades {
 		CurveType _type;
 	};
 
-	template<typename Time, typename Data>
-	bool operator==(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
+	template<typename T, typename D>
+	bool operator==(const Curve<T, D> &lhs, const Curve<T, D> &rhs)
 	{
 		return lhs._type == rhs._type && lhs._data == rhs._data;
 	}
 
-	template<typename Time, typename Data>
-	bool operator!=(const Curve<Time, Data> &lhs, const Curve<Time, Data> &rhs)
+	template<typename T, typename D>
+	bool operator!=(const Curve<T, D> &lhs, const Curve<T, D> &rhs)
 	{
 		return !(rhs == lhs);
 	}

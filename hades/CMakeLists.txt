@@ -20,6 +20,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+#make visual studio debug the desired project by default
+set(VS_STARTUP_PROJECT example)
+
 # Global preprocessor and include options
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_INSTALL_PREFIX}/include)

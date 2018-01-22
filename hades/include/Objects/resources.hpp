@@ -14,6 +14,7 @@ namespace objects
 {
 	const auto editor_snaptogrid = "editor_snaptogrid",
 		editor_grid_size = "editor_grid_min_size",
+		editor_grid_max = "editor_grid_max",
 		editor_grid_enabled = "editor_show_grid",
 		editor_grid_size_multiple = "editor_grid_size";
 

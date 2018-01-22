@@ -76,7 +76,10 @@ namespace objects
 	{
 		_object_snap = hades::console::GetInt(editor_snaptogrid, editor_snap_default);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
-		_gridCurrentSize = *_gridMinSize;
+		_gridMaxSize = hades::console::GetInt(editor_grid_max, 1);
+		_gridCurrentScale = hades::console::GetInt(editor_grid_size_multiple, 1);
+
+		_gridCurrentSize = *_gridMinSize * *_gridCurrentScale;
 		_grid.setCellSize(_gridCurrentSize);
 
 		reinit();
@@ -272,7 +275,7 @@ namespace objects
 		object_combox->setSelectedItem(all_str);
 	}
 
-	void object_editor::GenerateDrawPreview(const sf::RenderTarget&, MousePos m_pos)
+	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
 	{
 		if (EditMode != editor::EditMode::OBJECT)
 			return;
@@ -296,7 +299,7 @@ namespace objects
 				assert(size.size() == 2);
 			}
 			else //TODO: default object size in editor settings
-				size = { 1, 1 };
+				size = { 8, 8 };
 
 			//if we have one or more idle animations then place the dummy represented by them
 			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())
@@ -322,19 +325,24 @@ namespace objects
 			if (*_object_snap <= SnapToGrid::GRIDSNAP_DISABLED)
 			{
 				//snap to pixel
-				auto[pos_x, pos_y] = m_pos;
+				auto world_pos = hades::pointer::ConvertToWorldCoords(target, 
+					{ std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
+
 				auto max_x = MapSize.x - size[0],
 					max_y = MapSize.y - size[1];
 
-				pos_x = std::clamp(pos_x, 0, max_x);
-				pos_y = std::clamp(pos_y, 0, max_y);
+				auto pos_x = std::clamp(world_pos.x, 0.f, static_cast<float>(max_x));
+				auto pos_y = std::clamp(world_pos.y, 0.f, static_cast<float>(max_y));
 
-				object->setPosition({ static_cast<float>(pos_x), static_cast<float>(pos_y) });
+				object->setPosition({ pos_x, pos_y });
 			}
 			else
 			{
 				//snap to grid enabled
 				//places objects in the top left of the nearest grid cell
+				auto world_coord = hades::pointer::ConvertToWorldCoords(target, {std::get<0>(m_pos), std::get<1>(m_pos)}, GameView);
+				auto snapped_coords = hades::pointer::SnapCoordsToGrid(static_cast<sf::Vector2i>(world_coord), _gridCurrentSize);
+				object->setPosition(static_cast<sf::Vector2f>(snapped_coords));
 			}
 		}
 	}

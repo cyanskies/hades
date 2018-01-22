@@ -141,7 +141,7 @@ namespace objects
 		//and grid
 		sf::View _backgroundView;
 		sf::RectangleShape _editorBackground, _mapBackground;
-		hades::console::property_int _gridMinSize, _gridSize;
+		hades::console::property_int _gridMinSize, _gridCurrentScale, _gridMaxSize;
 		hades::console::property_bool _gridEnabled;
 		hades::types::int32 _gridCurrentSize;
 		hades::GridArea _grid;

@@ -40,9 +40,7 @@ namespace hades
 	{
 		auto mpos = sf::Mouse::getPosition(window);
 		auto size = window.getSize();
-		auto inside_window = false;
-		if (sf::IntRect(0, 0, size.x, size.y).contains(mpos))
-			inside_window = true;
+		auto inside_window = sf::IntRect(0, 0, size.x, size.y).contains(mpos);
 
 		auto [mx, my] = vector_clamp(mpos.x, mpos.y,
 			0, 0,

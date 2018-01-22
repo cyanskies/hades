@@ -5,7 +5,7 @@ mode=$2
 library=$3
 prepath=$4
 
-if [ -z ${generator}  ] ;
+if [ -z "${generator}"  ] ;
 then generator="Unix Makefiles"
 fi
 

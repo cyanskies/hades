@@ -15,7 +15,7 @@ namespace hades
 		sf::IntRect collisionTest(const T &lhs, const U &rhs)
 		{
 			assert(false && "don't call this again");
-			return sf::IntRect;
+			return sf::IntRect();
 		}
 
 		//test against themselves
@@ -26,10 +26,10 @@ namespace hades
 			lhs.getRect().intersects(rhs.getRect(), intersection);
 			return intersection;
 		}
-		
+
 		template<>
 		sf::IntRect collisionTest<Point, Point>(const Point &lhs, const Point &rhs)
-		{ 
+		{
 			sf::IntRect rect;
 
 			if (lhs.getPosition() == rhs.getPosition())

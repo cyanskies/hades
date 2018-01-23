@@ -73,19 +73,6 @@ namespace hades {
 		bool stov<bool>(std::string value);
 	}
 
-	template<class First, class Last>
-	types::string to_string(First begin, Last end)
-	{
-		if (begin == end) return types::string();
-
-		auto out = to_string(*begin);
-
-		while (++begin != end)
-			out += " " + to_string(*begin);
-
-		return out;
-	}
-
 	template<typename T>
 	types::string to_string(T value)
 	{
@@ -98,6 +85,19 @@ namespace hades {
 	types::string to_string<types::string>(types::string value);
 	template<>
 	types::string to_string<std::string_view>(std::string_view value);
+
+	template<class First, class Last>
+	types::string to_string(First begin, Last end)
+	{
+		if (begin == end) return types::string();
+
+		auto out = to_string(*begin);
+
+		while (++begin != end)
+			out += " " + to_string(*begin);
+
+		return out;
+	}
 }
 
 #endif //HADES_TYPES_HPP

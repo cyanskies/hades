@@ -33,7 +33,7 @@ namespace hades {
 		const std::vector<T>& vec,
 		Compare& compare)
 	{
-		std::vector<size_type> p(vec.size());
+		std::vector<std::size_t> p(vec.size());
 		std::iota(p.begin(), p.end(), 0);
 		std::sort(p.begin(), p.end(),
 			[&](std::size_t i, std::size_t j) { return compare(vec[i], vec[j]); });
@@ -56,7 +56,10 @@ namespace hades {
 	void transactional_map<Key, Value>::sort()
 	{
 		//take exclusive locks
-		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
+		std::lock(_vectorMutex, _dispatchMutex);
+		std::lock_guard<mutex_type> guardVec{ _vectorMutex, std::adopt_lock };
+		std::lock_guard<mutex_type> guardDis{ _dispatchMutex, std::adopt_lock };
+
 
 		//confirm that all of the mutexs are unlocked
 		for (auto &&m : _componentMutex)

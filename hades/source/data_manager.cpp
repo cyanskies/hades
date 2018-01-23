@@ -110,7 +110,7 @@ namespace hades
 			add_mod(game, true, "game.yaml");
 
 			_mods.clear();
-			//go through the mod list and reload them in the 
+			//go through the mod list and reload them in the
 			//same order as they were origionally loaded
 			//(this means we will parse the game and it's dependents again)
 			for (auto m : mods)
@@ -147,7 +147,7 @@ namespace hades
 			_loadQueue.clear();
 
 			for (auto r : queue)
-				r->load(this);			
+				r->load(this);
 		}
 
 		void data_manager::load(data::UniqueId id)
@@ -227,7 +227,7 @@ namespace hades
 
 			if (ContainsTab(include_yaml))
 				LOGWARNING("Yaml file: " + mod_info->name + "/" + file + " contains tabs, expect errors.");
-			
+
 			yamlParser(mod, YAML::Load(include_yaml.c_str()));
 		}
 
@@ -248,14 +248,14 @@ namespace hades
 					if (header.second.IsScalar())
 					{
 						auto value = header.second.as<types::string>();
-						parseInclude(mod, value, [this](data::UniqueId mod) {return get<resources::mod>(mod); }, [this](data::UniqueId mod, YAML::Node root) {parseYaml(mod, root); });	
+						parseInclude(mod, value, [this](data::UniqueId mod) {return get<resources::mod>(mod); }, [this](data::UniqueId mod, YAML::Node root) {parseYaml(mod, root); });
 					}
 					else if (header.second.IsSequence())
 					{
 						;
 					}
 
-					
+
 				}
 
 				//if this resource name has a parser then load it
@@ -268,9 +268,9 @@ namespace hades
 		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
 		{
 			auto modKey = getUid(source);
-			
+
 			//mod:
-			//    name: 
+			//    name:
 			//    depends:
 			//        -other_mod
 
@@ -304,7 +304,7 @@ namespace hades
 			{
 				if (dependencies.IsSequence())
 				{
-					for (auto &d : dependencies)
+					for (const auto &d : dependencies)
 					{
 						if (!dependencycheck(d.as<types::string>()))
 						{

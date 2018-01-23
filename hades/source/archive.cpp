@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring> // for std::memcopy
 //TODO: revert to <filesystem> once support comes in both MSVC and GCC
 #include <experimental/filesystem>
 //#include <filesystem>
@@ -33,7 +34,7 @@ namespace hades
 	namespace zip
 	{
 		archive_exception::archive_exception(const char* what, error_code code)
-			: std::exception(what), _code(code)
+			: std::runtime_error(what), _code(code)
 		{}
 
 		//open a close unzip archives
@@ -107,7 +108,7 @@ namespace hades
 			buffer buff(static_cast<buffer::size_type>(usize));
 
 			//NOTE: uint32 max worth of bytes is around 4gb, so we shouldn't have
-			// a problem unless someones trying to load something really big, but then the 
+			// a problem unless someones trying to load something really big, but then the
 			// assert should catch it.
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
@@ -204,9 +205,9 @@ namespace hades
 		buffer read_file_from_archive(types::string archive, types::string path)
 		{
 			auto stream = stream_file_from_archive(archive, path);
-				
+
 			auto size = stream.getSize();
-			
+
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
@@ -274,7 +275,7 @@ namespace hades
 				throw archive_exception(("Error finding file in archive: " + archive).c_str(), archive_exception::error_code::FILE_OPEN);
 
 			auto separator_count = count_separators(dir_path);
-			
+
 			//while theirs more files
 			while (unzGoToNextFile(zip) != UNZ_END_OF_LIST_OF_FILE)
 			{
@@ -285,7 +286,7 @@ namespace hades
 				char_buffer name(info.size_filename);
 
 				unzGetCurrentFileInfo(zip, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
-				
+
 				types::string file_name(name.begin(), name.end());
 
 				if (dir_path.empty())
@@ -325,7 +326,7 @@ namespace hades
 				if(!fs::remove(path + ".zip", errorc))
 					archive_exception(("Unable to modify existing archive. Reason: " + errorc.message()).c_str(), archive_exception::error_code::FILE_WRITE);
 			}
-		
+
 			types::string new_zip_path;
 
 			fs::path fs_path(path);
@@ -360,10 +361,10 @@ namespace hades
 
 
 				auto file_name = file_path.substr(directory.length(), file_path.length() - directory.length());
-				
+
 				//remove leading /
 				file_name.erase(file_name.begin());
-				
+
 				auto date = fs::last_write_time(p);
 				auto t = date.time_since_epoch();
 
@@ -383,7 +384,7 @@ namespace hades
 
 				//NOTE:, the buffer size will have to be double checked if we move to zip64 compression
 				std::ifstream in(p.string(), std::ios::binary | std::ios::ate);
-				auto size = in.tellg();			
+				auto size = in.tellg();
 
 				//if the file is size 0(like many git tag files are)
 				//then skip this whole thing and close the file.
@@ -394,7 +395,7 @@ namespace hades
 					in.read(&buf[0], size);
 
 					//NOTE: same as for the buffer, size is being truncated if larger than 32 bits
-					ret = zipWriteInFileInZip(zip, &buf[0], static_cast<unsigned int>(size.seekpos()));
+					ret = zipWriteInFileInZip(zip, &buf[0], static_cast<unsigned int>(size));
 					if (ret != ZIP_OK)
 						throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
 				}
@@ -405,7 +406,7 @@ namespace hades
 				if (ret != ZIP_OK)
 					throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
 			}
-			
+
 			auto ret = zipClose(zip, nullptr);
 			if (ret != ZIP_OK)
 				throw archive_exception(("Error closing file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_CLOSE);
@@ -450,7 +451,7 @@ namespace hades
 				fs::create_directories(root_dir / parent_dir.parent_path()); //only creates missing directories
 
 				//open file
-				std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);	
+				std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);
 
 				if (!file.is_open())
 					throw archive_exception(("Failed to create or open file: " + filename).c_str(), archive_exception::error_code::FILE_WRITE);
@@ -486,7 +487,7 @@ namespace hades
 				if (ret != ZIP_OK)
 					throw archive_exception(("Failed to close file in archive: " + path + filename).c_str(), archive_exception::error_code::FILE_CLOSE);
 			} while (unzGoToNextFile(archive) != UNZ_END_OF_LIST_OF_FILE);
-			
+
 			close_archive(archive);
 
 			LOG("Finished uncompressing archive: " + path);

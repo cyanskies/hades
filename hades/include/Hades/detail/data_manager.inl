@@ -1,4 +1,5 @@
 #include "Hades/Data.hpp"
+#include "Hades/Logging.hpp"
 
 namespace hades
 {

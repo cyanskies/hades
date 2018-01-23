@@ -19,7 +19,7 @@ namespace hades
 	{
 		using unarchive = void*;
 
-		class archive_exception : public std::exception
+		class archive_exception : public std::runtime_error
 		{
 		public:
 			enum class error_code
@@ -64,7 +64,7 @@ namespace hades
 			bool _fileOpen;
 			unarchive _archive;
 		};
-		
+
 		//returns raw data
 		buffer read_file_from_archive(types::string archive, types::string path);
 

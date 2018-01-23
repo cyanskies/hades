@@ -47,6 +47,6 @@ namespace hades
 
 		auto font = data::Get<resources::font>(id);
 
-		return std::make_shared<sf::Font>(font->value);
+		return tgui::Font(font->value);
 	}
 }

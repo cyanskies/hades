@@ -237,15 +237,15 @@ namespace hades
 
 	void InputSystem::create(data::UniqueId action, bool rebindable, types::string defaultBinding)
 	{
-		auto default = _interpretors.find(defaultBinding);
-		if (default == _interpretors.end())
+		auto default_interpretor = _interpretors.find(defaultBinding);
+		if (default_interpretor == _interpretors.end())
 		{
-			default = _specialInterpretors.find(defaultBinding);
+			default_interpretor = _specialInterpretors.find(defaultBinding);
 			//TODO: throw logic error here
-			assert(default != _specialInterpretors.end());
+			assert(default_interpretor != _specialInterpretors.end());
 		}
 
-		_inputMap.insert({ default->second, action });
+		_inputMap.insert({ default_interpretor->second, action });
 		_bindable.insert({ action, rebindable });
 	}
 

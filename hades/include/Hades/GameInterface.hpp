@@ -35,14 +35,14 @@ namespace hades
 		CurveMap <std::vector<float>> floatVectorCurves;
 	};
 
-	class system_already_attached : public std::exception
+	class system_already_attached : public std::runtime_error
 	{
-		using std::exception::exception;
+		using std::runtime_error::runtime_error;
 	};
 
-	class system_not_attached : public std::exception
+	class system_not_attached : public std::runtime_error
 	{
-		using std::exception::exception;
+		using std::runtime_error::runtime_error;
 	};
 
 	class curve_not_registered : public std::logic_error

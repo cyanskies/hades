@@ -85,10 +85,10 @@ namespace hades {
 		PULSE // data between keyframes is null
 	};
 
-	class curve_error : public std::exception
+	class curve_error : public std::runtime_error
 	{
 	public:
-		using std::exception::exception;
+		using std::runtime_error::runtime_error;
 	};
 
 	template<typename Time, typename Data>

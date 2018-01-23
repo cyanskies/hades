@@ -1,8 +1,9 @@
 #include "Hades/files.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <string>
-#include <filesystem>
+#include <experimental/filesystem>
 
 #include "SFML/System/FileInputStream.hpp"
 
@@ -20,7 +21,7 @@ namespace hades {
 
 			std::string out;
 			//convert buff to str
-			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out), 
+			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out),
 				[](auto i) { return static_cast<char>(i); });
 
 			return out;
@@ -41,7 +42,7 @@ namespace hades {
 		{
 			static const auto custom_path = hades::GetUserCustomFileDirectory();
 
-			try 
+			try
 			{
 				return std::move(FileStream(custom_path + modPath, fileName));
 			}

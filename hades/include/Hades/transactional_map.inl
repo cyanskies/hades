@@ -93,7 +93,9 @@ namespace hades {
 			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + std::to_string(id).c_str());
 
 		//exclusive locks
-		std::lock_guard<mutex_type, mutex_type> guard(_vectorMutex, _dispatchMutex);
+		std::lock(_vectorMutex, _dispatchMutex);
+		std::lock_guard<mutex_type> guardVector(_vectorMutex, std::adopt_lock);
+		std::lock_guard<mutex_type> guardDispatch(_dispatchMutex, std::adopt_lock);
 
 		auto newpos = _components.size();
 		_components.emplace_back(value);
@@ -119,13 +121,18 @@ namespace hades {
 		assert(index < _componentMutex.size());
 
 		//exclusive locks
-		std::lock_guard<mutex_type, mutex_type> guard{ _vectorMutex, _dispatchMutex };
+		std::lock(_vectorMutex, _dispatchMutex);
+		std::lock_guard<mutex_type> guardVector(_vectorMutex, std::adopt_lock);
+		std::lock_guard<mutex_type> guardDispatch(_dispatchMutex, std::adopt_lock);
 
 		//if index isn't the last entry, then swap it so that it's at the end
 		if (index < _components.size() - 1)
 		{
 			//always open an exclusive lock to the Key before accessing it.
-			std::lock_guard<mutex_type, mutex_type> complk(_componentMutex[index], _componentMutex.back());
+			//we lock the end aswell so we can swap and erase easily
+			std::lock(_componentMutex[index], _componentMutex.back());
+            std::lock_guard<mutex_type> guardcomponent(_componentMutex[index], std::adopt_lock);
+            std::lock_guard<mutex_type> guardcompback(_componentMutex.back(), std::adopt_lock);
 
 			//swap index and back
 			std::swap(_components[index], _components.back());
@@ -147,7 +154,7 @@ namespace hades {
 
 		auto index = _getIndex(id);
 
-		shared_lock vectlk(_vectorMutex);
+		std::shared_lock<mutex_type> vectlk(_vectorMutex);
 		assert(index < _componentMutex.size());
 		std::unique_lock<mutex_type> complk(_componentMutex[index]);
 
@@ -195,7 +202,7 @@ namespace hades {
 
 		auto index = _getIndex(id);
 
-		shared_lock vectlk(_vectorMutex);
+		std::shared_lock<mutex_type> vectlk(_vectorMutex);
 		assert(index < _components.size());
 
 		if (&*tok.mutex() != &_componentMutex[index])

@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <filesystem>
+//TODO: revert to <filesystem> once support comes in both MSVC and GCC
+#include <experimental/filesystem>
+//#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <string>
@@ -19,6 +21,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/Types.hpp"
 
+//TODO: revert to std::filesystem once support comes in both MSVC and GCC
 namespace fs = std::experimental::filesystem;
 
 //this is the default archive extension

@@ -6,6 +6,10 @@
 #include <sstream>
 #include <string>
 
+//secure lib is a microsoft only impl that provides the 
+//same as the standard compiant LIB_EXT1 but with a different name
+#define __STDC_WANT_SECURE_LIB__ 1
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <time.h>
 
 namespace hades
@@ -50,7 +54,14 @@ namespace hades
 		//Use the updated C version of localtime
 		//for better threading security
 		tm time;
-		localtime_s(&time, &ct);
+		#if defined(__STDC_LIB_EXT1__) || defined(__STDC_SECURE_LIB__)
+			localtime_s(&time, &ct);
+		#else
+			//updated c version unavailable, have to suffer with the C99 version
+			auto time_ptr = localtime(&ct);
+			time = *time_ptr;
+			time_ptr = nullptr;
+		#endif
 		//use stream to collect formatted time
 		std::stringstream ss;
 		ss << std::put_time(&time, "%T");

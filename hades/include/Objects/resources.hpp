@@ -13,8 +13,11 @@
 namespace objects
 {
 	//console variable names for editor settings
-	//Grid settings
-	const auto editor_snaptogrid = "editor_snaptogrid", //int(see SnapToGrid
+	//editor setting variables
+	const auto editor_scroll_margin = "",//int
+		editor_scroll_rate = "", //int
+		//Grid settings
+		editor_snaptogrid = "editor_snaptogrid", //int(see SnapToGrid
 		editor_grid_size = "editor_grid_min_size", //int
 		editor_grid_max = "editor_grid_max", //int
 		editor_grid_enabled = "editor_show_grid",  //bool

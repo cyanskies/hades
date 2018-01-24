@@ -189,10 +189,15 @@ namespace objects
 	void DefineObjectConsoleVars()
 	{
 		//object editor variables
-		hades::console::SetProperty(editor_snaptogrid, 1);
-		hades::console::SetProperty(editor_grid_size, 8);
+		//grid
+		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
+		hades::console::SetProperty(editor_grid_size, editor_grid_default);
 		hades::console::SetProperty(editor_grid_enabled, true);
 		hades::console::SetProperty(editor_grid_size_multiple, 1);
+		//map
+		hades::console::SetProperty(editor_map_size, editor_map_size_default);
+		//objects
+		hades::console::SetProperty(editor_object_mock_size, editor_mock_size_default);
 	}
 
 	void RegisterObjectResources(hades::data::data_manager *data)
@@ -371,16 +376,27 @@ namespace objects
 			//editor:
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
+			//    object-mock-size: 8
+			//    object-mock-colour:[r,g,b,a]
+			//
 			//    snap-to-grid: [-1, 0, 1, 2], [force-disabled, disabled, enabled, force-enabled]
 			//    grid-min-size: default 8 or something, defines the small  
 			//	  show-grid-settings: true // hides the toolbar buttons for modifying the grid
 			//    show-grid: false // defines whether the grid should be turned on by default
+			//    grid-colour: [r,g,b,a]
+			//    grid-highlight: [r,g,b,a]
+			//
+			//    map-size:
+			
+			//use MakeColour to turn vectors into sf::color
 
 			static const auto resource_type = "editor";
 			static const auto editor_id = data->getUid(resource_type);
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
+
+			//Parse Object variables
 
 			auto groups = node["object-groups"];
 
@@ -417,6 +433,12 @@ namespace objects
 						add_to_group(o);
 			}//for object groups
 
+			auto mock_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "object-mock-size", mod,
+				*hades::console::GetInt(editor_object_mock_size, editor_mock_size_default));
+			hades::console::SetProperty(editor_object_mock_size, mock_size);
+
+			//Parse Grid Settings
+
 			auto snap = node["snap-to-grid"];
 			if (snap.IsDefined() && snap.IsScalar())
 			{
@@ -451,8 +473,14 @@ namespace objects
 				hades::console::SetProperty(editor_grid_size_multiple, grid_size);
 			}
 
-			bool grid_enabled = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid", mod, false);
+			bool grid_enabled = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid", mod, 
+				*hades::console::GetBool(editor_grid_enabled, true));
 			hades::console::SetProperty(editor_grid_enabled, grid_enabled);
+
+			//Parse Map Settings
+			auto map_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "map-size", mod, 
+				*hades::console::GetInt(editor_map_size, editor_map_size_default));
+			hades::console::SetProperty(editor_map_size, map_size);
 
 			//========
 			// editor settings object
@@ -460,7 +488,21 @@ namespace objects
 
 			auto editor_obj = hades::data::FindOrCreate<editor>(editor_id, mod, data);
 
+			//grid stuff
 			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-settings", mod, editor_obj->show_grid_settings);
+			
+			auto grid_colour = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "grid-colour", mod);
+			if (!grid_colour.empty())
+				editor_obj->grid = hades::MakeColour(std::begin(grid_colour), std::end(grid_colour));
+
+			auto grid_highlight = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "grid-highlight", mod);
+			if (!grid_highlight.empty())
+				editor_obj->grid_highlight = hades::MakeColour(std::begin(grid_highlight), std::end(grid_highlight));
+
+			//object settings
+			auto object_mock = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "object-mock-colour", mod);
+			if (!object_mock.empty())
+				editor_obj->object_mock_colour = hades::MakeColour(std::begin(object_mock), std::end(object_mock));
 
 			//TODO:
 			//toolbar icons

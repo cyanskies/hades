@@ -3,6 +3,7 @@
 
 #include <variant>
 
+#include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/Shader.hpp"
 
@@ -16,6 +17,32 @@
 namespace hades
 {
 	void RegisterCommonResources(hades::data::data_manager*);
+
+	template<class First, class Last>
+	sf::Color MakeColour(First begin, Last end)
+	{
+		auto count = std::distance(begin, end);
+		if (count < 3 || count > 4)
+		{
+			//TODO: log failure
+			return sf::Color::Magenta;
+		}
+
+		static auto min = 0;
+		static auto max = 255;
+
+		auto r = std::clamp(*begin++, min, max);
+		auto g = std::clamp(*begin++, min, max);
+		auto b = std::clamp(*begin++, min, max);
+		decltype(r) a = 255;
+
+		if (count == 4)
+			a = std::clamp(*begin++, min, max);
+
+		assert(begin == end);
+
+		return sf::Color(r, g, b, a);
+	}
 
 	namespace resources
 	{

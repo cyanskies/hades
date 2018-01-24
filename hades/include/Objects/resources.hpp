@@ -12,16 +12,24 @@
 
 namespace objects
 {
-	const auto editor_snaptogrid = "editor_snaptogrid",
-		editor_grid_size = "editor_grid_min_size",
-		editor_grid_max = "editor_grid_max",
-		editor_grid_enabled = "editor_show_grid",
-		editor_grid_size_multiple = "editor_grid_size";
+	//console variable names for editor settings
+	//Grid settings
+	const auto editor_snaptogrid = "editor_snaptogrid", //int(see SnapToGrid
+		editor_grid_size = "editor_grid_min_size", //int
+		editor_grid_max = "editor_grid_max", //int
+		editor_grid_enabled = "editor_show_grid",  //bool
+		editor_grid_size_multiple = "editor_grid_size", //int
+		//map settings
+		editor_map_size = "editor_map_size", //int
+		//object settings
+		editor_object_mock_size = "editor_object_mock_size"; //int
 
 	enum SnapToGrid { GRIDSNAP_FORCE_DISABLED = -1, GRIDSNAP_DISABLED, GRIDSNAP_ENABLED,  GRIDSNAP_FORCE_ENABLED };
 
 	const auto editor_snap_default = GRIDSNAP_ENABLED;
 	const auto editor_grid_default = 8;
+	const auto editor_map_size_default = 100;
+	const auto editor_mock_size_default = editor_grid_default;
 
 	void RegisterObjectResources(hades::data::data_manager*);
 	
@@ -38,7 +46,7 @@ namespace objects
 				show_grid_snap = true;
 			//grid colour
 			//grid highlight colour
-
+			sf::Color grid = sf::Color::Black, grid_highlight = sf::Color::White;
 			//toolbar icons
 			hades::resources::animation *selection_mode_icon = nullptr,
 				*grid_show_icon = nullptr,
@@ -46,8 +54,8 @@ namespace objects
 				*grid_grow_icon = nullptr,
 				*grid_snap_icon = nullptr;
 
-			//editor
-			//map default size
+			//object mock colour
+			sf::Color object_mock_colour = sf::Color::Cyan;
 		};
 
 		struct object_t

@@ -44,6 +44,10 @@ namespace objects
 		std::vector<object_info> objects;
 		//the id of the next entity to be placed, or spawned in-game
 		hades::EntityId next_id = hades::NO_ENTITY;
+
+		//TODO: background, flat colour, paralax image, paralax loop image
+		//set paralax to 0 to get a static image
+		//layered images with different paralax?
 	};
 }
 

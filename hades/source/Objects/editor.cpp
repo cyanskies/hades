@@ -342,6 +342,11 @@ namespace objects
 				//places objects in the top left of the nearest grid cell
 				auto world_coord = hades::pointer::ConvertToWorldCoords(target, {std::get<0>(m_pos), std::get<1>(m_pos)}, GameView);
 				auto snapped_coords = hades::pointer::SnapCoordsToGrid(static_cast<sf::Vector2i>(world_coord), _gridCurrentSize);
+		
+				//keep the object within the map bounds
+				snapped_coords.x = std::clamp(snapped_coords.x, 0, MapSize.x - size[0]);
+				snapped_coords.y = std::clamp(snapped_coords.y, 0, MapSize.y - size[1]);
+				
 				object->setPosition(static_cast<sf::Vector2f>(snapped_coords));
 			}
 		}

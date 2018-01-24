@@ -24,8 +24,7 @@ namespace hades
 
 		sf::Vector2i SnapCoordsToGrid(sf::Vector2i coord, types::int32 grid_size)
 		{
-			auto coordf = static_cast<sf::Vector2f>(coord) +
-			sf::Vector2f{static_cast<float>(grid_size), static_cast<float>(grid_size)};
+			auto coordf = static_cast<sf::Vector2f>(coord);
 			
 			auto snapPos = coordf - sf::Vector2f(static_cast<float>(std::abs(std::fmod(coordf.x, grid_size))),
 				static_cast<float>(std::abs((std::fmod(coordf.y, grid_size)))));

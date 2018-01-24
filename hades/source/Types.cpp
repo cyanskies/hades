@@ -1,5 +1,6 @@
 #include "Hades/Types.hpp"
 
+#include <stdexcept>
 #include <limits>
 
 namespace hades {

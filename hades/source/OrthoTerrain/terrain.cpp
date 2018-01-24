@@ -81,10 +81,10 @@ namespace ortho_terrain
 		if (amount == 0)
 			return { sf::Vector2i(position) };
 
-		auto end = sf::Vector2i(position) + 
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::floorf(amount / 2.f), std::floorf(amount / 2.f) });
+		auto end = sf::Vector2i(position) +
+			static_cast<sf::Vector2i>(sf::Vector2f{ std::floor(amount / 2.f), std::floor(amount / 2.f) });
 		auto start_position = sf::Vector2i(position) -
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceilf(amount / 2.f), std::ceilf(amount / 2.f)});
+			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceil(amount / 2.f), std::ceil(amount / 2.f)});
 
 		std::vector<sf::Vector2i> positions;
 
@@ -122,7 +122,7 @@ namespace ortho_terrain
 	//[3] bottom right
 	std::array<sf::Vector2i, 4> AsTiles(const sf::Vector2u &position)
 	{
-		//if the tile is along the top or left edge of the map, 
+		//if the tile is along the top or left edge of the map,
 		//then the positions would wrap around to the opposite extremities
 		auto pos = static_cast<sf::Vector2i>(position);
 		std::array<sf::Vector2i, 4> tiles;
@@ -158,7 +158,7 @@ namespace ortho_terrain
 	}
 
 	void MutableTerrainMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
-	{	
+	{
 		MutableTileMap::replace(t, position, amount);
 
 		if (!updateVertex)
@@ -224,7 +224,7 @@ namespace ortho_terrain
 
 		_cleanTransitions({ smallest_x, smallest_y }, { largest_x - smallest_x, largest_y - smallest_y });
 	}
-	
+
 	void MutableTerrainMap::_cleanTransitions(const sf::Vector2u &position, sf::Vector2u size)
 	{
 		//for each vertex in the area

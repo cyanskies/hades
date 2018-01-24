@@ -154,15 +154,17 @@ std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string re
 	auto seq = node[property_name];
 
 	if(seq.IsDefined())
-	if (seq.IsSequence())
 	{
-		for (auto &i : seq)
-			output.push_back(i.as<T>());
-	}
-	else if (seq.IsScalar())
-	{
-		output.push_back(seq.as<T>(T()));
-	}
+        if (seq.IsSequence())
+        {
+            for (const auto &i : seq)
+                output.push_back(i.as<T>());
+        }
+        else if (seq.IsScalar())
+        {
+            output.push_back(seq.as<T>(T()));
+        }
+    }
 
 	return output;
 }

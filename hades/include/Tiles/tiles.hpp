@@ -38,11 +38,10 @@ namespace tiles
 		hades::types::uint32 tiles_per_row, hades::types::uint32 tile_size);
 
 	//thrown by tile maps for unrecoverable errors
-	class tile_map_exception : public std::exception
+	class tile_map_exception : public std::runtime_error
 	{
 	public:
-		using std::exception::exception;
-		using std::exception::what;
+		using std::runtime_error::runtime_error;
 	};
 
 	//a class for rendering MapData as a tile map

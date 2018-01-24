@@ -1,5 +1,7 @@
 #include "Tiles/editor.hpp"
 
+#include "Hades/common-input.hpp"
+
 namespace tiles
 {
 	template<class MapClass>
@@ -13,13 +15,13 @@ namespace tiles
 	{
 		return Map.getMap();
 	}
-	
+
 	template<class MapClass>
 	void tile_editor_t<MapClass>::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	{
 		target.setView(GameView);
 		target.draw(Map);
-		
+
 		DrawTilePreview(target);
 	}
 

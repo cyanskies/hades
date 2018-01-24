@@ -2,8 +2,8 @@
 
 #ifdef _WIN32
 #include "StandardPathsWindows.cpp"
-#endif
+#endif //_WIN32
 
-#ifdef linux
+#ifdef __linux__
 #include "StandardPathsLinux.cpp"
-#endif
+#endif // __linux__

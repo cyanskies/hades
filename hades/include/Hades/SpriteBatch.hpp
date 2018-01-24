@@ -80,8 +80,10 @@ namespace hades {
 			static const type_id type;
 		};
 
+		extern types::uint32 type_count;
+
 		template<typename T>
-		type_id ShaderUniform<T>::type = type_count++;
+		const type_id ShaderUniform<T>::type = type_count++;
 
 		template<typename T>
 		struct ShaderUniformArray final
@@ -112,9 +114,7 @@ namespace hades {
 		};
 
 		template<typename T>
-		type_id ShaderUniformArray<T>::type = type_count++;
-
-		extern types::uint32 type_count;
+		const type_id ShaderUniformArray<T>::type = type_count++;
 
 		using layer_t = types::int16;
 

@@ -124,7 +124,7 @@ namespace ortho_terrain
 					Position = (5, "new_mod_label.x + new_mod_label.h + 10");
 					Size = (100, 30);
 					DefaultText = "./";
-                
+
 				}
 
 				EditBox."new_filename" {
@@ -179,7 +179,7 @@ namespace ortho_terrain
 	}
 
 	void RegisterOrthoTerrainResources(hades::data::data_manager* data)
-	{	
+	{
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);
 
@@ -235,18 +235,18 @@ namespace ortho_terrain
 			//terrain: name <// a map of terrains in this tileset
 
 			auto terrain_str = terrainNode.as<hades::types::string>();
-			
+
 			auto id = data->getUid(terrain_str);
 
 			terrain* t = hades::data::FindOrCreate<terrain>(id, mod, data);
 			if (t)
 				Terrains.push_back(id);
-			
+
 			return t;
 		}
 
 		std::vector<tiles::tile> parseLayout(terrain_transition* transitions, data::UniqueId texture,
-			data::UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order, 
+			data::UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order,
 			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits, hades::data::data_manager *data)
 		{
 			std::vector<tiles::tile> out;
@@ -283,7 +283,7 @@ namespace ortho_terrain
 					info.terrain = terrain1;
 					info.terrain2 = terrain2;
 				}
-				
+
 				//TODO: exception handling here
 				auto &transition_vector = GetTransition(info.type, *transitions, data);
 				transition_vector.push_back(ntile);
@@ -360,16 +360,16 @@ namespace ortho_terrain
 			auto layout = v["layout"];
 
 			std::vector<tile_size_t> layout_order;
-				
+
 			using namespace transition2;
 
-			static const std::vector<tile_size_t> ascending = 
+			static const std::vector<tile_size_t> ascending =
 			{ TOP_RIGHT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT,
 				BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
-				TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT, TOP_LEFT_RIGHT, 
+				TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT, TOP_LEFT_RIGHT,
 				TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
 				TOP_LEFT_RIGHT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT},
-				brigids_cross = 
+				brigids_cross =
 			{ BOTTOM_LEFT, TOP_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT_RIGHT, BOTTOM_LEFT_RIGHT,
 				TOP_LEFT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT_RIGHT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT,
 				TOP_RIGHT, TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
@@ -377,7 +377,7 @@ namespace ortho_terrain
 
 			if (layout.IsDefined() && layout.IsSequence())
 			{
-				for (auto &i : layout)
+				for (const auto &i : layout)
 					layout_order.push_back(i.as<tile_size_t>());
 			}
 			else if (layout.IsDefined() && layout.IsScalar() &&
@@ -587,17 +587,17 @@ namespace ortho_terrain
 			std::vector<tile_size_t> layout_order;
 
 			//these values corrispond to entries in transition3::Types
-			static const std::vector<tile_size_t> ascending = 
+			static const std::vector<tile_size_t> ascending =
 				{  5,  7, 11, 14, 15, 16,
 				17, 19, 21, 22, 23, 25,
 				29, 32, 33, 34, 35, 38,
 				42, 45, 46, 47, 48, 51,
-				55, 57, 58, 59, 61, 63, 
+				55, 57, 58, 59, 61, 63,
 				64, 65, 66, 69, 73, 75 };
 
 			if (layout.IsDefined() && layout.IsSequence())
 			{
-				for (auto &i : layout)
+				for (const auto &i : layout)
 					layout_order.push_back(i.as<tile_size_t>());
 			}
 			else

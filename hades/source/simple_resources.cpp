@@ -20,7 +20,7 @@ using namespace hades;
 void resource_error(types::string resource_type, types::string resource_name, data::UniqueId mod)
 {
 	auto mod_ptr = data::Get<resources::mod>(mod);
-	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: " 
+	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: "
 		+ mod_ptr->name + ". Name has already been used for a different resource type.");
 }
 
@@ -98,7 +98,7 @@ namespace hades
 			return t;
 		}
 
-		//generates a group of 
+		//generates a group of
 		sf::Texture generate_default_texture(texture::size_type width = 32u, texture::size_type height = 32u)
 		{
 			static std::size_t counter = 0;
@@ -115,7 +115,7 @@ namespace hades
 			//textures:
 			//    default:
 			//        width: 0 #0 = autodetect, no size checking will be done
-			//        height: 0 
+			//        height: 0
 			//        source: #empty source, no file is specified, will always be default error texture
 			//        smooth: false
 			//        repeating: false
@@ -158,12 +158,12 @@ namespace hades
 		void loadTexture(resources::resource_base* r, data::data_manager* dataman)
 		{
 			auto tex = static_cast<texture*>(r);
-			
+
 			if (!tex->source.empty())
 			{
 				//the mod not being available should be 'impossible'
 				auto mod = dataman->getMod(tex->mod);
-				
+
 				try
 				{
 					files::FileStream fstream = files::make_stream(mod->source, tex->source);
@@ -200,7 +200,7 @@ namespace hades
 		void parseString(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//strings yaml
-			//strings: 
+			//strings:
 			//    id: value
 			//    id2: value2
 
@@ -220,7 +220,7 @@ namespace hades
 				auto id = dataman->getUid(tnode.as<types::string>());
 
 				auto str = data::FindOrCreate<resources::string>(id, mod, dataman);// = std::make_unique<resources::string>();
-				
+
 				if (!str)
 					continue;
 
@@ -305,7 +305,7 @@ namespace hades
 			//on clients
 			//a blast of names to VariableIds must be sent on client connection
 			//so that we can refer to curves by id instead of by string
-			
+
 			//first check that our node is valid
 			//no point looping though if their are not children
 			static const types::string resource_type = "curve";
@@ -408,7 +408,7 @@ namespace hades
 					bool bad_frames = false;
 					types::uint16 frame_count = 0;
 					//frames is a sequence node
-					for (auto &frame : frames)
+					for (const auto &frame : frames)
 					{
 						frame_count++;
 						if (!yaml_error(resource_type, name, "frame", "sequence", mod, frame.IsSequence()))
@@ -425,7 +425,7 @@ namespace hades
 						frame_vector.emplace_back( frame[0].as<types::uint16>(),	// X
 							frame[1].as<types::uint16>(),							// Y
 							frame[3].as<float>() );									// duration
-						
+
 						auto &f = frame_vector.back();
 						//check that the x and y values are within the limits of int32::max
 						if (f.x + a->width > a->tex->width)
@@ -483,7 +483,7 @@ namespace hades
 		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//fonts yaml
-			//fonts: 
+			//fonts:
 			//    name: source
 			//    name2: source2
 
@@ -501,10 +501,10 @@ namespace hades
 				auto id = data->getUid(tnode.as<types::string>());
 				auto name = tnode.as<types::string>();
 				font *f = data::FindOrCreate<font>(id, mod, data);
-				
+
 				if (!f)
 					continue;
-				
+
 				f->source = source;
 			}
 		}

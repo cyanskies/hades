@@ -21,10 +21,17 @@ if(WIN32)
 	set(SFML_MAIN_RELEASE sfml-main)
 	set(SFML_MAIN_DEBUG sfml-main-d)
 	set(GLEW)
+	set(YAML libyaml-cppmd)
+	set(PTHREAD)
+	set(GCCFS)
 else()
 	set(SFML_MAIN_RELEASE)
 	set(SFML_MAIN_DEBUG)
 	set(GLEW GLEW)
+	set(YAML yaml-cpp)
+	set(PTHREAD pthread)
+# this won't be needed once gcc properly publish the non-experimental filesystem support
+	set(GCCFS stdc++fs)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
@@ -38,8 +45,10 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	sfml-network
 	${SFML_MAIN_RELEASE}
 	tgui
-	libyaml-cppmd
+	${YAML}
 	zlibwapi
+	${PTHREAD}
+	${GCCFS}
 	)
 else()
 	target_link_libraries(${XING_EXE}
@@ -52,8 +61,10 @@ else()
 	sfml-network-d
 	${SFML_MAIN_DEBUG}
 	tgui-d
-	libyaml-cppmdd
+	${YAML}
 	zlibwapi
+	${PTHREAD}
+	${GCCFS}
 	)
 endif()
 

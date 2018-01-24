@@ -1,7 +1,7 @@
 namespace hades
 {
 	template<class Rect, class Key, class Value>
-	QuadNode<Rect, Key, Value>::QuadNode(const Rect &map, types::uint8 max_density) : _map(map), _max_density(density)
+	QuadNode<Rect, Key, Value>::QuadNode(const Rect &map, types::uint8 max_density) : _area(map), _max_density(max_density)
 	{}
 
 	template<class Rect, class Key, class Value>
@@ -44,9 +44,9 @@ namespace hades
 		{
 			//create four chilren, then reinsert the current entities held in data.
 			//then insert this entity
-			int halfwidth = (_map.width / 2) + 1, halfheight = (_map.height / 2) + 1;
-			Rect tlrect(_map.left, _map.top, halfwidth, halfheight), trrect(_map.left + halfwidth, _map.top, halfwidth, halfheight),
-				blrect(_map.left, _map.top + halfheight, halfwidth, halfheight), brrect(_map.left + halfwidth, _map.top + halfheight, halfwidth, halfheight);
+			int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
+			Rect tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(_area.left + halfwidth, _area.top, halfwidth, halfheight),
+				blrect(_area.left, _area.top + halfheight, halfwidth, halfheight), brrect(_area.left + halfwidth, _area.top + halfheight, halfwidth, halfheight);
 
 			_children.insert(QuadNode(tlrect));
 			_children.insert(QuadNode(trrect));

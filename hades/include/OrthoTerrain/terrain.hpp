@@ -31,11 +31,10 @@ namespace ortho_terrain
 
 	//thrown by functions in the ortho-terrain namespace
 	//for unrecoverable errors
-	class exception : public std::exception
+	class exception : public std::runtime_error
 	{
 	public:
-		using std::exception::exception;
-		using std::exception::what;
+		using std::runtime_error::runtime_error;
 	};
 
 	//a drawable map of terrain tiles
@@ -56,7 +55,7 @@ namespace ortho_terrain
 		void replace(const resources::terrain&, const sf::Vector2u &position, hades::types::uint8 amount = 0);
 
 	private:
-		//fixes transitions for vertex in an area 
+		//fixes transitions for vertex in an area
 		void _cleanTransitions(const sf::Vector2u &position, sf::Vector2u size = { 0,0 });
 
 		tiles::tile_count_t _vertex_width;

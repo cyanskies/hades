@@ -72,7 +72,7 @@ namespace tiles
 		//a list of tilesets, to tilesets starting id
 		std::vector<std::pair<const resources::tileset*, tile_count_t>> tilesets;
 
-		//for each tile, add its tileset to the tilesets list, 
+		//for each tile, add its tileset to the tilesets list,
 		// and record the highest tile_id used from that tileset.
 		const auto &tiles = std::get<TileArray>(map);
 		auto &tile_list = std::get<std::vector<tile_count_t>>(output);
@@ -135,7 +135,7 @@ namespace tiles
 				}
 			}
 
-			//by now we should have found the tileset and tile id, 
+			//by now we should have found the tileset and tile id,
 			//if not then saving is impossible
 			assert(tset);
 			//add whatever was found
@@ -337,9 +337,9 @@ namespace tiles
 			return { sf::Vector2i(position) };
 
 		auto end = sf::Vector2i(position) +
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::floorf(amount / 2.f), std::floorf(amount / 2.f) });
+			static_cast<sf::Vector2i>(sf::Vector2f{ std::floor(amount / 2.f), std::floor(amount / 2.f) });
 		auto start_position = sf::Vector2i(position) -
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceilf(amount / 2.f), std::ceilf(amount / 2.f) });
+			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceil(amount / 2.f), std::ceil(amount / 2.f) });
 
 		std::vector<sf::Vector2i> positions;
 

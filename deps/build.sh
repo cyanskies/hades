@@ -27,8 +27,6 @@ if [ ! -d "$installpfx" ]; then
 mkdir "$installpfx"
 fi
 
-echo NOTE: $installpfx
-
 #SFML
 cd ./sfml
 cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -G "$generator"
@@ -45,6 +43,9 @@ cmake --build . --target install --config "$mode"
 
 cd ../yaml-cpp
 cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -G "$generator"
+cmake --build . --target install --config "$mode"
+
+cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -DBUILD_GMOCK=false -DYAML_CPP_BUILD_TESTS=false -G "$generator"
 cmake --build . --target install --config "$mode"
 
 #minizlib

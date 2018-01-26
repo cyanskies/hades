@@ -189,6 +189,9 @@ namespace objects
 	void DefineObjectConsoleVars()
 	{
 		//object editor variables
+		//editor ui
+		hades::console::SetProperty(editor_scroll_margin, editor_scroll_margin_default);
+		hades::console::SetProperty(editor_scroll_rate, editor_scroll_rate_default);
 		//grid
 		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
 		hades::console::SetProperty(editor_grid_size, editor_grid_default);
@@ -374,6 +377,9 @@ namespace objects
 		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
 		{
 			//editor:
+			//    scroll-rate: +int
+			//    scroll-margin: +int
+			//
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]
 			//    object-mock-size: 8
@@ -391,10 +397,20 @@ namespace objects
 			//use MakeColour to turn vectors into sf::color
 
 			static const auto resource_type = "editor";
+			static const auto resource_name = "N/A";
 			static const auto editor_id = data->getUid(resource_type);
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
+
+			//Parse editor variables
+			auto scroll_rate = yaml_get_scalar(node, resource_type, resource_name, "scroll-rate", mod, 
+				hades::console::GetInt(editor_scroll_rate, editor_scroll_rate_default));
+			hades::console::SetProperty(editor_scroll_rate, scroll_rate);
+
+			auto scroll_margin = yaml_get_scalar(node, resource_type, resource_name, "scroll-margin", mod,
+				hades::console::GetInt(editor_scroll_margin, editor_scroll_margin_default));
+			hades::console::SetProperty(editor_scroll_margin, scroll_margin);
 
 			//Parse Object variables
 
@@ -433,7 +449,7 @@ namespace objects
 						add_to_group(o);
 			}//for object groups
 
-			auto mock_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "object-mock-size", mod,
+			auto mock_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "object-mock-size", mod,
 				*hades::console::GetInt(editor_object_mock_size, editor_mock_size_default));
 			hades::console::SetProperty(editor_object_mock_size, mock_size);
 
@@ -465,7 +481,7 @@ namespace objects
 			// Get the minimum grid size for the editor(this should be the same value the game uses if it uses
 			// grid based game logic
 			hades::types::int32 current_grid_size = *hades::console::GetInt(editor_grid_size, editor_grid_default);
-			auto grid_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "grid-min-size", mod, current_grid_size);
+			auto grid_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "grid-min-size", mod, current_grid_size);
 
 			if (grid_size != current_grid_size)
 			{
@@ -473,12 +489,12 @@ namespace objects
 				hades::console::SetProperty(editor_grid_size_multiple, grid_size);
 			}
 
-			bool grid_enabled = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid", mod, 
+			bool grid_enabled = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid", mod,
 				*hades::console::GetBool(editor_grid_enabled, true));
 			hades::console::SetProperty(editor_grid_enabled, grid_enabled);
 
 			//Parse Map Settings
-			auto map_size = yaml_get_scalar<hades::types::int32>(node, "editor", "N/A", "map-size", mod, 
+			auto map_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "map-size", mod,
 				*hades::console::GetInt(editor_map_size, editor_map_size_default));
 			hades::console::SetProperty(editor_map_size, map_size);
 
@@ -489,18 +505,18 @@ namespace objects
 			auto editor_obj = hades::data::FindOrCreate<editor>(editor_id, mod, data);
 
 			//grid stuff
-			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, "editor", "N/A", "show-grid-settings", mod, editor_obj->show_grid_settings);
+			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid-settings", mod, editor_obj->show_grid_settings);
 			
-			auto grid_colour = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "grid-colour", mod);
+			auto grid_colour = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-colour", mod);
 			if (!grid_colour.empty())
 				editor_obj->grid = hades::MakeColour(std::begin(grid_colour), std::end(grid_colour));
 
-			auto grid_highlight = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "grid-highlight", mod);
+			auto grid_highlight = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-highlight", mod);
 			if (!grid_highlight.empty())
 				editor_obj->grid_highlight = hades::MakeColour(std::begin(grid_highlight), std::end(grid_highlight));
 
 			//object settings
-			auto object_mock = yaml_get_sequence<hades::types::int32>(node, "editor", "N/A", "object-mock-colour", mod);
+			auto object_mock = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "object-mock-colour", mod);
 			if (!object_mock.empty())
 				editor_obj->object_mock_colour = hades::MakeColour(std::begin(object_mock), std::end(object_mock));
 

@@ -14,8 +14,8 @@ namespace objects
 {
 	//console variable names for editor settings
 	//editor setting variables
-	const auto editor_scroll_margin = "",//int
-		editor_scroll_rate = "", //int
+	const auto editor_scroll_margin = "editor_scroll_area",//int
+		editor_scroll_rate = "editor_scroll_rate", //int
 		//Grid settings
 		editor_snaptogrid = "editor_snaptogrid", //int(see SnapToGrid
 		editor_grid_size = "editor_grid_min_size", //int
@@ -29,6 +29,8 @@ namespace objects
 
 	enum SnapToGrid { GRIDSNAP_FORCE_DISABLED = -1, GRIDSNAP_DISABLED, GRIDSNAP_ENABLED,  GRIDSNAP_FORCE_ENABLED };
 
+	const auto editor_scroll_margin_default = 8;
+	const auto editor_scroll_rate_default = 4;
 	const auto editor_snap_default = GRIDSNAP_ENABLED;
 	const auto editor_grid_default = 8;
 	const auto editor_map_size_default = 100;

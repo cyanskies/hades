@@ -16,6 +16,9 @@ namespace objects
 	//editor setting variables
 	const auto editor_scroll_margin = "editor_scroll_area",//int
 		editor_scroll_rate = "editor_scroll_rate", //int
+		editor_camera_height = "editor_view_height", //the camera size at zoom level 1(the lowest level)
+		editor_zoom_max = "editor_zoom_max",
+		editor_zoom_start = "editor_zoom_default",
 		//Grid settings
 		editor_snaptogrid = "editor_snaptogrid", //int(see SnapToGrid
 		editor_grid_size = "editor_grid_min_size", //int
@@ -31,6 +34,9 @@ namespace objects
 
 	const auto editor_scroll_margin_default = 8;
 	const auto editor_scroll_rate_default = 4;
+	const auto editor_camera_height_default = 600;
+	const auto editor_zoom_max_default = 4;
+	const auto editor_zoom_default = 2;
 	const auto editor_snap_default = GRIDSNAP_ENABLED;
 	const auto editor_grid_default = 8;
 	const auto editor_map_size_default = 100;

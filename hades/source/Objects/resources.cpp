@@ -192,6 +192,9 @@ namespace objects
 		//editor ui
 		hades::console::SetProperty(editor_scroll_margin, editor_scroll_margin_default);
 		hades::console::SetProperty(editor_scroll_rate, editor_scroll_rate_default);
+		hades::console::SetProperty(editor_camera_height, editor_camera_height_default);
+		hades::console::SetProperty(editor_zoom_max, editor_zoom_max_default);
+		hades::console::SetProperty(editor_zoom_start, editor_zoom_default);
 		//grid
 		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
 		hades::console::SetProperty(editor_grid_size, editor_grid_default);
@@ -379,6 +382,9 @@ namespace objects
 			//editor:
 			//    scroll-rate: +int
 			//    scroll-margin: +int
+			//    camera_height: +int
+			//    zoom_start: +int
+			//    zoom_max: +int
 			//
 			//    object-groups:
 			//        <group-name>: object or [object1, object2, ...]

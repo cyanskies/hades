@@ -48,12 +48,8 @@ namespace hades
 					std::visit([identifier, &value, this](auto &&arg) {
 						using T = std::decay_t<decltype(arg)>;
 						using U = T::element_type::value_type;
-						if constexpr(std::is_same_v<T, console::property_int> ||
-							std::is_same_v<T, console::property_bool> ||
-							std::is_same_v<T, console::property_float>)
-						{
+						if constexpr(std::is_same_v<T, console::property<U>>)
 							set(identifier, types::stov<U>(value));
-						}
 						else if constexpr(std::is_same_v<T, console::property_str>)
 							set(identifier, value);
 					}, var);

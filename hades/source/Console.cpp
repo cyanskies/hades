@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #include <iostream>
 #endif
 
@@ -16,10 +16,10 @@
 //==============
 namespace hades
 {
-	bool Console::GetValue(std::string_view var, std::shared_ptr<detail::Property_Base> &out) const
+	bool Console::GetValue(std::string_view var, detail::Property &out) const
 	{
-		auto iter = TypeMap.find(types::string(var));
-		if(iter == TypeMap.end())
+		auto iter = _consoleVariables.find(to_string(var));
+		if(iter == _consoleVariables.end())
 			return false;
 		else
 			out = iter->second;
@@ -34,7 +34,7 @@ namespace hades
 		//or register specific functions for defining variables dynamically
 		bool ret = false;
 
-		std::shared_ptr<detail::Property_Base> var;
+		detail::Property var;
 		if(GetValue(identifier, var))
 		{
 			if(value.empty())
@@ -45,18 +45,18 @@ namespace hades
 			{
 				try
 				{
-					//float
-					if (var->type == typeid(float))
-						ret = set<float>(identifier, types::stov<float>(value));
-					//bool
-					else if (var->type == typeid(bool))
-						ret = set<bool>(identifier, types::stov<bool>(value));
-					//string
-					else if (var->type == typeid(types::string))
-						ret = set<types::string>(identifier, value);
-					//integer
-					else if (var->type == typeid(types::int32))
-						ret = set<types::int32>(identifier, types::stov<types::int32>(value));
+					std::visit([identifier, &value, this](auto &&arg) {
+						using T = std::decay_t<decltype(arg)>;
+						using U = T::element_type::value_type;
+						if constexpr(std::is_same_v<T, console::property_int> ||
+							std::is_same_v<T, console::property_bool> ||
+							std::is_same_v<T, console::property_float>)
+						{
+							set(identifier, types::stov<U>(value));
+						}
+						else if constexpr(std::is_same_v<T, console::property_str>)
+							set(identifier, value);
+					}, var);
 
 					echo(to_string(identifier) + " " + value);
 				}
@@ -71,17 +71,17 @@ namespace hades
 			}
 		}
 		else
-			echo("Attemped to set undefined variable: " + to_string(identifier), WARNING);
+			echo("Attemped to set undefined variable: " + to_string(identifier), ERROR);
 		return ret;
 	}
 
 	void Console::EchoVariable(std::string_view identifier)
 	{
-		std::shared_ptr<detail::Property_Base> var;
+		detail::Property var;
 
 		if(GetValue(identifier, var))
 		{
-			echo(to_string(identifier) + " " + var->to_string());
+			echo(to_string(identifier) + " " + std::visit(detail::to_string_lamb, var));
 		}
 	}
 
@@ -92,10 +92,10 @@ namespace hades
 		std::vector<types::string> output;
 
 		auto insert = [&output](const ConsoleVariableMap::value_type &v) {
-			output.push_back(v.first + " " + v.second->to_string());
+			output.push_back(v.first + " " + std::visit(detail::to_string_lamb, v.second));
 		};
 
-		for (auto &var : TypeMap)
+		for (auto &var : _consoleVariables)
 		{
 			if (args.empty())
 				insert(var);
@@ -156,7 +156,7 @@ namespace hades
 		//test to see the name hasn't been used for a variable
 		{
 			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-			std::shared_ptr<detail::Property_Base> var;
+			detail::Property var;
 			if (GetValue(identifier, var))
 			{
 				echo("Attempted definition of function: " + to_string(identifier) + ", but name is already used for a variable.", ERROR);
@@ -194,26 +194,22 @@ namespace hades
 
 	void Console::set(std::string_view name, types::int32 val)
 	{
-		if (!set<types::int32>(name, val))
-			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
+		setValue(name, val);
 	}
 
 	void Console::set(std::string_view name, float val)
 	{
-		if(!set<float>(name, val))
-			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
+		setValue(name, val);
 	}
 
 	void Console::set(std::string_view name, bool val)
 	{
-		if (!set<bool>(name, val))
-			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
+		setValue(name, val);
 	}
 
 	void Console::set(std::string_view name, std::string_view val)
 	{
-		if (!set<types::string>(name, std::string(val)))
-			throw console::property_wrong_type("name: " + std::string(name) + ", value: " + to_string(val));
+		setValue(name, to_string(val));
 	}
 
 	console::property<types::int32> Console::getInt(std::string_view name)
@@ -233,17 +229,13 @@ namespace hades
 
 	console::property_str Console::getString(std::string_view name)
 	{
-		std::shared_ptr<detail::Property_Base > out;
+		detail::Property out;
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if (GetValue(name, out))
 		{
-			if (out->type == typeid(types::string))
-			{
-				auto value = std::static_pointer_cast<detail::Property<types::string> > (out);
-				return value->value;
-			}
-			else
-				return nullptr;
+			using str = console::property_str;
+			if (std::holds_alternative<str>(out))
+				return std::get<str>(out);
 		}
 
 		return nullptr;
@@ -314,7 +306,7 @@ namespace hades
 		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
 		TextBuffer.push_back(message);
 
-		#ifdef _DEBUG
+		#ifndef NDEBUG
 			std::cerr << message.Text() << std::endl;
 		#endif
 	}
@@ -323,7 +315,7 @@ namespace hades
 	{
 		{
 			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-			std::shared_ptr<detail::Property_Base> var;
+			detail::Property var;
 			if (GetValue(command, var))
 				return true;
 		}
@@ -343,7 +335,7 @@ namespace hades
 	{
 		{
 			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-			TypeMap.erase(command);
+			_consoleVariables.erase(command);
 		}
 
 		eraseFunction(command);

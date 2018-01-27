@@ -11,10 +11,11 @@ namespace hades {
 	public:
 		using exchange_token = std::unique_lock<mutex>;
 		using lock_return = std::tuple<bool, exchange_token>;
+		using value_type = value;
 
 		value_guard() = default;
 		value_guard(value desired) : _value(desired) {}
-		value_guard(const value_guard& other) : _value(other.get()) {}
+		value_guard(const value_guard& other) : _value(other.load()) {}
 		~value_guard() = default;
 
 		void operator=(value desired)
@@ -25,7 +26,7 @@ namespace hades {
 
 		void operator=(const value_guard&) = delete;
 
-		value get() const
+		value load() const
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			return _value;
@@ -33,7 +34,7 @@ namespace hades {
 
 		operator value() const
 		{
-			return get();
+			return load();
 		}
 
 		bool compare_exhange(const value &expected, value desired)

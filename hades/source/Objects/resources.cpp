@@ -410,12 +410,12 @@ namespace objects
 				return;
 
 			//Parse editor variables
-			auto scroll_rate = yaml_get_scalar(node, resource_type, resource_name, "scroll-rate", mod, 
-				hades::console::GetInt(editor_scroll_rate, editor_scroll_rate_default));
+			auto scroll_rate = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-rate", mod, 
+				*hades::console::GetInt(editor_scroll_rate, editor_scroll_rate_default));
 			hades::console::SetProperty(editor_scroll_rate, scroll_rate);
 
-			auto scroll_margin = yaml_get_scalar(node, resource_type, resource_name, "scroll-margin", mod,
-				hades::console::GetInt(editor_scroll_margin, editor_scroll_margin_default));
+			auto scroll_margin = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-margin", mod,
+				*hades::console::GetInt(editor_scroll_margin, editor_scroll_margin_default));
 			hades::console::SetProperty(editor_scroll_margin, scroll_margin);
 
 			//Parse Object variables

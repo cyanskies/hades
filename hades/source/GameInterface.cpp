@@ -46,7 +46,7 @@ namespace hades
 		//this is a compare exchange loop
 		while (try_again)
 		{
-			auto oldcurve = ents.get();
+			auto oldcurve = ents.load();
 			auto newcurve = oldcurve;
 
 			auto value = newcurve.get(t);
@@ -85,7 +85,7 @@ namespace hades
 
 		while (try_again)
 		{
-			auto oldcurve = ents.get();
+			auto oldcurve = ents.load();
 			auto newcurve = oldcurve;
 
 			auto value = newcurve.get(t);

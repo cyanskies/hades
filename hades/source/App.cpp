@@ -327,8 +327,8 @@ namespace hades
 			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
 			{									// doesn't block resizing the window
-				_console.set<types::int32>("vid_width", e.size.width);
-				_console.set<types::int32>("vid_height", e.size.height);
+				_console.setValue<types::int32>("vid_width", e.size.width);
+				_console.setValue<types::int32>("vid_height", e.size.height);
 				_console.set("vid_mode", -1);
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });

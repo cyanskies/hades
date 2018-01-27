@@ -25,7 +25,7 @@ namespace hades
 
 		template<class T>
 		using property = std::shared_ptr<std::atomic<T>>;
-
+	
 		using property_int = property<types::int32>;
 		using property_float = property<float>;
 		using property_bool = property<bool>;

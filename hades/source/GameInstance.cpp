@@ -34,7 +34,7 @@ namespace hades
 
 			//create the job data, with a pointer to the game interface
 			auto job_data = std::make_unique<system_job_data>();
-			job_data->entities = s.attached_entities.get().get(_currentTime);
+			job_data->entities = s.attached_entities.load().get(_currentTime);
 			job_data->game_data = this;
 			job_data->current_time = _currentTime;
 			job_data->dt = dt;

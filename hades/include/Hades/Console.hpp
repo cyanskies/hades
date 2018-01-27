@@ -10,6 +10,7 @@
 #include <queue>
 #include <string>
 #include <typeindex>
+#include <variant>
 
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
@@ -27,13 +28,11 @@ namespace hades
 {
 	namespace detail
 	{
-		struct Property_Base 
-		{
-			Property_Base(std::type_index i) : type(i) {}
-			virtual ~Property_Base() {}
-			std::type_index type;
+		using Property = std::variant<console::property_int, console::property_bool,
+			console::property_float, console::property_str>;
 
-			virtual std::string to_string() = 0;
+		const auto to_string_lamb = [](auto &&val)->types::string {
+			return to_string(val->load());
 		};
 	}
 
@@ -62,7 +61,7 @@ namespace hades
 		void eraseFunction(std::string_view identifier) override;
 
 		template<class T>
-		bool set(std::string_view identifier, const T &value);
+		void setValue(std::string_view identifier, const T &value);
 
 		void set(std::string_view, types::int32) override;
 		void set(std::string_view, float) override;
@@ -92,7 +91,7 @@ namespace hades
 
 	protected:
 		//returns false if var was not found; true if out contains the requested value
-		bool GetValue(std::string_view var, std::shared_ptr<detail::Property_Base> &out) const;
+		bool GetValue(std::string_view var, detail::Property &out) const;
 		//for unknown types stored as string, passed in by RunCommand
 		bool SetVariable(std::string_view identifier, const std::string &value); 
 		void EchoVariable(std::string_view identifier);
@@ -106,8 +105,8 @@ namespace hades
 		mutable std::mutex _historyMutex;
 		using ConsoleFunctionMap = std::map<types::string, Console_Function>;
 		ConsoleFunctionMap _consoleFunctions;
-		using ConsoleVariableMap = std::map<types::string, std::shared_ptr<detail::Property_Base> >;
-		ConsoleVariableMap TypeMap;
+		using ConsoleVariableMap = std::map<types::string, detail::Property>;
+		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		CommandList _commandHistory;
 		int recentOutputPos;

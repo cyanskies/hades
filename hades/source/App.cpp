@@ -41,17 +41,29 @@ namespace hades
 	//file_* for file path settings and read/write settings
 	//a_* for audio settings
 	//n_* for network settings
+	//editor_* for game editor settings
+
+	//console variable names
+	const auto client_tick_time = "c_ticktime";
+	const auto client_max_tick = "c_maxticktime";
+	const auto file_portable = "file_portable";
+
+	//console variable default values
+	const auto client_tick_time_d = 30;
+	const auto client_max_tick_d = 150;
+	const auto file_portable_d = false;
 
 	void registerVariables(Console *console)
 	{
 		//console variables
-		console->set("con_charactersize", 15);
-		console->set("con_fade", 180);
+		console::SetProperty(console_character_size, console_character_size_d);
+		console::SetProperty(console_fade, console_fade_d);
 
 		//app variables
-		console->set("c_ticktime", 30);
-		console->set("c_maxticktime", 150); // 1.5 seconds is the maximum allowable tick time.
-		console->set("file_portable", false); // activates portable mode, where files are only read/writen to the game directory
+		console::SetProperty(client_tick_time, client_tick_time_d);
+		console::SetProperty(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
+		// activates portable mode, where files are only read/writen to the game directory
+		console::SetProperty(file_portable, file_portable_d);
 	}
 
 	void registerVidVariables(Console *console)
@@ -211,7 +223,7 @@ namespace hades
 		//create  the normal window
 		if (!_console.runCommand(Command("vid_reinit")))
 		{
-			_console.echo("Error setting video, falling back to default", Console::ERROR);
+			LOGERROR("Error setting video, falling back to default");
 			_console.runCommand(Command("vid_default"));
 			_console.runCommand(Command("vid_reinit"));
 		}
@@ -392,7 +404,7 @@ namespace hades
 				// if we're in fullscreen mode, then the videomode must be 'valid'
 				if (fullscreen->load() && !mode.isValid())
 				{
-					_console.echo("Attempted to set invalid video mode.", Console::ERROR);
+					LOGERROR("Attempted to set invalid video mode.");
 					return false;
 				}
 
@@ -412,7 +424,7 @@ namespace hades
 					break;
 				default:
 					_console.set("vid_mode", -1);
-					_console.echo("Cannot determine video ratio.", Console::WARNING);
+					LOGWARNING("Cannot determine video ratio.");
 					break;
 				}
 
@@ -432,7 +444,7 @@ namespace hades
 
 			auto vsync = [this](const ArgumentList &args)->bool {
 				if (args.size() != 1)
-					throw invalid_argument("Uncompress function expects one argument");
+					throw invalid_argument("vsync function expects one argument");
 
 				_window.setFramerateLimit(0);
 

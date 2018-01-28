@@ -54,20 +54,20 @@ namespace hades
 							set(identifier, value);
 					}, var);
 
-					echo(to_string(identifier) + " " + value);
+					LOG(to_string(identifier) + " " + value);
 				}
 				catch (std::invalid_argument&)
 				{
-					echo("Unsupported type for variable: " + to_string(identifier), ERROR);
+					LOGERROR("Unsupported type for variable: " + to_string(identifier));
 				}
 				catch (std::out_of_range&)
 				{
-					echo("Value is out of range for variable: " + to_string(identifier), ERROR);
+					LOGERROR("Value is out of range for variable: " + to_string(identifier));
 				}
 			}
 		}
 		else
-			echo("Attemped to set undefined variable: " + to_string(identifier), ERROR);
+			LOGERROR("Attemped to set undefined variable: " + to_string(identifier));
 		return ret;
 	}
 
@@ -76,9 +76,7 @@ namespace hades
 		detail::Property var;
 
 		if(GetValue(identifier, var))
-		{
-			echo(to_string(identifier) + " " + std::visit(detail::to_string_lamb, var));
-		}
+			LOG(to_string(identifier) + " " + std::visit(detail::to_string_lamb, var));
 	}
 
 	void Console::DisplayVariables(std::vector<std::string_view> args)
@@ -111,7 +109,7 @@ namespace hades
 
 		std::sort(output.begin(), output.end());
 		for (auto &s : output)
-			echo(s);
+			LOG(s);
 	}
 
 	void Console::DisplayFunctions(std::vector<std::string_view> args)
@@ -144,7 +142,7 @@ namespace hades
 		std::sort(std::begin(funcs), std::end(funcs));
 
 		for (auto &s : funcs)
-			echo(s);
+			LOG(s);
 	}
 
 	bool Console::registerFunction(std::string_view identifier, console::function func, bool replace)
@@ -155,7 +153,7 @@ namespace hades
 			detail::Property var;
 			if (GetValue(identifier, var))
 			{
-				echo("Attempted definition of function: " + to_string(identifier) + ", but name is already used for a variable.", ERROR);
+				LOGERROR("Attempted definition of function: " + to_string(identifier) + ", but name is already used for a variable.");
 				return false;
 			}
 		}
@@ -168,7 +166,7 @@ namespace hades
 
 		if (funcIter != _consoleFunctions.end() && !replace)
 		{
-			echo("Attempted multiple definitions of function: " + id_str, ERROR);
+			LOGERROR("Attempted multiple definitions of function: " + id_str);
 			return false;
 		}
 
@@ -277,7 +275,7 @@ namespace hades
 
 		if (isFunction)
 		{
-			echo(to_string(command));
+			LOG(to_string(command));
 			return function(command.arguments);
 		}
 		else

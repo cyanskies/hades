@@ -80,16 +80,23 @@ namespace hades
 			Verbosity_									\
 	));													\
 
+//Standard information log, for requst responses 
+//or inforamtional messages
 #define LOG(Message_)									\
 	HADESLOG(Message_,									\
 		hades::console::logger::LOG_VERBOSITY::NORMAL	\
 	);
 
+//Error log, indicates that a requested
+//action failed to complete
 #define LOGERROR(Message_)								\
 	HADESLOG(Message_,									\
 		hades::console::logger::LOG_VERBOSITY::ERROR	\
 	);
 
+//Warning log, for incorrect behaviour, any error which
+//recovers becomes a warning, represents correctness and
+//performace problems
 #define LOGWARNING(Message_)							\
 	HADESLOG(Message_,									\
 		hades::console::logger::LOG_VERBOSITY::WARNING	\

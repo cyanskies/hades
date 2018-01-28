@@ -75,11 +75,13 @@ namespace objects
 	void object_editor::init()
 	{
 		_object_snap = hades::console::GetInt(editor_snaptogrid, editor_snap_default);
+		_gridEnabled = hades::console::GetBool(editor_grid_enabled, true);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
 		_gridMaxSize = hades::console::GetInt(editor_grid_max, 1);
 		_gridCurrentScale = hades::console::GetInt(editor_grid_size_multiple, 1);
 
-		_gridCurrentSize = *_gridMinSize * *_gridCurrentScale;
+		_gridCurrentSize = std::min(_gridCurrentScale->load(), _gridMaxSize->load()) * *_gridMinSize;
+
 		_grid.setCellSize(_gridCurrentSize);
 
 		reinit();
@@ -182,13 +184,16 @@ namespace objects
 		_backgroundView.reset({ { 0.f, 0.f }, size });
 		GameView.setCenter({ 100.f,100.f });
 
+		//tell the grid to draw the viewable area
+		_grid.set2dDrawArea({ GameView.getCenter() - GameView.getSize() / 2.f, GameView.getSize() });
+
 		_editorBackground.setSize({ static_cast<float>(*wwidth), static_cast<float>(*wheight) });
 		_editorBackground.setFillColor(sf::Color(127, 127, 127, 255));
 
 		_mapBackground.setSize(static_cast<sf::Vector2f>(MapSize));
 		_mapBackground.setFillColor(sf::Color::Black);
 
-		//TODO: set grid color for editor settings
+		//TODO: set grid color from editor settings
 		_grid.setSize(static_cast<sf::Vector2f>(MapSize));
 
 		_createGui();
@@ -210,11 +215,10 @@ namespace objects
 		auto toolbar_panel = _gui.get<tgui::Container>(editor::toolbar_panel);
 
 		//empty mouse button
-		auto empty_icon = editor_settings->selection_mode_icon;
 		auto empty_button = editor::MakeObjectButton("empty", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
-		}, empty_icon);
+		}, editor_settings->selection_mode_icon);
 
 		toolbar_panel->add(empty_button);
 
@@ -224,14 +228,46 @@ namespace objects
 		if (editor_settings->show_grid_settings)
 		{
 			//show grid toggle
+			auto grid_toggle = editor::MakeObjectButton("grid toggle", [this]() {
+				hades::console::SetProperty(editor_grid_enabled, !*_gridEnabled);
+			}, editor_settings->grid_show_icon);
 
-			//shrink grid size
+			toolbar_panel->add(grid_toggle);
 
-			//expand grid size
+			//if the max size is the same as the smallest size 
+			//then dont show the size related buttons
+			if (*_gridMaxSize > 1)
+			{
+				//shrink grid size
+				auto grid_shrink = editor::MakeObjectButton("grid shrink", [this]() {
+					*_gridCurrentScale = std::max(--*_gridCurrentScale, 1);
+					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
+					_grid.setCellSize(_gridCurrentSize);
+				}, editor_settings->grid_shrink_icon);
+
+				toolbar_panel->add(grid_shrink);
+
+				//expand grid size
+				auto grid_grow = editor::MakeObjectButton("grid grow", [this]() {
+					*_gridCurrentScale = std::min(++*_gridCurrentScale, _gridMaxSize->load());
+					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
+					_grid.setCellSize(_gridCurrentSize);
+				}, editor_settings->grid_shrink_icon);
+
+				toolbar_panel->add(grid_grow);
+			}
+
+			//if object snap isn't being force enabled/disabled,
+			//then place a button to toggle it
 			if (*_object_snap == SnapToGrid::GRIDSNAP_DISABLED
 				|| *_object_snap == SnapToGrid::GRIDSNAP_ENABLED)
 			{
 				//snap to grid button
+				auto grid_snap_button = editor::MakeObjectButton("grid snap", [this]() {
+					*_object_snap = !*_object_snap;
+				}, editor_settings->grid_snap_icon);
+
+				toolbar_panel->add(grid_snap_button);
 			}
 		}
 

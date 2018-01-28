@@ -198,6 +198,8 @@ namespace objects
 		//grid
 		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
 		hades::console::SetProperty(editor_grid_size, editor_grid_default);
+		hades::console::SetProperty(editor_grid_size_multiple, 1);
+		hades::console::SetProperty(editor_grid_max, 1);
 		hades::console::SetProperty(editor_grid_enabled, true);
 		hades::console::SetProperty(editor_grid_size_multiple, 1);
 		//map
@@ -392,7 +394,8 @@ namespace objects
 			//    object-mock-colour:[r,g,b,a]
 			//
 			//    snap-to-grid: [-1, 0, 1, 2], [force-disabled, disabled, enabled, force-enabled]
-			//    grid-min-size: default 8 or something, defines the small  
+			//    grid-min-size: default 8 or something, defines the grids smallest size
+			//    grid-max-size: //how many multiples of grid-min-size can the grid be, eg. 5 = 8*5 is the largest size
 			//	  show-grid-settings: true // hides the toolbar buttons for modifying the grid
 			//    show-grid: false // defines whether the grid should be turned on by default
 			//    grid-colour: [r,g,b,a]

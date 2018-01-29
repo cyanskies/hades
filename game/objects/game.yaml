@@ -16,9 +16,24 @@ curves:
         type: const
         value: bool
 
+textures:
+    ball-texture:
+        source: ball.png
+
+animations:
+    ball-anim:
+        duration: 1
+        texture: ball-texture
+        size: [90, 90]
+        frames:
+            - [0, 0, 1.0]
+
 objects:
     test:
         curves:
             - health
             - speed
             - [cool, true]
+    ball:
+        editor-icon: ball-anim
+        editor-anim: ball-anim

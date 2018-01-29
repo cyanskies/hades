@@ -74,7 +74,11 @@ namespace objects
 
 	void object_editor::init()
 	{
+		//access the console properties used by the editor
+		//editor settings
+		//object settings
 		_object_snap = hades::console::GetInt(editor_snaptogrid, editor_snap_default);
+		//grid settings
 		_gridEnabled = hades::console::GetBool(editor_grid_enabled, true);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
 		_gridMaxSize = hades::console::GetInt(editor_grid_max, 1);

@@ -358,6 +358,69 @@ namespace hades
 			}
 		}
 
+		//throws runtime error
+		animation_frame parseFrame(const YAML::Node &node)
+		{
+			if (!node.IsSequence())
+				throw std::runtime_error("Expected frame to be a sequence of values");
+			else if (node.size() != 3)
+				throw std::runtime_error("expected frame to hold exactly 3 values in the form of [int, int, float]");
+
+			try
+			{
+				animation_frame out = { node[0].as<types::uint16>(),	// X
+					node[1].as<types::uint16>(),						// Y
+					node[2].as<float>() };							// duration
+
+				return out;
+			}
+			catch (YAML::Exception &e)
+			{
+				auto message = "error parsing frame: " + e.msg + ", at line: " + to_string(e.mark.line) +
+					", coloumn: " +	to_string(e.mark.column) + ", pos: " + to_string(e.mark.pos);
+				throw std::runtime_error(message);
+			}			
+		}
+
+		//throws runtime erorr
+		std::vector<animation_frame> parseFrames(data::UniqueId mod, const YAML::Node &node)
+		{
+			std::vector<animation_frame> frame_vector;
+
+			types::uint16 frame_count = 0;
+			
+			if(!node.IsSequence())
+				throw std::runtime_error("Frames must contain one or more frame nodes");
+
+			//if the nodes chidren are also sequences
+			//then we probably contain valid frames
+			if (node[0].IsSequence())
+			{
+				//multiple frames
+				for (const auto &frame : node)
+				{
+					frame_vector.emplace_back(parseFrame(frame));
+					++frame_count;
+				}
+			}
+			else //otherwise we must have a single frame(or an invalid node)
+			{
+				frame_vector.emplace_back(parseFrame(node));
+				frame_count = 1;
+			}
+
+			//normalise all the frame durations
+			float sum = 0.f;
+			for (auto &f : frame_vector)
+				sum += f.duration;
+
+			assert(sum != 0.f);
+			for (auto &f : frame_vector)
+				f.duration /= sum;
+
+			return frame_vector;
+		}
+
 		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//animations:
@@ -380,86 +443,41 @@ namespace hades
 
 				auto node = n.first;
 				auto animation_node = n.second;
-				auto id = data->getUid(node.as<types::string>());
+				const types::string name = node.as<types::string>();
+				auto id = data->getUid(name);
 				animation* a = data::FindOrCreate<animation>(id, mod, data);
 
 				if (!a)
 					continue;
 
-				const types::string name = n.as<types::string>();
-
 				a->duration = yaml_get_scalar(animation_node, resource_type, name, "duration", mod, a->duration);
 
-				auto texture_str = animation_node["texture"];
-				if (texture_str.IsDefined() && yaml_error(resource_type, name, "texture", "scalar", mod, texture_str.IsScalar()))
-					a->tex = data->get<resources::texture>(data->getUid(texture_str.as<types::string>()));
+				auto texture_str = yaml_get_scalar<types::string>(animation_node, resource_type, name, "texture", mod, "");
+				if (texture_str.empty())
+				{
+					LOGWARNING("Animation: " + name + ", is missing a texture");
+					continue;
+				}
 
+				a->tex = data::FindOrCreate<resources::texture>(data::GetUid(texture_str), mod, data);
 				a->width = yaml_get_scalar(animation_node, resource_type, name, "width", mod, a->width);
 				a->height = yaml_get_scalar(animation_node, resource_type, name, "height", mod, a->height);
 
 				//now get all the frames
-				//TODO: redo this section, support a single frame as a scalar instead of mandating a sequence
-				// log error if an animation has no frames
 				auto frames = animation_node["frames"];
-				if (frames.IsDefined() && yaml_error(resource_type, name, "frames", "sequence", mod, frames.IsSequence()))
+				if (frames.IsDefined())
 				{
-					std::vector<animation_frame> frame_vector;
-
-					bool bad_frames = false;
-					types::uint16 frame_count = 0;
-					//frames is a sequence node
-					for (const auto &frame : frames)
+					try
 					{
-						frame_count++;
-						if (!yaml_error(resource_type, name, "frame", "sequence", mod, frame.IsSequence()))
-						{
-							bad_frames = true;
-							break;
-						}
-						else if(!yaml_error(resource_type, name, "frame", "[uint16, uint16, float]", mod, frame.size() == 3))
-						{
-							bad_frames = true;
-							break;
-						}
-
-						frame_vector.emplace_back( frame[0].as<types::uint16>(),	// X
-							frame[1].as<types::uint16>(),							// Y
-							frame[3].as<float>() );									// duration
-
-						auto &f = frame_vector.back();
-						//check that the x and y values are within the limits of int32::max
-						if (f.x + a->width > a->tex->width)
-						{
-							bad_frames = true;
-							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));
-							break;
-						}
-						else if (f.y + a->height > a->tex->height)
-						{
-							bad_frames = true;
-							LOGERROR("animation rectangle would be outside the texture. For animation: " + name + ", frame number: " + std::to_string(frame_count));
-							break;
-						}
-					}//for frame in frames
-
-					if (bad_frames)
+						a->value = parseFrames(mod, frames);
+					}
+					catch (std::runtime_error &e)
 					{
-						LOGERROR("Animation had frames which contained an error. For animation: " + name + ", This animation will not be valid");
-						a->value.clear();
+						LOGERROR("Failed to parse frames for animation: " + name + ", reason:");
+						LOGERROR(e.what());
 						continue;
 					}
-
-					//normalise all the frame durations
-					float sum = 0.f;
-					for (auto &f : frame_vector)
-						sum += f.duration;
-
-					assert(sum != 0.f);
-					for (auto &f : frame_vector)
-						f.duration /= sum;
-
-					a->value = std::move(frame_vector);
-				}//if frames not null
+				}
 			}//for animations
 		}//parse animations
 

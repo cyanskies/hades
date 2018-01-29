@@ -427,7 +427,8 @@ namespace hades
 			//	example-animation:
 			//		duration: 1.0s
 			//		texture: example-texture
-			//		size: [w, h]
+			//		width: +int
+			//      height: +int
 			//		frames:
 			//			- [x, y, d]
 			//			- [x, y, d]

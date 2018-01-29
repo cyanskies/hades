@@ -338,7 +338,8 @@ namespace objects
 				size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
 				assert(size.size() == 2);
 			}
-			else //TODO: default object size in editor settings
+			
+			if (size.size() != 2)
 				size = { 8, 8 };
 
 			//if we have one or more idle animations then place the dummy represented by them

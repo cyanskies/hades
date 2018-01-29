@@ -45,7 +45,7 @@ namespace hades
 	template<class T>
 	using ConsoleVariable = console::property<T>;
 
-	class Console : public console::logger, public console::properties, public console::system
+	class Console final : public console::logger, public console::properties, public console::system
 	{
 	public:
 		using Console_Function = console::function;
@@ -78,7 +78,7 @@ namespace hades
 
 		bool runCommand(const Command &command) override;
 
-		CommandList getCommandHistory() const override;
+		console::CommandHistory getCommandHistory() const override;
 
 		void echo(std::string_view message, Console_String_Verbosity verbosity = NORMAL);
 		void echo(const Console_String &message) override;
@@ -108,7 +108,7 @@ namespace hades
 		using ConsoleVariableMap = std::map<types::string, detail::Property>;
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
-		CommandList _commandHistory;
+		console::CommandHistory _commandHistory;
 		int recentOutputPos;
 	};
 

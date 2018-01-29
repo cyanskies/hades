@@ -284,7 +284,7 @@ namespace hades
 		return true;
 	}
 
-	CommandList Console::getCommandHistory() const
+	console::CommandHistory Console::getCommandHistory() const
 	{
 		std::lock_guard<std::mutex> lock(_historyMutex);
 		return _commandHistory;

@@ -15,5 +15,5 @@ endif()
 add_subdirectory(deps)
 add_subdirectory(hades)
 
-// if defined build example
+#if defined build example
 add_subdirectory(example)

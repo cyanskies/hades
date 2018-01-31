@@ -133,10 +133,13 @@ namespace objects
 		hades::console::property_int _object_snap;
 
 		//the limits of the pointer scroll
+		hades::console::property_int _scroll_margin;
+		hades::console::property_int _scroll_rate;
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
 		//true if mouse was down in the previous frame
 		bool _pointerLeft = false, _pointerDrag = false;
+
 		//drawing the out of bounds background
 		//and grid
 		sf::View _backgroundView;

@@ -30,7 +30,6 @@ namespace objects
 {
 	namespace editor
 	{
-
 		//TODO: the only way to accept function as reference without blocking 
 		//lambdas is to move this to the header and accept the function by template
 		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
@@ -329,13 +328,13 @@ namespace objects
 		{
 			sf::Transformable *object = nullptr;
 			static auto size_id = hades::data::GetUid("size");
-			auto[size_c, size_v] = GetCurve(_heldObject, size_id);
+			auto[size_curve, size_value] = GetCurve(_heldObject, size_id);
 
 			hades::resources::curve_types::vector_int size;
 
-			if (size_c && size_v.set)
+			if (size_curve && size_value.set)
 			{
-				size = std::get<hades::resources::curve_types::vector_int>(size_v.value);
+				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 				assert(size.size() == 2);
 			}
 			
@@ -352,8 +351,7 @@ namespace objects
 				_objectPreview = s;
 				object = &std::get<sf::Sprite>(_objectPreview);
 			}
-			// otherwise we place an appropriatly sized rect
-			else
+			else // otherwise we place an appropriatly sized rect
 			{
 				sf::RectangleShape r;
 				r.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });

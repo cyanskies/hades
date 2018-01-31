@@ -85,7 +85,7 @@ set_target_properties(${HADES_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
 #lin libraries
-target_link_libraries(hades
+target_link_libraries(hades PUBLIC
 	SFML 
 	YAML_CPP)
 

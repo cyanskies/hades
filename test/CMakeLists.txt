@@ -33,3 +33,6 @@ link_directories(${CMAKE_INSTALL_PREFIX}/lib)
 
 # C++ source code
 add_subdirectory(source)
+
+install(DIRECTORY include
+		DESTINATION .)

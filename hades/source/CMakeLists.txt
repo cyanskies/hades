@@ -84,43 +84,10 @@ add_library(${HADES_LIB} STATIC ${HADES_SRC})
 set_target_properties(${HADES_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
-if(WIN32)
-	set(SFML_MAIN_RELEASE sfml-main)
-	set(SFML_MAIN_DEBUG sfml-main-d)
-	set(GLEW)
-else()
-	set(SFML_MAIN_RELEASE)
-	set(SFML_MAIN_DEBUG)
-	set(GLEW GLEW)
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL Release)
-	target_link_libraries(${HADES_LIB}
-	${GLEW}
-	sfml-system
-	sfml-window
-	sfml-graphics
-	sfml-audio
-	sfml-network
-	${SFML_MAIN_RELEASE}
-	tgui
-	libyaml-cppmd
-	zlibwapi
-	)
-else()
-	target_link_libraries(${HADES_LIB}
-	${GLEW}
-	sfml-system-d
-	sfml-window-d
-	sfml-graphics-d
-	sfml-audio-d
-	sfml-network-d
-	${SFML_MAIN_DEBUG}
-	tgui-d
-	libyaml-cppmdd
-	zlibwapi
-	)
-endif()
+#lin libraries
+target_link_libraries(hades
+	SFML 
+	YAML_CPP)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${HADES_LIB}

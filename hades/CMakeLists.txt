@@ -32,6 +32,7 @@ add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
 # C++ source code
 add_subdirectory(source)
 
+
 # Install include directory and license files
 install(DIRECTORY include
 		DESTINATION .)

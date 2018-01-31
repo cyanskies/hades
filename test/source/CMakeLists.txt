@@ -1,7 +1,7 @@
 # Directory xing/source
 
 # C++ source files
-set(XING_SRC
+set(HADES_EXAMPLE_SRC
 	ConsoleTestState.cpp
 	ExampleJob.cpp
 	input_names.cpp
@@ -11,11 +11,11 @@ set(XING_SRC
 )
 
 # Library to build
-set(XING_EXE ${PROJECT_NAME})
+set(EXAMPLE_EXE ${PROJECT_NAME})
 
 # Determine library suffixes depending on static/shared configuration
-add_executable(${XING_EXE} ${XING_SRC})
-set_target_properties(${XING_EXE} PROPERTIES DEBUG_POSTFIX -d)
+add_executable(${EXAMPLE_EXE} ${HADES_EXAMPLE_SRC})
+set_target_properties(${EXAMPLE_EXE} PROPERTIES DEBUG_POSTFIX -d)
 
 if(WIN32)
 	set(SFML_MAIN_RELEASE sfml-main)
@@ -37,7 +37,7 @@ else()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-	target_link_libraries(${XING_EXE}
+	target_link_libraries(${EXAMPLE_EXE}
 	hades-s
 	${GLEW}
 	sfml-system
@@ -53,7 +53,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 	${GCCFS}
 	)
 else()
-	target_link_libraries(${XING_EXE}
+	target_link_libraries(${EXAMPLE_EXE}
 	hades-s-d
 	${GLEW}
 	sfml-system-d
@@ -71,5 +71,5 @@ else()
 endif()
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
-install(TARGETS ${XING_EXE}
+install(TARGETS ${EXAMPLE_EXE}
 		RUNTIME DESTINATION bin)

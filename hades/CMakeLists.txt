@@ -1,5 +1,6 @@
 # Directory hades
 
+#version 3.10 needed for CXX_STANDARD settings
 cmake_minimum_required(VERSION 3.10)
 
 # Specify default build type if none provided (before project() command)

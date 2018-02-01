@@ -223,6 +223,7 @@ hades/CMakeCache.txt
 *.cmake
 *.bin
 *.sln
+CMakeFiles/
 hades/source/CMakeFiles/
 hades/CMakeFiles/
 *.db
@@ -242,3 +243,4 @@ test/.vs/xing/v15/Solution.VC.db-wal
 Makefile
 *.cbp
 *.layout
+CMakeCache.txt

@@ -1,7 +1,10 @@
 add_subdirectory(sfml)
 
-#set(SFML_ROOT sfml)
 set(TGUI_SHARED_LIBS OFF CACHE BOOL "")
+#needed for proper static linkage from TGUI to SFML
+if(NOT BUILD_SHARED_LIBS)
+    add_definitions(-DSFML_STATIC)
+endif()
 
 add_subdirectory(tgui)
 

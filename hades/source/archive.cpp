@@ -14,8 +14,8 @@
 	#define ZLIB_WINAPI 1
 #endif
 
-#include "zlib/zip.h"
-#include "zlib/unzip.h"
+#include "zip.h"
+#include "unzip.h"
 
 #undef ERROR
 

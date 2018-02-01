@@ -94,7 +94,7 @@ set(HADES_DEPS
 	yaml-cpp
 	minizip)
 
-#add_dependencies(hades ${HADES_DEPS})
+add_dependencies(hades ${HADES_DEPS})
 
 #lin libraries
 target_link_libraries(hades PUBLIC ${HADES_DEPS})

@@ -84,6 +84,8 @@ add_library(${HADES_LIB} STATIC ${HADES_SRC})
 set_target_properties(${HADES_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
+target_include_directories(${HADES_LIB} PUBLIC include)
+
 set(HADES_DEPS
 	sfml-audio
 	sfml-graphics
@@ -94,10 +96,10 @@ set(HADES_DEPS
 	yaml-cpp
 	minizip)
 
-add_dependencies(hades ${HADES_DEPS})
+#add_dependencies(${HADES_LIB} ${HADES_DEPS})
 
 #lin libraries
-target_link_libraries(hades PUBLIC ${HADES_DEPS})
+target_link_libraries(${HADES_LIB} PUBLIC ${HADES_DEPS})
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${HADES_LIB}

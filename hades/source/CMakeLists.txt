@@ -84,7 +84,7 @@ add_library(${HADES_LIB} STATIC ${HADES_SRC})
 set_target_properties(${HADES_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
-target_include_directories(${HADES_LIB} PUBLIC include)
+target_include_directories(${HADES_LIB} PUBLIC ../include)
 
 set(HADES_DEPS
 	sfml-audio

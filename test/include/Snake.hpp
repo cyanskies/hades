@@ -28,7 +28,7 @@ namespace snake
 {
 	using texture = hades::resources::texture;
 
-	texture snake_head, snake_body, food_fruit;
+	//texture snake_head, snake_body, food_fruit;
 }
 
 #endif //TEST_SNAKE_HPP

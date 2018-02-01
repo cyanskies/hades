@@ -10,7 +10,7 @@
 #include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 
-#include "zlib/zlib.h" //for zlib version
+#include "zlib.h" //for zlib version
 
 #include "Hades/ConsoleView.hpp"
 #include "Hades/Data.hpp"

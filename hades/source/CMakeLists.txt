@@ -93,6 +93,7 @@ set(HADES_DEPS
 	sfml-network
 	sfml-system
 	sfml-window
+	tgui
 	yaml-cpp
 	minizip)
 

@@ -17,7 +17,7 @@ set(EXAMPLE_EXE ${PROJECT_NAME})
 add_executable(${EXAMPLE_EXE} ${HADES_EXAMPLE_SRC})
 set_target_properties(${EXAMPLE_EXE} PROPERTIES DEBUG_POSTFIX -d)
 
-target_include_direcories(${EXAMPLE_EXE} PRIVATE ../include)
+target_include_directories(${EXAMPLE_EXE} PRIVATE ../include)
 
 target_link_libraries(${EXAMPLE_EXE} hades)
 

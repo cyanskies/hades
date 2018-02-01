@@ -12,6 +12,11 @@ if(CMAKE_CONFIGURATION_TYPES)
 	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
 endif()
 
+#needed for proper static linkage to SFML
+if(NOT BUILD_SHARED_LIBS)
+    add_definitions(-DSFML_STATIC)
+endif()
+
 add_subdirectory(deps)
 add_subdirectory(hades)
 

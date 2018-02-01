@@ -244,3 +244,4 @@ Makefile
 *.cbp
 *.layout
 CMakeCache.txt
+install_manifest.txt

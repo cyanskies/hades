@@ -3,7 +3,7 @@ add_subdirectory(sfml)
 #set(SFML_ROOT sfml)
 set(TGUI_SHARED_LIBS OFF CACHE BOOL "")
 
-#add_subdirectory(tgui)
+add_subdirectory(tgui)
 
 set(BUILD_GMOCK OFF CACHE BOOL "")
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "")

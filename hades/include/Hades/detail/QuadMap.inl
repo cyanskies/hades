@@ -1,140 +1,173 @@
+#include <map>
+#include <vector>
+
+#include "Hades/QuadMap.hpp"
+
 namespace hades
 {
-	template<class Rect, class Key, class Value>
-	QuadNode<Rect, Key, Value>::QuadNode(const Rect &map, types::uint8 max_density) : _area(map), _max_density(max_density)
-	{}
-
-	template<class Rect, class Key, class Value>
-	std::vector<QuadData<Rect, Key, Value>> QuadNode<Rect, Key, Value>::find_collisions(const Rect &rect) const
+	template<class Key>
+	struct QuadData
 	{
-		std::vector<const QuadNode<Rect, Key, Value>*> nodes;
+		using key_type = Key;
 
-		for (auto &c : _children)
-		{
-			if (rect.intersects(c.getArea()))
-				nodes.push_back(&c);
-		}
+		key_type key;
+		sf::IntRect rect;
+	};
 
-		std::vector<QuadData<Rect, Key, Value>> out;
-
-		for (auto r : _data)
-			out.push_back(r);
-
-		for (auto n : nodes)
-		{
-			auto collisions = n->find_collisions(rect);
-			out.insert(out.end(), collisions.begin(), collisions.end());
-		}
-
-		return out;
-	}
-
-	template<class Rect, class Key, class Value>
-	void QuadNode<Rect, Key, Value>::insert(const QuadData<Rect, Key, Value> &data)
+	template<class Key>
+	class QuadNode
 	{
-		//no chilren, insert into this node
-		if (_children.empty() && _data.size() < _max_density)
+	public:
+		using rect_type = sf::IntRect;
+		using key_type = Key;
+		using value_type = QuadData<key_type>;
+		using node_type = QuadNode<key_type>;
+
+		QuadNode() = default;
+
+		explicit QuadNode(const rect_type &area, types::int32 _bucket_cap) : _area(map), _bucket_cap(max_density)
+		{}
+
+		rect_type getArea() const
 		{
-			_data.push_back(data);
-			return;
+			return _area;
 		}
 
-		//no children, split this node
-		if (_children.empty() && _data.size() >= _max_density)
+		std::vector<value_type> find_collisions(const rect_type &rect) const
 		{
-			//create four chilren, then reinsert the current entities held in data.
-			//then insert this entity
-			int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
-			Rect tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(_area.left + halfwidth, _area.top, halfwidth, halfheight),
-				blrect(_area.left, _area.top + halfheight, halfwidth, halfheight), brrect(_area.left + halfwidth, _area.top + halfheight, halfwidth, halfheight);
+			std::vector<const node_type*> nodes;
 
-			_children.insert(QuadNode(tlrect));
-			_children.insert(QuadNode(trrect));
-			_children.insert(QuadNode(blrect));
-			_children.insert(QuadNode(brrect));
-
-			auto rects = _data;
-			_data.clear();
-
-			for (auto ent : rects)
+			for (auto &c : _children)
 			{
-				insert({ ent.id, ent.layer, ent.collideRect });
+				if (rect.intersects(c.getArea()))
+					nodes.push_back(&c);
+			}
+
+			std::vector<value_type> out;
+
+			for (auto r : _data)
+				out.push_back(r);
+
+			for (auto n : nodes)
+			{
+				auto collisions = n->find_collisions(rect);
+				out.insert(out.end(), collisions.begin(), collisions.end());
+			}
+
+			return out;
+		}
+
+		void insert(const value_type &data)
+		{
+			//no chilren, insert into this node
+			if (_children.empty() && _data.size() <= _bucket_cap)
+			{
+				_data.push_back(data);
+				return;
+			}
+
+			//no children, split this node
+			if (_children.empty() && _data.size() > _bucket_cap)
+			{
+				//create four chilren, then reinsert the current entities held in data.
+				//then insert this entity
+				int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
+				Rect tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(_area.left + halfwidth, _area.top, halfwidth, halfheight),
+					blrect(_area.left, _area.top + halfheight, halfwidth, halfheight), brrect(_area.left + halfwidth, _area.top + halfheight, halfwidth, halfheight);
+
+				_children.insert(node_type(tlrect));
+				_children.insert(node_type(trrect));
+				_children.insert(node_type(blrect));
+				_children.insert(node_type(brrect));
+
+				auto rects = _data;
+				_data.clear();
+
+				for (auto r : rects)
+					insert(r);
+			}
+
+			//has children, insert into relevent child node
+			std::vector<std::pair<rect_type, node_type*> > nodes;
+			for (auto &c : _children)
+			{
+				if (data.rect.intersects(c.getArea()))
+				{
+					auto node = std::make_pair(c.getArea(), &c);
+					nodes.push_back(node);
+				}
+			}
+
+			//insert this rect into target child and leave breadcrumbs pointing to it
+			if (nodes.size() == 1)
+			{
+				_stored.insert(std::make_pair(data.id, nodes.front().second));
+				nodes.front().second->insert(data);
+			}
+			//keep the rect in this node if it intersects multiple child nodes.
+			else if (nodes.size() > 1)
+			{
+				_data.push_back(data);
 			}
 		}
 
-		//has children, insert into relevent child node
-		std::vector<std::pair<Rect, QuadNode*> > nodes;
-		for (auto &c : _children)
+		void remove(key_type id)
 		{
-			if (data.rect.intersects(c.getArea()))
+			//remove if from children, if present
+			auto s = _stored.find(id);
+			if (s != _stored.end())
 			{
-				auto node = std::make_pair(c.getArea(), &c);
-				nodes.push_back(node);
+				assert(s.first = id);
+				s.second->remove(id);
+				_stored.erase(s);
+				return;
 			}
+
+			//remove entity from _data
+			if (!_data.empty())
+				_data.erase(std::remove_if(_data.begin(), _data.end(), [&id](const value_type &in) { return in.id == id; }), _data.end());
+
+			//TODO: rotate structure if we fall bellow parents MAXDENSITY
+			// if _data.size and _stored.size < max_density
+			// gobble children and store them all in data
 		}
 
-		//insert this rect into target child and leave breadcrumbs pointing to it
-		if (nodes.size() == 1)
-		{
-			_stored.insert(std::make_pair(data.id, nodes.front().second));
-			nodes.front().second->insert(data);
-		}
-		//keep the rect in this node if it intersects multiple child nodes.
-		else if (nodes.size() > 1)
-		{
-			_data.push_back(data);
-		}
-	}
+	private:
+		rect_type _area;
+		types::int32 _bucket_cap;
+		std::vector<value_type> _data;
+		std::map<key_type, node_type*> _stored;
+		using _child_vector_type = std::vector<node_type>;
+		_child_vector_type _children;
+	};
 
-	template<class Rect, class Key, class Value>
-	void QuadNode<Rect, Key, Value>::remove(Key id)
-	{
-		//remove if from children, if present
-		auto s = _stored.find(id);
-		if (s != _stored.end())
-		{
-			assert(s.first = id);
-			s.second->remove(id);
-			_stored.erase(s);
-			return;
-		}
-
-		//remove entity from _data
-		if (!_data.empty())
-			_data.erase(std::remove_if(_data.begin(), _data.end(), [id](QuadData<Rect, Key, Value> &in) { return in.id == id; }), _data.end());
-
-		//TODO: rotate structure if we fall bellow parents MAXDENSITY
-		// if _data.size and _stored.size < max_density
-		// gobble children and store them all in data
-	}
-
-	template<class Rect, class Key, class Value>
-	void QuadMap<Rect, Key, Value>::setAreaSize(const Rect &map)
+	template<class Key>
+	void QuadTree<Key>::setAreaSize(const rect_type &map)
 	{
 		auto children = _rootNode.find_collisions(_rootNode.getArea());
 		auto density = std::min(map.width / 2, map.height / 2);
 
-		_rootNode = QuadNode<Rect, Key, Value>(map, density);
+		_rootNode = node_type(map, density);
 
 		for (auto &c : children)
 			_rootNode.insert(c);
 	}
 
-	template<class Rect, class Key, class Value>
-	std::vector<QuadData<Rect, Key, Value>> QuadMap<Rect, Key, Value>::find_collisions(const Rect &rect) const
+	template<class Key>
+	std::vector<typename QuadTree<Key>::value_type> QuadTree<Key>::find_collisions(const rect_type &rect) const
 	{
 		return _rootNode.find_collisions(rect);
 	}
 
-	template<class Rect, class Key, class Value>
-	void QuadMap<Rect, Key, Value>::insert(Rect r, Key k, Value v)
+	template<class Key>
+	void QuadTree<Key>::insert(const rect_type &r, const key_type &k)
 	{
 		_rootNode.remove(k);
-		_rootNode.insert({r, k, v});
+		_rootNode.insert({r, k});
 	}
 
-	template<class Rect, class Key, class Value>
-	void QuadMap<Rect, Key, Value>::remove(Key id)
+	template<class Key>
+	void QuadTree<Key>::remove(key_type id)
 	{
 		_rootNode.remove(id);
 	}

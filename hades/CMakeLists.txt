@@ -24,8 +24,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #make visual studio debug the desired project by default
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT hades)
 
-# Global preprocessor and include options
-include_directories(${CMAKE_INSTALL_PREFIX}/include)
+# Global preprocessor options
+#this is to ignore the thousands of warnings that
+#yaml generates through iterator usage
 add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
 
 # C++ source code

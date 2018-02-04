@@ -8,6 +8,8 @@
 
 #include "Hades/GridArea.hpp"
 #include "Hades/Properties.hpp"
+#include "Hades/QuadMap.hpp"
+#include "Hades/SpriteBatch.hpp"
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
@@ -38,7 +40,9 @@ namespace objects
 		enum class ObjectMode {
 			NONE_SELECTED, // nothing selected
 			SELECT, // something selected
+			GROUP_SELECT, //
 			DRAG, // dragging is taking place
+			GROUP_DRAG,
 			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
 
@@ -51,19 +55,19 @@ namespace objects
 	class object_editor : public hades::State
 	{
 	public:
-		virtual void init() override; 
+		virtual void init() override;
 
 		// called when the load command is issued
 		// overide to parse extra elements from the level
 		// then call the Protected LoadX functions to parse all the subsequent parts
 		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
 
-		virtual bool handleEvent(const hades::Event &windowEvent) override; 
+		virtual bool handleEvent(const hades::Event &windowEvent) override;
 		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override final;
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 		virtual void cleanup() override;
-						
+
 		virtual void reinit() override;
 		virtual void pause() override;
 		virtual	void resume() override;
@@ -89,7 +93,7 @@ namespace objects
 		virtual void OnMenuClick(sf::String);
 		//override to check if a location on the map is valid for the provided object
 		//ie. depending on terrain, or other objects
-		virtual bool ObjectValidLocation() const;
+		virtual bool ObjectValidLocation(sf::Vector2i position, const object_info &object) const;
 		//function for creating a new level
 		virtual void NewLevel();
 		//function for saving the level, call provided Save<NAME> functions
@@ -111,7 +115,7 @@ namespace objects
 		//editing variables
 		using EditMode_t = hades::types::uint8;
 		EditMode_t EditMode = editor::OBJECT;
-		
+
 		//core map drawing variables
 		sf::View GameView;
 	private:
@@ -127,10 +131,19 @@ namespace objects
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing
-		const resources::object *_heldObject = nullptr;
+		const resources::object *_heldObject = nullptr; //replace this with an object info to preserve settings when dragging
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
 		hades::console::property_int _object_snap;
+		hades::EntityId _next_object_id = hades::NO_ENTITY;
+
+		//objects in the map
+		//id map
+		hades::QuadMap<hades::EntityId> _quadtree;
+		std::vector<object_info> _objects;
+
+		//sprite batch for objects
+		hades::SpriteBatch _objectSprites;
 
 		//the limits of the pointer scroll
 		hades::console::property_int _scroll_margin;

@@ -135,10 +135,13 @@ namespace objects
 		assert(mouseLeft != std::end(input));
 		if (mouseLeft->active)
 		{
+			//TODO: redo this logic
+			//replace _pointerLeft with an int that gets incremented
+			//current logic will require users to click faster than a single frame to avoid triggering a drag
 			if (!_pointerLeft)
 			{
 				OnClick({ mouseLeft->x_axis, mouseLeft->y_axis });
-				_pointerLeft = true;
+				//_pointerLeft = true;
 			}
 			else if (_pointerLeft)
 			{
@@ -392,7 +395,24 @@ namespace objects
 	}
 
 	void object_editor::OnClick(object_editor::MousePos pos)
-	{}
+	{
+		if (EditMode == editor::EditMode::OBJECT)
+		{
+			//held object position
+			auto position = std::visit([](auto &&val) {
+				return static_cast<sf::Vector2i>(val.getPosition());
+			}, _objectPreview);
+
+			object_info object = { _heldObject, 0 };
+
+			//if(select || none selected
+			if (_objectMode == editor::ObjectMode::PLACE && ObjectValidLocation(position, object))
+			{
+				//create the object held at the target location
+
+			}
+		}
+	}
 
 	void object_editor::OnDragStart(MousePos pos)
 	{}
@@ -461,9 +481,11 @@ namespace objects
 			reinit();
 	}
 
-	bool object_editor::ObjectValidLocation() const
+	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
 	{
-		return false;
+		//check for collision with another object
+
+		return true;
 	}
 
 	void object_editor::NewLevel()

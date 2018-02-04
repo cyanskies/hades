@@ -1,72 +1,36 @@
 #ifndef HADES_QUADMAP_HPP
 #define HADES_QUADMAP_HPP
 
-#include <map>
 #include <vector>
+
+#include "SFML/Graphics/Rect.hpp"
 
 #include "Hades/Types.hpp"
 
 namespace hades
 {
-	template<class Rect, class Key, class Value>
-	struct QuadData
-	{
-		using rect_type = Rect;
-		using key_type = Key;
-		using stored_type = Value;
+	template<class Key>
+	struct QuadData;
 
-		Key key;
-		Value value;
-		Rect rect;
-	};
+	template<class Key>
+	class QuadNode;
 
-	template<class Rect, class Key, class Value>
-	class QuadNode
+	template<class Key>
+	class QuadTree
 	{
 	public:
-		using rect_type = Rect;
+		using rect_type = sf::IntRect;
 		using key_type = Key;
-		using stored_type = Value;
-		using value_type = QuadData<rect_type, key_type, stored_type>;
+		using value_type = QuadData<key_type>;
+		using node_type = QuadNode<key_type>;
 
-		QuadNode() {}
-
-		explicit QuadNode(const rect_type &area, types::uint8 max_density);
-
-		rect_type getArea() const;
-
-		std::vector<value_type> find_collisions(const rect_type &rect) const;
-
-		void insert(const value_type &data);
-		void remove(key_type id);
-
-	private:
-		rect_type _area;
-		types::uint8 _max_density;
-
-		using _child_vector_type = std::vector<QuadNode<rect_type, key_type, stored_type>>;
-
-		std::vector<value_type> _data;
-		std::map<key_type, QuadNode<Rect, Key, Value>*> _stored;
-		_child_vector_type _children;
-	};
-
-	template<class Rect, class Key,  class Value>
-	class QuadMap
-	{
-	public:
-		using rect_type = Rect;
-		using key_type = Key;
-		using stored_type = Value;
-		using value_type = QuadData<rect_type, key_type, stored_type>;
-		using node_type = QuadNode<rect_type, key_type, value_type>;
+		explicit QuadTree(types::int32 bucket_cap);
 
 		void setAreaSize(const rect_type &area);
 
-		// This returns possible collisions, by generating a list of nearby rects. You still need to check for actual intersections manually.
 		std::vector<value_type> find_collisions(const rect_type &rect) const;
 
-		void insert(const rect_type, const key_type, const stored_type);
+		void insert(const rect_type&, const key_type&);
 		void remove(key_type id);
 
 	private:

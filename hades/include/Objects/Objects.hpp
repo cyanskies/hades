@@ -14,7 +14,7 @@ namespace objects
 	//represents an instance of an object in a level file
 	struct object_info
 	{
-		resources::object *obj_type;
+		const resources::object *obj_type;
 		hades::EntityId id;
 		resources::object::curve_list curves;
 	};

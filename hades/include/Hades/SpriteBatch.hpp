@@ -47,10 +47,7 @@ namespace hades {
 			virtual type_id getType() const = 0;
 		};
 
-		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs)
-		{
-			return !(lhs == rhs);
-		}
+		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs);
 
 		template<typename T>
 		struct ShaderUniform final

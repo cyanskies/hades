@@ -139,7 +139,7 @@ namespace objects
 
 		//objects in the map
 		//id map
-		hades::QuadMap<hades::EntityId> _quadtree;
+		hades::QuadTree<hades::EntityId> _quadtree;
 		std::vector<object_info> _objects;
 
 		//sprite batch for objects

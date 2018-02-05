@@ -9,10 +9,20 @@ namespace hades
 	struct QuadData
 	{
 		using key_type = Key;
+		using rect_type = sf::IntRect;
 
 		key_type key;
-		sf::IntRect rect;
+		rect_type rect;
 	};
+
+	template<class Rect>
+	Rect MakeMaxRect()
+	{
+		using T = decltype(Rect::left);
+		auto min = std::numeric_limits<T>::min();
+		auto max = std::numeric_limits<T>::max();
+		return Rect(min, min, max, max);
+	}
 
 	template<class Key>
 	class QuadNode
@@ -25,7 +35,10 @@ namespace hades
 
 		QuadNode() = default;
 
-		explicit QuadNode(const rect_type &area, types::int32 _bucket_cap) : _area(map), _bucket_cap(max_density)
+		explicit QuadNode(types::int32 _bucket_cap) : _bucket_cap(_bucket_cap)
+		{}
+
+		QuadNode(const rect_type &area, types::int32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
 		{}
 
 		rect_type getArea() const
@@ -133,8 +146,8 @@ namespace hades
 		}
 
 	private:
-		rect_type _area;
-		types::int32 _bucket_cap;
+		rect_type _area = MakeMaxRect<rect_type>();
+		types::int32 _bucket_cap = 1;
 		std::vector<value_type> _data;
 		std::map<key_type, node_type*> _stored;
 		using _child_vector_type = std::vector<node_type>;
@@ -142,16 +155,12 @@ namespace hades
 	};
 
 	template<class Key>
-	void QuadTree<Key>::setAreaSize(const rect_type &map)
-	{
-		auto children = _rootNode.find_collisions(_rootNode.getArea());
-		auto density = std::min(map.width / 2, map.height / 2);
+	QuadTree<Key>::QuadTree(types::int32 bucket_cap) : _root_node(bucket_cap)
+	{}
 
-		_rootNode = node_type(map, density);
-
-		for (auto &c : children)
-			_rootNode.insert(c);
-	}
+	template<class Key>
+	QuadTree<Key>::QuadTree(const rect_type &area, types::int32 bucket_cap) : _root_node(area, bucket_cap)
+	{}
 
 	template<class Key>
 	std::vector<typename QuadTree<Key>::value_type> QuadTree<Key>::find_collisions(const rect_type &rect) const

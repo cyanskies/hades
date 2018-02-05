@@ -9,6 +9,11 @@ namespace hades
 	namespace sprite_utility
 	{
 		types::uint32 type_count = 0;
+
+		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs)
+		{
+			return !(lhs == rhs);
+		}
 	}
 
 	using uniform_map = sprite_utility::uniform_map;

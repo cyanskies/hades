@@ -3,4 +3,3 @@
 @IF NOT DEFINED library (@set library=./dep-library)
 
 @cmake -DCMAKE_BUILD_TYPE=%mode% -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=%library% -G %generator%
-@cmake --build . --target install --config %mode%

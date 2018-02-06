@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "Hades/DataManager.hpp"
-
 namespace hades
 {
 	typename RendererInterface::SpriteMap &RendererInterface::getSprites()

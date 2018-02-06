@@ -1,4 +1,4 @@
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -10,22 +10,18 @@ namespace hades
 {
 	namespace data
 	{
-		data_manager::data_manager()
-		{
-			_ids.insert({ no_id_string, UniqueId::Zero });
-		}
-
-		data_manager::~data_manager()
+		data_system::data_system() : _ids({ {no_id_string, UniqueId::Zero} })
 		{}
+
 		//application registers the custom resource types
 		//parser must convert yaml into a resource manifest object
-		void data_manager::register_resource_type(std::string name, resources::parserFunc parser)
+		void data_system::register_resource_type(std::string name, resources::parserFunc parser)
 		{
 			_resourceParsers[name] = parser;
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
-		void data_manager::load_game(std::string game)
+		void data_system::load_game(std::string game)
 		{
 			static bool game_loaded = false;
 
@@ -57,7 +53,7 @@ namespace hades
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file
-		void data_manager::add_mod(std::string mod, bool autoLoad, std::string name)
+		void data_system::add_mod(std::string mod, bool autoLoad, std::string name)
 		{
 			auto modyaml = files::as_string(mod, name);
 
@@ -65,12 +61,12 @@ namespace hades
 				LOGWARNING("Yaml file: " + mod + "/" + name + " contains tabs, expect errors.");
 			//parse game.yaml
 			auto root = YAML::Load(modyaml.c_str());
-			if(autoLoad)
+			if (autoLoad)
 				//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
-				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true;});
+				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true; });
 			else
 				//otherwise bind to loaded, returns false if dependent mod is not loaded
-				parseMod(mod, root, std::bind(&data_manager::loaded, this, std::placeholders::_1));
+				parseMod(mod, root, std::bind(&data_system::loaded, this, std::placeholders::_1));
 
 			//record the list of loaded games/mods
 			if (name == "game.yaml")
@@ -79,7 +75,7 @@ namespace hades
 				_mods.push_back(getUid(mod));
 		}
 
-		bool data_manager::loaded(std::string mod)
+		bool data_system::loaded(types::string mod)
 		{
 			//name hasn't even been used yet
 			if (_names.find(mod) == _names.end())
@@ -90,7 +86,7 @@ namespace hades
 				auto r = get<resources::mod>(getUid(mod));
 			}
 			//name has been used, but not for a mod
-			catch (resource_wrong_type&)
+			catch (data::resource_wrong_type&)
 			{
 				return false;
 			}
@@ -99,14 +95,14 @@ namespace hades
 			return true;
 		}
 
-		void data_manager::reparse()
+		void data_system::reparse()
 		{
 			//copy and clear the mod list, so that
 			// when add_mod readds them we don't double up
 			auto mods = _mods;
 
 			//reparse the game
-			auto game = getMod(_game)->name;
+			auto game = get<resources::mod>(_game)->name;
 			add_mod(game, true, "game.yaml");
 
 			_mods.clear();
@@ -116,12 +112,12 @@ namespace hades
 			for (auto m : mods)
 			{
 				//for each mod reload it
-				auto name = getMod(m)->name;
+				auto name = get<resources::mod>(m)->name;
 				add_mod(name);
 			}
 		}
 
-		void data_manager::refresh()
+		void data_system::refresh()
 		{
 			//note: load queue can be full of duplicates,
 			//the load functions resolve them
@@ -129,19 +125,19 @@ namespace hades
 				refresh(id.second);
 		}
 
-		void data_manager::refresh(UniqueId id)
+		void data_system::refresh(UniqueId id)
 		{
 			if (exists(id))
 			{
 				//_resources stores unique_ptrs to resources
 				//so we void ptr cast to get it out of the type erased property bag
-				auto* r = static_cast<std::unique_ptr<resources::resource_base>*>(_resources.get_reference_void(id));
+				auto r = getResource(id);
 
-				_loadQueue.push_back(&**r);
+				_loadQueue.push_back(r);
 			}
 		}
 
-		void data_manager::load()
+		void data_system::load()
 		{
 			const std::set<resources::resource_base*> queue{ _loadQueue.begin(), _loadQueue.end() };
 			_loadQueue.clear();
@@ -150,7 +146,7 @@ namespace hades
 				r->load(this);
 		}
 
-		void data_manager::load(data::UniqueId id)
+		void data_system::load(data::UniqueId id)
 		{
 			auto it = std::find_if(_loadQueue.begin(), _loadQueue.end(), [id](const resources::resource_base* r) {return r->id == id; });
 			auto resource = *it;
@@ -163,7 +159,7 @@ namespace hades
 			resource->load(this);
 		}
 
-		void data_manager::load(types::uint8 count)
+		void data_system::load(types::uint8 count)
 		{
 			std::sort(_loadQueue.begin(), _loadQueue.end());
 			std::unique(_loadQueue.begin(), _loadQueue.end());
@@ -175,31 +171,8 @@ namespace hades
 			}
 		}
 
-		const data_manager::Mod* data_manager::getMod(UniqueId mod)
-		{
-			return get<resources::mod>(mod);
-		}
-
-		bool data_manager::exists(UniqueId uid) const
-		{
-			try
-			{
-				auto ptr = _resources.get_reference_void(uid);
-				return ptr != nullptr;
-			}
-			catch (type_erasure::key_null&)
-			{
-				return false;
-			}
-		}
-
 		//convert string to uid
-		UniqueId data_manager::getUid(std::string_view name)
-		{
-			return _ids[types::string(name)];
-		}
-
-		types::string data_manager::as_string(UniqueId uid) const
+		types::string data_system::getAsString(UniqueId uid) const
 		{
 			for (auto id : _ids)
 			{
@@ -208,6 +181,21 @@ namespace hades
 			}
 
 			return no_id_string;
+		}
+
+		UniqueId data_system::getUid(std::string_view name) const
+		{
+			auto id = _ids.find(types::string(name));
+
+			if (id == std::end(_ids))
+				return UniqueId::Zero;
+
+			return id->second;
+		}
+
+		UniqueId data_system::getUid(std::string_view name)
+		{
+			return _ids[types::string(name)];
 		}
 
 		template<typename GETMOD, typename YAMLPARSER>
@@ -231,7 +219,7 @@ namespace hades
 			yamlParser(mod, YAML::Load(include_yaml.c_str()));
 		}
 
-		void data_manager::parseYaml(data::UniqueId mod, YAML::Node root)
+		void data_system::parseYaml(data::UniqueId mod, YAML::Node root)
 		{
 			//loop though each of the root level nodes and pass them off
 			//to specialised handlers if present
@@ -254,8 +242,6 @@ namespace hades
 					{
 						;
 					}
-
-
 				}
 
 				//if this resource name has a parser then load it
@@ -265,7 +251,7 @@ namespace hades
 			}
 		}
 
-		void data_manager::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
+		void data_system::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
 		{
 			auto modKey = getUid(source);
 
@@ -325,7 +311,7 @@ namespace hades
 
 			LOG("Loaded mod: " + name);
 		}
-	}
+	}//namespace !data
 }
 
 using namespace hades;

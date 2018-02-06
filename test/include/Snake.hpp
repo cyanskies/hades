@@ -3,7 +3,6 @@
 
 #include "Hades/State.hpp"
 
-#include "Hades/DataManager.hpp"
 #include "Hades/GameInstance.hpp"
 
 //A snake game

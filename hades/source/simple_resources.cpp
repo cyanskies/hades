@@ -9,8 +9,7 @@
 
 #include "Hades/Console.hpp"
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/files.hpp"
 #include "Hades/resource/fonts.hpp"
 
@@ -35,11 +34,12 @@ namespace hades
 		void loadSystem(resource_base* r, data::data_manager* dataman);
 		void parseCurve(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
 		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void loadAnimation(resource_base* r, data::data_manager* dataman);
 		void loadFont(resource_base* r, data::data_manager* data);
 		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
 	}
 
-	void RegisterCommonResources(hades::data::data_manager *data)
+	void RegisterCommonResources(hades::data::data_system *data)
 	{
 		data->register_resource_type("actions", nullptr);
 		data->register_resource_type("animations", resources::parseAnimation);
@@ -54,6 +54,7 @@ namespace hades
 	{
 		texture::texture() : resource_type<sf::Texture>(loadTexture) {}
 		font::font() : resource_type<sf::Font>(loadFont) {}
+		animation::animation() : resource_type<std::vector<animation_frame>>(loadAnimation) {}
 
 		const size_t colour_count = 7;
 
@@ -162,7 +163,7 @@ namespace hades
 			if (!tex->source.empty())
 			{
 				//the mod not being available should be 'impossible'
-				auto mod = dataman->getMod(tex->mod);
+				auto mod = dataman->get<resources::mod>(tex->mod);
 
 				try
 				{
@@ -172,7 +173,7 @@ namespace hades
 					tex->value.setRepeated(tex->repeat);
 
 					if (tex->mips && !tex->value.generateMipmap())
-						LOGWARNING("Failed to generate MipMap for texture: " + dataman->as_string(tex->id));
+						LOGWARNING("Failed to generate MipMap for texture: " + dataman->getAsString(tex->id));
 				}
 				catch (files::file_exception e)
 				{
@@ -482,11 +483,19 @@ namespace hades
 			}//for animations
 		}//parse animations
 
+		void loadAnimation(resource_base* r, data::data_manager* data)
+		{
+			assert(dynamic_cast<animation*>(r));
+			auto a = static_cast<animation*>(r);
+			if (!a->tex->loaded)
+				a->tex->load(data);
+		}
+
 		void loadFont(resource_base* r, data::data_manager* data)
 		{
 			assert(dynamic_cast<font*>(r));
 			auto f = static_cast<font*>(r);
-			auto mod = data->getMod(f->mod);
+			auto mod = data->get<resources::mod>(f->mod);
 
 			try
 			{

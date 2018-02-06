@@ -6,6 +6,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Hades/Data.hpp"
 #include "Hades/type_erasure.hpp"
 #include "Hades/resource_base.hpp"
 
@@ -30,18 +31,19 @@ namespace hades
 			//value is unused
 			//mod_t value
 		};
+
+		using parserFunc = std::function<void(data::UniqueId mod, const YAML::Node& node, data::data_manager*)>;
 	}
 
 	namespace data
 	{
 		const types::string no_id_string = "ERROR_NO_UNIQUE_ID";
 
-		class data_manager
+		class data_system final : public data_manager
 		{
 		public:
-			data_manager();
+			data_system();
 
-			virtual ~data_manager();
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
 			void register_resource_type(std::string name, resources::parserFunc parser);
@@ -60,9 +62,9 @@ namespace hades
 
 			//adds all objects into the load queue
 			//note: this wont effect resources that are only parsed(strings and game parameters)
-			void refresh();
+			void refresh() override;
 			//adds a specific object into the load queue
-			void refresh(UniqueId);
+			void refresh(data::UniqueId) override;
 			//adds a range to the load queue
 			//template<Iter>
 			//void refresh(Iter first, Iter last);
@@ -80,29 +82,11 @@ namespace hades
 			//template<Iter>
 			//void load(Iter first, Iter last);
 
-			template<class T>
-			void set(UniqueId, std::unique_ptr<T>);
-
-			bool exists(UniqueId) const;
-
-			//returns a non-owning ptr to the resource
-			//will load the resource if it has never been loaded before
-			//throws: 
-			//    resource_null
-			//    resource_wrong_type
-			template<class T>
-			T* get(UniqueId);
-
-			using Mod = resources::mod;
-			//throws: 
-			//    resource_null
-			//    resource_wrong_type
-			const Mod* getMod(UniqueId);
-
 			//convert string to uid
-			UniqueId getUid(std::string_view name);
-			types::string as_string(UniqueId) const;
-
+			types::string getAsString(UniqueId id) const override;
+			data::UniqueId getUid(std::string_view name) const override;
+			data::UniqueId getUid(std::string_view name) override;
+			
 		private:
 			void parseYaml(data::UniqueId, YAML::Node);
 			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
@@ -116,8 +100,6 @@ namespace hades
 			std::vector<UniqueId> _mods;
 			//map of names to Uids
 			std::unordered_map<std::string, UniqueId> _ids;
-			//map of uids to resources
-			property_bag<UniqueId> _resources;
 			//list of unloaded resources
 			std::vector<resources::resource_base*> _loadQueue;
 		};
@@ -126,7 +108,7 @@ namespace hades
 		// sets the resources most recent mod to the passed value
 		// returns nullptr if unable to return a valid resource
 		template<class T>
-		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data);
+		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data_manager* data);
 	}
 }
 
@@ -148,6 +130,6 @@ template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod);
 
-#include "detail/data_manager.inl"
+#include "detail/data_system.inl"
 
 #endif // hades_data_hpp

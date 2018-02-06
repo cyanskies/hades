@@ -12,8 +12,7 @@ set(HADES_SRC
 	ConsoleView.cpp
 	common-input.cpp
 	Curves.cpp
-	DataManager.cpp
-	data_manager.cpp
+	data_system.cpp
   	ExportedCurves.cpp
 	files.cpp
 	GameInstance.cpp

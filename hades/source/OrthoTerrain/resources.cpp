@@ -3,8 +3,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
@@ -178,7 +177,7 @@ namespace ortho_terrain
 			})";
 	}
 
-	void RegisterOrthoTerrainResources(hades::data::data_manager* data)
+	void RegisterOrthoTerrainResources(hades::data::data_system* data)
 	{
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);

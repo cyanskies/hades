@@ -22,7 +22,7 @@ std::string_view defaultGame()
 	return "objects";
 }
 
-void resourceTypes(hades::data::data_manager &data)
+void resourceTypes(hades::data::data_system &data)
 {
 	objects::RegisterObjectResources(&data);
 	//data.register_resource_type("snake-rules", parseSnakeRules);

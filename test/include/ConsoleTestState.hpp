@@ -4,7 +4,7 @@
 #include "SFML/Graphics/Sprite.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 
-#include "Hades/DataManager.hpp"
+#include "Hades/simple_resources.hpp"
 #include "Hades/State.hpp"
 
 class ConsoleTestState final : public hades::State

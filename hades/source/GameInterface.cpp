@@ -1,7 +1,5 @@
 #include "Hades/GameInterface.hpp"
 
-#include "Hades/DataManager.hpp"
-
 namespace hades 
 {
 	EntityId GameInterface::createEntity()

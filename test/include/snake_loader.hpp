@@ -1,7 +1,7 @@
 #ifndef TEST_SNAKE_LOADER_HPP
 #define TEST_SNAKE_LOADER_HPP
 
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/UniqueId.hpp"
 
 struct snake_game_t {};

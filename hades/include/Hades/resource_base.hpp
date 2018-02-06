@@ -34,17 +34,21 @@ namespace hades
 		public:
 			using std::runtime_error::runtime_error;
 		};
+
+		class resource_name_already_used : public std::runtime_error
+		{
+		public:
+			using std::runtime_error::runtime_error;
+		};
 	}
 
 	namespace resources
 	{
-		using parserFunc = std::function<void(data::UniqueId mod, const YAML::Node& node, data::data_manager*)>;
-
 		struct resource_base
 		{
 			virtual ~resource_base() {}
 
-			virtual void load(data::data_manager*) {}
+			virtual void load(data::data_manager*) = 0;
 
 			data::UniqueId id;
 			//the file this resource should be loaded from
@@ -65,7 +69,7 @@ namespace hades
 
 			virtual ~resource_type() {}
 
-			void load(data::data_manager*);
+			void load(data::data_manager*) override;
 			//the actual resource
 			T value;
 		protected:

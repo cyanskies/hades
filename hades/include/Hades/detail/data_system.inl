@@ -16,56 +16,7 @@ namespace hades
 	namespace data
 	{
 		template<class T>
-		void data_manager::set(UniqueId key, std::unique_ptr<T> value)
-		{
-			try
-			{
-				_resources.set(key, std::move(value));
-				//set the values unique id, incase the calling code didn't
-				auto v = &**_resources.get_reference<std::unique_ptr<T>>(key);
-				v->id = key;
-			}
-			catch (type_erasure::value_wrong_type &e)
-			{
-				throw resource_wrong_type(e.what());
-			}
-		}
-
-		template<class T>
-		T* data_manager::get(UniqueId uid)
-		{
-			try
-			{
-				auto value = &**_resources.get_reference<std::unique_ptr<T>>(uid);
-
-				if (!value->loaded)
-				{
-					refresh(value->id);
-					load(value->id);
-				}
-
-				return value;
-			}
-			catch (type_erasure::key_null&)
-			{
-				//exception -- value no defined
-				auto message = "Failed to find resource for unique_id: " + as_string(uid);
-				throw resource_null(message.c_str());
-			}
-			catch (type_erasure::value_wrong_type&)
-			{
-				//exception -- value is wrong type
-				auto message = "Tried to get resource using wrong type, unique_id was : " + as_string(uid);
-				throw resource_wrong_type(message.c_str());
-			}
-		}
-
-		//gets the requested resource, or creates it if not already
-		// sets the resources most recent mod to the passed value
-		// returns nullptr if unable to return a valid resource
-		// also sets the id and mod ptr
-		template<class T>
-		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data::data_manager* data)
+		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data_manager *data)
 		{
 			T* r = nullptr;
 
@@ -74,7 +25,7 @@ namespace hades
 				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
 				return r;
 			}
-
+			
 			if (!data->exists(target))
 			{
 				auto new_ptr = std::make_unique<T>();
@@ -87,13 +38,13 @@ namespace hades
 			{
 				try
 				{
-					r = data->get<T>(target);
+					r = data->get<T>(target, data_manager::no_load);
 				}
-				catch (data::resource_wrong_type&)
+				catch (data::resource_wrong_type &e)
 				{
 					//name is already used for something else, this cannnot be loaded
-					auto modname = data->as_string(mod);
-					LOGERROR("Failed to get " + types::string(typeid(T).name()) + " with id: " + data->as_string(target) + ", in mod: " + modname + ", name has already been used for a different resource type.");
+					auto modname = data->getAsString(mod);
+					LOGERROR(types::string(e.what()) + "In mod: " + modname + ", name has already been used for a different resource type.");
 				}
 			}
 

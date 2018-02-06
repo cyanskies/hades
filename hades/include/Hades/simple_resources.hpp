@@ -16,7 +16,12 @@
 
 namespace hades
 {
-	void RegisterCommonResources(hades::data::data_manager*);
+	namespace data
+	{
+		class data_system;
+	}
+
+	void RegisterCommonResources(hades::data::data_system*);
 
 	template<class First, class Last>
 	sf::Color MakeColour(First begin, Last end)
@@ -303,6 +308,8 @@ namespace hades
 		//TODO: add field for fragment shaders
 		struct animation : public resource_type<std::vector<animation_frame>>
 		{
+			animation();
+
 			texture* tex = nullptr;
 			float duration = 0.f;
 			types::int32 width = 0, height = 0;

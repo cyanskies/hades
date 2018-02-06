@@ -42,7 +42,7 @@ namespace objects
 	const auto editor_map_size_default = 100;
 	const auto editor_mock_size_default = editor_grid_default;
 
-	void RegisterObjectResources(hades::data::data_manager*);
+	void RegisterObjectResources(hades::data::data_system*);
 	
 	namespace resources
 	{

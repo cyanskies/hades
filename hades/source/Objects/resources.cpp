@@ -1,7 +1,7 @@
 #include "Objects/resources.hpp"
 
 #include "Hades/Data.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/Properties.hpp"
 
 #include "Objects/editor.hpp"
@@ -208,7 +208,7 @@ namespace objects
 		hades::console::SetProperty(editor_object_mock_size, editor_mock_size_default);
 	}
 
-	void RegisterObjectResources(hades::data::data_manager *data)
+	void RegisterObjectResources(hades::data::data_system *data)
 	{
 		DefineObjectConsoleVars();
 
@@ -446,7 +446,7 @@ namespace objects
 
 				auto add_to_group = [g, gname, mod, data](const YAML::Node& n) {
 					auto obj_str = n.as<hades::types::string>();
-					auto obj_id = hades::data::GetUid(obj_str);
+					auto obj_id = hades::data::MakeUid(obj_str);
 					auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);
 					g->obj_list.push_back(obj);
 				};

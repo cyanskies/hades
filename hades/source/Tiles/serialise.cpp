@@ -3,7 +3,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 
 #include "OrthoTerrain/resources.hpp"
 

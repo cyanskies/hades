@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/Input.hpp"
 #include "Hades/StateManager.hpp"
 #include "Hades/Types.hpp"
@@ -51,7 +51,7 @@ std::string_view defaultGame();
 ///
 /// Apps may register their Actions here
 /////////////////////////////////////
-void resourceTypes(hades::data::data_manager &data);
+void resourceTypes(hades::data::data_system &data);
 
 /////////////////////////////////////
 /// Called at the start of the app

@@ -2,7 +2,6 @@
 
 #include <shared_mutex>
 
-#include "Hades/data_manager.hpp"
 #include "Hades/exceptions.hpp"
 
 namespace hades
@@ -43,7 +42,22 @@ namespace hades
 			}
 		}
 
+		const data_manager::no_load_t data_manager::no_load;
 		
+		bool data_manager::exists(UniqueId id) const
+		{
+			return _resources.find(id) != std::end(_resources);
+		}
+
+		resources::resource_base *data_manager::getResource(UniqueId id)
+		{
+			auto res = _resources.find(id);
+			if (res == std::end(_resources))
+				throw resource_null("Failed to find resource for unique_id: " + getAsString(id));
+
+			return res->second.get();
+		}
+
 		bool Exists(UniqueId id)
 		{
 			const data_manager* data = nullptr;
@@ -61,10 +75,21 @@ namespace hades
 
 			std::tie(data, lock) = detail::GetDataManagerPtrShared();
 
-			return data->as_string(id);
+			return data->getAsString(id);
 		}
 
 		UniqueId GetUid(std::string_view name)
+		{
+			const data_manager* data = nullptr;
+			shared_lock_t lock;
+
+			std::tie(data, lock) = detail::GetDataManagerPtrShared();
+
+			return data->getUid(name);
+		}
+
+
+		UniqueId MakeUid(std::string_view name)
 		{
 			data_manager* data = nullptr;
 			lock_t lock;

@@ -1,7 +1,7 @@
 #include "OrthoTerrain/utility.hpp"
 
 #include "Hades/Data.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/Utility.hpp"
 
 #include "OrthoTerrain/resources.hpp"
@@ -532,7 +532,7 @@ namespace ortho_terrain
 		}
 	}
 
-	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_manager *data)
+	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_system *data)
 	{
 		return GetTransition<tiles::TileArray, resources::terrain_transition, resources::terrain>(type, transition, 
 			[data](hades::UniqueId id) {return data->get<resources::terrain>(id); }, resources::GetMutableErrorTileset(data));
@@ -659,7 +659,7 @@ namespace ortho_terrain
 		};
 	}
 
-	tiles::TileArray& GetTransition(transition3::Types type, resources::terrain_transition3& transition, hades::data::data_manager *data)
+	tiles::TileArray& GetTransition(transition3::Types type, resources::terrain_transition3& transition, hades::data::data_system *data)
 	{
 		return GetTransition<tiles::TileArray, resources::terrain_transition3, resources::terrain_transition, resources::terrain>(type, transition,
 			[data](hades::UniqueId id) {return data->get<resources::terrain_transition>(id); }, [data](hades::UniqueId id) {return data->get<resources::terrain>(id); },

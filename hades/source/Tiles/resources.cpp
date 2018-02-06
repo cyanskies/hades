@@ -3,8 +3,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
-#include "Hades/DataManager.hpp"
-#include "Hades/data_manager.hpp"
+#include "Hades/data_system.hpp"
 
 #include "Tiles/editor.hpp"
 #include "Tiles/tiles.hpp"
@@ -151,7 +150,7 @@ namespace tiles
 		void parseTileset(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
 	}
 
-	void RegisterTileResources(hades::data::data_manager* data)
+	void RegisterTileResources(hades::data::data_system* data)
 	{
 		makeDefaultLayout(data);
 		

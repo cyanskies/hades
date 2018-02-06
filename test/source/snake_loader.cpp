@@ -33,7 +33,7 @@ void parseSnakeRules(hades::data::UniqueId mod, YAML::Node& node, hades::data::d
 	catch (hades::data::resource_wrong_type&)
 	{
 		//name is already used for something else, this cannnot be loaded
-		auto mod_ptr = dataman->getMod(mod);
+		auto mod_ptr = dataman->get<hades::resources::mod>(mod);
 		LOGERROR("Name collision with identifier: 'snake-game', for texture while parsing mod: " + mod_ptr->name + ". Name has already been used for a different resource type.");
 		//this is probably unrecoverable for game settings objects
 		return;

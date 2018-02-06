@@ -1,6 +1,7 @@
 #include <map>
 #include <vector>
 
+#include "Hades/exceptions.hpp"
 #include "Hades/QuadMap.hpp"
 
 namespace hades
@@ -16,7 +17,7 @@ namespace hades
 	};
 
 	template<class Rect>
-	Rect MakeMaxRect()
+	constexpr Rect MakeMaxRect()
 	{
 		using T = decltype(Rect::left);
 		auto min = std::numeric_limits<T>::min();
@@ -156,11 +157,17 @@ namespace hades
 
 	template<class Key>
 	QuadTree<Key>::QuadTree(types::int32 bucket_cap) : _root_node(bucket_cap)
-	{}
+	{
+		if (_bucket_cap < 1)
+			throw invalid_argument("QuadTree bucket capacity must be greater than 0");
+	}
 
 	template<class Key>
 	QuadTree<Key>::QuadTree(const rect_type &area, types::int32 bucket_cap) : _root_node(area, bucket_cap)
-	{}
+	{
+		if (_bucket_cap < 1)
+			throw invalid_argument("QuadTree bucket capacity must be greater than 0");
+	}
 
 	template<class Key>
 	std::vector<typename QuadTree<Key>::value_type> QuadTree<Key>::find_collisions(const rect_type &rect) const

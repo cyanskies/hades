@@ -13,7 +13,6 @@ namespace hades
 	{
 	public:
 		using std::invalid_argument::invalid_argument;
-		using std::invalid_argument::what;
 	};
 
 	//thrown when a global function depends on a previously registered backend provider
@@ -23,7 +22,6 @@ namespace hades
 	{
 	public:
 		using std::logic_error::logic_error;
-		using std::logic_error::what;
 	};
 }
 

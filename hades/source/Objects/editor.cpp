@@ -350,7 +350,15 @@ namespace objects
 				sf::Sprite s;
 				
 				auto index = hades::random(0u, anims.size() - 1);
-				hades::animation::Apply(anims[index], 0.f, s);
+				auto anim = anims[index];
+				hades::animation::Apply(anim, 0.f, s);
+				//calculate scale for x and y axis?
+				auto width_scale = static_cast<float>(size[0]) / static_cast<float>(anim->width);
+				auto height_scale = static_cast<float>(size[1]) / static_cast<float>(anim->height);
+
+				//scale the sprite to match object size
+				s.setScale(width_scale, height_scale);
+
 				_objectPreview = s;
 				object = &std::get<sf::Sprite>(_objectPreview);
 			}

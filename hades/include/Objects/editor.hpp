@@ -52,6 +52,11 @@ namespace objects
 		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
 	}
 
+	struct editor_object_info : public object_info
+	{
+		hades::sprite_utility::Sprite::sprite_id sprite_id;
+	};
+
 	class object_editor : public hades::State
 	{
 	public:
@@ -103,7 +108,7 @@ namespace objects
 		void LoadObjects(const level &l);
 
 		void DrawBackground(sf::RenderTarget &target) const;
-		void DrawObjects(sf::RenderTarget &target) const;
+		void DrawObjects(sf::RenderTarget &target);
 		void DrawGrid(sf::RenderTarget &target) const;
 		//draw the preview generated in GenerateDrawPreview
 		virtual void DrawPreview(sf::RenderTarget &target) const;
@@ -140,7 +145,7 @@ namespace objects
 		//objects in the map
 		//id map
 		hades::QuadTree<hades::EntityId> _quadtree;
-		std::vector<object_info> _objects;
+		std::vector<editor_object_info> _objects;
 
 		//sprite batch for objects
 		hades::SpriteBatch _objectSprites;

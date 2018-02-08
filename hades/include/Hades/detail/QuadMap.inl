@@ -86,13 +86,13 @@ namespace hades
 				//create four chilren, then reinsert the current entities held in data.
 				//then insert this entity
 				int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
-				Rect tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(_area.left + halfwidth, _area.top, halfwidth, halfheight),
+				rect_type tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(_area.left + halfwidth, _area.top, halfwidth, halfheight),
 					blrect(_area.left, _area.top + halfheight, halfwidth, halfheight), brrect(_area.left + halfwidth, _area.top + halfheight, halfwidth, halfheight);
 
-				_children.insert(node_type(tlrect));
-				_children.insert(node_type(trrect));
-				_children.insert(node_type(blrect));
-				_children.insert(node_type(brrect));
+				_children.push_back(node_type(tlrect, _bucket_cap));
+				_children.push_back(node_type(trrect, _bucket_cap));
+				_children.push_back(node_type(blrect, _bucket_cap));
+				_children.push_back(node_type(brrect, _bucket_cap));
 
 				auto rects = _data;
 				_data.clear();
@@ -115,7 +115,7 @@ namespace hades
 			//insert this rect into target child and leave breadcrumbs pointing to it
 			if (nodes.size() == 1)
 			{
-				_stored.insert(std::make_pair(data.id, nodes.front().second));
+				_stored.insert(std::make_pair(data.key, nodes.front().second));
 				nodes.front().second->insert(data);
 			}
 			//keep the rect in this node if it intersects multiple child nodes.
@@ -131,15 +131,15 @@ namespace hades
 			auto s = _stored.find(id);
 			if (s != _stored.end())
 			{
-				assert(s.first = id);
-				s.second->remove(id);
+				assert(s->first == id);
+				s->second->remove(id);
 				_stored.erase(s);
 				return;
 			}
 
 			//remove entity from _data
 			if (!_data.empty())
-				_data.erase(std::remove_if(_data.begin(), _data.end(), [&id](const value_type &in) { return in.id == id; }), _data.end());
+				_data.erase(std::remove_if(_data.begin(), _data.end(), [&id](const value_type &in) { return in.key == id; }), _data.end());
 
 			//TODO: rotate structure if we fall bellow parents MAXDENSITY
 			// if _data.size and _stored.size < max_density
@@ -179,7 +179,7 @@ namespace hades
 	void QuadTree<Key>::insert(const rect_type &r, const key_type &k)
 	{
 		_rootNode.remove(k);
-		_rootNode.insert({r, k});
+		_rootNode.insert({k, r});
 	}
 
 	template<class Key>

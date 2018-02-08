@@ -77,6 +77,8 @@ namespace hades
 		void clear();
 
 		sprite_id createSprite();
+		sprite_id createSprite(const resources::animation *a, sf::Time t,
+			sprite_utility::layer_t l, sf::Vector2f p, sf::Vector2f s);
 		bool exists(sprite_id id) const;
 		void destroySprite(sprite_id id);
 
@@ -93,12 +95,13 @@ namespace hades
 	private:
 		//mutex to ensure two threads don't try to add/search/erase from the two collections at the same time
 		mutable std::shared_mutex _collectionMutex; 
+
 		using batch = sprite_utility::batch;
 		std::vector<batch> _sprites;
+
 		sf::FloatRect _drawArea;
 
 		using vertex_batch = std::pair<sprite_utility::SpriteSettings, std::vector<sf::Vertex>>;
-		//sorted by SpriteSettings::layer
 		std::vector<vertex_batch> _vertex;
 		
 		//to speed up usage of exists() cache all the id's from this frame

@@ -108,20 +108,74 @@ namespace hades
 	{
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
 
-		auto id = _id_count;
+		auto id = ++_id_count;
 		//store the id for later lookup
 		_used_ids.push_back(id);
 
-		//if no batches exist
-		//then create and empty batch for unset sprites
-		if (_sprites.empty())
-			_sprites.push_back({});
+		static const sprite_utility::SpriteSettings settings;
+
+		batch *b = nullptr;
+
+		for (auto &batch : _sprites)
+		{
+			if (batch.first == settings)
+			{
+				b = &batch;
+				break;
+			}
+		}
+
+		if (!b)
+		{
+			_sprites.push_back({ settings, std::vector<sprite_utility::Sprite>() });
+			b = &_sprites.back();
+		}
 
 		sprite_utility::Sprite s;
 		s.id = id;
 
 		//insert sprites into the empty batch
-		_sprites[0].second.push_back(s);
+		b->second.push_back(s);
+
+		return id;
+	}
+
+	typename SpriteBatch::sprite_id SpriteBatch::createSprite(const resources::animation *a, sf::Time t,
+		sprite_utility::layer_t l, sf::Vector2f p, sf::Vector2f s)
+	{
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+
+		auto id = ++_id_count;
+		//store the id for later lookup
+		_used_ids.push_back(id);
+
+		const sprite_utility::SpriteSettings settings{ l, a->tex };
+
+		batch *b = nullptr;
+
+		for (auto &batch : _sprites)
+		{
+			if (batch.first == settings)
+			{
+				b = &batch;
+				break;
+			}
+		}
+
+		if (!b)
+		{
+			_sprites.push_back({ settings, std::vector<sprite_utility::Sprite>() });
+			b = &_sprites.back();
+		}
+
+		sprite_utility::Sprite spr;
+		spr.id = id;
+		spr.position = p;
+		spr.animation = a;
+		spr.animation_progress = t;
+		spr.size = s;
+
+		b->second.push_back(spr);
 
 		return id;
 	}
@@ -248,7 +302,6 @@ namespace hades
 	
 	PolySquare MakeSquare(const sprite_utility::Sprite &s)
 	{
-		//TODO: log warning here, sprite has no animation!
 		return PolySquare{
 			//first triange
 			sf::Vertex{ s.position }, //top left
@@ -263,7 +316,6 @@ namespace hades
 
 	PolySquare MakeSquareAnimation(const sprite_utility::Sprite &s)
 	{
-		//TODO, if a->tex == null, generate a coloured square instead and warn
 		auto a = s.animation;
 		auto [x, y] = animation::GetFrame(a, s.animation_progress);
 		return PolySquare{
@@ -314,8 +366,18 @@ namespace hades
 			//make the vertex data
 			for (const auto &s : _sprites[i].second)
 			{
+				//only test for draw culling if the draw area has been set
+				if (_drawArea != sf::FloatRect())
+				{
+					auto sprite_bounds = sf::FloatRect{ s.position, s.size };
+
+					//skip if the sprite isn't in the draw area
+					if (!sprite_bounds.intersects(_drawArea))
+						continue;
+				}
+
 				PolySquare vertex;
-				if (s.animation)
+				if (s.animation && s.animation->tex)
 					vertex = MakeSquareAnimation(s);
 				else //if the sprite has no animation then generated a untextured square
 					vertex = MakeSquare(s);

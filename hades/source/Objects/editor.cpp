@@ -404,20 +404,48 @@ namespace objects
 
 	void object_editor::OnClick(object_editor::MousePos pos)
 	{
+		//TODO error checking
 		if (EditMode == editor::EditMode::OBJECT)
 		{
 			//held object position
 			auto position = std::visit([](auto &&val) {
-				return static_cast<sf::Vector2i>(val.getPosition());
+				return val.getPosition();
 			}, _objectPreview);
 
-			object_info object = { _heldObject, 0 };
+			editor_object_info object;
+			object.obj_type = _heldObject;
 
 			//if(select || none selected
-			if (_objectMode == editor::ObjectMode::PLACE && ObjectValidLocation(position, object))
+			if (_objectMode == editor::ObjectMode::PLACE && ObjectValidLocation(static_cast<sf::Vector2i>(position), object))
 			{
 				//create the object held at the target location
+				object.id = ++_next_object_id;
+				
+				static auto size_id = hades::data::GetUid("size");
+				auto[size_curve, size_value] = GetCurve(object, size_id);
 
+				hades::resources::curve_types::vector_int size;
+
+				if (size_curve && size_value.set)
+				{
+					size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+					assert(size.size() == 2);
+				}
+				else
+					size = { 8, 8 };
+
+				sf::Vector2i size_vec{ size[0], size[1] };
+
+				_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
+
+				auto anims = GetEditorAnimations(_heldObject);
+				auto index = hades::random(0u, anims.size() - 1);
+				auto anim = anims[index];
+
+				object.sprite_id = _objectSprites.createSprite(anim, sf::Time(), 0,
+					position, static_cast<sf::Vector2f>(size_vec));
+
+				_objects.push_back(object);
 			}
 		}
 	}
@@ -510,9 +538,10 @@ namespace objects
 		target.draw(_mapBackground);
 	}
 
-	void object_editor::DrawObjects(sf::RenderTarget &target) const 
+	void object_editor::DrawObjects(sf::RenderTarget &target) 
 	{
-		//TODO:
+		_objectSprites.prepare();
+		target.draw(_objectSprites);
 	}
 
 	void object_editor::DrawGrid(sf::RenderTarget &target) const 

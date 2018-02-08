@@ -49,7 +49,7 @@ namespace hades
 		_lines = CreateGrid(_size, _colour, _cellSize);
 	}
 
-	void GridArea::set2dDrawArea(const sf::FloatRect &worldCoords)
+	void GridArea::limitDrawTo(const sf::FloatRect &worldCoords)
 	{
 		_worldClampRegion = worldCoords;
 	}

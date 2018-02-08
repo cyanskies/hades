@@ -131,7 +131,7 @@ namespace hades
 			//	BVEC4, //vector4b
 			//	MAT3, //a float 3x3 matrix
 			//	MAT4, //4x4 float matrix
-			//	SAMPLER2D, //a texture or other map
+			//	SAMPLER2D, //a sf::texture
 			//	SAMPLE_CURRENT, //sets the currently bound texture as a SAMPLER2D
 			//	//Array types
 			//	ARRAY_FLOAT,
@@ -153,12 +153,6 @@ namespace hades
 
 			template<typename T>
 			static constexpr bool valid_type()
-			{
-				return false;
-			}
-
-			template<typename T>
-			static constexpr bool valid_array_type()
 			{
 				return false;
 			}
@@ -249,7 +243,7 @@ namespace hades
 		}
 
 		template<>
-		constexpr bool shader::valid_type<sf::Texture>()
+		constexpr bool shader::valid_type<const sf::Texture*>()
 		{
 			return true;
 		}
@@ -261,37 +255,37 @@ namespace hades
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<float>()
+		constexpr bool shader::valid_type<std::vector<float>>()
 		{
 			return true;
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<sf::Glsl::Vec2>()
+		constexpr bool shader::valid_type<std::vector<sf::Glsl::Vec2>>()
 		{
 			return true;
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<sf::Glsl::Vec3>()
+		constexpr bool shader::valid_type<std::vector<sf::Glsl::Vec3>>()
 		{
 			return true;
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<sf::Glsl::Vec4>()
+		constexpr bool shader::valid_type<std::vector<sf::Glsl::Vec4>>()
 		{
 			return true;
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<sf::Glsl::Mat3>()
+		constexpr bool shader::valid_type<std::vector<sf::Glsl::Mat3>>()
 		{
 			return true;
 		}
 
 		template<>
-		constexpr bool shader::valid_array_type<sf::Glsl::Mat4>()
+		constexpr bool shader::valid_type<std::vector<sf::Glsl::Mat4>>()
 		{
 			return true;
 		}

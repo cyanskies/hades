@@ -3,167 +3,209 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "Hades/Animation.hpp"
+#include "Hades/exceptions.hpp"
+#include "Hades/Types.hpp"
 
 namespace hades
 {
 	namespace sprite_utility
 	{
-		types::uint32 type_count = 0;
-
-		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs)
+		bool operator==(const SpriteSettings &lhs, const SpriteSettings &rhs)
 		{
-			return !(lhs == rhs);
+			return lhs.layer == rhs.layer
+				&& lhs.texture == rhs.texture
+				&& lhs.shader == rhs.shader;
+		}
+
+		found_sprite FindSprite(std::vector<batch> sbatch, Sprite::sprite_id id)
+		{
+			for (auto batch_index = 0; batch_index < sbatch.size(); ++batch_index)
+			{
+				for (auto sprite_index = 0; sprite_index < sbatch[batch_index].second.size(); ++sprite_index)
+				{
+					if (auto sprite = &sbatch[batch_index].second[sprite_index]; sprite->id == id)
+					{
+						return { batch_index, sprite_index, sprite };
+					}
+				}
+			}
+
+			throw invalid_argument("Sprite not found in SpriteBatch, id was: " + to_string(id));
+		}
+
+		void MoveSprite(std::vector<batch> sbatch, index_type batch_index, index_type sprite_index, const SpriteSettings &settings)
+		{
+			//get the sprite out of its current batch
+			auto *batch = &sbatch[batch_index];
+			auto sprite = batch->second[sprite_index];
+
+			//erase the sprite from the old batch
+			auto iter = std::begin(batch->second) + sprite_index;
+			batch->second.erase(iter);
+
+			batch = nullptr;
+			//find a new batch to place it into
+			for (auto &b : sbatch)
+			{
+				if (b.first == settings)
+				{
+					batch = &b;
+					break;
+				}
+				
+				sbatch.push_back({ settings, {} });
+				batch = &sbatch.back();
+			}
+
+			assert(batch);
+			batch->second.push_back(sprite);
 		}
 	}
 
-	using uniform_map = sprite_utility::uniform_map;
-
-	//compare if two sets of uniforms are identical
-	bool ShaderUniformsEqual(const uniform_map &lhs, const uniform_map &rhs)
+	void SpriteBatch::clear()
 	{
-		if (lhs.size() != rhs.size())
-			return false;
-
-		auto lhs_it = lhs.begin(), rhs_it = rhs.begin();
-
-		while (lhs_it != lhs.end())
-		{
-			if (lhs_it->first != rhs_it->first)
-				return false;
-
-			const sprite_utility::ShaderUniformBase *lhs_base = nullptr, *rhs_base = nullptr;
-			lhs_base = &*(lhs_it->second);
-			rhs_base = &*(rhs_it->second);
-
-			if (*lhs_base != *rhs_base)
-				return false;
-
-			lhs_it++; rhs_it++;
-		}
-
-		return true;
-	}
-
-	//apply all the uniforms to the shader
-	//TODO: error checking/handling
-	void ApplyUniforms(const uniform_map &uniforms, sf::Shader &shader)
-	{
-		auto uniforms_it = uniforms.begin();
-		while (uniforms_it != uniforms.end())
-		{
-			sprite_utility::ShaderUniformBase *uniform_base = nullptr;
-			uniform_base = &*(uniforms_it->second);
-			uniform_base->apply(uniforms_it->first, shader);
-			uniforms_it++;
-		}
-	}
-
-	void SpriteBatch::cleanUniforms()
-	{
-		for (auto &s : _sprites)
-			s.second->uniforms.clear();
-	}
-
-	//NOTE: STORE unique ptrs to ShaderUniformBase in propertyBag
-	typename SpriteBatch::sprite_id SpriteBatch::createSprite(sf::Vector2f position, sprite_utility::layer_t l, const resources::animation *a, sf::Time t)
-	{	
-		auto s = std::make_unique<sprite_utility::Sprite>();
-		s->layer = l;
-		s->animation = a;
-		s->sprite = sf::Sprite(a->tex->value);
-		s->sprite.setPosition(position);
-		animation::Apply(a, t, s->sprite);
-
-		auto id = _id_count++;
+		//get the exclusive lock
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
-		_sprites.emplace(id, std::move(s));
+
+		//clear all the vectors
+		//NOTE: we don't clear the base vectors, we want to keep the reserved 
+		//space in the sprite vectors and in the vertex vectors
+		for (auto &b : _sprites)
+			b.second.clear();
+
+		for (auto &v : _vertex)
+			v.second.clear();
+
+		_used_ids.clear();
+	}
+
+	typename SpriteBatch::sprite_id SpriteBatch::createSprite()
+	{
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+
+		auto id = _id_count;
+		//store the it for later lookup
+		_used_ids.push_back(id);
+
+		//TODO: insert into temp/empty sprite storage?
+		//? reserve the first batch for unset sprites?
 
 		return id;
 	}
 
-	void  SpriteBatch::destroySprite(typename SpriteBatch::sprite_id id)
-	{
-		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
-		_sprites.erase(it);
-	}
-
 	bool SpriteBatch::exists(typename SpriteBatch::sprite_id id) const
 	{
-		return _sprites.find(id) != std::end(_sprites);
+		auto lk = std::shared_lock<std::shared_mutex>(_collectionMutex);
+		return std::find(std::begin(_used_ids), std::end(_used_ids), id) != std::end(_used_ids);
 	}
 
-	void SpriteBatch::changeAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
+	void SpriteBatch::setAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
 	{
-		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
+		bool needs_move = false;
 
 		{
-			std::lock_guard<std::mutex> slk(it->second->mut);
-			it->second->animation = a;
-			animation::Apply(a, t, it->second->sprite);
+			std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+			auto found = sprite_utility::FindSprite(_sprites, id);
+			auto batch = std::get<0>(found);
+
+			needs_move = _sprites[batch].first.texture != a->tex;
 		}
-	}
 
-	void SpriteBatch::setPosition(typename SpriteBatch::sprite_id id, sf::Vector2f pos)
-	{
-		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
+		//prepare both kinds of lock
+		std::shared_lock<std::shared_mutex> shlk(_collectionMutex, std::defer_lock);
+		std::unique_lock<std::shared_mutex> ulk(_collectionMutex, std::defer_lock);
 
+		//lock in the mode that we need
+		if (needs_move)
+			ulk.lock();
+		else
+			shlk.lock();
+
+		//update the sprites animation and progress
+		auto[batch, sprite_index, sprite] = sprite_utility::FindSprite(_sprites, id);
 		{
-			std::lock_guard<std::mutex> slk(it->second->mut);
-			it->second->sprite.setPosition(pos);
+			std::lock_guard<std::mutex> lk(sprite->mut);
+			sprite->animation = a;
+			sprite->animation_progress = t;
+		}
+
+		//move the sprite to a different batch if the textures no longer match
+		if (needs_move)
+		{
+			auto settings = _sprites[batch].first;
+			settings.texture = a->tex;
+
+			sprite_utility::MoveSprite(_sprites, batch, sprite_index, settings);
 		}
 	}
 
 	void SpriteBatch::setLayer(typename SpriteBatch::sprite_id id, sprite_utility::layer_t l)
 	{
-		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
-
 		{
-			std::lock_guard<std::mutex> slk(it->second->mut);
-			it->second->layer = l;
+			std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+			auto found = sprite_utility::FindSprite(_sprites, id);
+			auto batch = std::get<0>(found);
+
+			//if we're already in a batch with the correct layer, then don't do anything
+			if (_sprites[batch].first.layer == l)
+				return;
 		}
+
+		//take an exclusive lock so we can rotate the sprite data structure safely
+		std::unique_lock<std::shared_mutex> ulk(_collectionMutex);
+
+		//update the sprites animation and progress
+		auto found = sprite_utility::FindSprite(_sprites, id);
+		auto batch_index = std::get<0>(found);
+		auto sprite_index = std::get<1>(found);
+
+		//move the sprite to a batch that matches the new settings
+		auto settings = _sprites[batch_index].first;
+		sprite_utility::MoveSprite(_sprites, batch_index, sprite_index, settings);
 	}
 
-	bool SortSpritePtr(sprite_utility::Sprite *lhs, sprite_utility::Sprite *rhs)
+	void SpriteBatch::setPosition(typename SpriteBatch::sprite_id id, sf::Vector2f pos)
 	{
-		assert(lhs && rhs);
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+		auto found_sprite = sprite_utility::FindSprite(_sprites, id);
+		auto sprite = std::get<sprite_utility::Sprite*>(found_sprite);
 
-		//draw lowest layer first
-		if (lhs->layer == rhs->layer)
-		{
-			auto lpos = lhs->sprite.getPosition(),
-				rpos = rhs->sprite.getPosition();
-			//if the layer is the same, then draw lowest y value first, or lowest x value first
-			if (lpos.y == rpos.y)
-				return lpos.x < rpos.x;
-			else
-				return rpos.y < rpos.y;
+		std::lock_guard<std::mutex> slk(sprite->mut);
+		sprite->position = pos;
+	}
 
-		}
-		else
-			return lhs->layer < rhs->layer;
+	void SpriteBatch::setSize(typename SpriteBatch::sprite_id id, sf::Vector2f size)
+	{
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
+		auto found_sprite = sprite_utility::FindSprite(_sprites, id);
+		auto sprite = std::get<sprite_utility::Sprite*>(found_sprite);
+
+		std::lock_guard<std::mutex> slk(sprite->mut);
+		sprite->size = size;
 	}
 
 	void SpriteBatch::prepare()
 	{
-		std::sort(_draw_list.begin(), _draw_list.end(), SortSpritePtr);
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+
+		//clear the previous frames vertex
+		for (auto &v : _vertex)
+			v.second.clear();
+
+		//
 	}
 
 	void SpriteBatch::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		for (auto &s : _draw_list)
+		for (auto &s : _vertex)
 		{
-			sf::Shader *shader = nullptr;
-			if (s->animation->anim_shader && s->animation->anim_shader->loaded)
-				shader = &s->animation->anim_shader->value;
+			auto &settings = s.first;
+			auto state = states;
+			state.texture = &settings.texture->value;
+			if (settings.shader)
+				state.shader = &settings.shader->value;
 
-			if (shader)
-				target.draw(s->sprite, shader);
-			else
-				target.draw(s->sprite);
+			target.draw(s.second.data(), s.second.size(), sf::PrimitiveType::Triangles, state);
 		}
 	}
 }

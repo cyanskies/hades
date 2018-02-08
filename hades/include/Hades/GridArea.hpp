@@ -22,7 +22,7 @@ namespace hades
 		void setColour(const sf::Color &c);
 		void setCellSize(types::uint32 s);
 
-		void set2dDrawArea(const sf::FloatRect &worldCoords) override;
+		void limitDrawTo(const sf::FloatRect &worldCoords) override;
 
 		void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
 

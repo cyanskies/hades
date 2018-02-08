@@ -3,12 +3,15 @@
 
 #include <mutex>
 #include <shared_mutex>
+#include <variant>
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Shader.hpp"
-#include "SFML/Graphics/Sprite.hpp"
+#include "SFML/Graphics/Texture.hpp"
+#include "SFML/Graphics/Vertex.hpp"
 #include "SFML/System/Time.hpp"
 
+#include "Hades/LimitedDraw.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
@@ -16,187 +19,89 @@
 //the object manages batching draw calls to render more efficiently
 //the object also manages animation times.
 
-namespace hades {
-	class InvalidSpriteId : public std::logic_error
-	{
-	public:
-		using std::logic_error::logic_error;
-	};
-
+namespace hades 
+{
 	namespace sprite_utility
 	{
-		//throws spritebatch exception or something if trying to modify a missing sprite
-		template<class K, class V>
-		typename std::map<K, V>::iterator GetElement(std::map<K, V> &m, K id)
+		using layer_t = types::int32;
+
+		struct SpriteSettings
 		{
-			auto it = m.find(id);
-			if (it == std::end(m))
-				throw InvalidSpriteId("Tried to retreive missing Id, Id was: " + std::to_string(id));
-
-			return it;
-		}
-
-		using type_id = types::uint32;
-
-		struct ShaderUniformBase
-		{
-			virtual ~ShaderUniformBase() {}
-			virtual void apply(const types::string&, sf::Shader&) const = 0;
-			virtual bool operator==(const ShaderUniformBase& other) const = 0;
-
-			virtual type_id getType() const = 0;
+			layer_t layer;
+			const resources::texture* texture;
+			const resources::shader *shader;
+			//uniform_map uniforms;
 		};
 
-		bool operator!=(const ShaderUniformBase &lhs, const ShaderUniformBase &rhs);
-
-		template<typename T>
-		struct ShaderUniform final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				static_assert(resources::shader::valid_type<T>(), "Passed type cannot be used as a SFML Uniform");
-				s.setUniform(n, uniform);
-			}
-
-			virtual bool operator==(const ShaderUniformBase& other) const
-			{
-				if (other.getType() != type)
-					return false;
-
-				ShaderUniform<T> &ref = static_cast<ShaderUniform<T>&>(other);
-
-				return ref.uniform == uniform;
-			}
-
-			virtual type_id getType() const
-			{
-				return type;
-			}
-
-			T uniform;
-			static const type_id type;
-		};
-
-		extern types::uint32 type_count;
-
-		template<typename T>
-		const type_id ShaderUniform<T>::type = type_count++;
-
-		template<typename T>
-		struct ShaderUniformArray final
-		{
-			virtual void apply(const types::string& n, sf::Shader &s) const override
-			{
-				static_assert(resources::shader::valid_array_type<T>(), "Passed array type cannot be used as a SFML Uniform");
-				s.setUniformArray(n, uniform.data(), uniform.size());
-			}
-
-			virtual bool operator==(const ShaderUniformBase& other) const
-			{
-				if (other.getType() != type)
-					return false;
-
-				ShaderUniformArray<T> &ref = static_cast<ShaderUniformArray<T>&>(other);
-
-				return ref.uniform == uniform;
-			}
-
-			virtual type_id getType() const
-			{
-				return type;
-			}
-
-			std::vector<T> uniform;
-			static const type_id type;
-		};
-
-		template<typename T>
-		const type_id ShaderUniformArray<T>::type = type_count++;
-
-		using layer_t = types::int16;
-
-		using uniform_map = std::map<types::string, std::unique_ptr<sprite_utility::ShaderUniformBase>>;
+		bool operator==(const SpriteSettings &lhs, const SpriteSettings &rhs);
 
 		struct Sprite
 		{
+			Sprite() = default;
+			Sprite(const Sprite &other) : id(other.id), position(other.position),
+				size(other.size), animation(other.animation), animation_progress(other.animation_progress)
+			{}
+
+			using sprite_id = types::int64;
+
 			std::mutex mut;
-			layer_t layer;
-			sf::Sprite sprite;
+			sprite_id id;
+			sf::Vector2f position;
+			sf::Vector2f size;
 			const resources::animation *animation;
-			uniform_map uniforms;
+			sf::Time animation_progress;
 		};
+
+		using index_type = std::size_t;
+		//				//batch index,//sprite index, sprite ptr
+		using found_sprite = std::tuple<index_type, index_type, Sprite*>;
+		using batch = std::pair<sprite_utility::SpriteSettings, std::vector<sprite_utility::Sprite>>;
+
+		//must own a shared lock on sbatch
+		//throws hades::invalid_argument if id doesn't corrispond to a stored sprite
+		found_sprite FindSprite(std::vector<batch> sbatch, Sprite::sprite_id id);
+		//requires exclusive lock on sbatch
+		//moves the sprite to a batch that matches settings, or creates a new one;
+		//batch and sprite indexs' indicate where the sprite currently is
+		void MoveSprite(std::vector<batch> sbatch, index_type batch, index_type sprite, const SpriteSettings &settings);
 	}
 
-	//NOTE: this current impl does have any performance benifits over using sprites
-	// the purpose here is to delop the API for the SpriteBatch
-	class SpriteBatch : public sf::Drawable
+	class SpriteBatch : public sf::Drawable, public Camera2dDrawClamp
 	{
 	public:
-		using sprite_id = types::uint64;
-		//clears all of the stored uniforms
-		void cleanUniforms();
+		using sprite_id = sprite_utility::Sprite::sprite_id;
+		//clears all of the stored data
+		void clear();
 
-		//Begin thread safe methods
-		sprite_id createSprite(sf::Vector2f position, sprite_utility::layer_t l, const resources::animation *a, sf::Time t);
+		sprite_id createSprite();
+		bool exists(sprite_id id) const;
 		void destroySprite(sprite_id id);
 
-		bool exists(sprite_id id) const;
-
-		void changeAnimation(sprite_id id, const resources::animation *a, sf::Time t);
-
-		void setPosition(sprite_id id, sf::Vector2f pos);
+		void setAnimation(sprite_id id, const resources::animation *a, sf::Time t);
 		void setLayer(sprite_id id, sprite_utility::layer_t l);
+		void setPosition(sprite_id id, sf::Vector2f pos);
+		void setSize(sprite_id id, sf::Vector2f size);
+		
+		void limitDrawTo(const sf::FloatRect &worldCoords);
 
-		template<typename T>
-		void setUniform(sprite_id id, types::string name, T value);
-
-		template<typename T>
-		void setUniform(sprite_id id, types::string name, std::vector<T> value);
-		//End thread safe methods
-
-		//generates the fewest number of vertex array needed to draw all the contained sprites
-		//usually called once before draw
 		void prepare();
 		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
 
 	private:
-		//for the vertex batch method, store all sprite details(anim, anim progress)
-		//and push them into a vetex buffer each frame that most efficiently reduces draw calls.
+		//mutex to ensure two threads don't try to add/search/erase from the two collections at the same time
+		mutable std::shared_mutex _collectionMutex; 
+		using batch = sprite_utility::batch;
+		std::vector<batch> _sprites;
+		sf::FloatRect _drawArea = makeMax;
 
-		mutable std::shared_mutex _collectionMutex; //mutex to ensure two threads don't try to add/search/erase from the two collections at the same time
-		//sorted by layer for drawing
-		std::vector<sprite_utility::Sprite*> _draw_list;
-		std::map<sprite_id, std::unique_ptr<sprite_utility::Sprite>> _sprites;
+		using vertex_batch = std::pair<sprite_utility::SpriteSettings, std::vector<sf::Vertex>>;
+		//sorted by SpriteSettings::layer
+		std::vector<vertex_batch> _vertex;
+		
+		//to speed up usage of exists() cache all the id's from this frame
+		std::vector<sprite_id> _used_ids;
 		sprite_id _id_count = std::numeric_limits<sprite_id>::min();
 	};
-
-	template<typename T>
-	void SpriteBatch::setUniform(typename SpriteBatch::sprite_id id, types::string name, T value)
-	{
-		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
-
-		{
-			std::lock_guard<std::mutex> slk(it->second->mut);
-			auto u = std::make_unique<sprite_utility::ShaderUniform<T>>();
-			u->uniform = value;
-			it->second->uniforms.insert({ name, std::move(u) });
-		}
-	}
-
-	template<typename T>
-	void SpriteBatch::setUniform(typename SpriteBatch::sprite_id id, types::string name, std::vector<T> value)
-	{
-		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
-		auto it = sprite_utility::GetElement(_sprites, id);
-
-		{
-			std::lock_guard<std::mutex> slk(it->second->mut);
-			auto u = std::make_unique<sprite_utility::ShaderUniformArray<T>>();
-			u->uniform = value;
-			it->second->uniforms.insert({ name, std::move(u) });
-		}
-	}
 }
 
 #endif //HADES_SPRITE_BATCH_HPP

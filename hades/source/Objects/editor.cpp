@@ -126,7 +126,7 @@ namespace objects
 			viewPosition.y = std::clamp(viewPosition.y, 0.f, static_cast<decltype(viewPosition.y)>(MapSize.y));
 
 			GameView.setCenter(viewPosition);
-			_grid.set2dDrawArea({ viewPosition - GameView.getSize() / 2.f, GameView.getSize() });
+			_grid.limitDrawTo({ viewPosition - GameView.getSize() / 2.f, GameView.getSize() });
 
 			GenerateDrawPreview(window, { mousePos->x_axis, mousePos->y_axis });
 		}
@@ -191,7 +191,7 @@ namespace objects
 		GameView.setCenter({ 100.f,100.f });
 
 		//tell the grid to draw the viewable area
-		_grid.set2dDrawArea({ GameView.getCenter() - GameView.getSize() / 2.f, GameView.getSize() });
+		_grid.limitDrawTo({ GameView.getCenter() - GameView.getSize() / 2.f, GameView.getSize() });
 
 		_editorBackground.setSize({ static_cast<float>(*wwidth), static_cast<float>(*wheight) });
 		_editorBackground.setFillColor(sf::Color(127, 127, 127, 255));

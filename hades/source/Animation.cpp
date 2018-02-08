@@ -29,12 +29,12 @@ namespace hades
 
 				// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
 				if (prog <= 0.f)
-					return std::make_tuple(animation->tex, frame.x, frame.y, animation->width, animation->height);
+					return std::make_tuple(static_cast<float>(frame.x), static_cast<float>(frame.y));
 			}
 
 			LOGWARNING("Unable to find correct frame for animation " + data::GetAsString(animation->id) +
 				"animation progress was: " + std::to_string(progress));
-			return std::make_tuple(animation->tex, 0, 0, 0, 0);
+			return std::make_tuple(0.f, 0.f);
 		}
 
 		animation_frame GetFrame(const resources::animation* animation, sf::Time t)
@@ -49,9 +49,9 @@ namespace hades
 		{
 			assert(animation);
 
-			auto [tex, x, y, w, h] = GetFrame(animation, progress);
-			target.setTexture(tex->value);
-			target.setTextureRect({ x, y , w, h });
+			auto [x, y] = GetFrame(animation, progress);
+			target.setTexture(animation->tex->value);
+			target.setTextureRect({ static_cast<int>(x), static_cast<int>(y) , animation->width, animation->height });
 		}
 	}
 }

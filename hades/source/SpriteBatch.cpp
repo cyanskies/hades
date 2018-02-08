@@ -1,5 +1,7 @@
 #include "Hades/SpriteBatch.hpp"
 
+#include <array>
+
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "Hades/Animation.hpp"
@@ -17,15 +19,35 @@ namespace hades
 				&& lhs.shader == rhs.shader;
 		}
 
+		Sprite::Sprite(const Sprite &other) : id(other.id), position(other.position),
+			size(other.size), animation(other.animation), animation_progress(other.animation_progress)
+		{}
+
+		Sprite &Sprite::operator=(const Sprite &other)
+		{
+			id = other.id;
+			position = other.position;
+			size = other.size;
+			animation = other.animation;
+			animation_progress = other.animation_progress;
+
+			return *this;
+		}
+
+		bool operator==(const Sprite &lhs, const Sprite &rhs)
+		{
+			return lhs.id == rhs.id;
+		}
+
 		found_sprite FindSprite(std::vector<batch> sbatch, Sprite::sprite_id id)
 		{
-			for (auto batch_index = 0; batch_index < sbatch.size(); ++batch_index)
+			for (auto batch_index = 0u; batch_index < sbatch.size(); ++batch_index)
 			{
-				for (auto sprite_index = 0; sprite_index < sbatch[batch_index].second.size(); ++sprite_index)
+				for (auto sprite_index = 0u; sprite_index < sbatch[batch_index].second.size(); ++sprite_index)
 				{
-					if (auto sprite = &sbatch[batch_index].second[sprite_index]; sprite->id == id)
+					if (auto &sprite = sbatch[batch_index].second[sprite_index]; sprite.id == id)
 					{
-						return { batch_index, sprite_index, sprite };
+						return { batch_index, sprite_index, &sprite };
 					}
 				}
 			}
@@ -52,12 +74,15 @@ namespace hades
 					batch = &b;
 					break;
 				}
-				
-				sbatch.push_back({ settings, {} });
+			}
+
+			//if no batch was found, then make one
+			if (!batch)
+			{
+				sbatch.push_back({ settings,{} });
 				batch = &sbatch.back();
 			}
 
-			assert(batch);
 			batch->second.push_back(sprite);
 		}
 	}
@@ -84,19 +109,49 @@ namespace hades
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
 
 		auto id = _id_count;
-		//store the it for later lookup
+		//store the id for later lookup
 		_used_ids.push_back(id);
 
-		//TODO: insert into temp/empty sprite storage?
-		//? reserve the first batch for unset sprites?
+		//if no batches exist
+		//then create and empty batch for unset sprites
+		if (_sprites.empty())
+			_sprites.push_back({});
+
+		sprite_utility::Sprite s;
+		s.id = id;
+
+		//insert sprites into the empty batch
+		_sprites[0].second.push_back(s);
 
 		return id;
 	}
 
 	bool SpriteBatch::exists(typename SpriteBatch::sprite_id id) const
 	{
-		auto lk = std::shared_lock<std::shared_mutex>(_collectionMutex);
+		std::shared_lock<std::shared_mutex> lk(_collectionMutex);
 		return std::find(std::begin(_used_ids), std::end(_used_ids), id) != std::end(_used_ids);
+	}
+
+	void SpriteBatch::destroySprite(sprite_id id)
+	{
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+		auto it = std::find(std::begin(_used_ids), std::end(_used_ids), id);
+		if (it == std::end(_used_ids))
+			throw invalid_argument("id was not found within the SpriteBatch id list, cannot remove");
+
+		_used_ids.erase(it);
+
+		auto found = sprite_utility::FindSprite(_sprites, id);
+		auto batch = std::get<0>(found);
+		auto sprite = std::get<sprite_utility::Sprite*>(found);
+
+		auto &sprite_vector = _sprites[batch].second;
+		auto sprite_iter = std::find(std::begin(sprite_vector), std::end(sprite_vector), *sprite);
+
+		if(sprite_iter == std::end(sprite_vector))
+			throw invalid_argument("id was not found within the SpriteBatch sprite stage, cannot remove");
+
+		sprite_vector.erase(sprite_iter);
 	}
 
 	void SpriteBatch::setAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
@@ -137,6 +192,11 @@ namespace hades
 
 			sprite_utility::MoveSprite(_sprites, batch, sprite_index, settings);
 		}
+	}
+
+	void SpriteBatch::limitDrawTo(const sf::FloatRect &worldCoords)
+	{
+		_drawArea = worldCoords;
 	}
 
 	void SpriteBatch::setLayer(typename SpriteBatch::sprite_id id, sprite_utility::layer_t l)
@@ -184,6 +244,40 @@ namespace hades
 		sprite->size = size;
 	}
 
+	using PolySquare = std::array<sf::Vertex, 6>;
+	
+	PolySquare MakeSquare(const sprite_utility::Sprite &s)
+	{
+		//TODO: log warning here, sprite has no animation!
+		return PolySquare{
+			//first triange
+			sf::Vertex{ s.position }, //top left
+			sf::Vertex{ {s.position.x + s.size.x, s.position.y} }, //top right
+			sf::Vertex{ {s.position.x, s.position.y + s.size.y} }, //bottom left
+			//second triange
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y } }, //top right
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y } }, //bottom right
+			sf::Vertex{ { s.position.x, s.position.y + s.size.y } } //bottom left
+		};
+	}
+
+	PolySquare MakeSquareAnimation(const sprite_utility::Sprite &s)
+	{
+		//TODO, if a->tex == null, generate a coloured square instead and warn
+		auto a = s.animation;
+		auto [x, y] = animation::GetFrame(a, s.animation_progress);
+		return PolySquare{
+			//first triange
+			sf::Vertex{ s.position, { x, y } }, //top left
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y }, { x + a->width, y } }, //top right
+			sf::Vertex{ { s.position.x, s.position.y + s.size.y }, { x, y + a->height } }, //bottom left
+			//second triange
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y },{ x + a->width, y } }, //top right
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y },  { x + a->width, y + a->height } }, //bottom right
+			sf::Vertex{ { s.position.x, s.position.y + s.size.y },  {x, y + a->height } } //bottom left
+		};
+	}
+
 	void SpriteBatch::prepare()
 	{
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
@@ -192,20 +286,57 @@ namespace hades
 		for (auto &v : _vertex)
 			v.second.clear();
 
-		//
+		//sort the sprite lists by layer
+		std::sort(std::begin(_sprites), std::end(_sprites), [](const batch &lhs, const batch &rhs)
+		{return lhs.first.layer < rhs.first.layer; });
+
+		//for each sprite list, write over a vertex buffer 
+		//with the settings and vertex data
+		for (auto i = 0u; i != _sprites.size(); ++i)
+		{
+			std::vector<sf::Vertex> *buffer = nullptr;
+
+			//use a vector that already exists in the _vertex vector
+			if (i < _vertex.size())
+			{
+				_vertex[i].first = _sprites[i].first;
+				buffer = &_vertex[i].second;
+			}
+			else
+			{
+				//if we've exceeded the vectors in _vertex then add a new one
+				_vertex.push_back({ _sprites[i].first, {} });
+				buffer = &_vertex.back().second;
+			}
+
+			assert(buffer);
+
+			//make the vertex data
+			for (const auto &s : _sprites[i].second)
+			{
+				PolySquare vertex;
+				if (s.animation)
+					vertex = MakeSquareAnimation(s);
+				else //if the sprite has no animation then generated a untextured square
+					vertex = MakeSquare(s);
+
+				std::copy(std::begin(vertex), std::end(vertex), std::back_inserter(*buffer));
+			}
+		}
 	}
 
 	void SpriteBatch::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		for (auto &s : _vertex)
+		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
+		for (auto &va : _vertex)
 		{
-			auto &settings = s.first;
+			auto &settings = va.first;
 			auto state = states;
 			state.texture = &settings.texture->value;
 			if (settings.shader)
 				state.shader = &settings.shader->value;
 
-			target.draw(s.second.data(), s.second.size(), sf::PrimitiveType::Triangles, state);
+			target.draw(va.second.data(), va.second.size(), sf::PrimitiveType::Triangles, state);
 		}
 	}
 }

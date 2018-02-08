@@ -3,16 +3,12 @@
 
 #include <mutex>
 #include <shared_mutex>
-#include <variant>
 
 #include "SFML/Graphics/Drawable.hpp"
-#include "SFML/Graphics/Shader.hpp"
-#include "SFML/Graphics/Texture.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 #include "SFML/System/Time.hpp"
 
 #include "Hades/LimitedDraw.hpp"
-#include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
 //A thread safe collection of animated sprites
@@ -21,16 +17,22 @@
 
 namespace hades 
 {
+	namespace resources
+	{
+		struct animation;	
+		struct shader;
+		struct texture;
+	}
+
 	namespace sprite_utility
 	{
 		using layer_t = types::int32;
 
 		struct SpriteSettings
 		{
-			layer_t layer;
-			const resources::texture* texture;
-			const resources::shader *shader;
-			//uniform_map uniforms;
+			layer_t layer = 0;
+			const resources::texture* texture = nullptr;
+			const resources::shader *shader = nullptr;
 		};
 
 		bool operator==(const SpriteSettings &lhs, const SpriteSettings &rhs);
@@ -38,9 +40,8 @@ namespace hades
 		struct Sprite
 		{
 			Sprite() = default;
-			Sprite(const Sprite &other) : id(other.id), position(other.position),
-				size(other.size), animation(other.animation), animation_progress(other.animation_progress)
-			{}
+			Sprite(const Sprite &other);
+			Sprite &operator=(const Sprite &other);
 
 			using sprite_id = types::int64;
 
@@ -48,9 +49,11 @@ namespace hades
 			sprite_id id;
 			sf::Vector2f position;
 			sf::Vector2f size;
-			const resources::animation *animation;
+			const resources::animation *animation = nullptr;
 			sf::Time animation_progress;
 		};
+
+		bool operator==(const Sprite &lhs, const Sprite &rhs);
 
 		using index_type = std::size_t;
 		//				//batch index,//sprite index, sprite ptr
@@ -92,7 +95,7 @@ namespace hades
 		mutable std::shared_mutex _collectionMutex; 
 		using batch = sprite_utility::batch;
 		std::vector<batch> _sprites;
-		sf::FloatRect _drawArea = makeMax;
+		sf::FloatRect _drawArea;
 
 		using vertex_batch = std::pair<sprite_utility::SpriteSettings, std::vector<sf::Vertex>>;
 		//sorted by SpriteSettings::layer

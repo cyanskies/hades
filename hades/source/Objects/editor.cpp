@@ -39,8 +39,8 @@ namespace objects
 			auto button_size = 40;
 			if (icon)
 			{
-				auto [tex, x ,y , w, h] = hades::animation::GetFrame(icon, sf::Time::Zero);
-				auto texture = tgui::Texture(tex->value, { x, y, w, h });
+				auto [x ,y] = hades::animation::GetFrame(icon, sf::Time::Zero);
+				auto texture = tgui::Texture(icon->tex->value, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
 				p = tgui::Picture::create(texture);
 				//TODO: create button pressed effect for icon buttons
 			}

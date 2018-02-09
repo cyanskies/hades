@@ -36,8 +36,8 @@ namespace hades
 	void RegisterMouseInput(InputSystem &bind)
 	{
 		//collect unique names for actions
-		input::PointerPosition = data::GetUid("mouse");
-		input::PointerLeft = data::GetUid("mouseleft");
+		input::PointerPosition = data::MakeUid("mouse");
+		input::PointerLeft = data::MakeUid("mouseleft");
 
 		//bind them
 		bind.create(input::PointerPosition, false, "mouse");

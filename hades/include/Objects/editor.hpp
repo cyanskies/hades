@@ -156,8 +156,10 @@ namespace objects
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
 		//true if mouse was down in the previous frame
-		bool _pointerLeft = false, _pointerDrag = false;
-
+		enum class MouseState{MOUSE_UP, MOUSE_DOWN};
+		MouseState _mouseLeftDown = MouseState::MOUSE_UP;
+		MousePos _mouseDownPos;
+		sf::Clock _mouseDownTime;
 		//drawing the out of bounds background
 		//and grid
 		sf::View _backgroundView;

@@ -131,40 +131,41 @@ namespace objects
 			GenerateDrawPreview(window, { mousePos->x_axis, mousePos->y_axis });
 		}
 
+		static const auto drag_time = sf::milliseconds(50);
 		auto mouseLeft = input.find(hades::input::PointerLeft);
 		assert(mouseLeft != std::end(input));
 		if (mouseLeft->active)
 		{
-			//TODO: redo this logic
-			//replace _pointerLeft with an int that gets incremented
-			//current logic will require users to click faster than a single frame to avoid triggering a drag
-			if (!_pointerLeft)
+			//this is the first frame the mouse has been down for
+			if (_mouseLeftDown == MouseState::MOUSE_UP)
 			{
-				OnClick({ mouseLeft->x_axis, mouseLeft->y_axis });
-				//_pointerLeft = true;
+				//record where the mouse was when first pressed
+				_mouseDownPos = { mouseLeft->x_axis, mouseLeft->y_axis };
+				_mouseLeftDown = MouseState::MOUSE_DOWN;
+				_mouseDownTime.restart();
 			}
-			else if (_pointerLeft)
+			else
 			{
-				OnDragStart({ mouseLeft->x_axis, mouseLeft->y_axis });
-				_pointerDrag = true;
-			}
-			else if (_pointerDrag)
-			{
-				OnDrag({ mouseLeft->x_axis, mouseLeft->y_axis });
+
 			}
 		}
-		else if (_pointerLeft && _pointerDrag)
+		else if (!mouseLeft->active)
 		{
-			OnDragEnd({ mouseLeft->x_axis, mouseLeft->y_axis });
-			_pointerLeft = _pointerDrag = false;
+			//mouse was being held,  but is now released
+			//this is a click if the held time was less the drag time
+			if (_mouseLeftDown == MouseState::MOUSE_DOWN)
+			{
+				OnClick(_mouseDownPos);
+				_mouseLeftDown = MouseState::MOUSE_UP;
+			}
 		}
 	}
 
 	void object_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	{
 		DrawBackground(target);
-		DrawObjects(target);
 		DrawGrid(target);
+		DrawObjects(target);
 		DrawPreview(target);
 	}
 

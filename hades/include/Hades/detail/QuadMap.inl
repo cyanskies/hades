@@ -36,10 +36,10 @@ namespace hades
 
 		QuadNode() = default;
 
-		explicit QuadNode(types::int32 _bucket_cap) : _bucket_cap(_bucket_cap)
+		explicit QuadNode(types::uint32 _bucket_cap) : _bucket_cap(_bucket_cap)
 		{}
 
-		QuadNode(const rect_type &area, types::int32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
+		QuadNode(const rect_type &area, types::uint32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
 		{}
 
 		rect_type getArea() const
@@ -148,7 +148,7 @@ namespace hades
 
 	private:
 		rect_type _area = MakeMaxRect<rect_type>();
-		types::int32 _bucket_cap = 1;
+		types::uint32 _bucket_cap = 1u;
 		std::vector<value_type> _data;
 		std::map<key_type, node_type*> _stored;
 		using _child_vector_type = std::vector<node_type>;
@@ -156,14 +156,14 @@ namespace hades
 	};
 
 	template<class Key>
-	QuadTree<Key>::QuadTree(types::int32 bucket_cap) : _root_node(bucket_cap)
+	QuadTree<Key>::QuadTree(types::int32 bucket_cap) : _root_node(static_cast<types::uint32>(bucket_cap))
 	{
 		if (_bucket_cap < 1)
 			throw invalid_argument("QuadTree bucket capacity must be greater than 0");
 	}
 
 	template<class Key>
-	QuadTree<Key>::QuadTree(const rect_type &area, types::int32 bucket_cap) : _root_node(area, bucket_cap)
+	QuadTree<Key>::QuadTree(const rect_type &area, types::int32 bucket_cap) : _root_node(area, static_cast<types::uint32>(bucket_cap))
 	{
 		if (_bucket_cap < 1)
 			throw invalid_argument("QuadTree bucket capacity must be greater than 0");

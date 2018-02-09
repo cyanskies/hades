@@ -149,7 +149,9 @@ namespace hades
 		//store the id for later lookup
 		_used_ids.push_back(id);
 
-		const sprite_utility::SpriteSettings settings{ l, a->tex };
+		sprite_utility::SpriteSettings settings{ l };
+		if (a)
+			settings.texture = a->tex;
 
 		batch *b = nullptr;
 
@@ -302,15 +304,17 @@ namespace hades
 	
 	PolySquare MakeSquare(const sprite_utility::Sprite &s)
 	{
+		static const auto col = sf::Color::Cyan;
+		//make a coloured rect
 		return PolySquare{
 			//first triange
-			sf::Vertex{ s.position }, //top left
-			sf::Vertex{ {s.position.x + s.size.x, s.position.y} }, //top right
-			sf::Vertex{ {s.position.x, s.position.y + s.size.y} }, //bottom left
+			sf::Vertex{ s.position, col }, //top left
+			sf::Vertex{ {s.position.x + s.size.x, s.position.y}, col }, //top right
+			sf::Vertex{ {s.position.x, s.position.y + s.size.y}, col}, //bottom left
 			//second triange
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y } }, //top right
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y } }, //bottom right
-			sf::Vertex{ { s.position.x, s.position.y + s.size.y } } //bottom left
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y }, col }, //top right
+			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y }, col }, //bottom right
+			sf::Vertex{ { s.position.x, s.position.y + s.size.y }, col } //bottom left
 		};
 	}
 
@@ -394,7 +398,8 @@ namespace hades
 		{
 			auto &settings = va.first;
 			auto state = states;
-			state.texture = &settings.texture->value;
+			if (settings.texture)
+				state.texture = &settings.texture->value;
 			if (settings.shader)
 				state.shader = &settings.shader->value;
 

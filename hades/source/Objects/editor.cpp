@@ -144,9 +144,21 @@ namespace objects
 				_mouseLeftDown = MouseState::MOUSE_DOWN;
 				_mouseDownTime.restart();
 			}
-			else
+			else if(_mouseLeftDown == MouseState::MOUSE_DOWN
+				&& _mouseDownTime.getElapsedTime() > drag_time)
 			{
-
+				//no draggable object under curser
+				if (ValidTargetForDrag(_mouseDownPos))
+				{
+					_mouseLeftDown = MouseState::DRAG_MOVE;
+					OnDragStart(_mouseDownPos);
+				}
+				else // no object to select for drag
+					_mouseLeftDown = MouseState::DRAG_DRAW;
+			}
+			else if (_mouseLeftDown == MouseState::DRAG_DRAW)
+			{
+				OnClick({ mouseLeft->x_axis, mouseLeft->y_axis });
 			}
 		}
 		else if (!mouseLeft->active)
@@ -359,7 +371,9 @@ namespace objects
 
 				//scale the sprite to match object size
 				s.setScale(width_scale, height_scale);
-
+				auto colour = s.getColor();
+				colour.a = 255 / 2;
+				s.setColor(colour);
 				_objectPreview = s;
 				object = &std::get<sf::Sprite>(_objectPreview);
 			}
@@ -367,7 +381,9 @@ namespace objects
 			{
 				sf::RectangleShape r;
 				r.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
-				r.setFillColor(sf::Color::Cyan);
+				auto colour = sf::Color::Cyan;
+				colour.a = 255 / 2;
+				r.setFillColor(colour);
 				r.setOutlineColor(sf::Color::Blue);
 				_objectPreview = r;
 				object = &std::get<sf::RectangleShape>(_objectPreview);
@@ -403,51 +419,19 @@ namespace objects
 		}
 	}
 
+	bool object_editor::ValidTargetForDrag(object_editor::MousePos pos) const
+	{
+		return false;
+	}
+
 	void object_editor::OnClick(object_editor::MousePos pos)
 	{
-		//TODO error checking
 		if (EditMode == editor::EditMode::OBJECT)
 		{
-			//held object position
-			auto position = std::visit([](auto &&val) {
-				return val.getPosition();
-			}, _objectPreview);
-
-			editor_object_info object;
-			object.obj_type = _heldObject;
-
-			//if(select || none selected
-			if (_objectMode == editor::ObjectMode::PLACE && ObjectValidLocation(static_cast<sf::Vector2i>(position), object))
-			{
-				//create the object held at the target location
-				object.id = ++_next_object_id;
-				
-				static auto size_id = hades::data::GetUid("size");
-				auto[size_curve, size_value] = GetCurve(object, size_id);
-
-				hades::resources::curve_types::vector_int size;
-
-				if (size_curve && size_value.set)
-				{
-					size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
-					assert(size.size() == 2);
-				}
-				else
-					size = { 8, 8 };
-
-				sf::Vector2i size_vec{ size[0], size[1] };
-
-				_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
-
-				auto anims = GetEditorAnimations(_heldObject);
-				auto index = hades::random(0u, anims.size() - 1);
-				auto anim = anims[index];
-
-				object.sprite_id = _objectSprites.createSprite(anim, sf::Time(), 0,
-					position, static_cast<sf::Vector2f>(size_vec));
-
-				_objects.push_back(object);
-			}
+			if (_objectMode == editor::ObjectMode::NONE_SELECTED)
+				;//_trySelectAt(pos);
+			else if(_objectMode == editor::ObjectMode::PLACE)
+				_placeHeldObject();
 		}
 	}
 
@@ -751,5 +735,54 @@ namespace objects
 		EditMode = editor::EditMode::OBJECT;
 		_objectMode = editor::ObjectMode::PLACE;
 		_heldObject = o;
+	}
+
+	void object_editor::_placeHeldObject()
+	{
+		//find object preview position
+		auto position = std::visit([](auto &&val) {
+			return val.getPosition();
+		}, _objectPreview);
+
+		editor_object_info object;
+		object.obj_type = _heldObject;
+
+		if (ObjectValidLocation(static_cast<sf::Vector2i>(position), object))
+		{
+			//create the object held at the target location
+			object.id = ++_next_object_id;
+
+			static auto size_id = hades::data::GetUid("size");
+			auto[size_curve, size_value] = GetCurve(object, size_id);
+
+			hades::resources::curve_types::vector_int size;
+
+			if (size_curve && size_value.set)
+			{
+				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+				assert(size.size() == 2);
+			}
+			else
+				size = { 8, 8 };
+
+			sf::Vector2i size_vec{ size[0], size[1] };
+
+			_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
+
+			//if no animation is set, send nullptr to the SpriteBatch, 
+			//it will render an appropriatly sized rect
+			const hades::resources::animation *anim = nullptr;
+			auto anims = GetEditorAnimations(_heldObject);
+			if (!anims.empty())
+			{
+				auto index = hades::random(0u, anims.size() - 1);
+				anim = anims[index];
+			}
+
+			object.sprite_id = _objectSprites.createSprite(anim, sf::Time(), 0,
+				position, static_cast<sf::Vector2f>(size_vec));
+
+			_objects.push_back(object);
+		}
 	}
 }

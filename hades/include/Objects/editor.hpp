@@ -89,6 +89,9 @@ namespace objects
 		//==map editing functions==
 		//generates the preview to be drawn over the map for the current editing mode
 		virtual void GenerateDrawPreview(const sf::RenderTarget&, MousePos);
+		//check if the location given contains a valid target for drag moving
+		// for this edit mode
+		virtual bool ValidTargetForDrag(MousePos) const;
 		//responds to user input(place object, place terrain tile, etc)
 		virtual void OnClick(MousePos);
 		//respond to mouse drag
@@ -131,6 +134,7 @@ namespace objects
 		void _addObjects(std::vector<const resources::object*> objects);
 		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
+		void _placeHeldObject();
 		//when the mouse is released this object will be placed in the pointers position
 		void _setDragObject(const resources::object* o);
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
@@ -156,7 +160,7 @@ namespace objects
 		hades::types::int32 _pointer_min_x;
 		hades::types::int32 _pointer_min_y;
 		//true if mouse was down in the previous frame
-		enum class MouseState{MOUSE_UP, MOUSE_DOWN};
+		enum class MouseState{MOUSE_UP, MOUSE_DOWN, DRAG_DRAW, DRAG_MOVE};
 		MouseState _mouseLeftDown = MouseState::MOUSE_UP;
 		MousePos _mouseDownPos;
 		sf::Clock _mouseDownTime;

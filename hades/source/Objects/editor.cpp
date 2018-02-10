@@ -128,6 +128,10 @@ namespace objects
 			GameView.setCenter(viewPosition);
 			_grid.limitDrawTo({ viewPosition - GameView.getSize() / 2.f, GameView.getSize() });
 
+			//update grid highlight location
+			_updateGridHighlight(window, { mousePos->x_axis, mousePos->y_axis });
+
+			//generate placement draw preview
 			GenerateDrawPreview(window, { mousePos->x_axis, mousePos->y_axis });
 		}
 
@@ -525,14 +529,19 @@ namespace objects
 
 	void object_editor::DrawObjects(sf::RenderTarget &target) 
 	{
+		//draw object selector
+
 		_objectSprites.prepare();
 		target.draw(_objectSprites);
 	}
 
 	void object_editor::DrawGrid(sf::RenderTarget &target) const 
 	{
-		target.draw(_grid);
-		//TODO draw highlighted grid square
+		if (_gridEnabled->load())
+		{
+			target.draw(_grid);
+			target.draw(_gridHighlight);
+		}
 	}
 
 	void object_editor::DrawPreview(sf::RenderTarget &target) const
@@ -727,6 +736,30 @@ namespace objects
 			}, o->editor_icon);
 
 			container->add(b);
+		}
+	}
+
+	void object_editor::_updateGridHighlight(const sf::RenderTarget &target, object_editor::MousePos pos)
+	{
+		if (_gridEnabled->load())
+		{
+			//snap to grid enabled
+			//places objects in the top left of the nearest grid cell
+			const auto world_coord = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
+			auto snapped_coords = hades::pointer::SnapCoordsToGrid(static_cast<sf::Vector2i>(world_coord), _gridCurrentSize);
+
+			const auto size = _gridCurrentSize - 1;
+
+			//keep the object within the map bounds
+			snapped_coords.x = std::clamp(snapped_coords.x + 1, 1, MapSize.x - size);
+			snapped_coords.y = std::clamp(snapped_coords.y +1, 1, MapSize.y - size);
+
+			const auto fsize = static_cast<float>(size);
+			_gridHighlight.setSize({ fsize, fsize });
+			_gridHighlight.setPosition(static_cast<sf::Vector2f>(snapped_coords));
+			_gridHighlight.setFillColor(sf::Color::Transparent);
+			_gridHighlight.setOutlineColor(sf::Color::Green); //TODO: setGridHightlightColour?
+			_gridHighlight.setOutlineThickness(1.f);
 		}
 	}
 

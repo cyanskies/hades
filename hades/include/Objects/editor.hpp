@@ -132,6 +132,7 @@ namespace objects
 		void _createGui();
 		void _newMap();
 		void _addObjects(std::vector<const resources::object*> objects);
+		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);
 		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
 		void _placeHeldObject();
@@ -171,6 +172,7 @@ namespace objects
 		hades::console::property_int _gridMinSize, _gridCurrentScale, _gridMaxSize;
 		hades::console::property_bool _gridEnabled;
 		hades::types::int32 _gridCurrentSize;
+		sf::RectangleShape _gridHighlight;
 		hades::GridArea _grid;
 	};
 }

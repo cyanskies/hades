@@ -52,6 +52,7 @@ namespace objects
                     Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h - 20");
                     Visible = true;
                     Resizable = false;
+					Moveable = false;
                     Title = "ToolBox";
                     TitleButtons = None;
 
@@ -199,7 +200,7 @@ namespace objects
 		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
 		hades::console::SetProperty(editor_grid_size, editor_grid_default);
 		hades::console::SetProperty(editor_grid_size_multiple, 1);
-		hades::console::SetProperty(editor_grid_max, 1);
+		hades::console::SetProperty(editor_grid_max, 3);
 		hades::console::SetProperty(editor_grid_enabled, true);
 		hades::console::SetProperty(editor_grid_size_multiple, 1);
 		//map

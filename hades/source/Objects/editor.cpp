@@ -815,6 +815,14 @@ namespace objects
 			object.sprite_id = _objectSprites.createSprite(anim, sf::Time(), 0,
 				position, static_cast<sf::Vector2f>(size_vec));
 
+			//record the object position as one of it's curves
+			using namespace hades::resources::curve_types;
+			auto pos_id = hades::data::GetUid("position");
+			auto pos_curve = objects::GetCurve(object, pos_id);
+			std::get<1>(pos_curve).value = 
+				vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
+			object.curves.push_back(pos_curve);
+
 			_objects.push_back(object);
 		}
 	}

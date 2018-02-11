@@ -14,7 +14,7 @@ namespace objects
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
 	}
 
-	void makeDefaultLayout(hades::data::data_manager* data)
+	void MakeDefaultLayout(hades::data::data_manager* data)
 	{
 		auto layout_id = data->getUid(editor::object_editor_layout);
 
@@ -47,17 +47,15 @@ namespace objects
                     }
                 }
 
-                ChildWindow {
+                Panel.ToolboxPane {
                     Position = (0, "ToolBar.y + ToolBar.h");
-                    Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h - 20");
-                    Visible = true;
-                    Resizable = false;
-					Moveable = false;
-                    Title = "ToolBox";
-                    TitleButtons = None;
-
+                    Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h");
+					VerticalLayout {
                     SimpleVerticalLayout.object-selector {
                     }
+					VerticalLayout.SelectedInfo {
+					}
+					}
                 }
 
                 ChildWindow."load_dialog" {
@@ -187,6 +185,27 @@ namespace objects
                 })";
 	}
 
+	void MakeDefaultCurves(hades::data::data_manager* data)
+	{
+		//Builtin curves exist for the values needed by the editor
+		//these curves exist for every object, even if not declared
+
+		using hades::resources::curve;
+
+		//position
+		auto position_id = data->getUid("position");
+		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::EmptyId, data);
+		position_c->curve_type = hades::CurveType::LINEAR;
+		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
+		position_c->default_value = { 0, 0 };
+		//size
+		auto size_id = data->getUid("size");
+		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::EmptyId, data);
+		size_c->curve_type = hades::CurveType::LINEAR;
+		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
+		size_c->default_value = { 0, 0 };
+	}
+
 	void DefineObjectConsoleVars()
 	{
 		//object editor variables
@@ -215,7 +234,9 @@ namespace objects
 
 		data->register_resource_type("editor", resources::ParseEditor);
 		data->register_resource_type("objects", resources::ParseObject);
-		makeDefaultLayout(data);
+		MakeDefaultLayout(data);
+
+		MakeDefaultCurves(data);
 	}
 
 	namespace resources

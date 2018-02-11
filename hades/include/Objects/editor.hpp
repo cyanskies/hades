@@ -135,6 +135,10 @@ namespace objects
 		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);
 		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
+		//sets up the selected object info box and also creates the selection indicator
+		//NOTE: selection indicator is controlled by OnDrag when dragging
+		void _onObjectSelected(objects::object_info &info);
+
 		void _placeHeldObject();
 		//when the mouse is released this object will be placed in the pointers position
 		void _setDragObject(const resources::object* o);

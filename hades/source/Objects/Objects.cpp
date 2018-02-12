@@ -2,34 +2,24 @@
 
 #include <algorithm>
 
+#include "Hades/Data.hpp"
+#include "Hades/exceptions.hpp"
+
 namespace objects
 {
-	curve_obj GetCurve(const object_info &o, hades::data::UniqueId c)
+	//returns nullptr if the curve wasn't found
+	//returns the curve with the value unset if it was found but not set
+	//returns the requested curve plus it's value otherwise
+	curve_obj TryGetCurve(const resources::object *o, const hades::resources::curve *c)
 	{
-		for (auto cur : o.curves)
-		{
-			auto curve = std::get<const hades::resources::curve*>(cur);
-			auto v = std::get<hades::resources::curve_default_value>(cur);
-			assert(curve);
-			//if we have the right id and this
-			if (curve->id == c && v.set)
-				return cur;
-		}
+		assert(o && c);
 
-		assert(o.obj_type);
-		return GetCurve(o.obj_type, c);
-	}
-
-	curve_obj GetCurve(const resources::object *o, hades::data::UniqueId c)
-	{
-		assert(o);
-		
 		using curve_t = hades::resources::curve;
 		const curve_t *curve_ptr = nullptr;
 		for (auto cur : o->curves)
-		{	
+		{
 			auto curve = std::get<const curve_t*>(cur);
-			if (curve->id == c)
+			if (curve == c)
 			{
 				curve_ptr = curve;
 				auto v = std::get<hades::resources::curve_default_value>(cur);
@@ -41,12 +31,56 @@ namespace objects
 		for (auto obj : o->base)
 		{
 			assert(obj);
-			auto ret = GetCurve(obj, c);
-			if (std::get<const curve_t*>(ret))
-				return ret;
+			auto ret = TryGetCurve(obj, c);
+			auto curve = std::get<const curve_t*>(ret);
+			if (curve)
+			{
+				curve_ptr = curve;
+				if (std::get<hades::resources::curve_default_value>(ret).set)
+					return ret;
+			}
 		}
 
 		return std::make_tuple(curve_ptr, hades::resources::curve_default_value());
+	}
+
+	curve_obj GetCurve(const object_info &o, const hades::resources::curve *c)
+	{
+		assert(c);
+		for (auto cur : o.curves)
+		{
+			auto curve = std::get<const hades::resources::curve*>(cur);
+			auto v = std::get<hades::resources::curve_default_value>(cur);
+			assert(curve);
+			//if we have the right id and this
+			if (curve == c && v.set)
+				return cur;
+		}
+
+		assert(o.obj_type);
+		auto out = TryGetCurve(o.obj_type, c);
+		if (std::get<const hades::resources::curve*>(out)
+			&& std::get<hades::resources::curve_default_value>(out).set)
+			return out;
+
+		return { c, c->default_value };
+	}
+
+	curve_obj GetCurve(const resources::object *o, const hades::resources::curve *c)
+	{
+		assert(o && c);
+
+		auto out = TryGetCurve(o, c);
+		using curve_t = hades::resources::curve;
+		if (std::get<const curve_t*>(out) == nullptr)
+			throw curve_not_found("Requested curve not found on object type: " + hades::data::GetAsString(o->id)
+				+ ", curve was: " + hades::data::GetAsString(c->id));
+
+		if (std::get<hades::resources::curve_default_value>(out).set)
+			return out;
+
+		auto curve = std::get<const curve_t*>(out);
+		return { curve, curve->default_value };
 	}
 
 	curve_list UniqueCurves(curve_list list)

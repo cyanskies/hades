@@ -1,6 +1,7 @@
 #ifndef OBJECT_EDITOR_HPP
 #define OBJECT_EDITOR_HPP
 
+#include "SFML/Graphics/CircleShape.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
@@ -135,6 +136,7 @@ namespace objects
 
 		//core map drawing variables
 		sf::View GameView;
+
 	private:
 		//loads the gui from the editor-layout resource
 		//then sets up all the generic UI elements
@@ -144,11 +146,15 @@ namespace objects
 		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);
 		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
+		void _placeHeldObject();
+		void _trySelectAt(MousePos pos);
 		//sets up the selected object info box and also creates the selection indicator
 		//NOTE: selection indicator is controlled by OnDrag when dragging
-		void _onObjectSelected(objects::object_info &info);
+		void _onObjectSelected(editor_object_info &info);
+		//clears the selection indicator and selection info box
+		//this should be called for any mode other than drag
+		void _clearObjectSelected();
 
-		void _placeHeldObject();
 		//when the mouse is released this object will be placed in the pointers position
 		void _setDragObject(const resources::object* o);
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
@@ -159,6 +165,8 @@ namespace objects
 			sf::Sprite> _objectPreview;
 		hades::console::property_int _object_snap;
 		hades::EntityId _next_object_id = hades::NO_ENTITY;
+		//object selection indicator
+		std::variant<sf::RectangleShape, sf::CircleShape> _objectSelector;
 
 		//objects in the map
 		//id map

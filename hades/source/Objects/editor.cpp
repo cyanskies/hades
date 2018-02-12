@@ -177,6 +177,10 @@ namespace objects
 				_mouseLeftDown = MouseState::MOUSE_UP;
 			}
 		}
+
+		if (EditMode != editor::EditMode::OBJECT
+			|| !(_objectMode == editor::ObjectMode::SELECT || _objectMode == editor::ObjectMode::DRAG))
+			_clearObjectSelected();
 	}
 
 	void object_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
@@ -349,19 +353,15 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 			sf::Transformable *object = nullptr;
-			static auto size_id = hades::data::GetUid("size");
-			auto[size_curve, size_value] = GetCurve(_heldObject, size_id);
+			static const auto size_id = hades::data::GetUid("size");
+			static const auto size_curve = hades::data::Get<hades::resources::curve>(size_id);
+			auto[size_c, size_value] = GetCurve(_heldObject, size_curve);
 
-			hades::resources::curve_types::vector_int size;
-
-			if (size_curve && size_value.set)
-			{
-				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
-				assert(size.size() == 2);
-			}
+			using size_type = hades::resources::curve_types::vector_int;
+			auto size = std::get<size_type>(size_value.value);
 
 			if (size.size() != 2)
-				size = { 8, 8 };
+				size = std::get<size_type>(size_c->default_value.value);
 
 			//if we have one or more idle animations then place the dummy represented by them
 			if (auto anims = GetEditorAnimations(_heldObject.obj_type); !anims.empty())
@@ -423,12 +423,7 @@ namespace objects
 				object->setPosition(static_cast<sf::Vector2f>(snapped_coords));
 			}
 
-			auto obj_size = sf::Vector2i{ size[0], size[1] };
-
-			auto bounds = sf::IntRect{ static_cast<sf::Vector2i>(object->getPosition()), obj_size };
-			auto collisions = _quadtree.find_collisions(bounds);
-			if (std::any_of(std::begin(collisions), std::end(collisions), 
-				[bounds](auto &&other) { return bounds.intersects(other.rect); }))
+			if(!ObjectValidLocation(static_cast<sf::Vector2i>(object->getPosition()), _heldObject))
 			{
 				std::visit([](auto &&obj) {
 					using T = std::decay_t < decltype(obj) > ;
@@ -531,11 +526,20 @@ namespace objects
 	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
 	{
 		//check for collision with another object
-		auto size_id = hades::data::GetUid("size");
-		auto size = GetCurve(object, size_id);
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		auto size_v = std::get<hades::resources::curve_default_value>(GetCurve(object, size_c));
+		using size_type = std::vector<hades::resources::curve_types::int_t>;
+		auto obj_size = std::get<size_type>(size_v.value);
 
+		if (obj_size.size() < 2)
+			obj_size = std::get<size_type>(size_c->default_value.value);
 
-		return true;
+		auto bounds = sf::IntRect{ position, { obj_size[0], obj_size[1] } };
+		auto collisions = _quadtree.find_collisions(bounds);
+
+		return std::none_of(std::begin(collisions), std::end(collisions),
+			[bounds](auto &&other) { return bounds.intersects(other.rect); });
 	}
 
 	void object_editor::NewLevel()
@@ -811,8 +815,9 @@ namespace objects
 			//create the object held at the target location
 			object.id = ++_next_object_id;
 
-			static auto size_id = hades::data::GetUid("size");
-			auto[size_curve, size_value] = GetCurve(object, size_id);
+			static const auto size_id = hades::data::GetUid("size");
+			static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+			auto[size_curve, size_value] = GetCurve(object, size_c);
 
 			hades::resources::curve_types::vector_int size;
 
@@ -843,13 +848,61 @@ namespace objects
 
 			//record the object position as one of it's curves
 			using namespace hades::resources::curve_types;
-			auto pos_id = hades::data::GetUid("position");
-			auto pos_curve = objects::GetCurve(object, pos_id);
+			static const auto pos_id = hades::data::GetUid("position");
+			static const auto pos_c = hades::data::Get<hades::resources::curve>(pos_id);
+			auto pos_curve = objects::GetCurve(object, pos_c);
 			std::get<1>(pos_curve).value = 
 				vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
 			object.curves.push_back(pos_curve);
 
 			_objects.push_back(object);
 		}
+	}
+
+	void object_editor::_trySelectAt(MousePos pos)
+	{
+		//these should have been checked before calling this func
+		assert(EditMode == editor::EditMode::OBJECT);
+		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
+
+		const auto mpos = sf::Vector2i{ std::get<0>(pos), std::get<1>(pos) };
+		const auto candidates = _quadtree.find_collisions({ mpos, {0, 0} });
+
+		const auto target = std::find_if(std::begin(candidates), std::end(candidates), [mpos](auto &&r) {
+			return r.rect.contains(mpos);
+		});
+
+		//nothing was under the cursor
+		if (target == std::end(candidates))
+			return;
+
+		const auto obj = std::find_if(std::begin(_objects), std::end(_objects), [id = target->key](auto &&o) {
+			return o.id == id;
+		});
+
+		//this should be 'impossible'
+		if (obj == std::end(_objects))
+			throw std::logic_error("object existed within quadtree, but wasn't in the master object list");
+
+		_onObjectSelected(*obj);
+	}
+
+	void object_editor::_onObjectSelected(editor_object_info &info)
+	{
+		assert(EditMode == editor::EditMode::OBJECT);
+		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
+		_objectMode = editor::ObjectMode::SELECT;
+
+		//set up the selection indicator
+		//TODO:
+
+		//set up the info box
+		//TODO:
+	}
+
+	void object_editor::_clearObjectSelected()
+	{
+		//reset the object info box
+		//TODO:
 	}
 }

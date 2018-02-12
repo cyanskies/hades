@@ -19,13 +19,20 @@ namespace objects
 		resources::object::curve_list curves;
 	};
 
+	class curve_not_found : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
 	//functions for getting info from objects
 	//checks base classes if the requested info isn't available in the current class
 	//NOTE: performs a depth first search for the requested data
 	using curve_obj = resources::object::curve_obj;
 	using curve_list = resources::object::curve_list;
-	curve_obj GetCurve(const object_info &o, hades::data::UniqueId c);
-	curve_obj GetCurve(const resources::object *o, hades::data::UniqueId c);
+	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
+	curve_obj GetCurve(const object_info &o, const hades::resources::curve *c);
+	curve_obj GetCurve(const resources::object *o, const hades::resources::curve *c);
 	curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
 	curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
 	const hades::resources::animation *GetEditorIcon(const resources::object *o);

@@ -54,6 +54,15 @@ namespace objects
 
 	struct editor_object_info : public object_info
 	{
+		editor_object_info() = default;
+		editor_object_info(const editor_object_info&) = default;
+		editor_object_info(editor_object_info&&) = default;
+		editor_object_info &operator=(const editor_object_info&) = default;
+		editor_object_info &operator=(editor_object_info&&) = default;
+
+		editor_object_info(const object_info& o) : object_info(o)
+		{}
+
 		hades::sprite_utility::Sprite::sprite_id sprite_id;
 	};
 
@@ -145,7 +154,7 @@ namespace objects
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing
-		const resources::object *_heldObject = nullptr; //replace this with an object info to preserve settings when dragging
+		object_info _heldObject;
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
 		hades::console::property_int _object_snap;
@@ -153,7 +162,8 @@ namespace objects
 
 		//objects in the map
 		//id map
-		hades::QuadTree<hades::EntityId> _quadtree;
+		using QuadTree = hades::QuadTree<hades::EntityId>;
+		QuadTree _quadtree;
 		std::vector<editor_object_info> _objects;
 
 		//sprite batch for objects

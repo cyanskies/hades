@@ -98,6 +98,8 @@ namespace hades {
 
 		return out;
 	}
+
+	template<class T> struct always_false : public std::false_type {};
 }
 
 #endif //HADES_TYPES_HPP

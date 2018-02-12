@@ -24,8 +24,7 @@ namespace hades
 		using value_type = QuadData<key_type>;
 		using node_type = QuadNode<key_type>;
 
-		QuadTree() = default;
-		explicit QuadTree(types::int32 bucket_cap);
+		QuadTree() : _rootNode(sf::IntRect(), 1) {}
 		QuadTree(const rect_type &area, types::int32 bucket_cap);
 
 		std::vector<value_type> find_collisions(const rect_type &rect) const;

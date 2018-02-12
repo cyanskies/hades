@@ -188,22 +188,25 @@ namespace objects
 	void MakeDefaultCurves(hades::data::data_manager* data)
 	{
 		//Builtin curves exist for the values needed by the editor
-		//these curves exist for every object, even if not declared
+		//these curves are auto generated for any object placed in the editor
 
 		using hades::resources::curve;
+		using namespace hades::resources::curve_types;
 
 		//position
 		auto position_id = data->getUid("position");
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::EmptyId, data);
 		position_c->curve_type = hades::CurveType::LINEAR;
 		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
-		position_c->default_value = { 0, 0 };
+		position_c->default_value.set = true;
+		position_c->default_value.value = std::vector<int_t>{ 0, 0 };
 		//size
 		auto size_id = data->getUid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::EmptyId, data);
 		size_c->curve_type = hades::CurveType::LINEAR;
 		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
-		size_c->default_value = { 0, 0 };
+		size_c->default_value.set = true;
+		size_c->default_value.value = std::vector<int_t>{ 8, 8 };
 	}
 
 	void DefineObjectConsoleVars()

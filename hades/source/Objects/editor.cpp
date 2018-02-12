@@ -87,6 +87,8 @@ namespace objects
 
 		_grid.setCellSize(_gridCurrentSize);
 
+		_quadtree = QuadTree({ 0, 0, editor_map_size_default, editor_map_size_default }, 1);
+
 		reinit();
 	}
 
@@ -357,15 +359,15 @@ namespace objects
 				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 				assert(size.size() == 2);
 			}
-			
+
 			if (size.size() != 2)
 				size = { 8, 8 };
 
 			//if we have one or more idle animations then place the dummy represented by them
-			if (auto anims = GetEditorAnimations(_heldObject); !anims.empty())
+			if (auto anims = GetEditorAnimations(_heldObject.obj_type); !anims.empty())
 			{
 				sf::Sprite s;
-				
+
 				auto index = hades::random(0u, anims.size() - 1);
 				auto anim = anims[index];
 				hades::animation::Apply(anim, 0.f, s);
@@ -396,7 +398,7 @@ namespace objects
 			if (*_object_snap <= SnapToGrid::GRIDSNAP_DISABLED)
 			{
 				//snap to pixel
-				auto world_pos = hades::pointer::ConvertToWorldCoords(target, 
+				auto world_pos = hades::pointer::ConvertToWorldCoords(target,
 					{ std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
 
 				auto max_x = MapSize.x - size[0],
@@ -411,14 +413,34 @@ namespace objects
 			{
 				//snap to grid enabled
 				//places objects in the top left of the nearest grid cell
-				auto world_coord = hades::pointer::ConvertToWorldCoords(target, {std::get<0>(m_pos), std::get<1>(m_pos)}, GameView);
+				auto world_coord = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
 				auto snapped_coords = hades::pointer::SnapCoordsToGrid(static_cast<sf::Vector2i>(world_coord), _gridCurrentSize);
-		
+
 				//keep the object within the map bounds
 				snapped_coords.x = std::clamp(snapped_coords.x, 0, MapSize.x - size[0]);
 				snapped_coords.y = std::clamp(snapped_coords.y, 0, MapSize.y - size[1]);
-				
+
 				object->setPosition(static_cast<sf::Vector2f>(snapped_coords));
+			}
+
+			auto obj_size = sf::Vector2i{ size[0], size[1] };
+
+			auto bounds = sf::IntRect{ static_cast<sf::Vector2i>(object->getPosition()), obj_size };
+			auto collisions = _quadtree.find_collisions(bounds);
+			if (std::any_of(std::begin(collisions), std::end(collisions), 
+				[bounds](auto &&other) { return bounds.intersects(other.rect); }))
+			{
+				std::visit([](auto &&obj) {
+					using T = std::decay_t < decltype(obj) > ;
+					auto col = sf::Color::Red;
+					col.a = 255 / 2;
+					if constexpr(std::is_same_v<T, sf::Sprite>)
+						obj.setColor(col);
+					else if constexpr(std::is_same_v<T, sf::RectangleShape>)
+						obj.setFillColor(col);
+					else
+						static_assert(hades::types::always_false<T>::value, "Visitor doesn't handle all cases");
+				}, _objectPreview);
 			}
 		}
 	}
@@ -509,6 +531,9 @@ namespace objects
 	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
 	{
 		//check for collision with another object
+		auto size_id = hades::data::GetUid("size");
+		auto size = GetCurve(object, size_id);
+
 
 		return true;
 	}
@@ -767,7 +792,9 @@ namespace objects
 	{
 		EditMode = editor::EditMode::OBJECT;
 		_objectMode = editor::ObjectMode::PLACE;
-		_heldObject = o;
+		_heldObject.curves.clear();
+		_heldObject.id = hades::NO_ENTITY;
+		_heldObject.obj_type = o;
 	}
 
 	void object_editor::_placeHeldObject()
@@ -777,8 +804,7 @@ namespace objects
 			return val.getPosition();
 		}, _objectPreview);
 
-		editor_object_info object;
-		object.obj_type = _heldObject;
+		editor_object_info object{ _heldObject };
 
 		if (ObjectValidLocation(static_cast<sf::Vector2i>(position), object))
 		{
@@ -805,7 +831,7 @@ namespace objects
 			//if no animation is set, send nullptr to the SpriteBatch, 
 			//it will render an appropriatly sized rect
 			const hades::resources::animation *anim = nullptr;
-			auto anims = GetEditorAnimations(_heldObject);
+			auto anims = GetEditorAnimations(_heldObject.obj_type);
 			if (!anims.empty())
 			{
 				auto index = hades::random(0u, anims.size() - 1);

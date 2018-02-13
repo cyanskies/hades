@@ -51,10 +51,10 @@ namespace objects
                     Position = (0, "ToolBar.y + ToolBar.h");
                     Size = ("&.w / 6", "&.h - ToolBar.h - MenuBar.h");
 					VerticalLayout {
-                    SimpleVerticalLayout.object-selector {
-                    }
-					VerticalLayout.SelectedInfo {
-					}
+						SimpleVerticalLayout.object-selector {
+						}
+						SimpleVerticalLayout.selection-info {
+						}
 					}
                 }
 

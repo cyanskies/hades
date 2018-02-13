@@ -225,6 +225,9 @@ namespace objects
 		//TODO: set grid color from editor settings
 		_grid.setSize(static_cast<sf::Vector2f>(MapSize));
 
+		EditMode = editor::EditMode::OBJECT;
+		_objectMode = editor::ObjectMode::NONE_SELECTED;
+
 		_createGui();
 	}
 
@@ -338,6 +341,8 @@ namespace objects
 		object_sel_panel->add(object_container, object_button_container);
 
 		object_combox->setSelectedItem(all_str);
+
+		_clearObjectSelected();
 	}
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
@@ -902,7 +907,11 @@ namespace objects
 
 	void object_editor::_clearObjectSelected()
 	{
-		//reset the object info box
-		//TODO:
+		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
+		selectedInfoBox->removeAllWidgets();
+
+		static const auto message = "Selected: \"Nothing\"";
+		auto label = tgui::Label::create(message);
+		selectedInfoBox->add(label);
 	}
 }

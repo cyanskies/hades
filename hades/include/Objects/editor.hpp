@@ -27,6 +27,7 @@ namespace objects
 			//object selector must be a container, the app will place the object type combobox in it,
 			// and objects beneath it.
 			object_selector_panel = "object-selector",
+			selection_info = "selection-info",
 			toolbar_panel = "toolbar-container";
 
 		//screen view height

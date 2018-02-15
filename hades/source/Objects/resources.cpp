@@ -425,7 +425,13 @@ namespace objects
 			//    show-grid: false // defines whether the grid should be turned on by default
 			//    grid-colour: [r,g,b,a]
 			//    grid-highlight: [r,g,b,a]
+			//    //grid toolbar icons
+			//	  grid-show-icon: animation name
+			//    grid-hide-icon: animation name
+			//    grid-grow-icon: animation name
+			//    grid-shrink-icon: animation name
 			//
+			//    //default map settings
 			//    map-size:
 			
 			//use MakeColour to turn vectors into sf::color

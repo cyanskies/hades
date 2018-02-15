@@ -296,7 +296,7 @@ namespace hades
 			animation_frame() = default;
 			animation_frame(types::uint16 nx, types::uint16 ny, float nd) : x(nx), y(ny), duration(nd) {}
 			types::uint16 x = 0, y = 0;
-			float duration = 0.f;
+			float duration = 1.f;
 		};
 
 		//TODO: add field for fragment shaders
@@ -305,7 +305,7 @@ namespace hades
 			animation();
 
 			texture* tex = nullptr;
-			float duration = 0.f;
+			float duration = 1.f;
 			types::int32 width = 0, height = 0;
 			shader *anim_shader = nullptr;
 		};

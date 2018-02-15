@@ -284,7 +284,7 @@ namespace objects
 					*_gridCurrentScale = std::min(++*_gridCurrentScale, _gridMaxSize->load());
 					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
 					_grid.setCellSize(_gridCurrentSize);
-				}, editor_settings->grid_shrink_icon);
+				}, editor_settings->grid_grow_icon);
 
 				toolbar_panel->add(grid_grow);
 			}

@@ -20,6 +20,10 @@ namespace hades
 			if (progress > 1.f || progress < 0.f)
 				animation_error(progress, animation);
 
+			//force lazy load if the texture hasn't been loaded yet.
+			if (!animation->tex->loaded)
+				hades::data::Get<hades::resources::texture>(animation->tex->id);
+
 			auto prog = std::clamp(progress, 0.f, 1.f);
 
 			//calculate the progress to find the correct rect for this time

@@ -338,7 +338,7 @@ hades::data::UniqueId yaml_get_uid(const YAML::Node& node, hades::types::string 
 	{
 		auto str = value_node.as<hades::types::string>();
 		if (!str.empty())
-			return hades::data::GetUid(str);
+			return hades::data::MakeUid(str);
 	}
 
 	return default_value;

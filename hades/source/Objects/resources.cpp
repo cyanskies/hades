@@ -559,9 +559,22 @@ namespace objects
 			auto object_mock = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "object-mock-colour", mod);
 			if (!object_mock.empty())
 				editor_obj->object_mock_colour = hades::MakeColour(std::begin(object_mock), std::end(object_mock));
+			
+			//======================
+			//get grid toolbar icons
+			//======================
+			using hades::resources::animation;
+			auto grid_shrink_id = yaml_get_uid(node, resource_type, resource_name, "grid-shrink-icon", mod);
+			if (grid_shrink_id != hades::UniqueId::Zero)
+				editor_obj->grid_shrink_icon = hades::data::FindOrCreate<animation>(grid_shrink_id, mod, data);
 
-			//TODO:
-			//toolbar icons
+			auto grid_grow_id = yaml_get_uid(node, resource_type, resource_name, "grid-grow-icon", mod);
+			if (grid_grow_id != hades::UniqueId::Zero)
+				editor_obj->grid_grow_icon = hades::data::FindOrCreate<animation>(grid_grow_id, mod, data);
+
+			auto grid_show_id = yaml_get_uid(node, resource_type, resource_name, "grid-show-icon", mod);
+			if (grid_show_id != hades::UniqueId::Zero)
+				editor_obj->grid_show_icon = hades::data::FindOrCreate<animation>(grid_show_id, mod, data);
 		}//parse editor
 
 		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)

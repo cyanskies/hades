@@ -4,6 +4,9 @@ mod:
 editor:
     object-groups:
         example-group: test
+    grid-shrink-icon: grid-shrink
+    grid-grow-icon: grid-grow
+    grid-show-icon: grid-show
 
 curves:
     health:
@@ -19,6 +22,8 @@ curves:
 textures:
     ball-texture:
         source: ball.png
+    grid-icons-texture:
+        source: grid_icons.png
 
 animations:
     ball-anim:
@@ -28,6 +33,24 @@ animations:
         height: 90
         frames:
             - [0, 0, 1.0]
+    grid-show:
+        texture: grid-icons-texture
+        width: 40
+        height: 40
+        frames:
+            - [40, 40, 1.0]
+    grid-grow:
+        texture: grid-icons-texture
+        width: 40
+        height: 40
+        frames:
+            - [0, 0, 1.0]
+    grid-shrink:
+        texture: grid-icons-texture
+        width: 40
+        height: 40
+        frames:
+            - [0, 40, 1.0]
 
 objects:
     test:

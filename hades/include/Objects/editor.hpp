@@ -88,6 +88,8 @@ namespace objects
 		virtual void pause() override;
 		virtual	void resume() override;
 
+		using EditMode_t = hades::types::uint8;
+
 	protected:
 		//==initialisation functions==
 		//first call your paren't classes impl of this function
@@ -132,7 +134,6 @@ namespace objects
 		sf::Vector2i MapSize = { 200, 200 };
 
 		//editing variables
-		using EditMode_t = hades::types::uint8;
 		EditMode_t EditMode = editor::OBJECT;
 
 		//core map drawing variables
@@ -152,6 +153,7 @@ namespace objects
 		//sets up the selected object info box and also creates the selection indicator
 		//NOTE: selection indicator is controlled by OnDrag when dragging
 		void _onObjectSelected(editor_object_info &info);
+		void _updateSelector(const object_info &info);
 		//clears the selection indicator and selection info box
 		//this should be called for any mode other than drag
 		void _clearObjectSelected();
@@ -167,7 +169,7 @@ namespace objects
 		hades::console::property_int _object_snap;
 		hades::EntityId _next_object_id = hades::NO_ENTITY;
 		//object selection indicator
-		std::variant<sf::RectangleShape, sf::CircleShape> _objectSelector;
+		sf::RectangleShape _objectSelector;
 
 		//objects in the map
 		//id map

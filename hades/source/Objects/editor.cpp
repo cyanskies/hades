@@ -26,6 +26,14 @@ const hades::types::uint32 map_height = 100, map_width = 100;
 const hades::types::int32 scroll_margin = 20,
 					scroll_rate = 4;
 
+bool ShowSelector(objects::object_editor::EditMode_t mode, objects::editor::ObjectMode objMode)
+{
+	using namespace objects::editor;
+	return mode == EditMode::OBJECT
+		&& (objMode == ObjectMode::SELECT
+			|| objMode == ObjectMode::DRAG);
+ }
+
 namespace objects
 {
 	namespace editor
@@ -563,10 +571,11 @@ namespace objects
 
 	void object_editor::DrawObjects(sf::RenderTarget &target) 
 	{
-		//draw object selector
-
 		_objectSprites.prepare();
 		target.draw(_objectSprites);
+
+		if (ShowSelector(EditMode, _objectMode))
+			target.draw(_objectSelector);
 	}
 
 	void object_editor::DrawGrid(sf::RenderTarget &target) const 
@@ -898,8 +907,7 @@ namespace objects
 		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
 		_objectMode = editor::ObjectMode::SELECT;
 
-		//set up the selection indicator
-		//TODO:
+		_updateSelector(info);
 
 		//set up the info box
 		//TODO:

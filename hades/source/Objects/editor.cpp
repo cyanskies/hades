@@ -913,6 +913,35 @@ namespace objects
 		//TODO:
 	}
 
+	void object_editor::_updateSelector(const object_info &info)
+	{
+		using curve = hades::resources::curve;
+	
+		//set the selector position
+		static const auto position_id = hades::data::GetUid("position");
+		static const auto position_c = hades::data::Get<curve>(position_id);
+		assert(position_c);
+		const auto [pos_curve, pos_v] = GetCurve(info, position_c);
+		assert(pos_curve == position_c && pos_v.set);
+
+		using int_vec = hades::resources::curve_types::vector_int;
+
+		const auto &pos = std::get<int_vec>(pos_v.value);
+		assert(pos.size() >= 2);
+		_objectSelector.setPosition(static_cast<float>(pos[0]), static_cast<float>(pos[1]));
+
+		//set the selectors size
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<curve>(size_id);
+		assert(size_c);
+		const auto[size_curve, size_v] = GetCurve(info, size_c);
+		assert(size_curve == size_c && size_v.set);
+
+		const auto &size = std::get<int_vec>(size_v.value);
+		assert(size.size() >= 2);
+		_objectSelector.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
+	}
+
 	void object_editor::_clearObjectSelected()
 	{
 		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);

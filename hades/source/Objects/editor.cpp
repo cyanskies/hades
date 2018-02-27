@@ -368,25 +368,23 @@ namespace objects
 			sf::Transformable *object = nullptr;
 			static const auto size_id = hades::data::GetUid("size");
 			static const auto size_curve = hades::data::Get<hades::resources::curve>(size_id);
-			auto[size_c, size_value] = GetCurve(_heldObject, size_curve);
+			const auto size_value = GetCurve(_heldObject, size_curve);
 
 			using size_type = hades::resources::curve_types::vector_int;
-			auto size = std::get<size_type>(size_value.value);
-
-			if (size.size() != 2)
-				size = std::get<size_type>(size_c->default_value.value);
+			const auto size = std::get<size_type>(size_value.value);
+			assert(size.size() >= 2);
 
 			//if we have one or more idle animations then place the dummy represented by them
-			if (auto anims = GetEditorAnimations(_heldObject.obj_type); !anims.empty())
+			if (const auto anims = GetEditorAnimations(_heldObject.obj_type); !anims.empty())
 			{
 				sf::Sprite s;
 
-				auto index = hades::random(0u, anims.size() - 1);
-				auto anim = anims[index];
+				const auto index = hades::random(0u, anims.size() - 1);
+				const auto anim = anims[index];
 				hades::animation::Apply(anim, 0.f, s);
 				//calculate scale for x and y axis?
-				auto width_scale = static_cast<float>(size[0]) / static_cast<float>(anim->width);
-				auto height_scale = static_cast<float>(size[1]) / static_cast<float>(anim->height);
+				const auto width_scale = static_cast<float>(size[0]) / static_cast<float>(anim->width);
+				const auto height_scale = static_cast<float>(size[1]) / static_cast<float>(anim->height);
 
 				//scale the sprite to match object size
 				s.setScale(width_scale, height_scale);
@@ -411,14 +409,14 @@ namespace objects
 			if (*_object_snap <= SnapToGrid::GRIDSNAP_DISABLED)
 			{
 				//snap to pixel
-				auto world_pos = hades::pointer::ConvertToWorldCoords(target,
+				const auto world_pos = hades::pointer::ConvertToWorldCoords(target,
 					{ std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
 
-				auto max_x = MapSize.x - size[0],
+				const auto max_x = MapSize.x - size[0],
 					max_y = MapSize.y - size[1];
 
-				auto pos_x = std::clamp(world_pos.x, 0.f, static_cast<float>(max_x));
-				auto pos_y = std::clamp(world_pos.y, 0.f, static_cast<float>(max_y));
+				const auto pos_x = std::clamp(world_pos.x, 0.f, static_cast<float>(max_x));
+				const auto pos_y = std::clamp(world_pos.y, 0.f, static_cast<float>(max_y));
 
 				object->setPosition({ pos_x, pos_y });
 			}
@@ -426,7 +424,7 @@ namespace objects
 			{
 				//snap to grid enabled
 				//places objects in the top left of the nearest grid cell
-				auto world_coord = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
+				const auto world_coord = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(m_pos), std::get<1>(m_pos) }, GameView);
 				auto snapped_coords = hades::pointer::SnapCoordsToGrid(static_cast<sf::Vector2i>(world_coord), _gridCurrentSize);
 
 				//keep the object within the map bounds
@@ -463,7 +461,7 @@ namespace objects
 		if (EditMode == editor::EditMode::OBJECT)
 		{
 			if (_objectMode == editor::ObjectMode::NONE_SELECTED)
-				;//_trySelectAt(pos);
+				_trySelectAt(pos);
 			else if(_objectMode == editor::ObjectMode::PLACE)
 				_placeHeldObject();
 		}
@@ -541,15 +539,13 @@ namespace objects
 		//check for collision with another object
 		static const auto size_id = hades::data::GetUid("size");
 		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
-		auto size_v = std::get<hades::resources::curve_default_value>(GetCurve(object, size_c));
+		const auto size_v = GetCurve(object, size_c);
 		using size_type = std::vector<hades::resources::curve_types::int_t>;
-		auto obj_size = std::get<size_type>(size_v.value);
-
-		if (obj_size.size() < 2)
-			obj_size = std::get<size_type>(size_c->default_value.value);
-
-		auto bounds = sf::IntRect{ position, { obj_size[0], obj_size[1] } };
-		auto collisions = _quadtree.find_collisions(bounds);
+		const auto obj_size = std::get<size_type>(size_v.value);
+		assert(obj_size.size() >= 2);
+		
+		const auto bounds = sf::IntRect{ position, { obj_size[0], obj_size[1] } };
+		const auto collisions = _quadtree.find_collisions(bounds);
 
 		return std::none_of(std::begin(collisions), std::end(collisions),
 			[bounds](auto &&other) { return bounds.intersects(other.rect); });
@@ -831,11 +827,11 @@ namespace objects
 
 			static const auto size_id = hades::data::GetUid("size");
 			static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
-			auto[size_curve, size_value] = GetCurve(object, size_c);
+			const auto size_value = GetCurve(object, size_c);
 
 			hades::resources::curve_types::vector_int size;
 
-			if (size_curve && size_value.set)
+			if (size_value.set)
 			{
 				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 				assert(size.size() == 2);
@@ -843,14 +839,14 @@ namespace objects
 			else
 				size = { 8, 8 };
 
-			sf::Vector2i size_vec{ size[0], size[1] };
+			const sf::Vector2i size_vec{ size[0], size[1] };
 
 			_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
 
 			//if no animation is set, send nullptr to the SpriteBatch, 
 			//it will render an appropriatly sized rect
 			const hades::resources::animation *anim = nullptr;
-			auto anims = GetEditorAnimations(_heldObject.obj_type);
+			const auto anims = GetEditorAnimations(_heldObject.obj_type);
 			if (!anims.empty())
 			{
 				auto index = hades::random(0u, anims.size() - 1);
@@ -864,10 +860,9 @@ namespace objects
 			using namespace hades::resources::curve_types;
 			static const auto pos_id = hades::data::GetUid("position");
 			static const auto pos_c = hades::data::Get<hades::resources::curve>(pos_id);
-			auto pos_curve = objects::GetCurve(object, pos_c);
-			std::get<1>(pos_curve).value = 
-				vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
-			object.curves.push_back(pos_curve);
+			auto pos_value = objects::GetCurve(object, pos_c);
+			pos_value.value = vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
+			object.curves.push_back({ pos_c, pos_value });
 
 			_objects.push_back(object);
 		}
@@ -921,24 +916,23 @@ namespace objects
 		static const auto position_id = hades::data::GetUid("position");
 		static const auto position_c = hades::data::Get<curve>(position_id);
 		assert(position_c);
-		const auto [pos_curve, pos_v] = GetCurve(info, position_c);
-		assert(pos_curve == position_c && pos_v.set);
 
+		const auto pos_v = GetCurve(info, position_c);
 		using int_vec = hades::resources::curve_types::vector_int;
-
 		const auto &pos = std::get<int_vec>(pos_v.value);
 		assert(pos.size() >= 2);
+
 		_objectSelector.setPosition(static_cast<float>(pos[0]), static_cast<float>(pos[1]));
 
 		//set the selectors size
 		static const auto size_id = hades::data::GetUid("size");
 		static const auto size_c = hades::data::Get<curve>(size_id);
 		assert(size_c);
-		const auto[size_curve, size_v] = GetCurve(info, size_c);
-		assert(size_curve == size_c && size_v.set);
 
+		const auto size_v = GetCurve(info, size_c);
 		const auto &size = std::get<int_vec>(size_v.value);
 		assert(size.size() >= 2);
+
 		_objectSelector.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
 	}
 
@@ -948,7 +942,7 @@ namespace objects
 		selectedInfoBox->removeAllWidgets();
 
 		static const auto message = "Selected: \"Nothing\"";
-		auto label = tgui::Label::create(message);
+		const auto label = tgui::Label::create(message);
 		selectedInfoBox->add(label);
 	}
 }

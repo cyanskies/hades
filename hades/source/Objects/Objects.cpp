@@ -7,6 +7,8 @@
 
 namespace objects
 {
+	using curve_obj = resources::object::curve_obj;
+
 	//returns nullptr if the curve wasn't found
 	//returns the curve with the value unset if it was found but not set
 	//returns the requested curve plus it's value otherwise
@@ -44,7 +46,7 @@ namespace objects
 		return std::make_tuple(curve_ptr, hades::resources::curve_default_value());
 	}
 
-	curve_obj GetCurve(const object_info &o, const hades::resources::curve *c)
+	curve_value GetCurve(const object_info &o, const hades::resources::curve *c)
 	{
 		assert(c);
 		for (auto cur : o.curves)
@@ -54,19 +56,19 @@ namespace objects
 			assert(curve);
 			//if we have the right id and this
 			if (curve == c && v.set)
-				return cur;
+				return v;
 		}
 
 		assert(o.obj_type);
 		auto out = TryGetCurve(o.obj_type, c);
-		if (std::get<const hades::resources::curve*>(out)
-			&& std::get<hades::resources::curve_default_value>(out).set)
-			return out;
+		if (auto[curve, value] = out; curve && value.set)
+			return value;
 
-		return { c, c->default_value };
+		assert(c->default_value.set);
+		return c->default_value;
 	}
 
-	curve_obj GetCurve(const resources::object *o, const hades::resources::curve *c)
+	curve_value GetCurve(const resources::object *o, const hades::resources::curve *c)
 	{
 		assert(o && c);
 
@@ -76,11 +78,11 @@ namespace objects
 			throw curve_not_found("Requested curve not found on object type: " + hades::data::GetAsString(o->id)
 				+ ", curve was: " + hades::data::GetAsString(c->id));
 
-		if (std::get<hades::resources::curve_default_value>(out).set)
-			return out;
+		if (auto v = std::get<hades::resources::curve_default_value>(out); v.set)
+			return v;
 
-		auto curve = std::get<const curve_t*>(out);
-		return { curve, curve->default_value };
+		assert(c->default_value.set);
+		return c->default_value;
 	}
 
 	curve_list UniqueCurves(curve_list list)

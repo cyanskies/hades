@@ -95,7 +95,7 @@ namespace objects
 
 		_grid.setCellSize(_gridCurrentSize);
 
-		_quadtree = QuadTree({ 0, 0, editor_map_size_default, editor_map_size_default }, 1);
+		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
 
 		reinit();
 	}
@@ -172,7 +172,7 @@ namespace objects
 			}
 			else if (_mouseLeftDown == MouseState::DRAG_DRAW)
 			{
-				OnClick({ mouseLeft->x_axis, mouseLeft->y_axis });
+				OnClick(window, { mouseLeft->x_axis, mouseLeft->y_axis });
 			}
 		}
 		else if (!mouseLeft->active)
@@ -181,7 +181,7 @@ namespace objects
 			//this is a click if the held time was less the drag time
 			if (_mouseLeftDown == MouseState::MOUSE_DOWN)
 			{
-				OnClick(_mouseDownPos);
+				OnClick(window, _mouseDownPos);
 				_mouseLeftDown = MouseState::MOUSE_UP;
 			}
 		}
@@ -455,12 +455,14 @@ namespace objects
 		return false;
 	}
 
-	void object_editor::OnClick(object_editor::MousePos pos)
+	void object_editor::OnClick(const sf::RenderTarget &target, object_editor::MousePos pos)
 	{
 		if (EditMode == editor::EditMode::OBJECT)
 		{
+			auto world_pos = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
+			using int32 = hades::types::int32;
 			if (_objectMode == editor::ObjectMode::NONE_SELECTED)
-				_trySelectAt(pos);
+				_trySelectAt({ static_cast<int32>(world_pos.x), static_cast<int32>(world_pos.y) });
 			else if(_objectMode == editor::ObjectMode::PLACE)
 				_placeHeldObject();
 		}
@@ -864,7 +866,7 @@ namespace objects
 		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
 
 		const auto mpos = sf::Vector2i{ std::get<0>(pos), std::get<1>(pos) };
-		const auto candidates = _quadtree.find_collisions({ mpos, {0, 0} });
+		const auto candidates = _quadtree.find_collisions({ mpos, {1, 1} });
 
 		const auto target = std::find_if(std::begin(candidates), std::end(candidates), [mpos](auto &&r) {
 			return r.rect.contains(mpos);

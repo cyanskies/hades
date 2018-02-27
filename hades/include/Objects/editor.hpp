@@ -106,7 +106,7 @@ namespace objects
 		// for this edit mode
 		virtual bool ValidTargetForDrag(MousePos) const;
 		//responds to user input(place object, place terrain tile, etc)
-		virtual void OnClick(MousePos);
+		virtual void OnClick(const sf::RenderTarget&, MousePos);
 		//respond to mouse drag
 		virtual void OnDragStart(MousePos);
 		virtual void OnDrag(MousePos);

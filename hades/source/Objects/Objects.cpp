@@ -46,6 +46,22 @@ namespace objects
 		return std::make_tuple(curve_ptr, hades::resources::curve_default_value());
 	}
 
+	curve_value ValidVectorCurve(hades::resources::curve_default_value v)
+	{
+		using vector_int = hades::resources::curve_types::vector_int;
+		assert(std::holds_alternative<vector_int>(v.value));
+
+		//the provided value is valid
+		if (auto vector = std::get<vector_int>(v.value); v.set && vector.size() >= 2)
+			return v;
+
+		//invalid value, override with a minimum valid value
+		v.set = true;
+		v.value = vector_int{0, 0};
+
+		return v;
+	}
+
 	curve_value GetCurve(const object_info &o, const hades::resources::curve *c)
 	{
 		assert(c);

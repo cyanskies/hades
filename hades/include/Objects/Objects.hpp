@@ -36,6 +36,9 @@ namespace objects
 	curve_value GetCurve(const resources::object *o, const hades::resources::curve *c);
 	curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
 	curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
+	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)
+	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
+	curve_value ValidVectorCurve(hades::resources::curve_default_value v);
 	const hades::resources::animation *GetEditorIcon(const resources::object *o);
 	resources::object::animation_list GetEditorAnimations(const resources::object *o);
 

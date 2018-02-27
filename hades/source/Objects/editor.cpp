@@ -368,11 +368,10 @@ namespace objects
 			sf::Transformable *object = nullptr;
 			static const auto size_id = hades::data::GetUid("size");
 			static const auto size_curve = hades::data::Get<hades::resources::curve>(size_id);
-			const auto size_value = GetCurve(_heldObject, size_curve);
+			const auto size_value = ValidVectorCurve(GetCurve(_heldObject, size_curve));
 
 			using size_type = hades::resources::curve_types::vector_int;
 			const auto size = std::get<size_type>(size_value.value);
-			assert(size.size() >= 2);
 
 			//if we have one or more idle animations then place the dummy represented by them
 			if (const auto anims = GetEditorAnimations(_heldObject.obj_type); !anims.empty())
@@ -539,10 +538,9 @@ namespace objects
 		//check for collision with another object
 		static const auto size_id = hades::data::GetUid("size");
 		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
-		const auto size_v = GetCurve(object, size_c);
+		const auto size_v = ValidVectorCurve(GetCurve(object, size_c));
 		using size_type = std::vector<hades::resources::curve_types::int_t>;
 		const auto obj_size = std::get<size_type>(size_v.value);
-		assert(obj_size.size() >= 2);
 		
 		const auto bounds = sf::IntRect{ position, { obj_size[0], obj_size[1] } };
 		const auto collisions = _quadtree.find_collisions(bounds);
@@ -827,18 +825,9 @@ namespace objects
 
 			static const auto size_id = hades::data::GetUid("size");
 			static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
-			const auto size_value = GetCurve(object, size_c);
+			const auto size_value = ValidVectorCurve(GetCurve(object, size_c));
 
-			hades::resources::curve_types::vector_int size;
-
-			if (size_value.set)
-			{
-				size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
-				assert(size.size() == 2);
-			}
-			else
-				size = { 8, 8 };
-
+			const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 			const sf::Vector2i size_vec{ size[0], size[1] };
 
 			_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
@@ -860,7 +849,7 @@ namespace objects
 			using namespace hades::resources::curve_types;
 			static const auto pos_id = hades::data::GetUid("position");
 			static const auto pos_c = hades::data::Get<hades::resources::curve>(pos_id);
-			auto pos_value = objects::GetCurve(object, pos_c);
+			auto pos_value = ValidVectorCurve(GetCurve(object, pos_c));
 			pos_value.value = vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
 			object.curves.push_back({ pos_c, pos_value });
 
@@ -917,10 +906,9 @@ namespace objects
 		static const auto position_c = hades::data::Get<curve>(position_id);
 		assert(position_c);
 
-		const auto pos_v = GetCurve(info, position_c);
+		const auto pos_v = ValidVectorCurve(GetCurve(info, position_c));
 		using int_vec = hades::resources::curve_types::vector_int;
 		const auto &pos = std::get<int_vec>(pos_v.value);
-		assert(pos.size() >= 2);
 
 		_objectSelector.setPosition(static_cast<float>(pos[0]), static_cast<float>(pos[1]));
 
@@ -929,9 +917,8 @@ namespace objects
 		static const auto size_c = hades::data::Get<curve>(size_id);
 		assert(size_c);
 
-		const auto size_v = GetCurve(info, size_c);
+		const auto size_v = ValidVectorCurve(GetCurve(info, size_c));
 		const auto &size = std::get<int_vec>(size_v.value);
-		assert(size.size() >= 2);
 
 		_objectSelector.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
 	}

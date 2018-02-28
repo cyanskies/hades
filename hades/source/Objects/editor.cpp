@@ -89,13 +89,16 @@ namespace objects
 		_gridEnabled = hades::console::GetBool(editor_grid_enabled, true);
 		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
 		_gridMaxSize = hades::console::GetInt(editor_grid_max, 1);
+
 		_gridCurrentScale = hades::console::GetInt(editor_grid_size_multiple, 1);
-
 		_gridCurrentSize = std::min(_gridCurrentScale->load(), _gridMaxSize->load()) * *_gridMinSize;
-
 		_grid.setCellSize(_gridCurrentSize);
 
+		//set up the selection and collision variables
 		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
+		_objectSelector.setFillColor(sf::Color::Transparent);
+		_objectSelector.setOutlineColor(sf::Color::White);
+		_objectSelector.setOutlineThickness(1.f);
 
 		reinit();
 	}
@@ -881,8 +884,7 @@ namespace objects
 		});
 
 		//this should be 'impossible'
-		if (obj == std::end(_objects))
-			throw std::logic_error("object existed within quadtree, but wasn't in the master object list");
+		assert(obj != std::end(_objects));
 
 		_onObjectSelected(*obj);
 	}
@@ -922,7 +924,7 @@ namespace objects
 		const auto size_v = ValidVectorCurve(GetCurve(info, size_c));
 		const auto &size = std::get<int_vec>(size_v.value);
 
-		_objectSelector.setSize({ static_cast<float>(size[0]), static_cast<float>(size[1]) });
+		_objectSelector.setSize({ static_cast<float>(size[0] + 1), static_cast<float>(size[1] + 1) });
 	}
 
 	void object_editor::_clearObjectSelected()

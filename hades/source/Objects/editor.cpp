@@ -261,6 +261,7 @@ namespace objects
 		auto empty_button = editor::MakeObjectButton("empty", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
+			_clearObjectSelected();
 		}, editor_settings->selection_mode_icon);
 
 		toolbar_panel->add(empty_button);
@@ -464,7 +465,8 @@ namespace objects
 		{
 			auto world_pos = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
 			using int32 = hades::types::int32;
-			if (_objectMode == editor::ObjectMode::NONE_SELECTED)
+			if (_objectMode == editor::ObjectMode::NONE_SELECTED
+				|| _objectMode == editor::ObjectMode::SELECT)
 				_trySelectAt({ static_cast<int32>(world_pos.x), static_cast<int32>(world_pos.y) });
 			else if(_objectMode == editor::ObjectMode::PLACE)
 				_placeHeldObject();
@@ -866,7 +868,8 @@ namespace objects
 	{
 		//these should have been checked before calling this func
 		assert(EditMode == editor::EditMode::OBJECT);
-		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
+		assert(_objectMode == editor::ObjectMode::NONE_SELECTED
+			|| _objectMode == editor::ObjectMode::SELECT);
 
 		const auto mpos = sf::Vector2i{ std::get<0>(pos), std::get<1>(pos) };
 		const auto candidates = _quadtree.find_collisions({ mpos, {1, 1} });
@@ -892,7 +895,8 @@ namespace objects
 	void object_editor::_onObjectSelected(editor_object_info &info)
 	{
 		assert(EditMode == editor::EditMode::OBJECT);
-		assert(_objectMode == editor::ObjectMode::NONE_SELECTED);
+		assert(_objectMode == editor::ObjectMode::NONE_SELECTED 
+			|| _objectMode == editor::ObjectMode::SELECT);
 		_objectMode = editor::ObjectMode::SELECT;
 
 		_updateSelector(info);

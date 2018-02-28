@@ -16,6 +16,7 @@ namespace objects
 	{
 		const resources::object *obj_type;
 		hades::EntityId id;
+		hades::types::string name;
 		resources::object::curve_list curves;
 	};
 

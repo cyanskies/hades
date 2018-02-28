@@ -42,7 +42,7 @@ namespace tiles
 {
 	void tile_editor_base::init()
 	{
-		TileSettings = &GetTileSettings();
+		TileSettings = GetTileSettings();
 
 		generate();
 

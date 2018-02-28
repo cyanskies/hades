@@ -47,6 +47,11 @@ namespace hades
 		struct resource_base
 		{
 			virtual ~resource_base() {}
+			resource_base() = default;
+			resource_base(const resource_base &rhs) = delete;
+			resource_base(resource_base &&rhs) = delete;
+			resource_base &operator=(const resource_base &rhs) = delete;
+			resource_base &operator=(resource_base &&rhs) = delete;
 
 			virtual void load(data::data_manager*) = 0;
 
@@ -65,7 +70,8 @@ namespace hades
 		{
 			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
 
-			resource_type(loaderFunc loader = nullptr) : _resourceLoader(loader) {}
+			resource_type() = default;
+			resource_type(loaderFunc loader) : _resourceLoader(loader) {}
 
 			virtual ~resource_type() {}
 

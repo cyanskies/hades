@@ -251,7 +251,7 @@ namespace ortho_terrain
 			std::vector<tiles::tile> out;
 
 			auto settings = tiles::GetTileSettings();
-			auto tile_size = settings.tile_size;
+			auto tile_size = settings->tile_size;
 
 			tile_size_t count = 0;
 			for (auto &t : tile_order)
@@ -422,7 +422,7 @@ namespace ortho_terrain
 			std::vector<tiles::tile> out;
 
 			auto settings = tiles::GetTileSettings();
-			auto tile_size = settings.tile_size;
+			auto tile_size = settings->tile_size;
 
 			tile_size_t count = 0;
 			for (auto &t : tile_order)
@@ -718,7 +718,7 @@ namespace ortho_terrain
 				if (tiles_section.IsDefined())
 				{
 					auto settings = tiles::GetTileSettings();
-					auto tiles = tiles::resources::ParseTileSection(texid, settings.tile_size, tiles_section, resource_type, name, mod);
+					auto tiles = tiles::resources::ParseTileSection(texid, settings->tile_size, tiles_section, resource_type, name, mod);
 					std::copy(std::begin(tiles), std::end(tiles), std::back_inserter(tset->tiles));
 					if (ter)
 					{

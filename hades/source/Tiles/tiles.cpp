@@ -326,7 +326,7 @@ namespace tiles
 		_width = std::get<tile_count_t>(map_data);
 
 		auto tile_settings = GetTileSettings();
-		_tile_size = tile_settings.tile_size;
+		_tile_size = tile_settings->tile_size;
 
 		TileMap::create(map_data);
 	}
@@ -507,7 +507,7 @@ namespace tiles
 			a.push_back(q);
 	}
 
-	const resources::tile_settings &GetTileSettings()
+	const resources::tile_settings *GetTileSettings()
 	{
 		auto settings_id = hades::data::GetUid(resources::tile_settings_name);
 		if (!hades::data::Exists(settings_id))
@@ -519,7 +519,7 @@ namespace tiles
 
 		try
 		{
-			return *hades::data::Get<resources::tile_settings>(settings_id);
+			return hades::data::Get<resources::tile_settings>(settings_id);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{
@@ -532,7 +532,7 @@ namespace tiles
 	const TileArray &GetErrorTileset()
 	{
 		auto settings = GetTileSettings();
-		auto tset = hades::data::Get<resources::tileset>(settings.error_tileset);
+		auto tset = hades::data::Get<resources::tileset>(settings->error_tileset);
 
 		if (!tset)
 		{

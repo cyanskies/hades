@@ -899,10 +899,27 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::SELECT);
 		_objectMode = editor::ObjectMode::SELECT;
 
+		_updateInfoBox(info);
 		_updateSelector(info);
+	}
 
-		//set up the info box
-		//TODO:
+
+	void object_editor::_updateInfoBox(const object_info &obj)
+	{
+		//clear the info box
+		_clearObjectSelected();
+
+		using namespace std::string_literals;
+		auto message = "Selected: "s;
+		auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
+
+		if (obj.name.empty())
+			message += obj_type_name;
+		else
+			message += obj.name + "(" + obj_type_name + ")";
+
+		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
+		const auto label = tgui::Label::create(message);
 	}
 
 	void object_editor::_updateSelector(const object_info &info)

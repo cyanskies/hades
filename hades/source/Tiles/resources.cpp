@@ -299,7 +299,7 @@ namespace tiles
 						continue;
 					}
 
-					auto tile_list = ParseTileSection(texid, tile_settings.tile_size, tiles_section, resource_type, name, mod);
+					auto tile_list = ParseTileSection(texid, tile_settings->tile_size, tiles_section, resource_type, name, mod);
 					std::move(std::begin(tile_list), std::end(tile_list), std::back_inserter(tset->tiles));
 				}
 				catch (tile_map_exception&)

@@ -153,9 +153,10 @@ namespace objects
 		//sets up the selected object info box and also creates the selection indicator
 		//NOTE: selection indicator is controlled by OnDrag when dragging
 		void _onObjectSelected(editor_object_info &info);
+		void _updateInfoBox(const object_info &obj);
 		//places the selection indicator around the specified object
 		void _updateSelector(const object_info &info);
-		//clears the selection indicator and selection info box
+		//clears the selection info box
 		//this should be called for any mode other than drag
 		void _clearObjectSelected();
 

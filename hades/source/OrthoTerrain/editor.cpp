@@ -107,7 +107,7 @@ namespace ortho_terrain
 		tiles::tile_editor_t<MutableTerrainMap>::FillTileSelector();
 
 		const auto settings = tiles::GetTileSettings();
-		auto tile_size = settings.tile_size;
+		auto tile_size = settings->tile_size;
 		auto tile_button_size = tile_size * 3;
 
 		 //================================
@@ -171,7 +171,7 @@ namespace ortho_terrain
 
 					auto texture = hades::data::Get<hades::resources::texture>(terrain->tiles[0].texture);
 					auto tex = tgui::Texture(texture->value, { static_cast<int>(tile.left), static_cast<int>(tile.top),
-						static_cast<int>(settings.tile_size), static_cast<int>(settings.tile_size) });
+						static_cast<int>(settings->tile_size), static_cast<int>(settings->tile_size) });
 
 					auto tileButton = tgui::Picture::create(tex);
 					tileButton->setSize(tile_button_size, tile_button_size);

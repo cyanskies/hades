@@ -90,7 +90,7 @@ namespace tiles
 		tile_count_t _vertex_width;
 	};
 	//throws tile_map_exception if the settings cannot be retrieved for any reason.
-	const resources::tile_settings &GetTileSettings();
+	const resources::tile_settings *GetTileSettings();
 	const TileArray &GetErrorTileset();
 	tile GetErrorTile();
 }

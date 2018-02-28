@@ -270,7 +270,7 @@ namespace ortho_terrain
 		}
 	}
 
-	const resources::terrain_settings &GetTerrainSettings()
+	const resources::terrain_settings *GetTerrainSettings()
 	{
 		auto settings_id = hades::data::GetUid(resources::terrain_settings_name);
 		if (!hades::data::Exists(settings_id))
@@ -282,7 +282,7 @@ namespace ortho_terrain
 
 		try
 		{
-			return *hades::data::Get<resources::terrain_settings>(settings_id);
+			return hades::data::Get<resources::terrain_settings>(settings_id);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{
@@ -295,7 +295,7 @@ namespace ortho_terrain
 	hades::data::UniqueId GetErrorTerrain()
 	{
 		auto settings = GetTerrainSettings();
-		return settings.error_terrain;
+		return settings->error_terrain;
 	}
 
 

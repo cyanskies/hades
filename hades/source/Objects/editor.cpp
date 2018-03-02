@@ -6,6 +6,7 @@
 #include "TGUI/Widgets/MenuBar.hpp"
 #include "TGUI/Widgets/Button.hpp"
 #include "TGUI/Widgets/EditBox.hpp"
+#include "TGUI/Widgets/HorizontalLayout.hpp"
 #include "TGUI/Widgets/HorizontalWrap.hpp"
 #include "TGUI/Widgets/Label.hpp"
 #include "TGUI/Widgets/Panel.hpp"
@@ -903,12 +904,42 @@ namespace objects
 		_updateSelector(info);
 	}
 
-
-	void object_editor::_updateInfoBox(const object_info &obj)
+	//returns the container with both editboxes, and the ptr to the value editbox
+	std::tuple<tgui::Container::Ptr, tgui::EditBox::Ptr> MakePropertyEditRow(hades::types::string name, hades::types::string value_str)
 	{
-		//clear the info box
-		_clearObjectSelected();
+		auto container = tgui::HorizontalLayout::create();
 
+		static const auto text_size = 24u;
+
+		auto name_box = tgui::EditBox::create();
+		name_box->setText(name);
+		name_box->setReadOnly();
+		name_box->setTextSize(text_size);
+		
+		auto value_box = tgui::EditBox::create();
+		value_box->setText(value_str);
+		value_box->setTextSize(text_size);
+
+		container->add(name_box);
+		container->add(value_box);
+
+		return { container, value_box };
+	}
+
+	template<class T>
+	tgui::Container::Ptr MakePropertyScalar(const hades::resources::curve *c, hades::resources::curve_default_value v)
+	{
+
+	}
+
+	template<class T>
+	tgui::Container::Ptr MakePropertyVector(const hades::resources::curve *c, hades::resources::curve_default_value v)
+	{
+
+	}
+
+	void object_editor::_updateInfoBox(object_info &obj)
+	{
 		using namespace std::string_literals;
 		auto message = "Selected: "s;
 		auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
@@ -919,7 +950,52 @@ namespace objects
 			message += obj.name + "(" + obj_type_name + ")";
 
 		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
+		selectedInfoBox->removeAllWidgets();
 		const auto label = tgui::Label::create(message);
+		selectedInfoBox->add(label);
+
+		//add the immutable id property
+		auto id_property = MakePropertyEditRow("Id", hades::to_string(obj.id));
+		selectedInfoBox->add(std::get<tgui::Container::Ptr>(id_property));
+		//add the optional name property
+		auto[name_container, name_edit] = MakePropertyEditRow("Name", obj.name);
+
+		auto &used_names = _usedObjectNames;
+		auto name_change_lamb = [this, &obj, &used_names, edit = name_edit] {
+			auto value = edit->getText();
+			auto &current_value = obj.name;
+
+			if (value == current_value)
+				return;
+
+			if (value == "")
+			{
+				used_names.erase(current_value);
+				current_value = value;
+				return;
+			}
+			//if the name has already been used
+			if (used_names.find(value) != std::end(used_names))
+			{
+				edit->setText(current_value);
+				return;
+			}
+
+			if (!current_value.empty())
+				used_names.erase(current_value);
+
+			used_names.insert(value);
+			current_value = value;
+
+			_updateInfoBox(obj);
+		};
+
+		name_edit->onReturnKeyPress.connect(name_change_lamb);
+		name_edit->onUnfocus.connect(name_change_lamb);
+
+		selectedInfoBox->add(name_container);
+		//add the special cased position, and size properties
+		//add all other properties
 	}
 
 	void object_editor::_updateSelector(const object_info &info)

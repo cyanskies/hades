@@ -13,3 +13,6 @@
 [submodule "deps/tgui"]
 	path = deps/tgui
 	url = https://github.com/cyanskies/tgui
+[submodule "deps/sfgui"]
+	path = deps/sfgui
+	url = https://github.com/cyanskies/sfgui

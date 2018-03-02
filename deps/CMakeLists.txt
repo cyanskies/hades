@@ -2,6 +2,7 @@ add_subdirectory(sfml)
 
 set(SFGUI_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(SFML_STATIC_LIBRARIES ON CACHE BOOL "")
+set(SFGUI_BUILD_EXAMPLES OFF CACHE BOOL "")
 
 add_subdirectory(sfgui)
 

@@ -16,8 +16,6 @@ namespace hades
 	class StateManager
 	{
 	public:
-		StateManager() : _target(nullptr) {}
-
 		State *getActiveState();
 
 		//Remove state from the top of the stack
@@ -28,9 +26,6 @@ namespace hades
 		//This allows the current state to finish before transfering or for a loading state to be added between the two.
 		void pushUnder(std::unique_ptr<State> state);
 
-		//Set the target to be used for Gui rendering
-		void setGuiTarget(sf::RenderTarget &target);
-
 		//deactivates the statemanager, this will drop all states, and drop utility handles to the console and resource manager
 		void drop();
 	private:
@@ -39,8 +34,6 @@ namespace hades
 
 		State *getValidState(state_iter state);
 		state_vector _states;
-
-		sf::RenderTarget *_target;
 	};
 }//hades
 

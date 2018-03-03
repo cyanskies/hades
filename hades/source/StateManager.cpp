@@ -29,10 +29,7 @@ namespace hades
 	{
 		state->setStateManangerCallbacks([this](std::unique_ptr<hades::State> state) {this->push(std::move(state));},
 			[this](std::unique_ptr<hades::State> state) {this->pushUnder(std::move(state)); });
-
-		assert(_target);
-		state->setGuiTarget(*_target);
-
+		
 		if(!_states.empty())
 			_states.back()->dropFocus();
 
@@ -49,16 +46,6 @@ namespace hades
 
 		//then swap it with the one underneath
 		std::iter_swap(_states.rbegin(), _states.rbegin() + 1);
-	}
-
-	void StateManager::setGuiTarget(sf::RenderTarget &target)
-	{
-		assert(_target == nullptr);
-		_target = &target;
-
-		//reset gui target for all current states
-		for (auto &s : _states)
-			s->setGuiTarget(target);
 	}
 
 	void StateManager::drop()
@@ -85,7 +72,6 @@ namespace hades
 			(*state)->initDone();
 			//make sure the gui has the correct view size
 			auto w = console::GetInt("vid_width", 800), h = console::GetInt("vid_height", 600);
-			(*state)->setGuiView(sf::View({ 0.f, 0.f, static_cast<float>(*w), static_cast<float>(*h) }));
 		}
 
 		//if this state is paused, resume
@@ -95,7 +81,6 @@ namespace hades
 			(*state)->reinit();
 			//make sure the gui has the correct view size
 			auto w = console::GetInt("vid_width", 800), h = console::GetInt("vid_height", 600);
-			(*state)->setGuiView(sf::View({ 0.f, 0.f, static_cast<float>(*w), static_cast<float>(*h) }));
 		}
 
 		//return this state.

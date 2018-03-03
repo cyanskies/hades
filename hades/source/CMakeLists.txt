@@ -19,7 +19,6 @@ set(HADES_SRC
 	GameInterface.cpp
 	GameRenderer.cpp
 	GridArea.cpp
-	GuiLoaders.cpp
 	Input.cpp
 	Logging.cpp
 	main.cpp
@@ -33,9 +32,6 @@ set(HADES_SRC
 	System.cpp
 	TimerManager.cpp
 	Types.cpp
-	Gui/Gui.cpp
-	Gui/SimpleHorizontalLayout.cpp
-	Gui/SimpleVerticalLayout.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
@@ -50,11 +46,6 @@ set(HADES_SRC
 	Tiles/serialise.cpp
 	Tiles/tiles.cpp
 )
-
-source_group("Gui" FILES
-	Gui/Gui.cpp
-	Gui/SimpleHorizontalLayout.cpp
-	Gui/SimpleVerticalLayout.cpp)
 
 source_group("Tiles" FILES
 	Tiles/editor.cpp

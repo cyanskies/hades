@@ -120,7 +120,6 @@ namespace hades
 		registerServerVariables(&_console);
 
 		//load config files and overwrite any updated settings
-		_states.setGuiTarget(_window);
 
 		registerConsoleCommands();
 

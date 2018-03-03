@@ -5,7 +5,7 @@
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
-#include "TGUI/Widgets/ClickableWidget.hpp"
+#include "SFGUI/Widget.hpp"
 
 #include "Hades/GridArea.hpp"
 #include "Hades/Properties.hpp"
@@ -23,13 +23,6 @@ namespace objects
 {
 	namespace editor
 	{
-		const hades::types::string object_editor_layout = "editor-layout",
-			//object selector must be a container, the app will place the object type combobox in it,
-			// and objects beneath it.
-			object_selector_panel = "object-selector",
-			selection_info = "selection-info",
-			toolbar_panel = "toolbar-container";
-
 		//screen view height
 		// set editor_height to override this
 		const hades::types::int32 view_height = 240;
@@ -50,8 +43,8 @@ namespace objects
 
 		using OnClickFunc = std::function<void(void)>;
 
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc, const hades::resources::animation *icon = nullptr);
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
+		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc, const hades::resources::animation *icon = nullptr);
+		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
 	}
 
 	struct editor_object_info : public object_info
@@ -138,6 +131,11 @@ namespace objects
 
 		//core map drawing variables
 		sf::View GameView;
+
+		//GUI elements
+		sfg::Widget::Ptr MenuBar;
+		sfg::Widget::Ptr ToolBar;
+		sfg::Widget::Ptr ObjectWindow;
 
 	private:
 		//loads the gui from the editor-layout resource

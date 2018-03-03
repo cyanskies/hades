@@ -1,5 +1,7 @@
 #include "Objects/editor.hpp"
 
+#include "SFGUI/Widgets.hpp"
+
 #include "Hades/Animation.hpp"
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
@@ -29,40 +31,27 @@ namespace objects
 	{
 		//TODO: the only way to accept function as reference without blocking 
 		//lambdas is to move this to the header and accept the function by template
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
+		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 		{
-			tgui::ClickableWidget::Ptr p;
-			//TODO: editor-button-size console vars
-			auto button_size = 40;
+			auto button = sfg::Button::Create(name);
+			
 			if (icon)
 			{
 				auto [x ,y] = hades::animation::GetFrame(icon, sf::Time::Zero);
-				auto texture = tgui::Texture(icon->tex->value, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
-				p = tgui::Picture::create(texture);
-				//TODO: create button pressed effect for icon buttons
-			}
-			else
-				p = tgui::Button::create(name);
-
-			p->setSize({ button_size, button_size });
-			
-			//if we have a name set it as a tooltip
-			if (!name.empty())
-			{
-				auto panel = tgui::Panel::create();
-				auto lbl = tgui::Label::create(name);
-				panel->add(lbl);
-				panel->setSize({tgui::bindWidth(lbl), tgui::bindHeight(lbl)});
-				p->setToolTip(panel);
+				auto tex_img = icon->tex->value.copyToImage();
+				sf::Image img;
+				img.create(icon->width, icon->height, sf::Color::Magenta);
+				img.copy(tex_img, 0u, 0u, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
+				button->SetImage(sfg::Image::Create(img));
 			}
 
-			if(func)
-				p->onClick.connect(func);
+			if (func)
+				button->GetSignal(sfg::Widget::OnLeftClick).Connect(func);
 
-			return p;
+			return button;
 		}
 		
-		tgui::ClickableWidget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
+		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
 		{
 			return MakeObjectButton(name, OnClickFunc(), icon);
 		}
@@ -239,7 +228,7 @@ namespace objects
 	void object_editor::FillGui()
 	{
 		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
-
+		/*
 		//===================
 		// Add ToolBar Icons
 		//===================
@@ -344,6 +333,7 @@ namespace objects
 		object_combox->setSelectedItem(all_str);
 
 		_clearObjectSelected();
+		*/
 	}
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
@@ -506,6 +496,7 @@ namespace objects
 
 	void object_editor::OnMenuClick(sf::String menu)
 	{
+		/*
 		if (menu == menu_names::new_menu)
 		{
 			auto new_dialog = _gui.get<tgui::Container>(dialog_names::new_dialog);
@@ -527,6 +518,7 @@ namespace objects
 		}
 		else if (menu == menu_names::reset_gui)
 			reinit();
+		*/
 	}
 
 	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
@@ -593,6 +585,7 @@ namespace objects
 
 	void object_editor::_createGui()
 	{
+		/*
 		//====================
 		//set up the object_editor UI
 		//====================
@@ -754,10 +747,12 @@ namespace objects
 			auto new_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
 			new_container->hide();
 		});
+		*/
 	}
 
 	void object_editor::_addObjects(std::vector<const resources::object*> objects)
 	{
+		/*
 		auto container = _gui.get<tgui::Container>(object_button_container);
 
 		container->removeAllWidgets();
@@ -770,6 +765,7 @@ namespace objects
 
 			container->add(b);
 		}
+		*/
 	}
 
 	void object_editor::_updateGridHighlight(const sf::RenderTarget &target, object_editor::MousePos pos)
@@ -892,42 +888,9 @@ namespace objects
 		_updateSelector(info);
 	}
 
-	//returns the container with both editboxes, and the ptr to the value editbox
-	std::tuple<tgui::Container::Ptr, tgui::EditBox::Ptr> MakePropertyEditRow(hades::types::string name, hades::types::string value_str)
-	{
-		auto container = tgui::HorizontalLayout::create();
-
-		static const auto text_size = 24u;
-
-		auto name_box = tgui::EditBox::create();
-		name_box->setText(name);
-		name_box->setReadOnly();
-		name_box->setTextSize(text_size);
-		
-		auto value_box = tgui::EditBox::create();
-		value_box->setText(value_str);
-		value_box->setTextSize(text_size);
-
-		container->add(name_box);
-		container->add(value_box);
-
-		return { container, value_box };
-	}
-
-	template<class T>
-	tgui::Container::Ptr MakePropertyScalar(const hades::resources::curve *c, hades::resources::curve_default_value v)
-	{
-
-	}
-
-	template<class T>
-	tgui::Container::Ptr MakePropertyVector(const hades::resources::curve *c, hades::resources::curve_default_value v)
-	{
-
-	}
-
 	void object_editor::_updateInfoBox(object_info &obj)
 	{
+		/*
 		using namespace std::string_literals;
 		auto message = "Selected: "s;
 		auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
@@ -984,6 +947,7 @@ namespace objects
 		selectedInfoBox->add(name_container);
 		//add the special cased position, and size properties
 		//add all other properties
+		*/
 	}
 
 	void object_editor::_updateSelector(const object_info &info)
@@ -1014,11 +978,13 @@ namespace objects
 
 	void object_editor::_clearObjectSelected()
 	{
+		/*
 		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
 		selectedInfoBox->removeAllWidgets();
 
 		static const auto message = "Selected: \"Nothing\"";
 		const auto label = tgui::Label::create(message);
 		selectedInfoBox->add(label);
+		*/
 	}
 }

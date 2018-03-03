@@ -276,20 +276,23 @@ namespace hades
 				thisFrame += dt;
 			}
 
-			_window.clear();
-			//drawing must pass the frame time, so that the renderer can
-			//interpolate between frames
-			auto totalFrameTime = thisFrame + accumulator;
-			activeState->draw(_window, totalFrameTime);
-			activeState->updateGui(totalFrameTime);
-			_sfgui.Display(_window);
-			//render the console interface if it is active.
-			if (_consoleView)
-				_consoleView->update();
+			if (_window.isOpen())
+			{
+				_window.clear();
+				//drawing must pass the frame time, so that the renderer can
+				//interpolate between frames
+				auto totalFrameTime = thisFrame + accumulator;
+				activeState->draw(_window, totalFrameTime);
+				activeState->updateGui(totalFrameTime);
+				_sfgui.Display(_window);
+				//render the console interface if it is active.
+				if (_consoleView)
+					_consoleView->update();
 
-			_window.draw(_overlayMan);
+				_window.draw(_overlayMan);
 
-			_window.display();
+				_window.display();
+			}
 		}
 
 		return EXIT_SUCCESS;

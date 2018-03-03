@@ -6,6 +6,7 @@
 #include "SFML/Graphics/Sprite.hpp"
 
 #include "SFGUI/Widget.hpp"
+#include "SFGUI/Box.hpp"
 
 #include "Hades/GridArea.hpp"
 #include "Hades/Properties.hpp"
@@ -134,7 +135,7 @@ namespace objects
 
 		//GUI elements
 		sfg::Widget::Ptr MenuBar;
-		sfg::Widget::Ptr ToolBar;
+		sfg::Box::Ptr ToolBar;
 		sfg::Widget::Ptr ObjectWindow;
 
 	private:

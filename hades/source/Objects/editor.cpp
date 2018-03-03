@@ -228,13 +228,21 @@ namespace objects
 	void object_editor::FillGui()
 	{
 		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
-		/*
 		//===================
 		// Add ToolBar Icons
 		//===================
-		//get the toolbar container
-		auto toolbar_panel = _gui.get<tgui::Container>(editor::toolbar_panel);
+		auto window_width = hades::console::GetInt("vid_width", 800);
 
+		using Style = sfg::Window::Style;
+		const auto toolbar_style = Style::BACKGROUND | Style::SHADOW;
+		auto toolbar_window = sfg::Window::Create();
+		ToolBar = sfg::Box::Create();
+		toolbar_window->Add(ToolBar);
+		_gui.Add(toolbar_window);
+		//common editor items
+
+		//new, save, load, quit, etc?
+		
 		//empty mouse button
 		auto empty_button = editor::MakeObjectButton("empty", [this]() {
 			EditMode = editor::EditMode::OBJECT;
@@ -242,8 +250,9 @@ namespace objects
 			_clearObjectSelected();
 		}, editor_settings->selection_mode_icon);
 
-		toolbar_panel->add(empty_button);
+		ToolBar->Add(empty_button);
 
+		/*
 		//=========================
 		// Toolbar Grid Settings
 		//=========================
@@ -585,40 +594,16 @@ namespace objects
 
 	void object_editor::_createGui()
 	{
-		/*
 		//====================
 		//set up the object_editor UI
 		//====================
 		
 		// remove any gui that might currently be loaded
-		_gui.removeAllWidgets();
-
-		//==================
-		//load the object_editor UI
-		//==================
-		auto layout_id = hades::data::GetUid(editor::object_editor_layout);
-		if (!hades::data::Exists(layout_id))
-		{
-			LOGERROR("No GUI layout exists for " + std::string(editor::object_editor_layout));
-			kill();
-			return;
-		}
-
-		auto layout = hades::data::Get<hades::resources::string>(layout_id);
-		try
-		{
-			_gui.loadWidgetsFromStream(std::stringstream(layout->value));
-		}
-		catch (tgui::Exception &e)
-		{
-			LOGERROR(e.what());
-			kill();
-			return;
-		}
+		_gui.RemoveAll();
 
 		//let child classes start adding their own elements
 		FillGui();
-
+		/*
 		//===========
 		//add menubar
 		//===========	

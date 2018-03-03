@@ -7,7 +7,7 @@
 #include "SFML/Window/Joystick.hpp"
 #include "SFML/Window/Window.hpp"
 
-#include "TGUI/Gui.hpp"
+#include "SFGUI/Desktop.hpp"
 
 #include "Hades/Input.hpp"
 
@@ -40,14 +40,11 @@ namespace hades
 		//resumes state
 		void grabFocus();
 		
+		//keep the gui working
 		bool guiInput(sf::Event&);
-		void setGuiTarget(sf::RenderTarget &target);
-		void setGuiView(sf::View v);
-		//draw gui, called after normal draw.
-		void drawGui();
+		void updateGui(sf::Time frameTime);
 
 		//functions for states to overide to define behaviour
-
 		//main state loop
 		virtual void init() = 0; //start all the state logic, this is for setting up game state
 		virtual bool handleEvent(const Event&) = 0; //handle any events you want
@@ -66,7 +63,7 @@ namespace hades
 		virtual void resume() = 0; //restart any custom timers, this state is active again and being drawn, recieving input
 	
 	protected:
-		tgui::Gui _gui;
+		sfg::Desktop _gui;
 
 		push_func PushState, PushStateUnder;
 

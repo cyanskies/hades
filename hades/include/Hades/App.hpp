@@ -6,6 +6,8 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
+#include "SFGUI/SFGUI.hpp"
+
 #include "Hades/Console.hpp"
 #include "Hades/data_system.hpp"
 #include "Hades/Debug.hpp"
@@ -87,6 +89,8 @@ namespace hades
 		bool _sfVSync;								///< Flag for SFML sync
 
 		ConsoleView *_consoleView;					///< The console interation devtool.
+
+		sfg::SFGUI _sfgui;							///< SFGUI object
 	};
 
 	bool LoadCommand(CommandList&, std::string_view, console::function);

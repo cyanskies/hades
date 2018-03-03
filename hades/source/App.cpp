@@ -20,7 +20,6 @@
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/simple_resources.hpp"
-#include "Gui/Gui.hpp"
 
 namespace hades
 {
@@ -115,9 +114,6 @@ namespace hades
 
 		resourceTypes(_dataMan);
 
-		//register custom TGUI widgets
-		gui::RegisterGuiElements();
-
 		//load defualt console settings
 		registerVariables(&_console);
 		registerVidVariables(&_console);
@@ -165,7 +161,7 @@ namespace hades
 
 		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
-		LOG("TGUI " + std::to_string(TGUI_VERSION_MAJOR) + "." + std::to_string(TGUI_VERSION_MINOR) + "." + std::to_string(TGUI_VERSION_PATCH));
+		LOG("SFGUI " + std::to_string(SFGUI_MAJOR_VERSION) + "." + std::to_string(SFGUI_MINOR_VERSION) + "." + std::to_string(SFGUI_REVISION_VERSION));
 		LOG("zlib " + types::string(ZLIB_VERSION));
 		//yaml-cpp doesn't currently have a version macro
 		LOG("yaml-cpp 0.5.3"); //TODO: base this off the version compiled
@@ -284,9 +280,10 @@ namespace hades
 			_window.clear();
 			//drawing must pass the frame time, so that the renderer can
 			//interpolate between frames
-			activeState->draw(_window, thisFrame + accumulator);
-			activeState->drawGui();
-
+			auto totalFrameTime = thisFrame + accumulator;
+			activeState->draw(_window, totalFrameTime);
+			activeState->updateGui(totalFrameTime);
+			_sfgui.Display(_window);
 			//render the console interface if it is active.
 			if (_consoleView)
 				_consoleView->update();
@@ -345,7 +342,6 @@ namespace hades
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
-				_states.getActiveState()->setGuiView(sf::View({0.f , 0.f, static_cast<float>(e.size.width), static_cast<float>(e.size.height)}));
 				activeState->handleEvent(std::make_tuple(true, e));		// let the gamestate see the changed window size
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate

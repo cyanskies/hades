@@ -1,17 +1,5 @@
 #include "Objects/editor.hpp"
 
-#include "TGUI/Animation.hpp"
-#include "TGUI/Widgets/ChildWindow.hpp"
-#include "TGUI/Widgets/ComboBox.hpp"
-#include "TGUI/Widgets/MenuBar.hpp"
-#include "TGUI/Widgets/Button.hpp"
-#include "TGUI/Widgets/EditBox.hpp"
-#include "TGUI/Widgets/HorizontalLayout.hpp"
-#include "TGUI/Widgets/HorizontalWrap.hpp"
-#include "TGUI/Widgets/Label.hpp"
-#include "TGUI/Widgets/Panel.hpp"
-#include "TGUI/Widgets/Picture.hpp"
-
 #include "Hades/Animation.hpp"
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"

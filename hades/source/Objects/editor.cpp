@@ -27,36 +27,6 @@ bool ShowSelector(objects::object_editor::EditMode_t mode, objects::editor::Obje
 
 namespace objects
 {
-	namespace editor
-	{
-		//TODO: the only way to accept function as reference without blocking 
-		//lambdas is to move this to the header and accept the function by template
-		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
-		{
-			auto button = sfg::Button::Create(name);
-			
-			if (icon)
-			{
-				auto [x ,y] = hades::animation::GetFrame(icon, sf::Time::Zero);
-				auto tex_img = icon->tex->value.copyToImage();
-				sf::Image img;
-				img.create(icon->width, icon->height, sf::Color::Magenta);
-				img.copy(tex_img, 0u, 0u, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
-				button->SetImage(sfg::Image::Create(img));
-			}
-
-			if (func)
-				button->GetSignal(sfg::Widget::OnLeftClick).Connect(func);
-
-			return button;
-		}
-		
-		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon)
-		{
-			return MakeObjectButton(name, OnClickFunc(), icon);
-		}
-	}
-
 	void object_editor::init()
 	{
 		//access the console properties used by the editor
@@ -236,58 +206,55 @@ namespace objects
 		using Style = sfg::Window::Style;
 		const auto toolbar_style = Style::BACKGROUND;
 		auto toolbar_window = sfg::Window::Create(toolbar_style);
-		const auto toolbar_height = 40.f;
+		const auto toolbar_height = 20.f;
 		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
-		ToolBar = sfg::Box::Create();
-		toolbar_window->Add(ToolBar);
+		_toolBar = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		toolbar_window->Add(_toolBar);
 		_gui.Add(toolbar_window);
 		//common editor items
 
 		//new, save, load, quit, etc?
 		
+		AddSeparatorToToolBar();
+
 		//empty mouse button
-		auto empty_button = editor::MakeObjectButton("empty", [this]() {
+		AddButtonToToolBar("selector", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
 			_clearObjectSelected();
 		}, editor_settings->selection_mode_icon);
 
-		ToolBar->Add(empty_button);
-
-		/*
 		//=========================
 		// Toolbar Grid Settings
 		//=========================
+
+		//add seperator to sperate the grid buttons from the generic editor buttons
+		AddSeparatorToToolBar();
+		
 		if (editor_settings->show_grid_settings)
 		{
 			//show grid toggle
-			auto grid_toggle = editor::MakeObjectButton("grid toggle", [this]() {
+			AddButtonToToolBar("grid toggle", [this]() {
 				hades::console::SetProperty(editor_grid_enabled, !*_gridEnabled);
 			}, editor_settings->grid_show_icon);
-
-			toolbar_panel->add(grid_toggle);
 
 			//if the max size is the same as the smallest size 
 			//then dont show the size related buttons
 			if (*_gridMaxSize > 1)
 			{
 				//shrink grid size
-				auto grid_shrink = editor::MakeObjectButton("grid shrink", [this]() {
+				AddButtonToToolBar("grid shrink", [this]() {
 					*_gridCurrentScale = std::max(--*_gridCurrentScale, 1);
 					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
 					_grid.setCellSize(_gridCurrentSize);
 				}, editor_settings->grid_shrink_icon);
 
-				toolbar_panel->add(grid_shrink);
-
 				//expand grid size
-				auto grid_grow = editor::MakeObjectButton("grid grow", [this]() {
+				AddButtonToToolBar("grid grow", [this]() {
 					*_gridCurrentScale = std::min(++*_gridCurrentScale, _gridMaxSize->load());
 					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
 					_grid.setCellSize(_gridCurrentSize);
 				}, editor_settings->grid_grow_icon);
-
-				toolbar_panel->add(grid_grow);
 			}
 
 			//if object snap isn't being force enabled/disabled,
@@ -296,14 +263,13 @@ namespace objects
 				|| *_object_snap == SnapToGrid::GRIDSNAP_ENABLED)
 			{
 				//snap to grid button
-				auto grid_snap_button = editor::MakeObjectButton("grid snap", [this]() {
+				AddButtonToToolBar("grid snap", [this]() {
 					*_object_snap = !*_object_snap;
 				}, editor_settings->grid_snap_icon);
-
-				toolbar_panel->add(grid_snap_button);
 			}
 		}
 
+		/*
 		//==============
 		// Add Objects
 		//==============
@@ -592,6 +558,47 @@ namespace objects
 				target.draw(drawable);
 			}, _objectPreview);
 		}
+	}
+
+	template <typename Button, typename Func>
+	auto CreateButton(hades::types::string name, Func func, const hades::resources::animation *icon)
+	{
+		auto button = Button::Create();
+
+		if (icon)
+		{
+			auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
+			auto tex_img = icon->tex->value.copyToImage();
+			sf::Image img;
+			img.create(icon->width, icon->height, sf::Color::Magenta);
+			img.copy(tex_img, 0u, 0u, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
+			button->SetImage(sfg::Image::Create(img));
+			button->SetLabel(sf::String());
+		}
+		else
+			button->SetLabel(name);
+
+		if (func)
+			button->GetSignal(sfg::Widget::OnLeftClick).Connect(func);
+
+		return button;
+	}
+
+	void object_editor::AddButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
+	{
+		auto button = CreateButton<sfg::Button>(name, func, icon);
+		_toolBar->Pack(button, false);
+	}
+
+	void object_editor::AddToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
+	{
+		auto button = CreateButton<sfg::ToggleButton>(name, func, icon);
+		_toolBar->Pack(button, false);
+	}
+
+	void object_editor::AddSeparatorToToolBar()
+	{
+		_toolBar->Pack(sfg::Separator::Create(sfg::Separator::Orientation::VERTICAL), false);
 	}
 
 	void object_editor::_createGui()

@@ -41,11 +41,6 @@ namespace objects
 			GROUP_DRAG,
 			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
-
-		using OnClickFunc = std::function<void(void)>;
-
-		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, OnClickFunc, const hades::resources::animation *icon = nullptr);
-		sfg::Widget::Ptr MakeObjectButton(hades::types::string name, const hades::resources::animation *icon = nullptr);
 	}
 
 	struct editor_object_info : public object_info
@@ -123,6 +118,11 @@ namespace objects
 		//draw the preview generated in GenerateDrawPreview
 		virtual void DrawPreview(sf::RenderTarget &target) const;
 
+		using OnClickFunc = std::function<void(void)>;
+		void AddButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon = nullptr);
+		void AddToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon = nullptr);
+		void AddSeparatorToToolBar();
+
 		//map file info
 		hades::types::string Mod = "./", Filename = "new.lvl";
 		sf::Vector2i MapSize = { 200, 200 };
@@ -134,8 +134,6 @@ namespace objects
 		sf::View GameView;
 
 		//GUI elements
-		sfg::Widget::Ptr MenuBar;
-		sfg::Box::Ptr ToolBar;
 		sfg::Widget::Ptr ObjectWindow;
 
 	private:
@@ -161,6 +159,10 @@ namespace objects
 
 		//when the mouse is released this object will be placed in the pointers position
 		void _setDragObject(const resources::object* o);
+
+		//gui variables
+		sfg::Box::Ptr _toolBar;
+
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing

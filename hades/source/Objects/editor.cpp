@@ -234,8 +234,10 @@ namespace objects
 		auto window_width = hades::console::GetInt("vid_width", 800);
 
 		using Style = sfg::Window::Style;
-		const auto toolbar_style = Style::BACKGROUND | Style::SHADOW;
-		auto toolbar_window = sfg::Window::Create();
+		const auto toolbar_style = Style::BACKGROUND;
+		auto toolbar_window = sfg::Window::Create(toolbar_style);
+		const auto toolbar_height = 40.f;
+		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
 		ToolBar = sfg::Box::Create();
 		toolbar_window->Add(ToolBar);
 		_gui.Add(toolbar_window);

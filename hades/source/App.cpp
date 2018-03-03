@@ -245,6 +245,9 @@ namespace hades
 		sf::Time currentTime = time.getElapsedTime();
 		sf::Time accumulator = sf::Time::Zero;
 
+		//this will allow rendering SFGUI objects even if sfml drawing hasn't been used yet.
+		_window.resetGLStates();
+
 		while(running && _window.isOpen())
 		{
 			State *activeState = _states.getActiveState();

@@ -5,8 +5,9 @@
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
-#include "SFGUI/Widget.hpp"
 #include "SFGUI/Box.hpp"
+#include "SFGUI/Widget.hpp"
+#include "SFGUI/ScrolledWindow.hpp"
 
 #include "Hades/GridArea.hpp"
 #include "Hades/Properties.hpp"
@@ -141,7 +142,7 @@ namespace objects
 		sf::View GameView;
 
 		//GUI elements
-		sfg::Widget::Ptr ObjectWindow;
+		sfg::ScrolledWindow::Ptr PalatteWindow;
 
 	private:
 		//loads the gui from the editor-layout resource
@@ -169,6 +170,7 @@ namespace objects
 
 		//gui variables
 		sfg::Box::Ptr _toolBar;
+		sfg::ScrolledWindow::Ptr _propertyWindow;
 
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 

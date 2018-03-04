@@ -193,30 +193,17 @@ namespace objects
 	void object_editor::pause() {}
 	void object_editor::resume() {}
 
-	const hades::types::string object_button_container = "object-button-container";
-
 	void object_editor::FillGui()
 	{
 		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
 		//===================
 		// Add ToolBar Icons
 		//===================
-		auto window_width = hades::console::GetInt("vid_width", 800);
-
-		using Style = sfg::Window::Style;
-		const auto toolbar_style = Style::BACKGROUND;
-		auto toolbar_window = sfg::Window::Create(toolbar_style);
-		const auto toolbar_height = 20.f;
-		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
-		_toolBar = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
-		toolbar_window->Add(_toolBar);
-		_gui.Add(toolbar_window);
-		//common editor items
 		
+		//common editor items
 		AddButtonToToolBar("new map", [this]() {
 			NewLevelDialog();
 		});
-
 
 		AddButtonToToolBar("new map", [this]() {
 			SaveLevelDialog();
@@ -625,6 +612,43 @@ namespace objects
 		
 		// remove any gui that might currently be loaded
 		_gui.RemoveAll();
+
+		auto window_width = hades::console::GetInt("vid_width", 800);
+
+		//====================
+		// ToolBar
+		//====================
+		using Style = sfg::Window::Style;
+		const auto toolbar_style = Style::BACKGROUND;
+		auto toolbar_window = sfg::Window::Create(toolbar_style);
+		const auto toolbar_height = 20.f;
+		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
+		_toolBar = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		toolbar_window->Add(_toolBar);
+		_gui.Add(toolbar_window);
+
+		//=============
+		// Left Panel
+		//=============
+		auto window_height = hades::console::GetInt("vid_height", 600);
+
+		auto left_panel = sfg::Window::Create();
+		left_panel->SetRequisition({ static_cast<float>(*window_height), 400.f });
+		left_panel->SetPosition({ 0.f, toolbar_height });
+
+		//create the layout for the left panel
+		auto left_panel_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		left_panel->Add(left_panel_box);
+
+		_gui.Add(left_panel);
+
+		//Palatte window
+		PalatteWindow = sfg::ScrolledWindow::Create();
+		left_panel_box->Pack(PalatteWindow);
+
+		//property window
+		_propertyWindow = sfg::ScrolledWindow::Create();
+		left_panel_box->Pack(_propertyWindow);
 
 		//let child classes start adding their own elements
 		FillGui();

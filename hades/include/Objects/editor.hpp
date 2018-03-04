@@ -104,7 +104,14 @@ namespace objects
 		//override to check if a location on the map is valid for the provided object
 		//ie. depending on terrain, or other objects
 		virtual bool ObjectValidLocation(sf::Vector2i position, const object_info &object) const;
-		//function for creating a new level
+
+		//create the dialogs for saving loading and new maps
+		//should set the MapSize variable when making a new level
+		virtual void NewLevelDialog();
+		virtual void SaveLevelDialog();
+		virtual void LoadLevelDialog();
+
+		//function called when creating a new level
 		virtual void NewLevel();
 		//function for saving the level, call provided Save<NAME> functions
 		virtual void SaveLevel() const;

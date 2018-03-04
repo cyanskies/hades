@@ -212,11 +212,20 @@ namespace objects
 		toolbar_window->Add(_toolBar);
 		_gui.Add(toolbar_window);
 		//common editor items
-
-		//new, save, load, quit, etc?
 		
-		AddSeparatorToToolBar();
+		AddButtonToToolBar("new map", [this]() {
+			NewLevelDialog();
+		});
 
+
+		AddButtonToToolBar("new map", [this]() {
+			SaveLevelDialog();
+		});
+
+		AddButtonToToolBar("new map", [this]() {
+			LoadLevelDialog();
+		});
+		
 		//empty mouse button
 		AddButtonToToolBar("selector", [this]() {
 			EditMode = editor::EditMode::OBJECT;
@@ -513,6 +522,13 @@ namespace objects
 		return std::none_of(std::begin(collisions), std::end(collisions),
 			[bounds](auto &&other) { return bounds.intersects(other.rect); });
 	}
+
+	void object_editor::NewLevelDialog()
+	{}
+	void object_editor::SaveLevelDialog()
+	{}
+	void object_editor::LoadLevelDialog()
+	{}
 
 	void object_editor::NewLevel()
 	{}

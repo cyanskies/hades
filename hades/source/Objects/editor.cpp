@@ -632,9 +632,11 @@ namespace objects
 		//=============
 		auto window_height = hades::console::GetInt("vid_height", 600);
 
-		auto left_panel = sfg::Window::Create();
-		left_panel->SetRequisition({ static_cast<float>(*window_height), 400.f });
-		left_panel->SetPosition({ 0.f, toolbar_height });
+		auto left_panel = sfg::Window::Create(toolbar_style);
+		auto panel_top = toolbar_window->GetAllocation().height;
+		const auto panel_width = 150.f;
+		left_panel->SetRequisition({ panel_width, static_cast<float>(*window_height) - panel_top });
+		left_panel->SetPosition({ 0.f, panel_top });
 
 		//create the layout for the left panel
 		auto left_panel_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
@@ -644,12 +646,18 @@ namespace objects
 
 		//Palatte window
 		PalatteWindow = sfg::ScrolledWindow::Create();
+		PalatteWindow->SetScrollbarPolicy(sfg::ScrolledWindow::ScrollbarPolicy::HORIZONTAL_NEVER | sfg::ScrolledWindow::ScrollbarPolicy::VERTICAL_AUTOMATIC);
 		left_panel_box->Pack(PalatteWindow);
 
+		auto combobox = sfg::ComboBox::Create();
+
+
+
+		/*
 		//property window
 		_propertyWindow = sfg::ScrolledWindow::Create();
 		left_panel_box->Pack(_propertyWindow);
-
+		*/
 		//let child classes start adding their own elements
 		FillGui();
 		/*

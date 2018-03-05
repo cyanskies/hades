@@ -151,6 +151,7 @@ namespace objects
 		void _createGui();
 
 		//functions for setting up the toolbar
+		void _addToToolBar(sfg::Widget::Ptr w);
 		void _addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
 		void _addToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
 		void _addSeparatorToToolBar();
@@ -177,6 +178,7 @@ namespace objects
 
 		//gui variables
 		sfg::Box::Ptr _toolBar;
+		sfg::Box::Ptr _toolBarIconBox;
 		sfg::ScrolledWindow::Ptr _propertyWindow;
 
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;

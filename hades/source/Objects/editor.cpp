@@ -198,12 +198,16 @@ namespace objects
 			NewLevelDialog();
 		}, nullptr);
 
-		Button("new map", [this]() {
+		Button("save map", [this]() {
 			SaveLevelDialog();
 		}, nullptr);
 
-		Button("new map", [this]() {
+		Button("load map", [this]() {
 			LoadLevelDialog();
+		}, nullptr);
+
+		Button("Exit", [this]() {
+			;
 		}, nullptr);
 
 		//empty mouse button
@@ -559,6 +563,22 @@ namespace objects
 		}
 	}
 
+	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
+	{
+		static const auto window_width = hades::console::GetInt("vid_width", 800);
+		auto toolbar_req = _toolBarIconBox->GetAllocation();
+		auto req = w->GetAllocation();
+		//if the current line of icons is full
+		//add a new line
+		if (req.width + toolbar_req.width > *window_width)
+		{
+			_toolBarIconBox = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+			_toolBar->PackEnd(_toolBarIconBox);
+		}
+
+		_toolBarIconBox->PackEnd(w, false);
+	}
+
 	template <typename Button, typename Func>
 	auto CreateButton(hades::types::string name, Func func, const hades::resources::animation *icon)
 	{
@@ -585,19 +605,17 @@ namespace objects
 
 	void object_editor::_addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 	{
-		auto button = CreateButton<sfg::Button>(name, func, icon);
-		_toolBar->PackEnd(button, false);
+		_addToToolBar(CreateButton<sfg::Button>(name, func, icon));
 	}
 
 	void object_editor::_addToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 	{
-		auto button = CreateButton<sfg::ToggleButton>(name, func, icon);
-		_toolBar->PackEnd(button, false);
+		_addToToolBar(CreateButton<sfg::ToggleButton>(name, func, icon));
 	}
 
 	void object_editor::_addSeparatorToToolBar()
 	{
-		_toolBar->Pack(sfg::Separator::Create(sfg::Separator::Orientation::VERTICAL), false);
+		_addToToolBar(sfg::Separator::Create(sfg::Separator::Orientation::VERTICAL));
 	}
 
 	void object_editor::_createGui()
@@ -619,7 +637,9 @@ namespace objects
 		auto toolbar_window = sfg::Window::Create(toolbar_style);
 		const auto toolbar_height = 20.f;
 		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
-		_toolBar = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		_toolBar = sfg::Box::Create();
+		_toolBarIconBox = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		_toolBar->PackEnd(_toolBarIconBox, false);
 		toolbar_window->Add(_toolBar);
 		_gui.Add(toolbar_window);
 

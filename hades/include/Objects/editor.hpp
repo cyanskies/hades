@@ -85,6 +85,12 @@ namespace objects
 		//first call your paren't classes impl of this function
 		// then add whatever you want to the gui
 		// ToolBar buttons
+		using OnClickFunc = std::function<void(void)>;
+		using AddToggleButtonFunc = std::function<void(hades::types::string, OnClickFunc, const hades::resources::animation*)>;
+		using AddButtonFunc = AddToggleButtonFunc;
+		using AddSeperatorFunc = std::function<void(void)>;
+		virtual void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc);
+
 		// Menu Options
 		virtual void FillGui();
 
@@ -126,11 +132,6 @@ namespace objects
 		//draw the preview generated in GenerateDrawPreview
 		virtual void DrawPreview(sf::RenderTarget &target) const;
 
-		using OnClickFunc = std::function<void(void)>;
-		void AddButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon = nullptr);
-		void AddToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon = nullptr);
-		void AddSeparatorToToolBar();
-
 		//map file info
 		hades::types::string Mod = "./", Filename = "new.lvl";
 		sf::Vector2i MapSize = { 200, 200 };
@@ -148,6 +149,12 @@ namespace objects
 		//loads the gui from the editor-layout resource
 		//then sets up all the generic UI elements
 		void _createGui();
+
+		//functions for setting up the toolbar
+		void _addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
+		void _addToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
+		void _addSeparatorToToolBar();
+
 		void _newMap();
 		void _addObjects(std::vector<const resources::object*> objects);
 		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);

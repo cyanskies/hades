@@ -10,9 +10,6 @@
 
 #include "Objects/resources.hpp"
 
-//map size in tiles
-const hades::types::uint32 map_height = 100, map_width = 100;
-
 //scrolling values
 const hades::types::int32 scroll_margin = 20,
 					scroll_rate = 4;
@@ -193,28 +190,24 @@ namespace objects
 	void object_editor::pause() {}
 	void object_editor::resume() {}
 
-	void object_editor::FillGui()
+	void object_editor::FillToolBar(AddToggleButtonFunc ToggleButton, AddButtonFunc Button, AddSeperatorFunc Seperator)
 	{
 		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
-		//===================
-		// Add ToolBar Icons
-		//===================
-		
 		//common editor items
-		AddButtonToToolBar("new map", [this]() {
+		Button("new map", [this]() {
 			NewLevelDialog();
-		});
+		}, nullptr);
 
-		AddButtonToToolBar("new map", [this]() {
+		Button("new map", [this]() {
 			SaveLevelDialog();
-		});
+		}, nullptr);
 
-		AddButtonToToolBar("new map", [this]() {
+		Button("new map", [this]() {
 			LoadLevelDialog();
-		});
-		
+		}, nullptr);
+
 		//empty mouse button
-		AddButtonToToolBar("selector", [this]() {
+		Button("selector", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
 			_clearObjectSelected();
@@ -225,12 +218,12 @@ namespace objects
 		//=========================
 
 		//add seperator to sperate the grid buttons from the generic editor buttons
-		AddSeparatorToToolBar();
-		
+		Seperator();
+
 		if (editor_settings->show_grid_settings)
 		{
 			//show grid toggle
-			AddButtonToToolBar("grid toggle", [this]() {
+			Button("grid toggle", [this]() {
 				hades::console::SetProperty(editor_grid_enabled, !*_gridEnabled);
 			}, editor_settings->grid_show_icon);
 
@@ -239,14 +232,14 @@ namespace objects
 			if (*_gridMaxSize > 1)
 			{
 				//shrink grid size
-				AddButtonToToolBar("grid shrink", [this]() {
+				Button("grid shrink", [this]() {
 					*_gridCurrentScale = std::max(--*_gridCurrentScale, 1);
 					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
 					_grid.setCellSize(_gridCurrentSize);
 				}, editor_settings->grid_shrink_icon);
 
 				//expand grid size
-				AddButtonToToolBar("grid grow", [this]() {
+				Button("grid grow", [this]() {
 					*_gridCurrentScale = std::min(++*_gridCurrentScale, _gridMaxSize->load());
 					_gridCurrentSize = *_gridCurrentScale * *_gridMinSize;
 					_grid.setCellSize(_gridCurrentSize);
@@ -259,12 +252,15 @@ namespace objects
 				|| *_object_snap == SnapToGrid::GRIDSNAP_ENABLED)
 			{
 				//snap to grid button
-				AddButtonToToolBar("grid snap", [this]() {
+				Button("grid snap", [this]() {
 					*_object_snap = !*_object_snap;
 				}, editor_settings->grid_snap_icon);
 			}
 		}
+	}
 
+	void object_editor::FillGui()
+	{
 		/*
 		//==============
 		// Add Objects
@@ -587,19 +583,19 @@ namespace objects
 		return button;
 	}
 
-	void object_editor::AddButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
+	void object_editor::_addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 	{
 		auto button = CreateButton<sfg::Button>(name, func, icon);
-		_toolBar->Pack(button, false);
+		_toolBar->PackEnd(button, false);
 	}
 
-	void object_editor::AddToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
+	void object_editor::_addToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)
 	{
 		auto button = CreateButton<sfg::ToggleButton>(name, func, icon);
-		_toolBar->Pack(button, false);
+		_toolBar->PackEnd(button, false);
 	}
 
-	void object_editor::AddSeparatorToToolBar()
+	void object_editor::_addSeparatorToToolBar()
 	{
 		_toolBar->Pack(sfg::Separator::Create(sfg::Separator::Orientation::VERTICAL), false);
 	}
@@ -626,6 +622,15 @@ namespace objects
 		_toolBar = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
 		toolbar_window->Add(_toolBar);
 		_gui.Add(toolbar_window);
+
+		//give decendants a chance to add to the toolbar
+		FillToolBar([this](hades::types::string s, OnClickFunc f, const hades::resources::animation* a) {
+			_addToggleButtonToToolBar(s, f, a);
+		}, [this](hades::types::string s, OnClickFunc f, const hades::resources::animation* a) {
+			_addButtonToToolBar(s, f, a);
+		}, [this] {
+			_addSeparatorToToolBar();
+		});
 
 		//=============
 		// Left Panel

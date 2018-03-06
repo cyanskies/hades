@@ -192,7 +192,7 @@ namespace objects
 
 	void object_editor::FillToolBar(AddToggleButtonFunc ToggleButton, AddButtonFunc Button, AddSeperatorFunc Seperator)
 	{
-		auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
+		const auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
 		//common editor items
 		Button("new map", [this]() {
 			NewLevelDialog();
@@ -207,7 +207,8 @@ namespace objects
 		}, nullptr);
 
 		Button("Exit", [this]() {
-			;
+			//TODO: add warning dialog
+			kill();
 		}, nullptr);
 
 		//empty mouse button
@@ -586,8 +587,8 @@ namespace objects
 
 		if (icon)
 		{
-			auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
-			auto tex_img = icon->tex->value.copyToImage();
+			const auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
+			const auto tex_img = icon->tex->value.copyToImage();
 			sf::Image img;
 			img.create(icon->width, icon->height, sf::Color::Magenta);
 			img.copy(tex_img, 0u, 0u, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
@@ -627,7 +628,7 @@ namespace objects
 		// remove any gui that might currently be loaded
 		_gui.RemoveAll();
 
-		auto window_width = hades::console::GetInt("vid_width", 800);
+		static const auto window_width = hades::console::GetInt("vid_width", 800);
 
 		//====================
 		// ToolBar
@@ -658,7 +659,7 @@ namespace objects
 		auto window_height = hades::console::GetInt("vid_height", 600);
 
 		auto left_panel = sfg::Window::Create(toolbar_style);
-		auto panel_top = toolbar_window->GetAllocation().height;
+		const auto panel_top = toolbar_window->GetAllocation().height;
 		const auto panel_width = 150.f;
 		left_panel->SetRequisition({ panel_width, static_cast<float>(*window_height) - panel_top });
 		left_panel->SetPosition({ 0.f, panel_top });
@@ -676,13 +677,6 @@ namespace objects
 
 		auto combobox = sfg::ComboBox::Create();
 
-
-
-		/*
-		//property window
-		_propertyWindow = sfg::ScrolledWindow::Create();
-		left_panel_box->Pack(_propertyWindow);
-		*/
 		//let child classes start adding their own elements
 		FillGui();
 		/*

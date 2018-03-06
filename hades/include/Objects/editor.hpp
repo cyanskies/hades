@@ -7,7 +7,6 @@
 
 #include "SFGUI/Box.hpp"
 #include "SFGUI/Widget.hpp"
-#include "SFGUI/ScrolledWindow.hpp"
 
 #include "Hades/GridArea.hpp"
 #include "Hades/Properties.hpp"
@@ -90,9 +89,10 @@ namespace objects
 		using AddButtonFunc = AddToggleButtonFunc;
 		using AddSeperatorFunc = std::function<void(void)>;
 		virtual void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc);
-
-		// Menu Options
 		virtual void FillGui();
+
+		//Gui helper functions
+		sfg::Box::Ptr GetPalatteContainer();
 
 		using MousePos = std::tuple<hades::types::int32, hades::types::int32>;
 		//==map editing functions==
@@ -142,9 +142,6 @@ namespace objects
 		//core map drawing variables
 		sf::View GameView;
 
-		//GUI elements
-		sfg::ScrolledWindow::Ptr PalatteWindow;
-
 	private:
 		//loads the gui from the editor-layout resource
 		//then sets up all the generic UI elements
@@ -157,6 +154,7 @@ namespace objects
 		void _addSeparatorToToolBar();
 
 		void _newMap();
+		void _onEnterObjectMode();
 		void _addObjects(std::vector<const resources::object*> objects);
 		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);
 		//Sets the object that will be placed on left click
@@ -179,7 +177,9 @@ namespace objects
 		//gui variables
 		sfg::Box::Ptr _toolBar;
 		sfg::Box::Ptr _toolBarIconBox;
-		sfg::ScrolledWindow::Ptr _propertyWindow;
+		sfg::Box::Ptr _palatteWindow;
+		sfg::Box::Ptr _objectPalatte;
+		sfg::Box::Ptr _propertyWindow;
 
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 

@@ -266,48 +266,12 @@ namespace objects
 
 	void object_editor::FillGui()
 	{
-		/*
-		//==============
-		// Add Objects
-		//==============
-		auto object_sel_panel = _gui.get<tgui::Container>(editor::object_selector_panel);
-		
-		//add the object group combobox
-		auto object_combox = tgui::ComboBox::create();
-		auto groups = resources::ObjectGroups;
-		
-		object_combox->setSize({ "&.w", 20 });
+		_onEnterObjectMode();
+	}
 
-		const auto all_str = "all";
-
-		object_combox->addItem(all_str);
-
-		//add all the group names
-		for (auto g : groups)
-			object_combox->addItem(g.name);
-
-		//rig up the function for filling the object list
-		object_combox->onItemSelect.connect([this, all_str](sf::String str) { 
-			auto groups = resources::ObjectGroups;
-			auto g = std::find_if(std::begin(groups), std::end(groups),
-				[str](resources::object_group group) {return group.name == str; });
-
-			if (g != std::end(groups))
-				_addObjects(g->obj_list);
-			else if (str == all_str)
-				_addObjects(resources::Objects);
-		});
-
-		object_sel_panel->add(object_combox);
-
-		auto object_container = tgui::HorizontalWrap::create();
-		object_container->setSize({ "&.w", tgui::bindHeight(object_sel_panel) - tgui::bindHeight(object_combox) });
-		object_sel_panel->add(object_container, object_button_container);
-
-		object_combox->setSelectedItem(all_str);
-
-		_clearObjectSelected();
-		*/
+	sfg::Box::Ptr object_editor::GetPalatteContainer()
+	{
+		return _palatteWindow;
 	}
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
@@ -671,11 +635,12 @@ namespace objects
 		_gui.Add(left_panel);
 
 		//Palatte window
-		PalatteWindow = sfg::ScrolledWindow::Create();
-		PalatteWindow->SetScrollbarPolicy(sfg::ScrolledWindow::ScrollbarPolicy::HORIZONTAL_NEVER | sfg::ScrolledWindow::ScrollbarPolicy::VERTICAL_AUTOMATIC);
-		left_panel_box->Pack(PalatteWindow);
+		_palatteWindow = sfg::Box::Create();
+		left_panel_box->PackEnd(_palatteWindow);
 
-		auto combobox = sfg::ComboBox::Create();
+		//Property Window
+		_propertyWindow = sfg::Box::Create();
+		left_panel_box->PackEnd(_propertyWindow);
 
 		//let child classes start adding their own elements
 		FillGui();
@@ -811,8 +776,57 @@ namespace objects
 		*/
 	}
 
+
+	void object_editor::_onEnterObjectMode()
+	{
+		//clear the palatte window and build the object palatte gui
+		/*
+		//==============
+		// Add Objects
+		//==============
+		auto object_sel_panel = _gui.get<tgui::Container>(editor::object_selector_panel);
+
+		//add the object group combobox
+		auto object_combox = tgui::ComboBox::create();
+		auto groups = resources::ObjectGroups;
+
+		object_combox->setSize({ "&.w", 20 });
+
+		const auto all_str = "all";
+
+		object_combox->addItem(all_str);
+
+		//add all the group names
+		for (auto g : groups)
+			object_combox->addItem(g.name);
+
+		//rig up the function for filling the object list
+		object_combox->onItemSelect.connect([this, all_str](sf::String str) {
+			auto groups = resources::ObjectGroups;
+			auto g = std::find_if(std::begin(groups), std::end(groups),
+				[str](resources::object_group group) {return group.name == str; });
+
+			if (g != std::end(groups))
+				_addObjects(g->obj_list);
+			else if (str == all_str)
+				_addObjects(resources::Objects);
+		});
+
+		object_sel_panel->add(object_combox);
+
+		auto object_container = tgui::HorizontalWrap::create();
+		object_container->setSize({ "&.w", tgui::bindHeight(object_sel_panel) - tgui::bindHeight(object_combox) });
+		object_sel_panel->add(object_container, object_button_container);
+
+		object_combox->setSelectedItem(all_str);
+
+		_clearObjectSelected();
+		*/
+	}
+
 	void object_editor::_addObjects(std::vector<const resources::object*> objects)
 	{
+		//replace the contents of _objectPalatte with the objects in objects
 		/*
 		auto container = _gui.get<tgui::Container>(object_button_container);
 

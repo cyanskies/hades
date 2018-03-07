@@ -1,5 +1,7 @@
 #include "Objects/editor.hpp"
 
+#include "SFML/Graphics/RenderTexture.hpp"
+
 #include "SFGUI/Widgets.hpp"
 
 #include "Hades/Animation.hpp"
@@ -62,7 +64,7 @@ namespace objects
 		static auto window_width = hades::console::GetInt("vid_width", 640),
 			window_height = hades::console::GetInt("vid_height", 480);
 
-		auto mousePos = input.find(hades::input::PointerPosition);
+		const auto mousePos = input.find(hades::input::PointerPosition);
 		assert(mousePos != std::end(input));
 		if (mousePos->active)
 		{
@@ -93,8 +95,8 @@ namespace objects
 			GenerateDrawPreview(window, { mousePos->x_axis, mousePos->y_axis });
 		}
 
-		static const auto drag_time = sf::milliseconds(50);
-		auto mouseLeft = input.find(hades::input::PointerLeft);
+		const auto drag_time = sf::milliseconds(50);
+		const auto mouseLeft = input.find(hades::input::PointerLeft);
 		assert(mouseLeft != std::end(input));
 		if (mouseLeft->active)
 		{
@@ -155,13 +157,13 @@ namespace objects
 		//set up the editor rendering
 		//=========================
 		//generate the view
-		auto cheight = hades::console::GetInt("editor_height", editor::view_height);
+		const auto cheight = hades::console::GetInt("editor_height", editor::view_height);
 
 		//current window size
-		auto wwidth = hades::console::GetInt("vid_width", 640),
-			wheight = hades::console::GetInt("vid_height", 480);
+		const auto wwidth = hades::console::GetInt("vid_width", 800);
+		const auto wheight = hades::console::GetInt("vid_height", 600);
 
-		float screenRatio = *wwidth / static_cast<float>(*wheight);
+		const float screenRatio = *wwidth / static_cast<float>(*wheight);
 
 		//set the view
 		sf::Vector2f size = { *cheight * screenRatio, static_cast<float>(*cheight) };
@@ -206,7 +208,7 @@ namespace objects
 			LoadLevelDialog();
 		}, nullptr);
 
-		Button("Exit", [this]() {
+		Button("exit", [this]() {
 			//TODO: add warning dialog
 			kill();
 		}, nullptr);
@@ -271,7 +273,7 @@ namespace objects
 
 	sfg::Box::Ptr object_editor::GetPalatteContainer()
 	{
-		return _palatteWindow;
+		return _paletteWindow;
 	}
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
@@ -380,7 +382,7 @@ namespace objects
 	{
 		if (EditMode == editor::EditMode::OBJECT)
 		{
-			auto world_pos = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
+			const auto world_pos = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
 			using int32 = hades::types::int32;
 			if (_objectMode == editor::ObjectMode::NONE_SELECTED
 				|| _objectMode == editor::ObjectMode::SELECT)
@@ -398,66 +400,6 @@ namespace objects
 
 	void object_editor::OnDragEnd(MousePos pos)
 	{}
-
-	namespace menu_names
-	{
-		const auto menu_bar = "MenuBar";
-
-		const auto file_menu = "File";
-
-		const auto new_menu = "New...";
-		const auto load_menu = "Load...";
-		const auto save_menu = "Save";
-		const auto save_as_menu = "Save...";
-
-		const auto view_menu = "View";
-
-		const auto reset_gui = "Reset Gui";
-	}
-
-	namespace dialog_names
-	{
-		const auto new_dialog = "new_dialog"; // <-- this should move to the header too
-		const auto load = "load_dialog";
-		const auto save = "save_dialog";
-	}
-
-	//TODO: move these names to the header, so they can be used by others
-	namespace new_dialog
-	{
-		const auto button = "new_button";
-		const auto mod = "new_mod";
-		const auto filename = "new_filename";
-		const auto size_x = "new_sizex";
-		const auto size_y = "new_sizey";
-	}
-
-	void object_editor::OnMenuClick(sf::String menu)
-	{
-		/*
-		if (menu == menu_names::new_menu)
-		{
-			auto new_dialog = _gui.get<tgui::Container>(dialog_names::new_dialog);
-			new_dialog->show();
-		}
-		else if (menu == menu_names::load_menu)
-		{
-			auto load_dialog = _gui.get<tgui::Container>(dialog_names::load);
-			load_dialog->show();
-		}
-		else if (menu == menu_names::save_menu)
-		{
-			SaveLevel();
-		}
-		else if (menu == menu_names::save_as_menu)
-		{
-			auto save_dialog = _gui.get<tgui::Container>(dialog_names::save);
-			save_dialog->show();
-		}
-		else if (menu == menu_names::reset_gui)
-			reinit();
-		*/
-	}
 
 	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
 	{
@@ -531,8 +473,8 @@ namespace objects
 	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
 	{
 		static const auto window_width = hades::console::GetInt("vid_width", 800);
-		auto toolbar_req = _toolBarIconBox->GetAllocation();
-		auto req = w->GetAllocation();
+		const auto toolbar_req = _toolBarIconBox->GetAllocation();
+		const auto req = w->GetAllocation();
 		//if the current line of icons is full
 		//add a new line
 		if (req.width + toolbar_req.width > *window_width)
@@ -544,20 +486,46 @@ namespace objects
 		_toolBarIconBox->PackEnd(w, false);
 	}
 
-	template <typename Button, typename Func>
-	auto CreateButton(hades::types::string name, Func func, const hades::resources::animation *icon)
+	sf::Image GetSubImage(const sf::Texture &i, hades::types::int32 x, hades::types::int32 y,
+		hades::types::int32 width, hades::types::int32 height,
+		hades::types::int32 target_width, hades::types::int32 target_height)
+	{
+		sf::RenderTexture rt;
+		if (target_width == 0
+			|| target_height == 0)
+		{
+			rt.create(width, height);
+		}
+		else
+		{
+			rt.create(target_width, target_height);
+			rt.setView(sf::View{ { 0.f, 0.f, static_cast<float>(width), static_cast<float>(height) } });
+		}
+		
+		const sf::Sprite s{ i, {x, y, width, height} };
+
+		rt.clear(sf::Color::Transparent);
+		rt.draw(s);
+		rt.display();
+
+		const auto &tex = rt.getTexture();
+		return tex.copyToImage();
+	}
+
+	template <typename Button>
+	auto CreateButton(hades::types::string name, object_editor::OnClickFunc func, const hades::resources::animation *icon)
 	{
 		auto button = Button::Create();
 
+		constexpr auto button_size = 20;
+
 		if (icon)
 		{
+			using int_t = hades::types::int32;
 			const auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
-			const auto tex_img = icon->tex->value.copyToImage();
-			sf::Image img;
-			img.create(icon->width, icon->height, sf::Color::Magenta);
-			img.copy(tex_img, 0u, 0u, { static_cast<int>(x), static_cast<int>(y), icon->width, icon->height });
-			button->SetImage(sfg::Image::Create(img));
-			button->SetLabel(sf::String());
+			const auto frame = GetSubImage(icon->tex->value, static_cast<int_t>(x), static_cast<int_t>(y),
+				icon->width, icon->height, button_size, button_size);
+			button->SetImage(sfg::Image::Create(frame));
 		}
 		else
 			button->SetLabel(name);
@@ -635,11 +603,11 @@ namespace objects
 		_gui.Add(left_panel);
 
 		//Palatte window
-		_palatteWindow = sfg::Box::Create();
-		left_panel_box->PackEnd(_palatteWindow);
+		_paletteWindow = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		left_panel_box->PackEnd(_paletteWindow);
 
 		//Property Window
-		_propertyWindow = sfg::Box::Create();
+		_propertyWindow = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
 		left_panel_box->PackEnd(_propertyWindow);
 
 		//let child classes start adding their own elements
@@ -780,67 +748,84 @@ namespace objects
 	void object_editor::_onEnterObjectMode()
 	{
 		//clear the palatte window and build the object palatte gui
-		/*
-		//==============
-		// Add Objects
-		//==============
-		auto object_sel_panel = _gui.get<tgui::Container>(editor::object_selector_panel);
+		_paletteWindow->RemoveAll();
 
-		//add the object group combobox
-		auto object_combox = tgui::ComboBox::create();
-		auto groups = resources::ObjectGroups;
+		auto combobox = sfg::ComboBox::Create();
 
-		object_combox->setSize({ "&.w", 20 });
+		//add the selector combobox
+		_paletteWindow->PackEnd(combobox, false);
 
-		const auto all_str = "all";
+		_objectPalette = sfg::Box::Create(sfg::Box::Orientation::VERTICAL, 1.f);
 
-		object_combox->addItem(all_str);
+		_paletteWindow->PackEnd(_objectPalette);
+
+		constexpr auto all_str = "all";
+
+		combobox->AppendItem(all_str);
+
+		const auto &groups = objects::resources::ObjectGroups;
 
 		//add all the group names
 		for (auto g : groups)
-			object_combox->addItem(g.name);
+			combobox->AppendItem(g.name);
 
-		//rig up the function for filling the object list
-		object_combox->onItemSelect.connect([this, all_str](sf::String str) {
-			auto groups = resources::ObjectGroups;
-			auto g = std::find_if(std::begin(groups), std::end(groups),
-				[str](resources::object_group group) {return group.name == str; });
+		std::weak_ptr<sfg::ComboBox> combo_weak{ combobox };
+		auto on_select_item = [this, &groups, combo_weak] {
+			const auto combo = combo_weak.lock();
+			//selected is in the range [0 - groups.size() + 1]
+			//[0] is all_string, everything else is groups[selected - 1]
+			const auto selected = combo->GetSelectedItem();
 
-			if (g != std::end(groups))
-				_addObjects(g->obj_list);
-			else if (str == all_str)
-				_addObjects(resources::Objects);
-		});
+			if (selected == 0)
+			{
+				const auto &g = objects::resources::Objects;
+				_addObjects(g);
+			}
+			else
+			{
+				assert(static_cast<int>(groups.size()) >= selected);
+				const auto &g = groups[selected - 1].obj_list;
+				_addObjects(g);
+			}
+		};
 
-		object_sel_panel->add(object_combox);
+		combobox->GetSignal(sfg::ComboBox::OnSelect).Connect(on_select_item);
 
-		auto object_container = tgui::HorizontalWrap::create();
-		object_container->setSize({ "&.w", tgui::bindHeight(object_sel_panel) - tgui::bindHeight(object_combox) });
-		object_sel_panel->add(object_container, object_button_container);
-
-		object_combox->setSelectedItem(all_str);
+		combobox->SelectItem(0);
+		on_select_item();
 
 		_clearObjectSelected();
-		*/
 	}
 
-	void object_editor::_addObjects(std::vector<const resources::object*> objects)
+	void object_editor::_addObjects(const std::vector<const resources::object*> &objects)
 	{
-		//replace the contents of _objectPalatte with the objects in objects
-		/*
-		auto container = _gui.get<tgui::Container>(object_button_container);
+		//replace the contents of _objectPalette with the objects in objects
+		assert(_objectPalette);
+		_objectPalette->RemoveAll();
 
-		container->removeAllWidgets();
+		const auto palette_alloc = _paletteWindow->GetRequisition();
+		auto box = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		_objectPalette->PackEnd(box, false, false);
 
-		for (auto o : objects)
+		for(const auto o : objects)
 		{
-			auto b = editor::MakeObjectButton(hades::data::GetAsString(o->id), [this, o]() {
+			const auto name = o->editor_icon ? hades::types::string{} : hades::data::GetAsString(o->id);
+			auto b = CreateButton<sfg::Button>(name, [this, o]
+			{
 				_setHeldObject(o);
 			}, o->editor_icon);
 
-			container->add(b);
+			const auto alloc = box->GetRequisition();
+			const auto button_alloc = b->GetAllocation();
+
+			if (alloc.x + button_alloc.width > palette_alloc.x)
+			{
+				box = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+				_objectPalette->PackEnd(box, false);
+			}
+
+			box->PackEnd(b, false);
 		}
-		*/
 	}
 
 	void object_editor::_updateGridHighlight(const sf::RenderTarget &target, object_editor::MousePos pos)
@@ -1053,6 +1038,8 @@ namespace objects
 
 	void object_editor::_clearObjectSelected()
 	{
+		//_objectMode = editor::ObjectMode::NONE_SELECTED;
+
 		/*
 		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
 		selectedInfoBox->removeAllWidgets();

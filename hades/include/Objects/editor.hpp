@@ -107,7 +107,6 @@ namespace objects
 		virtual void OnDragStart(MousePos);
 		virtual void OnDrag(MousePos);
 		virtual void OnDragEnd(MousePos);
-		virtual void OnMenuClick(sf::String);
 		//override to check if a location on the map is valid for the provided object
 		//ie. depending on terrain, or other objects
 		virtual bool ObjectValidLocation(sf::Vector2i position, const object_info &object) const;
@@ -155,7 +154,7 @@ namespace objects
 
 		void _newMap();
 		void _onEnterObjectMode();
-		void _addObjects(std::vector<const resources::object*> objects);
+		void _addObjects(const std::vector<const resources::object*> &objects);
 		void _updateGridHighlight(const sf::RenderTarget&, MousePos pos);
 		//Sets the object that will be placed on left click
 		void _setHeldObject(const resources::object*);
@@ -177,8 +176,8 @@ namespace objects
 		//gui variables
 		sfg::Box::Ptr _toolBar;
 		sfg::Box::Ptr _toolBarIconBox;
-		sfg::Box::Ptr _palatteWindow;
-		sfg::Box::Ptr _objectPalatte;
+		sfg::Box::Ptr _paletteWindow;
+		sfg::Box::Ptr _objectPalette;
 		sfg::Box::Ptr _propertyWindow;
 
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;

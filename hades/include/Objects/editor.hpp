@@ -174,11 +174,15 @@ namespace objects
 		void _setDragObject(const resources::object* o);
 
 		//gui variables
-		sfg::Box::Ptr _toolBar;
-		sfg::Box::Ptr _toolBarIconBox;
-		sfg::Box::Ptr _paletteWindow;
-		sfg::Box::Ptr _objectPalette;
-		sfg::Box::Ptr _propertyWindow;
+		sfg::Box::Ptr _toolBar; // horizontal button topbar
+		sfg::Box::Ptr _toolBarIconBox; //the current toolbar row container
+		sfg::Box::Ptr _paletteWindow; //the section of the left panel given to the palette
+		sfg::Box::Ptr _objectPalette; //the container for object placement buttons
+		sfg::Box::Ptr _propertyWindow; //the section of the left panel given to the object property pane
+		//load/save/new dialog windows
+		sfg::Widget::Ptr _loadDialog;
+		sfg::Widget::Ptr _saveDialog;
+		sfg::Widget::Ptr _newDialog;
 
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 

@@ -286,12 +286,19 @@ namespace hades
 				//interpolate between frames
 				auto totalFrameTime = thisFrame + accumulator;
 				activeState->draw(_window, totalFrameTime);
+
+				//store gl states while drawing sfgui elements
+				_window.pushGLStates();
 				activeState->updateGui(totalFrameTime);
 				_sfgui.Display(_window);
-				//render the console interface if it is active.
+				_window.popGLStates(); // restore sfml gl states
+
+				//activeState->drawAfterGui(_window, totalFrameTime);
+				//update the console interface.
 				if (_consoleView)
 					_consoleView->update();
 
+				//draw overlays
 				_window.draw(_overlayMan);
 
 				_window.display();

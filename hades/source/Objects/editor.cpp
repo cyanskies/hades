@@ -612,24 +612,12 @@ namespace objects
 
 		//let child classes start adding their own elements
 		FillGui();
+		
 		/*
-		//===========
-		//add menubar
-		//===========	
-		auto menu_bar = _gui.get<tgui::MenuBar>(menu_names::menu_bar);
-
-		menu_bar->moveToFront();
-	
-		menu_bar->onMenuItemClick.connect([this](const sf::String s) { OnMenuClick(s); });
-
-		//TODO: everything below here:
-		//		check the result of the _gui.get functions(return nullptr on failure)
-		//		handle nullptr properly as users could provide malformed
-		//		editor layouts to trigger null pointer exceptions and access violations
-
-		//===============
-		//FILE LOADING UI
-		//===============
+		//===================
+		//FILE LOADING DIALOG
+		//===================
+		//Shown when the Load button is pressed
 		auto load_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::load);
 		//hide the container
 		load_dialog_container->hide();
@@ -665,7 +653,7 @@ namespace objects
 		});
 
 		//===============
-		//SAVE UI
+		//SAVE DIALOG
 		//===============
 		auto save_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::save);
 		//hide the container
@@ -702,7 +690,7 @@ namespace objects
 		});
 
 		//==========
-		//New map UI
+		//New map DIALOG
 		//==========
 		auto new_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::new_dialog);
 		//hide the container

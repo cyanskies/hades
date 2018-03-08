@@ -9,8 +9,8 @@
 #include "Hades/System.hpp"
 #include "Hades/Utility.hpp"
 
-const float SCREEN_LEFT = 0.f;
-const auto INPUT_SYMBOL = ":> ";
+constexpr float SCREEN_LEFT = 0.f;
+constexpr auto INPUT_SYMBOL = ":>";
 
 namespace hades
 {
@@ -50,7 +50,7 @@ namespace hades
 	{
 		auto log_list = console::new_output(console::logger::LOG_VERBOSITY::WARNING);
 
-		for (auto &s : log_list)
+		for (const auto &s : log_list)
 			_addText(s);
 
 		_currentInput.setString(INPUT_SYMBOL + _input);
@@ -63,7 +63,7 @@ namespace hades
 		if (context.type != sf::Event::TextEntered)
 			throw ConsoleWrongEvent("Passed an event other than sf::Event:TextEntered to the console view overlay.");
 
-		auto text = sf::String(context.text.unicode).toAnsiString();
+		const auto text = sf::String(context.text.unicode).toAnsiString();
 
 		if (text == "\b")
 		{
@@ -81,32 +81,32 @@ namespace hades
 
 	void ConsoleView::prev()
 	{
-		auto prev = console::GetCommandHistory();
+		const auto prev = console::GetCommandHistory();
 
 		if (prev.empty())
 			return;
 
-		auto pos = std::find(prev.begin(), prev.end(), Command(_input));
+		const auto pos = std::find(prev.begin(), prev.end(), Command(_input));
 		if (pos == prev.end())
 			_input = to_string(prev.back());
 		else if (pos != prev.begin())
-			_input = to_string(*--pos);
+			_input = to_string(*(pos - 1));
 		else
 			_input = to_string(*pos);
 	}
 
 	void ConsoleView::next()
 	{
-		auto prev = console::GetCommandHistory();
+		const auto prev = console::GetCommandHistory();
 
 		if (prev.empty() || _input.empty())
 			return;
 
-		auto pos = std::find(prev.begin(), prev.end(), Command(_input));
+		const auto pos = std::find(prev.begin(), prev.end(), Command(_input));
 		if (pos == prev.end())
 			_input = to_string(prev.front());
 		else if (pos != --prev.end())
-			_input = to_string(*++pos);
+			_input = to_string(*(pos + 1));
 		else
 			_input = to_string(*pos);
 	}
@@ -126,10 +126,9 @@ namespace hades
 		_currentInput.setCharacterSize(*_charSize);
 		_currentInput.setFont(_font);
 
-		auto size_test = _currentInput;
-		size_test.setString("a");
+		const sf::Text size_test{ "a", _font, *_charSize };
 
-		auto offset = size_test.getGlobalBounds().height * 2;
+		const auto offset = size_test.getGlobalBounds().height * 2;
 		_editLine.setPosition(0.f, size.y - _editLine.getSize().y - offset);
 		_currentInput.setPosition(0.f, size.y - offset);
 
@@ -137,7 +136,7 @@ namespace hades
 
 		_previousOutput.clear();
 
-		auto output = console::output(console::logger::LOG_VERBOSITY::WARNING);
+		const auto output = console::output(console::logger::LOG_VERBOSITY::WARNING);
 		for (auto &s : output)
 			_addText(s);
 
@@ -178,16 +177,15 @@ namespace hades
 		text.setOutlineColor(col);
 		text.setFillColor(col);
 
-		auto max_width = _view.getSize().x;
+		const auto max_width = _view.getSize().x;
 
 		for (auto &s : words)
 		{
-			auto str = output.back().getString();
-			str += s + " ";
+			const auto str = output.back().getString() + " ";
 
 			auto test_text = output.back();
 			test_text.setString(str);
-			auto bounds = test_text.getGlobalBounds();
+			const auto bounds = test_text.getGlobalBounds();
 			if (bounds.width > max_width)
 			{
 				output.push_back({ "", _font, static_cast<unsigned int>(*_charSize) });

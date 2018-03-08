@@ -16,10 +16,10 @@
 
 namespace hades
 {
-	const auto console_character_size = "con_charactersize";
-	const auto console_fade = "con_fade";
-	const auto console_character_size_d = 15;
-	const auto console_fade_d = 180;
+	constexpr auto console_character_size = "con_charactersize";
+	constexpr auto console_fade = "con_fade";
+	constexpr auto console_character_size_d = 15;
+	constexpr auto console_fade_d = 180;
 
 	class ConsoleWrongEvent : public std::logic_error
 	{

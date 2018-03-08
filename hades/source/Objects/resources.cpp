@@ -23,14 +23,14 @@ namespace objects
 		using namespace hades::resources::curve_types;
 
 		//position
-		auto position_id = data->getUid("position");
+		const auto position_id = data->getUid("position");
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::EmptyId, data);
 		position_c->curve_type = hades::CurveType::LINEAR;
 		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
 		position_c->default_value.set = true;
 		position_c->default_value.value = std::vector<int_t>{ 0, 0 };
 		//size
-		auto size_id = data->getUid("size");
+		const auto size_id = data->getUid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::EmptyId, data);
 		size_c->curve_type = hades::CurveType::LINEAR;
 		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
@@ -98,8 +98,8 @@ namespace objects
 			hades::resources::curve_default_value out;
 			try
 			{
-				auto s = node.as<hades::types::string>();
-				auto u = hades::data::GetUid(s);
+				const auto s = node.as<hades::types::string>();
+				const auto u = hades::data::GetUid(s);
 				if (u == hades::EmptyId)
 					return out;
 
@@ -144,8 +144,8 @@ namespace objects
 				std::vector<hades::UniqueId> vec;
 				for (auto v : node)
 				{
-					auto s = node.as<hades::types::string>();
-					auto u = hades::data::GetUid(s);
+					const auto s = node.as<hades::types::string>();
+					const auto u = hades::data::GetUid(s);
 					if (u != hades::EmptyId)
 						vec.push_back(u);
 				}
@@ -200,29 +200,29 @@ namespace objects
 			object::curve_obj c;
 			std::get<0>(c) = nullptr;
 
-			static auto getPtr = [data](hades::types::string s)->hades::resources::curve* {
+			auto getPtr = [data](std::string_view s)->hades::resources::curve* {
 				if (s.empty())
 					return nullptr;
 				
-				auto id = data->getUid(s);
+				const auto id = data->getUid(s);
 				return data->get<hades::resources::curve>(id);
 			};
 
 			if (node.IsScalar())
 			{
-				auto id_str = node.as<hades::types::string>("");
+				const auto id_str = node.as<hades::types::string>("");
 				std::get<0>(c) = getPtr(id_str);
 			}
 			else if (node.IsSequence())
 			{
-				auto first = node[0];
+				const auto first = node[0];
 				if (!first.IsDefined())
 					return c;
 
-				auto id_str = first.as<hades::types::string>("");
+				const auto id_str = first.as<hades::types::string>("");
 				std::get<0>(c) = getPtr(id_str);
 
-				auto second = node[1];
+				const auto second = node[1];
 				if (!second.IsDefined())
 					return c;
 
@@ -264,30 +264,30 @@ namespace objects
 			
 			//use MakeColour to turn vectors into sf::color
 
-			static const auto resource_type = "editor";
-			static const auto resource_name = "N/A";
-			static const auto editor_id = data->getUid(resource_type);
+			constexpr auto resource_type = "editor";
+			constexpr auto resource_name = "N/A";
+			auto editor_id = data->getUid(resource_type);
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
 
 			//Parse editor variables
-			auto scroll_rate = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-rate", mod, 
+			const auto scroll_rate = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-rate", mod, 
 				*hades::console::GetInt(editor_scroll_rate, editor_scroll_rate_default));
 			hades::console::SetProperty(editor_scroll_rate, scroll_rate);
 
-			auto scroll_margin = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-margin", mod,
+			const auto scroll_margin = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-margin", mod,
 				*hades::console::GetInt(editor_scroll_margin, editor_scroll_margin_default));
 			hades::console::SetProperty(editor_scroll_margin, scroll_margin);
 
 			//Parse Object variables
 
-			auto groups = node["object-groups"];
+			const auto groups = node["object-groups"];
 
 			for (auto n : groups)
 			{
-				auto namenode = n.first;
-				auto gname = namenode.as<hades::types::string>();
+				const auto namenode = n.first;
+				const auto gname = namenode.as<hades::types::string>();
 				
 				auto g = std::find_if(std::begin(ObjectGroups), std::end(ObjectGroups), [gname](object_group g) {
 					return g.name == gname;
@@ -304,26 +304,26 @@ namespace objects
 				auto v = n.second;
 
 				auto add_to_group = [g, gname, mod, data](const YAML::Node& n) {
-					auto obj_str = n.as<hades::types::string>();
-					auto obj_id = hades::data::MakeUid(obj_str);
-					auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);
+					const auto obj_str = n.as<hades::types::string>();
+					const auto obj_id = hades::data::MakeUid(obj_str);
+					const auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);
 					g->obj_list.push_back(obj);
 				};
 
 				if (v.IsScalar())
 					add_to_group(v);
 				else if (v.IsSequence())
-					for (auto o : v)
+					for (const auto o : v)
 						add_to_group(o);
 			}//for object groups
 
-			auto mock_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "object-mock-size", mod,
+			const auto mock_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "object-mock-size", mod,
 				*hades::console::GetInt(editor_object_mock_size, editor_mock_size_default));
 			hades::console::SetProperty(editor_object_mock_size, mock_size);
 
 			//Parse Grid Settings
 
-			auto snap = node["snap-to-grid"];
+			const auto snap = node["snap-to-grid"];
 			if (snap.IsDefined() && snap.IsScalar())
 			{
 				auto intval = snap.as<hades::types::int32>(-1);
@@ -348,8 +348,8 @@ namespace objects
 
 			// Get the minimum grid size for the editor(this should be the same value the game uses if it uses
 			// grid based game logic
-			hades::types::int32 current_grid_size = *hades::console::GetInt(editor_grid_size, editor_grid_default);
-			auto grid_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "grid-min-size", mod, current_grid_size);
+			const hades::types::int32 current_grid_size = *hades::console::GetInt(editor_grid_size, editor_grid_default);
+			const auto grid_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "grid-min-size", mod, current_grid_size);
 
 			if (grid_size != current_grid_size)
 			{
@@ -357,12 +357,12 @@ namespace objects
 				hades::console::SetProperty(editor_grid_size_multiple, grid_size);
 			}
 
-			bool grid_enabled = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid", mod,
+			const bool grid_enabled = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid", mod,
 				*hades::console::GetBool(editor_grid_enabled, true));
 			hades::console::SetProperty(editor_grid_enabled, grid_enabled);
 
 			//Parse Map Settings
-			auto map_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "map-size", mod,
+			const auto map_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "map-size", mod,
 				*hades::console::GetInt(editor_map_size, editor_map_size_default));
 			hades::console::SetProperty(editor_map_size, map_size);
 
@@ -375,16 +375,16 @@ namespace objects
 			//grid stuff
 			editor_obj->show_grid_settings = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid-settings", mod, editor_obj->show_grid_settings);
 			
-			auto grid_colour = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-colour", mod);
+			const auto grid_colour = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-colour", mod);
 			if (!grid_colour.empty())
 				editor_obj->grid = hades::MakeColour(std::begin(grid_colour), std::end(grid_colour));
 
-			auto grid_highlight = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-highlight", mod);
+			const auto grid_highlight = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "grid-highlight", mod);
 			if (!grid_highlight.empty())
 				editor_obj->grid_highlight = hades::MakeColour(std::begin(grid_highlight), std::end(grid_highlight));
 
 			//object settings
-			auto object_mock = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "object-mock-colour", mod);
+			const auto object_mock = yaml_get_sequence<hades::types::int32>(node, resource_type, resource_name, "object-mock-colour", mod);
 			if (!object_mock.empty())
 				editor_obj->object_mock_colour = hades::MakeColour(std::begin(object_mock), std::end(object_mock));
 			
@@ -392,15 +392,15 @@ namespace objects
 			//get grid toolbar icons
 			//======================
 			using hades::resources::animation;
-			auto grid_shrink_id = yaml_get_uid(node, resource_type, resource_name, "grid-shrink-icon", mod);
+			const auto grid_shrink_id = yaml_get_uid(node, resource_type, resource_name, "grid-shrink-icon", mod);
 			if (grid_shrink_id != hades::UniqueId::Zero)
 				editor_obj->grid_shrink_icon = hades::data::FindOrCreate<animation>(grid_shrink_id, mod, data);
 
-			auto grid_grow_id = yaml_get_uid(node, resource_type, resource_name, "grid-grow-icon", mod);
+			const auto grid_grow_id = yaml_get_uid(node, resource_type, resource_name, "grid-grow-icon", mod);
 			if (grid_grow_id != hades::UniqueId::Zero)
 				editor_obj->grid_grow_icon = hades::data::FindOrCreate<animation>(grid_grow_id, mod, data);
 
-			auto grid_show_id = yaml_get_uid(node, resource_type, resource_name, "grid-show-icon", mod);
+			const auto grid_show_id = yaml_get_uid(node, resource_type, resource_name, "grid-show-icon", mod);
 			if (grid_show_id != hades::UniqueId::Zero)
 				editor_obj->grid_show_icon = hades::data::FindOrCreate<animation>(grid_show_id, mod, data);
 		}//parse editor
@@ -418,25 +418,25 @@ namespace objects
 			//		systems: [system_id, ...]
 			//		client-systems : [system_id, ...]
 
-			static const auto resource_type = "objects";
+			constexpr auto resource_type = "objects";
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
 
 			for (auto n : node)
 			{
-				auto namenode = n.first;
-				auto name = namenode.as<hades::types::string>();
-				auto id = data->getUid(name);
+				const auto namenode = n.first;
+				const auto name = namenode.as<hades::types::string>();
+				const auto id = data->getUid(name);
 
-				auto obj = hades::data::FindOrCreate<object>(id, mod, data);
+				const auto obj = hades::data::FindOrCreate<object>(id, mod, data);
 
 				if (!obj)
 					continue;
 
 				Objects.push_back(obj);
 
-				auto v = n.second;
+				const auto v = n.second;
 
 				//=========================
 				//get the icon used for the editor
@@ -454,9 +454,9 @@ namespace objects
 				//=========================
 				//get the animation list used for the editor
 				//=========================
-				auto anim_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "editor-anim", mod);
+				const auto anim_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "editor-anim", mod);
 				
-				auto anims = convert_string_to_resource<hades::resources::animation>(std::begin(anim_list_ids), std::end(anim_list_ids), data);
+				const auto anims = convert_string_to_resource<hades::resources::animation>(std::begin(anim_list_ids), std::end(anim_list_ids), data);
 				std::move(std::begin(anims), std::end(anims), std::back_inserter(obj->editor_anims));
 
 				//remove any duplicates
@@ -466,8 +466,8 @@ namespace objects
 				//get the base objects
 				//===============================
 
-				auto base_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "base", mod);
-				auto base = convert_string_to_resource<object>(std::begin(base_list_ids), std::end(base_list_ids), data);
+				const auto base_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "base", mod);
+				const auto base = convert_string_to_resource<object>(std::begin(base_list_ids), std::end(base_list_ids), data);
 				std::copy(std::begin(base), std::end(base), std::back_inserter(obj->base));
 
 				//remove dupes
@@ -478,14 +478,14 @@ namespace objects
 				//get the curves
 				//=================
 
-				auto curvesNode = v["curves"];
+				const auto curvesNode = v["curves"];
 				if (yaml_error(resource_type, name, "curves", "map", mod, node.IsMap()))
 				{
 					for (auto c : curvesNode)
 					{
-						auto curve = ParseCurveObj(c, data);
+						const auto curve = ParseCurveObj(c, data);
 
-						auto curve_ptr = std::get<0>(curve);
+						const auto curve_ptr = std::get<0>(curve);
 
 						//if the curve already exists then replace it's default value
 						auto target = std::find_if(std::begin(obj->curves), std::end(obj->curves), [curve_ptr](object::curve_obj c) {

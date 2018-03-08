@@ -117,16 +117,29 @@ namespace hades
 		_input.clear();
 	}
 
+	unsigned ValidCharSize(hades::console::property_int char_size)
+	{
+		auto n = char_size->load();
+		if (n < 0)
+			char_size->store(0);
+
+		return static_cast<unsigned int>(n);
+	}
+
 	void ConsoleView::_reinit(sf::Vector2f size)
 	{
 		_backdrop.setFillColor(sf::Color(0, 0, 0, *_fade));
 		_backdrop.setSize(sf::Vector2f(size.x, size.y));
 		_editLine.setSize(sf::Vector2f(size.x, 5.f));
 
-		_currentInput.setCharacterSize(*_charSize);
+		assert(_charSize > 0);
+
+		const auto char_size = ValidCharSize(_charSize);
+
+		_currentInput.setCharacterSize(char_size);
 		_currentInput.setFont(_font);
 
-		const sf::Text size_test{ "a", _font, *_charSize };
+		const sf::Text size_test{ "a", _font, char_size };
 
 		const auto offset = size_test.getGlobalBounds().height * 2;
 		_editLine.setPosition(0.f, size.y - _editLine.getSize().y - offset);
@@ -170,8 +183,10 @@ namespace hades
 		else if (s.Verbosity() == console::logger::LOG_VERBOSITY::ERROR)
 			col = sf::Color::Red;
 
+		const auto char_size = ValidCharSize(_charSize);
+
 		std::vector<sf::Text> output;
-		output.push_back({ "", _font, static_cast<unsigned int>(*_charSize) });
+		output.push_back({ "", _font, char_size });
 		auto &text = output.back();
 		text.setPosition({ 0.f, height });
 		text.setOutlineColor(col);
@@ -183,12 +198,11 @@ namespace hades
 		{
 			const auto str = output.back().getString() + " ";
 
-			auto test_text = output.back();
-			test_text.setString(str);
+			const sf::Text test_text{ str, _font, char_size };
 			const auto bounds = test_text.getGlobalBounds();
 			if (bounds.width > max_width)
 			{
-				output.push_back({ "", _font, static_cast<unsigned int>(*_charSize) });
+				output.push_back({ "", _font, char_size });
 				auto &t = output.back();
 				t.setPosition({ 0.f, bounds.top + bounds.height});
 				t.setOutlineColor(col);

@@ -24,7 +24,7 @@
 namespace hades
 {
 	//true float values for common ratios * 100
-	const int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
+	constexpr int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
 
 	//console variable names
 	//c_* client variables names
@@ -43,14 +43,14 @@ namespace hades
 	//editor_* for game editor settings
 
 	//console variable names
-	const auto client_tick_time = "c_ticktime";
-	const auto client_max_tick = "c_maxticktime";
-	const auto file_portable = "file_portable";
+	constexpr auto client_tick_time = "c_ticktime";
+	constexpr auto client_max_tick = "c_maxticktime";
+	constexpr auto file_portable = "file_portable";
 
 	//console variable default values
-	const auto client_tick_time_d = 30;
-	const auto client_max_tick_d = 150;
-	const auto file_portable_d = false;
+	constexpr auto client_tick_time_d = 30;
+	constexpr auto client_max_tick_d = 150;
+	constexpr auto file_portable_d = false;
 
 	void registerVariables(Console *console)
 	{
@@ -149,7 +149,7 @@ namespace hades
 
 	void App::postInit(CommandList commands)
 	{
-		const auto hades_version_major = 0,
+		constexpr auto hades_version_major = 0,
 			hades_version_minor = 1,
 			hades_version_patch  = 0;
 
@@ -231,7 +231,7 @@ namespace hades
 		//we use curves instead.
 
 		//tickrate is the amount of time simulated at any one tick
-		auto tickrate = _console.getValue<types::int32>("c_ticktime"),
+		const auto tickrate = _console.getValue<types::int32>("c_ticktime"),
 			maxframetime  = _console.getValue<types::int32>("c_maxticktime");
 
 		assert(tickrate && "failed to get tick rate value from console");
@@ -254,9 +254,9 @@ namespace hades
 			if(!activeState)
 				break;
 
-			sf::Time dt = sf::milliseconds(*tickrate);
+			const sf::Time dt = sf::milliseconds(*tickrate);
 
-			sf::Time newTime = time.getElapsedTime();
+			const sf::Time newTime = time.getElapsedTime();
 			sf::Time frameTime = newTime - currentTime;
 
 			if (frameTime > sf::milliseconds(*maxframetime))
@@ -284,7 +284,7 @@ namespace hades
 				_window.clear();
 				//drawing must pass the frame time, so that the renderer can
 				//interpolate between frames
-				auto totalFrameTime = thisFrame + accumulator;
+				const auto totalFrameTime = thisFrame + accumulator;
 				activeState->draw(_window, totalFrameTime);
 
 				//store gl states while drawing sfgui elements
@@ -401,11 +401,11 @@ namespace hades
 		//vid functions
 		{
 			auto vid_reinit = [this]()->bool {
-				auto width = _console.getValue<types::int32>("vid_width"),
+				const auto width = _console.getValue<types::int32>("vid_width"),
 					height = _console.getValue<types::int32>("vid_height"),
 					depth = _console.getValue<types::int32>("vid_depth");
 
-				auto fullscreen = _console.getValue<bool>("vid_fullscreen");
+				const auto fullscreen = _console.getValue<bool>("vid_fullscreen");
 
 				sf::VideoMode mode(width->load(), height->load(), depth->load());
 
@@ -416,8 +416,8 @@ namespace hades
 					return false;
 				}
 
-				float ratio = static_cast<float>(width->load()) / static_cast<float>(height->load());
-				int intratio = static_cast<int>(ratio * 100);
+				const float ratio = static_cast<float>(width->load()) / static_cast<float>(height->load());
+				const int intratio = static_cast<int>(ratio * 100);
 
 				switch (intratio)
 				{
@@ -512,7 +512,7 @@ namespace hades
 				if (args.size() != 1)
 					throw invalid_argument("Dir function expects one argument");
 
-				auto files = files::ListFilesInDirectory(to_string(args.front()));
+				const auto files = files::ListFilesInDirectory(to_string(args.front()));
 
 				for (auto f : files)
 					LOG(f);
@@ -527,7 +527,7 @@ namespace hades
 				if (args.size() != 1)
 					throw invalid_argument("Compress function expects one argument");
 
-				auto path = args.front();
+				const auto path = args.front();
 
 				//compress in a seperate thread to let the UI continue updating
 				std::thread t([path]() {
@@ -555,7 +555,7 @@ namespace hades
 				if (args.size() != 1)
 					throw invalid_argument("Uncompress function expects one argument");
 
-				auto path = args.front();
+				const auto path = args.front();
 
 				//run uncompress func in a seperate thread to spare the UI
 				std::thread t([path]() {

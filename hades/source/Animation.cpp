@@ -53,7 +53,7 @@ namespace hades
 		{
 			assert(animation);
 
-			auto [x, y] = GetFrame(animation, progress);
+			const auto [x, y] = GetFrame(animation, progress);
 			target.setTexture(animation->tex->value);
 			target.setTextureRect({ static_cast<int>(x), static_cast<int>(y) , animation->width, animation->height });
 		}

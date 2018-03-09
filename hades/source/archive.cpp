@@ -81,7 +81,7 @@ namespace hades
 				return false;
 
 			//open current file for reading
-			auto r = unzOpenCurrentFile(_archive);
+			const auto r = unzOpenCurrentFile(_archive);
 			if (r != UNZ_OK)
 				return false;
 
@@ -96,20 +96,33 @@ namespace hades
 			return _fileOpen;
 		}
 
+		//TODO: replace all size type casts with this function
+		unsigned int CheckSizeLimits(sf::Int64 size)
+		{
+			//TODO: check that size > 0
+			//and that size < unsigned int max
+			//throw otherwise
+			return static_cast<unsigned int>(size);
+		}
+
 		sf::Int64 archive_stream::read(void* data, sf::Int64 size)
 		{
 			assert(data);
 			if(!_fileOpen)
 				throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
+			//TODO: warn or except if size < 0
+			assert(size > 0); // this needs to be a runtime check
+
 			//unsigned int type used by zlib
-			auto usize = static_cast<unsigned int>(size);
+			const auto usize = static_cast<unsigned int>(size);
 
 			buffer buff(static_cast<buffer::size_type>(usize));
 
 			//NOTE: uint32 max worth of bytes is around 4gb, so we shouldn't have
 			// a problem unless someones trying to load something really big, but then the
 			// assert should catch it.
+			//TODO: Runtime check
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
 
@@ -135,6 +148,7 @@ namespace hades
 			if(!open(_fileName))
 				throw archive_exception(("Failed to open file in archive: " + _fileName).c_str(), archive_exception::error_code::FILE_OPEN);
 
+			//TODO: runtime check
 			assert(std::numeric_limits<unsigned int>::max() > position);
 			buffer buff(static_cast<buffer::size_type>(position));
 
@@ -161,8 +175,9 @@ namespace hades
 
 			unz_file_info64 info;
 
-			auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
+			const auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
+			//TODO: runtime check
 			assert(r == UNZ_OK);
 
 			return info.uncompressed_size;
@@ -194,9 +209,10 @@ namespace hades
 
 		void close_archive(unarchive f)
 		{
+			//TODO: runtime check
 			assert(f);
 
-			auto r = unzClose(f);
+			const auto r = unzClose(f);
 
 			if(r != UNZ_OK)
 				throw archive_exception("Unable to close archive", archive_exception::error_code::FILE_CLOSE);
@@ -206,8 +222,9 @@ namespace hades
 		{
 			auto stream = stream_file_from_archive(archive, path);
 
-			auto size = stream.getSize();
+			const auto size = stream.getSize();
 
+			//TODO: runtime check
 			assert(std::numeric_limits<unsigned int>::max() > size);
 			buffer buff(static_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
@@ -217,10 +234,11 @@ namespace hades
 
 		types::string read_text_from_archive(types::string archive, types::string path)
 		{
-			auto buf = read_file_from_archive(archive, path);
+			const auto buf = read_file_from_archive(archive, path);
 
 			types::string out;
 			//convert buff to str
+			//TODO: std::transform
 			for (auto i : buf)
 				out.push_back(static_cast<char>(i));
 
@@ -235,7 +253,7 @@ namespace hades
 		}
 
 		//no sensitivity on windows
-		const int case_sensitivity_auto = 0,
+		constexpr int case_sensitivity_auto = 0,
 			//case sensitivity everywhere
 			case_sensitivity_sensitive = 1,
 			//no sensitivity on any platform
@@ -244,21 +262,21 @@ namespace hades
 		bool file_exists(types::string archive, types::string path)
 		{
 			auto a = open_archive(archive);
-			auto ret = file_exists(a, path);
+			const auto ret = file_exists(a, path);
 			close_archive(a);
 			return ret;
 		}
 
 		bool file_exists(unarchive a, types::string path)
 		{
-			auto r = unzLocateFile(a, path.c_str(), case_sensitivity_auto);
+			const auto r = unzLocateFile(a, path.c_str(), case_sensitivity_auto);
 			return r == UNZ_OK;
 		}
 
 		types::uint16 count_separators(types::string s)
 		{
-			const char separator1 = '\\';
-			const char separator2 = '/';
+			constexpr char separator1 = '\\';
+			constexpr char separator2 = '/';
 
 			auto sep_count = std::count(s.begin(), s.end(), separator1);
 			return sep_count + std::count(s.begin(), s.end(), separator2);
@@ -270,11 +288,11 @@ namespace hades
 
 			auto zip = open_archive(archive);
 
-			auto ret = unzGoToFirstFile(zip);
+			const auto ret = unzGoToFirstFile(zip);
 			if (ret != ZIP_OK)
 				throw archive_exception(("Error finding file in archive: " + archive).c_str(), archive_exception::error_code::FILE_OPEN);
 
-			auto separator_count = count_separators(dir_path);
+			const auto separator_count = count_separators(dir_path);
 
 			//while theirs more files
 			while (unzGoToNextFile(zip) != UNZ_END_OF_LIST_OF_FILE)
@@ -330,16 +348,15 @@ namespace hades
 			types::string new_zip_path;
 
 			fs::path fs_path(path);
-			auto root = fs_path.parent_path();
-			auto name = --fs_path.end();
+			const auto root = fs_path.parent_path();
+			const auto name = --fs_path.end();
 
 			//detect likely bug
 			//may need to do --(--fs_path.end())
+			//TODO: runtime check
 			assert(*name != ".");
 
-			auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
-
-			assert(zip);
+			const auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
 
 			if(!zip)
 				throw archive_exception(("Error creating zip file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_WRITE);
@@ -350,12 +367,12 @@ namespace hades
 			//create new zip file
 			for (auto &f : fs::recursive_directory_iterator(fs_path))
 			{
-				auto p = f.path();
+				const auto p = f.path();
 				if (fs::is_directory(p))
 					continue;
 
-				auto file_path = p.string();
-				auto directory = fs_path.string();
+				const auto file_path = p.string();
+				const auto directory = fs_path.string();
 				if (file_path.find(directory) == types::string::npos)
 					throw archive_exception("Directory path isn't a subset of the file path, unexpected error", archive_exception::error_code::FILE_READ);
 
@@ -365,14 +382,15 @@ namespace hades
 				//remove leading /
 				file_name.erase(file_name.begin());
 
-				auto date = fs::last_write_time(p);
-				auto t = date.time_since_epoch();
+				const auto date = fs::last_write_time(p);
+				const auto t = date.time_since_epoch();
 
 				//NOTE: if this is firing, then we need to enable zip64 compression below
 				if (fs::file_size(p) > 0xffffffff)
 					throw archive_exception(("Cannot store file in archive: " + file_name + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
 
 				zip_fileinfo file_info{ tm_zip{}, 0, 0, 0 };
+				//no const for 'ret' the variable is resued a few times for other results
 				auto ret = zipOpenNewFileInZip(zip, file_name.c_str(), &file_info, nullptr, 0, nullptr, 0, nullptr,
 					Z_DEFLATED, // 0 = store, Z_DEFLATE = deflate
 					Z_DEFAULT_COMPRESSION);
@@ -384,7 +402,7 @@ namespace hades
 
 				//NOTE:, the buffer size will have to be double checked if we move to zip64 compression
 				std::ifstream in(p.string(), std::ios::binary | std::ios::ate);
-				auto size = in.tellg();
+				const auto size = in.tellg();
 
 				//if the file is size 0(like many git tag files are)
 				//then skip this whole thing and close the file.
@@ -407,7 +425,7 @@ namespace hades
 					throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
 			}
 
-			auto ret = zipClose(zip, nullptr);
+			const auto ret = zipClose(zip, nullptr);
 			if (ret != ZIP_OK)
 				throw archive_exception(("Error closing file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_CLOSE);
 
@@ -422,10 +440,11 @@ namespace hades
 				throw archive_exception(("Cannot open archive, file not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
 
 			//create directory if absent
-			auto root_dir = fs_path.parent_path() / fs_path.stem();
+			const auto root_dir = fs_path.parent_path() / fs_path.stem();
 
-			auto archive = open_archive(path);
+			const auto archive = open_archive(path);
 
+			//NOTE: no const for ret, variable is resued later
 			auto ret = unzGoToFirstFile(archive);
 			if (ret != ZIP_OK)
 				throw archive_exception(("Error finding file in archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
@@ -444,9 +463,9 @@ namespace hades
 				if (ret != ZIP_OK)
 					throw archive_exception("Error reading file info from archive", archive_exception::error_code::FILE_OPEN);
 
-				types::string filename(name.begin(), name.end());
+				const types::string filename(name.begin(), name.end());
 
-				fs::path parent_dir(filename);
+				const fs::path parent_dir(filename);
 				//create directory if it dosn't already exist
 				fs::create_directories(root_dir / parent_dir.parent_path()); //only creates missing directories
 
@@ -457,13 +476,15 @@ namespace hades
 					throw archive_exception(("Failed to create or open file: " + filename).c_str(), archive_exception::error_code::FILE_WRITE);
 
 				//write data to file
-				auto size = info.uncompressed_size;
+				const auto size = info.uncompressed_size;
 
 				//if this is being triggered then we need to upgrade to zip64
+				//TODO: use CheckSize to convert
 				if (std::numeric_limits<unsigned int>::max() < info.uncompressed_size)
 					throw archive_exception(("Cannot extract file from archive: " + filename + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
 
-				auto usize = static_cast<unsigned int>(size);
+				//TODO: use CHeckSize
+				const auto usize = static_cast<unsigned int>(size);
 				using char_buffer = std::vector<char>;
 				char_buffer buff(static_cast<buffer::size_type>(usize));
 
@@ -478,7 +499,7 @@ namespace hades
 				//write the data to actual files
 				while (total_written < usize)
 				{
-					auto amount = unzReadCurrentFile(archive, &buff[0], usize);
+					const auto amount = unzReadCurrentFile(archive, &buff[0], usize);
 					file.write(buff.data(), amount);
 					total_written += amount;
 				}

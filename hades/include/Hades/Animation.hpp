@@ -11,7 +11,7 @@ namespace
 	float ConvertToRatio(sf::Time t, float duration)
 	{
 		//reduce t until it is less than one duration
-		auto d = sf::seconds(duration);
+		const auto d = sf::seconds(duration);
 		if (t > d)
 		{
 			while (t > d)

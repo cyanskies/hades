@@ -1,6 +1,9 @@
 #ifndef HADES_FILES_HPP
 #define HADES_FILES_HPP
 
+#include <cassert>
+#include <variant>
+
 #include "SFML/System/FileInputStream.hpp"
 #include "SFML/System/InputStream.hpp"
 
@@ -10,24 +13,74 @@ namespace hades
 {
 	namespace files
 	{
-		class FileStream;
+		namespace detail
+		{
+			//This wrapper over sf::FileInputStream to allow move semantics
+			class FileStream
+			{
+			public:
+				FileStream() : _fstream(std::make_unique<sf::FileInputStream>())
+				{}
+
+				~FileStream() = default;
+
+				FileStream(const FileStream&) = delete;
+				FileStream &operator=(const FileStream&) = delete;
+
+				FileStream(FileStream&&) = default;
+				FileStream &operator=(FileStream&&) = default;
+
+				bool open(const std::string& filename)
+				{
+					assert(_fstream);
+					return _fstream->open(filename);
+				}
+
+				sf::Int64 read(void* data, sf::Int64 size)
+				{
+					assert(_fstream);
+					return _fstream->read(data, size);
+				}
+
+				sf::Int64 seek(sf::Int64 position)
+				{
+					assert(_fstream);
+					return _fstream->seek(position);
+				}
+
+				sf::Int64 tell()
+				{
+					assert(_fstream);
+					return _fstream->tell();
+				}
+
+				sf::Int64 getSize()
+				{
+					assert(_fstream);
+					return _fstream->getSize();
+				}
+
+			private:
+				std::unique_ptr<sf::FileInputStream> _fstream;
+			};
+		}
+
+		class ResourceStream;
 
 		std::string as_string(const std::string &modPath, const std::string &fileName);
 		buffer as_raw(const std::string &modPath, const std::string &fileName);
-		FileStream make_stream(const std::string &modPath, const std::string &fileName);
+		ResourceStream make_stream(const std::string &modPath, const std::string &fileName);
 
-		class FileStream : public sf::InputStream
+		class ResourceStream final : public sf::InputStream
 		{
 		public:
-			FileStream() {}
-			FileStream(const std::string &modPath, const std::string &fileName);
+			ResourceStream() = default;
+			ResourceStream(const std::string &modPath, const std::string &fileName);
 			
-			~FileStream();
-
-			FileStream(FileStream&&);
-			FileStream(const FileStream&) = delete;
-			FileStream &operator=(FileStream&&);
-			FileStream &operator=(const FileStream&) = delete;
+			ResourceStream(ResourceStream&&) = default;
+			ResourceStream(const ResourceStream&) = delete;
+			ResourceStream &operator=(ResourceStream&&) = default;
+			ResourceStream &operator=(const ResourceStream&) = delete;
 
 			void open(const std::string &modPath, const std::string &fileName);
 
@@ -42,14 +95,13 @@ namespace hades
 			sf::Int64 getSize();
 
 		private:
-			bool archive = false, file = false, _open = false;
+			bool _open = false;
 			std::string _mod_path, _file_path;
 
-			union 
-			{
-				sf::FileInputStream _fileStream;
-				zip::archive_stream _archiveStream;
-			};
+			using File = detail::FileStream;
+			using Archive = zip::archive_stream;
+			using StreamVariant = std::variant<File, Archive>;
+			StreamVariant _stream;
 		};
 
 		class file_exception : public std::runtime_error

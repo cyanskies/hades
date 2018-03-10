@@ -167,7 +167,7 @@ namespace hades
 
 				try
 				{
-					files::FileStream fstream = files::make_stream(mod->source, tex->source);
+					auto fstream = files::make_stream(mod->source, tex->source);
 					tex->value.loadFromStream(fstream);
 					tex->value.setSmooth(tex->smooth);
 					tex->value.setRepeated(tex->repeat);
@@ -499,7 +499,7 @@ namespace hades
 
 			try
 			{
-				files::FileStream fstream = files::make_stream(mod->source, f->source);
+				auto fstream = files::make_stream(mod->source, f->source);
 				f->value.loadFromStream(fstream);
 			}
 			catch (files::file_exception e)

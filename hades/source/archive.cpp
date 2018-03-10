@@ -96,34 +96,43 @@ namespace hades
 			return _fileOpen;
 		}
 
-		//TODO: replace all size type casts with this function
-		unsigned int CheckSizeLimits(sf::Int64 size)
+		template<typename Integer>
+		unsigned int CheckSizeLimits(Integer size)
 		{
-			//TODO: check that size > 0
-			//and that size < unsigned int max
-			//throw otherwise
+			if (size < 0)
+				throw archive_exception("Negative read size", archive_exception::error_code::FILE_READ);
+
+			if (size > std::numeric_limits<unsigned int>::max())
+			{
+				//if this is being triggered then may need to start using the zip64 algorithm
+				auto message = "Read size was too large. Max read size is: "
+					+ to_string(std::numeric_limits<unsigned int>::max()) + ", requested size was: "
+					+ to_string(size);
+				throw archive_exception(message.c_str(), archive_exception::error_code::FILE_READ);
+			}
+
 			return static_cast<unsigned int>(size);
 		}
 
 		sf::Int64 archive_stream::read(void* data, sf::Int64 size)
 		{
-			assert(data);
+			if (data == nullptr)
+				throw std::invalid_argument("Must pass a valid buffer to archive_steam::read");
+
 			if(!_fileOpen)
 				throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
 
-			//TODO: warn or except if size < 0
-			assert(size > 0); // this needs to be a runtime check
+			if (size == 0)
+			{
+				LOGWARNING("Tried to read 0 bytes from file; archive_stream::read");
+				return 0;
+			}
 
 			//unsigned int type used by zlib
-			const auto usize = static_cast<unsigned int>(size);
+			const auto usize = CheckSizeLimits(size);
 
 			buffer buff(static_cast<buffer::size_type>(usize));
 
-			//NOTE: uint32 max worth of bytes is around 4gb, so we shouldn't have
-			// a problem unless someones trying to load something really big, but then the
-			// assert should catch it.
-			//TODO: Runtime check
-			assert(std::numeric_limits<unsigned int>::max() > size);
 			auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
 
 			memcpy(data, buff.data(), amountRead);
@@ -148,9 +157,8 @@ namespace hades
 			if(!open(_fileName))
 				throw archive_exception(("Failed to open file in archive: " + _fileName).c_str(), archive_exception::error_code::FILE_OPEN);
 
-			//TODO: runtime check
-			assert(std::numeric_limits<unsigned int>::max() > position);
-			buffer buff(static_cast<buffer::size_type>(position));
+			auto upos = CheckSizeLimits(position);
+			buffer buff(static_cast<buffer::size_type>(upos));
 
 			sf::Int64 total = 0;
 
@@ -177,8 +185,8 @@ namespace hades
 
 			const auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
-			//TODO: runtime check
-			assert(r == UNZ_OK);
+			if (r != UNZ_OK)
+				throw archive_exception("Unable to get file into.", archive_exception::error_code::FILE_READ);
 
 			return info.uncompressed_size;
 		}
@@ -186,10 +194,10 @@ namespace hades
 		void archive_stream::_close()
 		{
 			if (_fileOpen)
-				unzCloseCurrentFile(_archive);
+				unzCloseCurrentFile(_archive); // returns error code if CRC check failed(we don't care at this point)
 
 			if (_archive)
-				unzClose(_archive);
+				unzClose(_archive); // returns UNZ_OK if everything was fine(what could go wrong that we would bother to report?)
 		}
 
 		unarchive open_archive(types::string path)
@@ -200,18 +208,16 @@ namespace hades
 			unarchive a = unzOpen(path.c_str());
 
 			if (!a)
-			{
 				throw archive_exception(("Unable to open archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
-			}
 
 			return a;
 		}
 
 		void close_archive(unarchive f)
 		{
-			//TODO: runtime check
-			assert(f);
-
+			if (!f)
+				throw archive_exception("Invalid argument", archive_exception::error_code::FILE_CLOSE);
+			
 			const auto r = unzClose(f);
 
 			if(r != UNZ_OK)
@@ -223,10 +229,9 @@ namespace hades
 			auto stream = stream_file_from_archive(archive, path);
 
 			const auto size = stream.getSize();
+			const auto usize = CheckSizeLimits(size);
 
-			//TODO: runtime check
-			assert(std::numeric_limits<unsigned int>::max() > size);
-			buffer buff(static_cast<buffer::size_type>(size));
+			buffer buff(static_cast<buffer::size_type>(usize));
 			stream.read(&buff[0], size);
 
 			return buff;
@@ -237,10 +242,10 @@ namespace hades
 			const auto buf = read_file_from_archive(archive, path);
 
 			types::string out;
-			//convert buff to str
-			//TODO: std::transform
-			for (auto i : buf)
-				out.push_back(static_cast<char>(i));
+	
+			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out), [](hades::buffer::value_type v) {
+				return static_cast<char>(v);
+			});
 
 			return out;
 		}
@@ -261,7 +266,7 @@ namespace hades
 
 		bool file_exists(types::string archive, types::string path)
 		{
-			auto a = open_archive(archive);
+			const auto a = open_archive(archive);
 			const auto ret = file_exists(a, path);
 			close_archive(a);
 			return ret;
@@ -286,7 +291,7 @@ namespace hades
 		{
 			std::vector<types::string> output;
 
-			auto zip = open_archive(archive);
+			const auto zip = open_archive(archive);
 
 			const auto ret = unzGoToFirstFile(zip);
 			if (ret != ZIP_OK)
@@ -351,10 +356,8 @@ namespace hades
 			const auto root = fs_path.parent_path();
 			const auto name = --fs_path.end();
 
-			//detect likely bug
-			//may need to do --(--fs_path.end())
-			//TODO: runtime check
-			assert(*name != ".");
+			if (*name == ".")
+				throw archive_exception("Tried to open \"./\".", archive_exception::error_code::FILE_OPEN);
 
 			const auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
 
@@ -375,7 +378,6 @@ namespace hades
 				const auto directory = fs_path.string();
 				if (file_path.find(directory) == types::string::npos)
 					throw archive_exception("Directory path isn't a subset of the file path, unexpected error", archive_exception::error_code::FILE_READ);
-
 
 				auto file_name = file_path.substr(directory.length(), file_path.length() - directory.length());
 
@@ -412,8 +414,8 @@ namespace hades
 					in.seekg(std::ios::beg);
 					in.read(&buf[0], size);
 
-					//NOTE: same as for the buffer, size is being truncated if larger than 32 bits
-					ret = zipWriteInFileInZip(zip, &buf[0], static_cast<unsigned int>(size));
+					const auto usize = CheckSizeLimits(size);
+					ret = zipWriteInFileInZip(zip, &buf[0], usize);
 					if (ret != ZIP_OK)
 						throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
 				}
@@ -476,15 +478,7 @@ namespace hades
 					throw archive_exception(("Failed to create or open file: " + filename).c_str(), archive_exception::error_code::FILE_WRITE);
 
 				//write data to file
-				const auto size = info.uncompressed_size;
-
-				//if this is being triggered then we need to upgrade to zip64
-				//TODO: use CheckSize to convert
-				if (std::numeric_limits<unsigned int>::max() < info.uncompressed_size)
-					throw archive_exception(("Cannot extract file from archive: " + filename + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
-
-				//TODO: use CHeckSize
-				const auto usize = static_cast<unsigned int>(size);
+				const auto usize = CheckSizeLimits(info.uncompressed_size);
 				using char_buffer = std::vector<char>;
 				char_buffer buff(static_cast<buffer::size_type>(usize));
 

@@ -359,6 +359,155 @@ namespace hades
 			}
 		}
 
+		template<class T, class StringToT>
+		std::vector<T> StringToVector(std::string_view str, StringToT converter)
+		{
+			// format accepted for curves
+
+			//either : T
+			// or : T, T, T, T, T
+			// or : [T, T, T, T, T, T]
+
+			//remove the braces at begining and end if present
+			auto first_brace = std::find(std::begin(str), std::end(str), '[');
+			if (first_brace != std::end(str))
+			{
+				const auto count = std::distance(first_brace, std::end(str));
+				str = str.substr(count, str.size() - count);
+			}
+
+			auto last_brace = std::find(std::begin(str), std::end(str), ']');
+			if (last_brace != std::end(str))
+			{
+				const auto pos = std::distance(std::begin(str), last_brace);
+				str = str.substr(0, pos);
+			}
+
+			//split into csv
+			std::vector<std::string_view> elements;
+			split(str, ',', std::back_inserter(elements));
+
+			//convert each one into T
+			std::vector<T> out;
+			for (const auto &e : elements)
+				out.push_back(converter(to_string(e)));
+
+			return out;
+		}
+
+		template<class T>
+		std::vector<T> StringToVector(std::string_view str)
+		{
+			return StringToVector<T>(str, types::stov<T>);
+		}
+
+		types::string CurveValueToString(curve_default_value v)
+		{
+			assert(v.set);
+			return std::visit([](auto &&v)->types::string {
+				using type = std::decay_t<decltype(v)>;
+				if constexpr (std::is_same_v<type, curve_types::int_t>
+					|| std::is_same_v<type, curve_types::float_t>
+					|| std::is_same_v<type, curve_types::bool_t>
+					|| std::is_same_v<type, curve_types::object_ref>
+					|| std::is_same_v<type, curve_types::string>)
+				{
+					return to_string(v);
+				}
+				else if constexpr (std::is_same_v<type, curve_types::unique>)
+				{
+					return hades::data::GetAsString(v);
+				}
+				else if constexpr (std::is_same_v<type, curve_types::vector_int>
+					|| std::is_same_v<type, curve_types::vector_float>
+					|| std::is_same_v<type, curve_types::vector_object_ref>)
+				{
+					types::string out{ "[" };
+					for (const auto &i : v)
+					{
+						out += to_string(i) + ", ";
+					}
+
+					//remove the final ", "
+					out.pop_back();
+					out.pop_back();
+					out += "]";
+					return out;
+				}
+				else if constexpr (std::is_same_v<type, curve_types::vector_unique>)
+				{
+					types::string out{ "[" };
+					for (const auto &i : v)
+					{
+						out += hades::data::GetAsString(i) + ", ";
+					}
+
+					//remove the final ", "
+					out.pop_back();
+					out.pop_back();
+					out += "]";
+					return out;
+				}
+				else
+				{
+					static_assert(hades::always_false<type>::value, "unexpected type")
+				}
+			}, v.value);
+		}
+
+		curve_default_value StringToCurveValue(const curve* c, std::string_view str)
+		{
+			assert(c);
+			const auto type = c->data_type;
+
+			curve_default_value out;
+			out.set = true;
+
+			using namespace std::string_view_literals;
+			static const auto true_str = { "true"sv, "TRUE"sv, "1"sv };
+
+			if (type == VariableType::BOOL)
+			{
+				if (std::any_of(std::begin(true_str), std::end(true_str), [str](auto &&s) { return str == s; }))
+					out.value = true;
+				else
+					out.value = false;
+			}
+			else if (type == VariableType::ERROR)
+				assert(false);
+			else if (type == VariableType::FLOAT)
+			{
+				out.value = std::stof(to_string(str));
+			}
+			else if (type == VariableType::INT || type == VariableType::OBJECT_REF)
+			{
+				out.value = std::stoi(to_string(str));
+			}
+			else if (type == VariableType::STRING)
+				out.value = to_string(str);
+			else if (type == VariableType::UNIQUE)
+			{
+				out.value = hades::data::GetUid(str);
+			}
+			else if (type == VariableType::VECTOR_FLOAT)
+			{
+				out.value = StringToVector<float>(str);
+			}
+			else if (type == VariableType::VECTOR_INT
+				|| type == VariableType::VECTOR_OBJECT_REF)
+			{
+				out.value = StringToVector<int>(str);
+			}
+			else if (type == VariableType::VECTOR_UNIQUE)
+			{
+				out.value = StringToVector<data::UniqueId>(str, [](auto &&str) {
+					return hades::data::GetUid(str);
+				});
+			}
+
+			return curve_default_value{};
+		}
+
 		//throws runtime error
 		animation_frame parseFrame(const YAML::Node &node)
 		{

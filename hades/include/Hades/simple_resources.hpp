@@ -114,6 +114,9 @@ namespace hades
 			curve_default_value default_value;
 		};
 
+		types::string CurveValueToString(curve_default_value);
+		curve_default_value StringToCurveValue(const curve*, std::string_view str);
+
 		struct shader : public resource_type<sf::Shader>
 		{
 			//enum class uniform_type {

@@ -936,23 +936,72 @@ namespace objects
 		_updateSelector(info);
 	}
 
+	template<typename OnEnter>
+	sfg::Box::Ptr MakeEditRow(std::string_view text, std::string_view value, OnEnter func)
+	{
+		auto box = sfg::Box::Create();
+
+		using namespace hades;
+		auto property_name = sfg::Label::Create(to_string(text));
+		box->PackEnd(property_name);
+
+		auto value_edit = sfg::Entry::Create(to_string(value));
+		std::weak_ptr<sfg::Entry> weak_value = value_edit;
+		value_edit->GetSignal(sfg::Entry::OnTextChanged).Connect([func, weak_value] {
+			auto value = weak_value.lock();
+			if (!value)
+				return;
+
+			if (auto text = value->GetText().toAnsiString(); text.back() == '\n')
+				func(text);
+		});
+
+		box->PackEnd(value_edit);
+
+		return box;
+	}
+
+	using namespace hades::resources;
+	using CurveEntry = std::tuple<const curve*, curve_default_value>;
+	sfg::Box::Ptr MakePropertyEditRow(std::string_view text, CurveEntry c, object_info &obj)
+	{
+		using namespace hades;
+		auto [curve, c_value] = c;
+		assert(curve);
+		const auto value_str = CurveValueToString(c_value);
+
+		auto on_enter = [curve, &obj](auto &&text) {
+			const auto value = StringToCurveValue(curve, text);
+			auto c = std::find_if(std::begin(obj.curves), std::end(obj.curves), [curve](CurveEntry c) {
+				const hades::resources::curve *other_curve = std::get<const hades::resources::curve*>(c);
+				return other_curve == curve;
+			});
+
+			if (c == std::end(obj.curves))
+				obj.curves.emplace_back(std::make_tuple(curve, value));
+			else
+				std::get<curve_default_value>(*c) = value;
+		};
+
+		return MakeEditRow(to_string(text), value_str, on_enter);
+	}
+
 	void object_editor::_updateInfoBox(object_info &obj)
 	{
-		/*
 		using namespace std::string_literals;
 		auto message = "Selected: "s;
-		auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
+		const auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
 
 		if (obj.name.empty())
 			message += obj_type_name;
 		else
 			message += obj.name + "(" + obj_type_name + ")";
 
-		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
-		selectedInfoBox->removeAllWidgets();
-		const auto label = tgui::Label::create(message);
-		selectedInfoBox->add(label);
+		_propertyWindow->RemoveAll();
+		const auto label = sfg::Label::Create(message);
+		_propertyWindow->PackEnd(label);
 
+		/*
 		//add the immutable id property
 		auto id_property = MakePropertyEditRow("Id", hades::to_string(obj.id));
 		selectedInfoBox->add(std::get<tgui::Container::Ptr>(id_property));
@@ -1028,13 +1077,9 @@ namespace objects
 	{
 		//_objectMode = editor::ObjectMode::NONE_SELECTED;
 
-		/*
-		auto selectedInfoBox = _gui.get<tgui::Container>(editor::selection_info);
-		selectedInfoBox->removeAllWidgets();
-
+		_propertyWindow->RemoveAll();
 		static const auto message = "Selected: \"Nothing\"";
-		const auto label = tgui::Label::create(message);
-		selectedInfoBox->add(label);
-		*/
+		const auto label = sfg::Label::Create(message);
+		_propertyWindow->PackEnd(label);
 	}
 }

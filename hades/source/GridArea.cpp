@@ -6,7 +6,7 @@ namespace hades
 {
 	std::vector<sf::RectangleShape> CreateGrid(const sf::Vector2f &size, const sf::Color &c, types::uint32 cellSize)
 	{
-		const float thickness = 1.f;
+		constexpr float thickness = 1.f;
 		std::vector<sf::RectangleShape> lines;
 
 		const auto max = std::max(size.x, size.y);
@@ -60,7 +60,7 @@ namespace hades
 
 		for (auto &line : _lines)
 		{
-			auto rect = line.getGlobalBounds();
+			const auto rect = line.getGlobalBounds();
 			states.transform.transformRect(rect);
 
 			//only draw the lines that intersect the 2d camera

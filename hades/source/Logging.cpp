@@ -49,8 +49,8 @@ namespace hades
 
 	types::string time()
 	{
-		auto t = std::chrono::system_clock::now();
-		auto ct = std::chrono::system_clock::to_time_t(t);
+		const auto t = std::chrono::system_clock::now();
+		const auto ct = std::chrono::system_clock::to_time_t(t);
 		//Use the updated C version of localtime
 		//for better threading security
 		tm time;

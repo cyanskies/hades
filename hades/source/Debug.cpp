@@ -48,7 +48,7 @@ namespace hades
 
 		Overlay* OverlayManager::destroyOverlay(Overlay *ptr)
 		{
-			auto loc = std::find_if(_overlays.begin(), _overlays.end(), [ptr](std::unique_ptr<Overlay> &e) {
+			const auto loc = std::find_if(_overlays.begin(), _overlays.end(), [ptr](std::unique_ptr<Overlay> &e) {
 				return ptr == &*e;
 			});
 
@@ -73,7 +73,7 @@ namespace hades
 				if (!overlay->fullscreen())
 				{
 					//arrange the next view
-					auto size = overlay->getSize();
+					const auto size = overlay->getSize();
 					if (size == sf::Vector2f())
 						continue;
 

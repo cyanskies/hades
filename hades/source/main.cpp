@@ -52,7 +52,7 @@ namespace hades
 int hades_main(int argc, char* argv[])
 {
 	//new commands start with a '-'.
-	const char COMMAND_DELIMITER = '-';
+	constexpr char COMMAND_DELIMITER = '-';
 
 	std::vector<std::string_view> cmdline;
 	cmdline.reserve(argc);
@@ -77,7 +77,7 @@ int hades_main(int argc, char* argv[])
 			commands[index].arguments.push_back(s);
 	}
 	
-	auto command_length = commands.size();
+	const auto command_length = commands.size();
 
 	//===special commands===
 	//these are invoked by using the engine as a normal command line program
@@ -124,7 +124,7 @@ int hades_main(int argc, char* argv[])
 
 			returnCode = app.run();
 		}
-		catch(hades::zip::archive_exception e)
+		catch(hades::zip::archive_exception &e)
 		{
 			//failed to read a resource from an archive //probably loading a mod.yaml
 			LOGERROR(e.what());

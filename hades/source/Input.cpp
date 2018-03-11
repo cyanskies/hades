@@ -18,8 +18,7 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		const auto &state = _previousState;
-		i.eventCheck = [&state](bool handled, const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
 
@@ -55,8 +54,7 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		const auto &state = _previousState;
-		i.eventCheck = [&window, &state](bool handled, const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [&window](bool handled, const sf::Event &e, data::UniqueId id) {
 			Action a;
 			a.id = id;
 

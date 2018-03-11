@@ -15,19 +15,19 @@ namespace hades
 
 		//application registers the custom resource types
 		//parser must convert yaml into a resource manifest object
-		void data_system::register_resource_type(std::string name, resources::parserFunc parser)
+		void data_system::register_resource_type(std::string_view name, resources::parserFunc parser)
 		{
-			_resourceParsers[name] = parser;
+			_resourceParsers[to_string(name)] = parser;
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
-		void data_system::load_game(std::string game)
+		void data_system::load_game(std::string_view game)
 		{
 			static bool game_loaded = false;
 
 			if (game_loaded)
 			{
-				LOG("Tried to load" + game + ", Already loaded a game, skipping");
+				LOG("Tried to load" + to_string(game) + ", Already loaded a game, skipping");
 				return;//game already loaded ignore
 			}
 
@@ -42,31 +42,31 @@ namespace hades
 			}
 			catch (YAML::Exception &e)
 			{
-				auto message = std::string(e.what()) + " while parsing: " + game + "/game.yaml";
+				const auto message = to_string(e.what()) + " while parsing: " + to_string(game) + "/game.yaml";
 				LOGERROR(message);
 			}
 		}
 
-		inline bool ContainsTab(types::string yaml)
+		inline bool ContainsTab(std::string_view yaml)
 		{
 			return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
 		}
 
 		//mod is the name of a folder or archive containing a mod.yaml file
-		void data_system::add_mod(std::string mod, bool autoLoad, std::string name)
+		void data_system::add_mod(std::string_view mod, bool autoLoad, std::string_view name)
 		{
-			auto modyaml = files::as_string(mod, name);
+			const auto modyaml = files::as_string(mod, name);
 
 			if (ContainsTab(modyaml))
-				LOGWARNING("Yaml file: " + mod + "/" + name + " contains tabs, expect errors.");
+				LOGWARNING("Yaml file: " + to_string(mod) + "/" + to_string(name) + " contains tabs, expect errors.");
 			//parse game.yaml
 			auto root = YAML::Load(modyaml.c_str());
 			if (autoLoad)
 				//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
-				parseMod(mod, root, [this](std::string s) {this->add_mod(s, true); return true; });
+				parseMod(to_string(mod), root, [this](std::string_view s) {this->add_mod(s, true); return true; });
 			else
 				//otherwise bind to loaded, returns false if dependent mod is not loaded
-				parseMod(mod, root, std::bind(&data_system::loaded, this, std::placeholders::_1));
+				parseMod(to_string(mod), root, std::bind(&data_system::loaded, this, std::placeholders::_1));
 
 			//record the list of loaded games/mods
 			if (name == "game.yaml")
@@ -75,10 +75,10 @@ namespace hades
 				_mods.push_back(getUid(mod));
 		}
 
-		bool data_system::loaded(types::string mod)
+		bool data_system::loaded(std::string_view mod)
 		{
 			//name hasn't even been used yet
-			if (_names.find(mod) == _names.end())
+			if (_names.find(types::string{ mod }) == _names.end())
 				return false;
 
 			try
@@ -251,7 +251,7 @@ namespace hades
 			}
 		}
 
-		void data_system::parseMod(std::string source, YAML::Node modRoot, std::function<bool(std::string)> dependencycheck)
+		void data_system::parseMod(std::string_view source, YAML::Node modRoot, std::function<bool(std::string_view)> dependencycheck)
 		{
 			auto modKey = getUid(source);
 
@@ -265,7 +265,7 @@ namespace hades
 			if (mod.IsNull() || !mod.IsDefined())
 			{
 				//missing mod header
-				LOGERROR("mod header missing for mod: " + source);
+				LOGERROR("mod header missing for mod: " + to_string(source));
 				return;
 			}
 
@@ -277,7 +277,7 @@ namespace hades
 			if (mod_name.IsNull() || !mod_name.IsDefined())
 			{
 				//missing mod name
-				LOGERROR("name missing for mod: " + source);
+				LOGERROR("name missing for mod: " + to_string(source));
 				return;
 			}
 
@@ -294,13 +294,13 @@ namespace hades
 					{
 						if (!dependencycheck(d.as<types::string>()))
 						{
-							LOGERROR("One of mods: " + source + " dependencies has not been provided, was: " + d.as<types::string>());
+							LOGERROR("One of mods: " + to_string(source) + " dependencies has not been provided, was: " + d.as<types::string>());
 							continue;
 						}
 					}
 				}
 				else
-					LOGERROR("Tried to read dependencies for mod: " + source + ", but the depends entry did not contain a sequence");
+					LOGERROR("Tried to read dependencies for mod: " + to_string(source) + ", but the depends entry did not contain a sequence");
 			}
 
 			//store the data

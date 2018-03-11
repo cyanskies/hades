@@ -27,7 +27,7 @@ namespace fs = std::experimental::filesystem;
 
 //this is the default archive extension
 //used when created archives, but not when searching for them
-const hades::types::string archive_ext = ".zip";
+constexpr auto archive_ext = ".zip";
 
 namespace hades
 {
@@ -38,10 +38,10 @@ namespace hades
 		{}
 
 		//open a close unzip archives
-		unarchive open_archive(types::string path);
+		unarchive open_archive(std::string_view path);
 		void close_archive(unarchive f);
 
-		archive_stream::archive_stream(types::string archive) : _fileOpen(false), _archive(open_archive(archive))
+		archive_stream::archive_stream(std::string_view archive) : _fileOpen(false), _archive(open_archive(archive))
 		{}
 
 		archive_stream::archive_stream(archive_stream&& rhs) : _fileOpen(rhs._fileOpen),
@@ -70,9 +70,9 @@ namespace hades
 			_close();
 		}
 
-		bool file_exists(unarchive, types::string);
+		bool file_exists(unarchive, std::string_view);
 
-		bool archive_stream::open(types::string filename)
+		bool archive_stream::open(std::string_view filename)
 		{
 			if(_fileOpen)
 				throw archive_exception("This stream already has a file open", archive_exception::error_code::FILE_ALREADY_OPEN);
@@ -200,15 +200,16 @@ namespace hades
 				unzClose(_archive); // returns UNZ_OK if everything was fine(what could go wrong that we would bother to report?)
 		}
 
-		unarchive open_archive(types::string path)
+		unarchive open_archive(std::string_view path)
 		{
-			if(!fs::exists(path))
-				throw archive_exception(("Archive not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
+			const types::string archive{ path };
+			if(!fs::exists(archive))
+				throw archive_exception(("Archive not found: " + archive).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
 			//open archive
-			unarchive a = unzOpen(path.c_str());
+			unarchive a = unzOpen(archive.c_str());
 
 			if (!a)
-				throw archive_exception(("Unable to open archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+				throw archive_exception(("Unable to open archive: " + archive).c_str(), archive_exception::error_code::FILE_OPEN);
 
 			return a;
 		}
@@ -224,7 +225,7 @@ namespace hades
 				throw archive_exception("Unable to close archive", archive_exception::error_code::FILE_CLOSE);
 		}
 
-		buffer read_file_from_archive(types::string archive, types::string path)
+		buffer read_file_from_archive(std::string_view archive, std::string_view path)
 		{
 			auto stream = stream_file_from_archive(archive, path);
 
@@ -237,7 +238,7 @@ namespace hades
 			return buff;
 		}
 
-		types::string read_text_from_archive(types::string archive, types::string path)
+		types::string read_text_from_archive(std::string_view archive, std::string_view path)
 		{
 			const auto buf = read_file_from_archive(archive, path);
 
@@ -250,7 +251,7 @@ namespace hades
 			return out;
 		}
 
-		archive_stream stream_file_from_archive(types::string archive, types::string path)
+		archive_stream stream_file_from_archive(std::string_view archive, std::string_view path)
 		{
 			archive_stream str(archive);
 			str.open(path);
@@ -264,7 +265,7 @@ namespace hades
 			//no sensitivity on any platform
 			case_sensitivity_none = 2;
 
-		bool file_exists(types::string archive, types::string path)
+		bool file_exists(std::string_view archive, std::string_view path)
 		{
 			const auto a = open_archive(archive);
 			const auto ret = file_exists(a, path);
@@ -272,13 +273,14 @@ namespace hades
 			return ret;
 		}
 
-		bool file_exists(unarchive a, types::string path)
+		bool file_exists(unarchive a, std::string_view path)
 		{
-			const auto r = unzLocateFile(a, path.c_str(), case_sensitivity_auto);
+			const types::string file{ path };
+			const auto r = unzLocateFile(a, file.c_str(), case_sensitivity_auto);
 			return r == UNZ_OK;
 		}
 
-		types::uint16 count_separators(types::string s)
+		types::uint16 count_separators(std::string_view s)
 		{
 			constexpr char separator1 = '\\';
 			constexpr char separator2 = '/';
@@ -287,7 +289,7 @@ namespace hades
 			return sep_count + std::count(s.begin(), s.end(), separator2);
 		}
 
-		std::vector<types::string> list_files_in_archive(types::string archive, types::string dir_path, bool recursive)
+		std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir_path, bool recursive)
 		{
 			std::vector<types::string> output;
 
@@ -295,7 +297,7 @@ namespace hades
 
 			const auto ret = unzGoToFirstFile(zip);
 			if (ret != ZIP_OK)
-				throw archive_exception(("Error finding file in archive: " + archive).c_str(), archive_exception::error_code::FILE_OPEN);
+				throw archive_exception(("Error finding file in archive: " + to_string(archive)).c_str(), archive_exception::error_code::FILE_OPEN);
 
 			const auto separator_count = count_separators(dir_path);
 
@@ -333,8 +335,10 @@ namespace hades
 			return output;
 		}
 
-		void compress_directory(types::string path)
+		void compress_directory(std::string_view path_view)
 		{
+			const types::string path{ path_view };
+
 			if (!fs::is_directory(path))
 				throw archive_exception(("Path is not a directory: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
 
@@ -434,8 +438,10 @@ namespace hades
 			LOG("Completed creating archive: " + name->generic_string());
 		}
 
-		void uncompress_archive(types::string path)
+		void uncompress_archive(std::string_view path_view)
 		{
+			const types::string path{ path_view };
+
 			//confirm is archive
 			fs::path fs_path(path);
 			if (!fs::exists(fs_path))

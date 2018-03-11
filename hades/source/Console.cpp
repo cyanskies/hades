@@ -18,7 +18,7 @@ namespace hades
 {
 	bool Console::GetValue(std::string_view var, detail::Property &out) const
 	{
-		auto iter = _consoleVariables.find(to_string(var));
+		const auto iter = _consoleVariables.find(to_string(var));
 		if(iter == _consoleVariables.end())
 			return false;
 		else
@@ -81,7 +81,7 @@ namespace hades
 
 	void Console::DisplayVariables(std::vector<std::string_view> args)
 	{
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
 		std::vector<types::string> output;
 
@@ -116,7 +116,7 @@ namespace hades
 	{
 		std::vector<types::string> funcs;
 		{
-			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 			funcs.reserve(_consoleFunctions.size());
 			std::transform(std::begin(_consoleFunctions), std::end(_consoleFunctions), std::back_inserter(funcs),
 				[](const ConsoleFunctionMap::value_type &f) { return f.first; });
@@ -158,11 +158,11 @@ namespace hades
 			}
 		}
 
-		auto id_str = to_string(identifier);
+		const auto id_str = to_string(identifier);
 
-		std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		
-		auto funcIter = _consoleFunctions.find(id_str);
+		const auto funcIter = _consoleFunctions.find(id_str);
 
 		if (funcIter != _consoleFunctions.end() && !replace)
 		{
@@ -182,7 +182,7 @@ namespace hades
 
 	void Console::eraseFunction(std::string_view identifier)
 	{
-		std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		_consoleFunctions.erase(to_string(identifier));
 	}
 
@@ -224,7 +224,7 @@ namespace hades
 	console::property_str Console::getString(std::string_view name)
 	{
 		detail::Property out;
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if (GetValue(name, out))
 		{
 			using str = console::property_str;
@@ -239,8 +239,8 @@ namespace hades
 	{
 		//add to command history
 		{
-			std::lock_guard<std::mutex> lock(_historyMutex);
-			auto entry = std::find(_commandHistory.begin(), _commandHistory.end(), command);
+			const std::lock_guard<std::mutex> lock(_historyMutex);
+			const auto entry = std::find(_commandHistory.begin(), _commandHistory.end(), command);
 
 			if (entry != _commandHistory.end())
 				_commandHistory.erase(entry);
@@ -263,8 +263,8 @@ namespace hades
 		bool isFunction = false;
 
 		{
-			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			auto funcIter = _consoleFunctions.find(to_string(command.command));
+			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			const auto funcIter = _consoleFunctions.find(to_string(command.command));
 
 			if (funcIter != _consoleFunctions.end())
 			{
@@ -297,7 +297,7 @@ namespace hades
 
 	void Console::echo(const Console_String &message)
 	{
-		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
+		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
 		TextBuffer.push_back(message);
 
 		#ifndef NDEBUG
@@ -308,15 +308,15 @@ namespace hades
 	bool Console::exists(const std::string &command) const
 	{
 		{
-			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+			const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 			detail::Property var;
 			if (GetValue(command, var))
 				return true;
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			auto funcIter = _consoleFunctions.find(command);
+			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+			const auto funcIter = _consoleFunctions.find(command);
 
 			if (funcIter != _consoleFunctions.end())
 				return true;
@@ -328,7 +328,7 @@ namespace hades
 	void Console::erase(const std::string &command)
 	{
 		{
-			std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+			const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 			_consoleVariables.erase(command);
 		}
 
@@ -337,8 +337,8 @@ namespace hades
 
 	ConsoleStringBuffer Console::get_new_output(Console_String_Verbosity maxVerbosity)
 	{
-		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
-		std::vector<Console_String>:: iterator iter = TextBuffer.begin() + recentOutputPos;
+		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
+		const std::vector<Console_String>:: iterator iter = TextBuffer.begin() + recentOutputPos;
 
 		ConsoleStringBuffer out(iter, TextBuffer.end());
 
@@ -353,7 +353,7 @@ namespace hades
 
 	ConsoleStringBuffer Console::get_output(Console_String_Verbosity maxVerbosity)
 	{
-		std::lock_guard<std::mutex> lock(_consoleBufferMutex);
+		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
 		ConsoleStringBuffer out(TextBuffer.begin(), TextBuffer.end());
 
 		recentOutputPos = TextBuffer.size();

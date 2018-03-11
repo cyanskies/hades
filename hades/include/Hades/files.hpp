@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <variant>
+#include <vector>
 
 #include "SFML/System/FileInputStream.hpp"
 #include "SFML/System/InputStream.hpp"
@@ -30,7 +31,7 @@ namespace hades
 				FileStream(FileStream&&) = default;
 				FileStream &operator=(FileStream&&) = default;
 
-				bool open(const std::string& filename)
+				bool open(const std::string& filename) 
 				{
 					assert(_fstream);
 					return _fstream->open(filename);
@@ -67,22 +68,22 @@ namespace hades
 
 		class ResourceStream;
 
-		std::string as_string(const std::string &modPath, const std::string &fileName);
-		buffer as_raw(const std::string &modPath, const std::string &fileName);
-		ResourceStream make_stream(const std::string &modPath, const std::string &fileName);
+		types::string as_string(std::string_view modPath, std::string_view fileName);
+		buffer as_raw(std::string_view modPath, std::string_view fileName);
+		ResourceStream make_stream(std::string_view modPath, std::string_view fileName);
 
 		class ResourceStream final : public sf::InputStream
 		{
 		public:
 			ResourceStream() = default;
-			ResourceStream(const std::string &modPath, const std::string &fileName);
+			ResourceStream(std::string_view modPath, std::string_view fileName);
 			
 			ResourceStream(ResourceStream&&) = default;
 			ResourceStream(const ResourceStream&) = delete;
 			ResourceStream &operator=(ResourceStream&&) = default;
 			ResourceStream &operator=(const ResourceStream&) = delete;
 
-			void open(const std::string &modPath, const std::string &fileName);
+			void open(std::string_view modPath, std::string_view fileName);
 
 			bool is_open() const
 			{
@@ -96,7 +97,7 @@ namespace hades
 
 		private:
 			bool _open = false;
-			std::string _mod_path, _file_path;
+			types::string _mod_path, _file_path;
 
 			using File = detail::FileStream;
 			using Archive = zip::archive_stream;
@@ -127,7 +128,7 @@ namespace hades
 			error_code _code;
 		};
 
-		std::vector<types::string> ListFilesInDirectory(types::string dir_path);
+		std::vector<types::string> ListFilesInDirectory(std::string_view dir_path);
 	}
 }
 

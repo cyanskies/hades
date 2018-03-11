@@ -48,7 +48,7 @@ namespace hades
 
 	void ConsoleView::update()
 	{
-		auto log_list = console::new_output(console::logger::LOG_VERBOSITY::WARNING);
+		const auto log_list = console::new_output(console::logger::LOG_VERBOSITY::WARNING);
 
 		for (const auto &s : log_list)
 			_addText(s);
@@ -117,9 +117,9 @@ namespace hades
 		_input.clear();
 	}
 
-	unsigned ValidCharSize(hades::console::property_int char_size)
+	unsigned int ValidCharSize(hades::console::property_int char_size)
 	{
-		auto n = char_size->load();
+		const auto n = char_size->load();
 		if (n < 0)
 			char_size->store(0);
 
@@ -131,8 +131,6 @@ namespace hades
 		_backdrop.setFillColor(sf::Color(0, 0, 0, *_fade));
 		_backdrop.setSize(sf::Vector2f(size.x, size.y));
 		_editLine.setSize(sf::Vector2f(size.x, 5.f));
-
-		assert(_charSize > 0);
 
 		const auto char_size = ValidCharSize(_charSize);
 

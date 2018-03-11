@@ -1,15 +1,16 @@
 #ifndef HADES_DATAMANAGER_HPP
 #define HADES_DATAMANAGER_HPP
 
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
-#include "Hades/type_erasure.hpp"
 #include "Hades/resource_base.hpp"
-
+#include "Hades/type_erasure.hpp"
+#include "Hades/Types.hpp"
 //Data manager is a resource management class.
 //The class is not thread safe
 
@@ -27,7 +28,7 @@ namespace hades
 				//names: unique id's provided by this mod
 				names;
 
-			std::string name;
+			types::string name;
 			//value is unused
 			//mod_t value
 		};
@@ -37,7 +38,7 @@ namespace hades
 
 	namespace data
 	{
-		const types::string no_id_string = "ERROR_NO_UNIQUE_ID";
+		constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID";
 
 		class data_system final : public data_manager
 		{
@@ -46,16 +47,16 @@ namespace hades
 
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
-			void register_resource_type(std::string name, resources::parserFunc parser);
+			void register_resource_type(std::string_view name, resources::parserFunc parser);
 	
 			//game is the name of a folder or archive containing a game.yaml file
-			void load_game(std::string game);
+			void load_game(std::string_view game);
 			//mod is the name of a folder or archive containing a mod.yaml file
-			void add_mod(std::string mod, bool autoLoad = false, std::string name = "mod.yaml");
+			void add_mod(std::string_view mod, bool autoLoad = false, std::string_view name = "mod.yaml");
 
 			//returns true if the mod or game with that name has been parsed
 			//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
-			bool loaded(std::string mod);
+			bool loaded(std::string_view mod);
 
 			//reread data from all mods, starting with game, and doing them all in order
 			void reparse();
@@ -89,17 +90,17 @@ namespace hades
 			
 		private:
 			void parseYaml(data::UniqueId, YAML::Node);
-			void parseMod(std::string name, YAML::Node modRoot, std::function<bool(std::string)> dependency);
+			void parseMod(std::string_view name, YAML::Node modRoot, std::function<bool(std::string_view)> dependency);
 
 			//==parsing and loading data==
-			std::unordered_map<std::string, resources::parserFunc> _resourceParsers;
+			std::unordered_map<types::string, resources::parserFunc> _resourceParsers;
 			//==stored resource data==
 			//list of used names
-			std::unordered_set<std::string> _names;
+			std::unordered_set<types::string> _names;
 			UniqueId _game;
 			std::vector<UniqueId> _mods;
 			//map of names to Uids
-			std::unordered_map<std::string, UniqueId> _ids;
+			std::unordered_map<types::string, UniqueId> _ids;
 			//list of unloaded resources
 			std::vector<resources::resource_base*> _loadQueue;
 		};

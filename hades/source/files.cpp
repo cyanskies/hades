@@ -15,11 +15,11 @@ namespace fs = std::experimental::filesystem;
 
 namespace hades {
 	namespace files {
-		std::string as_string(const std::string &modPath, const std::string &fileName)
+		types::string as_string(std::string_view modPath, std::string_view fileName)
 		{
 			const auto buf = as_raw(modPath, fileName);
 
-			std::string out;
+			types::string out;
 			//convert buff to str
 			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out),
 				[](auto i) { return static_cast<char>(i); });
@@ -27,7 +27,7 @@ namespace hades {
 			return out;
 		}
 
-		buffer as_raw(const std::string &modPath, const std::string &fileName)
+		buffer as_raw(std::string_view modPath, std::string_view fileName)
 		{
 			auto stream = make_stream(modPath, fileName);
 			const auto size = stream.getSize();
@@ -38,48 +38,50 @@ namespace hades {
 			return buff;
 		}
 
-		ResourceStream make_stream(const std::string &modPath, const std::string &fileName)
+		ResourceStream make_stream(std::string_view modPath, std::string_view fileName)
 		{
 			const auto custom_path = hades::GetUserCustomFileDirectory();
 
 			try
 			{
-				return std::move(ResourceStream(custom_path + modPath, fileName));
+				return std::move(ResourceStream(custom_path + to_string(modPath), fileName));
 			}
 			catch (file_exception&)
 			{
 
 				#ifndef NDEBUG
-					return std::move(ResourceStream("../../game/" + modPath, fileName));
+					return std::move(ResourceStream("../../game/" + to_string(modPath), fileName));
 				#else
 					return std::move(ResourceStream(modPath, filename));
 				#endif
 			}
 		}
 
-		ResourceStream::ResourceStream(const std::string &modPath, const std::string &fileName)
+		ResourceStream::ResourceStream(std::string_view modPath, std::string_view fileName)
 		{
 			open(modPath, fileName);
 		}
 
-		void ResourceStream::open(const std::string &modPath, const std::string &fileName)
+		void ResourceStream::open(std::string_view modPath, std::string_view fileName)
 		{
 			//check if modPath exists as a archive or directory
 			bool pathArchive = false, pathDirectory = false;
-			std::string archiveExt;
+			types::string archiveExt;
+			const types::string mod{ modPath };
+			const types::string file{ fileName };
 			{
-				fs::path parent = fs::path(modPath).parent_path();
+				fs::path parent = fs::path{ mod }.parent_path();
 				//iterate through directory and search for modpath.ext
 				//and modpath/.
-				fs::directory_iterator directory(parent);
+				fs::directory_iterator directory{ parent };
 
 				//get archive name
-				const auto namepos = modPath.find_last_of('/');
-				const auto archive_name = modPath.substr(namepos + 1, modPath.length() - namepos);
+				const auto namepos = mod.find_last_of('/');
+				const auto archive_name = mod.substr(namepos + 1, mod.length() - namepos);
 
 				for (auto d : directory)
 				{
-					if (d.path().stem() == archive_name)
+					if (d.path().stem().string() == archive_name)
 					{
 						if (fs::is_directory(d))
 							pathDirectory = true;
@@ -97,7 +99,7 @@ namespace hades {
 			//tryload from directory
 			if (pathDirectory)
 			{
-				auto fullPath = modPath + '/' + fileName;
+				const auto fullPath = mod + '/' + file;
 				if (fs::exists(fullPath))
 				{
 					found = true;
@@ -105,14 +107,14 @@ namespace hades {
 					File fstream;
 					if (!fstream.open(fullPath))
 					{
-						const auto message = "Cannot open file: " + fileName + ",  in mod location: " + modPath;
+						const auto message = "Cannot open file: " + file + ",  in mod location: " + mod;
 						throw file_exception(message.c_str(), file_exception::error_code::UNREADABLE_FILE);
 					}
 
 					_stream = std::move(fstream);
 
-					_mod_path = modPath;
-					_file_path = fileName;
+					_mod_path = mod;
+					_file_path = file;
 
 					//file successfully opened, construction complete
 				}
@@ -121,10 +123,10 @@ namespace hades {
 			//tryload from archive
 			if (!found && pathArchive)
 			{
-				const auto archivepath = modPath + archiveExt;
-				if (!zip::file_exists(archivepath, fileName))
+				const auto archivepath = mod + archiveExt;
+				if (!zip::file_exists(archivepath, file))
 				{
-					const auto message = "Cannot find file: " + fileName + ",  in mod archive: " + archivepath;
+					const auto message = "Cannot find file: " + file + ",  in mod archive: " + archivepath;
 					throw file_exception(message.c_str(), file_exception::error_code::FILE_NOT_FOUND);
 				}
 
@@ -133,9 +135,9 @@ namespace hades {
 				try
 				{
 					zip::archive_stream astream{ archivepath };
-					if (!astream.open(fileName))
+					if (!astream.open(file))
 					{
-						const auto message = "Cannot read file: " + fileName + ",  in mod archive: " + archivepath;
+						const auto message = "Cannot read file: " + file + ",  in mod archive: " + archivepath;
 						throw file_exception(message.c_str(), file_exception::error_code::UNREADABLE_FILE);
 					}
 
@@ -148,12 +150,12 @@ namespace hades {
 				}
 
 				_mod_path = archivepath;
-				_file_path = fileName;
+				_file_path = file;
 			}
 
 			if (!found)
 			{
-				const auto message = "Cannot find file: " + fileName + ",  in mod location: " + modPath;
+				const auto message = "Cannot find file: " + file + ",  in mod location: " + mod;
 				throw file_exception(message.c_str(), file_exception::error_code::FILE_NOT_FOUND);
 			}
 
@@ -200,14 +202,14 @@ namespace hades {
 			}, _stream);
 		}
 
-		std::vector<types::string> ListFilesInDirectory(types::string dir_path)
+		std::vector<types::string> ListFilesInDirectory(std::string_view dir_path)
 		{
 			std::vector<types::string> output;
 
-			const fs::path dir(dir_path);
+			const fs::path dir(to_string(dir_path));
 			if (!fs::is_directory(dir))
 			{
-				LOGERROR("\"" + dir_path + "\" is not a directory");
+				LOGERROR("\"" + to_string(dir_path) + "\" is not a directory");
 				return output;
 			}
 

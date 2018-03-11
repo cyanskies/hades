@@ -996,18 +996,28 @@ namespace objects
 			message += obj_type_name;
 		else
 			message += obj.name + "(" + obj_type_name + ")";
-
+		
 		_propertyWindow->RemoveAll();
-		const auto label = sfg::Label::Create(message);
-		_propertyWindow->PackEnd(label);
+		auto label = sfg::Label::Create(message);
+		label->SetAlignment({ 0.f, 0.f });
+		_propertyWindow->PackEnd(label, false, false);
+
+		//add the entity id
+		{
+			auto box = sfg::Box::Create();
+			auto id_entry = sfg::Entry::Create("Id");
+			id_entry->SetState(sfg::Widget::State::INSENSITIVE);
+			id_entry->SetRequisition({ 80.f, 0.f });
+			auto id_value = sfg::Entry::Create(hades::to_string(obj.id));
+			id_value->SetState(sfg::Widget::State::INSENSITIVE);
+			id_value->SetRequisition({ 80.f, 0.f });
+			box->PackEnd(id_entry, false);
+			box->PackEnd(id_value, false);
+			_propertyWindow->PackEnd(box, false, false);
+		}
 
 		/*
-		//add the immutable id property
-		auto id_property = MakePropertyEditRow("Id", hades::to_string(obj.id));
-		selectedInfoBox->add(std::get<tgui::Container::Ptr>(id_property));
-		//add the optional name property
-		auto[name_container, name_edit] = MakePropertyEditRow("Name", obj.name);
-
+		//add object name
 		auto &used_names = _usedObjectNames;
 		auto name_change_lamb = [this, &obj, &used_names, edit = name_edit] {
 			auto value = edit->getText();

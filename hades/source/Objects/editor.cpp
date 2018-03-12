@@ -936,14 +936,18 @@ namespace objects
 		_updateSelector(info);
 	}
 
+	constexpr auto property_entry_width = 70.f;
+
 	template<typename OnEnter>
 	sfg::Box::Ptr MakeEditRow(std::string_view text, std::string_view value, OnEnter func)
 	{
 		auto box = sfg::Box::Create();
 
 		using namespace hades;
-		auto property_name = sfg::Label::Create(to_string(text));
-		box->PackEnd(property_name);
+		auto property_name = sfg::Entry::Create(to_string(text));
+		property_name->SetRequisition({ property_entry_width, 0.f });
+		property_name->SetState(sfg::Widget::State::INSENSITIVE);
+		box->PackEnd(property_name, false);
 
 		auto value_edit = sfg::Entry::Create(to_string(value));
 		std::weak_ptr<sfg::Entry> weak_value = value_edit;
@@ -952,11 +956,12 @@ namespace objects
 			if (!value)
 				return;
 
-			if (auto text = value->GetText().toAnsiString(); text.back() == '\n')
-				func(text);
+			func(value->GetText().toAnsiString());
 		});
 
-		box->PackEnd(value_edit);
+		value_edit->SetRequisition({ property_entry_width, 0.f });
+
+		box->PackEnd(value_edit, false);
 
 		return box;
 	}
@@ -986,72 +991,81 @@ namespace objects
 		return MakeEditRow(to_string(text), value_str, on_enter);
 	}
 
+	constexpr auto selected = "Selected: ";
+
+	hades::types::string SelectionTitle(std::string_view type_name, std::string_view obj_name)
+	{
+		hades::types::string message = selected;
+		constexpr auto max_name_size = 15;
+		if (obj_name.empty())
+			message += type_name;
+		else
+		{
+			hades::types::string name{ obj_name };
+			if (name.size() > max_name_size)
+				name = name.substr(0, max_name_size) + "...";
+			message += name + "(" + hades::to_string(type_name) + ")";
+		}
+
+		return message;
+	}
+
 	void object_editor::_updateInfoBox(object_info &obj)
 	{
-		using namespace std::string_literals;
-		auto message = "Selected: "s;
 		const auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
-
-		if (obj.name.empty())
-			message += obj_type_name;
-		else
-			message += obj.name + "(" + obj_type_name + ")";
 		
 		_propertyWindow->RemoveAll();
-		auto label = sfg::Label::Create(message);
+		auto label = sfg::Label::Create(SelectionTitle(obj_type_name, obj.name));
 		label->SetAlignment({ 0.f, 0.f });
 		_propertyWindow->PackEnd(label, false, false);
 
-		//add the entity id
+		//add the immutable entity id
 		{
 			auto box = sfg::Box::Create();
 			auto id_entry = sfg::Entry::Create("Id");
 			id_entry->SetState(sfg::Widget::State::INSENSITIVE);
-			id_entry->SetRequisition({ 80.f, 0.f });
+			id_entry->SetRequisition({ property_entry_width, 0.f });
 			auto id_value = sfg::Entry::Create(hades::to_string(obj.id));
 			id_value->SetState(sfg::Widget::State::INSENSITIVE);
-			id_value->SetRequisition({ 80.f, 0.f });
+			id_value->SetRequisition({ property_entry_width, 0.f });
 			box->PackEnd(id_entry, false);
 			box->PackEnd(id_value, false);
 			_propertyWindow->PackEnd(box, false, false);
 		}
 
-		/*
+		
 		//add object name
 		auto &used_names = _usedObjectNames;
-		auto name_change_lamb = [this, &obj, &used_names, edit = name_edit] {
-			auto value = edit->getText();
+		std::weak_ptr<sfg::Label> weak_title = label;
+		auto name_change_lamb = [this, &obj, &used_names, weak_title, obj_type_name](const hades::types::string &text) {
 			auto &current_value = obj.name;
 
-			if (value == current_value)
+			if (text == current_value)
 				return;
 
-			if (value == "")
+			if (text == "")
 			{
 				used_names.erase(current_value);
-				current_value = value;
+				current_value = text;
 				return;
 			}
 			//if the name has already been used
-			if (used_names.find(value) != std::end(used_names))
-			{
-				edit->setText(current_value);
+			if (used_names.find(text) != std::end(used_names))
 				return;
-			}
 
 			if (!current_value.empty())
 				used_names.erase(current_value);
 
-			used_names.insert(value);
-			current_value = value;
+			used_names.insert(text);
+			current_value = text;
 
-			_updateInfoBox(obj);
+			auto title = weak_title.lock();
+			title->SetText(SelectionTitle(obj_type_name, text));
 		};
 
-		name_edit->onReturnKeyPress.connect(name_change_lamb);
-		name_edit->onUnfocus.connect(name_change_lamb);
-
-		selectedInfoBox->add(name_container);
+		auto name_edit = MakeEditRow("Name", obj.name, name_change_lamb);
+		_propertyWindow->PackEnd(name_edit, false);
+		/*
 		//add the special cased position, and size properties
 		//add all other properties
 		*/

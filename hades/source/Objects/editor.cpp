@@ -1065,8 +1065,36 @@ namespace objects
 
 		auto name_edit = MakeEditRow("Name", obj.name, name_change_lamb);
 		_propertyWindow->PackEnd(name_edit, false);
+
+		using Curve = hades::resources::curve;
+
+		//add position
+		static const auto position_id = hades::data::GetUid("position");
+		static const auto position_c = hades::data::Get<Curve>(position_id);
+
+
+		//add size
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<Curve>(size_id);
+		//add all remaining curves
+		auto curves = GetAllCurves(obj);
+
+		//remove the position and size curves(we already made edit box'es for them
+		const auto position_pos = std::find_if(std::begin(curves), std::end(curves), [pos = position_c](auto &&c) {
+			return std::get<const Curve*>(c) == pos;
+		});
+
+		if(position_pos != std::end(curves))
+			curves.erase(position_pos);
+
+		const auto size_pos = std::find_if(std::begin(curves), std::end(curves), [size = size_c](auto &&c) {
+			return std::get<const Curve*>(c) == size;
+		});
+
+		if (size_pos != std::end(curves))
+			curves.erase(size_pos);
+
 		/*
-		//add the special cased position, and size properties
 		//add all other properties
 		*/
 	}

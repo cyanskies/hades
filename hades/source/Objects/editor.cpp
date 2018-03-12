@@ -1063,16 +1063,19 @@ namespace objects
 		//add position
 		static const auto position_id = hades::data::GetUid("position");
 		static const auto position_c = hades::data::Get<Curve>(position_id);
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<Curve>(size_id);
 
-		auto position_v = GetCurve(obj, position_c);
+		const auto position_v = GetCurve(obj, position_c);
 
 		auto position_edit = MakeEditRow("position", hades::resources::CurveValueToString(position_v),
-			[&obj, pos_c = position_c, this](hades::types::string text) {
-			auto value = hades::resources::StringToCurveValue(pos_c, text);
+			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
+			auto value = ValidVectorCurve(hades::resources::StringToCurveValue(pos_c, text));
 			auto position = std::get<hades::resources::curve_types::vector_int>(value.value);
 			if (position.size() < 2)
 				return;
 
+			//todo: clamp this to valid region?
 			sf::Vector2i pos_vec{ position[0], position[1] };
 			//find the obj sprite
 			//move it to the new location
@@ -1080,13 +1083,44 @@ namespace objects
 			SetCurve(obj, pos_c, value);
 
 			//update the selection system in the editor
+			//get the size
+			auto size_value = ValidVectorCurve(GetCurve(obj, size_c));
+			auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+			_quadtree.insert({ pos_vec, { size[0], size[1] } }, obj.id);
+
+			//move selector to meet new position
+			_updateSelector(obj);
 		});
 
 		_propertyWindow->PackEnd(position_edit, false);
 
 		//add size
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<Curve>(size_id);
+		const auto size_v = GetCurve(obj, size_c);
+
+		auto size_edit = MakeEditRow("size", hades::resources::CurveValueToString(size_v),
+			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
+			auto value = ValidVectorCurve(hades::resources::StringToCurveValue(size_c, text));
+			auto size = std::get<hades::resources::curve_types::vector_int>(value.value);
+			if (size.size() < 2)
+				return;
+
+			sf::Vector2i size_vec{ size[0], size[1] };
+			//find the obj sprite
+			//move it to the new location
+			_objectSprites.setSize(obj.sprite_id, static_cast<sf::Vector2f>(size_vec));
+			SetCurve(obj, size_c, value);
+
+			//update the selection system in the editor
+			auto pos_value = ValidVectorCurve(GetCurve(obj, pos_c));
+			auto pos = std::get<hades::resources::curve_types::vector_int>(pos_value.value);
+			_quadtree.insert({ { pos[0], pos[1] }, size_vec }, obj.id);
+
+			//change selector to match size
+			_updateSelector(obj);
+		});
+
+		_propertyWindow->PackEnd(size_edit, false);
+
 		//add all remaining curves
 		auto curves = GetAllCurves(obj);
 

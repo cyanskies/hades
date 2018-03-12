@@ -938,8 +938,8 @@ namespace objects
 
 	constexpr auto property_entry_width = 70.f;
 
-	template<typename OnEnter>
-	sfg::Box::Ptr MakeEditRow(std::string_view text, std::string_view value, OnEnter func)
+	template<typename OnValueChange>
+	sfg::Box::Ptr MakeEditRow(std::string_view text, std::string_view value, OnValueChange func)
 	{
 		auto box = sfg::Box::Create();
 
@@ -975,20 +975,12 @@ namespace objects
 		assert(curve);
 		const auto value_str = CurveValueToString(c_value);
 
-		auto on_enter = [curve, &obj](auto &&text) {
+		auto on_change = [curve, &obj](auto &&text) {
 			const auto value = StringToCurveValue(curve, text);
-			auto c = std::find_if(std::begin(obj.curves), std::end(obj.curves), [curve](CurveEntry c) {
-				const hades::resources::curve *other_curve = std::get<const hades::resources::curve*>(c);
-				return other_curve == curve;
-			});
-
-			if (c == std::end(obj.curves))
-				obj.curves.emplace_back(std::make_tuple(curve, value));
-			else
-				std::get<curve_default_value>(*c) = value;
+			SetCurve(obj, curve, value);
 		};
 
-		return MakeEditRow(to_string(text), value_str, on_enter);
+		return MakeEditRow(to_string(text), value_str, on_change);
 	}
 
 	constexpr auto selected = "Selected: ";
@@ -1010,7 +1002,7 @@ namespace objects
 		return message;
 	}
 
-	void object_editor::_updateInfoBox(object_info &obj)
+	void object_editor::_updateInfoBox(editor_object_info &obj)
 	{
 		const auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
 		
@@ -1072,6 +1064,25 @@ namespace objects
 		static const auto position_id = hades::data::GetUid("position");
 		static const auto position_c = hades::data::Get<Curve>(position_id);
 
+		auto position_v = GetCurve(obj, position_c);
+
+		auto position_edit = MakeEditRow("position", hades::resources::CurveValueToString(position_v),
+			[&obj, pos_c = position_c, this](hades::types::string text) {
+			auto value = hades::resources::StringToCurveValue(pos_c, text);
+			auto position = std::get<hades::resources::curve_types::vector_int>(value.value);
+			if (position.size() < 2)
+				return;
+
+			sf::Vector2i pos_vec{ position[0], position[1] };
+			//find the obj sprite
+			//move it to the new location
+			_objectSprites.setPosition(obj.sprite_id, static_cast<sf::Vector2f>(pos_vec));
+			SetCurve(obj, pos_c, value);
+
+			//update the selection system in the editor
+		});
+
+		_propertyWindow->PackEnd(position_edit, false);
 
 		//add size
 		static const auto size_id = hades::data::GetUid("size");

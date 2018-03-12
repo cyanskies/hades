@@ -369,23 +369,25 @@ namespace hades
 			// or : [T, T, T, T, T, T]
 
 			//remove the braces at begining and end if present
-			auto first_brace = std::find(std::begin(str), std::end(str), '[');
-			if (first_brace != std::end(str))
-			{
-				const auto count = std::distance(first_brace, std::end(str));
-				str = str.substr(count, str.size() - count);
-			}
+			auto first_brace = str.find_first_of('[');
+			if (first_brace != std::string_view::npos)
+				str.remove_prefix(++first_brace);
 
-			auto last_brace = std::find(std::begin(str), std::end(str), ']');
-			if (last_brace != std::end(str))
-			{
-				const auto pos = std::distance(std::begin(str), last_brace);
-				str = str.substr(0, pos);
-			}
+			auto last_brace = str.find_last_of(']');
+			if (last_brace != std::string_view::npos)
+				str.remove_suffix(str.size() - last_brace);
 
 			//split into csv
 			std::vector<std::string_view> elements;
 			split(str, ',', std::back_inserter(elements));
+
+			if (std::any_of(std::begin(elements), std::end(elements), [](auto &&s) {
+				return s.empty() //return true if the str is empty of consists of spaces
+					|| std::all_of(std::begin(s), std::end(s), [](auto &&c) {return c == ' '; });
+			}))
+			{
+				return std::vector<T>{};
+			}
 
 			//convert each one into T
 			std::vector<T> out;
@@ -504,8 +506,10 @@ namespace hades
 					return hades::data::GetUid(str);
 				});
 			}
+			else
+				return curve_default_value{};
 
-			return curve_default_value{};
+			return out;
 		}
 
 		//throws runtime error

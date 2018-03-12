@@ -101,6 +101,20 @@ namespace objects
 		return c->default_value;
 	}
 
+	void SetCurve(object_info &o, const hades::resources::curve *c, curve_value v)
+	{
+		for (auto &curve : o.curves)
+		{
+			if (std::get<const hades::resources::curve*>(curve) == c)
+			{
+				std::get<curve_value>(curve) = std::move(v);
+				return;
+			}
+		}
+
+		o.curves.push_back({ c, v });
+	}
+
 	curve_list UniqueCurves(curve_list list)
 	{
 		//list should not contain any nullptr curves

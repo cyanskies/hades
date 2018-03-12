@@ -35,6 +35,7 @@ namespace objects
 	// or the value hasn't been set
 	curve_value GetCurve(const object_info &o, const hades::resources::curve *c);
 	curve_value GetCurve(const resources::object *o, const hades::resources::curve *c);
+	void SetCurve(object_info &o, const hades::resources::curve *c, curve_value v);
 	curve_list GetAllCurves(const object_info &o); // < collates all unique curves from the class tree
 	curve_list GetAllCurves(const resources::object *o); // < prefers data from decendants over ancestors
 	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)

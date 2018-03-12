@@ -39,7 +39,9 @@ namespace hades
 			return lhs.id == rhs.id;
 		}
 
-		found_sprite FindSprite(std::vector<batch> sbatch, Sprite::sprite_id id)
+		//must own a shared lock on sbatch
+		//throws hades::invalid_argument if id doesn't corrispond to a stored sprite
+		found_sprite FindSprite(std::vector<batch> &sbatch, Sprite::sprite_id id)
 		{
 			for (auto batch_index = 0u; batch_index < sbatch.size(); ++batch_index)
 			{
@@ -55,6 +57,9 @@ namespace hades
 			throw invalid_argument("Sprite not found in SpriteBatch, id was: " + to_string(id));
 		}
 
+		//requires exclusive lock on sbatch
+		//moves the sprite to a batch that matches settings, or creates a new one;
+		//batch and sprite indexs' indicate where the sprite currently is
 		void MoveSprite(std::vector<batch> sbatch, index_type batch_index, index_type sprite_index, const SpriteSettings &settings)
 		{
 			//get the sprite out of its current batch

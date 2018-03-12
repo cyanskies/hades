@@ -56,17 +56,9 @@ namespace hades
 		bool operator==(const Sprite &lhs, const Sprite &rhs);
 
 		using index_type = std::size_t;
-		//				//batch index,//sprite index, sprite ptr
+		//				           //batch index,//sprite index, sprite ptr
 		using found_sprite = std::tuple<index_type, index_type, Sprite*>;
 		using batch = std::pair<sprite_utility::SpriteSettings, std::vector<sprite_utility::Sprite>>;
-
-		//must own a shared lock on sbatch
-		//throws hades::invalid_argument if id doesn't corrispond to a stored sprite
-		found_sprite FindSprite(std::vector<batch> sbatch, Sprite::sprite_id id);
-		//requires exclusive lock on sbatch
-		//moves the sprite to a batch that matches settings, or creates a new one;
-		//batch and sprite indexs' indicate where the sprite currently is
-		void MoveSprite(std::vector<batch> sbatch, index_type batch, index_type sprite, const SpriteSettings &settings);
 	}
 
 	class SpriteBatch : public sf::Drawable, public Camera2dDrawClamp

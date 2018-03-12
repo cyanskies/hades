@@ -142,7 +142,7 @@ namespace objects
 		//for each unique curve, we want to keep the 
 		//first with an assigned value or the last if their is no value
 		auto first = std::begin(list);
-		auto last = std::begin(list);
+		auto last = std::end(list);
 		while (first != last)
 		{
 			value v;
@@ -162,7 +162,7 @@ namespace objects
 				}
 				else
 					++first;
-			} while (std::get<const curve*>(*first) == c);
+			} while (first != last && std::get<const curve*>(*first) == c);
 
 			//store c and v in output
 			output.push_back(std::make_tuple(c, v));

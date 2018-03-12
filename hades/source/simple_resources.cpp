@@ -405,7 +405,9 @@ namespace hades
 
 		types::string CurveValueToString(curve_default_value v)
 		{
-			assert(v.set);
+			if (!v.set)
+				return types::string{};
+
 			return std::visit([](auto &&v)->types::string {
 				using type = std::decay_t<decltype(v)>;
 				if constexpr (std::is_same_v<type, curve_types::int_t>

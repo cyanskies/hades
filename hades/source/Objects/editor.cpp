@@ -1014,7 +1014,7 @@ namespace objects
 		//add the immutable entity id
 		{
 			auto box = sfg::Box::Create();
-			auto id_entry = sfg::Entry::Create("Id");
+			auto id_entry = sfg::Entry::Create("id");
 			id_entry->SetState(sfg::Widget::State::INSENSITIVE);
 			id_entry->SetRequisition({ property_entry_width, 0.f });
 			auto id_value = sfg::Entry::Create(hades::to_string(obj.id));
@@ -1055,7 +1055,7 @@ namespace objects
 			title->SetText(SelectionTitle(obj_type_name, text));
 		};
 
-		auto name_edit = MakeEditRow("Name", obj.name, name_change_lamb);
+		auto name_edit = MakeEditRow("name", obj.name, name_change_lamb);
 		_propertyWindow->PackEnd(name_edit, false);
 
 		using Curve = hades::resources::curve;
@@ -1070,13 +1070,13 @@ namespace objects
 
 		auto position_edit = MakeEditRow("position", hades::resources::CurveValueToString(position_v),
 			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
-			auto value = ValidVectorCurve(hades::resources::StringToCurveValue(pos_c, text));
-			auto position = std::get<hades::resources::curve_types::vector_int>(value.value);
+			const auto value = ValidVectorCurve(hades::resources::StringToCurveValue(pos_c, text));
+			const auto position = std::get<hades::resources::curve_types::vector_int>(value.value);
 			if (position.size() < 2)
 				return;
 
 			//todo: clamp this to valid region?
-			sf::Vector2i pos_vec{ position[0], position[1] };
+			const sf::Vector2i pos_vec{ position[0], position[1] };
 			//find the obj sprite
 			//move it to the new location
 			_objectSprites.setPosition(obj.sprite_id, static_cast<sf::Vector2f>(pos_vec));
@@ -1084,8 +1084,8 @@ namespace objects
 
 			//update the selection system in the editor
 			//get the size
-			auto size_value = ValidVectorCurve(GetCurve(obj, size_c));
-			auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+			const auto size_value = ValidVectorCurve(GetCurve(obj, size_c));
+			const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 			_quadtree.insert({ pos_vec, { size[0], size[1] } }, obj.id);
 
 			//move selector to meet new position
@@ -1099,20 +1099,20 @@ namespace objects
 
 		auto size_edit = MakeEditRow("size", hades::resources::CurveValueToString(size_v),
 			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
-			auto value = ValidVectorCurve(hades::resources::StringToCurveValue(size_c, text));
-			auto size = std::get<hades::resources::curve_types::vector_int>(value.value);
+			const auto value = ValidVectorCurve(hades::resources::StringToCurveValue(size_c, text));
+			const auto size = std::get<hades::resources::curve_types::vector_int>(value.value);
 			if (size.size() < 2)
 				return;
 
-			sf::Vector2i size_vec{ size[0], size[1] };
+			const sf::Vector2i size_vec{ size[0], size[1] };
 			//find the obj sprite
 			//move it to the new location
 			_objectSprites.setSize(obj.sprite_id, static_cast<sf::Vector2f>(size_vec));
 			SetCurve(obj, size_c, value);
 
 			//update the selection system in the editor
-			auto pos_value = ValidVectorCurve(GetCurve(obj, pos_c));
-			auto pos = std::get<hades::resources::curve_types::vector_int>(pos_value.value);
+			const auto pos_value = ValidVectorCurve(GetCurve(obj, pos_c));
+			const auto pos = std::get<hades::resources::curve_types::vector_int>(pos_value.value);
 			_quadtree.insert({ { pos[0], pos[1] }, size_vec }, obj.id);
 
 			//change selector to match size
@@ -1139,9 +1139,13 @@ namespace objects
 		if (size_pos != std::end(curves))
 			curves.erase(size_pos);
 
-		/*
 		//add all other properties
-		*/
+		for (const auto &c : curves)
+		{
+			auto[curve, value] = c;
+			auto edit_curve = MakePropertyEditRow(hades::data::GetAsString(curve->id), c, obj);
+			_propertyWindow->PackEnd(edit_curve, false);
+		}
 	}
 
 	void object_editor::_updateSelector(const object_info &info)

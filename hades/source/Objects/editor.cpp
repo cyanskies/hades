@@ -1176,7 +1176,7 @@ namespace objects
 		//add all other properties
 		for (const auto &c : curves)
 		{
-			auto[curve, value] = c;
+			const auto curve = std::get<const Curve*>(c);
 			auto edit_curve = MakePropertyEditRow(hades::data::GetAsString(curve->id), c, obj);
 			_propertyWindow->PackEnd(edit_curve, false);
 		}

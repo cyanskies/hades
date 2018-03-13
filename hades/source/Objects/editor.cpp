@@ -417,16 +417,47 @@ namespace objects
 			[bounds](auto &&other) { return bounds.intersects(other.rect); });
 	}
 
+	constexpr auto dialog_style = sfg::Window::Style::BACKGROUND
+		| sfg::Window::Style::TITLEBAR 
+		| sfg::Window::Style::CLOSE
+		| sfg::Window::Style::SHADOW;
+
 	void object_editor::NewLevelDialog()
 	{
-		auto window = sfg::Window::Create();
+		auto window = sfg::Window::Create(dialog_style);
+		window->SetTitle("New Level");
+		std::weak_ptr<sfg::Window> weak_window = window;
+		window->GetSignal(sfg::Window::OnCloseButton).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+
+		_gui.Add(window);
 	}
 
 	void object_editor::SaveLevelDialog()
-	{}
+	{
+		auto window = sfg::Window::Create(dialog_style);
+		window->SetTitle("Save level");
+		std::weak_ptr<sfg::Window> weak_window = window;
+		window->GetSignal(sfg::Window::OnCloseButton).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+		_gui.Add(window);
+	}
 
 	void object_editor::LoadLevelDialog()
-	{}
+	{
+		auto window = sfg::Window::Create(dialog_style);
+		window->SetTitle("Load level");
+		std::weak_ptr<sfg::Window> weak_window = window;
+		window->GetSignal(sfg::Window::OnCloseButton).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+		_gui.Add(window);
+	}
 
 	void object_editor::NewLevel()
 	{}

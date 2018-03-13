@@ -418,9 +418,13 @@ namespace objects
 	}
 
 	void object_editor::NewLevelDialog()
-	{}
+	{
+		auto window = sfg::Window::Create();
+	}
+
 	void object_editor::SaveLevelDialog()
 	{}
+
 	void object_editor::LoadLevelDialog()
 	{}
 
@@ -1022,10 +1026,9 @@ namespace objects
 			id_value->SetRequisition({ property_entry_width, 0.f });
 			box->PackEnd(id_entry, false);
 			box->PackEnd(id_value, false);
-			_propertyWindow->PackEnd(box, false, false);
+			_propertyWindow->PackEnd(box, false);
 		}
 
-		
 		//add object name
 		auto &used_names = _usedObjectNames;
 		std::weak_ptr<sfg::Label> weak_title = label;

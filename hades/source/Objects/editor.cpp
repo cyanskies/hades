@@ -422,6 +422,16 @@ namespace objects
 		| sfg::Window::Style::CLOSE
 		| sfg::Window::Style::SHADOW;
 
+	void PlaceWidgetInCentre(sfg::Widget &w)
+	{
+		static const auto w_width = hades::console::GetInt("vid_width", 320);
+		static const auto w_height = hades::console::GetInt("vid_height", 480);
+
+		auto widget_size = w.GetAllocation();
+
+		w.SetPosition({ *w_width / 2.f - widget_size.width / 2.f, *w_height / 2.f - widget_size.height / 2.f });
+	}
+
 	void object_editor::NewLevelDialog()
 	{
 		auto window = sfg::Window::Create(dialog_style);
@@ -431,7 +441,58 @@ namespace objects
 			_gui.Remove(weak_window.lock());
 		});
 
+		//box for all the window elements to go in
+		auto window_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//main box is for the top half of the dialog
+		auto main_box = sfg::Box::Create();
+		//these two box's go in the main box and store the two labels and entries
+		auto label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto entry_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//bottom box for holding the button to activate the action
+		auto bottom_box = sfg::Box::Create();
 
+		auto width_label = sfg::Label::Create("Width:");
+		auto height_label = sfg::Label::Create("Height:");
+		label_box->PackEnd(width_label);
+		label_box->PackEnd(height_label);
+
+		auto width_entry = sfg::Entry::Create(hades::to_string(MapSize.x));
+		width_entry->SetRequisition({ 40.f, 0.f });
+		auto height_entry = sfg::Entry::Create(hades::to_string(MapSize.y));
+		height_entry->SetRequisition({ 40.f, 0.f });
+
+		entry_box->PackEnd(width_entry);
+		entry_box->PackEnd(height_entry);
+
+		main_box->PackEnd(label_box);
+		main_box->PackEnd(entry_box);
+
+		auto button = sfg::Button::Create("Create");
+		std::weak_ptr<sfg::Entry> weak_width = width_entry, weak_height = height_entry;
+		auto window_weak = window->weak_from_this();
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, this] {
+			auto width = weak_width.lock();
+			auto height = weak_height.lock();
+			assert(width && height);
+
+			auto x = std::stoi(width->GetText().toAnsiString());
+			auto y = std::stoi(height->GetText().toAnsiString());
+
+			//TODO: check that x/y are valid
+			MapSize = { x, y };
+
+			auto window = weak_window.lock();
+			_gui.Remove(window);
+
+			NewLevel();
+		});
+
+		bottom_box->PackEnd(button);
+
+		window_box->PackEnd(main_box);
+		window_box->PackEnd(bottom_box);
+		window->Add(window_box);
+		PlaceWidgetInCentre(*window);
 		_gui.Add(window);
 	}
 
@@ -460,7 +521,10 @@ namespace objects
 	}
 
 	void object_editor::NewLevel()
-	{}
+	{
+		//remove all objects
+		//change the world size
+	}
 
 	void object_editor::SaveLevel() const
 	{}

@@ -469,22 +469,37 @@ namespace objects
 
 		auto button = sfg::Button::Create("Create");
 		std::weak_ptr<sfg::Entry> weak_width = width_entry, weak_height = height_entry;
-		auto window_weak = window->weak_from_this();
 		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, this] {
 			auto width = weak_width.lock();
 			auto height = weak_height.lock();
 			assert(width && height);
 
-			auto x = std::stoi(width->GetText().toAnsiString());
-			auto y = std::stoi(height->GetText().toAnsiString());
+			try
+			{
+				auto x = std::stoi(width->GetText().toAnsiString());
+				auto y = std::stoi(height->GetText().toAnsiString());
 
-			//TODO: check that x/y are valid
-			MapSize = { x, y };
+				if (x < 1
+					|| y < 1)
+					return _makeErrorDialog("Map width or height too small");
 
-			auto window = weak_window.lock();
-			_gui.Remove(window);
+				MapSize = { x, y };
 
-			NewLevel();
+				auto window = weak_window.lock();
+				_gui.Remove(window);
+
+				NewLevel();
+			}
+			catch (std::invalid_argument&)
+			{
+				//could not convert width/height to integer
+				_makeErrorDialog("Unable to convert width or height to a number.");
+			}
+			catch (std::out_of_range&)
+			{
+				//couldn't fit calculated number within an int.
+				_makeErrorDialog("Width or height too large. Max: " + hades::to_string(std::numeric_limits<int>::max()));
+			}
 		});
 
 		bottom_box->PackEnd(button);
@@ -648,6 +663,32 @@ namespace objects
 	void object_editor::_addSeparatorToToolBar()
 	{
 		_addToToolBar(sfg::Separator::Create(sfg::Separator::Orientation::VERTICAL));
+	}
+
+
+	void object_editor::_makeErrorDialog(std::string_view message)
+	{
+		LOGERROR(message);
+		auto window = sfg::Window::Create(dialog_style);
+		window->SetTitle("Error");
+		std::weak_ptr<sfg::Window> weak_window = window;
+		window->GetSignal(sfg::Window::OnCloseButton).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+		//box for all the window elements to go in
+		auto window_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto label = sfg::Label::Create(hades::types::string{ message });
+		auto button = sfg::Button::Create("Ok");
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+		window_box->PackEnd(label);
+		window_box->PackEnd(button);
+		window->Add(window_box);
+		PlaceWidgetInCentre(*window);
+		_gui.Add(window);
 	}
 
 	void object_editor::_createGui()

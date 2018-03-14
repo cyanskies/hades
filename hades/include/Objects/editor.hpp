@@ -151,6 +151,7 @@ namespace objects
 		void _addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
 		void _addToggleButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon);
 		void _addSeparatorToToolBar();
+		void _makeErrorDialog(std::string_view message);
 
 		void _newMap();
 		void _onEnterObjectMode();

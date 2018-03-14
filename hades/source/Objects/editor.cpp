@@ -41,11 +41,11 @@ namespace objects
 		_gridCurrentSize = std::min(_gridCurrentScale->load(), _gridMaxSize->load()) * *_gridMinSize;
 		_grid.setCellSize(_gridCurrentSize);
 
-		//set up the selection and collision variables
-		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
 		_objectSelector.setFillColor(sf::Color::Transparent);
 		_objectSelector.setOutlineColor(sf::Color::White);
 		_objectSelector.setOutlineThickness(1.f);
+
+		NewLevel();
 
 		reinit();
 	}
@@ -489,6 +489,7 @@ namespace objects
 				_gui.Remove(window);
 
 				NewLevel();
+				reinit();
 			}
 			catch (std::invalid_argument&)
 			{
@@ -538,7 +539,14 @@ namespace objects
 	void object_editor::NewLevel()
 	{
 		//remove all objects
-		//change the world size
+		_next_object_id = hades::NO_ENTITY;
+		_objects.clear();
+		_usedObjectNames.clear();
+		//set up the selection and collision variables
+		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
+
+		Filename.clear();
+		Mod.clear();
 	}
 
 	void object_editor::SaveLevel() const
@@ -967,9 +975,17 @@ namespace objects
 
 			const auto size = _gridCurrentSize - 1;
 
-			//keep the object within the map bounds
-			snapped_coords.x = std::clamp(snapped_coords.x + 1, 1, MapSize.x - size);
-			snapped_coords.y = std::clamp(snapped_coords.y +1, 1, MapSize.y - size);
+			//keep the grid highlight within the map bounds
+			if (auto xsize = MapSize.x - size; xsize > 1) //if the map size is tiny (< size) 
+														//then we'll trigger undefined behaviour
+				snapped_coords.x = std::clamp(snapped_coords.x + 1, 1, xsize);
+			else
+				snapped_coords.x = 1;
+
+			if (auto ysize = MapSize.y - size; ysize > 1)
+				snapped_coords.y = std::clamp(snapped_coords.y + 1, 1, ysize);
+			else
+				snapped_coords.y = 1;
 
 			const auto fsize = static_cast<float>(size);
 			_gridHighlight.setSize({ fsize, fsize });

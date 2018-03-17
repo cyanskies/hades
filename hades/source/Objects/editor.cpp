@@ -7,7 +7,9 @@
 #include "Hades/Animation.hpp"
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
+#include "Hades/files.hpp"
 #include "Hades/Logging.hpp"
+#include "Hades/Main.hpp"
 #include "Hades/Properties.hpp"
 
 #include "Objects/resources.hpp"
@@ -420,7 +422,8 @@ namespace objects
 	constexpr auto dialog_style = sfg::Window::Style::BACKGROUND
 		| sfg::Window::Style::TITLEBAR 
 		| sfg::Window::Style::CLOSE
-		| sfg::Window::Style::SHADOW;
+		| sfg::Window::Style::SHADOW
+		| sfg::Window::Style::RESIZE;
 
 	void PlaceWidgetInCentre(sfg::Widget &w)
 	{
@@ -521,6 +524,64 @@ namespace objects
 			_gui.Remove(weak_window.lock());
 		});
 
+		//box for all the window elements to go in
+		auto window_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//main box is for the top half of the dialog
+		auto main_box = sfg::Box::Create();
+		//these two box's go in the main box and store the two labels and entries
+		auto label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto entry_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//bottom box for holding the button to activate the action
+		auto bottom_box = sfg::Box::Create();
+
+		auto width_label = sfg::Label::Create("Filename:");
+		auto height_label = sfg::Label::Create("Mod:");
+		label_box->PackEnd(width_label);
+		label_box->PackEnd(height_label);
+
+		auto filename = sfg::Entry::Create(Filename);
+		filename->SetRequisition({ 80.f, 0.f });
+		auto mod_entry = sfg::Entry::Create(Mod);
+		mod_entry->SetRequisition({ 80.f, 0.f });
+
+		entry_box->PackEnd(filename);
+		entry_box->PackEnd(mod_entry);
+
+		main_box->PackEnd(label_box);
+		main_box->PackEnd(entry_box);
+
+		auto button = sfg::Button::Create("Save");
+		std::weak_ptr<sfg::Entry> weak_file = filename, weak_mod = mod_entry;
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_file, weak_mod, weak_window, this] {
+			auto filename = weak_file.lock();
+			auto modname = weak_mod.lock();
+			assert(filename && modname);
+
+			auto file = filename->GetText().toAnsiString();
+			auto mod = modname->GetText().toAnsiString();
+
+			//test of the presence of an extension
+			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
+				file += '.' + level_ext;
+			//else if(std::distance(std::begin(file), ext) < 3)
+				//extension too short?
+
+			Filename = file;
+			Mod = mod;
+
+			auto window = weak_window.lock();
+			_gui.Remove(window);
+
+			SaveLevel();
+			reinit();
+		});
+
+		bottom_box->PackEnd(button);
+
+		window_box->PackEnd(main_box);
+		window_box->PackEnd(bottom_box);
+		window->Add(window_box);
+		PlaceWidgetInCentre(*window);
 		_gui.Add(window);
 	}
 
@@ -533,6 +594,78 @@ namespace objects
 			_gui.Remove(weak_window.lock());
 		});
 
+		//box for all the window elements to go in
+		auto window_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//main box is for the top half of the dialog
+		auto main_box = sfg::Box::Create();
+		//these two box's go in the main box and store the two labels and entries
+		auto label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto entry_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//bottom box for holding the button to activate the action
+		auto bottom_box = sfg::Box::Create();
+
+		auto width_label = sfg::Label::Create("Filename:");
+		auto height_label = sfg::Label::Create("Mod:");
+		label_box->PackEnd(width_label);
+		label_box->PackEnd(height_label);
+
+		auto filename = sfg::Entry::Create(Filename);
+		filename->SetRequisition({ 80.f, 0.f });
+		auto mod_entry = sfg::Entry::Create(Mod);
+		mod_entry->SetRequisition({ 80.f, 0.f });
+
+		entry_box->PackEnd(filename);
+		entry_box->PackEnd(mod_entry);
+
+		main_box->PackEnd(label_box);
+		main_box->PackEnd(entry_box);
+
+		auto button = sfg::Button::Create("Load");
+		std::weak_ptr<sfg::Entry> weak_file = filename, weak_mod = mod_entry;
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_file, weak_mod, weak_window, this] {
+			auto filename = weak_file.lock();
+			auto modname = weak_mod.lock();
+			assert(filename && modname);
+
+			auto file = filename->GetText().toAnsiString();
+			auto mod = modname->GetText().toAnsiString();
+
+			//test of the presence of an extension
+			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
+				file += '.' + level_ext;
+			//else if(std::distance(std::begin(file), ext) < 3)
+			//extension too short?
+
+			auto old_file = Filename;
+			auto old_mod = Mod;
+
+			Filename = file;
+			Mod = mod;
+
+			auto window = weak_window.lock();
+			_gui.Remove(window);
+
+			try
+			{
+				LoadLevel();
+			}
+			catch (hades::files::file_exception&)
+			{
+				_makeErrorDialog("Unable to load file: " + mod + "/" + file);
+				//restore the previous mod settings
+				Mod = old_mod;
+				Filename = old_file;
+			}
+
+			reinit();
+		});
+
+		bottom_box->PackEnd(button);
+
+		window_box->PackEnd(main_box);
+		window_box->PackEnd(bottom_box);
+		window->Add(window_box);
+		PlaceWidgetInCentre(*window);
 		_gui.Add(window);
 	}
 
@@ -545,12 +678,43 @@ namespace objects
 		//set up the selection and collision variables
 		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
 
-		Filename.clear();
-		Mod.clear();
+		Filename = "new.lvl";
+		Mod = defaultGame();
 	}
 
 	void object_editor::SaveLevel() const
 	{}
+
+	void object_editor::LoadLevel()
+	{
+		auto level_str = hades::files::as_string(Mod, Filename);
+		auto level_yaml = YAML::Load(level_str);
+
+		level lvl;
+		ReadObjectsFromYaml(level_yaml, lvl);
+
+		LoadObjects(lvl);
+	}
+
+	void object_editor::SaveObjects(level &l) const
+	{
+		l.map_x = MapSize.x;
+		l.map_y = MapSize.y;
+		l.next_id = _next_object_id;
+
+		//level name
+		//level description
+
+		//insert all objects
+		l.objects.clear();
+		std::transform(std::begin(_objects), std::end(_objects), std::back_inserter(l.objects), [](const editor_object_info &e)
+		{ return static_cast<object_info>(e); });
+	}
+
+	void object_editor::LoadObjects(const level &l)
+	{
+
+	}
 
 	void object_editor::DrawBackground(sf::RenderTarget &target) const
 	{

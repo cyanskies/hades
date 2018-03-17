@@ -68,14 +68,18 @@ namespace hades
 
 		class ResourceStream;
 
+		//throws file_exception
 		types::string as_string(std::string_view modPath, std::string_view fileName);
+		//throws file_exception
 		buffer as_raw(std::string_view modPath, std::string_view fileName);
+		//throws file_exception
 		ResourceStream make_stream(std::string_view modPath, std::string_view fileName);
 
 		class ResourceStream final : public sf::InputStream
 		{
 		public:
 			ResourceStream() = default;
+			//throws file_exception
 			ResourceStream(std::string_view modPath, std::string_view fileName);
 			
 			ResourceStream(ResourceStream&&) = default;
@@ -83,6 +87,7 @@ namespace hades
 			ResourceStream &operator=(ResourceStream&&) = default;
 			ResourceStream &operator=(const ResourceStream&) = delete;
 
+			//throws file_exception
 			void open(std::string_view modPath, std::string_view fileName);
 
 			bool is_open() const
@@ -90,6 +95,7 @@ namespace hades
 				return _open;
 			}
 
+			//these all throw std::logic_error
 			sf::Int64 read(void* data, sf::Int64 size);
 			sf::Int64 seek(sf::Int64 position);
 			sf::Int64 tell();

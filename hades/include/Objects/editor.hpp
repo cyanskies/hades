@@ -121,6 +121,8 @@ namespace objects
 		virtual void NewLevel();
 		//function for saving the level, call provided Save<NAME> functions
 		virtual void SaveLevel() const;
+		//same as above, call Load<NAME> functions
+		virtual void LoadLevel();
 		//these also save and load the map size parameters
 		void SaveObjects(level &l) const;
 		void LoadObjects(const level &l);

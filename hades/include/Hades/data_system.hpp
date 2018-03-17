@@ -124,12 +124,20 @@ template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::data::UniqueId mod, T default_value);
 
+template<class T>
+T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, T default_value)
+{
+	return yaml_get_scalar<T>(node, resource_type, resource_name, property_name, hades::UniqueId::Zero, default_value);
+}
+
+
 hades::data::UniqueId yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod, hades::data::UniqueId default_value = hades::data::UniqueId::Zero);
+	hades::types::string property_name, hades::data::UniqueId mod = hades::UniqueId::Zero, hades::data::UniqueId default_value = hades::data::UniqueId::Zero);
 
 template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod);
+	hades::types::string property_name, hades::data::UniqueId mod = hades::UniqueId::Zero);
 
 #include "detail/data_system.inl"
 

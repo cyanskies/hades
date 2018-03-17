@@ -76,6 +76,7 @@ namespace hades
 		//this will only test that a resource structure has been created.
 		bool Exists(UniqueId id);
 		types::string GetAsString(UniqueId id);
+		//returns UniqueId::Zero if the name cannot be assiciated with an id
 		UniqueId GetUid(std::string_view name);
 
 		//===Exclusive Functions: this will block all threads===

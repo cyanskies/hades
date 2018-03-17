@@ -9,13 +9,18 @@
 
 #include "Objects/resources.hpp"
 
+namespace YAML
+{
+	class Node;
+}
+
 namespace objects
 {
 	//represents an instance of an object in a level file
 	struct object_info
 	{
-		const resources::object *obj_type;
-		hades::EntityId id;
+		const resources::object *obj_type = nullptr;
+		hades::EntityId id = hades::NO_ENTITY;
 		hades::types::string name;
 		resources::object::curve_list curves;
 	};
@@ -46,6 +51,8 @@ namespace objects
 
 	using level_size_t = hades::types::uint32;
 
+	constexpr auto level_ext = "lvl";
+	constexpr auto save_ext = "hsv";
 	//A level is laid out in the same way as a save file
 	// but doesn't store the full curve history
 	struct level
@@ -62,6 +69,13 @@ namespace objects
 		//set paralax to 0 to get a static image
 		//layered images with different paralax?
 	};
+
+	//reads object and basic map data from the yaml node and stores it in target
+	//includes map size, map description/title, background and so on
+	//also includes all the object related data, next ID, all objects
+	void ReadObjectsFromYaml(const YAML::Node&, level &target);
+	//does the reverse of the above function
+	hades::types::string WriteObjectsToYaml(const level&);
 }
 
 #endif // !OBJECTS_OBJECTS_HPP

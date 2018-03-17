@@ -2,7 +2,10 @@
 
 #include <algorithm>
 
+#include "yaml-cpp/yaml.h"
+
 #include "Hades/Data.hpp"
+#include "Hades/data_system.hpp"
 #include "Hades/exceptions.hpp"
 
 namespace objects
@@ -242,5 +245,106 @@ namespace objects
 		}
 
 		return resources::object::animation_list();
+	}
+
+	constexpr auto level_str = "level";
+
+	void ReadObjectsFromYaml(const YAML::Node &root, level &l)
+	{
+		//yaml_root:
+			//level:
+				//width:
+				//height:
+				//title:
+				//description:
+				//background?
+			//objects:
+				//id:
+					//object-type
+					//name[opt]
+					//curves:
+						//[curve_id, value]
+
+		//read level data
+		const auto level_node = root[level_str];
+		constexpr auto level_str = "level";
+
+		const auto name = yaml_get_scalar<hades::types::string>(level_node, level_str, level_str, "title", "name");
+		const auto desc = yaml_get_scalar<hades::types::string>(level_node, level_str, name, "description", "");
+		l.map_x = yaml_get_scalar(level_node, level_str, name, "width", 0);
+		l.map_y = yaml_get_scalar(level_node, level_str, name, "height", 0);
+
+		//read objects
+		const auto objects_node = "objects";
+		auto object_list = root[objects_node];
+		for (const auto &o : object_list)
+		{
+			object_info obj;
+			const auto id_node = o.first;
+			if (!id_node.IsDefined() || id_node.IsNull() || !id_node.IsScalar())
+			{
+				const auto message = "Id for object in level: " + hades::to_string(name) + ", is invalid or missing";
+				LOGWARNING(message);
+				continue;
+			}
+
+			obj.id = id_node.as<hades::EntityId>(hades::NO_ENTITY);
+
+			const auto obj_node = o.second;
+			obj.name = yaml_get_scalar<hades::types::string>(obj_node, objects_node, hades::to_string(obj.id), "name", "");
+			const auto type_id = yaml_get_uid(obj_node, objects_node, obj.name, "type");
+
+			if (type_id != hades::UniqueId::Zero)
+			{
+				const auto type_ptr = hades::data::Get<resources::object>(type_id);
+				obj.obj_type = type_ptr;
+			}
+
+			const auto curves_str = "curves";
+			const auto curves_node_root = obj_node[curves_str];
+
+			for (const auto &c : curves_node_root)
+			{
+				//TODO: error handling
+				//log warnings here
+				if (!c.IsSequence())
+					continue;
+
+				//and here
+				if (c.size() < 2)
+					continue;
+
+				const auto curve_id_node = c[0];
+				const auto curve_id_str = curve_id_node.as<hades::types::string>();
+				//warning here
+				if (curve_id_str.empty())
+					continue;
+
+				const auto id = hades::data::GetUid(curve_id_str);
+
+				if (id == hades::UniqueId::Zero)
+					continue;
+
+				const auto curve_ptr = hades::data::Get<hades::resources::curve>(id);
+
+				const auto curve_value_node = c[1];
+
+				const auto value_str = curve_value_node.as<hades::types::string>();
+				const auto value = hades::resources::StringToCurveValue(curve_ptr, value_str);
+
+				obj.curves.push_back({ curve_ptr, value });
+			}
+
+			l.objects.push_back(obj);
+		}
+	}
+
+	hades::types::string WriteObjectsToYaml(const level &l)
+	{
+		YAML::Emitter y;
+
+		//write the level info
+
+		return y.c_str();
 	}
 }

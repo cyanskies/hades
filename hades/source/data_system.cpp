@@ -322,9 +322,16 @@ bool yaml_error(types::string resource_type, types::string resource_name,
 {
 	if (!test)
 	{
-		auto mod_ptr = data::Get<resources::mod>(mod);
-		LOGERROR("Error parsing YAML, in mod: " + mod_ptr->name + ", type: " + resource_type + ", name: "
-			+ resource_name + ", for property: " + property_name + ". value must be " + requested_type);
+		using namespace std::string_literals;
+		auto message = "Error passing YAML"s;
+		if (mod != hades::UniqueId::Zero)
+		{
+			auto mod_ptr = data::Get<resources::mod>(mod);
+			message += ", in mod: "s + mod_ptr->name;
+		}
+		message += ", type: "s + resource_type + ", name: "s
+			+ resource_name + ", for property: "s + property_name + ". value must be "s + requested_type;
+		LOGERROR(message);
 	}
 
 	return test;

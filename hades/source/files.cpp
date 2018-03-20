@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <string>
 #include <experimental/filesystem>
 
@@ -9,6 +10,7 @@
 
 #include "Hades/archive.hpp"
 #include "Hades/Logging.hpp"
+#include "Hades/Main.hpp"
 #include "Hades/StandardPaths.hpp"
 
 namespace fs = std::experimental::filesystem;
@@ -44,17 +46,75 @@ namespace hades {
 
 			try
 			{
-				return std::move(ResourceStream(custom_path + to_string(modPath), fileName));
+				return ResourceStream(custom_path + to_string(modPath), fileName);
 			}
 			catch (file_exception&)
 			{
 
 				#ifndef NDEBUG
-					return std::move(ResourceStream("../../game/" + to_string(modPath), fileName));
+					return ResourceStream("../../game/" + to_string(modPath), fileName);
 				#else
 					return std::move(ResourceStream(modPath, filename));
 				#endif
 			}
+		}
+
+		ResourceStream make_save_stream(std::string_view fileName)
+		{
+			const auto custom_path = hades::GetUserSaveDirectory();
+			try 
+			{
+				return ResourceStream(custom_path, fileName);
+			}
+			catch (file_exception&)
+			{
+				//check the static config dir(this is usually a read only directory)
+				using namespace std::string_literals;
+				return ResourceStream("./config/"s, fileName);
+			}
+		}
+
+		ResourceStream make_config_stream(std::string_view fileName)
+		{
+			const auto custom_path = hades::GetUserConfigDirectory();
+			return ResourceStream(custom_path, fileName);
+		}
+
+		bool MakeDirectory(fs::path dir)
+		{
+			if (fs::exists(dir) && fs::is_directory(dir))
+				return true;
+
+			//TODO: return false if mising write permissions for the directory that exists
+
+			return fs::create_directory(dir);
+		}
+
+		void write_file(std::string_view path, std::string_view file_contents)
+		{
+			const auto userCustomFileDirectory = hades::GetUserCustomFileDirectory();
+			const auto target = userCustomFileDirectory + to_string(path);
+
+			fs::path p{ target };
+			if (!p.has_filename())
+			{
+				const auto message = "unable to write file, path didn't include a filename; path was: " + p.u8string();
+				throw file_exception(message.c_str(), file_exception::error_code::FILENAME_INVALID);
+			}
+
+			auto parent = p.parent_path();
+			if (!MakeDirectory(parent))
+			{
+				const auto message = "No write permission for directory or unable to create directory; was: " + parent.u8string();
+				throw file_exception(message.c_str(), file_exception::error_code::PERMISSION_DENIED);
+			}
+
+			std::ofstream file{ p, std::ios::binary | std::ios::trunc };
+			if (file.is_open())
+				file.write(&file_contents[0], file_contents.size());
+			else
+				//todo throw instead
+				LOGERROR("Failed to open file for writing: " + target);
 		}
 
 		ResourceStream::ResourceStream(std::string_view modPath, std::string_view fileName)

@@ -21,11 +21,7 @@ hades::types::string Utf16ToUtf8(std::wstring input)
 	auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), buffer.size(), NULL, NULL);
 	assert(written_amount == buffer_size);
 
-	//copy output into a string
-	hades::types::string out;
-	std::copy(std::begin(buffer), std::end(buffer), std::back_inserter(out));
-
-	return out;
+	return hades::types::string{ buffer.data() };
 }
 
 //uses standard functions to get a named directory in windows.
@@ -50,14 +46,41 @@ hades::types::string getWindowsDirectory(REFKNOWNFOLDERID target)
 
 namespace hades
 {
+	using namespace std::string_literals;
+
 	//returns C:\\users\\<name>\\documents/gamename/
 	types::string GetUserCustomFileDirectory()
 	{
 		static const auto portable = hades::console::GetBool("file_portable", false);
 
 		if (*portable)
-			return "";
+			return "./"s;
 		else
-			return getWindowsDirectory(FOLDERID_Documents) + "/" + to_string(defaultGame()) + "/";
+			return getWindowsDirectory(FOLDERID_Documents) + "/"s + to_string(defaultGame()) + "/"s;
+	}
+
+	types::string GetUserConfigDirectory()
+	{
+		static const auto portable = hades::console::GetBool("file_portable", false);
+
+		//if portable is defined, then load read only config from application root directory
+		if (*portable)
+			return "./"s;
+		else
+		{
+			const auto postfix = "/"s + to_string(defaultGame()) + "/config/"s;
+			return getWindowsDirectory(FOLDERID_Documents) + postfix;
+		}
+	}
+
+	types::string GetUserSaveDirectory()
+	{
+		static const auto portable = hades::console::GetBool("file_portable", false);
+
+		using namespace std::string_literals;
+		if (*portable)
+			return "./save/"s;
+		else
+			return getWindowsDirectory(FOLDERID_SavedGames) + "/"s + to_string(defaultGame()) + "/"s;
 	}
 }

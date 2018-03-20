@@ -675,6 +675,7 @@ namespace objects
 		_next_object_id = hades::NO_ENTITY;
 		_objects.clear();
 		_usedObjectNames.clear();
+		_objectSprites.clear();
 		//set up the selection and collision variables
 		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
 
@@ -683,7 +684,19 @@ namespace objects
 	}
 
 	void object_editor::SaveLevel() const
-	{}
+	{
+		const auto path = Mod + '/' + Filename;
+
+		level lvl;
+		SaveObjects(lvl);
+
+		YAML::Emitter e;
+		e << YAML::BeginMap;
+		WriteObjectsToYaml(lvl, e);
+		e << YAML::EndMap;
+
+		hades::files::write_file(path, e.c_str());
+	}
 
 	void object_editor::LoadLevel()
 	{

@@ -247,7 +247,17 @@ namespace objects
 		return resources::object::animation_list();
 	}
 
-	constexpr auto level_str = "level";
+	constexpr auto level_str = "level",
+		level_name = "name",
+		level_desc = "description",
+		level_width = "width",
+		level_height = "height";
+
+	constexpr auto obj_str = "objects",
+		obj_curves = "curves",
+		obj_type = "type",
+		obj_next = "next_id",
+		obj_name = level_name;
 
 	void ReadObjectsFromYaml(const YAML::Node &root, level &l)
 	{
@@ -264,19 +274,19 @@ namespace objects
 					//name[opt]
 					//curves:
 						//[curve_id, value]
+			//nextid: value
 
 		//read level data
 		const auto level_node = root[level_str];
-		constexpr auto level_str = "level";
 
-		const auto name = yaml_get_scalar<hades::types::string>(level_node, level_str, level_str, "title", "name");
-		const auto desc = yaml_get_scalar<hades::types::string>(level_node, level_str, name, "description", "");
-		l.map_x = yaml_get_scalar(level_node, level_str, name, "width", 0);
-		l.map_y = yaml_get_scalar(level_node, level_str, name, "height", 0);
+		const auto name = yaml_get_scalar<hades::types::string>(level_node, level_str, level_str, "title", level_name);
+		const auto desc = yaml_get_scalar<hades::types::string>(level_node, level_str, name, level_desc, "");
+		l.map_x = yaml_get_scalar(level_node, level_str, name, level_width, 0);
+		l.map_y = yaml_get_scalar(level_node, level_str, name, level_height, 0);
+		l.next_id = yaml_get_scalar<hades::EntityId>(root, level_str, name, obj_next, hades::NO_ENTITY);
 
 		//read objects
-		const auto objects_node = "objects";
-		auto object_list = root[objects_node];
+		auto object_list = root[obj_str];
 		for (const auto &o : object_list)
 		{
 			object_info obj;
@@ -291,8 +301,8 @@ namespace objects
 			obj.id = id_node.as<hades::EntityId>(hades::NO_ENTITY);
 
 			const auto obj_node = o.second;
-			obj.name = yaml_get_scalar<hades::types::string>(obj_node, objects_node, hades::to_string(obj.id), "name", "");
-			const auto type_id = yaml_get_uid(obj_node, objects_node, obj.name, "type");
+			obj.name = yaml_get_scalar<hades::types::string>(obj_node, obj_str, hades::to_string(obj.id), obj_name, "");
+			const auto type_id = yaml_get_uid(obj_node, obj_str, obj.name, obj_type);
 
 			if (type_id != hades::UniqueId::Zero)
 			{
@@ -300,8 +310,7 @@ namespace objects
 				obj.obj_type = type_ptr;
 			}
 
-			const auto curves_str = "curves";
-			const auto curves_node_root = obj_node[curves_str];
+			const auto curves_node_root = obj_node[obj_curves];
 
 			for (const auto &c : curves_node_root)
 			{
@@ -339,12 +348,118 @@ namespace objects
 		}
 	}
 
-	hades::types::string WriteObjectsToYaml(const level &l)
+	YAML::Emitter &WriteLevel(const level &l, YAML::Emitter &y)
 	{
-		YAML::Emitter y;
-
 		//write the level info
+		y << YAML::Key << level_str;
+		y << YAML::Value << YAML::BeginMap;
 
-		return y.c_str();
+		//name
+		if (!l.name.empty())
+		{
+			y << YAML::Key << level_name;
+			y << YAML::Value << l.name;
+		}
+
+		//description
+		if (!l.description.empty())
+		{
+			y << YAML::Key << level_desc;
+			y << YAML::Value << l.description;
+		}
+
+		//width
+		y << YAML::Key << level_width;
+		y << YAML::Value << l.map_x;
+
+		//height:
+		y << YAML::Key << level_height;
+		y << YAML::Value << l.map_y;
+
+		//end the level structure
+		y << YAML::EndMap;
+		return y;
+	}
+
+	YAML::Emitter &WriteObject(const object_info &o, YAML::Emitter &y)
+	{
+		y << YAML::Key << o.id;
+		y << YAML::Value << YAML::BeginMap;
+
+		//name
+		if (!o.name.empty())
+		{
+			y << YAML::Key << obj_name;
+			y << YAML::Value << o.name;
+		}
+
+		//type
+		assert(o.obj_type);
+		y << YAML::Key << obj_type;
+		const auto type_id = hades::data::GetAsString(o.obj_type->id);
+		y << YAML::Value << type_id;
+
+		//curves
+		if (!o.curves.empty())
+		{
+			y << YAML::Key << obj_curves;
+			y << YAML::Value << YAML::BeginMap;
+
+			for (const auto &[curve, value] : o.curves)
+			{
+				assert(curve);
+				const auto curve_id = hades::data::GetAsString(curve->id);
+				const auto value_str = hades::resources::CurveValueToString(value);
+
+				y << YAML::Key << curve_id;
+				y << YAML::Value << value_str;
+			}
+
+			y << YAML::EndMap;
+		}
+
+		return y << YAML::EndMap;
+	}
+
+	YAML::Emitter &WriteObjects(const level &l, YAML::Emitter &y)
+	{
+		//objects
+			//id:
+				//object-type
+				//name[opt]
+				//curves:
+				//[curve_id, value]
+		//next_id
+
+		//start the list of objects
+		if (!l.objects.empty())
+		{
+			y << YAML::Key << obj_str;
+			y << YAML::Value << YAML::BeginMap;
+
+			for (const auto &o : l.objects)
+			{
+				WriteObject(o, y);
+			}
+
+			//end the object list
+			y << YAML::EndMap;
+		}
+
+		//add the next id value
+		if (l.next_id != hades::NO_ENTITY)
+		{
+			y << YAML::Key << obj_next;
+			y << YAML::Value << l.next_id;
+		}
+
+		return y;
+	}
+
+	YAML::Emitter &WriteObjectsToYaml(const level &l, YAML::Emitter& e)
+	{
+		WriteLevel(l, e);
+		WriteObjects(l, e);
+		return e;
 	}
 }

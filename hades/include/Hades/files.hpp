@@ -74,6 +74,18 @@ namespace hades
 		buffer as_raw(std::string_view modPath, std::string_view fileName);
 		//throws file_exception
 		ResourceStream make_stream(std::string_view modPath, std::string_view fileName);
+		//as above, but checks the usersSaveDirectoryinstead
+		ResourceStream make_save_stream(std::string_view fileName);
+		//as above, userConfigDir
+		ResourceStream make_config_stream(std::string_view fileName);
+
+		//writes file_contents to the file at path, will place UserCustomFileDirectory before path
+		//throws file_exception
+		void write_file(std::string_view path, std::string_view file_contents);
+		//same as above, calls UserSaveDirectory instead
+		void write_save();
+		//as above, calls UserConfigDir instead
+		void write_config();
 
 		class ResourceStream final : public sf::InputStream
 		{
@@ -120,7 +132,9 @@ namespace hades
 				FILE_NOT_FOUND,
 				PATH_NOT_FOUND,
 				ARCHIVE_INVALID,
-				FILE_NOT_OPEN
+				FILE_NOT_OPEN,
+				FILENAME_INVALID,
+				PERMISSION_DENIED
 			};
 
 			file_exception(const char* what, error_code code) : std::runtime_error(what), _code(code) {}

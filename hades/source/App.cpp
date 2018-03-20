@@ -50,7 +50,11 @@ namespace hades
 	//console variable default values
 	constexpr auto client_tick_time_d = 30;
 	constexpr auto client_max_tick_d = 150;
+#ifndef NDEBUG
+	constexpr auto file_portable_d = true;
+#else // !NDEBUG
 	constexpr auto file_portable_d = false;
+#endif // !NDEBUG
 
 	void registerVariables(Console *console)
 	{

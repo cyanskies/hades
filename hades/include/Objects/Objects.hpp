@@ -12,6 +12,7 @@
 namespace YAML
 {
 	class Node;
+	class Emitter;
 }
 
 namespace objects
@@ -57,6 +58,9 @@ namespace objects
 	// but doesn't store the full curve history
 	struct level
 	{
+		hades::types::string name;
+		hades::types::string description;
+
 		//map size in pixels
 		level_size_t map_x = 0, map_y = 0;
 		//sequence of object
@@ -75,7 +79,7 @@ namespace objects
 	//also includes all the object related data, next ID, all objects
 	void ReadObjectsFromYaml(const YAML::Node&, level &target);
 	//does the reverse of the above function
-	hades::types::string WriteObjectsToYaml(const level&);
+	YAML::Emitter &WriteObjectsToYaml(const level&, YAML::Emitter &);
 }
 
 #endif // !OBJECTS_OBJECTS_HPP

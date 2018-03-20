@@ -87,7 +87,7 @@ namespace hades {
 
 			//TODO: return false if mising write permissions for the directory that exists
 
-			return fs::create_directory(dir);
+			return fs::create_directories(dir);
 		}
 
 		void write_file(std::string_view path, std::string_view file_contents)

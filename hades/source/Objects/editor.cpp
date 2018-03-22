@@ -563,9 +563,7 @@ namespace objects
 			//test of the presence of an extension
 			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
 				file += '.' + level_ext;
-			//else if(std::distance(std::begin(file), ext) < 3)
-				//extension too short?
-
+			
 			Filename = file;
 			Mod = mod;
 
@@ -633,9 +631,7 @@ namespace objects
 			//test of the presence of an extension
 			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
 				file += '.' + level_ext;
-			//else if(std::distance(std::begin(file), ext) < 3)
-			//extension too short?
-
+			
 			auto old_file = Filename;
 			auto old_mod = Mod;
 
@@ -649,10 +645,16 @@ namespace objects
 			{
 				LoadLevel();
 			}
-			catch (hades::files::file_exception&)
+			catch (const hades::files::file_exception&)
 			{
 				_makeErrorDialog("Unable to load file: " + mod + "/" + file);
 				//restore the previous mod settings
+				Mod = old_mod;
+				Filename = old_file;
+			}
+			catch (const YAML::Exception &e)
+			{
+				_makeErrorDialog("Unable to read file: " + mod + "/" + file + ";\n " + e.what());
 				Mod = old_mod;
 				Filename = old_file;
 			}
@@ -707,6 +709,8 @@ namespace objects
 		ReadObjectsFromYaml(level_yaml, lvl);
 
 		LoadObjects(lvl);
+
+		reinit();
 	}
 
 	void object_editor::SaveObjects(level &l) const
@@ -724,9 +728,71 @@ namespace objects
 		{ return static_cast<object_info>(e); });
 	}
 
+	hades::SpriteBatch::sprite_id CreateSpriteFromObj(const object_info &o, hades::SpriteBatch &s)
+	{
+		static const auto position_id = hades::data::GetUid("position");
+		static const auto position_c = hades::data::Get<hades::resources::curve>(position_id);
+		const auto position_value = ValidVectorCurve(GetCurve(o, position_c));
+
+		const auto position = std::get<hades::resources::curve_types::vector_int>(position_value.value);
+		const sf::Vector2i position_vec{ position[0], position[1] };
+
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		const auto size_value = ValidVectorCurve(GetCurve(o, size_c));
+
+		const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+		const sf::Vector2i size_vec{ size[0], size[1] };
+
+		//if no animation is set, send nullptr to the SpriteBatch, 
+		//it will render an appropriatly sized rect
+		const hades::resources::animation *anim = nullptr;
+		const auto anims = GetEditorAnimations(o.obj_type);
+		if (!anims.empty())
+		{
+			auto index = hades::random(0u, anims.size() - 1);
+			anim = anims[index];
+		}
+
+		return s.createSprite(anim, sf::Time(), 0,
+			static_cast<sf::Vector2f>(position_vec), static_cast<sf::Vector2f>(size_vec));
+	}
+
+	void AddToQuadMap(const object_info &o, hades::QuadTree<hades::EntityId> &q)
+	{
+		static const auto position_id = hades::data::GetUid("position");
+		static const auto position_c = hades::data::Get<hades::resources::curve>(position_id);
+		const auto position_value = ValidVectorCurve(GetCurve(o, position_c));
+
+		const auto position = std::get<hades::resources::curve_types::vector_int>(position_value.value);
+		const sf::Vector2i position_vec{ position[0], position[1] };
+
+		static const auto size_id = hades::data::GetUid("size");
+		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		const auto size_value = ValidVectorCurve(GetCurve(o, size_c));
+
+		const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
+		const sf::Vector2i size_vec{ size[0], size[1] };
+
+		q.insert({ position[0], position[1], size[0], size[1] }, o.id);
+	}
+
 	void object_editor::LoadObjects(const level &l)
 	{
+		MapSize = { l.map_x, l.map_y };
+		_next_object_id = l.next_id;
+		_objectSprites.clear();
+		_objects.clear();
+		std::transform(std::begin(l.objects), std::end(l.objects), std::back_inserter(_objects), [](const object_info &e)
+		{ return static_cast<editor_object_info>(e); });
 
+		_quadtree = QuadTree({ 0, 0, MapSize.x, MapSize.y }, 1);
+
+		for (auto &o : _objects)
+		{
+			o.sprite_id = CreateSpriteFromObj(o, _objectSprites);
+			AddToQuadMap(o, _quadtree);
+		}
 	}
 
 	void object_editor::DrawBackground(sf::RenderTarget &target) const
@@ -937,124 +1003,6 @@ namespace objects
 
 		//let child classes start adding their own elements
 		FillGui();
-		
-		/*
-		//===================
-		//FILE LOADING DIALOG
-		//===================
-		//Shown when the Load button is pressed
-		auto load_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::load);
-		//hide the container
-		load_dialog_container->hide();
-		load_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
-			w->hide();
-		});
-
-		//set the default name to be the currently loaded file
-		auto load_dialog_filename = load_dialog_container->get<tgui::EditBox>("load_filename");
-		if (!Filename.empty())
-			load_dialog_filename->setText(Filename);
-		else
-			Filename = load_dialog_filename->getDefaultText();
-
-		auto load_dialog_modname = load_dialog_container->get<tgui::EditBox>("load_mod");
-		if (!Mod.empty())
-			load_dialog_modname->setText(Mod);
-		else
-			Mod = load_dialog_modname->getDefaultText();
-
-		//rig up the load button
-		auto load_dialog_button = load_dialog_container->get<tgui::Button>("load_button");
-		load_dialog_button->onPress.connect([this]() {
-			auto filename = _gui.get<tgui::EditBox>("load_filename");
-			auto modname = _gui.get<tgui::EditBox>("load_mod");
-
-			hades::types::string mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			hades::types::string file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
-			loadLevel(mod, file);
-
-			auto load_container = _gui.get<tgui::Container>(dialog_names::load);
-			load_container->hide();
-		});
-
-		//===============
-		//SAVE DIALOG
-		//===============
-		auto save_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::save);
-		//hide the container
-		save_dialog_container->hide();
-		save_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
-			w->hide();
-		});
-
-		//set the default name to be the currently saved file
-		auto save_dialog_filename = save_dialog_container->get<tgui::EditBox>("save_filename");
-		if (!Filename.empty())
-			save_dialog_filename->setText(Filename);
-		else
-			Filename = save_dialog_filename->getDefaultText();
-
-		auto save_dialog_modname = save_dialog_container->get<tgui::EditBox>("save_mod");
-		if (!Mod.empty())
-			save_dialog_modname->setText(Mod);
-		else
-			Mod = save_dialog_modname->getDefaultText();
-
-		//rig up the save button
-		auto save_dialog_button = save_dialog_container->get<tgui::Button>("save_button");
-		save_dialog_button->onPress.connect([this]() {
-			auto filename = _gui.get<tgui::EditBox>("save_filename");
-			auto modname = _gui.get<tgui::EditBox>("save_mod");
-
-			Mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			Filename = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
-			SaveLevel();
-
-			auto save_container = _gui.get<tgui::Container>(dialog_names::save);
-			save_container->hide();
-		});
-
-		//==========
-		//New map DIALOG
-		//==========
-		auto new_dialog_container = _gui.get<tgui::ChildWindow>(dialog_names::new_dialog);
-		//hide the container
-		new_dialog_container->hide();
-		new_dialog_container->onMinimize.connect([](std::shared_ptr<tgui::ChildWindow> w) {
-			w->hide();
-		});
-
-		//rig up the save button
-		auto new_dialog_button = new_dialog_container->get<tgui::Button>(new_dialog::button);
-		new_dialog_button->onPress.connect([this]() {
-			auto filename = _gui.get<tgui::EditBox>(new_dialog::filename);
-			auto modname = _gui.get<tgui::EditBox>(new_dialog::mod);
-
-			auto mod = modname->getText().isEmpty() ? modname->getDefaultText() : modname->getText();
-			auto file = filename->getText().isEmpty() ? filename->getDefaultText() : filename->getText();
-
-			auto size_x = _gui.get<tgui::EditBox>(new_dialog::size_x);
-			auto size_y = _gui.get<tgui::EditBox>(new_dialog::size_y);
-
-			auto size_x_str = size_x->getText().isEmpty() ? size_x->getDefaultText() : size_x->getText();
-			auto size_y_str = size_y->getText().isEmpty() ? size_y->getDefaultText() : size_y->getText();
-
-			auto value_x = std::stoi(size_x_str.toAnsiString());
-			auto value_y = std::stoi(size_y_str.toAnsiString());
-
-			if (value_x < 1)
-				value_x = 1;
-
-			if (value_y < 1)
-				value_y = 1;
-
-			//only one generator is available, so we don't really need to check it.
-			//_new(mod, file, value_x, value_y);
-
-			auto new_container = _gui.get<tgui::Container>(dialog_names::new_dialog);
-			new_container->hide();
-		});
-		*/
 	}
 
 

@@ -50,7 +50,7 @@ namespace objects
 	const hades::resources::animation *GetEditorIcon(const resources::object *o);
 	resources::object::animation_list GetEditorAnimations(const resources::object *o);
 
-	using level_size_t = hades::types::uint32;
+	using level_size_t = hades::types::int32;
 
 	constexpr auto level_ext = "lvl";
 	constexpr auto save_ext = "hsv";

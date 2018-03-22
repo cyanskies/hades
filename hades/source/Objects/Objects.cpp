@@ -314,17 +314,10 @@ namespace objects
 
 			for (const auto &c : curves_node_root)
 			{
-				//TODO: error handling
-				//log warnings here
-				if (!c.IsSequence())
-					continue;
+				const auto curve_id_str = c.first.as<hades::types::string>();
 
-				//and here
-				if (c.size() < 2)
-					continue;
+				const auto curve_value_node = c.second;
 
-				const auto curve_id_node = c[0];
-				const auto curve_id_str = curve_id_node.as<hades::types::string>();
 				//warning here
 				if (curve_id_str.empty())
 					continue;
@@ -335,9 +328,6 @@ namespace objects
 					continue;
 
 				const auto curve_ptr = hades::data::Get<hades::resources::curve>(id);
-
-				const auto curve_value_node = c[1];
-
 				const auto value_str = curve_value_node.as<hades::types::string>();
 				const auto value = hades::resources::StringToCurveValue(curve_ptr, value_str);
 

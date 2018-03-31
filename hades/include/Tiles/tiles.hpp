@@ -11,11 +11,20 @@
 
 #include "Tiles/resources.hpp"
 
+//the tiles subsystem adds the ability to draw terrain in the editor
+
+namespace hades::data
+{
+	class data_system;
+}
+
 namespace tiles
 {
+	//enables objects as well
+	void EnableTiles(hades::data::data_system*);
 	//tile_count_t::max is the largest amount of tiles that can be in a tileset, or map
 	using tile_count_t = hades::types::uint32;
-
+	using draw_size_t = hades::types::int8;
 	//raw map data, is a stream of tile_count id's
 	//and a map of tilesets along with thier first id's
 	// and also a width
@@ -75,7 +84,7 @@ namespace tiles
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const tile&, const sf::Vector2u &position, hades::types::uint8 amount = 0);
+		void replace(const tile&, const sf::Vector2i &position, draw_size_t amount = 0);
 
 		MapData getMap() const;
 
@@ -93,6 +102,8 @@ namespace tiles
 	const resources::tile_settings *GetTileSettings();
 	const TileArray &GetErrorTileset();
 	tile GetErrorTile();
+
+	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount);
 }
 
 #endif // !TILES_TILES_HPP

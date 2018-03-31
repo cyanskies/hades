@@ -21,7 +21,6 @@ namespace hades
 		if(_states.empty())
 			return;
 
-		_states.back()->cleanup();
 		_states.pop_back();
 	}
 
@@ -50,9 +49,6 @@ namespace hades
 
 	void StateManager::drop()
 	{
-		for (auto &s : _states)
-			s->cleanup();
-
 		_states.clear();
 	}
 

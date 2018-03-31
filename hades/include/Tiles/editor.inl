@@ -5,71 +5,80 @@
 namespace tiles
 {
 	template<class MapClass>
-	void tile_editor_t<MapClass>::load_map(const MapData& data)
+	void tile_editor_t<MapClass>::init()
 	{
-		Map.create(data);
-	}
+		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
+		TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);
 
-	template<class MapClass>
-	MapData tile_editor_t<MapClass>::save_map() const
-	{
-		return Map.getMap();
+		if (_tileInfo.texture == hades::UniqueId::Zero)
+		{
+			//replace FillTile with an error tile
+		}
+
+		object_editor::init();
 	}
 
 	template<class MapClass>
 	void tile_editor_t<MapClass>::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	{
 		target.setView(GameView);
+		DrawBackground(target);
 		target.draw(Map);
+		DrawGrid(target);
+		DrawObjects(target);
 
-		DrawTilePreview(target);
+		DrawPreview(target);
 	}
 
 	template<class MapClass>
-	sf::FloatRect tile_editor_t<MapClass>::GetMapBounds() const
+	void tile_editor_t<MapClass>::GenerateDrawPreview(const sf::RenderTarget& window, MousePos m)
 	{
-		return Map.getLocalBounds();
-	}
-
-	template<class MapClass>
-	void tile_editor_t<MapClass>::GenerateDrawPreview(const sf::RenderTarget& window, const hades::InputSystem::action_set &input)
-	{
-		auto mousePos = input.find(hades::input::PointerPosition);
-		if (EditMode == editor::EditMode::TILE && mousePos != input.end() && mousePos->active)
+		assert(TileSettings);
+		const auto mousePos = m;
+		if (EditMode == editor::EditMode::TILE)
 		{
 			const auto tile_size = TileSettings->tile_size;
 
-			auto truePos = window.mapPixelToCoords({ mousePos->x_axis, mousePos->y_axis }, GameView);
+			const auto x = std::get<0>(mousePos);
+			const auto y = std::get<1>(mousePos);
+
+			auto truePos = window.mapPixelToCoords({ x, y }, GameView);
 			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
 
 			auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
 				static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
-			auto position = sf::Vector2u(snapPos) / tile_size;
+			auto position = sf::Vector2i(snapPos) / static_cast<int>(tile_size);
 			if (_tilePosition != position)
 			{
 				_tilePosition = position;
 				_tilePreview = Map;
-				_tilePreview.replace(TileInfo, _tilePosition, Tile_draw_size);
+				_tilePreview.replace(_tileInfo, _tilePosition, TileDrawSize);
 			}
 		}
+		else
+			object_editor::GenerateDrawPreview(window, m);
 	}
 
 	//pastes the currently selected tile or terrain onto the map
 	template<class MapClass>
-	void tile_editor_t<MapClass>::TryDraw(const hades::InputSystem::action_set &input)
+	void tile_editor_t<MapClass>::OnClick(const sf::RenderTarget &t, MousePos m)
 	{
-		auto mouseLeft = input.find(hades::input::PointerLeft);
-		if (EditMode == editor::EditMode::TILE && mouseLeft != input.end() && mouseLeft->active)
+		const auto mouseLeft = m;
+		if (EditMode == editor::EditMode::TILE)
 		{
 			//place the tile in the tile map
-			Map.replace(TileInfo, _tilePosition, Tile_draw_size);
+			Map.replace(_tileInfo, _tilePosition, TileDrawSize);
 		}
+		else
+			object_editor::OnClick(t, m);
 	}
 
 	template<class MapClass>
-	void tile_editor_t<MapClass>::DrawTilePreview(sf::RenderTarget& target) const
+	void tile_editor_t<MapClass>::DrawPreview(sf::RenderTarget& target) const
 	{
 		if (EditMode == editor::EditMode::TILE)
 			target.draw(_tilePreview);
+		else
+			object_editor::DrawPreview(target);
 	}
 }

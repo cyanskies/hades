@@ -52,10 +52,6 @@ namespace objects
 		reinit();
 	}
 
-	void object_editor::loadLevel(const hades::types::string &mod, const hades::types::string &filename)
-	{
-	}
-
 	bool object_editor::handleEvent(const hades::Event &windowEvent)
 	{ 
 		return false; 
@@ -150,8 +146,6 @@ namespace objects
 		DrawObjects(target);
 		DrawPreview(target);
 	}
-
-	void object_editor::cleanup(){}
 
 	void object_editor::reinit() 
 	{
@@ -378,6 +372,7 @@ namespace objects
 	bool object_editor::ValidTargetForDrag(object_editor::MousePos pos) const
 	{
 		return false;
+		//if editMode is greater than OBJECT then return false as well.
 	}
 
 	void object_editor::OnClick(const sf::RenderTarget &target, object_editor::MousePos pos)

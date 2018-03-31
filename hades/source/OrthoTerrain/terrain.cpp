@@ -76,27 +76,6 @@ namespace ortho_terrain
 		MutableTileMap::create(map_data);
 	}
 
-	std::vector<sf::Vector2i> AllPositions(const sf::Vector2u &position, hades::types::uint8 amount)
-	{
-		if (amount == 0)
-			return { sf::Vector2i(position) };
-
-		auto end = sf::Vector2i(position) +
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::floor(amount / 2.f), std::floor(amount / 2.f) });
-		auto start_position = sf::Vector2i(position) -
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceil(amount / 2.f), std::ceil(amount / 2.f)});
-
-		std::vector<sf::Vector2i> positions;
-
-		for (auto r = start_position.x; r < end.x; ++r)
-		{
-			for (auto c = start_position.y; c < end.y; ++c)
-				positions.push_back({ r, c });
-		}
-
-		return positions;
-	}
-
 	//returns the 4 vertex in the corners of the tile position
 	//[0] top left
 	//[1] top right
@@ -157,14 +136,14 @@ namespace ortho_terrain
 		return changed;
 	}
 
-	void MutableTerrainMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount, bool updateVertex)
+	void MutableTerrainMap::replace(const tile& t, const sf::Vector2i &position, tiles::draw_size_t amount, bool updateVertex)
 	{
 		MutableTileMap::replace(t, position, amount);
 
 		if (!updateVertex)
 			return;
 
-		auto positions = AllPositions(position, amount);
+		auto positions = tiles::AllPositions(position, amount);
 		for (const auto &p : positions)
 		{
 			auto position = sf::Vector2u(p);
@@ -190,9 +169,9 @@ namespace ortho_terrain
 		}
 	}
 
-	void MutableTerrainMap::replace(const resources::terrain& terrain, const sf::Vector2u &position, hades::types::uint8 amount)
+	void MutableTerrainMap::replace(const resources::terrain& terrain, const sf::Vector2i &position, tiles::draw_size_t amount)
 	{
-		auto positions = AllPositions(position, amount);
+		auto positions = tiles::AllPositions(position, amount);
 
 		std::vector<sf::Vector2u> changedVertex;
 		//write over all vertex
@@ -266,7 +245,7 @@ namespace ortho_terrain
 			}
 
 			auto tile = PickTile(corners);
-			replace(tile, static_cast<sf::Vector2u>(pos));
+			replace(tile, pos);
 		}
 	}
 

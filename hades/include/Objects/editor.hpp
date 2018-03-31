@@ -28,7 +28,9 @@ namespace objects
 		// set editor_height to override this
 		const hades::types::int32 view_height = 240;
 
-		enum EditMode {
+		using EditMode_t = hades::types::uint8;
+
+		enum EditMode : EditMode_t {
 			OBJECT,
 			OBJECT_MODE_END
 		};
@@ -60,24 +62,17 @@ namespace objects
 	class object_editor : public hades::State
 	{
 	public:
-		virtual void init() override;
+		void init() override;
 
-		// called when the load command is issued
-		// overide to parse extra elements from the level
-		// then call the Protected LoadX functions to parse all the subsequent parts
-		virtual void loadLevel(const hades::types::string &mod, const hades::types::string &filename);
+		bool handleEvent(const hades::Event &windowEvent) override;
+		void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override final;
+		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
-		virtual bool handleEvent(const hades::Event &windowEvent) override;
-		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override final;
-		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
+		void reinit() override;
+		void pause() override;
+		void resume() override;
 
-		virtual void cleanup() override;
-
-		virtual void reinit() override;
-		virtual void pause() override;
-		virtual	void resume() override;
-
-		using EditMode_t = hades::types::uint8;
+		using EditMode_t = editor::EditMode_t;
 
 	protected:
 		//==initialisation functions==

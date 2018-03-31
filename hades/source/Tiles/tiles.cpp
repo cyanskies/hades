@@ -8,8 +8,17 @@
 #include "Hades/Data.hpp"
 #include "Hades/Utility.hpp"
 
+#include "Objects/Objects.hpp"
+
 namespace tiles
 {
+	void EnableTiles(hades::data::data_system *d)
+	{
+		assert(d);
+		objects::EnableObjects(d);
+		RegisterTileResources(d);
+	}
+
 	namespace
 	{
 		static const VertexArray::size_type VertexPerTile = 6;
@@ -331,7 +340,7 @@ namespace tiles
 		TileMap::create(map_data);
 	}
 
-	std::vector<sf::Vector2i> AllPositions(const sf::Vector2u &position, hades::types::uint8 amount)
+	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount)
 	{
 		if (amount == 0)
 			return { sf::Vector2i(position) };
@@ -375,7 +384,7 @@ namespace tiles
 		return changed;
 	}
 
-	void MutableTileMap::replace(const tile& t, const sf::Vector2u &position, hades::types::uint8 amount)
+	void MutableTileMap::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
 	{
 		auto positions = AllPositions(position, amount);
 

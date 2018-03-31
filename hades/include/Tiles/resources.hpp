@@ -7,7 +7,7 @@
 namespace tiles
 {
 	//registers the resources needed to use tilemaps and the tile editor
-	void RegisterTileResources(hades::data::data_manager*);
+	void RegisterTileResources(hades::data::data_system*);
 
 	//tile sizes are capped by the data type used for texture sizes
 	using tile_size_t = hades::resources::texture::size_type;

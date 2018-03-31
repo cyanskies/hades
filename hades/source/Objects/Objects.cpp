@@ -10,6 +10,12 @@
 
 namespace objects
 {
+	void EnableObjects(hades::data::data_system *d)
+	{
+		assert(d);
+		RegisterObjectResources(d);
+	}
+
 	using curve_obj = resources::object::curve_obj;
 
 	//returns nullptr if the curve wasn't found

@@ -55,7 +55,6 @@ namespace hades
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime
 		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) = 0; //draw
-		virtual void cleanup() = 0; //delete everything
 		
 		//support functions
 		virtual void reinit() = 0; //reinit because graphcs options changed, or state has been paused

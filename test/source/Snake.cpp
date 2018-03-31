@@ -29,9 +29,6 @@ void Snake::update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSyst
 void Snake::draw(sf::RenderTarget &target, sf::Time deltaTime)
 {}
 
-void Snake::cleanup()
-{}
-
 void Snake::reinit()
 {}
 

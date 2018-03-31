@@ -14,7 +14,6 @@ public:
 	bool handleEvent(const hades::Event &windowEvent) override;
 	void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
 	void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
-	void cleanup() override;
 	void reinit() override;
 	void pause() override;
 	void resume() override;

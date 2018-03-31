@@ -4,6 +4,8 @@
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
+#include "Objects/editor.hpp"
+
 #include "Tiles/resources.hpp"
 #include "Tiles/tiles.hpp"
 
@@ -21,93 +23,61 @@ namespace tiles
 		// set editor_height to override this
 		const hades::types::int32 view_height = 240;
 
-		enum EditMode {
-			NONE, //no editing
+		enum EditMode : objects::editor::EditMode_t
+		{TILE = objects::editor::EditMode::OBJECT_MODE_END, TILE_MODE_END};
+
+		enum class TileEditMode {
+			NONE, //no tile selected
 			TILE, //draw a specific tile, no cleanup
-			TILE_EDIT_END
+		};
+
+		enum class TileGenerator {
+			FILL
 		};
 	}
 
-	class tile_editor_base : public hades::State
-	{
-	public:
-		void init() override; 
-
-		virtual void generate();
-		
-		virtual void load_map(const MapData&) = 0;
-		virtual MapData save_map() const = 0;
-		
-		virtual bool handleEvent(const hades::Event &windowEvent) override; 
-		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
-		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override = 0;
-
-		virtual void cleanup() override;
-						
-		virtual void reinit() override;
-		virtual void pause() override;
-		virtual	void resume() override;
-
-	protected:
-		//==initialisation functions==
-		//loads the gui from the editor-layout resource
-		//then sets up all the generic UI elements
-		void CreateGui();
-		//fills the 'tiles' gui containers 
-		//with selectable tiles.
-		virtual void FillTileSelector();
-
-		virtual sf::FloatRect GetMapBounds() const = 0;
-		//==map editing functions==
-		//generates the current tile that will be pasted
-		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) = 0;
-		//check and draw the new tiles over the current map
-		virtual void TryDraw(const hades::InputSystem::action_set&) = 0;
-		
-		//map file info
-		hades::types::string Mod, Filename;
-
-		//editing variables
-		using EditMode_t = hades::types::uint8;
-		EditMode_t EditMode;
-		const resources::tile_settings *TileSettings;
-
-		//tile placement mode variables
-		hades::types::uint8 Tile_draw_size = 1;
-		tile TileInfo;
-
-		//core map drawing variables
-		sf::View GameView;
-	private:
-		void _new(const hades::types::string&, const hades::types::string&, tile_count_t width, tile_count_t height);
-		void _load(const hades::types::string&, const hades::types::string&);
-		void _save() const;
-	};
-
 	template<class MapClass = tiles::MutableTileMap>
-	class tile_editor_t : public tile_editor_base
+	class tile_editor_t : public objects::object_editor
 	{
 	public:
-		tile_editor_t() = default;
+		void init() override;
+		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
-		virtual void load_map(const MapData&) override;
-		virtual MapData save_map() const override;
-
-		virtual void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 	protected:
+		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
+		void FillGui() override;
 
-		virtual sf::FloatRect GetMapBounds() const;
-		virtual void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) override;
-		virtual void TryDraw(const hades::InputSystem::action_set&) override;
-		void DrawTilePreview(sf::RenderTarget&) const;
+		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
+		void OnClick(const sf::RenderTarget&, MousePos) override;
+		//add selector for default tile or generator
+		void NewLevelDialog() override;
+		void NewLevel() override;
+		void SaveLevel() const override;
+		void LoadLevel() override;
+
+		void SaveTiles();
+		void LoadTiles();
+
+		void DrawPreview(sf::RenderTarget &target) const override;
+
+		//New Map Settings
+		editor::TileGenerator TileGenerator = editor::TileGenerator::FILL;
+
+		//Shared Drawing
+		draw_size_t TileDrawSize = 0;
 
 		//core map variables
 		MapClass Map;
+		const resources::tile_settings *TileSettings = nullptr;
 	private:
 		//preview drawing variables
-		sf::Vector2u _tilePosition;
+		sf::Vector2i _tilePosition;
 		MapClass _tilePreview;
+		editor::TileEditMode _tileMode = editor::TileEditMode::NONE;
 
+		//selected tile for drawing
+		//also holds the default for filling a new map
+		tile _tileInfo;
 	};
 
 	using tile_editor = tile_editor_t<MutableTileMap>;

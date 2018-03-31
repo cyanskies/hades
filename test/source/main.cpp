@@ -5,8 +5,8 @@
 #include "Hades/App.hpp"
 #include "Hades/common-input.hpp"
 
-#include "Objects/editor.hpp"
-#include "Objects/resources.hpp"
+#include "Tiles/editor.hpp"
+#include "Tiles/tiles.hpp"
 
 #include "input_names.hpp"
 #include "ConsoleTestState.hpp"
@@ -19,23 +19,19 @@ int main(int argc, char **argv)
 
 std::string_view defaultGame()
 {
-	return "objects";
+	return "tiles";
 }
 
 void resourceTypes(hades::data::data_system &data)
 {
-	objects::RegisterObjectResources(&data);
-	//data.register_resource_type("snake-rules", parseSnakeRules);
-
-	//get names for the input system
-	//auto move_left = data.getUid("move_left");
+	tiles::EnableTiles(&data);
 }
 
 void hadesMain(hades::StateManager &state, hades::InputSystem &bind, hades::CommandList &commandLine)
 {
 	hades::RegisterMouseInput(bind);
 
-	std::unique_ptr<hades::State> editorstate = std::make_unique<objects::object_editor>();
+	std::unique_ptr<hades::State> editorstate = std::make_unique<tiles::tile_editor>();
 	state.push(std::move(editorstate));
 	return;
 

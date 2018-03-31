@@ -48,11 +48,11 @@ namespace ortho_terrain
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const tiles::tile&, const sf::Vector2u &position, hades::types::uint8 amount = 0, bool updateVertex = false);
+		void replace(const tiles::tile&, const sf::Vector2i &position, tiles::draw_size_t amount = 0, bool updateVertex = false);
 		//draw over a vertex with transitions fixup
 		//amount is the number of rows of adjacent vertex to replace as well.
 		//eg amount = 0, changes 4 tiles worth,
-		void replace(const resources::terrain&, const sf::Vector2u &position, hades::types::uint8 amount = 0);
+		void replace(const resources::terrain&, const sf::Vector2i &position, tiles::draw_size_t amount = 0);
 
 	private:
 		//fixes transitions for vertex in an area

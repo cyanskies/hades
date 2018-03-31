@@ -66,9 +66,6 @@ void ConsoleTestState::draw(sf::RenderTarget &target, sf::Time deltaTime)
 	target.draw(rect);
 }
 
-void ConsoleTestState::cleanup()
-{}
-
 void ConsoleTestState::reinit()
 {}
 

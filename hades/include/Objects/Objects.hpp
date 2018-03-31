@@ -17,6 +17,8 @@ namespace YAML
 
 namespace objects
 {
+	void EnableObjects(hades::data::data_system*);
+
 	//represents an instance of an object in a level file
 	struct object_info
 	{

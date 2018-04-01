@@ -36,7 +36,7 @@ namespace tiles
 		DrawGrid(target);
 		DrawObjects(target);
 
-		DrawPreview(target);
+		//DrawPreview(target);
 	}
 
 	void tile_editor::FillToolBar(AddToggleButtonFunc toggle, AddButtonFunc button, AddSeperatorFunc seperator)

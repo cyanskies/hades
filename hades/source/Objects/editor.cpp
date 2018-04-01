@@ -272,6 +272,7 @@ namespace objects
 		Button("selector", [this]() {
 			EditMode = editor::EditMode::OBJECT;
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
+			_onEnterObjectMode();
 			_clearObjectSelected();
 		}, editor_settings->selection_mode_icon);
 
@@ -1021,7 +1022,7 @@ namespace objects
 		_paletteWindow->PackEnd(combobox, false);
 
 		_objectPalette = sfg::Box::Create(sfg::Box::Orientation::VERTICAL, 1.f);
-
+		
 		_paletteWindow->PackEnd(_objectPalette);
 
 		constexpr auto all_str = "all";

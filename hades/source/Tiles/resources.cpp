@@ -8,8 +8,14 @@
 #include "Tiles/editor.hpp"
 #include "Tiles/tiles.hpp"
 
+#include "Tiles/resource/error_tile.hpp"
+
+const auto error_tileset = "error-tileset";
+
 namespace tiles
 {
+	using hades::UniqueId;
+
 	namespace resources
 	{
 		void parseTileset(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
@@ -20,9 +26,23 @@ namespace tiles
 		data->register_resource_type("tile-settings", tiles::resources::parseTileSettings);
 		data->register_resource_type("tilesets", tiles::resources::parseTileset);
 
+		//create texture for error_tile
+		UniqueId error_tile_texture;
+		auto error_t_tex = hades::data::FindOrCreate<hades::resources::texture>(error_tile_texture, UniqueId::Zero, data);
+		error_t_tex->loaded = true;
+		error_t_tex->value.loadFromMemory(error_tile::data, error_tile::len);
+
 		//create error tileset and add a default error tile
+		const auto error_tset_id = hades::data::GetUid(error_tileset);
+		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, UniqueId::Zero, data);
+		const tile error_tile{ error_tile_texture, 0, 0 };
+		error_tset->tiles.push_back(error_tile);
 
 		//create default tile settings obj
+		const auto settings_id = hades::data::GetUid(resources::tile_settings_name);
+		auto settings = hades::data::FindOrCreate<resources::tile_settings>(settings_id, UniqueId::Zero, data);
+		settings->error_tileset = error_tset_id;
+		settings->tile_size = 8;
 	}
 
 	bool operator==(const tile &lhs, const tile &rhs)

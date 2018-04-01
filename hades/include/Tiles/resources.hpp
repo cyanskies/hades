@@ -14,6 +14,7 @@ namespace tiles
 	using traits_list = std::vector<hades::data::UniqueId>;
 
 	//data needed to render and interact with a tile
+	//TODO: investigate storing the actual tex pointer here?
 	struct tile
 	{
 		hades::data::UniqueId texture = hades::data::UniqueId::Zero;

@@ -240,7 +240,7 @@ namespace hades
 					}
 					else if (header.second.IsSequence())
 					{
-						;
+						;//TODO: include all
 					}
 				}
 
@@ -298,6 +298,12 @@ namespace hades
 							continue;
 						}
 					}
+				}
+				else if (dependencies.IsScalar())
+				{
+					const auto d = dependencies.as<types::string>();
+					if (!dependencycheck(d))
+						LOGERROR("One of mods: " + to_string(source) + " dependencies has not been provided, was: " + d);
 				}
 				else
 					LOGERROR("Tried to read dependencies for mod: " + to_string(source) + ", but the depends entry did not contain a sequence");

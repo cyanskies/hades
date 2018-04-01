@@ -36,11 +36,11 @@ namespace tiles
 		};
 	}
 
-	template<class MapClass = tiles::MutableTileMap>
-	class tile_editor_t : public objects::object_editor
+	class tile_editor : public objects::object_editor
 	{
 	public:
 		void init() override;
+		void reinit() override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 	protected:
@@ -67,22 +67,18 @@ namespace tiles
 		draw_size_t TileDrawSize = 0;
 
 		//core map variables
-		MapClass Map;
+		MutableTileMap Map;
 		const resources::tile_settings *TileSettings = nullptr;
 	private:
 		//preview drawing variables
 		sf::Vector2i _tilePosition;
-		MapClass _tilePreview;
+		MutableTileMap _tilePreview;
 		editor::TileEditMode _tileMode = editor::TileEditMode::NONE;
 
 		//selected tile for drawing
 		//also holds the default for filling a new map
 		tile _tileInfo;
 	};
-
-	using tile_editor = tile_editor_t<MutableTileMap>;
 }
-
-#include "Tiles/editor.inl"
 
 #endif // !TILES_EDITOR_HPP

@@ -40,7 +40,7 @@ set(HADES_SRC
 	OrthoTerrain/utility.cpp
 	OrthoTerrain/generator.cpp
 	OrthoTerrain/resources.cpp
-	#Tiles/editor.cpp
+	Tiles/editor.cpp
 	Tiles/generator.cpp
 	Tiles/resources.cpp
 	Tiles/serialise.cpp

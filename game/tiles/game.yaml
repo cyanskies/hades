@@ -1,6 +1,6 @@
 mod:
     name: tiles
-
+    depends: objects
 textures:
     tiles-tex:
         width: 72

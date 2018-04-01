@@ -1,6 +1,4 @@
 mod:
     name: tiles
-    depends:
-        - objects
 
 include: game.yaml

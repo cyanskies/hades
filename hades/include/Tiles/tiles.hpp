@@ -29,6 +29,7 @@ namespace tiles
 	//and a map of tilesets along with thier first id's
 	// and also a width
 	using TileSetInfo = std::tuple<hades::data::UniqueId, tile_count_t>;
+	//							tilesets used in the map, the actual tile id map data, map width
 	using RawMap = std::tuple<std::vector<TileSetInfo>, std::vector<tile_count_t>, tile_count_t>;
 
 	//an array of tiles, can be converted into a tilemap to draw
@@ -53,6 +54,7 @@ namespace tiles
 		using std::runtime_error::runtime_error;
 	};
 
+	//TODO: split chunks based on visible area
 	//a class for rendering MapData as a tile map
 	class TileMap : public sf::Drawable, public sf::Transformable
 	{
@@ -98,6 +100,7 @@ namespace tiles
 		TileArray _tiles;
 		tile_count_t _vertex_width;
 	};
+
 	//throws tile_map_exception if the settings cannot be retrieved for any reason.
 	const resources::tile_settings *GetTileSettings();
 	const TileArray &GetErrorTileset();

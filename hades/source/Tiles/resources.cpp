@@ -32,14 +32,15 @@ namespace tiles
 		error_t_tex->loaded = true;
 		error_t_tex->value.loadFromMemory(error_tile::data, error_tile::len);
 
+
 		//create error tileset and add a default error tile
-		const auto error_tset_id = hades::data::GetUid(error_tileset);
+		const auto error_tset_id = hades::data::MakeUid(error_tileset);
 		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, UniqueId::Zero, data);
 		const tile error_tile{ error_tile_texture, 0, 0 };
 		error_tset->tiles.push_back(error_tile);
 
 		//create default tile settings obj
-		const auto settings_id = hades::data::GetUid(resources::tile_settings_name);
+		const auto settings_id = hades::data::MakeUid(resources::tile_settings_name);
 		auto settings = hades::data::FindOrCreate<resources::tile_settings>(settings_id, UniqueId::Zero, data);
 		settings->error_tileset = error_tset_id;
 		settings->tile_size = 8;

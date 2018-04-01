@@ -7,12 +7,13 @@ namespace tiles
 {
 	void tile_editor::init()
 	{
-		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
-		TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);
-
 		if (_tileInfo.texture == hades::UniqueId::Zero)
 		{
-			//replace FillTile with an error tile
+			//no tile to fill the map with
+			const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
+			TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);
+
+			_tileInfo = GetErrorTile();
 		}	
 
 		object_editor::init();
@@ -85,16 +86,30 @@ namespace tiles
 	}
 
 	void tile_editor::NewLevelDialog()
-	{}
+	{
+		object_editor::NewLevelDialog();
+	}
+
 	void tile_editor::NewLevel()
-	{}
+	{
+		object_editor::NewLevel();
+
+		const auto settings = GetTileSettings();
+
+		const tile_count_t width = MapSize.x / settings->tile_size;
+		TileArray map{ width * MapSize.y / settings->tile_size, _tileInfo };
+		Map.create({ map, width });
+	}
+
 	void tile_editor::SaveLevel() const
 	{}
+
 	void tile_editor::LoadLevel()
 	{}
 
 	void tile_editor::SaveTiles()
 	{}
+
 	void tile_editor::LoadTiles()
 	{}
 

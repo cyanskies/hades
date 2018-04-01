@@ -307,10 +307,10 @@ namespace hades
 		{
 			animation();
 
-			texture* tex = nullptr;
+			const texture* tex = nullptr;
 			float duration = 1.f;
 			types::int32 width = 0, height = 0;
-			shader *anim_shader = nullptr;
+			const shader *anim_shader = nullptr;
 		};
 
 		struct font : public resource_type<sf::Font>

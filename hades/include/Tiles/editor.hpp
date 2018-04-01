@@ -40,12 +40,10 @@ namespace tiles
 	{
 	public:
 		void init() override;
-		void reinit() override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 	protected:
 		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
-		void FillGui() override;
 
 		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
 		void OnClick(const sf::RenderTarget&, MousePos) override;
@@ -69,7 +67,15 @@ namespace tiles
 		//core map variables
 		MutableTileMap Map;
 		const resources::tile_settings *TileSettings = nullptr;
+
 	private:
+		void _addTilesToUi();
+		void _addTiles(const std::vector<tile> &tiles);
+		void _setCurrentTile(tile t);
+
+		//gui
+		sfg::Box::Ptr _tileWindow = nullptr;
+
 		//preview drawing variables
 		sf::Vector2i _tilePosition;
 		MutableTileMap _tilePreview;

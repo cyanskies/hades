@@ -28,6 +28,65 @@ bool ShowSelector(objects::object_editor::EditMode_t mode, objects::editor::Obje
 
 namespace objects
 {
+	sf::Image GetSubImage(const sf::Texture &i, hades::types::int32 x, hades::types::int32 y,
+		hades::types::int32 width, hades::types::int32 height,
+		hades::types::int32 target_width, hades::types::int32 target_height)
+	{
+		sf::RenderTexture rt;
+		if (target_width == 0
+			|| target_height == 0)
+		{
+			rt.create(width, height);
+		}
+		else
+		{
+			rt.create(target_width, target_height);
+			rt.setView(sf::View{ { 0.f, 0.f, static_cast<float>(width), static_cast<float>(height) } });
+		}
+
+		const sf::Sprite s{ i,{ x, y, width, height } };
+
+		rt.clear(sf::Color::Transparent);
+		rt.draw(s);
+		rt.display();
+
+		const auto &tex = rt.getTexture();
+		return tex.copyToImage();
+	}
+
+	template <typename Button>
+	auto CreateButton(hades::types::string name, object_editor::OnClickFunc func, const hades::resources::animation *icon)
+	{
+		auto button = Button::Create();
+
+		constexpr auto button_size = 20;
+
+		if (icon)
+		{
+			using int_t = hades::types::int32;
+			const auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
+			const auto frame = GetSubImage(icon->tex->value, static_cast<int_t>(x), static_cast<int_t>(y),
+				icon->width, icon->height, button_size, button_size);
+			button->SetImage(sfg::Image::Create(frame));
+		}
+		else
+			button->SetLabel(name);
+
+		if (func)
+			button->GetSignal(sfg::Widget::OnLeftClick).Connect(func);
+
+		return button;
+	}
+
+	namespace editor
+	{
+		sfg::Widget::Ptr CreateButton(std::string_view name, OnClickFunc func,
+			const hades::resources::animation *icon)
+		{
+			return objects::CreateButton<sfg::Button>(hades::to_string(name), func, icon);
+		}
+	}
+
 	void object_editor::init()
 	{
 		//access the console properties used by the editor
@@ -267,7 +326,7 @@ namespace objects
 		_onEnterObjectMode();
 	}
 
-	sfg::Box::Ptr object_editor::GetPalatteContainer()
+	sfg::Box::Ptr object_editor::GetPaletteContainer()
 	{
 		return _paletteWindow;
 	}
@@ -844,56 +903,6 @@ namespace objects
 		}
 
 		_toolBarIconBox->PackEnd(w, false);
-	}
-
-	sf::Image GetSubImage(const sf::Texture &i, hades::types::int32 x, hades::types::int32 y,
-		hades::types::int32 width, hades::types::int32 height,
-		hades::types::int32 target_width, hades::types::int32 target_height)
-	{
-		sf::RenderTexture rt;
-		if (target_width == 0
-			|| target_height == 0)
-		{
-			rt.create(width, height);
-		}
-		else
-		{
-			rt.create(target_width, target_height);
-			rt.setView(sf::View{ { 0.f, 0.f, static_cast<float>(width), static_cast<float>(height) } });
-		}
-		
-		const sf::Sprite s{ i, {x, y, width, height} };
-
-		rt.clear(sf::Color::Transparent);
-		rt.draw(s);
-		rt.display();
-
-		const auto &tex = rt.getTexture();
-		return tex.copyToImage();
-	}
-
-	template <typename Button>
-	auto CreateButton(hades::types::string name, object_editor::OnClickFunc func, const hades::resources::animation *icon)
-	{
-		auto button = Button::Create();
-
-		constexpr auto button_size = 20;
-
-		if (icon)
-		{
-			using int_t = hades::types::int32;
-			const auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
-			const auto frame = GetSubImage(icon->tex->value, static_cast<int_t>(x), static_cast<int_t>(y),
-				icon->width, icon->height, button_size, button_size);
-			button->SetImage(sfg::Image::Create(frame));
-		}
-		else
-			button->SetLabel(name);
-
-		if (func)
-			button->GetSignal(sfg::Widget::OnLeftClick).Connect(func);
-
-		return button;
 	}
 
 	void object_editor::_addButtonToToolBar(hades::types::string name, OnClickFunc func, const hades::resources::animation *icon)

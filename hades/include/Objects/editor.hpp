@@ -43,6 +43,11 @@ namespace objects
 			GROUP_DRAG,
 			PLACE // an object has been chosen from the picker and is being held by the mouse
 		};
+
+		using OnClickFunc = std::function<void(void)>;
+
+		sfg::Widget::Ptr CreateButton(std::string_view name, OnClickFunc func,
+			const hades::resources::animation *icon = nullptr);
 	}
 
 	struct editor_object_info : public object_info
@@ -79,7 +84,7 @@ namespace objects
 		//first call your paren't classes impl of this function
 		// then add whatever you want to the gui
 		// ToolBar buttons
-		using OnClickFunc = std::function<void(void)>;
+		using OnClickFunc = editor::OnClickFunc;
 		using AddToggleButtonFunc = std::function<void(hades::types::string, OnClickFunc, const hades::resources::animation*)>;
 		using AddButtonFunc = AddToggleButtonFunc;
 		using AddSeperatorFunc = std::function<void(void)>;
@@ -87,7 +92,7 @@ namespace objects
 		virtual void FillGui();
 
 		//Gui helper functions
-		sfg::Box::Ptr GetPalatteContainer();
+		sfg::Box::Ptr GetPaletteContainer();
 
 		using MousePos = std::tuple<hades::types::int32, hades::types::int32>;
 		//==map editing functions==

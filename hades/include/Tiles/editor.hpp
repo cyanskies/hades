@@ -46,6 +46,7 @@ namespace tiles
 		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
 
 		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
+		void OnModeChange(EditMode_t t) override;
 		void OnClick(const sf::RenderTarget&, MousePos) override;
 		//add selector for default tile or generator
 		void NewLevelDialog() override;

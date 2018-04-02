@@ -195,6 +195,8 @@ namespace tiles
 					LOGERROR("Cannot load tileset: " + name + ", missing tile-settings resource.");
 					continue;
 				}
+
+				Tilesets.push_back(id);
 			}
 		}
 	}

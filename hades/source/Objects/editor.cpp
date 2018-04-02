@@ -193,7 +193,7 @@ namespace objects
 			}
 		}
 
-		if (EditMode != editor::EditMode::OBJECT
+		if (Mode() != editor::EditMode::OBJECT
 			|| !(_objectMode == editor::ObjectMode::SELECT || _objectMode == editor::ObjectMode::DRAG))
 			_clearObjectSelected();
 	}
@@ -238,7 +238,7 @@ namespace objects
 		//TODO: set grid color from editor settings
 		_grid.setSize(static_cast<sf::Vector2f>(MapSize));
 
-		EditMode = editor::EditMode::OBJECT;
+		Mode(editor::EditMode::OBJECT);
 		_objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		_createGui();
@@ -270,7 +270,7 @@ namespace objects
 
 		//empty mouse button
 		Button("selector", [this]() {
-			EditMode = editor::EditMode::OBJECT;
+			Mode(editor::EditMode::OBJECT);
 			_objectMode = editor::ObjectMode::NONE_SELECTED;
 			_onEnterObjectMode();
 			_clearObjectSelected();
@@ -334,7 +334,7 @@ namespace objects
 
 	void object_editor::GenerateDrawPreview(const sf::RenderTarget &target, MousePos m_pos)
 	{
-		if (EditMode != editor::EditMode::OBJECT)
+		if (Mode() != editor::EditMode::OBJECT)
 			return;
 	
 		// if an object is held for placement
@@ -435,9 +435,15 @@ namespace objects
 		//if editMode is greater than OBJECT then return false as well.
 	}
 
+	void object_editor::OnModeChange(EditMode_t t)
+	{
+		if (t != editor::EditMode::OBJECT)
+			_objectPalette = nullptr;
+	}
+
 	void object_editor::OnClick(const sf::RenderTarget &target, object_editor::MousePos pos)
 	{
-		if (EditMode == editor::EditMode::OBJECT)
+		if (Mode() == editor::EditMode::OBJECT)
 		{
 			const auto world_pos = hades::pointer::ConvertToWorldCoords(target, { std::get<0>(pos), std::get<1>(pos) }, GameView);
 			using int32 = hades::types::int32;
@@ -863,7 +869,7 @@ namespace objects
 		_objectSprites.prepare();
 		target.draw(_objectSprites);
 
-		if (ShowSelector(EditMode, _objectMode))
+		if (ShowSelector(Mode(), _objectMode))
 			target.draw(_objectSelector);
 	}
 
@@ -880,7 +886,7 @@ namespace objects
 	{
 		//if we're in the drag or place mode
 		//then draw the current preview
-		if (EditMode == editor::EditMode::OBJECT
+		if (Mode() == editor::EditMode::OBJECT
 			&& (_objectMode == editor::ObjectMode::DRAG
 				|| _objectMode == editor::ObjectMode::PLACE))
 		{
@@ -888,6 +894,18 @@ namespace objects
 				target.draw(drawable);
 			}, _objectPreview);
 		}
+	}
+
+	editor::EditMode_t object_editor::Mode(EditMode_t t)
+	{
+		_editMode = t;
+		OnModeChange(t);
+		return t;
+	}
+
+	editor::EditMode_t object_editor::Mode() const
+	{
+		return _editMode;
 	}
 
 	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
@@ -1128,7 +1146,7 @@ namespace objects
 
 	void object_editor::_setHeldObject(const resources::object *o)
 	{
-		EditMode = editor::EditMode::OBJECT;
+		Mode(editor::EditMode::OBJECT);
 		_objectMode = editor::ObjectMode::PLACE;
 		_heldObject.curves.clear();
 		_heldObject.id = hades::NO_ENTITY;
@@ -1186,7 +1204,7 @@ namespace objects
 	void object_editor::_trySelectAt(MousePos pos)
 	{
 		//these should have been checked before calling this func
-		assert(EditMode == editor::EditMode::OBJECT);
+		assert(Mode() == editor::EditMode::OBJECT);
 		assert(_objectMode == editor::ObjectMode::NONE_SELECTED
 			|| _objectMode == editor::ObjectMode::SELECT);
 
@@ -1213,7 +1231,7 @@ namespace objects
 
 	void object_editor::_onObjectSelected(editor_object_info &info)
 	{
-		assert(EditMode == editor::EditMode::OBJECT);
+		assert(Mode() == editor::EditMode::OBJECT);
 		assert(_objectMode == editor::ObjectMode::NONE_SELECTED 
 			|| _objectMode == editor::ObjectMode::SELECT);
 		_objectMode = editor::ObjectMode::SELECT;

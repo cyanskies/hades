@@ -46,7 +46,7 @@ namespace tiles
 		seperator();
 
 		button("tiles", [this] {
-			EditMode = editor::EditMode::TILE;
+			Mode(editor::EditMode::TILE);
 			_tileMode = editor::TileEditMode::NONE;
 			_addTilesToUi();
 		}, nullptr);
@@ -56,7 +56,7 @@ namespace tiles
 	{
 		assert(TileSettings);
 		const auto mousePos = m;
-		if (EditMode == editor::EditMode::TILE)
+		if (Mode() == editor::EditMode::TILE)
 		{
 			const auto tile_size = TileSettings->tile_size;
 
@@ -80,11 +80,19 @@ namespace tiles
 			object_editor::GenerateDrawPreview(window, m);
 	}
 
+	void tile_editor::OnModeChange(EditMode_t t)
+	{
+		if(t != editor::EditMode::TILE)
+			_tileWindow = nullptr;
+
+		object_editor::OnModeChange(t);
+	}
+
 	//pastes the currently selected tile or terrain onto the map
 	void tile_editor::OnClick(const sf::RenderTarget &t, MousePos m)
 	{
 		const auto mouseLeft = m;
-		if (EditMode == editor::EditMode::TILE)
+		if (Mode() == editor::EditMode::TILE)
 		{
 			//place the tile in the tile map
 			Map.replace(_tileInfo, _tilePosition, TileDrawSize);
@@ -127,7 +135,7 @@ namespace tiles
 
 	void tile_editor::DrawPreview(sf::RenderTarget& target) const
 	{
-		if (EditMode == editor::EditMode::TILE)
+		if (Mode() == editor::EditMode::TILE)
 			target.draw(_tilePreview);
 		else
 			object_editor::DrawPreview(target);
@@ -135,7 +143,7 @@ namespace tiles
 
 	void tile_editor::_addTilesToUi()
 	{
-		assert(EditMode == editor::EditMode::TILE);
+		assert(Mode() == editor::EditMode::TILE);
 
 		auto palette = GetPaletteContainer();
 
@@ -203,7 +211,7 @@ namespace tiles
 		assert(_tileWindow);
 		_tileWindow->RemoveAll();
 
-		const auto palette_alloc = _tileWindow->GetRequisition();
+		const auto palette_alloc = GetPaletteContainer()->GetRequisition();
 		auto box = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
 		_tileWindow->PackEnd(box, false, false);
 

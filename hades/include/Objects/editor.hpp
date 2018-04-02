@@ -101,6 +101,7 @@ namespace objects
 		//check if the location given contains a valid target for drag moving
 		// for this edit mode
 		virtual bool ValidTargetForDrag(MousePos) const;
+		virtual void OnModeChange(EditMode_t t);
 		//responds to user input(place object, place terrain tile, etc)
 		virtual void OnClick(const sf::RenderTarget&, MousePos);
 		//respond to mouse drag
@@ -138,7 +139,8 @@ namespace objects
 		sf::Vector2i MapSize = { 200, 200 };
 
 		//editing variables
-		EditMode_t EditMode = editor::OBJECT;
+		EditMode_t Mode(EditMode_t t);
+		EditMode_t Mode() const;
 
 		//core map drawing variables
 		sf::View GameView;
@@ -187,6 +189,7 @@ namespace objects
 		sfg::Widget::Ptr _saveDialog;
 		sfg::Widget::Ptr _newDialog;
 
+		EditMode_t _editMode = editor::EditMode::OBJECT;
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing

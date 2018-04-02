@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include "yaml-cpp/yaml.h"
+
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
@@ -561,5 +563,65 @@ namespace tiles
 
 		const auto i = hades::random(0u, tset.size() - 1);
 		return tset[i];
+	}
+
+	constexpr auto tiles = "tiles";
+	constexpr auto tilesets = "tilesets";
+	constexpr auto map = "map";
+	constexpr auto width = "width";
+
+	void ReadTilesFromYaml(const YAML::Node &n, level &target)
+	{
+		//level root
+		//
+		//tiles:
+		//    tilesets:
+		//        - [name, gid]
+		//    map: [1,2,3,4...]
+		//    width: 1
+
+		const auto t = n[tiles];
+
+		if (!t.IsDefined() || !t.IsMap())
+			//TODO: throw
+			return;
+
+		//tilesets
+		const auto tilesets_node = t[tilesets];
+		if (tilesets_node.IsDefined() && tilesets_node.IsSequence())
+		{
+			for (const auto tset : tilesets_node)
+			{
+				if (!tset.IsSequence() || tset.size() != 2)
+				{
+					//error, invalid file
+				}
+
+				const auto name = tset[0];
+				const auto name_str = name.as<hades::types::string>();
+				const auto first_id = tset[1];
+				const auto id = first_id.as<tile_count_t>();
+
+				target.tilesets.push_back({ name_str, id });
+			}
+		}
+
+		//map data
+		const auto map_node = t[map];
+		if (map_node.IsDefined() && map_node.IsSequence())
+		{
+			for (const auto tile : map_node)
+				target.tiles.push_back(tile.as<tile_count_t>());
+		}
+
+		//map width
+		const auto width_n = t[width];
+		if (width_n.IsDefined() && width_n.IsScalar())
+			target.mapWidth = width_n.as<tile_count_t>();
+	}
+
+	YAML::Emitter &WriteTilesToYaml(const level &l, YAML::Emitter &e)
+	{
+		//write tiles
 	}
 }

@@ -61,6 +61,8 @@ namespace objects
 	struct level
 	{
 		hades::types::string name;
+		hades::types::string source_level; //if this is set, then map_x/y 
+		//and other details are read from the source file instead
 		hades::types::string description;
 
 		//map size in pixels

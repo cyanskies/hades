@@ -9,6 +9,8 @@
 
 #include "Hades/Types.hpp"
 
+#include "Objects/Objects.hpp"
+
 #include "Tiles/resources.hpp"
 
 //the tiles subsystem adds the ability to draw terrain in the editor
@@ -111,6 +113,20 @@ namespace tiles
 	tile GetErrorTile();
 
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount);
+
+	struct level : public objects::level
+	{
+		//tilesets
+		std::vector<std::tuple<hades::types::string, tile_count_t>> tilesets;
+		//tile data
+		std::vector<tile_count_t> tiles;
+		tile_count_t mapWidth; //should equal map_x / TileSettings->tile_size
+	};
+
+	//reads tiles from the yaml node and stores it in target
+	void ReadTilesFromYaml(const YAML::Node&, level &target);
+	//does the reverse of the above function
+	YAML::Emitter &WriteTilesToYaml(const level&, YAML::Emitter &);
 }
 
 #endif // !TILES_TILES_HPP

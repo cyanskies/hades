@@ -62,9 +62,6 @@ namespace tiles
 		//New Map Settings
 		editor::TileGenerator TileGenerator = editor::TileGenerator::FILL;
 
-		//Shared Drawing
-		draw_size_t TileDrawSize = 0;
-
 		//core map variables
 		MutableTileMap Map;
 		const resources::tile_settings *TileSettings = nullptr;
@@ -79,6 +76,7 @@ namespace tiles
 
 		//preview drawing variables
 		sf::Vector2i _tilePosition;
+		draw_size_t _tileDrawSize = 1;
 		MutableTileMap _tilePreview;
 		editor::TileEditMode _tileMode = editor::TileEditMode::NONE;
 

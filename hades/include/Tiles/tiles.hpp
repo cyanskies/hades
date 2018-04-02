@@ -76,6 +76,7 @@ namespace tiles
 	};
 
 	//an expanded upon TileMap, that allows changing the map on the fly
+	//mostly used for editors
 	class MutableTileMap : public TileMap
 	{
 	public:
@@ -88,6 +89,8 @@ namespace tiles
 		//eg amount = 1, draws over 9 tiles worth,
 		void replace(const tile&, const sf::Vector2i &position, draw_size_t amount = 0);
 
+		void setColour(sf::Color c);
+
 		MapData getMap() const;
 
 	private:
@@ -98,6 +101,7 @@ namespace tiles
 		tile_size_t _tile_size;
 		tile_count_t _width;
 		TileArray _tiles;
+		sf::Color _colour = sf::Color::White;
 		tile_count_t _vertex_width;
 	};
 

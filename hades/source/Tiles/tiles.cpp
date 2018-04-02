@@ -449,6 +449,16 @@ namespace tiles
 		return { _tiles, _width };
 	}
 
+	void MutableTileMap::setColour(sf::Color c)
+	{
+		_colour = c;
+		for (auto &a : Chunks)
+		{
+			for (auto &v : a.second)
+				v.color = c;
+		}
+	}
+
 	void MutableTileMap::_removeTile(VertexArray &a, const sf::Vector2u &position)
 	{
 		const auto pixelPos = position * _tile_size;
@@ -489,6 +499,10 @@ namespace tiles
 		}
 
 		auto newQuad = CreateTile(vertPosition.x, vertPosition.y, t.left, t.top, _tile_size);
+
+		for (auto &v : newQuad)
+			v.color = _colour;
+
 		for (auto i = firstVert; i < firstVert + VertexPerTile; ++i)
 			vertArray[i] = newQuad[i - firstVert];
 	}

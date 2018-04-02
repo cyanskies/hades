@@ -8,6 +8,8 @@
 
 namespace tiles
 {
+	const auto Transparent = sf::Color{ 255, 255, 255, 255 / 2 };
+
 	void tile_editor::init()
 	{
 		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
@@ -25,6 +27,8 @@ namespace tiles
 				_tileInfo = tileset->tiles[0];
 		}
 
+		_tilePreview.setColour(Transparent);
+
 		object_editor::init();
 	}
 
@@ -36,7 +40,7 @@ namespace tiles
 		DrawGrid(target);
 		DrawObjects(target);
 
-		//DrawPreview(target);
+		DrawPreview(target);
 	}
 
 	void tile_editor::FillToolBar(AddToggleButtonFunc toggle, AddButtonFunc button, AddSeperatorFunc seperator)
@@ -73,7 +77,8 @@ namespace tiles
 			{
 				_tilePosition = position;
 				_tilePreview = Map;
-				_tilePreview.replace(_tileInfo, _tilePosition, TileDrawSize);
+				_tilePreview.setColour(Transparent);
+				_tilePreview.replace(_tileInfo, _tilePosition, _tileDrawSize);
 			}
 		}
 		else
@@ -91,11 +96,10 @@ namespace tiles
 	//pastes the currently selected tile or terrain onto the map
 	void tile_editor::OnClick(const sf::RenderTarget &t, MousePos m)
 	{
-		const auto mouseLeft = m;
 		if (Mode() == editor::EditMode::TILE)
 		{
 			//place the tile in the tile map
-			Map.replace(_tileInfo, _tilePosition, TileDrawSize);
+			Map.replace(_tileInfo, _tilePosition, _tileDrawSize);
 		}
 		else
 			object_editor::OnClick(t, m);

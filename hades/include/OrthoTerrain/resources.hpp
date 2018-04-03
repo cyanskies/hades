@@ -9,7 +9,7 @@
 //tiles namespace is for the terrain editing and rendering subsystem
 namespace ortho_terrain
 {
-	void RegisterOrthoTerrainResources(hades::data::data_manager*);
+	void RegisterOrthoTerrainResources(hades::data::data_system*);
 	//tile sizes are capped by the data type used for texture sizes
 	using tile_size_t = tiles::tile_size_t;
 

@@ -18,6 +18,8 @@
 
 namespace ortho_terrain
 {
+	void EnableTerrain(hades::data::data_system *d);
+
 	//terrain vertex is a vector of verticies, each row is 1 element longer than the equivalent tile array
 	//and contains one extra row
 	using TerrainVertex = std::vector<const resources::terrain*>;

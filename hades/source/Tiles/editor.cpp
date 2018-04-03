@@ -4,7 +4,6 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/files.hpp"
 #include "Hades/simple_resources.hpp"

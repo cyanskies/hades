@@ -14,6 +14,12 @@
 
 namespace ortho_terrain
 {
+	void EnableTerrain(hades::data::data_system *d)
+	{
+		tiles::EnableTiles(d);
+		RegisterOrthoTerrainResources(d);
+	}
+
 	namespace
 	{
 		static const tiles::VertexArray::size_type VertexPerTile = 6;

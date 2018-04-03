@@ -47,6 +47,14 @@ namespace tiles
 			_tileMode = editor::TileEditMode::NONE;
 			_addTilesToUi();
 		}, nullptr);
+
+		button("draw size-", [this] {
+			_tileDrawSize = std::max(0, _tileDrawSize - 1);
+		}, nullptr);
+
+		button("draw size+", [this] {
+			_tileDrawSize = std::min(10, _tileDrawSize + 1);
+		}, nullptr);
 	}
 
 	void tile_editor::GenerateDrawPreview(const sf::RenderTarget& window, MousePos m)
@@ -180,7 +188,7 @@ namespace tiles
 	void tile_editor::LoadTiles(const level &l)
 	{
 		if (l.map_x % TileSettings->tile_size != 0)
-			;//TODO: throw invalid map
+			throw objects::level_load_exception{ "Unable to load tile layer, tiles cannot fit in the provided map size" };
 
 		const auto width = l.map_x / TileSettings->tile_size;
 

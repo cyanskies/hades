@@ -706,6 +706,13 @@ namespace objects
 			{
 				LoadLevel();
 			}
+			catch (const objects::level_load_exception& e)
+			{
+				_makeErrorDialog("Error loading level: " + mod + "/" + file + ";\n " + e.what());
+				//restore the previous mod settings
+				Mod = old_mod;
+				Filename = old_file;
+			}
 			catch (const hades::files::file_exception&)
 			{
 				_makeErrorDialog("Unable to load file: " + mod + "/" + file);
@@ -963,6 +970,7 @@ namespace objects
 		window->Add(window_box);
 		PlaceWidgetInCentre(*window);
 		_gui.Add(window);
+		_gui.BringToFront(window);
 	}
 
 	void object_editor::_createGui()

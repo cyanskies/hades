@@ -16,23 +16,12 @@ namespace tiles
 {
 	namespace editor
 	{
-		const hades::types::string tile_editor_layout = "editor-layout",
-			tile_selector_panel = "tile-selector";
-
-		//screen view height
-		// set editor_height to override this
-		const hades::types::int32 view_height = 240;
-
 		enum EditMode : objects::editor::EditMode_t
 		{TILE = objects::editor::EditMode::OBJECT_MODE_END, TILE_MODE_END};
 
 		enum class TileEditMode {
 			NONE, //no tile selected
 			TILE, //draw a specific tile, no cleanup
-		};
-
-		enum class TileGenerator {
-			FILL
 		};
 	}
 
@@ -59,8 +48,7 @@ namespace tiles
 
 		void DrawPreview(sf::RenderTarget &target) const override;
 
-		//New Map Settings
-		editor::TileGenerator TileGenerator = editor::TileGenerator::FILL;
+		draw_size_t GetDrawSize() const;
 
 		//core map variables
 		MutableTileMap Map;

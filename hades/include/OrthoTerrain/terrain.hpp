@@ -63,6 +63,8 @@ namespace ortho_terrain
 	};
 
 	hades::data::UniqueId GetErrorTerrain();
+	hades::data::UniqueId GetEmptyTerrain();
+
 	tiles::traits_list GetTerrainTraits(const tiles::tile &tile);
 	terrain_info GetTerrainInfo(const tiles::tile &tile);
 }

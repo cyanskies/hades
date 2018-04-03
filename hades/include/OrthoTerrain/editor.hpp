@@ -4,42 +4,71 @@
 #include "Hades/State.hpp"
 #include "Hades/Types.hpp"
 
-#include "OrthoTerrain/terrain.hpp"
 #include "Tiles/editor.hpp"
 
-//a simple terrain editor
 namespace ortho_terrain
 {
 	namespace editor
 	{
-		const hades::types::string terrain_selector_panel = "terrain-selector";
+		enum EditMode : objects::editor::EditMode_t
+		{
+			TERRAIN = tiles::editor::EditMode::TILE_MODE_END, TERRAIN_MODE_END
+		};
 
-		enum EditMode {
-			TERRAIN = tiles::editor::TILE_EDIT_END + 1, //draw a terrain tile with transition fixups
-			TERRAIN_EDIT_END
+		enum class TerrainEditMode {
+			NONE, //no tile selected
+			TERRAIN, //draw a specific tile, no cleanup
 		};
 	}
 
-	class terrain_editor : public tiles::tile_editor_t<MutableTerrainMap>
+	class terrain_editor : public tiles::tile_editor
 	{
 	public:
-		void generate() override;
-		///void update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set) override;
+		void init() override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
-	private:
-		void FillTileSelector() override;
+	protected:
+		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
 
-		void GenerateDrawPreview(const sf::RenderTarget&, const hades::InputSystem::action_set&) override;
-		void TryDraw(const hades::InputSystem::action_set&) override;
+		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
+		void OnModeChange(EditMode_t t) override;
+		void OnClick(const sf::RenderTarget&, MousePos) override;
+		//add selector for default tile or generator
+		void NewLevelDialog() override;
+		void NewLevel() override;
+		void SaveLevel() const override;
+		void LoadLevel() override;
+
+		void SaveTiles(level &l) const;
+		void LoadTiles(const level &l);
+
+		void DrawPreview(sf::RenderTarget &target) const override;
+
+		//New Map Settings
+		editor::TileGenerator TileGenerator = editor::TileGenerator::FILL;
+
+		//core map variables
+		MutableTileMap Map;
+		const resources::tile_settings *TileSettings = nullptr;
 
 	private:
+		void _enterTileMode();
+		void _addTilesToUi();
+		void _addTiles(const std::vector<tile> &tiles);
+		void _setCurrentTile(tile t);
+
+		//gui
+		sfg::Box::Ptr _tileWindow = nullptr;
+
 		//preview drawing variables
-		sf::Vector2u _terrainPosition;
-		MutableTerrainMap _terrainPreview;
+		sf::Vector2i _tilePosition;
+		draw_size_t _tileDrawSize = 1;
+		MutableTileMap _tilePreview;
+		editor::TileEditMode _tileMode = editor::TileEditMode::NONE;
 
-		const resources::terrain *_terrainInfo = nullptr;
-		hades::types::uint8 _terrain_draw_size = 1;
+		//selected tile for drawing
+		//also holds the default for filling a new map
+		tile _tileInfo;
 	};
 }
 

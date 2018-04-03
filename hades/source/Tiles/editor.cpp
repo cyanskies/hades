@@ -57,7 +57,7 @@ namespace tiles
 		}, nullptr);
 
 		button("draw size-", [this] {
-			_tileDrawSize = std::max(0, _tileDrawSize - 1);
+			_tileDrawSize = std::max(1, _tileDrawSize - 1);
 		}, nullptr);
 
 		button("draw size+", [this] {
@@ -220,6 +220,11 @@ namespace tiles
 			target.draw(_tilePreview);
 		else
 			object_editor::DrawPreview(target);
+	}
+
+	draw_size_t tile_editor::GetDrawSize() const
+	{
+		return _tileDrawSize;
 	}
 
 	void tile_editor::_enterTileMode()

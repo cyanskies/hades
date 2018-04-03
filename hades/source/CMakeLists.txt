@@ -35,7 +35,7 @@ set(HADES_SRC
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
-	#OrthoTerrain/editor.cpp
+	OrthoTerrain/editor.cpp
 	OrthoTerrain/terrain.cpp
 	OrthoTerrain/utility.cpp
 	OrthoTerrain/generator.cpp

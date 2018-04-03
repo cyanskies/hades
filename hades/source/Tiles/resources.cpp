@@ -10,8 +10,6 @@
 
 #include "Tiles/resource/error_tile.hpp"
 
-const auto error_tileset = "error-tileset";
-
 namespace tiles
 {
 	using hades::UniqueId;
@@ -27,22 +25,36 @@ namespace tiles
 		data->register_resource_type("tilesets", tiles::resources::parseTileset);
 
 		//create texture for error_tile
-		UniqueId error_tile_texture;
+		const UniqueId error_tile_texture;
 		auto error_t_tex = hades::data::FindOrCreate<hades::resources::texture>(error_tile_texture, UniqueId::Zero, data);
 		error_t_tex->loaded = true;
 		error_t_tex->value.loadFromMemory(error_tile::data, error_tile::len);
 
-
 		//create error tileset and add a default error tile
-		const auto error_tset_id = hades::data::MakeUid(error_tileset);
+		const hades::UniqueId error_tset_id;
 		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, UniqueId::Zero, data);
 		const tile error_tile{ error_tile_texture, 0, 0 };
-		error_tset->tiles.push_back(error_tile);
+		error_tset->tiles.emplace_back(error_tile);
+
+		//create texture for empty tile
+		const UniqueId empty_tile_texture;
+		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(empty_tile_texture, UniqueId::Zero, data);
+		sf::Image empty_i;
+		empty_i.create(1u, 1u, sf::Color::Transparent);
+		empty_t_tex->value.loadFromImage(empty_i);
+		empty_t_tex->value.setRepeated(true);
+		empty_t_tex->repeat = true;
+
+		const hades::UniqueId empty_tset_id;
+		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, UniqueId::Zero, data);
+		const tile empty_tile{ empty_tile_texture, 0, 0 };
+		empty_tset->tiles.emplace_back(empty_tile);
 
 		//create default tile settings obj
 		const auto settings_id = hades::data::MakeUid(resources::tile_settings_name);
 		auto settings = hades::data::FindOrCreate<resources::tile_settings>(settings_id, UniqueId::Zero, data);
 		settings->error_tileset = error_tset_id;
+		settings->empty_tileset = empty_tset_id;
 		settings->tile_size = 8;
 	}
 
@@ -67,7 +79,6 @@ namespace tiles
 		else
 			return lhs.top < rhs.top;
 	}
-
 
 	namespace resources
 	{

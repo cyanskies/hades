@@ -42,6 +42,7 @@ namespace tiles
 		{
 			hades::resources::texture::size_type tile_size = 0;
 			hades::data::UniqueId error_tileset = hades::data::UniqueId::Zero;
+			hades::data::UniqueId empty_tileset = hades::data::UniqueId::Zero;
 		};
 
 		struct tileset_t {};

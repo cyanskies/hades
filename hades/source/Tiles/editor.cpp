@@ -11,26 +11,16 @@
 
 namespace tiles
 {
-	const auto Transparent = sf::Color{ 255, 255, 255, 255 / 2 };
-
 	void tile_editor::init()
 	{
 		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
 		TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);	
 
-		auto tileset_iter = resources::Tilesets.begin();
-		if (resources::Tilesets.size() > 2)
-			++tileset_iter;
+		const auto tileset = hades::data::Get<resources::tileset>(TileSettings->empty_tileset);
+		assert(!tileset->tiles.empty());
+		_tileInfo = tileset->tiles[0];
 
-		//if the tilesets vector was empty then just leave the default _tileInfo
-		if (tileset_iter != std::end(resources::Tilesets))
-		{
-			const auto tileset = hades::data::Get<resources::tileset>(*tileset_iter);
-			if (!tileset->tiles.empty())
-				_tileInfo = tileset->tiles[0];
-		}
-
-		_tilePreview.setColour(Transparent);
+		_tilePreview.setColour(sf::Color::Transparent);
 
 		object_editor::init();
 	}
@@ -80,7 +70,7 @@ namespace tiles
 			{
 				_tilePosition = position;
 				_tilePreview = Map;
-				_tilePreview.setColour(Transparent);
+				_tilePreview.setColour(sf::Color::Transparent);
 				_tilePreview.replace(_tileInfo, _tilePosition, _tileDrawSize);
 			}
 		}

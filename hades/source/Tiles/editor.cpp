@@ -11,14 +11,19 @@
 
 namespace tiles
 {
+	tile GetEmptyTile(const resources::tile_settings *s)
+	{
+		const auto tileset = hades::data::Get<resources::tileset>(s->empty_tileset);
+		assert(!tileset->tiles.empty());
+		return tileset->tiles[0];
+	}
+
 	void tile_editor::init()
 	{
 		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
 		TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);	
 
-		const auto tileset = hades::data::Get<resources::tileset>(TileSettings->empty_tileset);
-		assert(!tileset->tiles.empty());
-		_tileInfo = tileset->tiles[0];
+		_tileInfo = GetEmptyTile(TileSettings);
 
 		_tilePreview.setColour(sf::Color::Transparent);
 
@@ -43,9 +48,12 @@ namespace tiles
 		seperator();
 
 		button("tiles", [this] {
-			Mode(editor::EditMode::TILE);
-			_tileMode = editor::TileEditMode::NONE;
-			_addTilesToUi();
+			_enterTileMode();
+		}, nullptr);
+
+		button("erase tile", [this] {
+			_enterTileMode();
+			_setCurrentTile(GetEmptyTile(TileSettings));
 		}, nullptr);
 
 		button("draw size-", [this] {
@@ -212,6 +220,13 @@ namespace tiles
 			target.draw(_tilePreview);
 		else
 			object_editor::DrawPreview(target);
+	}
+
+	void tile_editor::_enterTileMode()
+	{
+		Mode(editor::EditMode::TILE);
+		_tileMode = editor::TileEditMode::NONE;
+		_addTilesToUi();
 	}
 
 	void tile_editor::_addTilesToUi()

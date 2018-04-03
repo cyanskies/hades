@@ -67,6 +67,7 @@ namespace tiles
 		const resources::tile_settings *TileSettings = nullptr;
 
 	private:
+		void _enterTileMode();
 		void _addTilesToUi();
 		void _addTiles(const std::vector<tile> &tiles);
 		void _setCurrentTile(tile t);

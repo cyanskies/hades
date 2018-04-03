@@ -54,8 +54,8 @@ namespace tiles
 		void SaveLevel() const override;
 		void LoadLevel() override;
 
-		void SaveTiles();
-		void LoadTiles();
+		void SaveTiles(level &l) const;
+		void LoadTiles(const level &l);
 
 		void DrawPreview(sf::RenderTarget &target) const override;
 

@@ -2,8 +2,11 @@
 
 #include "SFGUI/Widgets.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
+#include "Hades/files.hpp"
 #include "Hades/simple_resources.hpp"
 
 namespace tiles
@@ -120,22 +123,90 @@ namespace tiles
 			_tileInfo = GetErrorTile();
 		}
 
+		assert(MapSize.x % TileSettings->tile_size == 0);
+
 		const tile_count_t width = MapSize.x / TileSettings->tile_size;
 		TileArray map{ width * MapSize.y / TileSettings->tile_size, _tileInfo };
 		Map.create({ map, width });
 	}
 
 	void tile_editor::SaveLevel() const
-	{}
+	{
+		level l;
+		SaveObjects(l);
+		SaveTiles(l);
+
+		YAML::Emitter e;
+		e << YAML::BeginMap;
+		objects::WriteObjectsToYaml(l, e);
+		WriteTilesToYaml(l, e);
+		e << YAML::EndMap;
+
+		const auto path = Mod + '/' + Filename;
+		hades::files::write_file(path, e.c_str());
+	}
 
 	void tile_editor::LoadLevel()
-	{}
+	{
+		auto level_str = hades::files::as_string(Mod, Filename);
+		auto level_yaml = YAML::Load(level_str);
 
-	void tile_editor::SaveTiles()
-	{}
+		level lvl;
+		objects::ReadObjectsFromYaml(level_yaml, lvl);
+		ReadTilesFromYaml(level_yaml, lvl);
 
-	void tile_editor::LoadTiles()
-	{}
+		LoadObjects(lvl);
+		LoadTiles(lvl);
+
+		reinit();
+	}
+
+	void tile_editor::SaveTiles(level &l) const
+	{
+		const auto map_data = Map.getMap();
+		const auto map = as_rawmap(map_data);
+
+		using tileset_list = std::vector<TileSetInfo>;
+		const auto &tilesets = std::get<tileset_list>(map);
+		for (const auto &tset : tilesets)
+		{
+			const auto id = std::get<hades::UniqueId>(tset);
+			const auto name = hades::data::GetAsString(id);
+			const auto first_tid = std::get<tile_count_t>(tset);
+			l.tilesets.push_back({ name, first_tid });
+		}
+
+		using tile_array = std::vector<tile_count_t>;
+		const auto &tiles = std::get<tile_array>(map);
+		l.tiles = tiles;
+
+		//level editor shouldn't be able to produce an invalid map width
+		using map_width_t = tile_count_t;
+		const auto width = std::get<map_width_t>(map);
+		assert(l.map_x % TileSettings->tile_size == 0);
+		assert(width == l.map_x / TileSettings->tile_size);
+	}
+
+	void tile_editor::LoadTiles(const level &l)
+	{
+		if (l.map_x % TileSettings->tile_size != 0)
+			;//TODO: throw invalid map
+
+		const auto width = l.map_x / TileSettings->tile_size;
+
+		std::vector<TileSetInfo> tilesets;
+		for (const auto &tset : l.tilesets)
+		{
+			const auto name = std::get<hades::types::string>(tset);
+			const auto id = hades::data::GetUid(name);
+			const auto first_tid = std::get<tile_count_t>(tset);
+
+			tilesets.push_back({ id, first_tid });
+		}
+
+		const auto map = as_mapdata({ tilesets, l.tiles, width });
+		Map.create(map);
+	}
 
 	void tile_editor::DrawPreview(sf::RenderTarget& target) const
 	{

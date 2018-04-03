@@ -568,7 +568,6 @@ namespace tiles
 	constexpr auto tiles = "tiles";
 	constexpr auto tilesets = "tilesets";
 	constexpr auto map = "map";
-	constexpr auto width = "width";
 
 	void ReadTilesFromYaml(const YAML::Node &n, level &target)
 	{
@@ -583,7 +582,6 @@ namespace tiles
 		const auto t = n[tiles];
 
 		if (!t.IsDefined() || !t.IsMap())
-			//TODO: throw
 			return;
 
 		//tilesets
@@ -613,15 +611,40 @@ namespace tiles
 			for (const auto tile : map_node)
 				target.tiles.push_back(tile.as<tile_count_t>());
 		}
-
-		//map width
-		const auto width_n = t[width];
-		if (width_n.IsDefined() && width_n.IsScalar())
-			target.mapWidth = width_n.as<tile_count_t>();
 	}
 
 	YAML::Emitter &WriteTilesToYaml(const level &l, YAML::Emitter &e)
 	{
 		//write tiles
+		e << YAML::Key << tiles;
+		e << YAML::Value << YAML::BeginMap;
+		
+		if (!l.tilesets.empty())
+		{
+			e << YAML::Key << tilesets;
+
+			e << YAML::Value << YAML::BeginSeq;
+			for (const auto &t : l.tilesets)
+			{
+				e << YAML::Flow << YAML::BeginSeq;
+				e << std::get<hades::types::string>(t) << std::get<tile_count_t>(t);
+				e << YAML::EndSeq;
+			}
+			e << YAML::EndSeq;
+		}
+
+		if (!l.tiles.empty())
+		{
+			e << YAML::Key << map;
+			e << YAML::Value << YAML::Flow << YAML::BeginSeq;
+			for (const auto t : l.tiles)
+				e << t;
+
+			e << YAML::EndSeq;
+		}
+
+		e << YAML::EndMap;
+
+		return e;
 	}
 }

@@ -30,6 +30,7 @@ namespace tiles
 	//raw map data, is a stream of tile_count id's
 	//and a map of tilesets along with thier first id's
 	// and also a width
+	// raw maps can be stored and transfered
 	using TileSetInfo = std::tuple<hades::data::UniqueId, tile_count_t>;
 	//							tilesets used in the map, the actual tile id map data, map width
 	using RawMap = std::tuple<std::vector<TileSetInfo>, std::vector<tile_count_t>, tile_count_t>;
@@ -120,7 +121,6 @@ namespace tiles
 		std::vector<std::tuple<hades::types::string, tile_count_t>> tilesets;
 		//tile data
 		std::vector<tile_count_t> tiles;
-		tile_count_t mapWidth; //should equal map_x / TileSettings->tile_size
 	};
 
 	//reads tiles from the yaml node and stores it in target

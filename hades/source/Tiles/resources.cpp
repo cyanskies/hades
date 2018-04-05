@@ -53,8 +53,8 @@ namespace tiles
 		//create default tile settings obj
 		const auto settings_id = hades::data::MakeUid(resources::tile_settings_name);
 		auto settings = hades::data::FindOrCreate<resources::tile_settings>(settings_id, UniqueId::Zero, data);
-		settings->error_tileset = error_tset_id;
-		settings->empty_tileset = empty_tset_id;
+		settings->error_tileset = error_tset;
+		settings->empty_tileset = empty_tset;
 		settings->tile_size = 8;
 	}
 
@@ -98,7 +98,12 @@ namespace tiles
 				return;
 
 			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);
-			settings->error_tileset = yaml_get_uid(node, resource_type, "n/a", "error-tileset", mod, settings->error_tileset);
+			const auto error_tset_id = yaml_get_uid(node, resource_type, "n/a", "error-tileset", mod);
+			if (error_tset_id == hades::UniqueId::Zero)
+			{
+				const auto error_tset = hades::data::FindOrCreate<tileset>(error_tset_id, mod, data_manager);
+				settings->error_tileset = error_tset;
+			}
 		}
 
 		std::vector<tile> parseTiles(hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)

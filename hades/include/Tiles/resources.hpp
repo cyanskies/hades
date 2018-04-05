@@ -36,15 +36,6 @@ namespace tiles
 		const hades::types::string tile_settings_name = "tile-settings";
 		extern std::vector<hades::data::UniqueId> Tilesets;
 
-		struct tile_settings_t {};
-
-		struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
-		{
-			hades::resources::texture::size_type tile_size = 0;
-			hades::data::UniqueId error_tileset = hades::data::UniqueId::Zero;
-			hades::data::UniqueId empty_tileset = hades::data::UniqueId::Zero;
-		};
-
 		struct tileset_t {};
 
 		//contains all the tiles defined by a particular tileset
@@ -52,6 +43,15 @@ namespace tiles
 		struct tileset : public hades::resources::resource_type<tileset_t>
 		{
 			std::vector<tile> tiles;
+		};
+
+		struct tile_settings_t {};
+
+		struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
+		{
+			hades::resources::texture::size_type tile_size = 0;
+			const tileset *error_tileset = nullptr;
+			const tileset *empty_tileset = nullptr;
 		};
 	}
 }

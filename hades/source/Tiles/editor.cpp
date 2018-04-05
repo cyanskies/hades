@@ -12,7 +12,7 @@ namespace tiles
 {
 	tile GetEmptyTile(const resources::tile_settings *s)
 	{
-		const auto tileset = hades::data::Get<resources::tileset>(s->empty_tileset);
+		const auto tileset = s->empty_tileset;
 		assert(!tileset->tiles.empty());
 		return tileset->tiles[0];
 	}

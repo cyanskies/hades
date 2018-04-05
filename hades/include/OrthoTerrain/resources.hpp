@@ -16,46 +16,23 @@ namespace ortho_terrain
 	//terrain info, mapped to tiles give information about terrain and transitions
 	struct terrain_info
 	{
-		hades::data::UniqueId terrain = hades::data::UniqueId::Zero,
-			terrain2 = hades::data::UniqueId::Zero,
-			terrain3 = hades::data::UniqueId::Zero,
-			terrain4 = hades::data::UniqueId::Zero;
-
-		union
-		{
-			transition2::TransitionTypes type;
-			//only used if terrain3 is non-Zero
-			transition3::Types type3;
-		};
+		hades::data::UniqueId terrain = hades::data::UniqueId::Zero;
+		transition2::TransitionTypes type;
 	};
 
-	//terrain map
-	using terrain_lookup = std::map<tiles::tile, terrain_info>;
-	extern terrain_lookup TerrainLookup;
-
+	constexpr auto terrain_settings_name = "terrain-settings";
 	namespace resources
 	{	
 		tiles::TileArray& GetMutableErrorTileset(hades::data::data_manager*);
 
-		const hades::types::string terrain_settings_name = "terrain-settings";
+		struct terrain_t {};
 
-		struct terrain_settings_t {};
-
-		struct terrain_settings : public hades::resources::resource_type<terrain_settings_t>
+		//a terrain types, with random tiles for that terrain and transitions
+		struct terrain : public hades::resources::resource_type<terrain_t>
 		{
-			hades::data::UniqueId error_terrain = hades::data::UniqueId::Zero;
-		};
-
-		struct terrain_transition_t {};
-
-		//a list of tiles used for terrain transitions for a particular pair of terrain
-		struct terrain_transition : public hades::resources::resource_type<terrain_transition_t>
-		{
-			hades::data::UniqueId terrain1 = hades::data::UniqueId::Zero, terrain2 = hades::data::UniqueId::Zero;
-
-			//the terrain transition tiles
-			//named as terrain1 interacts with terrain 2
+			//named as this terrain interacts with empty
 			std::vector<tiles::tile>
+				tile, // whole tile is terrain1
 				top_left_corner,	//only the bottom right is terrain2
 				top_right_corner,	//only the bottom left is terrain2
 				bottom_left_corner, //only the top right is terrain2
@@ -70,55 +47,27 @@ namespace ortho_terrain
 				bottom_right_circle,// all is terrain2 except top left
 				left_diagonal, //terrain2 in top right, and bottom left corners
 				right_diagonal; // terrain2 in top left, and bottom right corners
-		};
-
-		struct terrain_transition3_t {};
-
-		struct terrain_transition3 : public hades::resources::resource_type<terrain_transition3_t>
-		{
-			hades::data::UniqueId terrain1 = hades::data::UniqueId::Zero, terrain2 = hades::data::UniqueId::Zero,
-				terrain3 = hades::data::UniqueId::Zero;
-
-			//the 2-corner transitions that are used to complete the set
-			hades::data::UniqueId transition_1_2 = hades::data::UniqueId::Zero,
-				transition_2_3 = hades::data::UniqueId::Zero, transition_1_3 = hades::data::UniqueId::Zero;
-			
-			//the terrain transition tiles
-			//only contains tiles that cover all three terrains
-			//named to identify which corners are not terrain1
-			//use GetTransition to access these
-			std::vector<tiles::tile>
-				t2_bottom_right_t3_top_right, t2_top_right_t3_bottom_right, t2_bottom_left_t3_top_right, t2_bottom_left_right_t3_top_right,
-				t2_bottom_left_t3_bottom_right, t2_top_right_bottom_left_t3_bottom_right, t2_bottom_left_t3_top_right_bottom_right, t2_top_right_t3_bottom_left,
-				t2_bottom_right_t3_bottom_left, t2_top_right_bottom_right_t3_bottom_left, t2_bottom_right_t3_top_right_bottom_left, t2_top_right_t3_bottom_left_right,
-				/////////////////////
-				t2_top_left_t3_top_right, t2_top_left_bottom_right_t3_top_right, t2_top_left_t3_bottom_right, t2_top_left_right_t3_bottom_right,
-				t2_top_left_t3_top_right_bottom_right, t2_top_left_bottom_left_t3_top_right, t2_top_left_bottom_left_t3_bottom_right, t2_top_left_t3_bottom_left,
-				t2_top_left_right_t3_bottom_left, t2_top_left_t3_top_right_bottom_left, t2_top_left_bottom_right_t3_bottom_left, t2_top_left_t3_bottom_left_right,
-				/////////////////////
-				t2_top_right_t3_top_left, t2_bottom_right_t3_top_left, t2_top_right_bottom_right_t3_top_left, t2_bottom_right_t3_top_left_right,
-				t2_top_right_t3_top_left_bottom_right, t2_bottom_left_t3_top_left, t2_top_right_bottom_left_t3_top_left, t2_bottom_left_t3_top_left_right,
-				t2_bottom_left_right_t3_top_left, t2_bottom_left_t3_top_left_bottom_right, t2_top_right_t3_top_left_bottom_left, t2_bottom_right_t3_top_left_bottom_left;	
-		};
-
-		struct terrain_t {};
-
-		//a terrain types, with random tiles for that terrain and transitions
-		struct terrain : public hades::resources::resource_type<terrain_t>
-		{
-			//a terrain contains all the references to tiles needed to render that terrain
-			std::vector<tiles::tile> tiles; //list of random tiles for this terrain
-
-			//list of terrain-transition objects, linking this terrain to others
-			std::vector<hades::data::UniqueId> transitions;
-			std::vector<hades::data::UniqueId> transitions3;
 
 			tiles::traits_list traits;
 		};
 
+		struct terrain_settings_t {};
+
+		struct terrain_settings : public hades::resources::resource_type<terrain_settings_t>
+		{
+			const terrain *empty_terrrainset = nullptr;
+		};
+
+		struct terrainset_t {};
+
+		struct terrainset : public hades::resources::resource_type<terrainset_t>
+		{
+			std::vector<terrain*> terrains;
+		};
+
 		//global list of terrains for the editor to show in the ui
 		//editor can access individual tiles and transition tiles from in here as well
-		extern std::vector<hades::data::UniqueId> Terrains;
+		extern std::vector<hades::data::UniqueId> TerrainSets;
 	}
 }
 

@@ -43,6 +43,7 @@ namespace ortho_terrain
 				TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT_RIGHT, ALL };
 		}
 
+		/*
 		tile PickTile2Corner(const std::array<hades::data::UniqueId, 4> &corners)
 		{
 			std::set<hades::data::UniqueId> unique_terrain(corners.begin(), corners.end());
@@ -102,7 +103,8 @@ namespace ortho_terrain
 
 			return RandomTile(tiles);
 		}
-
+		*/
+		/*
 		hades::data::UniqueId TerrainInCorner2(const tile& tile, Corner corner)
 		{
 			using namespace transition2::transition_corners;
@@ -135,8 +137,9 @@ namespace ortho_terrain
 				return hades::data::UniqueId::Zero;
 			}
 		}
+		*/
 	}
-
+	/*
 	tile PickTile(const std::array<const resources::terrain*, 4> &vertex)
 	{
 		//check the adjacent tiles to see which terrains they have
@@ -151,7 +154,8 @@ namespace ortho_terrain
 
 		return transition3::PickTile3Corner(corners);
 	}
-
+	*/
+	/*
 	tile PickTile(const std::array<tiles::tile, 4> &corner_tiles)
 	{
 		//check the adjacent tiles to see which terrains they have
@@ -164,7 +168,8 @@ namespace ortho_terrain
 
 		return transition3::PickTile3Corner(corners);
 	}
-
+	*/
+	/*
 	hades::data::UniqueId TerrainInCorner(const tile& tile, Corner corner)
 	{
 		auto t = GetTerrainInfo(tile);
@@ -176,7 +181,9 @@ namespace ortho_terrain
 		else
 			return t.terrain;
 	}
+	*/
 
+	/*
 	template<class U = tiles::TileArray , class V = resources::terrain_transition, class W = resources::terrain >
 	U& GetTransition(transition2::TransitionTypes type, V& transitions, std::function<W*(hades::UniqueId)> GetResourceFunc, U& default_val)
 	{
@@ -228,7 +235,8 @@ namespace ortho_terrain
 			return default_val;
 		}
 	}
-
+	*/
+	/*
 	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_system *data)
 	{
 		return GetTransition<tiles::TileArray, resources::terrain_transition, resources::terrain>(type, transition, 
@@ -240,4 +248,5 @@ namespace ortho_terrain
 		return GetTransition<const tiles::TileArray, const resources::terrain_transition, const resources::terrain>(type,
 			transition, hades::data::Get<resources::terrain>, tiles::GetErrorTileset());
 	}
+	*/
 }

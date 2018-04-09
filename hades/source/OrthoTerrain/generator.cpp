@@ -8,12 +8,12 @@ namespace ortho_terrain
 		tiles::MapData Blank(const sf::Vector2u &size, const resources::terrain *terrain)
 		{
 			assert(terrain);
-			tiles::TileArray tiles(size.x * size.y);
+			tiles::TileArray tile_list(size.x * size.y);
 
-			for (tiles::TileArray::size_type i = 0; i < tiles.size(); ++i)
-				tiles[i] = RandomTile(terrain->tiles);
+			for (tiles::TileArray::size_type i = 0; i < tile_list.size(); ++i)
+				tile_list[i] = tiles::tile{};
 
-			return { tiles, size.x };
+			return { tile_list, size.x };
 		}
 	}
 }

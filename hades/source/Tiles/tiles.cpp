@@ -543,16 +543,14 @@ namespace tiles
 	const TileArray &GetErrorTileset()
 	{
 		const auto settings = GetTileSettings();
-		const auto tset = hades::data::Get<resources::tileset>(settings->error_tileset);
-
-		if (!tset)
+		if (!settings->error_tileset)
 		{
 			LOGWARNING("No error tileset");
 			const auto backup_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
 			return backup_tileset->tiles;
 		}
 
-		return tset->tiles;
+		return settings->error_tileset->tiles;
 	}
 
 	tile GetErrorTile()

@@ -51,8 +51,15 @@ namespace ortho_terrain
 		};
 	}
 
-	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& transition, hades::data::data_manager*);
-	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain_transition& transition);
+	class out_of_range : public std::out_of_range
+	{
+	public:
+		using std::out_of_range::out_of_range;
+	};
+
+	//both of these can throw out_of_range
+	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& terrain);
+	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain& terrain);
 }
 
 #endif // !ORTHO_UTILITY_HPP

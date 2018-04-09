@@ -63,12 +63,6 @@ namespace ortho_terrain
 		tiles::tile_count_t _vertex_width;
 		TerrainVertex _vertex;
 	};
-
-	hades::data::UniqueId GetErrorTerrain();
-	hades::data::UniqueId GetEmptyTerrain();
-
-	tiles::traits_list GetTerrainTraits(const tiles::tile &tile);
-	terrain_info GetTerrainInfo(const tiles::tile &tile);
 }
 
 #endif // !ORTHO_TERRAIN_HPP

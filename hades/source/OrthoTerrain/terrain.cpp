@@ -254,46 +254,4 @@ namespace ortho_terrain
 			replace(tile, pos);
 		}
 	}
-
-	const resources::terrain_settings *GetTerrainSettings()
-	{
-		auto settings_id = hades::data::GetUid(terrain_settings_name);
-		if (!hades::data::Exists(settings_id))
-		{
-			auto message = "terrain-settings undefined.";
-			LOGERROR(message)
-				throw exception(message);
-		}
-
-		try
-		{
-			return hades::data::Get<resources::terrain_settings>(settings_id);
-		}
-		catch (hades::data::resource_wrong_type&)
-		{
-			auto message = "The UID for the tile settings has been reused for another resource type";
-			LOGERROR(message);
-			throw exception(message);
-		}
-	}
-
-	/*
-	tiles::traits_list GetTerrainTraits(const tiles::tile &tile)
-	{
-		const auto terrain = GetTerrainInfo(tile);
-		auto out = tile.traits;
-		const auto terrain_list = { terrain.terrain, terrain.terrain2, terrain.terrain3, terrain.terrain4 };
-
-		for (auto &t_id : terrain_list)
-		{
-			if (t_id == hades::data::UniqueId::Zero ||
-				!hades::data::Exists(t_id))
-				continue;
-
-			auto t = hades::data::Get<resources::terrain>(t_id);
-			std::copy(std::begin(t->traits), std::end(t->traits), std::back_inserter(out));
-		}
-
-		return out;
-	}*/
 }

@@ -5,8 +5,8 @@
 #include "Hades/Utility.hpp"
 
 #include "OrthoTerrain/resources.hpp"
-
 #include "OrthoTerrain/terrain.hpp"
+
 #include "Tiles/tiles.hpp"
 
 namespace ortho_terrain
@@ -71,7 +71,7 @@ namespace ortho_terrain
 		return GetTransition<tiles::TileArray, resources::terrain>(type, terrain);
 	}
 
-	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain& terrain)
+	const tiles::TileArray& GetTransitionConst(transition2::TransitionTypes type, const resources::terrain& terrain)
 	{
 		return GetTransition<const tiles::TileArray, const resources::terrain>(type, terrain);
 	}

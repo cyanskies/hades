@@ -99,7 +99,7 @@ namespace tiles
 
 			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);
 			const auto error_tset_id = yaml_get_uid(node, resource_type, "n/a", "error-tileset", mod);
-			if (error_tset_id == hades::UniqueId::Zero)
+			if (error_tset_id != hades::UniqueId::Zero)
 			{
 				const auto error_tset = hades::data::FindOrCreate<tileset>(error_tset_id, mod, data_manager);
 				settings->error_tileset = error_tset;

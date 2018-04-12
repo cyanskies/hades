@@ -5,11 +5,12 @@
 #include <exception>
 #include <vector>
 
-#include "Hades/simple_resources.hpp"
-#include "Hades/Types.hpp"
+#include "Hades/UniqueId.hpp"
 
-#include "Tiles/resources.hpp"
-#include "Tiles/tiles.hpp"
+namespace tiles
+{
+	struct tile;
+}
 
 //contains utility functions for arranging and picking tiles from transitions
 namespace ortho_terrain
@@ -18,7 +19,6 @@ namespace ortho_terrain
 	namespace resources
 	{
 		struct terrain;
-		struct terrain_transition;
 	}
 
 	//returns a random tile from the selection
@@ -42,12 +42,12 @@ namespace ortho_terrain
 		//NOTE: see http://www.cr31.co.uk/stagecast/wang/2corn.html
 		//values for 2-corner transitions
 		enum TransitionTypes {
-			NONE,
+			TRANSITION_BEGIN = -1, NONE,
 			TOP_RIGHT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT,
 			BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT, BOTTOM_LEFT_RIGHT, TOP_RIGHT_BOTTOM_LEFT_RIGHT,
 			TOP_LEFT, TOP_LEFT_RIGHT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT,
 			TOP_LEFT_RIGHT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT,
-			ALL
+			ALL, TRANSITION_END
 		};
 	}
 
@@ -58,8 +58,8 @@ namespace ortho_terrain
 	};
 
 	//both of these can throw out_of_range
-	tiles::TileArray& GetTransition(transition2::TransitionTypes type, resources::terrain_transition& terrain);
-	const tiles::TileArray& GetTransition(transition2::TransitionTypes type, const resources::terrain& terrain);
+	std::vector<tiles::tile>& GetTransition(transition2::TransitionTypes type, resources::terrain& terrain);
+	const std::vector<tiles::tile>& GetTransitionConst(transition2::TransitionTypes type, const resources::terrain& terrain);
 }
 
 #endif // !ORTHO_UTILITY_HPP

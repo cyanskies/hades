@@ -643,10 +643,8 @@ namespace hades
 			assert(dynamic_cast<animation*>(r));
 			auto a = static_cast<animation*>(r);
 			if (!a->tex->loaded)
-			{
-				auto texture = data->get<resources::texture>(a->tex->id);
-				texture->load(data);
-			}
+				//data->get will lazy load texture
+				const auto texture = data->get<resources::texture>(a->tex->id);
 		}
 
 		void loadFont(resource_base* r, data::data_manager* data)

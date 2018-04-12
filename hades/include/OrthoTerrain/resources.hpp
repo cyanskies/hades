@@ -18,11 +18,13 @@ namespace ortho_terrain
 		struct terrain_t {};
 
 		//a terrain types, with random tiles for that terrain and transitions
-		struct terrain : public hades::resources::resource_type<terrain_t>
+		struct terrain : public tiles::resources::tileset
 		{
+			terrain();
+
 			//named as this terrain interacts with empty
 			std::vector<tiles::tile>
-				tile, // whole tile is terrain1
+				full, // whole tile is terrain1
 				top_left_corner,	//only the bottom right is terrain2
 				top_right_corner,	//only the bottom left is terrain2
 				bottom_left_corner, //only the top right is terrain2

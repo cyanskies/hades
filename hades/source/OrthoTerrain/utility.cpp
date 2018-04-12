@@ -31,7 +31,7 @@ namespace ortho_terrain
 		switch (type)
 		{
 		case NONE:
-			return transitions.tile;
+			return transitions.full;
 		case TOP_RIGHT:
 			return transitions.top_right_corner;
 		case BOTTOM_RIGHT:

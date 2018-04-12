@@ -122,7 +122,7 @@ namespace tiles
 	{
 		object_editor::NewLevel();
 
-		if (_tileInfo.texture == hades::UniqueId::Zero)
+		if (!_tileInfo.texture)
 		{
 			//no tile to fill the map with
 			_tileInfo = GetErrorTile();
@@ -313,8 +313,7 @@ namespace tiles
 		{
 			//create an animation to pass to 'CreateButton'
 			hades::resources::animation a;
-			const auto tex = hades::data::Get<hades::resources::texture>(t.texture);
-			a.tex = tex;
+			a.tex = t.texture;
 			a.height = a.width = TileSettings->tile_size;
 			hades::resources::animation_frame f{ t.left, t.top, 1.f };
 			a.value.push_back(f);

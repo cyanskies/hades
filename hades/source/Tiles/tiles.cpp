@@ -220,13 +220,13 @@ namespace tiles
 
 			for (auto &c : tex_cache)
 			{
-				if (c->id == t.texture)
+				if (c == t.texture)
 					texture = c;
 			}
 
 			if (!texture)
 			{
-				texture = hades::data::Get<hades::resources::texture>(t.texture);
+				texture = t.texture;
 				tex_cache.push_back(texture);
 			}
 
@@ -388,7 +388,7 @@ namespace tiles
 
 			for (auto &a : Chunks)
 			{
-				if (a.first->id == t.texture)
+				if (a.first == t.texture)
 				{
 					targetArray = &a;
 					break;
@@ -396,10 +396,9 @@ namespace tiles
 			}
 
 			//create a new vertex array if needed
-			if (!targetArray && hades::data::Exists(t.texture))
+			if (!targetArray && t.texture)
 			{
-				const auto texture = hades::data::Get<hades::resources::texture>(t.texture);
-				Chunks.push_back({ texture, VertexArray() });
+				Chunks.push_back({ t.texture, VertexArray() });
 				targetArray = &Chunks.back();
 			}
 			else if (!targetArray)

@@ -38,52 +38,93 @@ namespace ortho_terrain
 
 		using tile_pos_t = hades::types::int32;
 
-		void AddToTerrain(terrain &t, std::tuple<tile_pos_t, tile_pos_t>, const hades::resources::texture *tex, std::vector<transition2::TransitionTypes> tiles);
+		constexpr auto set_width = 4;
+		constexpr auto set_height = 4;
+		constexpr auto set_count = set_width * set_height;
 
-		void ApplyTraits(std::vector<tiles::tile> &tiles, tiles::traits_list traits)
+		void AddToTerrain(terrain &terrain, std::tuple<tile_pos_t, tile_pos_t> start_pos, const hades::resources::texture *tex,
+			std::array<transition2::TransitionTypes, set_count> tiles)
 		{
+			const auto settings = tiles::GetTileSettings();
+			const auto tile_size = settings->tile_size;
+
+			constexpr auto columns = set_width;
+			constexpr auto rows = set_height;
+
+			const auto[x, y] = start_pos;
+
+			tile_size_t count = 0;
 			for (auto &t : tiles)
 			{
-				t.traits.clear();
-				std::swap(t.traits, traits);
+				if (t <= transition2::TransitionTypes::TRANSITION_BEGIN ||
+					t >= transition2::TransitionTypes::ALL)
+					continue;
+
+				const auto [left, top] = tiles::GetGridPosition(count++, columns, tile_size);
+
+				auto &transition_vector = GetTransition(t, terrain);
+
+				const auto x_pos = left + x;
+				const auto y_pos = top + y;
+
+				assert(x_pos >= 0 && y_pos >= 0);
+				const tiles::tile tile{ tex, static_cast<tile_size_t>(x_pos), static_cast<tile_size_t>(y_pos) };
+				transition_vector.push_back(tile);
+				terrain.tiles.push_back(tile);
 			}
 		}
 
-		//applys the terrains traits to all of its member tiles
-		void ApplyTraits(terrain &t)
+		template<typename Func>
+		void ApplyToTerrain(terrain &t, Func func)
 		{
-			ApplyTraits(t.tile, t.traits);
-			ApplyTraits(t.top_left_corner, t.traits);
-			ApplyTraits(t.top_right_corner, t.traits);
-			ApplyTraits(t.bottom_left_corner, t.traits);
-			ApplyTraits(t.bottom_right_corner, t.traits);
-			ApplyTraits(t.top, t.traits);
-			ApplyTraits(t.left, t.traits);
-			ApplyTraits(t.right, t.traits);
-			ApplyTraits(t.bottom, t.traits);
-			ApplyTraits(t.top_left_circle, t.traits);
-			ApplyTraits(t.top_right_circle, t.traits);
-			ApplyTraits(t.bottom_left_circle, t.traits);
-			ApplyTraits(t.bottom_right_circle, t.traits);
-			ApplyTraits(t.left_diagonal, t.traits);
-			ApplyTraits(t.right_diagonal, t.traits);
+			//tileset tiles
+			func(t.tiles);
+			//terrain tiles
+			func(t.full);
+			func(t.top_left_corner);
+			func(t.top_right_corner);
+			func(t.bottom_left_corner);
+			func(t.bottom_right_corner);
+			func(t.top);
+			func(t.left);
+			func(t.right);
+			func(t.bottom);
+			func(t.top_left_circle);
+			func(t.top_right_circle);
+			func(t.bottom_left_circle);
+			func(t.bottom_right_circle);
+			func(t.left_diagonal);
+			func(t.right_diagonal);
 		}
+
+		void LoadTerrain(hades::resources::resource_base *r, hades::data::data_manager *data)
+		{
+			auto t = static_cast<terrain*>(r);
+
+			ApplyToTerrain(*t, [data](auto &&arr) {
+				for (auto t : arr)
+				{
+					if(t.texture)
+						data->get<hades::resources::texture>(t.texture->id);
+				}
+			});
+		}
+
+		terrain::terrain() : tiles::resources::tileset(LoadTerrain) {}
 
 		void ParseTerrain(UniqueId mod, const YAML::Node& node, data_manager *data)
 		{
+			//a terrain is composed out of multiple terrain tilesets
+
 			//terrains:
-			//		- {
-			//		  name:
+			//    tilesetName:
+			//		  terrain: terrainname
 			//        source: textureid
 			//		  position: [x ,y]
 			//        type: one of {tile a specific tile id or name},
 			//				normal(a full set of transition tiles in the war3 layout)
 			//        traits: [] 
 			//        count: default is max = set_count }
-
-			constexpr auto set_width = 4;
-			constexpr auto set_height = 4;
-			constexpr auto set_count = set_width * set_height;
 
 			using namespace transition2;
 
@@ -168,11 +209,15 @@ namespace ortho_terrain
 				//remove any duplicates
 				std::sort(std::begin(t->traits), std::end(t->traits));
 				std::unique(std::begin(t->traits), std::end(t->traits));
-				ApplyTraits(*t);
+				const auto &traits_list = t->traits;
+				ApplyToTerrain(*t, [&traits_list](auto &&t_vec) {
+					for (auto &t : t_vec)
+						t.traits = traits_list;
+				});
 			}
 		}
 
-		std::vector<tiles::tile> parseLayout(UniqueId texture,
+		std::vector<tiles::tile> parseLayout(const hades::resources::texture *texture,
 			UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order,
 			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits, hades::data::data_manager *data)
 		{

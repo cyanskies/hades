@@ -33,7 +33,7 @@ namespace tiles
 		//create error tileset and add a default error tile
 		const hades::UniqueId error_tset_id;
 		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, UniqueId::Zero, data);
-		const tile error_tile{ error_tile_texture, 0, 0 };
+		const tile error_tile{ error_t_tex, 0, 0 };
 		error_tset->tiles.emplace_back(error_tile);
 
 		//create texture for empty tile
@@ -47,7 +47,7 @@ namespace tiles
 
 		const hades::UniqueId empty_tset_id;
 		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, UniqueId::Zero, data);
-		const tile empty_tile{ empty_tile_texture, 0, 0 };
+		const tile empty_tile{ empty_t_tex, 0, 0 };
 		empty_tset->tiles.emplace_back(empty_tile);
 
 		//create default tile settings obj
@@ -84,6 +84,29 @@ namespace tiles
 	{
 		std::vector<hades::data::UniqueId> Tilesets;
 
+		void LoadTileset(hades::resources::resource_base *r, hades::data::data_manager *d)
+		{
+			auto tset = static_cast<tileset*>(r);
+
+			//hot load all the textures used in this tileset
+			for (const auto t : tset->tiles)
+			{
+				if (t.texture && !t.texture->loaded)
+					d->get<hades::resources::texture>(t.texture->id);
+				else
+				{
+					const auto message = "Tile in tileset: " + d->getAsString(tset->mod) + "::" + d->getAsString(tset->id) + ", are missing a texture";
+					LOGERROR(message);
+					throw std::logic_error(message);
+				}
+			}
+		}
+
+		tileset::tileset() : hades::resources::resource_type<tileset_t>(LoadTileset) {}
+
+		tileset::tileset(hades::resources::resource_type<tileset_t>::loaderFunc func) 
+			: hades::resources::resource_type<tileset_t>(func) {}
+
 		void parseTileSettings(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager* data_manager)
 		{
 			//terrain-settings:
@@ -106,8 +129,9 @@ namespace tiles
 			}
 		}
 
-		std::vector<tile> parseTiles(hades::data::UniqueId texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
+		std::vector<tile> parseTiles(const hades::resources::texture *texture, tile_size_t tile_size, tile_size_t top, tile_size_t left, tile_count_t width, tile_count_t count, const traits_list &traits)
 		{
+			assert(texture);
 			std::vector<tile> out;
 			tile_count_t row = 0, column = 0;
 			while (count > 0)
@@ -133,7 +157,7 @@ namespace tiles
 			return out;
 		}
 
-		std::vector<tile> ParseTileSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
+		std::vector<tile> ParseTileSection(hades::resources::texture *texture, tile_size_t tile_size, YAML::Node &tiles_node,
 			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod)
 		{
 			tile_size_t left = yaml_get_scalar<tile_size_t>(tiles_node, resource_type, name, "left", mod, 0),
@@ -203,7 +227,9 @@ namespace tiles
 						continue;
 					}
 
-					auto tile_list = ParseTileSection(texid, tile_settings->tile_size, tiles_section, resource_type, name, mod);
+					const auto tex = data->get<hades::resources::texture>(texid);
+
+					auto tile_list = ParseTileSection(tex, tile_settings->tile_size, tiles_section, resource_type, name, mod);
 					std::move(std::begin(tile_list), std::end(tile_list), std::back_inserter(tset->tiles));
 				}
 				catch (tile_map_exception&)

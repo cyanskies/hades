@@ -17,7 +17,7 @@ namespace tiles
 	//TODO: investigate storing the actual tex pointer here?
 	struct tile
 	{
-		hades::data::UniqueId texture = hades::data::UniqueId::Zero;
+		const hades::resources::texture *texture = nullptr;
 		tile_size_t left = 0, top = 0;
 		traits_list traits;
 	};
@@ -42,6 +42,8 @@ namespace tiles
 		//used to map the integers in maps to actual tiles
 		struct tileset : public hades::resources::resource_type<tileset_t>
 		{
+			tileset();
+			tileset(hades::resources::resource_type<tileset_t>::loaderFunc func);
 			std::vector<tile> tiles;
 		};
 

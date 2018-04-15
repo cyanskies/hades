@@ -40,6 +40,7 @@ namespace ortho_terrain
 				left_diagonal, //terrain2 in top right, and bottom left corners
 				right_diagonal; // terrain2 in top left, and bottom right corners
 
+			//traits are additive and are applied to all the tile lists contained in a terrain
 			tiles::traits_list traits;
 		};
 
@@ -47,7 +48,7 @@ namespace ortho_terrain
 
 		struct terrainset : public hades::resources::resource_type<terrainset_t>
 		{
-			std::vector<terrain*> terrains;
+			std::vector<const terrain*> terrains;
 		};
 
 		//global list of terrainsets for the editor to show in the ui

@@ -15,6 +15,7 @@ namespace ortho_terrain
 	namespace resources
 	{
 		void ParseTerrain(UniqueId, const YAML::Node&, data_manager*);
+		void ParseTerrainSet(UniqueId, const YAML::Node&, data_manager*);
 	}
 
 	void RegisterOrthoTerrainResources(hades::data::data_system* data)
@@ -43,7 +44,7 @@ namespace ortho_terrain
 		constexpr auto set_count = set_width * set_height;
 
 		void AddToTerrain(terrain &terrain, std::tuple<tile_pos_t, tile_pos_t> start_pos, const hades::resources::texture *tex,
-			std::array<transition2::TransitionTypes, set_count> tiles)
+			std::array<transition2::TransitionTypes, set_count> tiles, tiles::tile_count_t tile_count = set_count)
 		{
 			const auto settings = tiles::GetTileSettings();
 			const auto tile_size = settings->tile_size;
@@ -71,6 +72,10 @@ namespace ortho_terrain
 				const tiles::tile tile{ tex, static_cast<tile_size_t>(x_pos), static_cast<tile_size_t>(y_pos) };
 				transition_vector.push_back(tile);
 				terrain.tiles.push_back(tile);
+
+				//we've loaded the requested number of tiles
+				if (count > tile_count)
+					break;
 			}
 		}
 
@@ -117,19 +122,19 @@ namespace ortho_terrain
 			//a terrain is composed out of multiple terrain tilesets
 
 			//terrains:
-			//    tilesetName:
+			//     -
 			//		  terrain: terrainname
 			//        source: textureid
 			//		  position: [x ,y]
 			//        type: one of {tile a specific tile id or name},
 			//				normal(a full set of transition tiles in the war3 layout)
-			//        traits: [] 
+			//        traits: [] default is null
 			//        count: default is max = set_count }
 
 			using namespace transition2;
 
-			//normal warcraft 3 layout with
-			constexpr std::array<tile_size_t, set_count> normal{ NONE, BOTTOM_RIGHT, BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
+			//normal warcraft 3 layout
+			constexpr std::array<transition2::TransitionTypes, set_count> normal{ NONE, BOTTOM_RIGHT, BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
 				TOP_RIGHT, TOP_RIGHT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT_RIGHT,
 				TOP_LEFT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT,
 				TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT, NONE };
@@ -147,6 +152,19 @@ namespace ortho_terrain
 				//get the correct terrain object
 				const auto terrain_id = data->getUid(name);
 				auto t = hades::data::FindOrCreate<resources::terrain>(terrain_id, mod, data);
+				if (!t)
+				{
+					try
+					{
+						const auto tileset = data->get<tiles::resources::tileset>(terrain_id, hades::data::data_manager::no_load);
+						LOGERROR("Terrains can be used as a tileset, but they must be defined as a terrain before being written to as a tileset");
+					}
+					catch(const hades::data::resource_wrong_type&)
+					{ /* we already posted an error for wrong type */ }
+
+					//no terrain to write to.
+					continue;
+				}
 
 				//texture source
 				const auto source = yaml_get_uid(terrain, resource_type, name, "source");
@@ -187,11 +205,28 @@ namespace ortho_terrain
 
 				if (const auto type_str = type.as<hades::types::string>(); !type_str.empty())
 				{
-
+					if (type_str == "normal")
+					{
+						AddToTerrain(*t, { x, y }, texture, normal, count);
+					}
+					else
+					{
+						LOGERROR("specified terrain tile layout by string, but didn't match one of the standard layouts string was: " + type_str);
+						continue;
+					}
 				}
 				else if (const auto type_int = type.as<tiles::tile_count_t>(); type_int > TRANSITION_BEGIN && type_int < TRANSITION_END)
 				{
+					auto make_array = [](tiles::tile_count_t type) {
+						std::array<transition2::TransitionTypes, set_count> arr;
+						assert(type > transition2::TransitionTypes::TRANSITION_BEGIN
+							&& type < transition2::TransitionTypes::TRANSITION_END);
+						arr.fill(static_cast<transition2::TransitionTypes>(type));
+						return arr;
+					};
 
+					const auto tiles = make_array(type_int);
+					AddToTerrain(*t, { x, y }, texture, tiles, count);
 				}
 				else
 				{
@@ -217,53 +252,49 @@ namespace ortho_terrain
 			}
 		}
 
-		std::vector<tiles::tile> parseLayout(const hades::resources::texture *texture,
-			UniqueId terrain1, data::UniqueId terrain2, std::vector<tile_size_t> tile_order,
-			tile_size_t left, tile_size_t top, tile_size_t columns, const tiles::traits_list &traits, hades::data::data_manager *data)
+		void ParseTerrainSet(UniqueId mod, const YAML::Node& node, data_manager *data)
 		{
-			std::vector<tiles::tile> out;
+			//terrainsets:
+			//     name: [terrain1, terrain2, ...]
 
-			auto settings = tiles::GetTileSettings();
-			auto tile_size = settings->tile_size;
-
-			tile_size_t count = 0;
-			for (auto &t : tile_order)
+			constexpr auto resource_type = "terrainset";
+			
+			for (const auto &tset : node)
 			{
-				tiles::tile ntile;
-				ntile.texture = texture;
+				const auto name = tset.first.as<types::string>();
+				const auto terrainset_id = data->getUid(name);
 
-				std::tie(ntile.left, ntile.top) = tiles::GetGridPosition(count++, columns, tile_size);
+				auto terrain_set = hades::data::FindOrCreate<terrainset>(terrainset_id, mod, data);
 
-				//ofset by the position given
-				ntile.left += left;
-				ntile.top += top;
+				const auto terrain_list = tset.second;
 
-				std::copy(std::begin(traits), std::end(traits), std::back_inserter(ntile.traits));
+				if (!terrain_list.IsSequence())
+				{
+					LOGERROR("terrainset parse error, expected a squence of terrains");
+					continue;
+				}
 
-				//terrain_info info;
-				//info.type = static_cast<transition2::TransitionTypes>(t);
+				std::vector<const terrain*> terrainset_order;
 
-				//if (info.type == transition2::NONE)
-				//	info.terrain = terrain1;
-				//else if (info.type == transition2::ALL)
-				//{
-				//	info.type = transition2::NONE;
-				//	info.terrain = terrain2;
-				//}
-				//else
-				//{
-				//	info.terrain = terrain1;
-				//	//info.terrain2 = terrain2;
-				//}
+				for (const auto terrain : terrain_list)
+				{
+					const auto terrain_name = terrain.as<hades::types::string>();
+					const auto terrain_id = data->getUid(terrain_name);
+					if (terrain_id == hades::UniqueId::Zero)
+						continue;
 
-				//TODO: exception handling here
-				//auto &transition_vector = GetTransition(info.type, *transitions, data);
-				//transition_vector.push_back(ntile);
+					const auto terrain_ptr = hades::data::FindOrCreate<resources::terrain>(terrain_id, mod, data);
+					if (!terrain_ptr)
+					{
+						LOGERROR("Unable to access terrain: " + terrain_name + ", mentioned as part of terrainset: " + name);
+						continue;
+					}
 
-				out.push_back(ntile);
+					terrainset_order.emplace_back(terrain_ptr);
+				}
+
+				terrain_set->terrains.swap(terrainset_order);
 			}
-
-			return out;
 		}
 	}
 }

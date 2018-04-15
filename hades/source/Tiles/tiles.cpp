@@ -216,6 +216,13 @@ namespace tiles
 		std::vector<const hades::resources::texture*> tex_cache;
 		for (const auto &t : tiles)
 		{
+			//skip 'empty' tiles, no need to render a transparent texture
+			if (t.texture->id == empty_tile_texture)
+			{
+				++count;
+				continue;
+			}
+
 			const hades::resources::texture* texture = nullptr;
 
 			for (auto &c : tex_cache)
@@ -243,6 +250,11 @@ namespace tiles
 		std::sort(map.begin(), map.end(), [](const auto &lhs, const auto &rhs) {
 			return lhs.first < rhs.first;
 		});
+
+		//whole map is tranparent
+		//exit early
+		if (map.empty())
+			return;
 
 		auto current_tex = map.front().first;
 		VertexArray array;
@@ -374,6 +386,9 @@ namespace tiles
 
 	void MutableTileMap::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
 	{
+		//ensure the tile has a valid texture obj
+		assert(t.texture);
+
 		const auto positions = AllPositions(position, amount);
 
 		for (const auto &p : positions)
@@ -396,19 +411,14 @@ namespace tiles
 			}
 
 			//create a new vertex array if needed
-			if (!targetArray && t.texture)
+			if (!targetArray)
 			{
 				Chunks.push_back({ t.texture, VertexArray() });
 				targetArray = &Chunks.back();
 			}
-			else if (!targetArray)
-			{
-				//the texture doesn't exist,
-				//this should be impossible at this point,
-				//as it should be checked when adding tiles/terrain
-				//to the tile selector
-				assert(false);
-			}
+
+			//ensure a new array has been selected to place the tiles into
+			assert(targetArray);
 
 			//find the location of the current tile
 			vArray *currentArray = nullptr;
@@ -417,6 +427,7 @@ namespace tiles
 
 			for (auto &a : Chunks)
 			{
+				//check the that vertex array still has an expected number of elements
 				assert(a.second.size() % VertexPerTile == 0);
 				for (std::size_t i = 0; i != a.second.size(); i += VertexPerTile)
 				{
@@ -428,15 +439,19 @@ namespace tiles
 				}
 			}
 
-			assert(currentArray);
-
 			//if the arrays are the same, then replace the quad
 			//otherwise remove the quad from the old array and insert into the new one
 			if (currentArray == targetArray)
+			{
 				_replaceTile(targetArray->second, position, t);
-			else
+			}
+			else if (currentArray)
 			{
 				_removeTile(currentArray->second, position);
+				_addTile(targetArray->second, position, t);
+			}
+			else // tile isn't currently in an array, just add the tile
+			{
 				_addTile(targetArray->second, position, t);
 			}
 

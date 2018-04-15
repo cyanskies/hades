@@ -14,6 +14,8 @@ namespace tiles
 {
 	using hades::UniqueId;
 
+	hades::UniqueId empty_tile_texture = hades::UniqueId::Zero;
+
 	namespace resources
 	{
 		void parseTileset(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
@@ -37,7 +39,7 @@ namespace tiles
 		error_tset->tiles.emplace_back(error_tile);
 
 		//create texture for empty tile
-		const UniqueId empty_tile_texture;
+		empty_tile_texture = hades::UniqueId{};
 		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(empty_tile_texture, UniqueId::Zero, data);
 		sf::Image empty_i;
 		empty_i.create(1u, 1u, sf::Color::Transparent);
@@ -91,14 +93,14 @@ namespace tiles
 			//hot load all the textures used in this tileset
 			for (const auto t : tset->tiles)
 			{
-				if (t.texture && !t.texture->loaded)
-					d->get<hades::resources::texture>(t.texture->id);
-				else
+				if (!t.texture)
 				{
 					const auto message = "Tile in tileset: " + d->getAsString(tset->mod) + "::" + d->getAsString(tset->id) + ", are missing a texture";
 					LOGERROR(message);
 					throw std::logic_error(message);
 				}
+				else if (t.texture && !t.texture->loaded)
+					d->get<hades::resources::texture>(t.texture->id);
 			}
 		}
 

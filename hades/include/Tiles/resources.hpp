@@ -27,6 +27,8 @@ namespace tiles
 
 	bool operator<(const tile &lhs, const tile &rhs);
 
+	extern hades::data::UniqueId empty_tile_texture;
+
 	namespace resources
 	{
 		void parseTileSettings(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);

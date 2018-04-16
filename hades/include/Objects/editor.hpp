@@ -107,6 +107,7 @@ namespace objects
 		//check if the location given contains a valid target for drag moving
 		// for this edit mode
 		virtual bool ValidTargetForDrag(MousePos) const;
+		//allows other classes to destroy resources when their mode ends
 		virtual void OnModeChange(EditMode_t t);
 		//responds to user input(place object, place terrain tile, etc)
 		virtual void OnClick(const sf::RenderTarget&, MousePos);

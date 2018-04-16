@@ -6,6 +6,8 @@
 
 #include "Tiles/editor.hpp"
 
+#include "OrthoTerrain/resources.hpp"
+
 namespace ortho_terrain
 {
 	namespace editor
@@ -22,7 +24,22 @@ namespace ortho_terrain
 	}
 
 	class terrain_editor : public tiles::tile_editor
-	{};
+	{
+	public:
+		void init() override;
+
+	protected:
+		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
+
+		void Terrainset(const resources::terrainset*);
+		
+	private:
+		void _enterTerrainMode();
+		void _addTerrainToGui();
+
+		const resources::terrainset *_terrainset;
+		editor::TerrainEditMode _terrainMode = editor::TerrainEditMode::NONE;
+	};
 }
 
 #endif // !ORTHO_EDITOR_HPP

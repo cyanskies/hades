@@ -24,10 +24,13 @@ namespace tiles
 
 	bool operator==(const tile &lhs, const tile &rhs);
 	bool operator!=(const tile &lhs, const tile &rhs);
-
 	bool operator<(const tile &lhs, const tile &rhs);
 
-	extern hades::data::UniqueId empty_tile_texture;
+	namespace id
+	{
+		extern hades::data::UniqueId empty_tile_texture;
+		extern hades::data::UniqueId tile_settings;
+	}
 
 	namespace resources
 	{
@@ -35,7 +38,6 @@ namespace tiles
 		std::vector<tile> ParseTileSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
 			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod);
 		
-		const hades::types::string tile_settings_name = "tile-settings";
 		extern std::vector<hades::data::UniqueId> Tilesets;
 
 		struct tileset_t {};
@@ -53,7 +55,7 @@ namespace tiles
 
 		struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 		{
-			hades::resources::texture::size_type tile_size = 0;
+			tile_size_t tile_size = 0;
 			const tileset *error_tileset = nullptr;
 			const tileset *empty_tileset = nullptr;
 		};

@@ -19,8 +19,7 @@ namespace tiles
 
 	void tile_editor::init()
 	{
-		const auto tile_setting_id = hades::data::GetUid(resources::tile_settings_name);
-		TileSettings = hades::data::Get<resources::tile_settings>(tile_setting_id);	
+		TileSettings = hades::data::Get<resources::tile_settings>(id::tile_settings);	
 
 		_tileInfo = GetEmptyTile(TileSettings);
 
@@ -221,6 +220,11 @@ namespace tiles
 			object_editor::DrawPreview(target);
 	}
 
+	void tile_editor::Tilesets(std::vector<const resources::tileset*> tilesets)
+	{
+		std::swap(_tilesets, tilesets);
+	}
+
 	draw_size_t tile_editor::GetDrawSize() const
 	{
 		return _tileDrawSize;
@@ -254,12 +258,12 @@ namespace tiles
 
 		combobox->AppendItem(all_str);
 
-		const auto &tilesets = resources::Tilesets;
+		const auto &tilesets = _tilesets;
 
 		//add all the group names
 		for (const auto &t : tilesets)
 		{
-			const auto tset = hades::data::GetAsString(t);
+			const auto tset = hades::data::GetAsString(t->id);
 			combobox->AppendItem(tset);
 		}
 
@@ -274,20 +278,16 @@ namespace tiles
 			{
 				std::vector<tile> tiles;
 
-				for (const auto &tileset : resources::Tilesets)
-				{
-					const auto t = hades::data::Get<resources::tileset>(tileset);
+				for (const auto &t : tilesets)
 					std::copy(std::begin(t->tiles), std::end(t->tiles), std::back_inserter(tiles));
-				}
 
 				_addTiles(tiles);
 			}
 			else
 			{
-				assert(static_cast<int>(resources::Tilesets.size()) >= selected);
-				const auto t = resources::Tilesets[selected - 1];
-				const auto tileset = hades::data::Get<resources::tileset>(t);
-				_addTiles(tileset->tiles);
+				assert(static_cast<int>(tilesets.size()) >= selected);
+				const auto t = tilesets[selected - 1];
+				_addTiles(t->tiles);
 			}
 		};
 

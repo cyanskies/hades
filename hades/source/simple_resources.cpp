@@ -48,6 +48,10 @@ namespace hades
 		data->register_resource_type("strings", resources::parseString);
 		data->register_resource_type("systems", resources::parseSystem);
 		data->register_resource_type("textures", resources::parseTexture);
+
+		const auto max_tex_size = sf::Texture::getMaximumSize();
+		const auto max_engine_size = std::numeric_limits<resources::texture::size_type>::max();
+		//TODO warn if tex_size < engine_size
 	}
 
 	namespace resources

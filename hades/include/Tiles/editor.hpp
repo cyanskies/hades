@@ -28,6 +28,9 @@ namespace tiles
 	class tile_editor : public objects::object_editor
 	{
 	public:
+		tile_editor() = default;
+		tile_editor(const std::vector<hades::data::UniqueId> *tilesets);
+
 		void init() override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
@@ -48,6 +51,8 @@ namespace tiles
 
 		void DrawPreview(sf::RenderTarget &target) const override;
 
+		void Tilesets(std::vector<const resources::tileset*> tilesets);
+
 		draw_size_t GetDrawSize() const;
 
 		//core map variables
@@ -62,6 +67,8 @@ namespace tiles
 
 		//gui
 		sfg::Box::Ptr _tileWindow = nullptr;
+
+		std::vector<const resources::tileset*> _tilesets;
 
 		//preview drawing variables
 		sf::Vector2i _tilePosition;

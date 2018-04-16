@@ -217,7 +217,7 @@ namespace tiles
 		for (const auto &t : tiles)
 		{
 			//skip 'empty' tiles, no need to render a transparent texture
-			if (t.texture->id == empty_tile_texture)
+			if (t.texture->id == id::empty_tile_texture)
 			{
 				++count;
 				continue;
@@ -534,8 +534,7 @@ namespace tiles
 
 	const resources::tile_settings *GetTileSettings()
 	{
-		const auto settings_id = hades::data::GetUid(resources::tile_settings_name);
-		if (!hades::data::Exists(settings_id))
+		if (id::tile_settings == hades::UniqueId::Zero)
 		{
 			const auto message = "tile-settings undefined. GetTileSettings()";
 			LOGERROR(message)
@@ -544,7 +543,7 @@ namespace tiles
 
 		try
 		{
-			return hades::data::Get<resources::tile_settings>(settings_id);
+			return hades::data::Get<resources::tile_settings>(id::tile_settings);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{

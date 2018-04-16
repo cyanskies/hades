@@ -14,7 +14,13 @@ namespace tiles
 {
 	using hades::UniqueId;
 
-	hades::UniqueId empty_tile_texture = hades::UniqueId::Zero;
+	constexpr auto tile_settings_name = "tile-settings";
+
+	namespace id
+	{
+		hades::UniqueId empty_tile_texture = hades::UniqueId::Zero;
+		hades::UniqueId tile_settings = hades::UniqueId::Zero;
+	}
 
 	namespace resources
 	{
@@ -39,8 +45,8 @@ namespace tiles
 		error_tset->tiles.emplace_back(error_tile);
 
 		//create texture for empty tile
-		empty_tile_texture = hades::UniqueId{};
-		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(empty_tile_texture, UniqueId::Zero, data);
+		id::empty_tile_texture = hades::UniqueId{};
+		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(id::empty_tile_texture, UniqueId::Zero, data);
 		sf::Image empty_i;
 		empty_i.create(1u, 1u, sf::Color::Transparent);
 		empty_t_tex->value.loadFromImage(empty_i);
@@ -53,8 +59,8 @@ namespace tiles
 		empty_tset->tiles.emplace_back(empty_tile);
 
 		//create default tile settings obj
-		const auto settings_id = hades::data::MakeUid(resources::tile_settings_name);
-		auto settings = hades::data::FindOrCreate<resources::tile_settings>(settings_id, UniqueId::Zero, data);
+		id::tile_settings = hades::data::MakeUid(tile_settings_name);
+		auto settings = hades::data::FindOrCreate<resources::tile_settings>(id::tile_settings, UniqueId::Zero, data);
 		settings->error_tileset = error_tset;
 		settings->empty_tileset = empty_tset;
 		settings->tile_size = 8;

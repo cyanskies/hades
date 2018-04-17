@@ -23,7 +23,7 @@ namespace ortho_terrain
 		seperator();
 
 		button("terrain", [this] {
-			//_enterTileMode();
+			_enterTerrainMode();
 		}, nullptr);
 	}
 
@@ -41,11 +41,14 @@ namespace ortho_terrain
 
 	void terrain_editor::_enterTerrainMode()
 	{
-
+		Mode(editor::EditMode::TERRAIN);
+		_terrainMode = editor::TerrainEditMode::NONE;
+		_addTerrainToGui();
 	}
 
 	void terrain_editor::_addTerrainToGui()
 	{
+		assert(Mode() == editor::EditMode::TERRAIN);
 
 	}
 }

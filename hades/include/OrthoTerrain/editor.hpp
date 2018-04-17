@@ -39,6 +39,8 @@ namespace ortho_terrain
 
 		const resources::terrainset *_terrainset;
 		editor::TerrainEditMode _terrainMode = editor::TerrainEditMode::NONE;
+
+		sfg::Box::Ptr _terrainWindow = nullptr;
 	};
 }
 

@@ -14,6 +14,9 @@ namespace ortho_terrain
 
 	namespace resources
 	{
+		template<typename Func>
+		void ApplyToTerrain(terrain &t, Func func);
+
 		void ParseTerrain(UniqueId, const YAML::Node&, data_manager*);
 		void ParseTerrainSet(UniqueId, const YAML::Node&, data_manager*);
 	}
@@ -24,17 +27,22 @@ namespace ortho_terrain
 		tiles::RegisterTileResources(data);
 
 		data->register_resource_type("terrain", resources::ParseTerrain);
-		//override the default layout and the tilesets parser
-		//data->register_resource_type("terrainsets", ortho_terrain::resources::parseTileset);
-		//create empty terrain
+		
+		//create an empty terrain type, and insert a general empty tile as every transition type
 		resources::EmptyTerrainId = UniqueId{};
+		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
+		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::data_manager::no_load);
+		const tiles::tile empty_tile{ empty_t_tex, 0, 0 };
+		ApplyToTerrain(*empty_terrain, [empty_tile](auto &&vec) {
+			vec.emplace_back(empty_tile);
+		});
 	}
 
 	namespace resources
 	{
 		using namespace hades;
 
-		std::vector<UniqueId> Terrains;
+		std::vector<UniqueId> TerrainSets;
 		UniqueId EmptyTerrainId = UniqueId::Zero;
 
 		using tile_pos_t = hades::types::int32;

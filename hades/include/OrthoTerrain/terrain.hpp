@@ -24,12 +24,16 @@ namespace ortho_terrain
 	//and contains one extra row
 	using TerrainVertex = std::vector<const resources::terrain*>;
 
-	//uses the transition data to convert terrain verticies into an array of tiles
-	//returns the tile array and the number of tiles per row.
-	tiles::MapData ConvertToTiles(const TerrainVertex&, tiles::tile_count_t vertexPerRow);
-
-	using VertexMapData = std::tuple<TerrainVertex, tiles::tile_count_t>;
-	VertexMapData ConvertToVertex(const tiles::MapData&);
+	struct TerrainMapData
+	{
+		//terrain maps are stored as a variable sized stack of tile layers
+		//each layer has a vertex map and a tile map
+		//the vertex map is only used in the case of supporting a mutable terrain map
+		//the top of the stack is represented by a regular tilemap 
+		tiles::tile_count_t tile_count, map_width;
+		TerrainVertex terrain_vertex;
+		std::vector<tiles::TileArray> tile_map_stack;
+	};
 
 	//thrown by functions in the ortho-terrain namespace
 	//for unrecoverable errors
@@ -39,29 +43,51 @@ namespace ortho_terrain
 		using std::runtime_error::runtime_error;
 	};
 
-	//a drawable map of terrain tiles
-	class MutableTerrainMap : public tiles::MutableTileMap
+	class TerrainMap : public sf::Drawable, public sf::Transformable
+	{
+	public:
+		TerrainMap() = default;
+		TerrainMap(const TerrainMapData&);
+
+		void create(const TerrainMapData&);
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+		sf::FloatRect getLocalBounds() const;
+
+	private:
+		std::vector<tiles::TileMap> _map;
+	};
+
+	class MutableTerrainMap : public sf::Drawable, public sf::Transformable
 	{
 	public:
 		MutableTerrainMap() = default;
-		MutableTerrainMap(const tiles::MapData&);
+		MutableTerrainMap(const TerrainMapData&);
 
-		void create(const tiles::MapData&) override;
+		void create(const TerrainMapData&);
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+		sf::FloatRect getLocalBounds() const;
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const tiles::tile&, const sf::Vector2i &position, tiles::draw_size_t amount = 0, bool updateVertex = false);
-		//draw over a vertex with transitions fixup
-		//amount is the number of rows of adjacent vertex to replace as well.
-		//eg amount = 0, changes 4 tiles worth,
-		void replace(const resources::terrain&, const sf::Vector2i &position, tiles::draw_size_t amount = 0);
+		void replace(const resources::terrain *t, const sf::Vector2i &position, tiles::draw_size_t amount = 0);
 
+		void setColour(sf::Color c);
+
+		TerrainMapData getMap() const;
 	private:
-		//fixes transitions for vertex in an area
-		void _cleanTransitions(const sf::Vector2u &position, sf::Vector2u size = { 0,0 });
+		using terrain_layer = std::tuple<const resources::terrain*, tiles::MutableTileMap>;
+		
+		std::vector<terrain_layer> _terrain_layers;
+		TerrainVertex _vdata;
+	};
 
-		tiles::tile_count_t _vertex_width;
-		TerrainVertex _vertex;
+	struct level : public objects::level
+	{
+
 	};
 }
 

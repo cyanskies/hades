@@ -1,5 +1,7 @@
 #include "OrthoTerrain/editor.hpp"
 
+#include "SFGUI/Widgets.hpp"
+
 #include "Hades/Data.hpp"
 
 namespace ortho_terrain
@@ -49,6 +51,69 @@ namespace ortho_terrain
 	void terrain_editor::_addTerrainToGui()
 	{
 		assert(Mode() == editor::EditMode::TERRAIN);
+
+		auto palette = GetPaletteContainer();
+
+		palette->RemoveAll();
+
+		_terrainWindow = sfg::Box::Create(sfg::Box::Orientation::VERTICAL, 1.f);
+
+		palette->PackEnd(_terrainWindow);
+
+		_addTerrain(_terrainset->terrains);
+	}
+
+	void terrain_editor::_addTerrain(const std::vector<const resources::terrain*> &terrain)
+	{
+		assert(_terrainWindow);
+		_terrainWindow->RemoveAll();
+
+		const auto palette_alloc = GetPaletteContainer()->GetRequisition();
+		auto box = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+		_terrainWindow->PackEnd(box, false, false);
+
+		using objects::editor::CreateButton;
+
+		for (const auto terr : terrain)
+		{
+			//get a full terrain tile to use as the image
+			const auto &full_tiles = terr->full;
+			if (full_tiles.empty())
+			{
+				//LOG error
+				//TODO:
+				continue;
+			}
+
+			const auto t = full_tiles.front();
+
+			//create an animation to pass to 'CreateButton'
+			hades::resources::animation a;
+			a.tex = t.texture;
+			a.height = a.width = TileSettings->tile_size;
+			hades::resources::animation_frame f{ t.left, t.top, 1.f };
+			a.value.push_back(f);
+
+			auto b = objects::editor::CreateButton("unavailable", [this, terr]
+			{
+				_setCurrentTerrain(terr);
+			}, &a);
+
+			const auto alloc = box->GetRequisition();
+			const auto button_alloc = b->GetAllocation();
+
+			if (alloc.x + button_alloc.width > palette_alloc.x)
+			{
+				box = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
+				_terrainWindow->PackEnd(box, false);
+			}
+
+			box->PackEnd(b, false);
+		}
+	}
+
+	void terrain_editor::_setCurrentTerrain(const resources::terrain*)
+	{
 
 	}
 }

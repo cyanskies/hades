@@ -5,8 +5,8 @@
 #include "Hades/App.hpp"
 #include "Hades/common-input.hpp"
 
-#include "Tiles/editor.hpp"
-#include "Tiles/tiles.hpp"
+#include "OrthoTerrain/editor.hpp"
+#include "OrthoTerrain/terrain.hpp"
 
 #include "input_names.hpp"
 #include "ConsoleTestState.hpp"
@@ -19,19 +19,19 @@ int main(int argc, char **argv)
 
 std::string_view defaultGame()
 {
-	return "tiles";
+	return "ortho_terrain";
 }
 
 void resourceTypes(hades::data::data_system &data)
 {
-	tiles::EnableTiles(&data);
+	ortho_terrain::EnableTerrain(&data);
 }
 
 void hadesMain(hades::StateManager &state, hades::InputSystem &bind, hades::CommandList &commandLine)
 {
 	hades::RegisterMouseInput(bind);
 
-	std::unique_ptr<hades::State> editorstate = std::make_unique<tiles::tile_editor>();
+	std::unique_ptr<hades::State> editorstate = std::make_unique<ortho_terrain::terrain_editor>();
 	state.push(std::move(editorstate));
 	return;
 

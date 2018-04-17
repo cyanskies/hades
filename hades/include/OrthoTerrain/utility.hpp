@@ -26,16 +26,6 @@ namespace ortho_terrain
 
 	//Picks a tile that seemlessly fits between the 4 corner verticies
 	tiles::tile PickTile(const std::array<const resources::terrain*, 4> &vertex);
-	//Picks a tile that seemlessly fits between the 4 corner tiles provided
-	tiles::tile PickTile(const std::array<tiles::tile, 4> &corner_tiles);
-
-	//returns the terrain type in a corner of the tile
-	//NOTE: the numerical value of these is important
-	// they must remain in the range 0, 3
-	// as they are used by the AsVertex/AsTiles functions in terrain.cpp
-	// and the pick tile functions above
-	enum Corner { TOPLEFT, TOPRIGHT, BOTTOMLEFT, BOTTOMRIGHT, CORNER_LAST};
-	hades::data::UniqueId TerrainInCorner(const tiles::tile& t, Corner corner);
 
 	namespace transition2
 	{

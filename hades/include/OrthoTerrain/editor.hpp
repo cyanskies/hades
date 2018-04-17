@@ -36,6 +36,8 @@ namespace ortho_terrain
 	private:
 		void _enterTerrainMode();
 		void _addTerrainToGui();
+		void _addTerrain(const std::vector<const resources::terrain*> &terrain);
+		void _setCurrentTerrain(const resources::terrain*);
 
 		const resources::terrainset *_terrainset;
 		editor::TerrainEditMode _terrainMode = editor::TerrainEditMode::NONE;

@@ -8,16 +8,16 @@ editor:
 
 textures:
     tex-indev-grey:
-        width: 40
+        width: 32
         height: 32 
         source: "terrain/indev-grey.png"
     tex-indev-orange:
-        width: 72
+        width: 32
         height: 32
         source: "terrain/indev-orange.png"
     tex-indev-green:
-        width: 48
-        height: 48
+        width: 32
+        height: 32
         source: "terrain/indev-green.png"
 
 tile-settings:
@@ -25,7 +25,7 @@ tile-settings:
  
 terrain:
     -
-        terrain: indev-grey
+        name: indev-grey
         source: tex-indev-grey
         position: [0, 0]
         type: normal

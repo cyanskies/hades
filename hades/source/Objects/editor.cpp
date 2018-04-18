@@ -61,7 +61,7 @@ namespace objects
 
 		constexpr auto button_size = 20;
 
-		if (icon)
+		if (icon && icon->tex)
 		{
 			using int_t = hades::types::int32;
 			const auto[x, y] = hades::animation::GetFrame(icon, sf::Time::Zero);
@@ -918,11 +918,11 @@ namespace objects
 	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
 	{
 		static const auto window_width = hades::console::GetInt("vid_width", 800);
-		const auto toolbar_req = _toolBarIconBox->GetAllocation();
-		const auto req = w->GetAllocation();
+		const auto toolbar_req = _toolBarIconBox->GetRequisition().x;
+		const auto req = w->GetAllocation().width;
 		//if the current line of icons is full
 		//add a new line
-		if (req.width + toolbar_req.width > *window_width)
+		if (req + toolbar_req > *window_width)
 		{
 			_toolBarIconBox = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
 			_toolBar->PackEnd(_toolBarIconBox);
@@ -992,7 +992,7 @@ namespace objects
 		auto toolbar_window = sfg::Window::Create(toolbar_style);
 		const auto toolbar_height = 20.f;
 		toolbar_window->SetRequisition({ static_cast<float>(*window_width), toolbar_height });
-		_toolBar = sfg::Box::Create();
+		_toolBar = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
 		_toolBarIconBox = sfg::Box::Create(sfg::Box::Orientation::HORIZONTAL, 1.f);
 		_toolBar->PackEnd(_toolBarIconBox, false);
 		toolbar_window->Add(_toolBar);

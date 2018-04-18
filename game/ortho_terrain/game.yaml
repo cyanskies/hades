@@ -1,6 +1,11 @@
 mod:
     name: ortho_terrain
 
+editor:
+    grid-shrink-icon: grid-shrink
+    grid-grow-icon: grid-grow
+    grid-show-icon: grid-show
+
 textures:
     tex-indev-grey:
         width: 40

@@ -27,7 +27,8 @@ namespace ortho_terrain
 		tiles::RegisterTileResources(data);
 
 		data->register_resource_type("terrain", resources::ParseTerrain);
-		
+		data->register_resource_type("terrainsets", resources::ParseTerrainSet);
+
 		//create an empty terrain type, and insert a general empty tile as every transition type
 		resources::EmptyTerrainId = UniqueId{};
 		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
@@ -302,6 +303,9 @@ namespace ortho_terrain
 				}
 
 				terrain_set->terrains.swap(terrainset_order);
+
+				TerrainSets.emplace_back(terrain_set->id);
+				std::unique(std::begin(TerrainSets), std::end(TerrainSets));
 			}
 		}
 	}

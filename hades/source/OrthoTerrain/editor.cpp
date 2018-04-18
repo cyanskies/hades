@@ -10,6 +10,13 @@ namespace ortho_terrain
 
 	void terrain_editor::init()
 	{
+		if (resources::TerrainSets.empty())
+		{
+			LOGERROR("No Terrainsets have been recorded, editor unavailable");
+			kill();
+			return;
+		}
+		
 		const auto terrainset_id = resources::TerrainSets.front();
 		const auto terrainset = hades::data::Get<resources::terrainset>(terrainset_id);
 

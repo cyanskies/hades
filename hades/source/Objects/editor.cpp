@@ -882,7 +882,7 @@ namespace objects
 
 	void object_editor::DrawGrid(sf::RenderTarget &target) const 
 	{
-		if (_gridEnabled->load())
+		if (_gridEnabled && _gridEnabled->load())
 		{
 			target.draw(_grid);
 			target.draw(_gridHighlight);

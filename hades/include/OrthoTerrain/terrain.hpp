@@ -1,6 +1,7 @@
 #ifndef ORTHO_TERRAIN_HPP
 #define ORTHO_TERRAIN_HPP
 
+#include <optional>
 #include <vector>
 
 #include "SFML/Graphics/Drawable.hpp"
@@ -23,15 +24,17 @@ namespace ortho_terrain
 	//terrain vertex is a vector of verticies, each row is 1 element longer than the equivalent tile array
 	//and contains one extra row
 	using TerrainVertex = std::vector<const resources::terrain*>;
+	using vertex_count_t = tiles::tile_count_t;
+	TerrainVertex AsTerrainVertex(const std::vector<tiles::TileArray> &map, const std::vector<const resources::terrain*> &terrainset, tiles::tile_count_t width);
+	std::tuple<vertex_count_t, vertex_count_t> CalculateVertCount(std::tuple<tiles::tile_count_t, tiles::tile_count_t> count);
+	const resources::terrain *FindTerrain(const tiles::TileArray &layer, const std::vector<const resources::terrain*> &terrain_set);
 
 	struct TerrainMapData
 	{
+		//terain_set.size() == tile_map_stack.size()
+		//terrain_set implicitly has a empty layer at the front
+		std::vector<const resources::terrain*> terrain_set;
 		//terrain maps are stored as a variable sized stack of tile layers
-		//each layer has a vertex map and a tile map
-		//the vertex map is only used in the case of supporting a mutable terrain map
-		//the top of the stack is represented by a regular tilemap 
-		tiles::tile_count_t tile_count, map_width;
-		TerrainVertex terrain_vertex;
 		std::vector<tiles::TileArray> tile_map_stack;
 	};
 
@@ -47,29 +50,27 @@ namespace ortho_terrain
 	{
 	public:
 		TerrainMap() = default;
-		TerrainMap(const TerrainMapData&);
+		TerrainMap(const TerrainMapData&, tiles::tile_count_t width);
 
-		void create(const TerrainMapData&);
+		virtual void create(const TerrainMapData&, tiles::tile_count_t width);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 		sf::FloatRect getLocalBounds() const;
 
-	private:
-		std::vector<tiles::TileMap> _map;
+	protected:
+		std::vector<tiles::TileMap> Map;
 	};
 
-	class MutableTerrainMap : public sf::Drawable, public sf::Transformable
+	class MutableTerrainMap : TerrainMap
 	{
 	public:
 		MutableTerrainMap() = default;
-		MutableTerrainMap(const TerrainMapData&);
-
-		void create(const TerrainMapData&);
+		using TerrainMap::TerrainMap;
+		void create(const TerrainMapData&, tiles::tile_count_t width) override;
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		sf::FloatRect getLocalBounds() const;
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
@@ -78,16 +79,19 @@ namespace ortho_terrain
 		void setColour(sf::Color c);
 
 		TerrainMapData getMap() const;
+
 	private:
 		using terrain_layer = std::tuple<const resources::terrain*, tiles::MutableTileMap>;
-		
+		using tile_layer = std::tuple<const resources::terrain*, tiles::TileArray>;
 		std::vector<terrain_layer> _terrain_layers;
+		std::vector<tile_layer> _tile_layers;
+		sf::Color _colour = sf::Color::White;
 		TerrainVertex _vdata;
 	};
 
-	struct level : public objects::level
+	struct level : public tiles::level
 	{
-
+		TerrainMapData terrain;
 	};
 }
 

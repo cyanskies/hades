@@ -31,6 +31,7 @@ namespace ortho_terrain
 	{
 		//NOTE: see http://www.cr31.co.uk/stagecast/wang/2corn.html
 		//values for 2-corner transitions
+		//named based on which tile corners are 'empty'
 		enum TransitionTypes {
 			TRANSITION_BEGIN = -1, NONE,
 			TOP_RIGHT, BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_RIGHT,
@@ -40,6 +41,10 @@ namespace ortho_terrain
 			ALL, TRANSITION_END
 		};
 	}
+
+	enum class Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT };
+	bool IsTerrainInCorner(Corner c, transition2::TransitionTypes t);
+	transition2::TransitionTypes GetTransitionType(tiles::tile, const resources::terrain*);
 
 	class out_of_range : public std::out_of_range
 	{

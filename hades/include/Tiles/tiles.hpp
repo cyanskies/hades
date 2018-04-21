@@ -27,6 +27,8 @@ namespace tiles
 	//tile_count_t::max is the largest amount of tiles that can be in a tileset, or map
 	using tile_count_t = hades::types::uint32;
 	using draw_size_t = hades::types::int8;
+
+	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<objects::level_size_t, objects::level_size_t> size, tile_size_t tile_size);
 	//raw map data, is a stream of tile_count id's
 	//and a map of tilesets along with thier first id's
 	// and also a width
@@ -49,6 +51,9 @@ namespace tiles
 	//NOTE: this returns a pixel position with the maps origin in the top left corner.
 	std::tuple<hades::types::int32, hades::types::int32> GetGridPosition(hades::types::uint32 tile_number,
 		hades::types::uint32 tiles_per_row, hades::types::uint32 tile_size);
+
+	using vertex_count_t = tile_count_t;
+	vertex_count_t CalculateVertexCount(tile_count_t count);
 
 	//thrown by tile maps for unrecoverable errors
 	class tile_map_exception : public std::runtime_error

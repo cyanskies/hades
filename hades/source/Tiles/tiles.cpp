@@ -21,10 +21,17 @@ namespace tiles
 		RegisterTileResources(d);
 	}
 
-	namespace
+	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<objects::level_size_t, objects::level_size_t> size, tile_size_t tile_size)
 	{
-		static const VertexArray::size_type VertexPerTile = 6;
+		auto[x, y] = size;
+		if (x % tile_size != 0
+			|| y % tile_size != 0)
+			throw tile_map_exception("Level size was not multiple of tile size");
+
+		return { x / tile_size, y / tile_size };
 	}
+
+	constexpr VertexArray::size_type VertexPerTile = 6u;
 
 	MapData as_mapdata(const RawMap &map)
 	{
@@ -160,6 +167,8 @@ namespace tiles
 		return output;
 	}
 
+	//converts tile positions in the flat map to a 2d position on the screen
+	//NOTE: this returns a pixel position with the maps origin in the top left corner(0, 0).
 	std::tuple<hades::types::int32, hades::types::int32> GetGridPosition(hades::types::uint32 tile_number,
 		hades::types::uint32 tiles_per_row, tile_size_t tile_size)
 	{

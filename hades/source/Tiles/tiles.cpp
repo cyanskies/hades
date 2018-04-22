@@ -349,6 +349,28 @@ namespace tiles
 		TileMap::create(map_data);
 	}
 
+	sf::Vector2u InflatePosition(tile_count_t i, tile_count_t width)
+	{
+		const auto x = i % width;
+		const auto y = i / width;
+
+		return { x, y };
+	}
+
+	void MutableTileMap::update(const MapData &map_data)
+	{
+		const auto &[tiles, width] = map_data;
+		if (tiles.size() != _tiles.size()
+			|| width != _width)
+			throw tile_map_exception("TileMap::update must be called with a map of the same size and width");
+		
+		for (std::size_t i = 0; i < tiles.size(); ++i)
+		{
+			if (tiles[i] != _tiles[i])
+				_updateTile(InflatePosition(i, width), tiles[i]);
+		}
+	}
+
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount)
 	{
 		if (amount == 0)
@@ -407,62 +429,7 @@ namespace tiles
 			if (!IsWithin(_tiles, position, _width))
 				continue;
 
-			//find the array to place it in
-			vArray *targetArray = nullptr;
-
-			for (auto &a : Chunks)
-			{
-				if (a.first == t.texture)
-				{
-					targetArray = &a;
-					break;
-				}
-			}
-
-			//create a new vertex array if needed
-			if (!targetArray)
-			{
-				Chunks.push_back({ t.texture, VertexArray() });
-				targetArray = &Chunks.back();
-			}
-
-			//ensure a new array has been selected to place the tiles into
-			assert(targetArray);
-
-			//find the location of the current tile
-			vArray *currentArray = nullptr;
-
-			const auto pixelPos = position * _tile_size;
-
-			for (auto &a : Chunks)
-			{
-				//check the that vertex array still has an expected number of elements
-				assert(a.second.size() % VertexPerTile == 0);
-				for (std::size_t i = 0; i != a.second.size(); i += VertexPerTile)
-				{
-					if (static_cast<sf::Vector2u>(a.second[i].position) == pixelPos)
-					{
-						currentArray = &a;
-						break;
-					}
-				}
-			}
-
-			//if the arrays are the same, then replace the quad
-			//otherwise remove the quad from the old array and insert into the new one
-			if (currentArray == targetArray)
-			{
-				_replaceTile(targetArray->second, position, t);
-			}
-			else if (currentArray)
-			{
-				_removeTile(currentArray->second, position);
-				_addTile(targetArray->second, position, t);
-			}
-			else // tile isn't currently in an array, just add the tile
-			{
-				_addTile(targetArray->second, position, t);
-			}
+			_updateTile(position, t);
 
 			//write the tile to the tile vector
 			Write(_tiles, position, _width, t);
@@ -481,6 +448,66 @@ namespace tiles
 		{
 			for (auto &v : a.second)
 				v.color = c;
+		}
+	}
+
+	void MutableTileMap::_updateTile(const sf::Vector2u &position, const tile &t)
+	{
+		//find the array to place it in
+		vArray *targetArray = nullptr;
+
+		for (auto &a : Chunks)
+		{
+			if (a.first == t.texture)
+			{
+				targetArray = &a;
+				break;
+			}
+		}
+
+		//create a new vertex array if needed
+		if (!targetArray)
+		{
+			Chunks.push_back({ t.texture, VertexArray() });
+			targetArray = &Chunks.back();
+		}
+
+		//ensure a new array has been selected to place the tiles into
+		assert(targetArray);
+
+		//find the location of the current tile
+		vArray *currentArray = nullptr;
+
+		const auto pixelPos = position * _tile_size;
+
+		for (auto &a : Chunks)
+		{
+			//check the that vertex array still has an expected number of elements
+			assert(a.second.size() % VertexPerTile == 0);
+			for (std::size_t i = 0; i != a.second.size(); i += VertexPerTile)
+			{
+				if (static_cast<sf::Vector2u>(a.second[i].position) == pixelPos)
+				{
+					currentArray = &a;
+					break;
+				}
+			}
+		}
+
+		//if the arrays are the same, then replace the quad
+		//otherwise remove the quad from the old array and insert into the new one
+		if (currentArray == targetArray)
+		{
+			_replaceTile(targetArray->second, position, t);
+		}
+		else if (currentArray)
+		{
+			_removeTile(currentArray->second, position);
+			_addTile(targetArray->second, position, t);
+		}
+		else // tile isn't currently in an array, just add the tile
+		{
+			_addTile(targetArray->second, position, t);
 		}
 	}
 
@@ -612,6 +639,7 @@ namespace tiles
 			{
 				if (!tset.IsSequence() || tset.size() != 2)
 				{
+					//TODO:
 					//error, invalid file
 				}
 

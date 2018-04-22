@@ -116,6 +116,11 @@ namespace ortho_terrain
 		return nullptr;
 	}
 
+	void ReplaceTerrain(TerrainMapData &map, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
+	{
+
+	}
+
 	////////////////
 	// TerrainMap //
 	////////////////
@@ -139,17 +144,17 @@ namespace ortho_terrain
 		for (const auto &l : Map)
 			l.draw(target, states);
 	}
-
-	sf::FloatRect TerrainMap::getLocalBounds() const
+	
+	sf::FloatRect GetBounds(const std::vector<const tiles::TileMap*> &map)
 	{
-		if (Map.empty())
+		if (map.empty())
 			return sf::FloatRect{};
 		else
 		{
 			sf::FloatRect r{};
-			for (const auto &l : Map)
+			for (const auto &l : map)
 			{
-				const auto rect = l.getLocalBounds();
+				const auto rect = l->getLocalBounds();
 				r.left = std::min(r.left, rect.left);
 				r.top = std::min(r.top, rect.top);
 				r.width = std::max(r.width, rect.width);
@@ -160,17 +165,48 @@ namespace ortho_terrain
 		}
 	}
 
+	sf::FloatRect TerrainMap::getLocalBounds() const
+	{
+		std::vector<const tiles::TileMap*> map;
+		for (const auto &layer : Map)
+			map.emplace_back(&layer);
+
+		return GetBounds(map);
+	}
+
 	///////////////////////
 	// MutableTerrainMap //
 	///////////////////////
 
+	MutableTerrainMap::MutableTerrainMap(const TerrainMapData &dat, tiles::tile_count_t width)
+	{
+		create(dat, width);
+	}
+
 	void MutableTerrainMap::create(const TerrainMapData&, tiles::tile_count_t width)
 	{
+		
+	}
 
+	void MutableTerrainMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	{	
+		for (const auto &layer : _tile_layers)
+			target.draw(std::get<tiles::TileMap>(layer), states);
+	}
+
+	sf::FloatRect MutableTerrainMap::getLocalBounds() const
+	{
+		std::vector<const tiles::TileMap*> map;
+		for (const auto &layer : _terrain_layers)
+			map.emplace_back(&std::get<tiles::MutableTileMap>(layer));
+
+		return GetBounds(map);
 	}
 
 	void MutableTerrainMap::replace(const resources::terrain *t, const sf::Vector2i &position, tiles::draw_size_t amount)
-	{}
+	{
+
+	}
 
 	void MutableTerrainMap::setColour(sf::Color c)
 	{

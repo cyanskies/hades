@@ -92,6 +92,7 @@ namespace tiles
 		MutableTileMap(const MapData&);
 
 		void create(const MapData&) override;
+		void update(const MapData&);
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.
 		//eg amount = 1, draws over 9 tiles worth,
@@ -102,6 +103,7 @@ namespace tiles
 		MapData getMap() const;
 
 	private:
+		void _updateTile(const sf::Vector2u &position, const tile &t);
 		void _replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t);
 		void _removeTile(VertexArray &a, const sf::Vector2u &position);
 		void _addTile(VertexArray &a, const sf::Vector2u &position, const tile& t);

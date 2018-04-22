@@ -38,6 +38,8 @@ namespace ortho_terrain
 		std::vector<tiles::TileArray> tile_map_stack;
 	};
 
+	void ReplaceTerrain(TerrainMapData &map, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size);
+
 	//thrown by functions in the ortho-terrain namespace
 	//for unrecoverable errors
 	class exception : public std::runtime_error
@@ -62,14 +64,17 @@ namespace ortho_terrain
 		std::vector<tiles::TileMap> Map;
 	};
 
-	class MutableTerrainMap : TerrainMap
+	class MutableTerrainMap : public sf::Drawable, public sf::Transformable
 	{
 	public:
 		MutableTerrainMap() = default;
-		using TerrainMap::TerrainMap;
-		void create(const TerrainMapData&, tiles::tile_count_t width) override;
+		MutableTerrainMap(const TerrainMapData&, tiles::tile_count_t width);
+
+		void create(const TerrainMapData&, tiles::tile_count_t width);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+		sf::FloatRect getLocalBounds() const;
 
 		//draw over a tile
 		//amount is the number of rows of adjacent tiles to replace as well.

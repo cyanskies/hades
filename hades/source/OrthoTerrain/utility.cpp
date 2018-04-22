@@ -49,9 +49,40 @@ namespace ortho_terrain
 		}
 	}
 
+	tile_corners GetCornerData(sf::Vector2u pos, const TerrainVertex &vert_data, tiles::tile_count_t width)
+	{
+		//top left
+		const auto tl_pos = tiles::FlatPosition(pos, width);
+		//top right
+		const auto tr_pos = tl_pos + 1;
+		//bottom left
+		const auto bl_pos = tiles::FlatPosition(pos, width);
+		//bottom right
+		const auto br_pos = bl_pos + 1;
+
+		return { vert_data[tl_pos], vert_data[tr_pos], vert_data[bl_pos], vert_data[br_pos] };
+	}
+
 	bool InVec(const std::vector<tile> &v, tile t)
 	{
 		return std::find(std::begin(v), std::end(v), t) != std::end(v);
+	}
+
+	transition2::TransitionTypes PickTransition(const std::array<bool, 4> &corners)
+	{
+		using transition2::TransitionTypes;
+		hades::types::uint8 type = 0u;
+
+		if (corners[0])
+			type += 8u;
+		if (corners[1])
+			type += 1u;
+		if (corners[2])
+			type += 4u;
+		if (corners[3])
+			type += 2u;
+
+		return static_cast<TransitionTypes>(type);
 	}
 
 	transition2::TransitionTypes GetTransitionType(tile t, const resources::terrain *terr)

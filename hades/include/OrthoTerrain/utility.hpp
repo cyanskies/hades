@@ -7,6 +7,8 @@
 
 #include "Hades/UniqueId.hpp"
 
+#include "Tiles/tiles.hpp"
+
 namespace tiles
 {
 	struct tile;
@@ -23,9 +25,6 @@ namespace ortho_terrain
 
 	//returns a random tile from the selection
 	tiles::tile RandomTile(const std::vector<tiles::tile>& tiles);
-
-	//Picks a tile that seemlessly fits between the 4 corner verticies
-	tiles::tile PickTile(const std::array<const resources::terrain*, 4> &vertex);
 
 	namespace transition2
 	{
@@ -44,6 +43,11 @@ namespace ortho_terrain
 
 	enum class Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT };
 	bool IsTerrainInCorner(Corner c, transition2::TransitionTypes t);
+	using tile_corners = std::array<const resources::terrain*, 4>;
+	tile_corners GetCornerData(sf::Vector2u pos, const std::vector<const resources::terrain*> &vert_data, tiles::tile_count_t width);
+
+	//corners: flase if contains terrain, true if empty
+	transition2::TransitionTypes PickTransition(const std::array<bool, 4> &corners);
 	transition2::TransitionTypes GetTransitionType(tiles::tile, const resources::terrain*);
 
 	class out_of_range : public std::out_of_range

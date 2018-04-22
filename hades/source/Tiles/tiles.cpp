@@ -366,7 +366,7 @@ namespace tiles
 		
 		for (std::size_t i = 0; i < tiles.size(); ++i)
 		{
-			if (tiles[i] != _tiles[i])
+			if(tiles[i] != _tiles[i])
 				_updateTile(InflatePosition(i, width), tiles[i]);
 		}
 	}
@@ -610,6 +610,15 @@ namespace tiles
 
 		const auto i = hades::random(0u, tset.size() - 1);
 		return tset[i];
+	}
+
+	tile GetEmptyTile()
+	{
+		static const auto tile_settings = GetTileSettings();
+		assert(!tile_settings->empty_tileset->tiles.empty());
+		static const auto t = tile_settings->empty_tileset->tiles.front();
+
+		return t;
 	}
 
 	constexpr auto tiles = "tiles";

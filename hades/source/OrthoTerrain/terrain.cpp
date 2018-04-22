@@ -55,7 +55,12 @@ namespace ortho_terrain
 		return out;
 	}
 
-	TerrainVertex CalculateVertex(const std::vector<tiles::TileArray> &map, const std::vector<const resources::terrain*> &terrainset, tiles::tile_count_t width)
+	std::size_t VertWidth(std::size_t tiles_width)
+	{
+		return ++tiles_width;
+	}
+
+	TerrainVertex AsTerrainVertex(const std::vector<tiles::TileArray> &map, const std::vector<const resources::terrain*> &terrainset, tiles::tile_count_t width)
 	{
 		assert(!map.empty());
 		if (map[0].size() % width != 0)
@@ -66,7 +71,8 @@ namespace ortho_terrain
 		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
 
 		//a vert array includes a single extra column and row
-		const auto vert_length = coloumns + 1 * width + 1;
+		const auto vert_width = VertWidth(width);
+		const auto vert_length = coloumns + 1 * vert_width;
 		TerrainVertex verts{ vert_length, empty_terrain };
 		assert(map.size() <= terrainset.size());
 		for (std::size_t i = 0u; i < map.size(); ++i)
@@ -116,9 +122,47 @@ namespace ortho_terrain
 		return nullptr;
 	}
 
-	void ReplaceTerrain(TerrainMapData &map, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
+	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
 	{
+		if (map.terrain_set.size() != map.tile_map_stack.size())
+			throw exception("Map data malformed, should contain one tile layer per terrainset entry");
 
+		const auto positions = tiles::AllPositions(pos, size);
+		auto &tile_layers = map.tile_map_stack;
+		
+		const auto vert_width = VertWidth(width);
+		//for each position, update the vertex
+		for (const auto &pos : positions)
+		{
+			const auto f_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), vert_width);
+			verts[f_pos] = t;
+		}
+
+		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+
+		//we only want to update tiles within reach of the vertex changes
+		const auto tile_positions = tiles::AllPositions(pos, size + 1);
+		//then update the tiles based on the new vertex map
+		for (std::size_t i = 0; i < tile_layers.size(); ++i)
+		{
+			auto &layer = tile_layers[i];
+			const auto terrain = map.terrain_set[i];
+			const auto layer_size = layer.size();
+			for (const auto &pos : tile_positions)
+			{
+				const auto corners = GetCornerData(static_cast<sf::Vector2u>(pos), verts, vert_width);
+				std::array<bool, 4> empty_corners{ false };
+
+				for (std::size_t k = 0; k < corners.size(); ++k)
+					empty_corners[k] = corners[k] == empty_terrain ? true : false;
+
+				const auto type = PickTransition(empty_corners);
+				const auto tile_list = GetTransitionConst(type, *terrain);
+				const auto tile = RandomTile(tile_list);
+				const auto flat_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), width);
+				layer[flat_pos] = tile;
+			}
+		}
 	}
 
 	////////////////
@@ -183,29 +227,81 @@ namespace ortho_terrain
 		create(dat, width);
 	}
 
-	void MutableTerrainMap::create(const TerrainMapData&, tiles::tile_count_t width)
+	void MutableTerrainMap::create(const TerrainMapData &map, tiles::tile_count_t width)
 	{
+		tiles::tile_count_t size = 0u;
+		for (const auto &layer : map.tile_map_stack)
+			size = std::max(size, layer.size());
+
+		std::vector<tile_layer> new_map;
 		
+		//ensure the map is well formed, and patch it up if needed
+		const auto empty_tile = tiles::GetEmptyTile();
+		const auto &empty_terrain = resources::EmptyTerrainId;
+		tiles::TileArray empty_layer{ size, empty_tile };
+		std::size_t i = 0u, j = 0u;
+		while (j < map.terrain_set.size())
+		{
+			const auto &layer = i > map.tile_map_stack.size() ? map.tile_map_stack[i] : empty_layer;
+			const auto terrain = FindTerrain(layer, map.terrain_set);
+			if (terrain->id == empty_terrain)
+				continue;
+
+			if (terrain != map.terrain_set[i])
+			{
+				new_map.emplace_back(map.terrain_set[i], empty_layer);
+				++i;
+			}
+			else
+			{
+				new_map.emplace_back(terrain, layer);
+				++i; ++j;
+			}
+		}
+
+		std::vector<tiles::TileArray> tile_array;
+		for (const auto &arr : new_map)
+			tile_array.emplace_back(std::get<tiles::TileArray>(arr));
+
+		//generate vertex map
+		auto verts = AsTerrainVertex(tile_array, map.terrain_set, width);
+
+		for (const auto &tiles : new_map)
+			_terrain_layers.emplace_back(tiles::MutableTileMap{ {std::get<tiles::TileArray>(tiles), width} });
+
+		std::swap(new_map, _tile_layers);
+		std::swap(verts, _vdata);
+		_width = width;
+
+		//apply colour if it's already been set
+		setColour(_colour);
 	}
 
 	void MutableTerrainMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{	
-		for (const auto &layer : _tile_layers)
-			target.draw(std::get<tiles::TileMap>(layer), states);
+		for (const auto &layer : _terrain_layers)
+			layer.draw(target, states);
 	}
 
 	sf::FloatRect MutableTerrainMap::getLocalBounds() const
 	{
 		std::vector<const tiles::TileMap*> map;
 		for (const auto &layer : _terrain_layers)
-			map.emplace_back(&std::get<tiles::MutableTileMap>(layer));
+			map.emplace_back(&layer);
 
 		return GetBounds(map);
 	}
 
 	void MutableTerrainMap::replace(const resources::terrain *t, const sf::Vector2i &position, tiles::draw_size_t amount)
 	{
+		TerrainMapData map = getMap();
+		ReplaceTerrain(map, _vdata, _width, t, position, amount);
 
+		for (std::size_t i = 0u; i < map.tile_map_stack.size(); ++i)
+		{
+			std::swap(std::get<tiles::TileArray>(_tile_layers[i]), map.tile_map_stack[i]);
+			_terrain_layers[i].update({ map.tile_map_stack[i], _width });
+		}
 	}
 
 	void MutableTerrainMap::setColour(sf::Color c)
@@ -213,11 +309,18 @@ namespace ortho_terrain
 		_colour = c;
 
 		for (auto &l : _terrain_layers)
-			std::get<tiles::MutableTileMap>(l).setColour(c);
+			l.setColour(c);
 	}
 
 	TerrainMapData MutableTerrainMap::getMap() const
 	{
-		return TerrainMapData{};
+		TerrainMapData map;
+		for (const auto &[terrain, tiles] : _tile_layers)
+		{
+			map.terrain_set.emplace_back(terrain);
+			map.tile_map_stack.emplace_back(tiles);
+		}
+
+		return map;
 	}
 }

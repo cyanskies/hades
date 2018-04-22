@@ -52,6 +52,9 @@ namespace tiles
 	std::tuple<hades::types::int32, hades::types::int32> GetGridPosition(hades::types::uint32 tile_number,
 		hades::types::uint32 tiles_per_row, hades::types::uint32 tile_size);
 
+	tile_count_t FlatPosition(const sf::Vector2u &position, tile_count_t width);
+	sf::Vector2u InflatePosition(tile_count_t i, tile_count_t width);
+
 	using vertex_count_t = tile_count_t;
 	vertex_count_t CalculateVertexCount(tile_count_t count);
 
@@ -119,6 +122,7 @@ namespace tiles
 	const resources::tile_settings *GetTileSettings();
 	const TileArray &GetErrorTileset();
 	tile GetErrorTile();
+	tile GetEmptyTile();
 
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount);
 

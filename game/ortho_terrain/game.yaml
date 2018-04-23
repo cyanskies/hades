@@ -30,6 +30,18 @@ terrain:
         position: [0, 0]
         type: normal
         count: 15
+    -
+        name: indev-orange
+        source: tex-indev-orange
+        position: [0, 0]
+        type: normal
+        count: 15
+    -
+        name: indev-green
+        source: tex-indev-green
+        position: [0, 0]
+        type: normal
+        count: 15
 
 terrainsets:
-    indev: [indev-grey]
+    indev: [indev-grey, indev-orange, indev-green]

@@ -38,7 +38,7 @@ namespace ortho_terrain
 		std::vector<tiles::TileArray> tile_map_stack;
 	};
 
-	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size);
+	TerrainMapData ReplaceTerrain(const TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size);
 
 	//thrown by functions in the ortho-terrain namespace
 	//for unrecoverable errors

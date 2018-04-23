@@ -40,7 +40,6 @@ namespace ortho_terrain
 		target.draw(Map);
 		DrawGrid(target);
 		DrawObjects(target);
-
 		DrawPreview(target);
 	}
 
@@ -68,8 +67,7 @@ namespace ortho_terrain
 		{
 			const auto tile_size = TileSettings->tile_size;
 
-			const auto x = std::get<0>(m);
-			const auto y = std::get<1>(m);
+			const auto [x, y] = m;
 
 			auto truePos = t.mapPixelToCoords({ x, y }, GameView);
 			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
@@ -99,13 +97,30 @@ namespace ortho_terrain
 
 	void terrain_editor::OnClick(const sf::RenderTarget &t, MousePos m)
 	{
-		if (Mode() == editor::EditMode::TERRAIN)
+		if (Mode() == editor::EditMode::TERRAIN
+			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
 		{
 			//place the tile in the tile map
-			_map.replace(_terrain, _drawPosition, GetDrawSize());
+			_map.replace(_terrain, _drawPosition, GetDrawSize() - 1);
 		}
 		else
-			object_editor::OnClick(t, m);
+			tile_editor::OnClick(t, m);
+	}
+
+	void terrain_editor::NewLevel()
+	{
+		tile_editor::NewLevel();
+	}
+
+	void terrain_editor::DrawPreview(sf::RenderTarget &target) const
+	{
+		if (Mode() == editor::EditMode::TERRAIN
+			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
+		{
+			target.draw(_preview);
+		}
+		else
+			tile_editor::DrawPreview(target);
 	}
 
 	void terrain_editor::DrawTerrain(sf::RenderTarget &target)

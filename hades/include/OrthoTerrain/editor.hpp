@@ -35,6 +35,8 @@ namespace ortho_terrain
 		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
 		void OnModeChange(EditMode_t t) override;
 		void OnClick(const sf::RenderTarget&, MousePos) override;
+		void NewLevel() override;
+		void DrawPreview(sf::RenderTarget &target) const override;
 
 		void DrawTerrain(sf::RenderTarget &target);
 

@@ -126,7 +126,23 @@ namespace ortho_terrain
 	{
 		const auto flat_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), width);
 		return flat_pos < target_size &&
-			pos.x < width;
+			pos.x < static_cast<int>(width);
+	}
+	
+	TerrainVertex CalculateLayerVertex(const TerrainVertex &verts, const resources::terrain *t, std::vector<const resources::terrain*> friendly)
+	{
+		static const auto empty = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		TerrainVertex v{ verts.size(), empty };
+
+		for (std::size_t i = 0; i < verts.size(); ++i)
+		{
+			const auto terrain = verts[i];
+			if (terrain == t
+				|| std::any_of(std::begin(friendly), std::end(friendly), [terrain](const auto &t) {return terrain == t; }))
+				v[i] = t;
+		}
+
+		return v;
 	}
 
 	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
@@ -151,25 +167,30 @@ namespace ortho_terrain
 		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
 
 		//we only want to update tiles within reach of the vertex changes
-		const auto tile_positions = tiles::AllPositions(pos, size + 1);
+		const auto tile_positions = tiles::AllPositions(pos, size + 2);
 		//then update the tiles based on the new vertex map
 		for (std::size_t i = 0; i < tile_layers.size(); ++i)
 		{
 			auto &layer = tile_layers[i];
 			const auto terrain = map.terrain_set[i];
+			std::vector<const resources::terrain*> terrain_list;
+			std::copy(std::begin(map.terrain_set) + i, std::end(map.terrain_set), std::back_inserter(terrain_list));
 			const auto layer_size = layer.size();
+			const auto layer_verts = CalculateLayerVertex(verts, terrain, terrain_list);
 			for (const auto &pos : tile_positions)
 			{
 				if (!Within(pos, layer.size(), width))
 					continue;
 
-				const auto corners = GetCornerData(static_cast<sf::Vector2u>(pos), verts, vert_width);
+				const auto corners = GetCornerData(static_cast<sf::Vector2u>(pos), layer_verts, vert_width);
 				std::array<bool, 4> empty_corners{ false };
 
 				for (std::size_t k = 0; k < corners.size(); ++k)
 					empty_corners[k] = corners[k] == empty_terrain ? true : false;
 
 				const auto type = PickTransition(empty_corners);
+				if (type == transition2::ALL)
+					continue;
 				const auto tile_list = GetTransitionConst(type, *terrain);
 				const auto tile = RandomTile(tile_list);
 				const auto flat_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), width);

@@ -72,7 +72,7 @@ namespace ortho_terrain
 
 		//a vert array includes a single extra column and row
 		const auto vert_width = VertWidth(width);
-		const auto vert_length = coloumns + 1 * vert_width;
+		const auto vert_length = (coloumns + 1) * vert_width;
 		TerrainVertex verts{ vert_length, empty_terrain };
 		assert(map.size() <= terrainset.size());
 		for (std::size_t i = 0u; i < map.size(); ++i)
@@ -122,6 +122,13 @@ namespace ortho_terrain
 		return nullptr;
 	}
 
+	bool Within(sf::Vector2i pos, std::size_t target_size, tiles::tile_count_t width)
+	{
+		const auto flat_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), width);
+		return flat_pos < target_size &&
+			pos.x < width;
+	}
+
 	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
 	{
 		if (map.terrain_set.size() != map.tile_map_stack.size())
@@ -134,8 +141,11 @@ namespace ortho_terrain
 		//for each position, update the vertex
 		for (const auto &pos : positions)
 		{
-			const auto f_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), vert_width);
-			verts[f_pos] = t;
+			if (Within(pos, verts.size(), vert_width))
+			{
+				const auto f_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), vert_width);
+				verts[f_pos] = t;
+			}
 		}
 
 		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
@@ -150,6 +160,9 @@ namespace ortho_terrain
 			const auto layer_size = layer.size();
 			for (const auto &pos : tile_positions)
 			{
+				if (!Within(pos, layer.size(), width))
+					continue;
+
 				const auto corners = GetCornerData(static_cast<sf::Vector2u>(pos), verts, vert_width);
 				std::array<bool, 4> empty_corners{ false };
 
@@ -234,6 +247,9 @@ namespace ortho_terrain
 			size = std::max(size, layer.size());
 
 		std::vector<tile_layer> new_map;
+
+		if (map.tile_map_stack.size() > map.terrain_set.size())
+			throw exception("terrain map is malformed, contains more tile layers than terrain types");
 		
 		//ensure the map is well formed, and patch it up if needed
 		const auto empty_tile = tiles::GetEmptyTile();
@@ -272,6 +288,44 @@ namespace ortho_terrain
 		std::swap(new_map, _tile_layers);
 		std::swap(verts, _vdata);
 		_width = width;
+
+		//apply colour if it's already been set
+		setColour(_colour);
+	}
+
+	void MutableTerrainMap::create(std::vector<const resources::terrain*> terrainset, tiles::tile_count_t width, tiles::tile_count_t height)
+	{
+		const auto size = width * height;
+
+		//ensure the map is well formed, and patch it up if needed
+		const auto empty_tile = tiles::GetEmptyTile();
+		const auto &empty_terrain = resources::EmptyTerrainId;
+		tiles::TileArray empty_layer{ size, empty_tile };
+		const auto bottom_terrain = terrainset.front();
+		tiles::TileArray bottom_layer{ size, bottom_terrain->full.front() };
+
+		_width = width;
+		std::vector<tiles::TileArray> t_array;
+
+		for (const auto &t : terrainset)
+		{
+			if (t == bottom_terrain)
+			{
+				_tile_layers.emplace_back(t, bottom_layer);
+				t_array.emplace_back(bottom_layer);
+			}
+			else
+			{
+				_tile_layers.emplace_back(t, empty_layer);
+				t_array.emplace_back(empty_layer);
+			}
+		}
+
+		//generate vertex map
+		_vdata = AsTerrainVertex(t_array, terrainset, width);
+
+		for (const auto &tiles : t_array)
+			_terrain_layers.emplace_back(tiles::MutableTileMap{ {tiles, width} });
 
 		//apply colour if it's already been set
 		setColour(_colour);

@@ -54,7 +54,7 @@ namespace ortho_terrain
 		TerrainMap() = default;
 		TerrainMap(const TerrainMapData&, tiles::tile_count_t width);
 
-		virtual void create(const TerrainMapData&, tiles::tile_count_t width);
+		void create(const TerrainMapData&, tiles::tile_count_t width);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
@@ -70,7 +70,10 @@ namespace ortho_terrain
 		MutableTerrainMap() = default;
 		MutableTerrainMap(const TerrainMapData&, tiles::tile_count_t width);
 
+		//loads a map
 		void create(const TerrainMapData&, tiles::tile_count_t width);
+		//creates a new black map with the specified settings
+		void create(std::vector<const resources::terrain*> tset, tiles::tile_count_t width, tiles::tile_count_t height);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 

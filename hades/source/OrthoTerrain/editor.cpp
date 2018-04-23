@@ -21,8 +21,27 @@ namespace ortho_terrain
 		const auto terrainset = hades::data::Get<resources::terrainset>(terrainset_id);
 
 		Terrainset(terrainset);
-		
+
 		tile_editor::init();
+
+		const auto width = MapSize.x / TileSettings->tile_size;
+		const auto height = MapSize.y / TileSettings->tile_size;
+		const auto tile_length = width * height;
+		const auto empty_tile = tiles::GetEmptyTile();
+		tiles::TileArray tiles{ tile_length, empty_tile };
+		_map.create(_terrainset->terrains, width, height);
+	}
+
+	void terrain_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
+	{
+		target.setView(GameView);
+		DrawBackground(target);
+		DrawTerrain(target);
+		target.draw(Map);
+		DrawGrid(target);
+		DrawObjects(target);
+
+		DrawPreview(target);
 	}
 
 	void terrain_editor::FillToolBar(AddToggleButtonFunc toggle, AddButtonFunc button, AddSeperatorFunc seperator)
@@ -34,6 +53,64 @@ namespace ortho_terrain
 		button("terrain", [this] {
 			_enterTerrainMode();
 		}, nullptr);
+
+		button("erase terrain", [this] {
+			_enterTerrainMode();
+			static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+			_setCurrentTerrain(empty_terrain);
+		}, nullptr);
+	}
+
+	void terrain_editor::GenerateDrawPreview(const sf::RenderTarget &t, MousePos m)
+	{
+		if (Mode() == editor::EditMode::TERRAIN 
+			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
+		{
+			const auto tile_size = TileSettings->tile_size;
+
+			const auto x = std::get<0>(m);
+			const auto y = std::get<1>(m);
+
+			auto truePos = t.mapPixelToCoords({ x, y }, GameView);
+			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
+
+			auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
+				static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
+			auto position = sf::Vector2i(snapPos) / static_cast<int>(tile_size);
+			if (_drawPosition != position)
+			{
+				_drawPosition = position;
+				_preview = _map;
+				_preview.setColour(sf::Color::Transparent);
+				_preview.replace(_terrain, _drawPosition, GetDrawSize());
+			}
+		}
+
+		tile_editor::GenerateDrawPreview(t, m);
+	}
+
+	void terrain_editor::OnModeChange(EditMode_t t)
+	{
+		if (t != editor::EditMode::TERRAIN)
+			_terrainWindow = nullptr;
+
+		tile_editor::OnModeChange(t);
+	}
+
+	void terrain_editor::OnClick(const sf::RenderTarget &t, MousePos m)
+	{
+		if (Mode() == editor::EditMode::TERRAIN)
+		{
+			//place the tile in the tile map
+			_map.replace(_terrain, _drawPosition, GetDrawSize());
+		}
+		else
+			object_editor::OnClick(t, m);
+	}
+
+	void terrain_editor::DrawTerrain(sf::RenderTarget &target)
+	{
+		target.draw(_map);
 	}
 
 	void terrain_editor::Terrainset(const resources::terrainset *t)
@@ -119,8 +196,9 @@ namespace ortho_terrain
 		}
 	}
 
-	void terrain_editor::_setCurrentTerrain(const resources::terrain*)
+	void terrain_editor::_setCurrentTerrain(const resources::terrain *t)
 	{
-
+		_terrain = t;
+		_terrainMode = editor::TerrainEditMode::TERRAIN;
 	}
 }

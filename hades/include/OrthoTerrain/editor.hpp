@@ -7,6 +7,7 @@
 #include "Tiles/editor.hpp"
 
 #include "OrthoTerrain/resources.hpp"
+#include "OrthoTerrain/terrain.hpp"
 
 namespace ortho_terrain
 {
@@ -27,9 +28,15 @@ namespace ortho_terrain
 	{
 	public:
 		void init() override;
+		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 
 	protected:
 		void FillToolBar(AddToggleButtonFunc, AddButtonFunc, AddSeperatorFunc) override;
+		void GenerateDrawPreview(const sf::RenderTarget&, MousePos) override;
+		void OnModeChange(EditMode_t t) override;
+		void OnClick(const sf::RenderTarget&, MousePos) override;
+
+		void DrawTerrain(sf::RenderTarget &target);
 
 		void Terrainset(const resources::terrainset*);
 		
@@ -39,8 +46,13 @@ namespace ortho_terrain
 		void _addTerrain(const std::vector<const resources::terrain*> &terrain);
 		void _setCurrentTerrain(const resources::terrain*);
 
-		const resources::terrainset *_terrainset;
+		const resources::terrain *_terrain = nullptr;
+		const resources::terrainset *_terrainset = nullptr;
 		editor::TerrainEditMode _terrainMode = editor::TerrainEditMode::NONE;
+
+		sf::Vector2i _drawPosition;
+		MutableTerrainMap _map;
+		MutableTerrainMap _preview;
 
 		sfg::Box::Ptr _terrainWindow = nullptr;
 	};

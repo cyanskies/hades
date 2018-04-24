@@ -161,83 +161,77 @@ namespace ortho_terrain
 		}
 	}
 
-	std::size_t TileMapSizeFromVertex(std::size_t vertex_size, std::size_t vertex_width)
-	{
-		const auto height = vertex_size / vertex_width;
-		return (height-1) * (vertex_width-1);
-	}
-
-	tiles::TileArray TileArrayFromVertex(const TerrainVertex &verts, tiles::tile_count_t vertex_width, std::vector<const resources::terrain*> t_list)
+	void UpdateArray(tiles::TileArray &arr, const TerrainVertex &verts, tiles::tile_count_t vertex_width,
+		std::vector<const resources::terrain*> t_list, sf::Vector2i pos, tiles::draw_size_t size)
 	{
 		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
 		static const auto empty_tile = tiles::GetEmptyTile();
-		//calculate map size
-		const auto map_size = TileMapSizeFromVertex(verts.size(), vertex_width);
-
-		tiles::TileArray arr{ map_size, empty_tile };
-		const auto coloumns = arr.size() / map_size;
-		const auto w = vertex_width - 1;
-		for (std::size_t y = 0; y < coloumns; ++y)
+		
+		//for each of the positions that have been updated
+		const auto positions = tiles::AllPositions(pos, size);
+		for (const auto &pos : positions)
 		{
-			for (std::size_t x = 0; x < w - 1; ++x)
+			//ensure the position is within the limits of the map
+			if (!Within(static_cast<sf::Vector2u>(pos), arr.size(), vertex_width - 1))
+				continue;
+
+			//get the terrain in each corner of this tile
+			const auto corners = GetCornerData(static_cast<sf::Vector2u>(pos), verts, vertex_width);
+			const auto flat_pos = tiles::FlatPosition(static_cast<sf::Vector2u>(pos), vertex_width - 1);
+
+			//if none of the corners are the current layers terrain, then just dump an empty
+			if (std::none_of(std::begin(corners), std::end(corners), [t = t_list.front()](const auto &terrain)
 			{
-				if (!Within({ x, y }, arr.size(), w))
-					continue;
+				return t == terrain;
+			}))
+			{
+				arr[flat_pos] = empty_tile;
+			}
 
-				const auto corners = GetCornerData({ x, y }, verts, vertex_width);
-				std::array<bool, 4> empty_corners{ false };
-
-				for (std::size_t k = 0; k < corners.size(); ++k)
-				{
-					const auto found = std::any_of(std::begin(t_list), std::end(t_list),
-						[t = corners[k]](const auto terrain) {
-						return terrain == t;
-					});
+			//build a bool array of empty corners, we use this to pick the transition tile
+			std::array<bool, 4> empty_corners{ false };
+			for (std::size_t k = 0; k < corners.size(); ++k)
+			{
+				const auto found = std::any_of(std::begin(t_list), std::end(t_list),
+					[t = corners[k]](const auto terrain) {
+					return terrain == t;
+				});
 					
-					empty_corners[k] = !found;
-				}
+				empty_corners[k] = !found;
+			}
 
-				const auto flat_pos = tiles::FlatPosition({ x, y }, w);
-
-				const auto type = PickTransition(empty_corners);
-				if (type == transition2::ALL)
-					arr[flat_pos] = empty_tile;
-				else
-				{
-					const auto tile_list = GetTransitionConst(type, *t_list.front());
-					const auto tile = RandomTile(tile_list);
-					arr[flat_pos] = tile;
-				}
+			//apply the correct transition
+			const auto type = PickTransition(empty_corners);
+			//if every corner is empty, then place an empty tile
+			if (type == transition2::ALL)
+				arr[flat_pos] = empty_tile;
+			else
+			{
+				//apply the selected transition
+				const auto tile_list = GetTransitionConst(type, *t_list.front());
+				const auto tile = RandomTile(tile_list);
+				arr[flat_pos] = tile;
 			}
 		}
-
-		return arr;
 	}
 
-	std::vector<tiles::TileArray> TilesFromVertex(const TerrainVertex &verts, tiles::tile_count_t vertex_width, std::vector<const resources::terrain*> terrainset)
+	void UpdateTileArrays(TerrainMapData &map, const TerrainVertex &verts, tiles::tile_count_t vertex_width,
+		std::vector<const resources::terrain*> terrainset, sf::Vector2i pos, tiles::draw_size_t size)
 	{
-		std::vector<tiles::TileArray> arrays;
 		for (std::size_t i = 0; i < terrainset.size(); ++i)
 		{
 			std::vector<const resources::terrain*> terrain_list;
 			std::copy(std::begin(terrainset) + i, std::end(terrainset), std::back_inserter(terrain_list));
-			const auto tile_array = TileArrayFromVertex(verts, vertex_width, terrain_list);
-			arrays.emplace_back(tile_array);
+			UpdateArray(map.tile_map_stack[i], verts, vertex_width, terrain_list, pos, size);
 		}
-
-		return arrays;
 	}
 
-	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
+	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width,
+		const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
 	{
 		ReplaceVertexes(verts, width, t, pos, size);
 		const auto v_width = VertWidth(width);
-		const auto tile_arrays = TilesFromVertex(verts, v_width, map.terrain_set);
-		assert(!tile_arrays.empty());
-		assert(!map.tile_map_stack.empty());
-		assert(map.tile_map_stack.front().size() == tile_arrays.front().size());
-
-		map.tile_map_stack = tile_arrays;
+		UpdateTileArrays(map, verts, v_width, map.terrain_set, pos, size);
 	}
 
 	////////////////
@@ -415,8 +409,8 @@ namespace ortho_terrain
 
 		for (std::size_t i = 0u; i < map.tile_map_stack.size(); ++i)
 		{
-			std::swap(std::get<tiles::TileArray>(_tile_layers[i]), map.tile_map_stack[i]);
 			_terrain_layers[i].update({ map.tile_map_stack[i], _width });
+			std::swap(std::get<tiles::TileArray>(_tile_layers[i]), map.tile_map_stack[i]);
 		}
 	}
 

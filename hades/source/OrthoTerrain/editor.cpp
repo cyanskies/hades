@@ -23,13 +23,6 @@ namespace ortho_terrain
 		Terrainset(terrainset);
 
 		tile_editor::init();
-
-		const auto width = MapSize.x / TileSettings->tile_size;
-		const auto height = MapSize.y / TileSettings->tile_size;
-		const auto tile_length = width * height;
-		const auto empty_tile = tiles::GetEmptyTile();
-		tiles::TileArray tiles{ tile_length, empty_tile };
-		_map.create(_terrainset->terrains, width, height);
 	}
 
 	void terrain_editor::draw(sf::RenderTarget &target, sf::Time deltaTime)
@@ -62,7 +55,7 @@ namespace ortho_terrain
 
 	void terrain_editor::GenerateDrawPreview(const sf::RenderTarget &t, MousePos m)
 	{
-		if (Mode() == editor::EditMode::TERRAIN 
+		if (Mode() == editor::EditMode::TERRAIN
 			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
 		{
 			const auto tile_size = TileSettings->tile_size;
@@ -80,7 +73,7 @@ namespace ortho_terrain
 				_drawPosition = position;
 				_preview = _map;
 				_preview.setColour(sf::Color::Transparent);
-				_preview.replace(_terrain, _drawPosition, GetDrawSize());
+				_preview.replace(_terrain, _drawPosition, GetDrawSize() - 1);
 			}
 		}
 
@@ -110,6 +103,10 @@ namespace ortho_terrain
 	void terrain_editor::NewLevel()
 	{
 		tile_editor::NewLevel();
+
+		const auto width = MapSize.x / TileSettings->tile_size;
+		const auto height = MapSize.y / TileSettings->tile_size;
+		_map.create(_terrainset->terrains, width, height);
 	}
 
 	void terrain_editor::DrawPreview(sf::RenderTarget &target) const

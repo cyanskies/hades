@@ -65,15 +65,15 @@ namespace ortho_terrain
 			auto truePos = t.mapPixelToCoords({ x, y }, GameView);
 			truePos += {static_cast<float>(tile_size), static_cast<float>(tile_size)};
 
-			auto snapPos = truePos - sf::Vector2f(static_cast<float>(std::abs(std::fmod(truePos.x, tile_size))),
-				static_cast<float>(std::abs((std::fmod(truePos.y, tile_size)))));
-			auto position = sf::Vector2i(snapPos) / static_cast<int>(tile_size);
-			if (_drawPosition != position)
+			auto vertPos = static_cast<sf::Vector2i>(
+				sf::Vector2f{ std::round(truePos.x / tile_size), std::round(truePos.y / tile_size) });
+
+			if (_drawPosition != vertPos)
 			{
-				_drawPosition = position;
+				_drawPosition = vertPos;
 				_preview = _map;
 				_preview.setColour(sf::Color::Transparent);
-				_preview.replace(_terrain, _drawPosition, GetDrawSize() - 1);
+				_preview.replace(_terrain, _drawPosition, GetDrawSize());
 			}
 		}
 
@@ -94,7 +94,7 @@ namespace ortho_terrain
 			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
 		{
 			//place the tile in the tile map
-			_map.replace(_terrain, _drawPosition, GetDrawSize() - 1);
+			_map.replace(_terrain, _drawPosition, GetDrawSize());
 		}
 		else
 			tile_editor::OnClick(t, m);

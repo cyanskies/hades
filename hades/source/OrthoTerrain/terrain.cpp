@@ -175,7 +175,7 @@ namespace ortho_terrain
 		static const auto empty_tile = tiles::GetEmptyTile();
 		
 		//for each of the positions that have been updated
-		const auto positions = tiles::AllPositions(pos, size);
+		const auto positions = tiles::AllPositions(pos, size + 1);
 		for (const auto &pos : positions)
 		{
 			//ensure the position is within the limits of the map
@@ -237,9 +237,9 @@ namespace ortho_terrain
 	void ReplaceTerrain(TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width,
 		const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size)
 	{
-		ReplaceVertexes(verts, width, t, pos, size);
+		ReplaceVertexes(verts, width, t, pos, size );
 		const auto v_width = VertWidth(width);
-		UpdateTileArrays(map, verts, v_width, map.terrain_set, pos, size);
+		UpdateTileArrays(map, verts, v_width, map.terrain_set, pos, size + 1);
 	}
 
 	////////////////

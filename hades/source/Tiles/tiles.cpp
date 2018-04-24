@@ -374,9 +374,9 @@ namespace tiles
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount)
 	{
 		if (amount == 0)
-			return { sf::Vector2i(position) };
+			return { position };
 
-		const auto end = sf::Vector2i(position) +
+		const auto end = position +
 			static_cast<sf::Vector2i>(sf::Vector2f{ std::floor(amount / 2.f), std::floor(amount / 2.f) });
 		const auto start_position = sf::Vector2i(position) -
 			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceil(amount / 2.f), std::ceil(amount / 2.f) });

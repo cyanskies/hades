@@ -38,18 +38,25 @@ namespace ortho_terrain
 
 	std::vector<const resources::terrain*> &CalculateVertexLayer(const tiles::TileArray &layer, TerrainVertex &out, const resources::terrain *terrain, tiles::tile_count_t width)
 	{
+		const auto tile_width = width - 1;
 		for (std::size_t i = 0u; i < layer.size(); ++i)
 		{
 			const auto corners = TerrainInCorner(layer[i], terrain);
 
+			const auto t_x = i % tile_width;
+			const auto t_y = i / tile_width;
+
+			const auto tl = tiles::FlatPosition({t_x, t_y}, width);
+			const auto bl = tiles::FlatPosition({ t_x, t_y + 1 }, width);
+
 			if (corners[0])
-				out[i] = terrain;
+				out[tl] = terrain;
 			if (corners[1])
-				out[i + 1] = terrain;
+				out[tl + 1] = terrain;
 			if (corners[2])
-				out[i + width] = terrain;
+				out[bl] = terrain;
 			if (corners[3])
-				out[i + width + 1] = terrain;
+				out[bl + 1] = terrain;
 		}
 
 		return out;
@@ -76,7 +83,7 @@ namespace ortho_terrain
 		TerrainVertex verts{ vert_length, empty_terrain };
 		assert(map.size() <= terrainset.size());
 		for (std::size_t i = 0u; i < map.size(); ++i)
-			CalculateVertexLayer(map[i], verts, terrainset[i], width);
+			CalculateVertexLayer(map[i], verts, terrainset[i], vert_width);
 
 		return verts;
 	}
@@ -186,6 +193,7 @@ namespace ortho_terrain
 			}))
 			{
 				arr[flat_pos] = empty_tile;
+				continue;
 			}
 
 			//build a bool array of empty corners, we use this to pick the transition tile
@@ -351,6 +359,11 @@ namespace ortho_terrain
 
 	void MutableTerrainMap::create(std::vector<const resources::terrain*> terrainset, tiles::tile_count_t width, tiles::tile_count_t height)
 	{
+		_terrain_layers.clear();
+		_tile_layers.clear();
+		_colour = sf::Color::White;
+		_vdata.clear();
+
 		const auto size = width * height;
 
 		//ensure the map is well formed, and patch it up if needed
@@ -379,6 +392,10 @@ namespace ortho_terrain
 
 		//generate vertex map
 		_vdata = AsTerrainVertex(t_array, terrainset, width);
+		assert(std::all_of(std::begin(_vdata), std::end(_vdata), [t=terrainset.front()](const auto &terrain)
+		{
+			return t == terrain; }
+		));
 
 		for (const auto &tiles : t_array)
 			_terrain_layers.emplace_back(tiles::MutableTileMap{ {tiles, width} });

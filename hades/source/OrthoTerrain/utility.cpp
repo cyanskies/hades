@@ -56,6 +56,7 @@ namespace ortho_terrain
 		//top right
 		const auto tr_pos = tl_pos + 1;
 		//bottom left
+		++pos.y;
 		const auto bl_pos = tiles::FlatPosition(pos, width);
 		//bottom right
 		const auto br_pos = bl_pos + 1;
@@ -73,13 +74,13 @@ namespace ortho_terrain
 		using transition2::TransitionTypes;
 		hades::types::uint8 type = 0u;
 
-		if (corners[0])
+		if (!corners[0])
 			type += 8u;
-		if (corners[1])
+		if (!corners[1])
 			type += 1u;
-		if (corners[2])
+		if (!corners[2])
 			type += 4u;
-		if (corners[3])
+		if (!corners[3])
 			type += 2u;
 
 		return static_cast<TransitionTypes>(type);

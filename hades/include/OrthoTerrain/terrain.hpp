@@ -97,10 +97,21 @@ namespace ortho_terrain
 		TerrainVertex _vdata;
 	};
 
+	struct terrain_layer
+	{
+		std::vector<tiles::tile_layer> tile_layers;
+		std::vector<hades::types::string> terrainset;
+	};
+
 	struct level : public tiles::level
 	{
-		TerrainMapData terrain;
+		terrain_layer terrain;
 	};
+
+	//reads terrain from the yaml node and stores it in target
+	void ReadTerrainFromYaml(const YAML::Node&, level &target);
+	//does the reverse of the above function
+	YAML::Emitter &WriteTerrainToYaml(const level&, YAML::Emitter &);
 }
 
 #endif // !ORTHO_TERRAIN_HPP

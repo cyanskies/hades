@@ -126,7 +126,7 @@ namespace tiles
 
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount);
 
-	struct level : public objects::level
+	struct tile_layer
 	{
 		//tilesets
 		std::vector<std::tuple<hades::types::string, tile_count_t>> tilesets;
@@ -134,9 +134,15 @@ namespace tiles
 		std::vector<tile_count_t> tiles;
 	};
 
+	struct level : public objects::level
+	{
+		tile_layer tiles;
+	};
+
 	//reads tiles from the yaml node and stores it in target
 	void ReadTilesFromYaml(const YAML::Node&, level &target);
 	//does the reverse of the above function
+	YAML::Emitter &WriteTileLayerToYaml(const tile_layer &l, YAML::Emitter &e);
 	YAML::Emitter &WriteTilesToYaml(const level&, YAML::Emitter &);
 }
 

@@ -2,12 +2,13 @@
 
 #include "SFGUI/Widgets.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include "Hades/Data.hpp"
+#include "Hades/files.hpp"
 
 namespace ortho_terrain
 {
-	//TODO: reuse tile draw size, the eraser tool from tiles
-
 	void terrain_editor::init()
 	{
 		if (resources::TerrainSets.empty())
@@ -94,10 +95,17 @@ namespace ortho_terrain
 			&& _terrainMode == editor::TerrainEditMode::TERRAIN)
 		{
 			//place the tile in the tile map
+
 			_map.replace(_terrain, _drawPosition, GetDrawSize());
 		}
 		else
 			tile_editor::OnClick(t, m);
+	}
+
+	void terrain_editor::NewLevelDialog()
+	{
+		//TODO:
+		tile_editor::NewLevelDialog();
 	}
 
 	void terrain_editor::NewLevel()
@@ -107,6 +115,51 @@ namespace ortho_terrain
 		const auto width = MapSize.x / TileSettings->tile_size;
 		const auto height = MapSize.y / TileSettings->tile_size;
 		_map.create(_terrainset->terrains, width, height);
+	}
+
+	void terrain_editor::SaveLevel() const
+	{
+		level l;
+		SaveObjects(l);
+		SaveTiles(l);
+		SaveTerrain(l);
+
+		YAML::Emitter e;
+		e << YAML::BeginMap;
+		objects::WriteObjectsToYaml(l, e);
+		tiles::WriteTilesToYaml(l, e);
+		WriteTerrainToYaml(l, e);
+		e << YAML::EndMap;
+
+		const auto path = Mod + '/' + Filename;
+		hades::files::write_file(path, e.c_str());
+	}
+
+	void terrain_editor::LoadLevel()
+	{
+		auto level_str = hades::files::as_string(Mod, Filename);
+		auto level_yaml = YAML::Load(level_str);
+
+		level lvl;
+		objects::ReadObjectsFromYaml(level_yaml, lvl);
+		ReadTilesFromYaml(level_yaml, lvl);
+		ReadTerrainFromYaml(level_yaml, lvl);
+
+		LoadObjects(lvl);
+		LoadTiles(lvl);
+		LoadTerrain(lvl);
+
+		reinit();
+	}
+
+	void terrain_editor::SaveTerrain(level &l) const
+	{
+
+	}
+
+	void terrain_editor::LoadTerrain(const level &l)
+	{
+
 	}
 
 	void terrain_editor::DrawPreview(sf::RenderTarget &target) const

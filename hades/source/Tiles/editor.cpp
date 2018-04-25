@@ -177,12 +177,12 @@ namespace tiles
 			const auto id = std::get<hades::UniqueId>(tset);
 			const auto name = hades::data::GetAsString(id);
 			const auto first_tid = std::get<tile_count_t>(tset);
-			l.tilesets.push_back({ name, first_tid });
+			l.tiles.tilesets.push_back({ name, first_tid });
 		}
 
 		using tile_array = std::vector<tile_count_t>;
 		const auto &tiles = std::get<tile_array>(map);
-		l.tiles = tiles;
+		l.tiles.tiles = tiles;
 
 		//level editor shouldn't be able to produce an invalid map width
 		using map_width_t = tile_count_t;
@@ -199,7 +199,7 @@ namespace tiles
 		const auto width = l.map_x / TileSettings->tile_size;
 
 		std::vector<TileSetInfo> tilesets;
-		for (const auto &tset : l.tilesets)
+		for (const auto &tset : l.tiles.tilesets)
 		{
 			const auto name = std::get<hades::types::string>(tset);
 			const auto id = hades::data::GetUid(name);
@@ -208,7 +208,7 @@ namespace tiles
 			tilesets.push_back({ id, first_tid });
 		}
 
-		const auto map = as_mapdata({ tilesets, l.tiles, width });
+		const auto map = as_mapdata({ tilesets, l.tiles.tiles, width });
 		Map.create(map);
 	}
 

@@ -659,7 +659,7 @@ namespace tiles
 				const auto first_id = tset[1];
 				const auto id = first_id.as<tile_count_t>();
 
-				target.tilesets.push_back({ name_str, id });
+				target.tiles.tilesets.push_back({ name_str, id });
 			}
 		}
 
@@ -668,16 +668,13 @@ namespace tiles
 		if (map_node.IsDefined() && map_node.IsSequence())
 		{
 			for (const auto tile : map_node)
-				target.tiles.push_back(tile.as<tile_count_t>());
+				target.tiles.tiles.push_back(tile.as<tile_count_t>());
 		}
 	}
 
-	YAML::Emitter &WriteTilesToYaml(const level &l, YAML::Emitter &e)
+	YAML::Emitter &WriteTileLayerToYaml(const tile_layer &l, YAML::Emitter &e)
 	{
-		//write tiles
-		e << YAML::Key << tiles;
-		e << YAML::Value << YAML::BeginMap;
-		
+		e << YAML::BeginMap;
 		if (!l.tilesets.empty())
 		{
 			e << YAML::Key << tilesets;
@@ -703,6 +700,17 @@ namespace tiles
 		}
 
 		e << YAML::EndMap;
+
+		return e;
+	}
+
+	YAML::Emitter &WriteTilesToYaml(const level &l, YAML::Emitter &e)
+	{
+		//write tiles
+		e << YAML::Key << tiles;
+		e << YAML::Value;
+		
+		WriteTileLayerToYaml(l.tiles, e);
 
 		return e;
 	}

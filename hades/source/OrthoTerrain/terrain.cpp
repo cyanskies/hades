@@ -4,6 +4,8 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include "Hades/Data.hpp"
 #include "Hades/Utility.hpp"
 
@@ -449,5 +451,42 @@ namespace ortho_terrain
 		}
 
 		return map;
+	}
+
+	constexpr auto terrain_yaml = "terain";
+	constexpr auto tile_yaml = "tile-layers";
+	constexpr auto terrainset_yaml = "terrainset";
+	
+	void ReadTerrainFromYaml(const YAML::Node&, level &target)
+	{
+
+	}
+
+	YAML::Emitter &WriteTerrainToYaml(const level &l, YAML::Emitter &e)
+	{
+		e << YAML::Key << terrain_yaml;
+		e << YAML::Value << YAML::BeginMap;
+		
+		//write terrains
+		e << YAML::Key << terrainset_yaml;
+		e << YAML::Value << YAML::Flow;
+		e << YAML::BeginSeq;
+
+		for (const auto &t : l.terrain.terrainset)
+			e << t;
+
+		e << YAML::EndSeq;
+
+		//write each tile layer
+		e << YAML::Key << tile_yaml;
+		e << YAML::Value << YAML::BeginSeq;
+
+		for (const auto &layer : l.terrain.tile_layers)
+			tiles::WriteTileLayerToYaml(layer, e);
+		
+		e << YAML::EndSeq;
+
+		e << YAML::EndMap;
+		return e;
 	}
 }

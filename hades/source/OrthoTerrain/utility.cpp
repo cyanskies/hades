@@ -122,7 +122,7 @@ namespace ortho_terrain
 
 		switch (type)
 		{
-		case NONE:
+		case ALL:
 			return transitions.full;
 		case TOP_RIGHT:
 			return transitions.top_right_corner;

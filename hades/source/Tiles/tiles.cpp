@@ -369,6 +369,8 @@ namespace tiles
 			if(tiles[i] != _tiles[i])
 				_updateTile(InflatePosition(i, width), tiles[i]);
 		}
+
+		_tiles = tiles;
 	}
 
 	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount)

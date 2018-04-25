@@ -66,8 +66,8 @@ namespace ortho_terrain
 			tile_size_t count = 0;
 			for (auto &t : tiles)
 			{
-				if (t <= transition2::TransitionTypes::TRANSITION_BEGIN ||
-					t >= transition2::TransitionTypes::ALL)
+				if (t <= transition2::TransitionTypes::NONE ||
+					t >= transition2::TransitionTypes::TRANSITION_END)
 					continue;
 
 				const auto [left, top] = tiles::GetGridPosition(count++, columns, tile_size);
@@ -143,10 +143,10 @@ namespace ortho_terrain
 			using namespace transition2;
 
 			//normal warcraft 3 layout
-			constexpr std::array<transition2::TransitionTypes, set_count> normal{ NONE, BOTTOM_RIGHT, BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
+			constexpr std::array<transition2::TransitionTypes, set_count> normal{ ALL, BOTTOM_RIGHT, BOTTOM_LEFT, BOTTOM_LEFT_RIGHT,
 				TOP_RIGHT, TOP_RIGHT_BOTTOM_RIGHT, TOP_RIGHT_BOTTOM_LEFT, TOP_RIGHT_BOTTOM_LEFT_RIGHT,
 				TOP_LEFT, TOP_LEFT_BOTTOM_RIGHT, TOP_LEFT_BOTTOM_LEFT, TOP_LEFT_BOTTOM_LEFT_RIGHT,
-				TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT, NONE };
+				TOP_LEFT_RIGHT, TOP_LEFT_RIGHT_BOTTOM_RIGHT, TOP_LEFT_RIGHT_BOTTOM_LEFT, ALL };
 
 			constexpr auto resource_type = "terrain";
 			constexpr auto position = "position";

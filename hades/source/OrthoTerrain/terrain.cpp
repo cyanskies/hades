@@ -211,7 +211,7 @@ namespace ortho_terrain
 			//apply the correct transition
 			const auto type = PickTransition(empty_corners);
 			//if every corner is empty, then place an empty tile
-			if (type == transition2::ALL)
+			if (type == transition2::NONE)
 				arr[flat_pos] = empty_tile;
 			else
 			{

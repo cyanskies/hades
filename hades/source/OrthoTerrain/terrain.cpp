@@ -453,6 +453,15 @@ namespace ortho_terrain
 		return map;
 	}
 
+	TerrainMapData as_terraindata(const terrain_layer &l)
+	{
+		return TerrainMapData{};
+	}
+	terrain_layer as_terrain_layer(const TerrainMapData &m)
+	{
+		return terrain_layer{};
+	}
+
 	constexpr auto terrain_yaml = "terain";
 	constexpr auto tile_yaml = "tile-layers";
 	constexpr auto terrainset_yaml = "terrainset";

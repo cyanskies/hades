@@ -627,20 +627,12 @@ namespace tiles
 	constexpr auto tilesets = "tilesets";
 	constexpr auto map = "map";
 
-	void ReadTilesFromYaml(const YAML::Node &n, level &target)
+	void ReadTileLayerFromYaml(const YAML::Node &t, tile_layer &target)
 	{
-		//level root
-		//
-		//tiles:
-		//    tilesets:
-		//        - [name, gid]
-		//    map: [1,2,3,4...]
-		//    width: 1
-
-		const auto t = n[tiles];
-
-		if (!t.IsDefined() || !t.IsMap())
-			return;
+		// tilesets:
+		//     - [name, gid]
+		// map: [1,2,3,4...]
+		// width: 1
 
 		//tilesets
 		const auto tilesets_node = t[tilesets];
@@ -659,7 +651,7 @@ namespace tiles
 				const auto first_id = tset[1];
 				const auto id = first_id.as<tile_count_t>();
 
-				target.tiles.tilesets.push_back({ name_str, id });
+				target.tilesets.push_back({ name_str, id });
 			}
 		}
 
@@ -668,8 +660,26 @@ namespace tiles
 		if (map_node.IsDefined() && map_node.IsSequence())
 		{
 			for (const auto tile : map_node)
-				target.tiles.tiles.push_back(tile.as<tile_count_t>());
+				target.tiles.push_back(tile.as<tile_count_t>());
 		}
+	}
+
+	void ReadTilesFromYaml(const YAML::Node &n, level &target)
+	{
+		//level root
+		//
+		//tiles:
+		//    tilesets:
+		//        - [name, gid]
+		//    map: [1,2,3,4...]
+		//    width: 1
+
+		const auto t = n[tiles];
+
+		if (!t.IsDefined() || !t.IsMap())
+			return;
+
+		ReadTileLayerFromYaml(t, target.tiles);
 	}
 
 	YAML::Emitter &WriteTileLayerToYaml(const tile_layer &l, YAML::Emitter &e)

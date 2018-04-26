@@ -140,6 +140,7 @@ namespace tiles
 	};
 
 	//reads tiles from the yaml node and stores it in target
+	void ReadTileLayerFromYaml(const YAML::Node &n, tile_layer &target);
 	void ReadTilesFromYaml(const YAML::Node&, level &target);
 	//does the reverse of the above function
 	YAML::Emitter &WriteTileLayerToYaml(const tile_layer &l, YAML::Emitter &e);

@@ -457,9 +457,42 @@ namespace ortho_terrain
 	constexpr auto tile_yaml = "tile-layers";
 	constexpr auto terrainset_yaml = "terrainset";
 	
-	void ReadTerrainFromYaml(const YAML::Node&, level &target)
+	void ReadTerrainFromYaml(const YAML::Node &n, level &target)
 	{
+		//level root:
+		//    terrain:
+		//        terrainset: [t1, t2, t3, t4 ,t5]
+		//        tile-layers:
+		//            //tile_later layout
 
+		const auto terrain_n = n[terrain_yaml];
+
+		//TODO: add error logging here
+		if (terrain_n.IsDefined() || !terrain_n.IsMap())
+			return;
+
+		const auto terrainset_n = terrain_n[terrainset_yaml];
+		if (!terrainset_n.IsDefined() || !terrainset_n.IsSequence)
+			return;
+
+		std::vector<hades::types::string> terrains;
+
+		for (const auto &t : terrainset_n)
+			terrains.emplace_back(t.as<hades::types::string>());
+
+		std::vector<tiles::tile_layer> layers;
+		const auto tile_layers = terrain_n[tile_yaml];
+		if (!tile_layers.IsDefined() || !tile_layers.IsSequence())
+			return;
+
+		for (const auto &l : tile_layers)
+		{
+			tiles::tile_layer t;
+			tiles::ReadTileLayerFromYaml(l, t);
+			layers.emplace_back(t);
+		}
+
+		target.terrain = terrain_layer{ layers, terrains };
 	}
 
 	YAML::Emitter &WriteTerrainToYaml(const level &l, YAML::Emitter &e)

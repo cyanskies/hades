@@ -13,6 +13,8 @@ namespace tiles
 	using tile_size_t = hades::resources::texture::size_type;
 	using traits_list = std::vector<hades::data::UniqueId>;
 
+	constexpr auto empty_tileset_name = "tileset-empty";
+
 	//data needed to render and interact with a tile
 	//TODO: investigate storing the actual tex pointer here?
 	struct tile

@@ -39,8 +39,8 @@ namespace ortho_terrain
 		void NewLevelDialog() override;
 		void NewLevel() override;
 
-		void SaveLevel() const;
-		void LoadLevel();
+		void SaveLevel() const override;
+		void LoadLevel() override;
 
 		void SaveTerrain(level &l) const;
 		void LoadTerrain(const level &l);

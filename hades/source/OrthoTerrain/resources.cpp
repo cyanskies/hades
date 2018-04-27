@@ -21,6 +21,12 @@ namespace ortho_terrain
 		void ParseTerrainSet(UniqueId, const YAML::Node&, data_manager*);
 	}
 
+	void CreateEmptyTerrain(hades::data::data_system *data)
+	{
+		resources::EmptyTerrainId = data->getUid(tiles::empty_tileset_name);
+		hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
+	}
+
 	void RegisterOrthoTerrainResources(hades::data::data_system* data)
 	{
 		//we need the tile resources registered
@@ -29,10 +35,8 @@ namespace ortho_terrain
 		data->register_resource_type("terrain", resources::ParseTerrain);
 		data->register_resource_type("terrainsets", resources::ParseTerrainSet);
 
-		//create an empty terrain type, and insert a general empty tile as every transition type
-		resources::EmptyTerrainId = UniqueId{};
-		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
 		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::data_manager::no_load);
+		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
 		const tiles::tile empty_tile{ empty_t_tex, 0, 0 };
 		ApplyToTerrain(*empty_terrain, [empty_tile](auto &&vec) {
 			vec.emplace_back(empty_tile);
@@ -151,6 +155,8 @@ namespace ortho_terrain
 			constexpr auto resource_type = "terrain";
 			constexpr auto position = "position";
 
+			std::vector<hades::UniqueId> tilesets;
+
 			for (const auto &terrain : node)
 			{
 				//get the terrains name
@@ -258,7 +264,16 @@ namespace ortho_terrain
 					for (auto &t : t_vec)
 						t.traits = traits_list;
 				});
+
+				tilesets.emplace_back(terrain_id);
 			}
+
+			//copy tilesets into the global Tileset list
+			//then remove any duplicates
+			auto &tiles_tilesets = tiles::resources::Tilesets;
+			std::copy(std::begin(tilesets), std::end(tilesets), std::back_inserter(tiles_tilesets));
+			std::sort(std::begin(tiles_tilesets), std::end(tiles_tilesets));
+			std::unique(std::begin(tiles_tilesets), std::end(tiles_tilesets));
 		}
 
 		void ParseTerrainSet(UniqueId mod, const YAML::Node& node, data_manager *data)

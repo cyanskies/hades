@@ -53,10 +53,12 @@ namespace tiles
 		empty_t_tex->value.setRepeated(true);
 		empty_t_tex->repeat = true;
 
-		const hades::UniqueId empty_tset_id;
+		const hades::UniqueId empty_tset_id = data->getUid(empty_tileset_name);
 		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, UniqueId::Zero, data);
 		const tile empty_tile{ empty_t_tex, 0, 0 };
 		empty_tset->tiles.emplace_back(empty_tile);
+
+		resources::Tilesets.emplace_back(empty_tset_id);
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::MakeUid(tile_settings_name);

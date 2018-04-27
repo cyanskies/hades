@@ -17,7 +17,10 @@
 namespace ortho_terrain
 {
 	void EnableTerrain(hades::data::data_system *d)
-	{
+	{		
+		//create the empty terrainset before letting the tiles resources be registered
+		//this way we replace the tileset for empty terrains with the terrain id
+		CreateEmptyTerrain(d);
 		tiles::EnableTiles(d);
 		RegisterOrthoTerrainResources(d);
 	}
@@ -95,19 +98,11 @@ namespace ortho_terrain
 	{
 		for (const auto &terr : terrain_set)
 		{
-			const std::array<const std::vector<tiles::tile>*, 15> tile_arrays = { &terr->full, &terr->bottom_left_corner, &terr->top_left_corner, &terr->left,
-				&terr->top_right_corner, &terr->left_diagonal, &terr->top, &terr->top_left_circle, &terr->bottom_right_corner,
-				&terr->bottom, &terr->right_diagonal, &terr->bottom_left_circle, &terr->right, &terr->bottom_right_circle, &terr->top_right_circle
-			};
-
-			for (const auto &t_arr : tile_arrays)
+			if (std::any_of(std::begin(terr->tiles), std::end(terr->tiles), [t](const auto &tile)
 			{
-				if (std::any_of(std::begin(*t_arr), std::end(*t_arr), [t](const auto &tile)
-				{
-					return t == tile;
-				}))
-					return terr;
-			}
+				return t == tile;
+			}))
+				return terr;
 		}
 
 		return nullptr;
@@ -127,8 +122,15 @@ namespace ortho_terrain
 				return terrain;
 		}
 
-		//throw unexpected terrain?
-		return nullptr;
+		//terrain wasn't in terrain_set, check if it's empty_terrain
+		const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		for (const auto &t : layer)
+		{
+			if (const auto *terrain = FindTerrain(t, { empty_terrain }); terrain)
+				return terrain;
+		}
+
+		throw exception("Unable to find terrain");
 	}
 
 	bool Within(sf::Vector2u pos, std::size_t target_size, tiles::tile_count_t width)
@@ -322,24 +324,9 @@ namespace ortho_terrain
 		const auto &empty_terrain = resources::EmptyTerrainId;
 		tiles::TileArray empty_layer{ size, empty_tile };
 		std::size_t i = 0u, j = 0u;
-		while (j < map.terrain_set.size())
-		{
-			const auto &layer = i > map.tile_map_stack.size() ? map.tile_map_stack[i] : empty_layer;
-			const auto terrain = FindTerrain(layer, map.terrain_set);
-			if (terrain->id == empty_terrain)
-				continue;
 
-			if (terrain != map.terrain_set[i])
-			{
-				new_map.emplace_back(map.terrain_set[i], empty_layer);
-				++i;
-			}
-			else
-			{
-				new_map.emplace_back(terrain, layer);
-				++i; ++j;
-			}
-		}
+		for (std::size_t i = 0; i < map.tile_map_stack.size() && i < map.terrain_set.size(); ++i)
+			new_map.emplace_back(map.terrain_set[i], map.tile_map_stack[i]);
 
 		std::vector<tiles::TileArray> tile_array;
 		for (const auto &arr : new_map)
@@ -348,6 +335,7 @@ namespace ortho_terrain
 		//generate vertex map
 		auto verts = AsTerrainVertex(tile_array, map.terrain_set, width);
 
+		_terrain_layers.clear();
 		for (const auto &tiles : new_map)
 			_terrain_layers.emplace_back(tiles::MutableTileMap{ {std::get<tiles::TileArray>(tiles), width} });
 
@@ -497,13 +485,13 @@ namespace ortho_terrain
 				tilesets.emplace_back(name, std::get<tiles::tile_count_t>(set));
 			}
 
-			l.tile_layers.emplace_back(tilesets, std::get<tiles::TileArray>(tiles));
+			l.tile_layers.emplace_back(tiles::tile_layer{ tilesets, std::get<std::vector<tiles::tile_count_t>>(tiles) });
 		}
 
 		return l;
 	}
 
-	constexpr auto terrain_yaml = "terain";
+	constexpr auto terrain_yaml = "terrain";
 	constexpr auto tile_yaml = "tile-layers";
 	constexpr auto terrainset_yaml = "terrainset";
 	
@@ -518,11 +506,11 @@ namespace ortho_terrain
 		const auto terrain_n = n[terrain_yaml];
 
 		//TODO: add error logging here
-		if (terrain_n.IsDefined() || !terrain_n.IsMap())
+		if (!terrain_n.IsDefined() || !terrain_n.IsMap())
 			return;
 
 		const auto terrainset_n = terrain_n[terrainset_yaml];
-		if (!terrainset_n.IsDefined() || !terrainset_n.IsSequence)
+		if (!terrainset_n.IsDefined() || !terrainset_n.IsSequence())
 			return;
 
 		std::vector<hades::types::string> terrains;

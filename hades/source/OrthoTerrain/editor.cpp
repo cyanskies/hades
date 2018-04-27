@@ -124,7 +124,10 @@ namespace ortho_terrain
 		//these two box's go in the main box and store the two labels and entries
 		auto label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
 		auto entry_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//selectors for terrainset and type
+		auto terrain_label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
 		auto terrain_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto preview_box = sfg::Box::Create();
 		//bottom box for holding the button to activate the action
 		auto bottom_box = sfg::Box::Create();
 
@@ -141,6 +144,11 @@ namespace ortho_terrain
 		entry_box->PackEnd(width_entry);
 		entry_box->PackEnd(height_entry);
 
+		auto terrainset_label = sfg::Label::Create("Terrain Set:");
+		auto terrain_label = sfg::Label::Create("Terrain:");
+		terrain_label_box->PackEnd(terrainset_label);
+		terrain_label_box->PackEnd(terrain_label);
+
 		//add terrain selector
 		auto terrainset_selector = sfg::ComboBox::Create();
 		std::weak_ptr<sfg::ComboBox> terrainset_selector_weak = terrainset_selector;
@@ -151,33 +159,79 @@ namespace ortho_terrain
 		}
 
 		auto terrain_selector = sfg::ComboBox::Create();
-		std::weak_ptr<sfg::ComboBox> t_selector_weak = terrainset_selector;
+		std::weak_ptr<sfg::ComboBox> t_selector_weak = terrain_selector;
+		std::weak_ptr<sfg::Box> preview_weak = preview_box;
 
-		terrainset_selector->GetSignal(sfg::ComboBox::OnSelect).Connect([t_selector_weak, terrainset_selector_weak]
+		auto on_terrain_select = [preview_weak, t_selector_weak, terrainset_selector_weak] {
+			auto preview_box = preview_weak.lock();
+			auto terrain_sel = t_selector_weak.lock();
+			auto terrainset_sel = terrainset_selector_weak.lock();
+			const auto terrainset_selected = terrainset_sel->GetSelectedItem();
+
+			assert(terrainset_selected < static_cast<int>(resources::TerrainSets.size()));
+			const auto terrain_id = resources::TerrainSets[terrainset_selected];
+			const auto terrainset = hades::data::Get<resources::terrainset>(terrain_id);
+
+			const auto selected = terrain_sel->GetSelectedItem();
+
+			assert(selected < static_cast<int>(terrainset->terrains.size()));
+
+			const auto terrain = terrainset->terrains[selected];
+			assert(!terrain->full.empty());
+
+			const auto t = terrain->full[0];
+			const auto tile_settings = tiles::GetTileSettings();
+			//create an animation to pass to 'CreateButton'
+			hades::resources::animation a;
+			a.tex = t.texture;
+			a.height = a.width = tile_settings->tile_size;
+			hades::resources::animation_frame f{ t.left, t.top, 1.f };
+			a.value.push_back(f);
+
+			auto button = objects::editor::CreateButton("preview", nullptr, &a);
+
+			preview_box->RemoveAll();
+			preview_box->PackEnd(button);
+		};
+
+		terrain_selector->GetSignal(sfg::ComboBox::OnSelect).Connect(on_terrain_select);
+
+		auto on_terrainset_select = [t_selector_weak, terrainset_selector_weak, on_terrain_select]
 		{
 			auto terrainset_sel = terrainset_selector_weak.lock();
 			auto terrain_sel = t_selector_weak.lock();
 
 			const auto selected = terrainset_sel->GetSelectedItem();
-			assert(selected < resources::TerrainSets.size());
+			assert(selected < static_cast<int>(resources::TerrainSets.size()));
 
-			terrain_sel->RemoveAll();
+			while (terrain_sel->GetItemCount())
+				terrain_sel->RemoveItem(0);
 
 			const auto terrain_set = hades::data::Get<resources::terrainset>(resources::TerrainSets[selected]);
 
 			for (const auto &t : terrain_set->terrains)
 				terrain_sel->AppendItem(hades::data::GetAsString(t->id));
-		});
+
+			terrain_sel->SelectItem(0);
+			on_terrain_select();
+		};
+
+		terrainset_selector->GetSignal(sfg::ComboBox::OnSelect).Connect(on_terrainset_select);
+
+		auto preview_button = objects::editor::CreateButton("preview", nullptr, nullptr);
+		preview_box->PackEnd(preview_button);
 
 		terrainset_selector->SelectItem(0);
+		on_terrainset_select();
 
 		terrain_box->PackEnd(terrainset_selector);
 		terrain_box->PackEnd(terrain_selector);
 
 		main_box->PackEnd(label_box);
 		main_box->PackEnd(entry_box);
+		main_box->PackEnd(terrain_label_box);
 		main_box->PackEnd(terrain_box);
-
+		main_box->PackEnd(preview_box);
 		auto button = sfg::Button::Create("Create");
 		std::weak_ptr<sfg::Entry> weak_width = width_entry, weak_height = height_entry;
 		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, this] {

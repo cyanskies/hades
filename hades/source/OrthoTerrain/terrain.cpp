@@ -453,13 +453,54 @@ namespace ortho_terrain
 		return map;
 	}
 
-	TerrainMapData as_terraindata(const terrain_layer &l)
+	TerrainMapData as_terraindata(const terrain_layer &l, tiles::tile_count_t width)
 	{
-		return TerrainMapData{};
+		TerrainMapData m;
+
+		for (const auto &n : l.terrainset)
+		{
+			const auto id = hades::data::GetUid(n);
+			const auto t = hades::data::Get<resources::terrain>(id);
+			m.terrain_set.emplace_back(t);
+		}
+
+		for (const auto &t : l.tile_layers)
+		{
+			std::vector<tiles::TileSetInfo> tilesets;
+			for (const auto &set : t.tilesets)
+			{
+				const auto id = hades::data::GetUid(std::get<hades::types::string>(set));
+				tilesets.emplace_back(id, std::get<tiles::tile_count_t>(set));
+			}
+
+			const auto layer_data = tiles::as_mapdata({tilesets, t.tiles, width});
+			m.tile_map_stack.emplace_back(std::get<tiles::TileArray>(layer_data));
+		}
+
+		return m;
 	}
-	terrain_layer as_terrain_layer(const TerrainMapData &m)
+
+	terrain_layer as_terrain_layer(const TerrainMapData &m, tiles::tile_count_t width)
 	{
-		return terrain_layer{};
+		terrain_layer l;
+		for (const auto &t : m.terrain_set)
+			l.terrainset.emplace_back(hades::data::GetAsString(t->id));
+
+		for (const auto &layer : m.tile_map_stack)
+		{
+			const auto tiles = tiles::as_rawmap({ layer, width });
+
+			std::vector<std::tuple<hades::types::string, tiles::tile_count_t>> tilesets;
+			for (const auto &set : std::get<std::vector<tiles::TileSetInfo>>(tiles))
+			{
+				const auto name = hades::data::GetAsString(std::get<hades::UniqueId>(set));
+				tilesets.emplace_back(name, std::get<tiles::tile_count_t>(set));
+			}
+
+			l.tile_layers.emplace_back(tilesets, std::get<tiles::TileArray>(tiles));
+		}
+
+		return l;
 	}
 
 	constexpr auto terrain_yaml = "terain";

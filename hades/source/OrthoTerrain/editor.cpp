@@ -154,12 +154,15 @@ namespace ortho_terrain
 
 	void terrain_editor::SaveTerrain(level &l) const
 	{
-
+		const auto map = _map.getMap();
+		l.terrain = as_terrain_layer(map, MapSize.x / TileSettings->tile_size);
 	}
 
 	void terrain_editor::LoadTerrain(const level &l)
 	{
-
+		const auto width = MapSize.x / TileSettings->tile_size;
+		const auto map = as_terraindata(l.terrain, width);
+		_map.create(map, width);
 	}
 
 	void terrain_editor::DrawPreview(sf::RenderTarget &target) const

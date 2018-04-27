@@ -103,8 +103,8 @@ namespace ortho_terrain
 		std::vector<hades::types::string> terrainset;
 	};
 
-	TerrainMapData as_terraindata(const terrain_layer &l);
-	terrain_layer as_terrain_layer(const TerrainMapData &m);
+	TerrainMapData as_terraindata(const terrain_layer &l, tiles::tile_count_t width);
+	terrain_layer as_terrain_layer(const TerrainMapData &m, tiles::tile_count_t width);
 
 	struct level : public tiles::level
 	{

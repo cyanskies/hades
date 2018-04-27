@@ -915,6 +915,11 @@ namespace objects
 		return _editMode;
 	}
 
+	void object_editor::MakeErrorDialog(std::string_view message)
+	{
+		_makeErrorDialog(message);
+	}
+
 	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
 	{
 		static const auto window_width = hades::console::GetInt("vid_width", 800);

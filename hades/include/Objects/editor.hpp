@@ -141,6 +141,8 @@ namespace objects
 		//draw the preview generated in GenerateDrawPreview
 		virtual void DrawPreview(sf::RenderTarget &target) const;
 
+		void MakeErrorDialog(std::string_view message);
+
 		//map file info
 		hades::types::string Mod = "./", Filename = "new.lvl";
 		sf::Vector2i MapSize = { 200, 200 };
@@ -239,6 +241,8 @@ namespace objects
 		sf::RectangleShape _gridHighlight;
 		hades::GridArea _grid;
 	};
+
+	void PlaceWidgetInCentre(sfg::Widget &w);
 }
 
 #endif // !OBJECT_EDITOR_HPP

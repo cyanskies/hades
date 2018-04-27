@@ -102,10 +102,125 @@ namespace ortho_terrain
 			tile_editor::OnClick(t, m);
 	}
 
+	constexpr auto dialog_style = sfg::Window::Style::BACKGROUND
+		| sfg::Window::Style::TITLEBAR
+		| sfg::Window::Style::CLOSE
+		| sfg::Window::Style::SHADOW
+		| sfg::Window::Style::RESIZE;
+
 	void terrain_editor::NewLevelDialog()
 	{
-		//TODO:
-		tile_editor::NewLevelDialog();
+		auto window = sfg::Window::Create(dialog_style);
+		window->SetTitle("New Level");
+		std::weak_ptr<sfg::Window> weak_window = window;
+		window->GetSignal(sfg::Window::OnCloseButton).Connect([weak_window, this] {
+			_gui.Remove(weak_window.lock());
+		});
+
+		//box for all the window elements to go in
+		auto window_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//main box is for the top half of the dialog
+		auto main_box = sfg::Box::Create();
+		//these two box's go in the main box and store the two labels and entries
+		auto label_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto entry_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		auto terrain_box = sfg::Box::Create(sfg::Box::Orientation::VERTICAL);
+		//bottom box for holding the button to activate the action
+		auto bottom_box = sfg::Box::Create();
+
+		auto width_label = sfg::Label::Create("Width:");
+		auto height_label = sfg::Label::Create("Height:");
+		label_box->PackEnd(width_label);
+		label_box->PackEnd(height_label);
+
+		auto width_entry = sfg::Entry::Create(hades::to_string(MapSize.x));
+		width_entry->SetRequisition({ 40.f, 0.f });
+		auto height_entry = sfg::Entry::Create(hades::to_string(MapSize.y));
+		height_entry->SetRequisition({ 40.f, 0.f });
+
+		entry_box->PackEnd(width_entry);
+		entry_box->PackEnd(height_entry);
+
+		//add terrain selector
+		auto terrainset_selector = sfg::ComboBox::Create();
+		std::weak_ptr<sfg::ComboBox> terrainset_selector_weak = terrainset_selector;
+		for (const auto &tset : resources::TerrainSets)
+		{
+			const auto name = hades::data::GetAsString(tset);
+			terrainset_selector->AppendItem(name);
+		}
+
+		auto terrain_selector = sfg::ComboBox::Create();
+		std::weak_ptr<sfg::ComboBox> t_selector_weak = terrainset_selector;
+
+		terrainset_selector->GetSignal(sfg::ComboBox::OnSelect).Connect([t_selector_weak, terrainset_selector_weak]
+		{
+			auto terrainset_sel = terrainset_selector_weak.lock();
+			auto terrain_sel = t_selector_weak.lock();
+
+			const auto selected = terrainset_sel->GetSelectedItem();
+			assert(selected < resources::TerrainSets.size());
+
+			terrain_sel->RemoveAll();
+
+			const auto terrain_set = hades::data::Get<resources::terrainset>(resources::TerrainSets[selected]);
+
+			for (const auto &t : terrain_set->terrains)
+				terrain_sel->AppendItem(hades::data::GetAsString(t->id));
+		});
+
+		terrainset_selector->SelectItem(0);
+
+		terrain_box->PackEnd(terrainset_selector);
+		terrain_box->PackEnd(terrain_selector);
+
+		main_box->PackEnd(label_box);
+		main_box->PackEnd(entry_box);
+		main_box->PackEnd(terrain_box);
+
+		auto button = sfg::Button::Create("Create");
+		std::weak_ptr<sfg::Entry> weak_width = width_entry, weak_height = height_entry;
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, this] {
+			auto width = weak_width.lock();
+			auto height = weak_height.lock();
+			assert(width && height);
+
+			try
+			{
+				auto x = std::stoi(width->GetText().toAnsiString());
+				auto y = std::stoi(height->GetText().toAnsiString());
+
+				if (x < 1
+					|| y < 1)
+					return MakeErrorDialog("Map width or height too small");
+
+				MapSize = { x, y };
+
+				auto window = weak_window.lock();
+				_gui.Remove(window);
+
+				NewLevel();
+				reinit();
+			}
+			catch (std::invalid_argument&)
+			{
+				//could not convert width/height to integer
+				MakeErrorDialog("Unable to convert width or height to a number.");
+			}
+			catch (std::out_of_range&)
+			{
+				//couldn't fit calculated number within an int.
+				MakeErrorDialog("Width or height too large. Max: " + hades::to_string(std::numeric_limits<int>::max()));
+			}
+		});
+
+		bottom_box->PackEnd(button);
+
+		window_box->PackEnd(main_box);
+		window_box->PackEnd(bottom_box);
+		window->Add(window_box);
+		objects::PlaceWidgetInCentre(*window);
+		_gui.Add(window);
 	}
 
 	void terrain_editor::NewLevel()

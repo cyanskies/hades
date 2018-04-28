@@ -22,6 +22,8 @@ namespace ortho_terrain
 		const auto terrainset = hades::data::Get<resources::terrainset>(terrainset_id);
 
 		Terrainset(terrainset);
+		assert(!terrainset->terrains.empty());
+		_terrain = terrainset->terrains.front();
 
 		tile_editor::init();
 	}
@@ -136,9 +138,12 @@ namespace ortho_terrain
 		label_box->PackEnd(width_label);
 		label_box->PackEnd(height_label);
 
-		auto width_entry = sfg::Entry::Create(hades::to_string(MapSize.x));
+		const auto tile_settings = tiles::GetTileSettings();
+		const auto tile_size = tile_settings->tile_size;
+
+		auto width_entry = sfg::Entry::Create(hades::to_string(MapSize.x / tile_size));
 		width_entry->SetRequisition({ 40.f, 0.f });
-		auto height_entry = sfg::Entry::Create(hades::to_string(MapSize.y));
+		auto height_entry = sfg::Entry::Create(hades::to_string(MapSize.y / tile_size));
 		height_entry->SetRequisition({ 40.f, 0.f });
 
 		entry_box->PackEnd(width_entry);
@@ -234,38 +239,61 @@ namespace ortho_terrain
 		main_box->PackEnd(preview_box);
 		auto button = sfg::Button::Create("Create");
 		std::weak_ptr<sfg::Entry> weak_width = width_entry, weak_height = height_entry;
-		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, this] {
+		button->GetSignal(sfg::Button::OnLeftClick).Connect([weak_width, weak_height, weak_window, terrainset_selector_weak, t_selector_weak, this] {
 			auto width = weak_width.lock();
 			auto height = weak_height.lock();
 			assert(width && height);
 
+			int x = 0, y = 0;
+
 			try
 			{
-				auto x = std::stoi(width->GetText().toAnsiString());
-				auto y = std::stoi(height->GetText().toAnsiString());
-
-				if (x < 1
-					|| y < 1)
-					return MakeErrorDialog("Map width or height too small");
-
-				MapSize = { x, y };
-
-				auto window = weak_window.lock();
-				_gui.Remove(window);
-
-				NewLevel();
-				reinit();
+				x = std::stoi(width->GetText().toAnsiString());
+				y = std::stoi(height->GetText().toAnsiString());
 			}
 			catch (std::invalid_argument&)
 			{
 				//could not convert width/height to integer
-				MakeErrorDialog("Unable to convert width or height to a number.");
+				return MakeErrorDialog("Unable to convert width or height to a number.");
+				
 			}
 			catch (std::out_of_range&)
 			{
 				//couldn't fit calculated number within an int.
-				MakeErrorDialog("Width or height too large. Max: " + hades::to_string(std::numeric_limits<int>::max()));
+				return MakeErrorDialog("Width or height too large. Max: " + hades::to_string(std::numeric_limits<int>::max()));
 			}
+
+			if (x < 1
+				|| y < 1)
+				return MakeErrorDialog("Map width or height too small");
+
+			const auto tile_settings = tiles::GetTileSettings();
+			const auto tile_size = static_cast<int>(tile_settings->tile_size);
+			MapSize = { x * tile_size, y * tile_size };
+
+			//get tileset
+			auto terrainset_sel = terrainset_selector_weak.lock();
+			const auto selected = terrainset_sel->GetSelectedItem();
+			assert(selected < static_cast<int>(resources::TerrainSets.size()));
+
+			const auto terrain_set = hades::data::Get<resources::terrainset>(resources::TerrainSets[selected]);
+			Terrainset(terrain_set);
+
+			//get terrain
+			auto terrain_sel = t_selector_weak.lock();
+			const auto t_selected = terrain_sel->GetSelectedItem();
+
+			assert(t_selected < static_cast<int>(terrain_set->terrains.size()));
+
+			const auto terrain = terrain_set->terrains[t_selected];
+			assert(!terrain->full.empty());
+			_terrain = terrain;
+
+			auto window = weak_window.lock();
+			_gui.Remove(window);
+
+			NewLevel();
+			reinit();
 		});
 
 		bottom_box->PackEnd(button);
@@ -283,7 +311,7 @@ namespace ortho_terrain
 
 		const auto width = MapSize.x / TileSettings->tile_size;
 		const auto height = MapSize.y / TileSettings->tile_size;
-		_map.create(_terrainset->terrains, width, height);
+		_map.create(_terrainset->terrains, _terrain, width, height);
 	}
 
 	void terrain_editor::SaveLevel() const

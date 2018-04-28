@@ -347,7 +347,7 @@ namespace ortho_terrain
 		setColour(_colour);
 	}
 
-	void MutableTerrainMap::create(std::vector<const resources::terrain*> terrainset, tiles::tile_count_t width, tiles::tile_count_t height)
+	void MutableTerrainMap::create(std::vector<const resources::terrain*> terrainset, const resources::terrain *terr, tiles::tile_count_t width, tiles::tile_count_t height)
 	{
 		_terrain_layers.clear();
 		_tile_layers.clear();
@@ -360,18 +360,19 @@ namespace ortho_terrain
 		const auto empty_tile = tiles::GetEmptyTile();
 		const auto &empty_terrain = resources::EmptyTerrainId;
 		tiles::TileArray empty_layer{ size, empty_tile };
-		const auto bottom_terrain = terrainset.front();
-		tiles::TileArray bottom_layer{ size, bottom_terrain->full.front() };
+		assert(std::find(std::begin(terrainset), std::end(terrainset), terr) != std::end(terrainset));
+		assert(!terr->full.empty());
+		tiles::TileArray full_layer{ size, terr->full.front() };
 
 		_width = width;
 		std::vector<tiles::TileArray> t_array;
 
 		for (const auto &t : terrainset)
 		{
-			if (t == bottom_terrain)
+			if (t == terr)
 			{
-				_tile_layers.emplace_back(t, bottom_layer);
-				t_array.emplace_back(bottom_layer);
+				_tile_layers.emplace_back(t, full_layer);
+				t_array.emplace_back(full_layer);
 			}
 			else
 			{
@@ -382,7 +383,7 @@ namespace ortho_terrain
 
 		//generate vertex map
 		_vdata = AsTerrainVertex(t_array, terrainset, width);
-		assert(std::all_of(std::begin(_vdata), std::end(_vdata), [t=terrainset.front()](const auto &terrain)
+		assert(std::all_of(std::begin(_vdata), std::end(_vdata), [t=terr](const auto &terrain)
 		{
 			return t == terrain; }
 		));

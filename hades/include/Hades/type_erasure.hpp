@@ -106,6 +106,26 @@ namespace hades {
 		
 		data_map _bag;
 	};
+
+	template<typename Key, typename ...Types>
+	class var_bag
+	{
+	public:
+		using key_type = Key; 
+		using value_type = std::variant<Types...>;
+		using data_map = std::map<key_type, value_type>;
+
+		template<class T>
+		void set(Key key, T value);
+
+		template<class T>
+		T get(Key key) const;
+
+		bool contains(Key key) const;
+
+	private:
+		data_map _bag;
+	};
 }
 
 #include "Hades/detail/type_erasure.inl"

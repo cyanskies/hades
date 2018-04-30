@@ -164,4 +164,26 @@ namespace hades
 	{
 		return _bag.empty();
 	}
+
+	template<typename Key, typename ...Types>
+	template<typename T>
+	void var_bag<Key, ...Types>::set(Key k, T v)
+	{
+		static_assert(std::holds_alternative<T>(_bag), "var bag doesn't contain the requested type");
+		_bag.insert({ k, value_type{ v } });
+	}
+
+	template<typename Key, typename ...Types>
+	template<typename T>
+	T var_bag<Key, ...Types>::get(Key k) const
+	{
+		static_assert(std::holds_alternative<T>(_bag), "var bag doesn't contain the requested type");
+		return std::get<T>(*_bag.find(k));
+	}
+
+	template<typename Key, typename ...Types>
+	bool var_bag<Key, ...Types>::contains(Key k) const
+	{
+		return _bag.find(k) != std::end(_bag);
+	}
 }

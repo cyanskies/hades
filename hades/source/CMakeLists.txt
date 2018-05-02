@@ -22,7 +22,6 @@ set(HADES_SRC
 	Input.cpp
 	Logging.cpp
 	main.cpp
-	parallel_jobs.cpp
 	Properties.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp
@@ -31,7 +30,6 @@ set(HADES_SRC
 	StateManager.cpp
 	System.cpp
 	TimerManager.cpp
-	Types.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
@@ -77,6 +75,7 @@ set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 target_include_directories(${HADES_LIB} PUBLIC ../include)
 
 set(HADES_DEPS
+	hades-util
 	sfml-audio
 	sfml-graphics
 	sfml-main

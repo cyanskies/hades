@@ -1,5 +1,5 @@
-#ifndef HADES_SHAREDGUARD_HPP
-#define HADES_SHAREDGUARD_HPP
+#ifndef HADES_UTIL_SHAREDGUARD_HPP
+#define HADES_UTIL_SHAREDGUARD_HPP
 
 #include <shared_mutex>
 
@@ -30,4 +30,4 @@ namespace hades {
 	};
 }
 
-#endif // !HADES_SHAREDGUARD_HPP
+#endif // !HADES_UTIL_SHAREDGUARD_HPP

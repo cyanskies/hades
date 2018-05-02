@@ -1,11 +1,9 @@
-#ifndef HADES_TYPES_HPP
-#define HADES_TYPES_HPP
+#ifndef HADES_UTIL_TYPES_HPP
+#define HADES_UTIL_TYPES_HPP
 
 #include <cstdint>
 #include <string>
 #include <type_traits>
-
-#include "SFML/Config.hpp"
 
 namespace hades {
 	namespace types {
@@ -103,4 +101,4 @@ namespace hades {
 	template<class T> struct always_false : public std::false_type {};
 }
 
-#endif //HADES_TYPES_HPP
+#endif //HADES_UTIL_TYPES_HPP

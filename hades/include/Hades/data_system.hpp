@@ -24,7 +24,7 @@ namespace hades
 		{
 			// source == the name of the archive containing the mode
 			// dependencies: a list of mods this mod depends on
-			std::vector<data::UniqueId> dependencies,
+			std::vector<unique_id> dependencies,
 				//names: unique id's provided by this mod
 				names;
 
@@ -33,7 +33,7 @@ namespace hades
 			//mod_t value
 		};
 
-		using parserFunc = std::function<void(data::UniqueId mod, const YAML::Node& node, data::data_manager*)>;
+		using parserFunc = std::function<void(unique_id mod, const YAML::Node& node, data::data_manager*)>;
 	}
 
 	namespace data
@@ -65,7 +65,7 @@ namespace hades
 			//note: this wont effect resources that are only parsed(strings and game parameters)
 			void refresh() override;
 			//adds a specific object into the load queue
-			void refresh(data::UniqueId) override;
+			void refresh(unique_id) override;
 			//adds a range to the load queue
 			//template<Iter>
 			//void refresh(Iter first, Iter last);
@@ -85,11 +85,11 @@ namespace hades
 
 			//convert string to uid
 			types::string getAsString(UniqueId id) const override;
-			data::UniqueId getUid(std::string_view name) const override;
-			data::UniqueId getUid(std::string_view name) override;
+			unique_id getUid(std::string_view name) const override;
+			unique_id getUid(std::string_view name) override;
 			
 		private:
-			void parseYaml(data::UniqueId, YAML::Node);
+			void parseYaml(unique_id, YAML::Node);
 			void parseMod(std::string_view name, YAML::Node modRoot, std::function<bool(std::string_view)> dependency);
 
 			//==parsing and loading data==
@@ -109,7 +109,7 @@ namespace hades
 		// sets the resources most recent mod to the passed value
 		// returns nullptr if unable to return a valid resource
 		template<class T>
-		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data_manager* data);
+		T* FindOrCreate(unique_id target, unique_id mod, data_manager* data);
 	}
 }
 
@@ -118,26 +118,26 @@ std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::d
 
 //TODO: bool yaml_is_map
 bool yaml_error(hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::types::string requested_type, hades::data::UniqueId mod, bool test);
+	hades::types::string property_name, hades::types::string requested_type, hades::unique_id mod, bool test);
 
 template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod, T default_value);
+	hades::types::string property_name, hades::unique_id mod, T default_value);
 
 template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, T default_value)
 {
-	return yaml_get_scalar<T>(node, resource_type, resource_name, property_name, hades::UniqueId::Zero, default_value);
+	return yaml_get_scalar<T>(node, resource_type, resource_name, property_name, hades::UniqueId::zero, default_value);
 }
 
 
-hades::data::UniqueId yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod = hades::UniqueId::Zero, hades::data::UniqueId default_value = hades::data::UniqueId::Zero);
+hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::unique_id mod = hades::UniqueId::zero, hades::unique_id default_value = hades::unique_id::zero);
 
 template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod = hades::UniqueId::Zero);
+	hades::types::string property_name, hades::unique_id mod = hades::UniqueId::zero);
 
 #include "detail/data_system.inl"
 

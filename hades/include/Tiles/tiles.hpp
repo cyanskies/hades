@@ -33,7 +33,7 @@ namespace tiles
 	//and a map of tilesets along with thier first id's
 	// and also a width
 	// raw maps can be stored and transfered
-	using TileSetInfo = std::tuple<hades::data::UniqueId, tile_count_t>;
+	using TileSetInfo = std::tuple<hades::unique_id, tile_count_t>;
 	//							tilesets used in the map, the actual tile id map data, map width
 	using RawMap = std::tuple<std::vector<TileSetInfo>, std::vector<tile_count_t>, tile_count_t>;
 

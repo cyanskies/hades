@@ -9,7 +9,7 @@
 
 #include "SFML/System/InputStream.hpp"
 
-#include "Types.hpp"
+#include "hades/types.hpp"
 
 namespace hades
 {

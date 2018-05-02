@@ -11,7 +11,7 @@
 #include "SFML/Window/Window.hpp"
 
 #include "Hades/Types.hpp"
-#include "Hades/UniqueId.hpp"
+#include "hades/uniqueid.hpp"
 #include "Hades/vector_math.hpp"
 
 namespace hades
@@ -29,10 +29,10 @@ namespace hades
 	struct Action
 	{
 		Action() = default;
-		Action(data::UniqueId uid) : id(uid)
+		Action(unique_id uid) : id(uid)
 		{}
 
-		data::UniqueId id = data::UniqueId::Zero;
+		unique_id id = unique_id::zero;
 		hades::types::int32 x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
 		bool active = false; //always true for mouseposition and axis
 	};
@@ -54,7 +54,7 @@ namespace std {
 	{
 		size_t operator()(const hades::Action& key) const
 		{
-			std::hash<hades::data::UniqueId::type> h;
+			std::hash<hades::unique_id::type> h;
 			return h(key.id.get());
 		}
 	};
@@ -66,10 +66,10 @@ namespace hades
 
 	struct InputInterpretor
 	{
-		data::UniqueId id = data::UniqueId::Zero;
-		using event_function = std::function<std::tuple<bool, Action>(bool handled, const sf::Event&, data::UniqueId)>;
+		unique_id id = unique_id::zero;
+		using event_function = std::function<std::tuple<bool, Action>(bool handled, const sf::Event&, unique_id)>;
 		event_function eventCheck;
-		using function = std::function<Action(data::UniqueId)>;
+		using function = std::function<Action(unique_id)>;
 		function statusCheck;
 	};
 
@@ -84,16 +84,16 @@ namespace hades
 		InputSystem(const sf::Window&);
 
 		//creates an action and sets it's bindable status
-		void create(data::UniqueId action, bool rebindable);
-		void create(data::UniqueId action, bool rebindable, types::string defaultBinding);
+		void create(unique_id action, bool rebindable);
+		void create(unique_id action, bool rebindable, types::string defaultBinding);
 		//adds a new input interpretor
 		void addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f);
 		//binds an action to an interpretor
-		bool bind(data::UniqueId, types::string);
+		bool bind(unique_id, types::string);
 		//unbinds a specific interpretor from an action
-		void unbind(data::UniqueId, types::string);
+		void unbind(unique_id, types::string);
 		//unbinds all interpretors from an action
-		void unbind(data::UniqueId);
+		void unbind(unique_id);
 		//load bindings config
 		//save binding config, //this only works for bindable actions
 		void generateState(const std::vector<Event>&); //runs all the action test functions, including custom ones
@@ -108,10 +108,10 @@ namespace hades
 		InputInterpretor MouseButton(const sf::Window &window);
 
 		//a map of interpretors to actions, this is used for generateStat
-		using input_map = std::multimap<InputInterpretor, data::UniqueId>;
+		using input_map = std::multimap<InputInterpretor, unique_id>;
 		input_map _inputMap;
 		//bindable list(lists which actions can be rebound by console or settings interface)
-		std::map<data::UniqueId, bool> _bindable;
+		std::map<unique_id, bool> _bindable;
 		std::map<types::string, InputInterpretor> _interpretors;
 		std::map<types::string, InputInterpretor> _specialInterpretors;
 		action_set _previousState;

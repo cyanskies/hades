@@ -16,7 +16,7 @@ namespace hades
 	namespace data
 	{
 		template<class T>
-		T* FindOrCreate(data::UniqueId target, data::UniqueId mod, data_manager *data)
+		T* FindOrCreate(unique_id target, unique_id mod, data_manager *data)
 		{
 			T* r = nullptr;
 
@@ -60,18 +60,18 @@ template<class T, class Iter>
 std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager *data)
 {
 	//convert strings into ids
-	std::vector<hades::data::UniqueId> ids;
+	std::vector<hades::unique_id> ids;
 	std::transform(first, last, std::back_inserter(ids),
 		[data](hades::types::string input) {
-		if (input.empty()) return hades::data::UniqueId::Zero;
+		if (input.empty()) return hades::unique_id::zero;
 		else return data->getUid(input);
 	});
 
 	//get objects
 	std::vector<const T*> objs;
 	std::transform(std::begin(ids), std::end(ids), std::back_inserter(objs),
-		[data](hades::data::UniqueId id)->const T*{
-			if (id == hades::data::UniqueId::Zero)
+		[data](hades::unique_id id)->const T*{
+			if (id == hades::unique_id::zero)
 			return nullptr;
 			else
 				return data->get<T>(id);
@@ -88,7 +88,7 @@ std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::d
 
 template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod, T default_value)
+	hades::types::string property_name, hades::unique_id mod, T default_value)
 {
 	auto value_node = node[property_name];
 	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))
@@ -99,7 +99,7 @@ T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, ha
 
 template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod)
+	hades::types::string property_name, hades::unique_id mod)
 {
 	std::vector<T> output;
 	auto seq = node[property_name];

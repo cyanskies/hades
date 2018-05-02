@@ -4,6 +4,7 @@
 #include <exception>
 #include <memory>
 #include <unordered_map>
+#include <variant>
 
 #include "Hades/Types.hpp"
 

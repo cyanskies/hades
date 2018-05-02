@@ -10,8 +10,8 @@ namespace objects
 {
 	namespace resources
 	{
-		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
-		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data);
+		void ParseEditor(hades::unique_id mod, const YAML::Node &node, hades::data::data_manager *data);
+		void ParseObject(hades::unique_id mod, const YAML::Node &node, hades::data::data_manager *data);
 	}
 
 	void MakeDefaultCurves(hades::data::data_manager* data)
@@ -93,7 +93,7 @@ namespace objects
 		}
 
 		template<>
-		hades::resources::curve_default_value ParseValue<hades::data::UniqueId>(const YAML::Node &node)
+		hades::resources::curve_default_value ParseValue<hades::unique_id>(const YAML::Node &node)
 		{
 			hades::resources::curve_default_value out;
 			try
@@ -136,7 +136,7 @@ namespace objects
 		}
 
 		template<>
-		hades::resources::curve_default_value ParseValueVector<hades::data::UniqueId>(const YAML::Node &node)
+		hades::resources::curve_default_value ParseValueVector<hades::unique_id>(const YAML::Node &node)
 		{
 			hades::resources::curve_default_value out;
 			try
@@ -232,7 +232,7 @@ namespace objects
 			return c;
 		}
 
-		void ParseEditor(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
+		void ParseEditor(hades::unique_id mod, const YAML::Node &node, hades::data::data_manager *data)
 		{
 			//editor:
 			//    scroll-rate: +int
@@ -393,19 +393,19 @@ namespace objects
 			//======================
 			using hades::resources::animation;
 			const auto grid_shrink_id = yaml_get_uid(node, resource_type, resource_name, "grid-shrink-icon", mod);
-			if (grid_shrink_id != hades::UniqueId::Zero)
+			if (grid_shrink_id != hades::UniqueId::zero)
 				editor_obj->grid_shrink_icon = hades::data::FindOrCreate<animation>(grid_shrink_id, mod, data);
 
 			const auto grid_grow_id = yaml_get_uid(node, resource_type, resource_name, "grid-grow-icon", mod);
-			if (grid_grow_id != hades::UniqueId::Zero)
+			if (grid_grow_id != hades::UniqueId::zero)
 				editor_obj->grid_grow_icon = hades::data::FindOrCreate<animation>(grid_grow_id, mod, data);
 
 			const auto grid_show_id = yaml_get_uid(node, resource_type, resource_name, "grid-show-icon", mod);
-			if (grid_show_id != hades::UniqueId::Zero)
+			if (grid_show_id != hades::UniqueId::zero)
 				editor_obj->grid_show_icon = hades::data::FindOrCreate<animation>(grid_show_id, mod, data);
 		}//parse editor
 
-		void ParseObject(hades::data::UniqueId mod, const YAML::Node &node, hades::data::data_manager *data)
+		void ParseObject(hades::unique_id mod, const YAML::Node &node, hades::data::data_manager *data)
 		{
 			//objects:
 			//	thing:
@@ -441,14 +441,14 @@ namespace objects
 				//=========================
 				//get the icon used for the editor
 				//=========================
-				hades::data::UniqueId icon_id = hades::data::UniqueId::Zero;
+				hades::unique_id icon_id = hades::unique_id::zero;
 
 				if (obj->editor_icon)
 					icon_id = obj->editor_icon->id;
 
 				icon_id = yaml_get_uid(v, resource_type, name, "editor-icon", mod, icon_id);
 
-				if (icon_id != hades::data::UniqueId::Zero)
+				if (icon_id != hades::unique_id::zero)
 					obj->editor_icon = data->get<hades::resources::animation>(icon_id);
 
 				//=========================

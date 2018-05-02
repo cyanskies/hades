@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "Hades/Types.hpp"
-#include "Hades/UniqueId.hpp"
+#include "hades/uniqueid.hpp"
 
 //resource primatives
 
@@ -55,13 +55,13 @@ namespace hades
 
 			virtual void load(data::data_manager*) = 0;
 
-			data::UniqueId id;
+			unique_id id;
 			//the file this resource should be loaded from
 			//the path of the mod for resources that are parsed and not loaded
 			types::string source;
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
-			data::UniqueId mod = data::UniqueId::Zero;
+			unique_id mod = unique_id::zero;
 			bool loaded = false;
 		};
 

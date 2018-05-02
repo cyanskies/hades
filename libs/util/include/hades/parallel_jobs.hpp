@@ -1,5 +1,5 @@
-#ifndef HADES_PARALLELJOBS_HPP
-#define HADES_PARALLELJOBS_HPP
+#ifndef HADES_UTIL_PARALLELJOBS_HPP
+#define HADES_UTIL_PARALLELJOBS_HPP
 
 #include <functional>
 #include <memory>
@@ -44,4 +44,4 @@ namespace hades {
 	}
 }
 
-#endif // !HADES_PARALLELJOBS_HPP
+#endif // !HADES_UTIL_PARALLELJOBS_HPP

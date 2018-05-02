@@ -12,19 +12,19 @@
 
 namespace tiles
 {
-	using hades::UniqueId;
+	using hades::unique_id;
 
 	constexpr auto tile_settings_name = "tile-settings";
 
 	namespace id
 	{
-		hades::UniqueId empty_tile_texture = hades::UniqueId::Zero;
-		hades::UniqueId tile_settings = hades::UniqueId::Zero;
+		hades::unique_id empty_tile_texture = hades::unique_id::zero;
+		hades::unique_id tile_settings = hades::unique_id::zero;
 	}
 
 	namespace resources
 	{
-		void parseTileset(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
+		void parseTileset(unique_id, const YAML::Node&, hades::data::data_manager*);
 	}
 
 	void RegisterTileResources(hades::data::data_system* data)
@@ -33,28 +33,28 @@ namespace tiles
 		data->register_resource_type("tilesets", tiles::resources::parseTileset);
 
 		//create texture for error_tile
-		const UniqueId error_tile_texture;
-		auto error_t_tex = hades::data::FindOrCreate<hades::resources::texture>(error_tile_texture, UniqueId::Zero, data);
+		const unique_id error_tile_texture;
+		auto error_t_tex = hades::data::FindOrCreate<hades::resources::texture>(error_tile_texture, unique_id::zero, data);
 		error_t_tex->loaded = true;
 		error_t_tex->value.loadFromMemory(error_tile::data, error_tile::len);
 
 		//create error tileset and add a default error tile
-		const hades::UniqueId error_tset_id;
-		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, UniqueId::Zero, data);
+		const hades::unique_id error_tset_id;
+		auto error_tset = hades::data::FindOrCreate<resources::tileset>(error_tset_id, unique_id::zero, data);
 		const tile error_tile{ error_t_tex, 0, 0 };
 		error_tset->tiles.emplace_back(error_tile);
 
 		//create texture for empty tile
-		id::empty_tile_texture = hades::UniqueId{};
-		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(id::empty_tile_texture, UniqueId::Zero, data);
+		id::empty_tile_texture = hades::unique_id{};
+		auto empty_t_tex = hades::data::FindOrCreate<hades::resources::texture>(id::empty_tile_texture, unique_id::zero, data);
 		sf::Image empty_i;
 		empty_i.create(1u, 1u, sf::Color::Transparent);
 		empty_t_tex->value.loadFromImage(empty_i);
 		empty_t_tex->value.setRepeated(true);
 		empty_t_tex->repeat = true;
 
-		const hades::UniqueId empty_tset_id = data->getUid(empty_tileset_name);
-		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, UniqueId::Zero, data);
+		const hades::unique_id empty_tset_id = data->getUid(empty_tileset_name);
+		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, unique_id::zero, data);
 		const tile empty_tile{ empty_t_tex, 0, 0 };
 		empty_tset->tiles.emplace_back(empty_tile);
 
@@ -62,7 +62,7 @@ namespace tiles
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::MakeUid(tile_settings_name);
-		auto settings = hades::data::FindOrCreate<resources::tile_settings>(id::tile_settings, UniqueId::Zero, data);
+		auto settings = hades::data::FindOrCreate<resources::tile_settings>(id::tile_settings, unique_id::zero, data);
 		settings->error_tileset = error_tset;
 		settings->empty_tileset = empty_tset;
 		settings->tile_size = 8;
@@ -92,7 +92,7 @@ namespace tiles
 
 	namespace resources
 	{
-		std::vector<hades::data::UniqueId> Tilesets;
+		std::vector<unique_id> Tilesets;
 
 		void LoadTileset(hades::resources::resource_base *r, hades::data::data_manager *d)
 		{
@@ -117,7 +117,7 @@ namespace tiles
 		tileset::tileset(hades::resources::resource_type<tileset_t>::loaderFunc func) 
 			: hades::resources::resource_type<tileset_t>(func) {}
 
-		void parseTileSettings(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager* data_manager)
+		void parseTileSettings(unique_id mod, const YAML::Node& node, hades::data::data_manager* data_manager)
 		{
 			//terrain-settings:
 			//    tile-size: 32
@@ -132,7 +132,7 @@ namespace tiles
 
 			settings->tile_size = yaml_get_scalar(node, resource_type, "n/a", "tile-size", mod, settings->tile_size);
 			const auto error_tset_id = yaml_get_uid(node, resource_type, "n/a", "error-tileset", mod);
-			if (error_tset_id != hades::UniqueId::Zero)
+			if (error_tset_id != hades::unique_id::zero)
 			{
 				const auto error_tset = hades::data::FindOrCreate<tileset>(error_tset_id, mod, data_manager);
 				settings->error_tileset = error_tset;
@@ -168,7 +168,7 @@ namespace tiles
 		}
 
 		std::vector<tile> ParseTileSection(hades::resources::texture *texture, tile_size_t tile_size, YAML::Node &tiles_node,
-			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod)
+			hades::types::string resource_type, hades::types::string name, unique_id mod)
 		{
 			tile_size_t left = yaml_get_scalar<tile_size_t>(tiles_node, resource_type, name, "left", mod, 0),
 				top = yaml_get_scalar<tile_size_t>(tiles_node, resource_type, name, "top", mod, 0);
@@ -185,7 +185,7 @@ namespace tiles
 			return parseTiles(texture, tile_size, top, left, width - 1 /* make width 0 based */, count, traits);
 		}
 
-		void parseTileset(hades::data::UniqueId mod, const YAML::Node& node, hades::data::data_manager *data)
+		void parseTileset(unique_id mod, const YAML::Node& node, hades::data::data_manager *data)
 		{
 			//tilesets:
 			//    sand: <// tileset name, these must be unique

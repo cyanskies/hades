@@ -65,11 +65,11 @@ namespace hades
 		const curve_data &getCurves() const;
 
 		//attach/detach entities from systems
-		void attachSystem(EntityId, data::UniqueId, sf::Time t);
-		void detachSystem(EntityId, data::UniqueId, sf::Time t);
+		void attachSystem(EntityId, unique_id, sf::Time t);
+		void detachSystem(EntityId, unique_id, sf::Time t);
 
 	protected:
-		std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> FindSystem(data::UniqueId);
+		std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> FindSystem(unique_id);
 
 		using EntityNameMap = std::map<types::string, EntityId>;
 

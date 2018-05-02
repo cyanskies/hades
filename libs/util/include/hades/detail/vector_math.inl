@@ -1,6 +1,8 @@
+#include "hades/vector_math.hpp"
+
 #include <algorithm>
 
-#include "Hades/Utility.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {

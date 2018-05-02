@@ -6,13 +6,13 @@
 #include <tuple>
 
 #include "Hades/resource_base.hpp"
-#include "Hades/UniqueId.hpp"
+#include "hades/uniqueid.hpp"
 
 //Data provides thread safe access to the hades data manager.
 namespace hades
 {
-	using UniqueId = data::UniqueId;
-	const auto EmptyId = data::UniqueId::Zero;
+	using UniqueId = unique_id;
+	const auto EmptyId = unique_id::zero;
 
 	namespace data
 	{
@@ -50,7 +50,7 @@ namespace hades
 
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;
-			virtual void refresh(data::UniqueId) = 0;
+			virtual void refresh(unique_id) = 0;
 			template<class First, class Last>
 			void refresh(First first, Last last);
 
@@ -76,7 +76,7 @@ namespace hades
 		//this will only test that a resource structure has been created.
 		bool Exists(UniqueId id);
 		types::string GetAsString(UniqueId id);
-		//returns UniqueId::Zero if the name cannot be assiciated with an id
+		//returns UniqueId::zero if the name cannot be assiciated with an id
 		UniqueId GetUid(std::string_view name);
 
 		//===Exclusive Functions: this will block all threads===

@@ -54,8 +54,8 @@ namespace ortho_terrain
 
 		//global list of terrainsets for the editor to show in the ui
 		//editor can access individual tiles and transition tiles from in here as well
-		extern std::vector<hades::data::UniqueId> TerrainSets;
-		extern hades::data::UniqueId EmptyTerrainId;
+		extern std::vector<hades::unique_id> TerrainSets;
+		extern hades::unique_id EmptyTerrainId;
 	}
 }
 

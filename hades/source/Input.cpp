@@ -18,7 +18,7 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		i.eventCheck = [](bool handled, const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [](bool handled, const sf::Event &e, unique_id id) {
 			Action a;
 			a.id = id;
 
@@ -54,7 +54,7 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		i.eventCheck = [&window](bool handled, const sf::Event &e, data::UniqueId id) {
+		i.eventCheck = [&window](bool handled, const sf::Event &e, unique_id id) {
 			Action a;
 			a.id = id;
 
@@ -197,7 +197,7 @@ namespace hades
 		i.insert({ "mousex1", MouseButton<sf::Mouse::Button::XButton1>(window) });
 		i.insert({ "mousex2", MouseButton<sf::Mouse::Button::XButton2>(window) });
 		//mouse axis
-		i.insert({ "mouse", {data::UniqueId(), nullptr, [&window](data::UniqueId id) {
+		i.insert({ "mouse", {unique_id(), nullptr, [&window](unique_id id) {
 			Action a;
 			a.id = id;
 			std::tie(a.x_axis, a.y_axis, a.active) = MousePos(window);
@@ -213,8 +213,8 @@ namespace hades
 		//=====touch input=====
 		//only support single touch
 		//with build in functions
-		i.insert({ "touch", {data::UniqueId(), nullptr,
-			[&window](data::UniqueId id) {
+		i.insert({ "touch", {unique_id(), nullptr,
+			[&window](unique_id id) {
 			Action a;
 			a.id = id;
 			a.active = sf::Touch::isDown(0);
@@ -228,12 +228,12 @@ namespace hades
 		}} });
 	}
 
-	void InputSystem::create(data::UniqueId action, bool rebindable)
+	void InputSystem::create(unique_id action, bool rebindable)
 	{
 		_bindable.insert({ action, rebindable });
 	}
 
-	void InputSystem::create(data::UniqueId action, bool rebindable, types::string defaultBinding)
+	void InputSystem::create(unique_id action, bool rebindable, types::string defaultBinding)
 	{
 		auto default_interpretor = _interpretors.find(defaultBinding);
 		if (default_interpretor == _interpretors.end())
@@ -252,7 +252,7 @@ namespace hades
 		InputInterpretor i;
 		i.eventCheck = e;
 		i.statusCheck = f;
-		i.id = data::UniqueId();
+		i.id = unique_id();
 
 		auto out = _specialInterpretors.insert({ name, i });
 
@@ -261,7 +261,7 @@ namespace hades
 			throw std::logic_error("Tried to insert InputInterpretor with a name that has already been used: " + name);
 	}
 
-	bool InputSystem::bind(data::UniqueId action, types::string interpretor)
+	bool InputSystem::bind(unique_id action, types::string interpretor)
 	{
 		if (_bindable.find(action) == _bindable.end())
 			return false;
@@ -274,7 +274,7 @@ namespace hades
 		return true;
 	}
 
-	void InputSystem::unbind(data::UniqueId action, types::string input)
+	void InputSystem::unbind(unique_id action, types::string input)
 	{
 		auto inter = _interpretors.find(input);
 		if (inter == _interpretors.end())
@@ -284,7 +284,7 @@ namespace hades
 		_inputMap.erase(bindings.first, bindings.second);
 	}
 
-	void InputSystem::unbind(data::UniqueId action)
+	void InputSystem::unbind(unique_id action)
 	{
 		std::vector<input_map::iterator> erasure_list;
 		for (auto it = _inputMap.begin(); it != _inputMap.end(); ++it)

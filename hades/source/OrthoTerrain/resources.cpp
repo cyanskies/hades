@@ -9,7 +9,6 @@
 
 namespace ortho_terrain
 {
-	using hades::data::UniqueId;
 	using hades::data::data_manager;
 
 	namespace resources
@@ -17,14 +16,14 @@ namespace ortho_terrain
 		template<typename Func>
 		void ApplyToTerrain(terrain &t, Func func);
 
-		void ParseTerrain(UniqueId, const YAML::Node&, data_manager*);
-		void ParseTerrainSet(UniqueId, const YAML::Node&, data_manager*);
+		void ParseTerrain(hades::unique_id, const YAML::Node&, data_manager*);
+		void ParseTerrainSet(hades::unique_id, const YAML::Node&, data_manager*);
 	}
 
 	void CreateEmptyTerrain(hades::data::data_system *data)
 	{
 		resources::EmptyTerrainId = data->getUid(tiles::empty_tileset_name);
-		hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
+		hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, hades::unique_id::zero, data);
 	}
 
 	void RegisterOrthoTerrainResources(hades::data::data_system* data)
@@ -36,7 +35,7 @@ namespace ortho_terrain
 		data->register_resource_type("terrainsets", resources::ParseTerrainSet);
 
 		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::data_manager::no_load);
-		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, UniqueId::Zero, data);
+		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, hades::unique_id::zero, data);
 		const tiles::tile empty_tile{ empty_t_tex, 0, 0 };
 		ApplyToTerrain(*empty_terrain, [empty_tile](auto &&vec) {
 			vec.emplace_back(empty_tile);
@@ -47,8 +46,8 @@ namespace ortho_terrain
 	{
 		using namespace hades;
 
-		std::vector<UniqueId> TerrainSets;
-		UniqueId EmptyTerrainId = UniqueId::Zero;
+		std::vector<hades::unique_id> TerrainSets;
+		hades::unique_id EmptyTerrainId = hades::unique_id::zero;
 
 		using tile_pos_t = hades::types::int32;
 
@@ -130,7 +129,7 @@ namespace ortho_terrain
 
 		terrain::terrain() : tiles::resources::tileset(LoadTerrain) {}
 
-		void ParseTerrain(UniqueId mod, const YAML::Node& node, data_manager *data)
+		void ParseTerrain(hades::unique_id mod, const YAML::Node& node, data_manager *data)
 		{
 			//a terrain is composed out of multiple terrain tilesets
 
@@ -155,7 +154,7 @@ namespace ortho_terrain
 			constexpr auto resource_type = "terrain";
 			constexpr auto position = "position";
 
-			std::vector<hades::UniqueId> tilesets;
+			std::vector<hades::unique_id> tilesets;
 
 			for (const auto &terrain : node)
 			{
@@ -184,7 +183,7 @@ namespace ortho_terrain
 				//texture source
 				const auto source = yaml_get_uid(terrain, resource_type, name, "source");
 
-				if (source == UniqueId::Zero)
+				if (source == hades::unique_id::zero)
 					continue;
 
 				const auto texture = hades::data::Get<hades::resources::texture>(source);
@@ -276,7 +275,7 @@ namespace ortho_terrain
 			std::unique(std::begin(tiles_tilesets), std::end(tiles_tilesets));
 		}
 
-		void ParseTerrainSet(UniqueId mod, const YAML::Node& node, data_manager *data)
+		void ParseTerrainSet(hades::unique_id mod, const YAML::Node& node, data_manager *data)
 		{
 			//terrainsets:
 			//     name: [terrain1, terrain2, ...]
@@ -304,7 +303,7 @@ namespace ortho_terrain
 				{
 					const auto terrain_name = terrain.as<hades::types::string>();
 					const auto terrain_id = data->getUid(terrain_name);
-					if (terrain_id == hades::UniqueId::Zero)
+					if (terrain_id == hades::unique_id::zero)
 						continue;
 
 					const auto terrain_ptr = hades::data::FindOrCreate<resources::terrain>(terrain_id, mod, data);

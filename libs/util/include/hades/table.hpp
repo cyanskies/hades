@@ -1,5 +1,5 @@
-#ifndef HADES_TABLE_HPP
-#define HADES_TABLE_HPP
+#ifndef HADES_UTIL_TABLE_HPP
+#define HADES_UTIL_TABLE_HPP
 
 #include <vector>
 
@@ -97,6 +97,6 @@ namespace hades {
 	table<Value, SizeType>& operator+=(table<Value, SizeType>&, const virtual_table<Value, SizeType>&);
 }
 
-#include "table.inl"
+#include "detail/table.inl"
 
-#endif // !HADES_TABLE_HPP
+#endif // !HADES_UTIL_TABLE_HPP

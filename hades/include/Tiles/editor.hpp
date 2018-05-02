@@ -29,7 +29,7 @@ namespace tiles
 	{
 	public:
 		tile_editor() = default;
-		tile_editor(const std::vector<hades::data::UniqueId> *tilesets);
+		tile_editor(const std::vector<hades::unique_id> *tilesets);
 
 		void init() override;
 		void draw(sf::RenderTarget &target, sf::Time deltaTime) override;

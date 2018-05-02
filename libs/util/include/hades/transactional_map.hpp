@@ -94,6 +94,6 @@ namespace hades {
 	};
 }
 
-#include "transactional_map.inl"
+#include "detail/transactional_map.inl"
 
-#endif // !HADES_TRANSACTIONALMAP_HPP
+#endif // !HADES_UTIL_TRANSACTIONALMAP_HPP

@@ -27,7 +27,7 @@ namespace hades
 		return _curves;
 	}
 
-	void GameInterface::attachSystem(EntityId entity, data::UniqueId sys, sf::Time t)
+	void GameInterface::attachSystem(EntityId entity, unique_id sys, sf::Time t)
 	{
 		std::shared_lock<std::shared_mutex> lk;
 		GameSystem* system;
@@ -68,7 +68,7 @@ namespace hades
 		}//!while try_again
 	}
 
-	void GameInterface::detachSystem(EntityId entity, data::UniqueId sys, sf::Time t)
+	void GameInterface::detachSystem(EntityId entity, unique_id sys, sf::Time t)
 	{
 		std::shared_lock<std::shared_mutex> lk;
 		GameSystem* system;
@@ -107,7 +107,7 @@ namespace hades
 		} //!while modify the ent list
 	}
 
-	std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> GameInterface::FindSystem(data::UniqueId sys)
+	std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> GameInterface::FindSystem(unique_id sys)
 	{
 		std::shared_lock<std::shared_mutex> lk(SystemsMutex);
 		GameSystem* system = nullptr;

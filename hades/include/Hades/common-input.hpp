@@ -10,7 +10,7 @@ namespace hades
 {
 	namespace input
 	{
-		using InputId = hades::data::UniqueId;
+		using InputId = hades::unique_id;
 
 		extern InputId PointerPosition;
 		extern InputId PointerLeft;

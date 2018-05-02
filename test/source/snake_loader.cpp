@@ -6,7 +6,7 @@
 
 snake_rules *snake_game_rules = nullptr;
 
-void parseSnakeRules(hades::data::UniqueId mod, YAML::Node& node, hades::data::data_manager* dataman)
+void parseSnakeRules(hades::unique_id mod, YAML::Node& node, hades::data::data_manager* dataman)
 {
 	//default snake yaml
 	//snake-game:

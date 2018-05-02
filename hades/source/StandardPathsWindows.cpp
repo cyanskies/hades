@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#define NOMINMAX
+
 #include "Objbase.h"
 #include "Shlobj.h"
 #include "winerror.h"

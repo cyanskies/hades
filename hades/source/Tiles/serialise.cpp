@@ -270,7 +270,7 @@ namespace tiles
 			//get the tilesets
 			auto version_node = GetNode(ortho_node, version_keyname);
 			version_t version;
-			if (version_node.IsDefined() && yaml_error(tile_map_keyname, "n/a", version_keyname, "scalar", hades::data::UniqueId::Zero, version_node.IsScalar()))
+			if (version_node.IsDefined() && yaml_error(tile_map_keyname, "n/a", version_keyname, "scalar", hades::unique_id::zero, version_node.IsScalar()))
 				version = version_node.as<version_t>(max_supported_version + 1);
 
 			if (version > max_supported_version)

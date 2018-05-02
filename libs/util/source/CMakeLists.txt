@@ -1,0 +1,53 @@
+# Directory hades/source
+
+# C++ source files
+set(HADES_UTIL_SRC
+	parallel_jobs.cpp
+	types.cpp
+	../include/hades/parallel_jobs.hpp
+	../include/hades/shared_guard.hpp
+	../include/hades/table.hpp
+	../include/hades/transactional_map.hpp
+	../include/hades/types.hpp
+	../include/hades/uniqueid.hpp
+	../include/hades/utility.hpp
+	../include/hades/value_guard.hpp
+	../include/hades/vector_math.hpp
+	../include/hades/detail/table.inl
+	../include/hades/detail/transactional_map.inl
+	../include/hades/detail/type_erasure.inl
+	../include/hades/detail/vector_math.inl
+)
+
+source_group("Headers" FILES
+	../include/hades/parallel_jobs.hpp
+	../include/hades/shared_guard.hpp
+	../include/hades/table.hpp
+	../include/hades/transactional_map.hpp
+	../include/hades/types.hpp
+	../include/hades/uniqueid.hpp
+	../include/hades/utility.hpp
+	../include/hades/value_guard.hpp
+	../include/hades/vector_math.hpp)
+
+source_group("Detail" FILES
+	../include/hades/detail/table.inl
+	../include/hades/detail/transactional_map.inl
+	../include/hades/detail/type_erasure.inl
+	../include/hades/detail/vector_math.inl)
+
+# Library to build
+set(HADES_UTIL_LIB ${PROJECT_NAME})
+
+# Determine library suffixes depending on static/shared configuration
+add_library(${HADES_UTIL_LIB} STATIC ${HADES_UTIL_SRC})
+set_target_properties(${HADES_UTIL_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
+set_target_properties(${HADES_UTIL_LIB} PROPERTIES RELEASE_POSTFIX -s)
+
+target_include_directories(${HADES_UTIL_LIB} PUBLIC ../include)
+
+# Install (use "bin" folder for DLL, "lib" for SO files)
+install(TARGETS ${HADES_LIB}
+		RUNTIME DESTINATION lib
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib)

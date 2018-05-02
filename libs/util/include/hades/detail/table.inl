@@ -1,4 +1,4 @@
-#include "table.hpp"
+#include "hades/table.hpp"
 
 #include <cassert>
 #include <vector>

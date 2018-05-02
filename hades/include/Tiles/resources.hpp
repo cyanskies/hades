@@ -11,7 +11,7 @@ namespace tiles
 
 	//tile sizes are capped by the data type used for texture sizes
 	using tile_size_t = hades::resources::texture::size_type;
-	using traits_list = std::vector<hades::data::UniqueId>;
+	using traits_list = std::vector<hades::unique_id>;
 
 	constexpr auto empty_tileset_name = "tileset-empty";
 
@@ -30,17 +30,17 @@ namespace tiles
 
 	namespace id
 	{
-		extern hades::data::UniqueId empty_tile_texture;
-		extern hades::data::UniqueId tile_settings;
+		extern hades::unique_id empty_tile_texture;
+		extern hades::unique_id tile_settings;
 	}
 
 	namespace resources
 	{
-		void parseTileSettings(hades::data::UniqueId, const YAML::Node&, hades::data::data_manager*);
-		std::vector<tile> ParseTileSection(hades::data::UniqueId texture, tile_size_t tile_size, YAML::Node &tiles_node,
-			hades::types::string resource_type, hades::types::string name, hades::data::UniqueId mod);
+		void parseTileSettings(hades::unique_id, const YAML::Node&, hades::data::data_manager*);
+		std::vector<tile> ParseTileSection(hades::unique_id texture, tile_size_t tile_size, YAML::Node &tiles_node,
+			hades::types::string resource_type, hades::types::string name, hades::unique_id mod);
 		
-		extern std::vector<hades::data::UniqueId> Tilesets;
+		extern std::vector<hades::unique_id> Tilesets;
 
 		struct tileset_t {};
 

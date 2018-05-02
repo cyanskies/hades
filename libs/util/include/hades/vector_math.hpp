@@ -1,5 +1,5 @@
-#ifndef HADES_VECTOR_MATH_HPP
-#define HADES_VECTOR_MATH_HPP
+#ifndef HADES_UTIL_VECTOR_MATH_HPP
+#define HADES_UTIL_VECTOR_MATH_HPP
 
 #include <tuple>
 
@@ -29,6 +29,6 @@ namespace hades
 	std::tuple<T, T> vector_clamp(T vx, T vy, T minx, T miny, T maxx, T maxy);
 }
 
-#include "Hades/vector_math.inl"
+#include "hades/detail/vector_math.inl"
 
-#endif // !HADES_VECTOR_MATH_HPP
+#endif // !HADES_UTIL_VECTOR_MATH_HPP

@@ -310,7 +310,7 @@ namespace objects
 			obj.name = yaml_get_scalar<hades::types::string>(obj_node, obj_str, hades::to_string(obj.id), obj_name, "");
 			const auto type_id = yaml_get_uid(obj_node, obj_str, obj.name, obj_type);
 
-			if (type_id != hades::UniqueId::Zero)
+			if (type_id != hades::UniqueId::zero)
 			{
 				const auto type_ptr = hades::data::Get<resources::object>(type_id);
 				obj.obj_type = type_ptr;
@@ -330,7 +330,7 @@ namespace objects
 
 				const auto id = hades::data::GetUid(curve_id_str);
 
-				if (id == hades::UniqueId::Zero)
+				if (id == hades::UniqueId::zero)
 					continue;
 
 				const auto curve_ptr = hades::data::Get<hades::resources::curve>(id);

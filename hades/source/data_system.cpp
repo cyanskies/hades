@@ -10,7 +10,7 @@ namespace hades
 {
 	namespace data
 	{
-		data_system::data_system() : _ids({ {no_id_string, UniqueId::Zero} })
+		data_system::data_system() : _ids({ {no_id_string, UniqueId::zero} })
 		{}
 
 		//application registers the custom resource types
@@ -146,7 +146,7 @@ namespace hades
 				r->load(this);
 		}
 
-		void data_system::load(data::UniqueId id)
+		void data_system::load(unique_id id)
 		{
 			auto it = std::find_if(_loadQueue.begin(), _loadQueue.end(), [id](const resources::resource_base* r) {return r->id == id; });
 			auto resource = *it;
@@ -188,7 +188,7 @@ namespace hades
 			auto id = _ids.find(types::string(name));
 
 			if (id == std::end(_ids))
-				return UniqueId::Zero;
+				return UniqueId::zero;
 
 			return id->second;
 		}
@@ -199,7 +199,7 @@ namespace hades
 		}
 
 		template<typename GETMOD, typename YAMLPARSER>
-		void parseInclude(data::UniqueId mod, types::string file, GETMOD getMod, YAMLPARSER yamlParser)
+		void parseInclude(unique_id mod, types::string file, GETMOD getMod, YAMLPARSER yamlParser)
 		{
 			std::string include_yaml;
 			auto mod_info = getMod(mod);
@@ -219,7 +219,7 @@ namespace hades
 			yamlParser(mod, YAML::Load(include_yaml.c_str()));
 		}
 
-		void data_system::parseYaml(data::UniqueId mod, YAML::Node root)
+		void data_system::parseYaml(unique_id mod, YAML::Node root)
 		{
 			//loop though each of the root level nodes and pass them off
 			//to specialised handlers if present
@@ -236,7 +236,7 @@ namespace hades
 					if (header.second.IsScalar())
 					{
 						auto value = header.second.as<types::string>();
-						parseInclude(mod, value, [this](data::UniqueId mod) {return get<resources::mod>(mod); }, [this](data::UniqueId mod, YAML::Node root) {parseYaml(mod, root); });
+						parseInclude(mod, value, [this](unique_id mod) {return get<resources::mod>(mod); }, [this](unique_id mod, YAML::Node root) {parseYaml(mod, root); });
 					}
 					else if (header.second.IsSequence())
 					{
@@ -324,13 +324,13 @@ using namespace hades;
 
 //posts error message if the yaml node is the wrong type
 bool yaml_error(types::string resource_type, types::string resource_name,
-	types::string property_name, types::string requested_type, data::UniqueId mod, bool test)
+	types::string property_name, types::string requested_type, unique_id mod, bool test)
 {
 	if (!test)
 	{
 		using namespace std::string_literals;
 		auto message = "Error passing YAML"s;
-		if (mod != hades::UniqueId::Zero)
+		if (mod != hades::UniqueId::zero)
 		{
 			auto mod_ptr = data::Get<resources::mod>(mod);
 			message += ", in mod: "s + mod_ptr->name;
@@ -343,8 +343,8 @@ bool yaml_error(types::string resource_type, types::string resource_name,
 	return test;
 }
 
-hades::data::UniqueId yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::data::UniqueId mod, hades::data::UniqueId default_value)
+hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, hades::unique_id mod, hades::unique_id default_value)
 {
 	auto value_node = node[property_name];
 	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))

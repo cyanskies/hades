@@ -6,7 +6,7 @@
 
 struct Input
 {
-	using ActionId = hades::data::UniqueId;
+	using ActionId = hades::unique_id;
 
 	static ActionId move_left;
 	static ActionId move_up;

@@ -16,7 +16,7 @@
 using namespace hades;
 
 //posts a standard error message if the requested resource is of the wrong type
-void resource_error(types::string resource_type, types::string resource_name, data::UniqueId mod)
+void resource_error(types::string resource_type, types::string resource_name, unique_id mod)
 {
 	auto mod_ptr = data::Get<resources::mod>(mod);
 	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: "
@@ -27,16 +27,16 @@ namespace hades
 {
 	namespace resources
 	{
-		void parseTexture(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseTexture(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void loadTexture(resource_base* r, data::data_manager* dataman);
-		void parseString(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
-		void parseSystem(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseString(unique_id mod, const YAML::Node& node, data::data_manager*);
+		void parseSystem(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void loadSystem(resource_base* r, data::data_manager* dataman);
-		void parseCurve(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
-		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager*);
+		void parseAnimation(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void loadAnimation(resource_base* r, data::data_manager* dataman);
 		void loadFont(resource_base* r, data::data_manager* data);
-		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager*);
+		void parseFont(unique_id mod, const YAML::Node& node, data::data_manager*);
 	}
 
 	void RegisterCommonResources(hades::data::data_system *data)
@@ -114,7 +114,7 @@ namespace hades
 			return t;
 		}
 
-		void parseTexture(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
+		void parseTexture(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//default texture yaml
 			//textures:
@@ -202,7 +202,7 @@ namespace hades
 			}
 		}
 
-		void parseString(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
+		void parseString(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//strings yaml
 			//strings:
@@ -236,7 +236,7 @@ namespace hades
 			}
 		}
 
-		void parseSystem(data::UniqueId mod, const YAML::Node& node, data::data_manager*)
+		void parseSystem(unique_id mod, const YAML::Node& node, data::data_manager*)
 		{
 			assert(false && "mods cannot create systems until scripting is introduced.");
 		}
@@ -293,7 +293,7 @@ namespace hades
 				return VariableType::ERROR;
 		}
 
-		void parseCurve(data::UniqueId mod, const YAML::Node& node, data::data_manager* dataman)
+		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//curves:
 			//		name:
@@ -508,7 +508,7 @@ namespace hades
 			}
 			else if (type == VariableType::VECTOR_UNIQUE)
 			{
-				out.value = StringToVector<data::UniqueId>(str, [](auto &&str) {
+				out.value = StringToVector<unique_id>(str, [](auto &&str) {
 					return hades::data::GetUid(str);
 				});
 			}
@@ -543,7 +543,7 @@ namespace hades
 		}
 
 		//throws runtime erorr
-		std::vector<animation_frame> parseFrames(data::UniqueId mod, const YAML::Node &node)
+		std::vector<animation_frame> parseFrames(unique_id mod, const YAML::Node &node)
 		{
 			std::vector<animation_frame> frame_vector;
 
@@ -581,7 +581,7 @@ namespace hades
 			return frame_vector;
 		}
 
-		void parseAnimation(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
+		void parseAnimation(unique_id mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//animations:
 			//	example-animation:
@@ -668,7 +668,7 @@ namespace hades
 			}
 		}
 
-		void parseFont(data::UniqueId mod, const YAML::Node& node, data::data_manager* data)
+		void parseFont(unique_id mod, const YAML::Node& node, data::data_manager* data)
 		{
 			//fonts yaml
 			//fonts:

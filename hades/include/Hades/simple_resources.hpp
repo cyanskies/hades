@@ -81,7 +81,7 @@ namespace hades
 			using bool_t = bool;
 			using string = hades::types::string;
 			using object_ref = int; //? entity ID
-			using unique = hades::data::UniqueId;
+			using unique = hades::unique_id;
 			using vector_int = std::vector<int_t>;
 			using vector_float = std::vector<float_t>;
 			using vector_object_ref = std::vector<object_ref>;
@@ -94,8 +94,8 @@ namespace hades
 
 			using int_t = hades::types::int32;
 			using curve_value = std::variant<int_t, float,
-				bool, hades::types::string, hades::data::UniqueId, std::vector<int_t>,
-				std::vector<float>, std::vector<hades::data::UniqueId>>;
+				bool, hades::types::string, hades::unique_id, std::vector<int_t>,
+				std::vector<float>, std::vector<hades::unique_id>>;
 
 			curve_value value;
 		};
@@ -150,8 +150,8 @@ namespace hades
 			//std::vector<uniform_entry> uniforms;
 
 			types::string vert_source, geo_source;
-			data::UniqueId vert_mod = data::UniqueId::Zero,
-				geo_mod = data::UniqueId::Zero;
+			unique_id vert_mod = unique_id::zero,
+				geo_mod = unique_id::zero;
 			//source and mod refeer to the fragment shader source and mod
 
 			template<typename T>

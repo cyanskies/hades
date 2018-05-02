@@ -6,8 +6,8 @@ namespace hades
 {
 	namespace input
 	{
-		InputId PointerPosition = InputId::Zero;
-		InputId PointerLeft = InputId::Zero;
+		InputId PointerPosition = InputId::zero;
+		InputId PointerLeft = InputId::zero;
 	}
 
 	namespace pointer

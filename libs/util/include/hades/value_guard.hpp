@@ -1,5 +1,5 @@
-#ifndef HADES_VALUEGUARD_HPP
-#define HADES_VALUEGUARD_HPP
+#ifndef HADES_UTIL_VALUEGUARD_HPP
+#define HADES_UTIL_VALUEGUARD_HPP
 
 #include <mutex>
 
@@ -78,4 +78,4 @@ namespace hades {
 	};
 }
 
-#endif // !HADES_VALUEGUARD_HPP
+#endif // !HADES_UTIL_VALUEGUARD_HPP

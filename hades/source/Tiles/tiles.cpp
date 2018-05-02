@@ -45,7 +45,7 @@ namespace tiles
 		for (const auto &t : std::get<std::vector<TileSetInfo>>(map))
 		{
 			const auto start_id = std::get<tile_count_t>(t);
-			const auto tileset_id = std::get<hades::data::UniqueId>(t);
+			const auto tileset_id = std::get<hades::unique_id>(t);
 			const auto tileset = hades::data::Get<resources::tileset>(tileset_id);
 			assert(tileset);
 			tilesets.push_back({ tileset, start_id });
@@ -572,7 +572,7 @@ namespace tiles
 
 	const resources::tile_settings *GetTileSettings()
 	{
-		if (id::tile_settings == hades::UniqueId::Zero)
+		if (id::tile_settings == hades::UniqueId::zero)
 		{
 			const auto message = "tile-settings undefined. GetTileSettings()";
 			LOGERROR(message)

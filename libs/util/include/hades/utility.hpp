@@ -1,5 +1,5 @@
-#ifndef HADES_UTILITY_HPP
-#define HADES_UTILITY_HPP
+#ifndef HADES_UTIL_UTILITY_HPP
+#define HADES_UTIL_UTILITY_HPP
 
 #include <cassert>
 #include <limits>
@@ -70,4 +70,4 @@ namespace hades {
 	}
 }
 
-#endif // !HADES_UTILITY_HPP
+#endif // !HADES_UTIL_UTILITY_HPP

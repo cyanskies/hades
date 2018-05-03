@@ -1,5 +1,5 @@
-#ifndef HADES_CURVES_HPP
-#define HADES_CURVES_HPP
+#ifndef HADES_UTIL_CURVE_HPP
+#define HADES_UTIL_CURVE_HPP
 
 #include <algorithm>
 #include <cassert>
@@ -8,7 +8,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Logging.hpp"
+#include "hades/types.hpp"
 
 //A set of curve classes for variables
 //curves allow values to interpolated by comparing keyframes
@@ -17,16 +17,16 @@
 
 namespace hades {
 	template<typename Time, typename Data>
-	struct Keyframe
+	struct keyframe
 	{
-		Keyframe(Time at) : t(at) {}
-		Keyframe(Time at, Data data) : t(at), value(data) {}
+		keyframe(Time at) : t(at) {}
+		keyframe(Time at, Data data) : t(at), value(data) {}
 
 		Time t;
 		Data value;
 	};
 
-	//TODO: move lerp into a subnamespace
+	//TODO: move lerp into the utility header
 	template<typename T>
 	T lerp(T first, T second, float alpha)
 	{
@@ -36,53 +36,55 @@ namespace hades {
 	template<typename T>
 	std::vector<T> lerp(std::vector<T> first, std::vector<T> second, float alpha)
 	{
-		assert(false && "tried to call lerp on a vector");
-		LOGERROR("Called lerp with a vector: don't store vectors in Linear Curves");
+		//TODO: throw logic_error
+		assert(false && "Cannot lerp a vector");
 		return first;
 	}
 
-	//lerping on a string is forbidden, same as above
 	template<>
-	types::string lerp(types::string first, types::string second, float alpha);
+	inline types::string lerp(types::string first, types::string second, float alpha)
+	{
+		//TODO: throw logic_error
+		assert(false && "Cannot lerp a string");
+		return first;
+	}
 
 	template<typename Time, typename Data>
-	bool operator==(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	bool operator==(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
 	{
 		return lhs.t == rhs.t && lhs.value == rhs.value;
 	}
 
 	template<typename Time, typename Data>
-	bool operator!=(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	bool operator!=(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const Keyframe<Time, Data> &lhs, const Keyframe<Time, Data> &rhs)
+	bool operator<(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
 	{
 		return lhs.t < rhs.t;
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const Keyframe<Time, Data> &lhs, const Time &rhs)
+	bool operator<(const keyframe<Time, Data> &lhs, const Time &rhs)
 	{
 		return lhs.t < rhs;
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const Time &lhs, const Keyframe<Time, Data> &rhs)
+	bool operator<(const Time &lhs, const keyframe<Time, Data> &rhs)
 	{
 		return lhs < rhs.t;
 	}
 
-	#undef ERROR
-	#undef CONST
-	enum CurveType {
-		ERROR, //something is wrong
-		CONST, //data is constant for any keyframe
-		LINEAR, //data between keyframes is exactly the difference between them
-		STEP, // data between keyframes is identical to the previous keyframe
-		PULSE // data between keyframes is null
+	enum class curve_type {
+		error, //something is wrong
+		const_c, //data is constant for any keyframe
+		linear, //data between keyframes is exactly the difference between them
+		step, // data between keyframes is identical to the previous keyframe
+		pulse // data between keyframes is null
 	};
 
 	class curve_error : public std::runtime_error
@@ -92,10 +94,10 @@ namespace hades {
 	};
 
 	template<typename Time, typename Data>
-	class Curve final
+	class curve final
 	{
 	public:
-		explicit Curve(CurveType type) : _type(type)
+		explicit curve(curve_type type) : _type(type)
 		{}
 
 		//adds a keyframe
@@ -113,10 +115,10 @@ namespace hades {
 
 		Data get(Time at) const
 		{
-			assert(_type != CurveType::PULSE);
+			assert(_type != curve_type::pulse);
 
-			if (_type == CurveType::PULSE)
-				throw curve_error("Don't use Curve::get() for a pulse curve. Use get* functions instead.");
+			if (_type == curve_type::pulse)
+				throw curve_error("Don't use curve::get() for a pulse curve. Use get* functions instead.");
 
 			//if we're before the start of the data or after the end
 			// then just return the closest keyframe
@@ -127,14 +129,14 @@ namespace hades {
 			else if (*last < at)
 				return last->value;
 
-			if (_type == CurveType::CONST)
+			if (_type == curve_type::const_c)
 			{
 				if (_data.empty())
 					throw curve_error("Tried to read from empty CONST curve");
 
 				return _data.begin()->value;
 			}
-			else if (_type == CurveType::LINEAR)
+			else if (_type == curve_type::linear)
 			{
 				auto d = _getRange(at);
 
@@ -143,7 +145,7 @@ namespace hades {
 				using hades::lerp;
 				return lerp(d.first->value, d.second->value, interp);
 			}
-			else if (_type == CurveType::STEP)
+			else if (_type == curve_type::step)
 			{
 				auto d = _getRange(at);
 
@@ -153,27 +155,27 @@ namespace hades {
 				return d.first->value;
 			}
 
-			throw curve_error("Malformed curve, curvetype was: " + _type);
+			throw curve_error("Malformed curve");
 		}
 
 		//These are the only valid ways to get data from a Pulse
-		using FrameType = Keyframe<Time, Data>;
+		using frame_t = keyframe<Time, Data>;
 		//returns the closest frame before at
-		FrameType getPrevious(Time at) const
+		frame_t getPrevious(Time at) const
 		{
 			auto d = _getRange(at);
 			return *d.first;
 		}
 
 		//returns the closest frame after at
-		FrameType getNext(Time at) const
+		frame_t getNext(Time at) const
 		{
 			auto d = _getRange(at);
 			return *d.second;
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<FrameType> getBetween(Time first, Time second) const
+		std::vector<frame_t> getBetween(Time first, Time second) const
 		{
 			auto begin = begin(), end = end();
 			auto lower = std::lower_bound(begin, end, first);
@@ -184,7 +186,7 @@ namespace hades {
 				lower != upper)
 				--upper;
 
-			std::vector<Keyframe<Time, Data>> output;
+			std::vector<keyframe<Time, Data>> output;
 
 			while (lower != upper)
 				output.push_back(*lower++);
@@ -192,7 +194,7 @@ namespace hades {
 			return output;
 		}
 
-		using DataType = std::set< FrameType >;
+		using DataType = std::set< frame_t >;
 		using const_iterator = typename DataType::const_iterator;
 
 		const_iterator begin() const
@@ -206,19 +208,19 @@ namespace hades {
 		}
 
 		//For converting to the usable Curve Types
-		CurveType type() { return _type; }
+		curve_type type() { return _type; }
 
 		template<typename T, typename D>
-		friend bool operator==(const Curve<T, D> &lhs, const Curve<T, D> &rhs);
+		friend bool operator==(const curve<T, D> &lhs, const curve<T, D> &rhs);
 		template<typename T, typename D>
-		friend bool operator!=(const Curve<T, D> &lhs, const Curve<T, D> &rhs);
+		friend bool operator!=(const curve<T, D> &lhs, const curve<T, D> &rhs);
 
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
 
 		void _insertFrame(Time at, Data value, bool erase = false)
 		{
-			if (_type == CurveType::CONST)
+			if (_type == curve_type::const_c)
 			{
 				//replace the only value with the new one
 				_data.insert({ Time(), value });
@@ -249,20 +251,20 @@ namespace hades {
 		}
 
 		DataType _data;
-		CurveType _type;
+		curve_type _type;
 	};
 
 	template<typename T, typename D>
-	bool operator==(const Curve<T, D> &lhs, const Curve<T, D> &rhs)
+	bool operator==(const curve<T, D> &lhs, const curve<T, D> &rhs)
 	{
 		return lhs._type == rhs._type && lhs._data == rhs._data;
 	}
 
 	template<typename T, typename D>
-	bool operator!=(const Curve<T, D> &lhs, const Curve<T, D> &rhs)
+	bool operator!=(const curve<T, D> &lhs, const curve<T, D> &rhs)
 	{
 		return !(rhs == lhs);
 	}
 }
 
-#endif //HADES_CURVES_HPP
+#endif //HADES_UTIL_CURVES_HPP

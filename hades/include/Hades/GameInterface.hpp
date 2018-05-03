@@ -11,7 +11,7 @@
 
 #include "SFML/System/Time.hpp"
 
-#include "Hades/Curves.hpp"
+#include "hades/curve.hpp"
 #include "Hades/GameSystem.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
@@ -22,7 +22,7 @@ namespace hades
 	struct curve_data
 	{
 		template<class T>
-		using CurveMap = transactional_map< std::pair<EntityId, VariableId>, Curve<sf::Time, T> >;
+		using CurveMap = transactional_map< std::pair<EntityId, VariableId>, curve<sf::Time, T> >;
 
 		CurveMap<types::int32> intCurves;
 		CurveMap<float> floatCurves;

@@ -5,6 +5,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
+#include "Hades/Logging.hpp"
 #include "Hades/files.hpp"
 
 namespace ortho_terrain

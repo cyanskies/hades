@@ -51,7 +51,7 @@ namespace hades
 		//diffs for the entitynames list
 		std::vector<std::pair<EntityId, types::string>> _newEntityNames;
 
-		Curve<sf::Time, InputSystem::action_set> _input;
+		curve<sf::Time, InputSystem::action_set> _input;
 		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in
 	};
 }

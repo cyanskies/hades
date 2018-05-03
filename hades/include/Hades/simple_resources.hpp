@@ -7,7 +7,7 @@
 #include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/Shader.hpp"
 
-#include "Hades/Curves.hpp"
+#include "hades/curve.hpp"
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/resource_base.hpp"
 #include "Hades/Types.hpp"
@@ -106,7 +106,7 @@ namespace hades
 
 		struct curve : public resource_type<curve_t>
 		{
-			CurveType curve_type = CurveType::ERROR;
+			curve_type curve_type = curve_type::error;
 			VariableType data_type = VariableType::ERROR;
 			bool sync = false,
 				save = false,

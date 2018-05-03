@@ -3,7 +3,7 @@
 
 #include "SFML/System/Time.hpp"
 
-#include "Hades/Curves.hpp"
+#include "hades/curve.hpp"
 #include "Hades/GameInterface.hpp"
 
 //Exported curves can be streamed into packets,
@@ -23,7 +23,7 @@ namespace hades
 			EntityId entity;
 			VariableId variable;
 			//the client will use the variableid to ditermine curveType
-			std::vector<Keyframe<sf::Time, T>> frames;
+			std::vector<keyframe<sf::Time, T>> frames;
 		};
 
 		std::vector<std::pair<EntityId, types::string>> entity_names;

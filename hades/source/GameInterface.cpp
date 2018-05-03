@@ -145,7 +145,7 @@ namespace hades
 
 		GameSystem s;
 		s.system = system;
-		Curve<sf::Time, std::vector<EntityId>> entities(CurveType::STEP);
+		curve<sf::Time, std::vector<EntityId>> entities(curve_type::step);
 		entities.insert(sf::Time::Zero, {});
 		s.attached_entities = entities;
 	}

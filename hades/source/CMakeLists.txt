@@ -11,7 +11,6 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	common-input.cpp
-	Curves.cpp
 	data_system.cpp
   	ExportedCurves.cpp
 	files.cpp

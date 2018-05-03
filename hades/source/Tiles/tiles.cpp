@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "Hades/Data.hpp"
+#include "Hades/Logging.hpp"
 #include "Hades/Utility.hpp"
 
 #include "Objects/Objects.hpp"

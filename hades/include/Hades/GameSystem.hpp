@@ -38,7 +38,7 @@ namespace hades
 		//the current time, and the time to advance too(t + dt)
 		sf::Time current_time, dt;
 		//the input over time for systems to look at
-		const Curve<sf::Time, InputSystem::action_set> *actions;
+		const curve<sf::Time, InputSystem::action_set> *actions;
 	};
 
 	//the interface for game systems.
@@ -48,7 +48,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		resources::system* system;
 		//list of entities attached to this system, over time
-		value_guard<Curve<sf::Time, std::vector<EntityId>>> attached_entities = Curve<sf::Time, std::vector<EntityId>>(CurveType::STEP);
+		value_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
 	};
 
 	//program provided systems should be attatched to the renderer or 

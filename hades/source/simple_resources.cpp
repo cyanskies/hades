@@ -253,18 +253,18 @@ namespace hades
 				&& lhs.value == rhs.value;
 		}
 
-		CurveType readCurveType(types::string s)
+		curve_type readCurveType(types::string s)
 		{
 			if (s == "const")
-				return CurveType::CONST;
+				return curve_type::const_c;
 			else if (s == "step")
-				return CurveType::STEP;
+				return curve_type::step;
 			else if (s == "linear")
-				return CurveType::LINEAR;
+				return curve_type::linear;
 			else if (s == "pulse")
-				return CurveType::PULSE;
+				return curve_type::pulse;
 			else
-				return CurveType::ERROR;
+				return curve_type::error;
 		}
 
 		VariableType readVariableType(types::string s)

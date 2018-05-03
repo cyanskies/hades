@@ -4,6 +4,7 @@
 set(HADES_UTIL_SRC
 	parallel_jobs.cpp
 	types.cpp
+	../include/hades/curve.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp
@@ -20,6 +21,7 @@ set(HADES_UTIL_SRC
 )
 
 source_group("Headers" FILES
+	../include/hades/curve.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp

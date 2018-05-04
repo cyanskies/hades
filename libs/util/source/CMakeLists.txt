@@ -8,14 +8,14 @@ set(HADES_UTIL_SRC
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp
-	../include/hades/transactional_map.hpp
+	../include/hades/shared_map.hpp
 	../include/hades/types.hpp
 	../include/hades/uniqueid.hpp
 	../include/hades/utility.hpp
 	../include/hades/value_guard.hpp
 	../include/hades/vector_math.hpp
 	../include/hades/detail/table.inl
-	../include/hades/detail/transactional_map.inl
+	../include/hades/detail/shared_map.inl
 	../include/hades/detail/type_erasure.inl
 	../include/hades/detail/vector_math.inl
 )
@@ -25,7 +25,7 @@ source_group("Headers" FILES
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp
-	../include/hades/transactional_map.hpp
+	../include/hades/shared_map.hpp
 	../include/hades/types.hpp
 	../include/hades/uniqueid.hpp
 	../include/hades/utility.hpp
@@ -34,7 +34,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/table.inl
-	../include/hades/detail/transactional_map.inl
+	../include/hades/detail/shared_map.inl
 	../include/hades/detail/type_erasure.inl
 	../include/hades/detail/vector_math.inl)
 

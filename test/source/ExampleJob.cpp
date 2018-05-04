@@ -1,5 +1,5 @@
 #include "Hades/parallel_jobs.hpp"
-#include "Hades/transactional_map.hpp"
+#include "hades/shared_map.hpp"
 
 struct needed_info : public hades::parallel_jobs::job_data
 {

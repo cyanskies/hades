@@ -66,7 +66,7 @@ namespace hades
 	}
 
 	template<typename T>
-	std::vector<ExportedCurves::ExportSet<T>> GetExportedSet(sf::Time t, typename transactional_map<std::pair<EntityId, VariableId>, \
+	std::vector<ExportedCurves::ExportSet<T>> GetExportedSet(sf::Time t, typename shared_map<std::pair<EntityId, VariableId>, \
 		curve<sf::Time, T>>::data_array data)
 	{
 		std::vector<ExportedCurves::ExportSet<T>> output;

@@ -24,7 +24,7 @@
 namespace hades {
 
 	template<typename Key, typename Value>
-	class transactional_map
+	class shared_map
 	{
 	public:
 		using value_type = Value;
@@ -94,6 +94,6 @@ namespace hades {
 	};
 }
 
-#include "detail/transactional_map.inl"
+#include "detail/shared_map.inl"
 
 #endif // !HADES_UTIL_TRANSACTIONALMAP_HPP

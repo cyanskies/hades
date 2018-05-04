@@ -13,16 +13,16 @@
 
 #include "hades/curve.hpp"
 #include "Hades/GameSystem.hpp"
+#include "hades/shared_map.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
-#include "Hades/transactional_map.hpp"
 
 namespace hades
 {
 	struct curve_data
 	{
 		template<class T>
-		using CurveMap = transactional_map< std::pair<EntityId, VariableId>, curve<sf::Time, T> >;
+		using CurveMap = shared_map< std::pair<EntityId, VariableId>, curve<sf::Time, T> >;
 
 		CurveMap<types::int32> intCurves;
 		CurveMap<float> floatCurves;

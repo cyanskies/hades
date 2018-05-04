@@ -1,4 +1,4 @@
-#include "hades/transactional_map.hpp"
+#include "hades/shared_map.hpp"
 
 #include <cassert>
 #include <exception>
@@ -6,7 +6,7 @@
 
 namespace hades {
 	template<typename Key, typename Value>
-	typename transactional_map<Key, Value>::value_type transactional_map<Key, Value>::get(key_type id) const
+	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get(key_type id) const
 	{
 		if (!exists(id))
 			throw std::runtime_error("id is not stored in this vector.");
@@ -53,7 +53,7 @@ namespace hades {
 	//end functions from stack overflow
 
 	template<typename Key, typename Value>
-	void transactional_map<Key, Value>::sort()
+	void shared_map<Key, Value>::sort()
 	{
 		//take exclusive locks
 		std::lock(_vectorMutex, _dispatchMutex);
@@ -80,14 +80,14 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	bool transactional_map<Key, Value>::exists(key_type id) const
+	bool shared_map<Key, Value>::exists(key_type id) const
 	{
 		read_lock lk(_dispatchMutex);
 		return _idDispatch.find(id) != _idDispatch.end();
 	}
 
 	template<typename Key, typename Value>
-	void transactional_map<Key, Value>::create(key_type id, value_type value)
+	void shared_map<Key, Value>::create(key_type id, value_type value)
 	{
 		if (exists(id))
 			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + std::to_string(id).c_str());
@@ -111,7 +111,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	void transactional_map<Key, Value>::erase(key_type id)
+	void shared_map<Key, Value>::erase(key_type id)
 	{
 		if (!exists(id))
 			throw std::runtime_error("Tried to remove id that isn't contained.");
@@ -147,7 +147,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	typename transactional_map<Key, Value>::lock_return transactional_map<Key, Value>::exchange_lock(key_type id, value_type expected) const
+	typename shared_map<Key, Value>::lock_return shared_map<Key, Value>::exchange_lock(key_type id, value_type expected) const
 	{
 		if (!exists(id))
 			throw std::runtime_error("id is not stored in this vector.");
@@ -171,7 +171,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	void transactional_map<Key, Value>::exchange_release(key_type id, exchange_token &&token) const
+	void shared_map<Key, Value>::exchange_release(key_type id, exchange_token &&token) const
 	{
 		if (!exists(id))
 			throw std::runtime_error("id is not stored in this vector.");
@@ -191,7 +191,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	void transactional_map<Key, Value>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
+	void shared_map<Key, Value>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
 	{
 		if (!exists(id))
 			throw std::runtime_error("id is not stored in this vector.");
@@ -212,7 +212,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	typename transactional_map<Key, Value>::data_array transactional_map<Key, Value>::data() const
+	typename shared_map<Key, Value>::data_array shared_map<Key, Value>::data() const
 	{
 		std::lock(_vectorMutex, _dispatchMutex);
 		std::lock_guard<mutex_type> vectorGuard( _vectorMutex, std::adopt_lock ),
@@ -233,7 +233,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	typename transactional_map<Key, Value>::size_type transactional_map<Key, Value>::_getIndex(Key id) const
+	typename shared_map<Key, Value>::size_type shared_map<Key, Value>::_getIndex(Key id) const
 	{
 		//index is olny useful if the arrays are all the same size, so we'll check the invarient here.
 		assert((_components.size() == _ids.size()) &&

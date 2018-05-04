@@ -7,7 +7,7 @@
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
 #include "Hades/GameSystem.hpp"
-#include "Hades/transactional_map.hpp"
+#include "Hades/shared_map.hpp"
 
 namespace hades
 {
@@ -29,7 +29,7 @@ namespace hades
 	{
 	public:
 		//controls for messing with sprites
-		using SpriteMap = transactional_map<EntityId, sf::Sprite>;
+		using SpriteMap = shared_map<EntityId, sf::Sprite>;
 		SpriteMap &getSprites();
 	protected:
 		SpriteMap _sprites;

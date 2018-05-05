@@ -7,7 +7,7 @@
 #include <string_view>
 
 #include "Hades/exceptions.hpp"
-#include "Hades/Types.hpp"
+#include "hades/types.hpp"
 #include "Hades/value_guard.hpp"
 
 //Properties is a collection of global key->value pairs

@@ -9,7 +9,6 @@
 
 #include "Hades/Data.hpp"
 #include "Hades/resource_base.hpp"
-#include "Hades/type_erasure.hpp"
 #include "Hades/Types.hpp"
 //Data manager is a resource management class.
 //The class is not thread safe

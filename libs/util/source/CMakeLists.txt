@@ -4,6 +4,7 @@
 set(HADES_UTIL_SRC
 	parallel_jobs.cpp
 	types.cpp
+	../include/hades/any_map.hpp
 	../include/hades/curve.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
@@ -14,13 +15,14 @@ set(HADES_UTIL_SRC
 	../include/hades/utility.hpp
 	../include/hades/value_guard.hpp
 	../include/hades/vector_math.hpp
+	../include/hades/detail/any_map.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
-	../include/hades/detail/type_erasure.inl
 	../include/hades/detail/vector_math.inl
 )
 
 source_group("Headers" FILES
+	../include/hades/any_map.hpp
 	../include/hades/curve.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
@@ -33,9 +35,9 @@ source_group("Headers" FILES
 	../include/hades/vector_math.hpp)
 
 source_group("Detail" FILES
+	../include/hades/detail/any_map.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
-	../include/hades/detail/type_erasure.inl
 	../include/hades/detail/vector_math.inl)
 
 # Library to build

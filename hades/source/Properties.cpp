@@ -1,5 +1,6 @@
-#include "Hades/exceptions.hpp"
 #include "Hades/Properties.hpp"
+
+#include "Hades/exceptions.hpp"
 
 namespace hades
 {

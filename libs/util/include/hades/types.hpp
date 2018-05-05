@@ -27,19 +27,15 @@ namespace hades {
 		//using float
 		//using double
 		//using long double
-		template<typename T>
-		constexpr bool hades_type()
-		{
-			//return true for the above types
-			return std::is_arithmetic<T>::value || std::is_same<T, string>::value;
-		}
+
+		template<class T> struct always_false : public std::false_type {};
 
 		//string to value conversion
 		template<typename T>
 		T stov(std::string value)
 		{
             //TODO: gcc is too eager to interpret static asserts, need a different solution here
-			//static_assert(false, "Tried to convert type not covered by stov");
+			static_assert(always_false<T>, "Tried to convert type not covered by stov");
 			return T();
 		}
 
@@ -97,8 +93,6 @@ namespace hades {
 
 		return out;
 	}
-
-	template<class T> struct always_false : public std::false_type {};
 }
 
 #endif //HADES_UTIL_TYPES_HPP

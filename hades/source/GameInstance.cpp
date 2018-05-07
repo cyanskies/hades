@@ -10,15 +10,13 @@ namespace hades
 {
 	void GameInstance::tick(sf::Time dt)
 	{
-		assert(parallel_jobs::ready());
-
 		std::shared_lock<std::shared_mutex> system_lock(SystemsMutex);
 
-		std::vector<parallel_jobs::job*> jobs(Systems.size());
+		/*std::vector<parallel_jobs::job*> jobs(Systems.size());
 		auto iter = jobs.begin();
 
 		auto parent_job = parallel_jobs::create(parallel_jobs::job_function());
-
+*/
 		//create jobs for all systems to work on their entities
 		for(auto &s : Systems)
 		{
@@ -40,21 +38,21 @@ namespace hades
 			job_data->actions = &_input;
 
 			//create a job function that will call the systems job on each attached entity
-			*iter = parallel_jobs::create_child(parent_job, s.system->value, std::move(job_data));
-			++iter;
+			//*iter = parallel_jobs::create_child(parent_job, s.system->value, std::move(job_data));
+			//++iter;
 		}
 
-		parallel_jobs::run(parent_job);
+		//parallel_jobs::run(parent_job);
 
 		//the jobs must be started after they are all created,
 		//in case any systems try to add or remove entities from other systems
-		for (auto j : jobs)
+		/*for (auto j : jobs)
 			parallel_jobs::run(j);
 
 		parallel_jobs::wait(parent_job);
 
 		assert(parallel_jobs::ready());
-
+*/
 		//advance the game clock
 		//this is the only time the clock can be changed
 		_currentTime += dt;

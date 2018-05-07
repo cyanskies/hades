@@ -73,6 +73,6 @@ namespace hades
 	};
 }
 
-#include "Hades/detail/any_map.inl"
+#include "hades/detail/any_map.inl"
 
 #endif // !HADES_ANY_MAP_HPP

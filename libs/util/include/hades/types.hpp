@@ -28,7 +28,7 @@ namespace hades {
 		//using double
 		//using long double
 
-		template<class T> struct always_false : public std::false_type {};
+		template<typename ...Types> struct always_false : public std::false_type {};
 
 		//string to value conversion
 		template<typename T>

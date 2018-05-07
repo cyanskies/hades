@@ -1,351 +1,240 @@
-#include "Hades/parallel_jobs.hpp"
+#include "hades/parallel_jobs.hpp"
 
-#include <algorithm>
-#include <atomic>
+#include <any>
 #include <cassert>
-#include <condition_variable>
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <vector>
+#include <utility>
 
-#include "Hades/Types.hpp"
-#include "Hades/Utility.hpp"
+namespace hades
+{
+	//implementation based on article series
+	//https://blog.molecular-matters.com/2015/08/24/job-system-2-0-lock-free-work-stealing-part-1-basics/
 
-namespace hades {
-	namespace parallel_jobs {
+	namespace detail
+	{
+		thread_local void* t_current_job = nullptr;
+		thread_local thread_id t_thread_id;
+		constexpr auto t_main_thread_id = std::numeric_limits<thread_id>::max();
+	}
 
-		//implementation based on article series
-		//https://blog.molecular-matters.com/2015/08/24/job-system-2-0-lock-free-work-stealing-part-1-basics/
+	//
+	job_system::job_system() : job_system(-1)
+	{}
 
-		struct job
+	job_system::job_system(types::int32 threads)
+	{
+		_init(threads);
+		_create_threads();
+	}
+
+	job_system::~job_system()
+	{
+		_join.store(true);
+		_condition.notify_all();
+
+		for (auto &t : _thread_pool)
 		{
-			job(job_function f) : function(f), parent_job(nullptr), unfinished_children(1), user_data(nullptr) {}
+			assert(t.joinable());
+			t.detach();
+		}
+	}
 
-			job_function function;
-			job* parent_job;
-			std::atomic<types::int32> unfinished_children;
-			job_data_ptr user_data;
-		};
+	bool job_system::ready() const
+	{
+		std::unique_lock<std::mutex> cv_lock(_condition_mutex, std::try_to_lock);
+		lock_t job_lock(_jobs_mutex);
+		return _jobs.empty() && cv_lock.owns_lock();
+	}
 
-		//mutex to protect the joblist
-		using mutex_type = std::mutex;
-		mutex_type joblist_mutex;
-		//storage for jobs
-		static std::vector<std::unique_ptr<job>> g_joblist;
-		//contains the number of extra threads we have available(doesn't count the main thread)
-		//note: hardware_concurrency can return 0 as an error condition.
-		//std::max ensures the lowest value we can get is 0.
-		static const types::uint32 g_thread_count = static_cast<types::uint32>(std::max(static_cast<types::int32>(std::thread::hardware_concurrency()) - 1, 0));
-		//thread id type
-		using thread_id = std::size_t;
-		using thread_idle_t = std::size_t;
-		//the next unique thread id
-		static std::atomic<thread_id> g_thread_id_next = 0;
-		//the system will set this to false to make all the threads joinable
-		static std::atomic_bool g_workers_enabled = true;
-		//a pool of threads that we can use.
-		using thread_pool = std::vector<std::thread>;
-		static thread_pool g_threads(g_thread_count);
-		//a vector of mutexs to guard access to the per thread queues
-		static std::vector<std::mutex> g_worker_queue_mutexes(g_thread_count + 1);
-		//each worker thread gets a queue to work with
-		//the queue is in g_worker_job_queues[thread_id]
-		using worker_queue = std::deque<job*>;
-		static std::vector<worker_queue> g_worker_job_queues(g_thread_count + 1);
-		using lock_t = std::unique_lock<mutex_type>;
-		using lock_guard = std::lock_guard<mutex_type>;
-		using locked_queue = std::tuple<worker_queue*, lock_t>;
+	void job_system::run(job_system::job* j)
+	{
+		const auto id = _thread_id();
+		auto &[queue, lock] = _get_queue(id);
+		std::ignore = lock;
+		assert(queue);
+		queue->push_front(j);
+	}
 
-		//for sleeping threads when there is no work.
-		static std::mutex cv_mut;
-		static std::condition_variable cv;
+	void job_system::wait(job_system::job* job)
+	{
+		assert(job);
+		assert(ready());
+		_condition.notify_all();
 
-		static bool joined = false;
-
-		//==per thread data==
-		//the job the thread is currently working on
-		static thread_local job* t_current_job;
-		//the threads unique id(so it can look up it's queue in the job queue
-		//workers are threads 0 - thread_count, main thread is thread_count + 1
-		static thread_local thread_id t_thread_id;
-		//lets the thread ditermine if it is asleap
-		static thread_local bool t_sleep = false;
-
-		void worker_init();
-		void worker_function();
-
-		bool ready()
+		while (!_is_finished(job))
 		{
-			lock_guard jlk(joblist_mutex);
-			//test that none of the workers are holding the condition variable lock
-			std::unique_lock<std::mutex> cv_lock(cv_mut, std::try_to_lock);
-			return !joined && g_joblist.empty() && cv_lock.owns_lock();
+			//find another job to run
+			auto j = _find_job();
+			if (j)
+				_execute(j);
+		}
+	}
+
+	void job_system::clear()
+	{
+		//the work should have already stopped when this is called.
+		assert(ready());
+		//clear all the thread queues
+		for (std::size_t i = 0; i < _thread_count; ++i)
+		{
+			lock_t qlk(_worker_queues_mutex[i]);
+			_worker_queues[i].clear();
 		}
 
-		//==system functions==
-		void init()
+		//clear the job list
+		lock_t jlk(_jobs_mutex);
+		_jobs.clear();
+	}
+
+	void job_system::_init(types::int32 threads)
+	{
+		if (threads > 0)
+			_thread_count = threads - 1;
+		else
+			_thread_count = std::thread::hardware_concurrency() - 1;
+		
+		_thread_pool = thread_list{ _thread_count };
+		_worker_queues = worker_queue_list{ _thread_count + 1 };
+		_worker_queues_mutex = worker_mutex_list{ _thread_count + 1 };
+	}
+
+	void job_system::_create_threads()
+	{
+		thread_id next_id = 0;
+
+		for (auto &t : _thread_pool)
+			t = std::thread{ [this](thread_id id){ _worker_function(id); } , next_id++ };
+
+		_worker_init(next_id);
+	}
+
+	job_system::thread_id job_system::_thread_id() const
+	{
+		if (detail::t_thread_id == detail::t_main_thread_id)
+			return _main_thread_id();
+		else
+			return detail::t_thread_id;
+	}
+
+	void job_system::_worker_init(thread_id id)
+	{
+		detail::t_thread_id = id;
+	}
+
+	void job_system::_worker_function(thread_id id)
+	{
+		_worker_init(id);
+
+		while (_join.load())
 		{
-			//assert that the system isn't already running.
-			assert(std::none_of(g_threads.begin(), g_threads.end(), [](const std::thread &t) {return t.joinable();}));
-			//once the system has shut down that's it, no more init or rejoin
-			assert(!joined);
-
-			for (auto &t : g_threads)
-				t = std::thread(worker_function);
-
-			//initialise the main threads worker data too.
-			worker_init();
-		}
-
-		void join()
-		{
-			//assert that the system is running.
-			assert(std::all_of(g_threads.begin(), g_threads.end(), [](const std::thread &t) {return t.joinable();}));
-			assert(ready());
-			//once the system has shut down that's it, no more init or rejoin
-			assert(!joined);
-
-			g_workers_enabled = false;
-
-			cv.notify_all();
-
-			for (auto &t : g_threads)
+			//get job
+			auto j = _find_job();
+			if (j)
+				_execute(j);
+			else
 			{
-				assert(t.joinable());
-				t.join();//TODO: catch invalid_argument exception from non-joinable thread(should only be possible if init was skipped);
+				std::unique_lock<std::mutex> lock(_condition_mutex);
+				_condition.wait(lock);
 			}
-
-			joined = true;
 		}
+	}
 
-		//==client functions==
-		job* create(job_function function)
+	bool job_system::_is_ready(const job *j) const
+	{
+		//when children == 1, then only this jobs actual task is left to do.
+		return j->unfinished_children == 1;
+	}
+
+	bool job_system::_is_finished(const job *j) const
+	{
+		//if it's 0 or less than one, then the job has been completed
+		return j->unfinished_children <= 1;
+	}
+
+	void job_system::_finish(job *j)
+	{
+		assert(j);
+		//mark job as complete
+		const auto c = --(j->unfinished_children);
+		if (c == 0)
 		{
-			assert(function);
-			//create a new job and store it in the global jobstore
-			auto newjob = std::make_unique<job>( function );
-			job* jobptr = &*newjob;
-
-			lock_guard guard(joblist_mutex);
-			g_joblist.push_back(std::move(newjob));
-
-			//return ptr to the new job
-			//non-owning reference pointer.
-			return jobptr;
+			if (j->parent_job)
+				_finish(j->parent_job);
 		}
+	}
 
-		job* create(job_function function, job_data_ptr user_data)
+	typename job_system::locked_queue job_system::_get_queue(thread_id i)
+	{
+		assert(i < _thread_count + 1);
+		queue_lock lock(_worker_queues_mutex[i]);
+		worker_queue *q = &_worker_queues[i];
+		return { q, std::move(lock) };
+	}
+
+	job_system::job* job_system::_find_job()
+	{
+		job* j = nullptr;
+		const auto id = _thread_id();
 		{
-			assert(user_data);
-			auto j = create(function);
-			j->user_data.swap(user_data);
-			return j;
-		}
-
-		job* create_child(job* parent, job_function function)
-		{
-			assert(parent);
-
-			//create child job
-			auto jobptr = create(function);
-
-			//assign parent
-			jobptr->parent_job = parent;
-			//increment parents child count
-			++(parent->unfinished_children);
-
-			return jobptr;
-		}
-
-		job* create_child(job* parent, job_function function, job_data_ptr user_data)
-		{
-			auto j = create_child(parent, function);
-			assert(user_data);
-			j->user_data.swap(user_data);
-			return j;
-		}
-
-		locked_queue get_queue(thread_id i);
-
-		void run(job* job)
-		{
-			//add job to this threads queue
-			worker_queue* q = nullptr;
-			lock_t lock;
-			std::tie(q, lock) = get_queue(t_thread_id);
-
+			//grab a job from our queue
+			auto [q, qlock] = _get_queue(id);
 			assert(q);
-			assert(lock);
-			q->push_front(job);
-		}
-
-		bool is_finished(const job*);
-		job* find_job();
-		void execute(job* job);
-
-		void wait(const job* job)
-		{
-			assert(job);
-			assert(ready());
-			cv.notify_all();
-
-			while (!is_finished(job))
+			std::ignore = qlock;
+			
+			//out queue works from the front
+			if (q->size() > 0)
 			{
-				//find another job to run
-				auto j = find_job();
-				if(j)
-					execute(j);
+				j = q->front();
+				q->pop_front();
 			}
 		}
 
-		void finish(job* job)
+		if (!j)
+			j = _steal_job(id);
+
+		return j;
+	}
+
+	job_system::job *job_system::_steal_job(thread_id id)
+	{
+		//find the queue with the most jobs, and take half of them into our queue
+		//we know our queue must be empty
+
+		for (std::size_t i = 0; i < _worker_queues.size(); ++i)
+			;
+
+		return nullptr;
+	}
+
+	void job_system::_ready_wait(job *j)
+	{
+		assert(j);
+		while (!_is_ready(j))
 		{
-			//mark job as complete
-			const auto children = --(job->unfinished_children);
-			if (children == 0)
-			{
-				if (job->parent_job)
-				{
-					finish(job->parent_job);
-				}
-			}
+			//find another job to run
+			auto j = _find_job();
+			if (j)
+				_execute(j);
 		}
+	}
 
-		void clear()
+	void job_system::_execute(job *j)
+	{
+		assert(j);
+		if (j->unfinished_children > 1)
+			_ready_wait(j);
+
+		if (j->function)
 		{
-			//the work should have already stopped when this is called.
-			assert(ready());
-			//clear all the thread queues
-			for (thread_id i = 0; i < g_thread_count; ++i)
-			{
-				lock_guard qlk(g_worker_queue_mutexes[i]);
-				g_worker_job_queues[i].clear();
-			}
-
-			//clear the job list
-			lock_guard jlk(joblist_mutex);
-			g_joblist.clear();
+			//if true, the job completed properly, if false, it wants another go later
+			if (j->function())
+				_finish(j);
+			else
+				run(j);//requeue the job
 		}
+	}
 
-		//==worker functions==
-		bool is_ready(const job* job)
-		{
-			//when children == 1, then only this jobs actual task is left to do.
-			return job->unfinished_children == 1;
-		}
-
-		bool is_finished(const job* job)
-		{
-			//if it's 0 or less than one, then the job has been completed
-			return job->unfinished_children <= 1;
-		}
-
-		//worker init is called once at the start of the program
-		void worker_init()
-		{
-			auto id = std::this_thread::get_id();
-			t_thread_id = g_thread_id_next++;
-		}
-
-		locked_queue get_queue(thread_id i)
-		{
-			assert(i < g_thread_count + 1);
-			lock_t lock(g_worker_queue_mutexes[i]);
-			return std::make_tuple(&g_worker_job_queues[i], std::move(lock));
-		}
-
-		job* find_job()
-		{
-			job* j = nullptr;
-
-			{
-				//grab a job from our queue
-				lock_t qlock;
-				worker_queue *q = nullptr;
-				std::tie(q, qlock) = get_queue(t_thread_id);
-				assert(q);
-				assert(qlock);
-
-				//out queue works from the front
-				if (q->size() > 0)
-				{
-					j = q->front();
-					q->pop_front();
-				}
-			}
-
-			//or steal one from another queue if ours is empty
-			if (!j)
-			{
-				//TODO: we should be stealing from the longest queue, rather than a random one(what if only one has jobs?)
-				// we could try to steal g_thread_count times before finding a job
-				auto t = t_thread_id;
-				while(t == t_thread_id)
-					t = random<thread_id>(0, g_thread_count);
-
-				//stolen queue works from the back
-				lock_t qlock;
-				worker_queue *q = nullptr;
-				std::tie(q, qlock) = get_queue(t);
-				assert(q);
-				assert(qlock);
-
-				if (q->size() > 0)
-				{
-					j = q->back();
-					q->pop_back();
-				}
-			}
-
-			return j;
-		}
-
-		void ready_wait(const job *job)
-		{
-			assert(job);
-			while (!is_ready(job))
-			{
-				//find another job to run
-				auto j = find_job();
-				if (j)
-					execute(j);
-			}
-		}
-
-		void execute(job* job)
-		{
-			assert(job);
-			if (job->unfinished_children > 1)
-				ready_wait(job);
-
-			if (job->function)
-			{
-				//if true, the job completed properly, if false, it wants another go later
-				if (job->function(*job->user_data))
-					finish(job);
-				else
-					run(job);//requeue the job
-			}
-		}
-
-		void worker_function()
-		{
-			worker_init();
-
-			while (g_workers_enabled)
-			{
-				//get job
-				auto j = find_job();
-				if (j)
-					execute(j);
-				else
-				{
-					std::unique_lock<std::mutex> lock(cv_mut);
-					cv.wait(lock);
-				}
-			}
-		}	
+	job_system::thread_id job_system::_main_thread_id() const
+	{
+		return _thread_count;
 	}
 }

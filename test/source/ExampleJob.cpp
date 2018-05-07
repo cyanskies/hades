@@ -1,7 +1,6 @@
-#include "Hades/parallel_jobs.hpp"
 #include "hades/shared_map.hpp"
 
-struct needed_info : public hades::parallel_jobs::job_data
+struct needed_info
 {
 	//assume these would be ptrs(weak?) to the specific data
 	void* ref_to_position;
@@ -18,10 +17,7 @@ struct needed_info : public hades::parallel_jobs::job_data
 	//return true;
 };
 
-bool exampleJob(hades::parallel_jobs::job_data* data)
+bool exampleJob(needed_info data)
 {
-	//convert job data to our actual job information type
-	auto info = static_cast<needed_info*>(data);
-
 	return true;
 }

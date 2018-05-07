@@ -16,6 +16,7 @@ set(HADES_UTIL_SRC
 	../include/hades/value_guard.hpp
 	../include/hades/vector_math.hpp
 	../include/hades/detail/any_map.inl
+	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
 	../include/hades/detail/vector_math.inl
@@ -36,6 +37,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/any_map.inl
+	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
 	../include/hades/detail/vector_math.inl)

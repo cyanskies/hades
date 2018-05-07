@@ -126,9 +126,6 @@ namespace hades
 		//load config files and overwrite any updated settings
 
 		registerConsoleCommands();
-
-		//initialise the job system
-		parallel_jobs::init();
 	}
 
 	//calls job on any command that contains command
@@ -320,9 +317,6 @@ namespace hades
 
 		//kill off any lingering states.
 		_states.drop();
-
-		//shutdown the job system
-		parallel_jobs::join();
 
 		//unregister the global providers
 		console::log = nullptr;

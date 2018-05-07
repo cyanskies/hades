@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "Hades/Input.hpp"
-#include "Hades/parallel_jobs.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/value_guard.hpp"
 
@@ -30,7 +29,7 @@ namespace hades
 	//a reference to the game interface
 	//the current game time
 	//this frames dt
-	struct system_job_data : public parallel_jobs::job_data
+	struct system_job_data
 	{
 		//the entities this system id attached too
 		std::vector<EntityId> entities;

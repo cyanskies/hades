@@ -65,8 +65,10 @@ namespace hades
 		struct string : public resource_type<types::string>
 		{};
 
+		struct system_t
+		{};
 		//a system stores a job function
-		struct system : public resource_type<parallel_jobs::job_function>
+		struct system : public resource_type<system_t>
 		{
 			//if loaded from a manifest then it should be loaded from scripts
 			//if it's provided by the application, then source is empty, and no laoder function is provided.

@@ -41,7 +41,7 @@ namespace hades
 		auto size = window.getSize();
 		auto inside_window = sf::IntRect(0, 0, size.x, size.y).contains(mpos);
 
-		auto [mx, my] = vector_clamp(mpos.x, mpos.y,
+		auto [mx, my] = vector::clamp(mpos.x, mpos.y,
 			0, 0,
 			static_cast<types::int32>(size.x),
 			static_cast<types::int32>(size.y));
@@ -61,7 +61,7 @@ namespace hades
 			if (!handled && e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
 			{
 				a.active = true;
-				std::tie(a.x_axis, a.y_axis) = vector_clamp(e.mouseButton.x, e.mouseButton.y,
+				std::tie(a.x_axis, a.y_axis) = vector::clamp(e.mouseButton.x, e.mouseButton.y,
 					0, 0,
 					static_cast<types::int32>(window.getSize().x),
 					static_cast<types::int32>(window.getSize().y));
@@ -220,7 +220,7 @@ namespace hades
 			a.active = sf::Touch::isDown(0);
 			auto pos = sf::Touch::getPosition(0, window);
 			auto size = window.getSize();
-			std::tie(a.x_axis, a.y_axis) = vector_clamp(pos.x, pos.y,
+			std::tie(a.x_axis, a.y_axis) = vector::clamp(pos.x, pos.y,
 				0, 0,
 				static_cast<types::int32>(size.x),
 				static_cast<types::int32>(size.y));

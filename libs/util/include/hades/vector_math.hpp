@@ -1,34 +1,34 @@
-#ifndef HADES_UTIL_VECTOR_MATH_HPP
-#define HADES_UTIL_VECTOR_MATH_HPP
+#ifndef HADES_UTIL_MATH_HPP
+#define HADES_UTIL_MATH_HPP
 
 #include <tuple>
 
-namespace hades
+namespace hades::vector
 {
 	//returns the length of the vector
 	template<typename T>
-	T vector_length(T x, T y);
+	T length(T x, T y);
 
 	//returns the squared length of the vector
 	template<typename T>
-	T vector_length_sqrd(T x, T y);
+	T length_sqrd(T x, T y);
 
 	//changes the length of a vector to match the provided length
 	template<typename T>
-	std::tuple<T, T> vector_resize(T x, T y, T length);
+	std::tuple<T, T> resize(T x, T y, T length);
 
 	//returns a vector that points 90 degrees of the origional vector
 	template<typename T>
-	std::tuple<T, T> vector_purpendicular(T x, T y);
+	std::tuple<T, T> purpendicular(T x, T y);
 
 	//returns a vector that points 280 degrees of the origional vector
 	template<typename T>
-	std::tuple<T, T> vector_purpendicular_reverse(T x, T y);
+	std::tuple<T, T> purpendicular_reverse(T x, T y);
 
 	template<typename T>
-	std::tuple<T, T> vector_clamp(T vx, T vy, T minx, T miny, T maxx, T maxy);
+	std::tuple<T, T> clamp(T vx, T vy, T minx, T miny, T maxx, T maxy);
 }
 
 #include "hades/detail/vector_math.inl"
 
-#endif // !HADES_UTIL_VECTOR_MATH_HPP
+#endif // !HADES_UTIL_MATH_HPP

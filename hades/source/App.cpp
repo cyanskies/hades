@@ -247,7 +247,7 @@ namespace hades
 		sf::Time accumulator = sf::Time::Zero;
 
 		//this will allow rendering SFGUI objects even if sfml drawing hasn't been used yet.
-		_window.resetGLStates();
+		//_window.resetGLStates();
 
 		while(running && _window.isOpen())
 		{
@@ -289,10 +289,10 @@ namespace hades
 				activeState->draw(_window, totalFrameTime);
 
 				//store gl states while drawing sfgui elements
-				_window.pushGLStates();
+				//_window.pushGLStates();
 				activeState->updateGui(totalFrameTime);
 				_sfgui.Display(_window);
-				_window.popGLStates(); // restore sfml gl states
+				//_window.popGLStates(); // restore sfml gl states
 
 				//activeState->drawAfterGui(_window, totalFrameTime);
 				//update the console interface.

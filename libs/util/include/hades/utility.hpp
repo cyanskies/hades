@@ -13,6 +13,8 @@ namespace hades {
 		std::default_random_engine random_generator(rd());
 	}
 
+	//replace with logic similar to that displayed in the example
+	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	inline bool floatEqual(float a, float b)
 	{
 		return fabs(a - b) <= std::numeric_limits<float>::epsilon() * 4;

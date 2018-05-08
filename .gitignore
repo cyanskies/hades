@@ -245,3 +245,4 @@ Makefile
 *.layout
 CMakeCache.txt
 install_manifest.txt
+.vs

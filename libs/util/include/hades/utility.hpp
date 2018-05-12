@@ -38,6 +38,14 @@ namespace hades {
 		return random(0, 1) != 0;
 	}
 
+	template <typename Container>
+	void unique(Container c)
+	{
+		std::sort(std::begin(c), std::end(c));
+		auto new_end = std::unique(std::begin(c), std::end(c));
+		c.erase(new_end, std::end(c));
+	}
+
 	//pass a back_inserter to result
 	template<typename Out>
 	void split(const std::string &s, char delim, Out result) {

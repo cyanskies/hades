@@ -138,13 +138,15 @@ namespace objects
 		});
 
 		//remove any adjacent duplicates(for curves with the same type and value)
-		std::unique(std::begin(list), std::end(list), [](const curve_obj &lhs, const curve_obj &rhs) {
+		auto end = std::unique(std::begin(list), std::end(list), [](const curve_obj &lhs, const curve_obj &rhs) {
 			auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
 			auto v1 = std::get<value>(lhs), v2 = std::get<value>(rhs);
 			assert(c1 && c2);
 			return c1->id == c2->id
 				&& v1 == v2;
 		});
+
+		list.erase(end, std::end(list));
 
 		curve_list output;
 

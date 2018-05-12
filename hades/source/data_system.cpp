@@ -5,6 +5,7 @@
 #include "Hades/Data.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/files.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -161,9 +162,8 @@ namespace hades
 
 		void data_system::load(types::uint8 count)
 		{
-			std::sort(_loadQueue.begin(), _loadQueue.end());
-			std::unique(_loadQueue.begin(), _loadQueue.end());
-
+			unique(_loadQueue);
+			
 			while (count-- > 0 && !_loadQueue.empty())
 			{
 				_loadQueue.back()->load(this);

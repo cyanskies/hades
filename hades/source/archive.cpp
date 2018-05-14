@@ -10,10 +10,6 @@
 #include <limits>
 #include <string>
 
-#ifdef NDEBUG
-	#define ZLIB_WINAPI 1
-#endif
-
 #include "zip.h"
 #include "unzip.h"
 

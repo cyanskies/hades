@@ -54,7 +54,7 @@ namespace hades {
 				#ifndef NDEBUG
 					return ResourceStream("../../game/" + to_string(modPath), fileName);
 				#else
-					return std::move(ResourceStream(modPath, filename));
+					return std::move(ResourceStream(modPath, fileName));
 				#endif
 			}
 		}

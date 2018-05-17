@@ -126,7 +126,7 @@ namespace hades {
 		//zip == standard zip
 		//? hdf == hades data file
 		//? data == data file
-		constexpr auto extensions = { "zip" };
+		constexpr auto extensions = std::array{ "zip" };
 
 		void ResourceStream::open(std::string_view modPath, std::string_view fileName)
 		{
@@ -152,7 +152,7 @@ namespace hades {
 						if (fs::is_directory(d))
 							pathDirectory = true;
 						else if(std::any_of(std::begin(extensions), std::end(extensions),
-							[ext = d.path().extension()](auto &&other){return ext == other}))
+							[ext = d.path().extension()](auto &&other){ return ext == other; }))
 						{
 							pathArchive = d.path().string();
 						}
@@ -186,7 +186,7 @@ namespace hades {
 			}
 
 			//tryload from archive
-			if (!found && !pathArchive.empty)
+			if (!found && !pathArchive.empty())
 			{
 				const auto archivepath = pathArchive;
 				if (!zip::file_exists(archivepath, file))

@@ -54,7 +54,7 @@ namespace hades {
 				#ifndef NDEBUG
 					return ResourceStream("../../game/" + to_string(modPath), fileName);
 				#else
-					return std::move(ResourceStream(modPath, fileName));
+					return ResourceStream(modPath, fileName);
 				#endif
 			}
 		}
@@ -122,11 +122,17 @@ namespace hades {
 			open(modPath, fileName);
 		}
 
+		//acceptable zip extensions
+		//zip == standard zip
+		//? hdf == hades data file
+		//? data == data file
+		constexpr auto extensions = { "zip" };
+
 		void ResourceStream::open(std::string_view modPath, std::string_view fileName)
 		{
 			//check if modPath exists as a archive or directory
-			bool pathArchive = false, pathDirectory = false;
-			types::string archiveExt;
+			bool pathDirectory = false;
+			types::string pathArchive{};
 			const types::string mod{ modPath };
 			const types::string file{ fileName };
 			{
@@ -141,17 +147,16 @@ namespace hades {
 
 				for (auto d : directory)
 				{
-					if (d.path().stem().string() == archive_name)
+					if (d.path().stem() == archive_name)
 					{
 						if (fs::is_directory(d))
 							pathDirectory = true;
-						else
+						else if(std::any_of(std::begin(extensions), std::end(extensions),
+							[ext = d.path().extension()](auto &&other){return ext == other}))
 						{
-							pathArchive = true;
-							archiveExt = d.path().extension().string();
+							pathArchive = d.path().string();
 						}
 					}
-
 				}
 			}
 
@@ -181,9 +186,9 @@ namespace hades {
 			}
 
 			//tryload from archive
-			if (!found && pathArchive)
+			if (!found && !pathArchive.empty)
 			{
-				const auto archivepath = mod + archiveExt;
+				const auto archivepath = pathArchive;
 				if (!zip::file_exists(archivepath, file))
 				{
 					const auto message = "Cannot find file: " + file + ",  in mod archive: " + archivepath;

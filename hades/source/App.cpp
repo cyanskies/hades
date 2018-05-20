@@ -74,16 +74,17 @@ namespace hades
 		auto vid_default = [console] ()->bool {
 			//window
 			console->set("vid_fullscreen", false);
+			console->set("vid_resizable", false);
 			//resolution
 			console->set("vid_width", 800);
 			console->set("vid_height", 600);
-			console->set("vid_mode", 0);
 			//depth
 			console->set("vid_depth", 32);
 
 			return true;
 		};
 
+		
 		//set the default now
 		vid_default();
 
@@ -348,7 +349,6 @@ namespace hades
 			{									// doesn't block resizing the window
 				_console.setValue<types::int32>("vid_width", e.size.width);
 				_console.setValue<types::int32>("vid_height", e.size.height);
-				_console.set("vid_mode", -1);
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
@@ -414,34 +414,21 @@ namespace hades
 					return false;
 				}
 
-				const float ratio = static_cast<float>(width->load()) / static_cast<float>(height->load());
-				const int intratio = static_cast<int>(ratio * 100);
-
-				switch (intratio)
-				{
-				case RATIO3_4:
-					_console.set("vid_mode", 0);
-					break;
-				case RATIO16_9:
-					_console.set("vid_mode", 1);
-					break;
-				case RATIO16_10:
-					_console.set("vid_mode", 2);
-					break;
-				default:
-					_console.set("vid_mode", -1);
-					LOGWARNING("Cannot determine video ratio.");
-					break;
-				}
+				auto window_type = sf::Style::Titlebar | sf::Style::Close;
+				
+				const auto resizable = _console.getBool("vid_resizable");
 
 				if (fullscreen->load())
-					_window.create(mode, "game", sf::Style::Fullscreen);
-				else
-					_window.create(mode, "game", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
+					window_type = sf::Style::Fullscreen;
+				else if (resizable->load())
+					window_type |= sf::Style::Resize;
 
+				_window.create(mode, "game", window_type);
 				_overlayMan.setWindowSize({ mode.width, mode.height });
 
-				//TODO: restore vsync/framelimit settings to window
+				//restore vsync settings
+				_window.setFramerateLimit(0);
+				_window.setVerticalSyncEnabled(_sfVSync);
 
 				return true;
 			};

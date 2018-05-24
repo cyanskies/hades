@@ -18,18 +18,23 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		i.eventCheck = [](bool handled, const sf::Event &e, unique_id id) {
+		i.is_match = [](const sf::Event &e) {
+			if (e.type == sf::Event::KeyPressed ||
+				e.type == sf::Event::KeyReleased)
+				return e.key.code == k;
+
+			return false;
+		};
+
+		i.eventCheck = [](bool handled, const sf::Event &e) {
 			Action a;
-			a.id = id;
 
 			if (!handled && e.type == sf::Event::KeyPressed && e.key.code == k)
 				a.active = true;
 			else if (e.type == sf::Event::KeyReleased && e.key.code == k)
 				a.active = false;
-			else
-				return std::make_tuple(false, a);
 
-			return std::make_tuple(true, a);
+			return a;
 		};
 
 		return i;
@@ -54,9 +59,8 @@ namespace hades
 	{
 		InputInterpretor i;
 
-		i.eventCheck = [&window](bool handled, const sf::Event &e, unique_id id) {
+		i.eventCheck = [&window](bool handled, const sf::Event &e) {
 			Action a;
-			a.id = id;
 
 			if (!handled && e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == b)
 			{
@@ -68,10 +72,8 @@ namespace hades
 			}
 			else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == b)
 				a.active = false;
-			else
-				return std::make_tuple(false, a);
 
-			return std::make_tuple(true, a);
+			return a;
 		};
 
 		return i;
@@ -197,9 +199,8 @@ namespace hades
 		i.insert({ "mousex1", MouseButton<sf::Mouse::Button::XButton1>(window) });
 		i.insert({ "mousex2", MouseButton<sf::Mouse::Button::XButton2>(window) });
 		//mouse axis
-		i.insert({ "mouse", {unique_id(), nullptr, [&window](unique_id id) {
+		i.insert({ "mouse", {unique_id{}, nullptr, [&window]() {
 			Action a;
-			a.id = id;
 			std::tie(a.x_axis, a.y_axis, a.active) = MousePos(window);
 
 			return a;
@@ -214,9 +215,8 @@ namespace hades
 		//only support single touch
 		//with build in functions
 		i.insert({ "touch", {unique_id(), nullptr,
-			[&window](unique_id id) {
+			[&window]() {
 			Action a;
-			a.id = id;
 			a.active = sf::Touch::isDown(0);
 			auto pos = sf::Touch::getPosition(0, window);
 			auto size = window.getSize();
@@ -247,9 +247,20 @@ namespace hades
 		_bindable.insert({ action, rebindable });
 	}
 
-	void InputSystem::addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f)
+	void InputSystem::addInterpretor(types::string name, InputInterpretor::event_match_function m, InputInterpretor::event_function e)
+	{
+		return addInterpretor(name, m, e, nullptr);
+	}
+
+	void InputSystem::addInterpretor(types::string name, InputInterpretor::function f)
+	{
+		return addInterpretor(name, nullptr, nullptr, f);
+	}
+
+	void InputSystem::addInterpretor(types::string name, InputInterpretor::event_match_function m, InputInterpretor::event_function e, InputInterpretor::function f)
 	{
 		InputInterpretor i;
+		i.is_match = m;
 		i.eventCheck = e;
 		i.statusCheck = f;
 		i.id = unique_id();
@@ -308,31 +319,31 @@ namespace hades
 				bool handled = false;
 				for (auto &e : events)
 				{
-					auto action = i.first.eventCheck(std::get<bool>(e), std::get<sf::Event>(e), i.second);
-					if (std::get<bool>(action))
-					{
-						actionset.insert(std::get<Action>(action));
-						handled = true;
-					}
+					const auto event = std::get<sf::Event>(e);
+
+					//is this event relevent for our input
+					if (i.first.is_match && !i.first.is_match(event))
+						continue;
+
+					auto action = i.first.eventCheck(std::get<bool>(e), event);
+					auto a = action;
+
+					a.id = i.second;
+					actionset.insert(a);
+					handled = true;
 				}
 
 				if (!handled)
 				{
 					auto prev = _previousState.find(i.second);
-					if (prev == _previousState.end())
-					{
-						Action a;
-						a.id = i.second;
-						a.active = false;
-						actionset.insert(a);
-					}
-					else
+					if (prev != std::end(_previousState))
 						actionset.insert(*prev);
 				}
 			}
 			else if(i.first.statusCheck)
 			{
-				auto action = i.first.statusCheck(i.second);
+				auto action = i.first.statusCheck();
+				action.id = i.second;
 				actionset.insert(action);
 			}
 		}

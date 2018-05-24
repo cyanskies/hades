@@ -67,10 +67,12 @@ namespace hades
 	struct InputInterpretor
 	{
 		unique_id id = unique_id::zero;
-		using event_function = std::function<std::tuple<bool, Action>(bool handled, const sf::Event&, unique_id)>;
+		using event_function = std::function<Action(bool handled, const sf::Event&)>;
 		event_function eventCheck;
-		using function = std::function<Action(unique_id)>;
+		using function = std::function<Action(void)>;
 		function statusCheck;
+		using event_match_function = std::function<bool(const sf::Event&)>;
+		event_match_function is_match;
 	};
 
 	inline bool operator<(const InputInterpretor &lhs, const InputInterpretor &rhs)
@@ -87,7 +89,9 @@ namespace hades
 		void create(unique_id action, bool rebindable);
 		void create(unique_id action, bool rebindable, types::string defaultBinding);
 		//adds a new input interpretor
-		void addInterpretor(types::string name, InputInterpretor::event_function e, InputInterpretor::function f);
+		void addInterpretor(types::string name, InputInterpretor::event_match_function m, InputInterpretor::event_function e);
+		void addInterpretor(types::string name, InputInterpretor::function f);
+		void addInterpretor(types::string name, InputInterpretor::event_match_function m, InputInterpretor::event_function e, InputInterpretor::function f);
 		//binds an action to an interpretor
 		bool bind(unique_id, types::string);
 		//unbinds a specific interpretor from an action

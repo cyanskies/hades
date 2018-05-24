@@ -26,14 +26,19 @@ namespace hades
 			return false;
 		};
 
+		//TODO: encode modifier key state in thte x,y params
 		i.eventCheck = [](bool handled, const sf::Event &e) {
 			Action a;
 
 			if (!handled && e.type == sf::Event::KeyPressed && e.key.code == k)
 				a.active = true;
-			else if (e.type == sf::Event::KeyReleased && e.key.code == k)
-				a.active = false;
 
+			return a;
+		};
+
+		i.statusCheck = [] {
+			Action a;
+			a.active = sf::Keyboard::isKeyPressed(k);
 			return a;
 		};
 
@@ -335,9 +340,18 @@ namespace hades
 
 				if (!handled)
 				{
-					auto prev = _previousState.find(i.second);
-					if (prev != std::end(_previousState))
-						actionset.insert(*prev);
+					if (i.first.statusCheck)
+					{
+						auto action = i.first.statusCheck();
+						action.id = i.second;
+						actionset.insert(action);
+					}
+					else
+					{
+						auto prev = _previousState.find(i.second);
+						if (prev != std::end(_previousState))
+							actionset.insert(*prev);
+					}
 				}
 			}
 			else if(i.first.statusCheck)

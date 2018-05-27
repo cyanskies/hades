@@ -46,12 +46,13 @@ namespace hades
 
 		for (const auto &e : events)
 		{
+			const auto &this_event = std::get<Event>(e);
 			//check every event against this interpreter
 			if (interpreter.is_match
-				&& interpreter.is_match(std::get<Event>(e))
+				&& interpreter.is_match(this_event)
 				&& interpreter.event_check)
 			{
-				a.merge(interpreter.event_check(handled, std::get<Event>(e)));
+				a.merge(interpreter.event_check(std::get<bool>(e), this_event));
 				handled = true;
 			}
 		}

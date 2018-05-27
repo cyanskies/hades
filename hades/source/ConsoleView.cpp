@@ -192,23 +192,23 @@ namespace hades
 
 		const auto max_width = _view.getSize().x;
 
-		for (auto &s : words)
+		for (const auto &s : words)
 		{
-			const auto str = output.back().getString() + " ";
-
-			const sf::Text test_text{ str, _font, char_size };
+			const auto str = s + " ";
+			const auto current_line = output.back().getString();
+			const sf::Text test_text{ current_line + str, _font, char_size };
 			const auto bounds = test_text.getGlobalBounds();
 			if (bounds.width > max_width)
 			{
-				output.push_back({ "", _font, char_size });
+				const auto bounds = output.back().getGlobalBounds();
+				output.push_back({ "\t" + s + " ", _font, char_size });
 				auto &t = output.back();
-				t.setPosition({ 0.f, bounds.top + bounds.height});
+				t.setPosition({ 0.f, bounds.top + bounds.height });
 				t.setOutlineColor(col);
 				t.setFillColor(col);
-				t.setString("\t" + s + " ");
 			}
 			else
-				output.back() = test_text;
+				output.back().setString(current_line + str);
 		}
 
 		for (auto &t : output)

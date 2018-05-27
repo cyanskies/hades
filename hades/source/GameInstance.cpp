@@ -58,7 +58,7 @@ namespace hades
 		_currentTime += dt;
 	}
 
-	void GameInstance::insertInput(InputSystem::action_set input, sf::Time t)
+	void GameInstance::insertInput(input_system::action_set input, sf::Time t)
 	{
 		_input.set(t, input);
 	}

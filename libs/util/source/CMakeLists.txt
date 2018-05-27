@@ -53,7 +53,7 @@ set_target_properties(${HADES_UTIL_LIB} PROPERTIES RELEASE_POSTFIX -s)
 target_include_directories(${HADES_UTIL_LIB} PUBLIC ../include)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
-install(TARGETS ${HADES_LIB}
+install(TARGETS ${HADES_UTIL_LIB}
 		RUNTIME DESTINATION lib
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)

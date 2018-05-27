@@ -4,7 +4,9 @@
 #include <functional>
 #include <vector>
 
-#include "Hades/Input.hpp"
+#include "SFML/System/Time.hpp"
+
+#include "hades/input.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/value_guard.hpp"
 
@@ -37,7 +39,7 @@ namespace hades
 		//the current time, and the time to advance too(t + dt)
 		sf::Time current_time, dt;
 		//the input over time for systems to look at
-		const curve<sf::Time, InputSystem::action_set> *actions;
+		const curve<sf::Time, input_system::action_set> *actions;
 	};
 
 	//the interface for game systems.

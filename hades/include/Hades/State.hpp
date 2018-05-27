@@ -9,7 +9,7 @@
 
 #include "SFGUI/Desktop.hpp"
 
-#include "Hades/Input.hpp"
+#include "hades/sf_input.hpp"
 
 namespace hades
 {
@@ -47,10 +47,10 @@ namespace hades
 		//functions for states to overide to define behaviour
 		//main state loop
 		virtual void init() = 0; //start all the state logic, this is for setting up game state
-		virtual bool handleEvent(const Event&) = 0; //handle any events you want
+		virtual bool handleEvent(const event&) = 0; //handle any events you want
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
-		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, InputSystem::action_set) = 0;
+		virtual void update(sf::Time deltaTime, const sf::RenderTarget&, input_system::action_set) = 0;
 		//update animations and draw
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime

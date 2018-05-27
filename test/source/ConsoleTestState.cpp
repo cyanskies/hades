@@ -43,12 +43,12 @@ void ConsoleTestState::init()
 	rect.setSize({ 300.f, 90.f });
 }
 
-bool ConsoleTestState::handleEvent(const hades::Event &windowEvent)
+bool ConsoleTestState::handleEvent(const hades::event &windowEvent)
 {
 	return false;
 }
 
-void ConsoleTestState::update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set actions)
+void ConsoleTestState::update(sf::Time deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
 {
 	if (ball_sprite.getPosition().x + ball_sprite.getLocalBounds().width > 800.f)
 		ball_direction = -5.f;

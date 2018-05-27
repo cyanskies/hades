@@ -111,12 +111,12 @@ namespace objects
 		reinit();
 	}
 
-	bool object_editor::handleEvent(const hades::Event &windowEvent)
+	bool object_editor::handleEvent(const hades::event &windowEvent)
 	{ 
 		return false; 
 	}
 
-	void object_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::InputSystem::action_set input) 
+	void object_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::input_system::action_set input) 
 	{
 		static auto window_width = hades::console::GetInt("vid_width", 640),
 			window_height = hades::console::GetInt("vid_height", 480);

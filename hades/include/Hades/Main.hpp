@@ -4,9 +4,9 @@
 #include <memory>
 
 #include "Hades/data_system.hpp"
-#include "Hades/Input.hpp"
+#include "hades/input.hpp"
 #include "Hades/StateManager.hpp"
-#include "Hades/Types.hpp"
+#include "hades/types.hpp"
 
 namespace hades
 {
@@ -62,6 +62,6 @@ void resourceTypes(hades::data::data_system &data);
 ///
 ///	Allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
-void hadesMain(hades::StateManager &state, hades::InputSystem &bindings, hades::CommandList &commandLine);
+void hadesMain(hades::StateManager &state, hades::input_system &bindings, hades::CommandList &commandLine);
 
 #endif //HADES_BEGIN_HPP

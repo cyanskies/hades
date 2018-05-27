@@ -11,7 +11,7 @@
 #include "Hades/Console.hpp"
 #include "Hades/data_system.hpp"
 #include "Hades/Debug.hpp"
-#include "Hades/Input.hpp"
+#include "hades/sf_input.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
 
@@ -67,7 +67,7 @@ namespace hades
 		///  has already been handled elsewhere
 		///
 		////////////////////////////////////////////////////////////
-		std::vector<Event> handleEvents(State *activeState);
+		std::vector<input_event_system::checked_event> handleEvents(State *activeState);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Registers the engine provided console commands.
@@ -79,7 +79,7 @@ namespace hades
 		/// Member Data
 		////////////////////////////////////////////////////////////
 
-		InputSystem _input;							///< Used by the console to provide bindable input.
+		input_event_system _input;					///< Used by the console to provide bindable input.
 		Console _console;							///< The appcations debug console.
 		hades::data::data_system _dataMan;			///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.

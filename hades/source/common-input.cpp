@@ -33,7 +33,7 @@ namespace hades
 		}
 	}
 
-	void RegisterMouseInput(InputSystem &bind)
+	void RegisterMouseInput(input_system &bind)
 	{
 		//collect unique names for actions
 		input::PointerPosition = data::MakeUid("mouse");

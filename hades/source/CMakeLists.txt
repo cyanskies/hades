@@ -18,10 +18,10 @@ set(HADES_SRC
 	GameInterface.cpp
 	GameRenderer.cpp
 	GridArea.cpp
-	Input.cpp
 	Logging.cpp
 	main.cpp
 	Properties.cpp
+	sf_input.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp
 	StandardPaths.cpp
@@ -75,6 +75,7 @@ target_include_directories(${HADES_LIB} PUBLIC ../include)
 
 set(HADES_DEPS
 	hades-util
+	hades-basic
 	sfml-audio
 	sfml-graphics
 	sfml-main

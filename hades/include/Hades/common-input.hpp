@@ -3,7 +3,7 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
-#include "Hades/Input.hpp"
+#include "hades/input.hpp"
 #include "Hades/UniqueId.hpp"
 
 namespace hades
@@ -21,13 +21,14 @@ namespace hades
 		sf::Vector2f ConvertToWorldCoords(const sf::RenderTarget &, sf::Vector2i pointer_position, const sf::View&);
 		sf::Vector2i ConvertToScreenCoords(const sf::RenderTarget &, sf::Vector2f world_position, const sf::View &);
 		sf::Vector2i SnapCoordsToGrid(sf::Vector2i coord, types::int32 grid_size);
+		//TODO: within window
 	}
 
 	//optional function for registering common input methods
 	//such as mouse position and buttons:
 	// mouse - mouse position
 	// mouseleft - mouse button 1
-	void RegisterMouseInput(InputSystem &bind);
+	void RegisterMouseInput(input_system &bind);
 }
 
 

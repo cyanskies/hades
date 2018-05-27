@@ -18,12 +18,12 @@ void Snake::init()
 	//send starting data to the gamerenderer
 }
 
-bool Snake::handleEvent(const hades::Event &windowEvent)
+bool Snake::handleEvent(const hades::event &windowEvent)
 {
 	return false;
 }
 
-void Snake::update(sf::Time deltaTime, const sf::RenderTarget&, hades::InputSystem::action_set actions)
+void Snake::update(sf::Time deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
 {}
 
 void Snake::draw(sf::RenderTarget &target, sf::Time deltaTime)

@@ -100,7 +100,7 @@ namespace hades
 		console->set("s_portrange", 0); // unused
 	}
 
-	App::App() : _consoleView(nullptr), _input(_window), _sfVSync(false)
+	App::App() : _consoleView(nullptr), _sfVSync(false)
 	{}
 
 	void App::init()
@@ -113,6 +113,9 @@ namespace hades
 		console::system_object = &_console;
 
 		debug::overlay_manager = &_overlayMan;
+
+		//register sfml input names
+		register_sfml_input(_window, _input);
 
 		RegisterCommonResources(&_dataMan);
 		data::detail::SetDataManagerPtr(&_dataMan);
@@ -274,9 +277,9 @@ namespace hades
 			while( accumulator >= dt)
 			{
 				auto events = handleEvents(activeState);
-				_input.generateState(events);
+				_input.generate_state(events);
 
-				activeState->update(dt, _window, _input.getInputState());
+				activeState->update(dt, _window, _input.input_state());
 				accumulator -= dt;
 				thisFrame += dt;
 			}
@@ -326,9 +329,9 @@ namespace hades
 		debug::overlay_manager = nullptr;
 	}
 
-	std::vector<Event> App::handleEvents(State *activeState)
+	std::vector<input_event_system::checked_event> App::handleEvents(State *activeState)
 	{
-		std::vector<Event> events;
+		std::vector<input_event_system::checked_event> events;
 
 		sf::Event e;
 		while (_window.pollEvent(e))
@@ -352,7 +355,7 @@ namespace hades
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
-				activeState->handleEvent(std::make_tuple(true, e));		// let the gamestate see the changed window size
+				activeState->handleEvent(e);		// let the gamestate see the changed window size
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
@@ -373,7 +376,7 @@ namespace hades
 			{
 				if (activeState->guiInput(e))
 					handled = true;
-				if (activeState->handleEvent(std::make_tuple(handled, e)))
+				if (activeState->handleEvent(e))
 					handled = true;
 
 				events.push_back(std::make_tuple(handled, e));

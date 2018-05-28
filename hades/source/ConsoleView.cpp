@@ -43,7 +43,7 @@ namespace hades
 	sf::View setTextView(const sf::Text &last, sf::Vector2f size, float lineHeight, float extraHeight)
 	{
 		return sf::View({ 0.f, last.getGlobalBounds().top - size.y +
-			last.getGlobalBounds().height + lineHeight * 2 + extraHeight, size.x, size.y });
+			last.getGlobalBounds().height + lineHeight * 2 - extraHeight, size.x, size.y });
 	}
 
 	void ConsoleView::update()
@@ -55,7 +55,7 @@ namespace hades
 
 		_currentInput.setString(INPUT_SYMBOL + _input);
 
-		_textView = setTextView(_previousOutput.back(), _view.getSize(), _currentInput.getGlobalBounds().height, _editLine.getSize().y);
+		_textView = setTextView(_previousOutput.back(), _view.getSize(), static_cast<float>(_charSize->load()), _editLine.getSize().y);
 	}
 
 	void ConsoleView::enterText(const sf::Event &context)
@@ -137,9 +137,9 @@ namespace hades
 		_currentInput.setCharacterSize(char_size);
 		_currentInput.setFont(_font);
 
-		const sf::Text size_test{ "a", _font, char_size };
+		const sf::Text size_test{ "", _font, char_size };
 
-		const auto offset = size_test.getGlobalBounds().height * 2;
+		const auto offset = char_size;// size_test.getGlobalBounds().height * 2;
 		_editLine.setPosition(0.f, size.y - _editLine.getSize().y - offset);
 		_currentInput.setPosition(0.f, size.y - offset);
 
@@ -151,7 +151,7 @@ namespace hades
 		for (auto &s : output)
 			_addText(s);
 
-		_textView = setTextView(_previousOutput.back(), size, size_test.getGlobalBounds().height, _editLine.getSize().y);
+		_textView = setTextView(_previousOutput.back(), size, offset, _editLine.getSize().y);
 	}
 
 	float GetTextHeight(const std::vector<sf::Text> &text)
@@ -184,7 +184,7 @@ namespace hades
 		const auto char_size = ValidCharSize(_charSize);
 
 		std::vector<sf::Text> output;
-		output.push_back({ "", _font, char_size });
+		output.push_back({ sf::String{}, _font, char_size });
 		auto &text = output.back();
 		text.setPosition({ 0.f, height });
 		text.setOutlineColor(col);
@@ -194,14 +194,14 @@ namespace hades
 
 		for (const auto &s : words)
 		{
-			const auto str = s + " ";
+			const auto str = s + ' ';
 			const auto current_line = output.back().getString();
 			const sf::Text test_text{ current_line + str, _font, char_size };
 			const auto bounds = test_text.getGlobalBounds();
 			if (bounds.width > max_width)
 			{
 				const auto bounds = output.back().getGlobalBounds();
-				output.push_back({ "\t" + s + " ", _font, char_size });
+				output.push_back({ '\t' + s + ' ', _font, char_size });
 				auto &t = output.back();
 				t.setPosition({ 0.f, bounds.top + bounds.height });
 				t.setOutlineColor(col);

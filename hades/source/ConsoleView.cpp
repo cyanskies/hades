@@ -55,7 +55,7 @@ namespace hades
 
 		_currentInput.setString(INPUT_SYMBOL + _input);
 
-		_textView = setTextView(_previousOutput.back(), _view.getSize(), static_cast<float>(_charSize->load()), _editLine.getSize().y);
+		_textView = setTextView(_previousOutput.back(), _view.getSize(), ValidCharSize(_charSize), _editLine.getSize().y);
 	}
 
 	void ConsoleView::enterText(const sf::Event &context)
@@ -137,9 +137,7 @@ namespace hades
 		_currentInput.setCharacterSize(char_size);
 		_currentInput.setFont(_font);
 
-		const sf::Text size_test{ "", _font, char_size };
-
-		const auto offset = char_size;// size_test.getGlobalBounds().height * 2;
+		const auto offset = char_size;
 		_editLine.setPosition(0.f, size.y - _editLine.getSize().y - offset);
 		_currentInput.setPosition(0.f, size.y - offset);
 

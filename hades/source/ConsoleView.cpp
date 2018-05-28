@@ -46,6 +46,15 @@ namespace hades
 			last.getGlobalBounds().height + lineHeight * 2 - extraHeight, size.x, size.y });
 	}
 
+	unsigned int ValidCharSize(hades::console::property_int char_size)
+	{
+		const auto n = char_size->load();
+		if (n < 0)
+			char_size->store(0);
+
+		return static_cast<unsigned int>(n);
+	}
+
 	void ConsoleView::update()
 	{
 		const auto log_list = console::new_output(console::logger::LOG_VERBOSITY::WARNING);
@@ -117,15 +126,6 @@ namespace hades
 		_input.clear();
 	}
 
-	unsigned int ValidCharSize(hades::console::property_int char_size)
-	{
-		const auto n = char_size->load();
-		if (n < 0)
-			char_size->store(0);
-
-		return static_cast<unsigned int>(n);
-	}
-
 	void ConsoleView::_reinit(sf::Vector2f size)
 	{
 		_backdrop.setFillColor(sf::Color(0, 0, 0, *_fade));
@@ -149,7 +149,7 @@ namespace hades
 		for (auto &s : output)
 			_addText(s);
 
-		_textView = setTextView(_previousOutput.back(), size, offset, _editLine.getSize().y);
+		_textView = setTextView(_previousOutput.back(), size, static_cast<float>(offset), _editLine.getSize().y);
 	}
 
 	float GetTextHeight(const std::vector<sf::Text> &text)

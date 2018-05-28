@@ -3,15 +3,19 @@
 # C++ source files
 set(HADES_BASIC_SRC
 	input.cpp
+	../include/hades/collision.hpp
 	../include/hades/input.hpp
+	../include/hades/detail/collision.inl
 	../include/hades/detail/input.inl
 )
 
 source_group("Headers" FILES
+	../include/hades/collision.hpp
 	../include/hades/input.hpp
 )
 
 source_group("Detail" FILES
+	../include/hades/detail/collision.inl
 	../include/hades/detail/input.inl
 )
 

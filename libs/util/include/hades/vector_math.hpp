@@ -9,13 +9,12 @@ namespace hades::vector
 	template<typename T>
 	T length(T x, T y);
 
-	//returns the squared length of the vector
-	template<typename T>
-	T length_sqrd(T x, T y);
-
 	//changes the length of a vector to match the provided length
 	template<typename T>
 	std::tuple<T, T> resize(T x, T y, T length);
+
+	template<typename T>
+	std::tuple<T, T> unit(T x, T y);
 
 	//returns a vector that points 90 degrees of the origional vector
 	template<typename T>

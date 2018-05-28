@@ -6,22 +6,32 @@
 
 namespace hades::vector
 {
+	namespace detail
+	{
+		template<typename T>
+		T length_sqrd(T x, T y)
+		{
+			return x * x + y * y;
+		}
+	}
+
+	//TODO: many of these
 	template<typename T>
 	T length(T x, T y)
 	{
-		return std::sqrt(length_sqrd(x, y));
-	}
-
-	template<typename T>
-	T length_sqrd(T x, T y)
-	{
-		return x*x + y*y;
+		return std::sqrt(detail::length_sqrd(x, y));
 	}
 
 	template<typename T>
 	std::tuple<T, T> resize(T x, T y, T length)
 	{
 		return std::make_tuple(x, y);
+	}
+
+	template<typename T>
+	std::tuple<T, T> unit(T x, T y)
+	{
+		return resize(x, y, 1.f);
 	}
 
 	template<typename T>

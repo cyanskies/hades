@@ -44,17 +44,17 @@ namespace hades
 		bottom
 	};
 
-	//returns a tuple of collided, max move without intersection
-	//prev is required to not be intersecting
+	//returns the move needed to bring prev as close as possible to other without colliding.
+	//NOTE: prev must not be colliding with other.
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_test(U<T> prev, U<T> current, V<T> other);
+	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> other);
 
 	//returns the direction the collision occured from
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other);
 
 	//generates a bounding box that at least covers the whole of the collision primative.
-	template<typename T, template<typename U<T>>>
+	template<typename T, template<typename> typename U>
 	rect_t<T> bounding_box(U<T> object);
 
 	//places rect within the region

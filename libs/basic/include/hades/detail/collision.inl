@@ -105,12 +105,8 @@ namespace hades
 	template<typename T>
 	std::tuple<bool, vector_t<T>> collision_test(point_t<T> prev, point_t<T> current, point_t<T> other)
 	{
-		assert(!collision_test(prev, other));
-
-		const auto collide = collision_test(current, other);
-		const vector_t<T> distance{ current.x - current.x / current.x, current.y - current.y / current.y };
-
-		return { collide, distance };
+		static_assert(always_false<T>::value, "Cannot test collisions between points");
+		return { false, vector_t<T>{} };
 	}
 
 	template<typename T>
@@ -118,11 +114,12 @@ namespace hades
 	{
 		assert(!collision_test(prev, other));
 
-		
-		const vector_t<T> resolve{ current.x - prev.x, current.y - prev.y };
+		const auto col = collision_test(current, other);
+		const auto displacement = { current.x - prev.x, current.y - prev.y };
+		const auto rect_intersect = { current.x - rect.x, current.y - rect.y };
 
 		
-		return { collide, distance };
+		return { col, vector_t<T>{} };
 	}
 	//TODO:
 	//point to rect
@@ -137,10 +134,10 @@ namespace hades
 	//multipoint tests
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	std::tuple<bool, vector_t<T>, direction> collision_test(U<T> prev, U<T> current, V<T> object)
+	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> object)
 	{
 		static_assert(always_false<T, U<T>, V<T>>.value, "collision_test not defined for these types");
-		return { false, vector_t<T>{},  vector_t<T>{} };
+		return { false, vector_t<T>{} };
 	}
 
 	//TODO:
@@ -156,6 +153,11 @@ namespace hades
 
 	//TODO:
 	//all
+	template<typename T>
+	rect_t<T> bounding_box(rect_t<T> object)
+	{
+		return object;
+	}
 
 	template<typename T, template<typename> typename U>
 	rect_t<T> bounding_box(U<T> object)

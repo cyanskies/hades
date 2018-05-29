@@ -5,15 +5,10 @@
 #include <vector>
 
 #include "hades/types.hpp"
+#include "hades/vector_math.hpp"
 
 namespace hades
 {
-	template<typename T>
-	struct vector_t
-	{
-		T x, y;
-	};
-
 	template<typename T>
 	using point_t = vector_t<T>;
 

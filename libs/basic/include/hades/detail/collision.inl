@@ -1,6 +1,7 @@
 #include <array>
 #include <cassert>
 
+#include "hades/line_math.hpp"
 #include "hades/math.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
@@ -11,14 +12,12 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, point_t<T> object)
 	{
-		//NOTE: point must return false, as any floating based point 
+		//NOTE: 
 		//type will be impossible to compare for equality
 
 		//point to point collisions aren't very usefull, 
 		//so this shouldn't be a problem
-
-		static_assert(always_false<T>::value, "Cannot test collisions between points");
-		return false;
+		return current == object;
 	}
 
 	template<typename T>
@@ -38,8 +37,9 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, multipoint_t<T> object)
 	{
-		static_assert(always_false<T>::value, "Cannot test collisions between points");
-		return false;
+		return std::any_of(std::begin(object.points), std::end(object.points), [current](auto &&p) {
+			return collision_test(current, p);
+		});
 	}
 
 	//rect tests

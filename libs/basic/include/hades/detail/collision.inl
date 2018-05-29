@@ -1,48 +1,43 @@
+#include <array>
 #include <cassert>
 
+#include "hades/math.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades
 {
-	namespace detail
-	{
-		template<typename T>
-		bool valid_rect(rect_t<T> r)
-		{
-			return r.width >= 0
-				&& r.height >= 0;
-		}
-
-		template<typename T>
-		bool valid_circle(circle_t<T> r)
-		{
-			return r.r >= 0;
-		}
-	}
-
 	//point tests
 	template<typename T>
 	bool collision_test(point_t<T> current, point_t<T> object)
 	{
-		return current.x == object.x
-			&& current.y == object.y;
+		//NOTE: point must return false, as any floating based point 
+		//type will be impossible to compare for equality
+
+		//point to point collisions aren't very usefull, 
+		//so this shouldn't be a problem
+		return false;
 	}
 
 	template<typename T>
 	bool collision_test(point_t<T> current, rect_t<T> object)
 	{
-		assert(detail::valid_rect(object));
-
-		return current.x >= object.x
-			&& current.x <= object.x + object.width
-			&& current.y >= object.y
-			&& current.y <= object.y + object.height;
+		return is_within(current.x, object.x, object.x + object.width)
+			&& is_within(current.y, object.y, object.y + object.height);
 	}
 
-	//TODO:
-	//point to circle
-	//point to multipoint
+	template<typename T>
+	bool collision_test(point_t<T> current, circle_t<T> object)
+	{
+		const auto distance = vector::distance(current, { object.x, object.y });
+		return distance <= object.r;
+	}
+
+	template<typename T>
+	bool collision_test(point_t<T> current, multipoint_t<T> object)
+	{
+		return false;
+	}
 
 	//rect tests
 	template<typename T>
@@ -54,19 +49,19 @@ namespace hades
 	template<typename T>
 	bool collision_test(rect_t<T> lhs, rect_t<T> rhs)
 	{
-		assert(detail::valid_rect(lhs));
-		assert(detail::valid_rect(rhs));
+		return range_within(lhs.x, lhs.x + lhs.width, rhs.x, rhs.width)
+			&& range_within(lhs.y, lhs.y + lhs.height, rhs.y, rhs.height);
+	}
 
-		const auto l_x2 = lhs.x + lhs.width;
-		const auto l_y2 = lhs.y + lhs.height;
+	template<typename T>
+	bool collision_test(rect_t<T> lhs, circle_t<T> rhs)
+	{
+		//clamp the circles centre to a point within the rectangle
+		const point_t<T> closest_point{ clamp(rhs.x, lhs.x, lhs.x + lhs.width),
+										clamp(rhs.y, lhs.y, lhs.y + lhs.height) };
 
-		const auto r_x2 = rhs.x + rhs.width;
-		const auto r_y2 = rhs.y + rhs.height;
-
-		return lhs.x < r_x2
-			&& l_x2 > rhs.x
-			&& lhs.x > r_y2
-			&& l_y2 < rhs.y;
+		//use point->circle collision detection
+		return collision_test(closest_point, rhs);
 	}
 
 	//TODO:

@@ -6,6 +6,7 @@ set(HADES_UTIL_SRC
 	types.cpp
 	../include/hades/any_map.hpp
 	../include/hades/curve.hpp
+	../include/hades/math.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp
@@ -16,6 +17,7 @@ set(HADES_UTIL_SRC
 	../include/hades/value_guard.hpp
 	../include/hades/vector_math.hpp
 	../include/hades/detail/any_map.inl
+	../include/hades/detail/math.inl
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
@@ -25,6 +27,7 @@ set(HADES_UTIL_SRC
 source_group("Headers" FILES
 	../include/hades/any_map.hpp
 	../include/hades/curve.hpp
+	../include/hades/math.hpp
 	../include/hades/parallel_jobs.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/table.hpp
@@ -37,6 +40,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/any_map.inl
+	../include/hades/detail/math.inl
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl

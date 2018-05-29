@@ -1,5 +1,5 @@
-#ifndef HADES_UTIL_MATH_HPP
-#define HADES_UTIL_MATH_HPP
+#ifndef HADES_UTIL_VECTOR_MATH_HPP
+#define HADES_UTIL_VECTOR_MATH_HPP
 
 #include <tuple>
 
@@ -21,7 +21,7 @@ namespace hades
 	vector_t<T> to_vector(rad_vector_t<T>);
 
 	template<typename T>
-	rad_vector_t<T> to_rad_vector(rvector_t<T>);
+	rad_vector_t<T> to_rad_vector(vector_t<T>);
 
 	namespace vector
 	{
@@ -44,7 +44,10 @@ namespace hades
 		vector_t<T> resize(vector_t<T>, T length);
 
 		template<typename T>
-		vector_t<T> unit(T x, T y);
+		vector_t<T> unit(vector_t<T>);
+
+		template<typename T>
+		T distance(vector_t<T>, vector_t<T>);
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>
@@ -61,4 +64,4 @@ namespace hades
 
 #include "hades/detail/vector_math.inl"
 
-#endif // !HADES_UTIL_MATH_HPP
+#endif // !HADES_UTIL_VECTOR_MATH_HPP

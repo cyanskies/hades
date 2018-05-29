@@ -10,9 +10,6 @@
 namespace hades
 {
 	template<typename T>
-	using point_t = vector_t<T>;
-
-	template<typename T>
 	struct rect_t
 	{
 		T x, y, width, height;
@@ -30,6 +27,12 @@ namespace hades
 		std::vector<point_t<T>> points;
 	};
 
+	//collision functions are designed to work with
+	//point_t //NOTE: point_t never collides with itself or multipoint
+	//rect_t
+	//circle_t
+	//multipoint_t //NOTE: same as for point_t
+
 	//returns true if the objects are intersecting
 	template<typename U, typename V>
 	bool collision_test(U first, V second);
@@ -44,7 +47,7 @@ namespace hades
 	//returns a tuple of collided, max move without intersection
 	//prev is required to not be intersecting
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> other);
+	vector_t<T> collision_test(U<T> prev, U<T> current, V<T> other);
 
 	//returns the direction the collision occured from
 	template<typename T, template<typename> typename U>

@@ -56,6 +56,12 @@ namespace hades
 	//generates a bounding box that at least covers the whole of the collision primative.
 	template<typename T, template<typename U<T>>>
 	rect_t<T> bounding_box(U<T> object);
+
+	//places rect within the region
+	//if rect is larger than the region,
+	//then rect is placed in it's centre
+	template<typename T>
+	rect_t<T> clamp_rect(rect_t<T> rect, rect_t<T> region);
 }
 
 #include "hades/detail/collision.inl"

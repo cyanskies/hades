@@ -9,7 +9,8 @@ namespace hades
 	template<typename T>
 	vector_t<T> to_vector(rad_vector_t<T> v)
 	{
-		return { vector::x_comp(v), vector::y_comp(v) };
+		const auto ang = vector::angle(v);
+		return { vector::x_comp(v, ang), vector::y_comp(v, ang) };
 	}
 
 	template<typename T>
@@ -20,11 +21,34 @@ namespace hades
 
 	namespace vector
 	{
-		//TODO: many of these
 		template<typename T>
 		T magnitude(vector_t<T> v)
 		{
 			return std::sqrt(v.x * v.x + v.y * v.y);
+		}
+
+		template<typename T>
+		T angle(vector_t<T> v)
+		{
+			return std::atan2(v.y, v.x);
+		}
+
+		template<typename T>
+		T x_comp(rad_vector_t<T> v, std::optional<T> a)
+		{
+			if (!a)
+				a = angle(v);
+
+			return std::cos(a);
+		}
+
+		template<typename T>
+		T y_comp(rad_vector_t<T> v, std::optional<T> a)
+		{
+			if (!a)
+				a = angle(v);
+
+			return std::sin(a);
 		}
 
 		template<typename T>

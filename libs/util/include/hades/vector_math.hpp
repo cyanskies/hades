@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_VECTOR_MATH_HPP
 #define HADES_UTIL_VECTOR_MATH_HPP
 
+#include <optional>
 #include <tuple>
 
 namespace hades
@@ -18,7 +19,7 @@ namespace hades
 	};
 
 	template<typename T>
-	vector_t<T> to_vector(rad_vector_t<T>);
+	vector_t<T> to_vector(rad_vector_t<T> v);
 
 	template<typename T>
 	rad_vector_t<T> to_rad_vector(vector_t<T>);
@@ -34,10 +35,10 @@ namespace hades
 		T angle(vector_t<T>);
 
 		template<typename T>
-		T x_comp(rad_vector_t<T>);
+		T x_comp(rad_vector_t<T>, std::optional<T> angle = std::nullopt);
 
 		template<typename T>
-		T y_comp(rad_vector_t<T>);
+		T y_comp(rad_vector_t<T>, std::optional<T> angle = std::nullopt);
 
 		//changes the length of a vector to match the provided length
 		template<typename T>

@@ -53,7 +53,7 @@ namespace hades
 		sf::IntRect collisionTest<Circle, Circle>(const Circle &lhs, const Circle &rhs)
 		{
 			auto vector = static_cast<sf::Vector2f>(rhs.getPosition() - lhs.getPosition());
-			auto distance = vector::length(vector.x, vector.y);
+			auto distance = vector::magnitude(vector);
 			auto range = distance - (lhs.getRadius() + rhs.getRadius());
 			if (range < 0.f)
 			{

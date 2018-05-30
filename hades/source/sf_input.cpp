@@ -69,18 +69,22 @@ namespace hades
 			if (!handled)
 			{
 				a.active = in_window({ e.mouseMove.x, e.mouseMove.y }, window);
-				std::tie(a.x_axis, a.y_axis) = vector::clamp(e.mouseMove.x, e.mouseMove.y,
-					0, 0,
-					static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y));
+				const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
+					{ 0, 0 },
+					{ static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y) });
+				a.x_axis = mouse_move.x;
+				a.y_axis = mouse_move.y;
 			}
 			else
 			{
 				a.active = false;
-				std::tie(a.x_axis, a.y_axis) = vector::clamp(e.mouseMove.x, e.mouseMove.y,
-					0, 0,
-					static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y));
+				const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
+					{ 0, 0 },
+					{ static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y) });
+				a.x_axis = mouse_move.x;
+				a.y_axis = mouse_move.y;
 			}
 
 			return a;
@@ -93,13 +97,13 @@ namespace hades
 			auto size = window.getSize();
 			a.active = sf::IntRect(0, 0, size.x, size.y).contains(mpos);
 
-			auto[mx, my] = vector::clamp(mpos.x, mpos.y,
-				0, 0,
-				static_cast<types::int32>(size.x),
-				static_cast<types::int32>(size.y));
+			const auto mouse_pos = vector::clamp(vector_t<int>{ mpos.x, mpos.y },
+				{ 0, 0 },
+				{ static_cast<types::int32>(size.x),
+				static_cast<types::int32>(size.y) });
 
-			a.x_axis = mx;
-			a.y_axis = my;
+			a.x_axis = mouse_pos.x;
+			a.y_axis = mouse_pos.y;
 
 			return a;
 		};
@@ -124,18 +128,23 @@ namespace hades
 			if (!handled && e.type == sf::Event::MouseButtonPressed)
 			{
 				a.active = in_window({ e.mouseButton.x, e.mouseButton.y }, window);
-				std::tie(a.x_axis, a.y_axis) = vector::clamp(e.mouseButton.x, e.mouseButton.y,
-					0, 0,
-					static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y));
+				const auto mouse_pos = vector::clamp(vector_t<int>{e.mouseButton.x, e.mouseButton.y},
+					{ 0, 0 },
+					{ static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y) });
+
+				a.x_axis = mouse_pos.x;
+				a.y_axis = mouse_pos.y;
 			}
 			else if (e.type == sf::Event::MouseButtonReleased)
 			{
 				a.active = false;
-				std::tie(a.x_axis, a.y_axis) = vector::clamp(e.mouseButton.x, e.mouseButton.y,
-					0, 0,
-					static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y));
+				const auto pos = vector::clamp(vector_t<int>{e.mouseButton.x, e.mouseButton.y},
+					{ 0, 0 },
+					{ static_cast<types::int32>(window.getSize().x),
+					static_cast<types::int32>(window.getSize().y) });
+				a.x_axis = pos.x;
+				a.y_axis = pos.y;
 			}
 
 			return a;
@@ -147,10 +156,12 @@ namespace hades
 			const auto m_pos = sf::Mouse::getPosition(window);
 			a.active = sf::Mouse::isButtonPressed(b) && in_window(m_pos, window);; 
 			const auto size = window.getSize();
-			std::tie(a.x_axis, a.y_axis) = vector::clamp(m_pos.x, m_pos.y,
-				0, 0,
-				static_cast<types::int32>(size.x),
-				static_cast<types::int32>(size.y));
+			const auto pos = vector::clamp(vector_t<int>{m_pos.x, m_pos.y},
+				{ 0, 0 },
+				{ static_cast<types::int32>(size.x),
+				static_cast<types::int32>(size.y) });
+			a.x_axis = pos.x;
+			a.y_axis = pos.y;
 
 			return a;
 		};

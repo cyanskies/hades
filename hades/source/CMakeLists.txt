@@ -7,7 +7,6 @@ set(HADES_SRC
 	archive.cpp
 	Data.cpp
 	Debug.cpp
-	Collision.cpp
 	Console.cpp
 	ConsoleView.cpp
 	common-input.cpp

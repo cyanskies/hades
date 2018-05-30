@@ -23,8 +23,7 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, rect_t<T> object)
 	{
-		return is_within(current.x, object.x, object.x + object.width)
-			&& is_within(current.y, object.y, object.y + object.height);
+		return is_within(current, object);
 	}
 
 	template<typename T>

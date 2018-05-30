@@ -13,6 +13,15 @@ namespace hades
 	};
 
 	template<typename T>
+	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs);
+
+	template<typename T>
+	vector_t<T> operator*(const vector_t<T> &lhs, T rhs);
+
+	template<typename T>
+	vector_t<T> operator/(const vector_t<T> &lhs, T rhs);
+
+	template<typename T>
 	struct rad_vector_t
 	{
 		T a, m;

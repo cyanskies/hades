@@ -1,7 +1,24 @@
 #include "hades/line_math.hpp"
 
+#include <array>
+
+#include "hades/math.hpp"
+
 namespace hades::line
 {
+	template<typename T>
+	std::array<line_t<T>, 4> from_rect(rect_t<T> r)
+	{
+		const auto c = corners(r);
+
+		return {
+			{ c[bottom_left] - c[top_left] }, //left
+			{ c[bottom_right] - c[top_right] }, //right
+			{ c[top_right] - c[top_left] }, //top
+			{ c[bottom_right] - c[bottom_left] }  //bottom
+		};
+	}
+
 	template<typename T>
 	vector_t<T> intersect(line_t<T> first, line_t<T> second)
 	{

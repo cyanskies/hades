@@ -7,6 +7,24 @@
 namespace hades
 {
 	template<typename T>
+	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	{
+		return { lhs.x - rhs.x, lhs.y - rhs.y };
+	}
+
+	template<typename T>
+	vector_t<T> operator*(const vector_t<T> &lhs, T rhs)
+	{
+		return { lhs.x * rhs, lhs.y * rhs };
+	}
+
+	template<typename T>
+	vector_t<T> operator/(const vector_t<T> &lhs, T rhs)
+	{
+		return { lhs.x / rhs, lhs.y / rhs };
+	}
+
+	template<typename T>
 	vector_t<T> to_vector(rad_vector_t<T> v)
 	{
 		const auto ang = vector::angle(v);
@@ -55,14 +73,14 @@ namespace hades
 		vector_t<T> resize(vector_t<T> v, T length)
 		{
 			const auto unit_v = unit(v);
-			return { unit_v.x * length, unit_v.y * length };
+			return unit_v * length;
 		}
 
 		template<typename T>
 		vector_t<T> unit(vector_t<T> v)
 		{
 			const auto mag = magnitude(v);
-			return { v.x / mag, v.y / mag };
+			return v / mag;
 		}
 
 		template<typename T>

@@ -11,6 +11,17 @@ namespace hades
 	}
 
 	template<typename T>
+	std::array<point_t<T>, 4> corners(rect_t<T> r)
+	{
+		return {
+			{r.x, r.y},
+			{r.x + r.width, r.y},
+			{r.x + r.width, r.y + r.height},
+			{r.x, r.y + r.height}
+		};
+	}
+
+	template<typename T>
 	T distance(point_t<T> a, point_t<T> b)
 	{
 		const auto x = b.x - a.x;
@@ -22,6 +33,13 @@ namespace hades
 	bool is_within(T value, T min, T max)
 	{
 		return value >= std::min(min, max) && value <= std::max(min, max);
+	}
+
+	template<typename T>
+	bool is_within(point_t<T> value, rect_t<T> other)
+	{
+		return is_within(current.x, object.x, object.x + object.width)
+			&& is_within(current.y, object.y, object.y + object.height);
 	}
 
 	template<typename T>

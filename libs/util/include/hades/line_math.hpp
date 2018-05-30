@@ -4,6 +4,7 @@
 #include <array>
 #include <tuple>
 
+#include "hades/math.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades

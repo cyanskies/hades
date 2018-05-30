@@ -7,14 +7,16 @@
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
+//collision detection functions for the following types
+//rect_t
+//point_t
+//circle_t
+//multipoint_t
+
+//algorithms work best with floating point types.
+
 namespace hades
 {
-	template<typename T>
-	struct rect_t
-	{
-		T x, y, width, height;
-	};
-
 	template<typename T>
 	struct circle_t
 	{

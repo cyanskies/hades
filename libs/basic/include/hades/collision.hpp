@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/math.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 

@@ -13,6 +13,9 @@ namespace hades
 	};
 
 	template<typename T>
+	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs);
+
+	template<typename T>
 	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>

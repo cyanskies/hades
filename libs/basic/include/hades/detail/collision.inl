@@ -81,10 +81,11 @@ namespace hades
 		return collision_test(rhs, lhs);
 	}
 
+
 	template<typename T>
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
-		const auto dist = vector::distance(lhs, rhs);
+		const auto dist = vector::distance<T>({ lhs.x, lhs.y }, { rhs.x, rhs.y });
 		return dist < lhs.r + rhs.r;
 	}
 
@@ -96,7 +97,7 @@ namespace hades
 	template<typename U, typename V>
 	bool collision_test(U current, V object)
 	{
-		static_assert(always_false<U, V>.value, "collision_test not defined for these types");
+		static_assert(always_false<U, V>::value, "collision_test not defined for these types");
 		return false;
 	}
 
@@ -177,12 +178,25 @@ namespace hades
 	//rect to circle
 	//rect to multipoint
 	//circle tests
+	//circle to point
+	//circle to rect
+	template<typename T>
+	std::tuple<bool, vector_t<T>> collision_test(circle_t<T> prev, circle_t<T> current, circle_t<T> other)
+	{
+		assert(!collision_test(prev, other));
+		const auto col = collision_test(current, other);
+		const auto resolution = vector_t<T>{ current.x, current.y } - vector_t<T>{prev.x, prev.y};
+		const auto shortest_distance = current.r + other.r;
+		
+		return { col, vector::resize(resolution, shortest_distance) };
+	}
+	//circel to multipoint
 	//multipoint tests
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> object)
 	{
-		static_assert(always_false<T, U<T>, V<T>>.value, "collision_test not defined for these types");
+		static_assert(always_false<T, U<T>, V<T>>::value, "collision_test not defined for these types");
 		return { false, vector_t<T>{} };
 	}
 
@@ -193,7 +207,7 @@ namespace hades
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other)
 	{
-		static_assert(always_false<T, U<T>, rect_t<T>>.value, "collision_direction not defined for these types");
+		static_assert(always_false<T, U<T>, rect_t<T>>::value, "collision_direction not defined for these types");
 		return direction::left;
 	}
 

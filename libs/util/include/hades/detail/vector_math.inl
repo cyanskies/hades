@@ -7,6 +7,12 @@
 namespace hades
 {
 	template<typename T>
+	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	{
+		return { lhs.x + rhs.x, lhs.y + rhs.y };
+	}
+
+	template<typename T>
 	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return { lhs.x - rhs.x, lhs.y - rhs.y };
@@ -81,6 +87,13 @@ namespace hades
 		{
 			const auto mag = magnitude(v);
 			return v / mag;
+		}
+
+		template<typename T>
+		T distance(vector_t<T> a, vector_t<T> b)
+		{
+			const auto ab = b - a;
+			return magnitude(ab);
 		}
 
 		template<typename T>

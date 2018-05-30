@@ -64,7 +64,7 @@ namespace hades
 
 		_currentInput.setString(INPUT_SYMBOL + _input);
 
-		_textView = setTextView(_previousOutput.back(), _view.getSize(), ValidCharSize(_charSize), _editLine.getSize().y);
+		_textView = setTextView(_previousOutput.back(), _view.getSize(), static_cast<float>(ValidCharSize(_charSize)), _editLine.getSize().y);
 	}
 
 	void ConsoleView::enterText(const sf::Event &context)

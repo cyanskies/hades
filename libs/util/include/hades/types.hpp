@@ -68,6 +68,8 @@ namespace hades {
 		bool stov<bool>(std::string value);
 	}
 
+	using namespace types;
+
 	template<typename T>
 	types::string to_string(T value)
 	{

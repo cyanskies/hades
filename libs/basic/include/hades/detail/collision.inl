@@ -114,19 +114,66 @@ namespace hades
 		assert(!collision_test(prev, other));
 
 		const auto col = collision_test(current, other);
-		const auto displacement = { current.x - prev.x, current.y - prev.y };
-		const auto rect_intersect = { current.x - rect.x, current.y - rect.y };
+		const auto lines = line::from_rect(r);
 
-		
-		return { col, vector_t<T>{} };
+		const auto approach = prev - current;
+		auto approach_rect = bounding_box(approach);
+		approach_rect.x = current.x;
+		approach_rect.y = current.y;
+
+		point_t<T> intersect{};
+		bool found = false;
+		//find the intersect point
+		for (const auto &l : lines)
+		{
+			const auto i = line::intersect(approach, l);
+			if (is_within(i, approach_rect))
+			{
+				assert(!found);
+				found = true;
+				intersect = i;
+			}
+		}
+
+		return { col, current - intersect };
 	}
+
 	//TODO:
-	//point to rect
 	//point to circle
 	//point to multipoint
 	//rect tests
-	//rect to point
-	//rect to rect
+	template<typename T>
+	std::tuple<bool, vector_t<T>> collision_test(rect_t<T> prev, rect_t<T> current, point_t<T> other)
+	{
+		//TODO: this is untested!!!!!!
+
+		//convert into point->rect collision
+		const auto prev_p = { prev.x, prev.y } - other;
+		const auto current_p = { current.x, current.y } - other;
+
+		const auto[col, incident] = collision_test(prev_p, current_p, current);
+
+		return[col, incident - current_p];
+	}
+	
+	template<typename T>
+	std::tuple<bool, vector_t<T>> collision_test(rect_t<T> prev, rect_t<T> current, rect_t<T> other)
+	{
+		//TODO: this is untested!!!!!!
+		assert(!collision_test(prev, other));
+		const auto col = collision_test(current, other);
+
+
+		const auto intersect = rect_intersection(current, other);
+
+		const auto approach = vector_t<T>{ current.x, current.y } - vector_t<T>{ prev.x, prev.y };
+
+		T x = std::min(approach.x, intersect.width);
+		T y = std::min(approach.y, intersect.height);
+
+		return { col, {x,y} };
+	}
+
 	//rect to circle
 	//rect to multipoint
 	//circle tests
@@ -150,8 +197,38 @@ namespace hades
 		return direction::left;
 	}
 
+	template<typename T>
+	rect_t<T> rect_intersection(rect_t<T> lhs, rect_t<T> rhs)
+	{
+		const r1minx = std::min(lhs.x, lhs.x + lhs.width);
+		const r1maxx = std::max(lhs.x, lhs.x + lhs.width);
+		const r1miny = std::min(lhs.y, lhs.y + lhs.height);
+		const r1maxy = std::max(lhs.y, lhs.y + lhs.height);
+
+		const r2minx = std::min(rhs.x, rhs.x + rhs.width);
+		const r2maxx = std::max(rhs.x, rhs.x + rhs.width);
+		const r2miny = std::min(rhs.y, rhs.y + rhs.height);
+		const r2maxy = std::max(rhs.y, rhs.y + rhs.height);
+
+		const i_x_min = std::max(r1minx, r2minx);
+		const i_x_max = std::min(r1maxx, r2maxx);
+		const i_y_min = std::max(r1miny, r2miny);
+		const i_y_max = std::min(r1maxy, r2maxy);
+
+		return { i_x_min, i_y_min, i_x_max - i_x_min, i_y_max - i_y_min };
+	}
+
 	//TODO:
 	//all
+	template<typename T>
+	rect_t<T> bounding_box(vector_t<T> object)
+	{
+		rect_t<T> r{};
+		r.width = object.x;
+		r.height = object.y;
+		return r;
+	}
+
 	template<typename T>
 	rect_t<T> bounding_box(rect_t<T> object)
 	{

@@ -55,6 +55,9 @@ namespace hades
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other);
 
+	template<typename T>
+	rect_t<T> rect_intersection(rect_t<T> lhs, rect_t<T> rhs);
+
 	//generates a bounding box that at least covers the whole of the collision primative.
 	template<typename T, template<typename> typename U>
 	rect_t<T> bounding_box(U<T> object);

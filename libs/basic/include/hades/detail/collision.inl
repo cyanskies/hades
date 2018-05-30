@@ -185,10 +185,17 @@ namespace hades
 	{
 		assert(!collision_test(prev, other));
 		const auto col = collision_test(current, other);
-		const auto resolution = vector_t<T>{ current.x, current.y } - vector_t<T>{prev.x, prev.y};
-		const auto shortest_distance = current.r + other.r;
-		
-		return { col, vector::resize(resolution, shortest_distance) };
+		const vector_t<T> prev_pos{ prev.x, prev.y };
+		const vector_t<T> cur_pos{ current.x, current.y };
+		const vector_t<T> oth_pos{ other.x, other.y };
+		const auto resolution = prev_pos - cur_pos;
+		const auto distance = prev.r + other.r - vector::distance(cur_pos, oth_pos);
+		const auto out_vector = vector::resize(resolution, distance);
+
+		//if we apply the out_vector to prev, we shouldn't collide
+		assert(!collision_test(circle_t<T>{ prev.x + out_vector.x, prev.y + out_vector.y, prev.r }, other));
+
+		return { col, out_vector };
 	}
 	//circel to multipoint
 	//multipoint tests

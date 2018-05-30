@@ -92,7 +92,7 @@ namespace hades
 		template<typename T>
 		T distance(vector_t<T> a, vector_t<T> b)
 		{
-			const auto ab = b - a;
+			const auto ab = a - b;
 			return magnitude(ab);
 		}
 

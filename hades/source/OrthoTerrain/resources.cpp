@@ -4,6 +4,7 @@
 
 #include "Hades/data_system.hpp"
 #include "Hades/Logging.hpp"
+#include "hades/utility.hpp"
 
 #include "Tiles/tiles.hpp"
 

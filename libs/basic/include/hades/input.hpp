@@ -9,7 +9,6 @@
 
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
-#include "hades/vector_math.hpp"
 
 namespace hades
 {

@@ -7,6 +7,18 @@
 namespace hades
 {
 	template<typename T>
+	bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	{
+		return lhs.x == rhs.x && lhs.y == rhs.y;
+	}
+
+	template<typename T>
+	bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	{
+		return !(lhs == rhs);
+	}
+
+	template<typename T>
 	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return { lhs.x + rhs.x, lhs.y + rhs.y };
@@ -48,7 +60,13 @@ namespace hades
 		template<typename T>
 		T magnitude(vector_t<T> v)
 		{
-			return std::sqrt(v.x * v.x + v.y * v.y);
+			return std::sqrt(magnitude_squared(v));
+		}
+
+		template<typename T>
+		T magnitude_squared(vector_t<T> v)
+		{
+			return dot(v, v);
 		}
 
 		template<typename T>
@@ -78,14 +96,20 @@ namespace hades
 		template<typename T>
 		vector_t<T> resize(vector_t<T> v, T length)
 		{
-			const auto unit_v = unit(v);
-			return unit_v * length;
+			const auto mag = magnitude(v);
+			if (mag == 0)
+				return v;
+
+			return v * (length / mag);
 		}
 
 		template<typename T>
 		vector_t<T> unit(vector_t<T> v)
 		{
 			const auto mag = magnitude(v);
+			if (mag == 0)
+				return vector_t<T>{};
+
 			return v / mag;
 		}
 
@@ -114,6 +138,12 @@ namespace hades
 			const auto x = std::clamp(val.x, std::min(min.x, max.x), std::max(min.x, max.x));
 			const auto y = std::clamp(val.y, std::min(min.y, max.y), std::max(min.y, max.y));
 			return { x, y };
+		}
+
+		template<typename T>
+		T dot(vector_t<T> a, vector_t<T> b)
+		{
+			return a.x * b.x + a.y * b.y;
 		}
 	}
 }

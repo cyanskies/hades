@@ -1,5 +1,8 @@
+#include "hades/collision.hpp"
+
 #include <array>
 #include <cassert>
+#include <cmath>
 
 #include "hades/line_math.hpp"
 #include "hades/math.hpp"
@@ -30,7 +33,7 @@ namespace hades
 	bool collision_test(point_t<T> current, circle_t<T> object)
 	{
 		const auto distance = vector::distance(current, { object.x, object.y });
-		return distance <= object.r;
+		return distance < object.r;
 	}
 
 	template<typename T>
@@ -85,8 +88,8 @@ namespace hades
 	template<typename T>
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
-		const auto dist = vector::distance<T>({ lhs.x, lhs.y }, { rhs.x, rhs.y });
-		return dist < lhs.r + rhs.r;
+		const auto dist2 = vector::magnitude_squared<T>(vector_t<T>{ lhs.x, lhs.y } - vector_t<T>{ rhs.x, rhs.y });
+		return dist2 < std::pow(lhs.r + rhs.r, 2);
 	}
 
 	//TODO:
@@ -178,33 +181,61 @@ namespace hades
 	//rect to circle
 	//rect to multipoint
 	//circle tests
-	//circle to point
+	template<typename T>
+	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, point_t<T> other)
+	{
+		return collision_move(object, move, circle_t<T>{other.x, other.y, 0});
+	}
+
 	//circle to rect
 	template<typename T>
-	std::tuple<bool, vector_t<T>> collision_test(circle_t<T> prev, circle_t<T> current, circle_t<T> other)
+	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, circle_t<T> other)
 	{
-		assert(!collision_test(prev, other));
-		const auto col = collision_test(current, other);
-		const vector_t<T> prev_pos{ prev.x, prev.y };
-		const vector_t<T> cur_pos{ current.x, current.y };
+		//based off article here:
+		//https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?print=1
+
+		const vector_t<T> obj_pos{ object.x, object.y };
 		const vector_t<T> oth_pos{ other.x, other.y };
-		const auto resolution = prev_pos - cur_pos;
-		const auto distance = prev.r + other.r - vector::distance(cur_pos, oth_pos);
-		const auto out_vector = vector::resize(resolution, distance);
+		const auto obj_to_oth = oth_pos - obj_pos;
+		const auto rad2 = std::pow(object.r + other.r, 2);
 
-		//if we apply the out_vector to prev, we shouldn't collide
-		assert(!collision_test(circle_t<T>{ prev.x + out_vector.x, prev.y + out_vector.y, prev.r }, other));
+		//early exit if collision is impossible.
+		if (vector::magnitude_squared(move) <
+			vector::magnitude_squared(obj_to_oth) - rad2)
+			return move;
 
-		return { col, out_vector };
+		const auto move_unit = vector::unit(move);
+		const auto dot = vector::dot(move_unit, obj_to_oth);
+		
+		if (dot < 0)
+			return move;
+
+		const auto obj_to_oth_len2 = vector::magnitude_squared(obj_to_oth);
+		const auto f = obj_to_oth_len2 - std::pow(dot, 2);
+
+		if (f >= rad2)
+			return move;
+
+		const auto t = rad2 - f;
+
+		if (t < 0)
+			return move;
+
+		const auto distance = dot - std::sqrt(t);
+
+		if (vector::magnitude(move) < distance)
+			return move;
+
+		return  vector::resize(move, distance);
 	}
 	//circel to multipoint
 	//multipoint tests
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> object)
+	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other)
 	{
-		static_assert(always_false<T, U<T>, V<T>>::value, "collision_test not defined for these types");
-		return { false, vector_t<T>{} };
+		static_assert(always_false<T, U<T>, V<T>>::value, "collision_move not defined for these types");
+		return move;
 	}
 
 	//TODO:

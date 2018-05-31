@@ -1,5 +1,6 @@
 #include "hades/input.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 #include "hades/uniqueid.hpp"

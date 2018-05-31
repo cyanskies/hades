@@ -12,6 +12,7 @@
 #include "Hades/data_system.hpp"
 #include "Hades/files.hpp"
 #include "Hades/resource/fonts.hpp"
+#include "hades/utility.hpp"
 
 using namespace hades;
 

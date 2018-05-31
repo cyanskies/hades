@@ -11,6 +11,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/Properties.hpp"
+#include "hades/utility.hpp"
 
 #include "Objects/resources.hpp"
 

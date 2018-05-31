@@ -47,10 +47,10 @@ namespace hades
 		bottom
 	};
 
-	//returns the move needed to bring prev as close as possible to other without colliding.
-	//NOTE: prev must not be colliding with other.
+	//returns the move needed to bring object as close as possible to other without colliding.
+	//if return value == move, then no collision occured
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	std::tuple<bool, vector_t<T>> collision_test(U<T> prev, U<T> current, V<T> other);
+	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 
 	//returns the direction the collision occured from
 	template<typename T, template<typename> typename U>

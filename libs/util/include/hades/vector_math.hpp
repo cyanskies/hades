@@ -13,6 +13,12 @@ namespace hades
 	};
 
 	template<typename T>
+	bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs);
+
+	template<typename T>
+	bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs);
+
+	template<typename T>
 	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>
@@ -41,6 +47,9 @@ namespace hades
 		//returns the length of the vector
 		template<typename T>
 		T magnitude(vector_t<T>);
+
+		template<typename T>
+		T magnitude_squared(vector_t<T> v);
 
 		//returns the angle of the vector
 		template<typename T>
@@ -72,6 +81,9 @@ namespace hades
 
 		template<typename T>
 		vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max);
+
+		template<typename T>
+		T dot(vector_t<T> a, vector_t<T> b);
 	}
 }
 

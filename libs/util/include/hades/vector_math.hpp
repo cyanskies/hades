@@ -56,10 +56,10 @@ namespace hades
 		T angle(vector_t<T>);
 
 		template<typename T>
-		T x_comp(rad_vector_t<T>, std::optional<T> angle = std::nullopt);
+		T x_comp(rad_vector_t<T>);
 
 		template<typename T>
-		T y_comp(rad_vector_t<T>, std::optional<T> angle = std::nullopt);
+		T y_comp(rad_vector_t<T>);
 
 		//changes the length of a vector to match the provided length
 		template<typename T>

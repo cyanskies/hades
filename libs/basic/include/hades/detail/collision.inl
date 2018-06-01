@@ -147,39 +147,30 @@ namespace hades
 	//point to multipoint
 	//rect tests
 	template<typename T>
-	std::tuple<bool, vector_t<T>> collision_test(rect_t<T> prev, rect_t<T> current, point_t<T> other)
+	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, point_t<T> other)
 	{
-		//TODO: this is untested!!!!!!
-
-		//convert into point->rect collision
-		const auto prev_p = { prev.x, prev.y } - other;
-		const auto current_p = { current.x, current.y } - other;
-
-		const auto[col, incident] = collision_test(prev_p, current_p, current);
-
-		return[col, incident - current_p];
+		return collision_move(object, move, circle_t<T>{other.x, other.y, 1});
 	}
 	
 	template<typename T>
-	std::tuple<bool, vector_t<T>> collision_test(rect_t<T> prev, rect_t<T> current, rect_t<T> other)
+	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, rect_t<T> other)
 	{
-		//TODO: this is untested!!!!!!
-		assert(!collision_test(prev, other));
-		const auto col = collision_test(current, other);
+		const rect_t<T> moved_rect{ object.x + move.x, object.y + move.y, object.width, object.height };
+		const auto intersect = rect_intersection(moved_rect, other);
+		if (intersect.width >= 0 && intersect.height >= 0)
+			return move - vector_t<T>{ intersect.width, intersect.height };
 
-
-		const auto intersect = rect_intersection(current, other);
-
-		const auto approach = vector_t<T>{ current.x, current.y } - vector_t<T>{ prev.x, prev.y };
-
-		T x = std::min(approach.x, intersect.width);
-		T y = std::min(approach.y, intersect.height);
-
-		return { col, {x,y} };
+		return move;
 	}
 
-	//rect to circle
+	template<typename T>
+	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, circle_t<T> other)
+	{
+		return vector::reverse(collision_move(other, vector::reverse(move), object));
+	}
+
 	//rect to multipoint
+
 	//circle tests
 	template<typename T>
 	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, point_t<T> other)
@@ -187,7 +178,15 @@ namespace hades
 		return collision_move(object, move, circle_t<T>{other.x, other.y, 0});
 	}
 
-	//circle to rect
+	template<typename T>
+	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, rect_t<T> other)
+	{
+		const point_t<T> closest_point{ clamp(object.x, other.x, other.x + other.width),
+			clamp(object.y, other.y, other.y + other.height) };
+
+		return collision_move(object, move, closest_point);
+	}
+
 	template<typename T>
 	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, circle_t<T> other)
 	{
@@ -252,20 +251,20 @@ namespace hades
 	template<typename T>
 	rect_t<T> rect_intersection(rect_t<T> lhs, rect_t<T> rhs)
 	{
-		const r1minx = std::min(lhs.x, lhs.x + lhs.width);
-		const r1maxx = std::max(lhs.x, lhs.x + lhs.width);
-		const r1miny = std::min(lhs.y, lhs.y + lhs.height);
-		const r1maxy = std::max(lhs.y, lhs.y + lhs.height);
+		const auto r1minx = std::min(lhs.x, lhs.x + lhs.width);
+		const auto r1maxx = std::max(lhs.x, lhs.x + lhs.width);
+		const auto r1miny = std::min(lhs.y, lhs.y + lhs.height);
+		const auto r1maxy = std::max(lhs.y, lhs.y + lhs.height);
 
-		const r2minx = std::min(rhs.x, rhs.x + rhs.width);
-		const r2maxx = std::max(rhs.x, rhs.x + rhs.width);
-		const r2miny = std::min(rhs.y, rhs.y + rhs.height);
-		const r2maxy = std::max(rhs.y, rhs.y + rhs.height);
+		const auto r2minx = std::min(rhs.x, rhs.x + rhs.width);
+		const auto r2maxx = std::max(rhs.x, rhs.x + rhs.width);
+		const auto r2miny = std::min(rhs.y, rhs.y + rhs.height);
+		const auto r2maxy = std::max(rhs.y, rhs.y + rhs.height);
 
-		const i_x_min = std::max(r1minx, r2minx);
-		const i_x_max = std::min(r1maxx, r2maxx);
-		const i_y_min = std::max(r1miny, r2miny);
-		const i_y_max = std::min(r1maxy, r2maxy);
+		const auto i_x_min = std::max(r1minx, r2minx);
+		const auto i_x_max = std::min(r1maxx, r2maxx);
+		const auto i_y_min = std::max(r1miny, r2miny);
+		const auto i_y_max = std::min(r1maxy, r2maxy);
 
 		return { i_x_min, i_y_min, i_x_max - i_x_min, i_y_max - i_y_min };
 	}

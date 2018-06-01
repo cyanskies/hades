@@ -30,6 +30,7 @@ namespace hades
 	template<typename T>
 	vector_t<T> operator/(const vector_t<T> &lhs, T rhs);
 
+	//TODO: this should be pol_vector_t
 	template<typename T>
 	struct rad_vector_t
 	{
@@ -70,6 +71,9 @@ namespace hades
 
 		template<typename T>
 		T distance(vector_t<T>, vector_t<T>);
+
+		template<typename T>
+		vector_t<T> reverse(vector_t<T>);
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>

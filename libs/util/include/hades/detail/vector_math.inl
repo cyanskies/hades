@@ -114,6 +114,12 @@ namespace hades
 		}
 
 		template<typename T>
+		vector_t<T> reverse(vector_t<T> v)
+		{
+			return { -v.x, -v.y };
+		}
+
+		template<typename T>
 		vector_t<T> perpendicular(vector_t<T> v)
 		{
 			return { -v.y, x };

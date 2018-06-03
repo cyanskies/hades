@@ -18,9 +18,24 @@ namespace hades
 	};
 
 	template<typename T>
+	struct rect_centre_t
+	{
+		T x, y, half_width, half_height;
+	};
+
+	template<typename T>
+	rect_t<T> to_rect(rect_centre_t<T>);
+
+	template<typename T>
+	rect_centre_t<T> to_rect_centre(rect_t<T>);
+
+	template<typename T>
+	rect_t<T> normalise(rect_t<T>);
+
+	template<typename T>
 	T clamp(T value, T min, T max);
 
-	enum class rect_corners {
+	enum rect_corners {
 		top_left,
 		top_right,
 		bottom_right,

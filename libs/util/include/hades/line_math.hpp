@@ -2,6 +2,7 @@
 #define HADES_UTIL_LINE_MATH_HPP
 
 #include <array>
+#include <optional>
 #include <tuple>
 
 #include "hades/math.hpp"
@@ -20,8 +21,10 @@ namespace hades
 		template<typename T>
 		std::array<line_t<T>, 4> from_rect(rect_t<T>);
 
+		//returns the intersect point for the two lines
+		//returns nothing if the lines are parellel
 		template<typename T>
-		vector_t<T> intersect(line_t<T> first, line_t<T> second);
+		std::optional<vector_t<T>> intersect(line_t<T> first, line_t<T> second);
 	}
 }
 

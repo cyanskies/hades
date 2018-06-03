@@ -24,19 +24,21 @@ namespace hades
 		T x, y, r;
 	};
 
-	template<typename T>
-	struct multipoint_t
-	{
-		std::vector<point_t<T>> points;
-	};
+	//TODO: right angle triangles
 
-	//collision functions are designed to work with
-	//point_t //NOTE: point_t never collides with itself or multipoint
+	//the following functions all support
+	//supports:
+	//point_t
 	//rect_t
 	//circle_t
-	//multipoint_t //NOTE: same as for point_t
+	//triangle_t
 
 	//returns true if the objects are intersecting
+	//supports:
+	//point_t
+	//rect_t
+	//circle_t
+	//triangle_t
 	template<typename U, typename V>
 	bool collision_test(U first, V second);
 
@@ -49,6 +51,20 @@ namespace hades
 
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//if return value == move, then no collision occured
+	//supports:
+	//circle_t
+	//rectangle_t
+	//triangle_t
+	template<typename T, template<typename> typename U, template<typename> typename V>
+	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other);
+	
+	//returns the move needed to bring object as close as possible to other without colliding.
+	//uses as much of the movement vector as possible allowing sliding along walls, etc
+	//if return value == move, then no collision occured
+	//supports:
+	//circle_t
+	//rectangle_t
+	//triangle_t
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 
@@ -62,6 +78,10 @@ namespace hades
 	//generates a bounding box that at least covers the whole of the collision primative.
 	template<typename T, template<typename> typename U>
 	rect_t<T> bounding_box(U<T> object);
+
+	//generates a circle that encompasses the whole object
+	template<typename T, template<typename> typename U>
+	rect_t<T> bounding_circle(U<T> object);
 
 	//places rect within the region
 	//if rect is larger than the region,

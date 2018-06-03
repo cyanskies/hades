@@ -12,15 +12,15 @@ namespace hades::line
 		const auto c = corners(r);
 
 		return {
-			{ c[bottom_left] - c[top_left] }, //left
-			{ c[bottom_right] - c[top_right] }, //right
-			{ c[top_right] - c[top_left] }, //top
-			{ c[bottom_right] - c[bottom_left] }  //bottom
+			line_t<T>{ c[rect_corners::bottom_left], c[rect_corners::top_left] }, //left
+			line_t<T>{ c[rect_corners::bottom_right], c[rect_corners::top_right] }, //right
+			line_t<T>{ c[rect_corners::top_right], c[rect_corners::top_left] }, //top
+			line_t<T>{ c[rect_corners::bottom_right], c[rect_corners::bottom_left] }  //bottom
 		};
 	}
 
 	template<typename T>
-	vector_t<T> intersect(line_t<T> first, line_t<T> second)
+	std::optional<vector_t<T>> intersect(line_t<T> first, line_t<T> second)
 	{
 		//based on the determinants algorithm
 		const auto x1 = first.s.x,
@@ -37,14 +37,15 @@ namespace hades::line
 		const auto numerator_end = x3 * y4 - y3 * x4;
 		const auto denominator = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4);
 
-		assert(denominator != 0); // 0 means the lines are parallel.
+		if (denominator == 0) // 0 means the lines are parallel.
+			return std::nullopt;
 
 		const auto px_numerator = numerator_start * (x3 - x4) - (x1 - x2) * numerator_end;
 		const auto px = px_numerator / denominator;
 
-		const auto py_numerator = numerator_start * (y3 - y4) - (y1 - y2) * numerator_end
+		const auto py_numerator = numerator_start * (y3 - y4) - (y1 - y2) * numerator_end;
 		const auto py = py_numerator / denominator;
 
-		return { px, py };
+		return vector_t<T>{ px, py };
 	}
 }

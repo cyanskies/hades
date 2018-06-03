@@ -3,6 +3,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 #include "hades/line_math.hpp"
 #include "hades/math.hpp"
@@ -36,14 +37,6 @@ namespace hades
 		return distance < object.r;
 	}
 
-	template<typename T>
-	bool collision_test(point_t<T> current, multipoint_t<T> object)
-	{
-		return std::any_of(std::begin(object.points), std::end(object.points), [current](auto &&p) {
-			return collision_test(current, p);
-		});
-	}
-
 	//rect tests
 	template<typename T>
 	bool collision_test(rect_t<T> lhs, point_t<T> rhs)
@@ -54,8 +47,8 @@ namespace hades
 	template<typename T>
 	bool collision_test(rect_t<T> lhs, rect_t<T> rhs)
 	{
-		return range_within(lhs.x, lhs.x + lhs.width, rhs.x, rhs.width)
-			&& range_within(lhs.y, lhs.y + lhs.height, rhs.y, rhs.height);
+		return range_within(lhs.x, lhs.x + lhs.width, rhs.x, rhs.x + rhs.width)
+			&& range_within(lhs.y, lhs.y + lhs.height, rhs.y, rhs.y + rhs.height);
 	}
 
 	template<typename T>
@@ -69,9 +62,6 @@ namespace hades
 		return collision_test(closest_point, rhs);
 	}
 
-	//TODO:
-	//rect to multipoint
-
 	template<typename T>
 	bool collision_test(circle_t<T> lhs, point_t<T> rhs)
 	{
@@ -84,18 +74,12 @@ namespace hades
 		return collision_test(rhs, lhs);
 	}
 
-
 	template<typename T>
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
 		const auto dist2 = vector::magnitude_squared<T>(vector_t<T>{ lhs.x, lhs.y } - vector_t<T>{ rhs.x, rhs.y });
 		return dist2 < std::pow(lhs.r + rhs.r, 2);
 	}
-
-	//TODO:
-	//circle to multipoint
-
-	//multipoint tests
 
 	template<typename U, typename V>
 	bool collision_test(U current, V object)
@@ -104,91 +88,131 @@ namespace hades
 		return false;
 	}
 
-	//point tests
+	//point
 	template<typename T>
-	std::tuple<bool, vector_t<T>> collision_test(point_t<T> prev, point_t<T> current, point_t<T> other)
+	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, point_t<T> other)
 	{
-		static_assert(always_false<T>::value, "Cannot test collisions between points");
-		return { false, vector_t<T>{} };
-	}
-
-	template<typename T>
-	std::tuple<bool, vector_t<T>> collision_test(point_t<T> prev, point_t<T> current, rect_t<T> other)
-	{
-		assert(!collision_test(prev, other));
-
-		const auto col = collision_test(current, other);
-		const auto lines = line::from_rect(r);
-
-		const auto approach = prev - current;
-		auto approach_rect = bounding_box(approach);
-		approach_rect.x = current.x;
-		approach_rect.y = current.y;
-
-		point_t<T> intersect{};
-		bool found = false;
-		//find the intersect point
-		for (const auto &l : lines)
-		{
-			const auto i = line::intersect(approach, l);
-			if (is_within(i, approach_rect))
-			{
-				assert(!found);
-				found = true;
-				intersect = i;
-			}
-		}
-
-		return { col, current - intersect };
-	}
-
-	//TODO:
-	//point to circle
-	//point to multipoint
-	//rect tests
-	template<typename T>
-	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, point_t<T> other)
-	{
-		return collision_move(object, move, circle_t<T>{other.x, other.y, 1});
-	}
-	
-	template<typename T>
-	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, rect_t<T> other)
-	{
-		const rect_t<T> moved_rect{ object.x + move.x, object.y + move.y, object.width, object.height };
-		const auto intersect = rect_intersection(moved_rect, other);
-		if (intersect.width >= 0 && intersect.height >= 0)
-			return move - vector_t<T>{ intersect.width, intersect.height };
+		if (collision_test(prev + move, other))
+			return move - vector_t<T>{1, 1};
 
 		return move;
 	}
 
 	template<typename T>
-	vector_t<T> collision_move(rect_t<T> object, vector_t<T> move, circle_t<T> other)
+	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, rect_t<T> other)
 	{
-		return vector::reverse(collision_move(other, vector::reverse(move), object));
+		//FIXME: the collision is jittery
+		const auto current = prev + move;
+		
+		if (!collision_test(current, other))
+			return move;
+
+		//TODO: sort lines based on how close they are to prev
+		//that way we can discard any secondary intersections
+		const auto lines = line::from_rect(other);
+		const line_t<T> approach{ prev, current };
+		const auto approach_rect = bounding_box(approach);
+
+		point_t<T> intersect{};
+		bool found = false;
+
+		//find the intersect point
+		for (const auto &l : lines)
+		{
+			const auto i = line::intersect(approach, l);
+			if (i && is_within(*i, approach_rect))
+			{
+				found = true;
+				intersect = *i;
+			}
+		}
+
+		if (!found)
+			return move;
+
+		const auto intersect_vector = intersect  - prev;
+
+		const auto move_mag = vector::magnitude(move);
+		const auto inter_mag = vector::magnitude(intersect_vector) - 1;
+
+		return vector::resize(move, std::min(move_mag, inter_mag ));
 	}
 
-	//rect to multipoint
-
-	//circle tests
 	template<typename T>
-	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, point_t<T> other)
+	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, circle_t<T> other)
 	{
-		return collision_move(object, move, circle_t<T>{other.x, other.y, 0});
+		return safe_move(circle_t<T>{prev.x, prev.y, 0}, move, other);
+	}
+
+	//rect
+	template<typename T>
+	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, point_t<T> other)
+	{
+		return safe_move(object, move, circle_t<T>{other.x, other.y, 1});
 	}
 
 	template<typename T>
-	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, rect_t<T> other)
+	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, rect_t<T> other)
+	{
+		object = normalise(object);
+		other = normalise(other);
+
+		const rect_t<T> moved_object{ 
+			object.x + move.x, 
+			object.y + move.y, 
+			object.width, 
+			object.height 
+		};
+
+		if (!collision_test(moved_object, other))
+			return move;
+
+		const auto object_centre = to_rect_centre(object);
+		const auto other_centre = to_rect_centre(other);
+	
+		const vector_t<T> other_super_size{ 
+			other_centre.half_width + object_centre.half_width,
+			other_centre.half_height + object_centre.half_height
+		};
+
+		const rect_centre_t<T> other_expanded{ 
+			other_centre.x - other_super_size.x / 2,
+			other_centre.y - other_super_size.y / 2,
+			other_super_size.x,
+			other_super_size.y
+		};
+	
+		const auto super_size_other = to_rect(other_expanded);
+
+		const auto centre_move = safe_move(point_t<T>{ object_centre.x, object_centre.y }, move, super_size_other);
+
+		return centre_move;
+	}
+
+	template<typename T>
+	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, circle_t<T> other)
+	{
+		return vector::reverse(safe_move(other, vector::reverse(move), object));
+	}
+
+	//circle
+	template<typename T>
+	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, point_t<T> other)
+	{
+		return safe_move(object, move, circle_t<T>{other.x, other.y, 0});
+	}
+
+	template<typename T>
+	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, rect_t<T> other)
 	{
 		const point_t<T> closest_point{ clamp(object.x, other.x, other.x + other.width),
 			clamp(object.y, other.y, other.y + other.height) };
 
-		return collision_move(object, move, closest_point);
+		return safe_move(object, move, closest_point);
 	}
 
 	template<typename T>
-	vector_t<T> collision_move(circle_t<T> object, vector_t<T> move, circle_t<T> other)
+	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, circle_t<T> other)
 	{
 		//based off article here:
 		//https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?print=1
@@ -205,7 +229,7 @@ namespace hades
 
 		const auto move_unit = vector::unit(move);
 		const auto dot = vector::dot(move_unit, obj_to_oth);
-		
+
 		if (dot < 0)
 			return move;
 
@@ -227,8 +251,13 @@ namespace hades
 
 		return  vector::resize(move, distance);
 	}
-	//circel to multipoint
-	//multipoint tests
+
+	template<typename T, template<typename> typename U, template<typename> typename V>
+	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other)
+	{
+		static_assert(always_false<T, U<T>, V<T>>::value, "safe_move not defined for these types");
+		return move;
+	}
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other)
@@ -286,10 +315,21 @@ namespace hades
 		return object;
 	}
 
+	template<typename T>
+	rect_t<T> bounding_box(line_t<T> object)
+	{
+		const auto x1 = std::min(object.s.x, object.e.x);
+		const auto x2 = std::max(object.s.x, object.e.x);
+		const auto y1 = std::min(object.s.y, object.e.y);
+		const auto y2 = std::max(object.s.y, object.e.y);
+
+		return {x1, y1, x2 - x1, y2 - y1};
+	}
+
 	template<typename T, template<typename> typename U>
 	rect_t<T> bounding_box(U<T> object)
 	{
-		static_assert(always_false<T, U<T>>.value, "bounding_box not defined for these types");
+		static_assert(always_false<T, U<T>>::value, "bounding_box not defined for these types");
 		return rect_t<T>{};
 	}
 

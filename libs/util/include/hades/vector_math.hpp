@@ -88,6 +88,9 @@ namespace hades
 
 		template<typename T>
 		T dot(vector_t<T> a, vector_t<T> b);
+
+		template <typename T>
+		vector_t<T> project(vector_t<T> vector, vector_t<T> axis);
 	}
 }
 

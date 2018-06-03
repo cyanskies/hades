@@ -144,5 +144,12 @@ namespace hades
 		{
 			return a.x * b.x + a.y * b.y;
 		}
+
+		template <typename T>
+		vector_t<T> project(vector_t<T> vector, vector_t<T> axis)
+		{
+			assert(axis != vector_t<T>());
+			return axis * (dot(vector, axis) / magnitude_squared(axis));
+		}
 	}
 }

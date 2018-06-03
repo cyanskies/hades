@@ -12,6 +12,58 @@
 
 namespace hades
 {
+	namespace detail
+	{
+		template<typename T>
+		std::tuple<point_t<T>, point_t<T>> line_outside_inside(point_t<T> start, point_t<T> end, rect_t<T> other)
+		{
+			if (collision_test(start, other))
+				return { end, start };
+
+			return { start, end };
+		}
+
+		//returns the side of the rectangle that was hit, and the point of the intersection
+		template<typename T>
+		std::tuple<direction, point_t<T>> line_collision(point_t<T> start, point_t<T> end, rect_t<T> other)
+		{
+			//FIXME: the collision is jittery
+			const auto[outside, inside] = line_outside_inside(start, end, other);
+
+			assert(inside != outside);
+			const auto lines = line::from_rect(other);
+
+			//line value type
+			using line_val = std::tuple<T, line_t<T>, direction>;
+			std::vector<line_val> sorted_lines;
+			
+			for (auto i = 0; i < static_cast<int>(direction::last); ++i)
+			{
+				const auto l = lines[i];
+				const point_t<T> midpoint{ (l.s.x + l.e.x) / 2,
+									(l.s.y + l.e.y) / 2 };
+				sorted_lines.emplace_back(vector::distance(outside, midpoint), l, static_cast<direction>(i));
+			}
+
+			std::sort(std::begin(sorted_lines), std::end(sorted_lines), [](auto &&lhs, auto &&rhs) {
+				return std::get<T>(lhs) < std::get<T>(rhs);
+			});
+
+			const line_t<T> approach{ inside, outside };
+			const auto approach_rect = bounding_box(approach);
+
+			//find the intersect point
+			for (const auto &l : sorted_lines)
+			{
+				const auto i = line::intersect(approach, std::get<line_t<T>>(l));
+				if (i && is_within(*i, approach_rect))
+					return { std::get<direction>(l), *i };
+			}
+
+			return { direction::last, outside };
+		}
+	}
+
 	//point tests
 	template<typename T>
 	bool collision_test(point_t<T> current, point_t<T> object)
@@ -101,40 +153,16 @@ namespace hades
 	template<typename T>
 	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, rect_t<T> other)
 	{
-		//FIXME: the collision is jittery
-		const auto current = prev + move;
-		
-		if (!collision_test(current, other))
+		if (!collision_test(prev + move, other))
 			return move;
 
-		//TODO: sort lines based on how close they are to prev
-		//that way we can discard any secondary intersections
-		const auto lines = line::from_rect(other);
-		const line_t<T> approach{ prev, current };
-		const auto approach_rect = bounding_box(approach);
-
-		point_t<T> intersect{};
-		bool found = false;
-
-		//find the intersect point
-		for (const auto &l : lines)
-		{
-			const auto i = line::intersect(approach, l);
-			if (i && is_within(*i, approach_rect))
-			{
-				found = true;
-				intersect = *i;
-			}
-		}
-
-		if (!found)
+		const auto [direc, intersect] = detail::line_collision(prev, prev + move, other);
+		if (direc == direction::last)
 			return move;
 
-		const auto intersect_vector = intersect  - prev;
-
+		const auto intersect_vector = intersect - prev;
 		const auto move_mag = vector::magnitude(move);
 		const auto inter_mag = vector::magnitude(intersect_vector) - 1;
-
 		return vector::resize(move, std::min(move_mag, inter_mag ));
 	}
 
@@ -268,10 +296,10 @@ namespace hades
 
 	//TODO:
 	//all
-
+	
 	//returns the direction the collision occured from
 	template<typename T, template<typename> typename U>
-	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other)
+	direction collision_direction(U<T> object, U<T> move, rect_t<T> other)
 	{
 		static_assert(always_false<T, U<T>, rect_t<T>>::value, "collision_direction not defined for these types");
 		return direction::left;

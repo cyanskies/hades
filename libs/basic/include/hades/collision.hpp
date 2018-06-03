@@ -46,7 +46,8 @@ namespace hades
 		left,
 		right,
 		top,
-		bottom
+		bottom,
+		last
 	};
 
 	//returns the move needed to bring object as close as possible to other without colliding.

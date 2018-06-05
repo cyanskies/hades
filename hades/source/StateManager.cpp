@@ -37,11 +37,11 @@ namespace hades
 
 	void StateManager::pushUnder(std::unique_ptr<State> state)
 	{
-		//push this state
-		push(std::move(state));
-
 		//this will end up being under the current state, so it won't have focus
 		state->dropFocus();
+
+		//push this state
+		push(std::move(state));
 
 		//then swap it with the one underneath
 		std::iter_swap(_states.rbegin(), _states.rbegin() + 1);

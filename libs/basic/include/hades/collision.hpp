@@ -69,7 +69,7 @@ namespace hades
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 
-	//returns the direction the collision occured from
+	//returns the rect side that collisded
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other);
 

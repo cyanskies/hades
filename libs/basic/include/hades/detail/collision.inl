@@ -204,17 +204,15 @@ namespace hades
 		};
 
 		const rect_centre_t<T> other_expanded{ 
-			other_centre.x - other_super_size.x / 2,
-			other_centre.y - other_super_size.y / 2,
+			other_centre.x,
+			other_centre.y,
 			other_super_size.x,
 			other_super_size.y
 		};
 	
 		const auto super_size_other = to_rect(other_expanded);
 
-		const auto centre_move = safe_move(point_t<T>{ object_centre.x, object_centre.y }, move, super_size_other);
-
-		return centre_move;
+		return safe_move(point_t<T>{ object_centre.x, object_centre.y }, move, super_size_other);
 	}
 
 	template<typename T>
@@ -294,9 +292,52 @@ namespace hades
 		return move;
 	}
 
-	//TODO:
-	//all
+	template<typename T, template<typename> typename U>
+	direction collision_direction(point_t<T> object, U<T> move, rect_t<T> other)
+	{
+		const auto moved_object = object + move;
+		if (!collision_test(moved_object, other))
+			return direction::last;
+
+		const auto ret = detail::line_collision(object, moved_object, other);
+
+		return std::get<direction>(ret);
+	}
 	
+	template<typename T, template<typename> typename U>
+	direction collision_direction(rect_t<T> object, U<T> move, rect_t<T> other)
+	{
+		object = normalise(object);
+		other = normalise(other);
+
+		const rect_t<T> moved_object{
+			object.x + move.x,
+			object.y + move.y,
+			object.width,
+			object.height
+		};
+
+		if (!collision_test(moved_object, other))
+			return direction::last;
+
+		const auto object_centre = to_rect_centre(object);
+		const auto other_centre = to_rect_centre(other);
+
+		return detail::line_collision({ object_centre.x, object_centre.y }, { other_centre.x, other_centre.y }, other);
+	}
+
+	template<typename T, template<typename> typename U>
+	direction collision_direction(circle_t<T> object, U<T> move, rect_t<T> other)
+	{
+		const point_t<T> moved_object{ object.x + move.x, object.y + move.y };
+		const point_t<T> closest_point{ clamp(moved_object.x, other.x, other.x + other.width),
+			clamp(moved_object.y, other.y, other.y + other.height) };
+
+		const auto ret = detail::line_collision({ object.x, object.y }, closest_point, other);
+
+		return std::get<direction>(ret);
+	}
+
 	//returns the direction the collision occured from
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> object, U<T> move, rect_t<T> other)

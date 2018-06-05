@@ -323,7 +323,8 @@ namespace hades
 		const auto object_centre = to_rect_centre(object);
 		const auto other_centre = to_rect_centre(other);
 
-		return detail::line_collision({ object_centre.x, object_centre.y }, { other_centre.x, other_centre.y }, other);
+		const auto ret = detail::line_collision({ object_centre.x, object_centre.y }, { other_centre.x, other_centre.y }, other);
+		return std::get<direction>(ret);
 	}
 
 	template<typename T, template<typename> typename U>

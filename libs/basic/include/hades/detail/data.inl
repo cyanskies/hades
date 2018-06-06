@@ -5,7 +5,7 @@ namespace hades
 	namespace data
 	{
 		template<class T>
-		T *data_manager::get(UniqueId id)
+		T *data_manager::get(unique_id id)
 		{
 			auto res = get<T>(id, no_load);
 
@@ -16,14 +16,14 @@ namespace hades
 		}
 
 		template<class T>
-		T *data_manager::get(UniqueId id, const no_load_t)
+		T *data_manager::get(unique_id id, const no_load_t)
 		{
-			auto res = getResource(id);
+			auto res = get_resource(id);
 			auto out = dynamic_cast<T*>(res);
 
 			if (!out)
 			{
-				throw resource_wrong_type("Tried to get resource using wrong type, unique_id was: " + getAsString(id)
+				throw resource_wrong_type("Tried to get resource using wrong type, unique_id was: " + get_as_string(id)
 					+ ", requested type was: " + typeid(T).name());
 			}
 
@@ -31,12 +31,12 @@ namespace hades
 		}
 
 		template<class T>
-		void data_manager::set(UniqueId id, std::unique_ptr<T> ptr)
+		void data_manager::set(unique_id id, std::unique_ptr<T> ptr)
 		{
 			//throw error if that id has already been used
 			if (exists(id))
 			{
-				throw resource_name_already_used("Tried to set a new resource using the already reserved name: " + getAsString(id)
+				throw resource_name_already_used("Tried to set a new resource using the already reserved name: " + get_as_string(id)
 					+ ", resource type was: " + typeid(T).name());
 			}
 
@@ -46,11 +46,11 @@ namespace hades
 		}
 
 		template<class T>
-		const T* Get(UniqueId id)
+		const T* get(unique_id id)
 		{
 			data_manager* data = nullptr;
 			detail::exclusive_lock lock;
-			std::tie(data, lock) = detail::GetDataManagerPtrExclusive();
+			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
 			return data->get<T>(id);
 		}
 	}

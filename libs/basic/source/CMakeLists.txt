@@ -2,20 +2,29 @@
 
 # C++ source files
 set(HADES_BASIC_SRC
+	data.cpp
 	input.cpp
 	../include/hades/collision.hpp
+	../include/hades/data.hpp
+	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
+	../include/hades/resource_base.hpp
 	../include/hades/detail/collision.inl
+	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
 )
 
 source_group("Headers" FILES
 	../include/hades/collision.hpp
+	../include/hades/data.hpp
+	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
+	../include/hades/resource_base.hpp
 )
 
 source_group("Detail" FILES
 	../include/hades/detail/collision.inl
+	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
 )
 

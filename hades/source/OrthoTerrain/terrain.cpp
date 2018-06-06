@@ -80,7 +80,7 @@ namespace ortho_terrain
 
 		const auto coloumns = map[0].size() / width;
 
-		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		static const auto empty_terrain = hades::data::get<resources::terrain>(resources::EmptyTerrainId);
 
 		//a vert array includes a single extra column and row
 		const auto vert_width = VertWidth(width);
@@ -123,7 +123,7 @@ namespace ortho_terrain
 		}
 
 		//terrain wasn't in terrain_set, check if it's empty_terrain
-		const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		const auto empty_terrain = hades::data::get<resources::terrain>(resources::EmptyTerrainId);
 		for (const auto &t : layer)
 		{
 			if (const auto *terrain = FindTerrain(t, { empty_terrain }); terrain)
@@ -142,7 +142,7 @@ namespace ortho_terrain
 	
 	TerrainVertex CalculateLayerVertex(const TerrainVertex &verts, const resources::terrain *t, std::vector<const resources::terrain*> friendly)
 	{
-		static const auto empty = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		static const auto empty = hades::data::get<resources::terrain>(resources::EmptyTerrainId);
 		TerrainVertex v{ verts.size(), empty };
 
 		for (std::size_t i = 0; i < verts.size(); ++i)
@@ -175,7 +175,7 @@ namespace ortho_terrain
 	void UpdateArray(tiles::TileArray &arr, const TerrainVertex &verts, tiles::tile_count_t vertex_width,
 		std::vector<const resources::terrain*> t_list, sf::Vector2i pos, tiles::draw_size_t size)
 	{
-		static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+		static const auto empty_terrain = hades::data::get<resources::terrain>(resources::EmptyTerrainId);
 		static const auto empty_tile = tiles::GetEmptyTile();
 		
 		//for each of the positions that have been updated
@@ -448,8 +448,8 @@ namespace ortho_terrain
 
 		for (const auto &n : l.terrainset)
 		{
-			const auto id = hades::data::GetUid(n);
-			const auto t = hades::data::Get<resources::terrain>(id);
+			const auto id = hades::data::get_uid(n);
+			const auto t = hades::data::get<resources::terrain>(id);
 			m.terrain_set.emplace_back(t);
 		}
 
@@ -458,7 +458,7 @@ namespace ortho_terrain
 			std::vector<tiles::TileSetInfo> tilesets;
 			for (const auto &set : t.tilesets)
 			{
-				const auto id = hades::data::GetUid(std::get<hades::types::string>(set));
+				const auto id = hades::data::get_uid(std::get<hades::types::string>(set));
 				tilesets.emplace_back(id, std::get<tiles::tile_count_t>(set));
 			}
 
@@ -473,7 +473,7 @@ namespace ortho_terrain
 	{
 		terrain_layer l;
 		for (const auto &t : m.terrain_set)
-			l.terrainset.emplace_back(hades::data::GetAsString(t->id));
+			l.terrainset.emplace_back(hades::data::get_as_string(t->id));
 
 		for (const auto &layer : m.tile_map_stack)
 		{
@@ -482,7 +482,7 @@ namespace ortho_terrain
 			std::vector<std::tuple<hades::types::string, tiles::tile_count_t>> tilesets;
 			for (const auto &set : std::get<std::vector<tiles::TileSetInfo>>(tiles))
 			{
-				const auto name = hades::data::GetAsString(std::get<hades::UniqueId>(set));
+				const auto name = hades::data::get_as_string(std::get<hades::unique_id>(set));
 				tilesets.emplace_back(name, std::get<tiles::tile_count_t>(set));
 			}
 

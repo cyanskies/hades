@@ -14,7 +14,7 @@ void parseSnakeRules(hades::unique_id mod, YAML::Node& node, hades::data::data_m
 	//	  snake-speed:
 
 	snake_rules *s;
-	auto id = dataman->getUid("snake-game");
+	auto id = dataman->get_uid("snake-game");
 
 	try
 	{

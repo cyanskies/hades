@@ -19,7 +19,7 @@ namespace tiles
 
 	void tile_editor::init()
 	{
-		TileSettings = hades::data::Get<resources::tile_settings>(id::tile_settings);	
+		TileSettings = hades::data::get<resources::tile_settings>(id::tile_settings);	
 
 		_tileInfo = GetEmptyTile(TileSettings);
 
@@ -174,8 +174,8 @@ namespace tiles
 		const auto &tilesets = std::get<tileset_list>(map);
 		for (const auto &tset : tilesets)
 		{
-			const auto id = std::get<hades::UniqueId>(tset);
-			const auto name = hades::data::GetAsString(id);
+			const auto id = std::get<hades::unique_id>(tset);
+			const auto name = hades::data::get_as_string(id);
 			const auto first_tid = std::get<tile_count_t>(tset);
 			l.tiles.tilesets.push_back({ name, first_tid });
 		}
@@ -202,7 +202,7 @@ namespace tiles
 		for (const auto &tset : l.tiles.tilesets)
 		{
 			const auto name = std::get<hades::types::string>(tset);
-			const auto id = hades::data::GetUid(name);
+			const auto id = hades::data::get_uid(name);
 			const auto first_tid = std::get<tile_count_t>(tset);
 
 			tilesets.push_back({ id, first_tid });
@@ -263,7 +263,7 @@ namespace tiles
 		//add all the group names
 		for (const auto &t : tilesets)
 		{
-			const auto tset = hades::data::GetAsString(t->id);
+			const auto tset = hades::data::get_as_string(t->id);
 			combobox->AppendItem(tset);
 		}
 

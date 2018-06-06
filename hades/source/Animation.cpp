@@ -10,7 +10,7 @@ namespace hades
 	void animation_error(float progress, const resources::animation* const animation)
 	{
 		LOGWARNING("Animation progress parameter must be in the range (0, 1) was: " + std::to_string(progress) +
-			"; while setting animation: " + data::GetAsString(animation->id));
+			"; while setting animation: " + data::get_as_string(animation->id));
 	}
 
 	namespace animation
@@ -22,7 +22,7 @@ namespace hades
 
 			//force lazy load if the texture hasn't been loaded yet.
 			if (!animation->tex->loaded)
-				hades::data::Get<hades::resources::texture>(animation->tex->id);
+				hades::data::get<hades::resources::texture>(animation->tex->id);
 
 			auto prog = std::clamp(progress, 0.f, 1.f);
 
@@ -36,7 +36,7 @@ namespace hades
 					return std::make_tuple(static_cast<float>(frame.x), static_cast<float>(frame.y));
 			}
 
-			LOGWARNING("Unable to find correct frame for animation " + data::GetAsString(animation->id) +
+			LOGWARNING("Unable to find correct frame for animation " + data::get_as_string(animation->id) +
 				"animation progress was: " + std::to_string(progress));
 			return std::make_tuple(0.f, 0.f);
 		}

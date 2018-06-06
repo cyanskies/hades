@@ -19,7 +19,7 @@ using namespace hades;
 //posts a standard error message if the requested resource is of the wrong type
 void resource_error(types::string resource_type, types::string resource_name, unique_id mod)
 {
-	auto mod_ptr = data::Get<resources::mod>(mod);
+	auto mod_ptr = data::get<resources::mod>(mod);
 	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: "
 		+ mod_ptr->name + ". Name has already been used for a different resource type.");
 }
@@ -137,7 +137,7 @@ namespace hades
 				auto name = tnode.as<types::string>();
 				//second holds the map children
 				auto tvariables = n.second;
-				auto id = dataman->getUid(tnode.as<types::string>());
+				auto id = dataman->get_uid(tnode.as<types::string>());
 				auto tex = data::FindOrCreate<texture>(id, mod, dataman);
 
 				if (!tex)
@@ -178,7 +178,7 @@ namespace hades
 					tex->value.setRepeated(tex->repeat);
 
 					if (tex->mips && !tex->value.generateMipmap())
-						LOGWARNING("Failed to generate MipMap for texture: " + dataman->getAsString(tex->id));
+						LOGWARNING("Failed to generate MipMap for texture: " + dataman->get_as_string(tex->id));
 				}
 				catch (files::file_exception e)
 				{
@@ -223,7 +223,7 @@ namespace hades
 
 				//second holds the map children
 				auto string = n.second.as<types::string>();
-				auto id = dataman->getUid(tnode.as<types::string>());
+				auto id = dataman->get_uid(tnode.as<types::string>());
 
 				auto str = data::FindOrCreate<resources::string>(id, mod, dataman);// = std::make_unique<resources::string>();
 
@@ -334,7 +334,7 @@ namespace hades
 				//record this nodes name
 				const types::string name = tnode.as<types::string>();
 
-				auto id = dataman->getUid(name);
+				auto id = dataman->get_uid(name);
 				curve* c = hades::data::FindOrCreate<curve>(id, mod, dataman);
 
 				if (!c)
@@ -425,7 +425,7 @@ namespace hades
 				}
 				else if constexpr (std::is_same_v<type, curve_types::unique>)
 				{
-					return hades::data::GetAsString(v);
+					return hades::data::get_as_string(v);
 				}
 				else if constexpr (std::is_same_v<type, curve_types::vector_int>
 					|| std::is_same_v<type, curve_types::vector_float>
@@ -448,7 +448,7 @@ namespace hades
 					types::string out{ "[" };
 					for (const auto &i : v)
 					{
-						out += hades::data::GetAsString(i) + ", ";
+						out += hades::data::get_as_string(i) + ", ";
 					}
 
 					//remove the final ", "
@@ -496,7 +496,7 @@ namespace hades
 				out.value = to_string(str);
 			else if (type == VariableType::UNIQUE)
 			{
-				out.value = hades::data::GetUid(str);
+				out.value = hades::data::get_uid(str);
 			}
 			else if (type == VariableType::VECTOR_FLOAT)
 			{
@@ -510,7 +510,7 @@ namespace hades
 			else if (type == VariableType::VECTOR_UNIQUE)
 			{
 				out.value = StringToVector<unique_id>(str, [](auto &&str) {
-					return hades::data::GetUid(str);
+					return hades::data::get_uid(str);
 				});
 			}
 			else
@@ -606,7 +606,7 @@ namespace hades
 				auto node = n.first;
 				auto animation_node = n.second;
 				const types::string name = node.as<types::string>();
-				auto id = data->getUid(name);
+				auto id = data->get_uid(name);
 				animation* a = data::FindOrCreate<animation>(id, mod, data);
 
 				if (!a)
@@ -621,7 +621,7 @@ namespace hades
 					continue;
 				}
 
-				a->tex = data::FindOrCreate<resources::texture>(data::GetUid(texture_str), mod, data);
+				a->tex = data::FindOrCreate<resources::texture>(data::get_uid(texture_str), mod, data);
 				a->width = yaml_get_scalar(animation_node, resource_type, name, "width", mod, a->width);
 				a->height = yaml_get_scalar(animation_node, resource_type, name, "height", mod, a->height);
 
@@ -687,7 +687,7 @@ namespace hades
 				auto tnode = n.first;
 				//second holds the map children
 				auto source = n.second.as<types::string>();
-				auto id = data->getUid(tnode.as<types::string>());
+				auto id = data->get_uid(tnode.as<types::string>());
 				auto name = tnode.as<types::string>();
 				font *f = data::FindOrCreate<font>(id, mod, data);
 

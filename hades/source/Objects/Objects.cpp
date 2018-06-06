@@ -100,8 +100,8 @@ namespace objects
 		auto out = TryGetCurve(o, c);
 		using curve_t = hades::resources::curve;
 		if (std::get<const curve_t*>(out) == nullptr)
-			throw curve_not_found("Requested curve not found on object type: " + hades::data::GetAsString(o->id)
-				+ ", curve was: " + hades::data::GetAsString(c->id));
+			throw curve_not_found("Requested curve not found on object type: " + hades::data::get_as_string(o->id)
+				+ ", curve was: " + hades::data::get_as_string(c->id));
 
 		if (auto v = std::get<hades::resources::curve_default_value>(out); v.set)
 			return v;
@@ -312,9 +312,9 @@ namespace objects
 			obj.name = yaml_get_scalar<hades::types::string>(obj_node, obj_str, hades::to_string(obj.id), obj_name, "");
 			const auto type_id = yaml_get_uid(obj_node, obj_str, obj.name, obj_type);
 
-			if (type_id != hades::UniqueId::zero)
+			if (type_id != hades::unique_id::zero)
 			{
-				const auto type_ptr = hades::data::Get<resources::object>(type_id);
+				const auto type_ptr = hades::data::get<resources::object>(type_id);
 				obj.obj_type = type_ptr;
 			}
 
@@ -330,12 +330,12 @@ namespace objects
 				if (curve_id_str.empty())
 					continue;
 
-				const auto id = hades::data::GetUid(curve_id_str);
+				const auto id = hades::data::get_uid(curve_id_str);
 
-				if (id == hades::UniqueId::zero)
+				if (id == hades::unique_id::zero)
 					continue;
 
-				const auto curve_ptr = hades::data::Get<hades::resources::curve>(id);
+				const auto curve_ptr = hades::data::get<hades::resources::curve>(id);
 				const auto value_str = curve_value_node.as<hades::types::string>();
 				const auto value = hades::resources::StringToCurveValue(curve_ptr, value_str);
 
@@ -394,7 +394,7 @@ namespace objects
 		//type
 		assert(o.obj_type);
 		y << YAML::Key << obj_type;
-		const auto type_id = hades::data::GetAsString(o.obj_type->id);
+		const auto type_id = hades::data::get_as_string(o.obj_type->id);
 		y << YAML::Value << type_id;
 
 		//curves
@@ -406,7 +406,7 @@ namespace objects
 			for (const auto &[curve, value] : o.curves)
 			{
 				assert(curve);
-				const auto curve_id = hades::data::GetAsString(curve->id);
+				const auto curve_id = hades::data::get_as_string(curve->id);
 				const auto value_str = hades::resources::CurveValueToString(value);
 
 				y << YAML::Key << curve_id;

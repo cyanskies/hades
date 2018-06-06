@@ -20,7 +20,7 @@ namespace hades
 		{
 			T* r = nullptr;
 
-			if (target == EmptyId)
+			if (target == empty_id)
 			{
 				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
 				return r;
@@ -43,7 +43,7 @@ namespace hades
 				catch (data::resource_wrong_type &e)
 				{
 					//name is already used for something else, this cannnot be loaded
-					auto modname = data->getAsString(mod);
+					auto modname = data->get_as_string(mod);
 					LOGERROR(types::string(e.what()) + "In mod: " + modname + ", name has already been used for a different resource type.");
 				}
 			}
@@ -64,7 +64,7 @@ std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::d
 	std::transform(first, last, std::back_inserter(ids),
 		[data](hades::types::string input) {
 		if (input.empty()) return hades::unique_id::zero;
-		else return data->getUid(input);
+		else return data->get_uid(input);
 	});
 
 	//get objects

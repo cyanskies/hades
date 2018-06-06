@@ -20,7 +20,7 @@ namespace ortho_terrain
 		}
 		
 		const auto terrainset_id = resources::TerrainSets.front();
-		const auto terrainset = hades::data::Get<resources::terrainset>(terrainset_id);
+		const auto terrainset = hades::data::get<resources::terrainset>(terrainset_id);
 
 		Terrainset(terrainset);
 		assert(!terrainset->terrains.empty());
@@ -52,7 +52,7 @@ namespace ortho_terrain
 
 		button("erase terrain", [this] {
 			_enterTerrainMode();
-			static const auto empty_terrain = hades::data::Get<resources::terrain>(resources::EmptyTerrainId);
+			static const auto empty_terrain = hades::data::get<resources::terrain>(resources::EmptyTerrainId);
 			_setCurrentTerrain(empty_terrain);
 		}, nullptr);
 	}
@@ -160,7 +160,7 @@ namespace ortho_terrain
 		std::weak_ptr<sfg::ComboBox> terrainset_selector_weak = terrainset_selector;
 		for (const auto &tset : resources::TerrainSets)
 		{
-			const auto name = hades::data::GetAsString(tset);
+			const auto name = hades::data::get_as_string(tset);
 			terrainset_selector->AppendItem(name);
 		}
 
@@ -176,7 +176,7 @@ namespace ortho_terrain
 
 			assert(terrainset_selected < static_cast<int>(resources::TerrainSets.size()));
 			const auto terrain_id = resources::TerrainSets[terrainset_selected];
-			const auto terrainset = hades::data::Get<resources::terrainset>(terrain_id);
+			const auto terrainset = hades::data::get<resources::terrainset>(terrain_id);
 
 			const auto selected = terrain_sel->GetSelectedItem();
 
@@ -213,10 +213,10 @@ namespace ortho_terrain
 			while (terrain_sel->GetItemCount())
 				terrain_sel->RemoveItem(0);
 
-			const auto terrain_set = hades::data::Get<resources::terrainset>(resources::TerrainSets[selected]);
+			const auto terrain_set = hades::data::get<resources::terrainset>(resources::TerrainSets[selected]);
 
 			for (const auto &t : terrain_set->terrains)
-				terrain_sel->AppendItem(hades::data::GetAsString(t->id));
+				terrain_sel->AppendItem(hades::data::get_as_string(t->id));
 
 			terrain_sel->SelectItem(0);
 			on_terrain_select();
@@ -277,7 +277,7 @@ namespace ortho_terrain
 			const auto selected = terrainset_sel->GetSelectedItem();
 			assert(selected < static_cast<int>(resources::TerrainSets.size()));
 
-			const auto terrain_set = hades::data::Get<resources::terrainset>(resources::TerrainSets[selected]);
+			const auto terrain_set = hades::data::get<resources::terrainset>(resources::TerrainSets[selected]);
 			Terrainset(terrain_set);
 
 			//get terrain

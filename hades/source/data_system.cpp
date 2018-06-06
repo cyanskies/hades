@@ -11,7 +11,7 @@ namespace hades
 {
 	namespace data
 	{
-		data_system::data_system() : _ids({ {no_id_string, UniqueId::zero} })
+		data_system::data_system() : _ids({ {no_id_string, unique_id::zero} })
 		{}
 
 		//application registers the custom resource types
@@ -71,9 +71,9 @@ namespace hades
 
 			//record the list of loaded games/mods
 			if (name == "game.yaml")
-				_game = getUid(mod);
+				_game = get_uid(mod);
 			else
-				_mods.push_back(getUid(mod));
+				_mods.push_back(get_uid(mod));
 		}
 
 		bool data_system::loaded(std::string_view mod)
@@ -84,7 +84,7 @@ namespace hades
 
 			try
 			{
-				auto r = get<resources::mod>(getUid(mod));
+				auto r = get<resources::mod>(get_uid(mod));
 			}
 			//name has been used, but not for a mod
 			catch (data::resource_wrong_type&)
@@ -126,13 +126,13 @@ namespace hades
 				refresh(id.second);
 		}
 
-		void data_system::refresh(UniqueId id)
+		void data_system::refresh(unique_id id)
 		{
 			if (exists(id))
 			{
 				//_resources stores unique_ptrs to resources
 				//so we void ptr cast to get it out of the type erased property bag
-				auto r = getResource(id);
+				auto r = get_resource(id);
 
 				_loadQueue.push_back(r);
 			}
@@ -172,7 +172,7 @@ namespace hades
 		}
 
 		//convert string to uid
-		types::string data_system::getAsString(UniqueId uid) const
+		types::string data_system::get_as_string(unique_id uid) const
 		{
 			for (auto id : _ids)
 			{
@@ -183,17 +183,17 @@ namespace hades
 			return no_id_string;
 		}
 
-		UniqueId data_system::getUid(std::string_view name) const
+		unique_id data_system::get_uid(std::string_view name) const
 		{
 			auto id = _ids.find(types::string(name));
 
 			if (id == std::end(_ids))
-				return UniqueId::zero;
+				return unique_id::zero;
 
 			return id->second;
 		}
 
-		UniqueId data_system::getUid(std::string_view name)
+		unique_id data_system::get_uid(std::string_view name)
 		{
 			return _ids[types::string(name)];
 		}
@@ -253,7 +253,7 @@ namespace hades
 
 		void data_system::parseMod(std::string_view source, YAML::Node modRoot, std::function<bool(std::string_view)> dependencycheck)
 		{
-			auto modKey = getUid(source);
+			auto modKey = get_uid(source);
 
 			//mod:
 			//    name:
@@ -330,9 +330,9 @@ bool yaml_error(types::string resource_type, types::string resource_name,
 	{
 		using namespace std::string_literals;
 		auto message = "Error passing YAML"s;
-		if (mod != hades::UniqueId::zero)
+		if (mod != hades::unique_id::zero)
 		{
-			auto mod_ptr = data::Get<resources::mod>(mod);
+			auto mod_ptr = data::get<resources::mod>(mod);
 			message += ", in mod: "s + mod_ptr->name;
 		}
 		message += ", type: "s + resource_type + ", name: "s
@@ -351,7 +351,7 @@ hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resou
 	{
 		auto str = value_node.as<hades::types::string>();
 		if (!str.empty())
-			return hades::data::MakeUid(str);
+			return hades::data::make_uid(str);
 	}
 
 	return default_value;

@@ -23,10 +23,10 @@ void ConsoleTestState::init()
 	assert(*int8val == 5);
 
 	//assign the needed textures
-	auto missing_id = hades::data::GetUid("example"), ball_id = hades::data::GetUid("ball");
+	auto missing_id = hades::data::get_uid("example"), ball_id = hades::data::get_uid("ball");
 
-	missing = hades::data::Get<hades::resources::texture>(missing_id);
-	ball = hades::data::Get<hades::resources::texture>(ball_id);
+	missing = hades::data::get<hades::resources::texture>(missing_id);
+	ball = hades::data::get<hades::resources::texture>(ball_id);
 
 	assert(missing && ball);
 

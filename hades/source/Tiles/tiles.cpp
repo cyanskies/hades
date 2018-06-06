@@ -47,7 +47,7 @@ namespace tiles
 		{
 			const auto start_id = std::get<tile_count_t>(t);
 			const auto tileset_id = std::get<hades::unique_id>(t);
-			const auto tileset = hades::data::Get<resources::tileset>(tileset_id);
+			const auto tileset = hades::data::get<resources::tileset>(tileset_id);
 			assert(tileset);
 			tilesets.push_back({ tileset, start_id });
 		}
@@ -127,7 +127,7 @@ namespace tiles
 				//check Tilesets for the containing tileset
 				for (const auto &s_id : resources::Tilesets)
 				{
-					const auto s = hades::data::Get<resources::tileset>(s_id);
+					const auto s = hades::data::get<resources::tileset>(s_id);
 					const auto &set_tiles = s->tiles;
 					for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
 					{
@@ -573,7 +573,7 @@ namespace tiles
 
 	const resources::tile_settings *GetTileSettings()
 	{
-		if (id::tile_settings == hades::UniqueId::zero)
+		if (id::tile_settings == hades::unique_id::zero)
 		{
 			const auto message = "tile-settings undefined. GetTileSettings()";
 			LOGERROR(message)
@@ -582,7 +582,7 @@ namespace tiles
 
 		try
 		{
-			return hades::data::Get<resources::tile_settings>(id::tile_settings);
+			return hades::data::get<resources::tile_settings>(id::tile_settings);
 		}
 		catch (hades::data::resource_wrong_type&)
 		{
@@ -598,7 +598,7 @@ namespace tiles
 		if (!settings->error_tileset)
 		{
 			LOGWARNING("No error tileset");
-			const auto backup_tileset = hades::data::Get<resources::tileset>(resources::Tilesets.front());
+			const auto backup_tileset = hades::data::get<resources::tileset>(resources::Tilesets.front());
 			return backup_tileset->tiles;
 		}
 

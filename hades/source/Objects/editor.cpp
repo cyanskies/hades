@@ -250,7 +250,7 @@ namespace objects
 
 	void object_editor::FillToolBar(AddToggleButtonFunc ToggleButton, AddButtonFunc Button, AddSeperatorFunc Seperator)
 	{
-		const auto editor_settings = hades::data::Get<resources::editor>(hades::data::GetUid("editor"));
+		const auto editor_settings = hades::data::get<resources::editor>(hades::data::get_uid("editor"));
 		//common editor items
 		Button("new map", [this]() {
 			NewLevelDialog();
@@ -346,8 +346,8 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::DRAG)
 		{
 			sf::Transformable *object = nullptr;
-			static const auto size_id = hades::data::GetUid("size");
-			static const auto size_curve = hades::data::Get<hades::resources::curve>(size_id);
+			static const auto size_id = hades::data::get_uid("size");
+			static const auto size_curve = hades::data::get<hades::resources::curve>(size_id);
 			const auto size_value = ValidVectorCurve(GetCurve(_heldObject, size_curve));
 
 			using size_type = hades::resources::curve_types::vector_int;
@@ -468,8 +468,8 @@ namespace objects
 	bool object_editor::ObjectValidLocation(sf::Vector2i position, const object_info &object) const
 	{
 		//check for collision with another object
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		static const auto size_id = hades::data::get_uid("size");
+		static const auto size_c = hades::data::get<hades::resources::curve>(size_id);
 		const auto size_v = ValidVectorCurve(GetCurve(object, size_c));
 		using size_type = std::vector<hades::resources::curve_types::int_t>;
 		const auto obj_size = std::get<size_type>(size_v.value);
@@ -799,15 +799,15 @@ namespace objects
 
 	hades::SpriteBatch::sprite_id CreateSpriteFromObj(const object_info &o, hades::SpriteBatch &s)
 	{
-		static const auto position_id = hades::data::GetUid("position");
-		static const auto position_c = hades::data::Get<hades::resources::curve>(position_id);
+		static const auto position_id = hades::data::get_uid("position");
+		static const auto position_c = hades::data::get<hades::resources::curve>(position_id);
 		const auto position_value = ValidVectorCurve(GetCurve(o, position_c));
 
 		const auto position = std::get<hades::resources::curve_types::vector_int>(position_value.value);
 		const sf::Vector2i position_vec{ position[0], position[1] };
 
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		static const auto size_id = hades::data::get_uid("size");
+		static const auto size_c = hades::data::get<hades::resources::curve>(size_id);
 		const auto size_value = ValidVectorCurve(GetCurve(o, size_c));
 
 		const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
@@ -829,15 +829,15 @@ namespace objects
 
 	void AddToQuadMap(const object_info &o, hades::QuadTree<hades::EntityId> &q)
 	{
-		static const auto position_id = hades::data::GetUid("position");
-		static const auto position_c = hades::data::Get<hades::resources::curve>(position_id);
+		static const auto position_id = hades::data::get_uid("position");
+		static const auto position_c = hades::data::get<hades::resources::curve>(position_id);
 		const auto position_value = ValidVectorCurve(GetCurve(o, position_c));
 
 		const auto position = std::get<hades::resources::curve_types::vector_int>(position_value.value);
 		const sf::Vector2i position_vec{ position[0], position[1] };
 
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+		static const auto size_id = hades::data::get_uid("size");
+		static const auto size_c = hades::data::get<hades::resources::curve>(size_id);
 		const auto size_value = ValidVectorCurve(GetCurve(o, size_c));
 
 		const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
@@ -1107,7 +1107,7 @@ namespace objects
 
 		for(const auto o : objects)
 		{
-			const auto name = o->editor_icon ? hades::types::string{} : hades::data::GetAsString(o->id);
+			const auto name = o->editor_icon ? hades::types::string{} : hades::data::get_as_string(o->id);
 			auto b = CreateButton<sfg::Button>(name, [this, o]
 			{
 				_setHeldObject(o);
@@ -1181,8 +1181,8 @@ namespace objects
 			//create the object held at the target location
 			object.id = ++_next_object_id;
 
-			static const auto size_id = hades::data::GetUid("size");
-			static const auto size_c = hades::data::Get<hades::resources::curve>(size_id);
+			static const auto size_id = hades::data::get_uid("size");
+			static const auto size_c = hades::data::get<hades::resources::curve>(size_id);
 			const auto size_value = ValidVectorCurve(GetCurve(object, size_c));
 
 			const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
@@ -1205,8 +1205,8 @@ namespace objects
 
 			//record the object position as one of it's curves
 			using namespace hades::resources::curve_types;
-			static const auto pos_id = hades::data::GetUid("position");
-			static const auto pos_c = hades::data::Get<hades::resources::curve>(pos_id);
+			static const auto pos_id = hades::data::get_uid("position");
+			static const auto pos_c = hades::data::get<hades::resources::curve>(pos_id);
 			auto pos_value = ValidVectorCurve(GetCurve(object, pos_c));
 			pos_value.value = vector_int{ static_cast<int_t>(position.x), static_cast<int_t>(position.y) };
 			object.curves.push_back({ pos_c, pos_value });
@@ -1322,7 +1322,7 @@ namespace objects
 
 	void object_editor::_updateInfoBox(editor_object_info &obj)
 	{
-		const auto obj_type_name = hades::data::GetAsString(obj.obj_type->id);
+		const auto obj_type_name = hades::data::get_as_string(obj.obj_type->id);
 		
 		_propertyWindow->RemoveAll();
 		auto label = sfg::Label::Create(SelectionTitle(obj_type_name, obj.name));
@@ -1378,10 +1378,10 @@ namespace objects
 		using Curve = hades::resources::curve;
 
 		//add position
-		static const auto position_id = hades::data::GetUid("position");
-		static const auto position_c = hades::data::Get<Curve>(position_id);
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<Curve>(size_id);
+		static const auto position_id = hades::data::get_uid("position");
+		static const auto position_c = hades::data::get<Curve>(position_id);
+		static const auto size_id = hades::data::get_uid("size");
+		static const auto size_c = hades::data::get<Curve>(size_id);
 
 		const auto position_v = GetCurve(obj, position_c);
 
@@ -1460,7 +1460,7 @@ namespace objects
 		for (const auto &c : curves)
 		{
 			const auto curve = std::get<const Curve*>(c);
-			auto edit_curve = MakePropertyEditRow(hades::data::GetAsString(curve->id), c, obj);
+			auto edit_curve = MakePropertyEditRow(hades::data::get_as_string(curve->id), c, obj);
 			_propertyWindow->PackEnd(edit_curve, false);
 		}
 	}
@@ -1470,8 +1470,8 @@ namespace objects
 		using curve = hades::resources::curve;
 	
 		//set the selector position
-		static const auto position_id = hades::data::GetUid("position");
-		static const auto position_c = hades::data::Get<curve>(position_id);
+		static const auto position_id = hades::data::get_uid("position");
+		static const auto position_c = hades::data::get<curve>(position_id);
 		assert(position_c);
 
 		const auto pos_v = ValidVectorCurve(GetCurve(info, position_c));
@@ -1481,8 +1481,8 @@ namespace objects
 		_objectSelector.setPosition(static_cast<float>(pos[0]), static_cast<float>(pos[1]));
 
 		//set the selectors size
-		static const auto size_id = hades::data::GetUid("size");
-		static const auto size_c = hades::data::Get<curve>(size_id);
+		static const auto size_id = hades::data::get_uid("size");
+		static const auto size_c = hades::data::get<curve>(size_id);
 		assert(size_c);
 
 		const auto size_v = ValidVectorCurve(GetCurve(info, size_c));

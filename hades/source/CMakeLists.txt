@@ -5,7 +5,6 @@ set(HADES_SRC
 	Animation.cpp
 	App.cpp
 	archive.cpp
-	Data.cpp
 	Debug.cpp
 	Console.cpp
 	ConsoleView.cpp

@@ -118,7 +118,7 @@ namespace hades
 		register_sfml_input(_window, _input);
 
 		RegisterCommonResources(&_dataMan);
-		data::detail::SetDataManagerPtr(&_dataMan);
+		data::detail::set_data_manager_ptr(&_dataMan);
 
 		resourceTypes(_dataMan);
 

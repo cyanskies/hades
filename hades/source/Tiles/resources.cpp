@@ -53,7 +53,7 @@ namespace tiles
 		empty_t_tex->value.setRepeated(true);
 		empty_t_tex->repeat = true;
 
-		const hades::unique_id empty_tset_id = data->getUid(empty_tileset_name);
+		const hades::unique_id empty_tset_id = data->get_uid(empty_tileset_name);
 		auto empty_tset = hades::data::FindOrCreate<resources::tileset>(empty_tset_id, unique_id::zero, data);
 		const tile empty_tile{ empty_t_tex, 0, 0 };
 		empty_tset->tiles.emplace_back(empty_tile);
@@ -61,7 +61,7 @@ namespace tiles
 		resources::Tilesets.emplace_back(empty_tset_id);
 
 		//create default tile settings obj
-		id::tile_settings = hades::data::MakeUid(tile_settings_name);
+		id::tile_settings = hades::data::make_uid(tile_settings_name);
 		auto settings = hades::data::FindOrCreate<resources::tile_settings>(id::tile_settings, unique_id::zero, data);
 		settings->error_tileset = error_tset;
 		settings->empty_tileset = empty_tset;
@@ -103,7 +103,7 @@ namespace tiles
 			{
 				if (!t.texture)
 				{
-					const auto message = "Tile in tileset: " + d->getAsString(tset->mod) + "::" + d->getAsString(tset->id) + ", are missing a texture";
+					const auto message = "Tile in tileset: " + d->get_as_string(tset->mod) + "::" + d->get_as_string(tset->id) + ", are missing a texture";
 					LOGERROR(message);
 					throw std::logic_error(message);
 				}
@@ -123,7 +123,7 @@ namespace tiles
 			//    tile-size: 32
 			static const hades::types::string resource_type = tile_settings_name;
 			static const hades::types::uint8 default_size = 8;
-			auto id = data_manager->getUid(resource_type);
+			auto id = data_manager->get_uid(resource_type);
 
 			auto settings = hades::data::FindOrCreate<tile_settings>(id, mod, data_manager);
 
@@ -179,7 +179,7 @@ namespace tiles
 			traits_list traits;
 
 			std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(traits), [](hades::types::string s) {
-				return hades::data::GetUid(s);
+				return hades::data::get_uid(s);
 			});
 
 			return parseTiles(texture, tile_size, top, left, width - 1 /* make width 0 based */, count, traits);
@@ -206,7 +206,7 @@ namespace tiles
 			{
 				auto namenode = n.first;
 				auto name = namenode.as<hades::types::string>();
-				auto id = data->getUid(name);
+				auto id = data->get_uid(name);
 
 				auto tset = hades::data::FindOrCreate<tileset>(id, mod, data);
 
@@ -224,7 +224,7 @@ namespace tiles
 					continue;
 				}
 
-				auto texid = data->getUid(tex.as<hades::types::string>());
+				auto texid = data->get_uid(tex.as<hades::types::string>());
 
 				try
 				{

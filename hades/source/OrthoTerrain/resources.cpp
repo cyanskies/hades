@@ -23,7 +23,7 @@ namespace ortho_terrain
 
 	void CreateEmptyTerrain(hades::data::data_system *data)
 	{
-		resources::EmptyTerrainId = data->getUid(tiles::empty_tileset_name);
+		resources::EmptyTerrainId = data->get_uid(tiles::empty_tileset_name);
 		hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, hades::unique_id::zero, data);
 	}
 
@@ -165,7 +165,7 @@ namespace ortho_terrain
 					continue;
 
 				//get the correct terrain object
-				const auto terrain_id = data->getUid(name);
+				const auto terrain_id = data->get_uid(name);
 				auto t = hades::data::FindOrCreate<resources::terrain>(terrain_id, mod, data);
 				if (!t)
 				{
@@ -187,7 +187,7 @@ namespace ortho_terrain
 				if (source == hades::unique_id::zero)
 					continue;
 
-				const auto texture = hades::data::Get<hades::resources::texture>(source);
+				const auto texture = hades::data::get<hades::resources::texture>(source);
 
 				//get the start position of the tileset 
 				const auto pos_node = terrain[position];
@@ -253,7 +253,7 @@ namespace ortho_terrain
 				//we got this far so the terrain data must have been valid and tiles must have been added to the terrain
 				//convert traits to uids and add them to the terrain
 				std::transform(std::begin(traits_str), std::end(traits_str), std::back_inserter(t->traits), [data](auto &&str) {
-					return data->getUid(str);
+					return data->get_uid(str);
 				});
 				
 				//remove any duplicates
@@ -284,7 +284,7 @@ namespace ortho_terrain
 			for (const auto &tset : node)
 			{
 				const auto name = tset.first.as<types::string>();
-				const auto terrainset_id = data->getUid(name);
+				const auto terrainset_id = data->get_uid(name);
 
 				auto terrain_set = hades::data::FindOrCreate<terrainset>(terrainset_id, mod, data);
 
@@ -301,7 +301,7 @@ namespace ortho_terrain
 				for (const auto terrain : terrain_list)
 				{
 					const auto terrain_name = terrain.as<hades::types::string>();
-					const auto terrain_id = data->getUid(terrain_name);
+					const auto terrain_id = data->get_uid(terrain_name);
 					if (terrain_id == hades::unique_id::zero)
 						continue;
 

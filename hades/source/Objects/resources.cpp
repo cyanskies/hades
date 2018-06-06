@@ -23,15 +23,15 @@ namespace objects
 		using namespace hades::resources::curve_types;
 
 		//position
-		const auto position_id = data->getUid("position");
-		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::EmptyId, data);
+		const auto position_id = data->get_uid("position");
+		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::empty_id, data);
 		position_c->curve_type = hades::curve_type::linear;
 		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
 		position_c->default_value.set = true;
 		position_c->default_value.value = std::vector<int_t>{ 0, 0 };
 		//size
-		const auto size_id = data->getUid("size");
-		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::EmptyId, data);
+		const auto size_id = data->get_uid("size");
+		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
 		size_c->curve_type = hades::curve_type::linear;
 		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
 		size_c->default_value.set = true;
@@ -99,12 +99,12 @@ namespace objects
 			try
 			{
 				const auto s = node.as<hades::types::string>();
-				const auto u = hades::data::GetUid(s);
-				if (u == hades::EmptyId)
+				const auto u = hades::data::get_uid(s);
+				if (u == hades::empty_id)
 					return out;
 
 				out.set = true;
-				out.value.emplace<hades::UniqueId>(u);
+				out.value.emplace<hades::unique_id>(u);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -141,17 +141,17 @@ namespace objects
 			hades::resources::curve_default_value out;
 			try
 			{
-				std::vector<hades::UniqueId> vec;
+				std::vector<hades::unique_id> vec;
 				for (auto v : node)
 				{
 					const auto s = node.as<hades::types::string>();
-					const auto u = hades::data::GetUid(s);
-					if (u != hades::EmptyId)
+					const auto u = hades::data::get_uid(s);
+					if (u != hades::empty_id)
 						vec.push_back(u);
 				}
 
 				out.set = true;
-				out.value.emplace<std::vector<hades::UniqueId>>(vec);
+				out.value.emplace<std::vector<hades::unique_id>>(vec);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -181,7 +181,7 @@ namespace objects
 			case VariableType::STRING:
 				return ParseValue<hades::types::string>(node);
 			case VariableType::UNIQUE:
-				return ParseValue<hades::UniqueId>(node);
+				return ParseValue<hades::unique_id>(node);
 			case VariableType::VECTOR_INT:
 				[[fallthrough]];
 			case VariableType::VECTOR_OBJECT_REF:
@@ -189,7 +189,7 @@ namespace objects
 			case VariableType::VECTOR_FLOAT:
 				return ParseValueVector<float>(node);
 			case VariableType::VECTOR_UNIQUE:
-				return ParseValueVector<hades::UniqueId>(node);
+				return ParseValueVector<hades::unique_id>(node);
 			}
 
 			return hades::resources::curve_default_value();
@@ -204,7 +204,7 @@ namespace objects
 				if (s.empty())
 					return nullptr;
 				
-				const auto id = data->getUid(s);
+				const auto id = data->get_uid(s);
 				return data->get<hades::resources::curve>(id);
 			};
 
@@ -266,7 +266,7 @@ namespace objects
 
 			constexpr auto resource_type = "editor";
 			constexpr auto resource_name = "N/A";
-			auto editor_id = data->getUid(resource_type);
+			auto editor_id = data->get_uid(resource_type);
 
 			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
 				return;
@@ -305,7 +305,7 @@ namespace objects
 
 				auto add_to_group = [g, gname, mod, data](const YAML::Node& n) {
 					const auto obj_str = n.as<hades::types::string>();
-					const auto obj_id = hades::data::MakeUid(obj_str);
+					const auto obj_id = hades::data::make_uid(obj_str);
 					const auto obj = hades::data::FindOrCreate<object>(obj_id, mod, data);
 					g->obj_list.push_back(obj);
 				};
@@ -393,15 +393,15 @@ namespace objects
 			//======================
 			using hades::resources::animation;
 			const auto grid_shrink_id = yaml_get_uid(node, resource_type, resource_name, "grid-shrink-icon", mod);
-			if (grid_shrink_id != hades::UniqueId::zero)
+			if (grid_shrink_id != hades::unique_id::zero)
 				editor_obj->grid_shrink_icon = hades::data::FindOrCreate<animation>(grid_shrink_id, mod, data);
 
 			const auto grid_grow_id = yaml_get_uid(node, resource_type, resource_name, "grid-grow-icon", mod);
-			if (grid_grow_id != hades::UniqueId::zero)
+			if (grid_grow_id != hades::unique_id::zero)
 				editor_obj->grid_grow_icon = hades::data::FindOrCreate<animation>(grid_grow_id, mod, data);
 
 			const auto grid_show_id = yaml_get_uid(node, resource_type, resource_name, "grid-show-icon", mod);
-			if (grid_show_id != hades::UniqueId::zero)
+			if (grid_show_id != hades::unique_id::zero)
 				editor_obj->grid_show_icon = hades::data::FindOrCreate<animation>(grid_show_id, mod, data);
 		}//parse editor
 
@@ -427,7 +427,7 @@ namespace objects
 			{
 				const auto namenode = n.first;
 				const auto name = namenode.as<hades::types::string>();
-				const auto id = data->getUid(name);
+				const auto id = data->get_uid(name);
 
 				const auto obj = hades::data::FindOrCreate<object>(id, mod, data);
 

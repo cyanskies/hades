@@ -66,7 +66,7 @@ namespace tiles
 				//check Tilesets for the containing tileset
 				for (const auto &s_id : resources::Tilesets)
 				{
-					const auto s = hades::data::Get<resources::tileset>(s_id);
+					const auto s = hades::data::get<resources::tileset>(s_id);
 					const auto &set_tiles = s->tiles;
 					for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
 					{
@@ -100,7 +100,7 @@ namespace tiles
 		}
 
 		for (const auto &s : tilesets)
-			save.tilesets.push_back({ hades::data::GetAsString(s.first->id),
+			save.tilesets.push_back({ hades::data::get_as_string(s.first->id),
 				s.second });
 
 		return save;
@@ -120,8 +120,8 @@ namespace tiles
 			auto tileset_name = std::get<hades::types::string>(t);
 			auto start_id = std::get<tile_count_t>(t);
 
-			auto tileset_id = hades::data::GetUid(tileset_name);
-			auto tileset = hades::data::Get<resources::tileset>(tileset_id);
+			auto tileset_id = hades::data::get_uid(tileset_name);
+			auto tileset = hades::data::get<resources::tileset>(tileset_id);
 			assert(tileset);
 			tilesets.push_back({ tileset, start_id });
 		}

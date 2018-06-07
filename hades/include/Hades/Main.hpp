@@ -6,31 +6,8 @@
 #include "Hades/data_system.hpp"
 #include "hades/input.hpp"
 #include "Hades/StateManager.hpp"
+#include "hades/system.hpp"
 #include "hades/types.hpp"
-
-namespace hades
-{
-	using ArgumentList = std::vector<std::string_view>;
-
-	struct Command
-	{
-		Command() {}
-		Command(std::string_view sv);
-		Command(std::string_view command, ArgumentList args) : command(command),
-			arguments(args)
-		{}
-
-		std::string_view command;
-		ArgumentList arguments;
-	};
-
-	bool operator<(const Command& lhs, const Command &rhs);
-	bool operator==(const Command& lhs, const Command &rhs);
-
-	types::string to_string(const Command&);
-
-	typedef std::vector<Command> CommandList;
-}
 
 //handles application startup and command line parameters
 int hades_main(int argc, char* argv[]);
@@ -62,6 +39,6 @@ void resourceTypes(hades::data::data_system &data);
 ///
 ///	Allows users to define the ui for the game, both list commands and provide default binds for them.
 /////////////////////////////////////
-void hadesMain(hades::StateManager &state, hades::input_system &bindings, hades::CommandList &commandLine);
+void hadesMain(hades::StateManager &state, hades::input_system &bindings, hades::command_list &commandLine);
 
 #endif //HADES_BEGIN_HPP

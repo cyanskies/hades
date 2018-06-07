@@ -67,7 +67,7 @@ namespace hades
 			(*state)->init();
 			(*state)->initDone();
 			//make sure the gui has the correct view size
-			auto w = console::GetInt("vid_width", 800), h = console::GetInt("vid_height", 600);
+			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);
 		}
 
 		//if this state is paused, resume
@@ -76,7 +76,7 @@ namespace hades
 			(*state)->grabFocus();
 			(*state)->reinit();
 			//make sure the gui has the correct view size
-			auto w = console::GetInt("vid_width", 800), h = console::GetInt("vid_height", 600);
+			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);
 		}
 
 		//return this state.

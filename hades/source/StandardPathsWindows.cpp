@@ -53,7 +53,7 @@ namespace hades
 	//returns C:\\users\\<name>\\documents/gamename/
 	types::string GetUserCustomFileDirectory()
 	{
-		static const auto portable = hades::console::GetBool("file_portable", false);
+		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		if (*portable)
 			return "./"s;
@@ -63,7 +63,7 @@ namespace hades
 
 	types::string GetUserConfigDirectory()
 	{
-		static const auto portable = hades::console::GetBool("file_portable", false);
+		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		//if portable is defined, then load read only config from application root directory
 		if (*portable)
@@ -77,7 +77,7 @@ namespace hades
 
 	types::string GetUserSaveDirectory()
 	{
-		static const auto portable = hades::console::GetBool("file_portable", false);
+		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		using namespace std::string_literals;
 		if (*portable)

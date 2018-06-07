@@ -59,14 +59,14 @@ namespace hades
 	void registerVariables(Console *console)
 	{
 		//console variables
-		console::SetProperty(console_character_size, console_character_size_d);
-		console::SetProperty(console_fade, console_fade_d);
+		console::set_property(console_character_size, console_character_size_d);
+		console::set_property(console_fade, console_fade_d);
 
 		//app variables
-		console::SetProperty(client_tick_time, client_tick_time_d);
-		console::SetProperty(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
+		console::set_property(client_tick_time, client_tick_time_d);
+		console::set_property(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
 		// activates portable mode, where files are only read/writen to the game directory
-		console::SetProperty(file_portable, file_portable_d);
+		console::set_property(file_portable, file_portable_d);
 	}
 
 	void registerVidVariables(Console *console)
@@ -89,7 +89,7 @@ namespace hades
 		vid_default();
 
 		//add a command so that this function can be called again
-		console->registerFunction("vid_default", vid_default, true);
+		console->add_function("vid_default", vid_default, true);
 	}
 
 	void registerServerVariables(Console *console)
@@ -133,13 +133,13 @@ namespace hades
 	}
 
 	//calls job on any command that contains command
-	bool LoadCommand(CommandList &commands, std::string_view command, console::function job)
+	bool LoadCommand(command_list &commands, std::string_view command, console::function job)
 	{
 		auto com_iter = commands.begin();
 		bool ret = false;
 		while (com_iter != std::end(commands))
 		{
-			if (com_iter->command == command)
+			if (com_iter->request == command)
 			{
 				job(com_iter->arguments);
 				com_iter = commands.erase(com_iter);
@@ -152,7 +152,7 @@ namespace hades
 		return ret;
 	}
 
-	void App::postInit(CommandList commands)
+	void App::postInit(command_list commands)
 	{
 		constexpr auto hades_version_major = 0,
 			hades_version_minor = 1,
@@ -173,7 +173,7 @@ namespace hades
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
 		auto &data = _dataMan;
-		auto load_game = [&data](const ArgumentList &command) {
+		auto load_game = [&data](const argument_list &command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument");
@@ -188,15 +188,15 @@ namespace hades
 		if (!LoadCommand(commands, "game", load_game))
 		{
 			//add default game if one isnt specified
-			Command com;
-			com.command = "game";
+			command com;
+			com.request = "game";
 			com.arguments.push_back(defaultGame());
 
 			commands.push_back(com);
 			LoadCommand(commands, "game", load_game);
 		}
 
-		LoadCommand(commands, "mod", [&data](const ArgumentList &command) {
+		LoadCommand(commands, "mod", [&data](const argument_list &command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument");
@@ -218,14 +218,14 @@ namespace hades
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
 		for (auto &c : commands)
-			console::RunCommand(c);
+			console::run_command(c);
 
 		//create  the normal window
-		if (!_console.runCommand(Command("vid_reinit")))
+		if (!_console.run_command(command("vid_reinit")))
 		{
 			LOGERROR("Error setting video, falling back to default");
-			_console.runCommand(Command("vid_default"));
-			_console.runCommand(Command("vid_reinit"));
+			_console.run_command(command("vid_default"));
+			_console.run_command(command("vid_reinit"));
 		}
 	}
 
@@ -395,8 +395,8 @@ namespace hades
 				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
-			_console.registerFunction("exit", exit, true);
-			_console.registerFunction("quit", exit, true);
+			_console.add_function("exit", exit, true);
+			_console.add_function("quit", exit, true);
 		}
 
 		//vid functions
@@ -436,9 +436,9 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("vid_reinit", vid_reinit, true);
+			_console.add_function("vid_reinit", vid_reinit, true);
 
-			auto vsync = [this](const ArgumentList &args)->bool {
+			auto vsync = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
 					throw invalid_argument("vsync function expects one argument");
 
@@ -461,9 +461,9 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("vid_vsync", vsync, true);
+			_console.add_function("vid_vsync", vsync, true);
 
-			auto framelimit = [this](const ArgumentList &args)->bool {
+			auto framelimit = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
 					throw invalid_argument("framelimit function expects one argument");
 
@@ -492,11 +492,11 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("vid_framelimit", framelimit, true);
+			_console.add_function("vid_framelimit", framelimit, true);
 		}
 		//Filesystem functions
 		{
-			auto util_dir = [this](const ArgumentList &args)->bool {
+			auto util_dir = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
 					throw invalid_argument("Dir function expects one argument");
 
@@ -508,9 +508,9 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("dir", util_dir, true);
+			_console.add_function("dir", util_dir, true);
 
-			auto compress_dir = [](const ArgumentList &args)->bool
+			auto compress_dir = [](const argument_list &args)->bool
 			{
 				if (args.size() != 1)
 					throw invalid_argument("Compress function expects one argument");
@@ -536,9 +536,9 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("compress", compress_dir, true);
+			_console.add_function("compress", compress_dir, true);
 
-			auto uncompress_dir = [](const ArgumentList &args)->bool
+			auto uncompress_dir = [](const argument_list &args)->bool
 			{
 				if (args.size() != 1)
 					throw invalid_argument("Uncompress function expects one argument");
@@ -564,7 +564,7 @@ namespace hades
 				return true;
 			};
 
-			_console.registerFunction("uncompress", uncompress_dir, true);
+			_console.add_function("uncompress", uncompress_dir, true);
 		}
 	}
 }//hades

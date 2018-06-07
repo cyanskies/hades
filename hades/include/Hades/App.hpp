@@ -14,6 +14,7 @@
 #include "hades/sf_input.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
+#include "hades/system.hpp"
 
 namespace hades
 {
@@ -41,7 +42,7 @@ namespace hades
 		///	\param commands The command line arguments.
 		///
 		////////////////////////////////////////////////////////////
-		void postInit(CommandList commands);
+		void postInit(command_list commands);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Starts the main app loop.
@@ -93,7 +94,7 @@ namespace hades
 		sfg::SFGUI _sfgui;							///< SFGUI object
 	};
 
-	bool LoadCommand(CommandList&, std::string_view, console::function);
+	bool LoadCommand(command_list&, std::string_view, console::function);
 };//hades
 
 #endif //HADES_APP_HPP

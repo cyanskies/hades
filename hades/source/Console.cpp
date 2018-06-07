@@ -145,7 +145,7 @@ namespace hades
 			LOG(s);
 	}
 
-	bool Console::registerFunction(std::string_view identifier, console::function func, bool replace)
+	bool Console::add_function(std::string_view identifier, console::function func, bool replace)
 	{
 		//test to see the name hasn't been used for a variable
 		{
@@ -175,12 +175,12 @@ namespace hades
 		return true;
 	}
 
-	bool Console::registerFunction(std::string_view identifier, Console_Function_No_Arg func, bool replace) 
+	bool Console::add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) 
 	{
-		return registerFunction(identifier, [func](const ArgumentList&)->bool { return func(); }, replace);
+		return add_function(identifier, [func](const argument_list&)->bool { return func(); }, replace);
 	}
 
-	void Console::eraseFunction(std::string_view identifier)
+	void Console::erase_function(std::string_view identifier)
 	{
 		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		_consoleFunctions.erase(to_string(identifier));
@@ -235,7 +235,7 @@ namespace hades
 		return nullptr;
 	}
 
-	bool Console::runCommand(const Command &command)
+	bool Console::run_command(const command &command)
 	{
 		//add to command history
 		{
@@ -248,12 +248,12 @@ namespace hades
 			_commandHistory.push_back(command);
 		}
 
-		if (command.command == "vars")
+		if (command.request == "vars")
 		{
 			DisplayVariables(command.arguments);
 			return true;
 		}
-		else if (command.command == "funcs")
+		else if (command.request == "funcs")
 		{
 			DisplayFunctions(command.arguments);
 			return true;
@@ -264,7 +264,7 @@ namespace hades
 
 		{
 			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			const auto funcIter = _consoleFunctions.find(to_string(command.command));
+			const auto funcIter = _consoleFunctions.find(to_string(command.request));
 
 			if (funcIter != _consoleFunctions.end())
 			{
@@ -279,12 +279,12 @@ namespace hades
 			return function(command.arguments);
 		}
 		else
-			SetVariable(command.command, to_string(std::begin(command.arguments), std::end(command.arguments)));
+			SetVariable(command.request, to_string(std::begin(command.arguments), std::end(command.arguments)));
 
 		return true;
 	}
 
-	console::CommandHistory Console::getCommandHistory() const
+	console::command_history_list Console::command_history() const
 	{
 		std::lock_guard<std::mutex> lock(_historyMutex);
 		return _commandHistory;
@@ -301,7 +301,7 @@ namespace hades
 		TextBuffer.push_back(message);
 
 		#ifndef NDEBUG
-			std::cerr << message.Text() << std::endl;
+			std::cerr << message.text() << std::endl;
 		#endif
 	}
 
@@ -332,7 +332,7 @@ namespace hades
 			_consoleVariables.erase(command);
 		}
 
-		eraseFunction(command);
+		erase_function(command);
 	}
 
 	ConsoleStringBuffer Console::get_new_output(Console_String_Verbosity maxVerbosity)

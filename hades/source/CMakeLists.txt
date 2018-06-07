@@ -16,16 +16,13 @@ set(HADES_SRC
 	GameInterface.cpp
 	GameRenderer.cpp
 	GridArea.cpp
-	Logging.cpp
 	main.cpp
-	Properties.cpp
 	sf_input.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp
 	StandardPaths.cpp
 	State.cpp
 	StateManager.cpp
-	System.cpp
 	TimerManager.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp

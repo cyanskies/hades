@@ -8,47 +8,6 @@
 #include "Hades/Main.hpp"
 #include "Hades/Types.hpp"
 
-namespace hades
-{
-	Command::Command(std::string_view sv)
-	{
-		if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
-		{
-			command = sv;
-			return;
-		}
-		else
-		{
-			command = sv.substr(0, pos);
-			sv = sv.substr(pos + 1, sv.size() - pos);
-		}
-
-		while (!sv.empty())
-		{
-			if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
-			{
-				arguments.push_back(sv);
-				return;
-			}
-			else
-			{
-				arguments.push_back(sv.substr(0, pos));
-				sv = sv.substr(pos + 1, sv.size() - pos);
-			}
-		}
-	}
-
-	bool operator==(const Command& lhs, const Command &rhs)
-	{
-		return lhs.command == lhs.command && lhs.arguments == rhs.arguments;
-	}
-
-	types::string to_string(const Command& c)
-	{
-		return to_string(c.command) + " " + to_string(std::begin(c.arguments), std::end(c.arguments));
-	}
-}
-
 int hades_main(int argc, char* argv[])
 {
 	//new commands start with a '-'.
@@ -60,7 +19,7 @@ int hades_main(int argc, char* argv[])
 	//convert cmdline to string_view
 	std::copy(argv, argv + argc, std::back_inserter(cmdline));
 
-	hades::CommandList commands;
+	hades::command_list commands;
 	int index = -1;
 
 	for (auto &s : cmdline)
@@ -68,8 +27,8 @@ int hades_main(int argc, char* argv[])
 		if (s[0] == COMMAND_DELIMITER)
 		{
 			s = s.substr(1, s.size());
-			hades::Command com;
-			com.command = s;
+			hades::command com;
+			com.request = s;
 			commands.push_back(com);
 			index++;
 		}
@@ -84,7 +43,7 @@ int hades_main(int argc, char* argv[])
 	//the engine will not actually open if invoked with these commands
 	try
 	{
-		hades::LoadCommand(commands, "compress", [](const hades::ArgumentList &command) {
+		hades::LoadCommand(commands, "compress", [](const hades::argument_list &command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument");
@@ -94,7 +53,7 @@ int hades_main(int argc, char* argv[])
 			return true;
 		});
 
-		hades::LoadCommand(commands, "uncompress", [](const hades::ArgumentList &command) {
+		hades::LoadCommand(commands, "uncompress", [](const hades::argument_list &command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument");

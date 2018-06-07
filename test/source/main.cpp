@@ -27,7 +27,7 @@ void resourceTypes(hades::data::data_system &data)
 	ortho_terrain::EnableTerrain(&data);
 }
 
-void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::CommandList &commandLine)
+void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list &commandLine)
 {
 	hades::RegisterMouseInput(bind);
 

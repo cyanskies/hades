@@ -6,9 +6,9 @@
 #include <memory>
 #include <string_view>
 
-#include "Hades/exceptions.hpp"
+#include "hades/exceptions.hpp"
 #include "hades/types.hpp"
-#include "Hades/value_guard.hpp"
+#include "hades/value_guard.hpp"
 
 //Properties is a collection of global key->value pairs
 namespace hades
@@ -16,11 +16,10 @@ namespace hades
 	namespace console
 	{
 		//logic error, requesting the wrong type represents a code bug
-		class property_wrong_type : std::logic_error
+		class property_wrong_type : public std::logic_error
 		{
 		public:
 			using std::logic_error::logic_error;
-			using std::logic_error::what;
 		};
 
 		template<class T>
@@ -53,6 +52,7 @@ namespace hades
 			//TODO: exists + erase
 		};
 
+		//TODO: replace with set property ptr
 		extern properties *property_provider;
 
 		// Property global functions are required to work even when the property provider is absent
@@ -60,7 +60,7 @@ namespace hades
 		// and Get* functions return the provided default if possible
 
 		template<class T>
-		void SetProperty(std::string_view name, const T &value)
+		void set_property(std::string_view name, const T &value)
 		{
 			if (property_provider)
 				property_provider->set(name, value);
@@ -68,10 +68,10 @@ namespace hades
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
 		//if the requested type doesn't match the type stored then throws console::property_wrong_type
-		property_int GetInt(std::string_view, types::int32);
-		property_float GetFloat(std::string_view, float);
-		property_bool GetBool(std::string_view, bool);
-		property_str GetString(std::string_view, std::string_view);
+		property_int get_int(std::string_view, types::int32);
+		property_float get_float(std::string_view, float);
+		property_bool get_bool(std::string_view, bool);
+		property_str get_string(std::string_view, std::string_view);
 	}
 }//hades
 

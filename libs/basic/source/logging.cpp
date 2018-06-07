@@ -1,4 +1,4 @@
-#include "Hades/Logging.hpp"
+#include "hades/logging.hpp"
 
 #include <chrono>
 #include <iomanip>
@@ -24,24 +24,25 @@ namespace hades
 				log->echo(val);
 			else
 			{
-				if (val.Verbosity() == console::logger::LOG_VERBOSITY::NORMAL)
-					std::cout << val.Text();
+				if (val.verbosity() == console::logger::log_verbosity::normal)
+					std::cout << val.text();
 				else
-					std::cerr << val.Text();
+					std::cerr << val.text();
 			}
 		}
 
-		console::output_buffer new_output(console::logger::LOG_VERBOSITY maxVerbosity)
+		console::output_buffer new_output(console::logger::log_verbosity max_verbosity)
 		{
 			if (log)
-				return log->get_new_output(maxVerbosity);
+				return log->get_new_output(max_verbosity);
 
 			return console::output_buffer();
 		}
-		console::output_buffer output(console::logger::LOG_VERBOSITY maxVerbosity)
+
+		console::output_buffer output(console::logger::log_verbosity max_verbosity)
 		{
 			if (log)
-				return log->get_output(maxVerbosity);
+				return log->get_output(max_verbosity);
 
 			return console::output_buffer();
 		}
@@ -60,7 +61,6 @@ namespace hades
 			//updated c version unavailable, have to suffer with the C99 version
 			auto time_ptr = localtime(&ct);
 			time = *time_ptr;
-			time_ptr = nullptr;
 		#endif
 		//use stream to collect formatted time
 		std::stringstream ss;

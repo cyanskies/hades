@@ -93,13 +93,13 @@ namespace objects
 		//access the console properties used by the editor
 		//editor settings
 		//object settings
-		_object_snap = hades::console::GetInt(editor_snaptogrid, editor_snap_default);
+		_object_snap = hades::console::get_int(editor_snaptogrid, editor_snap_default);
 		//grid settings
-		_gridEnabled = hades::console::GetBool(editor_grid_enabled, true);
-		_gridMinSize = hades::console::GetInt(editor_grid_size, editor_grid_default);
-		_gridMaxSize = hades::console::GetInt(editor_grid_max, 1);
+		_gridEnabled = hades::console::get_bool(editor_grid_enabled, true);
+		_gridMinSize = hades::console::get_int(editor_grid_size, editor_grid_default);
+		_gridMaxSize = hades::console::get_int(editor_grid_max, 1);
 
-		_gridCurrentScale = hades::console::GetInt(editor_grid_size_multiple, 1);
+		_gridCurrentScale = hades::console::get_int(editor_grid_size_multiple, 1);
 		_gridCurrentSize = std::min(_gridCurrentScale->load(), _gridMaxSize->load()) * *_gridMinSize;
 		_grid.setCellSize(_gridCurrentSize);
 
@@ -119,8 +119,8 @@ namespace objects
 
 	void object_editor::update(sf::Time deltaTime, const sf::RenderTarget& window, hades::input_system::action_set input) 
 	{
-		static auto window_width = hades::console::GetInt("vid_width", 640),
-			window_height = hades::console::GetInt("vid_height", 480);
+		static auto window_width = hades::console::get_int("vid_width", 640),
+			window_height = hades::console::get_int("vid_height", 480);
 
 		const auto mousePos = input.find(hades::input::PointerPosition);
 		assert(mousePos != std::end(input));
@@ -213,11 +213,11 @@ namespace objects
 		//set up the editor rendering
 		//=========================
 		//generate the view
-		const auto cheight = hades::console::GetInt("editor_height", editor::view_height);
+		const auto cheight = hades::console::get_int("editor_height", editor::view_height);
 
 		//current window size
-		const auto wwidth = hades::console::GetInt("vid_width", 800);
-		const auto wheight = hades::console::GetInt("vid_height", 600);
+		const auto wwidth = hades::console::get_int("vid_width", 800);
+		const auto wheight = hades::console::get_int("vid_height", 600);
 
 		const float screenRatio = *wwidth / static_cast<float>(*wheight);
 
@@ -288,7 +288,7 @@ namespace objects
 		{
 			//show grid toggle
 			Button("grid toggle", [this]() {
-				hades::console::SetProperty(editor_grid_enabled, !*_gridEnabled);
+				hades::console::set_property(editor_grid_enabled, !*_gridEnabled);
 			}, editor_settings->grid_show_icon);
 
 			//if the max size is the same as the smallest size 
@@ -489,8 +489,8 @@ namespace objects
 
 	void PlaceWidgetInCentre(sfg::Widget &w)
 	{
-		static const auto w_width = hades::console::GetInt("vid_width", 320);
-		static const auto w_height = hades::console::GetInt("vid_height", 480);
+		static const auto w_width = hades::console::get_int("vid_width", 320);
+		static const auto w_height = hades::console::get_int("vid_height", 480);
 
 		auto widget_size = w.GetAllocation();
 
@@ -923,7 +923,7 @@ namespace objects
 
 	void object_editor::_addToToolBar(sfg::Widget::Ptr w)
 	{
-		static const auto window_width = hades::console::GetInt("vid_width", 800);
+		static const auto window_width = hades::console::get_int("vid_width", 800);
 		const auto toolbar_req = _toolBarIconBox->GetRequisition().x;
 		const auto req = w->GetAllocation().width;
 		//if the current line of icons is full
@@ -988,7 +988,7 @@ namespace objects
 		// remove any gui that might currently be loaded
 		_gui.RemoveAll();
 
-		static const auto window_width = hades::console::GetInt("vid_width", 800);
+		static const auto window_width = hades::console::get_int("vid_width", 800);
 
 		//====================
 		// ToolBar
@@ -1016,7 +1016,7 @@ namespace objects
 		//=============
 		// Left Panel
 		//=============
-		auto window_height = hades::console::GetInt("vid_height", 600);
+		auto window_height = hades::console::get_int("vid_height", 600);
 
 		auto left_panel = sfg::Window::Create(toolbar_style);
 		const auto panel_top = toolbar_window->GetAllocation().height;

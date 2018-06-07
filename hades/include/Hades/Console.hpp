@@ -50,15 +50,15 @@ namespace hades
 	public:
 		using Console_Function = console::function;
 		using Console_Function_No_Arg = console::function_no_argument;
-		using Console_String_Verbosity = console::logger::LOG_VERBOSITY;
+		using Console_String_Verbosity = console::logger::log_verbosity;
 		
 		Console() : recentOutputPos(0) {}
 
 		virtual ~Console() {}
 
-		bool registerFunction(std::string_view identifier, Console_Function func, bool replace) override;
-		bool registerFunction(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
-		void eraseFunction(std::string_view identifier) override;
+		bool add_function(std::string_view identifier, Console_Function func, bool replace) override;
+		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
+		void erase_function(std::string_view identifier) override;
 
 		template<class T>
 		void setValue(std::string_view identifier, const T &value);
@@ -76,18 +76,18 @@ namespace hades
 		console::property_bool getBool(std::string_view) override;
 		console::property_str getString(std::string_view) override;
 
-		bool runCommand(const Command &command) override;
+		bool run_command(const command &command) override;
 
-		console::CommandHistory getCommandHistory() const override;
+		console::command_history_list command_history() const override;
 
-		void echo(std::string_view message, Console_String_Verbosity verbosity = NORMAL);
+		void echo(std::string_view message, Console_String_Verbosity verbosity = logger::log_verbosity::normal);
 		void echo(const Console_String &message) override;
 
 		bool exists(const std::string &command) const;
 		void erase(const std::string &command);
 
-		ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = NORMAL) override;
-		ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = NORMAL) override;
+		ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = logger::log_verbosity::normal) override;
+		ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = logger::log_verbosity::normal) override;
 
 	protected:
 		//returns false if var was not found; true if out contains the requested value
@@ -108,7 +108,7 @@ namespace hades
 		using ConsoleVariableMap = std::map<types::string, detail::Property>;
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
-		console::CommandHistory _commandHistory;
+		console::command_history_list _commandHistory;
 		int recentOutputPos;
 	};
 
@@ -122,7 +122,7 @@ namespace hades
 		Console::Console_String_Verbosity CurrentVerb;
 	public:
 		void SetVerb(const Console::Console_String_Verbosity &verb) { CurrentVerb = verb; }
-		bool operator()(const Console_String &string) const { return string.Verbosity() > CurrentVerb; }
+		bool operator()(const Console_String &string) const { return string.verbosity() > CurrentVerb; }
 	};
 }//hades
 

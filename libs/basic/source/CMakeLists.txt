@@ -4,11 +4,17 @@
 set(HADES_BASIC_SRC
 	data.cpp
 	input.cpp
+	logging.cpp
+	properties.cpp
+	system.cpp
 	../include/hades/collision.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
+	../include/hades/logging.hpp
+	../include/hades/properties.hpp
 	../include/hades/resource_base.hpp
+	../include/hades/system.hpp
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
@@ -19,7 +25,10 @@ source_group("Headers" FILES
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
+	../include/hades/logging.hpp
+	../include/hades/properties.hpp
 	../include/hades/resource_base.hpp
+	../include/hades/system.hpp
 )
 
 source_group("Detail" FILES

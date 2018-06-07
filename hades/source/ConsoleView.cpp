@@ -17,8 +17,8 @@ namespace hades
 	ConsoleView::ConsoleView() : Overlay(true)
 	{
 		_font.loadFromMemory(console_font::data, console_font::length);
-		_fade = console::GetInt("con_fade", 180);
-		_charSize = console::GetInt("con_charactersize", 15);
+		_fade = console::get_int("con_fade", 180);
+		_charSize = console::get_int("con_charactersize", 15);
 	}
 
 	void ConsoleView::setFullscreenSize(sf::Vector2f size)
@@ -57,7 +57,7 @@ namespace hades
 
 	void ConsoleView::update()
 	{
-		const auto log_list = console::new_output(console::logger::LOG_VERBOSITY::WARNING);
+		const auto log_list = console::new_output(console::logger::log_verbosity::warning);
 
 		for (const auto &s : log_list)
 			_addText(s);
@@ -90,12 +90,12 @@ namespace hades
 
 	void ConsoleView::prev()
 	{
-		const auto prev = console::GetCommandHistory();
+		const auto prev = console::command_history();
 
 		if (prev.empty())
 			return;
 
-		const auto pos = std::find(prev.begin(), prev.end(), Command(_input));
+		const auto pos = std::find(prev.begin(), prev.end(), command(_input));
 		if (pos == prev.end())
 			_input = to_string(prev.back());
 		else if (pos != prev.begin())
@@ -106,12 +106,12 @@ namespace hades
 
 	void ConsoleView::next()
 	{
-		const auto prev = console::GetCommandHistory();
+		const auto prev = console::command_history();
 
 		if (prev.empty() || _input.empty())
 			return;
 
-		const auto pos = std::find(prev.begin(), prev.end(), Command(_input));
+		const auto pos = std::find(prev.begin(), prev.end(), command(_input));
 		if (pos == prev.end())
 			_input = to_string(prev.front());
 		else if (pos != --prev.end())
@@ -122,7 +122,7 @@ namespace hades
 
 	void ConsoleView::sendCommand()
 	{
-		console::RunCommand(Command(_input));
+		console::run_command(command(_input));
 		_input.clear();
 	}
 
@@ -145,7 +145,7 @@ namespace hades
 
 		_previousOutput.clear();
 
-		const auto output = console::output(console::logger::LOG_VERBOSITY::WARNING);
+		const auto output = console::output(console::logger::log_verbosity::warning);
 		for (auto &s : output)
 			_addText(s);
 
@@ -171,12 +171,12 @@ namespace hades
 			_previousOutput.back().getGlobalBounds().height;
 
 		std::vector<types::string> words;
-		split(s.Text(), ' ', std::back_inserter(words));
+		split(s.text(), ' ', std::back_inserter(words));
 
 		sf::Color col = sf::Color::White;
-		if (s.Verbosity() == console::logger::LOG_VERBOSITY::WARNING)
+		if (s.verbosity() == console::logger::log_verbosity::warning)
 			col = sf::Color::Yellow;
-		else if (s.Verbosity() == console::logger::LOG_VERBOSITY::ERROR)
+		else if (s.verbosity() == console::logger::log_verbosity::error)
 			col = sf::Color::Red;
 
 		const auto char_size = ValidCharSize(_charSize);

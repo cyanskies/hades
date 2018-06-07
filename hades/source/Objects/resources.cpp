@@ -42,22 +42,22 @@ namespace objects
 	{
 		//object editor variables
 		//editor ui
-		hades::console::SetProperty(editor_scroll_margin, editor_scroll_margin_default);
-		hades::console::SetProperty(editor_scroll_rate, editor_scroll_rate_default);
-		hades::console::SetProperty(editor_camera_height, editor_camera_height_default);
-		hades::console::SetProperty(editor_zoom_max, editor_zoom_max_default);
-		hades::console::SetProperty(editor_zoom_start, editor_zoom_default);
+		hades::console::set_property(editor_scroll_margin, editor_scroll_margin_default);
+		hades::console::set_property(editor_scroll_rate, editor_scroll_rate_default);
+		hades::console::set_property(editor_camera_height, editor_camera_height_default);
+		hades::console::set_property(editor_zoom_max, editor_zoom_max_default);
+		hades::console::set_property(editor_zoom_start, editor_zoom_default);
 		//grid
-		hades::console::SetProperty(editor_snaptogrid, editor_snap_default);
-		hades::console::SetProperty(editor_grid_size, editor_grid_default);
-		hades::console::SetProperty(editor_grid_size_multiple, 1);
-		hades::console::SetProperty(editor_grid_max, 3);
-		hades::console::SetProperty(editor_grid_enabled, true);
-		hades::console::SetProperty(editor_grid_size_multiple, 1);
+		hades::console::set_property(editor_snaptogrid, editor_snap_default);
+		hades::console::set_property(editor_grid_size, editor_grid_default);
+		hades::console::set_property(editor_grid_size_multiple, 1);
+		hades::console::set_property(editor_grid_max, 3);
+		hades::console::set_property(editor_grid_enabled, true);
+		hades::console::set_property(editor_grid_size_multiple, 1);
 		//map
-		hades::console::SetProperty(editor_map_size, editor_map_size_default);
+		hades::console::set_property(editor_map_size, editor_map_size_default);
 		//objects
-		hades::console::SetProperty(editor_object_mock_size, editor_mock_size_default);
+		hades::console::set_property(editor_object_mock_size, editor_mock_size_default);
 	}
 
 	void RegisterObjectResources(hades::data::data_system *data)
@@ -273,12 +273,12 @@ namespace objects
 
 			//Parse editor variables
 			const auto scroll_rate = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-rate", mod, 
-				*hades::console::GetInt(editor_scroll_rate, editor_scroll_rate_default));
-			hades::console::SetProperty(editor_scroll_rate, scroll_rate);
+				*hades::console::get_int(editor_scroll_rate, editor_scroll_rate_default));
+			hades::console::set_property(editor_scroll_rate, scroll_rate);
 
 			const auto scroll_margin = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "scroll-margin", mod,
-				*hades::console::GetInt(editor_scroll_margin, editor_scroll_margin_default));
-			hades::console::SetProperty(editor_scroll_margin, scroll_margin);
+				*hades::console::get_int(editor_scroll_margin, editor_scroll_margin_default));
+			hades::console::set_property(editor_scroll_margin, scroll_margin);
 
 			//Parse Object variables
 
@@ -318,8 +318,8 @@ namespace objects
 			}//for object groups
 
 			const auto mock_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "object-mock-size", mod,
-				*hades::console::GetInt(editor_object_mock_size, editor_mock_size_default));
-			hades::console::SetProperty(editor_object_mock_size, mock_size);
+				*hades::console::get_int(editor_object_mock_size, editor_mock_size_default));
+			hades::console::set_property(editor_object_mock_size, mock_size);
 
 			//Parse Grid Settings
 
@@ -343,28 +343,28 @@ namespace objects
 				}
 
 				if(intval >= GRIDSNAP_FORCE_DISABLED && intval <= GRIDSNAP_FORCE_ENABLED)
-					hades::console::SetProperty(editor_snaptogrid, intval);
+					hades::console::set_property(editor_snaptogrid, intval);
 			}
 
 			// Get the minimum grid size for the editor(this should be the same value the game uses if it uses
 			// grid based game logic
-			const hades::types::int32 current_grid_size = *hades::console::GetInt(editor_grid_size, editor_grid_default);
+			const hades::types::int32 current_grid_size = *hades::console::get_int(editor_grid_size, editor_grid_default);
 			const auto grid_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "grid-min-size", mod, current_grid_size);
 
 			if (grid_size != current_grid_size)
 			{
-				hades::console::SetProperty(editor_grid_size, grid_size);
-				hades::console::SetProperty(editor_grid_size_multiple, grid_size);
+				hades::console::set_property(editor_grid_size, grid_size);
+				hades::console::set_property(editor_grid_size_multiple, grid_size);
 			}
 
 			const bool grid_enabled = yaml_get_scalar<bool>(node, resource_type, resource_name, "show-grid", mod,
-				*hades::console::GetBool(editor_grid_enabled, true));
-			hades::console::SetProperty(editor_grid_enabled, grid_enabled);
+				*hades::console::get_bool(editor_grid_enabled, true));
+			hades::console::set_property(editor_grid_enabled, grid_enabled);
 
 			//Parse Map Settings
 			const auto map_size = yaml_get_scalar<hades::types::int32>(node, resource_type, resource_name, "map-size", mod,
-				*hades::console::GetInt(editor_map_size, editor_map_size_default));
-			hades::console::SetProperty(editor_map_size, map_size);
+				*hades::console::get_int(editor_map_size, editor_map_size_default));
+			hades::console::set_property(editor_map_size, map_size);
 
 			//========
 			// editor settings object

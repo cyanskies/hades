@@ -474,11 +474,11 @@ namespace objects
 		using size_type = std::vector<hades::resources::curve_types::int_t>;
 		const auto obj_size = std::get<size_type>(size_v.value);
 		
-		const auto bounds = sf::IntRect{ position, { obj_size[0], obj_size[1] } };
+		const hades::rect_t<hades::types::int32> bounds{ position.x, position.y, obj_size[0], obj_size[1] };
 		const auto collisions = _quadtree.find_collisions(bounds);
 
 		return std::none_of(std::begin(collisions), std::end(collisions),
-			[bounds](auto &&other) { return bounds.intersects(other.rect); });
+			[bounds](auto &&other) { return collision_test(bounds, other.rect); });
 	}
 
 	constexpr auto dialog_style = sfg::Window::Style::BACKGROUND
@@ -827,7 +827,7 @@ namespace objects
 			static_cast<sf::Vector2f>(position_vec), static_cast<sf::Vector2f>(size_vec));
 	}
 
-	void AddToQuadMap(const object_info &o, hades::QuadTree<hades::EntityId> &q)
+	void AddToQuadMap(const object_info &o, hades::quad_tree<hades::EntityId> &q)
 	{
 		static const auto position_id = hades::data::get_uid("position");
 		static const auto position_c = hades::data::get<hades::resources::curve>(position_id);
@@ -1188,7 +1188,10 @@ namespace objects
 			const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
 			const sf::Vector2i size_vec{ size[0], size[1] };
 
-			_quadtree.insert({ static_cast<sf::Vector2i>(position), size_vec }, object.id);
+			_quadtree.insert({ static_cast<hades::types::int32>(position.x),
+				static_cast<hades::types::int32>(position.y),
+				size_vec.x,
+				size_vec.y}, object.id);
 
 			//if no animation is set, send nullptr to the SpriteBatch, 
 			//it will render an appropriatly sized rect
@@ -1223,10 +1226,10 @@ namespace objects
 			|| _objectMode == editor::ObjectMode::SELECT);
 
 		const auto mpos = sf::Vector2i{ std::get<0>(pos), std::get<1>(pos) };
-		const auto candidates = _quadtree.find_collisions({ mpos, {1, 1} });
+		const auto candidates = _quadtree.find_collisions({ mpos.x, mpos.y, 1, 1 });
 
 		const auto target = std::find_if(std::begin(candidates), std::end(candidates), [mpos](auto &&r) {
-			return r.rect.contains(mpos);
+			return is_within({ mpos.x, mpos.y }, r.rect);
 		});
 
 		//nothing was under the cursor
@@ -1403,7 +1406,7 @@ namespace objects
 			//get the size
 			const auto size_value = ValidVectorCurve(GetCurve(obj, size_c));
 			const auto size = std::get<hades::resources::curve_types::vector_int>(size_value.value);
-			_quadtree.insert({ pos_vec, { size[0], size[1] } }, obj.id);
+			_quadtree.insert({ pos_vec.x, pos_vec.y, size[0], size[1] }, obj.id);
 
 			//move selector to meet new position
 			_updateSelector(obj);
@@ -1430,7 +1433,7 @@ namespace objects
 			//update the selection system in the editor
 			const auto pos_value = ValidVectorCurve(GetCurve(obj, pos_c));
 			const auto pos = std::get<hades::resources::curve_types::vector_int>(pos_value.value);
-			_quadtree.insert({ { pos[0], pos[1] }, size_vec }, obj.id);
+			_quadtree.insert({ pos[0], pos[1], size_vec.x, size_vec.y }, obj.id);
 
 			//change selector to match size
 			_updateSelector(obj);

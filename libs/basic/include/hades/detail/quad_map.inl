@@ -1,46 +1,46 @@
 #include <cassert>
 #include <map>
+#include <limits>
 #include <vector>
 
-#include "Hades/exceptions.hpp"
-#include "Hades/QuadMap.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/quad_map.hpp"
 
 namespace hades
 {
-	template<class Key>
-	struct QuadData
+	template<class Key, typename Rect>
+	struct quad_data
 	{
 		using key_type = Key;
-		using rect_type = sf::IntRect;
+		using rect_type = Rect;
 
 		key_type key;
 		rect_type rect;
 	};
 
-	template<class Rect>
-	constexpr Rect MakeMaxRect()
+	template<template<typename> typename Rect, typename T>
+	constexpr Rect<T> make_max_rect()
 	{
-		using T = decltype(Rect::left);
 		auto min = std::numeric_limits<T>::min();
 		auto max = std::numeric_limits<T>::max();
-		return Rect(min, min, max, max);
+		return Rect<T>(min, min, max, max);
 	}
 
-	template<class Key>
-	class QuadNode
+	template<class Key, typename Rect>
+	class quad_node
 	{
 	public:
-		using rect_type = sf::IntRect;
+		using rect_type = Rect;
 		using key_type = Key;
-		using value_type = QuadData<key_type>;
-		using node_type = QuadNode<key_type>;
+		using value_type = quad_data<key_type, rect_type>;
+		using node_type = quad_node<key_type, rect_type>;
 
-		QuadNode(const rect_type &area, types::uint32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
+		quad_node(const rect_type &area, types::uint32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
 		{
 			_children.reserve(4);
 		}
 
-		rect_type getArea() const
+		rect_type area() const
 		{
 			return _area;
 		}
@@ -51,7 +51,7 @@ namespace hades
 
 			for (auto &c : _children)
 			{
-				if (rect.intersects(c.getArea()))
+				if (collision_test(rect, c.area()))
 					nodes.push_back(&c);
 			}
 
@@ -63,7 +63,8 @@ namespace hades
 			for (auto n : nodes)
 			{
 				auto collisions = n->find_collisions(rect);
-				out.insert(out.end(), collisions.begin(), collisions.end());
+				std::move(std::begin(collisions), std::end(collisions), std::back_inserter(out));
+				//out.insert(out.end(), collisions.begin(), collisions.end());
 			}
 
 			return out;
@@ -84,9 +85,11 @@ namespace hades
 			{
 				//create four chilren, then reinsert the current entities held in data.
 				//then insert this entity
-				int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
-				rect_type tlrect(_area.left, _area.top, halfwidth, halfheight), trrect(tlrect.left + tlrect.width, tlrect.top, halfwidth, halfheight),
-					blrect(tlrect.left, tlrect.top + tlrect.height, halfwidth, halfheight), brrect(tlrect.left + tlrect.width, tlrect.top + tlrect.height, halfwidth, halfheight);
+				const int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
+				const rect_type tlrect{ _area.x, _area.y, halfwidth, halfheight },
+					trrect{ tlrect.x + tlrect.width, tlrect.y, halfwidth, halfheight },
+					blrect{ tlrect.x, tlrect.y + tlrect.height, halfwidth, halfheight },
+					brrect{ tlrect.x + tlrect.width, tlrect.y + tlrect.height, halfwidth, halfheight };
 
 				_children.push_back(node_type(tlrect, _bucket_cap));
 				_children.push_back(node_type(trrect, _bucket_cap));
@@ -95,7 +98,7 @@ namespace hades
 
 				assert(_children.size() == 4);
 
-				auto rects = _data;
+				const auto rects = _data;
 				_data.clear();
 				_stored.clear();
 
@@ -107,7 +110,7 @@ namespace hades
 			std::vector<node_type*> nodes;
 			for (auto &c : _children)
 			{
-				if (data.rect.intersects(c.getArea()))
+				if (collision_test(data.rect, c.area()))
 					nodes.push_back(&c);
 			}
 
@@ -148,7 +151,7 @@ namespace hades
 		}
 
 	private:
-		rect_type _area = MakeMaxRect<rect_type>();
+		rect_type _area = make_max_rect<rect_type>();
 		types::uint32 _bucket_cap = 1u;
 		std::vector<value_type> _data;
 		std::map<key_type, node_type*> _stored;
@@ -156,28 +159,28 @@ namespace hades
 		_child_vector_type _children;
 	};
 
-	template<class Key>
-	QuadTree<Key>::QuadTree(const rect_type &area, types::int32 _bucket_cap) : _rootNode(area, static_cast<types::uint32>(_bucket_cap))
+	template<class Key, typename Rect>
+	quad_tree<Key, Rect>::quad_tree(const rect_type &area, types::int32 _bucket_cap) : _rootNode(area, static_cast<types::uint32>(_bucket_cap))
 	{
 		if (_bucket_cap < 1)
-			throw invalid_argument("QuadTree bucket capacity must be greater than 0");
+			throw invalid_argument("quad_tree bucket capacity must be greater than 0");
 	}
 
-	template<class Key>
-	std::vector<typename QuadTree<Key>::value_type> QuadTree<Key>::find_collisions(const rect_type &rect) const
+	template<class Key, typename Rect>
+	std::vector<typename quad_tree<Key, Rect>::value_type> quad_tree<Key, Rect>::find_collisions(const rect_type &rect) const
 	{
 		return _rootNode.find_collisions(rect);
 	}
 
-	template<class Key>
-	void QuadTree<Key>::insert(const rect_type &r, const key_type &k)
+	template<class Key, typename Rect>
+	void quad_tree<Key, Rect>::insert(const rect_type &r, const key_type &k)
 	{
 		_rootNode.remove(k);
 		_rootNode.insert({k, r});
 	}
 
-	template<class Key>
-	void QuadTree<Key>::remove(key_type id)
+	template<class Key, typename Rect>
+	void quad_tree<Key, Rect>::remove(key_type id)
 	{
 		_rootNode.remove(id);
 	}

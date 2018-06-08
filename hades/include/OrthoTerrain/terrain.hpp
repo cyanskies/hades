@@ -9,9 +9,9 @@
 #include "SFML/Graphics/Transformable.hpp"
 #include "SFML/Graphics/VertexArray.hpp"
 
-#include "Hades/QuadMap.hpp"
-#include "Hades/Types.hpp"
-#include "Hades/UniqueId.hpp"
+#include "hades/quad_map.hpp"
+#include "hades/types.hpp"
+#include "hades/uniqueId.hpp"
 
 #include "OrthoTerrain/resources.hpp"
 

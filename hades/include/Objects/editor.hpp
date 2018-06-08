@@ -9,11 +9,11 @@
 #include "SFGUI/Widget.hpp"
 
 #include "Hades/GridArea.hpp"
-#include "Hades/Properties.hpp"
-#include "Hades/QuadMap.hpp"
+#include "hades/properties.hpp"
+#include "hades/quad_map.hpp"
 #include "Hades/SpriteBatch.hpp"
 #include "Hades/State.hpp"
-#include "Hades/Types.hpp"
+#include "hades/types.hpp"
 
 #include "Objects/Objects.hpp"
 #include "Objects/resources.hpp"
@@ -212,7 +212,7 @@ namespace objects
 
 		//objects in the map
 		//id map
-		using QuadTree = hades::QuadTree<hades::EntityId>;
+		using QuadTree = hades::quad_tree<hades::EntityId>;
 		QuadTree _quadtree;
 		//object properties
 		std::vector<editor_object_info> _objects;

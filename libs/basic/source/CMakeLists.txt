@@ -13,11 +13,13 @@ set(HADES_BASIC_SRC
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
 	../include/hades/properties.hpp
+	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
+	../include/hades/detail/quad_map.inl
 )
 
 source_group("Headers" FILES
@@ -27,6 +29,7 @@ source_group("Headers" FILES
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
 	../include/hades/properties.hpp
+	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
 )
@@ -35,6 +38,7 @@ source_group("Detail" FILES
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
+	../include/hades/detail/quad_map.inl
 )
 
 # Library to build

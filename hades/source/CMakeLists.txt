@@ -23,7 +23,6 @@ set(HADES_SRC
 	StandardPaths.cpp
 	State.cpp
 	StateManager.cpp
-	TimerManager.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp

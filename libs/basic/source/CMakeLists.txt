@@ -7,6 +7,7 @@ set(HADES_BASIC_SRC
 	logging.cpp
 	properties.cpp
 	system.cpp
+	timers.cpp
 	../include/hades/collision.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
@@ -16,6 +17,7 @@ set(HADES_BASIC_SRC
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
+	../include/hades/timers.hpp
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
@@ -32,6 +34,7 @@ source_group("Headers" FILES
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
+	../include/hades/timers.hpp
 )
 
 source_group("Detail" FILES

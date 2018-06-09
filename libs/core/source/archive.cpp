@@ -15,6 +15,7 @@
 #undef ERROR
 
 #include "hades/logging.hpp"
+#include "hades/properties.hpp"
 #include "hades/types.hpp"
 
 //TODO: revert to std::filesystem once support comes in both MSVC and GCC
@@ -522,7 +523,7 @@ namespace hades
 		bool probably_compressed(std::array<std::byte, 2> header)
 		{
 			return header[0] == header::first &&
-				std::any_of(std::begin(header::others), std::end(header::others), [second = header[2]](auto &&other)
+				std::any_of(std::begin(header::others), std::end(header::others), [second = header[1]](auto &&other)
 			{
 				return second == other;
 			});
@@ -538,6 +539,9 @@ namespace hades
 
 		buffer deflate(buffer stream)
 		{
+			if (*hades::console::get_bool("dev", false))
+				return stream;
+
 			z_stream deflate_stream;
 			deflate_stream.zalloc = Z_NULL;
 			deflate_stream.zfree = Z_NULL;
@@ -595,10 +599,12 @@ namespace hades
 				infstream.avail_out = buf.size();
 				infstream.next_out = reinterpret_cast<unsigned char*>(buf.data());
 				ret = inflate(&infstream, Z_NO_FLUSH);
-				if (ret != Z_OK)
+				if (ret == Z_STREAM_END)
+					cont = false;
+				else if (ret != Z_OK)
 					throw archive_exception("failed to inflate");
 
-				out.insert(std::end(out), buf.data(), reinterpret_cast<std::byte*>(infstream.next_out));
+				std::copy(buf.data(), reinterpret_cast<std::byte*>(infstream.next_out), std::back_inserter(out));
 
 				if (infstream.avail_out != 0)
 					cont = false;

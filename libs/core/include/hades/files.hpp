@@ -68,24 +68,26 @@ namespace hades
 
 		class ResourceStream;
 
+		//reads game files either from directories or mod archives
 		//throws file_exception
 		types::string as_string(std::string_view modPath, std::string_view fileName);
 		//throws file_exception
 		buffer as_raw(std::string_view modPath, std::string_view fileName);
+		// as above, but checks the usersSaveDirectoryinstead
+		//reads save files and config files
+		types::string read_save(std::string_view file_name);
+		//as above, userConfigDir
+		types::string read_config(std::string_view file_name);
+
 		//throws file_exception
 		ResourceStream make_stream(std::string_view modPath, std::string_view fileName);
-		//as above, but checks the usersSaveDirectoryinstead
-		ResourceStream make_save_stream(std::string_view fileName);
-		//as above, userConfigDir
-		ResourceStream make_config_stream(std::string_view fileName);
-
 		//writes file_contents to the file at path, will place UserCustomFileDirectory before path
 		//throws file_exception
 		void write_file(std::string_view path, std::string_view file_contents);
 		//same as above, calls UserSaveDirectory instead
-		void write_save();
+		void write_save(std::string_view);
 		//as above, calls UserConfigDir instead
-		void write_config();
+		void write_config(std::string_view);
 
 		class ResourceStream final : public sf::InputStream
 		{

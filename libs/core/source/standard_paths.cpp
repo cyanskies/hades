@@ -7,3 +7,22 @@
 #ifdef __linux__
 #include "standard_paths_linux.cpp"
 #endif // __linux__
+
+
+namespace hades
+{
+	types::string standard_file_directory()
+	{
+		return "./";
+	}
+
+	types::string standard_config_directory()
+	{
+		return "./config/";
+	}
+
+	types::string standard_save_directory()
+	{
+		return "./save/";
+	}
+}

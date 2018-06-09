@@ -1,4 +1,4 @@
-#include "Hades/StandardPaths.hpp"
+#include "hades/standard_paths.hpp"
 
 #include <cassert>
 
@@ -8,11 +8,10 @@
 #include "Shlobj.h"
 #include "winerror.h"
 
-#include "Hades/Properties.hpp"
-#include "Hades/Main.hpp"
-#include "Hades/Types.hpp"
+#include "hades/properties.hpp"
+#include "hades/types.hpp"
 
-hades::types::string Utf16ToUtf8(std::wstring input)
+hades::types::string utf16_to_utf8(std::wstring input)
 {
 	assert(!input.empty());
 
@@ -29,7 +28,7 @@ hades::types::string Utf16ToUtf8(std::wstring input)
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
 //https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457(v=vs.85).aspx
-hades::types::string getWindowsDirectory(REFKNOWNFOLDERID target)
+hades::types::string windows_directory(REFKNOWNFOLDERID target)
 {
 	PWSTR path = NULL;
 	auto result = SHGetKnownFolderPath(target, 0, NULL, &path);
@@ -43,39 +42,45 @@ hades::types::string getWindowsDirectory(REFKNOWNFOLDERID target)
 	std::wstring str(path);
 
 	CoTaskMemFree(path);
-	return Utf16ToUtf8(str);
+	return utf16_to_utf8(str);
 }
 
 namespace hades
 {
 	using namespace std::string_literals;
 
+	types::string game()
+	{
+		const auto name = hades::console::get_string("game", "game");
+		return *name;
+	}
+
 	//returns C:\\users\\<name>\\documents/gamename/
-	types::string GetUserCustomFileDirectory()
+	types::string user_custom_file_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		if (*portable)
 			return "./"s;
 		else
-			return getWindowsDirectory(FOLDERID_Documents) + "/"s + to_string(defaultGame()) + "/"s;
+			return windows_directory(FOLDERID_Documents) + "/"s + to_string(game()) + "/"s;
 	}
 
-	types::string GetUserConfigDirectory()
+	types::string user_config_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		//if portable is defined, then load read only config from application root directory
 		if (*portable)
-			return "./"s;
+			return "./config/"s;
 		else
 		{
-			const auto postfix = "/"s + to_string(defaultGame()) + "/config/"s;
-			return getWindowsDirectory(FOLDERID_Documents) + postfix;
+			const auto postfix = "/"s + to_string(game()) + "/config/"s;
+			return windows_directory(FOLDERID_Documents) + postfix;
 		}
 	}
 
-	types::string GetUserSaveDirectory()
+	types::string user_save_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
@@ -83,6 +88,6 @@ namespace hades
 		if (*portable)
 			return "./save/"s;
 		else
-			return getWindowsDirectory(FOLDERID_SavedGames) + "/"s + to_string(defaultGame()) + "/"s;
+			return windows_directory(FOLDERID_SavedGames) + "/"s + to_string(game()) + "/"s;
 	}
 }

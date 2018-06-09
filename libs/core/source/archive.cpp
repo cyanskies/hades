@@ -1,11 +1,10 @@
-#include "Hades/archive.hpp"
+#include "hades/archive.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstring> // for std::memcopy
-//TODO: revert to <filesystem> once support comes in both MSVC and GCC
-#include <experimental/filesystem>
-//#include <filesystem>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <string>
@@ -15,11 +14,11 @@
 
 #undef ERROR
 
-#include "Hades/Logging.hpp"
-#include "Hades/Types.hpp"
+#include "hades/logging.hpp"
+#include "hades/types.hpp"
 
 //TODO: revert to std::filesystem once support comes in both MSVC and GCC
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 //this is the default archive extension
 //used when created archives, but not when searching for them
@@ -508,6 +507,108 @@ namespace hades
 			close_archive(archive);
 
 			LOG("Finished uncompressing archive: " + path);
+		}
+
+		namespace header
+		{
+			constexpr std::byte first{ 0x78 };
+			constexpr std::array<std::byte, 3> others{ 
+				static_cast<std::byte>(0x01), 
+				static_cast<std::byte>(0x9C),
+				static_cast<std::byte>(0xDA) 
+			};
+		}
+
+		bool probably_compressed(std::array<std::byte, 2> header)
+		{
+			return header[0] == header::first &&
+				std::any_of(std::begin(header::others), std::end(header::others), [second = header[2]](auto &&other)
+			{
+				return second == other;
+			});
+		}
+
+		bool probably_compressed(const buffer &stream)
+		{
+			if (stream.size() < 2)
+				return false;
+
+			return probably_compressed(std::array{ stream[0], stream[1] });
+		}
+
+		buffer deflate(buffer stream)
+		{
+			z_stream deflate_stream;
+			deflate_stream.zalloc = Z_NULL;
+			deflate_stream.zfree = Z_NULL;
+			deflate_stream.opaque = Z_NULL;
+
+			deflate_stream.avail_in = stream.size(); // size of input, string + terminator
+			deflate_stream.next_in = reinterpret_cast<unsigned char*>(stream.data()); // input char array
+			
+			// the actual compression work.
+			auto ret = deflateInit(&deflate_stream, Z_BEST_COMPRESSION);
+			if (ret != Z_OK)
+				throw archive_exception("failed to initialise zlib deflate");
+
+			//get the size
+			auto size = deflateBound(&deflate_stream, stream.size());
+
+			buffer out{ size };
+			deflate_stream.avail_out = out.size(); // size of output
+			deflate_stream.next_out = reinterpret_cast<unsigned char*>(out.data()); // output char array
+
+			ret = deflate(&deflate_stream, Z_FINISH);
+			if (ret != Z_STREAM_END)
+				throw archive_exception("failed to deflate");
+			assert(ret == Z_STREAM_END);
+			ret = deflateEnd(&deflate_stream);
+			if (ret != Z_OK)
+				throw archive_exception("failed to finalise zlib deflate");
+
+			return { out.data(), reinterpret_cast<std::byte*>(deflate_stream.next_out) };
+		}
+
+		buffer inflate(buffer stream)
+		{
+			z_stream infstream;
+			infstream.zalloc = Z_NULL;
+			infstream.zfree = Z_NULL;
+			infstream.opaque = Z_NULL;
+			// setup "b" as the input and "c" as the compressed output
+			infstream.avail_in = stream.size(); // size of input
+			infstream.next_in = reinterpret_cast<unsigned char*>(stream.data()); // input char array
+			//infstream.avail_out = (uInt)sizeof(c); // size of output
+			//infstream.next_out = (Bytef *)c; // output char array
+
+			 // the actual DE-compression work.
+			auto ret = inflateInit(&infstream);
+			if (ret != Z_OK)
+				throw archive_exception("failed to initialise zlib inflate");
+
+			buffer out;
+
+			bool cont = true;
+			while (cont)
+			{
+				buffer buf{ stream.size() };
+				infstream.avail_out = buf.size();
+				infstream.next_out = reinterpret_cast<unsigned char*>(buf.data());
+				ret = inflate(&infstream, Z_NO_FLUSH);
+				if (ret != Z_OK)
+					throw archive_exception("failed to inflate");
+
+				out.insert(std::end(out), buf.data(), reinterpret_cast<std::byte*>(infstream.next_out));
+
+				if (infstream.avail_out != 0)
+					cont = false;
+			}
+
+			ret = inflateEnd(&infstream);
+			if (ret != Z_OK)
+				throw archive_exception("failed to finalise zlib inflate");
+
+			return out;
 		}
 	}
 }

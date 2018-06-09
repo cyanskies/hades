@@ -1,8 +1,10 @@
 #ifndef HADES_ARCHIVE_HPP
 #define HADES_ARCHIVE_HPP
 
+#include <cstddef>
 #include <exception>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,7 +16,7 @@
 namespace hades
 {
 	//buffer of bytes
-	using buffer = std::vector<types::uint8>;
+	using buffer = std::vector<std::byte>;
 
 	namespace zip
 	{
@@ -31,12 +33,17 @@ namespace hades
 				FILE_CLOSE,
 				FILE_ALREADY_OPEN,
 				FILE_NOT_OPEN,
-				FILE_NOT_FOUND
+				FILE_NOT_FOUND,
+				OTHER
 			};
 
-			archive_exception(const char* what, error_code code);
+			archive_exception(const char* what, error_code code = error_code::OTHER);
 
-			error_code code() const;
+			error_code code() const
+			{
+				return _code;
+			}
+
 		private:
 			error_code _code;
 		};
@@ -87,6 +94,14 @@ namespace hades
 		void compress_directory(std::string_view path);
 		//uncompress archive
 		void uncompress_archive(std::string_view path);
+
+
+		bool probably_compressed(std::array<std::byte, 2> header);
+		bool probably_compressed(const buffer& stream);
+
+		//both of these return archive exception on failure.
+		buffer deflate(buffer stream);
+		buffer inflate(buffer stream);
 	}
 }
 

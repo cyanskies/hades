@@ -1,19 +1,19 @@
 #include "Hades/files.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <fstream>
 #include <string>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include "SFML/System/FileInputStream.hpp"
 
-#include "Hades/archive.hpp"
-#include "Hades/Logging.hpp"
-#include "Hades/Main.hpp"
-#include "Hades/StandardPaths.hpp"
+#include "hades/archive.hpp"
+#include "hades/logging.hpp"
+#include "hades/standard_paths.hpp"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace hades {
 	namespace files {
@@ -31,6 +31,8 @@ namespace hades {
 
 		buffer as_raw(std::string_view modPath, std::string_view fileName)
 		{
+			//TODO: use inflate if needed(see probably_compressed)
+
 			auto stream = make_stream(modPath, fileName);
 			const auto size = stream.getSize();
 			assert(size >= 0 && size <= std::numeric_limits<buffer::size_type>::max());
@@ -42,7 +44,7 @@ namespace hades {
 
 		ResourceStream make_stream(std::string_view modPath, std::string_view fileName)
 		{
-			const auto custom_path = hades::GetUserCustomFileDirectory();
+			const auto custom_path = hades::user_custom_file_directory();
 
 			try
 			{
@@ -61,7 +63,7 @@ namespace hades {
 
 		ResourceStream make_save_stream(std::string_view fileName)
 		{
-			const auto custom_path = hades::GetUserSaveDirectory();
+			const auto custom_path = hades::user_save_directory();
 			try 
 			{
 				return ResourceStream(custom_path, fileName);
@@ -76,7 +78,7 @@ namespace hades {
 
 		ResourceStream make_config_stream(std::string_view fileName)
 		{
-			const auto custom_path = hades::GetUserConfigDirectory();
+			const auto custom_path = hades::user_config_directory();
 			return ResourceStream(custom_path, fileName);
 		}
 
@@ -92,7 +94,8 @@ namespace hades {
 
 		void write_file(std::string_view path, std::string_view file_contents)
 		{
-			const auto userCustomFileDirectory = hades::GetUserCustomFileDirectory();
+			//TODO: use deflate
+			const auto userCustomFileDirectory = hades::user_custom_file_directory();
 			const auto target = userCustomFileDirectory + to_string(path);
 
 			fs::path p{ target };

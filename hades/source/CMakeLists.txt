@@ -4,14 +4,12 @@
 set(HADES_SRC
 	Animation.cpp
 	App.cpp
-	archive.cpp
 	Debug.cpp
 	Console.cpp
 	ConsoleView.cpp
 	common-input.cpp
 	data_system.cpp
   	ExportedCurves.cpp
-	files.cpp
 	GameInstance.cpp
 	GameInterface.cpp
 	GameRenderer.cpp
@@ -20,7 +18,6 @@ set(HADES_SRC
 	sf_input.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp
-	StandardPaths.cpp
 	State.cpp
 	StateManager.cpp
 	Objects/editor.cpp
@@ -67,21 +64,8 @@ set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
 target_include_directories(${HADES_LIB} PUBLIC ../include)
 
-set(HADES_DEPS
-	hades-util
-	hades-basic
-	sfml-audio
-	sfml-graphics
-	sfml-main
-	sfml-network
-	sfml-system
-	sfml-window
-	sfgui
-	yaml-cpp
-	minizip)
-
 #lin libraries
-target_link_libraries(${HADES_LIB} PUBLIC ${HADES_DEPS})
+target_link_libraries(${HADES_LIB} PUBLIC hades-core)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${HADES_LIB}

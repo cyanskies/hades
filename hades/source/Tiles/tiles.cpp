@@ -79,78 +79,115 @@ namespace tiles
 		return out;
 	}
 
+	hades::types::int32 find_tile_number(const TileArray &tiles, const tile &t)
+	{
+		for (std::size_t i = 0; i < tiles.size(); ++i)
+		{
+			if (t == tiles[i])
+				return static_cast<hades::types::int32>(i);
+		}
+
+		return -1;
+	}
+
+	std::vector<std::tuple<const resources::tileset*, tile_count_t>> get_tilesets_for_map(TileArray tiles)
+	{
+		struct tileset_info {
+			const resources::tileset* tileset = nullptr;
+			hades::types::int32 max_id = -1;
+		};
+
+		std::vector<tileset_info> tilesets;
+
+		for (const auto &tset_id : resources::Tilesets)
+		{
+			const auto tset = hades::data::get<resources::tileset>(tset_id);
+			tilesets.push_back({ tset });
+		}
+
+		//remove duplicate tiles, we're only interested in one of each unique tile
+		std::sort(std::begin(tiles), std::end(tiles));
+		const auto new_end = std::unique(std::begin(tiles), std::end(tiles));
+		tiles.erase(new_end, std::end(tiles));
+
+		for (const auto &t : tiles)
+		{
+			for (auto &tset : tilesets)
+			{
+				auto tile_number = find_tile_number(tset.tileset->tiles, t);
+				if (tile_number != -1)
+				{
+					tset.max_id = tset.tileset->tiles.size();
+					break;
+				}
+			}
+		}
+
+		std::vector<std::tuple<const resources::tileset*, tile_count_t>> out;
+
+		for (const auto &tset : tilesets)
+		{
+			if (tset.max_id >= 0)
+				out.push_back({ tset.tileset, tset.max_id });
+		}
+
+		return out;
+	}
+
 	RawMap as_rawmap(const MapData &map)
 	{
-		RawMap output;
-
 		assert(std::get<0>(map).size() % std::get<1>(map) == 0);
 		//store the map width
-		std::get<tile_count_t>(output) = std::get<tile_count_t>(map);
+		const auto width = std::get<tile_count_t>(map);
 
+		const auto &tiles = std::get<TileArray>(map);
 		//a list of tilesets, to tilesets starting id
-		std::vector<std::pair<const resources::tileset*, tile_count_t>> tilesets;
+		const auto tilesets_max = get_tilesets_for_map(tiles);
+
+		auto start_id = 0;
+
+		struct tileset_info {
+			const resources::tileset* ptr = nullptr;
+			hades::types::int32 start_id = -1;
+		};
+
+		std::vector<tileset_info> tilesets;
+
+		for (const auto &tset : tilesets_max)
+		{
+			tilesets.push_back({ std::get<const resources::tileset*>(tset), start_id });
+			start_id += std::get<tile_count_t>(tset);
+		}
+
+		std::vector<tile_count_t> tile_list;
+		tile_list.reserve(tiles.size());
 
 		//for each tile, add its tileset to the tilesets list,
 		// and record the highest tile_id used from that tileset.
-		const auto &tiles = std::get<TileArray>(map);
-		auto &tile_list = std::get<std::vector<tile_count_t>>(output);
-		tile_list.reserve(tiles.size());
 		for (const auto &t : tiles)
 		{
 			//the target tileset will be stored here
 			const resources::tileset* tset = nullptr;
 			tile_count_t tileset_start_id = 0;
 			tile_count_t tile_id = 0;
-			//check tilesets cache for id
-			for (const auto &s : tilesets)
+
+			for (const auto &tileset : tilesets)
 			{
-				const auto &set_tiles = s.first->tiles;
-				for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
+				const auto tileset_ptr = tileset.ptr;
+				for (TileArray::size_type i = 0; i < tileset_ptr->tiles.size(); ++i)
 				{
-					if (set_tiles[i] == t)
+					if (t == tileset_ptr->tiles[i])
 					{
-						tset = s.first;
-						tileset_start_id = s.second;
+						tset = tileset_ptr;
 						tile_id = i;
+						tileset_start_id = tileset.start_id;
 						break;
 					}
 				}
 
-				//if we found it then break
+				//tileset has already been found
 				if (tset)
 					break;
-			}
-
-			//if we didn't have the tileset already, check the master tileset list.
-			if (!tset)
-			{
-				//check Tilesets for the containing tileset
-				for (const auto &s_id : resources::Tilesets)
-				{
-					const auto s = hades::data::get<resources::tileset>(s_id);
-					const auto &set_tiles = s->tiles;
-					for (std::vector<tile>::size_type i = 0; i < set_tiles.size(); ++i)
-					{
-						if (set_tiles[i] == t)
-						{
-							if (tilesets.empty())
-								tileset_start_id = 0;
-							else
-							{
-								const auto &back = tilesets.back();
-								tileset_start_id = back.second + set_tiles.size();
-							}
-
-							tset = s;
-							tilesets.push_back({ s, tileset_start_id });
-							tile_id = i;
-							break;
-						}
-					}
-
-					if (tset)
-						break;
-				}
 			}
 
 			//by now we should have found the tileset and tile id,
@@ -160,12 +197,12 @@ namespace tiles
 			tile_list.push_back(tile_id + tileset_start_id);
 		}
 
-		auto &tilesets_out = std::get<std::vector<TileSetInfo>>(output);
+		std::vector<TileSetInfo> tileset_output;
 
 		for (const auto &s : tilesets)
-			tilesets_out.push_back(std::make_tuple(s.first->id, s.second));
+			tileset_output.push_back({s.ptr->id, s.start_id});
 
-		return output;
+		return { tileset_output, tile_list, width };
 	}
 
 	//converts tile positions in the flat map to a 2d position on the screen

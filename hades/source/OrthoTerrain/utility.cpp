@@ -90,9 +90,22 @@ namespace ortho_terrain
 	{
 		//create array of tile lists for this terrain,
 		//the arrays are presented in the numerical order of the TransitionTypes enum
-		const std::array<const std::vector<tile>*, 15> tile_arrays = { &terr->full, &terr->bottom_left_corner, &terr->top_left_corner, &terr->left,
-			&terr->top_right_corner, &terr->left_diagonal, &terr->top, &terr->top_left_circle, &terr->bottom_right_corner,
-			&terr->bottom, &terr->right_diagonal, &terr->bottom_left_circle, &terr->right, &terr->bottom_right_circle, &terr->top_right_circle
+		const std::array<const std::vector<tile>*, 15> tile_arrays = {
+			&terr->full,
+			&terr->bottom_left_circle,
+			&terr->top_left_circle,
+			&terr->right,
+			&terr->top_right_circle,
+			&terr->right_diagonal,
+			&terr->bottom,
+			&terr->top_left_corner,
+			&terr->bottom_right_circle,
+			&terr->top,
+			&terr->left_diagonal,
+			&terr->bottom_left_corner,
+			&terr->left,
+			&terr->bottom_right_corner,
+			&terr->top_right_corner
 		};
 
 		//find the array that contains the tile

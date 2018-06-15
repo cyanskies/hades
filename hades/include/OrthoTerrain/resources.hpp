@@ -24,6 +24,7 @@ namespace ortho_terrain
 			terrain();
 
 			//named as this terrain interacts with empty
+			//NOTE: WARNING: This is the reverse of the intuitive naming scheme
 			std::vector<tiles::tile>
 				full, // whole tile is terrain1
 				top_left_corner,	//only the bottom right is terrain2

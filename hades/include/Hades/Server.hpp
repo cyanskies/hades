@@ -1,64 +1,73 @@
 #ifndef HADES_SERVER_HPP
 #define HADES_SERVER_HPP
 
+#include "hades/input.hpp"
+
 namespace hades
 {
-	namespace server
+	//players hold shared ptrs to the area they are connected too
+
+	//core server hub, this is used when creating the server, or first connecting
+	class server_hub
 	{
-		//this is for messages the game state will have to handle
-		class ServerMessage
-		{
-		public:
-			enum MessageType {
-				// Connection Management
-				DISCONNECTED, RECONNECT_REQUEST, //this client has been disconnected, or is being requested to disconnect and reconnect as the same slot
-				// Game Management
-				PLAYER_SLOT_CHANGED, //if this client is now in control of a different player slot
-				//Game Functions
-				CHAT_MESSAGE, TEAM_MESSAGE,
-				GAME_OVER, //list of players who won, and the world exit they achieved
+	public:
+		void update(/*dtime*/) = 0; //noop on remote server
+		void send_request(/*level_target*//*action*/) = 0;
+		void get_updates(/*level_target*/) = 0;
+		void resync(/*level token*/);
 
-			};
-		};
+		void connect_to_level(/*level token*/) = 0;
+		void disconnect_from_level() = 0;
+	};
 
-		//the server interface class
-		//this is used by gamestates for local/remote analogous requests 
-		template<class ClientAction, class ServerMessage>
-		class game_server
-		{
-		public:
-			//user provided type for setting requests or input from the client to the server
-			using client_action = ClientAction;
-			using server_message = ServerMessage;
+	class server_level
+	{
+	public:
+		//create(level src, level save)
 
-			virtual ~game_server() {}
+		void update();
+		void handle_request();
+		void get_changes();
+		void resync();
 
-			//allows this client to send input/commands (Move unit, quit game , etc)
-			virtual void sendAction(client_action action) = 0;
-			//get messages from the server(non gameplay curves, notifications, like, kicked from game, reconnect request, game chat?)
-			virtual server_message getServerUpdates() = 0;
-			//gets entity updates
-			void getCurveUpdates();
-			//returns the unique id of the player entity.
-			int getPlayerId();
-		};
+		void add_player();
+		void remove_player();
+	private:
+		//server_hub_ref
+		//entities
+	};
 
-		//this is for internal messaging that the game_server -> remote_server will handle internally
-		class ConnectionMessage {};
+	class local_server_hub
+	{
+	public:
+		void update();
+		void send_request();
+	private:
+		//players
+		//mission level objects
+		//levels
+	};
 
-		//the implementation for a server running in a seperate instance
-		template<class ClientAction, class ServerMessage>
-		class remote_server : public game_server<ClientAction, ServerMessage>
-		{};
+	//same as local, except it connects to a remote local_server_hub
+	class remote_server_hub;
 
-		//the server that hosts actual game logic and update ticking.
-		//this should only be used for command interaction or ticking
-		//normal gameplay calls should go through game_server
-		//wraps GameInstance in the server API
-		template<class ClientAction, class ServerMessage>
-		class local_server : public game_server<ClientAction, ServerMessage>
-		{};
-	}
+	//server level connections
+	//client game states, use this to play
+	class server_level_connection
+	{
+	public:
+		//tick
+		//get upadtes
+		//send input
+		//full sync
+	private:
+		//level_id
+		//server_hub
+	};
+	
+	//starting point
+	server_hub create_server(/*mission save*/);
+	server_hub connect_to_server(/*ip address*/);
 }
 
 #endif //HADES_SERVER_HPP

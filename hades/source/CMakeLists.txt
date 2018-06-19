@@ -17,6 +17,7 @@ set(HADES_SRC
 	level.cpp
 	main.cpp
 	mission.cpp
+	Server.cpp
 	sf_input.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp

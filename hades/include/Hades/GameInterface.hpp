@@ -29,10 +29,12 @@ namespace hades
 		//no linear curves here
 		CurveMap<bool> boolCurves;
 		CurveMap<types::string> stringCurves;
+		CurveMap<unique_id> uniqueCurves;
 
 		//no linear curves here either
 		CurveMap<std::vector<types::int32>> intVectorCurves;
 		CurveMap <std::vector<float>> floatVectorCurves;
+		CurveMap<std::vector<unique_id>> uniqueVectorCurves;
 	};
 
 	class system_already_attached : public std::runtime_error

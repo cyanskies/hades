@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Hades/GameSystem.hpp"
+#include "Hades/level.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
@@ -54,36 +55,12 @@ namespace objects
 
 	using level_size_t = hades::types::int32;
 
-	constexpr auto level_ext = "lvl";
-	constexpr auto save_ext = "hsv";
-	//A level is laid out in the same way as a save file
-	// but doesn't store the full curve history
-	struct level
-	{
-		hades::types::string name;
-		hades::types::string source_level; //if this is set, then map_x/y 
-		//and other details are read from the source file instead
-		hades::types::string description;
-
-		//map size in pixels
-		level_size_t map_x = 0, map_y = 0;
-		//sequence of object
-		    //list of curve values, not including defaults
-		std::vector<object_info> objects;
-		//the id of the next entity to be placed, or spawned in-game
-		hades::EntityId next_id = hades::NO_ENTITY;
-
-		//TODO: background, flat colour, paralax image, paralax loop image
-		//set paralax to 0 to get a static image
-		//layered images with different paralax?
-	};
-
 	//reads object and basic map data from the yaml node and stores it in target
 	//includes map size, map description/title, background and so on
 	//also includes all the object related data, next ID, all objects
-	void ReadObjectsFromYaml(const YAML::Node&, level &target);
+	void ReadObjectsFromYaml(const YAML::Node&, hades::level &target);
 	//does the reverse of the above function
-	YAML::Emitter &WriteObjectsToYaml(const level&, YAML::Emitter &);
+	YAML::Emitter &WriteObjectsToYaml(const hades::level&, YAML::Emitter &);
 }
 
 #endif // !OBJECTS_OBJECTS_HPP

@@ -11,6 +11,7 @@
 
 #include "SFML/System/Time.hpp"
 
+#include "hades/any_map.hpp"
 #include "hades/curve.hpp"
 #include "Hades/GameSystem.hpp"
 #include "hades/shared_map.hpp"
@@ -52,6 +53,8 @@ namespace hades
 		using std::logic_error::logic_error;
 	};
 
+	using property_map = any_map<unique_id>;
+
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
 	class GameInterface
@@ -65,6 +68,8 @@ namespace hades
 
 		curve_data &getCurves();
 		const curve_data &getCurves() const;
+
+		const property_map &getProperties() const;
 
 		//attach/detach entities from systems
 		void attachSystem(EntityId, unique_id, sf::Time t);
@@ -87,6 +92,8 @@ namespace hades
 
 		//CURVE VARIABLES
 		curve_data _curves;
+		//shared properties
+		property_map _properties;
 	};
 
 	class system_already_installed : public std::logic_error

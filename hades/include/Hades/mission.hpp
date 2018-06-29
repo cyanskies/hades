@@ -37,8 +37,7 @@ namespace hades
 	struct mission_save
 	{
 		//ref to origional mission
-
-		//optional career info
+		types::string source_file;
 
 		//current mission entity state
 		mission_info mission_data;

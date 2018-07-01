@@ -51,7 +51,6 @@ namespace hades
 
 
 	template<class Key>
-	template<class T>
 	bool any_map<Key>::contains(Key key) const
 	{
 		return _bag.find(key) != std::end(_bag);

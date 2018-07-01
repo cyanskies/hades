@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Hades/GameSystem.hpp"
-#include "Hades/level.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
 
@@ -14,6 +13,11 @@ namespace YAML
 {
 	class Node;
 	class Emitter;
+}
+
+namespace hades
+{
+	struct level;
 }
 
 namespace objects
@@ -52,8 +56,6 @@ namespace objects
 	curve_value ValidVectorCurve(hades::resources::curve_default_value v);
 	const hades::resources::animation *GetEditorIcon(const resources::object *o);
 	resources::object::animation_list GetEditorAnimations(const resources::object *o);
-
-	using level_size_t = hades::types::int32;
 
 	//reads object and basic map data from the yaml node and stores it in target
 	//includes map size, map description/title, background and so on

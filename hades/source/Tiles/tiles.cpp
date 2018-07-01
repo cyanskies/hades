@@ -22,7 +22,7 @@ namespace tiles
 		RegisterTileResources(d);
 	}
 
-	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<objects::level_size_t, objects::level_size_t> size, tile_size_t tile_size)
+	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<hades::level_size_t, hades::level_size_t> size, tile_size_t tile_size)
 	{
 		auto[x, y] = size;
 		if (x % tile_size != 0

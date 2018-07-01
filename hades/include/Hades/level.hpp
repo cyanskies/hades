@@ -6,6 +6,11 @@
 
 // a level is a playable area
 
+namespace objects
+{
+	struct object_info;
+}
+
 namespace hades
 {
 	//load level from file
@@ -15,6 +20,9 @@ namespace hades
 
 	constexpr auto level_ext = "lvl";
 	constexpr auto save_ext = "hsv";
+
+	using level_size_t = hades::types::int32;
+
 	//A level is laid out in the same way as a save file
 	// but doesn't store the full curve history
 	struct level
@@ -26,7 +34,7 @@ namespace hades
 		level_size_t map_x = 0, map_y = 0;
 		//sequence of object
 		//list of curve values, not including defaults
-		std::vector<object_info> objects;
+		std::vector<objects::object_info> objects;
 		//the id of the next entity to be placed, or spawned in-game
 		hades::EntityId next_id = hades::NO_ENTITY;
 

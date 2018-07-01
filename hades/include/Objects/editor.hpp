@@ -132,8 +132,8 @@ namespace objects
 		//same as above, call Load<NAME> functions
 		virtual void LoadLevel();
 		//these also save and load the map size parameters
-		void SaveObjects(level &l) const;
-		void LoadObjects(const level &l);
+		void SaveObjects(hades::level &l) const;
+		void LoadObjects(const hades::level &l);
 
 		void DrawBackground(sf::RenderTarget &target) const;
 		void DrawObjects(sf::RenderTarget &target);

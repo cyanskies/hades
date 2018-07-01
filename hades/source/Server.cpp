@@ -47,6 +47,6 @@ namespace hades
 
 		//copy curve data into the level
 
-
+		return nullptr;
 	}
 }

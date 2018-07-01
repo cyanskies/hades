@@ -8,6 +8,7 @@
 #include "Hades/common-input.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/files.hpp"
+#include "Hades/level.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/Properties.hpp"
@@ -624,7 +625,7 @@ namespace objects
 
 			//test of the presence of an extension
 			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
-				file += '.' + level_ext;
+				file += '.' + hades::level_ext;
 			
 			Filename = file;
 			Mod = mod;
@@ -692,7 +693,7 @@ namespace objects
 
 			//test of the presence of an extension
 			if (auto ext = std::find(std::begin(file), std::end(file), '.'); ext == std::end(file))
-				file += '.' + level_ext;
+				file += '.' + hades::level_ext;
 			
 			auto old_file = Filename;
 			auto old_mod = Mod;
@@ -758,7 +759,7 @@ namespace objects
 	{
 		const auto path = Mod + '/' + Filename;
 
-		level lvl;
+		hades::level lvl;
 		SaveObjects(lvl);
 
 		YAML::Emitter e;
@@ -774,7 +775,7 @@ namespace objects
 		auto level_str = hades::files::as_string(Mod, Filename);
 		auto level_yaml = YAML::Load(level_str);
 
-		level lvl;
+		hades::level lvl;
 		ReadObjectsFromYaml(level_yaml, lvl);
 
 		LoadObjects(lvl);
@@ -782,7 +783,7 @@ namespace objects
 		reinit();
 	}
 
-	void object_editor::SaveObjects(level &l) const
+	void object_editor::SaveObjects(hades::level &l) const
 	{
 		l.map_x = MapSize.x;
 		l.map_y = MapSize.y;
@@ -846,7 +847,7 @@ namespace objects
 		q.insert({ position[0], position[1], size[0], size[1] }, o.id);
 	}
 
-	void object_editor::LoadObjects(const level &l)
+	void object_editor::LoadObjects(const hades::level &l)
 	{
 		MapSize = { l.map_x, l.map_y };
 		_next_object_id = l.next_id;

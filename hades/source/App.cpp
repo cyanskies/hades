@@ -132,6 +132,14 @@ namespace hades
 		registerConsoleCommands();
 	}
 
+	bool LoadCommand(command_list &commands, std::string_view command, console::function_no_argument job)
+	{
+		return LoadCommand(commands, command, [&job](auto &&args)
+		{
+			return job();
+		});
+	}
+
 	//calls job on any command that contains command
 	bool LoadCommand(command_list &commands, std::string_view command, console::function job)
 	{

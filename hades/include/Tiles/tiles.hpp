@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "Hades/Types.hpp"
+#include "Hades/level.hpp"
 
 #include "Objects/Objects.hpp"
 
@@ -28,7 +29,7 @@ namespace tiles
 	using tile_count_t = hades::types::uint32;
 	using draw_size_t = hades::types::int8;
 
-	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<objects::level_size_t, objects::level_size_t> size, tile_size_t tile_size);
+	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<hades::level_size_t, hades::level_size_t> size, tile_size_t tile_size);
 	//raw map data, is a stream of tile_count id's
 	//and a map of tilesets along with thier first id's
 	// and also a width
@@ -134,7 +135,7 @@ namespace tiles
 		std::vector<tile_count_t> tiles;
 	};
 
-	struct level : public objects::level
+	struct level : public hades::level
 	{
 		tile_layer tiles;
 	};

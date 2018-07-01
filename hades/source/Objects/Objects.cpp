@@ -7,6 +7,7 @@
 #include "Hades/Data.hpp"
 #include "Hades/data_system.hpp"
 #include "Hades/exceptions.hpp"
+#include "Hades/level.hpp"
 
 namespace objects
 {
@@ -267,7 +268,7 @@ namespace objects
 		obj_next = "next_id",
 		obj_name = level_name;
 
-	void ReadObjectsFromYaml(const YAML::Node &root, level &l)
+	void ReadObjectsFromYaml(const YAML::Node &root, hades::level &l)
 	{
 		//yaml_root:
 			//level:
@@ -346,7 +347,7 @@ namespace objects
 		}
 	}
 
-	YAML::Emitter &WriteLevel(const level &l, YAML::Emitter &y)
+	YAML::Emitter &WriteLevel(const hades::level &l, YAML::Emitter &y)
 	{
 		//write the level info
 		y << YAML::Key << level_str;
@@ -419,7 +420,7 @@ namespace objects
 		return y << YAML::EndMap;
 	}
 
-	YAML::Emitter &WriteObjects(const level &l, YAML::Emitter &y)
+	YAML::Emitter &WriteObjects(const hades::level &l, YAML::Emitter &y)
 	{
 		//objects
 			//id:
@@ -454,7 +455,7 @@ namespace objects
 		return y;
 	}
 
-	YAML::Emitter &WriteObjectsToYaml(const level &l, YAML::Emitter& e)
+	YAML::Emitter &WriteObjectsToYaml(const hades::level &l, YAML::Emitter& e)
 	{
 		WriteLevel(l, e);
 		WriteObjects(l, e);

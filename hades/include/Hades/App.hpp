@@ -94,6 +94,7 @@ namespace hades
 		sfg::SFGUI _sfgui;							///< SFGUI object
 	};
 
+	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);
 	bool LoadCommand(command_list&, std::string_view, console::function);
 };//hades
 

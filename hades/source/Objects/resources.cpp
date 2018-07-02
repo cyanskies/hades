@@ -36,14 +36,6 @@ namespace objects
 		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
 		size_c->default_value.set = true;
 		size_c->default_value.value = std::vector<int_t>{ 8, 8 };
-
-		//obj_type
-		const auto obj_t_id = data->get_uid("object_type");
-		auto obj_t_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
-		obj_t_c->curve_type = hades::curve_type::const_c;
-		obj_t_c->data_type = hades::resources::VariableType::UNIQUE;
-		obj_t_c->default_value.set = true;
-		obj_t_c->default_value.value = unique::zero;
 	}
 
 	void DefineObjectConsoleVars()

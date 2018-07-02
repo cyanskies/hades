@@ -6,11 +6,6 @@
 
 // a level is a playable area
 
-namespace objects
-{
-	struct object_info;
-}
-
 namespace hades
 {
 	//load level from file
@@ -50,9 +45,14 @@ namespace hades
 
 		//entity data
 		curve_data curves;
-
-		hades::EntityId next_id = hades::NO_ENTITY;
+		EntityId next_id = hades::NO_ENTITY;
+		std::map<types::string, EntityId> names;
+		
+		//system data
+		//systems, attached entites
 	};
+
+	level_save make_save_from_level(level l);
 }
 
 #endif //HADES_LEVEL_HPP

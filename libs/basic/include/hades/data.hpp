@@ -6,6 +6,7 @@
 #include <tuple>
 
 #include "hades/resource_base.hpp"
+#include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
 //Data provides thread safe access to the hades data manager.
@@ -90,6 +91,9 @@ namespace hades
 		//or associates the name with a new id if it isn't already
 		unique_id make_uid(std::string_view name);
 	}
+
+	template<>
+	types::string to_string(unique_id value);
 }//hades
 
 #include "hades/detail/data.inl"

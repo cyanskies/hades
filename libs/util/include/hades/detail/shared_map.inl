@@ -4,7 +4,23 @@
 #include <exception>
 #include <numeric> // for std::iota
 
+#include "hades/types.hpp"
+
 namespace hades {
+	template<typename Key, typename Value>
+	shared_map<Key, Value>::shared_map(const shared_map &rhs) :
+		_idDispatch(rhs._idDispatch), _ids(rhs._ids), _components(rhs._components),
+		_componentMutex(rhs._componentMutex.size())
+	{}
+
+	template<typename Key, typename Value>
+	shared_map<Key, Value>::shared_map(shared_map &&rhs) :
+		_idDispatch(rhs._idDispatch), _ids(rhs._ids), _components(rhs._components),
+		_componentMutex(rhs._componentMutex.size())
+	{
+
+	}
+
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get(key_type id) const
 	{
@@ -86,11 +102,25 @@ namespace hades {
 		return _idDispatch.find(id) != _idDispatch.end();
 	}
 
+
+	template<class A>
+	types::string as_string(A value)
+	{
+		return to_string(value);
+	}
+
+	template<typename A, typename B, template<typename, typename> typename C> 
+	types::string as_string(C<A, B> value)
+	{
+		const auto &[a, b] = value;
+		return to_string(a) + "::" + to_string(b);
+	}
+
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::create(key_type id, value_type value)
 	{
 		if (exists(id))
-			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + std::to_string(id).c_str());
+			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + hades::as_string(id));
 
 		//exclusive locks
 		std::lock(_vectorMutex, _dispatchMutex);

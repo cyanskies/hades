@@ -33,6 +33,10 @@ namespace hades {
 		using exchange_token = std::unique_lock<mutex_type>;
 		using lock_return = std::tuple<bool, exchange_token>;
 
+		shared_map() = default;
+		shared_map(const shared_map&);
+		shared_map(shared_map&&);
+
 		//returns a copy of the component for id
 		value_type get(key_type id) const;
 

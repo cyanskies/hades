@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/timers.hpp"
 #include "hades/types.hpp"
 
 //A set of curve classes for variables
@@ -265,6 +266,9 @@ namespace hades {
 	{
 		return !(rhs == lhs);
 	}
+
+	template<class T>
+	using curve_var = curve<time_point, T>;
 }
 
 #endif //HADES_UTIL_CURVES_HPP

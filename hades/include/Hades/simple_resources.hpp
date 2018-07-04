@@ -82,7 +82,7 @@ namespace hades
 			using float_t = float;
 			using bool_t = bool;
 			using string = hades::types::string;
-			using object_ref = int; //? entity ID
+			using object_ref = types::int32; //? entity ID type hades::EntityId
 			using unique = hades::unique_id;
 			using vector_int = std::vector<int_t>;
 			using vector_float = std::vector<float_t>;

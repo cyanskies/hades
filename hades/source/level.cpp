@@ -17,6 +17,7 @@ namespace hades
 
 		hades::curve<sf::Time, T> curve_instance{ curve->curve_type };
 		assert(value.set);
+		assert(std::holds_alternative<T>(value.value));
 		const auto &val = std::get<T>(value.value);
 		curve_instance.insert(zero_time, val);
 
@@ -29,6 +30,8 @@ namespace hades
 
 		switch (curve->data_type)
 		{
+		case OBJECT_REF:
+			[[fallthrough]];
 		case INT:
 			add_curve(c.intCurves, id, curve, value);
 			break;
@@ -41,19 +44,17 @@ namespace hades
 		case STRING:
 			add_curve(c.stringCurves, id, curve, value);
 			break;
-		case OBJECT_REF:
-			[[fallthrough]];
 		case UNIQUE:
 			add_curve(c.uniqueCurves, id, curve, value);
 			break;
+		case VECTOR_OBJECT_REF:
+			[[fallthrough]];
 		case VECTOR_INT:
 			add_curve(c.intCurves, id, curve, value);
 			break;
 		case VECTOR_FLOAT:
 			add_curve(c.intCurves, id, curve, value);
 			break;
-		case VECTOR_OBJECT_REF:
-			[[fallthrough]];
 		case VECTOR_UNIQUE:
 			add_curve(c.uniqueVectorCurves, id, curve, value);
 			break;

@@ -14,6 +14,7 @@
 #include "hades/any_map.hpp"
 #include "hades/curve.hpp"
 #include "Hades/GameSystem.hpp"
+#include "hades/shared_guard.hpp"
 #include "hades/shared_map.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/Types.hpp"
@@ -64,7 +65,7 @@ namespace hades
 
 		//creates an entity with no curves or systems attached to it
 		EntityId createEntity();
-		EntityId getEntityId(const types::string &name) const;
+		EntityId getEntityId(const types::string &name, sf::Time t) const;
 
 		curve_data &getCurves();
 		const curve_data &getCurves() const;
@@ -76,20 +77,17 @@ namespace hades
 		void detachSystem(EntityId, unique_id, sf::Time t);
 
 	protected:
+		//
 		std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> FindSystem(unique_id);
 
-		using EntityNameMap = std::map<types::string, EntityId>;
+		void install_system(unique_id sys);
 
-		//protected, since the ability to name entities is provided by a child.
-		mutable std::shared_mutex EntNameMutex;
-		EntityNameMap EntityNames;
+		using entity_name_curve_type = curve<sf::Time, std::map<types::string, EntityId>>;
+		shared_guard<entity_name_curve_type> _entity_names = entity_name_curve_type(curve_type::step);
+		shared_guard<std::vector<GameSystem>> _systems;
 
-		mutable std::shared_mutex SystemsMutex;
-		std::vector<GameSystem> Systems;
-
-	private:
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min() + 1;
-
+	private:
 		//CURVE VARIABLES
 		curve_data _curves;
 		//shared properties

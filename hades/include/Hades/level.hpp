@@ -36,6 +36,9 @@ namespace hades
 		//TODO: background, flat colour, paralax image, paralax loop image
 		//set paralax to 0 to get a static image
 		//layered images with different paralax?
+		
+		//TODO: tilemaps
+		//TODO: terrain
 	};
 
 	struct level_save

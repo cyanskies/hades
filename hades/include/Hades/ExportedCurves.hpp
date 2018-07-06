@@ -29,13 +29,18 @@ namespace hades
 		std::vector<std::pair<EntityId, types::string>> entity_names;
 
 		//TODO: this should be synced on connection only
-		std::vector<std::pair<VariableId, types::string>> variable_names;
+		//std::vector<std::pair<VariableId, types::string>> variable_names;
 
 		//each curve type goes here
 		std::vector < ExportSet<types::int32>> intCurves;
+		std::vector < ExportSet<float>> floatCurves;
 		std::vector < ExportSet<bool>> boolCurves;
 		std::vector < ExportSet<types::string>> stringCurves;
+		std::vector < ExportSet<unique_id>> uniqueCurves;
+
 		std::vector < ExportSet<std::vector<types::int32>>> intVectorCurves;
+		std::vector < ExportSet<std::vector<float>>> floatVectorCurves;
+		std::vector < ExportSet<std::vector<unique_id>>> uniqueVectorCurves;
 	};
 }
 

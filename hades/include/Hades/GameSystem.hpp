@@ -8,7 +8,7 @@
 
 #include "hades/input.hpp"
 #include "Hades/simple_resources.hpp"
-#include "Hades/value_guard.hpp"
+#include "Hades/shared_guard.hpp"
 
 namespace hades
 {
@@ -47,9 +47,9 @@ namespace hades
 	struct GameSystem
 	{
 		//this holds the systems, name and id, and the function that the system uses.
-		resources::system* system;
+		const resources::system* system;
 		//list of entities attached to this system, over time
-		value_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
+		shared_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
 	};
 
 	//program provided systems should be attatched to the renderer or 

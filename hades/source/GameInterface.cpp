@@ -1,5 +1,8 @@
 #include "Hades/GameInterface.hpp"
 
+#include "Hades/data.hpp"
+#include "Hades/simple_resources.hpp"
+
 namespace hades 
 {
 	EntityId GameInterface::createEntity()
@@ -7,12 +10,12 @@ namespace hades
 		return ++_next;
 	}
 
-	EntityId GameInterface::getEntityId(const types::string &name) const
+	EntityId GameInterface::getEntityId(const types::string &name, sf::Time t) const
 	{
-		std::shared_lock<std::shared_mutex> lk(EntNameMutex);
-		auto ename = EntityNames.find(name);
-		if (ename != EntityNames.end())
-			return ename->second;
+		const auto names = _entity_names.get();
+		const auto name_map = names.get(t);
+		if (const auto ent_name = name_map.find(name); ent_name != std::end(name_map))
+			return ent_name->second;
 
 		return NO_ENTITY;
 	}
@@ -107,46 +110,19 @@ namespace hades
 		} //!while modify the ent list
 	}
 
-	std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> GameInterface::FindSystem(unique_id sys)
+	void GameInterface::install_system(unique_id sys)
 	{
-		std::shared_lock<std::shared_mutex> lk(SystemsMutex);
-		GameSystem* system = nullptr;
+		const auto system_list = _systems.get();
 
-		auto iter = Systems.begin();
-		while (iter != Systems.end())
-		{
-			if (iter->system->id == sys)
-			{
-				system = &*iter;
-				break;
-			}//!if iter* == sys
-			++iter;
-		}//!while(iter++ != list.end)
+		//never install a system more than once.
+		assert(std::none_of(std::begin(system_list), std::end(system_list), [sys](const auto &system) {
+			return system.system->id == sys;
+		}));
 
-		return std::make_tuple(std::move(lk), system);
-	}
+		auto updated_list = system_list;
 
-	void InstallSystem(resources::system *system, std::shared_mutex &mutex, std::vector<GameSystem> &systems)
-	{
-		assert(system);
+		const auto new_system = hades::data::get<resources::system>(sys);
 
-		std::lock_guard<std::shared_mutex> system_lock(mutex);
-
-		if (!system)
-			throw system_null("system pointer passed to GameInstance::installSystem was null");
-
-		auto id = system->id;
-
-		for (auto s : systems)
-		{
-			if (s.system->id == id)
-				throw system_already_installed("tried to install system: <name>; that is already installed");
-		}
-
-		GameSystem s;
-		s.system = system;
-		curve<sf::Time, std::vector<EntityId>> entities(curve_type::step);
-		entities.insert(sf::Time::Zero, {});
-		s.attached_entities = entities;
+		updated_list.push_back(GameSystem{ new_system });
 	}
 }

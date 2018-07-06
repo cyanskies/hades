@@ -28,25 +28,16 @@ namespace hades {
 	};
 
 	//TODO: move lerp into the utility header
-	template<typename T>
+	template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
 	T lerp(T first, T second, float alpha)
 	{
 		return (1 - alpha) * first + alpha * second;
 	}
 
 	template<typename T>
-	std::vector<T> lerp(std::vector<T> first, std::vector<T> second, float alpha)
+	T lerp(T first, T second, float alpha)
 	{
-		//TODO: throw logic_error
-		assert(false && "Cannot lerp a vector");
-		return first;
-	}
-
-	template<>
-	inline types::string lerp(types::string first, types::string second, float alpha)
-	{
-		//TODO: throw logic_error
-		assert(false && "Cannot lerp a string");
+		assert(false);
 		return first;
 	}
 

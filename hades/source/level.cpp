@@ -80,6 +80,7 @@ namespace hades
 		{
 			assert(o.id != NO_ENTITY);
 
+			//record entity name if present
 			if (!o.name.empty())
 				sv.names.insert({ o.name, o.id });
 

@@ -36,7 +36,7 @@ namespace hades
 
 	void GameRenderer::insertFrames(ExportedCurves import)
 	{
-		std::unique_lock<std::shared_mutex> ent_name_lock(EntNameMutex);
+		/*std::unique_lock<std::shared_mutex> ent_name_lock(EntNameMutex);
 
 		for (auto &e : import.entity_names)
 			EntityNames.insert({ e.second, e.first });
@@ -47,11 +47,11 @@ namespace hades
 		ImportSet(curves.boolCurves, import.boolCurves);
 		ImportSet(curves.intCurves, import.intCurves);
 		ImportSet(curves.intVectorCurves, import.intVectorCurves);
-		ImportSet(curves.stringCurves, import.stringCurves);
+		ImportSet(curves.stringCurves, import.stringCurves);*/
 	}
 
 	void GameRenderer::installSystem(resources::system *system)
 	{
-		InstallSystem(system, SystemsMutex, Systems);
+		/*InstallSystem(system, SystemsMutex, Systems);*/
 	}
 }

@@ -1,4 +1,5 @@
 #include "Hades/Server.hpp"
+#include "Hades/GameInstance.hpp"
 
 namespace hades
 {
@@ -35,7 +36,7 @@ namespace hades
 		virtual void disconnect_from_level() = 0;
 
 	private:
-		//game instance
+		GameInstance _game_instance;
 		//players
 		//mission level objects
 		//levels
@@ -46,6 +47,8 @@ namespace hades
 		std::shared_ptr<server_hub> output;
 
 		//copy curve data into the level
+
+		//init systems and attch entities
 
 		return nullptr;
 	}

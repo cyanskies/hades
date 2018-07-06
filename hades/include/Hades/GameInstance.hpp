@@ -33,15 +33,11 @@ namespace hades
 		//		default is max time
 		ExportedCurves getChanges(sf::Time t = sf::microseconds(std::numeric_limits<sf::Int64>::max())) const;
 		//clears the new entity name list so the same list of entities don't get sent every tick
-		void clearNewEntitiesNames();
-		std::vector<std::pair<EntityId, types::string>> getAllEntityNames() const;
 		//names are used for common entities to make finding them easy
 		// master: the games master entity, used to store game rules, whether the game as ended yet
 		// terrain: the terrain entity, all the world terrain will be stored as this entity's properties
-		void nameEntity(EntityId entity, const types::string &name);
+		void nameEntity(EntityId entity, const types::string &name, sf::Time t);
 
-		//adds a system
-		void installSystem(resources::system *system);
 	private:
 		//the games starting time, is always 0
 		const sf::Time _startTime = sf::Time();
@@ -52,7 +48,8 @@ namespace hades
 		std::vector<std::pair<EntityId, types::string>> _newEntityNames;
 
 		curve<sf::Time, input_system::action_set> _input;
-		//how to handle events?(events are stored as pulse curves, the system will have to check the curve to see if theirs an event it is interested in
+		//each tick will generate events that are handled at the end of that tick
+		//events created by other events will be handled at the end of the next tick
 	};
 }
 

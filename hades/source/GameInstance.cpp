@@ -10,15 +10,8 @@ namespace hades
 {
 	void GameInstance::tick(sf::Time dt)
 	{
-		std::shared_lock<std::shared_mutex> system_lock(SystemsMutex);
-
-		/*std::vector<parallel_jobs::job*> jobs(Systems.size());
-		auto iter = jobs.begin();
-
-		auto parent_job = parallel_jobs::create(parallel_jobs::job_function());
-*/
 		//create jobs for all systems to work on their entities
-		for(auto &s : Systems)
+		for(auto &s : _systems.get())
 		{
 			assert(s.system);
 
@@ -111,31 +104,30 @@ namespace hades
 		return output;
 	}
 
-	void GameInstance::clearNewEntitiesNames()
+	void GameInstance::nameEntity(EntityId entity, const types::string &name, sf::Time t)
 	{
-		_newEntityNames.clear();
-	}
+		while (true) //NOTE: not a fan of while(true), is there another way to write this without repeating code?
+		{
+			const auto ent_names = _entity_names.get();
+			auto updated_names = ent_names;
+			//get the closest list of names to the current time
+			auto name_map = updated_names.get(t);
 
-	std::vector<std::pair<EntityId, types::string>> GameInstance::getAllEntityNames() const
-	{
-		std::shared_lock<std::shared_mutex> lk(EntNameMutex);
-		std::vector<std::pair<EntityId, types::string>> out;
+			//if entities can be renamed
+			name_map[name] = entity;
 
-		for (auto n : EntityNames)
-			out.push_back({ n.second, n.first });
+			//if entities can not be renamed
+			//if (name_map.find(name) != std::end(name_map))
+			//	name_map[name] = entity;
+			//else
+			//	;//throw?
 
-		return out;
-	}
+			//insert the new name map back into the curve
+			updated_names.insert(t, name_map);
 
-	void GameInstance::nameEntity(EntityId entity, const types::string &name)
-	{
-		std::lock_guard<std::shared_mutex> lk(EntNameMutex);
-		EntityNames[name] = entity;
-		_newEntityNames.push_back({ entity, name });
-	}
-
-	void GameInstance::installSystem(resources::system *system)
-	{
-		InstallSystem(system, SystemsMutex, Systems);
+			//replace the shared name list with the updated one
+			if (_entity_names.compare_exhange(ent_names, updated_names))
+				break; //if we were successful, then break, otherwise run the loop again.
+		}
 	}
 }

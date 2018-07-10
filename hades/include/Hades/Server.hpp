@@ -15,10 +15,14 @@ namespace hades
 	class server_level
 	{
 	public:
-		virtual void tick() = 0;
-		virtual void get_updates() = 0;
-		virtual void send_input() = 0;
-		virtual void resync() = 0;
+		//pumps the network and prepares for get_changes and handle_request
+		virtual void update() = 0; 
+		//gets updated curves
+		virtual ExportedCurves get_changes(sf::Time) = 0;
+		//sends player input
+		virtual void handle_request(hades::action a) = 0;
+		//
+		virtual ExportedCurves resync() = 0;
 
 	private:
 		//level_id
@@ -31,14 +35,15 @@ namespace hades
 	class server_hub
 	{
 	public:
-		virtual void update(/*dtime*/) = 0; //noop on remote server
+		virtual void update(sf::Time) = 0; //noop on remote server
 		virtual void send_request(/*level_target*//*action*/) = 0;
-		virtual void get_updates(/*level_target*/) = 0;
-		virtual void resync(/*level token*/) = 0;
+		virtual ExportedCurves get_updates(sf::Time) = 0;
+		virtual ExportedCurves resync(sf::Time) = 0;
 
 		//get source_file level1.mission or whatever
+		virtual void get_mission() = 0;
 
-		virtual void connect_to_level() = 0;
+		virtual server_level* connect_to_level() = 0;
 		virtual void connect_to_level(/*level token*/int) = 0;
 		virtual void disconnect_from_level() = 0;
 	};

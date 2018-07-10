@@ -49,10 +49,11 @@ namespace hades
 		//entity data
 		curve_data curves;
 		EntityId next_id = hades::NO_ENTITY;
-		std::map<types::string, EntityId> names;
+		std::vector<std::tuple<types::string, EntityId>> names;
 		
-		//system data
-		//systems, attached entites
+		//list of systems
+		std::vector<unique_id> systems;
+		std::vector<curve_data::CurveMap<EntityId>> systems_attached;
 	};
 
 	level_save make_save_from_level(level l);

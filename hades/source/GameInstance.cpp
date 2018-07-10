@@ -8,6 +8,11 @@
 
 namespace hades 
 {
+	GameInstance::GameInstance(level_save sv) : _input(curve_type::step)
+	{
+
+	}
+
 	void GameInstance::tick(sf::Time dt)
 	{
 		//create jobs for all systems to work on their entities
@@ -106,6 +111,8 @@ namespace hades
 
 	void GameInstance::nameEntity(EntityId entity, const types::string &name, sf::Time t)
 	{
+		assert(entity < _next);
+
 		while (true) //NOTE: not a fan of while(true), is there another way to write this without repeating code?
 		{
 			const auto ent_names = _entity_names.get();

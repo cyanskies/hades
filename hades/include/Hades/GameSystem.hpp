@@ -35,7 +35,8 @@ namespace hades
 	{
 		//the entities this system id attached too
 		std::vector<EntityId> entities;
-		GameInterface* game_data;
+		GameInterface* level_data;
+		GameInterface* mission_data;
 		//the current time, and the time to advance too(t + dt)
 		sf::Time current_time, dt;
 		//the input over time for systems to look at
@@ -50,6 +51,13 @@ namespace hades
 		const resources::system* system;
 		//list of entities attached to this system, over time
 		shared_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
+
+		//systems functions
+		//oncreate()
+		//onconnect()
+		//ondisconnect()
+		//tick(currenttime, dt)
+		//ondestroy()
 	};
 
 	//program provided systems should be attatched to the renderer or 

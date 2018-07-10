@@ -18,6 +18,7 @@ namespace hades
 			x_axis = std::max(x_axis, other.x_axis);
 			y_axis = std::max(y_axis, other.y_axis);
 
+			//TODO: should we do this?
 			x_axis = std::clamp(x_axis, 0, 100);
 			y_axis = std::clamp(y_axis, 0, 100);
 		}

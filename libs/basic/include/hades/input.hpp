@@ -33,7 +33,9 @@ namespace hades
 		void merge(const action &other);
 
 		unique_id id = unique_id::zero;
-		hades::types::int32 x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
+		types::int32 x_axis = 100, y_axis = 100; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
+		types::int32 u_axis, v_axis;
+		types::int32 z_axis, r_axis; //joystick triggers
 		bool active = false; //always true for mouseposition and axis
 	};
 

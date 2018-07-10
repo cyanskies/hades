@@ -6,6 +6,7 @@
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
 #include "Hades/GameSystem.hpp"
+#include "Hades/level.hpp"
 
 namespace hades
 {
@@ -21,6 +22,9 @@ namespace hades
 	class GameInstance : public GameInterface
 	{
 	public:
+		GameInstance() = default;
+		GameInstance(level_save);
+
 		//triggers all systems with the specified time change
 		void tick(sf::Time dt);
 
@@ -29,9 +33,9 @@ namespace hades
 		//exports all the newest keyframes so that they can be transmitted across the network
 		//also sends the new variable id mappings
 		//also sends entity name mappings
-		//  t: how far back to go looking for keyframes?
+		//  t: send all keyframes after this point
 		//		default is max time
-		ExportedCurves getChanges(sf::Time t = sf::microseconds(std::numeric_limits<sf::Int64>::max())) const;
+		ExportedCurves getChanges(sf::Time t) const;
 		//clears the new entity name list so the same list of entities don't get sent every tick
 		//names are used for common entities to make finding them easy
 		// master: the games master entity, used to store game rules, whether the game as ended yet

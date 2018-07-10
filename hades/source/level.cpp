@@ -82,7 +82,7 @@ namespace hades
 
 			//record entity name if present
 			if (!o.name.empty())
-				sv.names.insert({ o.name, o.id });
+				sv.names.push_back({ o.name, o.id });
 
 			//add curves from parents
 			if (o.obj_type)

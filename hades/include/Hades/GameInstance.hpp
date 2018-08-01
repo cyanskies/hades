@@ -22,7 +22,7 @@ namespace hades
 	class GameInstance : public GameInterface
 	{
 	public:
-		GameInstance() = default;
+		GameInstance();
 		GameInstance(level_save);
 
 		//triggers all systems with the specified time change

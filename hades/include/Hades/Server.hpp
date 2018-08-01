@@ -1,6 +1,9 @@
 #ifndef HADES_SERVER_HPP
 #define HADES_SERVER_HPP
 
+#include "SFML/System/Time.hpp"
+
+#include "Hades/ExportedCurves.hpp"
 #include "hades/input.hpp"
 #include "Hades/mission.hpp"
 #include "Hades/level.hpp"

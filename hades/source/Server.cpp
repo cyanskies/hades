@@ -3,6 +3,8 @@
 
 namespace hades
 {
+	class local_server_hub;
+
 	class local_server_level : public server_level
 	{
 	public:
@@ -17,7 +19,7 @@ namespace hades
 			_game.tick(dt);
 		}
 
-		void handle_request() override
+		void handle_request(hades::action a) override
 		{
 			/*yeeaarrrghhh*/
 		}
@@ -42,7 +44,7 @@ namespace hades
 	class local_server_hub : public server_hub
 	{
 	public:
-		local_server_hub(level_save lvl) : _level(lvl)
+		local_server_hub(level_save lvl) : _level{ lvl, *this }
 		{}
 
 		virtual void update(sf::Time dt)
@@ -56,7 +58,11 @@ namespace hades
 			_level.tick(dt);
 		}
 
-		virtual void send_request(/*action*/);
+		void send_request() override
+		{
+
+		}
+
 		virtual ExportedCurves get_updates(sf::Time dt)
 		{
 			return _level.get_changes(dt);

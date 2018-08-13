@@ -53,9 +53,9 @@ namespace hades
 
 	//starting point
 	//std::shared_ptr<server_hub> create_server(mission_save mis);
-	std::shared_ptr<server_hub> create_server(level lvl);
+	std::unique_ptr<server_hub> create_server(level_save lvl);
 
-	std::shared_ptr<server_hub> connect_to_server(/*ip address*/);
+	std::unique_ptr<server_hub> connect_to_server(/*ip address*/);
 }
 
 #endif //HADES_SERVER_HPP

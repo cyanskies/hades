@@ -78,7 +78,7 @@ namespace hades
 
 	protected:
 		//
-		std::tuple<std::shared_lock<std::shared_mutex>, GameSystem*> FindSystem(unique_id);
+		GameSystem* FindSystem(unique_id);
 
 		void install_system(unique_id sys);
 

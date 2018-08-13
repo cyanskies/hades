@@ -44,10 +44,10 @@ namespace hades
 	class local_server_hub : public server_hub
 	{
 	public:
-		local_server_hub(level_save lvl) : _level{ lvl, *this }
+		local_server_hub(level_save lvl) : _level{ lvl, *this }, _game_instance{lvl}
 		{}
 
-		virtual void update(sf::Time dt)
+		void update(sf::Time dt) override
 		{
 			tick(dt);
 		}
@@ -63,25 +63,31 @@ namespace hades
 
 		}
 
-		virtual ExportedCurves get_updates(sf::Time dt)
+		ExportedCurves get_updates(sf::Time dt) override
 		{
 			return _level.get_changes(dt);
 		}
 
-		virtual ExportedCurves resync(sf::Time)
+		ExportedCurves resync(sf::Time) override
 		{
 			return get_updates(sf::Time{});
 		}
 
-		//get source_file name level1.mission or whatever
+		void get_mission() override
+		{
 
-		virtual server_level* connect_to_level()
+		}
+
+		server_level* connect_to_level() override
 		{
 			return &_level;
 		}
 
-		//virtual void connect_to_level(/*level token*/int) = 0;
-		virtual void disconnect_from_level() = 0;
+		void connect_to_level(/*level token*/int) override
+		{}
+
+		void disconnect_from_level() override
+		{}
 
 	private:
 		//mission game instance
@@ -92,8 +98,8 @@ namespace hades
 		local_server_level _level;
 	};
 
-	std::shared_ptr<server_hub> create_server(level_save lvl)
+	std::unique_ptr<server_hub> create_server(level_save lvl)
 	{
-		return std::make_shared<local_server_hub>(lvl);
+		return std::make_unique<local_server_hub>(lvl);
 	}
 }

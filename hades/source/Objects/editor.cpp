@@ -123,6 +123,7 @@ namespace objects
 		static auto window_width = hades::console::get_int("vid_width", 640),
 			window_height = hades::console::get_int("vid_height", 480);
 
+		//TODO: provide input. assert to ensure a input type has been registered.
 		const auto mousePos = input.find(hades::input::PointerPosition);
 		assert(mousePos != std::end(input));
 		if (mousePos->active)
@@ -251,6 +252,9 @@ namespace objects
 
 	void object_editor::FillToolBar(AddToggleButtonFunc ToggleButton, AddButtonFunc Button, AddSeperatorFunc Seperator)
 	{
+		//TODO: log error here, as the editor cannot be opened, will result in crash if the 
+		// app is opened with the -editor command
+		//TODO: provide 'is_resource_registered assert to avoid errors
 		const auto editor_settings = hades::data::get<resources::editor>(hades::data::get_uid("editor"));
 		//common editor items
 		Button("new map", [this]() {

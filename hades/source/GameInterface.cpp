@@ -32,10 +32,7 @@ namespace hades
 
 	void GameInterface::attachSystem(EntityId entity, unique_id sys, sf::Time t)
 	{
-		std::shared_lock<std::shared_mutex> lk;
-		GameSystem* system;
-
-		std::tie(lk, system) = FindSystem(sys);
+		auto system = FindSystem(sys);
 
 		if(!system)
 			throw system_already_attached(std::string("Cannot attach to system: err, bacause the system is not part of this instance").c_str());
@@ -73,10 +70,7 @@ namespace hades
 
 	void GameInterface::detachSystem(EntityId entity, unique_id sys, sf::Time t)
 	{
-		std::shared_lock<std::shared_mutex> lk;
-		GameSystem* system;
-
-		std::tie(lk, system) = FindSystem(sys);
+		auto system = FindSystem(sys);
 
 		if(!system)
 			throw system_not_attached(std::string("Cannot detach from system: err, bacause the system is not part of this instance").c_str());
@@ -124,5 +118,10 @@ namespace hades
 		const auto new_system = hades::data::get<resources::system>(sys);
 
 		updated_list.push_back(GameSystem{ new_system });
+	}
+
+	GameSystem* GameInterface::FindSystem(unique_id)
+	{
+		return nullptr;
 	}
 }

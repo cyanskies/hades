@@ -31,7 +31,7 @@ namespace hades
 		{
 			std::visit([identifier, &value](auto &&arg) {
 				using U = std::decay_t<decltype(arg)>;
-				using W = U::element_type::value_type;
+				using W = std::decay_t<U::element_type::value_type>;
 				if constexpr(std::is_same_v<std::decay_t<decltype(value)>, W>)
 					*arg = value;
 				else
@@ -62,7 +62,7 @@ namespace hades
 		{
 			return std::visit([var](auto &&arg)->console::property<T> {
 				using U = std::decay_t<decltype(arg)>;
-				using W = U::element_type::value_type;
+				using W = std::decay_t<U::element_type::value_type>;
 				if constexpr(std::is_same_v<std::decay_t<T>, W>)
 					return arg;
 				else

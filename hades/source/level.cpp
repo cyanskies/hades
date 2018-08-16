@@ -50,10 +50,10 @@ namespace hades
 		case VECTOR_OBJECT_REF:
 			[[fallthrough]];
 		case VECTOR_INT:
-			add_curve(c.intCurves, id, curve, value);
+			add_curve(c.intVectorCurves, id, curve, value);
 			break;
 		case VECTOR_FLOAT:
-			add_curve(c.intCurves, id, curve, value);
+			add_curve(c.floatVectorCurves, id, curve, value);
 			break;
 		case VECTOR_UNIQUE:
 			add_curve(c.uniqueVectorCurves, id, curve, value);

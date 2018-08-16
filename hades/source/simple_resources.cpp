@@ -459,7 +459,7 @@ namespace hades
 				}
 				else
 				{
-					static_assert(hades::always_false<type>::value, "unexpected type")
+					static_assert(hades::always_false<type>::value, "unexpected type");
 				}
 			}, v.value);
 		}

@@ -54,7 +54,11 @@ namespace hades
 
 		void tick(sf::Time dt)
 		{
+			//tick the mission contruct
 			_game_instance.tick(dt);
+
+			//tick all the level contructs
+			//they will give accesss to the mission construct as well.
 			_level.tick(dt);
 		}
 

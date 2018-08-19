@@ -1,3 +1,5 @@
+#include "hades/data.hpp"
+
 #include <typeindex>
 
 namespace hades

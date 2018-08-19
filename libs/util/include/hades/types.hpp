@@ -35,7 +35,7 @@ namespace hades {
 		T stov(std::string value)
 		{
             //TODO: gcc is too eager to interpret static asserts, need a different solution here
-			static_assert(always_false<T>, "Tried to convert type not covered by stov");
+			static_assert(always_false<T>::value, "Tried to convert type not covered by stov");
 			return T();
 		}
 

@@ -1,6 +1,7 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
+//#include <functional>
 #include <variant>
 
 #include "SFML/Graphics/Color.hpp"
@@ -8,7 +9,7 @@
 #include "SFML/Graphics/Shader.hpp"
 
 #include "hades/curve.hpp"
-#include "Hades/parallel_jobs.hpp"
+//#include "Hades/parallel_jobs.hpp"
 #include "Hades/resource_base.hpp"
 #include "Hades/Types.hpp"
 
@@ -64,15 +65,6 @@ namespace hades
 
 		struct string : public resource_type<types::string>
 		{};
-
-		struct system_t
-		{};
-		//a system stores a job function
-		struct system : public resource_type<system_t>
-		{
-			//if loaded from a manifest then it should be loaded from scripts
-			//if it's provided by the application, then source is empty, and no laoder function is provided.
-		};
 
 		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE};
 

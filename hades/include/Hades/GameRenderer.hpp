@@ -6,8 +6,10 @@
 
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
-#include "Hades/GameSystem.hpp"
 #include "Hades/shared_map.hpp"
+#include "Hades/systems.hpp"
+
+//TODO: merge into systems.hpp
 
 namespace hades
 {

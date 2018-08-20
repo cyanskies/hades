@@ -5,8 +5,8 @@
 
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
-#include "Hades/GameSystem.hpp"
 #include "Hades/level.hpp"
+#include "Hades/systems.hpp"
 
 namespace hades
 {

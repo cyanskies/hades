@@ -13,10 +13,10 @@
 
 #include "hades/any_map.hpp"
 #include "hades/curve.hpp"
-#include "Hades/GameSystem.hpp"
 #include "hades/shared_guard.hpp"
 #include "hades/shared_map.hpp"
 #include "Hades/simple_resources.hpp"
+#include "Hades/systems.hpp"
 #include "Hades/Types.hpp"
 
 namespace hades

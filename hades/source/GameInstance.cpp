@@ -29,11 +29,11 @@ namespace hades
 
 			//create the job data, with a pointer to the game interface
 			auto job_data = std::make_unique<system_job_data>();
-			job_data->entities = s.attached_entities.load().get(_currentTime);
+			//job_data->entities = s.attached_entities.load().get(_currentTime);
 			job_data->level_data = this;
 			job_data->current_time = _currentTime;
 			job_data->dt = dt;
-			job_data->actions = &_input;
+			//job_data->actions = &_input;
 
 			//create a job function that will call the systems job on each attached entity
 			//*iter = parallel_jobs::create_child(parent_job, s.system->value, std::move(job_data));

@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "Hades/GameSystem.hpp"
 #include "Hades/simple_resources.hpp"
-#include "Hades/Types.hpp"
+#include "hades/Types.hpp"
+#include "Hades/systems.hpp"
 
 #include "Objects/resources.hpp"
 

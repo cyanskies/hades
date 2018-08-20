@@ -31,8 +31,6 @@ namespace hades
 		void parseTexture(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void loadTexture(resource_base* r, data::data_manager* dataman);
 		void parseString(unique_id mod, const YAML::Node& node, data::data_manager*);
-		void parseSystem(unique_id mod, const YAML::Node& node, data::data_manager*);
-		void loadSystem(resource_base* r, data::data_manager* dataman);
 		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void parseAnimation(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void loadAnimation(resource_base* r, data::data_manager* dataman);
@@ -47,7 +45,6 @@ namespace hades
 		data->register_resource_type("curves", resources::parseCurve);
 		data->register_resource_type("fonts", resources::parseFont);
 		data->register_resource_type("strings", resources::parseString);
-		data->register_resource_type("systems", resources::parseSystem);
 		data->register_resource_type("textures", resources::parseTexture);
 
 		const auto max_tex_size = sf::Texture::getMaximumSize();
@@ -235,17 +232,6 @@ namespace hades
 				str->source = moddata->source;
 				str->value = string;
 			}
-		}
-
-		void parseSystem(unique_id mod, const YAML::Node& node, data::data_manager*)
-		{
-			assert(false && "mods cannot create systems until scripting is introduced.");
-		}
-
-		void loadSystem(resource_base* r, data::data_manager* dataman)
-		{
-			//same as above
-			return;
 		}
 
 		bool operator==(const curve_default_value &lhs, const curve_default_value &rhs)

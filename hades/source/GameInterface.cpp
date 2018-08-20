@@ -1,7 +1,7 @@
 #include "Hades/GameInterface.hpp"
 
 #include "Hades/data.hpp"
-#include "Hades/simple_resources.hpp"
+#include "Hades/systems.hpp"
 
 namespace hades 
 {

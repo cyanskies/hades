@@ -23,6 +23,7 @@ set(HADES_SRC
 	SpriteBatch.cpp
 	State.cpp
 	StateManager.cpp
+	systems.cpp
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp

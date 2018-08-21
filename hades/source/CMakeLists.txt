@@ -12,11 +12,12 @@ set(HADES_SRC
   	ExportedCurves.cpp
 	GameInstance.cpp
 	GameInterface.cpp
-	GameRenderer.cpp
 	GridArea.cpp
 	level.cpp
 	main.cpp
 	mission.cpp
+	RenderInstance.cpp
+	RenderInterface.cpp
 	Server.cpp
 	sf_input.cpp
 	simple_resources.cpp

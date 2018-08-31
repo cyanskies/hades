@@ -67,7 +67,7 @@ namespace objects
 		editor_object_info(const object_info& o) : object_info(o)
 		{}
 
-		hades::sprite_utility::Sprite::sprite_id sprite_id;
+		hades::sprite_utility::Sprite::sprite_id sprite_id = hades::sprite_utility::Sprite::bad_sprite_id;
 	};
 
 	class object_editor : public hades::State

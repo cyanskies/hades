@@ -45,6 +45,8 @@ namespace hades
 
 			using sprite_id = types::int64;
 
+			static constexpr auto bad_sprite_id = std::numeric_limits<sprite_id>::min();
+
 			std::mutex mut;
 			sprite_id id;
 			sf::Vector2f position;
@@ -98,7 +100,7 @@ namespace hades
 		
 		//to speed up usage of exists() cache all the id's from this frame
 		std::vector<sprite_id> _used_ids;
-		sprite_id _id_count = std::numeric_limits<sprite_id>::min();
+		sprite_id _id_count = ++std::numeric_limits<sprite_id>::min();
 	};
 }
 

@@ -50,7 +50,7 @@ namespace hades
 		private:
 			types::string _message;
 			logger::log_verbosity _verb;
-			int _line;
+			int _line = -1;
 			types::string _function, _file, _time;
 		};
 

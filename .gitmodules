@@ -1,9 +1,6 @@
 [submodule "deps/sfml"]
 	path = deps/sfml
 	url = https://github.com/cyanskies/SFML
-[submodule "deps/hades"]
-	path = deps/hades
-	url = https://github.com/cyanskies/hades
 [submodule "deps/yaml-cpp"]
 	path = deps/yaml-cpp
 	url = http://github.com/cyanskies/yaml-cpp

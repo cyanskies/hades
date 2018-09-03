@@ -7,9 +7,6 @@
 [submodule "deps/zlib"]
 	path = deps/zlib
 	url = http://github.com/cyanskies/zlib
-[submodule "deps/tgui"]
-	path = deps/tgui
-	url = https://github.com/cyanskies/tgui
 [submodule "deps/sfgui"]
 	path = deps/sfgui
 	url = https://github.com/cyanskies/sfgui

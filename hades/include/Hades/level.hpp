@@ -1,6 +1,9 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
+#include "SFML/System/Time.hpp"
+
+#include "hades/curve.hpp"
 #include "Hades/GameInterface.hpp"
 #include "Objects/Objects.hpp"
 
@@ -52,8 +55,15 @@ namespace hades
 		std::vector<std::tuple<types::string, EntityId>> names;
 		
 		//list of systems
-		std::vector<unique_id> systems;
-		std::vector<curve_data::CurveMap<EntityId>> systems_attached;
+		using system_list = std::vector<const resources::system*>;
+		system_list systems;
+		using system_attachment_list = std::vector<curve<sf::Time, std::vector<EntityId>>>;
+		system_attachment_list systems_attached;
+
+		//list of client systems?
+		//nah, we get all that from the object base type,
+		//they shouldn't be changing at runtime anyway
+		// ^^ TODO: potential optimisation for the render instance?
 	};
 
 	level_save make_save_from_level(level l);

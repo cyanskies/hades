@@ -63,6 +63,41 @@ namespace hades
 		}
 	}
 
+	std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
+	{
+		//search list
+		const auto sys_iter = std::find(std::begin(system_list), std::end(system_list), s);
+		auto pos = std::distance(std::begin(system_list), sys_iter);
+		if (sys_iter == std::end(system_list))
+		{
+			pos = std::distance(std::begin(system_list), system_list.emplace(sys_iter, s));
+			attach_list.emplace_back(curve_type::step);
+		}
+
+		return pos;
+	}
+
+	void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, EntityId id, const objects::resources::object *o)
+	{
+		assert(system_list.size() == attach_list.size());
+
+		//add systems from ancestors
+		for (const auto b : o->base)
+			add_object_to_systems(system_list, attach_list, id, b);
+
+		for (const auto s : o->systems)
+		{
+			const auto sys_index = get_system_index(system_list, attach_list, s);
+
+			auto &attch = attach_list[sys_index];
+
+			auto ent_list = attch.get(sf::Time{});
+			ent_list.push_back(id);
+
+			//done
+		}
+	}
+
 	void add_object_to_save(curve_data &c, EntityId id, const objects::resources::object *o)
 	{
 		for (const auto b : o->base)
@@ -91,6 +126,9 @@ namespace hades
 			//add curves from object info
 			for (const auto[curve, value] : o.curves)
 				add_curve_from_object(sv.curves, o.id, curve, value);
+
+			//add object to systems
+			add_object_to_systems(sv.systems, sv.systems_attached, o.id, o.obj_type);
 		}
 
 		sv.next_id = l.next_id;

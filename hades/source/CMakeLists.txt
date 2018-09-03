@@ -25,6 +25,7 @@ set(HADES_SRC
 	State.cpp
 	StateManager.cpp
 	systems.cpp
+	../include/Hades/detail/systems.inl
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
@@ -39,6 +40,10 @@ set(HADES_SRC
 	Tiles/serialise.cpp
 	Tiles/tiles.cpp
 )
+
+source_group("Detail" FILES
+	../include/Hades/detail/systems.inl
+	)
 
 source_group("Tiles" FILES
 	Tiles/editor.cpp

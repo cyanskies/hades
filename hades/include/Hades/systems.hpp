@@ -10,6 +10,7 @@
 #include "SFML/System/Time.hpp"
 
 #include "hades/curve.hpp"
+#include "hades/data.hpp"
 #include "hades/input.hpp"
 #include "hades/parallel_jobs.hpp"
 #include "hades/resource_base.hpp"
@@ -68,6 +69,15 @@ namespace hades
 			//ondestroy() //called when system object is being destroyed
 			//on_event()
 		};
+	}
+
+	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
+	void make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
+
+	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
+	void make_system(std::string_view name, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
+	{
+		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
 	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
@@ -146,5 +156,7 @@ namespace hades
 		shared_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
 	};
 }
+
+#include "Hades/detail/systems.inl"
 
 #endif //HADES_GAMESYSTEM_HPP

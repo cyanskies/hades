@@ -66,6 +66,7 @@ namespace hades
 		{
 			void set_data_manager_ptr(data_manager* ptr);
 			using exclusive_lock = std::unique_lock<std::shared_mutex>;
+			//TODO: return data_manager& here instead; as user is not permitted to store the result
 			using data_manager_exclusive = std::tuple<data_manager*, exclusive_lock>;
 			data_manager_exclusive get_data_manager_exclusive_lock();
 		}

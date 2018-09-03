@@ -87,9 +87,14 @@ namespace objects
 			using curve_obj = std::tuple<const hades::resources::curve*, hades::resources::curve_default_value>;
 			using curve_list = std::vector<curve_obj>;
 			curve_list curves;
-			//TODO:
-			//systems
-			//client system
+
+			//server systems
+			using system_list = std::vector<const hades::resources::system*>;
+			system_list systems;
+	
+			//client systems
+			using render_system_list = std::vector<const hades::resources::render_system*>;
+			render_system_list render_systems;
 		};
 
 		struct object_group

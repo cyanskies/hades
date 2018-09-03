@@ -104,6 +104,10 @@ namespace hades
 			std::vector<resources::resource_base*> _loadQueue;
 		};
 
+		//TODO: redo findorcreate and the yaml_* functions below, they shouldn't be in this header
+		//they shouldnt accept pointers and should handle sequence specifiers correctly
+		// probably in a resource_parser header
+
 		//gets the requested resource, or creates it if not already
 		// sets the resources most recent mod to the passed value
 		// returns nullptr if unable to return a valid resource
@@ -134,6 +138,11 @@ T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, ha
 hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::unique_id mod = hades::unique_id::zero, hades::unique_id default_value = hades::unique_id::zero);
 
+//TODO:
+
+// value: [+, elm1, elm2] // to add to stored sequence
+// value: [=, elm1, elm2] // to replace seqence
+// value: [-, elm3, + elm1, elm2] // remove one element by name, then add two more
 template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::unique_id mod = hades::unique_id::zero);

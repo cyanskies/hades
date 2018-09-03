@@ -416,7 +416,7 @@ namespace objects
 			//			-[curve id, default value]
 			//			-curve_id(no default value)
 			//		systems: [system_id, ...]
-			//		client-systems : [system_id, ...]
+			//		client-systems : [system_id, ...] // aka. render system
 
 			constexpr auto resource_type = "objects";
 

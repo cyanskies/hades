@@ -95,6 +95,12 @@ namespace hades {
 
 		return out;
 	}
+
+	template<typename T, typename Less, typename Equal>
+	std::vector<T> remove_duplicates(std::vector<T>);
+
+	template<typename T>
+	void remove_duplicates(std::vector<T>&);
 }
 
 #endif //HADES_UTIL_TYPES_HPP

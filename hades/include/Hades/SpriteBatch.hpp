@@ -100,7 +100,7 @@ namespace hades
 		
 		//to speed up usage of exists() cache all the id's from this frame
 		std::vector<sprite_id> _used_ids;
-		sprite_id _id_count = ++std::numeric_limits<sprite_id>::min();
+		sprite_id _id_count = sprite_utility::Sprite::bad_sprite_id + 1;
 	};
 }
 

@@ -17,25 +17,9 @@ if [ -z ${library} ] ;
 then library="./dep-library"
 fi
 
-if [ -z ${prepath} ] ;
-then prepath="./"
+if [ ! -d "$library" ]; then
+mkdir "$library"
 fi
 
-installpfx="$prepath$library"
+cmake -DCMAKE_BUILD_TYPE="$mode" -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX="../$library" -G "$generator"
 
-if [ ! -d "$installpfx" ]; then
-mkdir "$installpfx"
-fi
-
-cd ./deps
-./build.sh "$generator" "$mode" "$library" "../$prepath"
-
-#hades
-cd ../hades
-cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -G "$generator"
-cmake --build . --target install --config "$mode"
-
-#test
-cd ../test
-cmake -DCMAKE_BUILD_TYPE="$mode" -DCMAKE_INSTALL_PREFIX="../$installpfx" -G "$generator"
-cmake --build . --target install --config "$mode"

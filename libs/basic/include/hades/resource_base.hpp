@@ -3,7 +3,7 @@
 
 #include <functional>
 
-#include "hades/Types.hpp"
+#include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
 //resource primatives

@@ -61,7 +61,7 @@ namespace hades
 	}
 
 	template<typename Event>
-	void input_event_system_t<Event>::generate_state(const std::vector<typename checked_event> &events)
+	void input_event_system_t<Event>::generate_state(const std::vector<typename input_event_system_t<Event>::checked_event> &events)
 	{
 		input_system::action_set actionset;
 

@@ -20,8 +20,8 @@ namespace hades
 			y_axis = std::max(y_axis, other.y_axis);
 
 			//TODO: should we do this?
-			x_axis = std::clamp(x_axis, 0, 100);
-			y_axis = std::clamp(y_axis, 0, 100);
+			x_axis = std::clamp<decltype(x_axis)>(x_axis, 0, 100);
+			y_axis = std::clamp<decltype(y_axis)>(y_axis, 0, 100);
 		}
 	}
 

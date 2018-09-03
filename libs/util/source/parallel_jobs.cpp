@@ -48,7 +48,7 @@ namespace hades
 	void job_system::run(job_system::job* j)
 	{
 		const auto id = _thread_id();
-		auto &[queue, lock] = _get_queue(id);
+		auto [queue, lock] = _get_queue(id);
 		std::ignore = lock;
 		assert(queue);
 		queue->push_front(j);

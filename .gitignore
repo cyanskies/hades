@@ -246,3 +246,5 @@ Makefile
 CMakeCache.txt
 install_manifest.txt
 .vs
+
+*.a

@@ -152,15 +152,15 @@ namespace hades
 	{
 	public:
 		using event = Event;
-		using checked_event = std::tuple<bool, typename event>;
-		using event_interpreter = input_event_interpreter<typename event>;
+		using checked_event = std::tuple<bool, event>;
+		using event_interpreter = input_event_interpreter<event>;
 		using event_interpreter_set = std::set<event_interpreter>;
 
 		//adds a new input interpretor
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e);
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e, input_interpreter::function f);
 
-		void generate_state(const std::vector<typename checked_event>&); //runs all the action test functions, including custom ones
+		void generate_state(const std::vector<checked_event>&); //runs all the action test functions, including custom ones
 	private:
 		event_interpreter_set _event_interpreters;
 	};

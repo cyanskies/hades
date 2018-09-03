@@ -12,19 +12,19 @@ namespace hades
 		template<typename Func, typename JobData>
 		job_system::job_function create_job_invoker(job_system &j, Func f, JobData d)
 		{
-			if constexpr(std::is_constructable<std::function<bool(job_system&, JobData)>, Func >)
+			if constexpr(std::is_constructible<std::function<bool(job_system&, JobData)>, Func >::value)
 			{
 				return [j, f, d]()->bool {
 					return std::invoke(f, j, d);
 				};
 			}
-			else if constexpr(std::is_constructable<std::function<bool(JobData)>, Func >)
+			else if constexpr(std::is_constructible<std::function<bool(JobData)>, Func >::value)
 			{
 				return [f, d]()->bool {
 					return std::invoke(f, d);
 				};
 			}
-			else constexpr
+			else
 				static_assert(always_false<Func, JobData>::value, "Function passed to job but accept JobData as parameter, or job_system& and JobData as parameters");
 		}
 	}
@@ -37,7 +37,7 @@ namespace hades
 
 		//create a new job and store it in the global jobstore
 		lock_t guard{ _jobs_mutex };
-		_jobs.push_back();
+		_jobs.emplace_back();
 		job* job_ptr = &_jobs.back();
 		job_ptr->function = detail::create_job_invoker(this, func, data);
 		return job_ptr;

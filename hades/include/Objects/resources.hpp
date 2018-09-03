@@ -10,6 +10,14 @@
 //objects are a resource type representing spawnable entities
 //everything from doodads to players
 
+//forward declerations
+//needed for object*
+namespace hades::resources
+{
+	struct system;
+	struct render_system;
+}
+
 namespace objects
 {
 	//console variable names for editor settings

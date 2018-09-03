@@ -10,6 +10,7 @@
 
 #include "hades/properties.hpp"
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 hades::types::string utf16_to_utf8(std::wstring input)
 {

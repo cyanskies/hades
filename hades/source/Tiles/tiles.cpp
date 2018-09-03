@@ -106,10 +106,8 @@ namespace tiles
 		}
 
 		//remove duplicate tiles, we're only interested in one of each unique tile
-		std::sort(std::begin(tiles), std::end(tiles));
-		const auto new_end = std::unique(std::begin(tiles), std::end(tiles));
-		tiles.erase(new_end, std::end(tiles));
-
+		hades::remove_duplicates(tiles);
+		
 		for (const auto &t : tiles)
 		{
 			for (auto &tset : tilesets)

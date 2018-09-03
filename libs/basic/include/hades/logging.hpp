@@ -4,6 +4,7 @@
 #include <list>
 
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 //Interface and functions for global logging.
 //a logger should impliment the interface and then a ptr assigned to hades::log to direct all logging to that logger

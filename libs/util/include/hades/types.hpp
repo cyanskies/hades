@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_TYPES_HPP
 #define HADES_UTIL_TYPES_HPP
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -69,38 +70,6 @@ namespace hades {
 	}
 
 	using namespace types;
-
-	template<typename T>
-	types::string to_string(T value)
-	{
-		return std::to_string(value);
-	}
-
-	template<>
-	types::string to_string<const char*>(const char* value);
-	template<>
-	types::string to_string<types::string>(types::string value);
-	template<>
-	types::string to_string<std::string_view>(std::string_view value);
-
-	template<class First, class Last>
-	types::string to_string(First begin, Last end)
-	{
-		if (begin == end) return types::string();
-
-		auto out = to_string(*begin);
-
-		while (++begin != end)
-			out += " " + to_string(*begin);
-
-		return out;
-	}
-
-	template<typename T, typename Less, typename Equal>
-	std::vector<T> remove_duplicates(std::vector<T>);
-
-	template<typename T>
-	void remove_duplicates(std::vector<T>&);
 }
 
 #endif //HADES_UTIL_TYPES_HPP

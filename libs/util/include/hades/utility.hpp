@@ -6,6 +6,8 @@
 #include <random>
 #include <sstream>
 
+#include "hades/types.hpp"
+
 namespace hades {
 	namespace
 	{
@@ -38,12 +40,34 @@ namespace hades {
 		return random(0, 1) != 0;
 	}
 
-	template <typename Container>
-	void unique(Container c)
+	//remove_duplicates: removes all duplicates from the container
+	// can remove only a subrange, or use custom comparitors
+
+	template<typename Container>
+	decltype(auto) remove_duplicates(Container &cont)
 	{
-		std::sort(std::begin(c), std::end(c));
-		auto new_end = std::unique(std::begin(c), std::end(c));
-		c.erase(new_end, std::end(c));
+		return remove_duplicates(cont, std::begin(cont), std::end(cont),
+			std::less<Container::value_type>{}, std::equal_to<Container::value_type>{});
+	}
+
+	template<typename Container, typename Less, typename Equal>
+	decltype(auto) remove_duplicates(Container &cont, Less less, Equal equal)
+	{
+		return remove_duplicates(cont, std::begin(cont), std::end(cont), less, equal);
+	}
+
+	template<typename Container, typename Iter>
+	Iter remove_duplicates(Container &cont, Iter first, Iter last)
+	{
+		return remove_duplicates(first, last, std::less<Iter::value_type>{}, std::equal_to<Iter::value_type>{});
+	}
+
+	template<typename Container, typename Iter, typename Less, typename Equal>
+	Iter remove_duplicates(Container &cont, Iter first, Iter last, Less less, Equal equal)
+	{
+		std::stable_sort(first, last, less);
+		const auto last_unique = std::unique(first, last, equal);
+		return cont.erase(last_unique, std::end(cont));
 	}
 
 	//pass a back_inserter to result
@@ -77,6 +101,32 @@ namespace hades {
 
 			*(result++) = output;
 		}
+	}
+
+	template<typename T>
+	types::string to_string(T value)
+	{
+		return std::to_string(value);
+	}
+
+	template<>
+	types::string to_string<const char*>(const char* value);
+	template<>
+	types::string to_string<types::string>(types::string value);
+	template<>
+	types::string to_string<std::string_view>(std::string_view value);
+
+	template<class First, class Last>
+	types::string to_string(First begin, Last end)
+	{
+		if (begin == end) return types::string();
+
+		auto out = to_string(*begin);
+
+		while (++begin != end)
+			out += " " + to_string(*begin);
+
+		return out;
 	}
 }
 

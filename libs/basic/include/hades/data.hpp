@@ -8,6 +8,7 @@
 #include "hades/resource_base.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
+#include "hades/utility.hpp"
 
 //Data provides thread safe access to the hades data manager.
 namespace hades

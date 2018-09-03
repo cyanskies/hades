@@ -162,7 +162,7 @@ namespace hades
 
 		void data_system::load(types::uint8 count)
 		{
-			unique(_loadQueue);
+			remove_duplicates(_loadQueue);
 			
 			while (count-- > 0 && !_loadQueue.empty())
 			{

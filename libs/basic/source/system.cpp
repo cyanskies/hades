@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "hades/utility.hpp"
+
 namespace hades
 {
 	command::command(std::string_view sv)

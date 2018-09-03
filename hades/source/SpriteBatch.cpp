@@ -5,8 +5,9 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "Hades/Animation.hpp"
-#include "Hades/exceptions.hpp"
-#include "Hades/Types.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/Types.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {

@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include "hades/uniqueid.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {

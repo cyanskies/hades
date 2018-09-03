@@ -257,7 +257,7 @@ namespace ortho_terrain
 				});
 				
 				//remove any duplicates
-				unique(t->traits);
+				remove_duplicates(t->traits);
 				const auto &traits_list = t->traits;
 				ApplyToTerrain(*t, [&traits_list](auto &&t_vec) {
 					for (auto &t : t_vec)
@@ -271,7 +271,7 @@ namespace ortho_terrain
 			//then remove any duplicates
 			auto &tiles_tilesets = tiles::resources::Tilesets;
 			std::copy(std::begin(tilesets), std::end(tilesets), std::back_inserter(tiles_tilesets));
-			unique(tiles_tilesets);
+			remove_duplicates(tiles_tilesets);
 		}
 
 		void ParseTerrainSet(hades::unique_id mod, const YAML::Node& node, data_manager *data)
@@ -318,7 +318,7 @@ namespace ortho_terrain
 				terrain_set->terrains.swap(terrainset_order);
 
 				TerrainSets.emplace_back(terrain_set->id);
-				unique(TerrainSets);
+				remove_duplicates(TerrainSets);
 			}
 		}
 	}

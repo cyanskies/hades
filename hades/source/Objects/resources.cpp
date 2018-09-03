@@ -460,8 +460,8 @@ namespace objects
 				std::move(std::begin(anims), std::end(anims), std::back_inserter(obj->editor_anims));
 
 				//remove any duplicates
-				std::sort(std::begin(obj->editor_anims), std::end(obj->editor_anims));
-				obj->editor_anims.erase(std::unique(std::begin(obj->editor_anims), std::end(obj->editor_anims)), std::end(obj->editor_anims));
+				hades::remove_duplicates(obj->editor_anims);
+				
 				//===============================
 				//get the base objects
 				//===============================
@@ -471,9 +471,8 @@ namespace objects
 				std::copy(std::begin(base), std::end(base), std::back_inserter(obj->base));
 
 				//remove dupes
-				std::sort(std::begin(obj->base), std::end(obj->base));
-				obj->base.erase(std::unique(std::begin(obj->base), std::end(obj->base)), std::end(obj->base));
-
+				hades::remove_duplicates(obj->base);
+				
 				//=================
 				//get the curves
 				//=================

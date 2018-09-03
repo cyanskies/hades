@@ -131,23 +131,21 @@ namespace objects
 		using curve = hades::resources::curve;
 		using value = hades::resources::curve_default_value;
 
-		//place all curves of the same type adjacent to one another
-		std::stable_sort(std::begin(list), std::end(list), [](const curve_obj &lhs, const curve_obj &rhs) {
+		const auto less = [](const curve_obj &lhs, const curve_obj &rhs) {
 			auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
 			assert(c1 && c2);
 			return c1->id < c2->id;
-		});
+		};
 
-		//remove any adjacent duplicates(for curves with the same type and value)
-		auto end = std::unique(std::begin(list), std::end(list), [](const curve_obj &lhs, const curve_obj &rhs) {
+		const auto equal = [](const curve_obj &lhs, const curve_obj &rhs) {
 			auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
 			auto v1 = std::get<value>(lhs), v2 = std::get<value>(rhs);
 			assert(c1 && c2);
 			return c1->id == c2->id
 				&& v1 == v2;
-		});
+		};
 
-		list.erase(end, std::end(list));
+		hades::remove_duplicates(list, less, equal);
 
 		curve_list output;
 

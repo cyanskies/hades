@@ -12,6 +12,7 @@
 #include "hades/archive.hpp"
 #include "hades/logging.hpp"
 #include "hades/standard_paths.hpp"
+#include "hades/utility.hpp"
 
 namespace fs = std::filesystem;
 

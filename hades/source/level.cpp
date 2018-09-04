@@ -16,6 +16,10 @@ namespace hades
 			c.erase({ id, curve->id });
 
 		hades::curve<sf::Time, T> curve_instance{ curve->curve_type };
+
+		//TODO: //exception a value hasn't been provided for this curve, invalid level or save file.
+		// replaces first assertion bellow.
+
 		assert(value.set);
 		assert(std::holds_alternative<T>(value.value));
 		const auto &val = std::get<T>(value.value);
@@ -77,6 +81,15 @@ namespace hades
 		return pos;
 	}
 
+	void add_object_to_save(curve_data &c, EntityId id, const objects::resources::object *o)
+	{
+		for (const auto b : o->base)
+			add_object_to_save(c, id, b);
+
+		for (const auto[curve, value] : o->curves)
+			add_curve_from_object(c, id, curve, value);
+	}
+
 	void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, EntityId id, const objects::resources::object *o)
 	{
 		assert(system_list.size() == attach_list.size());
@@ -92,19 +105,13 @@ namespace hades
 			auto &attch = attach_list[sys_index];
 
 			auto ent_list = attch.get(sf::Time{});
-			ent_list.push_back(id);
 
-			//done
+			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
+			{
+				ent_list.push_back(id);
+				attch.set(sf::Time{}, ent_list);
+			}
 		}
-	}
-
-	void add_object_to_save(curve_data &c, EntityId id, const objects::resources::object *o)
-	{
-		for (const auto b : o->base)
-			add_object_to_save(c, id, b);
-
-		for (const auto[curve, value] : o->curves)
-			add_curve_from_object(c, id, curve, value);
 	}
 
 	level_save make_save_from_level(level l)

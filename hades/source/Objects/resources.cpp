@@ -121,8 +121,8 @@ namespace objects
 			try
 			{
 				std::vector<T> vec;
-				for (auto v : node)
-					vec.push_back(node.as<T>());
+				for (const auto v : node)
+					vec.push_back(v.as<T>());
 
 				out.set = true;
 				out.value.emplace<std::vector<T>>(vec);

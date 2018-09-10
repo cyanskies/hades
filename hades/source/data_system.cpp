@@ -37,7 +37,7 @@ namespace hades
 				add_mod(game, true, "game.yaml");
 				game_loaded = true;
 			}
-			catch (files::file_exception &f)
+			catch (const files::file_exception &f)
 			{
 				LOGERROR(f.what());
 			}
@@ -207,7 +207,7 @@ namespace hades
 			{
 				include_yaml = files::as_string(mod_info->source, file);
 			}
-			catch (files::file_exception &f)
+			catch (const files::file_exception &f)
 			{
 				LOGERROR(f.what());
 				return;
@@ -323,6 +323,7 @@ namespace hades
 using namespace hades;
 
 //posts error message if the yaml node is the wrong type
+//TODO: string view
 bool yaml_error(types::string resource_type, types::string resource_name,
 	types::string property_name, types::string requested_type, unique_id mod, bool test)
 {

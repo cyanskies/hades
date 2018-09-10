@@ -177,7 +177,7 @@ namespace hades
 					if (tex->mips && !tex->value.generateMipmap())
 						LOGWARNING("Failed to generate MipMap for texture: " + dataman->get_as_string(tex->id));
 				}
-				catch (files::file_exception e)
+				catch (const files::file_exception &e)
 				{
 					LOGERROR("Failed to load texture: " + mod->source + "/" + tex->source + ". " + e.what());
 				}
@@ -649,7 +649,7 @@ namespace hades
 				auto fstream = files::make_stream(mod->source, f->source);
 				f->value.loadFromStream(fstream);
 			}
-			catch (files::file_exception e)
+			catch (const files::file_exception &e)
 			{
 				LOGERROR("Failed to load font: " + mod->source + "/" + f->source + ". " + e.what());
 			}

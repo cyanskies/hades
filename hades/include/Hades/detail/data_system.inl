@@ -101,21 +101,109 @@ template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::unique_id mod)
 {
-	std::vector<T> output;
+	return yaml_get_sequence(node, resource_type, resource_name, property_name, std::vector<T>{}, mod);
+}
+
+template<class T, class ConversionFunc>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, ConversionFunc func, hades::unique_id mod)
+{
+	return yaml_get_sequence(node, resource_type, resource_name, property_name, std::vector<T>{}, func, mod);
+}
+
+template<class T>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, const std::vector<T> &previous_sequence, hades::unique_id mod)
+{
+	return yaml_get_sequence(node, resource_type, resource_name, property_name, previous_sequence, nullptr, mod);
+}
+
+namespace
+{
+	template<typename T, typename ConversionFunction>
+	T convert_if(const YAML::Node &n, ConversionFunction convert)
+	{
+		if constexpr (!std::is_null_pointer_v<ConversionFunction>)
+			return convert(n.as<hades::string>());
+		else
+			return n.as<T>();
+	}
+
+	template<typename T>
+	void remove_from_sequence(std::vector<T> &container, const T& value)
+	{
+
+	}
+
+	template<typename T>
+	void add_to_sequence(std::vector<T> &container, const T& value)
+	{
+		container.emplace_back(value);
+	}
+}
+
+template<class T, class ConversionFunc>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, const std::vector<T> &previous_sequence, 
+	ConversionFunc func, hades::unique_id mod)
+{
+	//test that func can be used to convert string into T
+	if constexpr (!std::is_null_pointer_v<ConversionFunc>)
+		static_assert(std::is_constructible< std::function < T(hades::string) >, ConversionFunc >::value,
+			"Conversion func must be a function taking hades::string and returning typename T, (hades::string s)->T");
+
 	auto seq = node[property_name];
 
-	if(seq.IsDefined())
+	if (!seq.IsDefined())
+		return previous_sequence;
+
+	std::vector<T> output{ previous_sequence };
+
+	using namespace std::string_view_literals;
+
+	if (seq.IsScalar())
 	{
-        if (seq.IsSequence())
-        {
-            for (const auto &i : seq)
-                output.push_back(i.as<T>());
-        }
-        else if (seq.IsScalar())
-        {
-            output.push_back(seq.as<T>(T()));
-        }
-    }
+		const auto str{ seq.as<hades::string>() };
+
+		if (str == "="sv)
+			output.clear();
+		else
+			add_to_sequence(output, convert_if<T>(seq, func));
+	}
+	else if (seq.IsSequence())
+	{
+		enum class seq_mode {ADD, REMOVE};
+
+		seq_mode mode{ seq_mode::ADD };
+
+		for (const auto &i : seq)
+		{
+			const auto str{ i.as<hades::string>() };
+
+			if (str == "+"sv)
+				mode = seq_mode::ADD;
+			else if (str == "-"sv)
+				mode = seq_mode::REMOVE;
+			else if (str == "="sv)
+			{
+				mode = seq_mode::ADD;
+				output.clear();
+			}
+			else
+			{
+				if (mode == seq_mode::ADD)
+					add_to_sequence(output, convert_if<T>(i, func));
+				else if (mode == seq_mode::REMOVE)
+					remove_from_sequence(output, convert_if<T>(i, func));
+				else
+					assert(false); // ERROR: a new sequence mode has been added and not accounted for?
+			}
+		}
+	}
+	else
+	{
+		yaml_error(resource_type, resource_name, property_name, "sequence", mod, false);
+	}
 
 	return output;
 }

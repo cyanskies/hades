@@ -116,12 +116,13 @@ namespace hades
 	}
 }
 
+//TODO: move all of these into a yaml_parser header and hades namespace.
 template<class T, class Iter>
 std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager*);
 
 //TODO: bool yaml_is_map
 bool yaml_error(hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::types::string requested_type, hades::unique_id mod, bool test);
+	hades::types::string property_name, hades::types::string requested_type, hades::unique_id mod, bool test = false);
 
 template<class T>
 T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
@@ -140,12 +141,25 @@ hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resou
 
 //TODO:
 
+// value: [elm1, elm2] //same as '+' below
 // value: [+, elm1, elm2] // to add to stored sequence
 // value: [=, elm1, elm2] // to replace seqence
 // value: [-, elm3, + elm1, elm2] // remove one element by name, then add two more
 template<class T>
 std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
 	hades::types::string property_name, hades::unique_id mod = hades::unique_id::zero);
+
+template<class T, class ConversionFunc>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, ConversionFunc func, hades::unique_id mod = hades::unique_id::zero);
+
+template<class T>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, const std::vector<T> &previous_sequence, hades::unique_id mod = hades::unique_id::zero);
+
+template<class T, class ConversionFunc>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
+	hades::types::string property_name, const std::vector<T> &previous_sequence, ConversionFunc func, hades::unique_id mod = hades::unique_id::zero);
 
 #include "detail/data_system.inl"
 

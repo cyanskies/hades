@@ -101,13 +101,14 @@ namespace hades {
 		{
 			const auto custom_path = hades::user_custom_file_directory();
 
+			//TODO: make another resource stream constructor,
+			//so that we can do this without throwing unless there is actually an error
 			try
 			{
 				return ResourceStream(custom_path + to_string(modPath), fileName);
 			}
-			catch (file_exception&)
+			catch (const file_exception&)
 			{
-
 				#ifndef NDEBUG
 					return ResourceStream("../../game/" + to_string(modPath), fileName);
 				#else

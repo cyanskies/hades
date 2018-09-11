@@ -418,9 +418,11 @@ namespace objects
 			//		systems: system_id or [system_id, ...]
 			//		client-systems : system_id or [system_id, ...] // aka. render system
 
-			constexpr auto resource_type = "objects";
+			using namespace std::string_view_literals;
 
-			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
+			constexpr auto resource_type = "objects"sv;
+
+			if (!yaml_error(resource_type, "n/a"sv, "n/a"sv, "map"sv, mod, node.IsMap()))
 				return;
 
 			for (auto n : node)
@@ -446,7 +448,7 @@ namespace objects
 				if (obj->editor_icon)
 					icon_id = obj->editor_icon->id;
 
-				icon_id = yaml_get_uid(v, resource_type, name, "editor-icon", mod, icon_id);
+				icon_id = yaml_get_uid(v, resource_type, name, "editor-icon"sv, mod, icon_id);
 
 				if (icon_id != hades::unique_id::zero)
 					obj->editor_icon = data->get<hades::resources::animation>(icon_id);
@@ -454,7 +456,7 @@ namespace objects
 				//=========================
 				//get the animation list used for the editor
 				//=========================
-				const auto anim_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "editor-anim", mod);
+				const auto anim_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "editor-anim"sv, mod);
 				
 				const auto anims = convert_string_to_resource<hades::resources::animation>(std::begin(anim_list_ids), std::end(anim_list_ids), data);
 				std::move(std::begin(anims), std::end(anims), std::back_inserter(obj->editor_anims));
@@ -466,7 +468,7 @@ namespace objects
 				//get the base objects
 				//===============================
 
-				const auto base_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "base", mod);
+				const auto base_list_ids = yaml_get_sequence<hades::types::string>(v, resource_type, name, "base"sv, mod);
 				const auto base = convert_string_to_resource<object>(std::begin(base_list_ids), std::end(base_list_ids), data);
 				std::copy(std::begin(base), std::end(base), std::back_inserter(obj->base));
 
@@ -478,7 +480,7 @@ namespace objects
 				//=================
 
 				const auto curvesNode = v["curves"];
-				if (yaml_error(resource_type, name, "curves", "map", mod, node.IsMap()))
+				if (yaml_error(resource_type, name, "curves"sv, "map"sv, mod, node.IsMap()))
 				{
 					for (auto c : curvesNode)
 					{
@@ -497,15 +499,25 @@ namespace objects
 							*target = curve;
 					}
 				}
-				
-				//TODO:
+
 				//=================
 				//get the systems
 				//=================
+				using system = hades::resources::system;
+				obj->systems = yaml_get_sequence<const system*>(v, resource_type, name, "systems"sv, obj->systems, [&data, mod](const auto &&s)->system* {
+					const auto id = hades::data::make_uid(s);
+					return hades::data::FindOrCreate<system>(id, mod, data);
+				}, mod);
 
 				//=================
 				//get the client systems
 				//=================
+
+				using client_system = hades::resources::render_system;
+				obj->render_systems = yaml_get_sequence<const client_system*>(v, resource_type, name, "client-systems"sv, obj->render_systems, [&data, mod](const auto &&s)->client_system* {
+					const auto id = hades::data::make_uid(s);
+					return hades::data::FindOrCreate<client_system>(id, mod, data);
+				}, mod);
 			}
 		}
 	}

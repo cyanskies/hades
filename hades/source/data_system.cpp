@@ -185,7 +185,7 @@ namespace hades
 
 		unique_id data_system::get_uid(std::string_view name) const
 		{
-			if (name.empty)
+			if (name.empty())
 				return unique_id::zero;
 
 			auto id = _ids.find(types::string(name));

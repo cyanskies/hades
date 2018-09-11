@@ -92,7 +92,7 @@ namespace
 	T convert_if(const YAML::Node &n, ConversionFunction convert, T default_value = T{})
 	{
 		if constexpr (!std::is_null_pointer_v<ConversionFunction>)
-			return convert(n.as<hades::string>(default_value));
+			return convert(n.as<hades::string>());
 		else
 			return n.as<T>(default_value);
 	}
@@ -212,7 +212,7 @@ std::vector<T> yaml_get_sequence(const YAML::Node& node, std::string_view resour
 	}
 	else
 	{
-		yaml_error(resource_type, resource_name, property_name, "sequence", mod, false);
+		yaml_error(resource_type, resource_name, property_name, "sequence"sv, mod, false);
 	}
 
 	return output;

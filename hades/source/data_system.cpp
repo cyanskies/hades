@@ -185,6 +185,9 @@ namespace hades
 
 		unique_id data_system::get_uid(std::string_view name) const
 		{
+			if (name.empty)
+				return unique_id::zero;
+
 			auto id = _ids.find(types::string(name));
 
 			if (id == std::end(_ids))
@@ -195,6 +198,9 @@ namespace hades
 
 		unique_id data_system::get_uid(std::string_view name)
 		{
+			if (name.empty())
+				return unique_id::zero;
+
 			return _ids[types::string(name)];
 		}
 
@@ -322,10 +328,9 @@ namespace hades
 
 using namespace hades;
 
-//posts error message if the yaml node is the wrong type
-//TODO: string view
-bool yaml_error(types::string resource_type, types::string resource_name,
-	types::string property_name, types::string requested_type, unique_id mod, bool test)
+//posts error message if the test fails, yaml node is the wrong type
+bool yaml_error(std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, std::string_view requested_type, unique_id mod, bool test)
 {
 	if (!test)
 	{
@@ -336,24 +341,19 @@ bool yaml_error(types::string resource_type, types::string resource_name,
 			auto mod_ptr = data::get<resources::mod>(mod);
 			message += ", in mod: "s + mod_ptr->name;
 		}
-		message += ", type: "s + resource_type + ", name: "s
-			+ resource_name + ", for property: "s + property_name + ". value must be "s + requested_type;
+		message += ", type: "s + hades::to_string(resource_type)
+			+ ", name: "s + hades::to_string(resource_name)
+			+ ", for property: "s + hades::to_string(property_name)
+			+ ". value must be "s + hades::to_string(requested_type);
 		LOGERROR(message);
 	}
 
 	return test;
 }
 
-hades::unique_id yaml_get_uid(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::unique_id mod, hades::unique_id default_value)
+hades::unique_id yaml_get_uid(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, hades::unique_id mod, hades::unique_id default_value)
 {
-	auto value_node = node[property_name];
-	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))
-	{
-		auto str = value_node.as<hades::types::string>();
-		if (!str.empty())
-			return hades::data::make_uid(str);
-	}
-
-	return default_value;
+	return yaml_get_scalar(node, resource_type, resource_name, property_name, mod,
+		[](const auto &&s) { return hades::data::make_uid(s); }, default_value);
 }

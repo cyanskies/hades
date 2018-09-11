@@ -86,49 +86,59 @@ std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::d
 	return objs;
 }
 
-template<class T>
-T yaml_get_scalar(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::unique_id mod, T default_value)
+namespace
 {
-	auto value_node = node[property_name];
+	template<typename T, typename ConversionFunction>
+	T convert_if(const YAML::Node &n, ConversionFunction convert, T default_value = T{})
+	{
+		if constexpr (!std::is_null_pointer_v<ConversionFunction>)
+			return convert(n.as<hades::string>(default_value));
+		else
+			return n.as<T>(default_value);
+	}
+}
+
+template<class T, typename ConversionFunc>
+T yaml_get_scalar(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, hades::unique_id mod, ConversionFunc convert, T default_value)
+{
+	auto value_node = node[hades::to_string(property_name)];
 	if (value_node.IsDefined() && yaml_error(resource_type, resource_name, property_name, "scalar", mod, value_node.IsScalar()))
-		return value_node.as<T>(default_value);
+		return convert_if(value_node, convert, default_value);
 	else
 		return default_value;
 }
 
 template<class T>
-std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, hades::unique_id mod)
+T yaml_get_scalar(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, hades::unique_id mod, T default_value)
+{
+	return yaml_get_scalar(node, resource_type, resource_name, property_name, mod, nullptr, default_value);
+}
+
+template<class T>
+std::vector<T> yaml_get_sequence(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, hades::unique_id mod)
 {
 	return yaml_get_sequence(node, resource_type, resource_name, property_name, std::vector<T>{}, mod);
 }
 
 template<class T, class ConversionFunc>
-std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, ConversionFunc func, hades::unique_id mod)
+std::vector<T> yaml_get_sequence(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, ConversionFunc func, hades::unique_id mod)
 {
 	return yaml_get_sequence(node, resource_type, resource_name, property_name, std::vector<T>{}, func, mod);
 }
 
 template<class T>
-std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, const std::vector<T> &previous_sequence, hades::unique_id mod)
+std::vector<T> yaml_get_sequence(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, const std::vector<T> &previous_sequence, hades::unique_id mod)
 {
 	return yaml_get_sequence(node, resource_type, resource_name, property_name, previous_sequence, nullptr, mod);
 }
 
 namespace
 {
-	template<typename T, typename ConversionFunction>
-	T convert_if(const YAML::Node &n, ConversionFunction convert)
-	{
-		if constexpr (!std::is_null_pointer_v<ConversionFunction>)
-			return convert(n.as<hades::string>());
-		else
-			return n.as<T>();
-	}
-
 	template<typename T>
 	void remove_from_sequence(std::vector<T> &container, const T& value)
 	{
@@ -143,8 +153,8 @@ namespace
 }
 
 template<class T, class ConversionFunc>
-std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string resource_type, hades::types::string resource_name,
-	hades::types::string property_name, const std::vector<T> &previous_sequence, 
+std::vector<T> yaml_get_sequence(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
+	std::string_view property_name, const std::vector<T> &previous_sequence, 
 	ConversionFunc func, hades::unique_id mod)
 {
 	//test that func can be used to convert string into T
@@ -152,7 +162,7 @@ std::vector<T> yaml_get_sequence(const YAML::Node& node, hades::types::string re
 		static_assert(std::is_constructible< std::function < T(hades::string) >, ConversionFunc >::value,
 			"Conversion func must be a function taking hades::string and returning typename T, (hades::string s)->T");
 
-	auto seq = node[property_name];
+	auto seq = node[hades::to_string(property_name)];
 
 	if (!seq.IsDefined())
 		return previous_sequence;

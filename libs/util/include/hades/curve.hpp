@@ -112,6 +112,9 @@ namespace hades {
 			if (_type == curve_type::pulse)
 				throw curve_error("Don't use curve::get() for a pulse curve. Use get* functions instead.");
 
+			if (_data.empty())
+				throw curve_error("Tried to call get() on an empty curve");
+
 			//if we're before the start of the data or after the end
 			// then just return the closest keyframe
 			auto last = _data.end()--;
@@ -188,6 +191,11 @@ namespace hades {
 
 		using DataType = std::set< frame_t >;
 		using const_iterator = typename DataType::const_iterator;
+
+		bool empty() const
+		{
+			return _data.empty();
+		}
 
 		const_iterator begin() const
 		{

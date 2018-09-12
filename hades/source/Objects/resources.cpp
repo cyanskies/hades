@@ -504,7 +504,7 @@ namespace objects
 				//get the systems
 				//=================
 				using system = hades::resources::system;
-				obj->systems = yaml_get_sequence<const system*>(v, resource_type, name, "systems"sv, obj->systems, [&data, mod](const auto &&s)->system* {
+				obj->systems = yaml_get_sequence<const system*>(v, resource_type, name, "systems"sv, obj->systems, [&data, mod](const hades::string &s)->system* {
 					const auto id = hades::data::make_uid(s);
 					return hades::data::FindOrCreate<system>(id, mod, data);
 				}, mod);
@@ -514,7 +514,7 @@ namespace objects
 				//=================
 
 				using client_system = hades::resources::render_system;
-				obj->render_systems = yaml_get_sequence<const client_system*>(v, resource_type, name, "client-systems"sv, obj->render_systems, [&data, mod](const auto &&s)->client_system* {
+				obj->render_systems = yaml_get_sequence<const client_system*>(v, resource_type, name, "client-systems"sv, obj->render_systems, [&data, mod](const hades::string &s)->client_system* {
 					const auto id = hades::data::make_uid(s);
 					return hades::data::FindOrCreate<client_system>(id, mod, data);
 				}, mod);

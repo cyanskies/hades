@@ -10,7 +10,7 @@ namespace hades
 {
 	GameInstance::GameInstance(level_save sv) : _input(curve_type::step)
 	{
-
+		//TODO: load save
 	}
 
 	void GameInstance::tick(sf::Time dt)

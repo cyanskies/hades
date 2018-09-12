@@ -104,7 +104,7 @@ namespace hades
 
 			auto &attch = attach_list[sys_index];
 
-			auto ent_list = attch.get(sf::Time{});
+			auto ent_list = attch.empty() ? resources::curve_types::vector_int{} : attch.get(sf::Time{});
 
 			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
 			{

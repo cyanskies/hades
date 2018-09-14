@@ -1,10 +1,15 @@
 #include "Hades/GameInterface.hpp"
 
-#include "Hades/data.hpp"
+#include "hades/data.hpp"
+#include "Hades/level.hpp"
 #include "Hades/systems.hpp"
 
 namespace hades 
 {
+	GameInterface::GameInterface(const level_save &sv) : _curves(sv.curves)
+	{
+	}
+
 	EntityId GameInterface::createEntity()
 	{
 		return ++_next;

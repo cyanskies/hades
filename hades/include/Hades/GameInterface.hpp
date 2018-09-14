@@ -55,6 +55,9 @@ namespace hades
 	};
 
 	using property_map = any_map<unique_id>;
+	using name_curve_t = curve<sf::Time, std::map<types::string, EntityId>>;
+
+	struct level_save;
 
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
@@ -63,6 +66,8 @@ namespace hades
 	public:
 		virtual ~GameInterface() {}
 
+		GameInterface(const level_save&);
+
 		//creates an entity with no curves or systems attached to it
 		EntityId createEntity();
 		EntityId getEntityId(const types::string &name, sf::Time t) const;
@@ -70,7 +75,7 @@ namespace hades
 		curve_data &getCurves();
 		const curve_data &getCurves() const;
 
-		const property_map &getProperties() const;
+		//const property_map &getProperties() const;
 
 		//attach/detach entities from systems
 		void attachSystem(EntityId, unique_id, sf::Time t);
@@ -82,8 +87,7 @@ namespace hades
 
 		void install_system(unique_id sys);
 
-		using entity_name_curve_type = curve<sf::Time, std::map<types::string, EntityId>>;
-		shared_guard<entity_name_curve_type> _entity_names = entity_name_curve_type(curve_type::step);
+		shared_guard<name_curve_t> _entity_names = name_curve_t{ curve_type::step };
 		shared_guard<std::vector<GameSystem>> _systems;
 
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min() + 1;
@@ -91,7 +95,7 @@ namespace hades
 		//CURVE VARIABLES
 		curve_data _curves;
 		//shared properties
-		property_map _properties;
+		//property_map _properties;
 	};
 
 	class system_already_installed : public std::logic_error

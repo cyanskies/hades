@@ -18,7 +18,6 @@ namespace hades
 	//represents the logic side of an individual level or game
 	//TODO:
 	// support saving
-	// support loading
 	class GameInstance : public GameInterface
 	{
 	public:
@@ -44,7 +43,7 @@ namespace hades
 
 	private:
 		//the games starting time, is always 0
-		const sf::Time _startTime = sf::Time();
+		const sf::Time _startTime = sf::Time{};
 		//the current time, this is the sum of all dt from the game ticks
 		sf::Time _currentTime = _startTime;
 

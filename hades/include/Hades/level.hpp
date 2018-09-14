@@ -52,7 +52,7 @@ namespace hades
 		//entity data
 		curve_data curves;
 		EntityId next_id = hades::NO_ENTITY;
-		std::vector<std::tuple<types::string, EntityId>> names;
+		name_curve_t names{ curve_type::step };
 		
 		//list of systems
 		using system_list = std::vector<const resources::system*>;

@@ -8,9 +8,9 @@
 
 namespace hades 
 {
-	GameInstance::GameInstance(level_save sv) : _input(curve_type::step)
+	GameInstance::GameInstance(level_save sv) : GameInterface(sv), _input(curve_type::step)
 	{
-		//TODO: load save
+		//TODO: store input history in sv file and restore it on load
 	}
 
 	void GameInstance::tick(sf::Time dt)

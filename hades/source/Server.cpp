@@ -8,7 +8,7 @@ namespace hades
 	class local_server_level : public server_level
 	{
 	public:
-		local_server_level(level_save sv, local_server_hub &server) : _game(sv), _server(server)
+		local_server_level(level_save sv, local_server_hub *server) : _game(sv), _server(server)
 		{}
 
 		void update() override
@@ -37,14 +37,14 @@ namespace hades
 	private:
 		GameInstance _game;
 		
-		local_server_hub &_server; 
+		local_server_hub *_server; 
 		//entities
 	};
 
 	class local_server_hub : public server_hub
 	{
 	public:
-		local_server_hub(level_save lvl) : _level{ lvl, *this }, _game_instance{lvl}
+		local_server_hub(level_save lvl) : _level{ lvl, this }//, _game_instance{lvl}
 		{}
 
 		void update(sf::Time dt) override
@@ -55,7 +55,7 @@ namespace hades
 		void tick(sf::Time dt)
 		{
 			//tick the mission contruct
-			_game_instance.tick(dt);
+			//_game_instance.tick(dt);
 
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
@@ -95,7 +95,7 @@ namespace hades
 
 	private:
 		//mission game instance
-		GameInstance _game_instance;
+		//GameInstance _game_instance;
 		//players
 		
 		//levels

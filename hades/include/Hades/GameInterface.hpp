@@ -82,9 +82,8 @@ namespace hades
 		void detachSystem(EntityId, unique_id, sf::Time t);
 
 	protected:
-		//
+		//TODO: do these need to remain?
 		GameSystem* FindSystem(unique_id);
-
 		void install_system(unique_id sys);
 
 		shared_guard<name_curve_t> _entity_names = name_curve_t{ curve_type::step };

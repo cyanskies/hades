@@ -122,10 +122,13 @@ namespace hades
 		{
 			assert(o.id != NO_ENTITY);
 
-			//TODO: fixme
 			//record entity name if present
-			//if (!o.name.empty())
-			//	sv.names.push_back({ o.name, o.id });
+			if (!o.name.empty())
+			{
+				auto names = sv.names.get(sf::Time{});
+				names.emplace(o.name, o.id);
+				sv.names.set(sf::Time{}, names);
+			}
 
 			//add curves from parents
 			if (o.obj_type)

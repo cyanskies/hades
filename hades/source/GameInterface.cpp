@@ -6,8 +6,20 @@
 
 namespace hades 
 {
-	GameInterface::GameInterface(const level_save &sv) : _curves(sv.curves)
+	GameInterface::GameInterface(const level_save &sv) : _entity_names(sv.names),
+		_next(sv.next_id), _curves(sv.curves)
 	{
+		// NOTE: this is checked on release when reading savefiles 
+		//       and converting levels into saves
+		assert(sv.systems.size() == sv.systems_attached.size()); 
+
+		std::vector<GameSystem> systems;
+		auto attach_list = sv.systems_attached;
+
+		for (std::size_t i = 0; i < sv.systems.size(); ++i)
+			systems.emplace_back(sv.systems[i], std::move(attach_list[i]));
+
+		_systems = std::move(systems);
 	}
 
 	EntityId GameInterface::createEntity()

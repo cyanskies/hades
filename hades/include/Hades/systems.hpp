@@ -93,10 +93,24 @@ namespace hades
 	//systems work by creating jobs and passing along the data they will use.
 	struct GameSystem
 	{
+		using name_list = curve<sf::Time, std::vector<EntityId>>;
+
+		GameSystem(const resources::system* s) : system(s)
+		{}
+
+		GameSystem(const resources::system* s, name_list nl) : system(s), attached_entities(std::move(nl))
+		{}
+
+		GameSystem(const GameSystem&) = default;
+		GameSystem(GameSystem&&) = default;
+
+		GameSystem &operator=(const GameSystem&) = default;
+		GameSystem &operator=(GameSystem&&) = default;
+
 		//this holds the systems, name and id, and the function that the system uses.
-		const resources::system* system;
+		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
-		shared_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
+		shared_guard<name_list> attached_entities = name_list(curve_type::step);
 	};
 
 	//program provided systems should be attatched to the renderer or 

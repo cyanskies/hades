@@ -17,6 +17,8 @@ namespace hades {
 		shared_guard(const shared_guard& other) : value_guard(other) {}
 		void operator=(const shared_guard&) = delete;
 
+		using value_guard<value, mutex>::operator=;
+
 		value get() const
 		{
 			std::shared_lock<mutex>(_mutex);

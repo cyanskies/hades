@@ -20,8 +20,13 @@ namespace hades {
 	template<typename Time, typename Data>
 	struct keyframe
 	{
-		keyframe(Time at) : t(at) {}
-		keyframe(Time at, Data data) : t(at), value(data) {}
+		keyframe(Time at) 
+			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_constructible_v<Data>)
+			: t(at) {}
+
+		keyframe(Time at, Data data)
+			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_copy_constructible_v<Data>)
+			: t(at), value(data) {}
 
 		Time t;
 		Data value;
@@ -89,8 +94,53 @@ namespace hades {
 	class curve final
 	{
 	public:
-		explicit curve(curve_type type) : _type(type)
+		using frame_t = keyframe<Time, Data>;
+		using DataType = std::set<frame_t>;
+
+		explicit curve(curve_type type) 
+			noexcept(std::is_nothrow_copy_constructible_v<curve_type> && std::is_nothrow_constructible_v<DataType>)
+			: _type(type)
 		{}
+
+		static constexpr auto is_curve_nothrow_copy_assignable_v = std::conjunction<
+			std::is_nothrow_copy_constructible<curve_type>,
+			std::is_nothrow_constructible<typename DataType>,
+			std::is_nothrow_copy_assignable<typename DataType>,
+			std::is_nothrow_swappable<curve>>::value;
+
+		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
+			std::is_nothrow_swappable<typename DataType>,
+			std::is_nothrow_swappable<curve_type>>::value;
+
+		curve(const curve &other)
+			noexcept(is_curve_nothrow_copy_assignable_v)
+		{
+			*this = other;
+		}
+
+		curve(curve &&other)
+			noexcept(is_curve_nothrow_move_assignable_v)
+		{
+			*this = std::move(other);
+		}
+
+		curve &operator=(const curve &other)
+			noexcept(is_curve_nothrow_copy_assignable_v)
+		{
+			curve<Time, Data> c{ other._type };
+			c._data = other._data;
+
+			std::swap(*this, c);
+			return *this;
+		}
+
+		curve &operator=(curve &&other)
+			noexcept(is_curve_nothrow_move_assignable_v)
+		{
+			std::swap(_data, other._data);
+			std::swap(_type, other._type);
+			return *this;
+		}
 
 		//adds a keyframe
 		//when you add a keyframe, all keyframes after it are erased
@@ -99,7 +149,7 @@ namespace hades {
 			_insertFrame(at, value, true);
 		}
 
-		//inserting a keyframe doesn't remove other frames, but may replace a frame at the same time as the new frame.
+		//inserting a keyframe doesn't remove other frames, but may still replace a frame at the same time as the new frame.
 		void insert(Time at, Data value)
 		{
 			_insertFrame(at, value);
@@ -154,7 +204,6 @@ namespace hades {
 		}
 
 		//These are the only valid ways to get data from a Pulse
-		using frame_t = keyframe<Time, Data>;
 		//returns the closest frame before at
 		frame_t getPrevious(Time at) const
 		{
@@ -189,26 +238,25 @@ namespace hades {
 			return output;
 		}
 
-		using DataType = std::set< frame_t >;
 		using const_iterator = typename DataType::const_iterator;
 
-		bool empty() const
+		[[nodiscard]] bool empty() const noexcept
 		{
 			return _data.empty();
 		}
 
-		const_iterator begin() const
+		const_iterator begin() const noexcept
 		{
 			return _data.begin();
 		}
 
-		const_iterator end() const
+		const_iterator end() const noexcept
 		{
 			return _data.end();
 		}
 
 		//For converting to the usable Curve Types
-		curve_type type() { return _type; }
+		curve_type type() const noexcept { return _type; }
 
 		template<typename T, typename D>
 		friend bool operator==(const curve<T, D> &lhs, const curve<T, D> &rhs);

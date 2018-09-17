@@ -14,14 +14,19 @@ namespace hades {
 		using value_type = value;
 
 		value_guard() = default;
-		value_guard(value desired) : _value(desired) {}
+
+		value_guard(value desired) 
+			noexcept(std::is_nothrow_copy_constructible_v<value>)
+			: _value(desired) 
+		{}
+
 		value_guard(const value_guard& other) : _value(other.load()) {}
 		~value_guard() = default;
 
 		void operator=(value desired)
 		{
 			std::lock_guard<mutex> lk(_mutex);
-			_value = desired;
+			_value = std::move(desired);
 		}
 
 		void operator=(const value_guard&) = delete;
@@ -61,15 +66,21 @@ namespace hades {
 			return std::make_tuple(success, std::move(lk));
 		}
 		//releases the lock that is already held, without commiting the changes
-		void exchange_release(exchange_token &&token) const {}
+		void exchange_release(exchange_token &&token) const
+		{
+			assert(token.owns_lock());
+			assert(token.mutex == _mutex);
+		}
 		//releases the lock after exchanging the value
 		void exchange_resolve(value desired, exchange_token &&token)
 		{
+			assert(token.owns_lock());
+			assert(token.mutex == _mutex);
 			//TODO: assert that this is the right lock
 			_value = desired;
 		}
 
-		constexpr bool is_lock_free() const { return false; }
+		constexpr bool is_lock_free() const noexcept { return false; }
 		static constexpr bool is_always_lock_free = false;
 
 	protected:

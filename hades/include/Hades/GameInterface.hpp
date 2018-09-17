@@ -83,11 +83,12 @@ namespace hades
 
 	protected:
 		//TODO: do these need to remain?
-		GameSystem* FindSystem(unique_id);
-		void install_system(unique_id sys);
+		GameSystem& FindSystem(unique_id);
+		GameSystem& install_system(unique_id sys);
 
 		shared_guard<name_curve_t> _entity_names = name_curve_t{ curve_type::step };
-		shared_guard<std::vector<GameSystem>> _systems;
+		mutable std::mutex _system_list_mut;
+		std::vector<GameSystem> _systems;
 
 		std::atomic<EntityId> _next = std::numeric_limits<EntityId>::min() + 1;
 	private:

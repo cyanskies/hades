@@ -15,17 +15,19 @@ namespace hades
 
 	void GameInstance::tick(sf::Time dt)
 	{
+		const auto systems = [this] {
+			const auto lock = std::lock_guard{ _system_list_mut };
+			return _systems;
+		} ();
+
+		//NOTE: frame multithreading begins
+		// anything that isn't atomic or protected by a lock
+		// must be read only
+
 		//create jobs for all systems to work on their entities
-		for(auto &s : _systems.get())
+		for(auto &s : systems)
 		{
 			assert(s.system);
-
-			//TODO: remove this, is the system is null the input is invalid
-			if (!s.system)
-			{
-				//this is an unrecoverable error
-				throw system_null("Tried to run job from system, but the systems pointer was null");
-			}
 
 			//create the job data, with a pointer to the game interface
 			auto job_data = std::make_unique<system_job_data>();
@@ -51,6 +53,9 @@ namespace hades
 
 		assert(parallel_jobs::ready());
 */
+
+		//NOTE: frame multithreading ends
+
 		//advance the game clock
 		//this is the only time the clock can be changed
 		_currentTime += dt;
@@ -133,7 +138,7 @@ namespace hades
 			updated_names.insert(t, name_map);
 
 			//replace the shared name list with the updated one
-			if (_entity_names.compare_exhange(ent_names, updated_names))
+			if (_entity_names.compare_exchange(ent_names, updated_names))
 				break; //if we were successful, then break, otherwise run the loop again.
 		}
 	}

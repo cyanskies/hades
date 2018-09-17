@@ -42,12 +42,12 @@ namespace hades {
 			return load();
 		}
 
-		bool compare_exhange(const value &expected, value desired)
+		bool compare_exchange(const value &expected, value desired)
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			if (_value == expected)
 			{
-				_value = desired;
+				_value = std::move(desired);
 				return true;
 			}
 

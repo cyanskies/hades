@@ -167,7 +167,7 @@ namespace hades {
 
 			//if we're before the start of the data or after the end
 			// then just return the closest keyframe
-			auto last = _data.end()--;
+			const auto last = --_data.end();
 
 			if (at < *_data.begin())
 				return _data.begin()->value;
@@ -183,16 +183,16 @@ namespace hades {
 			}
 			else if (_type == curve_type::linear)
 			{
-				auto d = _getRange(at);
+				const auto d = _getRange(at);
 
-				auto interp = (at - d.first->t) / (d.second->t - d.first->t);
+				const auto interp = (at - d.first->t) / (d.second->t - d.first->t);
 
 				using hades::lerp;
 				return lerp(d.first->value, d.second->value, interp);
 			}
 			else if (_type == curve_type::step)
 			{
-				auto d = _getRange(at);
+				const auto d = _getRange(at);
 
 				if (d.second->t <= at)
 					return d.second->value;

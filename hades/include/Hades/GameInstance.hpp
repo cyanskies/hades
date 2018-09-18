@@ -6,6 +6,7 @@
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/GameInterface.hpp"
 #include "Hades/level.hpp"
+#include "hades/parallel_jobs.hpp"
 #include "Hades/systems.hpp"
 
 namespace hades
@@ -53,6 +54,8 @@ namespace hades
 		curve<sf::Time, input_system::action_set> _input;
 		//each tick will generate events that are handled at the end of that tick
 		//events created by other events will be handled at the end of the next tick
+
+		job_system _jobs;
 	};
 }
 

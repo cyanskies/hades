@@ -15,6 +15,8 @@ namespace hades
 
 	void GameInstance::tick(sf::Time dt)
 	{
+		//take a copy of the current active systems and entity attachments, 
+		//changes to this wont take effect untill the next tick
 		const auto systems = [this] {
 			const auto lock = std::lock_guard{ _system_list_mut };
 			return _systems;
@@ -24,35 +26,32 @@ namespace hades
 		// anything that isn't atomic or protected by a lock
 		// must be read only
 
+		const auto parent_job = _jobs.create();
+
 		//create jobs for all systems to work on their entities
-		for(auto &s : systems)
+		for(const auto &s : systems)
 		{
 			assert(s.system);
+			const auto entities = s.attached_entities.get().get(_currentTime);
 
-			//create the job data, with a pointer to the game interface
-			auto job_data = std::make_unique<system_job_data>();
-			//job_data->entities = s.attached_entities.load().get(_currentTime);
-			job_data->level_data = this;
-			job_data->current_time = _currentTime;
-			job_data->dt = dt;
-			//job_data->actions = &_input;
+			for (const auto ent : entities)
+			{
+				const auto j = _jobs.create_child(parent_job, s.system->tick, system_job_data{
+					ent,
+					s.system->id,
+					this,
+					nullptr, //mission data //TODO:
+					_currentTime,
+					dt
+				});
 
-			//create a job function that will call the systems job on each attached entity
-			//*iter = parallel_jobs::create_child(parent_job, s.system->value, std::move(job_data));
-			//++iter;
+				_jobs.run(j);
+			}
 		}
 
-		//parallel_jobs::run(parent_job);
+		_jobs.wait(parent_job);
 
-		//the jobs must be started after they are all created,
-		//in case any systems try to add or remove entities from other systems
-		/*for (auto j : jobs)
-			parallel_jobs::run(j);
-
-		parallel_jobs::wait(parent_job);
-
-		assert(parallel_jobs::ready());
-*/
+		_jobs.clear();
 
 		//NOTE: frame multithreading ends
 

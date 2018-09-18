@@ -12,20 +12,35 @@ namespace hades
 		template<typename Func, typename JobData>
 		job_system::job_function create_job_invoker(job_system &j, Func f, JobData d)
 		{
-			if constexpr(std::is_constructible<std::function<bool(job_system&, JobData)>, Func >::value)
+			if constexpr(std::is_invocable_r_v<bool, Func, job_system&, JobData>)
 			{
-				return [j, f, d]()->bool {
+				//auto jj = std::ref(j);
+				return [j = std::ref(j), f, d]()->bool {
 					return std::invoke(f, j, d);
 				};
 			}
-			else if constexpr(std::is_constructible<std::function<bool(JobData)>, Func >::value)
-			{
+			else if constexpr (std::is_invocable_v<Func, job_system&, JobData>)
+			{ //correct parameters, but does't return bool
+				return [j = std::ref(j), f, d]()->bool {
+					std::invoke(f, j, d);
+					return true;
+				};
+			}
+			else if constexpr(std::is_invocable_r_v<bool, Func, JobData>)
+			{ 
 				return [f, d]()->bool {
 					return std::invoke(f, d);
 				};
 			}
+			else if constexpr (std::is_invocable_r_v<bool, Func, JobData>)
+			{ //correct parameters without the system reference, but doesn't return bool
+				return [f, d]()->bool {
+					std::invoke(f, d);
+					return true;
+				};
+			}
 			else
-				static_assert(always_false<Func, JobData>::value, "Function passed to job but accept JobData as parameter, or job_system& and JobData as parameters");
+				static_assert(always_false<Func, JobData>::value, "Function passed to job must accept JobData as parameter, or job_system& and JobData as parameters");
 		}
 	}
 
@@ -34,12 +49,9 @@ namespace hades
 		JobData data)
 	{
 		assert(func);
-
 		//create a new job and store it in the global jobstore
-		lock_t guard{ _jobs_mutex };
-		_jobs.emplace_back();
-		job* job_ptr = &_jobs.back();
-		job_ptr->function = detail::create_job_invoker(this, func, data);
+		auto job_ptr = create();
+		job_ptr->function = detail::create_job_invoker(*this, func, data);
 		return job_ptr;
 	}
 

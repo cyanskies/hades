@@ -26,6 +26,13 @@ namespace hades
 
 		struct job
 		{
+			job() = default;
+			job(const job&);
+			job(job&&) = default;
+
+			job& operator=(const job&);
+			job& operator=(job&&) = default;
+
 			job_function function;
 			job* parent_job = nullptr;
 			std::atomic<types::int32> unfinished_children = 1;
@@ -40,6 +47,7 @@ namespace hades
 
 		bool ready() const;
 
+		job* create();
 		template<typename Func, typename JobData>
 		job* create(Func, JobData);
 		template<typename Func, typename JobData>
@@ -81,7 +89,7 @@ namespace hades
 		worker_queue_list _worker_queues;
 		using worker_mutex_list = std::vector<std::mutex>;
 		mutable worker_mutex_list _worker_queues_mutex;
-		std::vector<job> _jobs;
+		std::vector<std::unique_ptr<job>> _jobs;
 		mutable std::mutex _jobs_mutex;
 		
 		std::condition_variable _condition;

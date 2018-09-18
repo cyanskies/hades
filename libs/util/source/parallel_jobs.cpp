@@ -16,7 +16,17 @@ namespace hades
 		constexpr auto t_main_thread_id = std::numeric_limits<thread_id>::max();
 	}
 
-	//
+	job_system::job::job(const job &other)
+		: function(other.function), parent_job(other.parent_job), unfinished_children(other.unfinished_children.load())
+	{}
+
+	job_system::job& job_system::job::operator=(const job &other)
+	{
+		job j{ other };
+		std::swap(*this, j);
+		return *this;
+	}
+
 	job_system::job_system() : job_system(-1)
 	{}
 
@@ -45,6 +55,13 @@ namespace hades
 		return _jobs.empty() && cv_lock.owns_lock();
 	}
 
+	job_system::job* job_system::create()
+	{
+		lock_t guard{ _jobs_mutex };
+		_jobs.emplace_back(std::make_unique<job>());
+		return &*_jobs.back();
+	}
+
 	void job_system::run(job_system::job* j)
 	{
 		const auto id = _thread_id();
@@ -57,7 +74,6 @@ namespace hades
 	void job_system::wait(job_system::job* job)
 	{
 		assert(job);
-		assert(ready());
 		_condition.notify_all();
 
 		while (!_is_finished(job))
@@ -72,7 +88,7 @@ namespace hades
 	void job_system::clear()
 	{
 		//the work should have already stopped when this is called.
-		assert(ready());
+		//assert(ready()); //TODO: need a way to check the threads have paused without checking the job list
 		//clear all the thread queues
 		for (std::size_t i = 0; i < _thread_count; ++i)
 		{
@@ -89,9 +105,11 @@ namespace hades
 	{
 		if (threads > 0)
 			_thread_count = threads - 1;
+		else if (std::thread::hardware_concurrency() == 0)
+			_thread_count = 0;
 		else
 			_thread_count = std::thread::hardware_concurrency() - 1;
-		
+
 		_thread_pool = thread_list{ _thread_count };
 		_worker_queues = worker_queue_list{ _thread_count + 1 };
 		_worker_queues_mutex = worker_mutex_list{ _thread_count + 1 };
@@ -199,6 +217,7 @@ namespace hades
 		//find the queue with the most jobs, and take half of them into our queue
 		//we know our queue must be empty
 
+		//TODO: this
 		for (std::size_t i = 0; i < _worker_queues.size(); ++i)
 			;
 

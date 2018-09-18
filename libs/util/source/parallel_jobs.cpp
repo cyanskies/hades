@@ -216,12 +216,44 @@ namespace hades
 	{
 		//find the queue with the most jobs, and take half of them into our queue
 		//we know our queue must be empty
+		std::size_t max = id, max_count = 0;
 
-		//TODO: this
-		for (std::size_t i = 0; i < _worker_queues.size(); ++i)
-			;
+		for (std::size_t i = 0; i < _thread_count; ++i)
+		{
+			if (i = id)
+				continue; //our thread is already empty
 
-		return nullptr;
+			const auto[queue, lock] = _get_queue(i);
+			std::ignore = lock;
+
+			if (queue->size() > max_count)
+				max = i;
+		}
+
+		if (max == id) // there aren't any jobs left to steal.
+			return nullptr;
+
+		auto[queue, lock] = _get_queue(max);
+		std::ignore = lock;
+
+		//split this queue in half
+		const auto distance = std::distance(std::begin(*queue), std::end(*queue));
+		const auto mid_point = std::begin(*queue) + distance / 2;
+
+		auto[my_queue, my_lock] = _get_queue(id);
+		std::ignore = my_lock;
+
+		const auto last_moved = std::move(std::begin(*queue), mid_point, std::end(*my_queue));
+
+		queue->erase(std::begin(*queue), last_moved);
+
+		if (my_queue->empty())
+			return nullptr;
+
+		auto j = my_queue->front();
+		my_queue->pop_front();
+
+		return j;
 	}
 
 	void job_system::_ready_wait(job *j)
@@ -244,11 +276,14 @@ namespace hades
 
 		if (j->function)
 		{
+			detail::t_current_job = j;
 			//if true, the job completed properly, if false, it wants another go later
 			if (j->function())
 				_finish(j);
 			else
 				run(j);//requeue the job
+
+			detail::t_current_job = nullptr;
 		}
 	}
 

@@ -12,6 +12,8 @@ namespace hades
 	{
 		using resources::system;
 
+		//TODO: constexpr if using std::is_invocable to allow for different return values and not using job_system
+
 		//assert that the Functions can be converted to the correct std::function type
 		static_assert(std::is_constructible<system::system_func, CreateFunc>::value,
 			"on_create must be a function object with the following definition: bool func(hades::job_system&, hades::system_job_data)");

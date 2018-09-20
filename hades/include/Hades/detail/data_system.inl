@@ -142,7 +142,7 @@ namespace
 	template<typename T>
 	void remove_from_sequence(std::vector<T> &container, const T& value)
 	{
-
+		//TODO:
 	}
 
 	template<typename T>

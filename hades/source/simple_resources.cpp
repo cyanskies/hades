@@ -280,6 +280,46 @@ namespace hades
 				return VariableType::ERROR;
 		}
 
+		curve_default_value parse_default_value(std::string_view resource_name, VariableType v, const YAML::Node& node)
+		{
+			if (!node["default_value"].IsDefined())
+				return curve_default_value{};
+
+			curve_default_value value{ true };
+			switch (v)
+			{
+			case INT:
+			{
+				const auto d = yaml_get_scalar<int32>(node, "curve", resource_name, "default_value", int32{});
+				value.value = d;
+			}break;
+			case FLOAT:
+			{
+				//TODO:
+			}break;
+			case BOOL:
+			{}break;
+			case STRING:
+			{}break;
+			case OBJECT_REF:
+			{}break;
+			case UNIQUE:
+			{}break;
+			case VECTOR_INT:
+			{}break;
+			case VECTOR_FLOAT:
+			{}break;
+			case VECTOR_OBJECT_REF:
+			{}break;
+			case VECTOR_UNIQUE:
+			{}break;
+			default:
+				value = curve_default_value{};
+			}
+
+			return value;
+		}
+
 		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
 		{
 			//curves:
@@ -347,6 +387,11 @@ namespace hades
 				auto save = curveInfo["save"];
 				if (save.IsDefined() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
 					c->save = save.as<bool>();
+
+				//TODO: trim
+				//TODO: default
+				c->default_value = parse_default_value(name, c->data_type, curveInfo);
+
 			}
 		}
 

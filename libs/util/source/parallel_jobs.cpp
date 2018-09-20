@@ -88,7 +88,7 @@ namespace hades
 	void job_system::clear()
 	{
 		//the work should have already stopped when this is called.
-		//assert(ready()); //TODO: need a way to check the threads have paused without checking the job list
+		assert(_threads_ready());
 		//clear all the thread queues
 		for (std::size_t i = 0; i < _thread_count; ++i)
 		{
@@ -290,5 +290,12 @@ namespace hades
 	job_system::thread_id job_system::_main_thread_id() const
 	{
 		return _thread_count;
+	}
+
+
+	bool job_system::_threads_ready() const
+	{
+		std::unique_lock<std::mutex> cv_lock(_condition_mutex, std::try_to_lock);
+		return cv_lock.owns_lock();
 	}
 }

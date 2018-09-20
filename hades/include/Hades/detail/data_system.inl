@@ -142,7 +142,7 @@ namespace
 	template<typename T>
 	void remove_from_sequence(std::vector<T> &container, const T& value)
 	{
-		//TODO:
+		container.erase(std::remove(std::begin(container), std::end(container), value), std::end(container));
 	}
 
 	template<typename T>

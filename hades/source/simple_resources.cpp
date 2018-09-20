@@ -285,34 +285,47 @@ namespace hades
 			if (!node["default_value"].IsDefined())
 				return curve_default_value{};
 
+			const auto convert_uid = [](const auto &&s) { return data::make_uid(s); };
+			
 			curve_default_value value{ true };
 			switch (v)
 			{
+			case OBJECT_REF:
+				[[fallthrough]];
 			case INT:
 			{
-				const auto d = yaml_get_scalar<int32>(node, "curve", resource_name, "default_value", int32{});
-				value.value = d;
+				value.value = yaml_get_scalar<int32>(node, "curve", resource_name, "default_value", int32{});
 			}break;
 			case FLOAT:
 			{
-				//TODO:
+				value.value = yaml_get_scalar<float>(node, "curve", resource_name, "default_value", float{});
 			}break;
 			case BOOL:
-			{}break;
+			{
+				value.value = yaml_get_scalar<bool>(node, "curve", resource_name, "default_value", bool{});
+			}break;
 			case STRING:
-			{}break;
-			case OBJECT_REF:
-			{}break;
+			{
+				value.value = yaml_get_scalar<types::string>(node, "curve", resource_name, "default_value", types::string{});
+			}break;
 			case UNIQUE:
-			{}break;
-			case VECTOR_INT:
-			{}break;
-			case VECTOR_FLOAT:
-			{}break;
+			{
+				value.value = yaml_get_scalar<unique_id>(node, "curve", resource_name, "default_value", unique_id::zero, convert_uid, unique_id::zero);
+			}break;
 			case VECTOR_OBJECT_REF:
-			{}break;
+				[[fallthrough]];
+			case VECTOR_INT:
+			{
+				value.value = yaml_get_sequence<int32>(node, "curve", resource_name, "default_value");
+			}break;
+			case VECTOR_FLOAT:
+			{
+				value.value = yaml_get_sequence<float>(node, "curve", resource_name, "default_value");
+			}break;
 			case VECTOR_UNIQUE:
-			{}break;
+			{
+				value.value = yaml_get_sequence<unique_id>(node, "curve", resource_name, "default_value", convert_uid);
+			}break;
 			default:
 				value = curve_default_value{};
 			}
@@ -328,8 +341,7 @@ namespace hades
 			//			value: default: int32 //determines the value type
 			//			sync: default: false //true if this should be syncronised to the client
 			//			save: default false //true if this should be saved when creating a save file
-			//	TODO:	trim: default false
-			//	TODO:	default: value, [value1, value2, value3, ...] etc
+			//			default: value, [value1, value2, value3, ...] etc
 
 			//these are loaded into the game instance before anything else
 			//curves cannot change type/value once they have been created,
@@ -382,16 +394,13 @@ namespace hades
 
 				auto sync = curveInfo["sync"];
 				if (sync.IsDefined() && yaml_error(resource_type, name, "sync", "scalar", mod, sync.IsScalar()))
-					c->sync = sync.as<bool>();
+					c->trim = c->sync = sync.as<bool>();
 
 				auto save = curveInfo["save"];
 				if (save.IsDefined() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
 					c->save = save.as<bool>();
 
-				//TODO: trim
-				//TODO: default
 				c->default_value = parse_default_value(name, c->data_type, curveInfo);
-
 			}
 		}
 

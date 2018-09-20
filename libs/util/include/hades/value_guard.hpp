@@ -76,7 +76,6 @@ namespace hades {
 		{
 			assert(token.owns_lock());
 			assert(token.mutex == _mutex);
-			//TODO: assert that this is the right lock
 			_value = desired;
 		}
 

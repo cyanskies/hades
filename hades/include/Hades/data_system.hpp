@@ -143,8 +143,6 @@ T yaml_get_scalar(const YAML::Node& node, std::string_view resource_type, std::s
 hades::unique_id yaml_get_uid(const YAML::Node& node, std::string_view resource_type, std::string_view resource_name,
 	std::string_view property_name, hades::unique_id mod = hades::unique_id::zero, hades::unique_id default_value = hades::unique_id::zero);
 
-//TODO:
-
 // value: [elm1, elm2] //same as '+' below
 // value: [+, elm1, elm2] // to add to stored sequence
 // value: [=, elm1, elm2] // to replace seqence

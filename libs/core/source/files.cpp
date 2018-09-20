@@ -32,7 +32,6 @@ namespace hades {
 
 		buffer as_raw(std::string_view modPath, std::string_view fileName)
 		{
-			//TODO: use inflate if needed(see probably_compressed)
 			auto stream = make_stream(modPath, fileName);
 			const auto size = stream.getSize();
 			assert(size >= 0 && size <= std::numeric_limits<buffer::size_type>::max());

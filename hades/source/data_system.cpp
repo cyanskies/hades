@@ -237,16 +237,24 @@ namespace hades
 
 				auto type = header.first.as<types::string>();
 				//if type is include, then open the file and pass it to parseyaml
+
 				if (type == "include")
 				{
+					const auto get_mod = [this](unique_id mod) {return get<resources::mod>(mod); };
+					const auto yaml_parser = [this](unique_id mod, YAML::Node root) {parseYaml(mod, root); };
+
 					if (header.second.IsScalar())
 					{
-						auto value = header.second.as<types::string>();
-						parseInclude(mod, value, [this](unique_id mod) {return get<resources::mod>(mod); }, [this](unique_id mod, YAML::Node root) {parseYaml(mod, root); });
+						const auto value = header.second.as<types::string>();
+						parseInclude(mod, value, get_mod, yaml_parser);
 					}
 					else if (header.second.IsSequence())
 					{
-						;//TODO: include all
+						using include_list_type = std::vector<string>;
+						const auto value = header.second.as<include_list_type>(include_list_type{});
+
+						for (const auto &s : value)
+							parseInclude(mod, s, get_mod, yaml_parser);
 					}
 				}
 

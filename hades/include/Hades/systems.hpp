@@ -19,6 +19,12 @@
 
 namespace hades
 {
+	class system_error : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
 	class GameInterface;
 	//we use int32 as the id type so that entity id's can be stored in curves.
 	using EntityId = types::int32;

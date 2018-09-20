@@ -77,6 +77,7 @@ namespace hades
 		job* _steal_job(thread_id);
 		void _ready_wait(job*);
 		void _execute(job*);
+		bool _threads_ready() const;
 
 		thread_id _main_thread_id() const;
 		job* _main_current_job = nullptr;

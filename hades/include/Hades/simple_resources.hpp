@@ -1,7 +1,6 @@
 #ifndef HADES_SIMPLERESOURCE_HPP
 #define HADES_SIMPLERESOURCE_HPP
 
-//#include <functional>
 #include <variant>
 
 #include "SFML/Graphics/Color.hpp"
@@ -9,7 +8,6 @@
 #include "SFML/Graphics/Shader.hpp"
 
 #include "hades/curve.hpp"
-//#include "Hades/parallel_jobs.hpp"
 #include "Hades/resource_base.hpp"
 #include "Hades/Types.hpp"
 

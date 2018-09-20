@@ -51,10 +51,10 @@ namespace hades
 		if (!sys)
 			throw system_error("unable to create requested system");
 
-		sys->on_create = make_system_func(on_create);
-		sys->on_connect = make_system_func(on_connect);
-		sys->on_disconnect = make_system_func(on_disconnect);
-		sys->tick = make_system_func(on_tick);
-		sys->on_destroy = make_system_func(on_destroy);
+		sys->on_create		= on_create ? make_system_func(on_create) : nullptr;
+		sys->on_connect		= on_connect ? make_system_func(on_connect) : nullptr;
+		sys->on_disconnect	= on_disconnect ? make_system_func(on_disconnect) : nullptr;
+		sys->tick			= on_tick ? make_system_func(on_tick) : nullptr;
+		sys->on_destroy		= on_destroy ? make_system_func(on_destroy) : nullptr;
 	}
 }

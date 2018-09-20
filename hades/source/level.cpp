@@ -23,7 +23,7 @@ namespace hades
 		if (!value.set)
 			throw curve_error("curve is missing a value");
 
-		if (std::holds_alternative<T>(value.value))
+		if (!std::holds_alternative<T>(value.value))
 			throw curve_error("curve has wrong type");
 
 		const auto &val = std::get<T>(value.value);

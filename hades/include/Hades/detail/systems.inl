@@ -25,17 +25,19 @@ namespace hades
 		}
 		else if constexpr (std::is_invocable_r_v<bool, Func, system_job_data>)
 		{
-			return [f](system_job_data job_data)->bool {
+			return [f](job_system &j, system_job_data job_data)->bool {
 				return std::invoke(f, std::move(job_data));
 			};
 		}
 		else if constexpr (std::is_invocable_v<Func, system_job_data>)
 		{
-			return [f](system_job_data job_data)->bool {
+			return [f](job_system &j, system_job_data job_data)->bool {
 				std::invoke(f, std::move(job_data));
 				return true;
 			};
 		}
+		else if constexpr (std::is_null_pointer_v<Func>)
+			return f;
 		else
 			static_assert(always_false<Func>::value,
 				"system functions must be a function object with the following definition: bool func(hades::job_system&, hades::system_job_data), the return and job_system ref are optional");
@@ -51,10 +53,10 @@ namespace hades
 		if (!sys)
 			throw system_error("unable to create requested system");
 
-		sys->on_create		= on_create ? make_system_func(on_create) : nullptr;
-		sys->on_connect		= on_connect ? make_system_func(on_connect) : nullptr;
-		sys->on_disconnect	= on_disconnect ? make_system_func(on_disconnect) : nullptr;
-		sys->tick			= on_tick ? make_system_func(on_tick) : nullptr;
-		sys->on_destroy		= on_destroy ? make_system_func(on_destroy) : nullptr;
+		sys->on_create		= make_system_func(on_create);
+		sys->on_connect		= make_system_func(on_connect);
+		sys->on_disconnect = make_system_func(on_disconnect);
+		sys->tick			= make_system_func(on_tick);
+		sys->on_destroy		= make_system_func(on_destroy);
 	}
 }

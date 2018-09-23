@@ -13,6 +13,7 @@ namespace hades
 		//       and converting levels into saves
 		assert(sv.systems.size() == sv.systems_attached.size()); 
 
+		//TODO: check that systems have been loaded by now
 		std::vector<GameSystem> systems;
 		auto attach_list = sv.systems_attached;
 

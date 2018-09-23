@@ -31,6 +31,9 @@ namespace hades
 		//create jobs for all systems to work on their entities
 		for(const auto &s : systems)
 		{
+			if (!s.system->tick)
+				continue;
+
 			assert(s.system);
 			const auto entities = s.attached_entities.get().get(_currentTime);
 

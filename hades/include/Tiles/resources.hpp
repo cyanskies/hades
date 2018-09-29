@@ -4,6 +4,11 @@
 #include "Hades/resource_base.hpp"
 #include "Hades/simple_resources.hpp"
 
+namespace YAML
+{
+	class Node;
+}
+
 namespace tiles
 {
 	//registers the resources needed to use tilemaps and the tile editor

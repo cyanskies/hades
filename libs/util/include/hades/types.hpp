@@ -67,6 +67,8 @@ namespace hades {
 		long double stov<long double>(std::string value);
 		template<>
 		bool stov<bool>(std::string value);
+		template<>
+		std::string stov<std::string>(std::string value);
 	}
 
 	using namespace types;

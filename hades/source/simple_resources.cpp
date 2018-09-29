@@ -14,6 +14,9 @@
 #include "Hades/resource/fonts.hpp"
 #include "hades/utility.hpp"
 
+#include "Hades/parser.hpp"
+#include "Hades/yaml_parser.hpp"
+
 using namespace hades;
 
 //posts a standard error message if the requested resource is of the wrong type
@@ -40,7 +43,7 @@ namespace hades
 
 	void RegisterCommonResources(hades::data::data_system *data)
 	{
-		data->register_resource_type("actions", nullptr);
+		//data->register_resource_type("actions", nullptr);
 		data->register_resource_type("animations", resources::parseAnimation);
 		data->register_resource_type("curves", resources::parseCurve);
 		data->register_resource_type("fonts", resources::parseFont);
@@ -126,6 +129,38 @@ namespace hades
 
 			const types::string d_source, resource_type = "textures";
 
+			const auto parser = data::make_yaml_parser(node);
+			const auto textures = parser->get_children();
+
+			for (const auto &t : textures)
+			{
+				const auto name = t->to_string();
+				const auto id = dataman->get_uid(name);
+
+				const auto tex = data::FindOrCreate<texture>(id, mod, dataman);
+				if (!tex)
+					continue;
+
+				using namespace data::parse_tools;
+				tex->width	= get_scalar(*t, resource_type, name, "width",		tex->width, mod);
+				tex->height = get_scalar(*t, resource_type, name, "height",		tex->height, mod);
+				tex->smooth = get_scalar(*t, resource_type, name, "smooth",		tex->smooth, mod);
+				tex->repeat = get_scalar(*t, resource_type, name, "repeating",	tex->repeat, mod);
+				tex->mips	= get_scalar(*t, resource_type, name, "mips",		tex->mips, mod);
+				tex->source = get_scalar(*t, resource_type, name, "source",		tex->source, mod);
+
+				//if either size parameters are 0, then don't warn for size mismatch
+				if (tex->width == 0 || tex->height == 0)
+					tex->width = tex->height = 0;
+
+				if (tex->width == 0)
+					tex->value = generate_default_texture();
+				else
+					tex->value = generate_default_texture(tex->width, tex->height);
+			}
+
+			return;
+			//OLD WAY
 			for (auto n : node)
 			{
 				//get texture with this name if it has already been loaded

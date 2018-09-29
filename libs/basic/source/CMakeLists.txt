@@ -13,6 +13,7 @@ set(HADES_BASIC_SRC
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
+	../include/hades/parser.hpp
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
@@ -21,6 +22,7 @@ set(HADES_BASIC_SRC
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
+	../include/hades/detail/parser.inl
 	../include/hades/detail/quad_map.inl
 )
 
@@ -30,6 +32,7 @@ source_group("Headers" FILES
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
+	../include/hades/parser.hpp
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
@@ -41,6 +44,7 @@ source_group("Detail" FILES
 	../include/hades/detail/collision.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
+	../include/hades/detail/parser.inl
 	../include/hades/detail/quad_map.inl
 )
 

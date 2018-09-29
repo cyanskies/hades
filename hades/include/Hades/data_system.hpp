@@ -8,6 +8,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "Hades/Data.hpp"
+#include "Hades/parser.hpp"
 #include "Hades/resource_base.hpp"
 #include "Hades/Types.hpp"
 //Data manager is a resource management class.
@@ -17,22 +18,8 @@ namespace hades
 {
 	namespace resources
 	{
-		struct mod_t {};
-
-		struct mod : public resource_type<mod_t>
-		{
-			// source == the name of the archive containing the mode
-			// dependencies: a list of mods this mod depends on
-			std::vector<unique_id> dependencies,
-				//names: unique id's provided by this mod
-				names;
-
-			types::string name;
-			//value is unused
-			//mod_t value
-		};
-
 		using parserFunc = std::function<void(unique_id mod, const YAML::Node& node, data::data_manager*)>;
+		using parser_func = std::function<void(unique_id mod, std::unique_ptr<data::parser_node>, data::data_manager*)>;
 	}
 
 	namespace data
@@ -47,7 +34,9 @@ namespace hades
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
 			void register_resource_type(std::string_view name, resources::parserFunc parser);
-	
+			//TODO: move this to a virtual in the data class, so parsers can be registered without needing hades-core
+			void register_resource_type(std::string_view name, resources::parser_func parser);
+
 			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string_view game);
 			//mod is the name of a folder or archive containing a mod.yaml file

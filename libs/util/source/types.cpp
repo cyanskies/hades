@@ -102,5 +102,11 @@ namespace hades {
 		{
 			return value != "0" && value != "false";
 		}
+
+		template<>
+		std::string stov<std::string>(std::string value)
+		{
+			return value;
+		}
 	}
 }

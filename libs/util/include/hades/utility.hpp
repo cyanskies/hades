@@ -128,6 +128,10 @@ namespace hades {
 
 		return out;
 	}
+
+	//TODO: from_string
 }
+
+//TODO: utility.inl
 
 #endif // !HADES_UTIL_UTILITY_HPP

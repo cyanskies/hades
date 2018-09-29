@@ -25,6 +25,7 @@ set(HADES_SRC
 	State.cpp
 	StateManager.cpp
 	systems.cpp
+	yaml_parser.cpp
 	../include/Hades/detail/systems.inl
 	Objects/editor.cpp
 	Objects/Objects.cpp

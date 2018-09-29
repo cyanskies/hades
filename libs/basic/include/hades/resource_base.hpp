@@ -8,11 +8,6 @@
 
 //resource primatives
 
-namespace YAML
-{
-	class Node;
-}
-
 namespace hades
 {
 	namespace data
@@ -80,6 +75,21 @@ namespace hades
 			T value;
 		protected:
 			loaderFunc _resourceLoader;
+		};
+
+		struct mod_t {};
+
+		struct mod : public resource_type<mod_t>
+		{
+			// source == the name of the archive containing the mode
+			// dependencies: a list of mods this mod depends on
+			std::vector<unique_id> dependencies,
+				//names: unique id's provided by this mod
+				names;
+
+			types::string name;
+			//value is unused
+			//mod_t value
 		};
 	}
 }

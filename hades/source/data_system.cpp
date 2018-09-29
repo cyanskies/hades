@@ -6,6 +6,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/files.hpp"
 #include "hades/utility.hpp"
+#include "hades/yaml_parser.hpp"
 
 namespace hades
 {
@@ -19,6 +20,13 @@ namespace hades
 		void data_system::register_resource_type(std::string_view name, resources::parserFunc parser)
 		{
 			_resourceParsers[to_string(name)] = parser;
+		}
+
+		void data_system::register_resource_type(std::string_view name, resources::parser_func parser)
+		{
+			_resourceParsers[to_string(name)] = [parser](unique_id m, const YAML::Node &n, data_manager *d) {
+				return std::invoke(parser, m, make_yaml_parser(n), d);
+			};
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file

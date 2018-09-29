@@ -25,7 +25,7 @@ namespace hades
 		void data_system::register_resource_type(std::string_view name, resources::parser_func parser)
 		{
 			_resourceParsers[to_string(name)] = [parser](unique_id m, const YAML::Node &n, data_manager *d) {
-				return std::invoke(parser, m, make_yaml_parser(n), d);
+				return std::invoke(parser, m, *make_yaml_parser(n), d);
 			};
 		}
 

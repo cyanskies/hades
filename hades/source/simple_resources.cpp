@@ -31,7 +31,7 @@ namespace hades
 {
 	namespace resources
 	{
-		void parseTexture(unique_id mod, const YAML::Node& node, data::data_manager*);
+		void parseTexture(unique_id mod, const data::parser_node& node, data::data_manager*);
 		void loadTexture(resource_base* r, data::data_manager* dataman);
 		void parseString(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager*);
@@ -115,7 +115,7 @@ namespace hades
 			return t;
 		}
 
-		void parseTexture(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
+		void parseTexture(unique_id mod, const data::parser_node &node, data::data_manager* dataman)
 		{
 			//default texture yaml
 			//textures:
@@ -129,8 +129,7 @@ namespace hades
 
 			const types::string d_source, resource_type = "textures";
 
-			const auto parser = data::make_yaml_parser(node);
-			const auto textures = parser->get_children();
+			const auto textures = node.get_children();
 
 			for (const auto &t : textures)
 			{
@@ -148,39 +147,6 @@ namespace hades
 				tex->repeat = get_scalar(*t, resource_type, name, "repeating",	tex->repeat, mod);
 				tex->mips	= get_scalar(*t, resource_type, name, "mips",		tex->mips, mod);
 				tex->source = get_scalar(*t, resource_type, name, "source",		tex->source, mod);
-
-				//if either size parameters are 0, then don't warn for size mismatch
-				if (tex->width == 0 || tex->height == 0)
-					tex->width = tex->height = 0;
-
-				if (tex->width == 0)
-					tex->value = generate_default_texture();
-				else
-					tex->value = generate_default_texture(tex->width, tex->height);
-			}
-
-			return;
-			//OLD WAY
-			for (auto n : node)
-			{
-				//get texture with this name if it has already been loaded
-				//first node holds the maps name
-				auto tnode = n.first;
-				auto name = tnode.as<types::string>();
-				//second holds the map children
-				auto tvariables = n.second;
-				auto id = dataman->get_uid(tnode.as<types::string>());
-				auto tex = data::FindOrCreate<texture>(id, mod, dataman);
-
-				if (!tex)
-					continue;
-
-				tex->width = yaml_get_scalar(tvariables, resource_type, name, "width", mod, tex->width);
-				tex->height = yaml_get_scalar(tvariables, resource_type, name, "height", mod, tex->height);
-				tex->smooth = yaml_get_scalar(tvariables, resource_type, name, "smooth", mod, tex->smooth);
-				tex->repeat = yaml_get_scalar(tvariables, resource_type, name, "repeating", mod, tex->repeat);
-				tex->mips = yaml_get_scalar(tvariables, resource_type, name, "mips", mod, tex->mips);
-				tex->source = yaml_get_scalar(tvariables, resource_type, name, "source", mod, tex->source);
 
 				//if either size parameters are 0, then don't warn for size mismatch
 				if (tex->width == 0 || tex->height == 0)

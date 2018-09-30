@@ -3,6 +3,7 @@
 
 #include "Hades/resource_base.hpp"
 #include "Hades/simple_resources.hpp"
+#include "hades/texture.hpp"
 
 namespace YAML
 {

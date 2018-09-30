@@ -3,6 +3,7 @@
 #include "Hades/Data.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
+#include "hades/texture.hpp"
 #include "Hades/Types.hpp"
 
 using namespace hades::types;

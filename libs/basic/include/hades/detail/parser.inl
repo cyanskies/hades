@@ -76,7 +76,7 @@ namespace hades::data
 			auto message = "Error parsing data"s;
 			if (mod != hades::unique_id::zero)
 			{
-				auto mod_ptr = data::get<resources::mod>(mod);
+				const auto mod_ptr = get<hades::resources::mod>(mod);
 				message += ", in mod: "s + mod_ptr->name;
 			}
 			message += ", type: "s + hades::to_string(resource_type)

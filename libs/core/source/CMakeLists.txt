@@ -5,14 +5,18 @@ set(HADES_CORE_SRC
 	archive.cpp
 	files.cpp
 	standard_paths.cpp
+	texture.cpp
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
 	../include/hades/standard_paths.hpp
+	../include/hades/texture.hpp
 )
 
 source_group("Headers" FILES
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
+	../include/hades/standard_paths.hpp
+	../include/hades/texture.hpp
 )
 
 # Library to build
@@ -35,7 +39,6 @@ target_link_libraries(${HADES_CORE_LIB} PUBLIC
 	sfml-system
 	sfml-window
 	sfgui
-	yaml-cpp
 	minizip
 )
 

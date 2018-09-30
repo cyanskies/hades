@@ -1,10 +1,12 @@
 #ifndef HADES_DATA_HPP
 #define HADES_DATA_HPP
 
+#include <functional>
 #include <map>
 #include <shared_mutex>
 #include <tuple>
 
+//#include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
@@ -17,10 +19,29 @@ namespace hades
 
 	namespace data
 	{
+		class data_manager;
+		class parser_node;
+	}
+
+	namespace resources
+	{
+		using parser_func = std::function<void(unique_id mod, const data::parser_node&, data::data_manager&)>;
+	}
+
+	namespace data
+	{
 		class data_manager
 		{
 		public:
 			virtual ~data_manager() = default;
+
+			virtual void register_resource_type(std::string_view name, resources::parser_func parser) = 0;
+
+			//returns a resource if it exists, or creates it if it doesn't
+			//this should be used when writing parsers
+			//allows creating a ptr to a resource that hasn't actually been defined yet
+			template<class T>
+			T* find_or_create(unique_id target, unique_id mod);
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;

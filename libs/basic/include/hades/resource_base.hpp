@@ -48,7 +48,7 @@ namespace hades
 			resource_base &operator=(const resource_base &rhs) = delete;
 			resource_base &operator=(resource_base &&rhs) = delete;
 
-			virtual void load(data::data_manager*) = 0;
+			virtual void load(data::data_manager&) = 0;
 
 			unique_id id;
 			//the file this resource should be loaded from
@@ -63,18 +63,28 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			using loaderFunc = std::function<void(resource_base*, data::data_manager*)>;
+			using loader_func = std::function<void(resource_type<T>&, data::data_manager&)>;
+			//TODO: depricate this
+			using old_loader_func = std::function<void(resource_base*, data::data_manager*)>;
+			using loaderFunc = old_loader_func;
 
 			resource_type() = default;
-			resource_type(loaderFunc loader) : _resourceLoader(loader) {}
+			resource_type(loader_func loader) : _resource_loader(loader) {}
+			resource_type(old_loader_func loader) : _resource_loader([loader](resource_type<T> &r, data::data_manager &d) { return  loader(&r, &d); })
+			{}
 
 			virtual ~resource_type() {}
 
-			void load(data::data_manager*) override;
+			void load(data::data_manager &d) override 
+			{
+				if (_resource_loader)
+					_resource_loader(*this, d);
+			}
+
 			//the actual resource
 			T value;
-		protected:
-			loaderFunc _resourceLoader;
+		private:
+			loader_func _resource_loader;
 		};
 
 		struct mod_t {};

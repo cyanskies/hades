@@ -19,13 +19,13 @@ namespace hades
 	namespace resources
 	{
 		using parserFunc = std::function<void(unique_id mod, const YAML::Node& node, data::data_manager*)>;
-		using parser_func = std::function<void(unique_id mod, const data::parser_node&, data::data_manager*)>;
 	}
 
 	namespace data
 	{
 		constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID";
 
+		//templatise on data file .ext and make_parser func
 		class data_system final : public data_manager
 		{
 		public:
@@ -34,8 +34,7 @@ namespace hades
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
 			void register_resource_type(std::string_view name, resources::parserFunc parser);
-			//TODO: move this to a virtual in the data class, so parsers can be registered without needing hades-core
-			void register_resource_type(std::string_view name, resources::parser_func parser);
+			void register_resource_type(std::string_view name, resources::parser_func parser) override;
 
 			//game is the name of a folder or archive containing a game.yaml file
 			void load_game(std::string_view game);
@@ -96,12 +95,14 @@ namespace hades
 		//TODO: redo findorcreate and the yaml_* functions below, they shouldn't be in this header
 		//they shouldnt accept pointers and should handle sequence specifiers correctly
 		// probably in a resource_parser header
-
 		//gets the requested resource, or creates it if not already
 		// sets the resources most recent mod to the passed value
 		// returns nullptr if unable to return a valid resource
 		template<class T>
-		T* FindOrCreate(unique_id target, unique_id mod, data_manager* data);
+		T* FindOrCreate(unique_id target, unique_id mod, data_manager* data)
+		{
+			return data->find_or_create<T>(target, mod);
+		}
 	}
 }
 

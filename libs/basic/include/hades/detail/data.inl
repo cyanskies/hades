@@ -2,17 +2,58 @@
 
 #include <typeindex>
 
+#include "hades/logging.hpp"
+
 namespace hades
 {
 	namespace data
 	{
+		template<class T>
+		T* data_manager::find_or_create(unique_id target, unique_id mod)
+		{
+			T* r = nullptr;
+
+			if (target == empty_id)
+			{
+				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
+				return r;
+			}
+
+			if (!exists(target))
+			{
+				auto new_ptr = std::make_unique<T>();
+				r = &*new_ptr;
+				set<T>(target, std::move(new_ptr));
+
+				r->id = target;
+			}
+			else
+			{
+				try
+				{
+					r = get<T>(target, data_manager::no_load);
+				}
+				catch (data::resource_wrong_type &e)
+				{
+					//name is already used for something else, this cannnot be loaded
+					auto modname = get_as_string(mod);
+					LOGERROR(types::string(e.what()) + "In mod: " + modname + ", name has already been used for a different resource type.");
+				}
+			}
+
+			if (r)
+				r->mod = mod;
+
+			return r;
+		}
+
 		template<class T>
 		T *data_manager::get(unique_id id)
 		{
 			auto res = get<T>(id, no_load);
 
 			if (!res->loaded)
-				res->load(this);
+				res->load(*this);
 
 			return res;
 		}

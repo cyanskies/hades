@@ -6,6 +6,7 @@
 
 #include "Hades/Animation.hpp"
 #include "hades/exceptions.hpp"
+#include "Hades/texture.hpp"
 #include "hades/Types.hpp"
 #include "hades/utility.hpp"
 

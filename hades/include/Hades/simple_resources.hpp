@@ -50,16 +50,7 @@ namespace hades
 
 	namespace resources
 	{
-		struct texture : public resource_type<sf::Texture>
-		{
-			texture();
-
-			using size_type = types::uint16;
-			//max texture size for older hardware is 512
-			//max size for modern hardware is 8192 or higher
-			size_type width = 0, height = 0;
-			bool smooth = false, repeat = false, mips = false;
-		};
+		struct texture;
 
 		struct string : public resource_type<types::string>
 		{};

@@ -14,8 +14,9 @@
 #include "Hades/resource/fonts.hpp"
 #include "hades/utility.hpp"
 
-#include "Hades/parser.hpp"
-#include "Hades/yaml_parser.hpp"
+#include "hades/parser.hpp"
+#include "hades/texture.hpp"
+#include "hades/yaml_parser.hpp"
 
 using namespace hades;
 
@@ -31,8 +32,6 @@ namespace hades
 {
 	namespace resources
 	{
-		void parseTexture(unique_id mod, const data::parser_node& node, data::data_manager*);
-		void loadTexture(resource_base* r, data::data_manager* dataman);
 		void parseString(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void parseCurve(unique_id mod, const YAML::Node& node, data::data_manager*);
 		void parseAnimation(unique_id mod, const YAML::Node& node, data::data_manager*);
@@ -43,121 +42,18 @@ namespace hades
 
 	void RegisterCommonResources(hades::data::data_system *data)
 	{
+		register_texture_resource(*data);
 		//data->register_resource_type("actions", nullptr);
 		data->register_resource_type("animations", resources::parseAnimation);
 		data->register_resource_type("curves", resources::parseCurve);
 		data->register_resource_type("fonts", resources::parseFont);
 		data->register_resource_type("strings", resources::parseString);
-		data->register_resource_type("textures", resources::parseTexture);
-
-		const auto max_tex_size = sf::Texture::getMaximumSize();
-		const auto max_engine_size = std::numeric_limits<resources::texture::size_type>::max();
-		//TODO warn if tex_size < engine_size
 	}
 
 	namespace resources
 	{
-		texture::texture() : resource_type<sf::Texture>(loadTexture) {}
 		font::font() : resource_type<sf::Font>(loadFont) {}
 		animation::animation() : resource_type<std::vector<animation_frame>>(loadAnimation) {}
-
-		const size_t colour_count = 7;
-
-		const std::array<sf::Color, colour_count> colours {
-			sf::Color::Magenta,
-			sf::Color::White,
-			sf::Color::Red,
-			sf::Color::Green,
-			sf::Color::Blue,
-			sf::Color::Yellow,
-			sf::Color::Cyan
-		};
-
-		sf::Texture generate_checkerboard_texture(texture::size_type width, texture::size_type height, texture::size_type checker_scale,
-			sf::Color c1, sf::Color c2)
-		{
-			std::vector<sf::Uint32> pixels(width * height);
-
-			texture::size_type counter = 0;
-			sf::Color c = c1;
-
-			for (auto &p : pixels)
-			{
-				p = c.toInteger();
-				if (counter++ % checker_scale == 0)
-				{
-					if (c == c1)
-						c = c2;
-					else
-						c = c1;
-				}
-			}
-
-			sf::Uint8* p = reinterpret_cast<sf::Uint8*>(pixels.data());
-
-			sf::Image i;
-			i.create(width, height, p);
-
-			sf::Texture t;
-			t.loadFromImage(i);
-
-			return t;
-		}
-
-		//generates a group of
-		sf::Texture generate_default_texture(texture::size_type width = 32u, texture::size_type height = 32u)
-		{
-			static std::size_t counter = 0;
-
-			auto t = generate_checkerboard_texture(width, height, 16, colours[counter++ % colour_count], sf::Color::Black);
-			t.setRepeated(true);
-
-			return t;
-		}
-
-		void parseTexture(unique_id mod, const data::parser_node &node, data::data_manager* dataman)
-		{
-			//default texture yaml
-			//textures:
-			//    default:
-			//        width: 0 #0 = autodetect, no size checking will be done
-			//        height: 0
-			//        source: #empty source, no file is specified, will always be default error texture
-			//        smooth: false
-			//        repeating: false
-			//        mips: false
-
-			const types::string d_source, resource_type = "textures";
-
-			const auto textures = node.get_children();
-
-			for (const auto &t : textures)
-			{
-				const auto name = t->to_string();
-				const auto id = dataman->get_uid(name);
-
-				const auto tex = data::FindOrCreate<texture>(id, mod, dataman);
-				if (!tex)
-					continue;
-
-				using namespace data::parse_tools;
-				tex->width	= get_scalar(*t, resource_type, name, "width",		tex->width, mod);
-				tex->height = get_scalar(*t, resource_type, name, "height",		tex->height, mod);
-				tex->smooth = get_scalar(*t, resource_type, name, "smooth",		tex->smooth, mod);
-				tex->repeat = get_scalar(*t, resource_type, name, "repeating",	tex->repeat, mod);
-				tex->mips	= get_scalar(*t, resource_type, name, "mips",		tex->mips, mod);
-				tex->source = get_scalar(*t, resource_type, name, "source",		tex->source, mod);
-
-				//if either size parameters are 0, then don't warn for size mismatch
-				if (tex->width == 0 || tex->height == 0)
-					tex->width = tex->height = 0;
-
-				if (tex->width == 0)
-					tex->value = generate_default_texture();
-				else
-					tex->value = generate_default_texture(tex->width, tex->height);
-			}
-		}
 
 		void loadTexture(resources::resource_base* r, data::data_manager* dataman)
 		{

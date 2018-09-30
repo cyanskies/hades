@@ -1,61 +1,6 @@
 #include "Hades/Data.hpp"
 #include "Hades/Logging.hpp"
 
-namespace hades
-{
-	namespace resources
-	{
-		template<typename T>
-		void resource_type<T>::load(data::data_manager* data)
-		{
-			if (_resourceLoader)
-				_resourceLoader(this, data);
-		}
-	}
-
-	namespace data
-	{
-		template<class T>
-		T* FindOrCreate(unique_id target, unique_id mod, data_manager *data)
-		{
-			T* r = nullptr;
-
-			if (target == empty_id)
-			{
-				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
-				return r;
-			}
-			
-			if (!data->exists(target))
-			{
-				auto new_ptr = std::make_unique<T>();
-				r = &*new_ptr;
-				data->set<T>(target, std::move(new_ptr));
-
-				r->id = target;
-			}
-			else
-			{
-				try
-				{
-					r = data->get<T>(target, data_manager::no_load);
-				}
-				catch (data::resource_wrong_type &e)
-				{
-					//name is already used for something else, this cannnot be loaded
-					auto modname = data->get_as_string(mod);
-					LOGERROR(types::string(e.what()) + "In mod: " + modname + ", name has already been used for a different resource type.");
-				}
-			}
-
-			if (r)
-				r->mod = mod;
-
-			return r;
-		}
-	}
-}
-
 template<class T, class Iter>
 std::vector<const T*> convert_string_to_resource(Iter first, Iter last, hades::data::data_manager *data)
 {

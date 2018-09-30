@@ -25,7 +25,7 @@ namespace hades
 		void data_system::register_resource_type(std::string_view name, resources::parser_func parser)
 		{
 			_resourceParsers[to_string(name)] = [parser](unique_id m, const YAML::Node &n, data_manager *d) {
-				return std::invoke(parser, m, *make_yaml_parser(n), d);
+				return std::invoke(parser, m, *make_yaml_parser(n), *d);
 			};
 		}
 
@@ -152,7 +152,7 @@ namespace hades
 			_loadQueue.clear();
 
 			for (auto r : queue)
-				r->load(this);
+				r->load(*this);
 		}
 
 		void data_system::load(unique_id id)
@@ -165,7 +165,7 @@ namespace hades
 			//erase all the matching id's
 			_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), *it), _loadQueue.end());
 
-			resource->load(this);
+			resource->load(*this);
 		}
 
 		void data_system::load(types::uint8 count)
@@ -174,7 +174,7 @@ namespace hades
 			
 			while (count-- > 0 && !_loadQueue.empty())
 			{
-				_loadQueue.back()->load(this);
+				_loadQueue.back()->load(*this);
 				_loadQueue.pop_back();
 			}
 		}

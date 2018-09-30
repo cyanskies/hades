@@ -12,6 +12,7 @@
 #include "Hades/Logging.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/Properties.hpp"
+#include "hades/texture.hpp"
 #include "hades/utility.hpp"
 
 #include "Objects/resources.hpp"

@@ -2,8 +2,9 @@
 
 #include <cassert>
 
-#include "Hades/Data.hpp"
-#include "Hades/Logging.hpp"
+#include "hades/data.hpp"
+#include "hades/logging.hpp"
+#include "hades/texture.hpp"
 
 namespace hades
 {

@@ -116,7 +116,10 @@ namespace hades
 	}
 
 	template<>
-	types::string to_string(unique_id value);
+	types::string to_string<unique_id>(unique_id value);
+
+	template<>
+	unique_id from_string<unique_id>(std::string_view value);
 }//hades
 
 #include "hades/detail/data.inl"

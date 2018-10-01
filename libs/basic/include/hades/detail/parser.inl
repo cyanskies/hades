@@ -13,7 +13,7 @@ namespace hades::data
 			if constexpr (std::is_invocable_r_v<T, Converter, std::string_view>)
 				return std::invoke(conv, str);
 			else
-				return stov<T>(to_string(str)); //TODO: from_string
+				return from_string<T>(str);
 		}
 	}
 
@@ -30,7 +30,7 @@ namespace hades::data
 		std::vector<T> result;
 		result.reserve(children.size());
 		for (const auto &child : children)
-			result.emplace_back(detail::convert(child->to_string(), conv));
+			result.emplace_back(detail::convert<T>(child->to_string(), conv));
 
 		return result;
 	}

@@ -2,6 +2,7 @@
 
 # C++ source files
 set(HADES_BASIC_SRC
+	curve_extra.cpp
 	data.cpp
 	input.cpp
 	logging.cpp
@@ -9,6 +10,7 @@ set(HADES_BASIC_SRC
 	system.cpp
 	timers.cpp
 	../include/hades/collision.hpp
+	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
@@ -20,6 +22,7 @@ set(HADES_BASIC_SRC
 	../include/hades/system.hpp
 	../include/hades/timers.hpp
 	../include/hades/detail/collision.inl
+	../include/hades/detail/curve_extra.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
 	../include/hades/detail/parser.inl
@@ -28,6 +31,7 @@ set(HADES_BASIC_SRC
 
 source_group("Headers" FILES
 	../include/hades/collision.hpp
+	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
@@ -42,6 +46,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/collision.inl
+	../include/hades/detail/curve_extra.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
 	../include/hades/detail/parser.inl

@@ -101,8 +101,14 @@ namespace hades
 	}
 
 	template<>
-	types::string to_string(unique_id value)
+	types::string to_string<unique_id>(unique_id value)
 	{
 		return data::get_as_string(value);
+	}
+
+	template<>
+	unique_id from_string<unique_id>(std::string_view value)
+	{
+		return data::get_uid(value);
 	}
 }

@@ -12,7 +12,8 @@ namespace hades
 
 	void register_texture_resource(data::data_manager &d)
 	{
-		d.register_resource_type("textures", parse_texture);
+		using namespace std::string_view_literals;
+		d.register_resource_type("textures"sv, parse_texture);
 	}
 
 	const auto colours = std::array{
@@ -78,8 +79,8 @@ namespace hades
 		//        smooth: false
 		//        repeating: false
 		//        mips: false
-
-		const types::string d_source, resource_type = "textures";
+		using namespace std::string_view_literals;
+		constexpr auto resource_type = "textures"sv;
 
 		const auto textures = node.get_children();
 
@@ -93,12 +94,12 @@ namespace hades
 				continue;
 
 			using namespace data::parse_tools;
-			tex->width = get_scalar(*t, resource_type, name, "width", tex->width, mod);
-			tex->height = get_scalar(*t, resource_type, name, "height", tex->height, mod);
-			tex->smooth = get_scalar(*t, resource_type, name, "smooth", tex->smooth, mod);
-			tex->repeat = get_scalar(*t, resource_type, name, "repeating", tex->repeat, mod);
-			tex->mips = get_scalar(*t, resource_type, name, "mips", tex->mips, mod);
-			tex->source = get_scalar(*t, resource_type, name, "source", tex->source, mod);
+			tex->width = get_scalar(*t, resource_type, name, "width"sv, tex->width, mod);
+			tex->height = get_scalar(*t, resource_type, name, "height"sv, tex->height, mod);
+			tex->smooth = get_scalar(*t, resource_type, name, "smooth"sv, tex->smooth, mod);
+			tex->repeat = get_scalar(*t, resource_type, name, "repeating"sv, tex->repeat, mod);
+			tex->mips = get_scalar(*t, resource_type, name, "mips"sv, tex->mips, mod);
+			tex->source = get_scalar(*t, resource_type, name, "source"sv, tex->source, mod);
 
 			//if either size parameters are 0, then don't warn for size mismatch
 			if (tex->width == 0 || tex->height == 0)
@@ -113,6 +114,8 @@ namespace hades
 
 	void load_texture(resources::resource_type<sf::Texture> &r, data::data_manager &d)
 	{
+		using namespace std::string_literals;
+
 		auto &tex = dynamic_cast<resources::texture&>(r);
 
 		if (!tex.source.empty())
@@ -128,21 +131,21 @@ namespace hades
 				tex.value.setRepeated(tex.repeat);
 
 				if (tex.mips && !tex.value.generateMipmap())
-					LOGWARNING("Failed to generate MipMap for texture: " + d.get_as_string(tex.id));
+					LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
 			}
 			catch (const files::file_exception &e)
 			{
-				LOGERROR("Failed to load texture: " + mod->source + "/" + tex.source + ". " + e.what());
+				LOGERROR("Failed to load texture: "s + mod->source + "/"s + tex.source + ". "s + e.what());
 			}
 
 			//if the width or height are 0, then don't warn about size mismatch
 			//otherwise log unexpected size
-			auto size = tex.value.getSize();
+			const auto size = tex.value.getSize();
 			if (tex.width != 0 &&
 				(size.x != tex.width || size.y != tex.height))
 			{
-				LOGWARNING("Loaded texture: " + mod->source + "/" + tex.source + ". Texture size different from requested. Requested(" +
-					to_string(tex.width) + ", " + to_string(tex.height) + "), Found(" + to_string(size.x) + ", " + to_string(size.y) + ")");
+				LOGWARNING("Loaded texture: "s + mod->source + "/"s + tex.source + ". Texture size different from requested. Requested("s +
+					to_string(tex.width) + ", "s + to_string(tex.height) + "), Found("s + to_string(size.x) + ", "s + to_string(size.y) + ")"s);
 				//NOTE: if the texture is the wrong size
 				// then enable repeating, to avoid leaving
 				// gaps in the world(between tiles and other such stuff).

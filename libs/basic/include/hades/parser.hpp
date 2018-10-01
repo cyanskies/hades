@@ -29,16 +29,16 @@ namespace hades::data
 		//returns empty vector on error
 		virtual std::vector<std::unique_ptr<parser_node>> get_children() const = 0;
 
-		template<typename T, typename Converter>
+		template<typename T, typename Converter = nullptr_t>
 		T to_scalar(Converter conv = nullptr) const;
 
-		template<typename T, typename Converter>
+		template<typename T, typename Converter = nullptr_t>
 		std::vector<T> to_sequence(Converter conv = nullptr) const;
 
-		template<typename Value, typename Converter>
+		template<typename Value, typename Converter = nullptr_t>
 		std::vector<std::pair<string, Value>> to_map(Converter conv = nullptr) const;
 
-		template<typename Key, typename Value, typename KeyConv, typename ValueConv>
+		template<typename Key, typename Value, typename KeyConv = nullptr_t, typename ValueConv = nullptr_t>
 		std::vector<std::pair<Key, Value>> to_map(KeyConv k_conv = nullptr, ValueConv v_conv = nullptr) const;
 	};
 

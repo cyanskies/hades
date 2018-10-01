@@ -24,6 +24,7 @@ set(HADES_UTIL_SRC
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
+	../include/hades/detail/utility.inl
 	../include/hades/detail/vector_math.inl
 )
 
@@ -49,6 +50,7 @@ source_group("Detail" FILES
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
+	../include/hades/detail/utility.inl
 	../include/hades/detail/vector_math.inl)
 
 # Library to build

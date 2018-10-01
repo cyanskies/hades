@@ -55,48 +55,6 @@ namespace hades
 		struct string : public resource_type<types::string>
 		{};
 
-		enum VariableType {ERROR, INT, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE};
-
-		namespace curve_types
-		{
-			using int_t = hades::types::int32;
-			using float_t = float;
-			using bool_t = bool;
-			using string = hades::types::string;
-			using object_ref = types::int32; //? entity ID type hades::EntityId
-			using unique = hades::unique_id;
-			using vector_int = std::vector<int_t>;
-			using vector_float = std::vector<float_t>;
-			using vector_object_ref = std::vector<object_ref>;
-			using vector_unique = std::vector<unique>;
-		}
-
-		struct curve_default_value
-		{
-			bool set = false;
-
-			using int_t = hades::types::int32;
-			using curve_value = std::variant<int_t, float,
-				bool, hades::types::string, hades::unique_id, std::vector<int_t>,
-				std::vector<float>, std::vector<hades::unique_id>>;
-
-			curve_value value;
-		};
-
-		bool operator==(const curve_default_value &lhs, const curve_default_value &rhs);
-
-		struct curve_t {};
-
-		struct curve : public resource_type<curve_t>
-		{
-			curve_type curve_type = curve_type::error;
-			VariableType data_type = VariableType::ERROR;
-			bool sync = false,
-				save = false,
-				trim = false;
-			curve_default_value default_value;
-		};
-
 		types::string CurveValueToString(curve_default_value);
 		curve_default_value StringToCurveValue(const curve*, std::string_view str);
 

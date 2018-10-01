@@ -21,6 +21,13 @@ namespace hades
 	public:
 		using std::runtime_error::runtime_error;
 	};
+
+	namespace resources
+	{
+		struct curve;
+	}
+
+	types::string to_string(const resources::curve &v);
 }
 
 namespace hades::resources
@@ -85,6 +92,8 @@ namespace hades::resources
 	};
 
 	bool is_curve_valid(const resources::curve&) noexcept;
+
+	curve_default_value curve_from_string(const resources::curve &c, std::string_view str);
 }
 
 #endif // !HADES_CURVE_EXTRA_HPP

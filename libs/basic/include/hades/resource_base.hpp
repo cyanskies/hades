@@ -42,11 +42,6 @@ namespace hades
 		struct resource_base
 		{
 			virtual ~resource_base() {}
-			resource_base() = default;
-			resource_base(const resource_base &rhs) = delete;
-			resource_base(resource_base &&rhs) = delete;
-			resource_base &operator=(const resource_base &rhs) = delete;
-			resource_base &operator=(resource_base &&rhs) = delete;
 
 			virtual void load(data::data_manager&) = 0;
 
@@ -58,6 +53,13 @@ namespace hades
 			//not nessicarily the only mod to specify this resource.
 			unique_id mod = unique_id::zero;
 			bool loaded = false;
+
+		protected:
+			resource_base() = default;
+			resource_base(const resource_base &rhs) = default;
+			resource_base(resource_base &&rhs) = default;
+			resource_base &operator=(const resource_base &rhs) = default;
+			resource_base &operator=(resource_base &&rhs) = default;
 		};
 
 		template<class T>

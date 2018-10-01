@@ -41,7 +41,9 @@ namespace hades
 
 	types::string to_string(const command& c)
 	{
-		return to_string(c.request) + " " + to_string(std::begin(c.arguments), std::end(c.arguments));
+		using namespace std::string_literals;
+		using namespace std::string_view_literals;
+		return to_string(c.request) + " "s + to_string(std::begin(c.arguments), std::end(c.arguments), " "sv);
 	}
 
 	namespace console

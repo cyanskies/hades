@@ -4,8 +4,9 @@
 #include <tuple>
 #include <vector>
 
-#include "Hades/resource_base.hpp"
-#include "Hades/simple_resources.hpp"
+#include "hades/curve_extra.hpp"
+#include "hades/resource_base.hpp"
+#include "hades/simple_resources.hpp"
 
 //objects are a resource type representing spawnable entities
 //everything from doodads to players

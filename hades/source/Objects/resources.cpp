@@ -27,15 +27,13 @@ namespace objects
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::empty_id, data);
 		position_c->curve_type = hades::curve_type::linear;
 		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
-		position_c->default_value.set = true;
-		position_c->default_value.value = std::vector<int_t>{ 0, 0 };
+		position_c->default_value = std::vector<int_t>{ 0, 0 };
 		//size
 		const auto size_id = data->get_uid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
 		size_c->curve_type = hades::curve_type::linear;
 		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
-		size_c->default_value.set = true;
-		size_c->default_value.value = std::vector<int_t>{ 8, 8 };
+		size_c->default_value = std::vector<int_t>{ 8, 8 };
 	}
 
 	void DefineObjectConsoleVars()
@@ -81,8 +79,7 @@ namespace objects
 			hades::resources::curve_default_value out;
 			try
 			{
-				out.set = true;
-				out.value.emplace<T>(node.as<T>());
+				out.emplace<T>(node.as<T>());
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -103,8 +100,7 @@ namespace objects
 				if (u == hades::empty_id)
 					return out;
 
-				out.set = true;
-				out.value.emplace<hades::unique_id>(u);
+				out.emplace<hades::unique_id>(u);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -124,8 +120,7 @@ namespace objects
 				for (const auto v : node)
 					vec.push_back(v.as<T>());
 
-				out.set = true;
-				out.value.emplace<std::vector<T>>(vec);
+				out.emplace<std::vector<T>>(vec);
 			}
 			catch (YAML::InvalidNode&)
 			{
@@ -150,8 +145,7 @@ namespace objects
 						vec.push_back(u);
 				}
 
-				out.set = true;
-				out.value.emplace<std::vector<hades::unique_id>>(vec);
+				out.emplace<std::vector<hades::unique_id>>(vec);
 			}
 			catch (YAML::InvalidNode&)
 			{

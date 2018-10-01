@@ -152,10 +152,10 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-			new_curve->curve_type	= get_scalar(*c, resource_type, name, "type"sv, new_curve->curve_type, mod, read_curve_type);
+			new_curve->curve_type	= get_scalar(*c, resource_type, name, "type"sv,	 new_curve->curve_type, mod, read_curve_type);
 			new_curve->data_type	= get_scalar(*c, resource_type, name, "value"sv, new_curve->data_type, mod, read_variable_type);
-			new_curve->sync			= get_scalar(*c, resource_type, name, "sync"sv, new_curve->sync, mod);
-			new_curve->save			= get_scalar(*c, resource_type, name, "save"sv, new_curve->save, mod);
+			new_curve->sync			= get_scalar(*c, resource_type, name, "sync"sv,  new_curve->sync, mod);
+			new_curve->save			= get_scalar(*c, resource_type, name, "save"sv,  new_curve->save, mod);
 
 			if (old_type != new_curve->data_type)
 				reset_default_value(*new_curve);
@@ -165,53 +165,6 @@ namespace hades::resources
 			if (!is_curve_valid(*new_curve))
 				throw invalid_curve{ "get_default_value returned an invalid curve" };
 		}
-
-		//then look through the children
-		//for (auto n : node)
-		//{
-		//	//if this entry isn't a map, then it cannot have any child values
-		//	if (!yaml_error(resource_type, n.first.as<types::string>(), "n/a", "map", mod, n.second.IsMap()))
-		//		continue;
-
-		//	//maps have a first and second value
-		//	//the first is the string label of the entry
-		//	//the second is the stored node
-		//	auto tnode = n.first;
-		//	auto curveInfo = n.second;
-
-		//	//record this nodes name
-		//	const types::string name = tnode.as<types::string>();
-
-		//	auto id = dataman->get_uid(name);
-		//	curve* c = hades::data::FindOrCreate<curve>(id, mod, dataman);
-
-		//	if (!c)
-		//		continue;
-
-		//	//checking a key will return the value accociated with it
-		//	//eg
-		//	//thisnode:
-		//	//	type: curve_type
-
-		//	//test that the type is a scalar, and not a container or map
-		//	auto type = curveInfo["type"];
-		//	if (type.IsDefined() && yaml_error(resource_type, name, "type", "scalar", mod, type.IsScalar()))
-		//		c->curve_type = readCurveType(type.as<types::string>());
-
-		//	auto var = curveInfo["value"];
-		//	if (var.IsDefined() && yaml_error(resource_type, name, "value", "scalar", mod, var.IsScalar()))
-		//		c->data_type = readVariableType(var.as<types::string>());
-
-		//	auto sync = curveInfo["sync"];
-		//	if (sync.IsDefined() && yaml_error(resource_type, name, "sync", "scalar", mod, sync.IsScalar()))
-		//		c->trim = c->sync = sync.as<bool>();
-
-		//	auto save = curveInfo["save"];
-		//	if (save.IsDefined() && yaml_error(resource_type, name, "save", "scalar", mod, save.IsScalar()))
-		//		c->save = save.as<bool>();
-
-		//	c->default_value = parse_default_value(name, c->data_type, curveInfo);
-		//}
 	}
 
 	bool is_curve_valid(const resources::curve &c) noexcept
@@ -248,6 +201,26 @@ namespace hades::resources
 			return false;
 		}
 	}
+
+	resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
+	{
+		if (!resources::is_curve_valid(c))
+			throw invalid_curve{ "Tried to call curve_from_string to set an invalid curve" };
+
+		auto out = c.default_value;
+
+		std::visit([str](auto &&v) {
+			using T = std::decay_t<decltype(v)>;
+
+			using namespace resources::curve_types;
+			if constexpr (is_vector_type_v<T>)
+				v = vector_from_string<T>(str);
+			else
+				v = from_string<T>(str);
+		}, out);
+
+		return out;
+	}
 }
 
 namespace hades
@@ -274,26 +247,6 @@ namespace hades
 			else
 				return to_string<T>(t);
 		}, v.default_value);
-	}
-
-	resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
-	{
-		if (!resources::is_curve_valid(c))
-			throw invalid_curve{ "Tried to call StringToCurveValue to set an invalid curve" };
-
-		auto out = c.default_value;
-
-		std::visit([str](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-
-			using namespace resources::curve_types;
-			if constexpr (is_vector_type_v<T>)
-				v = vector_from_string<T>(str);
-			else
-				v = from_string<T>(str);
-		}, out);
-
-		return out;
 	}
 
 	void register_curve_resource(data::data_manager &d)

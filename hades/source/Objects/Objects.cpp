@@ -4,10 +4,13 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "hades/curve_extra.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/data_system.hpp"
 #include "Hades/exceptions.hpp"
 #include "Hades/level.hpp"
+
+//TODO: this whole file needs to be updated due to changes to curve default value storage
 
 namespace objects
 {
@@ -35,8 +38,9 @@ namespace objects
 			{
 				curve_ptr = curve;
 				auto v = std::get<hades::resources::curve_default_value>(cur);
-				if (v.set)
-					return cur;
+				//if (v.set)
+					//return cur;
+				return cur;
 			}
 		}
 
@@ -48,8 +52,9 @@ namespace objects
 			if (curve)
 			{
 				curve_ptr = curve;
-				if (std::get<hades::resources::curve_default_value>(ret).set)
-					return ret;
+				//if (std::get<hades::resources::curve_default_value>(ret).set)
+					//return ret;
+				return ret;
 			}
 		}
 
@@ -59,15 +64,14 @@ namespace objects
 	curve_value ValidVectorCurve(hades::resources::curve_default_value v)
 	{
 		using vector_int = hades::resources::curve_types::vector_int;
-		assert(std::holds_alternative<vector_int>(v.value));
+		assert(std::holds_alternative<vector_int>(v));
 
 		//the provided value is valid
-		if (auto vector = std::get<vector_int>(v.value); v.set && vector.size() >= 2)
+		if (auto vector = std::get<vector_int>(v); vector.size() >= 2)
 			return v;
 
 		//invalid value, override with a minimum valid value
-		v.set = true;
-		v.value = vector_int{0, 0};
+		v = vector_int{0, 0};
 
 		return v;
 	}
@@ -81,16 +85,17 @@ namespace objects
 			auto v = std::get<hades::resources::curve_default_value>(cur);
 			assert(curve);
 			//if we have the right id and this
-			if (curve == c && v.set)
-				return v;
+			//if (curve == c && v.set)
+			//	return v;
+			return v;
 		}
 
 		assert(o.obj_type);
 		auto out = TryGetCurve(o.obj_type, c);
-		if (auto[curve, value] = out; curve && value.set)
-			return value;
+		//if (auto[curve, value] = out; curve && value.set)
+			//return value;
 
-		assert(c->default_value.set);
+		//assert(c->default_value.set);
 		return c->default_value;
 	}
 
@@ -104,10 +109,10 @@ namespace objects
 			throw curve_not_found("Requested curve not found on object type: " + hades::data::get_as_string(o->id)
 				+ ", curve was: " + hades::data::get_as_string(c->id));
 
-		if (auto v = std::get<hades::resources::curve_default_value>(out); v.set)
-			return v;
+		//if (auto v = std::get<hades::resources::curve_default_value>(out); v.set)
+			//return v;
 
-		assert(c->default_value.set);
+		//assert(c->default_value.set);
 		return c->default_value;
 	}
 
@@ -163,7 +168,7 @@ namespace objects
 			// or iterate to the next c
 			do {
 				auto val = std::get<value>(*first);
-				if (val.set)
+				if (true)//val.set)
 				{
 					v = val;
 					first = std::find_if_not(first, last, [c](const curve_obj &lhs) {
@@ -336,7 +341,7 @@ namespace objects
 
 				const auto curve_ptr = hades::data::get<hades::resources::curve>(id);
 				const auto value_str = curve_value_node.as<hades::types::string>();
-				const auto value = hades::resources::StringToCurveValue(curve_ptr, value_str);
+				const auto value = hades::resources::curve_from_string(*curve_ptr, value_str);
 
 				obj.curves.push_back({ curve_ptr, value });
 			}
@@ -406,7 +411,9 @@ namespace objects
 			{
 				assert(curve);
 				const auto curve_id = hades::data::get_as_string(curve->id);
-				const auto value_str = hades::resources::CurveValueToString(value);
+				hades::resources::curve c = *curve;
+				c.default_value = value;
+				const auto value_str = hades::to_string(c);
 
 				y << YAML::Key << curve_id;
 				y << YAML::Value << value_str;

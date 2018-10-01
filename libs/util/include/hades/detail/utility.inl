@@ -1,8 +1,8 @@
 #include "hades/utility.hpp"
 
 #include <charconv>
-//#include <limits>
 #include <sstream>
+#include <string_view>
 
 namespace hades
 {
@@ -31,9 +31,6 @@ namespace hades
 		return random(0, 1) != 0;
 	}
 
-	//remove_duplicates: removes all duplicates from the container
-	// can remove only a subrange, or use custom comparitors
-
 	template<typename Container>
 	decltype(auto) remove_duplicates(Container &cont)
 	{
@@ -61,9 +58,9 @@ namespace hades
 		return cont.erase(last_unique, std::end(cont));
 	}
 
-	//pass a back_inserter to result
 	template<typename Out>
-	void split(const std::string &s, char delim, Out result) {
+	void split(const std::string &s, char delim, Out result)
+	{
 		std::stringstream ss;
 		ss.str(s);
 		std::string item;
@@ -73,7 +70,8 @@ namespace hades
 	}
 
 	template <typename Out>
-	void split(std::string_view sv, char delim, Out result) {
+	void split(std::string_view sv, char delim, Out result) 
+	{
 		while (!sv.empty())
 		{
 			std::string_view output;
@@ -101,16 +99,37 @@ namespace hades
 	}
 
 	template<class First, class Last>
-	types::string to_string(First begin, Last end)
+	types::string to_string(First begin, Last end, std::string_view delim)
 	{
 		if (begin == end) return types::string();
 
+		const auto delimiter = to_string(delim);
 		auto out = to_string(*begin);
 
 		while (++begin != end)
-			out += " " + to_string(*begin);
+			out += delimiter + to_string(*begin);
 
 		return out;
+	}
+
+	struct bracket_wrap_t {};
+
+	constexpr bracket_wrap_t bracket_wrap{};
+
+	template<class First, class Last>
+	types::string to_string(First begin, Last end, std::string_view delim, bracket_wrap_t wrap)
+	{
+		const auto str = to_string(begin, end, delim);
+
+		using namespace std::string_literals;
+		return "["s + str + "]"s;
+	}
+
+	template<class First, class Last>
+	types::string to_string(First begin, Last end)
+	{
+		using namespace std::string_view_literals;
+		return to_string(begin, end, ", "sv, bracket_wrap);
 	}
 
 	template<typename T>
@@ -127,6 +146,38 @@ namespace hades
 	template<typename T>
 	T vector_from_string(std::string_view str)
 	{
-		return T{};
+		//either : T
+		// or	 : T, T, T, T, T
+		// or	 : [T, T, T, T, T, T]
+
+		using value_type = T::value_type;
+
+		//remove the braces at begining and end if present
+		const auto first_brace = str.find_first_of('[');
+		if (first_brace != std::string_view::npos)
+			str.remove_prefix(first_brace + 1);
+
+		const auto last_brace = str.find_last_of(']');
+		if (last_brace != std::string_view::npos)
+			str.remove_suffix(str.size() - last_brace);
+
+		//split into csv
+		std::vector<std::string_view> elements;
+		split(str, ',', std::back_inserter(elements));
+
+		if (std::any_of(std::begin(elements), std::end(elements), [](auto &&s) {
+			return s.empty() //return true if the str is empty or consists of spaces
+				|| std::all_of(std::begin(s), std::end(s), [](auto &&c) {return c == ' '; });
+		}))
+		{
+			return T{};
+		}
+
+		//convert each one into T
+		std::vector<value_type> out;
+		for (const auto &e : elements)
+			out.push_back(from_string<value_type>(e));
+
+		return out;
 	}
 }

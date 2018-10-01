@@ -17,16 +17,15 @@ namespace hades
 
 		hades::curve<sf::Time, T> curve_instance{ curve->curve_type };
 
-		assert(value.set);
-		assert(std::holds_alternative<T>(value.value));
+		assert(std::holds_alternative<T>(value));
 
-		if (!value.set)
+		if (!resources::is_curve_valid(*curve))
 			throw curve_error("curve is missing a value");
 
-		if (!std::holds_alternative<T>(value.value))
+		if (!std::holds_alternative<T>(value))
 			throw curve_error("curve has wrong type");
 
-		const auto &val = std::get<T>(value.value);
+		const auto &val = std::get<T>(value);
 		curve_instance.insert(zero_time, val);
 
 		c.create({ id, curve->id }, curve_instance);

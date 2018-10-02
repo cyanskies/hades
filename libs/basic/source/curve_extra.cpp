@@ -4,6 +4,16 @@
 
 #include "hades/parser.hpp"
 
+namespace hades
+{
+	template<>
+	std::monostate from_string<std::monostate>(std::string_view)
+	{
+		LOGWARNING("Tried to call from_string<std::monostate>, a curve is being set without being properly initialised");
+		return {};
+	}
+}
+
 namespace hades::resources
 {
 	curve_type read_curve_type(std::string_view s) noexcept
@@ -21,71 +31,71 @@ namespace hades::resources
 			return curve_type::error;
 	}
 
-	VariableType read_variable_type(std::string_view s) noexcept
+	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
 		using namespace std::string_view_literals;
 		if (s == "int"sv)
-			return VariableType::INT;
+			return curve_variable_type::int_t;
 		else if (s == "float"sv)
-			return VariableType::FLOAT;
+			return curve_variable_type::FLOAT;
 		else if (s == "bool"sv)
-			return VariableType::BOOL;
+			return curve_variable_type::BOOL;
 		else if (s == "string"sv)
-			return VariableType::STRING;
+			return curve_variable_type::STRING;
 		else if (s == "obj_ref"sv)
-			return VariableType::OBJECT_REF;
+			return curve_variable_type::OBJECT_REF;
 		else if (s == "unique"sv)
-			return VariableType::UNIQUE;
+			return curve_variable_type::UNIQUE;
 		else if (s == "int_vector"sv)
-			return VariableType::VECTOR_INT;
+			return curve_variable_type::VECTOR_INT;
 		else if (s == "float_vector"sv)
-			return VariableType::VECTOR_FLOAT;
+			return curve_variable_type::VECTOR_FLOAT;
 		else if (s == "obj_ref_vector"sv)
-			return VariableType::VECTOR_OBJECT_REF;
+			return curve_variable_type::VECTOR_OBJECT_REF;
 		else if (s == "unique_vector"sv)
-			return VariableType::VECTOR_UNIQUE;
+			return curve_variable_type::VECTOR_UNIQUE;
 		else
-			return VariableType::ERROR;
+			return curve_variable_type::error;
 	}
 
 	void reset_default_value(curve& c)
 	{
-		using resources::VariableType;
-		if (c.data_type == VariableType::ERROR)
+		using resources::curve_variable_type;
+		if (c.data_type == curve_variable_type::error)
 			throw invalid_curve{"Tried to call reset_default_value on an invalid curve"};
 
 		using namespace resources::curve_types;
 
 		switch (c.data_type)
 		{
-		case VariableType::INT:
+		case curve_variable_type::int_t:
 			c.default_value.emplace<int_t>();
 			return;
-		case VariableType::FLOAT:
+		case curve_variable_type::FLOAT:
 			c.default_value.emplace<float_t>();
 			return;
-		case VariableType::BOOL:
+		case curve_variable_type::BOOL:
 			c.default_value.emplace<bool_t>();
 			return;
-		case VariableType::STRING:
+		case curve_variable_type::STRING:
 			c.default_value.emplace< resources::curve_types::string>();
 			return;
-		case VariableType::OBJECT_REF:
+		case curve_variable_type::OBJECT_REF:
 			c.default_value.emplace<object_ref>();
 			return;
-		case VariableType::UNIQUE:
+		case curve_variable_type::UNIQUE:
 			c.default_value.emplace<unique>();
 			return;
-		case VariableType::VECTOR_INT:
+		case curve_variable_type::VECTOR_INT:
 			c.default_value.emplace<vector_int>();
 			return;
-		case VariableType::VECTOR_FLOAT:
+		case curve_variable_type::VECTOR_FLOAT:
 			c.default_value.emplace<vector_float>();
 			return;
-		case VariableType::VECTOR_OBJECT_REF:
+		case curve_variable_type::VECTOR_OBJECT_REF:
 			c.default_value.emplace<vector_object_ref>();
 			return;
-		case VariableType::VECTOR_UNIQUE:
+		case curve_variable_type::VECTOR_UNIQUE:
 			c.default_value.emplace<vector_unique>();
 			return;
 		}
@@ -167,35 +177,45 @@ namespace hades::resources
 		}
 	}
 
+	constexpr bool is_set(const curve_default_value &v) noexcept
+	{
+		return !std::holds_alternative<std::monostate>(v);
+	}
+
 	bool is_curve_valid(const resources::curve &c) noexcept
 	{
-		using resources::VariableType;
-		if (c.data_type == VariableType::ERROR)
+		if (c.curve_type == curve_type::error)
+			return false;
+
+		using resources::curve_variable_type;
+		if (c.data_type == curve_variable_type::error)
+			return false;
+
+		if (!is_set(c.default_value))
 			return false;
 
 		using namespace resources::curve_types;
-
 		switch (c.data_type)
 		{
-		case VariableType::INT:
+		case curve_variable_type::int_t:
 			return std::holds_alternative<int_t>(c.default_value);
-		case VariableType::FLOAT:
+		case curve_variable_type::FLOAT:
 			return std::holds_alternative<float_t>(c.default_value);
-		case VariableType::BOOL:
+		case curve_variable_type::BOOL:
 			return std::holds_alternative<bool_t>(c.default_value);
-		case VariableType::STRING:
+		case curve_variable_type::STRING:
 			return std::holds_alternative<resources::curve_types::string>(c.default_value);
-		case VariableType::OBJECT_REF:
+		case curve_variable_type::OBJECT_REF:
 			return std::holds_alternative<object_ref>(c.default_value);
-		case VariableType::UNIQUE:
+		case curve_variable_type::UNIQUE:
 			return std::holds_alternative<unique>(c.default_value);
-		case VariableType::VECTOR_INT:
+		case curve_variable_type::VECTOR_INT:
 			return std::holds_alternative<vector_int>(c.default_value);
-		case VariableType::VECTOR_FLOAT:
+		case curve_variable_type::VECTOR_FLOAT:
 			return std::holds_alternative<vector_float>(c.default_value);
-		case VariableType::VECTOR_OBJECT_REF:
+		case curve_variable_type::VECTOR_OBJECT_REF:
 			return std::holds_alternative<vector_object_ref>(c.default_value);
-		case VariableType::VECTOR_UNIQUE:
+		case curve_variable_type::VECTOR_UNIQUE:
 			return std::holds_alternative<vector_unique>(c.default_value);
 		default:
 			return false;
@@ -225,7 +245,7 @@ namespace hades::resources
 
 namespace hades
 {
-	template<resources::VariableType t>
+	template<resources::curve_variable_type t>
 	types::string to_string(const resources::curve_default_value &v)
 	{
 		using T = resources::as_curve_type_t<t>;
@@ -233,9 +253,16 @@ namespace hades
 		return to_string(value);
 	}
 
+	template<>
+	types::string to_string<std::monostate>(std::monostate value)
+	{
+		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised");
+		return {};
+	}
+
 	types::string to_string(const resources::curve &v)
 	{
-		if (v.data_type == resources::VariableType::ERROR 
+		if (v.data_type == resources::curve_variable_type::error 
 			|| !resources::is_curve_valid(v))
 			throw invalid_curve{"Tried to call to_string on an invalid curve"};
 

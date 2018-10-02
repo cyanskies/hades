@@ -37,32 +37,32 @@ namespace hades
 
 		switch (curve->data_type)
 		{
-		case OBJECT_REF:
+		case curve_variable_type::OBJECT_REF:
 			[[fallthrough]];
-		case INT:
+		case curve_variable_type::int_t:
 			add_curve(c.intCurves, id, curve, value);
 			break;
-		case FLOAT:
+		case curve_variable_type::FLOAT:
 			add_curve(c.floatCurves, id, curve, value);
 			break;
-		case BOOL:
+		case curve_variable_type::BOOL:
 			add_curve(c.boolCurves, id, curve, value);
 			break;
-		case STRING:
+		case curve_variable_type::STRING:
 			add_curve(c.stringCurves, id, curve, value);
 			break;
-		case UNIQUE:
+		case curve_variable_type::UNIQUE:
 			add_curve(c.uniqueCurves, id, curve, value);
 			break;
-		case VECTOR_OBJECT_REF:
+		case curve_variable_type::VECTOR_OBJECT_REF:
 			[[fallthrough]];
-		case VECTOR_INT:
+		case curve_variable_type::VECTOR_INT:
 			add_curve(c.intVectorCurves, id, curve, value);
 			break;
-		case VECTOR_FLOAT:
+		case curve_variable_type::VECTOR_FLOAT:
 			add_curve(c.floatVectorCurves, id, curve, value);
 			break;
-		case VECTOR_UNIQUE:
+		case curve_variable_type::VECTOR_UNIQUE:
 			add_curve(c.uniqueVectorCurves, id, curve, value);
 			break;
 		default:

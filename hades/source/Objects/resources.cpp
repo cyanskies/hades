@@ -26,13 +26,13 @@ namespace objects
 		const auto position_id = data->get_uid("position");
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::empty_id, data);
 		position_c->curve_type = hades::curve_type::linear;
-		position_c->data_type = hades::resources::VariableType::VECTOR_INT;
+		position_c->data_type = hades::resources::curve_variable_type::VECTOR_INT;
 		position_c->default_value = std::vector<int_t>{ 0, 0 };
 		//size
 		const auto size_id = data->get_uid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
 		size_c->curve_type = hades::curve_type::linear;
-		size_c->data_type = hades::resources::VariableType::VECTOR_INT;
+		size_c->data_type = hades::resources::curve_variable_type::VECTOR_INT;
 		size_c->default_value = std::vector<int_t>{ 8, 8 };
 	}
 
@@ -160,29 +160,29 @@ namespace objects
 			if (c == nullptr)
 				return hades::resources::curve_default_value();
 
-			using hades::resources::VariableType;
+			using hades::resources::curve_variable_type;
 
 			switch (c->data_type)
 			{
-			case VariableType::BOOL:
+			case curve_variable_type::BOOL:
 				return ParseValue<bool>(node);
-			case VariableType::INT:
+			case curve_variable_type::int_t:
 				[[fallthrough]];
-			case VariableType::OBJECT_REF:
+			case curve_variable_type::OBJECT_REF:
 				return ParseValue<hades::types::int32>(node);
-			case VariableType::FLOAT:
+			case curve_variable_type::FLOAT:
 				return ParseValue<float>(node);
-			case VariableType::STRING:
+			case curve_variable_type::STRING:
 				return ParseValue<hades::types::string>(node);
-			case VariableType::UNIQUE:
+			case curve_variable_type::UNIQUE:
 				return ParseValue<hades::unique_id>(node);
-			case VariableType::VECTOR_INT:
+			case curve_variable_type::VECTOR_INT:
 				[[fallthrough]];
-			case VariableType::VECTOR_OBJECT_REF:
+			case curve_variable_type::VECTOR_OBJECT_REF:
 				return ParseValueVector<hades::types::int32>(node);
-			case VariableType::VECTOR_FLOAT:
+			case curve_variable_type::VECTOR_FLOAT:
 				return ParseValueVector<float>(node);
-			case VariableType::VECTOR_UNIQUE:
+			case curve_variable_type::VECTOR_UNIQUE:
 				return ParseValueVector<hades::unique_id>(node);
 			}
 

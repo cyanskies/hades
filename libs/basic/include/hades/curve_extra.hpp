@@ -32,7 +32,7 @@ namespace hades
 
 namespace hades::resources
 {
-	enum VariableType { ERROR, INT, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE };
+	enum class curve_variable_type { error, int_t, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE };
 
 	namespace curve_types
 	{
@@ -70,6 +70,7 @@ namespace hades::resources
 	}
 
 	using curve_default_value = std::variant<
+		std::monostate,
 		curve_types::int_t, 
 		curve_types::float_t,
 		curve_types::bool_t, 
@@ -84,13 +85,14 @@ namespace hades::resources
 	struct curve : public resource_type<curve_t>
 	{
 		curve_type curve_type = curve_type::error;
-		VariableType data_type = VariableType::ERROR;
+		curve_variable_type data_type = curve_variable_type::error;
 		bool sync = false,
 			save = false,
 			trim = false;
-		curve_default_value default_value;
+		curve_default_value default_value{};
 	};
 
+	constexpr bool is_set(const curve_default_value&) noexcept;
 	bool is_curve_valid(const resources::curve&) noexcept;
 
 	curve_default_value curve_from_string(const resources::curve &c, std::string_view str);

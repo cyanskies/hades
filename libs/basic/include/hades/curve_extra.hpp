@@ -27,12 +27,12 @@ namespace hades
 		struct curve;
 	}
 
-	types::string to_string(const resources::curve &v);
+	types::string to_string(const resources::curve &c);
 }
 
 namespace hades::resources
 {
-	enum class curve_variable_type { error, int_t, FLOAT, BOOL, STRING, OBJECT_REF, UNIQUE, VECTOR_INT, VECTOR_FLOAT, VECTOR_OBJECT_REF, VECTOR_UNIQUE };
+	enum class curve_variable_type { error, int_t, float_t, bool_t, string, object_ref, unique, vector_int, vector_float, vector_object_ref, vector_unique };
 
 	namespace curve_types
 	{
@@ -96,6 +96,12 @@ namespace hades::resources
 	bool is_curve_valid(const resources::curve&) noexcept;
 
 	curve_default_value curve_from_string(const resources::curve &c, std::string_view str);
+}
+
+namespace hades
+{
+
+	string to_string(const resources::curve &c, const resources::curve_default_value &v);
 }
 
 #endif // !HADES_CURVE_EXTRA_HPP

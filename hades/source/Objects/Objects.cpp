@@ -38,8 +38,9 @@ namespace objects
 			{
 				curve_ptr = curve;
 				auto v = std::get<hades::resources::curve_default_value>(cur);
-				//if (v.set)
-					//return cur;
+				if (hades::resources::is_set(v))
+					return cur;
+
 				return cur;
 			}
 		}
@@ -52,8 +53,8 @@ namespace objects
 			if (curve)
 			{
 				curve_ptr = curve;
-				//if (std::get<hades::resources::curve_default_value>(ret).set)
-					//return ret;
+				if (hades::resources::is_set(std::get<hades::resources::curve_default_value>(ret)))
+					return ret;
 				return ret;
 			}
 		}
@@ -85,17 +86,16 @@ namespace objects
 			auto v = std::get<hades::resources::curve_default_value>(cur);
 			assert(curve);
 			//if we have the right id and this
-			//if (curve == c && v.set)
-			//	return v;
-			return v;
+			if (curve == c && hades::resources::is_set(v))
+				return v;
 		}
 
 		assert(o.obj_type);
 		auto out = TryGetCurve(o.obj_type, c);
-		//if (auto[curve, value] = out; curve && value.set)
-			//return value;
+		if (auto[curve, value] = out; curve && hades::resources::is_set(value))
+			return value;
 
-		//assert(c->default_value.set);
+		assert(hades::resources::is_set(c->default_value));
 		return c->default_value;
 	}
 
@@ -109,10 +109,10 @@ namespace objects
 			throw curve_not_found("Requested curve not found on object type: " + hades::data::get_as_string(o->id)
 				+ ", curve was: " + hades::data::get_as_string(c->id));
 
-		//if (auto v = std::get<hades::resources::curve_default_value>(out); v.set)
-			//return v;
+		if (auto v = std::get<hades::resources::curve_default_value>(out); hades::resources::is_set(v))
+			return v;
 
-		//assert(c->default_value.set);
+		assert(hades::resources::is_set(c->default_value));
 		return c->default_value;
 	}
 
@@ -168,7 +168,7 @@ namespace objects
 			// or iterate to the next c
 			do {
 				auto val = std::get<value>(*first);
-				if (true)//val.set)
+				if (hades::resources::is_set(val))
 				{
 					v = val;
 					first = std::find_if_not(first, last, [c](const curve_obj &lhs) {

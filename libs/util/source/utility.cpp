@@ -1,6 +1,14 @@
 #include "hades/utility.hpp"
 
 namespace hades {
+	std::string_view trim(std::string_view in)
+	{
+		const auto start = in.find_first_not_of(' ');
+		const auto end = in.find_last_not_of(' ');
+
+		return in.substr(start, end - start + 1);
+	}
+
 	template<>
 	types::string to_string<const char*>(const char* value)
 	{

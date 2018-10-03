@@ -135,10 +135,16 @@ namespace hades
 	template<typename T>
 	T from_string(std::string_view str)
 	{
+		//remove spaces
+		const auto s = trim(str);
 		auto value = T{};
-		const auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+		const auto result = std::from_chars(s.data(), s.data() + s.size(), value);
 
-		//TODO: check result
+		if (result.ec == std::errc::invalid_argument)
+			throw bad_conversion{ "from_string: string cannot be converted" };
+
+		if (result.ec == std::errc::result_out_of_range)
+			throw bad_conversion{ "from_string: result out of range" };
 
 		return value;
 	}

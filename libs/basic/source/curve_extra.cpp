@@ -37,23 +37,23 @@ namespace hades::resources
 		if (s == "int"sv)
 			return curve_variable_type::int_t;
 		else if (s == "float"sv)
-			return curve_variable_type::FLOAT;
+			return curve_variable_type::float_t;
 		else if (s == "bool"sv)
-			return curve_variable_type::BOOL;
+			return curve_variable_type::bool_t;
 		else if (s == "string"sv)
-			return curve_variable_type::STRING;
+			return curve_variable_type::string;
 		else if (s == "obj_ref"sv)
-			return curve_variable_type::OBJECT_REF;
+			return curve_variable_type::object_ref;
 		else if (s == "unique"sv)
-			return curve_variable_type::UNIQUE;
+			return curve_variable_type::unique;
 		else if (s == "int_vector"sv)
-			return curve_variable_type::VECTOR_INT;
+			return curve_variable_type::vector_int;
 		else if (s == "float_vector"sv)
-			return curve_variable_type::VECTOR_FLOAT;
+			return curve_variable_type::vector_float;
 		else if (s == "obj_ref_vector"sv)
-			return curve_variable_type::VECTOR_OBJECT_REF;
+			return curve_variable_type::vector_object_ref;
 		else if (s == "unique_vector"sv)
-			return curve_variable_type::VECTOR_UNIQUE;
+			return curve_variable_type::vector_unique;
 		else
 			return curve_variable_type::error;
 	}
@@ -71,31 +71,31 @@ namespace hades::resources
 		case curve_variable_type::int_t:
 			c.default_value.emplace<int_t>();
 			return;
-		case curve_variable_type::FLOAT:
+		case curve_variable_type::float_t:
 			c.default_value.emplace<float_t>();
 			return;
-		case curve_variable_type::BOOL:
+		case curve_variable_type::bool_t:
 			c.default_value.emplace<bool_t>();
 			return;
-		case curve_variable_type::STRING:
+		case curve_variable_type::string:
 			c.default_value.emplace< resources::curve_types::string>();
 			return;
-		case curve_variable_type::OBJECT_REF:
+		case curve_variable_type::object_ref:
 			c.default_value.emplace<object_ref>();
 			return;
-		case curve_variable_type::UNIQUE:
+		case curve_variable_type::unique:
 			c.default_value.emplace<unique>();
 			return;
-		case curve_variable_type::VECTOR_INT:
+		case curve_variable_type::vector_int:
 			c.default_value.emplace<vector_int>();
 			return;
-		case curve_variable_type::VECTOR_FLOAT:
+		case curve_variable_type::vector_float:
 			c.default_value.emplace<vector_float>();
 			return;
-		case curve_variable_type::VECTOR_OBJECT_REF:
+		case curve_variable_type::vector_object_ref:
 			c.default_value.emplace<vector_object_ref>();
 			return;
-		case curve_variable_type::VECTOR_UNIQUE:
+		case curve_variable_type::vector_unique:
 			c.default_value.emplace<vector_unique>();
 			return;
 		}
@@ -199,23 +199,23 @@ namespace hades::resources
 		{
 		case curve_variable_type::int_t:
 			return std::holds_alternative<int_t>(c.default_value);
-		case curve_variable_type::FLOAT:
+		case curve_variable_type::float_t:
 			return std::holds_alternative<float_t>(c.default_value);
-		case curve_variable_type::BOOL:
+		case curve_variable_type::bool_t:
 			return std::holds_alternative<bool_t>(c.default_value);
-		case curve_variable_type::STRING:
+		case curve_variable_type::string:
 			return std::holds_alternative<resources::curve_types::string>(c.default_value);
-		case curve_variable_type::OBJECT_REF:
+		case curve_variable_type::object_ref:
 			return std::holds_alternative<object_ref>(c.default_value);
-		case curve_variable_type::UNIQUE:
+		case curve_variable_type::unique:
 			return std::holds_alternative<unique>(c.default_value);
-		case curve_variable_type::VECTOR_INT:
+		case curve_variable_type::vector_int:
 			return std::holds_alternative<vector_int>(c.default_value);
-		case curve_variable_type::VECTOR_FLOAT:
+		case curve_variable_type::vector_float:
 			return std::holds_alternative<vector_float>(c.default_value);
-		case curve_variable_type::VECTOR_OBJECT_REF:
+		case curve_variable_type::vector_object_ref:
 			return std::holds_alternative<vector_object_ref>(c.default_value);
-		case curve_variable_type::VECTOR_UNIQUE:
+		case curve_variable_type::vector_unique:
 			return std::holds_alternative<vector_unique>(c.default_value);
 		default:
 			return false;
@@ -262,18 +262,22 @@ namespace hades
 
 	types::string to_string(const resources::curve &v)
 	{
-		if (v.data_type == resources::curve_variable_type::error 
-			|| !resources::is_curve_valid(v))
-			throw invalid_curve{"Tried to call to_string on an invalid curve"};
+		return to_string(v, v.default_value);
+	}
 
-		return std::visit([](auto&& t)->types::string
-		{
+	types::string to_string(const resources::curve &c, const resources::curve_default_value &v)
+	{
+		if (!resources::is_curve_valid(c) ||
+			!resources::is_set(v))
+			throw invalid_curve{ "Tried to call to_string on an invalid curve" };
+
+		return std::visit([](auto&& t)->types::string {
 			using T = std::decay_t<decltype(t)>;
-			if constexpr(resources::curve_types::is_vector_type_v<T>)
+			if constexpr (resources::curve_types::is_vector_type_v<T>)
 				return to_string(std::begin(t), std::end(t));
 			else
 				return to_string<T>(t);
-		}, v.default_value);
+		}, v);
 	}
 
 	void register_curve_resource(data::data_manager &d)

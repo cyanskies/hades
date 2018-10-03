@@ -26,13 +26,13 @@ namespace objects
 		const auto position_id = data->get_uid("position");
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::empty_id, data);
 		position_c->curve_type = hades::curve_type::linear;
-		position_c->data_type = hades::resources::curve_variable_type::VECTOR_INT;
+		position_c->data_type = hades::resources::curve_variable_type::vector_int;
 		position_c->default_value = std::vector<int_t>{ 0, 0 };
 		//size
 		const auto size_id = data->get_uid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
 		size_c->curve_type = hades::curve_type::linear;
-		size_c->data_type = hades::resources::curve_variable_type::VECTOR_INT;
+		size_c->data_type = hades::resources::curve_variable_type::vector_int;
 		size_c->default_value = std::vector<int_t>{ 8, 8 };
 	}
 
@@ -164,25 +164,25 @@ namespace objects
 
 			switch (c->data_type)
 			{
-			case curve_variable_type::BOOL:
+			case curve_variable_type::bool_t:
 				return ParseValue<bool>(node);
 			case curve_variable_type::int_t:
 				[[fallthrough]];
-			case curve_variable_type::OBJECT_REF:
+			case curve_variable_type::object_ref:
 				return ParseValue<hades::types::int32>(node);
-			case curve_variable_type::FLOAT:
+			case curve_variable_type::float_t:
 				return ParseValue<float>(node);
-			case curve_variable_type::STRING:
+			case curve_variable_type::string:
 				return ParseValue<hades::types::string>(node);
-			case curve_variable_type::UNIQUE:
+			case curve_variable_type::unique:
 				return ParseValue<hades::unique_id>(node);
-			case curve_variable_type::VECTOR_INT:
+			case curve_variable_type::vector_int:
 				[[fallthrough]];
-			case curve_variable_type::VECTOR_OBJECT_REF:
+			case curve_variable_type::vector_object_ref:
 				return ParseValueVector<hades::types::int32>(node);
-			case curve_variable_type::VECTOR_FLOAT:
+			case curve_variable_type::vector_float:
 				return ParseValueVector<float>(node);
-			case curve_variable_type::VECTOR_UNIQUE:
+			case curve_variable_type::vector_unique:
 				return ParseValueVector<hades::unique_id>(node);
 			}
 

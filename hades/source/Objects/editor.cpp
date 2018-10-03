@@ -1300,8 +1300,8 @@ namespace objects
 		using namespace hades;
 		auto [curve, c_value] = c;
 		assert(curve);
-		//FIXME:
-		const auto value_str = to_string(*curve);
+
+		const auto value_str = to_string(*curve, c_value);
 
 		auto on_change = [curve, &obj](auto &&text) {
 			const auto value = curve_from_string(*curve, text);
@@ -1396,7 +1396,7 @@ namespace objects
 		const auto position_v = GetCurve(obj, position_c);
 
 		//FIXME:
-		auto position_edit = MakeEditRow("position", hades::to_string(*position_c),
+		auto position_edit = MakeEditRow("position", hades::to_string(*position_c, position_v),
 			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
 			const auto value = ValidVectorCurve(hades::resources::curve_from_string(*pos_c, text));
 			const auto position = std::get<hades::resources::curve_types::vector_int>(value);
@@ -1425,7 +1425,7 @@ namespace objects
 		//add size
 		const auto size_v = GetCurve(obj, size_c);
 
-		auto size_edit = MakeEditRow("size", hades::to_string(*size_c),
+		auto size_edit = MakeEditRow("size", hades::to_string(*size_c, size_v),
 			[&obj, pos_c = position_c, size_c = size_c, this](hades::types::string text) {
 			const auto value = ValidVectorCurve(hades::resources::curve_from_string(*size_c, text));
 			const auto size = std::get<hades::resources::curve_types::vector_int>(value);

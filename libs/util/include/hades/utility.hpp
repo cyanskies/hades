@@ -43,6 +43,8 @@ namespace hades {
 	template <typename Out>
 	void split(std::string_view sv, char delim, Out result);
 
+	std::string_view trim(std::string_view);
+
 	template<typename T>
 	types::string to_string(T value);
 
@@ -55,6 +57,13 @@ namespace hades {
 
 	template<class First, class Last>
 	types::string to_string(First begin, Last end);
+
+	//thrown by all the from_string functions
+	class bad_conversion : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
 
 	template<typename T>
 	T from_string(std::string_view str);

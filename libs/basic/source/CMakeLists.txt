@@ -15,18 +15,21 @@ set(HADES_BASIC_SRC
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
+	../include/hades/objects.hpp
 	../include/hades/parser.hpp
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
 	../include/hades/timers.hpp
+	../include/hades/writer.hpp
 	../include/hades/detail/collision.inl
 	../include/hades/detail/curve_extra.inl
 	../include/hades/detail/data.inl
 	../include/hades/detail/input.inl
 	../include/hades/detail/parser.inl
 	../include/hades/detail/quad_map.inl
+	../include/hades/detail/writer.inl
 )
 
 source_group("Headers" FILES
@@ -36,6 +39,7 @@ source_group("Headers" FILES
 	../include/hades/exceptions.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
+	../include/hades/objects.hpp
 	../include/hades/parser.hpp
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp

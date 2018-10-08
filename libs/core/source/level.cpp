@@ -2,27 +2,27 @@
 
 #include "SFML/System/Time.hpp"
 
-#include "hades/curve.hpp"
+#include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 
 namespace hades
 {
-	const auto zero_time = sf::Time{};
+	const auto zero_time = time_point{};
 
 	template<typename T>
-	void add_curve(curve_data::CurveMap<T> &c, EntityId id, const resources::curve *curve, const resources::curve_default_value &value)
+	void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
 	{
 		if (c.exists({ id, curve->id }))
 			c.erase({ id, curve->id });
 
-		hades::curve<sf::Time, T> curve_instance{ curve->curve_type };
+		hades::curve<T> curve_instance{ curve->curve_type };
 
 		assert(std::holds_alternative<T>(value));
 
-		if (!resources::is_curve_valid(*curve))
+		if (!resources::is_set(value))
 			throw curve_error("curve is missing a value");
 
-		if (!std::holds_alternative<T>(value))
+		if (!resources::is_curve_valid(*curve, value))
 			throw curve_error("curve has wrong type");
 
 		const auto &val = std::get<T>(value);
@@ -31,43 +31,17 @@ namespace hades
 		c.create({ id, curve->id }, curve_instance);
 	}
 
-	void add_curve_from_object(curve_data &c, EntityId id, const resources::curve *curve, const resources::curve_default_value &value)
+	void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
 	{
 		using namespace resources;
 
-		switch (curve->data_type)
-		{
-		case curve_variable_type::object_ref:
-			[[fallthrough]];
-		case curve_variable_type::int_t:
-			add_curve(c.intCurves, id, curve, value);
-			break;
-		case curve_variable_type::float_t:
-			add_curve(c.floatCurves, id, curve, value);
-			break;
-		case curve_variable_type::bool_t:
-			add_curve(c.boolCurves, id, curve, value);
-			break;
-		case curve_variable_type::string:
-			add_curve(c.stringCurves, id, curve, value);
-			break;
-		case curve_variable_type::unique:
-			add_curve(c.uniqueCurves, id, curve, value);
-			break;
-		case curve_variable_type::vector_object_ref:
-			[[fallthrough]];
-		case curve_variable_type::vector_int:
-			add_curve(c.intVectorCurves, id, curve, value);
-			break;
-		case curve_variable_type::vector_float:
-			add_curve(c.floatVectorCurves, id, curve, value);
-			break;
-		case curve_variable_type::vector_unique:
-			add_curve(c.uniqueVectorCurves, id, curve, value);
-			break;
-		default:
+		if (!resources::is_curve_valid(*curve, value))
 			throw std::runtime_error("unexpected curve type");
-		}
+
+		std::visit([&](auto &&v) {
+			using T = std::decay_t<decltype(v)>;
+			add_curve(get_curve_list<T>(c), id, curve, value);
+		}, value);
 	}
 
 	std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
@@ -84,7 +58,7 @@ namespace hades
 		return pos;
 	}
 
-	void add_object_to_save(curve_data &c, EntityId id, const objects::resources::object *o)
+	void add_object_to_save(curve_data &c, entity_id id, const resources::object *o)
 	{
 		for (const auto b : o->base)
 			add_object_to_save(c, id, b);
@@ -93,7 +67,7 @@ namespace hades
 			add_curve_from_object(c, id, curve, value);
 	}
 
-	void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, EntityId id, const objects::resources::object *o)
+	void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
 	{
 		assert(system_list.size() == attach_list.size());
 
@@ -107,12 +81,12 @@ namespace hades
 
 			auto &attch = attach_list[sys_index];
 
-			auto ent_list = attch.empty() ? resources::curve_types::vector_int{} : attch.get(sf::Time{});
+			auto ent_list = attch.empty() ? resources::curve_types::vector_int{} : attch.get(zero_time);
 
 			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
 			{
 				ent_list.push_back(id);
-				attch.set(sf::Time{}, ent_list);
+				attch.set(zero_time, ent_list);
 			}
 		}
 	}
@@ -123,14 +97,14 @@ namespace hades
 
 		for (const auto &o : l.objects)
 		{
-			assert(o.id != NO_ENTITY);
+			assert(o.id != bad_entity);
 
 			//record entity name if present
 			if (!o.name.empty())
 			{
-				auto names = sv.names.get(sf::Time{});
+				auto names = sv.names.get(zero_time);
 				names.emplace(o.name, o.id);
-				sv.names.set(sf::Time{}, names);
+				sv.names.set(zero_time, names);
 			}
 
 			//add curves from parents

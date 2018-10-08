@@ -4,19 +4,37 @@
 set(HADES_CORE_SRC
 	archive.cpp
 	files.cpp
+	game_system.cpp
+	level.cpp
+	level_interface.cpp
 	standard_paths.cpp
 	texture.cpp
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
+	../include/hades/game_system.hpp
+	../include/hades/level.hpp
+	../include/hades/level_interface.hpp
+	../include/hades/objects.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/texture.hpp
+	../include/hades/time.hpp
+	../include/hades/detail/game_system.inl
 )
 
 source_group("Headers" FILES
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
+	../include/hades/game_system.hpp
+	../include/hades/level.hpp
+	../include/hades/level_interface.hpp
+	../include/hades/objects.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/texture.hpp
+	../include/hades/time.hpp
+)
+
+source_group("Detail" FILES
+	../include/hades/detail/game_system.inl
 )
 
 # Library to build

@@ -100,6 +100,7 @@ namespace hades::resources
 			return;
 		}
 	}
+
 	curve_default_value get_default_value(const data::parser_node &n, std::string_view resource_name,
 		const curve &current_value, hades::unique_id mod)
 	{
@@ -184,6 +185,11 @@ namespace hades::resources
 
 	bool is_curve_valid(const resources::curve &c) noexcept
 	{
+		return is_curve_valid(c, c.default_value);
+	}
+
+	bool is_curve_valid(const resources::curve &c, const curve_default_value &v) noexcept
+	{
 		if (c.curve_type == curve_type::error)
 			return false;
 
@@ -191,32 +197,29 @@ namespace hades::resources
 		if (c.data_type == curve_variable_type::error)
 			return false;
 
-		if (!is_set(c.default_value))
-			return false;
-
 		using namespace resources::curve_types;
 		switch (c.data_type)
 		{
 		case curve_variable_type::int_t:
-			return std::holds_alternative<int_t>(c.default_value);
+			return std::holds_alternative<int_t>(v);
 		case curve_variable_type::float_t:
-			return std::holds_alternative<float_t>(c.default_value);
+			return std::holds_alternative<float_t>(v);
 		case curve_variable_type::bool_t:
-			return std::holds_alternative<bool_t>(c.default_value);
+			return std::holds_alternative<bool_t>(v);
 		case curve_variable_type::string:
-			return std::holds_alternative<resources::curve_types::string>(c.default_value);
+			return std::holds_alternative<resources::curve_types::string>(v);
 		case curve_variable_type::object_ref:
-			return std::holds_alternative<object_ref>(c.default_value);
+			return std::holds_alternative<object_ref>(v);
 		case curve_variable_type::unique:
-			return std::holds_alternative<unique>(c.default_value);
+			return std::holds_alternative<unique>(v);
 		case curve_variable_type::vector_int:
-			return std::holds_alternative<vector_int>(c.default_value);
+			return std::holds_alternative<vector_int>(v);
 		case curve_variable_type::vector_float:
-			return std::holds_alternative<vector_float>(c.default_value);
+			return std::holds_alternative<vector_float>(v);
 		case curve_variable_type::vector_object_ref:
-			return std::holds_alternative<vector_object_ref>(c.default_value);
+			return std::holds_alternative<vector_object_ref>(v);
 		case curve_variable_type::vector_unique:
-			return std::holds_alternative<vector_unique>(c.default_value);
+			return std::holds_alternative<vector_unique>(v);
 		default:
 			return false;
 		}

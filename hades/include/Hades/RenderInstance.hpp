@@ -21,7 +21,7 @@ namespace hades
 		void addTime(sf::Time dt);
 
 		//insert curvestream
-		void insertFrames(ExportedCurves import);
+		void insertFrames(exported_curves import);
 
 		//systems
 		void installSystem(resources::system *system);

@@ -5,10 +5,10 @@
 #include "yaml-cpp/yaml.h"
 
 #include "hades/curve_extra.hpp"
-#include "Hades/Data.hpp"
-#include "Hades/data_system.hpp"
-#include "Hades/exceptions.hpp"
-#include "Hades/level.hpp"
+#include "hades/data.hpp"
+#include "hades/data_system.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/level.hpp"
 
 //TODO: this whole file needs to be updated due to changes to curve default value storage
 
@@ -295,7 +295,7 @@ namespace objects
 		const auto desc = yaml_get_scalar<hades::types::string>(level_node, level_str, name, level_desc, "");
 		l.map_x = yaml_get_scalar(level_node, level_str, name, level_width, 0);
 		l.map_y = yaml_get_scalar(level_node, level_str, name, level_height, 0);
-		l.next_id = yaml_get_scalar<hades::EntityId>(root, level_str, name, obj_next, hades::NO_ENTITY);
+		l.next_id = yaml_get_scalar<hades::entity_id>(root, level_str, name, obj_next, hades::bad_entity);
 
 		//read objects
 		auto object_list = root[obj_str];
@@ -310,7 +310,7 @@ namespace objects
 				continue;
 			}
 
-			obj.id = id_node.as<hades::EntityId>(hades::NO_ENTITY);
+			obj.id = id_node.as<hades::entity_id>(hades::bad_entity);
 
 			const auto obj_node = o.second;
 			obj.name = yaml_get_scalar<hades::types::string>(obj_node, obj_str, hades::to_string(obj.id), obj_name, "");
@@ -451,7 +451,7 @@ namespace objects
 		}
 
 		//add the next id value
-		if (l.next_id != hades::NO_ENTITY)
+		if (l.next_id != hades::bad_entity)
 		{
 			y << YAML::Key << obj_next;
 			y << YAML::Value << l.next_id;

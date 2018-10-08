@@ -1,9 +1,8 @@
-#include "Hades/systems.hpp"
+#include "hades/game_system.hpp"
 
 #include <type_traits>
 
 #include "hades/data.hpp"
-#include "hades/data_system.hpp"
 
 namespace hades
 {
@@ -55,7 +54,7 @@ namespace hades
 
 		sys->on_create		= make_system_func(on_create);
 		sys->on_connect		= make_system_func(on_connect);
-		sys->on_disconnect = make_system_func(on_disconnect);
+		sys->on_disconnect	= make_system_func(on_disconnect);
 		sys->tick			= make_system_func(on_tick);
 		sys->on_destroy		= make_system_func(on_destroy);
 	}

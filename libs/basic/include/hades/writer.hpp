@@ -47,26 +47,4 @@ namespace hades::data
 	};
 }
 
-//start_map (terrain_yaml)
-e << YAML::Key << terrain_yaml;
-
-e << YAML::Value << YAML::BeginMap;
-
-
-//start_sequence(terrainset)
-//write terrains
-e << YAML::Key << terrainset_yaml;
-e << YAML::Value << YAML::Flow;
-e << YAML::BeginSeq;
-
-//wrtie(t);
-for (const auto &t : l.terrain.terrainset)
-e << t;
-
-//end_sequence
-e << YAML::EndSeq;
-
-//write each tile layer
-e << YAML::Key << tile_yaml;
-
 #endif // !HADES_WRITER_HPP

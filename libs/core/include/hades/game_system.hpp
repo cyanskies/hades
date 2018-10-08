@@ -1,38 +1,42 @@
-#ifndef HADES_SYSTEMS_HPP
-#define HADES_SYSTEMS_HPP
+#ifndef HADES_GAME_SYSTEM_HPP
+#define HADES_GAME_SYSTEM_HPP
 
 #include <any>
 #include <functional>
 #include <vector>
 
-#include "SFML/Graphics/Drawable.hpp"
-#include "SFML/Graphics/RenderStates.hpp"
-#include "SFML/System/Time.hpp"
+//#include "SFML/Graphics/Drawable.hpp"
+//#include "SFML/Graphics/RenderStates.hpp"
+//#include "SFML/System/Time.hpp"
 
-#include "hades/curve.hpp"
+#include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/input.hpp"
 #include "hades/parallel_jobs.hpp"
 #include "hades/resource_base.hpp"
-#include "Hades/shared_guard.hpp"
-#include "Hades/SpriteBatch.hpp"
+#include "hades/shared_guard.hpp"
+#include "hades/timers.hpp"
+//#include "Hades/SpriteBatch.hpp"
 
 namespace hades
 {
+	//fwd declaration
+	class GameInterface;
+	class RenderInterface;
+
 	class system_error : public std::runtime_error
 	{
 	public:
 		using std::runtime_error::runtime_error;
 	};
 
-	class GameInterface;
 	//we use int32 as the id type so that entity id's can be stored in curves.
-	using EntityId = types::int32;
+	using entity_id = types::int32;
 
 	struct system_job_data
 	{
 		//entity to run on
-		EntityId entity;
+		entity_id entity;
 		//unique id of this system TODO: is this needed?
 		unique_id system;
 		//level data interface:
@@ -44,7 +48,8 @@ namespace hades
 		// and... just the players
 		GameInterface* mission_data;
 		//the current time, and the time to advance by(t + dt)
-		sf::Time current_time, dt;
+		time_point current_time;
+		time_duration dt;
 	};
 
 	namespace resources
@@ -89,18 +94,18 @@ namespace hades
 	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
 	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
-	using VariableId = unique_id;
+	using variable_id = unique_id;
 
 	//these are earmarked as error values
-	const EntityId NO_ENTITY = std::numeric_limits<EntityId>::min();
-	const VariableId NO_VARIABLE = VariableId::zero;
+	constexpr entity_id bad_entity = std::numeric_limits<entity_id>::min();
+	const variable_id bad_variable = variable_id::zero;
+
+	using name_list = curve<resources::curve_types::vector_object_ref>;
 
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
 	struct GameSystem
 	{
-		using name_list = curve<sf::Time, std::vector<EntityId>>;
-
 		GameSystem(const resources::system* s) : system(s)
 		{}
 
@@ -132,7 +137,7 @@ namespace hades
 	struct render_job_data
 	{
 		//entity to run on
-		EntityId entity;
+		entity_id entity;
 		//unique id of this system TODO: is this needed?
 		unique_id system;
 		//level data interface:
@@ -144,7 +149,7 @@ namespace hades
 		// and... just the players
 		RenderInterface* mission_data;
 		//the current time, and the time to advance too(t + dt)
-		sf::Time current_time;
+		time_point current_time;
 		//the input over time for systems to look at TODO: find another way to do this
 		//const curve<sf::Time, input_system::action_set> *actions;
 	};
@@ -173,10 +178,10 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system* system;
 		//list of entities attached to this system, over time
-		shared_guard<curve<sf::Time, std::vector<EntityId>>> attached_entities = curve<sf::Time, std::vector<EntityId>>(curve_type::step);
+		shared_guard<name_list> attached_entities = name_list{ curve_type::step };
 	};
 }
 
-#include "Hades/detail/systems.inl"
+#include "hades/detail/game_system.inl"
 
 #endif //HADES_GAMESYSTEM_HPP

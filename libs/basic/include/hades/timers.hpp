@@ -15,7 +15,25 @@ namespace hades
 {
 	using time_clock = std::chrono::high_resolution_clock;
 	using time_point = std::chrono::high_resolution_clock::time_point;
-	using time_duration = std::chrono::nanoseconds;
+
+	template<typename Rep, typename Period>
+	using basic_duration = std::chrono::duration<Rep, Period>;
+	template<typename Rep>
+	using basic_second = std::chrono::duration<Rep>;
+
+	using nanoseconds = std::chrono::nanoseconds;
+	using microseconds = std::chrono::microseconds;
+	using milliseconds = std::chrono::milliseconds;
+	using seconds = basic_second<float>;
+
+	using time_duration = nanoseconds;
+
+	template<typename TargetDuration,
+		typename Rep2, typename Period2>
+		std::enable_if<std::chrono::_Is_duration_v<TargetDuration>, TargetDuration> duration_cast(basic_duration<Rep2, Period2> duration)
+	{
+		return std::chrono::duration_cast<TargetDuration>(duration);
+	}
 
 	//Thread safe.
 	class timer_system

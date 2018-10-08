@@ -11,9 +11,7 @@ set(HADES_SRC
 	data_system.cpp
   	ExportedCurves.cpp
 	GameInstance.cpp
-	GameInterface.cpp
 	GridArea.cpp
-	level.cpp
 	main.cpp
 	mission.cpp
 	RenderInstance.cpp
@@ -24,10 +22,8 @@ set(HADES_SRC
 	SpriteBatch.cpp
 	State.cpp
 	StateManager.cpp
-	systems.cpp
 	yaml_parser.cpp
 	yaml_writer.cpp
-	../include/Hades/detail/systems.inl
 	Objects/editor.cpp
 	Objects/Objects.cpp
 	Objects/resources.cpp
@@ -42,10 +38,6 @@ set(HADES_SRC
 	Tiles/serialise.cpp
 	Tiles/tiles.cpp
 )
-
-source_group("Detail" FILES
-	../include/Hades/detail/systems.inl
-	)
 
 source_group("Tiles" FILES
 	Tiles/editor.cpp

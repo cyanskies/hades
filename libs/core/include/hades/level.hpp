@@ -1,11 +1,9 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-#include "SFML/System/Time.hpp"
-
 #include "hades/curve.hpp"
-#include "Hades/GameInterface.hpp"
-#include "Objects/Objects.hpp"
+#include "hades/level_interface.hpp"
+#include "hades/objects.hpp"
 
 // a level is a playable area
 
@@ -32,9 +30,9 @@ namespace hades
 		level_size_t map_x = 0, map_y = 0;
 		//sequence of object
 		//list of curve values, not including defaults
-		std::vector<objects::object_info> objects;
+		std::vector<object_instance> objects;
 		//the id of the next entity to be placed, or spawned in-game
-		hades::EntityId next_id = hades::NO_ENTITY;
+		entity_id next_id = bad_entity;
 
 		//TODO: background, flat colour, paralax image, paralax loop image
 		//set paralax to 0 to get a static image
@@ -51,13 +49,13 @@ namespace hades
 
 		//entity data
 		curve_data curves;
-		EntityId next_id = hades::NO_ENTITY;
+		entity_id next_id = bad_entity;
 		name_curve_t names{ curve_type::step };
 		
 		//list of systems
 		using system_list = std::vector<const resources::system*>;
 		system_list systems;
-		using system_attachment_list = std::vector<curve<sf::Time, std::vector<EntityId>>>;
+		using system_attachment_list = std::vector<curve<resources::curve_types::vector_object_ref>>;
 		system_attachment_list systems_attached;
 
 		//list of client systems?

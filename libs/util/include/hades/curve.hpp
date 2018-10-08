@@ -18,19 +18,22 @@
 
 namespace hades {
 	template<typename Time, typename Data>
-	struct keyframe
+	struct basic_keyframe
 	{
-		keyframe(Time at) 
+		basic_keyframe(Time at)
 			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_constructible_v<Data>)
 			: t(at) {}
 
-		keyframe(Time at, Data data)
+		basic_keyframe(Time at, Data data)
 			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_copy_constructible_v<Data>)
 			: t(at), value(data) {}
 
 		Time t;
 		Data value;
 	};
+
+	template<typename T>
+	using keyframe = basic_keyframe<time_point, T>;
 
 	//TODO: move lerp into the utility header
 	template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
@@ -47,31 +50,31 @@ namespace hades {
 	}
 
 	template<typename Time, typename Data>
-	bool operator==(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
+	bool operator==(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
 	{
 		return lhs.t == rhs.t && lhs.value == rhs.value;
 	}
 
 	template<typename Time, typename Data>
-	bool operator!=(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
+	bool operator!=(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const keyframe<Time, Data> &lhs, const keyframe<Time, Data> &rhs)
+	bool operator<(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
 	{
 		return lhs.t < rhs.t;
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const keyframe<Time, Data> &lhs, const Time &rhs)
+	bool operator<(const basic_keyframe<Time, Data> &lhs, const Time &rhs)
 	{
 		return lhs.t < rhs;
 	}
 
 	template<typename Time, typename Data>
-	bool operator<(const Time &lhs, const keyframe<Time, Data> &rhs)
+	bool operator<(const Time &lhs, const basic_keyframe<Time, Data> &rhs)
 	{
 		return lhs < rhs.t;
 	}
@@ -91,13 +94,13 @@ namespace hades {
 	};
 
 	template<typename Time, typename Data>
-	class curve final
+	class basic_curve final
 	{
 	public:
-		using frame_t = keyframe<Time, Data>;
+		using frame_t = basic_keyframe<Time, Data>;
 		using DataType = std::set<frame_t>;
 
-		explicit curve(curve_type type) 
+		explicit basic_curve(curve_type type) 
 			noexcept(std::is_nothrow_copy_constructible_v<curve_type> && std::is_nothrow_constructible_v<DataType>)
 			: _type(type)
 		{}
@@ -106,35 +109,35 @@ namespace hades {
 			std::is_nothrow_copy_constructible<curve_type>,
 			std::is_nothrow_constructible<typename DataType>,
 			std::is_nothrow_copy_assignable<typename DataType>,
-			std::is_nothrow_swappable<curve>>::value;
+			std::is_nothrow_swappable<basic_curve>>::value;
 
 		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
 			std::is_nothrow_swappable<typename DataType>,
 			std::is_nothrow_swappable<curve_type>>::value;
 
-		curve(const curve &other)
+		basic_curve(const basic_curve &other)
 			noexcept(is_curve_nothrow_copy_assignable_v)
 		{
 			*this = other;
 		}
 
-		curve(curve &&other)
+		basic_curve(basic_curve &&other)
 			noexcept(is_curve_nothrow_move_assignable_v)
 		{
 			*this = std::move(other);
 		}
 
-		curve &operator=(const curve &other)
+		basic_curve &operator=(const basic_curve &other)
 			noexcept(is_curve_nothrow_copy_assignable_v)
 		{
-			curve<Time, Data> c{ other._type };
+			basic_curve<Time, Data> c{ other._type };
 			c._data = other._data;
 
 			std::swap(*this, c);
 			return *this;
 		}
 
-		curve &operator=(curve &&other)
+		basic_curve &operator=(basic_curve &&other)
 			noexcept(is_curve_nothrow_move_assignable_v)
 		{
 			std::swap(_data, other._data);
@@ -185,7 +188,10 @@ namespace hades {
 			{
 				const auto d = _getRange(at);
 
-				const auto interp = (at - d.first->t) / (d.second->t - d.first->t);
+				const auto first = at - d.first->t;
+				const auto second = d.second->t - d.first->t;
+
+				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
 
 				using hades::lerp;
 				return lerp(d.first->value, d.second->value, interp);
@@ -230,7 +236,7 @@ namespace hades {
 				lower != upper)
 				--upper;
 
-			std::vector<keyframe<Time, Data>> output;
+			std::vector<basic_keyframe<Time, Data>> output;
 
 			while (lower != upper)
 				output.push_back(*lower++);
@@ -259,9 +265,9 @@ namespace hades {
 		curve_type type() const noexcept { return _type; }
 
 		template<typename T, typename D>
-		friend bool operator==(const curve<T, D> &lhs, const curve<T, D> &rhs);
+		friend bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs);
 		template<typename T, typename D>
-		friend bool operator!=(const curve<T, D> &lhs, const curve<T, D> &rhs);
+		friend bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs);
 
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
@@ -303,19 +309,19 @@ namespace hades {
 	};
 
 	template<typename T, typename D>
-	bool operator==(const curve<T, D> &lhs, const curve<T, D> &rhs)
+	bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs)
 	{
 		return lhs._type == rhs._type && lhs._data == rhs._data;
 	}
 
 	template<typename T, typename D>
-	bool operator!=(const curve<T, D> &lhs, const curve<T, D> &rhs)
+	bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs)
 	{
 		return !(rhs == lhs);
 	}
 
 	template<class T>
-	using curve_var = curve<time_point, T>;
+	using curve = basic_curve<time_point, T>;
 }
 
 #endif //HADES_UTIL_CURVES_HPP

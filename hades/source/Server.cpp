@@ -24,12 +24,12 @@ namespace hades
 			/*yeeaarrrghhh*/
 		}
 
-		ExportedCurves get_changes(sf::Time dt) override
+		exported_curves get_changes(sf::Time dt) override
 		{
 			return _game.getChanges(dt);
 		}
 
-		ExportedCurves resync() override
+		exported_curves resync() override
 		{
 			return _game.getChanges(sf::Time{});
 		}
@@ -67,12 +67,12 @@ namespace hades
 
 		}
 
-		ExportedCurves get_updates(sf::Time dt) override
+		exported_curves get_updates(sf::Time dt) override
 		{
 			return _level.get_changes(dt);
 		}
 
-		ExportedCurves resync(sf::Time) override
+		exported_curves resync(sf::Time) override
 		{
 			return get_updates(sf::Time{});
 		}

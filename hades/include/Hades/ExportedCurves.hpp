@@ -1,10 +1,8 @@
 #ifndef HADES_EXPORTEDCURVES_HPP
 #define HADES_EXPORTEDCURVES_HPP
 
-#include "SFML/System/Time.hpp"
-
-#include "hades/curve.hpp"
-#include "Hades/GameInterface.hpp"
+#include "hades/curve_extra.hpp"
+#include "hades/level_interface.hpp"
 
 //Exported curves can be streamed into packets,
 //they can also be imported into GameRenderers
@@ -15,32 +13,32 @@ namespace hades
 	// curve type
 	// entity and variable id's
 	// 
-	struct ExportedCurves
+	struct exported_curves
 	{
 		template<class T>
-		struct ExportSet
+		struct export_set
 		{
-			EntityId entity;
-			VariableId variable;
+			entity_id entity;
+			variable_id variable;
 			//the client will use the variableid to ditermine curveType
-			std::vector<keyframe<sf::Time, T>> frames;
+			std::vector<keyframe<T>> frames;
 		};
 
-		std::vector<std::pair<EntityId, types::string>> entity_names;
+		std::vector<std::pair<entity_id, types::string>> entity_names;
 
 		//TODO: this should be synced on connection only
 		//std::vector<std::pair<VariableId, types::string>> variable_names;
 
-		//each curve type goes here
-		std::vector < ExportSet<types::int32>> intCurves;
-		std::vector < ExportSet<float>> floatCurves;
-		std::vector < ExportSet<bool>> boolCurves;
-		std::vector < ExportSet<types::string>> stringCurves;
-		std::vector < ExportSet<unique_id>> uniqueCurves;
-
-		std::vector < ExportSet<std::vector<types::int32>>> intVectorCurves;
-		std::vector < ExportSet<std::vector<float>>> floatVectorCurves;
-		std::vector < ExportSet<std::vector<unique_id>>> uniqueVectorCurves;
+		std::vector<export_set<resources::curve_types::int_t>> int_curves;
+		std::vector<export_set<resources::curve_types::float_t>> float_curves;
+		std::vector<export_set<resources::curve_types::bool_t>> bool_curves;
+		std::vector<export_set<resources::curve_types::string>> string_curves;
+		std::vector<export_set<resources::curve_types::object_ref>> object_ref_curves;
+		std::vector<export_set<resources::curve_types::unique>> unique_curves;
+		std::vector<export_set<resources::curve_types::vector_int>> int_vector_curves;
+		std::vector<export_set<resources::curve_types::vector_float>> float_vector_curves;
+		std::vector<export_set<resources::curve_types::vector_object_ref>> object_ref_vector_curves;
+		std::vector<export_set<resources::curve_types::vector_unique>> unique_vector_curves;
 	};
 }
 

@@ -1,8 +1,8 @@
-#include "Hades/GameInterface.hpp"
+#include "Hades/level_interface.hpp"
 
 #include "hades/data.hpp"
-#include "Hades/level.hpp"
-#include "Hades/systems.hpp"
+#include "hades/level.hpp"
+#include "hades/game_system.hpp"
 
 namespace hades 
 {
@@ -23,19 +23,19 @@ namespace hades
 		_systems = std::move(systems);
 	}
 
-	EntityId GameInterface::createEntity()
+	entity_id GameInterface::createEntity()
 	{
 		return ++_next;
 	}
 
-	EntityId GameInterface::getEntityId(const types::string &name, sf::Time t) const
+	entity_id GameInterface::getEntityId(const types::string &name, time_point t) const
 	{
 		const auto names = _entity_names.get();
 		const auto name_map = names.get(t);
 		if (const auto ent_name = name_map.find(name); ent_name != std::end(name_map))
 			return ent_name->second;
 
-		return NO_ENTITY;
+		return bad_entity;
 	}
 
 	curve_data &GameInterface::getCurves()
@@ -48,7 +48,7 @@ namespace hades
 		return _curves;
 	}
 
-	void GameInterface::attachSystem(EntityId entity, unique_id sys, sf::Time t)
+	void GameInterface::attachSystem(entity_id entity, unique_id sys, time_point t)
 	{
 		const auto lock = std::lock_guard{ _system_list_mut };
 
@@ -58,9 +58,11 @@ namespace hades
 		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
 		if (found != ent_list.end())
 		{
+			const auto message = "The requested entityid is already attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				to_string(std::chrono::duration_cast<seconds>(t.time_since_epoch()).count()) + "s";
 			//ent is already attached
-			throw system_already_attached(std::string("The requested entityid is already attached to this system. EntityId: " \
-				+ std::to_string(entity) + ", System: " + "err" + ", at time: " + std::to_string(t.asSeconds()) + "s").c_str());
+			throw system_already_attached{message};
 		}
 
 		ent_list.emplace_back(entity);
@@ -68,7 +70,7 @@ namespace hades
 		system.attached_entities = ents;
 	}
 
-	void GameInterface::detachSystem(EntityId entity, unique_id sys, sf::Time t)
+	void GameInterface::detachSystem(entity_id entity, unique_id sys, time_point t)
 	{
 		const auto lock = std::lock_guard{ _system_list_mut };
 
@@ -78,8 +80,10 @@ namespace hades
 		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
 		if (found == ent_list.end())
 		{
-			throw system_already_attached(std::string("The requested entityid isn't attached to this system. EntityId: " \
-				+ std::to_string(entity) + ", System: " + "err" + ", at time: " + std::to_string(t.asSeconds()) + "s").c_str());
+			const auto message = "The requested entityid isn't attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				to_string(std::chrono::duration_cast<seconds>(t.time_since_epoch()).count()) + "s";
+			throw system_already_attached{ message };
 		}
 
 		ent_list.erase(found);

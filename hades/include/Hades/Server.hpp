@@ -21,11 +21,11 @@ namespace hades
 		//pumps the network and prepares for get_changes and handle_request
 		virtual void update() = 0; 
 		//gets updated curves
-		virtual ExportedCurves get_changes(sf::Time) = 0;
+		virtual exported_curves get_changes(sf::Time) = 0;
 		//sends player input
 		virtual void handle_request(hades::action a) = 0;
 		//
-		virtual ExportedCurves resync() = 0;
+		virtual exported_curves resync() = 0;
 
 	private:
 		//level_id
@@ -40,8 +40,8 @@ namespace hades
 	public:
 		virtual void update(sf::Time) = 0; //noop on remote server
 		virtual void send_request(/*level_target*//*action*/) = 0;
-		virtual ExportedCurves get_updates(sf::Time) = 0;
-		virtual ExportedCurves resync(sf::Time) = 0;
+		virtual exported_curves get_updates(sf::Time) = 0;
+		virtual exported_curves resync(sf::Time) = 0;
 
 		//get source_file level1.mission or whatever
 		virtual void get_mission() = 0;

@@ -2,9 +2,10 @@
 
 #include <cassert>
 
-#include "Hades/Data.hpp"
-#include "Hades/parallel_jobs.hpp"
-#include "Hades/simple_resources.hpp"
+#include "hades/data.hpp"
+#include "hades/parallel_jobs.hpp"
+#include "hades/simple_resources.hpp"
+#include "hades/time.hpp"
 
 namespace hades 
 {
@@ -15,6 +16,10 @@ namespace hades
 
 	void GameInstance::tick(sf::Time dt)
 	{
+		const auto current_duration = to_standard_time(_currentTime);
+		const auto current_time = time_point{ current_duration };
+		const auto dt_duration = to_standard_time(dt);
+
 		//take a copy of the current active systems and entity attachments, 
 		//changes to this wont take effect untill the next tick
 		const auto systems = [this] {
@@ -35,7 +40,7 @@ namespace hades
 				continue;
 
 			assert(s.system);
-			const auto entities = s.attached_entities.get().get(_currentTime);
+			const auto entities = s.attached_entities.get().get(current_time);
 
 			for (const auto ent : entities)
 			{
@@ -44,8 +49,8 @@ namespace hades
 					s.system->id,
 					this,
 					nullptr, //mission data //TODO:
-					_currentTime,
-					dt
+					current_time,
+					dt_duration
 				});
 
 				_jobs.run(j);
@@ -65,17 +70,19 @@ namespace hades
 
 	void GameInstance::insertInput(input_system::action_set input, sf::Time t)
 	{
-		_input.set(t, input);
+		const auto duration = to_standard_time(t);
+		const auto current_time = time_point{ duration };
+		_input.set(current_time, input);
 	}
 
 	template<typename T>
-	std::vector<ExportedCurves::ExportSet<T>> GetExportedSet(sf::Time t, typename shared_map<std::pair<EntityId, VariableId>, \
-		curve<sf::Time, T>>::data_array data)
+	std::vector<exported_curves::export_set<T>> GetExportedSet(time_point t, typename shared_map<std::pair<entity_id, variable_id>, \
+		curve<T>>::data_array data)
 	{
-		std::vector<ExportedCurves::ExportSet<T>> output;
+		std::vector<exported_curves::export_set<T>> output;
 		for (auto c : data)
 		{
-			ExportedCurves::ExportSet<T> s;
+			exported_curves::export_set<T> s;
 			s.variable = c.first.second;
 			
 			auto curve = data::get<resources::curve>(s.variable);
@@ -96,19 +103,22 @@ namespace hades
 		return output;
 	}
 
-	ExportedCurves GameInstance::getChanges(sf::Time t) const
+	exported_curves GameInstance::getChanges(sf::Time t) const
 	{
 		//return all frames between currenttime - t and time.max	
-		auto startTime = _currentTime - t;
-		auto &curves = getCurves();
+		const auto startTime = _currentTime - t;
+		const auto time = to_standard_time_point(startTime);
+		const auto &curves = getCurves();
 
-		ExportedCurves output;
+		exported_curves output;
 
+		using namespace resources::curve_types;
 		//load all the frames from the specified time into the exported data
-		output.intCurves = GetExportedSet<types::int32>(startTime, curves.intCurves.data());
-		output.boolCurves = GetExportedSet<bool>(startTime, curves.boolCurves.data());
-		output.stringCurves = GetExportedSet<types::string>(startTime, curves.stringCurves.data());
-		output.intVectorCurves = GetExportedSet<std::vector<types::int32>>(startTime, curves.intVectorCurves.data());
+		//TODO: half of the curve types are missing
+		output.int_curves = GetExportedSet<int_t>(time, curves.int_curves.data());
+		output.bool_curves = GetExportedSet<bool_t>(time, curves.bool_curves.data());
+		output.string_curves = GetExportedSet<string>(time, curves.string_curves.data());
+		output.int_vector_curves = GetExportedSet<vector_int>(time, curves.int_vector_curves.data());
 
 		//add in entityNames and variable Id mappings
 		output.entity_names = _newEntityNames;
@@ -116,16 +126,18 @@ namespace hades
 		return output;
 	}
 
-	void GameInstance::nameEntity(EntityId entity, const types::string &name, sf::Time t)
+	void GameInstance::nameEntity(entity_id entity, const types::string &name, sf::Time t)
 	{
 		assert(entity < _next);
+
+		const auto time = to_standard_time_point(t);
 
 		while (true) //NOTE: not a fan of while(true), is there another way to write this without repeating code?
 		{
 			const auto ent_names = _entity_names.get();
 			auto updated_names = ent_names;
 			//get the closest list of names to the current time
-			auto name_map = updated_names.get(t);
+			auto name_map = updated_names.get(time);
 
 			//if entities can be renamed
 			name_map[name] = entity;
@@ -137,7 +149,7 @@ namespace hades
 			//	;//throw?
 
 			//insert the new name map back into the curve
-			updated_names.insert(t, name_map);
+			updated_names.insert(time, name_map);
 
 			//replace the shared name list with the updated one
 			if (_entity_names.compare_exchange(ent_names, updated_names))

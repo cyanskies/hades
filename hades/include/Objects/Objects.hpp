@@ -5,7 +5,7 @@
 
 #include "Hades/simple_resources.hpp"
 #include "hades/Types.hpp"
-#include "Hades/systems.hpp"
+#include "hades/game_system.hpp"
 
 #include "Objects/resources.hpp"
 
@@ -28,7 +28,7 @@ namespace objects
 	struct object_info
 	{
 		const resources::object *obj_type = nullptr;
-		hades::EntityId id = hades::NO_ENTITY;
+		hades::entity_id id = hades::bad_entity;
 		hades::types::string name;
 		resources::object::curve_list curves;
 	};

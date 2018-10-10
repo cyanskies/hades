@@ -69,26 +69,9 @@ namespace hades::data
 
 	namespace parse_tools
 	{
-		inline void log_parse_error(std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, std::string_view requested_type, hades::unique_id mod)
-		{
-			using namespace std::string_literals;
-			auto message = "Error parsing data"s;
-			if (mod != hades::unique_id::zero)
-			{
-				const auto mod_ptr = get<hades::resources::mod>(mod);
-				message += ", in mod: "s + mod_ptr->name;
-			}
-			message += ", type: "s + hades::to_string(resource_type)
-				+ ", name: "s + hades::to_string(resource_name)
-				+ ", for property: "s + hades::to_string(property_name)
-				+ ". value must be "s + hades::to_string(requested_type);
-			LOGERROR(message);
-		}
-
 		template<class T, typename ConversionFunc>
-		T get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, T default_value, hades::unique_id mod, ConversionFunc convert)
+		T get_scalar(const parser_node &node, std::string_view property_name, T default_value,
+			ConversionFunc convert)
 		{
 			const auto property_node = node.get_child(property_name);
 			if (property_node)
@@ -97,20 +80,15 @@ namespace hades::data
 				return default_value;
 		}
 
-		template<typename ConversionFunc>
-		unique_id get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, unique_id default_value, hades::unique_id mod, ConversionFunc convert)
-		{
-			return get_scalar(node, resource_type, resource_name, property_name, mode, default_value, [](std::string_view str) {
-				return make_uid(str);
-			})
-		}
-
 		template<class T, typename ConversionFunc>
-		T get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, T default_value, ConversionFunc convert)
+		std::vector<T> get_sequence(const parser_node &node, std::string_view property_name, 
+			const std::vector<T> &default_value, ConversionFunc convert)
 		{
-			return get_scalar<T>(node, resource_type, resource_name, property_name, default_value, hades::unique_id::zero, convert);
+			const auto property_node = node.get_child(property_name);
+			if (property_node)
+				return property_node->to_sequence<T>(convert);
+			else
+				return default_value;
 		}
 	}
 }

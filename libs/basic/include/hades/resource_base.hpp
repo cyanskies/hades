@@ -104,6 +104,9 @@ namespace hades
 			//mod_t value
 		};
 	}
+
+	template<typename T>
+	constexpr bool is_resource_v = std::is_base_of_v<resources::resource_base, T>;
 }
 
 #endif // !HADES_RESOURCE_BASE_HPP

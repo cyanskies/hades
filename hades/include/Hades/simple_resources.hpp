@@ -231,26 +231,6 @@ namespace hades
 			return true;
 		}
 
-		struct animation_frame
-		{
-			//the rectangle for this frame and the duration relative to the rest of the frames in this animation
-			animation_frame() = default;
-			animation_frame(types::uint16 nx, types::uint16 ny, float nd) : x(nx), y(ny), duration(nd) {}
-			types::uint16 x = 0, y = 0;
-			float duration = 1.f;
-		};
-
-		//TODO: add field for fragment shaders
-		struct animation : public resource_type<std::vector<animation_frame>>
-		{
-			animation();
-
-			const texture* tex = nullptr;
-			float duration = 1.f;
-			types::int32 width = 0, height = 0;
-			const shader *anim_shader = nullptr;
-		};
-
 		struct font : public resource_type<sf::Font>
 		{
 			font();

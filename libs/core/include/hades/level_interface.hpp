@@ -145,4 +145,6 @@ namespace hades
 	void InstallSystem(resources::system*, std::shared_mutex&, std::vector<GameSystem>&);
 }
 
+#include "hades/detail/level_interface.inl"
+
 #endif //HADES_LEVEL_INTERFACE_HPP

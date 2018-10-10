@@ -58,7 +58,7 @@ namespace hades::resources
 			return curve_variable_type::error;
 	}
 
-	void reset_default_value(curve& c)
+	[[nodiscard]] curve_default_value reset_default_value(const curve& c)
 	{
 		using resources::curve_variable_type;
 		if (c.data_type == curve_variable_type::error)
@@ -66,46 +66,49 @@ namespace hades::resources
 
 		using namespace resources::curve_types;
 
+		curve_default_value default_value{};
+
 		switch (c.data_type)
 		{
 		case curve_variable_type::int_t:
-			c.default_value.emplace<int_t>();
-			return;
+			default_value.emplace<int_t>();
+			break;
 		case curve_variable_type::float_t:
-			c.default_value.emplace<float_t>();
-			return;
+			default_value.emplace<float_t>();
+			break;
 		case curve_variable_type::bool_t:
-			c.default_value.emplace<bool_t>();
-			return;
+			default_value.emplace<bool_t>();
+			break;
 		case curve_variable_type::string:
-			c.default_value.emplace< resources::curve_types::string>();
-			return;
+			default_value.emplace<resources::curve_types::string>();
+			break;
 		case curve_variable_type::object_ref:
-			c.default_value.emplace<object_ref>();
-			return;
+			default_value.emplace<object_ref>();
+			break;
 		case curve_variable_type::unique:
-			c.default_value.emplace<unique>();
-			return;
+			default_value.emplace<unique>();
+			break;
 		case curve_variable_type::vector_int:
-			c.default_value.emplace<vector_int>();
-			return;
+			default_value.emplace<vector_int>();
+			break;
 		case curve_variable_type::vector_float:
-			c.default_value.emplace<vector_float>();
-			return;
+			default_value.emplace<vector_float>();
+			break;
 		case curve_variable_type::vector_object_ref:
-			c.default_value.emplace<vector_object_ref>();
-			return;
+			default_value.emplace<vector_object_ref>();
+			break;
 		case curve_variable_type::vector_unique:
-			c.default_value.emplace<vector_unique>();
-			return;
+			default_value.emplace<vector_unique>();
+			break;
 		}
+
+		return default_value;
 	}
 
-	curve_default_value get_default_value(const data::parser_node &n, std::string_view resource_name,
+	curve_default_value get_default_value(const data::parser_node &n,
 		const curve &current_value, hades::unique_id mod)
 	{
 		using namespace std::string_view_literals;
-		constexpr auto resource_type = "curve"sv;
 		constexpr auto property_name = "default_value"sv;
 
 		if (!is_curve_valid(current_value))
@@ -116,18 +119,7 @@ namespace hades::resources
 		if (!value_node)
 			return current_value.default_value;
 
-		auto out = current_value.default_value;
-
-		std::visit([&current_value, &value_node](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-
-			if constexpr (curve_types::is_vector_type_v<T>)
-				v = value_node->to_sequence<T::value_type>();
-			else
-				v = value_node->to_scalar<T>();
-		}, out);
-
-		return out;
+		return curve_from_node(current_value, *value_node);
 	}
 
 	void parse_curves(unique_id mod, const data::parser_node &n, data::data_manager &d)
@@ -163,15 +155,15 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-			new_curve->curve_type	= get_scalar(*c, resource_type, name, "type"sv,	 new_curve->curve_type, mod, read_curve_type);
-			new_curve->data_type	= get_scalar(*c, resource_type, name, "value"sv, new_curve->data_type, mod, read_variable_type);
-			new_curve->sync			= get_scalar(*c, resource_type, name, "sync"sv,  new_curve->sync, mod);
-			new_curve->save			= get_scalar(*c, resource_type, name, "save"sv,  new_curve->save, mod);
+			new_curve->curve_type	= get_scalar(*c, "type"sv,	new_curve->curve_type, read_curve_type);
+			new_curve->data_type	= get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
+			new_curve->sync			= get_scalar(*c, "sync"sv,  new_curve->sync);
+			new_curve->save			= get_scalar(*c, "save"sv,  new_curve->save);
 
 			if (old_type != new_curve->data_type)
-				reset_default_value(*new_curve);
+				new_curve->default_value = reset_default_value(*new_curve);
 
-			new_curve->default_value = get_default_value(*c, name, *new_curve, mod);
+			new_curve->default_value = get_default_value(*c, *new_curve, mod);
 
 			if (!is_curve_valid(*new_curve))
 				throw invalid_curve{ "get_default_value returned an invalid curve" };
@@ -244,6 +236,22 @@ namespace hades::resources
 
 		return out;
 	}
+
+	curve_default_value curve_from_node(const resources::curve &c, const data::parser_node &n)
+	{
+		auto value = reset_default_value(c);
+
+		std::visit([&n](auto &&v) {
+			using T = std::decay_t<decltype(v)>;
+
+			if constexpr (curve_types::is_vector_type_v<T>)
+				v = n.to_sequence<T::value_type>();
+			else
+				v = n.to_scalar<T>();
+		}, value);
+
+		return value;
+	}
 }
 
 namespace hades
@@ -265,10 +273,15 @@ namespace hades
 
 	types::string to_string(const resources::curve &v)
 	{
-		return to_string(v, v.default_value);
+		return curve_to_string(v, v.default_value);
 	}
 
-	types::string to_string(const resources::curve &c, const resources::curve_default_value &v)
+	string to_string(std::tuple<const resources::curve&, const resources::curve_default_value&> curve)
+	{
+		return curve_to_string(std::get<0>(curve), std::get<1>(curve));
+	}
+
+	types::string curve_to_string(const resources::curve &c, const resources::curve_default_value &v)
 	{
 		if (!resources::is_curve_valid(c) ||
 			!resources::is_set(v))

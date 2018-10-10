@@ -1,8 +1,9 @@
 #include "Objects/resources.hpp"
 
-#include "Hades/Data.hpp"
-#include "Hades/data_system.hpp"
-#include "Hades/Properties.hpp"
+#include "hades/animation.hpp"
+#include "hades/data.hpp"
+#include "hades/data_system.hpp"
+#include "hades/properties.hpp"
 
 #include "Objects/editor.hpp"
 

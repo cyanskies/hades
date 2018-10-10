@@ -3,6 +3,7 @@
 #include <typeindex>
 
 #include "hades/logging.hpp"
+#include "hades/resource_base.hpp"
 
 namespace hades
 {
@@ -11,7 +12,11 @@ namespace hades
 		template<class T>
 		T* data_manager::find_or_create(unique_id target, unique_id mod)
 		{
-			T* r = nullptr;
+			using Type = std::remove_const_t<T>;
+
+			static_assert(is_resource_v<Type>, "Data subsystem only works with hades resources");
+
+			Type* r = nullptr;
 
 			if (target == empty_id)
 			{
@@ -21,9 +26,9 @@ namespace hades
 
 			if (!exists(target))
 			{
-				auto new_ptr = std::make_unique<T>();
+				auto new_ptr = std::make_unique<Type>();
 				r = &*new_ptr;
-				set<T>(target, std::move(new_ptr));
+				set<Type>(target, std::move(new_ptr));
 
 				r->id = target;
 			}
@@ -31,7 +36,7 @@ namespace hades
 			{
 				try
 				{
-					r = get<T>(target, data_manager::no_load);
+					r = get<Type>(target, data_manager::no_load);
 				}
 				catch (data::resource_wrong_type &e)
 				{
@@ -45,6 +50,19 @@ namespace hades
 				r->mod = mod;
 
 			return r;
+		}
+
+		template<typename T>
+		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, unique_id mod)
+		{
+			std::vector<T*> out;
+			out.reserve(target.size());
+
+			std::transform(std::begin(target), std::end(target), std::back_inserter(out), [mod, &out, this](const unique_id id) {
+				return find_or_create<T>(id, mod);
+			});
+
+			return out;
 		}
 
 		template<class T>
@@ -96,5 +114,20 @@ namespace hades
 			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
 			return data->get<T>(id);
 		}
+
+		template<typename T>
+		std::vector<unique_id> get_uid(const std::vector<const T*> &r_list)
+		{
+			static_assert(is_resource_v<T>, "data subsystem only works on hades resources");
+
+			std::vector<unique_id> out;
+			out.reserve(r_list.size());
+
+			for (const auto &r : r_list)
+				out.emplace_back(r->id);
+
+			return out;
+		}
+
 	}
 }

@@ -10,9 +10,11 @@
 #include <unordered_map>
 
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
+	//TODO: add a timers.inl for all these function defs
 	using time_clock = std::chrono::high_resolution_clock;
 	using time_point = std::chrono::high_resolution_clock::time_point;
 
@@ -28,11 +30,52 @@ namespace hades
 
 	using time_duration = nanoseconds;
 
-	template<typename TargetDuration,
-		typename Rep2, typename Period2>
-		std::enable_if<std::chrono::_Is_duration_v<TargetDuration>, TargetDuration> duration_cast(basic_duration<Rep2, Period2> duration)
+	template<typename T> struct is_duration : std::false_type {};
+	template<typename Rep, typename Period>
+	struct is_duration<basic_duration<Rep, Period>> : std::true_type {};
+	template<typename T>
+	constexpr auto is_duration_v = is_duration<T>::value;
+
+	template<typename TargetDuration, typename Rep2, typename Period2,
+		typename = std::enable_if_t<is_duration_v<TargetDuration>>>
+		TargetDuration duration_cast(const basic_duration<Rep2, Period2> &duration)
 	{
 		return std::chrono::duration_cast<TargetDuration>(duration);
+	}
+
+	template<typename Duration>
+	std::enable_if_t<is_duration_v<Duration>, float> normalise_time(time_point t, Duration d)
+	{
+		const auto duration_point = time_point{ d };
+
+		//reduce t untill is is less than one duration;
+		while (t > duration_point)
+			t -= d;
+
+		const auto time_nanos = t.time_since_epoch();
+		const auto time_seconds = hades::duration_cast<seconds>(time_nanos);
+		const auto duration_seconds = hades::duration_cast<seconds>(d);
+
+		return time_seconds.count() / duration_seconds.count();
+	}
+
+	template<typename Duration,
+		typename = std::enable_if_t<is_duration_v<Duration>>>
+	Duration duration_from_string(std::string_view s)
+	{
+		//TODO: accept differnt time scales?
+		//using extensions?
+		//easy way to parse these?
+		using namespace std::string_view_literals;
+		constexpr auto nano_ext = "ns"sv;
+		constexpr auto micro_ext = "us"sv;
+		constexpr auto milli_ext = "ms"sv;
+		constexpr auto second_ext = "s"sv;
+
+		//default with no extention is ms
+		const auto ms_count = from_string<milliseconds::rep>(s);
+		const auto ms = milliseconds{ ms_count };
+		return hades::duration_cast<Duration>(ms);
 	}
 
 	//Thread safe.

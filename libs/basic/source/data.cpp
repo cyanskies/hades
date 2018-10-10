@@ -88,13 +88,14 @@ namespace hades
 			return data->get_uid(name);
 		}
 
-
 		unique_id make_uid(std::string_view name)
 		{
 			data_manager* data = nullptr;
 			lock_t lock;
 
 			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
+
+			std::ignore = lock;
 
 			return data->get_uid(name);
 		}

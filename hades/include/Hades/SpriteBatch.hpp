@@ -6,10 +6,10 @@
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Vertex.hpp"
-#include "SFML/System/Time.hpp"
 
 #include "Hades/LimitedDraw.hpp"
-#include "Hades/Types.hpp"
+#include "hades/timers.hpp"
+#include "hades/types.hpp"
 
 //A thread safe collection of animated sprites
 //the object manages batching draw calls to render more efficiently
@@ -52,7 +52,7 @@ namespace hades
 			sf::Vector2f position;
 			sf::Vector2f size;
 			const resources::animation *animation = nullptr;
-			sf::Time animation_progress;
+			time_point animation_progress;
 		};
 
 		bool operator==(const Sprite &lhs, const Sprite &rhs);
@@ -71,12 +71,12 @@ namespace hades
 		void clear();
 
 		sprite_id createSprite();
-		sprite_id createSprite(const resources::animation *a, sf::Time t,
+		sprite_id createSprite(const resources::animation *a, time_point t,
 			sprite_utility::layer_t l, sf::Vector2f p, sf::Vector2f s);
 		bool exists(sprite_id id) const;
 		void destroySprite(sprite_id id);
 
-		void setAnimation(sprite_id id, const resources::animation *a, sf::Time t);
+		void setAnimation(sprite_id id, const resources::animation *a, time_point t);
 		void setLayer(sprite_id id, sprite_utility::layer_t l);
 		void setPosition(sprite_id id, sf::Vector2f pos);
 		void setSize(sprite_id id, sf::Vector2f size);

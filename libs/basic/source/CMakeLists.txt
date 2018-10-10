@@ -6,6 +6,7 @@ set(HADES_BASIC_SRC
 	data.cpp
 	input.cpp
 	logging.cpp
+	parser.cpp
 	properties.cpp
 	system.cpp
 	timers.cpp

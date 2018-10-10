@@ -15,7 +15,7 @@
 #include "Hades/State.hpp"
 #include "hades/types.hpp"
 
-#include "Objects/Objects.hpp"
+#include "hades/objects.hpp"
 #include "Objects/resources.hpp"
 
 //this allows the creation of levels with objects placed on them
@@ -56,7 +56,7 @@ namespace objects
 			const hades::resources::animation *icon = nullptr);
 	}
 
-	struct editor_object_info : public object_info
+	struct editor_object_info : public hades::object_instance
 	{
 		editor_object_info() = default;
 		editor_object_info(const editor_object_info&) = default;
@@ -64,7 +64,7 @@ namespace objects
 		editor_object_info &operator=(const editor_object_info&) = default;
 		editor_object_info &operator=(editor_object_info&&) = default;
 
-		editor_object_info(const object_info& o) : object_info(o)
+		editor_object_info(const hades::object_instance& o) : hades::object_instance{ o }
 		{}
 
 		hades::sprite_utility::Sprite::sprite_id sprite_id = hades::sprite_utility::Sprite::bad_sprite_id;
@@ -117,7 +117,7 @@ namespace objects
 		virtual void OnDragEnd(MousePos);
 		//override to check if a location on the map is valid for the provided object
 		//ie. depending on terrain, or other objects
-		virtual bool ObjectValidLocation(sf::Vector2i position, const object_info &object) const;
+		virtual bool ObjectValidLocation(sf::Vector2i position, const hades::object_instance &object) const;
 
 		//create the dialogs for saving loading and new maps
 		//should set the MapSize variable when making a new level
@@ -179,7 +179,7 @@ namespace objects
 		void _onObjectSelected(editor_object_info &info);
 		void _updateInfoBox(editor_object_info &obj);
 		//places the selection indicator around the specified object
-		void _updateSelector(const object_info &info);
+		void _updateSelector(const hades::object_instance &info);
 		//clears the selection info box
 		//this should be called for any mode other than drag
 		void _clearObjectSelected();
@@ -202,17 +202,17 @@ namespace objects
 		editor::ObjectMode _objectMode = editor::ObjectMode::NONE_SELECTED;
 
 		//object placement and drawing
-		object_info _heldObject;
+		hades::object_instance _heldObject;
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
 		hades::console::property_int _object_snap;
-		hades::EntityId _next_object_id = hades::NO_ENTITY;
+		hades::entity_id _next_object_id = hades::bad_entity;
 		//object selection indicator
 		sf::RectangleShape _objectSelector;
 
 		//objects in the map
 		//id map
-		using QuadTree = hades::quad_tree<hades::EntityId>;
+		using QuadTree = hades::quad_tree<hades::entity_id>;
 		QuadTree _quadtree;
 		//object properties
 		std::vector<editor_object_info> _objects;

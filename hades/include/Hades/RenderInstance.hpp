@@ -3,6 +3,7 @@
 
 #include "Hades/ExportedCurves.hpp"
 #include "Hades/RenderInterface.hpp"
+#include "hades/timers.hpp"
 
 namespace hades
 {
@@ -16,9 +17,9 @@ namespace hades
 		void prepareFrame();
 
 		//sets the current game clock
-		void setTime(sf::Time time);
+		void setTime(time_point time);
 		//progresses the clock by dt
-		void addTime(sf::Time dt);
+		void addTime(time_duration dt);
 
 		//insert curvestream
 		void insertFrames(exported_curves import);
@@ -27,7 +28,7 @@ namespace hades
 		void installSystem(resources::system *system);
 	private:
 		//the time that should be drawn/generated
-		sf::Time _currentTime;
+		time_point _currentTime;
 	};
 }
 

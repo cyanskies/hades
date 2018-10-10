@@ -21,13 +21,6 @@ namespace hades
 	public:
 		using std::runtime_error::runtime_error;
 	};
-
-	namespace resources
-	{
-		struct curve;
-	}
-
-	types::string to_string(const resources::curve &c);
 }
 
 namespace hades::resources
@@ -92,17 +85,22 @@ namespace hades::resources
 		curve_default_value default_value{};
 	};
 
+	[[nodiscard]] curve_default_value reset_default_value(const curve &c);
+
 	constexpr bool is_set(const curve_default_value&) noexcept;
 	bool is_curve_valid(const resources::curve&) noexcept;
 	bool is_curve_valid(const resources::curve&, const curve_default_value&) noexcept;
 
 	curve_default_value curve_from_string(const resources::curve &c, std::string_view str);
+	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
 }
 
 namespace hades
 {
+	string to_string(const resources::curve &c);
+	string to_string(std::tuple<const resources::curve&, const resources::curve_default_value&> curve);
 
-	string to_string(const resources::curve &c, const resources::curve_default_value &v);
+	string curve_to_string(const resources::curve &c, const resources::curve_default_value &v);
 }
 
 #endif // !HADES_CURVE_EXTRA_HPP

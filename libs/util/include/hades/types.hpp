@@ -72,6 +72,13 @@ namespace hades {
 	}
 
 	using namespace types;
+
+	template<typename T> struct is_string : std::false_type{};
+	template<> struct is_string<string> : std::true_type {};
+	template<> struct is_string<std::string_view> : std::true_type {};
+
+	template<typename T>
+	constexpr auto is_string_v = is_string<T>::value;
 }
 
 #endif //HADES_UTIL_TYPES_HPP

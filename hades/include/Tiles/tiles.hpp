@@ -3,14 +3,14 @@
 
 #include <vector>
 
+#include "yaml-cpp/emitter.h"
+
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Transformable.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
-#include "Hades/Types.hpp"
-#include "Hades/level.hpp"
-
-#include "Objects/Objects.hpp"
+#include "hades/level.hpp"
+#include "hades/types.hpp"
 
 #include "Tiles/resources.hpp"
 

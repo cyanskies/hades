@@ -7,18 +7,18 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
-#include "Hades/Data.hpp"
-#include "Hades/Logging.hpp"
-#include "Hades/Utility.hpp"
+//#include "Hades/data_system.hpp" // so that we can convert data_system* to data_manager* implicitly
 
-#include "Objects/Objects.hpp"
+#include "hades/data.hpp"
+#include "hades/logging.hpp"
+//#include "hades/objects.hpp"
+#include "hades/utility.hpp"
 
 namespace tiles
 {
 	void EnableTiles(hades::data::data_system *d)
 	{
 		assert(d);
-		objects::EnableObjects(d);
 		RegisterTileResources(d);
 	}
 

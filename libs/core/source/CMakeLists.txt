@@ -2,13 +2,16 @@
 
 # C++ source files
 set(HADES_CORE_SRC
+	animation.cpp
 	archive.cpp
 	files.cpp
 	game_system.cpp
 	level.cpp
 	level_interface.cpp
+	objects.cpp
 	standard_paths.cpp
 	texture.cpp
+	../include/hades/animation.hpp
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
 	../include/hades/game_system.hpp
@@ -19,9 +22,11 @@ set(HADES_CORE_SRC
 	../include/hades/texture.hpp
 	../include/hades/time.hpp
 	../include/hades/detail/game_system.inl
+	../include/hades/detail/level_interface.inl
 )
 
 source_group("Headers" FILES
+	../include/hades/animation.hpp
 	../include/hades/archive.hpp
 	../include/hades/files.hpp
 	../include/hades/game_system.hpp
@@ -35,6 +40,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/game_system.inl
+	../include/hades/detail/level_interface.inl
 )
 
 # Library to build

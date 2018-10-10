@@ -4,6 +4,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "hades/animation.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/files.hpp"
 #include "Hades/simple_resources.hpp"
@@ -142,7 +143,7 @@ namespace tiles
 
 		YAML::Emitter e;
 		e << YAML::BeginMap;
-		objects::WriteObjectsToYaml(l, e);
+		//objects::WriteObjectsToYaml(l, e);
 		WriteTilesToYaml(l, e);
 		e << YAML::EndMap;
 
@@ -156,7 +157,7 @@ namespace tiles
 		auto level_yaml = YAML::Load(level_str);
 
 		level lvl;
-		objects::ReadObjectsFromYaml(level_yaml, lvl);
+		//objects::ReadObjectsFromYaml(level_yaml, lvl);
 		ReadTilesFromYaml(level_yaml, lvl);
 
 		LoadObjects(lvl);

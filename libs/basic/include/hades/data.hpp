@@ -6,7 +6,6 @@
 #include <shared_mutex>
 #include <tuple>
 
-//#include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
@@ -42,6 +41,9 @@ namespace hades
 			//allows creating a ptr to a resource that hasn't actually been defined yet
 			template<class T>
 			T* find_or_create(unique_id target, unique_id mod);
+
+			template<typename T>
+			std::vector<T*> find_or_create(const std::vector<unique_id> &target, unique_id mod);
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;
@@ -102,17 +104,20 @@ namespace hades
 		//returns UniqueId::zero if the name cannot be assiciated with an id
 		unique_id get_uid(std::string_view name);
 
+		template<typename T>
+		std::vector<unique_id> get_uid(const std::vector<const T*>&);
+
 		//===Exclusive Functions: this will block all threads===
 		//NOTE: Can throw hades::data::resource_null
 		//		or hades::data::resource_wrong_type
 		template<class T>
 		const T* get(unique_id id);
-	
+
 		//refresh requests
 
 		//returns the uid associated with this name
 		//or associates the name with a new id if it isn't already
-		unique_id make_uid(std::string_view name);
+		unique_id make_uid(std::string_view name);		
 	}
 
 	template<>

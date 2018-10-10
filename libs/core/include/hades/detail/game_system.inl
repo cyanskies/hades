@@ -47,7 +47,7 @@ namespace hades
 	{
 		using resources::system;
 
-		auto sys = data::FindOrCreate<system>(id, unique_id::zero, &data);
+		auto sys = data.find_or_create<system>(id, unique_id::zero);
 
 		if (!sys)
 			throw system_error("unable to create requested system");

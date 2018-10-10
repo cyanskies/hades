@@ -94,12 +94,12 @@ namespace hades
 				continue;
 
 			using namespace data::parse_tools;
-			tex->width = get_scalar(*t, resource_type, name, "width"sv, tex->width, mod);
-			tex->height = get_scalar(*t, resource_type, name, "height"sv, tex->height, mod);
-			tex->smooth = get_scalar(*t, resource_type, name, "smooth"sv, tex->smooth, mod);
-			tex->repeat = get_scalar(*t, resource_type, name, "repeating"sv, tex->repeat, mod);
-			tex->mips = get_scalar(*t, resource_type, name, "mips"sv, tex->mips, mod);
-			tex->source = get_scalar(*t, resource_type, name, "source"sv, tex->source, mod);
+			tex->width	= get_scalar(*t, "width"sv,		tex->width);
+			tex->height = get_scalar(*t, "height"sv,	tex->height);
+			tex->smooth = get_scalar(*t, "smooth"sv,	tex->smooth);
+			tex->repeat = get_scalar(*t, "repeating"sv, tex->repeat);
+			tex->mips	= get_scalar(*t, "mips"sv,		tex->mips);
+			tex->source = get_scalar(*t, "source"sv,	tex->source);
 
 			//if either size parameters are 0, then don't warn for size mismatch
 			if (tex->width == 0 || tex->height == 0)
@@ -116,7 +116,7 @@ namespace hades
 	{
 		using namespace std::string_literals;
 
-		auto &tex = dynamic_cast<resources::texture&>(r);
+		auto &tex = static_cast<resources::texture&>(r);
 
 		if (!tex.source.empty())
 		{

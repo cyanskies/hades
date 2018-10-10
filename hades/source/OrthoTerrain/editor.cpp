@@ -4,9 +4,10 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "Hades/Data.hpp"
-#include "Hades/Logging.hpp"
-#include "Hades/files.hpp"
+#include "hades/animation.hpp"
+#include "hades/data.hpp"
+#include "hades/logging.hpp"
+#include "hades/files.hpp"
 
 namespace ortho_terrain
 {
@@ -324,7 +325,7 @@ namespace ortho_terrain
 
 		YAML::Emitter e;
 		e << YAML::BeginMap;
-		objects::WriteObjectsToYaml(l, e);
+		//objects::WriteObjectsToYaml(l, e);
 		tiles::WriteTilesToYaml(l, e);
 		WriteTerrainToYaml(l, e);
 		e << YAML::EndMap;
@@ -339,7 +340,7 @@ namespace ortho_terrain
 		auto level_yaml = YAML::Load(level_str);
 
 		level lvl;
-		objects::ReadObjectsFromYaml(level_yaml, lvl);
+		//objects::ReadObjectsFromYaml(level_yaml, lvl);
 		ReadTilesFromYaml(level_yaml, lvl);
 		ReadTerrainFromYaml(level_yaml, lvl);
 

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "hades/curve_extra.hpp"
+#include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/simple_resources.hpp"
 
@@ -78,33 +79,7 @@ namespace objects
 			sf::Color object_mock_colour = sf::Color::Cyan;
 		};
 
-		struct object_t
-		{};
-
-		struct object : public hades::resources::resource_type<object_t>
-		{
-			//editor icon, used in the object picker
-			const hades::resources::animation *editor_icon = nullptr;
-			//editor anim list
-			//used for placed objects
-			using animation_list = std::vector<const hades::resources::animation*>;
-			animation_list editor_anims;
-			//base objects, curves and systems are inherited from these
-			using base_list = std::vector<const object*>;
-			base_list base;
-			//list of curves
-			using curve_obj = std::tuple<const hades::resources::curve*, hades::resources::curve_default_value>;
-			using curve_list = std::vector<curve_obj>;
-			curve_list curves;
-
-			//server systems
-			using system_list = std::vector<const hades::resources::system*>;
-			system_list systems;
-	
-			//client systems
-			using render_system_list = std::vector<const hades::resources::render_system*>;
-			render_system_list render_systems;
-		};
+		using hades::resources::object;
 
 		struct object_group
 		{

@@ -29,11 +29,23 @@ namespace hades::data
 		//returns empty vector on error
 		virtual std::vector<std::unique_ptr<parser_node>> get_children() const = 0;
 
-		template<typename T, typename Converter = nullptr_t>
-		T to_scalar(Converter conv = nullptr) const;
+		template<typename T, typename Converter>
+		T to_scalar(Converter conv) const;
 
-		template<typename T, typename Converter = nullptr_t>
-		std::vector<T> to_sequence(Converter conv = nullptr) const;
+		template<typename T>
+		T to_scalar() const
+		{
+			return to_scalar<T, nullptr_t>(nullptr);
+		}
+
+		template<typename T, typename Converter>
+		std::vector<T> to_sequence(Converter conv) const;
+
+		template<typename T>
+		std::vector<T> to_sequence() const
+		{
+			return to_sequence<T, nullptr_t>(nullptr);
+		}
 
 		template<typename Value, typename Converter = nullptr_t>
 		std::vector<std::pair<string, Value>> to_map(Converter conv = nullptr) const;
@@ -44,20 +56,18 @@ namespace hades::data
 
 	namespace parse_tools
 	{
-		inline void log_parse_error(std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, std::string_view requested_type, hades::unique_id mod);
+		template<class T, typename ConversionFunc = nullptr_t>
+		T get_scalar(const parser_node &node, std::string_view property_name,
+			T default_value, ConversionFunc convert = nullptr);
 
-		template<class T, typename ConversionFunc>
-		T get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, T default_value, hades::unique_id mod,ConversionFunc convert = nullptr);
+		unique_id get_unique(const parser_node &node, std::string_view property_name, unique_id default_value);
 
-		template<typename ConversionFunc>
-		unique_id get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, unique_id default_value, hades::unique_id mod, ConversionFunc convert = nullptr);
+		std::vector<unique_id> get_unique_sequence(const parser_node &node, std::string_view property_name,
+			const std::vector<unique_id> &default_value);
 
-		template<class T, typename ConversionFunc>
-		T get_scalar(const parser_node &node, std::string_view resource_type, std::string_view resource_name,
-			std::string_view property_name, T default_value, ConversionFunc convert = nullptr);
+		template<class T, typename ConversionFunc = nullptr_t>
+		std::vector<T> get_sequence(const parser_node &node, std::string_view property_name,
+			const std::vector<T> &default_value, ConversionFunc convert = nullptr);
 	}
 }
 

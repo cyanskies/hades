@@ -27,19 +27,19 @@ namespace hades::data
 
 		virtual std::string get_string() const = 0;
 
-		template<typename T>
+		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
 		void start_map(T value)
 		{
 			start_map(to_string(value));
 		}
 
-		template<typename T, typename U>
+		template<typename T, typename U, typename = std::enable_if_t<!is_string_v<T> || !is_string_v<U>>>
 		void write(T key, U value)
 		{
 			write(to_string(key), to_string(value));
 		}
 
-		template<typename T>
+		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
 		void write(T value)
 		{
 			write(to_string(value));

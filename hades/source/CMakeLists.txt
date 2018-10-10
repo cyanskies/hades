@@ -2,7 +2,6 @@
 
 # C++ source files
 set(HADES_SRC
-	Animation.cpp
 	App.cpp
 	Debug.cpp
 	Console.cpp
@@ -25,7 +24,6 @@ set(HADES_SRC
 	yaml_parser.cpp
 	yaml_writer.cpp
 	Objects/editor.cpp
-	Objects/Objects.cpp
 	Objects/resources.cpp
 	OrthoTerrain/editor.cpp
 	OrthoTerrain/terrain.cpp
@@ -48,7 +46,6 @@ source_group("Tiles" FILES
 
 source_group("Objects" FILES
 	Objects/editor.cpp
-	Objects/Objects.cpp
 	Objects/resources.cpp)
 
 source_group("OrthoTerrain" FILES

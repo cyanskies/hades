@@ -4,10 +4,11 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
-#include "Hades/Animation.hpp"
+#include "hades/animation.hpp"
+#include "Hades/simple_resources.hpp"
 #include "hades/exceptions.hpp"
-#include "Hades/texture.hpp"
-#include "hades/Types.hpp"
+#include "hades/texture.hpp"
+#include "hades/types.hpp"
 #include "hades/utility.hpp"
 
 namespace hades
@@ -147,7 +148,7 @@ namespace hades
 		return id;
 	}
 
-	typename SpriteBatch::sprite_id SpriteBatch::createSprite(const resources::animation *a, sf::Time t,
+	typename SpriteBatch::sprite_id SpriteBatch::createSprite(const resources::animation *a, time_point t,
 		sprite_utility::layer_t l, sf::Vector2f p, sf::Vector2f s)
 	{
 		std::lock_guard<std::shared_mutex> lk(_collectionMutex);
@@ -217,7 +218,7 @@ namespace hades
 		sprite_vector.erase(sprite_iter);
 	}
 
-	void SpriteBatch::setAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, sf::Time t)
+	void SpriteBatch::setAnimation(typename SpriteBatch::sprite_id id, const resources::animation *a, time_point t)
 	{
 		bool needs_move = false;
 
@@ -328,7 +329,7 @@ namespace hades
 	PolySquare MakeSquareAnimation(const sprite_utility::Sprite &s)
 	{
 		auto a = s.animation;
-		auto [x, y] = animation::GetFrame(a, s.animation_progress);
+		auto [x, y] = animation::get_frame(*a, s.animation_progress);
 		return PolySquare{
 			//first triange
 			sf::Vertex{ s.position, { x, y } }, //top left

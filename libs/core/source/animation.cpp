@@ -34,7 +34,7 @@ namespace hades::resources
 
 		for (const auto &a : animations)
 		{
-			const auto name = a->to_scalar<unique_id>([](std::string_view s) {return data::get_uid(s); });
+			const auto name = a->to_scalar<unique_id>([&d](std::string_view s) {return d.get_uid(s); });
 
 			auto anim = d.find_or_create<animation>(name, mod);
 

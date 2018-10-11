@@ -29,19 +29,21 @@ namespace hades::resources
 	};
 }
 
+namespace hades::animation
+{
+	using animation_frame = std::tuple<float, float>; /*x and y*/
+
+	//returns the first frame of the animation, or the animation for the requested time, with wrapping
+	animation_frame get_frame(const resources::animation &animation, time_point time_played);
+
+	//applys an animation to a sprite, progress is a float in the range (0, 1), indicating how far into the animation the sprite should be set to.
+	void apply(const resources::animation &animation, float progress, sf::Sprite &target);
+	void apply(const resources::animation &animation, time_point progress, sf::Sprite &target);
+}
+
 namespace hades
 {
-	namespace animation
-	{
-		using animation_frame = std::tuple<float, float>; /*x and y*/
-
-		//returns the first frame of the animation, or the animation for the requested time, with wrapping
-		animation_frame get_frame(const resources::animation &animation, time_point time_played);
-
-		//applys an animation to a sprite, progress is a float in the range (0, 1), indicating how far into the animation the sprite should be set to.
-		void apply(const resources::animation &animation, float progress, sf::Sprite &target);
-		void apply(const resources::animation &animation, time_point progress, sf::Sprite &target);
-	}
+	void register_animation_resource(data::data_manager&);
 }
 
 #endif //HADES_ANIMATION_HPP

@@ -14,6 +14,7 @@ set(HADES_BASIC_SRC
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
+	../include/hades/game_types.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
 	../include/hades/parser.hpp
@@ -37,6 +38,7 @@ source_group("Headers" FILES
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
+	../include/hades/game_types.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
 	../include/hades/parser.hpp

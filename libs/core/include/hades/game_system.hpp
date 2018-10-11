@@ -11,6 +11,7 @@
 
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
+#include "hades/game_types.hpp"
 #include "hades/input.hpp"
 #include "hades/parallel_jobs.hpp"
 #include "hades/resource_base.hpp"
@@ -29,9 +30,6 @@ namespace hades
 	public:
 		using std::runtime_error::runtime_error;
 	};
-
-	//we use int32 as the id type so that entity id's can be stored in curves.
-	using entity_id = types::int32;
 
 	struct system_job_data
 	{
@@ -95,9 +93,6 @@ namespace hades
 	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using variable_id = unique_id;
-
-	//these are earmarked as error values
-	constexpr entity_id bad_entity = std::numeric_limits<entity_id>::min();
 	const variable_id bad_variable = variable_id::zero;
 
 	using name_list = curve<resources::curve_types::vector_object_ref>;

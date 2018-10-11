@@ -206,7 +206,7 @@ namespace objects
 		std::variant<sf::RectangleShape,
 			sf::Sprite> _objectPreview;
 		hades::console::property_int _object_snap;
-		hades::entity_id _next_object_id = hades::bad_entity;
+		hades::entity_id::value_type _next_object_id = static_cast<hades::entity_id::value_type>(hades::bad_entity);
 		//object selection indicator
 		sf::RectangleShape _objectSelector;
 

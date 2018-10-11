@@ -128,7 +128,7 @@ namespace hades
 
 	void GameInstance::nameEntity(entity_id entity, const types::string &name, sf::Time t)
 	{
-		assert(entity < _next);
+		assert(entity < entity_id{ _next });
 
 		const auto time = to_standard_time_point(t);
 

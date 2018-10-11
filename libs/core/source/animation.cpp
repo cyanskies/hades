@@ -162,3 +162,12 @@ namespace hades::animation
 		apply(animation, ratio, target);
 	}
 }
+
+namespace hades
+{
+	void register_animation_resource(data::data_manager &d)
+	{
+		using namespace std::string_view_literals;
+		d.register_resource_type("animations"sv, resources::parse_animation);
+	}
+}

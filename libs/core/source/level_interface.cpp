@@ -67,7 +67,7 @@ namespace hades
 	}
 
 	GameInterface::GameInterface(const level_save &sv) : _entity_names(sv.names),
-		_next(sv.next_id), _curves(sv.curves)
+		_next(static_cast<entity_id::value_type>(sv.next_id)), _curves(sv.curves)
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves
@@ -85,7 +85,7 @@ namespace hades
 
 	entity_id GameInterface::createEntity()
 	{
-		return ++_next;
+		return entity_id{ ++_next };
 	}
 
 	entity_id GameInterface::getEntityId(const types::string &name, time_point t) const

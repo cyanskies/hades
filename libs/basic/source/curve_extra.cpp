@@ -217,6 +217,8 @@ namespace hades::resources
 		}
 	}
 
+
+
 	resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
 	{
 		if (!resources::is_curve_valid(c))
@@ -292,7 +294,7 @@ namespace hades
 			if constexpr (resources::curve_types::is_vector_type_v<T>)
 				return to_string(std::begin(t), std::end(t));
 			else
-				return to_string<T>(t);
+				return to_string(t);
 		}, v);
 	}
 

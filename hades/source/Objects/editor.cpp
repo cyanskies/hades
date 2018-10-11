@@ -749,7 +749,7 @@ namespace objects
 	void object_editor::NewLevel()
 	{
 		//remove all objects
-		_next_object_id = hades::bad_entity;
+		_next_object_id = static_cast<hades::entity_id::value_type>(hades::bad_entity);
 		_objects.clear();
 		_usedObjectNames.clear();
 		_objectSprites.clear();
@@ -792,7 +792,7 @@ namespace objects
 	{
 		l.map_x = MapSize.x;
 		l.map_y = MapSize.y;
-		l.next_id = _next_object_id;
+		l.next_id = hades::entity_id{ _next_object_id };
 
 		//level name
 		//level description
@@ -855,7 +855,7 @@ namespace objects
 	void object_editor::LoadObjects(const hades::level &l)
 	{
 		MapSize = { l.map_x, l.map_y };
-		_next_object_id = l.next_id;
+		_next_object_id = static_cast<hades::entity_id::value_type>(l.next_id);
 		_objectSprites.clear();
 		_objects.clear();
 		std::transform(std::begin(l.objects), std::end(l.objects), std::back_inserter(_objects), [](const hades::object_instance &e)
@@ -1185,7 +1185,7 @@ namespace objects
 		if (ObjectValidLocation(static_cast<sf::Vector2i>(position), object))
 		{
 			//create the object held at the target location
-			object.id = ++_next_object_id;
+			object.id = hades::entity_id{ ++_next_object_id };
 
 			static const auto size_id = hades::data::get_uid("size");
 			static const auto size_c = hades::data::get<hades::resources::curve>(size_id);

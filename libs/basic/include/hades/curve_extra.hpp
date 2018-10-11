@@ -7,6 +7,7 @@
 
 #include "hades/curve.hpp"
 #include "hades/data.hpp"
+#include "hades/game_types.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -33,8 +34,7 @@ namespace hades::resources
 		using float_t = float;
 		using bool_t = bool;
 		using string = hades::types::string;
-		//TODO: might be dangerous to have this alias to the same type as int_t
-		using object_ref = int_t; //TODO: entity ID type hades::EntityId
+		using object_ref = entity_id;
 		using unique = hades::unique_id;
 		using vector_int = std::vector<int_t>;
 		using vector_float = std::vector<float_t>;
@@ -50,10 +50,8 @@ namespace hades::resources
 		template <>
 		struct is_vector_type<vector_float> : public std::true_type {};
 
-		//NOTE: if object_ref is ever given a strong typedef, 
-		// or has a different base variable, then this specialisation should be re-enabled
-		//template <>
-		//struct is_vector_type<vector_object_ref> : public std::true_type {};
+		template <>
+		struct is_vector_type<vector_object_ref> : public std::true_type {};
 
 		template <>
 		struct is_vector_type<vector_unique> : public std::true_type {};
@@ -68,9 +66,11 @@ namespace hades::resources
 		curve_types::float_t,
 		curve_types::bool_t, 
 		curve_types::string, 
+		curve_types::object_ref,
 		curve_types::unique, 
 		curve_types::vector_int,
 		curve_types::vector_float,
+		curve_types::vector_object_ref,
 		curve_types::vector_unique>;
 
 	struct curve_t {};

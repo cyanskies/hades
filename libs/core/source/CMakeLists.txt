@@ -4,6 +4,7 @@
 set(HADES_CORE_SRC
 	animation.cpp
 	archive.cpp
+	core_resources.cpp
 	files.cpp
 	game_system.cpp
 	level.cpp
@@ -13,6 +14,7 @@ set(HADES_CORE_SRC
 	texture.cpp
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
 	../include/hades/game_system.hpp
 	../include/hades/level.hpp
@@ -28,6 +30,7 @@ set(HADES_CORE_SRC
 source_group("Headers" FILES
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
 	../include/hades/game_system.hpp
 	../include/hades/level.hpp

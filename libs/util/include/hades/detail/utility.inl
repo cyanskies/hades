@@ -149,41 +149,63 @@ namespace hades
 		return value;
 	}
 
+	namespace detail
+	{
+		template<typename T, typename FromString>
+		T vector_from_string_impl(std::string_view str, FromString from_string_func)
+		{
+			//either : T
+			// or	 : T, T, T, T, T
+			// or	 : [T, T, T, T, T, T]
+
+			using value_type = T::value_type;
+
+			//remove the braces at begining and end if present
+			const auto first_brace = str.find_first_of('[');
+			if (first_brace != std::string_view::npos)
+				str.remove_prefix(first_brace + 1);
+
+			const auto last_brace = str.find_last_of(']');
+			if (last_brace != std::string_view::npos)
+				str.remove_suffix(str.size() - last_brace);
+
+			//split into csv
+			std::vector<std::string_view> elements;
+			split(str, ',', std::back_inserter(elements));
+
+			if (std::any_of(std::begin(elements), std::end(elements), [](auto &&s) {
+				return s.empty() //return true if the str is empty or consists of spaces
+					|| std::all_of(std::begin(s), std::end(s), [](auto &&c) {return c == ' '; });
+			}))
+			{
+				return T{};
+			}
+
+			constexpr auto custom_from_string = std::is_invocable_r_v<value_type, FromString, std::string_view>;
+
+			//convert each one into T
+			std::vector<value_type> out;
+			for (const auto &e : elements)
+			{
+				if constexpr (custom_from_string)
+					out.emplace_back(std::invoke(from_string_func, e));
+				else
+					out.emplace_back(from_string<value_type>(e));
+			}
+
+			return out;
+		}
+	}
+
+	template<typename T, typename FromString, typename>
+	T vector_from_string(std::string_view str, FromString func)
+	{
+		return detail::vector_from_string_impl(str, func);
+	}
+
 	template<typename T>
 	T vector_from_string(std::string_view str)
 	{
-		//either : T
-		// or	 : T, T, T, T, T
-		// or	 : [T, T, T, T, T, T]
-
-		using value_type = T::value_type;
-
-		//remove the braces at begining and end if present
-		const auto first_brace = str.find_first_of('[');
-		if (first_brace != std::string_view::npos)
-			str.remove_prefix(first_brace + 1);
-
-		const auto last_brace = str.find_last_of(']');
-		if (last_brace != std::string_view::npos)
-			str.remove_suffix(str.size() - last_brace);
-
-		//split into csv
-		std::vector<std::string_view> elements;
-		split(str, ',', std::back_inserter(elements));
-
-		if (std::any_of(std::begin(elements), std::end(elements), [](auto &&s) {
-			return s.empty() //return true if the str is empty or consists of spaces
-				|| std::all_of(std::begin(s), std::end(s), [](auto &&c) {return c == ' '; });
-		}))
-		{
-			return T{};
-		}
-
-		//convert each one into T
-		std::vector<value_type> out;
-		for (const auto &e : elements)
-			out.push_back(from_string<value_type>(e));
-
-		return out;
+		return detail::vector_from_string_impl<T, nullptr_t>(str, nullptr);
 	}
 }

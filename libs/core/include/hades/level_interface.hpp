@@ -124,7 +124,7 @@ namespace hades
 		mutable std::mutex _system_list_mut;
 		std::vector<GameSystem> _systems;
 
-		std::atomic<entity_id> _next = std::numeric_limits<entity_id>::min() + 1;
+		std::atomic<entity_id::value_type> _next = static_cast<entity_id::value_type>(bad_entity) + 1;
 	private:
 		//CURVE VARIABLES
 		curve_data _curves;

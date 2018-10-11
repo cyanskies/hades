@@ -77,6 +77,9 @@ namespace hades {
 	template<>
 	std::string_view from_string<std::string_view>(std::string_view str);
 
+	template<typename T, typename FromString, typename = std::enable_if_t<std::is_invocable_r_v<T, FromString, std::string_view>>>
+	T vector_from_string(std::string_view str, FromString);
+
 	template<typename T>
 	T vector_from_string(std::string_view str);
 }

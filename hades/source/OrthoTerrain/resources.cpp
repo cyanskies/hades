@@ -35,7 +35,7 @@ namespace ortho_terrain
 		data->register_resource_type("terrain", resources::ParseTerrain);
 		data->register_resource_type("terrainsets", resources::ParseTerrainSet);
 
-		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::data_manager::no_load);
+		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::no_load);
 		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, hades::unique_id::zero, data);
 		const tiles::tile empty_tile{ empty_t_tex, 0, 0 };
 		ApplyToTerrain(*empty_terrain, [empty_tile](auto &&vec) {
@@ -171,7 +171,7 @@ namespace ortho_terrain
 				{
 					try
 					{
-						const auto tileset = data->get<tiles::resources::tileset>(terrain_id, hades::data::data_manager::no_load);
+						const auto tileset = data->get<tiles::resources::tileset>(terrain_id, hades::data::no_load);
 						LOGERROR("Terrains can be used as a tileset, but they must be defined as a terrain before being written to as a tileset");
 					}
 					catch(const hades::data::resource_wrong_type&)

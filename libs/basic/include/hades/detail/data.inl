@@ -36,7 +36,7 @@ namespace hades
 			{
 				try
 				{
-					r = get<Type>(target, data_manager::no_load);
+					r = get<Type>(target, no_load);
 				}
 				catch (data::resource_wrong_type &e)
 				{

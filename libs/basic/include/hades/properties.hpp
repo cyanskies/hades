@@ -22,6 +22,18 @@ namespace hades
 			using std::logic_error::logic_error;
 		};
 
+		class property_name_already_used : public std::logic_error
+		{
+		public:
+			using std::logic_error::logic_error;
+		};
+
+		class property_missing : public std::logic_error
+		{
+		public:
+			using std::logic_error::logic_error;
+		};
+
 		template<class T>
 		using property = std::shared_ptr<std::atomic<T>>;
 	
@@ -33,6 +45,12 @@ namespace hades
 		class properties {
 		public:
 			virtual ~properties() {}
+
+			//creates the property and sets it's default value
+			virtual void create(std::string_view, int32 default_val) = 0;
+			virtual void create(std::string_view, float default_val) = 0;
+			virtual void create(std::string_view, bool default_val) = 0;
+			virtual void create(std::string_view, std::string_view default_val) = 0;
 
 			//assigns the value to the id
 			//throws property_wrong_type if the type doesn't match the property name
@@ -55,6 +73,14 @@ namespace hades
 		//TODO: replace with set property ptr
 		extern properties *property_provider;
 
+		// The following functions will throw if the provider isn't available
+		template<typename T>
+		void create_property(std::string_view s, T v)
+		{
+			if(property_provider)
+				return property_provider->create(s, v);
+		}
+
 		// Property global functions are required to work even when the property provider is absent
 		// as such SetProperty doesn't provide any success feedback
 		// and Get* functions return the provided default if possible
@@ -68,6 +94,11 @@ namespace hades
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
 		//if the requested type doesn't match the type stored then throws console::property_wrong_type
+		property_int get_int(std::string_view);
+		property_float get_float(std::string_view);
+		property_bool get_bool(std::string_view);
+		property_str get_string(std::string_view);
+
 		property_int get_int(std::string_view, types::int32);
 		property_float get_float(std::string_view, float);
 		property_bool get_bool(std::string_view, bool);

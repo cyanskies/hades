@@ -1,21 +1,16 @@
 #ifndef HADES_CONSOLE_HPP
 #define HADES_CONSOLE_HPP
 
-#include <atomic>
 #include <functional>
-#include <list>
-#include <map>
-#include <memory>
 #include <mutex>
-#include <queue>
-#include <string>
-#include <typeindex>
+#include <string_view>
+#include <unordered_map>
 #include <variant>
 
-#include "Hades/Logging.hpp"
-#include "Hades/Properties.hpp"
-#include "Hades/Types.hpp"
-#include "Hades/System.hpp"
+#include "hades/logging.hpp"
+#include "hades/properties.hpp"
+#include "hades/types.hpp"
+#include "hades/system.hpp"
 
 //Console is a unique engine object for holding game wide properties
 //it also exposes dev commands
@@ -60,6 +55,11 @@ namespace hades
 		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
 		void erase_function(std::string_view identifier) override;
 
+		virtual void create(std::string_view, int32) override;
+		virtual void create(std::string_view, float) override;
+		virtual void create(std::string_view, bool) override;
+		virtual void create(std::string_view, std::string_view) override;
+
 		template<class T>
 		void setValue(std::string_view identifier, const T &value);
 
@@ -83,7 +83,16 @@ namespace hades
 		void echo(std::string_view message, Console_String_Verbosity verbosity = logger::log_verbosity::normal);
 		void echo(const Console_String &message) override;
 
-		bool exists(const std::string &command) const;
+		struct variable_t {};
+		struct function_t {};
+
+		static constexpr variable_t variable{};
+		static constexpr function_t function{};
+
+		bool exists(const std::string_view &command) const;
+		bool exists(const std::string_view &command, variable_t) const;
+		bool exists(const std::string_view &command, function_t) const;
+
 		void erase(const std::string &command);
 
 		ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = logger::log_verbosity::normal) override;
@@ -99,13 +108,19 @@ namespace hades
 		void DisplayFunctions(std::vector<std::string_view> args);
 
 	private:
+		template<class T>
+		void _create_property(std::string_view identifier, T value);
+
+		template<class T>
+		void _set_property(std::string_view identifier, T value);
+
 		mutable std::mutex _consoleVariableMutex;
 		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
 		mutable std::mutex _historyMutex;
-		using ConsoleFunctionMap = std::map<types::string, Console_Function>;
+		using ConsoleFunctionMap = std::unordered_map<types::string, Console_Function>;
 		ConsoleFunctionMap _consoleFunctions;
-		using ConsoleVariableMap = std::map<types::string, detail::Property>;
+		using ConsoleVariableMap = std::unordered_map<types::string, detail::Property>;
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;

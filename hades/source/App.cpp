@@ -21,65 +21,37 @@
 #include "Hades/Properties.hpp"
 #include "Hades/simple_resources.hpp"
 
+#include "hades/console_variables.hpp"
+
 namespace hades
 {
 	//true float values for common ratios * 100
 	constexpr int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
 
-	//console variable names
-	//c_* client variables names
-	// for variables that control basic client behaviour: framerate, etc
-	//con_* console variable names
-	// for console behaviour, font type, size and so on
-	//r_* render variable names
-	// none currently?
-	//s_* server variables
-	// server framerate and so on
-	//vid_* video settings variables
-	// resolution, colour depth, fullscreen, etc
-	//file_* for file path settings and read/write settings
-	//a_* for audio settings
-	//n_* for network settings
-	//editor_* for game editor settings
-
-	//console variable names
-	constexpr auto client_tick_time = "c_ticktime";
-	constexpr auto client_max_tick = "c_maxticktime";
-	constexpr auto file_portable = "file_portable";
-
-	//console variable default values
-	constexpr auto client_tick_time_d = 30;
-	constexpr auto client_max_tick_d = 150;
-#ifndef NDEBUG
-	constexpr auto file_portable_d = true;
-#else // !NDEBUG
-	constexpr auto file_portable_d = false;
-#endif // !NDEBUG
-
 	void registerVariables(Console *console)
 	{
 		//console variables
-		console::set_property(console_character_size, console_character_size_d);
-		console::set_property(console_fade, console_fade_d);
+		//console::set_property(console_character_size, console_character_size_d);
+		//console::set_property(console_fade, console_fade_d);
 
 		//app variables
-		console::set_property(client_tick_time, client_tick_time_d);
-		console::set_property(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
+		//console::set_property(client_tick_time, client_tick_time_d);
+		//console::set_property(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
 		// activates portable mode, where files are only read/writen to the game directory
-		console::set_property(file_portable, file_portable_d);
+		//console::set_property(file_portable, file_portable_d);
 	}
 
 	void registerVidVariables(Console *console)
 	{
 		auto vid_default = [console] ()->bool {
 			//window
-			console->set("vid_fullscreen", false);
-			console->set("vid_resizable", false);
+			console->set(cvars::video_fullscreen, cvars::default_value::video_fullscreen);
+			console->set(cvars::video_resizable, cvars::default_value::video_resizable);
 			//resolution
-			console->set("vid_width", 800);
-			console->set("vid_height", 600);
+			console->set(cvars::video_width, cvars::default_value::video_width);
+			console->set(cvars::video_height, cvars::default_value::video_height);
 			//depth
-			console->set("vid_depth", 32);
+			console->set(cvars::video_depth, cvars::default_value::video_depth);
 
 			return true;
 		};
@@ -94,10 +66,10 @@ namespace hades
 
 	void registerServerVariables(Console *console)
 	{
-		console->set("s_tickrate", 30);
-		console->set("s_maxframetime", 150); // 1.5 seconds is the maximum allowable frame time.
-		console->set("s_connectionport", 0); // 0 = auto port
-		console->set("s_portrange", 0); // unused
+		//console->set("s_tickrate", 30);
+		//console->set("s_maxframetime", 150); // 1.5 seconds is the maximum allowable frame time.
+		//console->set("s_connectionport", 0); // 0 = auto port
+		//console->set("s_portrange", 0); // unused
 	}
 
 	App::App() : _consoleView(nullptr), _sfVSync(false)
@@ -123,10 +95,8 @@ namespace hades
 		resourceTypes(_dataMan);
 
 		//load defualt console settings
-		registerVariables(&_console);
-		registerVidVariables(&_console);
-		registerServerVariables(&_console);
-
+		create_core_console_variables();
+		
 		//load config files and overwrite any updated settings
 
 		registerConsoleCommands();
@@ -244,8 +214,8 @@ namespace hades
 		//we use curves instead.
 
 		//tickrate is the amount of time simulated at any one tick
-		const auto tickrate = _console.getValue<types::int32>("c_ticktime"),
-			maxframetime  = _console.getValue<types::int32>("c_maxticktime");
+		const auto tickrate = _console.getValue<types::int32>(cvars::client_tick_time),
+			maxframetime  = _console.getValue<types::int32>(cvars::client_max_tick);
 
 		assert(tickrate && "failed to get tick rate value from console");
 
@@ -335,6 +305,8 @@ namespace hades
 		console::property_provider = nullptr;
 		console::system_object = nullptr;
 		debug::overlay_manager = nullptr;
+		//TODO: what about data_manager
+		//how about auto unregister from destructor?
 	}
 
 	std::vector<input_event_system::checked_event> App::handleEvents(State *activeState)
@@ -358,8 +330,8 @@ namespace hades
 			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
 			{									// doesn't block resizing the window
-				_console.setValue<types::int32>("vid_width", e.size.width);
-				_console.setValue<types::int32>("vid_height", e.size.height);
+				_console.setValue<types::int32>(cvars::video_width, e.size.width);
+				_console.setValue<types::int32>(cvars::video_height, e.size.height);
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
@@ -410,11 +382,11 @@ namespace hades
 		//vid functions
 		{
 			auto vid_reinit = [this]()->bool {
-				const auto width = _console.getValue<types::int32>("vid_width"),
-					height = _console.getValue<types::int32>("vid_height"),
-					depth = _console.getValue<types::int32>("vid_depth");
+				const auto width = _console.getValue<types::int32>(cvars::video_width),
+					height = _console.getValue<types::int32>(cvars::video_height),
+					depth = _console.getValue<types::int32>(cvars::video_depth);
 
-				const auto fullscreen = _console.getValue<bool>("vid_fullscreen");
+				const auto fullscreen = _console.getValue<bool>(cvars::video_fullscreen);
 
 				sf::VideoMode mode(width->load(), height->load(), depth->load());
 
@@ -427,7 +399,7 @@ namespace hades
 
 				auto window_type = sf::Style::Titlebar | sf::Style::Close;
 				
-				const auto resizable = _console.getBool("vid_resizable");
+				const auto resizable = _console.getBool(cvars::video_resizable);
 
 				if (fullscreen->load())
 					window_type = sf::Style::Fullscreen;

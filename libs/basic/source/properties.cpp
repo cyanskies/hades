@@ -26,6 +26,40 @@ namespace hades
 			return std::make_shared<std::atomic<V>>(default_value);
 		}
 
+		constexpr auto provider_missing_error = "Property provider unavailable, use overloads with fall back values";
+
+		property_int get_int(std::string_view name)
+		{
+			if (!property_provider)
+				throw provider_unavailable{ provider_missing_error };
+
+			return property_provider->getInt(name);
+		}
+
+		property_float get_float(std::string_view name)
+		{
+			if (!property_provider)
+				throw provider_unavailable{ provider_missing_error };
+
+			return property_provider->getFloat(name);
+		}
+
+		property_bool get_bool(std::string_view name)
+		{
+			if (!property_provider)
+				throw provider_unavailable{ provider_missing_error };
+
+			return property_provider->getBool(name);
+		}
+
+		property_str get_string(std::string_view name)
+		{
+			if (!property_provider)
+				throw provider_unavailable{ provider_missing_error };
+			
+			return property_provider->getString(name);
+		}
+
 		property_int get_int(std::string_view name, types::int32 default_value)
 		{
 			return get<property<types::int32>>(name, [](std::string_view n) { return property_provider->getInt(n);}, default_value);

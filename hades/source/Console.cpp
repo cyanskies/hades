@@ -9,7 +9,8 @@
 #include <iostream>
 #endif
 
-#include "Hades/Utility.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/utility.hpp"
 
 //==============
 // Console
@@ -186,24 +187,44 @@ namespace hades
 		_consoleFunctions.erase(to_string(identifier));
 	}
 
+	void Console::create(std::string_view s, int32 v)
+	{
+		_create_property(s, v);
+	}
+
+	void Console::create(std::string_view s, float v)
+	{
+		_create_property(s, v);
+	}
+
+	void Console::create(std::string_view s, bool v)
+	{
+		_create_property(s, v);
+	}
+	
+	void Console::create(std::string_view s, std::string_view v)
+	{
+		_create_property(s, to_string(v));
+	}
+
 	void Console::set(std::string_view name, types::int32 val)
 	{
-		setValue(name, val);
+		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, float val)
 	{
-		setValue(name, val);
+		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, bool val)
 	{
-		setValue(name, val);
+		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, std::string_view val)
 	{
-		setValue(name, to_string(val));
+		_set_property(name, to_string(val));
 	}
 
 	console::property<types::int32> Console::getInt(std::string_view name)
@@ -305,22 +326,29 @@ namespace hades
 		#endif
 	}
 
-	bool Console::exists(const std::string &command) const
+	bool Console::exists(const std::string_view &command) const
 	{
-		{
-			const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-			detail::Property var;
-			if (GetValue(command, var))
-				return true;
-		}
+		return exists(command, variable) ||
+			exists(command, function);
+	}
 
-		{
-			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			const auto funcIter = _consoleFunctions.find(command);
+	bool Console::exists(const std::string_view &command, variable_t) const
+	{
+		const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		detail::Property var;
+		if (GetValue(command, var))
+			return true;
 
-			if (funcIter != _consoleFunctions.end())
-				return true;
-		}
+		return false;
+	}
+
+	bool Console::exists(const std::string_view &command, function_t) const
+	{
+		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		const auto funcIter = _consoleFunctions.find(to_string(command));
+
+		if (funcIter != _consoleFunctions.end())
+			return true;
 
 		return false;
 	}
@@ -363,5 +391,58 @@ namespace hades
 
 		out.remove_if(predicate);
 		return out;
+	}
+
+	template<class T>
+	void Console::_create_property(std::string_view identifier, T value)
+	{
+		//we can only store integral types in std::atomic
+		static_assert(valid_console_type<T>::value, "Attempting to create an illegal property type");
+
+		if (exists(identifier))
+			throw console::property_name_already_used{ "Cannot create property; name: " +
+			to_string(identifier) + ", has already been used" };
+
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+
+		detail::Property var;
+		if constexpr (std::is_same_v<T, types::string>)
+			var = std::make_shared <value_guard<T>>(value);
+		else
+			var = std::make_shared<std::atomic<T>>(value);
+
+		_consoleVariables.emplace( to_string(identifier), std::move(var) );
+	}
+
+	template<class T>
+	void Console::_set_property(std::string_view identifier, T value)
+	{
+		//we can only store integral types in std::atomic
+		static_assert(valid_console_type<T>::value, "Attempting to set an illegal property type");
+
+		if (!exists(identifier))
+			throw console::property_missing{ "Cannot set property: " +
+			to_string(identifier) + ", it doesn't exist" };
+
+		if (exists(identifier, function))
+			throw invalid_argument{ "Property set: " +
+			to_string(identifier) + ", this name is used for a function" };
+
+		detail::Property out;
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+
+		const auto get = GetValue(identifier, out);
+
+		if (!get)
+			throw std::runtime_error{ "Failed to find property value" };
+
+		std::visit([identifier, &value](auto &&arg) {
+			using U = std::decay_t<decltype(arg)>;
+			using W = std::decay_t<U::element_type::value_type>;
+			if constexpr (std::is_same_v<std::decay_t<decltype(value)>, W>)
+				*arg = value;
+			else
+				throw console::property_wrong_type("name: " + to_string(identifier) + ", value: " + to_string(value));
+		}, out);
 	}
 }//hades

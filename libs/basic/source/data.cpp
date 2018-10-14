@@ -42,8 +42,6 @@ namespace hades
 			}
 		}
 
-		const data_manager::no_load_t data_manager::no_load;
-		
 		bool data_manager::exists(unique_id id) const
 		{
 			return _resources.find(id) != std::end(_resources);

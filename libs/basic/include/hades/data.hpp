@@ -29,6 +29,10 @@ namespace hades
 
 	namespace data
 	{
+		//tag type to request that a resource not be lazy loaded
+		struct no_load_t {};
+		constexpr no_load_t no_load{};
+
 		class data_manager
 		{
 		public:
@@ -57,10 +61,6 @@ namespace hades
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
 			T *get(unique_id id);
-
-			//tag type to request that a resource not be lazy loaded
-			struct no_load_t {};
-			static const no_load_t no_load;
 
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>

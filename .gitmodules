@@ -10,3 +10,6 @@
 [submodule "deps/sfgui"]
 	path = deps/sfgui
 	url = https://github.com/cyanskies/sfgui
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/cyanskies/imgui

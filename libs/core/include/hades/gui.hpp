@@ -6,6 +6,7 @@
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Texture.hpp"
+#include "SFML/Window/Event.hpp"
 
 #include "hades/font.hpp"
 #include "hades/texture.hpp"
@@ -61,7 +62,8 @@ namespace hades
 		const font *add_font(const resources::font*);
 
 		//input must be inserted before frame_begin
-		void input_actions(time_duration dt);
+		bool handle_event(const sf::Event &e);
+		void update(time_duration dt);
 
 		void frame_begin();
 		void frame_end();
@@ -89,6 +91,7 @@ namespace hades
 
 		//each gui instance will create a texture, 
 		//should we add a destroy function to data_manager so these can be cleaned up?
+		//TODO: shared atlas struct + texture
 		unique_id _font_atlas_id;
 	};
 }

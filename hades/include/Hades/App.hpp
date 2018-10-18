@@ -6,7 +6,7 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
-#include "SFGUI/SFGUI.hpp"
+//#include "SFGUI/SFGUI.hpp"
 
 #include "Hades/Console.hpp"
 #include "Hades/data_system.hpp"
@@ -91,7 +91,7 @@ namespace hades
 
 		ConsoleView *_consoleView;					///< The console interation devtool.
 
-		sfg::SFGUI _sfgui;							///< SFGUI object
+		//sfg::SFGUI _sfgui;							///< SFGUI object
 	};
 
 	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);

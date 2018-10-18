@@ -5,7 +5,7 @@
 #include "hades/data_system.hpp"
 #include "hades/properties.hpp"
 
-#include "Objects/editor.hpp"
+//#include "Objects/editor.hpp"
 
 namespace objects
 {

@@ -7,7 +7,7 @@
 #include "SFML/Window/Joystick.hpp"
 #include "SFML/Window/Window.hpp"
 
-#include "SFGUI/Desktop.hpp"
+//#include "SFGUI/Desktop.hpp"
 
 #include "hades/sf_input.hpp"
 
@@ -62,7 +62,7 @@ namespace hades
 		virtual void resume() = 0; //restart any custom timers, this state is active again and being drawn, recieving input
 	
 	protected:
-		sfg::Desktop _gui;
+		//sfg::Desktop _gui;
 
 		push_func PushState, PushStateUnder;
 

@@ -41,12 +41,13 @@ namespace hades
 
 	bool State::guiInput(sf::Event& event)
 	{
-		return _gui.HandleEvent(event);
+		return false;
+		//return _gui.HandleEvent(event);
 	}
 
 	void State::updateGui(sf::Time frameTime)
 	{
-		_gui.Update(frameTime.asSeconds());
+		//_gui.Update(frameTime.asSeconds());
 	}
 
 	bool State::paused() const
@@ -58,7 +59,7 @@ namespace hades
 	{
 		pause();
 		//states should rebuild their gui in reinit
-		_gui.RemoveAll();
+		//_gui.RemoveAll();
 		_paused = true;
 	}
 }//hades

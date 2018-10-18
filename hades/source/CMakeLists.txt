@@ -24,14 +24,11 @@ set(HADES_SRC
 	StateManager.cpp
 	yaml_parser.cpp
 	yaml_writer.cpp
-	Objects/editor.cpp
 	Objects/resources.cpp
-	OrthoTerrain/editor.cpp
 	OrthoTerrain/terrain.cpp
 	OrthoTerrain/utility.cpp
 	OrthoTerrain/generator.cpp
 	OrthoTerrain/resources.cpp
-	Tiles/editor.cpp
 	Tiles/generator.cpp
 	Tiles/resources.cpp
 	Tiles/serialise.cpp

@@ -5,7 +5,7 @@
 #include "Hades/Data.hpp"
 #include "Hades/data_system.hpp"
 
-#include "Tiles/editor.hpp"
+//#include "Tiles/editor.hpp"
 #include "Tiles/tiles.hpp"
 
 #include "Tiles/resource/error_tile.hpp"

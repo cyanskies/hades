@@ -72,7 +72,6 @@ target_link_libraries(${HADES_CORE_LIB} PUBLIC
 	sfml-network
 	sfml-system
 	sfml-window
-	sfgui
 	minizip
 )
 

@@ -134,8 +134,13 @@ namespace hades
 
 	sf::Vertex to_vertex(ImDrawVert vert)
 	{
+		const auto col = ImColor{ vert.col }.Value;
+		
 		return { {vert.pos.x, vert.pos.y},
-			sf::Color{vert.col},
+			sf::Color{static_cast<sf::Uint8>(col.x * 255.f),
+					static_cast<sf::Uint8>(col.y * 255.f), 
+					static_cast<sf::Uint8>(col.z * 255.f), 
+					static_cast<sf::Uint8>(col.w * 255.f)},
 			{vert.uv.x, vert.uv.y} };
 	}
 
@@ -238,8 +243,8 @@ namespace hades
 
 		//let someone elses better render function do it for us
 		//NOTE: this doesn't respect sf::view settings
-		RenderDrawLists(draw_data);
-		return;
+		//RenderDrawLists(draw_data);
+		//return;
 
 		const auto first = draw_data->CmdLists;
 		const auto last = draw_data->CmdLists + draw_data->CmdListsCount;

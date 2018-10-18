@@ -132,7 +132,7 @@ namespace hades
 		ImGui::EndFrame();
 	}
 
-	sf::Vertex to_vertex(ImDrawVert vert)
+	sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f })
 	{
 		const auto col = ImColor{ vert.col }.Value;
 		
@@ -141,98 +141,12 @@ namespace hades
 					static_cast<sf::Uint8>(col.y * 255.f), 
 					static_cast<sf::Uint8>(col.z * 255.f), 
 					static_cast<sf::Uint8>(col.w * 255.f)},
-			{vert.uv.x, vert.uv.y} };
+			//uv coords are normalised for the texture size as [0.f, 1.f]
+			//we need to expand them to the range of [0, tex_size]
+			{vert.uv.x * tex_size.x, vert.uv.y * tex_size.y} };
 	}
 
-	//draw function borrowed from https://github.com/eliasdaler/imgui-sfml/blob/master/imgui-SFML.cpp
-	//proves that my draw function is responsible for the messed up rendering
-	void RenderDrawLists(ImDrawData* draw_data)
-	{
-		if (draw_data->CmdListsCount == 0) {
-			return;
-		}
-
-		ImGuiIO& io = ImGui::GetIO();
-		assert(io.Fonts->TexID != NULL); // You forgot to create and set font texture
-		// scale stuff (needed for proper handling of window resize)
-		int fb_width = static_cast<int>(io.DisplaySize.x * io.DisplayFramebufferScale.x);
-		int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
-		if (fb_width == 0 || fb_height == 0) { return; }
-		draw_data->ScaleClipRects(io.DisplayFramebufferScale);
-
-#ifdef GL_VERSION_ES_CL_1_1
-		GLint last_program, last_texture, last_array_buffer, last_element_array_buffer;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-		glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-		glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-#else
-		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
-#endif
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_SCISSOR_TEST);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_LIGHTING);
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
-
-		glMatrixMode(GL_TEXTURE);
-		glLoadIdentity();
-
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-
-#ifdef GL_VERSION_ES_CL_1_1
-		glOrthof(0.0f, io.DisplaySize.x, io.DisplaySize.y, 0.0f, -1.0f, +1.0f);
-#else
-		glOrtho(0.0f, io.DisplaySize.x, io.DisplaySize.y, 0.0f, -1.0f, +1.0f);
-#endif
-
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-
-		for (int n = 0; n < draw_data->CmdListsCount; ++n) {
-			const ImDrawList* cmd_list = draw_data->CmdLists[n];
-			const unsigned char* vtx_buffer = (const unsigned char*)&cmd_list->VtxBuffer.front();
-			const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer.front();
-
-			glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), (void*)(vtx_buffer + offsetof(ImDrawVert, pos)));
-			glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), (void*)(vtx_buffer + offsetof(ImDrawVert, uv)));
-			glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), (void*)(vtx_buffer + offsetof(ImDrawVert, col)));
-
-			for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.size(); ++cmd_i) {
-				const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
-				if (pcmd->UserCallback) {
-					pcmd->UserCallback(cmd_list, pcmd);
-				}
-				else {
-					const auto texture = static_cast<const resources::texture*>(pcmd->TextureId);
-					glBindTexture(GL_TEXTURE_2D, texture->value.getNativeHandle());
-					glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w),
-						(int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-					glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer);
-				}
-				idx_buffer += pcmd->ElemCount;
-			}
-		}
-#ifdef GL_VERSION_ES_CL_1_1
-		glBindTexture(GL_TEXTURE_2D, last_texture);
-		glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
-		glDisable(GL_SCISSOR_TEST);
-#else
-		glPopAttrib();
-#endif
-	}
-
-	//TODO: find out why this isn't working
-	//because we don't have glscissor?
+	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	{
 		_active_assert();
@@ -241,16 +155,14 @@ namespace hades
 		const auto draw_data = ImGui::GetDrawData();
 		assert(draw_data);
 
-		//let someone elses better render function do it for us
-		//NOTE: this doesn't respect sf::view settings
-		//RenderDrawLists(draw_data);
-		//return;
-
 		const auto first = draw_data->CmdLists;
 		const auto last = draw_data->CmdLists + draw_data->CmdListsCount;
 
+		const auto view = target.getView();
+		const auto view_height = view.getSize().y;
+
 		//for each entry in the draw list
-		std::for_each(first, last, [&target, states](ImDrawList *draw_list) {
+		std::for_each(first, last, [&target, states, view_height](ImDrawList *draw_list) {
 			const auto *index_first = draw_list->IdxBuffer.Data;
 
 			//for each command
@@ -260,13 +172,28 @@ namespace hades
 					std::invoke(cmd.UserCallback, draw_list, &cmd);
 				else
 				{
+					//get the info needed to denormalise the tex coords.
+					sf::Vector2f texture_size = { 1.f, 1.f };
+					if (cmd.TextureId)
+					{
+						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
+						texture_size = { static_cast<float>(texture->width), static_cast<float>(texture->height) };
+					}
+
 					//get the verts from the draw list that are associated with
 					//this command
 					sf::VertexArray verts{ sf::Triangles, cmd.ElemCount };
 					const auto *i = index_first;
 					for (decltype(ImDrawCmd::ElemCount) j = 0; j < cmd.ElemCount; ++j)
-						verts[j] = to_vertex(draw_list->VtxBuffer[*(i++)]);
+						verts[j] = to_vertex(draw_list->VtxBuffer[*(i++)], texture_size);
 
+
+					glEnable(GL_SCISSOR_TEST);
+					glScissor(static_cast<GLsizei>(cmd.ClipRect.x),
+						static_cast<GLsizei>(view_height - cmd.ClipRect.w),
+						static_cast<GLsizei>(cmd.ClipRect.z - cmd.ClipRect.x),
+						static_cast<GLsizei>(cmd.ClipRect.w - cmd.ClipRect.y));
+					//draw with texture
 					if (cmd.TextureId)
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
@@ -275,8 +202,10 @@ namespace hades
 						state.texture = &texture->value;
 						target.draw(verts, state);
 					}
-					else
+					else //draw coloured verts
 						target.draw(verts);
+
+					glDisable(GL_SCISSOR_TEST);
 				}
 
 				//move the index ptr forward for the next command

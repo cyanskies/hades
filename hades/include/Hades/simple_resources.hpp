@@ -230,11 +230,6 @@ namespace hades
 		{
 			return true;
 		}
-
-		struct font : public resource_type<sf::Font>
-		{
-			font();
-		};
 	}
 }
 

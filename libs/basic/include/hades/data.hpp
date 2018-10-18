@@ -112,6 +112,7 @@ namespace hades
 		//		or hades::data::resource_wrong_type
 		template<class T>
 		const T* get(unique_id id);
+		//TODO: get_mutable, to allow for elements that edit an owned resource
 
 		//refresh requests
 

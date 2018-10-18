@@ -40,28 +40,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # C++ source files
 set(IMGUI_SRC
-	imgui/imgconfig.h
-	imgui/imgui.cpp
-	imgui/imgui.h
-	imgui/imgui.h
-	imgui/imgui_demo.cpp
-	imgui/imgui_draw.cpp
-	imgui/imgui_internal.h
-	imgui/imgui_widgets.h
-	imgui/imstb_rectpack.h
-	imgui/imstb_textedit.h
-	imgui/imstb_truetype.h
-)
-
-source_group("Headers" FILES
-	imgui/imgconfig.h
-	imgui/imgui.h
-	imgui/imgui.h
-	imgui/imgui_internal.h
-	imgui/imgui_widgets.h
-	imgui/imstb_rectpack.h
-	imgui/imstb_textedit.h
-	imgui/imstb_truetype.h
+	./imgui/imconfig.h
+	./imgui/imgui.cpp
+	./imgui/imgui.h
+	./imgui/imgui.h
+	./imgui/imgui_demo.cpp
+	./imgui/imgui_draw.cpp
+	./imgui/imgui_internal.h
+	./imgui/imgui_widgets.cpp
+	./imgui/imstb_rectpack.h
+	./imgui/imstb_textedit.h
+	./imgui/imstb_truetype.h
 )
 
 # Library to build
@@ -72,14 +61,10 @@ add_library(${IMGUI_LIB} STATIC ${IMGUI_SRC})
 set_target_properties(${IMGUI_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${IMGUI_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
-target_include_directories(${IMGUI_LIB} PUBLIC ../include)
+target_include_directories(${IMGUI_LIB} PUBLIC ./imgui)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${IMGUI_LIB}
 		RUNTIME DESTINATION lib
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
-
-# Install include directory and license files
-install(DIRECTORY include
-		DESTINATION .)

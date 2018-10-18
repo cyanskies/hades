@@ -16,11 +16,6 @@ namespace hades
 			{
 				if (auto p = func(name))
 					return p;
-				else
-				{
-					set_property(name, default_value);
-					return func(name);
-				}
 			}
 
 			return std::make_shared<std::atomic<V>>(default_value);

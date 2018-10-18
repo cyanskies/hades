@@ -4,6 +4,7 @@
 set(HADES_EXAMPLE_SRC
 	ConsoleTestState.cpp
 	ExampleJob.cpp
+	gui_state.cpp
 	input_names.cpp
 	main.cpp
 	Snake.cpp

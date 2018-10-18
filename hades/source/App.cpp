@@ -13,6 +13,7 @@
 #include "zlib.h" //for zlib version
 
 #include "Hades/ConsoleView.hpp"
+#include "hades/core_resources.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/files.hpp"
@@ -89,6 +90,7 @@ namespace hades
 		//register sfml input names
 		register_sfml_input(_window, _input);
 
+		register_core_resources(_dataMan);
 		RegisterCommonResources(&_dataMan);
 		data::detail::set_data_manager_ptr(&_dataMan);
 
@@ -185,6 +187,8 @@ namespace hades
 			return true;
 		});
 
+		_window.resetGLStates();
+
 		//if hades main handles any of the commands then they will be removed from 'commands'
 		hadesMain(_states, _input, commands);
 
@@ -228,9 +232,6 @@ namespace hades
 		sf::Time currentTime = time.getElapsedTime();
 		sf::Time accumulator = sf::Time::Zero;
 
-		//this will allow rendering SFGUI objects even if sfml drawing hasn't been used yet.
-		//_window.resetGLStates();
-
 		while(running && _window.isOpen())
 		{
 			State *activeState = _states.getActiveState();
@@ -270,11 +271,11 @@ namespace hades
 				const auto totalFrameTime = thisFrame + accumulator;
 				activeState->draw(_window, totalFrameTime);
 
-				//store gl states while drawing sfgui elements
-				_window.pushGLStates();
-				activeState->updateGui(totalFrameTime);
-				_sfgui.Display(_window);
-				_window.popGLStates(); // restore sfml gl states
+				////store gl states while drawing sfgui elements
+				//_window.pushGLStates();
+				//activeState->updateGui(totalFrameTime);
+				//_sfgui.Display(_window);
+				//_window.popGLStates(); // restore sfml gl states
 
 				//activeState->drawAfterGui(_window, totalFrameTime);
 				//update the console interface.

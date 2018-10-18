@@ -2,6 +2,7 @@
 
 #include "hades/animation.hpp"
 #include "hades/curve_extra.hpp"
+#include "hades/font.hpp"
 #include "hades/objects.hpp"
 #include "hades/texture.hpp"
 
@@ -12,7 +13,7 @@ namespace hades
 		register_animation_resource(d);
 		register_curve_resource(d);
 		//TODO: register_game_systems();
-		//TODO: register_font;
+		register_font_resource(d);
 		register_objects(d);
 		//TODO: register_string
 		//TODO: register_shader

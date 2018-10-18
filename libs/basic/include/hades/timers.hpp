@@ -38,7 +38,7 @@ namespace hades
 
 	template<typename TargetDuration, typename Rep2, typename Period2,
 		typename = std::enable_if_t<is_duration_v<TargetDuration>>>
-		TargetDuration duration_cast(const basic_duration<Rep2, Period2> &duration)
+		TargetDuration time_cast(const basic_duration<Rep2, Period2> &duration)
 	{
 		return std::chrono::duration_cast<TargetDuration>(duration);
 	}
@@ -53,8 +53,8 @@ namespace hades
 			t -= d;
 
 		const auto time_nanos = t.time_since_epoch();
-		const auto time_seconds = hades::duration_cast<seconds>(time_nanos);
-		const auto duration_seconds = hades::duration_cast<seconds>(d);
+		const auto time_seconds = time_cast<seconds>(time_nanos);
+		const auto duration_seconds = time_cast<seconds>(d);
 
 		return time_seconds.count() / duration_seconds.count();
 	}
@@ -75,7 +75,7 @@ namespace hades
 		//default with no extention is ms
 		const auto ms_count = from_string<milliseconds::rep>(s);
 		const auto ms = milliseconds{ ms_count };
-		return hades::duration_cast<Duration>(ms);
+		return time_cast<Duration>(ms);
 	}
 
 	//Thread safe.

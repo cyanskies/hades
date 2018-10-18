@@ -6,7 +6,9 @@ set(HADES_CORE_SRC
 	archive.cpp
 	core_resources.cpp
 	files.cpp
+	font.cpp
 	game_system.cpp
+	gui.cpp
 	level.cpp
 	level_interface.cpp
 	objects.cpp
@@ -16,7 +18,9 @@ set(HADES_CORE_SRC
 	../include/hades/archive.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
+	../include/hades/font.hpp
 	../include/hades/game_system.hpp
+	../include/hades/gui.hpp
 	../include/hades/level.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
@@ -32,7 +36,9 @@ source_group("Headers" FILES
 	../include/hades/archive.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
+	../include/hades/font.hpp
 	../include/hades/game_system.hpp
+	../include/hades/gui.hpp
 	../include/hades/level.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
@@ -59,6 +65,7 @@ target_include_directories(${HADES_CORE_LIB} PUBLIC ../include)
 target_link_libraries(${HADES_CORE_LIB} PUBLIC 
 	hades-util
 	hades-basic 
+	imgui
 	sfml-audio
 	sfml-graphics
 	sfml-main

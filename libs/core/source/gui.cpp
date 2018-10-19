@@ -8,13 +8,20 @@
 #include "SFML/Graphics/Vertex.hpp"
 #include "SFML/Graphics/VertexArray.hpp"
 
+#include "hades/animation.hpp"
 #include "hades/data.hpp"
+#include "hades/font.hpp"
+#include "hades/texture.hpp"
 
 namespace hades
 {
 	gui::gui()
 	{
-		_activate_context();
+		if (!_font_atlas)
+			_font_atlas = std::make_unique<ImFontAtlas>();
+
+		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()), ImGui::DestroyContext };
+		_activate_context(); //context will only be activated by default if it is the only one
 
 		auto &io = ImGui::GetIO();
 
@@ -60,20 +67,6 @@ namespace hades
 		_active_assert();
 		auto &io = ImGui::GetIO();
 		io.DisplaySize = { size.x, size.y };
-	}
-
-	const gui::font *gui::add_font(const resources::font *f)
-	{
-		auto &io = ImGui::GetIO();
-		auto &f_atlas = *io.Fonts;
-		ImFontConfig cfg;
-		cfg.FontDataOwnedByAtlas = false;
-		//const cast, because f_atlas demands control of the ptr
-		//though it won't actually do anything, since FontDataOwned is set to false
-		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), f->source_buffer.size(), 13.f, &cfg);
-		_generate_atlas();
-
-		return out;
 	}
 
 	bool gui::handle_event(const sf::Event &e)
@@ -132,6 +125,12 @@ namespace hades
 		ImGui::EndFrame();
 	}
 
+	void gui::show_demo_window()
+	{
+		_active_assert();
+		ImGui::ShowDemoWindow();
+	}
+
 	sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f })
 	{
 		const auto col = ImColor{ vert.col }.Value;
@@ -143,7 +142,103 @@ namespace hades
 					static_cast<sf::Uint8>(col.w * 255.f)},
 			//uv coords are normalised for the texture size as [0.f, 1.f]
 			//we need to expand them to the range of [0, tex_size]
+			//same as the colours above
 			{vert.uv.x * tex_size.x, vert.uv.y * tex_size.y} };
+	}
+
+	bool gui::window_begin(std::string_view name, bool &closed, window_flags flags)
+	{
+		_active_assert();
+		return ImGui::Begin(to_string(name).data(), &closed, static_cast<ImGuiWindowFlags>(flags));
+	}
+
+	bool gui::window_begin(std::string_view name, window_flags flags)
+	{
+		_active_assert();
+		return ImGui::Begin(to_string(name).data(), nullptr, static_cast<ImGuiWindowFlags>(flags));;
+	}
+
+	void gui::window_end()
+	{
+		_active_assert();
+		ImGui::End();
+	}
+
+	bool gui::child_window_begin(std::string_view name, vector size, bool border, window_flags flags)
+	{
+		_active_assert();
+		return ImGui::BeginChild(to_string(name).data(), { size.x, size.y }, border, static_cast<ImGuiWindowFlags>(flags));
+	}
+
+	void gui::child_window_end()
+	{
+		_active_assert();
+		ImGui::EndChild();
+	}
+
+	gui::vector gui::window_position() const
+	{
+		_active_assert();
+		const auto pos = ImGui::GetWindowPos();
+		return { pos.x, pos.y };
+	}
+
+	gui::vector gui::window_size() const
+	{
+		_active_assert();
+		const auto size = ImGui::GetWindowSize();
+		return { size.x, size.y };
+	}
+
+	void gui::push_font(const resources::font *f)
+	{
+		_active_assert();
+		auto font = _get_font(f);
+		ImGui::PushFont(font);
+	}
+
+	void gui::pop_font()
+	{
+		_active_assert();
+		ImGui::PopFont();
+	}
+
+	ImVec4 to_imvec4(const sf::Color &c)
+	{
+		return {c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f};
+	}
+
+	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
+	{
+		_active_assert();
+		const auto[x, y] = animation::get_frame(a, time);
+
+		const auto tex_width = a.tex->width;
+		const auto tex_height = a.tex->height;
+
+		ImGui::Image(const_cast<resources::texture*>(a.tex), //ImGui only accepts these as non-const void* 
+			{ size.x, size.y },
+			{ x / tex_width, y / tex_height }, // normalised coords
+			{ (x + a.width) / tex_width,  (y + a.height) / tex_width }, // absolute pos for bottom right corner, also normalised
+			to_imvec4(tint_colour),
+			to_imvec4(border_colour));
+	}
+
+	bool gui::image_button(const resources::animation &a, const vector &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
+	{
+		_active_assert();
+		const auto[x, y] = animation::get_frame(a, time);
+
+		const auto tex_width = a.tex->width;
+		const auto tex_height = a.tex->height;
+
+		return ImGui::ImageButton(const_cast<resources::texture*>(a.tex), //ImGui only accepts these as non-const void* 
+			{ size.x, size.y },
+			{ x / tex_width, y / tex_height }, // normalised coords
+			{ (x + a.width) / tex_width,  (y + a.height) / tex_width }, // absolute pos for bottom right corner, also normalised
+			-1, // frame padding
+			to_imvec4(background_colour),
+			to_imvec4(tint_colour));
 	}
 
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
@@ -214,12 +309,6 @@ namespace hades
 		});
 	}
 
-	void gui::show_demo_window()
-	{
-		_active_assert();
-		ImGui::ShowDemoWindow();
-	}
-
 	constexpr std::string_view gui::version()
 	{
 		return IMGUI_VERSION;
@@ -238,13 +327,53 @@ namespace hades
 		assert(ImGui::GetCurrentContext() == _my_context.get());
 	}
 
+	gui::font *gui::_get_font(const resources::font *f)
+	{
+		assert(f);
+
+		if (const auto font = _fonts.find(f); font != std::end(_fonts))
+			return font->second;
+		else
+			return _create_font(f);
+	}
+
+	//const gui::font *gui::add_font(const resources::font *f)
+	//{
+	//	auto &io = ImGui::GetIO();
+	//	auto &f_atlas = *io.Fonts;
+	//	ImFontConfig cfg;
+	//	cfg.FontDataOwnedByAtlas = false;
+	//	//const cast, because f_atlas demands control of the ptr
+	//	//though it won't actually do anything, since FontDataOwned is set to false
+	//	const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), f->source_buffer.size(), 13.f, &cfg);
+	//	_generate_atlas();
+
+	//	return out;
+	//}
+
+	gui::font *gui::_create_font(const resources::font *f)
+	{
+		auto &io = ImGui::GetIO();
+		auto &f_atlas = *_font_atlas;
+		ImFontConfig cfg;
+		cfg.FontDataOwnedByAtlas = false;
+		//const cast, because f_atlas demands control of the ptr
+		//though it won't actually do anything, since FontDataOwned is set to false
+		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), f->source_buffer.size(), 13.f, &cfg);
+		_generate_atlas();
+
+		return out;
+	}
+
 	void gui::_generate_atlas()
 	{
 		//get texture
 		auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
 		std::ignore = lock;
 
-		auto t = d->find_or_create<resources::texture>(_font_atlas_id, unique_id::zero);
+		static unique_id font_texture_id{};
+
+		auto t = d->find_or_create<resources::texture>(font_texture_id, unique_id::zero);
 
 		t->mips = false;
 		t->repeat = false;
@@ -252,7 +381,7 @@ namespace hades
 
 		//get the data and set the correct ids
 		auto &io = ImGui::GetIO();
-		auto &f_atlas = *io.Fonts;
+		auto &f_atlas = *_font_atlas;
 		int width = 0, height = 0;
 		unsigned char *texture_data = nullptr;
 		f_atlas.GetTexDataAsRGBA32(&texture_data, &width, &height);
@@ -267,4 +396,8 @@ namespace hades
 		t->width = width;
 		t->height = height;
 	}
+
+	//gui::static objects
+	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
+	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;
 }

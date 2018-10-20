@@ -19,8 +19,11 @@ namespace hades
 	{
 		if (!_font_atlas)
 			_font_atlas = std::make_unique<ImFontAtlas>();
+		assert(_font_atlas);
 
-		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()), ImGui::DestroyContext };
+		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()) };
+		assert(_my_context);
+
 		_activate_context(); //context will only be activated by default if it is the only one
 
 		auto &io = ImGui::GetIO();
@@ -190,6 +193,18 @@ namespace hades
 		return { size.x, size.y };
 	}
 
+	void gui::next_window_position(vector p)
+	{
+		_active_assert();
+		ImGui::SetNextWindowPos({ p.x, p.y });
+	}
+
+	void gui::next_window_size(vector s)
+	{
+		_active_assert();
+		ImGui::SetNextWindowSize({ s.x, s.y });
+	}
+
 	void gui::push_font(const resources::font *f)
 	{
 		_active_assert();
@@ -205,9 +220,77 @@ namespace hades
 
 	ImVec4 to_imvec4(const sf::Color &c)
 	{
-		return {c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f};
+		return { c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f };
 	}
 
+	void gui::push_colour(colour_target element, const sf::Color &c)
+	{
+		_active_assert();
+		ImGui::PushStyleColor(static_cast<ImGuiCol>(element), to_imvec4(c));
+	}
+
+	void gui::pop_colour()
+	{
+		_active_assert();
+		ImGui::PopStyleColor();
+	}
+
+	void gui::seperator_horizontal()
+	{
+		_active_assert();
+		ImGui::Separator();
+	}
+
+	void gui::layout_horizontal(float pos, float width)
+	{
+		_active_assert();
+		ImGui::SameLine(pos, width);
+	}
+
+	void gui::layout_vertical()
+	{
+		_active_assert();
+		ImGui::NewLine();
+	}
+
+	void gui::vertical_spacing()
+	{
+		_active_assert();
+		ImGui::Spacing();
+	}
+
+	void gui::text(std::string_view s)
+	{
+		_active_assert();
+		ImGui::TextUnformatted(s.data(), s.data() + s.size());
+	}
+
+	void gui::text_coloured(std::string_view s, const sf::Color &c)
+	{
+		_active_assert();
+		push_colour(colour_target::text, c);
+		text(s);
+		pop_colour();
+	}
+
+	void gui::text_disabled(std::string_view s)
+	{
+		_active_assert();
+		const auto &style = ImGui::GetStyle();
+		const auto &c = style.Colors[static_cast<ImGuiCol>(colour_target::text_disabled)];
+		ImGui::PushStyleColor(static_cast<ImGuiCol>(colour_target::text), c);
+		text(s);
+		pop_colour();	
+	}
+
+	void gui::text_bullet(std::string_view s)
+	{
+		_active_assert();
+		bullet();
+		text(s);
+	}
+
+	//NOTE: image* functions are untested
 	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
@@ -239,6 +322,12 @@ namespace hades
 			-1, // frame padding
 			to_imvec4(background_colour),
 			to_imvec4(tint_colour));
+	}
+
+	void gui::bullet()
+	{
+		_active_assert();
+		ImGui::Bullet();
 	}
 
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor

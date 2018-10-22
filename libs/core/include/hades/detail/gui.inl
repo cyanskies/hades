@@ -5,6 +5,7 @@ namespace hades
 	template<typename T>
 	bool gui::radio_button(std::string_view label, T &active_selection, T this_button)
 	{
+		_active_assert();
 		if (radio_button(label, active_selection == this_button))
 			active_selection = this_button;
 	}
@@ -12,18 +13,22 @@ namespace hades
 	template<std::size_t Size>
 	inline bool gui::input_text(std::string_view label, std::array<char, Size>& buffer, input_text_flags f)
 	{
+		_active_assert();
 		return ImGui::InputText(to_string(label).data(), buffer.data(), buffer.size(), static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<std::size_t Size>
 	inline bool gui::input_text_multiline(std::string_view label, std::array<char, Size>& buffer, const vector &size, input_text_flags)
 	{
+		_active_assert();
 		return ImGui::InputTextMultiline(to_string(label).data(), buffer.data(), buffer.size(), {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename T>
 	inline bool gui::input(std::string_view label, T &v, T step, T step_fast, input_text_flags f)
 	{
+		_active_assert();
+
 		constexpr auto func = [] {
 			if constexpr (std::is_same_v<T, int>)
 				return &ImGui::InputInt;
@@ -39,6 +44,8 @@ namespace hades
 	template<typename T, std::size_t Size>
 	inline bool gui::input(std::string_view label, std::array<T, Size> &v, input_text_flags f)
 	{
+		_active_assert();
+
 		constexpr auto data_type = [] {
 			if constexpr (std::is_same_v<T, int>)
 				return ImGuiDataType_S32;

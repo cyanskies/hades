@@ -293,21 +293,25 @@ namespace hades
 
 	bool gui::button(std::string_view label, const vector &size)
 	{
+		_active_assert();
 		return ImGui::Button(to_string(label).data(), { size.x, size.y });
 	}
 
 	bool gui::small_button(std::string_view label)
 	{
+		_active_assert();
 		return ImGui::SmallButton(to_string(label).data());
 	}
 
 	bool gui::invisible_button(std::string_view label, const vector & size)
 	{
+		_active_assert();
 		return ImGui::InvisibleButton(to_string(label).data(), { size.x, size.y });
 	}
 
 	bool gui::arrow_button(std::string_view label, direction d)
 	{
+		_active_assert();
 		return ImGui::ArrowButton(to_string(label).data(), static_cast<ImGuiDir>(d));
 	}
 
@@ -347,21 +351,25 @@ namespace hades
 
 	bool gui::checkbox(std::string_view label, bool &checked)
 	{
+		_active_assert();
 		return ImGui::Checkbox(to_string(label).data(), &checked);
 	}
 
 	bool gui::radio_button(std::string_view label, bool active)
 	{
+		_active_assert();
 		return ImGui::RadioButton(to_string(label).data(), active);
 	}
 
 	void gui::progress_bar(float progress, const vector &size)
 	{
+		_active_assert();
 		ImGui::ProgressBar(progress, { size.x, size.y });
 	}
 
 	void gui::progress_bar(float progress, std::string_view overlay_text, const vector & size)
 	{
+		_active_assert();
 		ImGui::ProgressBar(progress, { size.x, size.y }, to_string(overlay_text).data());
 	}
 
@@ -373,21 +381,31 @@ namespace hades
 
 	bool gui::selectable(std::string_view label, bool &selected, selectable_flag flag, const vector & size)
 	{
+		_active_assert();
 		return ImGui::Selectable(to_string(label).data(), &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
 	}
 
 	bool gui::combo_begin(std::string_view l, std::string_view preview_value, combo_flags f)
 	{
+		_active_assert();
 		return ImGui::BeginCombo(to_string(l).data(), to_string(preview_value).data(), static_cast<ImGuiComboFlags>(f));
+	}
+
+	void gui::combo_end()
+	{
+		_active_assert();
+		ImGui::EndCombo();
 	}
 
 	bool gui::input_text(std::string_view label, std::string &buffer, input_text_flags f)
 	{
+		_active_assert();
 		return ImGui::InputText(to_string(label).data(), &buffer, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector &size, input_text_flags f)
 	{
+		_active_assert();
 		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
 	}
 

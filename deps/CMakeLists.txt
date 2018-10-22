@@ -45,6 +45,8 @@ set(IMGUI_SRC
 	./imgui/imstb_rectpack.h
 	./imgui/imstb_textedit.h
 	./imgui/imstb_truetype.h
+	./imgui/misc/cpp/imgui_stdlib.cpp
+	./imgui/misc/cpp/imgui_stdlib.h
 )
 
 # Library to build

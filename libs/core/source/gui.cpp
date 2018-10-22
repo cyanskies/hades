@@ -1,6 +1,7 @@
 #include "hades/gui.hpp"
 
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "SFML/OpenGL.hpp"
 
@@ -290,6 +291,26 @@ namespace hades
 		text(s);
 	}
 
+	bool gui::button(std::string_view label, const vector &size)
+	{
+		return ImGui::Button(to_string(label).data(), { size.x, size.y });
+	}
+
+	bool gui::small_button(std::string_view label)
+	{
+		return ImGui::SmallButton(to_string(label).data());
+	}
+
+	bool gui::invisible_button(std::string_view label, const vector & size)
+	{
+		return ImGui::InvisibleButton(to_string(label).data(), { size.x, size.y });
+	}
+
+	bool gui::arrow_button(std::string_view label, direction d)
+	{
+		return ImGui::ArrowButton(to_string(label).data(), static_cast<ImGuiDir>(d));
+	}
+
 	//NOTE: image* functions are untested
 	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
@@ -324,10 +345,50 @@ namespace hades
 			to_imvec4(tint_colour));
 	}
 
+	bool gui::checkbox(std::string_view label, bool &checked)
+	{
+		return ImGui::Checkbox(to_string(label).data(), &checked);
+	}
+
+	bool gui::radio_button(std::string_view label, bool active)
+	{
+		return ImGui::RadioButton(to_string(label).data(), active);
+	}
+
+	void gui::progress_bar(float progress, const vector &size)
+	{
+		ImGui::ProgressBar(progress, { size.x, size.y });
+	}
+
+	void gui::progress_bar(float progress, std::string_view overlay_text, const vector & size)
+	{
+		ImGui::ProgressBar(progress, { size.x, size.y }, to_string(overlay_text).data());
+	}
+
 	void gui::bullet()
 	{
 		_active_assert();
 		ImGui::Bullet();
+	}
+
+	bool gui::selectable(std::string_view label, bool &selected, selectable_flag flag, const vector & size)
+	{
+		return ImGui::Selectable(to_string(label).data(), &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
+	}
+
+	bool gui::combo_begin(std::string_view l, std::string_view preview_value, combo_flags f)
+	{
+		return ImGui::BeginCombo(to_string(l).data(), to_string(preview_value).data(), static_cast<ImGuiComboFlags>(f));
+	}
+
+	bool gui::input_text(std::string_view label, std::string &buffer, input_text_flags f)
+	{
+		return ImGui::InputText(to_string(label).data(), &buffer, static_cast<ImGuiInputTextFlags>(f));
+	}
+
+	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector &size, input_text_flags f)
+	{
+		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor

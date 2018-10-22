@@ -28,6 +28,7 @@ set(HADES_CORE_SRC
 	../include/hades/texture.hpp
 	../include/hades/time.hpp
 	../include/hades/detail/game_system.inl
+	../include/hades/detail/gui.inl
 	../include/hades/detail/level_interface.inl
 )
 
@@ -49,6 +50,7 @@ source_group("Headers" FILES
 
 source_group("Detail" FILES
 	../include/hades/detail/game_system.inl
+	../include/hades/detail/gui.inl
 	../include/hades/detail/level_interface.inl
 )
 

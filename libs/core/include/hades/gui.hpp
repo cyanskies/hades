@@ -47,7 +47,26 @@ namespace hades
 		void show_demo_window();
 
 		enum class window_flags : ImGuiWindowFlags {
-			none = ImGuiWindowFlags_::ImGuiWindowFlags_None
+			none = ImGuiWindowFlags_::ImGuiWindowFlags_None,
+			no_titlebar = ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar,
+			no_resize = ImGuiWindowFlags_::ImGuiWindowFlags_NoResize,
+			no_move = ImGuiWindowFlags_::ImGuiWindowFlags_NoMove,
+			no_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollbar,
+			no_scroll_with_mouse = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse,
+			no_collapse = ImGuiWindowFlags_::ImGuiWindowFlags_NoCollapse,
+			always_auto_resize = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize,
+			no_saved_settings = ImGuiWindowFlags_::ImGuiWindowFlags_NoSavedSettings,
+			no_imputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
+			menubar = ImGuiWindowFlags_::ImGuiWindowFlags_MenuBar,
+			horizontal_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_HorizontalScrollbar,
+			no_focus_on_appearing = ImGuiWindowFlags_::ImGuiWindowFlags_NoFocusOnAppearing,
+			no_bring_to_front_on_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoBringToFrontOnFocus,
+			always_vertical_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar,
+			always_horizontal_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar,
+			always_use_window_padding = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysUseWindowPadding,
+			no_nav_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavInputs,
+			no_nav_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus,
+			no_nav = ImGuiWindowFlags_::ImGuiWindowFlags_NoNav
 		};
 
 		//windows and child windows
@@ -65,50 +84,51 @@ namespace hades
 		void next_window_position(vector);
 		void next_window_size(vector);
 
-		enum class colour_target : ImGuiCol {
-			text = ImGuiCol_Text,
-			text_disabled = ImGuiCol_TextDisabled,
-			window_background = ImGuiCol_WindowBg,
-			child_background = ImGuiCol_ChildBg,
-			popup_background =ImGuiCol_PopupBg, 
-			border = ImGuiCol_Border,
-			border_shadow = ImGuiCol_BorderShadow,
-			frame_background = ImGuiCol_FrameBg,             
-			frame_background_hover = ImGuiCol_FrameBgHovered,
-			frame_background_active = ImGuiCol_FrameBgActive,
-			title_background = ImGuiCol_TitleBg,
-			title_background_active = ImGuiCol_TitleBgActive,
-			title_background_collapsed = ImGuiCol_TitleBgCollapsed,
-			menu_bar_background = ImGuiCol_MenuBarBg,
-			scrollbar_background = ImGuiCol_ScrollbarBg,
-			scrollbar_grab = ImGuiCol_ScrollbarGrab,
-			scrollbar_grab_hovered = ImGuiCol_ScrollbarGrabHovered,
-			scrollbar_grab_active = ImGuiCol_ScrollbarGrabActive,
-			check_mark = ImGuiCol_CheckMark,
-			slider_grab = ImGuiCol_SliderGrab,
-			slider_grab_active = ImGuiCol_SliderGrabActive,
-			button = ImGuiCol_Button,
-			button_hovered = ImGuiCol_ButtonHovered,
-			button_active = ImGuiCol_ButtonActive,
-			header = ImGuiCol_Header,
-			header_hovered = ImGuiCol_HeaderHovered,
-			header_active = ImGuiCol_HeaderActive,
-			seperator = ImGuiCol_Separator,
-			seperator_hovered = ImGuiCol_SeparatorHovered,
-			seperator_active = ImGuiCol_SeparatorActive,
-			resize_grip = ImGuiCol_ResizeGrip,
-			resize_grip_hovered = ImGuiCol_ResizeGripHovered,
-			resize_grip_active = ImGuiCol_ResizeGripActive,
-			plot_lines = ImGuiCol_PlotLines,
-			plot_lines_hovered = ImGuiCol_PlotLinesHovered,
-			plot_histogram = ImGuiCol_PlotHistogram,
-			plot_histogram_hovered = ImGuiCol_PlotHistogramHovered,
-			text_selected_background = ImGuiCol_TextSelectedBg,
-			drag_drop_target = ImGuiCol_DragDropTarget,
-			navigation_highlight = ImGuiCol_NavHighlight,
-			navigation_window_highlight = ImGuiCol_NavWindowingHighlight,
-			navigation_window_dim_background = ImGuiCol_NavWindowingDimBg,
-			modal_window_dim_background = ImGuiCol_ModalWindowDimBg,
+		enum class colour_target : ImGuiCol 
+		{
+			text = ImGuiCol_::ImGuiCol_Text,
+			text_disabled = ImGuiCol_::ImGuiCol_TextDisabled,
+			window_background = ImGuiCol_::ImGuiCol_WindowBg,
+			child_background = ImGuiCol_::ImGuiCol_ChildBg,
+			popup_background = ImGuiCol_PopupBg, 
+			border = ImGuiCol_::ImGuiCol_Border,
+			border_shadow = ImGuiCol_::ImGuiCol_BorderShadow,
+			frame_background = ImGuiCol_::ImGuiCol_FrameBg,             
+			frame_background_hover = ImGuiCol_::ImGuiCol_FrameBgHovered,
+			frame_background_active = ImGuiCol_::ImGuiCol_FrameBgActive,
+			title_background = ImGuiCol_::ImGuiCol_TitleBg,
+			title_background_active = ImGuiCol_::ImGuiCol_TitleBgActive,
+			title_background_collapsed = ImGuiCol_::ImGuiCol_TitleBgCollapsed,
+			menu_bar_background = ImGuiCol_::ImGuiCol_MenuBarBg,
+			scrollbar_background = ImGuiCol_::ImGuiCol_ScrollbarBg,
+			scrollbar_grab = ImGuiCol_::ImGuiCol_ScrollbarGrab,
+			scrollbar_grab_hovered = ImGuiCol_::ImGuiCol_ScrollbarGrabHovered,
+			scrollbar_grab_active = ImGuiCol_::ImGuiCol_ScrollbarGrabActive,
+			check_mark = ImGuiCol_::ImGuiCol_CheckMark,
+			slider_grab = ImGuiCol_::ImGuiCol_SliderGrab,
+			slider_grab_active = ImGuiCol_::ImGuiCol_SliderGrabActive,
+			button = ImGuiCol_::ImGuiCol_Button,
+			button_hovered = ImGuiCol_::ImGuiCol_ButtonHovered,
+			button_active = ImGuiCol_::ImGuiCol_ButtonActive,
+			header = ImGuiCol_::ImGuiCol_Header,
+			header_hovered = ImGuiCol_::ImGuiCol_HeaderHovered,
+			header_active = ImGuiCol_::ImGuiCol_HeaderActive,
+			seperator = ImGuiCol_::ImGuiCol_Separator,
+			seperator_hovered = ImGuiCol_::ImGuiCol_SeparatorHovered,
+			seperator_active = ImGuiCol_::ImGuiCol_SeparatorActive,
+			resize_grip = ImGuiCol_::ImGuiCol_ResizeGrip,
+			resize_grip_hovered = ImGuiCol_::ImGuiCol_ResizeGripHovered,
+			resize_grip_active = ImGuiCol_::ImGuiCol_ResizeGripActive,
+			plot_lines = ImGuiCol_::ImGuiCol_PlotLines,
+			plot_lines_hovered = ImGuiCol_::ImGuiCol_PlotLinesHovered,
+			plot_histogram = ImGuiCol_::ImGuiCol_PlotHistogram,
+			plot_histogram_hovered = ImGuiCol_::ImGuiCol_PlotHistogramHovered,
+			text_selected_background = ImGuiCol_::ImGuiCol_TextSelectedBg,
+			drag_drop_target = ImGuiCol_::ImGuiCol_DragDropTarget,
+			navigation_highlight = ImGuiCol_::ImGuiCol_NavHighlight,
+			navigation_window_highlight = ImGuiCol_::ImGuiCol_NavWindowingHighlight,
+			navigation_window_dim_background = ImGuiCol_::ImGuiCol_NavWindowingDimBg,
+			modal_window_dim_background = ImGuiCol_::ImGuiCol_ModalWindowDimBg,
 		};
 
 		//shared parameters
@@ -128,11 +148,113 @@ namespace hades
 		void text_coloured(std::string_view, const sf::Color&);
 		void text_disabled(std::string_view);
 		void text_bullet(std::string_view);
+		
+		enum class direction : ImGuiDir 
+		{
+			none = ImGuiDir_::ImGuiDir_None,
+			left = ImGuiDir_::ImGuiDir_Left,
+			right = ImGuiDir_::ImGuiDir_Right,
+			up = ImGuiDir_::ImGuiDir_Up,
+			down = ImGuiDir_::ImGuiDir_Down
+		};
 
 		//widgets
+		bool button(std::string_view label, const vector &size = {0.f, 0.f});
+		bool small_button(std::string_view label);
+		bool invisible_button(std::string_view label, const vector &size = { 0.f, 0.f });
+		bool arrow_button(std::string_view label, direction);
 		void image(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
 		bool image_button(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
+		bool checkbox(std::string_view label, bool &checked); //returns true on checked changed
+		bool radio_button(std::string_view label, bool active);
+		template<typename T>
+		bool radio_button(std::string_view label, T &active_selection, T this_button);
+		void progress_bar(float progress, const vector &size = { -1.f, 0.f });
+		void progress_bar(float progress, std::string_view overlay_text, const vector &size = { -1.f, 0.f });
 		void bullet();
+
+		enum class selectable_flag : ImGuiSelectableFlags
+		{
+			none = ImGuiSelectableFlags_::ImGuiSelectableFlags_None,
+			dont_close_popups = ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups,
+			span_all_columns = ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns,
+			allow_double_click = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowDoubleClick,
+			disabled = ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled
+		};
+
+		//selectables
+		//used as elements in comboboxes, etc
+		bool selectable(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector &size = {0.f, 0.f});
+
+		enum class combo_flags : ImGuiComboFlags
+		{
+			none = ImGuiComboFlags_::ImGuiComboFlags_None,
+			popup_align_left = ImGuiComboFlags_::ImGuiComboFlags_PopupAlignLeft,
+			height_small = ImGuiComboFlags_::ImGuiComboFlags_HeightSmall,
+			height_regular = ImGuiComboFlags_::ImGuiComboFlags_HeightRegular,
+			height_large = ImGuiComboFlags_::ImGuiComboFlags_HeightLarge,
+			height_largest = ImGuiComboFlags_::ImGuiComboFlags_HeightLargest,
+			no_arrow_button = ImGuiComboFlags_::ImGuiComboFlags_NoArrowButton,
+			no_preview = ImGuiComboFlags_::ImGuiComboFlags_NoPreview,
+			height_mask = ImGuiComboFlags_::ImGuiComboFlags_HeightMask_
+		};
+
+		//combobox
+		bool combo_begin(std::string_view label, std::string_view preview_value, combo_flags = combo_flags::none);
+		void combo_end();
+		
+		//TODO: drags
+
+		//TODO: sliders
+
+		enum class input_text_flags : ImGuiInputTextFlags
+		{
+			none = ImGuiInputTextFlags_::ImGuiInputTextFlags_None,
+			chars_decimal = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsDecimal,
+			chars_hexidecimal = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsHexadecimal,
+			chars_uppercase = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsUppercase,
+			chars_no_black = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank,
+			auto_select_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll,
+			enter_returns_true = ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue,
+			allow_tab_input = ImGuiInputTextFlags_::ImGuiInputTextFlags_AllowTabInput,
+			ctrl_enter_for_newline = ImGuiInputTextFlags_::ImGuiInputTextFlags_CtrlEnterForNewLine,
+			no_horizontal_scroll = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoHorizontalScroll,
+			always_insert_mode = ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysInsertMode,
+			readonly = ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly,
+			password = ImGuiInputTextFlags_::ImGuiInputTextFlags_Password,
+			no_undo_redo = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo,
+			chars_scientific = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific
+		};
+
+		//inputs
+		template<std::size_t Size>
+		bool input_text(std::string_view label, std::array<char, Size> &buffer, input_text_flags = input_text_flags::none);
+		bool input_text(std::string_view label, std::string &buffer, input_text_flags = input_text_flags::none);
+		template<std::size_t Size>
+		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
+		bool input_text_multiline(std::string_view label, std::string &buffer, const vector &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
+		template<typename T>
+		bool input(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
+		template<typename T, std::size_t Size>
+		bool input(std::string_view label, std::array<T, Size> &v, input_text_flags = input_text_flags::none);
+		
+		//TODO: colour picker
+
+		//TODO: Tree
+
+		//TODO: list box
+
+		//TODO: other widgets
+
+		//TODO: plotting
+
+		//TODO: value
+
+		//TODO: menubar
+
+		//TODO: tooltips
+
+		//TODO: popups
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
@@ -165,5 +287,7 @@ namespace hades
 		static std::unordered_map<const resources::font*, ImFont*> _fonts;
 	};
 }
+
+#include "hades/detail/gui.inl"
 
 #endif //!HADES_GUI_HPP

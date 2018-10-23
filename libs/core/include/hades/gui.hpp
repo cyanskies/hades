@@ -56,7 +56,7 @@ namespace hades
 			no_collapse = ImGuiWindowFlags_::ImGuiWindowFlags_NoCollapse,
 			always_auto_resize = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize,
 			no_saved_settings = ImGuiWindowFlags_::ImGuiWindowFlags_NoSavedSettings,
-			no_imputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
+			no_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
 			menubar = ImGuiWindowFlags_::ImGuiWindowFlags_MenuBar,
 			horizontal_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_HorizontalScrollbar,
 			no_focus_on_appearing = ImGuiWindowFlags_::ImGuiWindowFlags_NoFocusOnAppearing,
@@ -240,7 +240,26 @@ namespace hades
 		
 		//TODO: colour picker
 
+		enum class tree_node_flags : ImGuiTreeNodeFlags
+		{
+			none = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_None,
+			selected = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Selected,
+			framed = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed,
+			allow_item_overlap = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_AllowItemOverlap,
+			no_tree_push_on_open = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoTreePushOnOpen,
+			no_auto_open_on_log = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoAutoOpenOnLog,
+			default_open = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen,
+			open_on_double_click = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_OpenOnDoubleClick,
+			open_on_arrow = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_OpenOnArrow,
+			leaf = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Leaf,
+			bullet = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Bullet,
+			frame_padding = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_FramePadding,
+			nav_left_jumps_back_here = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NavLeftJumpsBackHere
+		};
+
 		//TODO: Tree
+		bool collapsing_header(std::string_view, tree_node_flags = tree_node_flags::none);
+		bool collapsing_header(std::string_view, bool &open, tree_node_flags = tree_node_flags::none);
 
 		//TODO: list box
 
@@ -255,6 +274,12 @@ namespace hades
 		//TODO: tooltips
 
 		//TODO: popups
+
+		//item utils
+		vector get_item_rect_max();
+
+		//utils
+		vector calculate_text_size(std::string_view, bool include_text_after_double_hash = true, float wrap_width = -1.0f);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
@@ -286,6 +311,20 @@ namespace hades
 		static std::unique_ptr<ImFontAtlas> _font_atlas;
 		static std::unordered_map<const resources::font*, ImFont*> _fonts;
 	};
+
+	constexpr inline gui::window_flags operator|(gui::window_flags lhs, gui::window_flags rhs)
+	{
+		using T = std::underlying_type_t<gui::window_flags>;
+		return static_cast<gui::window_flags>(static_cast<T>(lhs) | static_cast<T>(rhs));
+	}
+
+	//TODO: selrctable, combo, etc...
+
+	constexpr inline gui::tree_node_flags operator|(gui::tree_node_flags lhs, gui::tree_node_flags rhs)
+	{
+		using T = std::underlying_type_t<gui::tree_node_flags>;
+		return static_cast<gui::tree_node_flags>(static_cast<T>(lhs) | static_cast<T>(rhs));
+	}
 }
 
 #include "hades/detail/gui.inl"

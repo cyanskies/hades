@@ -24,21 +24,21 @@ namespace hades
 		_states.pop_back();
 	}
 
-	void StateManager::push(std::unique_ptr<State> state)
+	void StateManager::push(std::unique_ptr<state> state)
 	{
-		state->setStateManangerCallbacks([this](std::unique_ptr<hades::State> state) {this->push(std::move(state));},
-			[this](std::unique_ptr<hades::State> state) {this->pushUnder(std::move(state)); });
+		state->state_manager_callbacks([this](std::unique_ptr<hades::state> state) {this->push(std::move(state));},
+			[this](std::unique_ptr<hades::state> state) {this->pushUnder(std::move(state)); });
 		
 		if(!_states.empty())
-			_states.back()->dropFocus();
+			_states.back()->drop_focus();
 
 		_states.push_back(std::move(state));
 	}
 
-	void StateManager::pushUnder(std::unique_ptr<State> state)
+	void StateManager::pushUnder(std::unique_ptr<state> state)
 	{
 		//this will end up being under the current state, so it won't have focus
-		state->dropFocus();
+		state->drop_focus();
 
 		//push this state
 		push(std::move(state));
@@ -55,17 +55,17 @@ namespace hades
 	State *StateManager::getValidState(StateManager::state_iter state)
 	{
 		//if the state is dead, clean it up and loop though to the next state
-		if(!(*state)->isAlive())
+		if(!(*state)->is_alive())
 		{
 			pop();
 			return getActiveState();
 		}
 
 		//if this state isn't initialised, then init
-		if(!(*state)->isInit())
+		if(!(*state)->is_init())
 		{
 			(*state)->init();
-			(*state)->initDone();
+			(*state)->init_done();
 			//make sure the gui has the correct view size
 			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);
 		}
@@ -73,7 +73,7 @@ namespace hades
 		//if this state is paused, resume
 		if ((*state)->paused())
 		{
-			(*state)->grabFocus();
+			(*state)->grab_focus();
 			(*state)->reinit();
 			//make sure the gui has the correct view size
 			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);

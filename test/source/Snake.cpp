@@ -18,7 +18,7 @@ void Snake::init()
 	//send starting data to the gamerenderer
 }
 
-bool Snake::handleEvent(const hades::event &windowEvent)
+bool Snake::handle_event(const hades::event &windowEvent)
 {
 	return false;
 }

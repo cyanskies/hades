@@ -2,6 +2,7 @@
 
 # C++ source files
 set(HADES_BASIC_SRC
+	console_variables.cpp
 	curve_extra.cpp
 	data.cpp
 	input.cpp
@@ -11,6 +12,7 @@ set(HADES_BASIC_SRC
 	system.cpp
 	timers.cpp
 	../include/hades/collision.hpp
+	../include/hades/console_variables.hpp
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
@@ -35,6 +37,7 @@ set(HADES_BASIC_SRC
 
 source_group("Headers" FILES
 	../include/hades/collision.hpp
+	../include/hades/console_variables.hpp
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp

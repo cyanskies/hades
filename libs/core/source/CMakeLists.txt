@@ -10,9 +10,12 @@ set(HADES_CORE_SRC
 	game_system.cpp
 	gui.cpp
 	level.cpp
+	level_editor.cpp
 	level_interface.cpp
 	objects.cpp
+	sf_input.cpp
 	standard_paths.cpp
+	state.cpp
 	texture.cpp
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
@@ -22,14 +25,20 @@ set(HADES_CORE_SRC
 	../include/hades/game_system.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
+	../include/hades/level_editor.hpp
+	../include/hades/level_editor_component.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
+	../include/hades/sf_input.hpp
 	../include/hades/standard_paths.hpp
+	../include/hades/state.hpp
 	../include/hades/texture.hpp
 	../include/hades/time.hpp
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
+	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_interface.inl
+	../include/hades/detail/state.inl
 )
 
 source_group("Headers" FILES
@@ -41,9 +50,13 @@ source_group("Headers" FILES
 	../include/hades/game_system.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
+	../include/hades/level_editor.hpp
+	../include/hades/level_editor_component.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
+	../include/hades/sf_input.hpp
 	../include/hades/standard_paths.hpp
+	../include/hades/state.hpp
 	../include/hades/texture.hpp
 	../include/hades/time.hpp
 )
@@ -51,7 +64,9 @@ source_group("Headers" FILES
 source_group("Detail" FILES
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
+	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_interface.inl
+	../include/hades/detail/state.inl
 )
 
 # Library to build

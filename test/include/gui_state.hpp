@@ -8,7 +8,7 @@ class gui_state final : public hades::State
 {
 public:
 	void init() override;
-	bool handleEvent(const hades::event &windowEvent) override;
+	bool handle_event(const hades::event &windowEvent) override;
 	void update(sf::Time deltaTime, const sf::RenderTarget&, hades::input_system::action_set) override;
 	void draw(sf::RenderTarget &target, sf::Time deltaTime) override;
 	void reinit() override;

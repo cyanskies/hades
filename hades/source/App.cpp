@@ -21,6 +21,7 @@
 #include "Hades/parallel_jobs.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/simple_resources.hpp"
+#include "Hades/time.hpp"
 
 #include "hades/console_variables.hpp"
 
@@ -258,7 +259,7 @@ namespace hades
 				auto events = handleEvents(activeState);
 				_input.generate_state(events);
 
-				activeState->update(dt, _window, _input.input_state());
+				activeState->update(to_standard_time(dt), _window, _input.input_state());
 				accumulator -= dt;
 				thisFrame += dt;
 			}
@@ -269,7 +270,7 @@ namespace hades
 				//drawing must pass the frame time, so that the renderer can
 				//interpolate between frames
 				const auto totalFrameTime = thisFrame + accumulator;
-				activeState->draw(_window, totalFrameTime);
+				activeState->draw(_window, to_standard_time(totalFrameTime));
 
 				////store gl states while drawing sfgui elements
 				//_window.pushGLStates();
@@ -336,7 +337,7 @@ namespace hades
 
 				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
-				activeState->handleEvent(e);		// let the gamestate see the changed window size
+				activeState->handle_event(e);		// let the gamestate see the changed window size
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
@@ -355,12 +356,9 @@ namespace hades
 			//input events
 			else
 			{
-				if (activeState->guiInput(e))
-					handled = true;
-				if (activeState->handleEvent(e))
+				if (activeState->handle_event(e))
 					handled = true;
 
-				//TODO: don't add to events if handled
 				events.push_back(std::make_tuple(handled, e));
 			}
 		}

@@ -6,7 +6,6 @@ set(HADES_SRC
 	Debug.cpp
 	Console.cpp
 	ConsoleView.cpp
-	console_variables.cpp
 	common-input.cpp
 	data_system.cpp
   	ExportedCurves.cpp
@@ -17,10 +16,8 @@ set(HADES_SRC
 	RenderInstance.cpp
 	RenderInterface.cpp
 	Server.cpp
-	sf_input.cpp
 	simple_resources.cpp
 	SpriteBatch.cpp
-	State.cpp
 	StateManager.cpp
 	yaml_parser.cpp
 	yaml_writer.cpp

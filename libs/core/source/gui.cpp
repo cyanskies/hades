@@ -409,6 +409,32 @@ namespace hades
 		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
 	}
 
+	bool gui::collapsing_header(std::string_view s, tree_node_flags f)
+	{
+		_active_assert();
+		return ImGui::CollapsingHeader(to_string(s).data(), static_cast<ImGuiTreeNodeFlags>(f));
+	}
+
+	bool gui::collapsing_header(std::string_view s, bool &open, tree_node_flags f)
+	{
+		_active_assert();
+		return ImGui::CollapsingHeader(to_string(s).data(), &open, static_cast<ImGuiTreeNodeFlags>(f));
+	}
+
+	gui::vector gui::get_item_rect_max()
+	{
+		_active_assert();
+		const auto v = ImGui::GetItemRectMax();
+		return { v.x, v.y };
+	}
+
+	gui::vector gui::calculate_text_size(std::string_view s, bool include_text_after_double_hash, float wrap_width)
+	{
+		_active_assert();
+		const auto v = ImGui::CalcTextSize(s.data(), s.data() + s.size(), !include_text_after_double_hash, wrap_width);
+		return { v.x, v.y };
+	}
+
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	{
@@ -504,20 +530,6 @@ namespace hades
 		else
 			return _create_font(f);
 	}
-
-	//const gui::font *gui::add_font(const resources::font *f)
-	//{
-	//	auto &io = ImGui::GetIO();
-	//	auto &f_atlas = *io.Fonts;
-	//	ImFontConfig cfg;
-	//	cfg.FontDataOwnedByAtlas = false;
-	//	//const cast, because f_atlas demands control of the ptr
-	//	//though it won't actually do anything, since FontDataOwned is set to false
-	//	const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), f->source_buffer.size(), 13.f, &cfg);
-	//	_generate_atlas();
-
-	//	return out;
-	//}
 
 	gui::font *gui::_create_font(const resources::font *f)
 	{

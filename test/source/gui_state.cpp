@@ -11,7 +11,7 @@ void gui_state::init()
 	reinit();
 }
 
-bool gui_state::handleEvent(const hades::event &windowEvent)
+bool gui_state::handle_event(const hades::event &windowEvent)
 {
 	return _gui.handle_event(windowEvent);
 }

@@ -18,6 +18,7 @@ namespace hades::detail
 	protected:
 		gui _gui;
 		float _width = 0.f, _height = 0.f;
+		std::size_t _active_brush;
 	};
 }
 
@@ -27,6 +28,7 @@ namespace hades
 	class basic_level_editor : public detail::level_editor_impl
 	{
 	public:
+		void init() override;
 		void update(time_duration delta_time, const sf::RenderTarget&, input_system::action_set) override;
 		void draw(sf::RenderTarget &target, time_duration delta_time) override;
 		

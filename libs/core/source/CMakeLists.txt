@@ -11,6 +11,7 @@ set(HADES_CORE_SRC
 	gui.cpp
 	level.cpp
 	level_editor.cpp
+	level_editor_objects.cpp
 	level_interface.cpp
 	objects.cpp
 	sf_input.cpp
@@ -27,6 +28,7 @@ set(HADES_CORE_SRC
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
+	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp
@@ -52,6 +54,7 @@ source_group("Headers" FILES
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
+	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp

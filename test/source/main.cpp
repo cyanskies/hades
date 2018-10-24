@@ -30,6 +30,9 @@ void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::com
 	//state.push(std::move(editorstate));
 	//return;
 
-	std::unique_ptr<hades::state> consolestate = std::make_unique<gui_state>();
+	using test_state = hades::level_editor;
+	//using test_state = gui_state;
+
+	std::unique_ptr<hades::state> consolestate = std::make_unique<test_state>();
 	state.push(std::move(consolestate));
 }

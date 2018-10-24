@@ -18,3 +18,7 @@ namespace hades::detail
 		_gui.set_display_size({ _width, _height });
 	}
 }
+
+void hades::create_editor_console_varaibles()
+{
+}

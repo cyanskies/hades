@@ -24,6 +24,8 @@ namespace hades::detail
 
 namespace hades
 {
+	void create_editor_console_varaibles();
+
 	template<typename ...Components>
 	class basic_level_editor : public detail::level_editor_impl
 	{
@@ -38,6 +40,16 @@ namespace hades
 	};
 
 	using level_editor = basic_level_editor<>;
+}
+
+namespace hades::cvars
+{
+
+}
+
+namespace hades::cvars::default_value
+{
+
 }
 
 #include "hades/detail/level_editor.inl"

@@ -2,9 +2,12 @@
 
 namespace hades
 {
-	void level_editor_objects::gui_toolbar(toolbar_button_f button, toolbar_icon_button_f icon_button, toolbar_seperator_f seperator)
+	void level_editor_objects::gui_toolbar(toolbar_functions toolbar)
 	{
-		//selection tool
-		//
+		if (toolbar.button("selector"))
+		{
+			_brush_type = brush_type::object_selector;
+			activate_brush();
+		}
 	}
 }

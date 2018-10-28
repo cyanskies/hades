@@ -71,6 +71,8 @@ namespace hades
 		_active_assert();
 		auto &io = ImGui::GetIO();
 		io.DisplaySize = { size.x, size.y };
+
+		_main_toolbar_info.width = size.x;
 	}
 
 	bool gui::handle_event(const sf::Event &e)
@@ -120,6 +122,10 @@ namespace hades
 	void gui::frame_begin()
 	{
 		_active_assert();
+
+		_main_toolbar_info.last_item_x2 = 0.f;
+		_main_toolbar_info.main_menubar_y2 = 0.f;
+
 		ImGui::NewFrame();
 	}
 
@@ -236,7 +242,7 @@ namespace hades
 		ImGui::PopStyleColor();
 	}
 
-	void gui::seperator_horizontal()
+	void gui::separator_horizontal()
 	{
 		_active_assert();
 		ImGui::Separator();
@@ -421,6 +427,99 @@ namespace hades
 		return ImGui::CollapsingHeader(to_string(s).data(), &open, static_cast<ImGuiTreeNodeFlags>(f));
 	}
 
+	bool gui::main_menubar_begin()
+	{
+		_active_assert();
+		const auto r = ImGui::BeginMainMenuBar();
+		_main_toolbar_info.main_menubar_y2 = get_item_rect_max().y;
+
+		return r;
+	}
+
+	void gui::main_menubar_end()
+	{
+		_active_assert();
+		ImGui::EndMainMenuBar();
+	}
+
+	bool gui::menubar_begin()
+	{
+		_active_assert();
+		return ImGui::BeginMenuBar();
+	}
+
+	void gui::menubar_end()
+	{
+		_active_assert();
+		ImGui::EndMenuBar();
+	}
+
+	bool gui::menu_begin(std::string_view s, bool enabled)
+	{
+		_active_assert();
+		return ImGui::BeginMenu(to_string(s).data(), enabled);
+	}
+
+	void gui::menu_end()
+	{
+		_active_assert();
+		ImGui::EndMenu();
+	}
+
+	bool gui::menu_item(std::string_view l, bool enabled)
+	{
+		_active_assert();
+		ImGui::MenuItem(to_string(l).data(), nullptr, false, enabled);
+		return false;
+	}
+
+	bool gui::menu_toggle_item(std::string_view l, bool &selected, bool enabled)
+	{
+		_active_assert();
+		ImGui::MenuItem(to_string(l).data(), nullptr, &selected, enabled);
+		return false;
+	}
+
+	constexpr auto toolbar_button_size = gui::vector{ 25.f, 25.f };
+	constexpr auto toolbar_layout_size = gui::vector{ 0.f, -1.f };
+
+	bool gui::main_toolbar_begin()
+	{
+		_active_assert();
+		next_window_position({ 0.f, _main_toolbar_info.main_menubar_y2 });
+		next_window_size({ _main_toolbar_info.width, 0.f });
+
+		using flags = gui::window_flags;
+		constexpr auto toolbar_flags =
+			flags::no_collapse |
+			flags::no_move |
+			flags::no_titlebar |
+			flags::no_resize |
+			flags::no_saved_settings;
+
+		using namespace std::string_view_literals;
+		window_begin("##main_toolbar"sv, toolbar_flags);
+
+		_main_toolbar_info.width = get_item_rect_max().x;
+		return false;
+	}
+
+	void gui::main_toolbar_end()
+	{
+		_active_assert();
+		window_end();
+	}
+
+	bool gui::toolbar_button(std::string_view s)
+	{
+		_active_assert();
+		_toolbar_layout_next();
+
+		const auto result = button(s, toolbar_button_size);
+		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
+		return result;
+	}
+
 	gui::vector gui::get_item_rect_max()
 	{
 		_active_assert();
@@ -521,6 +620,18 @@ namespace hades
 		assert(ImGui::GetCurrentContext() == _my_context.get());
 	}
 
+	void gui::_toolbar_layout_next()
+	{
+		const auto &style = ImGui::GetStyle();
+		const auto frame_pad = style.FramePadding.x * 2;
+		const auto item_spacing = style.ItemSpacing.x;
+		
+		constexpr auto size = toolbar_button_size.x;
+		const auto x2 = _main_toolbar_info.last_item_x2;
+		const auto next_button_x2 = size + item_spacing + x2;
+		if (next_button_x2 < _main_toolbar_info.width) layout_horizontal(toolbar_layout_size.x, toolbar_layout_size.y);
+	}
+
 	gui::font *gui::_get_font(const resources::font *f)
 	{
 		assert(f);
@@ -576,7 +687,6 @@ namespace hades
 		t->width = width;
 		t->height = height;
 	}
-
 	//gui::static objects
 	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
 	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;

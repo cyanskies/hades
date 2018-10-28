@@ -5,10 +5,10 @@
 
 namespace hades
 {
-	class level_editor_objects : public level_editor_component
+	class level_editor_objects final : public level_editor_component
 	{
 	public:
-		void gui_toolbar(toolbar_button_f, toolbar_icon_button_f, toolbar_seperator_f) override;
+		void gui_toolbar(toolbar_functions) override;
 
 	private:
 		enum class brush_type {

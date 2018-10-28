@@ -138,7 +138,7 @@ namespace hades
 		void pop_colour();
 
 		//layouts
-		void seperator_horizontal();
+		void separator_horizontal();
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal
 		void vertical_spacing();
@@ -269,7 +269,20 @@ namespace hades
 
 		//TODO: value
 
-		//TODO: menubar
+		bool main_menubar_begin();
+		void main_menubar_end();
+		bool menubar_begin();
+		void menubar_end();
+		bool menu_begin(std::string_view, bool enabled = true);
+		void menu_end();                                                          
+		bool menu_item(std::string_view, bool enabled = true);
+		bool menu_toggle_item(std::string_view, bool &selected, bool enabled = true);
+
+		bool main_toolbar_begin();
+		void main_toolbar_end();
+		bool toolbar_button(std::string_view);
+		bool toolbar_button(const resources::animation*);
+		void toolbar_separator();
 
 		//TODO: tooltips
 
@@ -290,6 +303,7 @@ namespace hades
 
 		void _activate_context();
 		void _active_assert() const;
+		void _toolbar_layout_next();
 		static font* _get_font(const resources::font*);
 		static font* _create_font(const resources::font*);
 		static void _generate_atlas();
@@ -306,6 +320,15 @@ namespace hades
 
 		using context_ptr = std::unique_ptr<context, context_destroyer>;
 		context_ptr _my_context{nullptr};
+
+		struct toolbar_layout_info
+		{
+			float last_item_x2;
+			float main_menubar_y2;
+			float width;
+		};
+
+		toolbar_layout_info _main_toolbar_info;
 
 		//static font atlas will be shared for all instances of gui
 		static std::unique_ptr<ImFontAtlas> _font_atlas;

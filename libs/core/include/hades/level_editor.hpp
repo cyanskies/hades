@@ -6,6 +6,7 @@
 
 #include "hades/gui.hpp"
 #include "hades/state.hpp"
+#include "hades/types.hpp"
 
 namespace hades::detail
 {
@@ -17,7 +18,8 @@ namespace hades::detail
 
 	protected:
 		gui _gui;
-		float _width = 0.f, _height = 0.f;
+		float _window_width = 0.f, _window_height = 0.f;
+		int32 _level_x = 0, _level_y = 0;
 		std::size_t _active_brush;
 	};
 }

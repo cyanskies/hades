@@ -12,10 +12,10 @@ namespace hades::detail
 		const auto width = console::get_int(cvars::video_width);
 		const auto height = console::get_int(cvars::video_height);
 
-		_width = static_cast<float>(*width);
-		_height = static_cast<float>(*height);
+		_window_width = static_cast<float>(*width);
+		_window_height = static_cast<float>(*height);
 
-		_gui.set_display_size({ _width, _height });
+		_gui.set_display_size({ _window_width, _window_height });
 	}
 }
 

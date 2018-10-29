@@ -8,12 +8,14 @@ namespace hades
 	class level_editor_objects final : public level_editor_component
 	{
 	public:
-		void gui_toolbar(toolbar_functions) override;
+		void gui_update(gui&) override;
 
 	private:
 		enum class brush_type {
 			object_place,
-			object_selector
+			object_selector,
+			region_selector,
+			region_place
 		};
 
 		brush_type _brush_type{ brush_type::object_selector };

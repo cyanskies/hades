@@ -66,15 +66,22 @@ namespace hades
 			always_use_window_padding = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysUseWindowPadding,
 			no_nav_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavInputs,
 			no_nav_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus,
-			no_nav = ImGuiWindowFlags_::ImGuiWindowFlags_NoNav
+			no_nav = ImGuiWindowFlags_::ImGuiWindowFlags_NoNav,
+			panel =	no_collapse |
+					no_move |
+					no_titlebar |
+					no_resize |
+					no_saved_settings
 		};
 
 		//windows and child windows
+		//_begin must always be matched by a _end
 		bool window_begin(std::string_view name, bool &closed, window_flags = window_flags::none);
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
 		using vector = vector_t<float>;
+		//_begin must always be matched by a _end
 		bool child_window_begin(std::string_view name, vector size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
 		void child_window_end();
 
@@ -90,7 +97,7 @@ namespace hades
 			text_disabled = ImGuiCol_::ImGuiCol_TextDisabled,
 			window_background = ImGuiCol_::ImGuiCol_WindowBg,
 			child_background = ImGuiCol_::ImGuiCol_ChildBg,
-			popup_background = ImGuiCol_PopupBg, 
+			popup_background = ImGuiCol_::ImGuiCol_PopupBg,
 			border = ImGuiCol_::ImGuiCol_Border,
 			border_shadow = ImGuiCol_::ImGuiCol_BorderShadow,
 			frame_background = ImGuiCol_::ImGuiCol_FrameBg,             
@@ -281,7 +288,7 @@ namespace hades
 		bool main_toolbar_begin();
 		void main_toolbar_end();
 		bool toolbar_button(std::string_view);
-		bool toolbar_button(const resources::animation*);
+		bool toolbar_button(const resources::animation&);
 		void toolbar_separator();
 
 		//TODO: tooltips

@@ -10,11 +10,10 @@ namespace hades
 	{
 	public:
 		void gui_update(gui&) override;
-		void gui_menubar(menu_functions);
-		void gui_window();
+
 	private:
-		string _level_name;
-		string _level_desc;
+		string _level_name, _name_input;
+		string _level_desc, _desc_input;
 	};
 }
 

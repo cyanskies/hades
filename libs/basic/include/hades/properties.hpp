@@ -34,6 +34,8 @@ namespace hades
 			using std::logic_error::logic_error;
 		};
 
+		//TODO: does this still need to be shared?
+		// would be good to just be property*
 		template<class T>
 		using property = std::shared_ptr<std::atomic<T>>;
 	

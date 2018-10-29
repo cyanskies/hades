@@ -19,6 +19,7 @@ namespace hades
 		//a_* for audio settings
 		//n_* for network settings
 		//editor_* for game editor settings
+		//shared for level, mission and mod editors
 
 		//client vars
 		constexpr auto client_tick_time = "c_ticktime"; //the amount of time each tick represents

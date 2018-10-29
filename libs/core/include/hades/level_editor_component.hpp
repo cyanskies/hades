@@ -17,39 +17,13 @@ namespace hades::resources
 namespace hades
 {
 	class gui;
+	struct mission;
 	struct level;
 
 	class level_editor_component
 	{
 	public:
 		virtual ~level_editor_component() noexcept = default;
-
-		struct menu_functions
-		{
-			//bool specifies whether the item or menu is enabled
-			//bool& holds the toggle value
-			using begin_f = std::function<bool(std::string_view, bool)>;
-			using end_f = std::function<void(void)>;
-			using item_f = std::function<bool(std::string_view, bool)>;
-			using toggle_item_f = std::function<bool(std::string_view, bool&, bool)>;
-
-			begin_f begin;
-			end_f end;
-			item_f item;
-			toggle_item_f toggle_item;
-		};
-
-		//callbacks for toolbar buttons
-		struct toolbar_functions
-		{
-			using toolbar_button_f = std::function<bool(std::string_view)>;
-			using toolbar_icon_button_f = std::function<bool(const resources::animation*)>;
-			using toolbar_seperator_f = std::function<void(void)>;
-
-			toolbar_button_f button;
-			toolbar_icon_button_f icon_button;
-			toolbar_seperator_f seperator;
-		};
 
 		//generic callbacks, these are always available
 		using activate_brush_f = std::function<void(void)>;
@@ -66,10 +40,6 @@ namespace hades
 		}
 
 		virtual void gui_update(gui&) {};
-		virtual void gui_menubar(menu_functions) {};
-		virtual void gui_toolbar(toolbar_functions) {};
-		virtual void gui_toolbox() {};
-		virtual void gui_info_window(level&) {};
 
 		//mouse position, in world coords
 		using mouse_pos = std::tuple<int32, int32>;
@@ -94,6 +64,11 @@ namespace hades
 
 	private:
 		activate_brush_f _activate_brush;
+
+		//for auto complete and
+		//lookups of immutable data
+		const mission *_mission = nullptr;
+		const level *_level = nullptr;
 	};
 }
 

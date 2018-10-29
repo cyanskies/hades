@@ -431,7 +431,7 @@ namespace hades
 	{
 		_active_assert();
 		const auto r = ImGui::BeginMainMenuBar();
-		_main_toolbar_info.main_menubar_y2 = get_item_rect_max().y;
+		_main_toolbar_info.main_menubar_y2 = window_position().y + window_size().y;
 
 		return r;
 	}
@@ -489,19 +489,11 @@ namespace hades
 		next_window_position({ 0.f, _main_toolbar_info.main_menubar_y2 });
 		next_window_size({ _main_toolbar_info.width, 0.f });
 
-		using flags = gui::window_flags;
-		constexpr auto toolbar_flags =
-			flags::no_collapse |
-			flags::no_move |
-			flags::no_titlebar |
-			flags::no_resize |
-			flags::no_saved_settings;
-
 		using namespace std::string_view_literals;
-		window_begin("##main_toolbar"sv, toolbar_flags);
+		const auto r = window_begin("##main_toolbar"sv, window_flags::panel);
 
 		_main_toolbar_info.width = get_item_rect_max().x;
-		return false;
+		return r;
 	}
 
 	void gui::main_toolbar_end()
@@ -518,6 +510,25 @@ namespace hades
 		const auto result = button(s, toolbar_button_size);
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 		return result;
+	}
+
+	bool gui::toolbar_button(const resources::animation &a)
+	{
+		_active_assert();
+		_toolbar_layout_next();
+
+		const auto result = image_button(a, toolbar_button_size);
+		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
+		return result;
+	}
+
+	void gui::toolbar_separator()
+	{
+		_active_assert();
+		_toolbar_layout_next();
+
+		separator_horizontal();
+		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 	}
 
 	gui::vector gui::get_item_rect_max()

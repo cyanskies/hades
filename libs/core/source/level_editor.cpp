@@ -1,7 +1,18 @@
 #include "hades/level_editor.hpp"
 
+#include "hades/properties.hpp"
+
 namespace hades::detail
 {
+	void level_editor_impl::init()
+	{
+		_toolbox_width = console::get_int(cvars::editor_toolbox_width);
+
+		_hand_component_setup();
+
+		reinit();
+	}
+
 	bool level_editor_impl::handle_event(const event &e)
 	{
 		return _gui.handle_event(e);
@@ -19,6 +30,7 @@ namespace hades::detail
 	}
 }
 
-void hades::create_editor_console_varaibles()
+void hades::create_editor_console_variables()
 {
+	console::create_property(cvars::editor_toolbox_width, cvars::default_value::editor_toolbox_width);
 }

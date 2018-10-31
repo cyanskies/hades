@@ -16,7 +16,7 @@ namespace hades
 	class StateManager
 	{
 	public:
-		State *getActiveState();
+		state *getActiveState();
 
 		//Remove state from the top of the stack
 		void pop();

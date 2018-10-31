@@ -235,7 +235,7 @@ namespace hades
 
 		while(running && _window.isOpen())
 		{
-			State *activeState = _states.getActiveState();
+			state *activeState = _states.getActiveState();
 			if(!activeState)
 				break;
 
@@ -311,7 +311,7 @@ namespace hades
 		//how about auto unregister from destructor?
 	}
 
-	std::vector<input_event_system::checked_event> App::handleEvents(State *activeState)
+	std::vector<input_event_system::checked_event> App::handleEvents(state *activeState)
 	{
 		std::vector<input_event_system::checked_event> events;
 

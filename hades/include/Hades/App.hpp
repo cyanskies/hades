@@ -68,7 +68,7 @@ namespace hades
 		///  has already been handled elsewhere
 		///
 		////////////////////////////////////////////////////////////
-		std::vector<input_event_system::checked_event> handleEvents(State *activeState);
+		std::vector<input_event_system::checked_event> handleEvents(state *activeState);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Registers the engine provided console commands.

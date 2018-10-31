@@ -41,12 +41,9 @@ namespace hades
 			return;
 		}
 
-		//TODO: just reuse 'out' here?
-		detail::Property var;
-		if constexpr(std::is_same_v<T, types::string>)
-			var = std::make_shared <value_guard<T>>(value);
-		else
-			var = std::make_shared<std::atomic<T>>(value);
+		throw console::property_missing(to_string(identifier));
+
+		auto var = std::make_shared<console::basic_property<T>>(value);
 	
 		_consoleVariables.insert(std::make_pair(to_string(identifier), var));
 	}

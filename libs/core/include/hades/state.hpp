@@ -78,8 +78,6 @@ namespace hades
 	private:
 		std::atomic_bool _alive = true, _init = false, _paused = false;
 	};
-
-	using State [[deprecated("use hades::state instead")]] = state;
 }//hades
 
 #include "hades/detail/state.inl"

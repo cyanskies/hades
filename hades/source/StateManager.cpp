@@ -6,7 +6,7 @@
 
 namespace hades
 {
-	State *StateManager::getActiveState()
+	state *StateManager::getActiveState()
 	{
 		if(_states.empty())
 			return nullptr;
@@ -52,7 +52,7 @@ namespace hades
 		_states.clear();
 	}
 
-	State *StateManager::getValidState(StateManager::state_iter state)
+	state *StateManager::getValidState(StateManager::state_iter state)
 	{
 		//if the state is dead, clean it up and loop though to the next state
 		if(!(*state)->is_alive())

@@ -14,11 +14,11 @@ namespace hades
 		{
 			if (property_provider)
 			{
-				if (auto p = func(name))
+				if (auto p = std::invoke(func, name))
 					return p;
 			}
 
-			return std::make_shared<std::atomic<V>>(default_value);
+			return make_property<V>(default_value);
 		}
 
 		constexpr auto provider_missing_error = "Property provider unavailable, use overloads with fall back values";
@@ -72,18 +72,7 @@ namespace hades
 
 		property_str get_string(std::string_view name, std::string_view default_value)
 		{
-			if (property_provider)
-			{
-				if (auto p = property_provider->getString(name))
-					return p;
-				else
-				{
-					set_property(name, default_value);
-					return property_provider->getString(name);
-				}
-			}
-
-			return std::make_shared<value_guard<types::string>>(to_string(default_value));
+			return get<property<string>>(name, [](std::string_view n) { return property_provider->getString(n); }, to_string(default_value));
 		}
 	}
 }//hades

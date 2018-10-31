@@ -21,7 +21,7 @@ namespace hades {
 		{}
 
 		value_guard(const value_guard& other) : _value(other.load()) {}
-		~value_guard() = default;
+		virtual ~value_guard() = default;
 
 		void operator=(value desired)
 		{

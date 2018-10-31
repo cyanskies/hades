@@ -34,15 +34,64 @@ namespace hades
 			using std::logic_error::logic_error;
 		};
 
-		//TODO: does this still need to be shared?
-		// would be good to just be property*
-		template<class T>
-		using property = std::shared_ptr<std::atomic<T>>;
+		template<typename T>
+		struct basic_property
+		{
+			basic_property(T val) : _value{val}, _default{val}
+			{}
+
+			basic_property &operator=(T val)
+			{
+				store(val);
+				return *this;
+			}
+
+			operator T()
+			{
+				return load();
+			}
+
+			using value_type = T;
+
+			T load()
+			{
+				return _value;
+			}
+
+			T load_default()
+			{
+				return _default;
+			}
+
+			void store(T desired)
+			{
+				_value = desired;
+			}
+
+			T compare_exchange(T &expected, T desired)
+			{
+				return _value.compare_exchange(expected, desired);
+			}
+
+		private:
+			std::conditional_t<std::is_trivially_copyable_v<T>,
+				std::atomic<T>, value_guard<T>> _value;
+			T _default;
+		};
+
+		template<typename T>
+		using property = std::shared_ptr<basic_property<T>>;
 	
-		using property_int = property<types::int32>;
+		template<typename T>
+		property<T> make_property(T value)
+		{
+			return std::make_shared< basic_property<T> >(value);
+		}
+
+		using property_int = property<int32>;
 		using property_float = property<float>;
 		using property_bool = property<bool>;
-		using property_str = std::shared_ptr<value_guard<types::string>>;
+		using property_str = property<types::string>;
 
 		class properties {
 		public:

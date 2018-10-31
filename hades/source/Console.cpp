@@ -47,15 +47,11 @@ namespace hades
 				try
 				{
 					std::visit([identifier, &value, this](auto &&arg) {
-						using T = std::decay_t<decltype(arg)>;
-						using U = T::element_type::value_type;
-						if constexpr(std::is_same_v<T, console::property<U>>)
-							set(identifier, types::stov<U>(value));
-						else if constexpr(std::is_same_v<T, console::property_str>)
-							set(identifier, value);
+						using T = std::decay_t<decltype(arg)>::element_type::value_type;
+						set(identifier, from_string<T>(value));
 					}, var);
 
-					LOG(to_string(identifier) + " " + value);
+					LOG(to_string(identifier) + " " + to_string(value));
 				}
 				catch (std::invalid_argument&)
 				{
@@ -405,11 +401,7 @@ namespace hades
 
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
-		detail::Property var;
-		if constexpr (std::is_same_v<T, types::string>)
-			var = std::make_shared <value_guard<T>>(value);
-		else
-			var = std::make_shared<std::atomic<T>>(value);
+		auto var = console::make_property<T>(value);
 
 		_consoleVariables.emplace( to_string(identifier), std::move(var) );
 	}

@@ -8,7 +8,7 @@
 
 //A snake game
 
-class Snake final : public hades::State
+class Snake final : public hades::state
 {
 public:
 	void init() override;

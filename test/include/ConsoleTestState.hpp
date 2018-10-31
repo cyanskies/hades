@@ -7,7 +7,7 @@
 #include "Hades/simple_resources.hpp"
 #include "Hades/State.hpp"
 
-class ConsoleTestState final : public hades::State
+class ConsoleTestState final : public hades::state
 {
 public:
 	void init() override;

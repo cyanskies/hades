@@ -4,7 +4,7 @@
 #include "hades/gui.hpp"
 #include "Hades/State.hpp"
 
-class gui_state final : public hades::State
+class gui_state final : public hades::state
 {
 public:
 	void init() override;

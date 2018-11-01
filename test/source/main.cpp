@@ -21,6 +21,7 @@ std::string_view defaultGame()
 
 void resourceTypes(hades::data::data_system &data)
 {
+	hades::create_editor_console_variables();
 }
 
 void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list &commandLine)

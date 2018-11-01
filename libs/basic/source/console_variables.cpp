@@ -7,8 +7,8 @@ namespace hades
 {
 	void create_core_console_variables()
 	{
-		console::create_property<int32>(cvars::client_tick_time,	30);
-		console::create_property<int32>(cvars::client_max_tick,		150);
+		console::create_property<int32>(cvars::client_tick_time, cvars::default_value::client_tick_time);
+		console::create_property<int32>(cvars::client_max_tick,	 cvars::default_value::client_tick_max);
 
 		//in debug we want portable = true 
 		//					deflate = false

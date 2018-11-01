@@ -45,6 +45,9 @@ namespace hades
 
 		namespace default_value
 		{
+			constexpr auto client_tick_time = 30;
+			constexpr auto client_tick_max = 150;
+
 			constexpr auto video_fullscreen = false;
 			constexpr auto video_resizable = false;
 			constexpr auto video_width = 800;

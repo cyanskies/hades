@@ -30,19 +30,6 @@ namespace hades
 	//true float values for common ratios * 100
 	constexpr int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
 
-	void registerVariables(Console *console)
-	{
-		//console variables
-		//console::set_property(console_character_size, console_character_size_d);
-		//console::set_property(console_fade, console_fade_d);
-
-		//app variables
-		//console::set_property(client_tick_time, client_tick_time_d);
-		//console::set_property(client_max_tick, client_max_tick_d); // 1.5 seconds is the maximum allowable tick time.
-		// activates portable mode, where files are only read/writen to the game directory
-		//console::set_property(file_portable, file_portable_d);
-	}
-
 	void registerVidVariables(Console *console)
 	{
 		auto vid_default = [console] ()->bool {
@@ -66,15 +53,7 @@ namespace hades
 		console->add_function("vid_default", vid_default, true);
 	}
 
-	void registerServerVariables(Console *console)
-	{
-		//console->set("s_tickrate", 30);
-		//console->set("s_maxframetime", 150); // 1.5 seconds is the maximum allowable frame time.
-		//console->set("s_connectionport", 0); // 0 = auto port
-		//console->set("s_portrange", 0); // unused
-	}
-
-	App::App() : _consoleView(nullptr), _sfVSync(false)
+	App::App() : _consoleView{ nullptr }, _sfVSync{ false }
 	{}
 
 	void App::init()
@@ -412,6 +391,8 @@ namespace hades
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_sfVSync);
+
+				//TODO: reinit active state
 
 				return true;
 			};

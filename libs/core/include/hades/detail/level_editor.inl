@@ -8,22 +8,6 @@
 namespace hades
 {
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::init()
-	{
-		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
-			auto activate_brush = [this, index] {
-				_active_brush = index;
-			};
-
-			c.install_callbacks(
-				activate_brush
-			);
-		});
-
-		reinit();
-	}
-
-	template<typename ...Components>
 	inline void basic_level_editor<Components...>::update(time_duration delta_time, const sf::RenderTarget &, input_system::action_set)
 	{
 		_gui.update(delta_time);

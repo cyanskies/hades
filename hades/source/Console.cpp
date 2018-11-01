@@ -265,12 +265,14 @@ namespace hades
 			_commandHistory.push_back(command);
 		}
 
-		if (command.request == "vars")
+		using namespace std::string_view_literals;
+
+		if (command.request == "vars"sv)
 		{
 			DisplayVariables(command.arguments);
 			return true;
 		}
-		else if (command.request == "funcs")
+		else if (command.request == "funcs"sv)
 		{
 			DisplayFunctions(command.arguments);
 			return true;
@@ -296,7 +298,7 @@ namespace hades
 			return function(command.arguments);
 		}
 		else
-			SetVariable(command.request, to_string(std::begin(command.arguments), std::end(command.arguments)));
+			SetVariable(command.request, to_string(std::begin(command.arguments), std::end(command.arguments), " "sv));
 
 		return true;
 	}

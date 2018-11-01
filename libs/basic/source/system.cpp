@@ -62,8 +62,9 @@ namespace hades
 
 		types::string to_string(const previous_command &command)
 		{
+			using namespace std::string_view_literals;
 			return hades::to_string(command.request) + " " + 
-				hades::to_string(std::begin(command.arguments), std::end(command.arguments));
+				hades::to_string(std::begin(command.arguments), std::end(command.arguments), " "sv);
 		}
 
 		system* system_object = nullptr;

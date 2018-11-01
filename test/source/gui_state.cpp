@@ -16,15 +16,15 @@ bool gui_state::handle_event(const hades::event &windowEvent)
 	return _gui.handle_event(windowEvent);
 }
 
-void gui_state::update(sf::Time deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
+void gui_state::update(hades::time_duration deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
 {
-	_gui.update(hades::to_standard_time(deltaTime));
+	_gui.update(deltaTime);
 	_gui.frame_begin();
 	_gui.show_demo_window();
 	_gui.frame_end();
 }
 
-void gui_state::draw(sf::RenderTarget &target, sf::Time deltaTime)
+void gui_state::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
 {
 	target.setView(_view);
 	target.resetGLStates();

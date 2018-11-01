@@ -49,7 +49,7 @@ bool ConsoleTestState::handle_event(const hades::event &windowEvent)
 	return false;
 }
 
-void ConsoleTestState::update(sf::Time deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
+void ConsoleTestState::update(hades::time_duration deltaTime, const sf::RenderTarget&, hades::input_system::action_set actions)
 {
 	if (ball_sprite.getPosition().x + ball_sprite.getLocalBounds().width > 800.f)
 		ball_direction = -5.f;
@@ -59,7 +59,7 @@ void ConsoleTestState::update(sf::Time deltaTime, const sf::RenderTarget&, hades
 	ball_sprite.move(ball_direction, 0.f);
 }
 
-void ConsoleTestState::draw(sf::RenderTarget &target, sf::Time deltaTime)
+void ConsoleTestState::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
 {
 	target.draw(missing_sprite);
 	target.draw(ball_sprite);

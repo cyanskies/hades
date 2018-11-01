@@ -5,10 +5,8 @@
 #include <functional>
 
 #include "SFML/Graphics/RenderTarget.hpp"
-#include "SFML/System/Time.hpp"
 
 #include "hades/input.hpp"
-#include "hades/time.hpp" // for sf::Time conversions
 #include "hades/timers.hpp"
 #include "hades/sf_input.hpp"
 
@@ -46,25 +44,12 @@ namespace hades
 		virtual bool handle_event(const event&) { return false;  } //handle any events you want, unhandled events go through the input system
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
-		virtual void update(time_duration delta_time, const sf::RenderTarget &t, input_system::action_set a) 
-		{
-			update(to_sfml_time(delta_time), t, std::move(a));
-		}
+		virtual void update(time_duration delta_time, const sf::RenderTarget &t, input_system::action_set a) {}
 		
-		[[deprecated("use time_duration instead")]]
-		virtual void update(sf::Time delta_time, const sf::RenderTarget&, input_system::action_set) {}
-
 		//update animations and draw
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime
-		virtual void draw(sf::RenderTarget &target, time_duration delta_time) 
-		{
-			draw(target, to_sfml_time(delta_time));
-		} //draw
-
-		[[deprecated("use time_duration instead")]]
-		virtual void draw(sf::RenderTarget &target, sf::Time delta_time) {} //draw
-
+		virtual void draw(sf::RenderTarget &target, time_duration delta_time) {}
 
 		//support functions
 		virtual void reinit() {} //reinit because graphcs options changed, or state has been paused

@@ -104,7 +104,7 @@ namespace hades
 	void job_system::_init(types::int32 threads)
 	{
 		if (threads > 0)
-			_thread_count = threads - 1;
+			_thread_count = static_cast<std::size_t>(threads - 1);
 		else if (std::thread::hardware_concurrency() == 0)
 			_thread_count = 0;
 		else
@@ -220,7 +220,7 @@ namespace hades
 
 		for (std::size_t i = 0; i < _thread_count; ++i)
 		{
-			if (i = id)
+			if (i == id)
 				continue; //our thread is already empty
 
 			const auto[queue, lock] = _get_queue(i);
@@ -262,9 +262,9 @@ namespace hades
 		while (!_is_ready(j))
 		{
 			//find another job to run
-			auto j = _find_job();
-			if (j)
-				_execute(j);
+			auto j2 = _find_job();
+			if (j2)
+				_execute(j2);
 		}
 	}
 

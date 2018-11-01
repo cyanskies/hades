@@ -507,7 +507,14 @@ namespace hades
 		_active_assert();
 		_toolbar_layout_next();
 
-		const auto result = button(s, toolbar_button_size);
+		const auto str_size = calculate_text_size(s, false);
+
+		//add frame pad
+		const auto &pad = ImGui::GetStyle().FramePadding;
+		const auto result = button(s, { 
+			std::max(toolbar_button_size.x, str_size.x + pad.x),
+			std::max(toolbar_button_size.y, str_size.y + pad.y) });
+
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 		return result;
 	}

@@ -6,6 +6,7 @@
 
 #include "hades/level_editor.hpp"
 #include "hades/level_editor_level_properties.hpp"
+#include "hades/level_editor_objects.hpp"
 
 #include "gui_state.hpp"
 
@@ -32,7 +33,7 @@ void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::com
 	//state.push(std::move(editorstate));
 	//return;
 
-	using test_state = hades::basic_level_editor<hades::level_editor_level_props>;
+	using test_state = hades::basic_level_editor<hades::level_editor_level_props, hades::level_editor_objects>;
 	//using test_state = gui_state;
 
 	std::unique_ptr<hades::state> consolestate = std::make_unique<test_state>();

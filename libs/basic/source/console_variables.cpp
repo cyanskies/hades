@@ -17,7 +17,7 @@ namespace hades
 			constexpr auto file_defaults = false;
 		#else
 			constexpr auto file_defaults = true;
-#		endif
+		#endif
 
 		console::create_property(cvars::file_portable,	file_defaults);
 		console::create_property(cvars::file_deflate,	!file_defaults);

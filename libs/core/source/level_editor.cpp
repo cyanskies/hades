@@ -7,6 +7,7 @@ namespace hades::detail
 	void level_editor_impl::init()
 	{
 		_toolbox_width = console::get_int(cvars::editor_toolbox_width);
+		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width);
 
 		_hand_component_setup();
 
@@ -33,4 +34,5 @@ namespace hades::detail
 void hades::create_editor_console_variables()
 {
 	console::create_property(cvars::editor_toolbox_width, cvars::default_value::editor_toolbox_width);
+	console::create_property(cvars::editor_toolbox_auto_width, cvars::default_value::editor_toolbox_auto_width);
 }

@@ -38,14 +38,16 @@ namespace hades
 
 		//make toolbox window
 		assert(_toolbox_width);
+		assert(_toolbox_auto_width);
+
 		_gui.next_window_position({ 0.f, toolbar_y2 });
-		const auto toolbox_size = [](int32 width, float window_width)->float {
-			constexpr auto auto_width = -1;
-			if (width == auto_width)
-				return window_width / 3;
+		const auto toolbox_size = [](int32 width, int32 auto_width, float window_width)->float {
+			constexpr auto auto_mode = cvars::default_value::editor_toolbox_width;
+			if (width == auto_mode)
+				return window_width / auto_width;
 			else
 				return static_cast<float>(width);
-		}(*_toolbox_width, _window_width);
+		}(*_toolbox_width, *_toolbox_auto_width, _window_width);
 
 		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });
 		const auto toolbox_created = _gui.window_begin("##toolbox", gui::window_flags::panel);

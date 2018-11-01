@@ -25,6 +25,7 @@ namespace hades::detail
 		gui _gui;
 		float _window_width = 0.f, _window_height = 0.f;
 		console::property_int _toolbox_width;
+		console::property_int _toolbox_auto_width;
 		level_size_t _level_x = 0, _level_y = 0;
 		std::size_t _active_brush = std::numeric_limits<std::size_t>::max();
 
@@ -55,13 +56,15 @@ namespace hades
 
 namespace hades::cvars
 {
-	using namespace std::string_view_literals;
-	constexpr auto editor_toolbox_width = "editor_toolbox_width"sv; // set to -1 for auto 1/3 screen width
+	constexpr auto editor_toolbox_width = "editor_toolbox_width"; // set to -1 for auto screen width
+	constexpr auto editor_toolbox_auto_width = "editor_toolbox_auto_width"; // used to calculate the toolbox width in auto mode
+																			// window width / auto_width; lower value makes a larger toolbox
 }
 
 namespace hades::cvars::default_value
 {
-	constexpr int32 editor_toolbox_width = -1;
+	constexpr auto editor_toolbox_width = -1;
+	constexpr auto editor_toolbox_auto_width = 4;
 }
 
 #include "hades/detail/level_editor.inl"

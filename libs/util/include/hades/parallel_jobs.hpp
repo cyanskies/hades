@@ -28,11 +28,8 @@ namespace hades
 		{
 			job() = default;
 			job(const job&);
-			job(job&&) = default;
-
 			job& operator=(const job&);
-			job& operator=(job&&) = default;
-
+			
 			job_function function;
 			job* parent_job = nullptr;
 			std::atomic<types::int32> unfinished_children = 1;

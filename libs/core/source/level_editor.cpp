@@ -1,6 +1,7 @@
 #include "hades/level_editor.hpp"
 
 #include "hades/properties.hpp"
+//TODO: common_input.hpp
 
 namespace hades::detail
 {
@@ -37,6 +38,12 @@ namespace hades::detail
 
 		_gui.set_display_size({ _window_width, _window_height });
 	}
+
+	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &, input_system::action_set actions)
+	{
+		//const auto mouse_position = actions.find()
+	}
+
 	void level_editor_impl::draw(sf::RenderTarget &rt, time_duration dt)
 	{
 		rt.setView(_world_view);

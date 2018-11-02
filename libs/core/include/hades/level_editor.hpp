@@ -19,6 +19,8 @@ namespace hades::detail
 		bool handle_event(const event&) override;
 		void reinit() override;
 
+		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
+
 		void draw(sf::RenderTarget&, time_duration) override;
 
 	protected:
@@ -28,6 +30,7 @@ namespace hades::detail
 		gui _gui;
 		//current window size
 		float _window_width = 0.f, _window_height = 0.f;
+		float _left_min = 0.f, _top_min = 0.f; // minimum values for world interaction(represents the edge of the UI)
 
 		console::property_int _camera_height;
 		console::property_int _toolbox_width;

@@ -1,5 +1,5 @@
 #ifndef HADES_FONT_HPP
-#define HADES_Font_HPP
+#define HADES_FONT_HPP
 
 #include "SFML/Graphics/Font.hpp"
 

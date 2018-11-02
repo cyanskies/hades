@@ -14,6 +14,7 @@ set(HADES_CORE_SRC
 	level_editor_level_properties.cpp
 	level_editor_objects.cpp
 	level_interface.cpp
+	mouse_input.cpp
 	objects.cpp
 	sf_input.cpp
 	standard_paths.cpp
@@ -32,6 +33,7 @@ set(HADES_CORE_SRC
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp
+	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp
 	../include/hades/standard_paths.hpp
@@ -59,6 +61,7 @@ source_group("Headers" FILES
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp
+	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp
 	../include/hades/standard_paths.hpp

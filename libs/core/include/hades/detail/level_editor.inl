@@ -34,6 +34,7 @@ namespace hades
 		const auto toolbar_created = _gui.main_toolbar_begin();
 		assert(toolbar_created);
 		const auto toolbar_y2 = _gui.window_position().y + _gui.window_size().y;
+		_top_min = toolbar_y2;
 		_gui.main_toolbar_end();
 
 		//make toolbox window
@@ -52,6 +53,8 @@ namespace hades
 		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });
 		const auto toolbox_created = _gui.window_begin("##toolbox", gui::window_flags::panel);
 		assert(toolbox_created);
+		//store toolbox x2 for use in the input update
+		_left_min = _gui.get_item_rect_max().x;
 		_gui.window_end();
 
 		//make infobox

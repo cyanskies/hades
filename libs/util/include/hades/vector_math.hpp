@@ -9,6 +9,7 @@ namespace hades
 	template<typename T>
 	struct vector_t
 	{
+		using value_type = T;
 		T x, y;
 	};
 

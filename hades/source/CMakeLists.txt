@@ -6,7 +6,6 @@ set(HADES_SRC
 	Debug.cpp
 	Console.cpp
 	ConsoleView.cpp
-	common-input.cpp
 	data_system.cpp
   	ExportedCurves.cpp
 	GameInstance.cpp

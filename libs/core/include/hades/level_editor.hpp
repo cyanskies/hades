@@ -26,15 +26,18 @@ namespace hades::detail
 	protected:
 		virtual void _draw_components(sf::RenderTarget&, time_duration) = 0;
 		virtual void _hand_component_setup() = 0;
+		virtual void _update_component_gui(gui&) = 0;
 
-		gui _gui;
 		//current window size
 		float _window_width = 0.f, _window_height = 0.f;
-		float _left_min = 0.f, _top_min = 0.f; // minimum values for world interaction(represents the edge of the UI)
+		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
 
 		console::property_int _camera_height;
 		console::property_int _toolbox_width;
 		console::property_int _toolbox_auto_width;
+
+		console::property_int _scroll_margin;
+		console::property_int _scroll_rate;
 
 		//level width, height
 		level_size_t _level_x = 0, _level_y = 0;
@@ -45,6 +48,11 @@ namespace hades::detail
 		sf::View _world_view;
 
 		level *_level = nullptr;
+
+	private:
+		void _update_gui(time_duration);
+
+		gui _gui;
 	};
 }
 
@@ -55,12 +63,11 @@ namespace hades
 	template<typename ...Components>
 	class basic_level_editor final : public detail::level_editor_impl
 	{
-	public:
-		void update(time_duration delta_time, const sf::RenderTarget&, input_system::action_set) override;
-		
 	private:
 		void _draw_components(sf::RenderTarget &, time_duration) override;
+		//void _generate_draw_preview() override;
 		void _hand_component_setup() override;
+		void _update_component_gui(gui&) override;
 
 		using component_tuple = std::tuple<Components...>;
 		component_tuple _editor_components;
@@ -91,7 +98,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_toolbox_auto_width = 4;
 
 	constexpr auto editor_scroll_margin_size = 8;
-	constexpr auto editor_scroll_rate = 4;
+	constexpr auto editor_scroll_rate = 4.f;
 
 	constexpr auto editor_camera_height_px = 600;
 

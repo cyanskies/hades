@@ -7,6 +7,7 @@
 #include "hades/level_editor.hpp"
 #include "hades/level_editor_level_properties.hpp"
 #include "hades/level_editor_objects.hpp"
+#include "hades/mouse_input.hpp"
 
 #include "gui_state.hpp"
 
@@ -27,8 +28,8 @@ void resourceTypes(hades::data::data_system &data)
 
 void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list &commandLine)
 {
-	//hades::RegisterMouseInput(bind);
-
+	hades::register_mouse_input(bind);
+	
 	//std::unique_ptr<hades::State> editorstate = std::make_unique<ortho_terrain::terrain_editor>();
 	//state.push(std::move(editorstate));
 	//return;

@@ -1,7 +1,7 @@
 #include "hades/level_editor.hpp"
 
 #include "hades/properties.hpp"
-//TODO: common_input.hpp
+#include "hades/mouse_input.hpp"
 
 namespace hades::detail
 {
@@ -41,7 +41,49 @@ namespace hades::detail
 
 	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &, input_system::action_set actions)
 	{
-		//const auto mouse_position = actions.find()
+		const auto mouse_position = actions.find(input::mouse_position);
+		assert(mouse_position != std::end(actions));
+
+		//view scrolling
+		if(mouse_position->active)
+		{
+			//world scroll
+			//skip if under ui
+			const auto under_ui = mouse_position->x_axis < _left_min
+				|| mouse_position->y_axis < _top_min;
+
+			if (!under_ui)
+			{
+				const auto rate = static_cast<float>(*_scroll_rate);
+				const int32 margin = *_scroll_margin;
+				if (mouse_position->x_axis < margin + _left_min)
+					_world_view.move({ -rate, 0.f });
+				else if (mouse_position->x_axis > static_cast<int32>(_window_width) - margin)
+					_world_view.move({ rate, 0.f });
+
+				if (mouse_position->y_axis < margin + _top_min)
+					_world_view.move({ 0.f, -rate });
+				else if (mouse_position->y_axis > static_cast<int32>(_window_height) + margin)
+					_world_view.move({ 0.f, rate });
+
+				const auto pos = _world_view.getCenter();
+
+				const auto new_x = std::clamp(pos.x, 0.f, static_cast<float>(_level_x));
+				const auto new_y = std::clamp(pos.y, 0.f, static_cast<float>(_level_y));
+
+				_world_view.setCenter({ new_x, new_y });
+			}
+
+			//generate draw preview
+		}
+
+		const auto mouse_left = actions.find(input::mouse_left);
+		assert(mouse_left != std::end(actions));
+
+		if (mouse_left->active)
+		{
+
+		}
 	}
 
 	void level_editor_impl::draw(sf::RenderTarget &rt, time_duration dt)
@@ -51,6 +93,62 @@ namespace hades::detail
 
 		rt.setView(_gui_view);
 		rt.draw(_gui);
+	}
+	void level_editor_impl::_update_gui(time_duration dt)
+	{
+		_gui.update(dt);
+		_gui.frame_begin();
+
+		using namespace std::string_view_literals;
+
+		//make main menu
+		const auto main_menu_created = _gui.main_menubar_begin();
+		assert(main_menu_created);
+
+		if (_gui.menu_begin("file"sv))
+		{
+			_gui.menu_item("new..."sv);
+			_gui.menu_item("load..."sv);
+			_gui.menu_item("save"sv);
+			_gui.menu_item("save as..."sv);
+			_gui.menu_end();
+		}
+
+		_gui.main_menubar_end();
+
+		//make toolbar
+		const auto toolbar_created = _gui.main_toolbar_begin();
+		assert(toolbar_created);
+		const auto toolbar_y2 = _gui.window_position().y + _gui.window_size().y;
+		_top_min = static_cast<int32>(toolbar_y2);
+		_gui.main_toolbar_end();
+
+		//make toolbox window
+		assert(_toolbox_width);
+		assert(_toolbox_auto_width);
+
+		_gui.next_window_position({ 0.f, toolbar_y2 });
+		const auto toolbox_size = [](int32 width, int32 auto_width, float window_width)->float {
+			constexpr auto auto_mode = cvars::default_value::editor_toolbox_width;
+			if (width == auto_mode)
+				return window_width / auto_width;
+			else
+				return static_cast<float>(width);
+		}(*_toolbox_width, *_toolbox_auto_width, _window_width);
+
+		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });
+		const auto toolbox_created = _gui.window_begin("##toolbox", gui::window_flags::panel);
+		assert(toolbox_created);
+		//store toolbox x2 for use in the input update
+		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
+		_gui.window_end();
+
+		//make infobox
+		//make minimap
+
+		_update_component_gui(_gui);
+
+		_gui.frame_end();
 	}
 }
 

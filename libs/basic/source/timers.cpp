@@ -16,7 +16,7 @@ namespace hades
 			current = _time;
 		}
 
-		time_event t{ function, repeating, duration, false, time_point{}, current + duration };
+		time_event t{ function,  duration, time_point{}, current + duration, repeating, false };
 		types::int32 id = ++_timerCount;
 
 		std::lock_guard<std::mutex> tlock(_add_mutex);

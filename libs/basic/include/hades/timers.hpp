@@ -101,14 +101,13 @@ namespace hades
 		struct time_event
 		{
 			std::function<bool(void)> function;
-			bool repeating;
 			time_duration duration; //how long the time is set for, for repeating and so on.
-			bool paused;
 			time_point pause_time; // time between the pause and the finish.
 			time_point target_tick;
+			bool repeating;
+			bool paused;
 		};
 
-		types::int32 _timerCount;
 		time_point _time = time_clock::now(); //total game watch
 
 		std::mutex _timer_mutex, //guards the timer_map
@@ -120,6 +119,7 @@ namespace hades
 		timer_map _timers,
 			_add_list; // add list stores timers before they are merged into the full timer list
 		std::set<types::int32> _remove_list; // stores the timers to be killed before they are pulled from the main list
+		types::int32 _timerCount;
 	};
 }
 

@@ -46,12 +46,12 @@ namespace hades
 			virtual void load(data::data_manager&) = 0;
 
 			unique_id id;
-			//the file this resource should be loaded from
-			//the path of the mod for resources that are parsed and not loaded
-			types::string source;
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
 			unique_id mod = unique_id::zero;
+			//the file this resource should be loaded from
+			//the path of the mod for resources that are parsed and not loaded
+			types::string source;
 			bool loaded = false;
 
 		protected:

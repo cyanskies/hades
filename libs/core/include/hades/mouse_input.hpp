@@ -32,12 +32,17 @@ namespace hades
 				: enable_double_click{ double_click }, enable_drag{ drag }
 			{}
 
-			vector_int prev_down_location;
-			time_point prev_down_time;
-			bool prev_down = false;
+			vector_int click_pos;
+			time_point click_time;
 			bool is_down = false;
 			bool enable_double_click = true;
 			bool enable_drag = true;
+
+			bool clicked = false;
+			bool double_clicked = false;
+			bool drag_start = false;
+			bool dragging = false;
+			bool drag_end = false;
 		};
 
 		struct never_double_click_t {};
@@ -47,10 +52,12 @@ namespace hades
 		vector_float to_world_coords(const sf::RenderTarget&, vector_int window_position, const sf::View&);
 		vector_int to_window_coords(const sf::RenderTarget&, vector_float world_position, const sf::View&);
 		vector_int snap_to_grid(vector_int coord, types::int32 grid_size);
-		bool is_click(const action &mouse_button, mouse_button_state &mouse_state);
-		bool is_double_click(const action &mouse_button, mouse_button_state &mouse_state);
-		bool is_dragging(const action &mouse_button, mouse_button_state &mouse_state);
-		bool is_drag_end(const action &mouse_button, mouse_button_state &mouse_state);
+		void update_button_state(const action &mouse_button, const time_point &time, mouse_button_state &mouse_state);
+		bool is_click(const mouse_button_state &mouse_state);
+		bool is_double_click(const mouse_button_state &mouse_state);
+		bool is_drag_start(const mouse_button_state &mouse_state);
+		bool is_dragging(const mouse_button_state &mouse_state);
+		bool is_drag_end(const mouse_button_state &mouse_state);
 		//TODO: within window
 	}
 

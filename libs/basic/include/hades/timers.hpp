@@ -38,7 +38,7 @@ namespace hades
 
 	template<typename TargetDuration, typename Rep2, typename Period2,
 		typename = std::enable_if_t<is_duration_v<TargetDuration>>>
-		TargetDuration time_cast(const basic_duration<Rep2, Period2> &duration)
+	constexpr TargetDuration time_cast(const basic_duration<Rep2, Period2> &duration)
 	{
 		return std::chrono::duration_cast<TargetDuration>(duration);
 	}

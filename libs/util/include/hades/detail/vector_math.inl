@@ -1,6 +1,7 @@
 #include "hades/vector_math.hpp"
 
 #include <algorithm>
+#include <type_traits>
 
 #include "hades/utility.hpp"
 
@@ -59,7 +60,12 @@ namespace hades
 		template<typename T>
 		T magnitude(vector_t<T> v)
 		{
-			return std::sqrt(magnitude_squared(v));
+			const auto mag = std::sqrt(magnitude_squared(v));
+			//if T is not a floating point type then sqrt will return double
+			if constexpr (std::is_same_v<decltype(mag), T>)
+				return mag;
+			else
+				return static_cast<T>(mag);
 		}
 
 		template<typename T>

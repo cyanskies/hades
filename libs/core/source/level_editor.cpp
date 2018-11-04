@@ -77,9 +77,12 @@ namespace hades::detail
 				_world_view.setCenter({ new_x, new_y });
 			}
 
-			//generate draw preview
-			const auto world_coords = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
-			_generate_brush_preview(_active_brush, world_coords);
+			if (_active_brush != invalid_brush)
+			{
+				//generate draw preview
+				const auto world_coords = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
+				_generate_brush_preview(_active_brush, world_coords);
+			}
 		}
 
 		const auto mouse_left = actions.find(input::mouse_left);

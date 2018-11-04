@@ -25,8 +25,10 @@ namespace hades::detail
 		void draw(sf::RenderTarget&, time_duration) override;
 
 	protected:
+		using brush_index_t = std::size_t;
+
 		virtual void _draw_components(sf::RenderTarget&, time_duration) = 0;
-		virtual void _generate_brush_preview(std::size_t brush_index, vector_float world_position) = 0;
+		virtual void _generate_brush_preview(brush_index_t brush_index, vector_float world_position) = 0;
 		virtual void _hand_component_setup() = 0;
 		void _set_active_brush(std::size_t index);
 		virtual void _update_component_gui(gui&) = 0;
@@ -56,7 +58,8 @@ namespace hades::detail
 		gui _gui;
 
 		//currently active brush
-		std::size_t _active_brush = std::numeric_limits<std::size_t>::max();
+		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
+		brush_index_t _active_brush = invalid_brush;
 	};
 }
 

@@ -44,6 +44,7 @@ set(HADES_CORE_SRC
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_interface.inl
+	../include/hades/detail/mouse_input.inl
 	../include/hades/detail/state.inl
 )
 
@@ -75,6 +76,7 @@ source_group("Detail" FILES
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_interface.inl
+	../include/hades/detail/mouse_input.inl
 	../include/hades/detail/state.inl
 )
 

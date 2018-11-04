@@ -7,12 +7,16 @@
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
 #include "hades/properties.hpp"
+#include "hades/mouse_input.hpp"
 #include "hades/state.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades::detail
 {
+	constexpr auto mouse_drag_enabled = true;
+	constexpr auto mouse_double_click_enabled = false;
+
 	class level_editor_impl : public state
 	{
 	public:
@@ -56,6 +60,8 @@ namespace hades::detail
 		void _update_gui(time_duration);
 
 		gui _gui;
+		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
+		time_point _total_run_time;
 
 		//currently active brush
 		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();

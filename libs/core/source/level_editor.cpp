@@ -44,6 +44,8 @@ namespace hades::detail
 
 	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &t, input_system::action_set actions)
 	{
+		_total_run_time += dt;
+
 		const auto mouse_position = actions.find(input::mouse_position);
 		assert(mouse_position != std::end(actions));
 
@@ -87,8 +89,21 @@ namespace hades::detail
 
 		const auto mouse_left = actions.find(input::mouse_left);
 		assert(mouse_left != std::end(actions));
+		mouse::update_button_state(*mouse_left, _total_run_time, _mouse_left);
 
-		if (mouse_left->active)
+		if (mouse::is_click(_mouse_left))
+		{
+
+		}
+		else if (mouse::is_drag_start(_mouse_left))
+		{
+
+		}
+		else if (mouse::is_dragging(_mouse_left))
+		{
+
+		}
+		else if (mouse::is_drag_end(_mouse_left))
 		{
 
 		}

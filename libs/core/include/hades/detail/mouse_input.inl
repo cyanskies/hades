@@ -16,7 +16,9 @@ namespace hades::mouse
 		//also record info need about the mouse down, for other state checks in later frames
 		if (m.active && !s.is_down)
 		{
-			auto do_click_logic = [&] {
+			//TODO: FIXME: constexpr if doesn't work well in lambdas
+			// this fails to compile if Drag and DoubleClick are false
+			auto do_click_logic = [&s, &m] {
 				if constexpr(Drag || DoubleClick)
 					s.click_pos = vector_int{ m.x_axis, m.y_axis };
 
@@ -124,7 +126,7 @@ namespace hades::mouse
 	template<bool Drag, bool DoubleClick>
 	inline bool is_double_click(const mouse_button_state<Drag, DoubleClick>&)
 	{
-		static_assert(always_false<Drag, DoubleClick>::value, "Double click is disabled for this mouse state");
+		static_assert(DoubleClick, "Double click is disabled for this mouse state");
 		return false;
 	}
 
@@ -137,21 +139,21 @@ namespace hades::mouse
 	template<bool Drag, bool DoubleClick>
 	inline bool is_drag_start(const mouse_button_state<Drag, DoubleClick>&)
 	{
-		static_assert(always_false<Drag, DoubleClick>::value, "Dragging is disabled for this mouse state");
+		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool Drag, bool DoubleClick>
 	inline bool is_dragging(const mouse_button_state<Drag, DoubleClick>&)
 	{
-		static_assert(always_false<Drag, DoubleClick>::value, "Dragging is disabled for this mouse state");
+		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool Drag, bool DoubleClick>
 	inline bool is_drag_end(const mouse_button_state<Drag, DoubleClick>&)
 	{
-		static_assert(always_false<Drag, DoubleClick>::value, "Dragging is disabled for this mouse state");
+		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 

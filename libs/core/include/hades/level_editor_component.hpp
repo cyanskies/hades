@@ -8,6 +8,7 @@
 
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
+#include "hades/vector_math.hpp"
 
 namespace hades::resources
 {
@@ -42,7 +43,7 @@ namespace hades
 		virtual void gui_update(gui&) {};
 
 		//mouse position, in world coords
-		using mouse_pos = std::tuple<int32, int32>;
+		using mouse_pos = vector_float;
 
 		//used to generate info for draw_brush_preview
 		virtual void make_brush_preview(mouse_pos) {};

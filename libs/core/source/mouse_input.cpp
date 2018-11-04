@@ -15,31 +15,31 @@ namespace hades
 		input_id mouse_left = input_id::zero;
 	}
 
-	namespace pointer
+	namespace mouse
 	{
-		vector_f to_world_coords(const sf::RenderTarget &t, vector_i pos, const sf::View &v)
+		vector_float to_world_coords(const sf::RenderTarget &t, vector_int pos, const sf::View &v)
 		{
 			const auto r = t.mapPixelToCoords({ pos.x, pos.y }, v);
 			return { r.x, r.y };
 		}
 
-		vector_i from_world_coords(const sf::RenderTarget &t, vector_f pos, const sf::View &v)
+		vector_int to_window_coords(const sf::RenderTarget &t, vector_float pos, const sf::View &v)
 		{
 			const auto r = t.mapCoordsToPixel({ pos.x, pos.y }, v);
 			return { r.x, r.y };
 		}
 
-		vector_i snap_coords_to_grid(vector_i coord, types::int32 grid_size)
+		vector_int snap_to_grid(vector_int coord, types::int32 grid_size)
 		{
-			const auto coordf = vector_f{ static_cast<vector_f::value_type>(coord.x),
-										static_cast<vector_f::value_type>(coord.y) };
+			const auto coordf = vector_float{ static_cast<vector_float::value_type>(coord.x),
+										static_cast<vector_float::value_type>(coord.y) };
 
 			const auto snap_pos = coordf -
-				vector_f{ static_cast<vector_f::value_type>(std::abs(std::fmod(coordf.x, grid_size))),
-				static_cast<vector_f::value_type>(std::abs((std::fmod(coordf.y, grid_size)))) };
+				vector_float{ static_cast<vector_float::value_type>(std::abs(std::fmod(coordf.x, grid_size))),
+				static_cast<vector_float::value_type>(std::abs((std::fmod(coordf.y, grid_size)))) };
 
-			return { static_cast<vector_i::value_type>(snap_pos.x),
-				static_cast<vector_i::value_type>(snap_pos.y) };
+			return { static_cast<vector_int::value_type>(snap_pos.x),
+				static_cast<vector_int::value_type>(snap_pos.y) };
 		}
 	}
 

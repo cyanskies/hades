@@ -6,10 +6,10 @@
 namespace hades
 {
 	template<typename Func, typename ...Ts>
-	constexpr void for_each_tuple(const std::tuple<Ts...> &tuple, Func function);
-	
-	template<typename Func, typename ...Ts>
 	void for_each_tuple(std::tuple<Ts...> &tuple, Func function);
+
+	template<typename Func, typename ...Ts>
+	void for_index_tuple(std::tuple<Ts...> &tuple, std::size_t index, Func function);
 }
 
 #include "hades/detail/for_each_tuple.inl"

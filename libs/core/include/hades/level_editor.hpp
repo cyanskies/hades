@@ -9,6 +9,7 @@
 #include "hades/properties.hpp"
 #include "hades/state.hpp"
 #include "hades/types.hpp"
+#include "hades/vector_math.hpp"
 
 namespace hades::detail
 {
@@ -25,7 +26,9 @@ namespace hades::detail
 
 	protected:
 		virtual void _draw_components(sf::RenderTarget&, time_duration) = 0;
+		virtual void _generate_brush_preview(std::size_t brush_index, vector_float world_position) = 0;
 		virtual void _hand_component_setup() = 0;
+		void _set_active_brush(std::size_t index);
 		virtual void _update_component_gui(gui&) = 0;
 
 		//current window size
@@ -37,12 +40,10 @@ namespace hades::detail
 		console::property_int _toolbox_auto_width;
 
 		console::property_int _scroll_margin;
-		console::property_int _scroll_rate;
+		console::property_float _scroll_rate;
 
 		//level width, height
 		level_size_t _level_x = 0, _level_y = 0;
-		//currently active brush
-		std::size_t _active_brush = std::numeric_limits<std::size_t>::max();
 
 		sf::View _gui_view;
 		sf::View _world_view;
@@ -53,6 +54,9 @@ namespace hades::detail
 		void _update_gui(time_duration);
 
 		gui _gui;
+
+		//currently active brush
+		std::size_t _active_brush = std::numeric_limits<std::size_t>::max();
 	};
 }
 
@@ -65,7 +69,7 @@ namespace hades
 	{
 	private:
 		void _draw_components(sf::RenderTarget &, time_duration) override;
-		//void _generate_draw_preview() override;
+		void _generate_brush_preview(std::size_t, vector_float) override;
 		void _hand_component_setup() override;
 		void _update_component_gui(gui&) override;
 

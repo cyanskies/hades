@@ -11,6 +11,9 @@ namespace hades::detail
 		_toolbox_width = console::get_int(cvars::editor_toolbox_width);
 		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width);
 
+		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size);
+		_scroll_rate = console::get_float(cvars::editor_scroll_rate);
+
 		_hand_component_setup();
 
 		reinit();
@@ -39,7 +42,7 @@ namespace hades::detail
 		_gui.set_display_size({ _window_width, _window_height });
 	}
 
-	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &, input_system::action_set actions)
+	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &t, input_system::action_set actions)
 	{
 		const auto mouse_position = actions.find(input::mouse_position);
 		assert(mouse_position != std::end(actions));
@@ -75,6 +78,8 @@ namespace hades::detail
 			}
 
 			//generate draw preview
+			const auto world_coords = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
+			_generate_brush_preview(_active_brush, world_coords);
 		}
 
 		const auto mouse_left = actions.find(input::mouse_left);
@@ -84,6 +89,8 @@ namespace hades::detail
 		{
 
 		}
+
+		_update_gui(dt);
 	}
 
 	void level_editor_impl::draw(sf::RenderTarget &rt, time_duration dt)
@@ -94,6 +101,12 @@ namespace hades::detail
 		rt.setView(_gui_view);
 		rt.draw(_gui);
 	}
+
+	void level_editor_impl::_set_active_brush(std::size_t index)
+	{
+		_active_brush = index;
+	}
+
 	void level_editor_impl::_update_gui(time_duration dt)
 	{
 		_gui.update(dt);

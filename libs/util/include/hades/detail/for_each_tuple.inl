@@ -4,25 +4,6 @@
 //the for each
 namespace hades::detail
 {
-	//TODO: avoid repeating this function for const version?
-	template<typename Func, std::size_t Count, typename ...Ts>
-	constexpr inline std::enable_if_t<std::tuple_size_v<std::tuple<Ts...>> <= Count>
-		for_each_worker(const std::tuple<Ts...>&, Func)
-	{}
-
-	template<typename Func, std::size_t Count, typename ...Ts>
-	constexpr inline std::enable_if_t < Count < std::tuple_size_v<std::tuple<Ts...>>>
-		for_each_worker(const std::tuple<Ts...> &t, Func f)
-	{
-		using T = std::tuple_element_t<Count, std::tuple<Ts...>>;
-		if constexpr (std::is_invocable_v<Func, T, std::size_t>)
-			std::invoke(f, std::get<Count>(t), Count);
-		else
-			std::invoke(f, std::get<Count>(t));
-
-		for_each_worker<Func, Count + 1, Ts...>(t, f);
-	}
-
 	template<typename Func, std::size_t Count, typename ...Ts>
 	inline std::enable_if_t<std::tuple_size_v<std::tuple<Ts...>> <= Count> for_each_worker(std::tuple<Ts...>&, Func)
 	{}
@@ -38,19 +19,37 @@ namespace hades::detail
 
 		for_each_worker<Func, Count + 1, Ts...>(t, f);
 	}
+
+	template<typename Func, std::size_t Count, typename ...Ts>
+	inline std::enable_if_t<std::tuple_size_v<std::tuple<Ts...>> <= Count> for_index_worker(std::tuple<Ts...>&, std::size_t, Func)
+	{}
+
+	template<typename Func, std::size_t Count, typename ...Ts>
+	inline std::enable_if_t < Count < std::tuple_size_v<std::tuple<Ts...>>> for_index_worker(std::tuple<Ts...> &t, std::size_t index, Func f)
+	{
+		if (Count == index)
+		{
+			std::invoke(f, std::get<Count>(t));
+			return;
+		}
+
+		for_each_worker<Func, Count + 1, Ts...>(t, f);
+	}
 }
 
 namespace hades
 {
 	template<typename Func, typename ...Ts>
-	constexpr inline void for_each_tuple(const std::tuple<Ts...> &t, Func f)
+	void for_each_tuple(std::tuple<Ts...> &t, Func f)
 	{
 		detail::for_each_worker < Func, std::size_t{ 0 }, Ts... > (t, f);
 	}
 
 	template<typename Func, typename ...Ts>
-	void for_each_tuple(std::tuple<Ts...> &t, Func f)
+	void for_index_tuple(std::tuple<Ts...> &t, std::size_t i, Func f)
 	{
-		detail::for_each_worker < Func, std::size_t{ 0 }, Ts... > (t, f);
+		assert(i <= std::tuple_size_v<std::tuple<Ts...>>);
+
+		detail::for_index_worker < Func, std::size_t{ 0 }, Ts... > (t, i, f);
 	}
 }

@@ -22,13 +22,11 @@ namespace hades
 		extern input_id mouse_left;
 	}
 
-	namespace pointer
+	namespace mouse
 	{
-		using vector_f = vector_t<float>;
-		using vector_i = vector_t<int32>;
-		vector_f to_world_coords(const sf::RenderTarget&, vector_i pointer_position, const sf::View&);
-		vector_i from_world_coords(const sf::RenderTarget&, vector_f world_position, const sf::View&);
-		vector_i snap_coords_to_grid(vector_i coord, types::int32 grid_size);
+		vector_float to_world_coords(const sf::RenderTarget&, vector_int window_position, const sf::View&);
+		vector_int to_window_coords(const sf::RenderTarget&, vector_float world_position, const sf::View&);
+		vector_int snap_to_grid(vector_int coord, types::int32 grid_size);
 		//TODO: within window
 	}
 

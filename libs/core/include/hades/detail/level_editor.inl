@@ -17,11 +17,19 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_generate_brush_preview(std::size_t brush_index, vector_float world_position)
+	{
+		for_index_tuple(_editor_components, brush_index, [world_position](auto &&c) {
+			c.make_brush_preview(world_position);
+		});
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_hand_component_setup()
 	{
 		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
 			auto activate_brush = [this, index] {
-				_active_brush = index;
+				_set_active_brush(index);
 			};
 
 			c.install_callbacks(

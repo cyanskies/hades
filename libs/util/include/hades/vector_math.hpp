@@ -4,6 +4,8 @@
 #include <optional>
 #include <tuple>
 
+#include "hades/types.hpp"
+
 namespace hades
 {
 	template<typename T>
@@ -12,6 +14,9 @@ namespace hades
 		using value_type = T;
 		T x, y;
 	};
+
+	using vector_int = vector_t<int32>;
+	using vector_float = vector_t<float>;
 
 	template<typename T>
 	bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs);

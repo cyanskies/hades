@@ -12,7 +12,7 @@ namespace hades
 	struct vector_t
 	{
 		using value_type = T;
-		T x, y;
+		T x{}, y{};
 	};
 
 	using vector_int = vector_t<int32>;

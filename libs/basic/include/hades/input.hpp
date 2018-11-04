@@ -34,8 +34,6 @@ namespace hades
 
 		unique_id id = unique_id::zero;
 		types::int32 x_axis = 0, y_axis = 0; //joystick movement if joystick; //mouse position if mouse // 100 otherwise
-		types::int32 u_axis = 0, v_axis = 0;
-		types::int32 z_axis = 0, r_axis = 0; //joystick triggers
 		bool active = false; //always true for mouseposition and axis
 	};
 

@@ -67,25 +67,16 @@ namespace hades
 			action a;
 
 			if (!handled)
-			{
 				a.active = in_window({ e.mouseMove.x, e.mouseMove.y }, window);
-				const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
-					{ 0, 0 },
-					{ static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y) });
-				a.x_axis = mouse_move.x;
-				a.y_axis = mouse_move.y;
-			}
 			else
-			{
 				a.active = false;
-				const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
-					{ 0, 0 },
-					{ static_cast<types::int32>(window.getSize().x),
-					static_cast<types::int32>(window.getSize().y) });
-				a.x_axis = mouse_move.x;
-				a.y_axis = mouse_move.y;
-			}
+
+			const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
+				{ 0, 0 },
+				{ static_cast<types::int32>(window.getSize().x),
+				static_cast<types::int32>(window.getSize().y) });
+			a.x_axis = mouse_move.x;
+			a.y_axis = mouse_move.y;
 
 			return a;
 		};

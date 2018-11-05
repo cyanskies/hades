@@ -31,6 +31,10 @@ namespace hades::detail
 	protected:
 		using brush_index_t = std::size_t;
 
+		virtual void _component_on_click(brush_index_t, vector_float) = 0;
+		virtual void _component_on_drag_start(brush_index_t, vector_float) = 0;
+		virtual void _component_on_drag(brush_index_t, vector_float) = 0;
+		virtual void _component_on_drag_end(brush_index_t, vector_float) = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration) = 0;
 		virtual void _generate_brush_preview(brush_index_t brush_index, vector_float world_position) = 0;
 		virtual void _hand_component_setup() = 0;
@@ -77,8 +81,12 @@ namespace hades
 	class basic_level_editor final : public detail::level_editor_impl
 	{
 	private:
+		void _component_on_click(brush_index_t, vector_float) override;
+		void _component_on_drag_start(brush_index_t, vector_float) override;
+		void _component_on_drag(brush_index_t, vector_float) override;
+		void _component_on_drag_end(brush_index_t, vector_float) override;
 		void _draw_components(sf::RenderTarget &, time_duration) override;
-		void _generate_brush_preview(std::size_t, vector_float) override;
+		void _generate_brush_preview(brush_index_t, vector_float) override;
 		void _hand_component_setup() override;
 		void _update_component_gui(gui&) override;
 

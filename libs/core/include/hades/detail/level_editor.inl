@@ -8,6 +8,38 @@
 namespace hades
 {
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector_float p)
+	{
+		for_index_tuple(_editor_components, i, [p](auto &&c) {
+			c.on_click(p);
+		});
+	}
+
+	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_drag_start(brush_index_t i, vector_float p)
+	{
+		for_index_tuple(_editor_components, i, [p](auto &&c) {
+			c.on_drag_start(p);
+		});
+	}
+
+	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_drag(brush_index_t i, vector_float p)
+	{
+		for_index_tuple(_editor_components, i, [p](auto &&c) {
+			c.on_drag(p);
+		});
+	}
+
+	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_drag_end(brush_index_t i, vector_float p)
+	{
+		for_index_tuple(_editor_components, i, [p](auto &&c) {
+			c.on_drag_end(p);
+		});
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target, time_duration delta_time)
 	{
 		auto states = sf::RenderStates{};
@@ -17,7 +49,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_generate_brush_preview(std::size_t brush_index, vector_float world_position)
+	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, vector_float world_position)
 	{
 		for_index_tuple(_editor_components, brush_index, [world_position](auto &&c) {
 			c.make_brush_preview(world_position);

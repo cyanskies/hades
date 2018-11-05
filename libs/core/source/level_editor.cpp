@@ -89,23 +89,23 @@ namespace hades::detail
 
 		const auto mouse_left = actions.find(input::mouse_left);
 		assert(mouse_left != std::end(actions));
-		mouse::update_button_state(*mouse_left, _total_run_time, _mouse_left);
+		mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
 
 		if (mouse::is_click(_mouse_left))
 		{
-
+			LOG("Click");
 		}
-		else if (mouse::is_drag_start(_mouse_left))
+		if (mouse::is_drag_start(_mouse_left))
 		{
-
+			LOG("Drag_Start");
 		}
-		else if (mouse::is_dragging(_mouse_left))
+		if (mouse::is_dragging(_mouse_left))
 		{
-
+			LOG("DRAGGING");
 		}
-		else if (mouse::is_drag_end(_mouse_left))
+		if (mouse::is_drag_end(_mouse_left))
 		{
-
+			LOG("DRAG_END");
 		}
 
 		_update_gui(dt);

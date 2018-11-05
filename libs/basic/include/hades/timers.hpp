@@ -21,7 +21,7 @@ namespace hades
 	template<typename Rep, typename Period>
 	using basic_duration = std::chrono::duration<Rep, Period>;
 	template<typename Rep>
-	using basic_second = std::chrono::duration<Rep>;
+	using basic_second = std::chrono::duration<Rep, std::chrono::seconds::period>;
 
 	using nanoseconds = std::chrono::nanoseconds;
 	using microseconds = std::chrono::microseconds;

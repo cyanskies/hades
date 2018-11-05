@@ -5,7 +5,7 @@ namespace hades::mouse
 	constexpr auto drag_distance = 6;
 
 	template<bool Drag, bool DoubleClick>
-	inline void update_button_state(const action &m, const time_point &t, mouse_button_state<Drag, DoubleClick> &s)
+	inline void update_button_state(const action &m, const action &mpos, const time_point &t, mouse_button_state<Drag, DoubleClick> &s)
 	{
 		//check each combination of inputs
 		//mouse is down / not down
@@ -16,39 +16,36 @@ namespace hades::mouse
 		//also record info need about the mouse down, for other state checks in later frames
 		if (m.active && !s.is_down)
 		{
-			//TODO: FIXME: constexpr if doesn't work well in lambdas
-			// this fails to compile if Drag and DoubleClick are false
-			auto do_click_logic = [&s, &m] {
-				if constexpr(Drag || DoubleClick)
-					s.click_pos = vector_int{ m.x_axis, m.y_axis };
-
-				s.clicked = true;
-			};
-
 			//NOTE: if doubleclick is disabled, then clicks can be generated quickly in sucession
 			// otherwise each click must be at least double_click_time apart
 			//TODO: investigate changing this, disabling DoubleClick shouldn't
 			// affect the behaviour of click
 			if constexpr (DoubleClick)
 			{
-				const time_duration click_duration = s.is_down ? t - s.click_time : time_duration{};
-				const auto distance = vector::distance({ m.x_axis, m.y_axis }, s.click_pos);
+				assert(t > s.double_clicked.click_time);
+				const time_duration click_duration = t - s.double_clicked.click_time;
+				const auto distance = vector::distance({ mpos.x_axis, mpos.y_axis }, s.click_pos);
 
 				//mouse has been clicked previously
 				if (click_duration < double_click_time &&
 					distance < double_click_distance)
 				{
-					s.double_clicked = true;
+					s.double_clicked.double_clicked = true;
+					s.double_clicked.click_time = time_point{};
 					s.clicked = false;
 				}
 				else
 				{
 					s.double_clicked.click_time = t;
-					do_click_logic();
+					s.clicked = true;
 				}
 			}
 			else
-				do_click_logic();
+				s.clicked = true;
+
+			//record the mouse down position for later frames
+			if constexpr (Drag || DoubleClick)
+				s.click_pos = { m.x_axis, m.y_axis };
 		}
 		else if (m.active && s.is_down)
 		{
@@ -57,21 +54,24 @@ namespace hades::mouse
 			//disable the click so it can't trigger twice then check to see if the mouse
 			//has moved enough to trigger a drag event
 			s.clicked = false;
+			if constexpr (DoubleClick)
+				s.double_clicked.double_clicked = false;
+
 			if constexpr(Drag)
 			{
-				const auto distance = vector::distance({ m.x_axis, m.y_axis }, s.click_pos);
-
+				const auto distance = vector::distance({ mpos.x_axis, mpos.y_axis }, s.click_pos);
 				//start a drag event or convert a drag starting into
 				// a dragging event
+				if (distance > drag_distance &&
+					s.drag.drag_start)
+				{
+					s.drag.drag_start = false;
+					s.drag.dragging = true;
+				}
 				if (distance > drag_distance &&
 					!s.drag.dragging)
 				{
 					s.drag.drag_start = true;
-				}
-				else if (distance > drag_distance)
-				{
-					s.drag.drag_start = false;
-					s.drag.dragging = true;
 				}
 			}
 		}
@@ -84,7 +84,7 @@ namespace hades::mouse
 			s.clicked = false;
 
 			if constexpr(DoubleClick)
-				s.double_clicked = false;
+				s.double_clicked.double_clicked = false;
 
 			if constexpr (Drag)
 			{

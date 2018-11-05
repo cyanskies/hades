@@ -60,7 +60,8 @@ namespace hades
 		//call update_button_state each update frame to keep a mouse_button_state current for each button you care about
 		//use the is_* functions to check whether to trigger a mouse event
 		template<bool Drag, bool DoubleClick>
-		void update_button_state(const action &mouse_button, const time_point &time, mouse_button_state<Drag, DoubleClick> &mouse_state);
+		void update_button_state(const action &mouse_button, const action &mouse_position, const time_point &time, mouse_button_state<Drag, DoubleClick> &mouse_state);
+		
 		template<bool Drag, bool DoubleClick>
 		bool is_click(const mouse_button_state<Drag, DoubleClick> &mouse_state);
 		template<bool Drag, bool DoubleClick>

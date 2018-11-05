@@ -1,5 +1,7 @@
 #include "hades/level_editor.hpp"
 
+#include <tuple>
+
 #include "hades/animation.hpp"
 #include "hades/properties.hpp"
 #include "hades/console_variables.hpp"
@@ -7,10 +9,20 @@
 
 namespace hades
 {
+	template<typename Func, typename ...Components>
+	inline void level_editor_do_tuple_work(std::tuple<Components...> &t, std::size_t i, Func f)
+	{
+		//if no brush is set, then do nothing
+		if (i > std::tuple_size_v<std::tuple<Components...>>)
+			return;
+
+		for_index_tuple(t, i, f);
+	}
+
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector_float p)
 	{
-		for_index_tuple(_editor_components, i, [p](auto &&c) {
+		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_click(p);
 		});
 	}
@@ -18,7 +30,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_drag_start(brush_index_t i, vector_float p)
 	{
-		for_index_tuple(_editor_components, i, [p](auto &&c) {
+		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag_start(p);
 		});
 	}
@@ -26,7 +38,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_drag(brush_index_t i, vector_float p)
 	{
-		for_index_tuple(_editor_components, i, [p](auto &&c) {
+		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag(p);
 		});
 	}
@@ -34,7 +46,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_drag_end(brush_index_t i, vector_float p)
 	{
-		for_index_tuple(_editor_components, i, [p](auto &&c) {
+		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag_end(p);
 		});
 	}
@@ -51,7 +63,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, vector_float world_position)
 	{
-		for_index_tuple(_editor_components, brush_index, [world_position](auto &&c) {
+		level_editor_do_tuple_work(_editor_components, brush_index, [world_position](auto &&c) {
 			c.make_brush_preview(world_position);
 		});
 	}

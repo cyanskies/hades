@@ -1,5 +1,6 @@
 #include "hades/level_editor.hpp"
 
+#include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 
@@ -162,7 +163,7 @@ namespace hades::detail
 		}(*_toolbox_width, *_toolbox_auto_width, _window_width);
 
 		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });
-		const auto toolbox_created = _gui.window_begin("##toolbox", gui::window_flags::panel);
+		const auto toolbox_created = _gui.window_begin(editor::gui_names::toolbox, gui::window_flags::panel);
 		assert(toolbox_created);
 		//store toolbox x2 for use in the input update
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);

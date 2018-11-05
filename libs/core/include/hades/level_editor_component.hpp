@@ -15,6 +15,13 @@ namespace hades::resources
 	struct animation;
 }
 
+namespace hades::editor::gui_names
+{
+	using namespace std::string_view_literals;
+	//Window name for left toolbox window
+	constexpr auto toolbox = "##toolbox"sv;
+}
+
 namespace hades
 {
 	class gui;

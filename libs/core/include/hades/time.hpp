@@ -12,7 +12,7 @@ namespace hades
 	inline time_duration to_standard_time(sf::Time t)
 	{
 		const int64 micros = t.asMicroseconds();
-		return time_duration{ micros };
+		return microseconds{ micros };
 	}
 
 	inline time_point to_standard_time_point(sf::Time t)

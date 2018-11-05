@@ -191,7 +191,8 @@ namespace hades
 
 		//selectables
 		//used as elements in comboboxes, etc
-		bool selectable(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector &size = {0.f, 0.f});
+		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector &size = { 0.f, 0.f });
+		bool selectable_easy(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector &size = {0.f, 0.f});
 
 		enum class combo_flags : ImGuiComboFlags
 		{
@@ -208,6 +209,7 @@ namespace hades
 
 		//combobox
 		bool combo_begin(std::string_view label, std::string_view preview_value, combo_flags = combo_flags::none);
+		// only call combo_end if combo_begin returns true
 		void combo_end();
 		
 		//TODO: drags

@@ -15,7 +15,7 @@ namespace hades::detail
 		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size);
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate);
 
-		_hand_component_setup();
+		_handle_component_setup();
 
 		reinit();
 	}

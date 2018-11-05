@@ -69,7 +69,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_hand_component_setup()
+	inline void basic_level_editor<Components...>::_handle_component_setup()
 	{
 		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
 			auto activate_brush = [this, index] {

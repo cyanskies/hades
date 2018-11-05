@@ -37,10 +37,11 @@ namespace hades::detail
 		virtual void _component_on_drag_end(brush_index_t, vector_float) = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration) = 0;
 		virtual void _generate_brush_preview(brush_index_t brush_index, vector_float world_position) = 0;
-		virtual void _hand_component_setup() = 0;
+		virtual void _handle_component_setup() = 0;
 		void _set_active_brush(std::size_t index);
 		virtual void _update_component_gui(gui&) = 0;
 
+	private:
 		//current window size
 		float _window_width = 0.f, _window_height = 0.f;
 		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
@@ -85,9 +86,9 @@ namespace hades
 		void _component_on_drag_start(brush_index_t, vector_float) override;
 		void _component_on_drag(brush_index_t, vector_float) override;
 		void _component_on_drag_end(brush_index_t, vector_float) override;
-		void _draw_components(sf::RenderTarget &, time_duration) override;
+		void _draw_components(sf::RenderTarget&, time_duration) override;
 		void _generate_brush_preview(brush_index_t, vector_float) override;
-		void _hand_component_setup() override;
+		void _handle_component_setup() override;
 		void _update_component_gui(gui&) override;
 
 		using component_tuple = std::tuple<Components...>;

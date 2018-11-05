@@ -385,7 +385,13 @@ namespace hades
 		ImGui::Bullet();
 	}
 
-	bool gui::selectable(std::string_view label, bool &selected, selectable_flag flag, const vector & size)
+	bool gui::selectable(std::string_view label, bool selected, selectable_flag flag, const vector & size)
+	{
+		_active_assert();
+		return ImGui::Selectable(to_string(label).data(), selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
+	}
+
+	bool gui::selectable_easy(std::string_view label, bool &selected, selectable_flag flag, const vector & size)
 	{
 		_active_assert();
 		return ImGui::Selectable(to_string(label).data(), &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
@@ -646,7 +652,7 @@ namespace hades
 		constexpr auto size = toolbar_button_size.x;
 		const auto x2 = _main_toolbar_info.last_item_x2;
 		const auto next_button_x2 = size + item_spacing + x2;
-		if (next_button_x2 < _main_toolbar_info.width) layout_horizontal(toolbar_layout_size.x, toolbar_layout_size.y);
+		if (next_button_x2 < _main_toolbar_info.width) layout_horizontal(); // layout_horizontal(toolbar_layout_size.x, toolbar_layout_size.y);
 	}
 
 	gui::font *gui::_get_font(const resources::font *f)

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "hades/animation.hpp"
+#include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
@@ -118,6 +119,28 @@ namespace hades::resources
 			obj->render_systems = d.find_or_create<const render_system>(render_system_ids, mod);
 		}
 	}
+
+	void load_objects(resource_type<object_t> &r, data::data_manager &d)
+	{
+		assert(dynamic_cast<object*>(&r));
+		const auto &o = static_cast<object&>(r);
+
+		//load all the referenced resources
+		if (o.editor_icon && !o.editor_icon->loaded)
+			d.get<animation>(o.editor_icon->id);
+
+		for (auto a : o.editor_anims)
+		{
+			if (!a->loaded)
+				d.get<animation>(a->id);
+		}
+
+		//all of the other resources used by objects are parse-only and don't require loading
+	}
+
+	//TODO: define load object, needs to laod all resources that the object uses
+	object::object() : resource_type<object_t>(load_objects)
+	{}
 }
 
 namespace hades
@@ -184,6 +207,13 @@ namespace hades
 		v = vector_int{0, 0};
 
 		return v;
+	}
+
+	string get_object_name(const resources::object & o)
+	{
+		const auto name_curve = get_name_curve();
+
+		return data::get_as_string(o.id);
 	}
 
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)

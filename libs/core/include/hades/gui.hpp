@@ -149,6 +149,7 @@ namespace hades
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal
 		void vertical_spacing();
+		void dummy(vector_float size = {});
 
 		//text widgets
 		void text(std::string_view);
@@ -293,11 +294,29 @@ namespace hades
 		bool toolbar_button(const resources::animation&);
 		void toolbar_separator();
 
-		//TODO: tooltips
+		//tooltips
+		void tooltip(std::string_view); //shows a tooltip if the previous item was hovered
+		void show_tooltip(std::string_view); //always shows a tooltip
 
 		//TODO: popups
 
+		enum class hovered_flags : ImGuiHoveredFlags
+		{
+			none = ImGuiHoveredFlags_::ImGuiHoveredFlags_None,
+			child_windows = ImGuiHoveredFlags_::ImGuiHoveredFlags_ChildWindows,
+			root_window = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootWindow,
+			any_window = ImGuiHoveredFlags_::ImGuiHoveredFlags_AnyWindow,
+			allow_when_blocked_by_popup = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByPopup,
+			allow_when_blocked_by_model = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByActiveItem,
+			allow_when_overlapped = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlapped,
+			allow_when_disabled = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled,
+			rect_only = ImGuiHoveredFlags_::ImGuiHoveredFlags_RectOnly,
+			root_and_child_windows = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootAndChildWindows
+		};
+
 		//item utils
+		bool is_item_hovered(hovered_flags); //returns true if mouse is over object
+		bool is_item_focused(); //returns true if item has keyboard or gamepad focus
 		vector get_item_rect_max();
 
 		//utils

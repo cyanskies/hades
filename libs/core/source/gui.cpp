@@ -266,6 +266,12 @@ namespace hades
 		ImGui::Spacing();
 	}
 
+	void gui::dummy(vector_float s)
+	{
+		_active_assert();
+		ImGui::Dummy({ s.x, s.y });
+	}
+
 	void gui::text(std::string_view s)
 	{
 		_active_assert();
@@ -541,6 +547,25 @@ namespace hades
 
 		separator_horizontal();
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
+	}
+
+	void gui::tooltip(std::string_view s)
+	{
+		_active_assert();
+		if(is_item_hovered(hovered_flags::none))
+			show_tooltip(s);
+	}
+
+	void gui::show_tooltip(std::string_view s)
+	{
+		_active_assert();
+		ImGui::SetTooltip(to_string(s).c_str());
+	}
+
+	bool gui::is_item_hovered(hovered_flags f)
+	{
+		_active_assert();
+		return ImGui::IsItemHovered(static_cast<ImGuiHoveredFlags>(f));
 	}
 
 	gui::vector gui::get_item_rect_max()

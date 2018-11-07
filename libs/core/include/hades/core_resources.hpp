@@ -1,7 +1,10 @@
 #ifndef HADES_CORE_RESOURCES_HPP
 #define HADES_CORE_RESOURCES_HPP
 
-#include "hades/data.hpp"
+namespace hades::data
+{
+	class data_manager;
+}
 
 namespace hades
 {

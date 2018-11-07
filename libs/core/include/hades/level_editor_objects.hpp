@@ -38,6 +38,7 @@ namespace hades
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
 		std::vector<bool> _object_group_selection;
+		size_t _current_group = 0u;
 		//objects for drawing
 		//object instances
 	};

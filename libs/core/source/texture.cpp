@@ -152,6 +152,14 @@ namespace hades
 				tex.value.setRepeated(true);
 			}
 
+			//if width or height are 0 then use them to store the textures size
+			if (tex.width == 0 || tex.height == 0)
+			{
+				const auto size = tex.value.getSize();
+				tex.width = size.x;
+				tex.height = size.y;
+			}
+
 			tex.loaded = true;
 		}
 	}

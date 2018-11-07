@@ -4,6 +4,7 @@
 set(HADES_CORE_SRC
 	animation.cpp
 	archive.cpp
+	core_curves.cpp
 	core_resources.cpp
 	files.cpp
 	font.cpp
@@ -22,6 +23,7 @@ set(HADES_CORE_SRC
 	texture.cpp
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
@@ -51,6 +53,7 @@ set(HADES_CORE_SRC
 source_group("Headers" FILES
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp

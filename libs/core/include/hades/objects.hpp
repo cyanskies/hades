@@ -18,6 +18,8 @@ namespace hades::resources
 
 	struct object : public resource_type<object_t>
 	{
+		object();
+
 		//editor icon, used in the object picker
 		const hades::resources::animation *editor_icon = nullptr;
 		//editor anim list
@@ -81,6 +83,7 @@ namespace hades
 	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)
 	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
 	curve_value valid_vector_curve(hades::resources::curve_default_value v);
+	string get_object_name(const resources::object &o);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);
 

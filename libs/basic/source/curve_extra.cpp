@@ -34,7 +34,7 @@ namespace hades::resources
 	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
 		using namespace std::string_view_literals;
-		if (s == "int"sv)
+		if (s == "int"sv || s == "int32"sv)
 			return curve_variable_type::int_t;
 		else if (s == "float"sv)
 			return curve_variable_type::float_t;
@@ -61,6 +61,7 @@ namespace hades::resources
 	[[nodiscard]] curve_default_value reset_default_value(const curve& c)
 	{
 		using resources::curve_variable_type;
+		//TODO: move into the switch
 		if (c.data_type == curve_variable_type::error)
 			throw invalid_curve{"Tried to call reset_default_value on an invalid curve"};
 

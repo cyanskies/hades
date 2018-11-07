@@ -4,6 +4,7 @@
 
 #include "Hades/App.hpp"
 
+#include "hades/core_curves.hpp"
 #include "hades/level_editor.hpp"
 #include "hades/level_editor_level_properties.hpp"
 #include "hades/level_editor_objects.hpp"
@@ -18,13 +19,14 @@ int main(int argc, char **argv)
 
 std::string_view defaultGame()
 {
-	return "ortho_terrain";
+	return "objects";
 }
 
 void resourceTypes(hades::data::data_system &data)
 {
 	hades::create_editor_console_variables();
 	hades::register_level_editor_object_resources(data);
+	hades::register_core_curves(data);
 }
 
 void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list &commandLine)

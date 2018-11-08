@@ -53,7 +53,7 @@ namespace hades
 		using mouse_pos = vector_float;
 
 		//used to generate info for draw_brush_preview
-		virtual void make_brush_preview(mouse_pos) {};
+		virtual void make_brush_preview(time_duration, mouse_pos) {};
 
 		//return true if their is a valid target for dragging under the mouse
 		virtual bool valid_drag_target(mouse_pos) const { return false; };

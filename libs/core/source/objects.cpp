@@ -392,6 +392,91 @@ namespace hades
 		return resources::object::animation_list{};
 	}
 
+	template<typename Object>
+	string get_name_impl(const Object &o)
+	{
+		try
+		{
+			const auto name_curve = get_name_curve();
+			const auto name = get_curve(o, *name_curve);
+			assert(std::holds_alternative<string>(name));
+			return std::get<string>(name);
+		}
+		catch (const curve_not_found&)
+		{
+			using namespace std::string_literals;
+			return ""s;
+		}
+	}
+
+	string get_name(const object_instance &o)
+	{
+		return get_name_impl(o);
+	}
+
+	string get_name(const resources::object &o)
+	{
+		return get_name_impl(o);
+	}
+
+	void set_name(object_instance &o, std::string_view name)
+	{
+		const auto name_curve = get_name_curve();
+		set_curve(o, *name_curve, to_string(name));
+	}
+
+	template<typename Object, typename Func>
+	vector_float get_vector_curve_impl(const Object &o, Func f)
+	{
+		try
+		{
+			const auto[x, y] = std::invoke(f);
+			const auto x_value = get_curve(o, *x);
+			const auto y_value = get_curve(o, *y);
+			assert(std::holds_alternative<float>(x_value));
+			assert(std::holds_alternative<float>(y_value));
+			return { std::get<float>(x_value), std::get<float>(y_value) };
+		}
+		catch (const curve_not_found&)
+		{
+			return vector_float{};
+		}
+	}
+
+	vector_float get_position(const object_instance &o)
+	{
+		return get_vector_curve_impl(o, get_position_curve);
+	}
+
+	vector_float get_position(const resources::object &o)
+	{
+		return get_vector_curve_impl(o, get_position_curve);
+	}
+
+	void set_position(object_instance & o, vector_float v)
+	{
+		const auto[posx, posy] = get_position_curve();
+		set_curve(o, *posx, v.x);
+		set_curve(o, *posy, v.y);
+	}
+
+	vector_float get_size(const object_instance &o)
+	{
+		return get_vector_curve_impl(o, get_size_curve);
+	}
+
+	vector_float get_size(const resources::object &o)
+	{
+		return get_vector_curve_impl(o, get_size_curve);
+	}
+
+	void set_size(object_instance &o, vector_float v)
+	{
+		const auto [sizx, sizy] = get_size_curve();
+		set_curve(o, *sizx, v.x);
+		set_curve(o, *sizy, v.y);
+	}
+
 	using namespace std::string_view_literals;
 	constexpr auto obj_str = "objects"sv,
 		obj_curves = "curves"sv,

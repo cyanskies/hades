@@ -84,7 +84,7 @@ namespace hades::detail
 			{
 				//generate draw preview
 				const auto world_coords = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
-				_generate_brush_preview(_active_brush, world_coords);
+				_generate_brush_preview(_active_brush, dt, world_coords);
 			}
 		}
 

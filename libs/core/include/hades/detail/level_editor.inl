@@ -61,10 +61,10 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, vector_float world_position)
+	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, time_duration dt, vector_float world_position)
 	{
-		level_editor_do_tuple_work(_editor_components, brush_index, [world_position](auto &&c) {
-			c.make_brush_preview(world_position);
+		level_editor_do_tuple_work(_editor_components, brush_index, [dt, world_position](auto &&c) {
+			c.make_brush_preview(dt, world_position);
 		});
 	}
 

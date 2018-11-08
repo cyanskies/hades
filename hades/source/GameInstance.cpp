@@ -118,7 +118,7 @@ namespace hades
 		output.int_curves = GetExportedSet<int_t>(time, curves.int_curves.data());
 		output.bool_curves = GetExportedSet<bool_t>(time, curves.bool_curves.data());
 		output.string_curves = GetExportedSet<string>(time, curves.string_curves.data());
-		output.int_vector_curves = GetExportedSet<vector_int>(time, curves.int_vector_curves.data());
+		output.int_vector_curves = GetExportedSet<resources::curve_types::vector_int>(time, curves.int_vector_curves.data());
 
 		//add in entityNames and variable Id mappings
 		output.entity_names = _newEntityNames;

@@ -7,6 +7,7 @@
 #include "hades/game_system.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/types.hpp"
+#include "hades/vector_math.hpp"
 #include "hades/writer.hpp"
 
 namespace hades::resources
@@ -80,12 +81,23 @@ namespace hades
 	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v);
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
 	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
+
 	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)
 	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
 	curve_value valid_vector_curve(hades::resources::curve_default_value v);
-	string get_object_name(const resources::object &o);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);
+
+	//helpers for common curves
+	string get_name(const object_instance &o);
+	string get_name(const resources::object &o);
+	void set_name(object_instance &o, std::string_view);
+	vector_float get_position(const object_instance &o);
+	vector_float get_position(const resources::object &o);
+	void set_position(object_instance &o, vector_float v);
+	vector_float get_size(const object_instance &o);
+	vector_float get_size(const resources::object &o);
+	void set_size(object_instance &o, vector_float v);
 
 	struct level;
 	//reads the object tree from the level and writes it

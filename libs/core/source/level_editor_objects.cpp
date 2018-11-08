@@ -1,6 +1,7 @@
 #include "hades/level_editor_objects.hpp"
 
 #include "hades/animation.hpp"
+#include "hades/core_curves.hpp"
 #include "hades/gui.hpp"
 #include "hades/parser.hpp"
 
@@ -68,8 +69,11 @@ namespace hades
 		}
 	}
 
-	void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects)
+	template<typename Func>
+	void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
 	{
+		static_assert(std::is_invocable_v<Func, const resources::object*>);
+
 		constexpr auto button_size = vector_float{ 25.f, 25.f };
 		constexpr auto button_scale_diff = 6.f;
 		constexpr auto button_size_no_img = vector_float{ button_size.x + button_scale_diff,
@@ -83,25 +87,20 @@ namespace hades
 				g.layout_horizontal();
 
 			auto clicked = false;
+			
+			auto name = get_name(*o); 
+			if (name.empty())
+				name = data::get_as_string(o->id);
 
 			if (const auto ico = get_editor_icon(*o); ico)
-			{
-				clicked = g.image_button(*ico, button_size);
-				g.tooltip(get_object_name(*o));
-			}
+				clicked = g.image_button(*ico, button_size);	
 			else
-			{
-				const auto name = get_object_name(*o);
 				clicked = g.button(name, button_size_no_img);
-				g.tooltip(name);
-			}
+
+			g.tooltip(name);
 
 			if (clicked)
-			{
-				//TODO:
-				//set cursor type
-				//set held object
-			}
+				std::invoke(on_click, o);
 
 			x2 = g.get_item_rect_max().x;
 		}
@@ -162,11 +161,17 @@ namespace hades
 					_current_group = i;
 			}
 
+			auto on_click_object = [this](const resources::object *o) {
+				activate_brush();
+				_brush_type = brush_type::object_place;
+				_held_object = o;
+			};
+
 			//create selector buttons for objects
 			if (_current_group == all_index)
 			{
 				//'all' is selected
-				add_object_buttons(g, toolbox_width, resources::all_objects);
+				add_object_buttons(g, toolbox_width, resources::all_objects, on_click_object);
 			}
 			else
 			{
@@ -175,10 +180,57 @@ namespace hades
 
 				const auto &group = _settings->groups[_current_group - 1];
 				add_object_buttons(g, toolbox_width,
-					std::get<std::vector<const resources::object*>>(group));
+					std::get<std::vector<const resources::object*>>(group), on_click_object);
 			}
 		}
 
 		g.window_end();
+	}
+
+	template<typename Object>
+	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, const Object &o)
+	{
+		const auto size = get_size(o);
+		const auto obj_pos = pos;
+		const auto anims = get_editor_animations(o);
+		if (anims.empty())
+		{
+			//make rect
+			auto rect = sf::RectangleShape{ {size.x, size.y} };
+			rect.setPosition({ obj_pos.x, obj_pos.y });
+			rect.setFillColor(sf::Color::Cyan);
+			rect.setOutlineColor(sf::Color::Cyan);
+			return rect;
+		}
+		else
+		{
+			//make sprite
+			const auto anim = anims[0];
+			auto sprite = sf::Sprite{};
+			animation::apply(*anim, time_point{}, sprite);
+			sprite.setPosition({ obj_pos.x, obj_pos.y });
+			return sprite;
+		}
+	}
+
+	void level_editor_objects::make_brush_preview(time_duration, mouse_pos pos)
+	{
+		switch (_brush_type)
+		{
+		case brush_type::object_place:
+		{
+			assert(_held_object);
+			_held_preview = make_held_preview(pos, *_held_object);
+		}break;
+		case brush_type::object_selector:
+		{
+			//if (_selected_object)
+			//	create selection indicator around object
+		}break;
+		case brush_type::object_drag:
+		{
+			//draw dragged object
+		}break;
+		}
 	}
 }

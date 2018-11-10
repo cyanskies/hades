@@ -66,7 +66,7 @@ namespace hades
 
 		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
 
-		virtual void draw_brush_preview() const {};
+		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
 
 		//TODO: onsave, onload
 

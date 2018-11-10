@@ -109,7 +109,7 @@ namespace hades::detail
 	void level_editor_impl::draw(sf::RenderTarget &rt, time_duration dt)
 	{
 		rt.setView(_world_view);
-		_draw_components(rt, dt);
+		_draw_components(rt, dt, _active_brush);
 
 		rt.setView(_gui_view);
 		rt.draw(_gui);

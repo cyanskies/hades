@@ -190,7 +190,14 @@ namespace hades
 	template<typename Object>
 	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, const Object &o)
 	{
-		const auto size = get_size(o);
+		const auto size = [&o]()->vector_float {
+			auto s = get_size(o);
+			if (s.x < 1 || s.y < 1)
+				return { 8.f, 8.f };
+
+			return s;
+		}();
+
 		const auto obj_pos = pos;
 		const auto anims = get_editor_animations(o);
 		if (anims.empty())
@@ -208,6 +215,17 @@ namespace hades
 			const auto anim = anims[0];
 			auto sprite = sf::Sprite{};
 			animation::apply(*anim, time_point{}, sprite);
+			const auto anim_size = vector_int{ anim->width, anim->height };
+			const auto round_size = static_cast<vector_int>(size);
+
+			if (anim_size != round_size)
+			{
+				const auto scale = sf::Vector2f{ size.x / static_cast<float>(anim_size.x),
+												 size.y / static_cast<float>(anim_size.y) };
+
+				sprite.setScale(scale);
+			}
+
 			sprite.setPosition({ obj_pos.x, obj_pos.y });
 			return sprite;
 		}
@@ -232,5 +250,12 @@ namespace hades
 			//draw dragged object
 		}break;
 		}
+	}
+
+	void level_editor_objects::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+	{
+		std::visit([&t, s](auto &&p) {
+			t.draw(p, s);
+		}, _held_preview);
 	}
 }

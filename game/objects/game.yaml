@@ -60,4 +60,4 @@ objects:
             - [cool, true]
     ball:
         editor-icon: ball-anim
-        editor-anim: ball-anim
+        editor-anim: [ball-anim]

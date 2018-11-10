@@ -9,37 +9,37 @@
 namespace hades
 {
 	template<typename T>
-	bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return lhs.x == rhs.x && lhs.y == rhs.y;
 	}
 
 	template<typename T>
-	bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	constexpr bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	template<typename T>
-	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	constexpr vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return { lhs.x + rhs.x, lhs.y + rhs.y };
 	}
 
 	template<typename T>
-	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs)
+	constexpr vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{
 		return { lhs.x - rhs.x, lhs.y - rhs.y };
 	}
 
 	template<typename T>
-	vector_t<T> operator*(const vector_t<T> &lhs, T rhs)
+	constexpr vector_t<T> operator*(const vector_t<T> &lhs, T rhs)
 	{
 		return { lhs.x * rhs, lhs.y * rhs };
 	}
 
 	template<typename T>
-	vector_t<T> operator/(const vector_t<T> &lhs, T rhs)
+	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs)
 	{
 		return { lhs.x / rhs, lhs.y / rhs };
 	}
@@ -59,7 +59,7 @@ namespace hades
 	namespace vector
 	{
 		template<typename T>
-		T magnitude(vector_t<T> v)
+		constexpr T magnitude(vector_t<T> v)
 		{
 			const auto mag = std::hypot(v.x, v.y);
 			//if T is not a floating point type then sqrt will return double
@@ -70,13 +70,13 @@ namespace hades
 		}
 
 		template<typename T>
-		T magnitude_squared(vector_t<T> v)
+		constexpr T magnitude_squared(vector_t<T> v)
 		{
 			return dot(v, v);
 		}
 
 		template<typename T>
-		T angle(vector_t<T> v)
+		constexpr T angle(vector_t<T> v)
 		{
 			return std::atan2(v.y, v.x);
 		}
@@ -94,7 +94,7 @@ namespace hades
 		}
 
 		template<typename T>
-		vector_t<T> resize(vector_t<T> v, T length)
+		constexpr vector_t<T> resize(vector_t<T> v, T length)
 		{
 			const auto mag = magnitude(v);
 			if (mag == 0)
@@ -104,7 +104,7 @@ namespace hades
 		}
 
 		template<typename T>
-		vector_t<T> unit(vector_t<T> v)
+		constexpr vector_t<T> unit(vector_t<T> v)
 		{
 			const auto mag = magnitude(v);
 			if (mag == 0)
@@ -114,32 +114,32 @@ namespace hades
 		}
 
 		template<typename T>
-		T distance(vector_t<T> a, vector_t<T> b)
+		constexpr T distance(vector_t<T> a, vector_t<T> b)
 		{
 			const auto ab = a - b;
 			return magnitude(ab);
 		}
 
 		template<typename T>
-		vector_t<T> reverse(vector_t<T> v)
+		constexpr vector_t<T> reverse(vector_t<T> v)
 		{
 			return { -v.x, -v.y };
 		}
 
 		template<typename T>
-		vector_t<T> perpendicular(vector_t<T> v)
+		constexpr vector_t<T> perpendicular(vector_t<T> v)
 		{
 			return { -v.y, x };
 		}
 
 		template<typename T>
-		vector_t<T> perpendicular_reverse(vector_t<T> v)
+		constexpr vector_t<T> perpendicular_reverse(vector_t<T> v)
 		{
 			return { v.y, -v.x };
 		}
 
 		template<typename T>
-		vector_t<T> clamp(vector_t<T> val, vector_t<T> min, vector_t<T> max)
+		constexpr vector_t<T> clamp(vector_t<T> val, vector_t<T> min, vector_t<T> max)
 		{
 			const auto x = std::clamp(val.x, std::min(min.x, max.x), std::max(min.x, max.x));
 			const auto y = std::clamp(val.y, std::min(min.y, max.y), std::max(min.y, max.y));
@@ -147,13 +147,13 @@ namespace hades
 		}
 
 		template<typename T>
-		T dot(vector_t<T> a, vector_t<T> b)
+		constexpr T dot(vector_t<T> a, vector_t<T> b)
 		{
 			return a.x * b.x + a.y * b.y;
 		}
 
 		template <typename T>
-		vector_t<T> project(vector_t<T> vector, vector_t<T> axis)
+		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis)
 		{
 			assert(axis != vector_t<T>());
 			return axis * (dot(vector, axis) / magnitude_squared(axis));

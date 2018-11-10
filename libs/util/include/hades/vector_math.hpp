@@ -12,6 +12,36 @@ namespace hades
 	struct vector_t
 	{
 		using value_type = T;
+
+		constexpr vector_t() noexcept = default;
+		constexpr vector_t(T x, T y) noexcept : x(x), y(y) {}
+
+		~vector_t() noexcept = default;
+	
+		template<typename U>
+		constexpr vector_t(const vector_t<U> &other) noexcept : x(static_cast<T>(other.x)), y(static_cast<T>(other.y))
+		{}
+
+		template<typename U>
+		constexpr vector_t(vector_t<U> &&other) noexcept : x(static_cast<T>(other.x)), y(static_cast<T>(other.y))
+		{}
+
+		template<typename U>
+		constexpr vector_t &operator=(const vector_t<U> &other) noexcept
+		{
+			x = static_cast<T>(other.x);
+			y = static_cast<T>(other.y);
+			return *this;
+		}
+
+		template<typename U>
+		constexpr vector_t &operator=(vector_t<U> &&other) noexcept
+		{
+			x = static_cast<T>(other.x);
+			y = static_cast<T>(other.y);
+			return *this;
+		}
+
 		T x{}, y{};
 	};
 
@@ -19,22 +49,22 @@ namespace hades
 	using vector_float = vector_t<float>;
 
 	template<typename T>
-	bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>
-	bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>
-	vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>
-	vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs);
 
 	template<typename T>
-	vector_t<T> operator*(const vector_t<T> &lhs, T rhs);
+	constexpr vector_t<T> operator*(const vector_t<T> &lhs, T rhs);
 
 	template<typename T>
-	vector_t<T> operator/(const vector_t<T> &lhs, T rhs);
+	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs);
 
 	//TODO: this should be pol_vector_t
 	template<typename T>
@@ -53,14 +83,14 @@ namespace hades
 	{
 		//returns the length of the vector
 		template<typename T>
-		T magnitude(vector_t<T>);
+		constexpr T magnitude(vector_t<T>);
 
 		template<typename T>
-		T magnitude_squared(vector_t<T> v);
+		constexpr T magnitude_squared(vector_t<T> v);
 
 		//returns the angle of the vector
 		template<typename T>
-		T angle(vector_t<T>);
+		constexpr T angle(vector_t<T>);
 
 		template<typename T>
 		T x_comp(rad_vector_t<T>);
@@ -70,33 +100,33 @@ namespace hades
 
 		//changes the length of a vector to match the provided length
 		template<typename T>
-		vector_t<T> resize(vector_t<T>, T length);
+		constexpr vector_t<T> resize(vector_t<T>, T length);
 
 		template<typename T>
-		vector_t<T> unit(vector_t<T>);
+		constexpr vector_t<T> unit(vector_t<T>);
 
 		template<typename T>
-		T distance(vector_t<T>, vector_t<T>);
+		constexpr T distance(vector_t<T>, vector_t<T>);
 
 		template<typename T>
-		vector_t<T> reverse(vector_t<T>);
+		constexpr vector_t<T> reverse(vector_t<T>);
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>
-		vector_t<T> perpendicular(vector_t<T>);
+		constexpr vector_t<T> perpendicular(vector_t<T>);
 
 		//returns a vector that points 280 degrees of the origional vector
 		template<typename T>
-		vector_t<T> perpendicular_reverse(vector_t<T>);
+		constexpr vector_t<T> perpendicular_reverse(vector_t<T>);
 
 		template<typename T>
-		vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max);
+		constexpr vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max);
 
 		template<typename T>
-		T dot(vector_t<T> a, vector_t<T> b);
+		constexpr T dot(vector_t<T> a, vector_t<T> b);
 
 		template <typename T>
-		vector_t<T> project(vector_t<T> vector, vector_t<T> axis);
+		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis);
 	}
 }
 

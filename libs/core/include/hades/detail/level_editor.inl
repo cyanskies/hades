@@ -52,11 +52,18 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target, time_duration delta_time)
+	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target, time_duration delta_time, brush_index_t active_brush)
 	{
-		auto states = sf::RenderStates{};
-		for_each_tuple(_editor_components, [&target, &delta_time, states](auto &&v) {
-			v.draw(target, delta_time, states);
+		for_each_tuple(_editor_components, [&target, &delta_time](auto &&v) {
+			v.draw(target, delta_time, sf::RenderStates{});
+		});
+
+		//draw brush preview
+		if (active_brush == invalid_brush)
+			return;
+
+		for_index_tuple(_editor_components, active_brush, [&target, &delta_time](auto &&v) {
+			v.draw_brush_preview(target, delta_time, sf::RenderStates{});
 		});
 	}
 

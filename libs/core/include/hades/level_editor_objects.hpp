@@ -33,6 +33,7 @@ namespace hades
 
 		void gui_update(gui&) override;
 		void make_brush_preview(time_duration, mouse_pos) override;
+		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
 	private:
 		enum class brush_type {

@@ -75,12 +75,12 @@ namespace hades::resources
 
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = data::get_uid(obj->editor_anims);
-			const auto animation_ids = get_sequence(node, "editor-anim"sv, current_ids);
+			const auto animation_ids = get_sequence(*o, "editor-anim"sv, current_ids);
 			obj->editor_anims = d.find_or_create<const animation>(animation_ids, mod);
 
 			//base objects
 			const auto current_base_ids = data::get_uid(obj->base);
-			const auto base_ids = get_sequence(node, "base"sv, current_base_ids);
+			const auto base_ids = get_sequence(*o, "base"sv, current_base_ids);
 			obj->base = d.find_or_create<const object>(base_ids, mod);
 
 			//curves

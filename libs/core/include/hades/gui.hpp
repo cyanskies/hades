@@ -144,6 +144,10 @@ namespace hades
 		void push_colour(colour_target element, const sf::Color&);
 		void pop_colour();
 
+		//current window parameters
+		void push_item_width(float width);
+		void pop_item_width();
+
 		//layouts
 		void separator_horizontal();
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
@@ -205,7 +209,6 @@ namespace hades
 			height_largest = ImGuiComboFlags_::ImGuiComboFlags_HeightLargest,
 			no_arrow_button = ImGuiComboFlags_::ImGuiComboFlags_NoArrowButton,
 			no_preview = ImGuiComboFlags_::ImGuiComboFlags_NoPreview,
-			height_mask = ImGuiComboFlags_::ImGuiComboFlags_HeightMask_
 		};
 
 		//combobox

@@ -44,6 +44,8 @@ namespace hades
 			region_place
 		};
 
+		//TODO: editor_object_instance
+
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
 		const resources::object *_held_object = nullptr;

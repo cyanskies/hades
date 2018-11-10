@@ -1,6 +1,10 @@
 mod:
     name: objects
 
+level-editor-object-settings:
+    object-groups:
+        example-group: test
+
 editor:
     object-groups:
         example-group: test

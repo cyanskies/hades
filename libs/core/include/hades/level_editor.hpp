@@ -4,6 +4,8 @@
 #include <string_view>
 #include <tuple>
 
+#include "SFML/Graphics/RectangleShape.hpp"
+
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
 #include "hades/properties.hpp"
@@ -66,6 +68,9 @@ namespace hades::detail
 
 		gui _gui;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
+
+		sf::RectangleShape _background;
+
 		time_point _total_run_time;
 
 		//currently active brush

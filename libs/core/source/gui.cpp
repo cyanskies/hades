@@ -242,6 +242,18 @@ namespace hades
 		ImGui::PopStyleColor();
 	}
 
+	void gui::push_item_width(float width)
+	{
+		_active_assert();
+		ImGui::PushItemWidth(width);
+	}
+
+	void gui::pop_item_width()
+	{
+		_active_assert();
+		ImGui::PopItemWidth();
+	}
+
 	void gui::separator_horizontal()
 	{
 		_active_assert();

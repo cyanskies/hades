@@ -35,10 +35,12 @@ namespace hades::resources
 
 				auto &group = iter != std::end(settings->groups) ? *iter : settings->groups.emplace_back();
 
-				std::vector<const object*> &group_content = std::get<1>(group);
-				group_content = g->merge_sequence(std::move(group_content), [](const std::string_view str_id) {
-					const auto id = data::get_uid(str_id);
-					return data::get<object>(id);
+				std::get<string>(group) = name;
+				auto &group_content = std::get<std::vector<const object*>>(group);
+
+				group_content = g->merge_sequence(std::move(group_content), [&d, mod](const std::string_view str_id) {
+					const auto id = d.get_uid(str_id);
+					return d.find_or_create<object>(id, mod);
 				});
 			}
 		}//!object_groups
@@ -126,7 +128,6 @@ namespace hades
 
 		g.main_toolbar_end();
 
-		std::size_t selected_index = 0u;
 		g.window_begin(editor::gui_names::toolbox);
 
 		const auto toolbox_width = g.get_item_rect_max().x;
@@ -138,7 +139,7 @@ namespace hades
 
 			//if selected == 0 then we're in the special 'all' group
 			//otherwise the preview should be set to the name of the selected group
-			if (g.combo_begin({}, selected_index == 0u ? all_str : std::get<string>(_settings->groups[selected_index - 1])))
+			if (g.combo_begin({}, _current_group == 0u ? all_str : std::get<string>(_settings->groups[_current_group - 1]), gui::combo_flags::height_largest))
 			{
 				_object_group_selection[0u] = g.selectable(all_str, _object_group_selection[0u]);
 
@@ -151,7 +152,6 @@ namespace hades
 
 				g.combo_end();
 			}
-
 			//add a dummy item, to move the input curser to the next line
 			g.dummy();
 
@@ -176,7 +176,7 @@ namespace hades
 			else
 			{
 				assert(_settings);
-				assert(_current_group == _settings->groups.size() - 1);
+				assert(_current_group <= _settings->groups.size());
 
 				const auto &group = _settings->groups[_current_group - 1];
 				add_object_buttons(g, toolbox_width,

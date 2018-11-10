@@ -71,12 +71,18 @@ namespace hades::data
 			try
 			{
 				const auto &node = _type == yaml_type::MAP ? _nodes.second : _nodes.first;
-				for (const auto &n : node)
+
+				if (node.IsScalar())
+					result.emplace_back(std::make_unique<yaml_parser_node>(node));
+				else
 				{
-					if(node.IsMap())
-						result.emplace_back(std::make_unique<yaml_parser_node>(n.first, n.second));
-					else
-						result.emplace_back(std::make_unique<yaml_parser_node>(n));
+					for (const auto &n : node)
+					{
+						if (node.IsMap())
+							result.emplace_back(std::make_unique<yaml_parser_node>(n.first, n.second));
+						else
+							result.emplace_back(std::make_unique<yaml_parser_node>(n));
+					}
 				}
 			}
 			catch (YAML::Exception&)

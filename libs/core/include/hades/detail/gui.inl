@@ -2,6 +2,18 @@
 
 namespace hades
 {
+	template<size_t Count>
+	inline void gui::indent()
+	{
+		size_t i = 0u;
+		while (i < Count)
+		{
+			dummy();
+			layout_horizontal();
+			++i;
+		}
+	}
+
 	template<typename T>
 	bool gui::radio_button(std::string_view label, T &active_selection, T this_button)
 	{

@@ -150,6 +150,8 @@ namespace hades
 
 		//layouts
 		void separator_horizontal();
+		template<size_t Count = 1u>
+		void indent();
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal
 		void vertical_spacing();

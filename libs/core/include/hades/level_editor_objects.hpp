@@ -51,10 +51,7 @@ namespace hades
 		const resources::object *_held_object = nullptr;
 		//_held_animation
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
-		//for controlling which group of objects is selected from 
-		// the ui combo box
-		std::vector<bool> _object_group_selection;
-		size_t _current_group = 0u;
+
 		//objects for drawing
 		//object instances
 	};

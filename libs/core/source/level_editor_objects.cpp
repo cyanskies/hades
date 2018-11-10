@@ -59,11 +59,6 @@ namespace hades
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
 
-		if (_settings)
-			_object_group_selection = std::vector<bool>(_settings->groups.size() + 1, false);
-		else
-			_object_group_selection = { false };
-
 		for (const auto o : resources::all_objects)
 		{
 			if (!o->loaded)
@@ -81,12 +76,16 @@ namespace hades
 		constexpr auto button_size_no_img = vector_float{ button_size.x + button_scale_diff,
 														  button_size.y + button_scale_diff };
 
+		g.indent();
+
 		auto x2 = 0.f;
 		for (const auto o : objects)
 		{
 			const auto new_x2 = x2 + button_size.x;
 			if (new_x2 < toolbox_width)
 				g.layout_horizontal();
+			else
+				g.indent();
 
 			auto clicked = false;
 			
@@ -136,51 +135,23 @@ namespace hades
 		{
 			constexpr auto all_str = "all"sv;
 			constexpr auto all_index = 0u;
-
-			//if selected == 0 then we're in the special 'all' group
-			//otherwise the preview should be set to the name of the selected group
-			if (g.combo_begin({}, _current_group == 0u ? all_str : std::get<string>(_settings->groups[_current_group - 1]), gui::combo_flags::height_largest))
-			{
-				_object_group_selection[0u] = g.selectable(all_str, _object_group_selection[0u]);
-
-				for (std::size_t i = 1u; i < _object_group_selection.size(); ++i)
-				{
-					assert(_settings);
-					assert(i - 1 < _settings->groups.size());
-					_object_group_selection[i] = g.selectable(std::get<string>(_settings->groups[i - 1]), _object_group_selection[i]);
-				}
-
-				g.combo_end();
-			}
-			//add a dummy item, to move the input curser to the next line
-			g.dummy();
-
-			for(std::size_t i = 0u; i < _object_group_selection.size(); ++i)
-			{
-				if (_object_group_selection[i])
-					_current_group = i;
-			}
-
 			auto on_click_object = [this](const resources::object *o) {
 				activate_brush();
 				_brush_type = brush_type::object_place;
 				_held_object = o;
 			};
 
-			//create selector buttons for objects
-			if (_current_group == all_index)
-			{
-				//'all' is selected
-				add_object_buttons(g, toolbox_width, resources::all_objects, on_click_object);
-			}
-			else
-			{
-				assert(_settings);
-				assert(_current_group <= _settings->groups.size());
+			g.indent();
 
-				const auto &group = _settings->groups[_current_group - 1];
-				add_object_buttons(g, toolbox_width,
-					std::get<std::vector<const resources::object*>>(group), on_click_object);
+			if (g.collapsing_header("all"sv))
+				add_object_buttons(g, toolbox_width, resources::all_objects, on_click_object);
+
+			for (const auto &group : _settings->groups)
+			{
+				g.indent();
+
+				if (g.collapsing_header(std::get<string>(group)))
+					add_object_buttons(g, toolbox_width, std::get<std::vector<const resources::object*>>(group), on_click_object);
 			}
 		}
 

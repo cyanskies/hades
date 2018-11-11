@@ -21,6 +21,7 @@ namespace hades
 
 		extern input_id mouse_position;
 		extern input_id mouse_left;
+		extern input_id mouse_wheel;
 	}
 
 	namespace mouse
@@ -78,6 +79,7 @@ namespace hades
 	//such as mouse position and buttons:
 	// mouse - mouse position
 	// mouseleft - mouse button 1
+	// mousewheel - mouse wheel axis
 	void register_mouse_input(input_system &bind);
 }
 

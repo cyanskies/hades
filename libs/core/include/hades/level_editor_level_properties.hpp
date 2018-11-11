@@ -13,7 +13,9 @@ namespace hades
 	class level_editor_level_props final : public level_editor_component
 	{
 	public:
+		void level_load(const level&) override;
 		void gui_update(gui&) override;
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
 	private:
 		sf::RectangleShape _background;

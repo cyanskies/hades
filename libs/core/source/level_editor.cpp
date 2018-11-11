@@ -1,11 +1,27 @@
 #include "hades/level_editor.hpp"
 
+#include "hades/camera.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 
 namespace hades::detail
 {
+	level_editor_impl::level_editor_impl()
+	{
+		const auto default_size = console::get_int(cvars::editor_level_default_size);
+
+		_level.map_x = *default_size;
+		_level.map_y = *default_size;
+		using namespace std::string_literals;
+		_level.name = "A brand new level"s;
+		_level.description = "An emptpy level, ready to by filled with content"s;
+	}
+
+	level_editor_impl::level_editor_impl(level l) : _level(std::move(l))
+	{
+	}
+
 	void level_editor_impl::init()
 	{
 		_camera_height = console::get_int(cvars::editor_camera_height_px);
@@ -16,6 +32,8 @@ namespace hades::detail
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate);
 
 		_handle_component_setup();
+
+		_component_on_load(_level);
 
 		reinit();
 	}
@@ -29,16 +47,14 @@ namespace hades::detail
 	{
 		const auto width = console::get_int(cvars::video_width);
 		const auto height = console::get_int(cvars::video_height);
+		const auto view_height = console::get_int(cvars::editor_camera_height_px);
 
 		_window_width = static_cast<float>(*width);
 		_window_height = static_cast<float>(*height);
 
 		_gui_view.reset({ 0.f, 0.f, _window_width, _window_height });
 
-		const float screen_ratio = _window_width / _window_height;
-		const auto camera_height = static_cast<float>(*_camera_height);
-		//set size to preserve view position
-		_world_view.setSize({ camera_height * screen_ratio, camera_height });
+		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_height, _window_width);
 
 		_gui.set_display_size({ _window_width, _window_height });
 
@@ -78,8 +94,8 @@ namespace hades::detail
 
 				const auto pos = _world_view.getCenter();
 
-				const auto new_x = std::clamp(pos.x, 0.f, static_cast<float>(_level_x));
-				const auto new_y = std::clamp(pos.y, 0.f, static_cast<float>(_level_y));
+				const auto new_x = std::clamp(pos.x, 0.f, static_cast<float>(_level.map_x));
+				const auto new_y = std::clamp(pos.y, 0.f, static_cast<float>(_level.map_y));
 
 				_world_view.setCenter({ new_x, new_y });
 			}

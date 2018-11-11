@@ -6,6 +6,7 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
+#include "hades/level.hpp"
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
@@ -26,8 +27,7 @@ namespace hades
 {
 	class gui;
 	struct mission;
-	struct level;
-
+	
 	class level_editor_component
 	{
 	public:
@@ -46,6 +46,9 @@ namespace hades
 		{
 			_activate_brush();
 		}
+
+		virtual void level_load(const level&) {};
+		virtual level level_save(level) const { return level{}; };
 
 		virtual void gui_update(gui&) {};
 
@@ -72,11 +75,6 @@ namespace hades
 
 	private:
 		activate_brush_f _activate_brush;
-
-		//for auto complete and
-		//lookups of immutable data
-		const mission *_mission = nullptr;
-		const level *_level = nullptr;
 	};
 }
 

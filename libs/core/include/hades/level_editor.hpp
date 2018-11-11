@@ -22,6 +22,11 @@ namespace hades::detail
 	class level_editor_impl : public state
 	{
 	public:
+		level_editor_impl();
+		level_editor_impl(level);
+
+		virtual ~level_editor_impl() noexcept = default;
+
 		void init() override;
 		bool handle_event(const event&) override;
 		void reinit() override;
@@ -33,6 +38,8 @@ namespace hades::detail
 	protected:
 		using brush_index_t = std::size_t;
 
+		virtual void _component_on_load(const level&) = 0;
+		virtual level _component_on_save(level) const = 0;
 		virtual void _component_on_click(brush_index_t, vector_float) = 0;
 		virtual void _component_on_drag_start(brush_index_t, vector_float) = 0;
 		virtual void _component_on_drag(brush_index_t, vector_float) = 0;
@@ -56,17 +63,16 @@ namespace hades::detail
 		console::property_float _scroll_rate;
 
 		//level width, height
-		level_size_t _level_x = 0, _level_y = 0;
+		//level_size_t _level_x = 0, _level_y = 0;
 
 		sf::View _gui_view;
 		sf::View _world_view;
-
-		level *_level = nullptr;
 
 	private:
 		void _update_gui(time_duration);
 
 		gui _gui;
+		level _level;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 
 		sf::RectangleShape _background;
@@ -87,6 +93,8 @@ namespace hades
 	class basic_level_editor final : public detail::level_editor_impl
 	{
 	private:
+		void _component_on_load(const level&) override;
+		level _component_on_save(level) const override;
 		void _component_on_click(brush_index_t, vector_float) override;
 		void _component_on_drag_start(brush_index_t, vector_float) override;
 		void _component_on_drag(brush_index_t, vector_float) override;
@@ -124,7 +132,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_toolbox_width = -1;
 	constexpr auto editor_toolbox_auto_width = 4;
 
-	constexpr auto editor_scroll_margin_size = 8;
+	constexpr auto editor_scroll_margin_size = 20;
 	constexpr auto editor_scroll_rate = 4.f;
 
 	constexpr auto editor_camera_height_px = 600;

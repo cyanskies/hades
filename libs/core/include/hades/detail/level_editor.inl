@@ -20,6 +20,24 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_load(const level &l)
+	{
+		for_each_tuple(_editor_components, [&l](auto &&c) {
+			c.level_load(l);
+		});
+	}
+
+	template<typename ...Components>
+	inline level basic_level_editor<Components...>::_component_on_save(level l) const
+	{
+		for_each_tuple(_editor_components, [&l](auto &&c) {
+			l = c.level_save(std::move(l));
+		});
+
+		return l;
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
@@ -78,6 +96,8 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_handle_component_setup()
 	{
+		_editor_components = component_tuple{};
+
 		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
 			auto activate_brush = [this, index] {
 				_set_active_brush(index);

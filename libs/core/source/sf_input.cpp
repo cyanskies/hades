@@ -160,6 +160,30 @@ namespace hades
 		return {is_match, event_check, nullptr};
 	}
 
+	interpreter_funcs mouse_wheel(const sf::Window &window)
+	{
+		auto is_match = [](const sf::Event &e) {
+			if (e.type == sf::Event::MouseWheelScrolled)
+				return e.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel;
+
+			return false;
+		};
+
+		auto event_check = [&window](bool handled, const sf::Event &e) {
+			action a;
+
+			if (!handled && e.type == sf::Event::MouseWheelScrolled)
+			{
+				a.active = in_window({ e.mouseWheelScroll.x, e.mouseWheelScroll.y }, window);
+				a.y_axis = static_cast<int32>(e.mouseWheelScroll.delta * 100);
+			}
+
+			return a;
+		};
+
+		return { is_match, event_check, nullptr };
+	}
+
 	void register_sfml_input(const sf::Window &win, input_event_system &sys)
 	{
 		std::map<types::string, interpreter_funcs> interpreter_map;
@@ -280,6 +304,7 @@ namespace hades
 		interpreter_map.insert({ "mouse_x2", mouse_button<sf::Mouse::Button::XButton2>(win) });
 		//mouse axis
 		interpreter_map.insert({ "mouse", mouse_pos(win) });
+		interpreter_map.insert({ "mousewheel", mouse_wheel(win) });
 		//mouseMoveRelative
 		//=====joy buttons=====
 		//TODO: impliment for joystick

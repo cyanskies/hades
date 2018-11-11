@@ -4,6 +4,7 @@
 set(HADES_CORE_SRC
 	animation.cpp
 	archive.cpp
+	camera.cpp
 	core_curves.cpp
 	core_resources.cpp
 	files.cpp
@@ -23,6 +24,7 @@ set(HADES_CORE_SRC
 	texture.cpp
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp
@@ -32,6 +34,7 @@ set(HADES_CORE_SRC
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
+	../include/hades/level_editor_grid.hpp
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp
@@ -62,6 +65,7 @@ source_group("Headers" FILES
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
+	../include/hades/level_editor_grid.hpp
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
 	../include/hades/level_interface.hpp

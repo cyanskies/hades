@@ -4,47 +4,44 @@
 //the for each
 namespace hades::detail
 {
-	template<typename Func, std::size_t Count, typename ...Ts>
-	inline void for_each_worker(std::tuple<Ts...> &t, Func f)
+	template<typename Func, std::size_t Count, typename Tuple>
+	inline void for_each_worker(Tuple &t, Func f)
 	{
-		if constexpr (Count >= std::tuple_size_v<std::tuple<Ts...>>)
-			return;
+		using T = std::tuple_element_t<Count, Tuple>;
+		if constexpr (std::is_invocable_v<Func, T, std::size_t>)
+			std::invoke(f, std::get<Count>(t), Count);
 		else
-		{
-			using T = std::tuple_element_t<Count, std::tuple<Ts...>>;
-			if constexpr (std::is_invocable_v<Func, T, std::size_t>)
-				std::invoke(f, std::get<Count>(t), Count);
-			else
-				std::invoke(f, std::get<Count>(t));
+			std::invoke(f, std::get<Count>(t));
 
-			for_each_worker<Func, Count + 1, Ts...>(t, f);
-		}
+		if constexpr(Count + 1 < std::tuple_size_v<Tuple>)
+			for_each_worker<Func, Count + 1, Tuple>(t, f);
 	}
 
-	template<typename Func, std::size_t Count, typename ...Ts>
-	inline void for_index_worker(std::tuple<Ts...> &t, std::size_t index, Func f)
+	template<typename Func, std::size_t Count, typename Tuple>
+	inline void for_index_worker(Tuple &t, std::size_t i, Func f)
 	{
-		if constexpr (Count >= std::tuple_size_v<std::tuple<Ts...>>)
-			return;
-		else
-		{
-			if (Count == index)
-			{
-				std::invoke(f, std::get<Count>(t));
-				return;
-			}
-
-			for_each_worker<Func, Count + 1, Ts...>(t, f);
-		}
+		if (Count == i)
+			std::invoke(f, std::get<Count>(t));
+		else if constexpr(Count + 1 < std::tuple_size_v<Tuple>)
+			for_index_worker<Func, Count + 1, Tuple>(t, i, f);
 	}
 }
 
 namespace hades
 {
 	template<typename Func, typename ...Ts>
+	void for_each_tuple(const std::tuple<Ts...> &t, Func f)
+	{
+		assert(std::tuple_size_v<std::tuple<Ts...>> > 0);
+		detail::for_each_worker<Func, std::size_t{0u}>(t, f);
+	}
+
+
+	template<typename Func, typename ...Ts>
 	void for_each_tuple(std::tuple<Ts...> &t, Func f)
 	{
-		detail::for_each_worker < Func, std::size_t{ 0 }, Ts... > (t, f);
+		assert(std::tuple_size_v<std::tuple<Ts...>> > 0);
+		detail::for_each_worker<Func, std::size_t{0u}>(t, f);
 	}
 
 	template<typename Func, typename ...Ts>
@@ -52,6 +49,7 @@ namespace hades
 	{
 		assert(i <= std::tuple_size_v<std::tuple<Ts...>>);
 
-		detail::for_index_worker < Func, std::size_t{ 0 }, Ts... > (t, i, f);
+
+		detail::for_index_worker<Func, std::size_t{0u}>(t, i, f);
 	}
 }

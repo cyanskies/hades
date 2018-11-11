@@ -159,7 +159,7 @@ namespace hades
 	}
 
 	template<typename Object>
-	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, const Object &o)
+	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, const Object &o, const resources::level_editor_object_settings &s)
 	{
 		const auto size = [&o]()->vector_float {
 			auto s = get_size(o);
@@ -176,8 +176,8 @@ namespace hades
 			//make rect
 			auto rect = sf::RectangleShape{ {size.x, size.y} };
 			rect.setPosition({ obj_pos.x, obj_pos.y });
-			rect.setFillColor(sf::Color::Cyan);
-			rect.setOutlineColor(sf::Color::Cyan);
+			rect.setFillColor(s.object_colour);
+			rect.setOutlineColor(s.object_colour);
 			return rect;
 		}
 		else
@@ -209,7 +209,7 @@ namespace hades
 		case brush_type::object_place:
 		{
 			assert(_held_object);
-			_held_preview = make_held_preview(pos, *_held_object);
+			_held_preview = make_held_preview(pos, *_held_object, *_settings);
 		}break;
 		case brush_type::object_selector:
 		{

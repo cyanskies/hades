@@ -96,6 +96,20 @@ namespace hades
 
 	using namespace sprite_utility;
 
+	sprite_batch::sprite_batch(const sprite_batch &other) : _sprites{other._sprites}, _draw_clamp{other._draw_clamp},
+		_vertex{other._vertex}, _used_ids{other._used_ids}, _id_count{other._id_count}
+	{}
+
+	sprite_batch &sprite_batch::operator=(const sprite_batch &other)
+	{
+		_sprites = other._sprites;
+		_draw_clamp = other._draw_clamp;
+		_vertex = other._vertex;
+		_used_ids = other._used_ids;
+		_id_count = other._id_count;
+		return *this;
+	}
+
 	void sprite_batch::clear()
 	{
 		//get the exclusive lock

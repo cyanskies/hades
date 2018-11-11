@@ -135,7 +135,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_scroll_margin_size = 20;
 	constexpr auto editor_scroll_rate = 4.f;
 
-	constexpr auto editor_camera_height_px = 600;
+	constexpr auto editor_camera_height_px = 320;
 
 	constexpr auto editor_zoom_max = 4;
 	constexpr auto editor_zoom_default = 2;

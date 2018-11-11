@@ -8,6 +8,7 @@
 
 #include "hades/level_editor_component.hpp"
 #include "hades/objects.hpp"
+#include "hades/quad_map.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 
@@ -45,16 +46,26 @@ namespace hades
 			region_place
 		};
 
-		//TODO: editor_object_instance
+		struct editor_object_instance final : object_instance
+		{
+			editor_object_instance() noexcept = default;
+			editor_object_instance(const object_instance&);
+
+			sprite_batch::sprite_id _id = sprite_utility::sprite::bad_sprite_id;
+		};
 
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
-		const resources::object *_held_object = nullptr;
+		editor_object_instance _held_object;
 		//_held_animation
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 
 		//objects for drawing
+		sprite_batch _sprites;
 		//object instances
+		std::vector<editor_object_instance> _objects;
+		quad_tree<entity_id> _quad;
+		//TODO: name list
 	};
 }
 

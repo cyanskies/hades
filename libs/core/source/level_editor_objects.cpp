@@ -138,7 +138,7 @@ namespace hades
 			auto on_click_object = [this](const resources::object *o) {
 				activate_brush();
 				_brush_type = brush_type::object_place;
-				_held_object = o;
+				_held_object = make_instance(o);
 			};
 
 			g.indent();
@@ -208,8 +208,7 @@ namespace hades
 		{
 		case brush_type::object_place:
 		{
-			assert(_held_object);
-			_held_preview = make_held_preview(pos, *_held_object, *_settings);
+			_held_preview = make_held_preview(pos, _held_object, *_settings);
 		}break;
 		case brush_type::object_selector:
 		{
@@ -228,5 +227,10 @@ namespace hades
 		std::visit([&t, s](auto &&p) {
 			t.draw(p, s);
 		}, _held_preview);
+	}
+
+	level_editor_objects::editor_object_instance::editor_object_instance(const object_instance &o)
+		: object_instance{o}
+	{
 	}
 }

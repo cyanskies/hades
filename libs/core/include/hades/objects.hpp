@@ -67,7 +67,7 @@ namespace hades
 		using std::runtime_error::runtime_error;
 	};
 
-	object_instance make_instance(const resources::object&);
+	object_instance make_instance(const resources::object*);
 
 	//functions for getting info from objects
 	//checks base classes if the requested info isn't available in the current class
@@ -87,6 +87,7 @@ namespace hades
 	curve_value valid_vector_curve(hades::resources::curve_default_value v);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);
+	resources::object::animation_list get_editor_animations(const object_instance &o);
 
 	//helpers for common curves
 	string get_name(const object_instance &o);

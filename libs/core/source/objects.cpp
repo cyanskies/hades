@@ -216,6 +216,11 @@ namespace hades
 		return data::get_as_string(o.id);
 	}
 
+	object_instance make_instance(const resources::object *o)
+	{
+		return object_instance{ o };
+	}
+
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
 	{
 		for (auto cur : o.curves)
@@ -390,6 +395,12 @@ namespace hades
 		}
 
 		return resources::object::animation_list{};
+	}
+
+	resources::object::animation_list get_editor_animations(const object_instance & o)
+	{
+		assert(o.obj_type);
+		return get_editor_animations(*o.obj_type);
 	}
 
 	template<typename Object>

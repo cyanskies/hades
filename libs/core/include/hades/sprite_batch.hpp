@@ -41,10 +41,8 @@ namespace hades
 		{
 			sprite() = default;
 			sprite(const sprite &other);
-			sprite(sprite&&);
 			sprite &operator=(const sprite &other);
-			sprite &operator=(sprite&&);
-
+			
 			using sprite_id = int64;
 
 			static constexpr auto bad_sprite_id = std::numeric_limits<sprite_id>::min();
@@ -69,6 +67,12 @@ namespace hades
 	{
 	public:
 		using sprite_id = sprite_utility::sprite::sprite_id;
+
+		sprite_batch() = default;
+		sprite_batch(const sprite_batch&);
+
+		sprite_batch &operator=(const sprite_batch&);
+
 		//clears all of the stored data
 		void clear();
 

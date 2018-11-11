@@ -16,7 +16,6 @@ set(HADES_SRC
 	RenderInterface.cpp
 	Server.cpp
 	simple_resources.cpp
-	SpriteBatch.cpp
 	StateManager.cpp
 	yaml_parser.cpp
 	yaml_writer.cpp

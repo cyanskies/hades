@@ -19,6 +19,7 @@ set(HADES_CORE_SRC
 	mouse_input.cpp
 	objects.cpp
 	sf_input.cpp
+	sprite_batch.cpp
 	standard_paths.cpp
 	state.cpp
 	texture.cpp
@@ -41,6 +42,7 @@ set(HADES_CORE_SRC
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
 	../include/hades/texture.hpp
@@ -72,6 +74,7 @@ source_group("Headers" FILES
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
 	../include/hades/texture.hpp

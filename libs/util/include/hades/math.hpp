@@ -4,6 +4,7 @@
 #include <array>
 #include <tuple>
 
+#include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades
@@ -14,8 +15,17 @@ namespace hades
 	template<typename T>
 	struct rect_t
 	{
-		T x, y, width, height;
+		T x{}, y{}, width{}, height{};
 	};
+
+	template<typename T>
+	bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs);
+
+	template<typename T>
+	bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs);
+
+	using rect_int = rect_t<int32>;
+	using rect_float = rect_t<float>;
 
 	template<typename T>
 	struct rect_centre_t
@@ -23,11 +33,20 @@ namespace hades
 		T x, y, half_width, half_height;
 	};
 
+	using rect_centre_int = rect_centre_t<int32>;
+	using rect_centre_float = rect_centre_t<float>;
+
 	template<typename T>
 	rect_t<T> to_rect(rect_centre_t<T>);
 
 	template<typename T>
 	rect_centre_t<T> to_rect_centre(rect_t<T>);
+
+	template<typename T>
+	bool intersects(const rect_t<T>&, const rect_t<T>&);
+
+	template<typename T>
+	bool intersect_area(const rect_t<T>&, const rect_t<T>&, rect_t<T> &area);
 
 	template<typename T>
 	rect_t<T> normalise(rect_t<T>);

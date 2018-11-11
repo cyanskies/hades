@@ -9,6 +9,7 @@
 #include "hades/level_editor_component.hpp"
 #include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/sprite_batch.hpp"
 
 namespace hades::resources
 {

@@ -31,6 +31,12 @@ namespace hades {
 
 		template<typename ...Types> struct always_false : public std::false_type {};
 
+		template<typename ...Ts>
+		constexpr auto always_false_v = always_false<Ts...>::value;
+
+		template<typename ...Ts>
+		constexpr auto always_true_v = !always_false_v<Ts...>::value;
+
 		//string to value conversion
 		template<typename T>
 		T stov(std::string value)
@@ -39,36 +45,6 @@ namespace hades {
 			static_assert(always_false<T>::value, "Tried to convert type not covered by stov");
 			return T();
 		}
-
-		// type conversion
-		// TODO: remove all but the specialisations needed by console
-		// and curves
-		template<>
-		signed char stov<signed char>(std::string value);
-		template<>
-		unsigned char stov<unsigned char>(std::string value);
-		template<>
-		short stov<short>(std::string value);
-		template<>
-		unsigned short stov<unsigned short>(std::string value);
-		template<>
-		int stov<int>(std::string value);
-		template<>
-		unsigned int stov<unsigned int>(std::string value);
-		template<>
-		long long stov<long long>(std::string value);
-		template<>
-		unsigned long long stov<unsigned long long>(std::string value);
-		template<>
-		float stov<float>(std::string value);
-		template<>
-		double stov<double>(std::string value);
-		template<>
-		long double stov<long double>(std::string value);
-		template<>
-		bool stov<bool>(std::string value);
-		template<>
-		std::string stov<std::string>(std::string value);
 	}
 
 	using namespace types;

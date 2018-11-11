@@ -3,7 +3,6 @@
 # C++ source files
 set(HADES_UTIL_SRC
 	parallel_jobs.cpp
-	types.cpp
 	utility.cpp
 	../include/hades/any_map.hpp
 	../include/hades/curve.hpp

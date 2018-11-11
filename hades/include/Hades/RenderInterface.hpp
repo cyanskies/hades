@@ -2,7 +2,7 @@
 #define HADES_RENDERINTERFACE_HPP
 
 #include "hades/level_interface.hpp"
-#include "hades/SpriteBatch.hpp"
+#include "hades/sprite_batch.hpp"
 
 namespace hades
 {
@@ -10,9 +10,9 @@ namespace hades
 	{
 	public:
 		//controls for messing with sprites
-		SpriteBatch *getSprites();
+		sprite_batch  *getSprites();
 	protected:
-		SpriteBatch _sprites;
+		sprite_batch  _sprites;
 	};
 }
 

@@ -5,7 +5,15 @@
 namespace hades
 {
 	template<typename T>
-	bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs)
+	constexpr inline rect_t<T>::rect_t(T x, T y, T width, T height) noexcept
+		: x{ x }, y{ y }, width{ width }, height{ height } {}
+
+	template<typename T>
+	constexpr inline rect_t<T>::rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept
+		: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
+
+	template<typename T>
+	constexpr bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs)
 	{
 		return lhs.x == rhs.x,
 			lhs.y == rhs.y,
@@ -14,7 +22,7 @@ namespace hades
 	}
 
 	template<typename T>
-	bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs)
+	constexpr bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs)
 	{
 		return !(lhs == rhs);
 	}
@@ -88,10 +96,10 @@ namespace hades
 	std::array<point_t<T>, 4> corners(rect_t<T> r)
 	{
 		return {
-			point_t<T>{r.x, r.y},
-			point_t<T>{r.x + r.width, r.y},
-			point_t<T>{r.x + r.width, r.y + r.height},
-			point_t<T>{r.x, r.y + r.height}
+			point_t{r.x, r.y},
+			point_t{r.x + r.width, r.y},
+			point_t{r.x + r.width, r.y + r.height},
+			point_t{r.x, r.y + r.height}
 		};
 	}
 

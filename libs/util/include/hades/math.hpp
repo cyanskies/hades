@@ -16,41 +16,18 @@ namespace hades
 	template<typename T>
 	struct rect_t
 	{
-		rect_t() noexcept = default;
-
-		rect_t(const std::initializer_list<T>&l) noexcept
-		{
-			//we only have 4 members, a longer init list is a programmer error
-			assert(l.size() < 5u);
-
-			auto rbegin = std::rbegin(l);
-			switch (l.size())
-			{
-			case 4:
-				height = *rbegin++;
-				[[fallthrough]];
-			case 3:
-				width = *rbegin++;
-				[[fallthrough]];
-			case 2:
-				y = *rbegin++;
-				[[fallthrough]];
-			case 1:
-				x = *rbegin++;
-			}
-		}
-
-		rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept
-			: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
+		constexpr rect_t() noexcept = default;
+		constexpr rect_t(T x, T y, T width, T height) noexcept;
+		constexpr rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept;
 
 		T x{}, y{}, width{}, height{};
 	};
 
 	template<typename T>
-	bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs);
+	constexpr bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs);
 
 	template<typename T>
-	bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs);
+	constexpr bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs);
 
 	using rect_int = rect_t<int32>;
 	using rect_float = rect_t<float>;
@@ -58,7 +35,7 @@ namespace hades
 	template<typename T>
 	struct rect_centre_t
 	{
-		T x, y, half_width, half_height;
+		T x{}, y{}, half_width{}, half_height{};
 	};
 
 	using rect_centre_int = rect_centre_t<int32>;
@@ -82,7 +59,7 @@ namespace hades
 	template<typename T>
 	T clamp(T value, T min, T max);
 
-	enum rect_corners {
+	enum rect_corners : std::size_t {
 		top_left,
 		top_right,
 		bottom_right,

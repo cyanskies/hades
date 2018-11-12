@@ -2,6 +2,7 @@
 #define HADES_UTIL_MATH_HPP
 
 #include <array>
+#include <cassert>
 #include <tuple>
 
 #include "hades/types.hpp"
@@ -15,6 +16,33 @@ namespace hades
 	template<typename T>
 	struct rect_t
 	{
+		rect_t() noexcept = default;
+
+		rect_t(const std::initializer_list<T>&l) noexcept
+		{
+			//we only have 4 members, a longer init list is a programmer error
+			assert(l.size() < 5u);
+
+			auto rbegin = std::rbegin(l);
+			switch (l.size())
+			{
+			case 4:
+				height = *rbegin++;
+				[[fallthrough]];
+			case 3:
+				width = *rbegin++;
+				[[fallthrough]];
+			case 2:
+				y = *rbegin++;
+				[[fallthrough]];
+			case 1:
+				x = *rbegin++;
+			}
+		}
+
+		rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept
+			: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
+
 		T x{}, y{}, width{}, height{};
 	};
 

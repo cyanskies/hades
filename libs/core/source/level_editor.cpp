@@ -89,7 +89,7 @@ namespace hades::detail
 
 				if (mouse_position->y_axis < margin + _top_min)
 					_world_view.move({ 0.f, -rate });
-				else if (mouse_position->y_axis > static_cast<int32>(_window_height) + margin)
+				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
 				const auto pos = _world_view.getCenter();

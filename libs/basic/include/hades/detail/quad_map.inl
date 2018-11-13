@@ -85,7 +85,7 @@ namespace hades
 			{
 				//create four chilren, then reinsert the current entities held in data.
 				//then insert this entity
-				const int halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
+				const auto halfwidth = (_area.width / 2) + 1, halfheight = (_area.height / 2) + 1;
 				const rect_type tlrect{ _area.x, _area.y, halfwidth, halfheight },
 					trrect{ tlrect.x + tlrect.width, tlrect.y, halfwidth, halfheight },
 					blrect{ tlrect.x, tlrect.y + tlrect.height, halfwidth, halfheight },

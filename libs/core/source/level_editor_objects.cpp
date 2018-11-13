@@ -213,10 +213,10 @@ namespace hades
 	}
 
 	template<typename Object>
-	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit, const Object &o, const resources::level_editor_object_settings &s)
+	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit,
+		const Object &o, const resources::level_editor_object_settings &s, const quad_tree<entity_id, rect_float> &quads)
 	{
 		const auto size = get_safe_size(o);
-
 		const auto obj_pos = pos;
 
 		if(!within_level(pos, size, level_limit))
@@ -228,7 +228,11 @@ namespace hades
 			//make rect
 			auto rect = sf::RectangleShape{ {size.x, size.y} };
 			rect.setPosition({ obj_pos.x, obj_pos.y });
-			rect.setFillColor(s.object_colour);
+
+			auto col = s.object_colour;
+			col.a -= col.a / 8;
+
+			rect.setFillColor(col);
 			rect.setOutlineColor(s.object_colour);
 			return rect;
 		}
@@ -250,6 +254,10 @@ namespace hades
 			}
 
 			sprite.setPosition({ obj_pos.x, obj_pos.y });
+			auto col = sprite.getColor();
+
+			col.a -= col.a / 8;
+			sprite.setColor(col);
 			return sprite;
 		}
 	}
@@ -261,7 +269,7 @@ namespace hades
 		case brush_type::object_place:
 		{
 			assert(_held_object);
-			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings);
+			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings, _quad);
 		}break;
 		case brush_type::object_selector:
 		{
@@ -309,9 +317,14 @@ namespace hades
 		{
 			const auto size = get_safe_size(*_held_object);
 		
-			if (within_level(pos, size, _level_limit))
+			const auto bounding_rect = rect_float{ pos, size };
+			const auto rects = _quad.find_collisions(bounding_rect);
+			const auto intersect_found = std::any_of(std::begin(rects), std::end(rects), [bounding_rect](const auto &rect) {
+				return intersects(rect.rect, bounding_rect);
+			});
+
+			if (within_level(pos, size, _level_limit) && !intersect_found || _allow_intersect)
 			{
-				//TODO: if allow_intersections
 				const auto id = _held_object->sprite_id = _sprites.create_sprite();
 				//TODO: layer support
 				_sprites.set_position(id, pos);
@@ -324,6 +337,7 @@ namespace hades
 				_held_object->id = entity_id{ _next_id++ };
 				set_position(*_held_object, pos);
 				_objects.emplace_back(*_held_object);
+				_quad.insert({ pos, size }, _held_object->id);
 			}
 		}
 	}
@@ -334,8 +348,8 @@ namespace hades
 		if(_show_objects)
 			t.draw(_sprites, s);
 		
-		if (_show_regions)
-			;
+		//if (_show_regions)
+		//	;
 		//TODO: draw regions
 	}
 

@@ -79,7 +79,7 @@ namespace hades
 		//object instances
 		entity_id::value_type _next_id = static_cast<entity_id::value_type>(bad_entity) + 1;
 		std::vector<editor_object_instance> _objects;
-		quad_tree<entity_id> _quad;
+		quad_tree<entity_id, rect_float> _quad;
 		vector_float _level_limit;
 		//TODO: name list
 	};

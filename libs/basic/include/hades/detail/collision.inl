@@ -347,27 +347,6 @@ namespace hades
 		return direction::left;
 	}
 
-	template<typename T>
-	rect_t<T> rect_intersection(rect_t<T> lhs, rect_t<T> rhs)
-	{
-		const auto r1minx = std::min(lhs.x, lhs.x + lhs.width);
-		const auto r1maxx = std::max(lhs.x, lhs.x + lhs.width);
-		const auto r1miny = std::min(lhs.y, lhs.y + lhs.height);
-		const auto r1maxy = std::max(lhs.y, lhs.y + lhs.height);
-
-		const auto r2minx = std::min(rhs.x, rhs.x + rhs.width);
-		const auto r2maxx = std::max(rhs.x, rhs.x + rhs.width);
-		const auto r2miny = std::min(rhs.y, rhs.y + rhs.height);
-		const auto r2maxy = std::max(rhs.y, rhs.y + rhs.height);
-
-		const auto i_x_min = std::max(r1minx, r2minx);
-		const auto i_x_max = std::min(r1maxx, r2maxx);
-		const auto i_y_min = std::max(r1miny, r2miny);
-		const auto i_y_max = std::min(r1maxy, r2maxy);
-
-		return { i_x_min, i_y_min, i_x_max - i_x_min, i_y_max - i_y_min };
-	}
-
 	//TODO:
 	//all
 	template<typename T>

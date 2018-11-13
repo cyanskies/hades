@@ -21,6 +21,8 @@ namespace hades
 		_background.setSize({ static_cast<float>(l.map_x),
 							  static_cast<float>(l.map_y) });
 
+		//TODO: background colour
+		// paralax background etc...
 		_background.setFillColor(sf::Color::Black);
 	}
 

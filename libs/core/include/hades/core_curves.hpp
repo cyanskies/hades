@@ -15,6 +15,8 @@ namespace hades
 	//NOTE: curve resources should be registered before calling this
 	void register_core_curves(data::data_manager&);
 
+	//NOTE: the get_* functions throw curve_error
+	// if the curve doesn't exist as a resource
 	const resources::curve* get_name_curve();
 	using vector_curve = std::tuple<const resources::curve*, const resources::curve*>;
 	vector_curve get_position_curve();

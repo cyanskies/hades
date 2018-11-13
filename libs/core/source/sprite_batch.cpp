@@ -62,7 +62,7 @@ namespace hades
 		//requires exclusive lock on sbatch
 		//moves the sprite to a batch that matches settings, or creates a new one;
 		//batch and sprite indexs' indicate where the sprite currently is
-		static void move_sprite(std::vector<batch> sbatch, index_type batch_index, index_type sprite_index, const sprite_settings &settings)
+		static void move_sprite(std::vector<batch> &sbatch, index_type batch_index, index_type sprite_index, const sprite_settings &settings)
 		{
 			//get the sprite out of its current batch
 			auto *batch = &sbatch[batch_index];
@@ -257,6 +257,9 @@ namespace hades
 
 	void sprite_batch::set_animation(typename sprite_batch::sprite_id id, const resources::animation *a, time_point t)
 	{
+		if (!a)
+			return;
+
 		bool needs_move = false;
 
 		{

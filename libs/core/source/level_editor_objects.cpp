@@ -66,8 +66,17 @@ namespace hades
 		}
 	}
 
+	void level_editor_objects::level_load(const level &l)
+	{
+		_next_id = static_cast<entity_id::value_type>(l.next_id);
+		_level_limit = { static_cast<float>(l.map_x),
+						 static_cast<float>(l.map_y) };
+
+		//TODO: load objects
+	}
+
 	template<typename Func>
-	void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
+	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
 	{
 		static_assert(std::is_invocable_v<Func, const resources::object*>);
 
@@ -107,6 +116,11 @@ namespace hades
 		}
 	}
 
+	static entity_id get_selected_id(const object_instance &o)
+	{
+		return o.id;
+	}
+
 	void level_editor_objects::gui_update(gui &g)
 	{
 		using namespace std::string_view_literals;
@@ -133,6 +147,9 @@ namespace hades
 
 		if (g.collapsing_header("objects"sv))
 		{
+			g.checkbox("show objects"sv, _show_objects);
+			g.checkbox("allow_intersection"sv, _allow_intersect);
+
 			constexpr auto all_str = "all"sv;
 			constexpr auto all_index = 0u;
 			auto on_click_object = [this](const resources::object *o) {
@@ -155,21 +172,56 @@ namespace hades
 			}
 		}
 
+		if (g.collapsing_header("regions"sv))
+		{
+
+		}
+
+		if (g.collapsing_header("properties"sv))
+		{
+			if (_brush_type == brush_type::object_selector)
+			{
+			}
+			else if (_brush_type == brush_type::region_selector)
+			{
+			}
+			else
+				g.text("Nothing is selected"sv);
+		}
+
 		g.window_end();
+
+		//NOTE: this is the latest in a frame that we can call this
+		// all on_* functions and other non-const functions should 
+		// have already been called if appropriate
+		_sprites.prepare();
+	}
+
+	static vector_float get_safe_size(const object_instance &o)
+	{
+		const auto size = get_size(o);
+		return size == vector_float{} ? vector_float{8.f, 8.f} : size;
+	}
+
+	static bool within_level(vector_float pos, vector_float size, vector_float level_size)
+	{
+		if (const auto br_corner = pos + size; pos.x < 0.f || pos.y < 0.f
+			|| br_corner.x > level_size.x || br_corner.y > level_size.y)
+			return false;
+		else
+			return true;
 	}
 
 	template<typename Object>
-	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, const Object &o, const resources::level_editor_object_settings &s)
+	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit, const Object &o, const resources::level_editor_object_settings &s)
 	{
-		const auto size = [&o]()->vector_float {
-			auto s = get_size(o);
-			if (s.x < 1 || s.y < 1)
-				return { 8.f, 8.f };
-
-			return s;
-		}();
+		const auto size = get_safe_size(o);
 
 		const auto obj_pos = pos;
+
+		if(!within_level(pos, size, level_limit))
+			return std::variant<sf::Sprite, sf::RectangleShape>{};
+
 		const auto anims = get_editor_animations(o);
 		if (anims.empty())
 		{
@@ -208,12 +260,24 @@ namespace hades
 		{
 		case brush_type::object_place:
 		{
-			_held_preview = make_held_preview(pos, _held_object, *_settings);
+			assert(_held_object);
+			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings);
 		}break;
 		case brush_type::object_selector:
 		{
-			//if (_selected_object)
-			//	create selection indicator around object
+			if (_held_object && _show_objects)
+			{
+				//draw selector around object
+				const auto position = get_position(*_held_object);
+				const auto size = get_safe_size(*_held_object);
+
+				auto selector = sf::RectangleShape{ {size.x + 2.f, size.y + 2.f} };
+				selector.setPosition({ position.x - 1.f, position.y - 1.f });
+				selector.setFillColor(sf::Color::Transparent);
+				selector.setOutlineColor(sf::Color::White);
+
+				_held_preview = std::move(selector);
+			}
 		}break;
 		case brush_type::object_drag:
 		{
@@ -224,13 +288,75 @@ namespace hades
 
 	void level_editor_objects::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
 	{
+		//NOTE: always draw, we're only called when we are the active brush
+		// if one of the brush types doesn't use _held_preview, then we'll need to draw conditionally
 		std::visit([&t, s](auto &&p) {
 			t.draw(p, s);
 		}, _held_preview);
 	}
 
+	void level_editor_objects::on_click(mouse_pos p)
+	{
+		//if grid snap enabled
+		const auto pos = p;
+
+		if (_brush_type == brush_type::object_selector
+			&& _show_objects && within_level(p, vector_float{}, _level_limit))
+		{
+			//select object under brush
+		}
+		else if (_brush_type == brush_type::object_place)
+		{
+			const auto size = get_safe_size(*_held_object);
+		
+			if (within_level(pos, size, _level_limit))
+			{
+				//TODO: if allow_intersections
+				const auto id = _held_object->sprite_id = _sprites.create_sprite();
+				//TODO: layer support
+				_sprites.set_position(id, pos);
+				_sprites.set_size(id, size);
+
+				const auto anim = _held_object->obj_type->editor_anims.empty() ? nullptr
+					: get_editor_animations(*_held_object)[0];
+
+				_sprites.set_animation(id, anim, {});
+				_held_object->id = entity_id{ _next_id++ };
+				set_position(*_held_object, pos);
+				_objects.emplace_back(*_held_object);
+			}
+		}
+	}
+
+	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+	{
+		//TODO: draw objects checkbox
+		if(_show_objects)
+			t.draw(_sprites, s);
+		
+		if (_show_regions)
+			;
+		//TODO: draw regions
+	}
+
+	void level_editor_objects::_update_position(const object_instance &o, vector_float p)
+	{
+		const auto s = get_size(o);
+		_quad.insert({ p, s }, o.id);
+	}
+
+	void level_editor_objects::_update_size(const object_instance &o, vector_float s)
+	{
+		const auto p = get_position(o);
+		_quad.insert({ p, s }, o.id);
+	}
+
+	void level_editor_objects::_update_pos_size(entity_id id, vector_float p, vector_float s)
+	{
+		_quad.insert({ p, s }, id);
+	}
+
 	level_editor_objects::editor_object_instance::editor_object_instance(const object_instance &o)
 		: object_instance{o}
-	{
-	}
+	{}
 }

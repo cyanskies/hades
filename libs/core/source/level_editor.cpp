@@ -43,6 +43,16 @@ namespace hades::detail
 		return _gui.handle_event(e);
 	}
 
+	static void clamp_camera(sf::View &camera, vector_float min, vector_float max)
+	{
+		const auto pos = camera.getCenter();
+
+		const auto new_x = std::clamp(pos.x, min.x, max.x);
+		const auto new_y = std::clamp(pos.y, min.x, max.x);
+
+		camera.setCenter({ new_x, new_y });
+	}
+
 	void level_editor_impl::reinit()
 	{
 		const auto width = console::get_int(cvars::video_width);
@@ -55,7 +65,7 @@ namespace hades::detail
 		_gui_view.reset({ 0.f, 0.f, _window_width, _window_height });
 
 		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_height, _window_width);
-
+		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level.map_x), static_cast<float>(_level.map_y) });
 		_gui.set_display_size({ _window_width, _window_height });
 
 		_background.setSize({ _window_width, _window_height });
@@ -92,12 +102,7 @@ namespace hades::detail
 				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
-				const auto pos = _world_view.getCenter();
-
-				const auto new_x = std::clamp(pos.x, 0.f, static_cast<float>(_level.map_x));
-				const auto new_y = std::clamp(pos.y, 0.f, static_cast<float>(_level.map_y));
-
-				_world_view.setCenter({ new_x, new_y });
+				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level.map_x), static_cast<float>(_level.map_y) });
 			}
 
 			if (_active_brush != invalid_brush)

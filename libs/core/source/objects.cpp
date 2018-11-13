@@ -10,6 +10,7 @@
 #include "hades/level.hpp"
 #include "hades/parser.hpp"
 #include "hades/game_system.hpp"
+#include "hades/utility.hpp"
 
 namespace hades::resources
 {
@@ -118,6 +119,8 @@ namespace hades::resources
 			const auto render_system_ids = get_sequence(*o, "client-systems"sv, current_system_ids);
 			obj->render_systems = d.find_or_create<const render_system>(render_system_ids, mod);
 		}
+
+		remove_duplicates(all_objects);
 	}
 
 	void load_objects(resource_type<object_t> &r, data::data_manager &d)
@@ -439,19 +442,12 @@ namespace hades
 	template<typename Object, typename Func>
 	vector_float get_vector_curve_impl(const Object &o, Func f)
 	{
-		try
-		{
-			const auto[x, y] = std::invoke(f);
-			const auto x_value = get_curve(o, *x);
-			const auto y_value = get_curve(o, *y);
-			assert(std::holds_alternative<float>(x_value));
-			assert(std::holds_alternative<float>(y_value));
-			return { std::get<float>(x_value), std::get<float>(y_value) };
-		}
-		catch (const curve_not_found&)
-		{
-			return vector_float{};
-		}
+		const auto[x, y] = std::invoke(f);
+		const auto x_value = get_curve(o, *x);
+		const auto y_value = get_curve(o, *y);
+		assert(std::holds_alternative<float>(x_value));
+		assert(std::holds_alternative<float>(y_value));
+		return { std::get<float>(x_value), std::get<float>(y_value) };
 	}
 
 	vector_float get_position(const object_instance &o)

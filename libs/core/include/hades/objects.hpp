@@ -90,6 +90,8 @@ namespace hades
 	resources::object::animation_list get_editor_animations(const object_instance &o);
 
 	//helpers for common curves
+	//NOTE: can throw curve_error(if the curve resource doesn't exist
+	// and curve_not_found(if the object doesn't have that particular curve)
 	string get_name(const object_instance &o);
 	string get_name(const resources::object &o);
 	void set_name(object_instance &o, std::string_view);

@@ -131,6 +131,7 @@ namespace hades
 		{
 			activate_brush();
 			_brush_type = brush_type::object_selector;
+			_held_object.reset();
 		}
 
 		if (g.toolbar_button("region selector"sv))
@@ -282,6 +283,7 @@ namespace hades
 				auto selector = sf::RectangleShape{ {size.x + 2.f, size.y + 2.f} };
 				selector.setPosition({ position.x - 1.f, position.y - 1.f });
 				selector.setFillColor(sf::Color::Transparent);
+				selector.setOutlineThickness(1.f);
 				selector.setOutlineColor(sf::Color::White);
 
 				_held_preview = std::move(selector);
@@ -311,7 +313,30 @@ namespace hades
 		if (_brush_type == brush_type::object_selector
 			&& _show_objects && within_level(p, vector_float{}, _level_limit))
 		{
+			const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
+			const auto rects = _quad.find_collisions(target);
 			//select object under brush
+			auto id = bad_entity;
+			for (const auto &o : rects)
+			{
+				if (intersects(o.rect, target))
+				{
+					id = o.key;
+					break;
+				}
+			}
+
+			if (id == bad_entity)
+				return;
+
+			for (const auto &o : _objects)
+			{
+				if (o.id == id)
+				{
+					_held_object = o;
+					break;
+				}
+			}
 		}
 		else if (_brush_type == brush_type::object_place)
 		{

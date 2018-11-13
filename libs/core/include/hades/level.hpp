@@ -32,7 +32,7 @@ namespace hades
 		//list of curve values, not including defaults
 		std::vector<object_instance> objects;
 		//the id of the next entity to be placed, or spawned in-game
-		entity_id next_id = bad_entity;
+		entity_id next_id = entity_id{ static_cast<entity_id::value_type>(bad_entity) + 1 };
 
 		//TODO: background, flat colour, paralax image, paralax loop image
 		//set paralax to 0 to get a static image

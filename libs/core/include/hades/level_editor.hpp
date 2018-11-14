@@ -70,12 +70,18 @@ namespace hades::detail
 		sf::View _world_view;
 
 	private:
+		struct new_level_opt
+		{
+			int32 width{}, height{};
+		};
+
 		void _update_gui(time_duration);
 
 		level_editor_component::editor_windows _window_flags;
 		gui _gui;
 		level _level;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
+		new_level_opt _new_level_options;
 
 		sf::RectangleShape _background;
 

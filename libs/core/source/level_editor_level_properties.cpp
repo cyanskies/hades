@@ -4,19 +4,27 @@
 
 namespace hades
 {
-	static void make_level_detail_window(gui &g, std::string name, std::string description)
+	static void make_level_detail_window(gui &g, bool &open, string &name, string &description)
 	{
-		if (g.window_begin("level details"))
+		using namespace std::string_view_literals;
+		if (g.window_begin("level details"sv, open))
 		{
+			if (g.button("Done"sv))
+				open = false;
 
+			g.input_text("Name"sv, name, gui::input_text_flags::auto_select_all);
+			g.input_text_multiline("Description"sv, description, vector_float{}, gui::input_text_flags::no_horizontal_scroll);
 		}
 		g.window_end();
 	}
 
 	void level_editor_level_props::level_load(const level &l)
 	{
-		_name_input = l.name;
-		_desc_input = l.description;
+		_new_name = editor::new_level_name;
+		_new_desc = editor::new_level_description;
+
+		_level_name = l.name;
+		_level_desc = l.description;
 
 		_background.setSize({ static_cast<float>(l.map_x),
 							  static_cast<float>(l.map_y) });
@@ -33,19 +41,24 @@ namespace hades
 		if (g.menu_begin("level"sv))
 		{
 			if (g.menu_item("details..."sv))
-				make_level_detail_window(g, _level_name, _level_desc);
+				_details_window = true;
+				
+			g.menu_item("background..."sv);
 
 			g.menu_end();
 		}
 
 		g.main_menubar_end();
 
+		if(_details_window)
+			make_level_detail_window(g, _details_window, _level_name, _level_desc);
+
 		if (flags.new_level)
 		{
 			if (g.window_begin(editor::gui_names::new_level, flags.new_level))
 			{
-				g.input_text("Name", _level_name, gui::input_text_flags::auto_select_all);
-				g.input_text_multiline("Description", _level_desc);
+				g.input_text("Name", _new_name, gui::input_text_flags::auto_select_all);
+				g.input_text_multiline("Description", _new_desc);
 			}
 			g.window_end();
 		}

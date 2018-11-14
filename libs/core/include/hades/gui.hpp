@@ -155,6 +155,8 @@ namespace hades
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal
 		void vertical_spacing();
+		void group_begin();
+		void group_end();
 		void dummy(vector_float size = {});
 
 		//text widgets

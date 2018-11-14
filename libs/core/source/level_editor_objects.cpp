@@ -180,9 +180,9 @@ namespace hades
 
 		if (g.collapsing_header("properties"sv))
 		{
-			if (_brush_type == brush_type::object_selector)
-			{
-			}
+			if (_brush_type == brush_type::object_selector 
+				&& _held_object)
+				_make_property_editor(g);
 			else if (_brush_type == brush_type::region_selector)
 			{
 			}
@@ -375,6 +375,39 @@ namespace hades
 		//if (_show_regions)
 		//	;
 		//TODO: draw regions
+	}
+
+	void level_editor_objects::_make_property_editor(gui &g)
+	{
+		assert(_held_object);
+		const auto id = _held_object->id;
+
+		auto &o = [this, id]()->editor_object_instance& {
+			for (auto &o : _objects)
+			{
+				if (o.id == id)
+					return o;
+			}
+
+			throw std::runtime_error{"object was selected, but not in object list."};
+		}();
+
+		bool changed = false;
+
+		const auto name = [&o] {
+			assert(o.obj_type);
+			using namespace std::string_literals;
+			const auto type = data::get_as_string(o.obj_type->id);
+			//TODO: clamp name and type if too long
+			if (!o.name.empty())
+				return o.name + "("s + type + ")"s;
+			else
+				return type;
+		}();
+
+		g.text("Selected: " + name);
+
+		//g.coloumn
 	}
 
 	void level_editor_objects::_update_position(const object_instance &o, vector_float p)

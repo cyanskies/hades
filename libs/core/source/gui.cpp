@@ -278,6 +278,18 @@ namespace hades
 		ImGui::Spacing();
 	}
 
+	void gui::group_begin()
+	{
+		_active_assert();
+		ImGui::BeginGroup();
+	}
+
+	void gui::group_end()
+	{
+		_active_assert();
+		ImGui::EndGroup();
+	}
+
 	void gui::dummy(vector_float s)
 	{
 		_active_assert();

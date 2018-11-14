@@ -14,8 +14,8 @@ namespace hades::detail
 		_level.map_x = *default_size;
 		_level.map_y = *default_size;
 		using namespace std::string_literals;
-		_level.name = "A brand new level"s;
-		_level.description = "An emptpy level, ready to by filled with content"s;
+		_level.name = editor::new_level_name;
+		_level.description = editor::new_level_description;
 	}
 
 	level_editor_impl::level_editor_impl(level l) : _level(std::move(l))
@@ -30,6 +30,9 @@ namespace hades::detail
 
 		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size);
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate);
+
+		_new_level_options.width = _level.map_x;
+		_new_level_options.height = _level.map_y;
 
 		_handle_component_setup();
 
@@ -207,6 +210,10 @@ namespace hades::detail
 				_gui.layout_horizontal();
 				if (_gui.button("Cancel"))
 					_window_flags.new_level = false;
+
+				_gui.text("Level Size: "sv);
+				_gui.input("Width"sv, _new_level_options.width);
+				_gui.input("Height"sv, _new_level_options.height);
 			}
 			_gui.window_end();
 		}

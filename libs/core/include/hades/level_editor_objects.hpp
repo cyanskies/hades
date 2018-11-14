@@ -61,6 +61,7 @@ namespace hades
 			sprite_batch::sprite_id sprite_id = sprite_utility::sprite::bad_sprite_id;
 		};
 
+		void _make_property_editor(gui&);
 		void _update_position(const object_instance&, vector_float);
 		void _update_size(const object_instance&, vector_float);
 		void _update_pos_size(entity_id, vector_float, vector_float);

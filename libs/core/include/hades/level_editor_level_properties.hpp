@@ -18,9 +18,10 @@ namespace hades
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
 	private:
+		bool _details_window = false;
 		sf::RectangleShape _background;
-		string _level_name, _name_input;
-		string _level_desc, _desc_input;
+		string _level_name, _new_name;
+		string _level_desc, _new_desc;
 	};
 }
 

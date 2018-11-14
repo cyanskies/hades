@@ -24,6 +24,13 @@ namespace hades::editor::gui_names
 	constexpr auto new_level = "New Level"sv;
 }
 
+namespace hades::editor
+{
+	using namespace std::string_view_literals;
+	constexpr auto new_level_name = "A brand new level"sv;
+	constexpr auto new_level_description = "An empty level, ready to be filled with content"sv;
+}
+
 namespace hades
 {
 	class gui;

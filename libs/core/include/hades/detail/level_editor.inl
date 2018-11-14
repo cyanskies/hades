@@ -110,10 +110,10 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_update_component_gui(gui &g)
+	inline void basic_level_editor<Components...>::_update_component_gui(gui &g, level_editor_component::editor_windows &win_flags)
 	{
-		for_each_tuple(_editor_components, [&g](auto &&c) {
-			c.gui_update(g);
+		for_each_tuple(_editor_components, [&g, &win_flags](auto &&c) {
+			c.gui_update(g, win_flags);
 		});
 	}
 }

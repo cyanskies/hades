@@ -14,7 +14,7 @@ namespace hades
 	{
 	public:
 		void level_load(const level&) override;
-		void gui_update(gui&) override;
+		void gui_update(gui&, editor_windows&) override;
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
 	private:

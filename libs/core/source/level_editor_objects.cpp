@@ -121,7 +121,7 @@ namespace hades
 		return o.id;
 	}
 
-	void level_editor_objects::gui_update(gui &g)
+	void level_editor_objects::gui_update(gui &g, editor_windows&)
 	{
 		using namespace std::string_view_literals;
 		//toolbar buttons
@@ -369,7 +369,6 @@ namespace hades
 
 	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
 	{
-		//TODO: draw objects checkbox
 		if(_show_objects)
 			t.draw(_sprites, s);
 		

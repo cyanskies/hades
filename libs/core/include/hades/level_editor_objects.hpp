@@ -36,7 +36,7 @@ namespace hades
 
 		void level_load(const level&) override;
 
-		void gui_update(gui&) override;
+		void gui_update(gui&, editor_windows&) override;
 		void make_brush_preview(time_duration, mouse_pos) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 

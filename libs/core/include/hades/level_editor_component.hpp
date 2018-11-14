@@ -21,6 +21,7 @@ namespace hades::editor::gui_names
 	using namespace std::string_view_literals;
 	//Window name for left toolbox window
 	constexpr auto toolbox = "##toolbox"sv;
+	constexpr auto new_level = "New Level"sv;
 }
 
 namespace hades
@@ -31,6 +32,13 @@ namespace hades
 	class level_editor_component
 	{
 	public:
+		struct editor_windows
+		{
+			bool new_level = false;
+			bool load_level = false;
+			bool save_level = false;
+		};
+
 		virtual ~level_editor_component() noexcept = default;
 
 		//generic callbacks, these are always available
@@ -47,10 +55,12 @@ namespace hades
 			_activate_brush();
 		}
 
+		virtual level level_new(level l) const { return l; };
 		virtual void level_load(const level&) {};
-		virtual level level_save(level) const { return level{}; };
+		virtual level level_save(level l) const { return l; };
+		//TODO: level_resize
 
-		virtual void gui_update(gui&) {};
+		virtual void gui_update(gui&, editor_windows&) {};
 
 		//mouse position, in world coords
 		using mouse_pos = vector_float;
@@ -70,8 +80,6 @@ namespace hades
 		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
 
 		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
-
-		//TODO: onsave, onload
 
 	private:
 		activate_brush_f _activate_brush;

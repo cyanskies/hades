@@ -26,7 +26,7 @@ namespace hades
 		_background.setFillColor(sf::Color::Black);
 	}
 
-	void level_editor_level_props::gui_update(gui &g)
+	void level_editor_level_props::gui_update(gui &g, editor_windows &flags)
 	{
 		using namespace std::string_view_literals;
 		g.main_menubar_begin();
@@ -39,6 +39,16 @@ namespace hades
 		}
 
 		g.main_menubar_end();
+
+		if (flags.new_level)
+		{
+			if (g.window_begin(editor::gui_names::new_level, flags.new_level))
+			{
+				g.input_text("Name", _level_name, gui::input_text_flags::auto_select_all);
+				g.input_text_multiline("Description", _level_desc);
+			}
+			g.window_end();
+		}
 	}
 
 	void level_editor_level_props::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const

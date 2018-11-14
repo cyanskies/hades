@@ -161,7 +161,8 @@ namespace hades::detail
 
 		if (_gui.menu_begin("file"sv))
 		{
-			_gui.menu_item("new..."sv);
+			if (_gui.menu_item("new..."sv))
+				_window_flags.new_level = true;
 			_gui.menu_item("load..."sv);
 			_gui.menu_item("save"sv);
 			_gui.menu_item("save as..."sv);
@@ -197,10 +198,23 @@ namespace hades::detail
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
 		_gui.window_end();
 
+		//windows
+		if (_window_flags.new_level)
+		{
+			if (_gui.window_begin(editor::gui_names::new_level, _window_flags.new_level))
+			{
+				_gui.button("Create"sv);
+				_gui.layout_horizontal();
+				if (_gui.button("Cancel"))
+					_window_flags.new_level = false;
+			}
+			_gui.window_end();
+		}
+
 		//make infobox
 		//make minimap
 
-		_update_component_gui(_gui);
+		_update_component_gui(_gui, _window_flags);
 
 		_gui.frame_end();
 	}

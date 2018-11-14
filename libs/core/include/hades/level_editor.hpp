@@ -8,6 +8,7 @@
 
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
+#include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/state.hpp"
@@ -48,7 +49,7 @@ namespace hades::detail
 		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector_float world_position) = 0;
 		virtual void _handle_component_setup() = 0;
 		void _set_active_brush(std::size_t index);
-		virtual void _update_component_gui(gui&) = 0;
+		virtual void _update_component_gui(gui&, level_editor_component::editor_windows&) = 0;
 
 	private:
 		//current window size
@@ -71,6 +72,7 @@ namespace hades::detail
 	private:
 		void _update_gui(time_duration);
 
+		level_editor_component::editor_windows _window_flags;
 		gui _gui;
 		level _level;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
@@ -102,7 +104,7 @@ namespace hades
 		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t) override;
 		void _generate_brush_preview(brush_index_t, time_duration, vector_float) override;
 		void _handle_component_setup() override;
-		void _update_component_gui(gui&) override;
+		void _update_component_gui(gui&, level_editor_component::editor_windows&) override;
 
 		using component_tuple = std::tuple<Components...>;
 		component_tuple _editor_components;

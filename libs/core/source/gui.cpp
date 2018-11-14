@@ -493,8 +493,7 @@ namespace hades
 	bool gui::menu_item(std::string_view l, bool enabled)
 	{
 		_active_assert();
-		ImGui::MenuItem(to_string(l).data(), nullptr, false, enabled);
-		return false;
+		return ImGui::MenuItem(to_string(l).data(), nullptr, false, enabled);
 	}
 
 	bool gui::menu_toggle_item(std::string_view l, bool &selected, bool enabled)

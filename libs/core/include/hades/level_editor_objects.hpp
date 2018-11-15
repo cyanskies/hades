@@ -32,6 +32,21 @@ namespace hades
 	class level_editor_objects final : public level_editor_component
 	{
 	public:
+		struct editor_object_instance final : object_instance
+		{
+			editor_object_instance() noexcept = default;
+			editor_object_instance(const object_instance&);
+
+			sprite_batch::sprite_id sprite_id = sprite_utility::sprite::bad_sprite_id;
+		};
+
+		struct curve_info
+		{
+			string name;
+			const resources::curve* curve = nullptr;
+			resources::curve_default_value value;
+		};
+
 		level_editor_objects();
 
 		void level_load(const level&) override;
@@ -51,14 +66,6 @@ namespace hades
 			object_drag,
 			region_selector,
 			region_place
-		};
-
-		struct editor_object_instance final : object_instance
-		{
-			editor_object_instance() noexcept = default;
-			editor_object_instance(const object_instance&);
-
-			sprite_batch::sprite_id sprite_id = sprite_utility::sprite::bad_sprite_id;
 		};
 
 		void _make_property_editor(gui&);
@@ -82,6 +89,9 @@ namespace hades
 		std::vector<editor_object_instance> _objects;
 		quad_tree<entity_id, rect_float> _quad;
 		vector_float _level_limit;
+		std::unordered_map<string, entity_id> _entity_names; 
+		std::string _entity_name_id_uncommited;
+		std::vector<curve_info> _curve_properties;
 		//TODO: name list
 	};
 }

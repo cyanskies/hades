@@ -65,3 +65,6 @@ objects:
     ball:
         editor-icon: ball-anim
         editor-anim: [ball-anim]
+        curves:
+            - [size_x, 8]
+            - [size_y, 8]

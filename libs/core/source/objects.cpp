@@ -29,8 +29,9 @@ namespace hades::resources
 
 		const auto curve_id = curve_info[0]->to_scalar<unique_id>();
 		const auto curve_ptr = data::get<curve>(curve_id);
+		//NOTE: curve_ptr must be valid, get<> throws otherwise
 
-		if (curve_ptr && curve_info.size() > 2)
+		if (curve_info.size() == 2)
 		{
 			const auto value = curve_from_node(*curve_ptr, *curve_info[1]);
 			return { curve_ptr, value };
@@ -175,8 +176,6 @@ namespace hades
 				auto v = std::get<hades::resources::curve_default_value>(cur);
 				if (hades::resources::is_set(v))
 					return cur;
-
-				return cur;
 			}
 		}
 
@@ -190,11 +189,10 @@ namespace hades
 				curve_ptr = curve;
 				if (hades::resources::is_set(std::get<hades::resources::curve_default_value>(ret)))
 					return ret;
-				return ret;
 			}
 		}
 
-		return std::make_tuple(curve_ptr, hades::resources::curve_default_value());
+		return std::make_tuple(curve_ptr, hades::resources::curve_default_value{});
 	}
 
 	curve_value valid_vector_curve(hades::resources::curve_default_value v)
@@ -384,6 +382,17 @@ namespace hades
 		return nullptr;
 	}
 
+	const hades::resources::animation *get_random_animation(const object_instance & o)
+	{
+		const auto anims = get_editor_animations(o);
+		if (anims.empty())
+			return nullptr;
+
+		const auto index = random(0u, anims.size() - 1);
+
+		return anims[index];
+	}
+
 	resources::object::animation_list get_editor_animations(const resources::object &o)
 	{
 		if (!o.editor_anims.empty())
@@ -521,8 +530,8 @@ namespace hades
 				w.write(obj_type, o.obj_type->id);
 
 			//	name:
-			if (!o.name.empty())
-				w.write(obj_name, o.name);
+			if (!o.name_id.empty())
+				w.write(obj_name, o.name_id);
 
 			if (!o.curves.empty())
 			{

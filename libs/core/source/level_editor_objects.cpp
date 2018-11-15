@@ -305,6 +305,41 @@ namespace hades
 		}, _held_preview);
 	}
 
+	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
+	{
+		if (o.sprite_id == sprite_utility::sprite::bad_sprite_id)
+			o.sprite_id = s.create_sprite();
+
+		const auto position = get_position(o);
+		const auto size = get_safe_size(o);
+		const auto animation = get_random_animation(o);
+
+		s.set_animation(o.sprite_id, animation, {});
+		s.set_position(o.sprite_id, position);
+		s.set_size(o.sprite_id, size);
+	}
+
+	static void set_selected_info(const object_instance &o, string &name_id, std::vector<level_editor_objects::curve_info> &curve_info)
+	{
+		using curve_t = level_editor_objects::curve_info;
+		std::vector<curve_t> curves;
+
+		const auto all_curves = get_all_curves(o);
+
+		for (const auto &[curve, value] : all_curves)
+			curves.emplace_back(curve_t{ data::get_as_string(curve->id), curve, value });
+
+		std::sort(std::begin(curves), std::end(curves), [](auto &&lhs, auto &&rhs) {
+			return lhs.name < rhs.name;
+		});
+
+		std::swap(curves, curve_info);
+		name_id = o.name_id;
+	}
+
+	static void update_selection_rect(object_instance &o, std::variant<sf::Sprite, sf::RectangleShape> &selection_rect)
+	{}
+
 	void level_editor_objects::on_click(mouse_pos p)
 	{
 		//if grid snap enabled
@@ -334,6 +369,7 @@ namespace hades
 				if (o.id == id)
 				{
 					_held_object = o;
+					set_selected_info(*_held_object, _entity_name_id_uncommited, _curve_properties);
 					break;
 				}
 			}
@@ -350,19 +386,12 @@ namespace hades
 
 			if (within_level(pos, size, _level_limit) && !intersect_found || _allow_intersect)
 			{
-				const auto id = _held_object->sprite_id = _sprites.create_sprite();
-				//TODO: layer support
-				_sprites.set_position(id, pos);
-				_sprites.set_size(id, size);
-
-				const auto anim = _held_object->obj_type->editor_anims.empty() ? nullptr
-					: get_editor_animations(*_held_object)[0];
-
-				_sprites.set_animation(id, anim, {});
 				_held_object->id = entity_id{ _next_id++ };
 				set_position(*_held_object, pos);
 				_objects.emplace_back(*_held_object);
 				_quad.insert({ pos, size }, _held_object->id);
+
+				update_object_sprite(_objects.back(), _sprites);
 			}
 		}
 	}
@@ -377,6 +406,103 @@ namespace hades
 		//TODO: draw regions
 	}
 
+	template<std::size_t Length>
+	static string clamp_length(std::string_view str)
+	{
+		if (str.length() <= Length)
+			return str;
+
+		return str.substr(0, Length) + "...";
+	}
+
+	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
+	{
+		if (g.input_text("Name_id"sv, text))
+		{
+			//if the new name is empty, and the old name isn't
+			if (text == string{}
+				&& !o.name_id.empty())
+			{
+				//remove name_id
+				auto begin = std::cbegin(name_map);
+				const auto end = std::cend(name_map);
+				for (begin; begin != std::end(name_map); ++begin)
+				{
+					if (begin->second == o.id)
+						break;
+				}
+
+				name_map.erase(begin);
+				o.name_id.clear();
+			}
+			else if (const auto iter = name_map.find(text);
+				iter == std::end(name_map))
+			{
+				//remove current name binding if present
+				if (!o.name_id.empty())
+				{
+					for (auto begin = std::begin(name_map); begin != std::end(name_map); ++begin)
+					{
+						if (begin->second == o.id)
+						{
+							name_map.erase(begin);
+							break;
+						}
+					}
+				}
+
+				//apply
+				name_map.emplace(text, o.id);
+				o.name_id = text;
+			}
+		}
+
+		//if the editbox is different to the current name,
+		//then something must have stopped it from being commited
+		if (text != o.name_id)
+		{
+			if (const auto iter = name_map.find(text); iter->second != o.id)
+				g.show_tooltip("This name is already being used");
+		}
+	}
+
+	static rect_float get_bounds(object_instance &o)
+	{
+		return { get_position(o), get_size(o) };
+	}
+
+	template<typename MakeBoundRect, typename SetChangedProperty>
+	static void	make_positional_property(gui &g, std::string_view label, bool allow_intersect, level_editor_objects::editor_object_instance &o,
+		level_editor_objects::curve_info &edit_curve, quad_tree<entity_id, rect_float> &quad, sprite_batch &s,
+		std::variant<sf::Sprite, sf::RectangleShape> &preview, MakeBoundRect make_rect, SetChangedProperty apply)
+	{
+		static_assert(std::is_invocable_r_v<rect_float, MakeBoundRect, const object_instance&, const level_editor_objects::curve_info&>,
+			"MakeBoundRect must have the following definition: (const object_instance&, const curve_info&)->rect_float");
+		static_assert(std::is_invocable_v<SetChangedProperty, object_instance&, const rect_float&>,
+			"SetChangedProperty must have the following definition (object_instance&, const rect_float&)");
+
+		if (g.input(label, std::get<float>(edit_curve.value)))
+		{
+			const auto rect = std::invoke(make_rect, o, edit_curve);
+			const auto others = quad.find_collisions(rect);
+
+			const auto safe_pos = std::none_of(std::begin(others), std::end(others), [rect, id = o.id](auto &&other){
+				return intersects(rect, other.rect) && id != other.key;
+			});
+
+			if (safe_pos || allow_intersect)
+			{
+				std::invoke(apply, o, rect);
+				quad.insert(rect, o.id);
+				update_object_sprite(o, s);
+				update_selection_rect(o, preview);
+			}
+		}
+	}
+
+	template<typename Func>
+	static void make_property_row(gui &g, Func on_commit);
+
 	void level_editor_objects::_make_property_editor(gui &g)
 	{
 		assert(_held_object);
@@ -389,25 +515,129 @@ namespace hades
 					return o;
 			}
 
-			throw std::runtime_error{"object was selected, but not in object list."};
+			throw std::logic_error{"object was selected, but not in object list."};
 		}();
-
-		bool changed = false;
 
 		const auto name = [&o] {
 			assert(o.obj_type);
 			using namespace std::string_literals;
 			const auto type = data::get_as_string(o.obj_type->id);
 			//TODO: clamp name and type if too long
-			if (!o.name.empty())
-				return o.name + "("s + type + ")"s;
+			if (!o.name_id.empty())
+				return o.name_id + "("s + type + ")"s;
 			else
 				return type;
 		}();
 
-		g.text("Selected: " + name);
+		using namespace std::string_view_literals;
+		using namespace std::string_literals;
+		g.text("Selected: "s + name);
 
-		//g.coloumn
+		//create the property editor
+
+		//id
+		//this is a display of the entities assigned id
+		// it cannot be modified
+		g.input_text("Id"sv, to_string(static_cast<entity_id::value_type>(o.id)), gui::input_text_flags::readonly);
+		
+		//name_id
+		//this is the unique name that systems can use to access this entity
+		// can be useful for players the world or other significant objects
+		make_name_id_property(g, o, _entity_name_id_uncommited, _entity_names);
+
+		//get all of the other curves that we'll handle here
+		const auto special_curves = std::array{
+			get_name_curve(),
+			std::get<0>(get_position_curve()),
+			std::get<1>(get_position_curve()),
+			std::get<0>(get_size_curve()),
+			std::get<1>(get_size_curve())
+		};
+
+		assert(std::all_of(std::begin(special_curves), std::end(special_curves), [](auto &&c) { return c; }));
+
+		//we show the position and size properties before the others
+		//position
+		// modifying these curves actively modifies the world
+		auto pos_x = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
+			return elm.curve == special_curves[1u];
+		});
+		auto pos_y = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
+			return elm.curve == special_curves[2u];
+		});
+
+		make_positional_property(g, "x position"sv, _allow_intersect, o, *pos_x, _quad, _sprites, _held_preview,
+			[](const auto &o, const auto&c) {
+			auto rect = rect_float{ get_position(o), get_size(o) }; 
+			rect.x = std::get<float>(c.value);
+			return rect;
+		}, [](auto &&o, const auto &r) {
+			set_position(o, { r.x, r.y });
+		});
+
+		if (const auto pos = get_position(o); std::get<float>(pos_x->value) != pos.x)
+		{
+			g.show_tooltip("The value of x position would cause an collision");
+			pos_x->value = pos.x;
+		}
+
+		make_positional_property(g, "y position"sv, _allow_intersect, o, *pos_y, _quad, _sprites, _held_preview,
+			[](const auto &o, const auto&c) {
+			auto rect = rect_float{ get_position(o), get_size(o) };
+			rect.y = std::get<float>(c.value);
+			return rect;
+		}, [](auto &&o, const auto &r) {
+			set_position(o, { r.x, r.y });
+		});
+
+		if (const auto pos = get_position(o); std::get<float>(pos_y->value) != pos.y)
+		{
+			g.show_tooltip("The value of y position would cause an collision");
+			pos_y->value = pos.y;
+		}
+
+		//size
+		auto siz_x = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
+			return elm.curve == special_curves[3u];
+		});
+		auto siz_y = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
+			return elm.curve == special_curves[4u];
+		});
+
+		if (const auto props_end = std::end(_curve_properties); siz_x != props_end && siz_y != props_end)
+		{
+			make_positional_property(g, "x size"sv, _allow_intersect, o, *siz_x, _quad, _sprites, _held_preview,
+				[](const auto &o, const auto&c) {
+				auto rect = rect_float{ get_position(o), get_size(o) };
+				rect.width = std::get<float>(c.value);
+				return rect;
+			}, [](auto &&o, const auto &r) {
+				set_size(o, { r.width, r.height });
+			});
+
+			if (const auto siz = get_size(o); std::get<float>(siz_x->value) != siz.x)
+			{
+				g.show_tooltip("The value of x size would cause an collision");
+				siz_x->value = siz.x;
+			}
+			
+			make_positional_property(g, "y size"sv, _allow_intersect, o, *siz_y, _quad, _sprites, _held_preview,
+				[](const auto &o, const auto&c) {
+				auto rect = rect_float{ get_position(o), get_size(o) };
+				rect.height = std::get<float>(c.value);
+				return rect;
+			}, [](auto &&o, const auto &r) {
+				set_size(o, { r.width, r.height });
+			});
+
+			if (const auto siz = get_size(o); std::get<float>(siz_y->value) != siz.y)
+			{
+				g.show_tooltip("The value of y size would cause an collision");
+				siz_y->value = siz.y;
+			}
+		}
+		
+		//TODO: all other curves
 	}
 
 	void level_editor_objects::_update_position(const object_instance &o, vector_float p)

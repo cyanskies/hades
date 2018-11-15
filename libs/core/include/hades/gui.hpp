@@ -307,6 +307,8 @@ namespace hades
 
 		//TODO: popups
 
+		//TODO: columns
+
 		enum class hovered_flags : ImGuiHoveredFlags
 		{
 			none = ImGuiHoveredFlags_::ImGuiHoveredFlags_None,

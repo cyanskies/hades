@@ -57,7 +57,9 @@ namespace hades
 	{
 		const resources::object *obj_type = nullptr;
 		entity_id id = bad_entity;
-		string name;
+		//NOTE: name_id is used to address objects using a name rather than id
+		// for the objects display name, shown to users, look up the name curve
+		string name_id;
 		resources::object::curve_list curves;
 	};
 
@@ -86,6 +88,7 @@ namespace hades
 	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
 	curve_value valid_vector_curve(hades::resources::curve_default_value v);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
+	const hades::resources::animation *get_random_animation(const object_instance &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);
 	resources::object::animation_list get_editor_animations(const object_instance &o);
 

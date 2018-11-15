@@ -41,16 +41,22 @@ namespace hades
 	{
 		_active_assert();
 
-		constexpr auto func = [] {
+		constexpr auto func = [&] {
 			if constexpr (std::is_same_v<T, int>)
-				return &ImGui::InputInt;
+				return [&](auto &v, auto &step, auto &step_fast) {
+				return ImGui::InputInt(to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
+			};
 			else if constexpr (std::is_same_v<T, float>)
-				return &ImGui::InputFloat;
+				return [&](auto &v, auto &step, auto &step_fast) {
+				return ImGui::InputFloat(to_string(label).data(), &v, step, step_fast, "%.3f", static_cast<ImGuiInputTextFlags>(f));
+			};
 			else if constexpr (std::is_same_v<T, double>)
-				return &ImGui::InputDouble;
+				return [&](auto &v, auto &step, auto &step_fast) {
+				return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));
+			};
 		}();
 
-		return std::invoke(func, to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
+		return std::invoke(func, v, step, step_fast);
 	}
 
 	template<typename T, std::size_t Size>

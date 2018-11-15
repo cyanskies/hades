@@ -100,10 +100,10 @@ namespace hades
 			assert(o.id != bad_entity);
 
 			//record entity name if present
-			if (!o.name.empty())
+			if (!o.name_id.empty())
 			{
 				auto names = sv.names.get(zero_time);
-				names.emplace(o.name, o.id);
+				names.emplace(o.name_id, o.id);
 				sv.names.set(zero_time, names);
 			}
 

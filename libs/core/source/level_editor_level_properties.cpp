@@ -50,7 +50,7 @@ namespace hades
 
 		g.main_menubar_end();
 
-		if(_details_window)
+		if (_details_window)
 			make_level_detail_window(g, _details_window, _level_name, _level_desc);
 
 		if (flags.new_level)

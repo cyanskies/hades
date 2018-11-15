@@ -410,9 +410,10 @@ namespace hades
 	static string clamp_length(std::string_view str)
 	{
 		if (str.length() <= Length)
-			return str;
+			return to_string(str);
 
-		return str.substr(0, Length) + "...";
+		using namespace std::string_literals;
+		return to_string(str.substr(0, Length)) + "..."s;
 	}
 
 	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
@@ -522,11 +523,11 @@ namespace hades
 			assert(o.obj_type);
 			using namespace std::string_literals;
 			const auto type = data::get_as_string(o.obj_type->id);
-			//TODO: clamp name and type if too long
+			constexpr auto max_length = 15u;
 			if (!o.name_id.empty())
-				return o.name_id + "("s + type + ")"s;
+				return clamp_length<max_length>(o.name_id) + "("s + clamp_length<max_length>(type) + ")"s;
 			else
-				return type;
+				return clamp_length<max_length>(type);
 		}();
 
 		using namespace std::string_view_literals;

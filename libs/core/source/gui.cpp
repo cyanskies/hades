@@ -585,6 +585,30 @@ namespace hades
 		ImGui::SetTooltip(to_string(s).c_str());
 	}
 
+	void gui::columns_begin(std::size_t count, bool border)
+	{
+		_active_assert();
+		ImGui::Columns(count, nullptr, border);
+	}
+
+	void gui::columns_begin(std::string_view id, std::size_t count, bool border)
+	{
+		_active_assert();
+		ImGui::Columns(count, to_string(id).data(), border);
+	}
+
+	void gui::columns_next()
+	{
+		_active_assert();
+		ImGui::NextColumn();
+	}
+
+	void gui::columns_end()
+	{
+		_active_assert();
+		ImGui::Columns();
+	}
+
 	bool gui::is_item_hovered(hovered_flags f)
 	{
 		_active_assert();

@@ -203,6 +203,16 @@ namespace hades
 		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector &size = { 0.f, 0.f });
 		bool selectable_easy(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector &size = {0.f, 0.f});
 
+		//listboxes
+		//return true if selected item changes
+		template<template<typename> typename Container, typename T,
+			typename = std::enable_if_t<is_string_v<T> && !std::is_same_v<std::string_view, T>>>
+		bool listbox(std::string_view label, int32 &current_item, Container<T>, int height_in_items = -1);
+		template<template<typename> typename Container, typename T>
+		bool listbox(std::string_view label, int32 &current_item, Container<T>, int height_in_items = -1);
+		template<template<typename> typename Container, typename T, typename ToString>
+		bool listbox(std::string_view label, int32 &current_item, ToString to_string_func, Container<T>, int height_in_items = -1);
+
 		enum class combo_flags : ImGuiComboFlags
 		{
 			none = ImGuiComboFlags_::ImGuiComboFlags_None,
@@ -307,7 +317,11 @@ namespace hades
 
 		//TODO: popups
 
-		//TODO: columns
+		//columns
+		void columns_begin(std::size_t count = 1u, bool border = true);
+		void columns_begin(std::string_view id, std::size_t count = 1u, bool border = true);
+		void columns_next();
+		void columns_end();
 
 		enum class hovered_flags : ImGuiHoveredFlags
 		{

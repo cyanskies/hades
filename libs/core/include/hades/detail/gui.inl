@@ -1,4 +1,6 @@
-#include "..\gui.hpp"
+#include "hades/gui.hpp"
+
+#include <type_traits>
 
 namespace hades
 {
@@ -20,6 +22,59 @@ namespace hades
 		_active_assert();
 		if (radio_button(label, active_selection == this_button))
 			active_selection = this_button;
+	}
+
+	template<template<typename> typename Container, typename T, typename>
+	inline bool gui::listbox(std::string_view label, int32 &current_item, Container<T> container, int32 height_in_items)
+	{
+		static_assert(is_string_v<T>);
+		static_assert(!std::is_same_v<T, std::string_view>);
+
+		_active_assert();
+
+		return ImGui::ListBox(to_string(label).data(), &current_item,
+			[](void *data, int index, const char **out_text)->bool {
+			assert(dynamic_cast<Container<T>*>(data));
+
+			auto &container = *static_cast<Container<T>*>(data);
+			if (index < 0 || index > std::size(container))
+				return false;
+
+			auto at = std::begin(container);
+			std::advance(at, index);
+
+			*out_text = [](auto &&val)->const char* {
+				if constexpr (std::is_same_v < string, std::decay_t<decltype(value)>)
+					return val.c_str();
+				else
+					return val; // must be a char*
+			}(*at);
+			return true;
+		}, &container, std::size(container), height_in_items);
+	}
+
+	template<template<typename> typename Container, typename T>
+	inline bool gui::listbox(std::string_view label, int32 &current_item, Container<T> container, int32 height_in_items)
+	{
+		return listbox(label, current_item, to_string<T>, container,
+			std::size(container), height_in_items);
+	}
+
+	template<template<typename> typename Container, typename T, typename ToString>
+	inline bool gui::listbox(std::string_view label, int32 &current_item, ToString to_string_func, Container<T> container, int32 height_in_items)
+	{
+		static_assert(std::is_invocable_r_v<string, ToString, const T&>,
+			"ToString must accept the list entry type and return a string");
+
+		auto strings = std::vector<string>{};
+		const auto size = std::size(container)
+		strings.reserve(size);
+
+		std::transform(std::begin(container), std::end(container),
+			std::back_inserter(strings), to_string_func);
+
+		return listbox(label, current_item, strings, size,
+			height_in_items);
 	}
 
 	template<std::size_t Size>

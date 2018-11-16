@@ -42,7 +42,6 @@ namespace hades
 
 		struct curve_info
 		{
-			string name;
 			const resources::curve* curve = nullptr;
 			resources::curve_default_value value;
 		};
@@ -76,6 +75,7 @@ namespace hades
 		bool _show_objects = true;
 		bool _allow_intersect = false;
 		bool _show_regions = true;
+		bool _vector_property_window_open = false;
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
 		std::optional<editor_object_instance> _held_object;
@@ -91,7 +91,7 @@ namespace hades
 		vector_float _level_limit;
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;
-		std::vector<curve_info> _curve_properties;
+		std::array<curve_info, 4> _curve_properties;
 		//TODO: name list
 	};
 }

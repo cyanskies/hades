@@ -180,15 +180,20 @@ namespace hades
 
 		if (g.collapsing_header("properties"sv))
 		{
-			if (_brush_type == brush_type::object_selector 
+			if (_brush_type == brush_type::object_selector
 				&& _held_object)
 				_make_property_editor(g);
 			else if (_brush_type == brush_type::region_selector)
 			{
 			}
 			else
+			{
 				g.text("Nothing is selected"sv);
+				_vector_property_window_open = false;
+			}
 		}
+		else
+			_vector_property_window_open = false;
 
 		g.window_end();
 
@@ -201,7 +206,10 @@ namespace hades
 	static vector_float get_safe_size(const object_instance &o)
 	{
 		const auto size = get_size(o);
-		return size == vector_float{} ? vector_float{8.f, 8.f} : size;
+		if (size.x == 0.f || size.y == 0.f)
+			return vector_float{ 8.f, 8.f };
+		else
+			return size;
 	}
 
 	static bool within_level(vector_float pos, vector_float size, vector_float level_size)
@@ -319,21 +327,24 @@ namespace hades
 		s.set_size(o.sprite_id, size);
 	}
 
-	static void set_selected_info(const object_instance &o, string &name_id, std::vector<level_editor_objects::curve_info> &curve_info)
+	static void set_selected_info(const object_instance &o, string &name_id, std::array<level_editor_objects::curve_info, 4> &curve_info)
 	{
+		const auto [posx_curve, posy_curve] = get_position_curve();
+		const auto [sizx_curve, sizy_curve] = get_size_curve();
+		const auto posx = get_curve(o, *posx_curve);
+		const auto posy = get_curve(o, *posy_curve);
+		const auto sizx = get_curve(o, *sizx_curve);
+		const auto sizy = get_curve(o, *sizy_curve);
+
 		using curve_t = level_editor_objects::curve_info;
-		std::vector<curve_t> curves;
+		auto info = std::array{
+			curve_t{posx_curve, posx},
+			curve_t{posy_curve, posy},
+			curve_t{sizx_curve, sizx},
+			curve_t{sizy_curve, sizy},
+		};
 
-		const auto all_curves = get_all_curves(o);
-
-		for (const auto &[curve, value] : all_curves)
-			curves.emplace_back(curve_t{ data::get_as_string(curve->id), curve, value });
-
-		std::sort(std::begin(curves), std::end(curves), [](auto &&lhs, auto &&rhs) {
-			return lhs.name < rhs.name;
-		});
-
-		std::swap(curves, curve_info);
+		curve_info = info;
 		name_id = o.name_id;
 	}
 
@@ -501,8 +512,79 @@ namespace hades
 		}
 	}
 
-	template<typename Func>
-	static void make_property_row(gui &g, Func on_commit);
+	template<typename T>
+	static void make_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const T &value)
+	{
+		//g.input(name, value);
+	}
+
+	template<>
+	static void make_property_edit<entity_id>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const entity_id &value)
+	{
+		auto value2 = static_cast<entity_id::value_type>(value);
+		make_property_edit(g, o, name, c, value2);
+		//value = entity_id{ value2 };
+	}
+
+	template<>
+	static void make_property_edit<bool>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const bool &value)
+	{
+		if (g.combo_begin(name, to_string(value)))
+		{
+			bool true_opt, false_opt;
+
+			true_opt = value;
+			false_opt = !true_opt;
+
+			using namespace std::string_view_literals;
+			g.selectable_easy("true"sv, true_opt);
+			g.selectable_easy("false"sv, false_opt);
+			g.combo_end();
+
+			//value = true_opt;
+		}
+	}
+
+	template<>
+	static void make_property_edit<string>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const string &value)
+	{
+		//g.input_text(name, value);
+	}
+
+	template<>
+	static void make_property_edit<unique_id>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const unique_id &value)
+	{
+		auto u_string = data::get_as_string(value);
+		g.input_text(name, u_string);
+		//value = data::make_uid(u_string);
+	}
+
+	template<typename T>
+	static void make_vector_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const T &value, bool &vector_window)
+	{
+
+	}
+
+	static void make_property_row(gui &g, object_instance &o, const resources::object::curve_obj &c, bool &vector_window)
+	{
+		const auto[curve, value] = c;
+		
+		if (!resources::is_curve_valid(*curve, value))
+			return;
+
+		std::visit([&g, &o, &curve, &vector_window](auto &&value) {
+			using T = std::decay_t<decltype(value)>;
+
+			if constexpr (!std::is_same_v<std::monostate, T>)
+			{
+				if constexpr (resources::curve_types::is_vector_type_v<T>)
+					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, vector_window);
+				else
+					make_property_edit(g, o, data::get_as_string(curve->id), curve, value);
+			}
+
+		}, value);
+	}
 
 	void level_editor_objects::_make_property_editor(gui &g)
 	{
@@ -560,6 +642,7 @@ namespace hades
 		//we show the position and size properties before the others
 		//position
 		// modifying these curves actively modifies the world
+		//TODO: this have static indicies now, replace these with []
 		auto pos_x = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
 			return elm.curve == special_curves[1u];
 		});
@@ -638,7 +721,9 @@ namespace hades
 			}
 		}
 		
-		//TODO: all other curves
+		const auto all_curves = get_all_curves(o);
+		for (auto &c : all_curves)
+			make_property_row(g, o, c, _vector_property_window_open);
 	}
 
 	void level_editor_objects::_update_position(const object_instance &o, vector_float p)

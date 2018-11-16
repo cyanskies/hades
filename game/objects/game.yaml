@@ -13,6 +13,12 @@ editor:
     grid-show-icon: grid-show
 
 curves:
+    quote:
+        type: step
+        value: string
+    numbers:
+        type: step
+        value: int_vector
     health:
         type: step 
         value: int32
@@ -62,6 +68,8 @@ objects:
             - health
             - speed
             - [cool, true]
+            - [quote, ahhh]
+            - [numbers, [1, 2, 3, 4]]
     ball:
         editor-icon: ball-anim
         editor-anim: [ball-anim]

@@ -502,6 +502,8 @@ namespace hades
 				return intersects(rect, other.rect) && id != other.key;
 			});
 
+			//TODO: test safe_pos against map limits
+
 			if (safe_pos || allow_intersect)
 			{
 				std::invoke(apply, o, rect);
@@ -513,50 +515,55 @@ namespace hades
 	}
 
 	template<typename T>
-	static void make_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const T &value)
+	static void make_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const T &value)
 	{
-		//g.input(name, value);
+		auto edit_value = value;
+		if (g.input(name, edit_value))
+			set_curve(o, c, edit_value);
 	}
 
 	template<>
-	static void make_property_edit<entity_id>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const entity_id &value)
+	static void make_property_edit<entity_id>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const entity_id &value)
 	{
 		auto value2 = static_cast<entity_id::value_type>(value);
 		make_property_edit(g, o, name, c, value2);
-		//value = entity_id{ value2 };
+		const auto ent_value = entity_id{ value2 };
 	}
 
 	template<>
-	static void make_property_edit<bool>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const bool &value)
+	static void make_property_edit<bool>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const bool &value)
 	{
-		if (g.combo_begin(name, to_string(value)))
+		using namespace std::string_view_literals;
+		constexpr auto tru = "true"sv;
+		constexpr auto fal = "false"sv;
+		if (g.combo_begin(name, value ? tru : fal))
 		{
-			bool true_opt, false_opt;
+			bool true_opt = value;
+			bool false_opt = !true_opt;
 
-			true_opt = value;
-			false_opt = !true_opt;
+			if (g.selectable(tru, value))
+				set_curve(o, c, true);
+			if (g.selectable(fal, !value))
+				set_curve(o, c, false);
 
-			using namespace std::string_view_literals;
-			g.selectable_easy("true"sv, true_opt);
-			g.selectable_easy("false"sv, false_opt);
 			g.combo_end();
-
-			//value = true_opt;
 		}
 	}
 
 	template<>
-	static void make_property_edit<string>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const string &value)
+	static void make_property_edit<string>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const string &value)
 	{
-		//g.input_text(name, value);
+		auto edit = value;
+		if (g.input_text(name, edit))
+			set_curve(o, c, edit);
 	}
 
 	template<>
-	static void make_property_edit<unique_id>(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const unique_id &value)
+	static void make_property_edit<unique_id>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const unique_id &value)
 	{
 		auto u_string = data::get_as_string(value);
-		g.input_text(name, u_string);
-		//value = data::make_uid(u_string);
+		if (g.input_text(name, u_string))
+			set_curve(o, c, data::make_uid(u_string));
 	}
 
 	template<typename T>
@@ -580,7 +587,7 @@ namespace hades
 				if constexpr (resources::curve_types::is_vector_type_v<T>)
 					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, vector_window);
 				else
-					make_property_edit(g, o, data::get_as_string(curve->id), curve, value);
+					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
 			}
 
 		}, value);
@@ -722,8 +729,13 @@ namespace hades
 		}
 		
 		const auto all_curves = get_all_curves(o);
+		using curve_type = const resources::curve*;
 		for (auto &c : all_curves)
-			make_property_row(g, o, c, _vector_property_window_open);
+		{
+			if (std::none_of(std::begin(special_curves), std::end(special_curves),
+				[&c](auto &&curve) { return std::get<curve_type>(c) == curve; }))
+				make_property_row(g, o, c, _vector_property_window_open);
+		}
 	}
 
 	void level_editor_objects::_update_position(const object_instance &o, vector_float p)

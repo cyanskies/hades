@@ -22,6 +22,25 @@ namespace hades
 		struct font;
 	}
 
+	namespace detail
+	{
+		//we can throw a container holding a string straight into the listbox
+		//NOTE: we cannot use a string_view without processing
+		template<typename Cont>
+		using listbox_with_string = std::enable_if_t<
+			is_string_v<typename Cont::value_type> &&
+			!std::is_same_v<std::string_view, typename Cont::value_type>,
+			bool>;
+
+		//a string_view or anything other than a string, we generate a default
+		// to_string function
+		template<typename Cont>
+		using listbox_no_string = std::enable_if_t<
+			!is_string_v<typename Cont::value_type> ||
+			std::is_same_v<std::string_view, typename Cont::value_type>,
+			bool>;
+	}
+
 	class gui : public sf::Drawable
 	{
 	public:
@@ -205,13 +224,17 @@ namespace hades
 
 		//listboxes
 		//return true if selected item changes
-		template<template<typename> typename Container, typename T,
-			typename = std::enable_if_t<is_string_v<T> && !std::is_same_v<std::string_view, T>>>
-		bool listbox(std::string_view label, int32 &current_item, Container<T>, int height_in_items = -1);
-		template<template<typename> typename Container, typename T>
-		bool listbox(std::string_view label, int32 &current_item, Container<T>, int height_in_items = -1);
-		template<template<typename> typename Container, typename T, typename ToString>
-		bool listbox(std::string_view label, int32 &current_item, ToString to_string_func, Container<T>, int height_in_items = -1);
+		template<typename Container>
+		detail::listbox_with_string<Container> listbox(std::string_view label,
+			int32 &current_item, const Container&, int height_in_items = -1);
+
+		template<typename Container>
+		detail::listbox_no_string<Container> listbox(std::string_view label,
+			int32 &current_item, const Container&, int height_in_items = -1);
+
+		template<typename Container, typename ToString>
+		bool listbox(std::string_view label, int32 &current_item,
+			const Container&, ToString to_string_func, int height_in_items = -1);
 
 		enum class combo_flags : ImGuiComboFlags
 		{
@@ -254,6 +277,8 @@ namespace hades
 		};
 
 		//inputs
+		template<typename T> // selects the correct function from those bellow
+		bool input(std::string_view label, T&, input_text_flags = input_text_flags::none);
 		template<std::size_t Size>
 		bool input_text(std::string_view label, std::array<char, Size> &buffer, input_text_flags = input_text_flags::none);
 		bool input_text(std::string_view label, std::string &buffer, input_text_flags = input_text_flags::none);
@@ -261,9 +286,9 @@ namespace hades
 		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
 		bool input_text_multiline(std::string_view label, std::string &buffer, const vector &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
 		template<typename T>
-		bool input(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
+		bool input_scalar(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		template<typename T, std::size_t Size>
-		bool input(std::string_view label, std::array<T, Size> &v, input_text_flags = input_text_flags::none);
+		bool input_scalar_array(std::string_view label, std::array<T, Size> &v, input_text_flags = input_text_flags::none);
 		
 		//TODO: colour picker
 

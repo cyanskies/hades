@@ -19,6 +19,13 @@ namespace hades
 	{
 		return entity_id{ from_string<entity_id::value_type>(s) };
 	}
+
+	template<>
+	inline string to_string<entity_id>(entity_id id)
+	{
+		return to_string(static_cast<entity_id::value_type>(id));
+	}
+
 	//level size type
 
 	//something else?

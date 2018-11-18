@@ -1,5 +1,6 @@
 #include "hades/gui.hpp"
 
+#include <cstring>
 #include <type_traits>
 
 namespace hades
@@ -24,57 +25,119 @@ namespace hades
 			active_selection = this_button;
 	}
 
-	template<template<typename> typename Container, typename T, typename>
-	inline bool gui::listbox(std::string_view label, int32 &current_item, Container<T> container, int32 height_in_items)
+	template<typename Container>
+	inline detail::listbox_with_string<Container> gui::listbox(std::string_view label,
+		int32 &current_item, const Container& container, int height_in_items)
 	{
+		using T = typename Container::value_type;
 		static_assert(is_string_v<T>);
 		static_assert(!std::is_same_v<T, std::string_view>);
 
 		_active_assert();
 
+		//NOTE: container is not modified, but ListBox() only accepts non-const
+		auto &cont = const_cast<Container&>(container);
+
 		return ImGui::ListBox(to_string(label).data(), &current_item,
 			[](void *data, int index, const char **out_text)->bool {
-			assert(dynamic_cast<Container<T>*>(data));
-
-			auto &container = *static_cast<Container<T>*>(data);
-			if (index < 0 || index > std::size(container))
+			assert(index >= 0);
+			const auto i = static_cast<std::size_t>(index);
+			const auto &container = *static_cast<Container*>(data);
+			if (i > std::size(container))
 				return false;
 
 			auto at = std::begin(container);
-			std::advance(at, index);
+			std::advance(at, i);
 
 			*out_text = [](auto &&val)->const char* {
-				if constexpr (std::is_same_v < string, std::decay_t<decltype(value)>)
+				if constexpr (std::is_same_v<string, std::decay_t<decltype(val)>>)
 					return val.c_str();
 				else
 					return val; // must be a char*
 			}(*at);
 			return true;
-		}, &container, std::size(container), height_in_items);
+		}, &cont, static_cast<int32>(std::size(container)), height_in_items);
 	}
 
-	template<template<typename> typename Container, typename T>
-	inline bool gui::listbox(std::string_view label, int32 &current_item, Container<T> container, int32 height_in_items)
+	template<typename Container>
+	inline detail::listbox_no_string<Container> gui::listbox(std::string_view label,
+		int32 &current_item, const Container &container, int height_in_items)
 	{
-		return listbox(label, current_item, to_string<T>, container,
-			std::size(container), height_in_items);
+		using T = typename Container::value_type;
+		return listbox(label, current_item, container, to_string<T>,
+			height_in_items);
 	}
 
-	template<template<typename> typename Container, typename T, typename ToString>
-	inline bool gui::listbox(std::string_view label, int32 &current_item, ToString to_string_func, Container<T> container, int32 height_in_items)
+	template<typename Container, typename ToString>
+	inline bool gui::listbox(std::string_view label, int32 &current_item,
+		const Container &container, ToString to_string_func,
+		int height_in_items)
 	{
+		using T = typename Container::value_type;
 		static_assert(std::is_invocable_r_v<string, ToString, const T&>,
 			"ToString must accept the list entry type and return a string");
 
 		auto strings = std::vector<string>{};
-		const auto size = std::size(container)
-		strings.reserve(size);
+		strings.reserve(std::size(container));
 
 		std::transform(std::begin(container), std::end(container),
 			std::back_inserter(strings), to_string_func);
 
-		return listbox(label, current_item, strings, size,
-			height_in_items);
+		return listbox(label, current_item, strings, height_in_items);
+	}
+
+	namespace detail
+	{
+		template<typename T>
+		using input_imp_return = std::enable_if_t<!is_string_v<T>, bool>;
+
+		template<typename T>
+		using input_imp_string_return = std::enable_if_t<is_string_v<T>, bool>;
+
+		//basic imp, calls input scalar
+		template<typename T>
+		inline input_imp_return<T> input_imp(gui &g, std::string_view label, T &v, gui::input_text_flags f)
+		{
+			constexpr auto step = static_cast<T>(1);
+			return g.input_scalar(label, v, step, step, f);
+		}
+	
+		//string imp
+		template<typename T>
+		inline input_imp_string_return<T> input_imp(gui &g, std::string_view label, T &v, gui::input_text_flags f)
+		{
+			using Type = std::decay_t<T>;
+			if constexpr (std::is_same_v<Type, std::string_view>)
+				static_assert(always_false_v<Type>, "string_view is not mutable");
+			else if constexpr (std::is_same_v<Type, char*>)
+			{
+				return ImGui::InputText(to_string(label).data(), v, std::strlen(v), static_cast<ImGuiInputTextFlags>(f));
+			}
+			else
+			{
+				return g.input_text(to_string(label).data(), v, f);
+			}
+		}
+
+		//array imp, calls input scalar array
+		template<typename T, std::size_t Size>
+		inline bool input_imp(gui &g, std::string_view l, std::array<T, Size> &v, gui::input_text_flags f)
+		{
+			return g.input_scalar_array(g, l, v, f);
+		}
+
+		//specialisation for static sized char array buffers
+		template<std::size_t Size>
+		inline bool input_imp(gui &g, std::string_view l, std::array<char, Size> &v, gui::input_text_flags f)
+		{
+			return g.input_text(l, v, f);
+		}
+	}
+	template<typename T>
+	inline bool gui::input(std::string_view label, T &v, input_text_flags f)
+	{
+		_active_assert();
+		return detail::input_imp(*this, label, v, f);
 	}
 
 	template<std::size_t Size>
@@ -92,7 +155,7 @@ namespace hades
 	}
 
 	template<typename T>
-	inline bool gui::input(std::string_view label, T &v, T step, T step_fast, input_text_flags f)
+	inline bool gui::input_scalar(std::string_view label, T &v, T step, T step_fast, input_text_flags f)
 	{
 		_active_assert();
 
@@ -115,7 +178,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	inline bool gui::input(std::string_view label, std::array<T, Size> &v, input_text_flags f)
+	inline bool gui::input_scalar_array(std::string_view label, std::array<T, Size> &v, input_text_flags f)
 	{
 		_active_assert();
 

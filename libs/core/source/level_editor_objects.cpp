@@ -121,6 +121,8 @@ namespace hades
 		return o.id;
 	}
 
+	using vector_curve_edit = level_editor_objects::vector_curve_edit;
+
 	void level_editor_objects::gui_update(gui &g, editor_windows&)
 	{
 		using namespace std::string_view_literals;
@@ -189,11 +191,11 @@ namespace hades
 			else
 			{
 				g.text("Nothing is selected"sv);
-				_vector_property_window_open = false;
+				_vector_curve_edit = vector_curve_edit{};
 			}
 		}
 		else
-			_vector_property_window_open = false;
+			_vector_curve_edit = vector_curve_edit{};
 
 		g.window_end();
 
@@ -566,26 +568,181 @@ namespace hades
 			set_curve(o, c, data::make_uid(u_string));
 	}
 
+	//TODO: clean these three specialisations up to get rid of repeated code
 	template<typename T>
-	static void make_vector_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve *c, const T &value, bool &vector_window)
+	static void make_vector_edit_field(gui &g, object_instance &o, const resources::curve &c, int32 selected, const T &value)
 	{
+		auto iter = std::cbegin(value);
+		std::advance(iter, selected);
 
+		auto edit = *iter;
+
+		g.input("edit"sv, edit);
+
+		if (edit != *iter)
+		{
+			auto container = value;
+			auto iter = std::begin(container);
+			std::advance(iter, selected);
+			*iter = edit;
+			set_curve(o, c, container);
+		}
 	}
 
-	static void make_property_row(gui &g, object_instance &o, const resources::object::curve_obj &c, bool &vector_window)
+	template<>
+	static void make_vector_edit_field<resources::curve_types::vector_unique>
+		(gui &g, object_instance &o, const resources::curve &c, int32 selected, 
+		const resources::curve_types::vector_unique &value)
+	{
+		auto iter = std::cbegin(value);
+		std::advance(iter, selected);
+
+		auto edit = data::get_as_string(*iter);
+
+		g.input("edit"sv, edit);
+
+		auto id = data::make_uid(edit);
+
+		if (id != *iter)
+		{
+			auto container = value;
+			auto iter = std::begin(container);
+			std::advance(iter, selected);
+			*iter = id;
+			set_curve(o, c, container);
+		}
+	}
+
+	template<>
+	static void make_vector_edit_field
+		<resources::curve_types::vector_object_ref>(gui &g, object_instance &o,
+			const resources::curve &c, int32 selected,
+			const resources::curve_types::vector_object_ref &value)
+	{
+		auto iter = std::begin(value);
+		std::advance(iter, selected);
+
+		auto edit = static_cast
+			<resources::curve_types::object_ref::value_type>(*iter);
+
+		g.input("edit"sv, edit);
+
+		const auto new_val = resources::curve_types::object_ref{ edit };
+
+		if (new_val != *iter)
+		{
+			auto container = value;
+			auto iter = std::begin(container);
+			std::advance(iter, selected);
+			*iter = new_val;
+
+			set_curve(o, c, container);
+		}
+	}
+
+	template<typename T>
+	static void make_vector_property_edit(gui &g, object_instance &o, std::string_view name, 
+		const resources::curve *c, const T &value, vector_curve_edit &target)
+	{
+		using namespace std::string_view_literals;
+
+		if (g.button("edit vector..."sv))
+			target.target = c;
+		g.layout_horizontal();
+		g.text(name);
+
+		if (target.target == c)
+		{
+			if (g.window_begin("edit vector"sv,gui::window_flags::no_collapse))
+			{
+				if (g.button("done"sv))
+					target = vector_curve_edit{};
+
+				g.text(name);
+				g.columns_begin(2u, false);
+				
+				g.listbox(std::string_view{}, target.selected, value);
+
+				g.columns_next();
+
+				assert(target.selected >= 0);
+				if(static_cast<std::size_t>(target.selected) < std::size(value))
+					make_vector_edit_field(g, o, *c, target.selected, value);	
+				else
+				{
+					string empty{};
+					g.input("edit"sv, empty, gui::input_text_flags::readonly);
+				}
+
+				if (g.button("add"sv))
+				{
+					auto container = value;
+					auto iter = std::begin(container);
+					++target.selected;
+					std::advance(iter, target.selected);
+
+					container.emplace(iter);
+					set_curve(o, *c, container);
+				}
+
+				g.layout_horizontal();
+
+				if (g.button("remove"sv) && !std::empty(value))
+				{
+					auto container = value;
+					auto iter = std::begin(container);
+					std::advance(iter, target.selected);
+					container.erase(iter);
+
+					set_curve(o, *c, container);
+					if (std::empty(container))
+						target.selected = 0;
+					else
+						target.selected = std::clamp(target.selected, 0, static_cast<int32>(std::size(container)) - 1);
+				}
+
+				if (g.button("move up"sv) && target.selected > 0)
+				{
+					auto container = value;
+
+					auto at = std::begin(container);
+					std::advance(at, target.selected);
+					auto before = at - 1;
+
+					std::iter_swap(before, at);
+					--target.selected;
+					set_curve(o, *c, container);
+				}
+
+				if (g.button("move down"sv) && target.selected + 1 != std::size(value))
+				{
+					auto container = value;
+					auto at = std::begin(container);
+					std::advance(at, target.selected);
+					auto after = at + 1;
+					std::iter_swap(at, after);
+					++target.selected;
+					set_curve(o, *c, container);
+				}
+			}
+			g.window_end();
+		}
+	}
+
+	static void make_property_row(gui &g, object_instance &o, const resources::object::curve_obj &c, vector_curve_edit &target)
 	{
 		const auto[curve, value] = c;
 		
 		if (!resources::is_curve_valid(*curve, value))
 			return;
 
-		std::visit([&g, &o, &curve, &vector_window](auto &&value) {
+		std::visit([&g, &o, &curve, &target](auto &&value) {
 			using T = std::decay_t<decltype(value)>;
 
 			if constexpr (!std::is_same_v<std::monostate, T>)
 			{
 				if constexpr (resources::curve_types::is_vector_type_v<T>)
-					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, vector_window);
+					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, target);
 				else
 					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
 			}
@@ -734,7 +891,7 @@ namespace hades
 		{
 			if (std::none_of(std::begin(special_curves), std::end(special_curves),
 				[&c](auto &&curve) { return std::get<curve_type>(c) == curve; }))
-				make_property_row(g, o, c, _vector_property_window_open);
+				make_property_row(g, o, c, _vector_curve_edit);
 		}
 	}
 

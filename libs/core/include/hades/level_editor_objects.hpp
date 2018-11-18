@@ -46,6 +46,12 @@ namespace hades
 			resources::curve_default_value value;
 		};
 
+		struct vector_curve_edit
+		{
+			int32 selected = 0;
+			const resources::curve *target = nullptr;
+		};
+
 		level_editor_objects();
 
 		void level_load(const level&) override;
@@ -75,7 +81,6 @@ namespace hades
 		bool _show_objects = true;
 		bool _allow_intersect = false;
 		bool _show_regions = true;
-		bool _vector_property_window_open = false;
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
 		std::optional<editor_object_instance> _held_object;
@@ -91,6 +96,7 @@ namespace hades
 		vector_float _level_limit;
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;
+		vector_curve_edit _vector_curve_edit;
 		std::array<curve_info, 4> _curve_properties;
 		//TODO: name list
 	};

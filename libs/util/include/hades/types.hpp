@@ -36,25 +36,17 @@ namespace hades {
 
 		template<typename ...Ts>
 		constexpr auto always_true_v = !always_false_v<Ts...>::value;
-
-		//string to value conversion
-		template<typename T>
-		T stov(std::string value)
-		{
-            //TODO: gcc is too eager to interpret static asserts, need a different solution here
-			static_assert(always_false<T>::value, "Tried to convert type not covered by stov");
-			return T();
-		}
 	}
 
 	using namespace types;
 
 	template<typename T> struct is_string : std::false_type{};
 	template<> struct is_string<string> : std::true_type {};
+	template<> struct is_string<const char*> : std::true_type {};
 	template<> struct is_string<std::string_view> : std::true_type {};
 
 	template<typename T>
-	constexpr auto is_string_v = is_string<T>::value;
+	constexpr bool is_string_v = is_string<T>::value;
 }
 
 #endif //HADES_UTIL_TYPES_HPP

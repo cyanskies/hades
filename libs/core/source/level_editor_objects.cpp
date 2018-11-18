@@ -880,6 +880,8 @@ namespace hades
 			{ return std::get<curve_type>(c) == curve.curve; }))
 				make_property_row(g, o, c, _vector_curve_edit);
 		}
+
+		_held_object = o;
 	}
 
 	void level_editor_objects::_update_position(const object_instance &o, vector_float p)

@@ -72,6 +72,7 @@ namespace hades
 		_level_limit = { static_cast<float>(l.map_x),
 						 static_cast<float>(l.map_y) };
 
+		_quad = quad_tree<entity_id, rect_float>{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y}, 5 };
 		//TODO: load objects
 	}
 
@@ -273,6 +274,20 @@ namespace hades
 		}
 	}
 
+	static void update_selection_rect(object_instance &o, std::variant<sf::Sprite, sf::RectangleShape> &selection_rect)
+	{
+		const auto position = get_position(o);
+		const auto size = get_safe_size(o);
+
+		auto selector = sf::RectangleShape{ {size.x + 2.f, size.y + 2.f} };
+		selector.setPosition({ position.x - 1.f, position.y - 1.f });
+		selector.setFillColor(sf::Color::Transparent);
+		selector.setOutlineThickness(1.f);
+		selector.setOutlineColor(sf::Color::White);
+
+		selection_rect = std::move(selector);
+	}
+
 	void level_editor_objects::make_brush_preview(time_duration, mouse_pos pos)
 	{
 		switch (_brush_type)
@@ -285,19 +300,7 @@ namespace hades
 		case brush_type::object_selector:
 		{
 			if (_held_object && _show_objects)
-			{
-				//draw selector around object
-				const auto position = get_position(*_held_object);
-				const auto size = get_safe_size(*_held_object);
-
-				auto selector = sf::RectangleShape{ {size.x + 2.f, size.y + 2.f} };
-				selector.setPosition({ position.x - 1.f, position.y - 1.f });
-				selector.setFillColor(sf::Color::Transparent);
-				selector.setOutlineThickness(1.f);
-				selector.setOutlineColor(sf::Color::White);
-
-				_held_preview = std::move(selector);
-			}
+				update_selection_rect(*_held_object, _held_preview);
 		}break;
 		case brush_type::object_drag:
 		{
@@ -339,19 +342,16 @@ namespace hades
 		const auto sizy = get_curve(o, *sizy_curve);
 
 		using curve_t = level_editor_objects::curve_info;
-		auto info = std::array{
+
+		curve_info = std::array{
 			curve_t{posx_curve, posx},
 			curve_t{posy_curve, posy},
-			curve_t{sizx_curve, sizx},
-			curve_t{sizy_curve, sizy},
+			has_curve(o, *sizx_curve) ? curve_t{sizx_curve, sizx} : curve_t{},
+			has_curve(o, *sizy_curve) ? curve_t{sizy_curve, sizy} : curve_t{}
 		};
 
-		curve_info = info;
 		name_id = o.name_id;
 	}
-
-	static void update_selection_rect(object_instance &o, std::variant<sf::Sprite, sf::RectangleShape> &selection_rect)
-	{}
 
 	void level_editor_objects::on_click(mouse_pos p)
 	{
@@ -402,6 +402,15 @@ namespace hades
 				_held_object->id = entity_id{ _next_id++ };
 				set_position(*_held_object, pos);
 				_objects.emplace_back(*_held_object);
+				//TODO: we're putting sizeless objects into here too
+				// forcing them to not collide with each other
+				// and this breaks when their position property
+				// is modified, they are re-added to the quadtree with 0 size
+				// making them un-selectable
+				//
+				// I should add a second quadtree used just for selection purposes
+				// and then a more granular collision type system for actual 
+				// intersections
 				_quad.insert({ pos, size }, _held_object->id);
 
 				update_object_sprite(_objects.back(), _sprites);
@@ -500,7 +509,7 @@ namespace hades
 			const auto rect = std::invoke(make_rect, o, edit_curve);
 			const auto others = quad.find_collisions(rect);
 
-			const auto safe_pos = std::none_of(std::begin(others), std::end(others), [rect, id = o.id](auto &&other){
+			const auto safe_pos = !std::any_of(std::begin(others), std::end(others), [rect, id = o.id](auto &&other){
 				return intersects(rect, other.rect) && id != other.key;
 			});
 
@@ -792,29 +801,10 @@ namespace hades
 		// can be useful for players the world or other significant objects
 		make_name_id_property(g, o, _entity_name_id_uncommited, _entity_names);
 
-		//get all of the other curves that we'll handle here
-		const auto special_curves = std::array{
-			get_name_curve(),
-			std::get<0>(get_position_curve()),
-			std::get<1>(get_position_curve()),
-			std::get<0>(get_size_curve()),
-			std::get<1>(get_size_curve())
-		};
+		auto &pos_x = _curve_properties[curve_index::pos_x];
+		auto &pos_y = _curve_properties[curve_index::pos_y];
 
-		assert(std::all_of(std::begin(special_curves), std::end(special_curves), [](auto &&c) { return c; }));
-
-		//we show the position and size properties before the others
-		//position
-		// modifying these curves actively modifies the world
-		//TODO: this have static indicies now, replace these with []
-		auto pos_x = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
-			return elm.curve == special_curves[1u];
-		});
-		auto pos_y = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
-			return elm.curve == special_curves[2u];
-		});
-
-		make_positional_property(g, "x position"sv, _allow_intersect, o, *pos_x, _quad, _sprites, _held_preview,
+		make_positional_property(g, "x position"sv, _allow_intersect, o, pos_x, _quad, _sprites, _held_preview,
 			[](const auto &o, const auto&c) {
 			auto rect = rect_float{ get_position(o), get_size(o) }; 
 			rect.x = std::get<float>(c.value);
@@ -823,13 +813,13 @@ namespace hades
 			set_position(o, { r.x, r.y });
 		});
 
-		if (const auto pos = get_position(o); std::get<float>(pos_x->value) != pos.x)
+		if (const auto pos = get_position(o); std::get<float>(pos_x.value) != pos.x)
 		{
 			g.show_tooltip("The value of x position would cause an collision");
-			pos_x->value = pos.x;
+			pos_x.value = pos.x;
 		}
 
-		make_positional_property(g, "y position"sv, _allow_intersect, o, *pos_y, _quad, _sprites, _held_preview,
+		make_positional_property(g, "y position"sv, _allow_intersect, o, pos_y, _quad, _sprites, _held_preview,
 			[](const auto &o, const auto&c) {
 			auto rect = rect_float{ get_position(o), get_size(o) };
 			rect.y = std::get<float>(c.value);
@@ -838,23 +828,19 @@ namespace hades
 			set_position(o, { r.x, r.y });
 		});
 
-		if (const auto pos = get_position(o); std::get<float>(pos_y->value) != pos.y)
+		if (const auto pos = get_position(o); std::get<float>(pos_y.value) != pos.y)
 		{
 			g.show_tooltip("The value of y position would cause an collision");
-			pos_y->value = pos.y;
+			pos_y.value = pos.y;
 		}
 
 		//size
-		auto siz_x = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
-			return elm.curve == special_curves[3u];
-		});
-		auto siz_y = std::find_if(std::begin(_curve_properties), std::end(_curve_properties), [&special_curves](auto &&elm) {
-			return elm.curve == special_curves[4u];
-		});
+		auto &siz_x = _curve_properties[curve_index::size_x];
+		auto &siz_y = _curve_properties[curve_index::size_y];
 
-		if (const auto props_end = std::end(_curve_properties); siz_x != props_end && siz_y != props_end)
+		if (const auto props_end = std::end(_curve_properties); siz_x.curve && siz_y.curve)
 		{
-			make_positional_property(g, "x size"sv, _allow_intersect, o, *siz_x, _quad, _sprites, _held_preview,
+			make_positional_property(g, "x size"sv, _allow_intersect, o, siz_x, _quad, _sprites, _held_preview,
 				[](const auto &o, const auto&c) {
 				auto rect = rect_float{ get_position(o), get_size(o) };
 				rect.width = std::get<float>(c.value);
@@ -863,13 +849,13 @@ namespace hades
 				set_size(o, { r.width, r.height });
 			});
 
-			if (const auto siz = get_size(o); std::get<float>(siz_x->value) != siz.x)
+			if (const auto siz = get_size(o); std::get<float>(siz_x.value) != siz.x)
 			{
 				g.show_tooltip("The value of x size would cause an collision");
-				siz_x->value = siz.x;
+				siz_x.value = siz.x;
 			}
 			
-			make_positional_property(g, "y size"sv, _allow_intersect, o, *siz_y, _quad, _sprites, _held_preview,
+			make_positional_property(g, "y size"sv, _allow_intersect, o, siz_y, _quad, _sprites, _held_preview,
 				[](const auto &o, const auto&c) {
 				auto rect = rect_float{ get_position(o), get_size(o) };
 				rect.height = std::get<float>(c.value);
@@ -878,10 +864,10 @@ namespace hades
 				set_size(o, { r.width, r.height });
 			});
 
-			if (const auto siz = get_size(o); std::get<float>(siz_y->value) != siz.y)
+			if (const auto siz = get_size(o); std::get<float>(siz_y.value) != siz.y)
 			{
 				g.show_tooltip("The value of y size would cause an collision");
-				siz_y->value = siz.y;
+				siz_y.value = siz.y;
 			}
 		}
 		
@@ -889,8 +875,9 @@ namespace hades
 		using curve_type = const resources::curve*;
 		for (auto &c : all_curves)
 		{
-			if (std::none_of(std::begin(special_curves), std::end(special_curves),
-				[&c](auto &&curve) { return std::get<curve_type>(c) == curve; }))
+			if (std::none_of(std::begin(_curve_properties),
+				std::end(_curve_properties), [&c](auto &&curve) 
+			{ return std::get<curve_type>(c) == curve.curve; }))
 				make_property_row(g, o, c, _vector_curve_edit);
 		}
 	}

@@ -73,6 +73,13 @@ namespace hades
 			region_place
 		};
 
+		enum curve_index : std::size_t {
+			pos_x,
+			pos_y,
+			size_x,
+			size_y
+		};
+
 		void _make_property_editor(gui&);
 		void _update_position(const object_instance&, vector_float);
 		void _update_size(const object_instance&, vector_float);

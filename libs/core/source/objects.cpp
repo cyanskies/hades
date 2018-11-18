@@ -222,6 +222,22 @@ namespace hades
 		return object_instance{ o };
 	}
 
+	bool has_curve(const object_instance & o, const resources::curve & c)
+	{
+		if (std::any_of(std::begin(o.curves), std::end(o.curves), [&c](auto &&curve) {
+			return std::get<const resources::curve*>(curve) == &c;
+		}))
+			return true;
+
+		assert(o.obj_type);
+		return has_curve(*o.obj_type, c);
+	}
+
+	bool has_curve(const resources::object & o, const resources::curve & c)
+	{
+		return std::get<const resources::curve*>(TryGetCurve(&o, &c)) != nullptr;
+	}
+
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
 	{
 		for (auto cur : o.curves)

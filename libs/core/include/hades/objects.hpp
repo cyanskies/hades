@@ -76,6 +76,9 @@ namespace hades
 	//NOTE: performs a depth first search for the requested data
 	using curve_list = resources::object::curve_list;
 	using curve_value = hades::resources::curve_default_value;
+
+	bool has_curve(const object_instance &o, const resources::curve &c);
+	bool has_curve(const resources::object &o, const resources::curve &c);
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// or the value hasn't been set
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c);

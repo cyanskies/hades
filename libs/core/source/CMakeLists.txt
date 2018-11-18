@@ -58,6 +58,7 @@ set(HADES_CORE_SRC
 source_group("Headers" FILES
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/files.hpp

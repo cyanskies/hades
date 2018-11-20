@@ -72,7 +72,7 @@ namespace hades
 		_level_limit = { static_cast<float>(l.map_x),
 						 static_cast<float>(l.map_y) };
 
-		_quad = quad_tree<entity_id, rect_float>{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y}, 5 };
+		_quad = quad_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y}, 5 };
 		//TODO: load objects
 	}
 
@@ -85,6 +85,8 @@ namespace hades
 		constexpr auto button_scale_diff = 6.f;
 		constexpr auto button_size_no_img = vector_float{ button_size.x + button_scale_diff,
 														  button_size.y + button_scale_diff };
+
+		const auto name_curve = get_name_curve();
 
 		g.indent();
 
@@ -99,8 +101,10 @@ namespace hades
 
 			auto clicked = false;
 			
-			auto name = get_name(*o); 
-			if (name.empty())
+			string name{};
+			if(has_curve(*o, *name_curve))
+				name = get_name(*o);
+			else
 				name = data::get_as_string(o->id);
 
 			if (const auto ico = get_editor_icon(*o); ico)
@@ -494,37 +498,6 @@ namespace hades
 		return { get_position(o), get_size(o) };
 	}
 
-	template<typename MakeBoundRect, typename SetChangedProperty>
-	static void	make_positional_property(gui &g, std::string_view label, bool allow_intersect, level_editor_objects::editor_object_instance &o,
-		level_editor_objects::curve_info &edit_curve, quad_tree<entity_id, rect_float> &quad, sprite_batch &s,
-		std::variant<sf::Sprite, sf::RectangleShape> &preview, MakeBoundRect make_rect, SetChangedProperty apply)
-	{
-		static_assert(std::is_invocable_r_v<rect_float, MakeBoundRect, const object_instance&, const level_editor_objects::curve_info&>,
-			"MakeBoundRect must have the following definition: (const object_instance&, const curve_info&)->rect_float");
-		static_assert(std::is_invocable_v<SetChangedProperty, object_instance&, const rect_float&>,
-			"SetChangedProperty must have the following definition (object_instance&, const rect_float&)");
-
-		if (g.input(label, std::get<float>(edit_curve.value)))
-		{
-			const auto rect = std::invoke(make_rect, o, edit_curve);
-			const auto others = quad.find_collisions(rect);
-
-			const auto safe_pos = !std::any_of(std::begin(others), std::end(others), [rect, id = o.id](auto &&other){
-				return intersects(rect, other.rect) && id != other.key;
-			});
-
-			//TODO: test safe_pos against map limits
-
-			if (safe_pos || allow_intersect)
-			{
-				std::invoke(apply, o, rect);
-				quad.insert(rect, o.id);
-				update_object_sprite(o, s);
-				update_selection_rect(o, preview);
-			}
-		}
-	}
-
 	template<typename T>
 	static void make_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const T &value)
 	{
@@ -804,7 +777,7 @@ namespace hades
 		auto &pos_x = _curve_properties[curve_index::pos_x];
 		auto &pos_y = _curve_properties[curve_index::pos_y];
 
-		make_positional_property(g, "x position"sv, _allow_intersect, o, pos_x, _quad, _sprites, _held_preview,
+		_make_positional_property_edit_field(g, "x position"sv, o, pos_x,
 			[](const auto &o, const auto&c) {
 			auto rect = rect_float{ get_position(o), get_size(o) }; 
 			rect.x = std::get<float>(c.value);
@@ -819,7 +792,7 @@ namespace hades
 			pos_x.value = pos.x;
 		}
 
-		make_positional_property(g, "y position"sv, _allow_intersect, o, pos_y, _quad, _sprites, _held_preview,
+		_make_positional_property_edit_field(g, "y position"sv, o, pos_y,
 			[](const auto &o, const auto&c) {
 			auto rect = rect_float{ get_position(o), get_size(o) };
 			rect.y = std::get<float>(c.value);
@@ -840,7 +813,7 @@ namespace hades
 
 		if (const auto props_end = std::end(_curve_properties); siz_x.curve && siz_y.curve)
 		{
-			make_positional_property(g, "x size"sv, _allow_intersect, o, siz_x, _quad, _sprites, _held_preview,
+			_make_positional_property_edit_field(g, "x size"sv, o, siz_x,
 				[](const auto &o, const auto&c) {
 				auto rect = rect_float{ get_position(o), get_size(o) };
 				rect.width = std::get<float>(c.value);
@@ -855,7 +828,7 @@ namespace hades
 				siz_x.value = siz.x;
 			}
 			
-			make_positional_property(g, "y size"sv, _allow_intersect, o, siz_y, _quad, _sprites, _held_preview,
+			_make_positional_property_edit_field(g, "y size"sv, o, siz_y,
 				[](const auto &o, const auto&c) {
 				auto rect = rect_float{ get_position(o), get_size(o) };
 				rect.height = std::get<float>(c.value);
@@ -884,21 +857,17 @@ namespace hades
 		_held_object = o;
 	}
 
-	void level_editor_objects::_update_position(const object_instance &o, vector_float p)
+	void level_editor_objects::_update_quad_data(object_instance & o)
 	{
-		const auto s = get_size(o);
-		_quad.insert({ p, s }, o.id);
-	}
+		//update selection quad
+		const auto position = get_position(o);
+		const auto select_size = get_safe_size(o);
+		_quad_selection.insert({ position, select_size }, o.id);
+		//update collision quad
 
-	void level_editor_objects::_update_size(const object_instance &o, vector_float s)
-	{
-		const auto p = get_position(o);
-		_quad.insert({ p, s }, o.id);
-	}
+		const auto size = get_size(o);
 
-	void level_editor_objects::_update_pos_size(entity_id id, vector_float p, vector_float s)
-	{
-		_quad.insert({ p, s }, id);
+		_quad.insert({ position, size }, o.id);
 	}
 
 	level_editor_objects::editor_object_instance::editor_object_instance(const object_instance &o)

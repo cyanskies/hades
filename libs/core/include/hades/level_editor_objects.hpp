@@ -80,10 +80,13 @@ namespace hades
 			size_y
 		};
 
+		using quad_tree = quad_tree<entity_id, rect_float>;
+
 		void _make_property_editor(gui&);
-		void _update_position(const object_instance&, vector_float);
-		void _update_size(const object_instance&, vector_float);
-		void _update_pos_size(entity_id, vector_float, vector_float);
+		template<typename MakeBoundRect, typename SetChangedProperty>
+		void _make_positional_property_edit_field(gui&, std::string_view,
+			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
+		void _update_quad_data(object_instance &o);
 
 		bool _show_objects = true;
 		bool _allow_intersect = false;
@@ -99,7 +102,8 @@ namespace hades
 		//object instances
 		entity_id::value_type _next_id = static_cast<entity_id::value_type>(bad_entity) + 1;
 		std::vector<editor_object_instance> _objects;
-		quad_tree<entity_id, rect_float> _quad;
+		quad_tree _quad_selection; // quadtree used for selecting objects
+		quad_tree _quad; //quadtree used for collisions
 		vector_float _level_limit;
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;
@@ -108,5 +112,7 @@ namespace hades
 		//TODO: name list
 	};
 }
+
+#include "hades/detail/level_editor_objects.inl"
 
 #endif //!HADES_LEVEL_EDITOR_OBJECTS_HPP

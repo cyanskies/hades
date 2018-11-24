@@ -66,13 +66,17 @@ namespace hades
 		}
 	}
 
+	constexpr auto quad_bucket_limit = 5;
+
 	void level_editor_objects::level_load(const level &l)
 	{
 		_next_id = static_cast<entity_id::value_type>(l.next_id);
 		_level_limit = { static_cast<float>(l.map_x),
 						 static_cast<float>(l.map_y) };
 
-		_quad = quad_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y}, 5 };
+		//setup the quad used for selecting objects
+		_quad_selection = quad_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
+		
 		//TODO: load objects
 	}
 
@@ -230,7 +234,7 @@ namespace hades
 
 	template<typename Object>
 	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit,
-		const Object &o, const resources::level_editor_object_settings &s, const quad_tree<entity_id, rect_float> &quads)
+		const Object &o, const resources::level_editor_object_settings &s)
 	{
 		const auto size = get_safe_size(o);
 		const auto obj_pos = pos;
@@ -299,7 +303,7 @@ namespace hades
 		case brush_type::object_place:
 		{
 			assert(_held_object);
-			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings, _quad);
+			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings);
 		}break;
 		case brush_type::object_selector:
 		{
@@ -366,7 +370,7 @@ namespace hades
 			&& _show_objects && within_level(p, vector_float{}, _level_limit))
 		{
 			const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
-			const auto rects = _quad.find_collisions(target);
+			const auto rects = _quad_selection.find_collisions(target);
 			//select object under brush
 			auto id = bad_entity;
 			for (const auto &o : rects)
@@ -393,30 +397,18 @@ namespace hades
 		}
 		else if (_brush_type == brush_type::object_place)
 		{
+			auto &o = *_held_object;
 			const auto size = get_safe_size(*_held_object);
-		
-			const auto bounding_rect = rect_float{ pos, size };
-			const auto rects = _quad.find_collisions(bounding_rect);
-			const auto intersect_found = std::any_of(std::begin(rects), std::end(rects), [bounding_rect](const auto &rect) {
-				return intersects(rect.rect, bounding_rect);
-			});
+			o.id = entity_id{ _next_id + 1 };
+			const auto valid_location = _object_valid_location(pos, size, o);
 
-			if (within_level(pos, size, _level_limit) && !intersect_found || _allow_intersect)
+			if (valid_location || _allow_intersect)
 			{
-				_held_object->id = entity_id{ _next_id++ };
-				set_position(*_held_object, pos);
-				_objects.emplace_back(*_held_object);
-				//TODO: we're putting sizeless objects into here too
-				// forcing them to not collide with each other
-				// and this breaks when their position property
-				// is modified, they are re-added to the quadtree with 0 size
-				// making them un-selectable
-				//
-				// I should add a second quadtree used just for selection purposes
-				// and then a more granular collision type system for actual 
-				// intersections
-				_quad.insert({ pos, size }, _held_object->id);
+				++_next_id;
+				set_position(o, pos);
+				_objects.emplace_back(o);
 
+				_update_quad_data(o);
 				update_object_sprite(_objects.back(), _sprites);
 			}
 		}
@@ -857,17 +849,76 @@ namespace hades
 		_held_object = o;
 	}
 
-	void level_editor_objects::_update_quad_data(object_instance & o)
+	bool level_editor_objects::_object_valid_location(const rect_float &r, const object_instance &o) const
+	{
+		const auto id = o.id;
+
+		const auto collision_groups = get_collision_groups(o);
+		const auto &current_groups = _collision_quads;
+
+		if(!within_level(position(r), size(r), _level_limit))
+			return false;
+
+		//for each group that this object is a member of
+		//check each neaby rect for a collision
+		//return true if any such collision would occur
+		const auto object_collision = std::any_of(std::begin(collision_groups), std::end(collision_groups),
+			[&current_groups, &r, id](const unique_id cg) {
+			const auto group_quadtree = current_groups.find(cg);
+			if (group_quadtree == std::end(current_groups))
+				return false;
+
+			const auto local_rects = group_quadtree->second.find_collisions(r);
+
+			return std::any_of(std::begin(local_rects), std::end(local_rects),
+				[&r, id](const quad_data<entity_id, rect_float> &other) {
+				return other.key != id && intersects(other.rect, r);
+			});
+		});
+
+		//TODO: a way to ask the terrain system for it's say on this object?
+		return !object_collision;
+	}
+
+	bool level_editor_objects::_object_valid_location(vector_float pos, vector_float size, const object_instance &o) const
+	{
+		return _object_valid_location({ pos, size }, o);
+	}
+
+	void level_editor_objects::_update_quad_data(const object_instance &o)
 	{
 		//update selection quad
 		const auto position = get_position(o);
-		const auto select_size = get_safe_size(o);
-		_quad_selection.insert({ position, select_size }, o.id);
+
+		{
+			const auto select_size = get_safe_size(o);
+			_quad_selection.insert({ position, select_size }, o.id);
+		}
+		
 		//update collision quad
-
+		const auto collision_groups = get_collision_groups(o);
 		const auto size = get_size(o);
+		const auto rect = rect_float{ position, size };
 
-		_quad.insert({ position, size }, o.id);
+		//remove this object from all the quadtrees
+		//this is needed if the object is no longer 
+		//part of a specific collision group
+		for (auto &group : _collision_quads)
+			group.second.remove(o.id);
+
+		//reinsert into the correct trees
+		//making new trees if needed
+		for (auto col_group_id : collision_groups)
+		{
+			//emplace creates the entry if needed, otherwise returns
+			//the existing one, we don't care which
+			auto[group, found] = _collision_quads.emplace(std::piecewise_construct,
+				std::forward_as_tuple(col_group_id),
+				std::forward_as_tuple(rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit));
+
+			std::ignore = found;
+			group->second.insert(rect, o.id);
+		}
 	}
 
 	level_editor_objects::editor_object_instance::editor_object_instance(const object_instance &o)

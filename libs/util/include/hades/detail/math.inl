@@ -47,6 +47,18 @@ namespace hades
 	}
 
 	template<typename T>
+	vector_t<T> position(const rect_t<T> &r)
+	{
+		return { r.x, r.y };
+	}
+
+	template<typename T>
+	vector_t<T> size(const rect_t<T> &r)
+	{
+		return { r.width, r.height };
+	}
+
+	template<typename T>
 	bool intersects(const rect_t<T> &l, const rect_t<T> &r)
 	{
 		return intersect_area(l, r, rect_t<T>{});

@@ -89,6 +89,7 @@ namespace hades
 
 	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)
 	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
+	//TODO: depricate
 	curve_value valid_vector_curve(hades::resources::curve_default_value v);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	const hades::resources::animation *get_random_animation(const object_instance &o);
@@ -107,6 +108,8 @@ namespace hades
 	vector_float get_size(const object_instance &o);
 	vector_float get_size(const resources::object &o);
 	void set_size(object_instance &o, vector_float v);
+	resources::curve_types::vector_unique get_collision_groups(const object_instance &o);
+	resources::curve_types::vector_unique get_collision_groups(const resources::object &o);
 
 	struct level;
 	//reads the object tree from the level and writes it

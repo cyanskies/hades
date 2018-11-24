@@ -21,6 +21,7 @@ namespace hades
 	using vector_curve = std::tuple<const resources::curve*, const resources::curve*>;
 	vector_curve get_position_curve();
 	vector_curve get_size_curve();
+	const resources::curve* get_collision_group_curve();
 }
 
 #endif //!HADES_CORE_CURVES_HPP

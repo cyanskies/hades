@@ -8,6 +8,7 @@ namespace hades
 	static auto posy_id = unique_id::zero;
 	static auto sizx_id = unique_id::zero;
 	static auto sizy_id = unique_id::zero;
+	static auto collision_groups_id = unique_id::zero;
 
 	static void setup_curve(resources::curve &c)
 	{
@@ -26,17 +27,23 @@ namespace hades
 		name_c->data_type = resources::curve_variable_type::string;
 		name_c->default_value = string{};
 
-		posx_id = d.get_uid("position_x"sv);
+		posx_id = d.get_uid("position-x"sv);
 		setup_curve(*d.find_or_create<curve>(posx_id, unique_id::zero));
-		posy_id = d.get_uid("position_y"sv);
+		posy_id = d.get_uid("position-y"sv);
 		setup_curve(*d.find_or_create<curve>(posy_id, unique_id::zero));
-		sizx_id = d.get_uid("size_x"sv);
+		sizx_id = d.get_uid("size-x"sv);
 		setup_curve(*d.find_or_create<curve>(sizx_id, unique_id::zero));
-		sizy_id = d.get_uid("size_y"sv);
+		sizy_id = d.get_uid("size-y"sv);
 		setup_curve(*d.find_or_create<curve>(sizy_id, unique_id::zero));
+		collision_groups_id = d.get_uid("collision-groups");
+		auto *col_groups = d.find_or_create<curve>(collision_groups_id, unique_id::zero);
+
+		col_groups->curve_type = curve_type::step;
+		col_groups->data_type = resources::curve_variable_type::vector_unique;
+		col_groups->default_value = resources::curve_types::vector_unique{};
 	}
 
-	const resources::curve *get_curve(unique_id i)
+	static const resources::curve *get_curve(unique_id i)
 	{
 		if (!i)
 			throw curve_error{"requested curve was not registered to the data manager: " + data::get_as_string(i)};
@@ -57,5 +64,9 @@ namespace hades
 	vector_curve get_size_curve()
 	{
 		return { get_curve(sizx_id), get_curve(sizy_id) };
+	}
+	const resources::curve * get_collision_group_curve()
+	{
+		return get_curve(collision_groups_id);
 	}
 }

@@ -74,5 +74,6 @@ objects:
         editor-icon: ball-anim
         editor-anim: [ball-anim]
         curves:
-            - [size_x, 8]
-            - [size_y, 8]
+            - [size-x, 8]
+            - [size-y, 8]
+            - [collision-groups, ground]

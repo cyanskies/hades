@@ -48,6 +48,12 @@ namespace hades
 	rect_centre_t<T> to_rect_centre(rect_t<T>);
 
 	template<typename T>
+	vector_t<T> position(const rect_t<T>&);
+
+	template<typename T>
+	vector_t<T> size(const rect_t<T>&);
+
+	template<typename T>
 	bool intersects(const rect_t<T>&, const rect_t<T>&);
 
 	template<typename T>

@@ -2,6 +2,7 @@
 #define HADES_LEVEL_EDITOR_OBJECTS_HPP
 
 #include <optional>
+#include <unordered_set>
 #include <variant>
 
 #include "SFML/Graphics/Sprite.hpp"
@@ -86,30 +87,33 @@ namespace hades
 		template<typename MakeBoundRect, typename SetChangedProperty>
 		void _make_positional_property_edit_field(gui&, std::string_view,
 			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
-		void _update_quad_data(object_instance &o);
+		bool _object_valid_location(const rect_float&, const object_instance&) const;
+		bool _object_valid_location(vector_float pos, vector_float size, const object_instance&) const;
+		void _update_quad_data(const object_instance &o);
 
+		//editing settings and state
 		bool _show_objects = true;
 		bool _allow_intersect = false;
 		bool _show_regions = true;
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings *_settings = nullptr;
 		std::optional<editor_object_instance> _held_object;
-		//_held_animation
-		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
-
 		//objects for drawing
+		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 		sprite_batch _sprites;
-		//object instances
+		//level info
 		entity_id::value_type _next_id = static_cast<entity_id::value_type>(bad_entity) + 1;
+		vector_float _level_limit;
+		//object instances
 		std::vector<editor_object_instance> _objects;
 		quad_tree _quad_selection; // quadtree used for selecting objects
-		quad_tree _quad; //quadtree used for collisions
-		vector_float _level_limit;
+		//quadtree used for object collision
+		std::unordered_map<unique_id, quad_tree> _collision_quads;
+		//object data for editing
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;
 		std::array<curve_info, 4> _curve_properties;
-		//TODO: name list
 	};
 }
 

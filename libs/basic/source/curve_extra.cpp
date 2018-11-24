@@ -248,9 +248,19 @@ namespace hades::resources
 			using T = std::decay_t<decltype(v)>;
 
 			if constexpr (curve_types::is_vector_type_v<T>)
-				v = n.to_sequence<T::value_type>();
+			{
+				if constexpr (std::is_same_v<T::value_type, unique_id>)
+					v = n.to_sequence<T::value_type>(data::make_uid);
+				else
+					v = n.to_sequence<T::value_type>();
+			}
 			else
-				v = n.to_scalar<T>();
+			{
+				if constexpr (std::is_same_v<T, unique_id>)
+					v = n.to_scalar<T>(data::make_uid);
+				else
+					v = n.to_scalar<T>();
+			}
 		}, value);
 
 		return value;

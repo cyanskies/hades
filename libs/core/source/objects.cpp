@@ -14,9 +14,9 @@
 
 namespace hades::resources
 {
-	std::vector<const object*> all_objects;
+	std::vector<const object*> all_objects{};
 
-	std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n, unique_id mod)
+	static std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n, unique_id mod)
 	{
 		//TODO: this is probably wrong
 		// n == curve name and n.children are entries?
@@ -40,7 +40,7 @@ namespace hades::resources
 		return { curve_ptr, curve_default_value{} };		
 	}
 
-	void parse_objects(hades::unique_id mod, const data::parser_node &node, hades::data::data_manager &d)
+	static void parse_objects(hades::unique_id mod, const data::parser_node &node, hades::data::data_manager &d)
 	{
 		//objects:
 		//	thing:
@@ -124,7 +124,7 @@ namespace hades::resources
 		remove_duplicates(all_objects);
 	}
 
-	void load_objects(resource_type<object_t> &r, data::data_manager &d)
+	static void load_objects(resource_type<object_t> &r, data::data_manager &d)
 	{
 		assert(dynamic_cast<object*>(&r));
 		const auto &o = static_cast<object&>(r);
@@ -161,7 +161,7 @@ namespace hades
 	//returns the curve with the value unset if it was found but not set
 	//returns the requested curve plus it's value otherwise
 	//TODO: rename with correct naming scheme
-	curve_obj TryGetCurve(const resources::object *o, const hades::resources::curve *c)
+	static curve_obj TryGetCurve(const resources::object *o, const hades::resources::curve *c)
 	{
 		assert(o && c);
 
@@ -208,13 +208,6 @@ namespace hades
 		v = vector_int{0, 0};
 
 		return v;
-	}
-
-	string get_object_name(const resources::object & o)
-	{
-		const auto name_curve = get_name_curve();
-
-		return data::get_as_string(o.id);
 	}
 
 	object_instance make_instance(const resources::object *o)
@@ -288,21 +281,21 @@ namespace hades
 		o.curves.push_back({ &c, std::move(v) });
 	}
 
-	curve_list unique_curves(curve_list list)
+	static curve_list unique_curves(curve_list list)
 	{
 		//list should not contain any nullptr curves
 		using curve = hades::resources::curve;
 		using value = hades::resources::curve_default_value;
 
 		const auto less = [](const curve_obj &lhs, const curve_obj &rhs) {
-			auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
+			const auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
 			assert(c1 && c2);
 			return c1->id < c2->id;
 		};
 
 		const auto equal = [](const curve_obj &lhs, const curve_obj &rhs) {
-			auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
-			auto v1 = std::get<value>(lhs), v2 = std::get<value>(rhs);
+			const auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
+			const auto &v1 = std::get<value>(lhs), &v2 = std::get<value>(rhs);
 			assert(c1 && c2);
 			return c1->id == c2->id
 				&& v1 == v2;
@@ -315,11 +308,11 @@ namespace hades
 		//for each unique curve, we want to keep the 
 		//first with an assigned value or the last if their is no value
 		auto first = std::begin(list);
-		auto last = std::end(list);
+		const auto last = std::end(list);
 		while (first != last)
 		{
-			value v;
-			auto c = std::get<const curve*>(*first);
+			value v{};
+			const auto c = std::get<const curve*>(*first);
 			//while each item represents the same curve c
 			//store the value if it is set
 			//and then find the next different curve
@@ -338,13 +331,13 @@ namespace hades
 			} while (first != last && std::get<const curve*>(*first) == c);
 
 			//store c and v in output
-			output.push_back(std::make_tuple(c, v));
+			output.emplace_back(c, v);
 		}
 
 		return output;
 	}
 
-	curve_list GetAllCurvesSimple(const resources::object *o)
+	static curve_list GetAllCurvesSimple(const resources::object *o)
 	{
 		assert(o);
 		curve_list out;
@@ -432,7 +425,7 @@ namespace hades
 	}
 
 	template<typename Object>
-	string get_name_impl(const Object &o)
+	static inline string get_name_impl(const Object &o)
 	{
 		try
 		{
@@ -465,7 +458,7 @@ namespace hades
 	}
 
 	template<typename Object, typename Func>
-	vector_float get_vector_curve_impl(const Object &o, Func f)
+	static inline vector_float get_vector_curve_impl(const Object &o, Func f)
 	{
 		const auto[x, y] = std::invoke(f);
 		const auto x_value = get_curve(o, *x);
@@ -507,6 +500,35 @@ namespace hades
 		const auto [sizx, sizy] = get_size_curve();
 		set_curve(o, *sizx, v.x);
 		set_curve(o, *sizy, v.y);
+	}
+
+	template<typename Object>
+	static inline resources::curve_types::vector_unique get_col_group_impl(const Object &o)
+	{
+		using group = resources::curve_types::vector_unique;
+
+		try
+		{
+			const auto curve = get_collision_group_curve();
+			const auto name = get_curve(o, *curve);
+			assert(std::holds_alternative<group>(name));
+			return std::get<group>(name);
+		}
+		catch (const curve_not_found&)
+		{
+			using namespace std::string_literals;
+			return group{};
+		}
+	}
+
+	resources::curve_types::vector_unique get_collision_groups(const object_instance &o)
+	{
+		return get_col_group_impl(o);
+	}
+
+	resources::curve_types::vector_unique get_collision_groups(const resources::object &o)
+	{
+		return get_col_group_impl(o);
 	}
 
 	using namespace std::string_view_literals;

@@ -13,19 +13,16 @@ namespace hades
 
 		if (g.input(label, std::get<float>(c.value)))
 		{
+			//TODO: must use both collision systems here
 			const auto rect = std::invoke(make_rect, o, c);
-			const auto others = _quad.find_collisions(rect);
-
-			const auto safe_pos = !std::any_of(std::begin(others), std::end(others), [rect, id = o.id](auto &&other){
-				return intersects(rect, other.rect) && id != other.key;
-			});
+			const auto safe_pos = _object_valid_location(position(rect), size(rect), o);
 
 			//TODO: test safe_pos against map limits
 
 			if (safe_pos || _allow_intersect)
 			{
 				std::invoke(apply, o, rect);
-				_quad.insert(rect, o.id);
+				_update_quad_data(o);
 				update_object_sprite(o, _sprites);
 			}
 		}

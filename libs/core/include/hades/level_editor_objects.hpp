@@ -53,6 +53,8 @@ namespace hades
 			const resources::curve *target = nullptr;
 		};
 
+		using object_collision_tree = quad_tree<entity_id, rect_float>;
+
 		level_editor_objects();
 
 		void level_load(const level&) override;
@@ -62,6 +64,9 @@ namespace hades
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
 		void on_click(mouse_pos) override;
+		void on_drag_start(mouse_pos) override;
+		void on_drag(mouse_pos) override;
+		void on_drag_end(mouse_pos) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
@@ -69,6 +74,7 @@ namespace hades
 		enum class brush_type {
 			object_place,
 			object_selector,
+			object_multiselect,
 			object_drag,
 			region_selector,
 			region_place
@@ -81,14 +87,14 @@ namespace hades
 			size_y
 		};
 
-		using quad_tree = quad_tree<entity_id, rect_float>;
-
 		void _make_property_editor(gui&);
 		template<typename MakeBoundRect, typename SetChangedProperty>
 		void _make_positional_property_edit_field(gui&, std::string_view,
 			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
 		bool _object_valid_location(const rect_float&, const object_instance&) const;
 		bool _object_valid_location(vector_float pos, vector_float size, const object_instance&) const;
+		void _remove_object(entity_id);
+		bool _try_place_object(vector_float pos, editor_object_instance);
 		void _update_quad_data(const object_instance &o);
 
 		//editing settings and state
@@ -106,9 +112,9 @@ namespace hades
 		vector_float _level_limit;
 		//object instances
 		std::vector<editor_object_instance> _objects;
-		quad_tree _quad_selection; // quadtree used for selecting objects
+		object_collision_tree _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
-		std::unordered_map<unique_id, quad_tree> _collision_quads;
+		std::unordered_map<unique_id, object_collision_tree> _collision_quads;
 		//object data for editing
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;

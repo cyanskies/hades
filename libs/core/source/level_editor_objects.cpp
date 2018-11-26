@@ -75,7 +75,7 @@ namespace hades
 						 static_cast<float>(l.map_y) };
 
 		//setup the quad used for selecting objects
-		_quad_selection = quad_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
+		_quad_selection = object_collision_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
 		
 		//TODO: load objects
 	}
@@ -301,6 +301,8 @@ namespace hades
 		switch (_brush_type)
 		{
 		case brush_type::object_place:
+			[[fallthrough]];
+		case brush_type::object_drag:
 		{
 			assert(_held_object);
 			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings);
@@ -309,10 +311,6 @@ namespace hades
 		{
 			if (_held_object && _show_objects)
 				update_selection_rect(*_held_object, _held_preview);
-		}break;
-		case brush_type::object_drag:
-		{
-			//draw dragged object
 		}break;
 		}
 	}
@@ -361,56 +359,112 @@ namespace hades
 		name_id = o.name_id;
 	}
 
+	static entity_id object_at(level_editor_objects::mouse_pos pos, 
+		const level_editor_objects::object_collision_tree &quads)
+	{
+		const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
+		const auto rects = quads.find_collisions(target);
+
+		for (const auto &o : rects)
+		{
+			if (intersects(o.rect, target))
+				return o.key;
+		}
+
+		return bad_entity;
+	}
+
 	void level_editor_objects::on_click(mouse_pos p)
 	{
+		assert(_brush_type != brush_type::object_drag);
+
 		//if grid snap enabled
 		const auto pos = p;
 
 		if (_brush_type == brush_type::object_selector
-			&& _show_objects && within_level(p, vector_float{}, _level_limit))
+			&& _show_objects 
+			&& within_level(p, vector_float{}, _level_limit))
 		{
-			const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
-			const auto rects = _quad_selection.find_collisions(target);
-			//select object under brush
-			auto id = bad_entity;
-			for (const auto &o : rects)
-			{
-				if (intersects(o.rect, target))
-				{
-					id = o.key;
-					break;
-				}
-			}
+			const auto id = object_at(pos, _quad_selection);
+			if (id == bad_entity) // nothing under cursor
+				return;
+
+			const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id](auto &&o) {
+				return o.id == id;
+			});
+
+			//object was in quadmap but not objectlist
+			assert(obj != std::cend(_objects));
+
+			_held_object = *obj;
+			set_selected_info(*_held_object, _entity_name_id_uncommited, _curve_properties);
+		}
+		else if (_brush_type == brush_type::object_place)
+		{
+			_try_place_object(pos, *_held_object);
+		}
+	}
+
+	void level_editor_objects::on_drag_start(mouse_pos pos)
+	{
+		if (!within_level(pos, vector_float{}, _level_limit))
+			return;
+
+		if (_brush_type == brush_type::object_selector
+			&& _show_objects)
+		{
+			const auto id = object_at(pos, _quad_selection);
 
 			if (id == bad_entity)
 				return;
 
-			for (const auto &o : _objects)
-			{
-				if (o.id == id)
-				{
-					_held_object = o;
-					set_selected_info(*_held_object, _entity_name_id_uncommited, _curve_properties);
-					break;
-				}
-			}
+			const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id](auto &&o) {
+				return id == o.id;
+			});
+
+			assert(obj != std::cend(_objects));
+			_held_object = *obj;
+
+			_brush_type = brush_type::object_drag;
 		}
-		else if (_brush_type == brush_type::object_place)
+	}
+
+	void level_editor_objects::on_drag(mouse_pos pos)
+	{
+		if (!_show_objects)
+			return;
+
+		if (_brush_type == brush_type::object_place)
 		{
-			auto &o = *_held_object;
-			const auto size = get_safe_size(*_held_object);
-			o.id = entity_id{ _next_id + 1 };
-			const auto valid_location = _object_valid_location(pos, size, o);
+			assert(_held_object);
+			_try_place_object(pos, *_held_object);
+		}
 
-			if (valid_location || _allow_intersect)
+		//TODO: if object selector_selection rect stretch the rect
+
+	}
+
+	void level_editor_objects::on_drag_end(mouse_pos pos)
+	{
+		if (_brush_type == brush_type::object_drag)
+		{
+			if (_try_place_object(pos, *_held_object))
 			{
-				++_next_id;
-				set_position(o, pos);
-				_objects.emplace_back(o);
+				//object is placed at the back of the object list,
+				//we need to remove the old entry
+				//NOTE: _try_place updates the quadtree and 
+				//sprite data for us already
+				const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id = _held_object->id](auto &&o) {
+					return o.id == id;
+				});
 
-				_update_quad_data(o);
-				update_object_sprite(_objects.back(), _sprites);
+				_objects.erase(obj);
+
+				_held_object = _objects.back();
+				update_selection_rect(*_held_object, _held_preview);
 			}
+
+			_brush_type = brush_type::object_selector;
 		}
 	}
 
@@ -883,6 +937,43 @@ namespace hades
 	bool level_editor_objects::_object_valid_location(vector_float pos, vector_float size, const object_instance &o) const
 	{
 		return _object_valid_location({ pos, size }, o);
+	}
+
+	void level_editor_objects::_remove_object(entity_id id)
+	{
+		//NOTE: we only remove the first element to match,
+		//this allows other functions to add a replacement to the end
+		// of the list before calling this.
+		const auto obj = std::find_if(std::begin(_objects), std::end(_objects), [id](auto &&o) {
+			return o.id == id;
+		});
+	}
+
+	bool level_editor_objects::_try_place_object(vector_float pos, editor_object_instance o)
+	{
+		const auto size = get_size(o);
+
+		const auto new_entity = o.id == bad_entity;
+
+		if(new_entity)
+			o.id = entity_id{ _next_id + 1 };
+		
+		const auto valid_location = _object_valid_location(pos, size, o);
+
+		if (valid_location || _allow_intersect)
+		{
+			if(new_entity)
+				++_next_id;
+
+			set_position(o, pos);
+			_update_quad_data(o);
+			_objects.emplace_back(std::move(o));
+
+			update_object_sprite(_objects.back(), _sprites);
+			return true;
+		}
+
+		return false;
 	}
 
 	void level_editor_objects::_update_quad_data(const object_instance &o)

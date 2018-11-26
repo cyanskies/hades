@@ -103,6 +103,7 @@ namespace hades
 	private:
 		void _component_on_load(const level&) override;
 		level _component_on_save(level) const override;
+		tag_list _component_get_tags_at_location(rect_float) const;
 		void _component_on_click(brush_index_t, vector_float) override;
 		void _component_on_drag_start(brush_index_t, vector_float) override;
 		void _component_on_drag(brush_index_t, vector_float) override;

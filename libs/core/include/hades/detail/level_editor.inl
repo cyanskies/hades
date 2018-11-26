@@ -38,6 +38,22 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline tag_list basic_level_editor<Components...>::_component_get_tags_at_location(rect_float area) const
+	{
+		auto func = [](auto &&c, rect_float rect)->tag_list {
+			return c.get_tags_at_location(rect);
+		};
+
+		auto results = for_each_tuple_r(_editor_components, func, area);
+
+		tag_list output{};
+		for (auto &r : results)
+			std::move(std::begin(r), std::end(r), std::back_inserter(output));
+
+		return output;
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
@@ -104,7 +120,7 @@ namespace hades
 			};
 
 			auto get_tags_at = [this](rect_float area)->tag_list {
-				return tag_list{};
+				return _component_get_tags_at_location(area);
 			};
 
 			c.install_callbacks(

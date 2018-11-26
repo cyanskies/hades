@@ -502,14 +502,16 @@ namespace hades
 		set_curve(o, *sizy, v.y);
 	}
 
-	template<typename Object>
-	static inline resources::curve_types::vector_unique get_col_group_impl(const Object &o)
+	template<typename Object, typename GetCurve>
+	static inline resources::curve_types::vector_unique get_vec_unique_impl(const Object &o, GetCurve get_vec_curve)
 	{
 		using group = resources::curve_types::vector_unique;
 
+		static_assert(std::is_invocable_r_v<const resources::curve*, GetCurve>);
+
 		try
 		{
-			const auto curve = get_collision_group_curve();
+			const auto curve = std::invoke(get_vec_curve);
 			const auto name = get_curve(o, *curve);
 			assert(std::holds_alternative<group>(name));
 			return std::get<group>(name);
@@ -523,12 +525,22 @@ namespace hades
 
 	resources::curve_types::vector_unique get_collision_groups(const object_instance &o)
 	{
-		return get_col_group_impl(o);
+		return get_vec_unique_impl(o, get_collision_group_curve);
 	}
 
 	resources::curve_types::vector_unique get_collision_groups(const resources::object &o)
 	{
-		return get_col_group_impl(o);
+		return get_vec_unique_impl(o, get_collision_group_curve);
+	}
+
+	tag_list get_tags(const object_instance & o)
+	{
+		return get_vec_unique_impl(o, get_tags_curve);
+	}
+
+	tag_list get_tags(const resources::object & o)
+	{
+		return get_vec_unique_impl(o, get_tags_curve);
 	}
 
 	using namespace std::string_view_literals;

@@ -103,8 +103,13 @@ namespace hades
 				_set_active_brush(index);
 			};
 
+			auto get_tags_at = [this](rect_float area)->tag_list {
+				return tag_list{};
+			};
+
 			c.install_callbacks(
-				activate_brush
+				activate_brush,
+				get_tags_at
 			);
 		});
 	}

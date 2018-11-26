@@ -324,6 +324,28 @@ namespace hades
 		}, _held_preview);
 	}
 
+	tag_list level_editor_objects:: get_tags_at_location(rect_float area) const
+	{
+		auto tags = tag_list{};
+
+		for(const auto &o : _objects)
+		{
+			const auto pos = get_position(o);
+			const auto size = get_size(o);
+			const auto rect = rect_float{ pos, size };
+
+			if (intersects(rect, area))
+			{
+				const auto obj_tags = get_tags(o);
+				tags.reserve(tags.size() + obj_tags.size());
+				std::copy(std::begin(obj_tags), std::end(obj_tags),
+					std::back_inserter(tags));
+			}
+		}
+
+		return tags;
+	}
+
 	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
 	{
 		if (o.sprite_id == sprite_utility::sprite::bad_sprite_id)

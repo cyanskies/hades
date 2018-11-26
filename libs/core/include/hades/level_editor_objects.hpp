@@ -63,6 +63,8 @@ namespace hades
 		void make_brush_preview(time_duration, mouse_pos) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 
+		tag_list get_tags_at_location(rect_float) const override;
+
 		void on_click(mouse_pos) override;
 		void on_drag_start(mouse_pos) override;
 		void on_drag(mouse_pos) override;

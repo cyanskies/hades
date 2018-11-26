@@ -108,8 +108,13 @@ namespace hades
 	vector_float get_size(const object_instance &o);
 	vector_float get_size(const resources::object &o);
 	void set_size(object_instance &o, vector_float v);
-	resources::curve_types::vector_unique get_collision_groups(const object_instance &o);
-	resources::curve_types::vector_unique get_collision_groups(const resources::object &o);
+
+	using tag_list = resources::curve_types::vector_unique;
+	tag_list get_collision_groups(const object_instance &o);
+	tag_list get_collision_groups(const resources::object &o);
+
+	tag_list get_tags(const object_instance &o);
+	tag_list get_tags(const resources::object &o);
 
 	struct level;
 	//reads the object tree from the level and writes it

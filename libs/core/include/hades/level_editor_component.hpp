@@ -7,6 +7,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "hades/level.hpp"
+#include "hades/math.hpp"
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
@@ -50,16 +51,23 @@ namespace hades
 
 		//generic callbacks, these are always available
 		using activate_brush_f = std::function<void(void)>;
+		using get_tags_at_f = std::function<tag_list(rect_float)>;
 
-		template<typename ActivateBrush>
-		void install_callbacks(ActivateBrush ab)
+		template<typename ActivateBrush, typename GetTagsAt>
+		void install_callbacks(ActivateBrush ab, GetTagsAt get_tags)
 		{
 			_activate_brush = ab;
+			_get_tags_at = get_tags;
 		}
 
 		void activate_brush()
 		{
-			_activate_brush();
+			std::invoke(_activate_brush);
+		}
+
+		tag_list get_tags_at(rect_float r)
+		{
+			std::invoke(_get_tags_at, r);
 		}
 
 		virtual level level_new(level l) const { return l; };
@@ -75,8 +83,8 @@ namespace hades
 		//used to generate info for draw_brush_preview
 		virtual void make_brush_preview(time_duration, mouse_pos) {};
 
-		//return true if their is a valid target for dragging under the mouse
-		virtual bool valid_drag_target(mouse_pos) const { return false; };
+		//return any relevent tags for that location
+		virtual tag_list get_tags_at_location(rect_float) const { return {}; }
 
 		virtual void on_click(mouse_pos) {};
 		
@@ -90,6 +98,7 @@ namespace hades
 
 	private:
 		activate_brush_f _activate_brush;
+		get_tags_at_f _get_tags_at;
 	};
 }
 

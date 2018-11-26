@@ -9,6 +9,7 @@ namespace hades
 	static auto sizx_id = unique_id::zero;
 	static auto sizy_id = unique_id::zero;
 	static auto collision_groups_id = unique_id::zero;
+	static auto tags_id = unique_id::zero;
 
 	static void setup_curve(resources::curve &c)
 	{
@@ -41,6 +42,12 @@ namespace hades
 		col_groups->curve_type = curve_type::step;
 		col_groups->data_type = resources::curve_variable_type::vector_unique;
 		col_groups->default_value = resources::curve_types::vector_unique{};
+
+		tags_id = d.get_uid("tags");
+		auto *tags = d.find_or_create<curve>(tags_id, unique_id::zero);
+		tags->curve_type = curve_type::step;
+		tags->data_type = resources::curve_variable_type::vector_unique;
+		tags->default_value = resources::curve_types::vector_unique{};
 	}
 
 	static const resources::curve *get_curve(unique_id i)
@@ -68,5 +75,9 @@ namespace hades
 	const resources::curve * get_collision_group_curve()
 	{
 		return get_curve(collision_groups_id);
+	}
+	const resources::curve *get_tags_curve()
+	{
+		return get_curve(tags_id);
 	}
 }

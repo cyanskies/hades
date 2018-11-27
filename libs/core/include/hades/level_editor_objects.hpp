@@ -95,6 +95,7 @@ namespace hades
 			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
 		bool _object_valid_location(const rect_float&, const object_instance&) const;
 		bool _object_valid_location(vector_float pos, vector_float size, const object_instance&) const;
+		//removes object
 		void _remove_object(entity_id);
 		bool _try_place_object(vector_float pos, editor_object_instance);
 		void _update_quad_data(const object_instance &o);

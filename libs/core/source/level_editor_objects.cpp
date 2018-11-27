@@ -151,6 +151,17 @@ namespace hades
 			_brush_type = brush_type::region_selector;
 		}
 
+		if (g.toolbar_button("remove") 
+			&& _brush_type == brush_type::object_selector
+			&& _held_object)
+		{
+			//erase the selected object
+			_remove_object(_held_object->id);
+
+			_held_object.reset();
+			_held_preview = sf::Sprite{};
+		}
+
 		g.main_toolbar_end();
 
 		g.window_begin(editor::gui_names::toolbox);
@@ -184,10 +195,10 @@ namespace hades
 			}
 		}
 
-		if (g.collapsing_header("regions"sv))
+		/*if (g.collapsing_header("regions"sv))
 		{
 
-		}
+		}*/
 
 		if (g.collapsing_header("properties"sv))
 		{
@@ -472,17 +483,13 @@ namespace hades
 		{
 			if (_try_place_object(pos, *_held_object))
 			{
-				//object is placed at the back of the object list,
-				//we need to remove the old entry
-				//NOTE: _try_place updates the quadtree and 
-				//sprite data for us already
-				const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id = _held_object->id](auto &&o) {
-					return o.id == id;
+				const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id = _held_object->id](auto &&o){
+					return id == o.id;
 				});
 
-				_objects.erase(obj);
+				assert(obj != std::cend(_objects));
 
-				_held_object = _objects.back();
+				_held_object = *obj;
 				update_selection_rect(*_held_object, _held_preview);
 			}
 
@@ -520,9 +527,9 @@ namespace hades
 			{
 				//remove name_id
 				auto begin = std::cbegin(name_map);
-				const auto end = std::cend(name_map);
-				for (begin; begin != std::end(name_map); ++begin)
+				for (begin; ; ++begin)
 				{
+					assert(begin != std::cend(name_map));
 					if (begin->second == o.id)
 						break;
 				}
@@ -536,8 +543,9 @@ namespace hades
 				//remove current name binding if present
 				if (!o.name_id.empty())
 				{
-					for (auto begin = std::begin(name_map); begin != std::end(name_map); ++begin)
+					for (auto begin = std::cbegin(name_map); ; ++begin)
 					{
+						assert(begin != std::cend(name_map));
 						if (begin->second == o.id)
 						{
 							name_map.erase(begin);
@@ -963,12 +971,23 @@ namespace hades
 
 	void level_editor_objects::_remove_object(entity_id id)
 	{
-		//NOTE: we only remove the first element to match,
-		//this allows other functions to add a replacement to the end
-		// of the list before calling this.
+		//we assume the the object isn't duplicated in the object list
 		const auto obj = std::find_if(std::begin(_objects), std::end(_objects), [id](auto &&o) {
 			return o.id == id;
 		});
+
+		_sprites.destroy_sprite(obj->sprite_id);
+		_quad_selection.remove(obj->id);
+
+		for (auto &[name, tree] : _collision_quads)
+		{
+			std::ignore = name;
+			tree.remove(obj->id);
+		}
+
+		_entity_names.erase(obj->name_id);
+
+		_objects.erase(obj);
 	}
 
 	bool level_editor_objects::_try_place_object(vector_float pos, editor_object_instance o)
@@ -989,9 +1008,19 @@ namespace hades
 
 			set_position(o, pos);
 			_update_quad_data(o);
-			_objects.emplace_back(std::move(o));
+			update_object_sprite(o, _sprites);
 
-			update_object_sprite(_objects.back(), _sprites);
+			const auto end = std::end(_objects);
+
+			const auto obj = std::find_if(std::begin(_objects), end, [id = o.id](auto &&o) {
+				return o.id == id;
+			});
+
+			if (obj == end)
+				_objects.emplace_back(std::move(o));
+			else
+				*obj = std::move(o);
+
 			return true;
 		}
 

@@ -65,6 +65,11 @@ namespace hades::data
 		std::vector<std::pair<Key, Value>> to_map(KeyConv k_conv = nullptr, ValueConv v_conv = nullptr) const;
 	};
 
+	using make_parser_f = std::unique_ptr<parser_node>(*)(std::string_view);
+
+	void set_default_parser(make_parser_f);
+	std::unique_ptr<parser_node> make_parser(std::string_view);
+
 	namespace parse_tools
 	{
 		template<class T, typename ConversionFunc = nullptr_t>

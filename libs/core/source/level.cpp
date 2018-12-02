@@ -1,9 +1,8 @@
-#include "Hades/level.hpp"
-
-//#include "SFML/System/Time.hpp"
+#include "hades/level.hpp"
 
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
+#include "hades/writer.hpp"
 
 namespace hades
 {
@@ -89,6 +88,34 @@ namespace hades
 				attch.set(zero_time, ent_list);
 			}
 		}
+	}
+
+	string serialise(const level &l)
+	{
+		using namespace std::string_view_literals;
+		auto w = data::make_writer();
+		assert(w);
+
+		w->start_map("level"sv);
+		w->write("width"sv, l.map_x);
+		w->write("height"sv, l.map_y);
+
+		if(!l.name.empty())
+			w->write("name", l.name);
+		if(!l.description.empty())
+			w->write("description", l.description);
+
+		write_objects_from_level(l, *w);
+		//write terrain info
+
+		w->end_map();
+		return w->get_string();
+	}
+
+	level deserialise(const string &s)
+	{
+		//TODO: make_default_parser?
+		return level();
 	}
 
 	level_save make_save_from_level(level l)

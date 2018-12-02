@@ -80,6 +80,15 @@ namespace hades
 		//TODO: load objects
 	}
 
+	level level_editor_objects::level_save(level l) const
+	{
+		l.next_id = entity_id{ _next_id };
+		
+		//TODO: objects
+
+		return l;
+	}
+
 	template<typename Func>
 	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
 	{

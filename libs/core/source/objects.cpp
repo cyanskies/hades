@@ -552,7 +552,7 @@ namespace hades
 
 	void write_objects_from_level(const hades::level &l, data::writer &w)
 	{
-		//yaml_root:
+		//level_root:
 			//next-id:
 			//objects:
 				//id:
@@ -609,7 +609,7 @@ namespace hades
 	
 	void read_objects_into_level(const data::parser_node &n, hades::level &l)
 	{
-		//yaml_root:
+		//level_root:
 			//next-id
 			//objects:
 				//id:

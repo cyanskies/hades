@@ -7,6 +7,11 @@ namespace
 	class yaml_writer : public hades::data::writer
 	{
 	public:
+		yaml_writer() noexcept 
+		{
+			_emitter << YAML::BeginMap;
+		}
+
 		void start_sequence(std::string_view key) override
 		{
 			_emitter << YAML::Key << hades::to_string(key);

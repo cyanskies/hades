@@ -58,6 +58,7 @@ namespace hades
 		level_editor_objects();
 
 		void level_load(const level&) override;
+		level level_save(level l) const override;
 
 		void gui_update(gui&, editor_windows&) override;
 		void make_brush_preview(time_duration, mouse_pos) override;

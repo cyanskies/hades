@@ -1,6 +1,7 @@
 #include "hades/level_editor.hpp"
 
 #include "hades/camera.hpp"
+#include "hades/files.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
@@ -36,7 +37,7 @@ namespace hades::detail
 
 		_handle_component_setup();
 
-		_component_on_load(_level);
+		_load(_level);
 
 		reinit();
 	}
@@ -151,6 +152,39 @@ namespace hades::detail
 		_active_brush = index;
 	}
 
+	void level_editor_impl::_load(const level &l)
+	{
+		_level_x = l.map_x;
+		_level_y = l.map_y;
+
+		_component_on_load(l);
+
+		_level = l;
+	}
+
+	void level_editor_impl::_save()
+	{
+		const auto path = _save_path;
+		level new_level{};
+		new_level.map_x = _level_x;
+		new_level.map_y = _level_y;
+
+		new_level = _component_on_save(new_level);
+
+		const auto save = serialise(new_level);
+
+		try
+		{
+			files::write_file(_next_save_path, save);
+			_level = std::move(new_level);
+			_save_path = _next_save_path;
+		}
+		catch (const files::file_exception &e)
+		{
+			LOGERROR(e.what());
+		}
+	}
+
 	void level_editor_impl::_update_gui(time_duration dt)
 	{
 		_gui.update(dt);
@@ -166,9 +200,11 @@ namespace hades::detail
 		{
 			if (_gui.menu_item("new..."sv))
 				_window_flags.new_level = true;
-			_gui.menu_item("load..."sv);
+			if(_gui.menu_item("load..."sv))
+				_window_flags.load_level = true;
 			_gui.menu_item("save"sv);
-			_gui.menu_item("save as..."sv);
+			if (_gui.menu_item("save as..."sv))
+				_window_flags.save_level = true;
 			_gui.menu_end();
 		}
 
@@ -214,6 +250,35 @@ namespace hades::detail
 				_gui.text("Level Size: "sv);
 				_gui.input("Width"sv, _new_level_options.width);
 				_gui.input("Height"sv, _new_level_options.height);
+			}
+			_gui.window_end();
+		}
+
+		if (_window_flags.load_level)
+		{
+			if (_gui.window_begin(editor::gui_names::load_level, _window_flags.load_level))
+			{
+				if (_gui.button("Load"))
+				{
+					_window_flags.load_level = false;
+					//TODO:
+				}
+				_gui.input_text("path", _load_level_path);
+			}
+			_gui.window_end();
+		}
+
+		if (_window_flags.save_level)
+		{
+			if (_gui.window_begin(editor::gui_names::save_level, _window_flags.save_level))
+			{
+				if (_gui.button("Save"))
+				{
+					_window_flags.save_level = false;
+					_save();
+				}
+
+				_gui.input_text("path", _next_save_path);
 			}
 			_gui.window_end();
 		}

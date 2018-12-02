@@ -11,6 +11,7 @@ set(HADES_BASIC_SRC
 	properties.cpp
 	system.cpp
 	timers.cpp
+	writer.cpp
 	../include/hades/collision.hpp
 	../include/hades/console_variables.hpp
 	../include/hades/curve_extra.hpp

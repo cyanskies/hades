@@ -45,6 +45,11 @@ namespace hades::data
 			write(to_string(value));
 		}
 	};
+
+	using make_writer_f = std::unique_ptr<writer>(*)();
+	
+	void set_default_writer(make_writer_f);
+	std::unique_ptr<writer> make_writer();
 }
 
 #endif // !HADES_WRITER_HPP

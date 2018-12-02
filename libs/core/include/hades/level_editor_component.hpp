@@ -23,6 +23,8 @@ namespace hades::editor::gui_names
 	//Window name for left toolbox window
 	constexpr auto toolbox = "##toolbox"sv;
 	constexpr auto new_level = "New Level"sv;
+	constexpr auto load_level = "Load Level"sv;
+	constexpr auto save_level = "Save Level"sv;
 }
 
 namespace hades::editor

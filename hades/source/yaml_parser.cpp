@@ -53,6 +53,8 @@ namespace hades::data
 		{
 			try
 			{
+				//TODO: check if node is_valid before trying to return it, 
+				//avoid many exceptions on the safe path
 				if(_type == yaml_type::MAP)
 					return std::make_unique<yaml_parser_node>(_nodes.second[hades::to_string(name)]);
 				

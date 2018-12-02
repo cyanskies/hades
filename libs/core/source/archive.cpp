@@ -14,6 +14,7 @@
 
 #undef ERROR
 
+#include "hades/console_variables.hpp"
 #include "hades/logging.hpp"
 #include "hades/properties.hpp"
 #include "hades/types.hpp"
@@ -539,7 +540,7 @@ namespace hades
 
 		buffer deflate(buffer stream)
 		{
-			if (*hades::console::get_bool("dev", false))
+			if (*hades::console::get_bool(cvars::file_deflate, true))
 				return stream;
 
 			z_stream deflate_stream;
@@ -603,7 +604,7 @@ namespace hades
 					cont = false;
 				else if (ret != Z_OK)
 					throw archive_exception("failed to inflate");
-
+				out.reserve(out.size() + buf.size());
 				std::copy(buf.data(), reinterpret_cast<std::byte*>(infstream.next_out), std::back_inserter(out));
 
 				if (infstream.avail_out != 0)

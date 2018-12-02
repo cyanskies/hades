@@ -19,9 +19,13 @@
 #include "Hades/files.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/parallel_jobs.hpp"
+#include "hades/parser.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/simple_resources.hpp"
 #include "Hades/time.hpp"
+#include "hades/writer.hpp"
+#include "hades/yaml_parser.hpp"
+#include "hades/yaml_writer.hpp"
 
 #include "hades/console_variables.hpp"
 
@@ -74,6 +78,9 @@ namespace hades
 		RegisterCommonResources(&_dataMan);
 		data::detail::set_data_manager_ptr(&_dataMan);
 
+		data::set_default_parser(data::make_yaml_parser);
+		data::set_default_writer(data::make_yaml_writer);
+		
 		resourceTypes(_dataMan);
 
 		//load defualt console settings

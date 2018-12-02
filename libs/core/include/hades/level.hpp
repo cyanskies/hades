@@ -15,7 +15,7 @@ namespace hades
 	/*  void load level save()   */
 
 	constexpr auto level_ext = "lvl";
-	constexpr auto save_ext = "hsv";
+	constexpr auto save_ext = "sav";
 
 	using level_size_t = hades::types::int32;
 
@@ -63,6 +63,9 @@ namespace hades
 		//they shouldn't be changing at runtime anyway
 		// ^^ TODO: potential optimisation for the render instance?
 	};
+
+	string serialise(const level&);
+	level deserialise(const string&);
 
 	level_save make_save_from_level(level l);
 }

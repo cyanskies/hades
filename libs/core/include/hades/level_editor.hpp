@@ -64,7 +64,7 @@ namespace hades::detail
 		console::property_float _scroll_rate;
 
 		//level width, height
-		//level_size_t _level_x = 0, _level_y = 0;
+		level_size_t _level_x = 0, _level_y = 0;
 
 		sf::View _gui_view;
 		sf::View _world_view;
@@ -75,6 +75,8 @@ namespace hades::detail
 			int32 width{}, height{};
 		};
 
+		void _load(const level&);
+		void _save();
 		void _update_gui(time_duration);
 
 		level_editor_component::editor_windows _window_flags;
@@ -82,7 +84,9 @@ namespace hades::detail
 		level _level;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 		new_level_opt _new_level_options;
-
+		string _load_level_path;
+		string _next_save_path = "new_level.lvl";
+		string _save_path;
 		sf::RectangleShape _background;
 
 		time_point _total_run_time;

@@ -34,6 +34,13 @@ namespace hades
 		_background.setFillColor(sf::Color::Black);
 	}
 
+	level level_editor_level_props::level_save(level l) const
+	{
+		l.name = _level_name;
+		l.description = _level_desc;
+		return l;
+	}
+
 	void level_editor_level_props::gui_update(gui &g, editor_windows &flags)
 	{
 		using namespace std::string_view_literals;

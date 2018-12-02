@@ -540,7 +540,7 @@ namespace hades
 
 		buffer deflate(buffer stream)
 		{
-			if (*hades::console::get_bool(cvars::file_deflate, true))
+			if (!*hades::console::get_bool(cvars::file_deflate, true))
 				return stream;
 
 			z_stream deflate_stream;

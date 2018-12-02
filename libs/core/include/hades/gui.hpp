@@ -263,7 +263,7 @@ namespace hades
 			chars_decimal = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsDecimal,
 			chars_hexidecimal = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsHexadecimal,
 			chars_uppercase = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsUppercase,
-			chars_no_black = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank,
+			chars_no_blank = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank,
 			auto_select_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll,
 			enter_returns_true = ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue,
 			allow_tab_input = ImGuiInputTextFlags_::ImGuiInputTextFlags_AllowTabInput,

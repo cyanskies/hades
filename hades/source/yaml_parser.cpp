@@ -53,12 +53,13 @@ namespace hades::data
 		{
 			try
 			{
-				//TODO: check if node is_valid before trying to return it, 
-				//avoid many exceptions on the safe path
-				if(_type == yaml_type::MAP)
-					return std::make_unique<yaml_parser_node>(_nodes.second[hades::to_string(name)]);
+				const YAML::Node &node = _type == yaml_type::MAP ? _nodes.second : _nodes.first;
+				const auto &n = node[hades::to_string(name)];
+
+				if (!n.IsDefined())
+					return nullptr;
 				
-				return std::make_unique<yaml_parser_node>(_nodes.first[hades::to_string(name)]);
+				return make_yaml_parser(n);
 			}
 			catch (const YAML::Exception&)
 			{
@@ -100,20 +101,21 @@ namespace hades::data
 		yaml_type _type = yaml_type::SCALAR;
 	};
 
+	//TODO: make static
+	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src)
+	{
+		return std::make_unique<yaml_parser_node>(src);
+	}
+
 	std::unique_ptr<parser_node> make_yaml_parser(std::string_view src)
 	{
 		try
 		{
-			return std::make_unique<yaml_parser_node>(YAML::Load(to_string(src)));
+			return make_yaml_parser(YAML::Load(to_string(src)));
 		}
 		catch (const YAML::ParserException &p)
 		{
 			throw yaml_parse_exception(p.what());
 		}
-	}
-
-	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src)
-	{
-		return std::make_unique<yaml_parser_node>(src);
 	}
 }

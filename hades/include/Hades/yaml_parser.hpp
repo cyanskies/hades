@@ -13,6 +13,8 @@ namespace YAML
 namespace hades::data
 {
 	//thrown by make_yaml_parser
+	//TODO: replace with generic parser_exception in parser.hpp
+	//for compat with make_default_parser
 	class yaml_parse_exception : public std::runtime_error
 	{
 	public:

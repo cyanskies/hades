@@ -136,9 +136,10 @@ namespace hades
 			objects.emplace_back(std::move(object));
 		}
 
-		std::swap(_objects, objects);
-		std::swap(_sprites, sprites);
-		std::swap(_entity_names, names);
+		using std::swap;
+		swap(_objects, objects);
+		swap(_sprites, sprites);
+		swap(_entity_names, names);
 
 		_brush_type = brush_type::object_selector;
 		_held_object = std::nullopt;

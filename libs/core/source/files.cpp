@@ -44,7 +44,7 @@ namespace hades {
 			return buff;
 		}
 
-		buffer read_file(std::string_view path)
+		static buffer read_raw(std::string_view path)
 		{
 			std::ifstream file(path, std::ios_base::binary | std::ios_base::in);
 
@@ -58,9 +58,9 @@ namespace hades {
 			return buf;
 		}
 
-		types::string read_file_string(std::string_view path)
+		static types::string read_file_string(std::string_view path)
 		{
-			const auto buffer = read_file(path);
+			const auto buffer = read_raw(path);
 
 			types::string out;
 			std::transform(std::begin(buffer), std::end(buffer), std::back_inserter(out), [](const std::byte b) {
@@ -70,7 +70,7 @@ namespace hades {
 			return out;
 		}
 
-		types::string try_read(std::string_view first_path, std::string_view second_path, std::string_view file_name)
+		static types::string try_read(std::string_view first_path, std::string_view second_path, std::string_view file_name)
 		{
 			const auto first = read_file_string(to_string(first_path) + to_string(file_name));
 
@@ -84,6 +84,11 @@ namespace hades {
 
 			const auto message = "Unable to find file: " + to_string(file_name);
 			throw file_exception{message.c_str(), file_exception::error_code::FILE_NOT_FOUND};
+		}
+
+		string read_file(std::string_view file_path)
+		{
+			return try_read(hades::user_custom_file_directory(), "./", file_path);
 		}
 
 		types::string read_save(std::string_view file_name)
@@ -100,20 +105,20 @@ namespace hades {
 		{
 			const auto custom_path = hades::user_custom_file_directory();
 
-			//TODO: make another resource stream constructor,
-			//so that we can do this without throwing unless there is actually an error
-			try
+			ResourceStream stream{};
+			const auto found_in_custom = stream.open(custom_path + to_string(modPath), fileName);
+			if (!found_in_custom)
 			{
-				return ResourceStream(custom_path + to_string(modPath), fileName);
-			}
-			catch (const file_exception&)
-			{
-				#ifndef NDEBUG
-					return ResourceStream("../../game/" + to_string(modPath), fileName);
+				#ifdef NDEBUG
+				return ResourceStream(modPath, fileName);
 				#else
-					return ResourceStream(modPath, fileName);
+				const auto found_in_dir = stream.open("./", fileName);
+				if (!found_in_dir)
+					return ResourceStream{ "../../game/" + to_string(modPath), fileName };
 				#endif
 			}
+
+			return stream;
 		}
 
 		bool make_directory(fs::path dir)
@@ -172,7 +177,7 @@ namespace hades {
 		//? data == data file
 		constexpr auto extensions = std::array{ "zip" };
 
-		void ResourceStream::open(std::string_view modPath, std::string_view fileName)
+		bool ResourceStream::open(std::string_view modPath, std::string_view fileName)
 		{
 			//check if modPath exists as a archive or directory
 			bool pathDirectory = false;
@@ -235,8 +240,7 @@ namespace hades {
 				const auto archivepath = pathArchive;
 				if (!zip::file_exists(archivepath, file))
 				{
-					const auto message = "Cannot find file: " + file + ",  in mod archive: " + archivepath;
-					throw file_exception(message.c_str(), file_exception::error_code::FILE_NOT_FOUND);
+					return false;
 				}
 
 				found = true;
@@ -264,11 +268,12 @@ namespace hades {
 
 			if (!found)
 			{
-				const auto message = "Cannot find file: " + file + ",  in mod location: " + mod;
-				throw file_exception(message.c_str(), file_exception::error_code::FILE_NOT_FOUND);
+				return false;
 			}
 
 			_open = true;
+
+			return true;
 		}
 
 		sf::Int64 ResourceStream::read(void* data, sf::Int64 size)

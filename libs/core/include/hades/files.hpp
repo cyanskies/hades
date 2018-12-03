@@ -73,6 +73,10 @@ namespace hades
 		types::string as_string(std::string_view modPath, std::string_view fileName);
 		//throws file_exception
 		buffer as_raw(std::string_view modPath, std::string_view fileName);
+
+		//reads file at path as a string
+		//will attempt to load from user_custom_file_directory first
+		string read_file(std::string_view file_path);
 		// as above, but checks the usersSaveDirectoryinstead
 		//reads save files and config files
 		types::string read_save(std::string_view file_name);
@@ -89,6 +93,8 @@ namespace hades
 		//as above, calls UserConfigDir instead
 		void write_config(std::string_view);
 
+		//this is a helper class for streaming resources that might be inside
+		// an archive
 		class ResourceStream final : public sf::InputStream
 		{
 		public:
@@ -102,7 +108,7 @@ namespace hades
 			ResourceStream &operator=(const ResourceStream&) = delete;
 
 			//throws file_exception
-			void open(std::string_view modPath, std::string_view fileName);
+			bool open(std::string_view modPath, std::string_view fileName);
 
 			bool is_open() const
 			{

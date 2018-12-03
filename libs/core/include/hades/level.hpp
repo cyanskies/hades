@@ -65,7 +65,7 @@ namespace hades
 	};
 
 	string serialise(const level&);
-	level deserialise(const string&);
+	level deserialise(std::string_view);
 
 	level_save make_save_from_level(level l);
 }

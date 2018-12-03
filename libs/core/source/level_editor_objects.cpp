@@ -66,7 +66,30 @@ namespace hades
 		}
 	}
 
-	constexpr auto quad_bucket_limit = 5;
+	static vector_float get_safe_size(const object_instance &o)
+	{
+		const auto size = get_size(o);
+		if (size.x == 0.f || size.y == 0.f)
+			return vector_float{ 8.f, 8.f };
+		else
+			return size;
+	}
+
+	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
+	{
+		if (o.sprite_id == sprite_utility::sprite::bad_sprite_id)
+			o.sprite_id = s.create_sprite();
+
+		const auto position = get_position(o);
+		const auto size = get_safe_size(o);
+		const auto animation = get_random_animation(o);
+
+		s.set_animation(o.sprite_id, animation, {});
+		s.set_position(o.sprite_id, position);
+		s.set_size(o.sprite_id, size);
+	}
+
+	static constexpr auto quad_bucket_limit = 5;
 
 	void level_editor_objects::level_load(const level &l)
 	{
@@ -76,16 +99,57 @@ namespace hades
 
 		//setup the quad used for selecting objects
 		_quad_selection = object_collision_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
-		
-		//TODO: load objects
+		_collision_quads.clear();
+		auto sprites = sprite_batch{};
+		auto names = std::unordered_map<string, entity_id>{};
+
+		//copy the objects into the editor
+		//and set up the sprites and quad data
+		std::vector<editor_object_instance> objects{};
+		objects.reserve(std::size(l.objects));
+		const auto end = std::end(l.objects);
+		for (auto iter = std::begin(l.objects); iter != end; ++iter)
+		{
+			//if the object has a name then try and apply it
+			const auto &name = iter->name_id;
+			if (!name.empty())
+			{
+				//try and record the name having been used
+				auto[name_iter, name_already_used] = names.try_emplace(name, iter->id);
+				std::ignore = name_iter;
+
+				//log error if duplicate names
+				if (!name_already_used)
+				{
+					using namespace std::string_literals;
+					const auto msg = "error loading level, name: "s + name
+						+ " has already been used by another entity"s;
+					LOGERROR(msg);
+				}
+			}
+
+			//update the quad data and sprites
+			auto object = editor_object_instance{ *iter };
+			_update_quad_data(object);
+			update_object_sprite(object, sprites);
+			
+			objects.emplace_back(std::move(object));
+		}
+
+		std::swap(_objects, objects);
+		std::swap(_sprites, sprites);
+		std::swap(_entity_names, names);
+
+		_brush_type = brush_type::object_selector;
+		_held_object = std::nullopt;
+		_held_preview = sf::Sprite{};
 	}
 
 	level level_editor_objects::level_save(level l) const
 	{
 		l.next_id = entity_id{ _next_id };
-		
-		//TODO: objects
-
+		l.objects.reserve(std::size(_objects));
+		std::copy(std::begin(_objects), std::end(_objects), std::back_inserter(l.objects));
 		return l;
 	}
 
@@ -234,15 +298,6 @@ namespace hades
 		_sprites.prepare();
 	}
 
-	static vector_float get_safe_size(const object_instance &o)
-	{
-		const auto size = get_size(o);
-		if (size.x == 0.f || size.y == 0.f)
-			return vector_float{ 8.f, 8.f };
-		else
-			return size;
-	}
-
 	static bool within_level(vector_float pos, vector_float size, vector_float level_size)
 	{
 		if (const auto br_corner = pos + size; pos.x < 0.f || pos.y < 0.f
@@ -364,20 +419,6 @@ namespace hades
 		}
 
 		return tags;
-	}
-
-	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
-	{
-		if (o.sprite_id == sprite_utility::sprite::bad_sprite_id)
-			o.sprite_id = s.create_sprite();
-
-		const auto position = get_position(o);
-		const auto size = get_safe_size(o);
-		const auto animation = get_random_animation(o);
-
-		s.set_animation(o.sprite_id, animation, {});
-		s.set_position(o.sprite_id, position);
-		s.set_size(o.sprite_id, size);
 	}
 
 	static void set_selected_info(const object_instance &o, string &name_id, std::array<level_editor_objects::curve_info, 4> &curve_info)
@@ -1063,9 +1104,8 @@ namespace hades
 		{
 			//emplace creates the entry if needed, otherwise returns
 			//the existing one, we don't care which
-			auto[group, found] = _collision_quads.emplace(std::piecewise_construct,
-				std::forward_as_tuple(col_group_id),
-				std::forward_as_tuple(rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit));
+			auto[group, found] = _collision_quads.try_emplace(col_group_id,
+				rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit);
 
 			std::ignore = found;
 			group->second.insert(rect, o.id);

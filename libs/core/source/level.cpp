@@ -2,6 +2,7 @@
 
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
+#include "hades/parser.hpp"
 #include "hades/writer.hpp"
 
 namespace hades
@@ -90,20 +91,26 @@ namespace hades
 		}
 	}
 
+	using namespace std::string_view_literals;
+	static constexpr auto level_str = "level"sv;
+	static constexpr auto level_width_str = "width"sv;
+	static constexpr auto level_height_str = "height"sv;
+	static constexpr auto level_name_str = "name"sv;
+	static constexpr auto level_description_str = "desc"sv;
+
 	string serialise(const level &l)
 	{
-		using namespace std::string_view_literals;
 		auto w = data::make_writer();
 		assert(w);
 
-		w->start_map("level"sv);
-		w->write("width"sv, l.map_x);
-		w->write("height"sv, l.map_y);
+		w->start_map(level_str);
+		w->write(level_width_str, l.map_x);
+		w->write(level_height_str, l.map_y);
 
 		if(!l.name.empty())
-			w->write("name", l.name);
+			w->write(level_name_str, l.name);
 		if(!l.description.empty())
-			w->write("description", l.description);
+			w->write(level_description_str, l.description);
 
 		write_objects_from_level(l, *w);
 		//write terrain info
@@ -112,10 +119,26 @@ namespace hades
 		return w->get_string();
 	}
 
-	level deserialise(const string &s)
+	level deserialise(std::string_view s)
 	{
+		const auto parser = data::make_parser(s);
+		const auto level_node = parser->get_child(level_str);
+		level l{};
+
+		//file_root:
+		//	level:
+		//		name:
+		//		desc:
+		//		size:
+
+		l.name = data::parse_tools::get_scalar<string>(*level_node, level_name_str, l.name);
+		l.description = data::parse_tools::get_scalar<string>(*level_node, level_description_str, l.description);
+		l.map_x = data::parse_tools::get_scalar<level_size_t>(*level_node, level_width_str, l.map_x);
+		l.map_y = data::parse_tools::get_scalar<level_size_t>(*level_node, level_height_str, l.map_y);
+
+		read_objects_into_level(*level_node, l);
 		//TODO: make_default_parser?
-		return level();
+		return l;
 	}
 
 	level_save make_save_from_level(level l)

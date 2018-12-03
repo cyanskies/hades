@@ -110,6 +110,17 @@ namespace hades
 		return *this;
 	}
 
+	void sprite_batch::swap(sprite_batch &other)
+	{
+		const auto locks = std::scoped_lock{ _collection_mutex, other._collection_mutex };
+		using std::swap;
+		swap(_sprites, other._sprites);
+		swap(_draw_clamp, other._draw_clamp);
+		swap(_vertex, other._vertex);
+		swap(_used_ids, other._used_ids);
+		swap(_id_count, other._id_count);
+	}
+
 	void sprite_batch::clear()
 	{
 		//get the exclusive lock
@@ -427,5 +438,10 @@ namespace hades
 
 			target.draw(va.second.data(), va.second.size(), sf::PrimitiveType::Triangles, state);
 		}
+	}
+
+	void swap(sprite_batch &lhs, sprite_batch &rhs)
+	{
+		lhs.swap(rhs);
 	}
 }

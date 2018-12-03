@@ -84,6 +84,7 @@ namespace hades::detail
 		level _level;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 		new_level_opt _new_level_options;
+		string _load_level_mod;
 		string _load_level_path;
 		string _next_save_path = "new_level.lvl";
 		string _save_path;

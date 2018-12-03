@@ -73,6 +73,8 @@ namespace hades
 
 		sprite_batch &operator=(const sprite_batch&);
 
+		void swap(sprite_batch&);
+
 		//clears all of the stored data
 		void clear();
 
@@ -108,6 +110,8 @@ namespace hades
 		std::vector<sprite_id> _used_ids;
 		sprite_id _id_count = sprite_utility::sprite::bad_sprite_id + 1;
 	};
+
+	void swap(sprite_batch&, sprite_batch&);
 }
 
 #endif //HADES_SPRITE_BATCH_HPP

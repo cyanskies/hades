@@ -2,6 +2,7 @@
 
 #include "hades/camera.hpp"
 #include "hades/files.hpp"
+#include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
@@ -160,6 +161,8 @@ namespace hades::detail
 		_component_on_load(l);
 
 		_level = l;
+
+		reinit();
 	}
 
 	void level_editor_impl::_save()
@@ -258,12 +261,26 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::load_level, _window_flags.load_level))
 			{
-				if (_gui.button("Load"))
+				if (_gui.button("Load"sv))
 				{
 					_window_flags.load_level = false;
-					//TODO:
+					
+					const auto file = [this] {
+						if (_load_level_mod.empty())
+							return files::read_file(_load_level_path);
+						else
+							return files::as_string(_load_level_mod, _load_level_path);
+					}();
+
+					if (!file.empty())
+					{
+						const auto l = deserialise(file);
+						_load(l);
+					}
 				}
-				_gui.input_text("path", _load_level_path);
+				_gui.text("leave mod empty to ignore"sv);
+				_gui.input_text("mod"sv, _load_level_mod);
+				_gui.input_text("path"sv, _load_level_path);
 			}
 			_gui.window_end();
 		}

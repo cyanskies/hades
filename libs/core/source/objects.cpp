@@ -616,7 +616,7 @@ namespace hades
 					//object-type
 					//name[opt]
 					//curves:
-						//[curve_id, value]
+						//curve_id: value
 
 		//read next id
 		l.next_id = data::parse_tools::get_scalar(n, obj_next, l.next_id);
@@ -647,21 +647,18 @@ namespace hades
 
 			for (const auto &c : curves)
 			{
-				const auto curve_info = c->get_children();
+				const auto curve_id = c->to_scalar<unique_id>();
 				//TODO: log error?
-				if (curve_info.size() < 2)
-					continue;
-
-				const auto curve_id = curve_info[0]->to_scalar<unique_id>([](std::string_view s) {
-					return data::get_uid(s);
-				});
-
-				//TODO: same
+					//TODO: same
 				if (curve_id == unique_id::zero)
 					continue;
 
+				const auto curve_info = c->get_child();
+				if (!curve_info)
+					continue;
+
 				const auto curve_ptr = data::get<resources::curve>(curve_id);
-				const auto curve_value = resources::curve_from_node(*curve_ptr, *curve_info[1]);
+				const auto curve_value = resources::curve_from_node(*curve_ptr, *curve_info);
 
 				if (resources::is_set(curve_value))
 					obj.curves.emplace_back(curve_ptr, curve_value);

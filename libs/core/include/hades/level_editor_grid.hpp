@@ -3,6 +3,7 @@
 
 #include<string_view>
 
+#include "hades/grid.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/properties.hpp"
 
@@ -10,14 +11,20 @@ namespace hades
 {
 	void create_level_editor_grid_variables();
 
-	//provides an interface for editing level name, properties, background colour
-	//TODO: background image(stretch, repeat, paralax)
 	class level_editor_grid final : public level_editor_component
 	{
 	public:
-	private:
-		console::property_bool _enabled;
 
+		void level_load(const level&) override;
+
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
+	private:
+		grid _grid;
+
+		console::property_bool _enabled;
+		console::property_float _size;
+		console::property_int _step;
+		console::property_int _step_max;
 	};
 }
 

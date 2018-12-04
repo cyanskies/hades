@@ -27,6 +27,7 @@ namespace hades
 		void set_cell_size(float);
 		void set_line_thickness(float);
 		void set_colour(colour);
+		void set_all(grid_properties);
 
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
 

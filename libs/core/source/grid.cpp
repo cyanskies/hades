@@ -76,6 +76,12 @@ namespace hades
 		_verticies = std::move(make_grid(_properties));
 	}
 
+	void grid::set_all(grid_properties p)
+	{
+		_properties = std::move(p);
+		_verticies = make_grid(_properties);
+	}
+
 	void grid::draw(sf::RenderTarget &t, const sf::RenderStates s) const
 	{
 		t.draw(_verticies.data(), _verticies.size(),

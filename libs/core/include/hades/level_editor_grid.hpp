@@ -1,28 +1,51 @@
 #ifndef HADES_LEVEL_EDITOR_GRID_HPP
 #define HADES_LEVEL_EDITOR_GRID_HPP
 
-#include "hades/level_editor_component.hpp"
+#include<string_view>
 
-namespace hades::data
-{
-	class data_manager;
-}
+#include "hades/level_editor_component.hpp"
+#include "hades/properties.hpp"
 
 namespace hades
 {
-	void register_level_editor_grid_variables();
-	void register_level_editor_grid_resource(data::data_manager&);
+	void create_level_editor_grid_variables();
 
 	//provides an interface for editing level name, properties, background colour
 	//TODO: background image(stretch, repeat, paralax)
 	class level_editor_grid final : public level_editor_component
 	{
+	public:
+	private:
+		console::property_bool _enabled;
+
 	};
 }
 
 namespace hades::cvars
 {
 	using namespace std::string_view_literals;
+	constexpr auto editor_grid = "editor_grid"sv;
+	// allows the editor to change grid settings automatically depending on current tool
+	constexpr auto editor_grid_auto = "editor_grid_auto"sv;
+	// toggle whether tools should snap to the nearest grid slot
+	constexpr auto editor_grid_snap = "editor_grid_snap"sv;
+	// the distance between lines at grid step 0
+	constexpr auto editor_grid_size = "editor_grid_size"sv;
+	// the maximum step level
+	constexpr auto editor_grid_step_max = "editor_grid_step_max"sv;
+	// the current step level, 
+	// distance between lines is doubled for every step level
+	constexpr auto editor_grid_step = "editor_grid_step"sv;
+}
+
+namespace hades::cvars::default_value
+{
+	constexpr auto editor_grid = true;
+	constexpr auto editor_grid_auto = true;
+	constexpr auto editor_grid_snap = true;
+	constexpr auto editor_grid_size = 8;
+	constexpr auto editor_grid_step_max = 4;
+	constexpr auto editor_grid_step = 0;
 }
 
 #endif //!HADES_LEVEL_EDITOR_GRID_HPP

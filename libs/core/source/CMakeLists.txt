@@ -10,9 +10,11 @@ set(HADES_CORE_SRC
 	files.cpp
 	font.cpp
 	game_system.cpp
+	grid.cpp
 	gui.cpp
 	level.cpp
 	level_editor.cpp
+	level_editor_grid.cpp
 	level_editor_level_properties.cpp
 	level_editor_objects.cpp
 	level_interface.cpp
@@ -31,6 +33,7 @@ set(HADES_CORE_SRC
 	../include/hades/files.hpp
 	../include/hades/font.hpp
 	../include/hades/game_system.hpp
+	../include/hades/grid.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp
@@ -65,6 +68,7 @@ source_group("Headers" FILES
 	../include/hades/files.hpp
 	../include/hades/font.hpp
 	../include/hades/game_system.hpp
+	../include/hades/grid.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
 	../include/hades/level_editor.hpp

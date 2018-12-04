@@ -28,6 +28,10 @@ namespace hades
 
 	//level size type
 
+	//world unit type
+	//used for position ranges and sizes
+	using world_unit = float;
+
 	//something else?
 }
 

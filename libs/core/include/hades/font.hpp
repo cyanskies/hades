@@ -22,4 +22,4 @@ namespace hades
 	}
 }
 
-#endif !//HADES_FONT_HPP
+#endif //!HADES_FONT_HPP

@@ -13,6 +13,7 @@ set(HADES_BASIC_SRC
 	timers.cpp
 	writer.cpp
 	../include/hades/collision.hpp
+	../include/hades/colour.hpp
 	../include/hades/console_variables.hpp
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
@@ -38,6 +39,7 @@ set(HADES_BASIC_SRC
 
 source_group("Headers" FILES
 	../include/hades/collision.hpp
+	../include/hades/colour.hpp
 	../include/hades/console_variables.hpp
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp

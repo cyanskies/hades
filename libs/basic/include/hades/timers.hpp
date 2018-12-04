@@ -28,7 +28,7 @@ namespace hades
 	using milliseconds = std::chrono::milliseconds;
 	using seconds = basic_second<float>;
 
-	using time_duration = nanoseconds;
+	using time_duration = time_point::duration;
 
 	template<typename T> struct is_duration : std::false_type {};
 	template<typename Rep, typename Period>
@@ -43,40 +43,9 @@ namespace hades
 		return std::chrono::duration_cast<TargetDuration>(duration);
 	}
 
-	template<typename Duration>
-	std::enable_if_t<is_duration_v<Duration>, float> normalise_time(time_point t, Duration d)
-	{
-		const auto duration_point = time_point{ d };
+	float normalise_time(time_point, time_duration);
 
-		//reduce t untill is is less than one duration;
-		while (t > duration_point)
-			t -= d;
-
-		const auto time_nanos = t.time_since_epoch();
-		const auto time_seconds = time_cast<seconds>(time_nanos);
-		const auto duration_seconds = time_cast<seconds>(d);
-
-		return time_seconds.count() / duration_seconds.count();
-	}
-
-	template<typename Duration,
-		typename = std::enable_if_t<is_duration_v<Duration>>>
-	Duration duration_from_string(std::string_view s)
-	{
-		//TODO: accept differnt time scales?
-		//using extensions?
-		//easy way to parse these?
-		using namespace std::string_view_literals;
-		constexpr auto nano_ext = "ns"sv;
-		constexpr auto micro_ext = "us"sv;
-		constexpr auto milli_ext = "ms"sv;
-		constexpr auto second_ext = "s"sv;
-
-		//default with no extention is ms
-		const auto ms_count = from_string<milliseconds::rep>(s);
-		const auto ms = milliseconds{ ms_count };
-		return time_cast<Duration>(ms);
-	}
+	time_duration duration_from_string(std::string_view);
 
 	//Thread safe.
 	class timer_system

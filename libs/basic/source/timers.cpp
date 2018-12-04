@@ -6,7 +6,65 @@
 
 namespace hades
 {
-	const types::int32 timer_system::invalid_timer = 0;
+	float normalise_time(time_point t, time_duration d)
+	{
+		const auto duration_point = time_point{ d };
+
+		//reduce t untill is is less than one duration;
+		while (t > duration_point)
+			t -= d;
+
+		return  t.time_since_epoch().count() / d.count();
+	}
+
+	time_duration duration_from_string(std::string_view s)
+	{
+		//TODO: accept differnt time scales?
+		//using extensions?
+		//easy way to parse these?
+		using namespace std::string_view_literals;
+		constexpr auto nano_ext = "ns"sv;
+		constexpr auto micro_ext = "us"sv;
+		constexpr auto milli_ext = "ms"sv;
+		constexpr auto second_ext = "se"sv;
+
+		//if string is too short for a extension
+		//then assume millis
+		if (s.size() < 3u)
+		{
+			const auto ms_count = from_string<milliseconds::rep>(s);
+			return milliseconds{ ms_count };
+		}
+
+		const auto ext = s.substr(s.size() - 2, 2);
+
+		if (ext == second_ext)
+		{
+			const auto second_count = from_string<seconds::rep>(s);
+			return time_cast<time_duration>(seconds{ second_count });
+		}
+		else if (ext == nano_ext)
+		{
+			const auto nano_count = from_string<nanoseconds::rep>(s);
+			return nanoseconds{ nano_count };
+		}
+		else if (ext == micro_ext)
+		{
+			const auto micro_count = from_string<microseconds::rep>(s);
+			return microseconds{ micro_count };
+		}
+		else if (ext == milli_ext)
+		{
+			const auto milli_count = from_string<milliseconds::rep>(s);
+			return milliseconds{ milli_count };
+		}
+
+		//default with no extention is ms
+		const auto ms_count = from_string<milliseconds::rep>(s);
+		return milliseconds{ ms_count };
+	}
+
+	constexpr types::int32 timer_system::invalid_timer = 0;
 
 	types::int32 timer_system::createTimer(time_duration duration, bool repeating, std::function<bool(void)> &function)
 	{

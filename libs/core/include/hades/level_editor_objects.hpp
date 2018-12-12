@@ -10,6 +10,7 @@
 
 #include "hades/level_editor_component.hpp"
 #include "hades/objects.hpp"
+#include "hades/properties.hpp"
 #include "hades/quad_map.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
@@ -90,10 +91,12 @@ namespace hades
 			size_y
 		};
 
+		vector_float _calculate_position(vector_float pos) const;
 		void _make_property_editor(gui&);
 		template<typename MakeBoundRect, typename SetChangedProperty>
 		void _make_positional_property_edit_field(gui&, std::string_view,
 			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
+
 		bool _object_valid_location(const rect_float&, const object_instance&) const;
 		bool _object_valid_location(vector_float pos, vector_float size, const object_instance&) const;
 		//removes object
@@ -124,6 +127,14 @@ namespace hades
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;
 		std::array<curve_info, 4> _curve_properties;
+
+		//grid info for snapping
+		console::property_bool _grid;
+		console::property_bool _grid_snap;
+		console::property_bool _grid_auto;
+		console::property_float _grid_size;
+		console::property_int _grid_step;
+		console::property_int _grid_step_max;
 	};
 }
 

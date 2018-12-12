@@ -36,6 +36,9 @@ namespace hades::detail
 		_new_level_options.width = _level.map_x;
 		_new_level_options.height = _level.map_y;
 
+		//set world camera to 0, 0
+		_world_view.setCenter({});
+
 		_handle_component_setup();
 
 		_load(_level);
@@ -53,7 +56,7 @@ namespace hades::detail
 		const auto pos = camera.getCenter();
 
 		const auto new_x = std::clamp(pos.x, min.x, max.x);
-		const auto new_y = std::clamp(pos.y, min.x, max.x);
+		const auto new_y = std::clamp(pos.y, min.y, max.y);
 
 		camera.setCenter({ new_x, new_y });
 	}

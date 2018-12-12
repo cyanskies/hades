@@ -56,7 +56,7 @@ namespace hades
 		bool inside_target(const sf::RenderTarget&, vector_int window_position);
 		vector_float to_world_coords(const sf::RenderTarget&, vector_int window_position, const sf::View&);
 		vector_int to_window_coords(const sf::RenderTarget&, vector_float world_position, const sf::View&);
-		vector_int snap_to_grid(vector_int coord, types::int32 grid_size);
+		vector_float snap_to_grid(vector_float coord, float cell_size);
 
 		//call update_button_state each update frame to keep a mouse_button_state current for each button you care about
 		//use the is_* functions to check whether to trigger a mouse event

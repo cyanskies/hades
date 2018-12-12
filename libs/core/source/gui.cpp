@@ -527,7 +527,7 @@ namespace hades
 		using namespace std::string_view_literals;
 		const auto r = window_begin("##main_toolbar"sv, window_flags::panel);
 
-		_main_toolbar_info.width = get_item_rect_max().x;
+		//_main_toolbar_info.width = get_item_rect_max().x;
 		return r;
 	}
 

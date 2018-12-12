@@ -38,17 +38,14 @@ namespace hades
 			return { r.x, r.y };
 		}
 
-		vector_int snap_to_grid(vector_int coord, types::int32 grid_size)
+		vector_float snap_to_grid(vector_float coord, float cell_size)
 		{
-			const auto coordf = vector_float{ static_cast<vector_float::value_type>(coord.x),
-										static_cast<vector_float::value_type>(coord.y) };
-
-			const auto snap_pos = coordf -
-				vector_float{ static_cast<vector_float::value_type>(std::abs(std::fmod(coordf.x, grid_size))),
-				static_cast<vector_float::value_type>(std::abs((std::fmod(coordf.y, grid_size)))) };
-
-			return { static_cast<vector_int::value_type>(snap_pos.x),
-				static_cast<vector_int::value_type>(snap_pos.y) };
+			const auto offset = vector_float{
+				std::abs(std::fmod(coord.x, cell_size)),
+				std::abs(std::fmod(coord.y, cell_size))
+			};
+			
+			return coord - offset;				
 		}
 	}
 

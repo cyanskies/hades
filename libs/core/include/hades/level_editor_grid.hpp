@@ -11,17 +11,23 @@ namespace hades
 {
 	void create_level_editor_grid_variables();
 
+	float calculate_grid_size(float cell_size, int step) noexcept;
+	int32 calculate_grid_step_for_size(float cell_size, float target_size) noexcept;
+
 	class level_editor_grid final : public level_editor_component
 	{
 	public:
-
+		level_editor_grid();
+		
 		void level_load(const level&) override;
+		void gui_update(gui&, editor_windows&) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
 	private:
 		grid _grid;
 
 		console::property_bool _enabled;
+		console::property_bool _snap;
 		console::property_float _size;
 		console::property_int _step;
 		console::property_int _step_max;
@@ -50,9 +56,9 @@ namespace hades::cvars::default_value
 	constexpr auto editor_grid = true;
 	constexpr auto editor_grid_auto = true;
 	constexpr auto editor_grid_snap = true;
-	constexpr auto editor_grid_size = 8;
-	constexpr auto editor_grid_step_max = 4;
-	constexpr auto editor_grid_step = 0;
+	constexpr auto editor_grid_size = 4.f;
+	constexpr auto editor_grid_step_max = 5;
+	constexpr auto editor_grid_step = 1;
 }
 
 #endif //!HADES_LEVEL_EDITOR_GRID_HPP

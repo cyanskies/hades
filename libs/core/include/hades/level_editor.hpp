@@ -156,7 +156,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_zoom_max = 4;
 	constexpr auto editor_zoom_default = 2;
 
-	constexpr auto editor_level_default_size = 100;
+	constexpr auto editor_level_default_size = 512;
 }
 
 #include "hades/detail/level_editor.inl"

@@ -3,6 +3,8 @@
 #include "hades/animation.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/gui.hpp"
+#include "hades/level_editor_grid.hpp"
+#include "hades/mouse_input.hpp"
 #include "hades/parser.hpp"
 
 using namespace std::string_view_literals;
@@ -54,7 +56,13 @@ namespace hades
 		d.register_resource_type(level_editor_object_resource_name, resources::parse_level_editor_object_resource);
 	}
 
-	level_editor_objects::level_editor_objects()
+	level_editor_objects::level_editor_objects() :
+		_grid{ console::get_bool(cvars::editor_grid, cvars::default_value::editor_grid) },
+		_grid_snap{ console::get_bool(cvars::editor_grid_snap, cvars::default_value::editor_grid_snap) },
+		_grid_auto{ console::get_bool(cvars::editor_grid_auto, cvars::default_value::editor_grid_auto) },
+		_grid_size{ console::get_float(cvars::editor_grid_size, cvars::default_value::editor_grid_size) },
+		_grid_step{ console::get_int(cvars::editor_grid_step, cvars::default_value::editor_grid_step) },
+		_grid_step_max{console::get_int(cvars::editor_grid_step_max, cvars::default_value::editor_grid_step_max) }
 	{
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
@@ -253,6 +261,15 @@ namespace hades
 				activate_brush();
 				_brush_type = brush_type::object_place;
 				_held_object = make_instance(o);
+
+				if (_grid->load() && _grid_snap->load()
+					&& _grid_auto->load())
+				{
+					const auto grid_size = _grid_size->load();
+					const auto obj_size = get_safe_size(*_held_object);
+					const auto step = calculate_grid_step_for_size(grid_size, std::max(obj_size.x, obj_size.y));
+					_grid_step->store(std::clamp(step, 0, _grid_step_max->load()));
+				}
 			};
 
 			g.indent();
@@ -310,13 +327,14 @@ namespace hades
 
 	template<typename Object>
 	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit,
-		const Object &o, const resources::level_editor_object_settings &s)
+		const Object &o, const resources::level_editor_object_settings &s, bool snap, float cell_size)
 	{
 		const auto size = get_safe_size(o);
-		const auto obj_pos = pos;
 
-		if(!within_level(pos, size, level_limit))
+		if (!within_level(pos, size, level_limit))
 			return std::variant<sf::Sprite, sf::RectangleShape>{};
+
+		const auto obj_pos = snap ? mouse::snap_to_grid(pos, cell_size) : pos;
 
 		const auto anims = get_editor_animations(o);
 		if (anims.empty())
@@ -381,7 +399,8 @@ namespace hades
 		case brush_type::object_drag:
 		{
 			assert(_held_object);
-			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings);
+			const auto cell_size = calculate_grid_size(*_grid_size, *_grid_step);
+			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings, _grid->load() && _grid_snap->load(), cell_size);
 		}break;
 		case brush_type::object_selector:
 		{
@@ -400,7 +419,7 @@ namespace hades
 		}, _held_preview);
 	}
 
-	tag_list level_editor_objects:: get_tags_at_location(rect_float area) const
+	tag_list level_editor_objects::get_tags_at_location(rect_float area) const
 	{
 		auto tags = tag_list{};
 
@@ -458,16 +477,13 @@ namespace hades
 		return bad_entity;
 	}
 
-	void level_editor_objects::on_click(mouse_pos p)
+	void level_editor_objects::on_click(mouse_pos pos)
 	{
 		assert(_brush_type != brush_type::object_drag);
 
-		//if grid snap enabled
-		const auto pos = p;
-
 		if (_brush_type == brush_type::object_selector
 			&& _show_objects 
-			&& within_level(p, vector_float{}, _level_limit))
+			&& within_level(pos, vector_float{}, _level_limit))
 		{
 			const auto id = object_at(pos, _quad_selection);
 			if (id == bad_entity) // nothing under cursor
@@ -485,7 +501,17 @@ namespace hades
 		}
 		else if (_brush_type == brush_type::object_place)
 		{
-			_try_place_object(pos, *_held_object);
+			const auto snapped_pos = [&] {
+				if (_grid->load() && _grid_snap->load())
+				{
+					const auto cell_size = calculate_grid_size(*_grid_size, *_grid_step);
+					return mouse::snap_to_grid(pos, cell_size);
+				}
+
+				return pos;
+			}();
+
+			_try_place_object(snapped_pos, *_held_object);
 		}
 	}
 
@@ -857,6 +883,19 @@ namespace hades
 			}
 
 		}, value);
+	}
+
+	vector_float level_editor_objects::_calculate_position(vector_float pos) const
+	{
+		if(!*_grid || !*_grid_snap)
+			return pos;
+
+		const auto size = _grid_size->load();
+		const auto step = _grid_step->load();
+
+		const auto cell_size = calculate_grid_size(size, step);
+
+		return mouse::snap_to_grid(pos, cell_size);
 	}
 
 	void level_editor_objects::_make_property_editor(gui &g)

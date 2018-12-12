@@ -19,8 +19,8 @@ namespace hades
 		{
 			vector_float grid_size{};
 			float cell_size{};
-			float line_thickness{ 1.f };
 			colour line_colour{};
+			float line_thickness{ 1.f };
 		};
 
 		void set_size(vector_float);

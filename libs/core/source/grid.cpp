@@ -28,27 +28,33 @@ namespace hades
 		const auto cols = static_cast<int32>(std::floor(p.grid_size.x / p.cell_size));
 
 		std::vector<sf::Vertex> verts{};
-		verts.reserve(rows * cols * quad_vert_count);
+		verts.reserve(rows * cols);
 
 		//make rows
 		constexpr auto row_left = 0.f;
 		const auto row_right = p.grid_size.x;
 
 		for (auto y = 0.f; y < p.grid_size.y; y += p.cell_size)
-			verts.emplace_back(make_quad({ row_left, y },
-				{ p.grid_size.x, p.line_thickness }, sf_colour));
+		{
+			auto quad = make_quad({ row_left, y },
+				{ p.grid_size.x, p.line_thickness }, sf_colour);
+			
+			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
+		}
 
 		//make coloumns
 		constexpr auto coloumn_top = 0.f;
 		const auto coloumn_bottom = p.grid_size.y;
 
 		for (auto x = 0.f; x < p.grid_size.x; x += p.cell_size)
-			verts.emplace_back(make_quad({ x, coloumn_top },
-				{ p.line_thickness, p.grid_size.y }, sf_colour));
+		{
+			auto quad = make_quad({ x, coloumn_top },
+				{ p.line_thickness, p.grid_size.y }, sf_colour);
+
+			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
+		}
 		
 		assert(verts.size() % 3 == 0);
-		assert(verts.size() == verts.capacity());
-		
 		return verts;
 	}
 

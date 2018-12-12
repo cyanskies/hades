@@ -26,6 +26,7 @@ std::string_view defaultGame()
 void resourceTypes(hades::data::data_system &data)
 {
 	hades::create_editor_console_variables();
+	hades::create_level_editor_grid_variables();
 	hades::register_level_editor_object_resources(data);
 	hades::register_core_curves(data);
 }

@@ -39,7 +39,7 @@ namespace hades::resources
 			auto anim = d.find_or_create<animation>(name, mod);
 
 			using namespace data::parse_tools;
-			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string<time_duration>);
+			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string);
 	
 			const auto tex_id = anim->tex ? anim->tex->id : unique_id::zero;
 			const auto new_tex_id = get_unique(*a, "texture"sv, tex_id);

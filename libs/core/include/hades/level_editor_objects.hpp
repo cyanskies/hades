@@ -15,6 +15,9 @@
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 
+// TODO: 
+// Add support for regions
+
 namespace hades::resources
 {
 	struct level_editor_object_settings_t {};
@@ -63,7 +66,7 @@ namespace hades
 
 		void gui_update(gui&, editor_windows&) override;
 		void make_brush_preview(time_duration, mouse_pos) override;
-		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
+		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 		tag_list get_tags_at_location(rect_float) const override;
 
@@ -72,7 +75,7 @@ namespace hades
 		void on_drag(mouse_pos) override;
 		void on_drag_end(mouse_pos) override;
 
-		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
 		enum class brush_type {

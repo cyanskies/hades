@@ -70,7 +70,7 @@ void hades::level_editor_grid::gui_update(gui &g, editor_windows &)
 	_grid.set_cell_size(size);
 }
 
-void hades::level_editor_grid::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+void hades::level_editor_grid::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 {
 	if (*_enabled)
 		t.draw(_grid, s);

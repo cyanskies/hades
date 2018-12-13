@@ -94,9 +94,9 @@ namespace hades
 		virtual void on_drag(mouse_pos) {};
 		virtual void on_drag_end(mouse_pos) {};
 
-		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
+		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {};
 
-		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) const {};
+		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {};
 
 	private:
 		activate_brush_f _activate_brush;

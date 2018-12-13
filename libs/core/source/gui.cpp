@@ -11,6 +11,7 @@
 
 #include "hades/animation.hpp"
 #include "hades/data.hpp"
+#include "hades/draw_clamp.hpp"
 #include "hades/font.hpp"
 #include "hades/texture.hpp"
 
@@ -669,26 +670,23 @@ namespace hades
 					const auto *i = index_first;
 					for (decltype(ImDrawCmd::ElemCount) j = 0; j < cmd.ElemCount; ++j)
 						verts[j] = to_vertex(draw_list->VtxBuffer[*(i++)], texture_size);
+					
+					auto state = states;
 
-
-					glEnable(GL_SCISSOR_TEST);
-					glScissor(static_cast<GLsizei>(cmd.ClipRect.x),
-						static_cast<GLsizei>(view_height - cmd.ClipRect.w),
-						static_cast<GLsizei>(cmd.ClipRect.z - cmd.ClipRect.x),
-						static_cast<GLsizei>(cmd.ClipRect.w - cmd.ClipRect.y));
 					//draw with texture
 					if (cmd.TextureId)
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						auto state = states;
 						state.texture = &texture->value;
-						target.draw(verts, state);
 					}
-					else //draw coloured verts
-						target.draw(verts);
 
-					glDisable(GL_SCISSOR_TEST);
+					const auto clip_region = rect_int{ static_cast<int32>(cmd.ClipRect.x),
+						static_cast<int32>(view_height - cmd.ClipRect.w),
+						static_cast<int32>(cmd.ClipRect.z - cmd.ClipRect.x),
+						static_cast<int32>(cmd.ClipRect.w - cmd.ClipRect.y) };
+
+					target.draw(draw_clamp_window{ verts, clip_region }, state);
 				}
 
 				//move the index ptr forward for the next command

@@ -71,7 +71,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_level_props::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+	void level_editor_level_props::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		t.draw(_background, s);
 	}

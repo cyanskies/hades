@@ -7,6 +7,7 @@ set(HADES_CORE_SRC
 	camera.cpp
 	core_curves.cpp
 	core_resources.cpp
+	draw_clamp.cpp
 	files.cpp
 	font.cpp
 	game_system.cpp
@@ -30,6 +31,7 @@ set(HADES_CORE_SRC
 	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
+	../include/hades/draw_clamp.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
 	../include/hades/game_system.hpp
@@ -65,6 +67,7 @@ source_group("Headers" FILES
 	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
+	../include/hades/draw_clamp.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
 	../include/hades/game_system.hpp

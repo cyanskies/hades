@@ -22,7 +22,7 @@ namespace hades
 		void level_load(const level&) override;
 		void gui_update(gui&, editor_windows&) override;
 
-		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 	private:
 		grid _grid;
 

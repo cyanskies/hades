@@ -410,7 +410,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+	void level_editor_objects::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		//NOTE: always draw, we're only called when we are the active brush
 		// if one of the brush types doesn't use _held_preview, then we'll need to draw conditionally
@@ -574,7 +574,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s) const
+	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		if(_show_objects)
 			t.draw(_sprites, s);

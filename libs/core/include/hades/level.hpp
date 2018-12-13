@@ -1,9 +1,11 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-#include "hades/curve.hpp"
 #include "hades/level_interface.hpp"
 #include "hades/objects.hpp"
+#include "hades/colour.hpp"
+#include "hades/curve.hpp"
+#include "hades/uniqueid.hpp"
 
 // a level is a playable area
 
@@ -23,6 +25,16 @@ namespace hades
 	// but doesn't store the full curve history
 	struct level
 	{
+		struct background_layer
+		{
+			//paralax controls the movement speed of the background relative to
+			//the world; 0.f is a static image, 1.f is no paralax
+			vector_float offset{};
+			vector_float parallax = { 1.f, 1.f };
+			//if animation is smaller than the world then it will loop
+			unique_id animation = unique_id::zero;
+		};
+
 		hades::types::string name;
 		hades::types::string description;
 
@@ -37,6 +49,8 @@ namespace hades
 		//TODO: background, flat colour, paralax image, paralax loop image
 		//set paralax to 0 to get a static image
 		//layered images with different paralax?
+		colour background_colour = colours::black;
+		std::vector<background_layer> background_layers;
 		
 		//TODO: tilemaps
 		//TODO: terrain

@@ -6,10 +6,12 @@
 #include "hades/level_editor_component.hpp"
 #include "hades/types.hpp"
 
+// TODO:
+// support for background colours, images(stretch, repeat, paralax)
+
 namespace hades
 {
 	//provides an interface for editing level name, properties, background colour
-	//TODO: background image(stretch, repeat, paralax)
 	class level_editor_level_props final : public level_editor_component
 	{
 	public:
@@ -17,11 +19,17 @@ namespace hades
 		level level_save(level l) const override;
 
 		void gui_update(gui&, editor_windows&) override;
-		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
+		void _edit_background_window(gui&);
+
+		//TODO: background object
+		//TODO: how to clip the background at the edges of the world
 		bool _details_window = false;
+		bool _background_window = false;
 		sf::RectangleShape _background;
+		std::vector<level::background_layer> _background_layer_settings;
 		string _level_name, _new_name;
 		string _level_desc, _new_desc;
 	};

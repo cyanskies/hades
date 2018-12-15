@@ -4,6 +4,7 @@
 set(HADES_CORE_SRC
 	animation.cpp
 	archive.cpp
+	background.cpp
 	camera.cpp
 	core_curves.cpp
 	core_resources.cpp
@@ -26,8 +27,11 @@ set(HADES_CORE_SRC
 	standard_paths.cpp
 	state.cpp
 	texture.cpp
+	tiled_sprite.cpp
+	vertex_buffer.cpp
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/background.hpp
 	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
@@ -51,7 +55,9 @@ set(HADES_CORE_SRC
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
 	../include/hades/texture.hpp
+	../include/hades/tiled_sprite.hpp
 	../include/hades/time.hpp
+	../include/hades/vertex_buffer.hpp
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_editor.inl
@@ -64,6 +70,7 @@ set(HADES_CORE_SRC
 source_group("Headers" FILES
 	../include/hades/animation.hpp
 	../include/hades/archive.hpp
+	../include/hades/background.hpp
 	../include/hades/camera.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
@@ -87,7 +94,9 @@ source_group("Headers" FILES
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
 	../include/hades/texture.hpp
+	../include/hades/tiled_sprite.hpp
 	../include/hades/time.hpp
+	../include/hades/vertex_buffer.hpp
 )
 
 source_group("Detail" FILES

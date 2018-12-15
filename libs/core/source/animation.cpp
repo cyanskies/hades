@@ -165,6 +165,35 @@ namespace hades::animation
 
 namespace hades
 {
+	poly_quad make_quad_colour(rect_float quad, colour c)
+	{
+		const auto col = sf::Color{ c.r, c.g, c.b, c.a };
+
+		return poly_quad{
+			//first triange
+			sf::Vertex{ {quad.x, quad.y}, col }, //top left
+			sf::Vertex{ {quad.x + quad.width, quad.y}, col }, //top right
+			sf::Vertex{ {quad.x, quad.y + quad.height}, col }, //bottom left
+			//second triange
+			sf::Vertex{ { quad.x + quad.width, quad.y }, col }, //top right
+			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height }, col }, //bottom right
+			sf::Vertex{ { quad.x, quad.y + quad.height }, col } //bottom left
+		};
+	}
+
+	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad)
+	{
+		return poly_quad{
+			//first triange
+			sf::Vertex{ {quad.x, quad.y}, { texture_quad.x, texture_quad.y } }, //top left
+			sf::Vertex{ { quad.x + quad.width, quad.y }, { texture_quad.x +  texture_quad.width, texture_quad.y } }, //top right
+			sf::Vertex{ { quad.x, quad.y + quad.height }, { texture_quad.x, texture_quad.y +  texture_quad.height } }, //bottom left
+			//second triange
+			sf::Vertex{ { quad.x + quad.width, quad.y },{ texture_quad.x +  texture_quad.width, texture_quad.y } }, //top right
+			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height },  { texture_quad.x +  texture_quad.width, texture_quad.y +  texture_quad.height } }, //bottom right
+			sf::Vertex{ { quad.x, quad.y + quad.height },  { texture_quad.x, texture_quad.y +  texture_quad.height } } //bottom left
+		};
+}
 	void register_animation_resource(data::data_manager &d)
 	{
 		using namespace std::string_view_literals;

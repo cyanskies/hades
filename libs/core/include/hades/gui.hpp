@@ -290,7 +290,42 @@ namespace hades
 		template<typename T, std::size_t Size>
 		bool input_scalar_array(std::string_view label, std::array<T, Size> &v, input_text_flags = input_text_flags::none);
 		
-		//TODO: colour picker
+		enum class colour_edit_flags : ImGuiColorEditFlags
+		{
+			none = ImGuiColorEditFlags_None,
+			no_alpha = ImGuiColorEditFlags_NoAlpha,
+			no_picker = ImGuiColorEditFlags_NoPicker,
+			no_options = ImGuiColorEditFlags_NoOptions,  
+			no_preview = ImGuiColorEditFlags_NoSmallPreview,
+			no_inputs = ImGuiColorEditFlags_NoInputs,
+			no_tooltip = ImGuiColorEditFlags_NoTooltip,
+			no_label = ImGuiColorEditFlags_NoLabel,
+			no_side_preview = ImGuiColorEditFlags_NoSidePreview, 
+			no_drag_drop = ImGuiColorEditFlags_NoDragDrop,
+		};
+
+		enum class colour_edit_settings : ImGuiColorEditFlags
+		{
+			none = ImGuiColorEditFlags_None,
+			alpha_bar = ImGuiColorEditFlags_AlphaBar,
+			alpha_preview = ImGuiColorEditFlags_AlphaPreview,
+			alpha_preview_half = ImGuiColorEditFlags_AlphaPreviewHalf,
+			format_hdr = ImGuiColorEditFlags_HDR,
+			format_rgb = ImGuiColorEditFlags_RGB,
+			format_hsv = ImGuiColorEditFlags_HSV,
+			format_hex = ImGuiColorEditFlags_HEX,
+			format_uint8 = ImGuiColorEditFlags_Uint8,
+			format_float = ImGuiColorEditFlags_Float,
+			hue_bar = ImGuiColorEditFlags_PickerHueBar,
+			hue_wheel = ImGuiColorEditFlags_PickerHueWheel
+		};
+
+		//3/4, 3 = rgb, 4 = rbga
+		//edit creates a preview square the summons a picker dialog
+		//picker creates a picker widget
+		void colour_editor_options(colour_edit_settings);
+		bool colour_picker3(std::string_view label, std::array<int32, 3> &colour, colour_edit_flags);
+		bool colour_picker4(std::string_view label, std::array<int32, 4> &colour, colour_edit_flags);
 
 		enum class tree_node_flags : ImGuiTreeNodeFlags
 		{
@@ -341,6 +376,8 @@ namespace hades
 		void show_tooltip(std::string_view); //always shows a tooltip
 
 		//TODO: popups
+
+		//TODO: modal dialog, window that blocks all other input
 
 		//columns
 		void columns_begin(std::size_t count = 1u, bool border = true);

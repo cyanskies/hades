@@ -6,6 +6,9 @@ namespace hades
 {
 	static void make_level_detail_window(gui &g, bool &open, string &name, string &description)
 	{
+		if (!open)
+			return;
+
 		using namespace std::string_view_literals;
 		if (g.window_begin("level details"sv, open))
 		{
@@ -18,6 +21,41 @@ namespace hades
 		g.window_end();
 	}
 
+	static void apply(const level_editor_level_props::background_settings &uncommitted,
+		background &background)
+	{
+
+	}
+
+	static void make_background_detail_window(gui &g, bool &open,
+		level_editor_level_props::background_settings &settings,
+		level_editor_level_props::background_settings &uncommitted,
+		background &background)
+	{
+		if (!open)
+			return;
+
+		using namespace std::string_view_literals;
+		if (g.window_begin("background"sv, open))
+		{
+			if (g.button("Done"sv))
+				open = false;
+
+			g.layout_horizontal();
+
+			if (g.button("Apply"sv))
+			{
+				apply(uncommitted, background);
+				settings = uncommitted;
+			}
+
+			//backdrop colour picker
+
+			//layer editor
+		}
+		g.window_end();
+	}
+
 	void level_editor_level_props::level_load(const level &l)
 	{
 		_new_name = editor::new_level_name;
@@ -26,12 +64,10 @@ namespace hades
 		_level_name = l.name;
 		_level_desc = l.description;
 
-		_background.setSize({ static_cast<float>(l.map_x),
+		_background.set_size({ static_cast<float>(l.map_x),
 							  static_cast<float>(l.map_y) });
 
-		//TODO: background colour
-		// paralax background etc...
-		_background.setFillColor(sf::Color::Black);
+		_background.set_colour(colours::black);
 	}
 
 	level level_editor_level_props::level_save(level l) const
@@ -50,15 +86,20 @@ namespace hades
 			if (g.menu_item("details..."sv))
 				_details_window = true;
 				
-			g.menu_item("background..."sv);
+			if (g.menu_item("background..."sv))
+			{
+				_background_window = true;
+				_background_uncommitted = _background_settings;
+			}
 
 			g.menu_end();
 		}
 
 		g.main_menubar_end();
 
-		if (_details_window)
-			make_level_detail_window(g, _details_window, _level_name, _level_desc);
+		make_level_detail_window(g, _details_window, _level_name, _level_desc);
+		make_background_detail_window(g, _background_window,
+			_background_settings, _background_uncommitted, _background);
 
 		if (flags.new_level)
 		{

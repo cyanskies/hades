@@ -1,8 +1,13 @@
 #ifndef HADES_ANIMATION_HPP
 #define HADES_ANIMATION_HPP
 
-#include "SFML/Graphics/Sprite.hpp"
+#include <array>
 
+#include "SFML/Graphics/Sprite.hpp"
+#include "SFML/Graphics/Vertex.hpp"
+
+#include "hades/colour.hpp"
+#include "hades/math.hpp"
 #include "hades/texture.hpp"
 #include "hades/timers.hpp"
 
@@ -43,6 +48,10 @@ namespace hades::animation
 
 namespace hades
 {
+	using poly_quad = std::array<sf::Vertex, 6u>;
+	poly_quad make_quad_colour(rect_float quad, colour);
+	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad);
+
 	void register_animation_resource(data::data_manager&);
 }
 

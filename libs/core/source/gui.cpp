@@ -452,6 +452,48 @@ namespace hades
 		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
 	}
 
+	void gui::colour_editor_options(colour_edit_settings s)
+	{
+		_active_assert();
+		ImGui::SetColorEditOptions(static_cast<ImGuiColorEditFlags>(s));
+	}
+
+	bool gui::colour_picker3(std::string_view label, std::array<int32, 3>& colour, colour_edit_flags f)
+	{
+		std::array<float, 3> float_col{ 0.f };
+		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
+			return col / 255.f;
+		});
+
+		const auto r = ImGui::ColorPicker3(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
+		if (r)
+		{
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->int32 {
+				return static_cast<int32>(col * 255);
+			});
+		}
+
+		return r;
+	}
+
+	bool gui::colour_picker4(std::string_view label, std::array<int32, 4>& colour, colour_edit_flags f)
+	{
+		std::array<float, 4> float_col{ 0.f };
+		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
+			return col / 255.f;
+		});
+
+		const auto r = ImGui::ColorPicker4(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
+		if (r)
+		{
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->int32 {
+				return static_cast<int32>(col * 255);
+			});
+		}
+
+		return r;
+	}
+
 	bool gui::collapsing_header(std::string_view s, tree_node_flags f)
 	{
 		_active_assert();
@@ -631,6 +673,7 @@ namespace hades
 	}
 
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
+	// this is done through the draw_clamp_window helper
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	{
 		_active_assert();
@@ -780,6 +823,7 @@ namespace hades
 		t->width = width;
 		t->height = height;
 	}
+
 	//gui::static objects
 	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
 	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;

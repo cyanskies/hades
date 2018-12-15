@@ -29,7 +29,7 @@ namespace hades
 		draw_clamp_region &operator=(const draw_clamp_region&) = delete;
 		draw_clamp_region &operator=(draw_clamp_region&&) = delete;
 
-		void draw(sf::RenderTarget&, sf::RenderStates) const;
+		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
 	private:
 		const sf::Drawable &_drawable;

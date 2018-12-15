@@ -338,38 +338,22 @@ namespace hades
 		_draw_clamp = r;
 	}
 
-	using poly_square = std::array<sf::Vertex, 6>;
+	using poly_square = poly_quad;
 	
 	static poly_square make_square(const sprite_utility::sprite &s)
 	{
 		static const auto col = sf::Color::Cyan;
 		//make a coloured rect
-		return poly_square{
-			//first triange
-			sf::Vertex{ {s.position.x, s.position.y}, col }, //top left
-			sf::Vertex{ {s.position.x + s.size.x, s.position.y}, col }, //top right
-			sf::Vertex{ {s.position.x, s.position.y + s.size.y}, col}, //bottom left
-			//second triange
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y }, col }, //top right
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y }, col }, //bottom right
-			sf::Vertex{ { s.position.x, s.position.y + s.size.y }, col } //bottom left
-		};
+		return make_quad_colour({ s.position, s.size }, { col.r, col.g, col.b, col.a });
 	}
 
 	static poly_square make_square_animation(const sprite_utility::sprite &s)
 	{
 		const auto a = s.animation;
 		const auto [x, y] = animation::get_frame(*a, s.animation_progress);
-		return poly_square{
-			//first triange
-			sf::Vertex{ {s.position.x, s.position.y}, { x, y } }, //top left
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y }, { x + a->width, y } }, //top right
-			sf::Vertex{ { s.position.x, s.position.y + s.size.y }, { x, y + a->height } }, //bottom left
-			//second triange
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y },{ x + a->width, y } }, //top right
-			sf::Vertex{ { s.position.x + s.size.x, s.position.y + s.size.y },  { x + a->width, y + a->height } }, //bottom right
-			sf::Vertex{ { s.position.x, s.position.y + s.size.y },  {x, y + a->height } } //bottom left
-		};
+
+		return make_quad_animation({ s.position, s.size }, { x, y,
+			static_cast<float>(a->width), static_cast<float>(a->height) });
 	}
 
 	void sprite_batch::prepare()

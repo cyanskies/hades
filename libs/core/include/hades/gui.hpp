@@ -324,8 +324,8 @@ namespace hades
 		//edit creates a preview square the summons a picker dialog
 		//picker creates a picker widget
 		void colour_editor_options(colour_edit_settings);
-		bool colour_picker3(std::string_view label, std::array<int32, 3> &colour, colour_edit_flags);
-		bool colour_picker4(std::string_view label, std::array<int32, 4> &colour, colour_edit_flags);
+		bool colour_picker3(std::string_view label, std::array<uint8, 3> &colour, colour_edit_flags = colour_edit_flags::none);
+		bool colour_picker4(std::string_view label, std::array<uint8, 4> &colour, colour_edit_flags = colour_edit_flags::none);
 
 		enum class tree_node_flags : ImGuiTreeNodeFlags
 		{

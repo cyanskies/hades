@@ -21,10 +21,10 @@ namespace hades
 		g.window_end();
 	}
 
-	static void apply(const level_editor_level_props::background_settings &uncommitted,
-		background &background)
+	static void apply(const level_editor_level_props::background_settings &s,
+		background &b)
 	{
-
+		b.set_colour(s.col);
 	}
 
 	static void make_background_detail_window(gui &g, bool &open,
@@ -49,7 +49,15 @@ namespace hades
 				settings = uncommitted;
 			}
 
+			auto &col = uncommitted.col;
 			//backdrop colour picker
+			auto colour = std::array{ col.r, col.g, col.b };
+			if (g.colour_picker3("backdrop colour"sv, colour))
+			{
+				col.r = colour[0];
+				col.g = colour[1];
+				col.b = colour[2];
+			}
 
 			//layer editor
 		}

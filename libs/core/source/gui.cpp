@@ -458,7 +458,7 @@ namespace hades
 		ImGui::SetColorEditOptions(static_cast<ImGuiColorEditFlags>(s));
 	}
 
-	bool gui::colour_picker3(std::string_view label, std::array<int32, 3>& colour, colour_edit_flags f)
+	bool gui::colour_picker3(std::string_view label, std::array<uint8, 3>& colour, colour_edit_flags f)
 	{
 		std::array<float, 3> float_col{ 0.f };
 		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
@@ -468,15 +468,15 @@ namespace hades
 		const auto r = ImGui::ColorPicker3(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
-			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->int32 {
-				return static_cast<int32>(col * 255);
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->uint8 {
+				return static_cast<uint8>(col * 255);
 			});
 		}
 
 		return r;
 	}
 
-	bool gui::colour_picker4(std::string_view label, std::array<int32, 4>& colour, colour_edit_flags f)
+	bool gui::colour_picker4(std::string_view label, std::array<uint8, 4>& colour, colour_edit_flags f)
 	{
 		std::array<float, 4> float_col{ 0.f };
 		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
@@ -486,8 +486,8 @@ namespace hades
 		const auto r = ImGui::ColorPicker4(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
-			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->int32 {
-				return static_cast<int32>(col * 255);
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->uint8 {
+				return static_cast<uint8>(col * 255);
 			});
 		}
 

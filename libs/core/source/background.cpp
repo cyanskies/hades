@@ -36,6 +36,11 @@ namespace hades
 		_layers.emplace_back(background_layer{ anim, l.offset, l.parallax });
 	}
 
+	void background::clear() noexcept
+	{
+		_layers.clear();
+	}
+
 	void background::update(time_point t)
 	{
 		for (auto &l : _layers)

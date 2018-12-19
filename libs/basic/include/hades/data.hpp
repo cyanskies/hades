@@ -56,7 +56,8 @@ namespace hades
 			//returns the resource base class
 			//throws resource_null if the id doesn't refer to a resource
 			resources::resource_base *get_resource(unique_id id);
-
+			//as above, returns null if the id doesn't refer to a resource
+			resources::resource_base *try_get_resource(unique_id id);
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
@@ -65,6 +66,31 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>
 			T *get(unique_id id, const no_load_t);
+
+			enum class get_error {
+				ok,
+				no_resource_for_id,
+				resource_wrong_type
+			};
+
+			template<class T>
+			struct try_get_return
+			{
+				//try_get_return(T* t) : result(t) {}
+				//try_get_return(get_error e) : error(e) {}
+
+				T *result = nullptr;
+				get_error error = get_error::ok;
+			};
+
+			//gets a non-owning ptr to the resource represented by id
+			//if the reasource has not been loaded it will be loaded before returning
+			template<class T>
+			try_get_return<typename T> try_get(unique_id id);
+
+			//gets a non-owning ptr to the resource represented by id
+			template<class T>
+			try_get_return<typename T> try_get(unique_id id, const no_load_t);
 
 			//creates a resource with the value of ptr
 			//and assigns it to the name id
@@ -112,6 +138,9 @@ namespace hades
 		//		or hades::data::resource_wrong_type
 		template<class T>
 		const T* get(unique_id id);
+
+		template<class T>
+		data_manager::try_get_return<const T> try_get(unique_id id);
 		//TODO: get_mutable, to allow for elements that edit an owned resource
 
 		//refresh requests

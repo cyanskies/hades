@@ -277,6 +277,7 @@ namespace hades
 		};
 
 		//inputs
+		//returns true of the value of buffer changes
 		template<typename T> // selects the correct function from those bellow
 		bool input(std::string_view label, T&, input_text_flags = input_text_flags::none);
 		template<std::size_t Size>
@@ -448,18 +449,30 @@ namespace hades
 		static std::unordered_map<const resources::font*, ImFont*> _fonts;
 	};
 
+	namespace details
+	{
+		template<typename Enum>
+		constexpr inline Enum enum_or(Enum lhs, Enum rhs)
+		{
+			using T = std::underlying_type_t<Enum>;
+			return static_cast<Enum>(static_cast<T>(lhs) | static_cast<T>(rhs));
+		}
+	}
+
 	constexpr inline gui::window_flags operator|(gui::window_flags lhs, gui::window_flags rhs)
 	{
-		using T = std::underlying_type_t<gui::window_flags>;
-		return static_cast<gui::window_flags>(static_cast<T>(lhs) | static_cast<T>(rhs));
+		return details::enum_or(lhs, rhs);
 	}
 
 	//TODO: selrctable, combo, etc...
+	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs)
+	{
+		return details::enum_or(lhs, rhs);
+	}
 
 	constexpr inline gui::tree_node_flags operator|(gui::tree_node_flags lhs, gui::tree_node_flags rhs)
 	{
-		using T = std::underlying_type_t<gui::tree_node_flags>;
-		return static_cast<gui::tree_node_flags>(static_cast<T>(lhs) | static_cast<T>(rhs));
+		return details::enum_or(lhs, rhs);
 	}
 }
 

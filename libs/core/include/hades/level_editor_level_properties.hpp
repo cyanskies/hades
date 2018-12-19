@@ -29,6 +29,13 @@ namespace hades
 			std::vector<background_layer> layers;
 		};
 
+		struct background_settings_window
+		{
+			bool open = false;
+			int32 selected_layer = 0;
+			string animation_input;
+		};
+
 		void level_load(const level&) override;
 		level level_save(level l) const override;
 
@@ -40,9 +47,10 @@ namespace hades
 		//TODO: how to clip the background at the edges of the world
 		background_settings _background_settings;
 		background_settings _background_uncommitted;
+		background_settings_window _background_window;
 		background _background;
 		bool _details_window = false;
-		bool _background_window = false;
+		//bool _background_window = false;
 		string _level_name, _new_name;
 		string _level_desc, _new_desc;
 	};

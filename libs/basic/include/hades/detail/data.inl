@@ -92,6 +92,37 @@ namespace hades
 		}
 
 		template<class T>
+		inline data_manager::try_get_return<typename T> data_manager::try_get(unique_id id)
+		{
+			auto res = try_get<T>(id, no_load);
+
+			if (res.result)
+			{
+				assert(res.error == get_error::ok);
+				auto &r = res.result;
+				if (!r->loaded)
+					r->load(*this);
+			}
+
+			return res;
+		}
+
+		template<class T>
+		inline data_manager::try_get_return<typename T> data_manager::try_get(unique_id id, const no_load_t)
+		{
+			auto res = try_get_resource(id);
+			if (!res)
+				return { nullptr, get_error::no_resource_for_id };
+
+			auto out = dynamic_cast<T*>(res);
+
+			if (!out)
+				return { nullptr, get_error::resource_wrong_type };
+
+			return { out, get_error::ok };
+		}
+
+		template<class T>
 		void data_manager::set(unique_id id, std::unique_ptr<T> ptr)
 		{
 			//throw error if that id has already been used
@@ -113,6 +144,14 @@ namespace hades
 			detail::exclusive_lock lock;
 			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
 			return data->get<T>(id);
+		}
+
+		template<class T>
+		data_manager::try_get_return<const T> try_get(unique_id id)
+		{
+			const auto &[data, lock] = detail::get_data_manager_exclusive_lock();
+			auto[anim, error] = data->try_get<T>(id);
+			return { anim, error };
 		}
 
 		template<typename T>

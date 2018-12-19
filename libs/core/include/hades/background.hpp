@@ -34,6 +34,7 @@ namespace hades
 		void set_colour(colour);
 		void set_size(vector_float);
 		void add(layer);
+		void clear() noexcept;
 
 		//must be called at least once to generate the mesh
 		void update(time_point = time_point{});

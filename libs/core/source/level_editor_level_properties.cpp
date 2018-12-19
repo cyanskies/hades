@@ -1,5 +1,6 @@
 #include "hades/level_editor_level_properties.hpp"
 
+#include "hades/animation.hpp"
 #include "hades/gui.hpp"
 
 namespace hades
@@ -25,21 +26,91 @@ namespace hades
 		background &b)
 	{
 		b.set_colour(s.col);
+		b.clear();
+
+		for (const auto &l : s.layers)
+		{
+			try
+			{
+				b.add({ l.offset, l.parallax, l.anim });
+			}
+			catch (const data::resource_null &e)
+			{
+				LOGERROR(e.what());
+			}
+			catch (const data::resource_wrong_type &e)
+			{
+				LOGERROR(e.what());
+			}
+		}
 	}
 
-	static void make_background_detail_window(gui &g, bool &open,
+	static bool make_layer_edit_pane(gui &g,
+		level_editor_level_props::background_settings &uncommitted,
+		level_editor_level_props::background_settings_window &window)
+	{
+		using namespace std::string_view_literals;
+
+		bool changed = false;
+
+		auto &current_layer = uncommitted.layers[window.selected_layer];
+
+		//edit controls for a layer
+		g.input_text("animation"sv, window.animation_input);
+
+		const auto id = data::get_uid(window.animation_input);
+		if (id == unique_id::zero)
+			g.tooltip("this is not a registered id"sv);
+		else
+		{
+			const auto[anim, error] = data::try_get<resources::animation>(id);
+			if (!anim)
+			{
+				using ec = data::data_manager::get_error;
+				if (error == ec::no_resource_for_id)
+					g.tooltip("this id isn't holding a resource"sv);
+				else if (error == ec::resource_wrong_type)
+					g.tooltip("this id isn't for a animation"sv);
+				else
+					LOGERROR("Unexpected value for data::data_manager::get_error, was: " + to_string(static_cast<std::underlying_type_t<ec>>(error)));
+			}
+			else if(current_layer.anim != id)
+			{
+				//assign this animation to the current layer
+				current_layer.anim = id;
+				changed = true;
+			}
+		}
+
+		if (g.input("x offset"sv, current_layer.offset.x))
+			changed = true;
+
+		if (g.input("y offset"sv, current_layer.offset.y))
+			changed = true;
+
+		if (g.input("x parallax"sv, current_layer.parallax.x))
+			changed = true;
+
+		if (g.input("y parallax"sv, current_layer.parallax.y))
+			changed = true;
+
+		return changed;
+	}
+
+	static void make_background_detail_window(gui &g,
 		level_editor_level_props::background_settings &settings,
 		level_editor_level_props::background_settings &uncommitted,
+		level_editor_level_props::background_settings_window &window,
 		background &background)
 	{
-		if (!open)
+		if (!window.open)
 			return;
 
 		using namespace std::string_view_literals;
-		if (g.window_begin("background"sv, open))
+		if (g.window_begin("background"sv, window.open))
 		{
 			if (g.button("Done"sv))
-				open = false;
+				window.open = false;
 
 			g.layout_horizontal();
 
@@ -52,14 +123,92 @@ namespace hades
 			auto &col = uncommitted.col;
 			//backdrop colour picker
 			auto colour = std::array{ col.r, col.g, col.b };
-			if (g.colour_picker3("backdrop colour"sv, colour))
+
+			g.text("background_colour"sv);
+			constexpr auto picker_flags = gui::colour_edit_flags::no_label;
+			if (g.colour_picker3("backdrop colour"sv, colour, picker_flags))
 			{
 				col.r = colour[0];
 				col.g = colour[1];
 				col.b = colour[2];
 			}
 
+			auto &selected = window.selected_layer;
+			auto &layers = uncommitted.layers;
+
+			assert(static_cast<std::size_t>(selected) <= std::size(layers));
+			assert(selected >= 0);
+
 			//layer editor
+			if (g.button("move up"sv))
+			{
+				const auto beg = std::begin(layers);
+				const auto at = beg + selected;
+				if (at != beg)
+				{
+					std::iter_swap(at, at - 1);
+					--selected;
+				}
+			}
+
+			g.layout_horizontal();
+
+			if (g.button("add"sv))
+			{
+				if (std::empty(layers))
+					layers.emplace_back();
+				else
+				{
+					const auto at = std::begin(layers) + selected++;
+					layers.emplace(at);
+				}
+			}
+
+			if (g.button("move down"sv))
+			{
+				const auto rbeg = std::rbegin(layers);
+				const auto at = rbeg + (std::size(layers) - selected - 1);
+				if (at != rbeg)
+				{
+					std::iter_swap(at, at - 1);
+					++selected;
+				}
+			}
+
+			g.layout_horizontal();
+
+			if (g.button("remove"sv) && !std::empty(layers))
+			{
+				const auto at = std::begin(layers) + selected;
+				layers.erase(at);
+
+				if (selected == std::size(layers)
+					&& selected > 0)
+					--selected;
+			}
+
+			g.columns_begin(2, false);
+
+			if (g.listbox("layers"sv, selected, layers, [](const auto &l) {
+				return to_string(l.anim);
+			}))
+			{
+				//selected item changed
+				window.animation_input = to_string(uncommitted.layers[selected].anim);
+			}
+
+			g.columns_next();
+
+			if (!layers.empty())
+			{
+				if (make_layer_edit_pane(g, uncommitted, window))
+				{
+					apply(uncommitted, background);
+					settings = uncommitted;
+				}
+			}
+
+			g.columns_end();
 		}
 		g.window_end();
 	}
@@ -96,7 +245,7 @@ namespace hades
 				
 			if (g.menu_item("background..."sv))
 			{
-				_background_window = true;
+				_background_window.open = true;
 				_background_uncommitted = _background_settings;
 			}
 
@@ -106,8 +255,8 @@ namespace hades
 		g.main_menubar_end();
 
 		make_level_detail_window(g, _details_window, _level_name, _level_desc);
-		make_background_detail_window(g, _background_window,
-			_background_settings, _background_uncommitted, _background);
+		make_background_detail_window(g, _background_settings,
+			_background_uncommitted, _background_window, _background);
 
 		if (flags.new_level)
 		{

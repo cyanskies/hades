@@ -45,13 +45,11 @@ namespace hades
 		}
 	}
 
-	static bool make_layer_edit_pane(gui &g,
+	static void make_layer_edit_pane(gui &g,
 		level_editor_level_props::background_settings &uncommitted,
 		level_editor_level_props::background_settings_window &window)
 	{
 		using namespace std::string_view_literals;
-
-		bool changed = false;
 
 		auto &current_layer = uncommitted.layers[window.selected_layer];
 
@@ -75,26 +73,14 @@ namespace hades
 					LOGERROR("Unexpected value for data::data_manager::get_error, was: " + to_string(static_cast<std::underlying_type_t<ec>>(error)));
 			}
 			else if(current_layer.anim != id)
-			{
 				//assign this animation to the current layer
 				current_layer.anim = id;
-				changed = true;
-			}
 		}
 
-		if (g.input("x offset"sv, current_layer.offset.x))
-			changed = true;
-
-		if (g.input("y offset"sv, current_layer.offset.y))
-			changed = true;
-
-		if (g.input("x parallax"sv, current_layer.parallax.x))
-			changed = true;
-
-		if (g.input("y parallax"sv, current_layer.parallax.y))
-			changed = true;
-
-		return changed;
+		g.input("x offset"sv, current_layer.offset.x);
+		g.input("y offset"sv, current_layer.offset.y);
+		g.input("x parallax"sv, current_layer.parallax.x);
+		g.input("y parallax"sv, current_layer.parallax.y);
 	}
 
 	static void make_background_detail_window(gui &g,
@@ -200,13 +186,7 @@ namespace hades
 			g.columns_next();
 
 			if (!layers.empty())
-			{
-				if (make_layer_edit_pane(g, uncommitted, window))
-				{
-					apply(uncommitted, background);
-					settings = uncommitted;
-				}
-			}
+				make_layer_edit_pane(g, uncommitted, window);
 
 			g.columns_end();
 		}
@@ -271,6 +251,9 @@ namespace hades
 
 	void level_editor_level_props::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
+		auto view_pos = t.getView().getCenter() - t.getView().getSize() / 2.f;
+		_background.update({ view_pos.x, view_pos.y });
+		_background.update(time_point{});
 		t.draw(_background, s);
 	}
 }

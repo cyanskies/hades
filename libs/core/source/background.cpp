@@ -46,17 +46,22 @@ namespace hades
 		for (auto &l : _layers)
 		{
 			l.sprite.set_animation(l.animation, t);
-			const auto size = vector_float{ _size.x * l.parallax.x,
-											_size.y * l.parallax.y };
+			const auto size = vector_float{ 
+				l.parallax.x == 0 ? _size.x : _size.x * l.parallax.x,
+				l.parallax.y == 0 ? _size.y : _size.y * l.parallax.y 
+			};
+
 			l.sprite.set_size(size);
 		}
 	}
 
 	void background::update(vector_float view_position)
 	{
+		const auto pos = vector::clamp(view_position, { 0.f, 0.f }, _size);
+
 		for (auto &l : _layers)
 		{
-			const auto parallax_pos = vector_float{ view_position.x * l.parallax.x, view_position.y * l.parallax.y };
+			const auto parallax_pos = vector_float{ pos.x * l.parallax.x, pos.y * l.parallax.y };
 			const auto final_pos = parallax_pos + l.offset;
 			l.sprite.setPosition({ final_pos.x, final_pos.y });
 		}

@@ -19,7 +19,7 @@ namespace hades
 		{
 			const resources::animation *animation = nullptr;
 			vector_float offset{ 0.f, 0.f };
-			vector_float parallax{ 1.f, 1.f };
+			vector_float parallax{ 0.f, 0.f };
 			tiled_sprite sprite;
 		};
 

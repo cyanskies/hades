@@ -20,7 +20,7 @@ namespace hades
 		if (new_frame != _frame
 			|| _animation != a)
 		{
-			new_frame = _frame;
+			_frame = new_frame;
 			_generate_buffer();
 		}
 	}

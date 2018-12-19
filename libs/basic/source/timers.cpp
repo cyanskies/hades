@@ -8,6 +8,9 @@ namespace hades
 {
 	float normalise_time(time_point t, time_duration d)
 	{
+		if (d == time_duration::zero())
+			return 0.f;
+
 		const auto duration_point = time_point{ d };
 
 		//reduce t untill is is less than one duration;

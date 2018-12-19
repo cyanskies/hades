@@ -34,6 +34,8 @@ textures:
         source: ball.png
     grid-icons-texture:
         source: grid_icons.png
+    background-texture:
+        source: background.png
 
 animations:
     ball-anim:
@@ -61,6 +63,54 @@ animations:
         height: 40
         frames:
             - [0, 40, 1.0]
+    background-dirt:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [0, 0, 1.0]
+    background-city-near:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [96, 0, 1.0]
+    background-city:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [192, 0, 1.0]
+    background-city-far:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [0, 54, 1.0]
+    background-city-furthest:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [96, 54, 1.0]
+    background-06:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [192, 54, 1.0]
+    background-sun:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [0, 108, 1.0]
+    background-sky:
+        texture: background-texture
+        width: 95
+        height: 53
+        frames:
+            - [96, 108, 1.0]
 
 objects:
     test:

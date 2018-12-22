@@ -127,6 +127,12 @@ namespace hades
 		}
 
 		template<typename T>
+		constexpr vector_t<T> abs(vector_t<T> v)
+		{
+			return { std::abs(v.x), std::abs(v.y) };
+		}
+
+		template<typename T>
 		constexpr vector_t<T> perpendicular(vector_t<T> v)
 		{
 			return { -v.y, x };

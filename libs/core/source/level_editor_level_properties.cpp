@@ -251,9 +251,11 @@ namespace hades
 
 	void level_editor_level_props::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
-		auto view_pos = t.getView().getCenter() - t.getView().getSize() / 2.f;
-		_background.update({ view_pos.x, view_pos.y });
-		_background.update(time_point{});
+		const auto view = t.getView();
+		const auto size = view.getSize();
+		const auto view_pos = view.getCenter() - size / 2.f;
+
+		_background.update(time_point{}, { view_pos.x, view_pos.y, size.x, size.y });
 		t.draw(_background, s);
 	}
 }

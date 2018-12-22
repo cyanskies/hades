@@ -7,6 +7,15 @@
 
 namespace hades
 {
+	static constexpr vector_float absolute_offset(vector_float o, vector_int a) noexcept
+	{
+		//TODO: handle offset > animation size
+		return vector_float{
+			o.x <= 0.f ? o.x : -(static_cast<float>(a.x) - o.x),
+			o.y <= 0.f ? o.y : -(static_cast<float>(a.y) - o.y)
+		} * -1.f;
+	}
+
 	background::background(vector_float size, const std::vector<layer> &layers, colour c)
 		: _size(size)
 	{
@@ -41,29 +50,56 @@ namespace hades
 		_layers.clear();
 	}
 
+	static void set_animation(background::background_layer &b, time_point t, vector_float s)
+	{
+		b.sprite.set_animation(b.animation, t, tiled_sprite::dont_regen);
+		const auto offset = absolute_offset(b.offset, { b.animation->width, b.animation->height });
+		b.sprite.set_size({
+			b.parallax.x > 0 ? std::max(s.x * b.parallax.x, s.x) : s.x,
+			b.parallax.y > 0 ? std::max(s.x * b.parallax.y, s.y) : s.x, 
+		});
+	}
+
 	void background::update(time_point t)
 	{
 		for (auto &l : _layers)
-		{
-			l.sprite.set_animation(l.animation, t);
-			const auto size = vector_float{ 
-				l.parallax.x == 0 ? _size.x : _size.x * l.parallax.x,
-				l.parallax.y == 0 ? _size.y : _size.y * l.parallax.y 
-			};
-
-			l.sprite.set_size(size);
-		}
+			set_animation(l, t, _size);
 	}
 
-	void background::update(vector_float view_position)
+	static void set_view(background::background_layer &b, rect_float v, vector_float s)
 	{
-		const auto pos = vector::clamp(view_position, { 0.f, 0.f }, _size);
+		const auto view_pos = position(v);
+		const auto view_size = size(v);
 
+		const auto clamped_pos = vector_float{
+			std::clamp(view_pos.x, 0.f, s.x),
+			std::clamp(view_pos.y, 0.f, s.y)
+		};
+
+		const auto offset = absolute_offset(b.offset, { b.animation->width, b.animation->height });
+
+		const auto offset_pos = clamped_pos - offset;
+
+		const auto parallax_pos = vector_float{
+			offset_pos.x * b.parallax.x,
+			offset_pos.y * b.parallax.y
+		};
+
+		b.sprite.setPosition({ parallax_pos.x, parallax_pos.y });
+	}
+
+	void background::update(rect_float v)
+	{
+		for (auto &l : _layers)
+			set_view(l, v, _size);
+	}
+
+	void background::update(time_point t, rect_float v)
+	{
 		for (auto &l : _layers)
 		{
-			const auto parallax_pos = vector_float{ pos.x * l.parallax.x, pos.y * l.parallax.y };
-			const auto final_pos = parallax_pos + l.offset;
-			l.sprite.setPosition({ final_pos.x, final_pos.y });
+			set_animation(l, t, _size);
+			set_view(l, v, _size);
 		}
 	}
 

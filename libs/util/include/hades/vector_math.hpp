@@ -111,6 +111,9 @@ namespace hades
 		template<typename T>
 		constexpr vector_t<T> reverse(vector_t<T>);
 
+		template<typename T>
+		constexpr vector_t<T> abs(vector_t<T>);
+
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>
 		constexpr vector_t<T> perpendicular(vector_t<T>);

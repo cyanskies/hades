@@ -18,10 +18,17 @@ namespace hades
 	class tiled_sprite : public sf::Drawable, public sf::Transformable
 	{
 	public:
+		struct dont_regen_t {};
+
 		void set_animation(const resources::animation*, time_point);
+		void set_animation(const resources::animation*, time_point, dont_regen_t);
+
 		void set_size(vector_float);
+		void set_size(vector_float, dont_regen_t);
 
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
+
+		static constexpr dont_regen_t dont_regen{};
 
 	private:
 		void _generate_buffer();

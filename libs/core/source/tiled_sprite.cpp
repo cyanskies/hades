@@ -12,24 +12,37 @@ namespace hades
 	void tiled_sprite::set_animation(const resources::animation *a, time_point t)
 	{
 		assert(a);
-		_animation = a;
 
-		vector_float new_frame{};
-		std::tie(new_frame.x, new_frame.y) = animation::get_frame(*a, t);
-		
-		if (new_frame != _frame
-			|| _animation != a)
+		const auto old_frame = _frame;
+		const auto old_anim = _animation;
+
+		set_animation(a, t, dont_regen);
+
+		if (old_frame != _frame
+			|| old_anim != a)
 		{
-			_frame = new_frame;
 			_generate_buffer();
 		}
 	}
 
+	void tiled_sprite::set_animation(const resources::animation *a, time_point t, dont_regen_t)
+	{
+		assert(a);
+		_animation = a;
+
+		std::tie(_frame.x, _frame.y) = animation::get_frame(*a, t); 
+	}
+
 	void tiled_sprite::set_size(vector_float s)
 	{
-		_size = s;
+		set_size(s, dont_regen);
 
 		_generate_buffer();
+	}
+
+	void tiled_sprite::set_size(vector_float s, dont_regen_t)
+	{
+		_size = s;
 	}
 
 	void tiled_sprite::draw(sf::RenderTarget &t, sf::RenderStates s) const
@@ -52,11 +65,11 @@ namespace hades
 		const auto x_part = std::modf(x_count, &x_wholef);
 		const auto y_part = std::modf(y_count, &y_wholef);
 
-		const auto x_whole = static_cast<int32>(x_wholef);
-		const auto y_whole = static_cast<int32>(y_wholef);
+		const auto vertex_x = static_cast<int32>(x_wholef);
+		const auto vertex_y = static_cast<int32>(y_wholef);
 
-		const auto vertex_x = static_cast<std::size_t>(std::ceil(x_count));
-		const auto vertex_y = static_cast<std::size_t>(std::ceil(y_count));
+		/*const auto vertex_x = static_cast<std::size_t>(std::ceil(x_count));
+		const auto vertex_y = static_cast<std::size_t>(std::ceil(y_count));*/
 
 		const vector_float anim_size{ static_cast<float>(_animation->width),
 									  static_cast<float>(_animation->height) };

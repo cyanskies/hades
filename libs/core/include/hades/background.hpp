@@ -6,6 +6,7 @@
 
 #include "hades/colour.hpp"
 #include "hades/level.hpp"
+#include "hades/math.hpp"
 #include "hades/tiled_sprite.hpp"
 
 namespace hades
@@ -39,7 +40,8 @@ namespace hades
 		//must be called at least once to generate the mesh
 		void update(time_point = time_point{});
 		//should be called once per frame
-		void update(vector_float view_position);
+		void update(rect_float view);
+		void update(time_point, rect_float);
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
 	private:

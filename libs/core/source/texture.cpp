@@ -167,5 +167,17 @@ namespace hades
 	namespace resources
 	{
 		texture::texture() : resource_type<sf::Texture>(load_texture) {}
+		texture::size_type get_max_texture_size()
+		{
+			return std::min(
+				std::numeric_limits<texture::size_type>::max(),
+				get_hardware_max_texture_size()
+			);
+		}
+
+		texture::size_type get_hardware_max_texture_size()
+		{
+			return sf::Texture::getMaximumSize();
+		}
 	}
 }

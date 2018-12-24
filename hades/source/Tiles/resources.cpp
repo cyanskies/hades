@@ -29,8 +29,8 @@ namespace tiles
 
 	void RegisterTileResources(hades::data::data_system* data)
 	{	
-		data->register_resource_type("tile-settings", tiles::resources::parseTileSettings);
-		data->register_resource_type("tilesets", tiles::resources::parseTileset);
+		//data->register_resource_type("tile-settings", tiles::resources::parseTileSettings);
+		//data->register_resource_type("tilesets", tiles::resources::parseTileset);
 
 		//create texture for error_tile
 		const unique_id error_tile_texture;

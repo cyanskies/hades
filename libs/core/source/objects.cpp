@@ -152,6 +152,10 @@ namespace hades
 	void register_objects(hades::data::data_manager &d)
 	{
 		using namespace std::string_view_literals;
+		register_animation_resource(d);
+		register_curve_resource(d);
+		register_core_curves(d);
+
 		d.register_resource_type("objects"sv, resources::parse_objects);
 	}
 

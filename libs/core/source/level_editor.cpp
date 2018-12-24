@@ -4,6 +4,9 @@
 #include "hades/files.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"
+#include "hades/level_editor_grid.hpp"
+#include "hades/level_editor_level_properties.hpp"
+#include "hades/level_editor_objects.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 
@@ -326,4 +329,16 @@ void hades::create_editor_console_variables()
 	console::create_property(cvars::editor_zoom_default, cvars::default_value::editor_zoom_default);
 
 	console::create_property(cvars::editor_level_default_size, cvars::default_value::editor_level_default_size);
+}
+
+void hades::register_level_editor_resources(data::data_manager &d)
+{
+	register_background_resource(d); //used by level_editor_level_properties
+	register_level_editor_object_resources(d);
+}
+
+void hades::create_level_editor_console_vars()
+{
+	create_editor_console_variables();
+	create_level_editor_grid_variables();
 }

@@ -9,6 +9,9 @@
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"
+#include "hades/level_editor_grid.hpp"
+#include "hades/level_editor_objects.hpp"
+#include "hades/level_editor_level_properties.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/state.hpp"
@@ -124,7 +127,18 @@ namespace hades
 		component_tuple _editor_components;
 	};
 
-	using level_editor = basic_level_editor<>;
+	//standard level editor
+	using level_editor = basic_level_editor<
+		level_editor_level_props,
+		level_editor_objects,
+		level_editor_grid
+	>;
+
+	// these register all the needed resources and console vars to use the 
+	// level_editor defined above
+	//NOTE: it is always safe to register or create the same resources, or console var twice
+	void register_level_editor_resources(data::data_manager&);
+	void create_level_editor_console_vars();
 }
 
 namespace hades::cvars

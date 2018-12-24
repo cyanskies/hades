@@ -63,8 +63,8 @@ namespace objects
 	{
 		DefineObjectConsoleVars();
 
-		data->register_resource_type("editor", resources::ParseEditor);
-		data->register_resource_type("objects", resources::ParseObject);
+		//data->register_resource_type("editor", resources::ParseEditor);
+		//data->register_resource_type("objects", resources::ParseObject);
 
 		MakeDefaultCurves(data);
 	}

@@ -69,31 +69,31 @@ animations:
         height: 53
         frames:
             - [0, 0, 1.0]
-    background-city-near:
+    background-trees:
         texture: background-texture
         width: 95
         height: 53
         frames:
             - [96, 0, 1.0]
-    background-city:
+    background-city-near:
         texture: background-texture
         width: 95
         height: 53
         frames:
             - [192, 0, 1.0]
-    background-city-far:
+    background-city:
         texture: background-texture
         width: 95
         height: 53
         frames:
             - [0, 54, 1.0]
-    background-city-furthest:
+    background-city-far:
         texture: background-texture
         width: 95
         height: 53
         frames:
             - [96, 54, 1.0]
-    background-06:
+    background-city-furthest:
         texture: background-texture
         width: 95
         height: 53
@@ -111,6 +111,18 @@ animations:
         height: 53
         frames:
             - [96, 108, 1.0]
+
+backgrounds:
+    city-background:
+        layers:
+            - [background-sky, 1.0, 1.0]
+            - [background-sun, 0.8, 0.8]
+            - [background-city-furthest, 0.7, 0.7]
+            - [background-city-far, 0.6, 0.6]
+            - [background-city, 0.5, 0.5]
+            - [background-city-near, 0.4, 0.4]
+            - [background-trees, 0.2, 0.2]
+            - [background-dirt]
 
 objects:
     test:

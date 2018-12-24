@@ -1,6 +1,7 @@
 #include "hades/level_editor_objects.hpp"
 
 #include "hades/animation.hpp"
+#include "hades/background.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_editor_grid.hpp"
@@ -53,6 +54,8 @@ namespace hades
 {
 	void register_level_editor_object_resources(data::data_manager &d)
 	{
+		register_objects(d);
+
 		d.register_resource_type(level_editor_object_resource_name, resources::parse_level_editor_object_resource);
 	}
 

@@ -105,7 +105,7 @@ namespace hades::resources
 		auto &a = static_cast<animation&>(r);
 		if (!a.tex->loaded)
 			//data->get will lazy load texture
-			const auto tex = d.get<texture>(a.tex->id);
+			d.get<texture>(a.tex->id);
 	}
 }
 
@@ -197,6 +197,9 @@ namespace hades
 	void register_animation_resource(data::data_manager &d)
 	{
 		using namespace std::string_view_literals;
+		//requires texture
+		register_texture_resource(d);
+
 		d.register_resource_type("animations"sv, resources::parse_animation);
 	}
 }

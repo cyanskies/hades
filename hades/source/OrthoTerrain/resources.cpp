@@ -32,8 +32,8 @@ namespace ortho_terrain
 		//we need the tile resources registered
 		tiles::RegisterTileResources(data);
 
-		data->register_resource_type("terrain", resources::ParseTerrain);
-		data->register_resource_type("terrainsets", resources::ParseTerrainSet);
+		//data->register_resource_type("terrain", resources::ParseTerrain);
+		//data->register_resource_type("terrainsets", resources::ParseTerrainSet);
 
 		auto empty_t_tex = data->get<hades::resources::texture>(tiles::id::empty_tile_texture, hades::data::no_load);
 		auto empty_terrain = hades::data::FindOrCreate<resources::terrain>(resources::EmptyTerrainId, hades::unique_id::zero, data);

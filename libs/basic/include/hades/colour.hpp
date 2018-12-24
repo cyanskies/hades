@@ -27,6 +27,11 @@ namespace hades
 		constexpr auto white = colour{ std::numeric_limits<uint8>::max(),
 									   std::numeric_limits<uint8>::max(),
 									   std::numeric_limits<uint8>::max() };
+
+		constexpr auto transparent = colour{ std::numeric_limits<uint8>::max(),
+											 std::numeric_limits<uint8>::max(),
+											 std::numeric_limits<uint8>::max(),
+											 0u };
 	}
 }
 

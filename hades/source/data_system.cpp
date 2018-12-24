@@ -17,16 +17,9 @@ namespace hades
 
 		//application registers the custom resource types
 		//parser must convert yaml into a resource manifest object
-		void data_system::register_resource_type(std::string_view name, resources::parserFunc parser)
-		{
-			_resourceParsers[to_string(name)] = parser;
-		}
-
 		void data_system::register_resource_type(std::string_view name, resources::parser_func parser)
 		{
-			_resourceParsers[to_string(name)] = [parser](unique_id m, const YAML::Node &n, data_manager *d) {
-				return std::invoke(parser, m, *make_yaml_parser(n), *d);
-			};
+			_resourceParsers[to_string(name)] = parser;
 		}
 
 		//game is the name of a folder or archive containing a game.yaml file
@@ -269,7 +262,7 @@ namespace hades
 				//if this resource name has a parser then load it
 				auto parser = _resourceParsers[type];
 				if (parser)
-					parser(mod, header.second, this);
+					std::invoke(parser, mod, *make_yaml_parser(header.second), *this);
 			}
 		}
 

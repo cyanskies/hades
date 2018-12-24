@@ -29,6 +29,13 @@ namespace hades
 			std::vector<background_layer> layers;
 		};
 
+		struct background_pick_window
+		{
+			bool open = false;
+			unique_id resource = unique_id::zero;
+			string input;
+		};
+
 		struct background_settings_window
 		{
 			bool open = false;
@@ -45,6 +52,7 @@ namespace hades
 	private:
 		//TODO: background object
 		//TODO: how to clip the background at the edges of the world
+		background_pick_window _background_pick_window;
 		background_settings _background_settings;
 		background_settings _background_uncommitted;
 		background_settings_window _background_window;

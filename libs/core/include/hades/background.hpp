@@ -7,10 +7,33 @@
 #include "hades/colour.hpp"
 #include "hades/level.hpp"
 #include "hades/math.hpp"
+#include "hades/resource_base.hpp"
 #include "hades/tiled_sprite.hpp"
+
+namespace hades::resources
+{
+	struct background_t {};
+
+	struct background : resource_type<background_t>
+	{
+		struct layer
+		{
+			const animation *animation = nullptr;
+			vector_float offset{ 0.f, 0.f };
+			vector_float parallax{ 0.f, 0.f };
+		};
+
+		background();
+
+		colour colour = colours::black;
+		std::vector<layer> layers;
+	};
+}
 
 namespace hades
 {
+	void register_background_resource(data::data_manager&);
+
 	class background : public sf::Drawable
 	{
 	public:
@@ -25,6 +48,7 @@ namespace hades
 		};
 
 		background() = default;
+		background(const resources::background&);
 		background(vector_float size, const std::vector<layer>& = std::vector<layer>{}, colour = colours::black);
 		
 		background(const background&) = default;

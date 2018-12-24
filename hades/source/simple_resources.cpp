@@ -33,7 +33,7 @@ namespace hades
 {
 	namespace resources
 	{
-		void parseString(unique_id mod, const YAML::Node& node, data::data_manager*);
+		void parseString(unique_id mod, const data::parser_node &node, data::data_manager&);
 	}
 
 	void RegisterCommonResources(hades::data::data_system *data)
@@ -43,36 +43,34 @@ namespace hades
 
 	namespace resources
 	{	
-		void parseString(unique_id mod, const YAML::Node& node, data::data_manager* dataman)
+		void parseString(unique_id mod, const data::parser_node &n, data::data_manager &d)
 		{
 			//strings yaml
 			//strings:
 			//    id: value
 			//    id2: value2
 
-			types::string resource_type = "strings";
-			if (!yaml_error(resource_type, "n/a", "n/a", "map", mod, node.IsMap()))
-				return;
+			const auto resource_type = "strings";
+			
+			const auto strings = n.get_children();
 
-			for (auto n : node)
+			for (const auto &s : strings)
 			{
 				//get string with this name if it has already been loaded
 				//first node holds the maps name
-				auto tnode = n.first;
-				auto name = tnode.as<types::string>();
-
-				//second holds the map children
-				auto string = n.second.as<types::string>();
-				auto id = dataman->get_uid(tnode.as<types::string>());
-
-				auto str = data::FindOrCreate<resources::string>(id, mod, dataman);// = std::make_unique<resources::string>();
-
+				const auto name = s->to_string();
+				const auto id = d.get_uid(name);
+				
+				auto str = d.find_or_create<resources::string>(id, mod);
 				if (!str)
 					continue;
 
-				str->mod = mod;
-				auto moddata = dataman->get<resources::mod>(mod);
-				str->source = moddata->source;
+				const auto mod_info = d.get<resources::mod>(mod);
+
+				const auto value = s->get_child();
+				const auto string = value->to_string();
+
+				str->source = mod_info->source;
 				str->value = string;
 			}
 		}

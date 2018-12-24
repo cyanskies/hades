@@ -18,7 +18,7 @@ namespace hades
 {
 	namespace resources
 	{
-		using parserFunc = std::function<void(unique_id mod, const YAML::Node& node, data::data_manager*)>;
+		//using parserFunc = std::function<void(unique_id mod, const YAML::Node& node, data::data_manager*)>;
 	}
 
 	namespace data
@@ -33,7 +33,6 @@ namespace hades
 
 			//application registers the custom resource types
 			//parser must convert yaml into a resource manifest object
-			void register_resource_type(std::string_view name, resources::parserFunc parser);
 			void register_resource_type(std::string_view name, resources::parser_func parser) override;
 
 			//game is the name of a folder or archive containing a game.yaml file
@@ -80,7 +79,7 @@ namespace hades
 			void parseMod(std::string_view name, YAML::Node modRoot, std::function<bool(std::string_view)> dependency);
 
 			//==parsing and loading data==
-			std::unordered_map<types::string, resources::parserFunc> _resourceParsers;
+			std::unordered_map<types::string, resources::parser_func> _resourceParsers;
 			//==stored resource data==
 			//list of used names
 			std::unordered_set<types::string> _names;

@@ -214,6 +214,51 @@ namespace hades
 		return l;
 	}
 
+	static bool make_background_pick_window(gui &g, level_editor_level_props::background_pick_window &w)
+	{
+		auto ret = false;
+
+		if (!w.open)
+			return ret;
+
+		using namespace std::string_view_literals;
+
+		if (g.window_begin("background"sv, w.open))
+		{
+			if (g.button("cancel"sv))
+				w.open = false;
+
+			if (g.button("apply"sv))
+				ret = true;
+
+			g.input_text("##resource"sv, w.input);
+
+			const auto id = data::get_uid(w.input);
+			if (id == unique_id::zero)
+				g.tooltip("this is not a registered id"sv);
+			else
+			{
+				const auto[back, error] = data::try_get<resources::background>(id);
+				if (!back)
+				{
+					using ec = data::data_manager::get_error;
+					if (error == ec::no_resource_for_id)
+						g.tooltip("this id isn't holding a resource"sv);
+					else if (error == ec::resource_wrong_type)
+						g.tooltip("this id isn't for a background"sv);
+					else
+						LOGERROR("Unexpected value for data::data_manager::get_error, was: " + to_string(static_cast<std::underlying_type_t<ec>>(error)));
+				}
+				else if (w.resource != id)
+					w.resource = id;
+			}
+		}
+
+		g.window_end();
+
+		return ret;
+	}
+
 	void level_editor_level_props::gui_update(gui &g, editor_windows &flags)
 	{
 		using namespace std::string_view_literals;
@@ -223,7 +268,10 @@ namespace hades
 			if (g.menu_item("details..."sv))
 				_details_window = true;
 				
-			if (g.menu_item("background..."sv))
+			if (g.menu_item("pick background..."))
+				_background_pick_window.open = true;
+
+			if (g.menu_item("custom background..."sv))
 			{
 				_background_window.open = true;
 				_background_uncommitted = _background_settings;
@@ -237,6 +285,34 @@ namespace hades
 		make_level_detail_window(g, _details_window, _level_name, _level_desc);
 		make_background_detail_window(g, _background_settings,
 			_background_uncommitted, _background_window, _background);
+
+		if (make_background_pick_window(g, _background_pick_window) 
+			&& _background_pick_window.resource != unique_id::zero)
+		{
+			const auto *back = data::get<resources::background>(_background_pick_window.resource);
+			assert(back);
+
+			background_settings b;
+			b.col = back->colour;
+			b.layers.reserve(back->layers.size());
+
+			for (const auto &l : back->layers)
+			{
+				assert(l.animation);
+
+				const auto layer = background_settings::background_layer{
+					l.animation->id,
+					l.offset,
+					l.parallax
+				};
+
+				b.layers.emplace_back(layer);
+			}
+
+			std::swap(b, _background_uncommitted);
+			apply(_background_uncommitted, _background);
+			_background_settings = _background_uncommitted;
+		}
 
 		if (flags.new_level)
 		{

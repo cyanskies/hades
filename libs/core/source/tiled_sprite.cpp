@@ -65,8 +65,11 @@ namespace hades
 		const auto x_part = std::modf(x_count, &x_wholef);
 		const auto y_part = std::modf(y_count, &y_wholef);
 
-		const auto vertex_x = static_cast<int32>(x_wholef);
-		const auto vertex_y = static_cast<int32>(y_wholef);
+		assert(x_wholef >= 0.f);
+		assert(y_wholef >= 0.f);
+
+		const auto vertex_x = static_cast<uint32>(x_wholef);
+		const auto vertex_y = static_cast<uint32>(y_wholef);
 
 		/*const auto vertex_x = static_cast<std::size_t>(std::ceil(x_count));
 		const auto vertex_y = static_cast<std::size_t>(std::ceil(y_count));*/

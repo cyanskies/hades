@@ -83,8 +83,6 @@ namespace hades
 			object_selector,
 			object_multiselect,
 			object_drag,
-			region_selector,
-			region_place
 		};
 
 		enum curve_index : std::size_t {

@@ -230,12 +230,6 @@ namespace hades
 			_held_object.reset();
 		}
 
-		if (g.toolbar_button("region selector"sv))
-		{
-			activate_brush();
-			_brush_type = brush_type::region_selector;
-		}
-
 		if (g.toolbar_button("remove") 
 			&& _brush_type == brush_type::object_selector
 			&& _held_object)
@@ -298,9 +292,8 @@ namespace hades
 		{
 			if (_brush_type == brush_type::object_selector
 				&& _held_object)
-				_make_property_editor(g);
-			else if (_brush_type == brush_type::region_selector)
 			{
+				_make_property_editor(g);
 			}
 			else
 			{
@@ -581,10 +574,6 @@ namespace hades
 	{
 		if(_show_objects)
 			t.draw(_sprites, s);
-		
-		//if (_show_regions)
-		//	;
-		//TODO: draw regions
 	}
 
 	template<std::size_t Length>

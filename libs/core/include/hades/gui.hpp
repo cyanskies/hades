@@ -232,6 +232,7 @@ namespace hades
 		detail::listbox_no_string<Container> listbox(std::string_view label,
 			int32 &current_item, const Container&, int height_in_items = -1);
 
+		//TODO: std::size_t
 		template<typename Container, typename ToString>
 		bool listbox(std::string_view label, int32 &current_item,
 			const Container&, ToString to_string_func, int height_in_items = -1);

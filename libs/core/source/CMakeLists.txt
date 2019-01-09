@@ -19,6 +19,7 @@ set(HADES_CORE_SRC
 	level_editor_grid.cpp
 	level_editor_level_properties.cpp
 	level_editor_objects.cpp
+	level_editor_regions.cpp
 	level_interface.cpp
 	mouse_input.cpp
 	objects.cpp
@@ -47,6 +48,7 @@ set(HADES_CORE_SRC
 	../include/hades/level_editor_grid.hpp
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
+	../include/hades/level_editor_regions.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
@@ -86,6 +88,7 @@ source_group("Headers" FILES
 	../include/hades/level_editor_grid.hpp
 	../include/hades/level_editor_level_properties.hpp
 	../include/hades/level_editor_objects.hpp
+	../include/hades/level_editor_regions.hpp
 	../include/hades/level_interface.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp

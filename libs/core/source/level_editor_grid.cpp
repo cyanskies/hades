@@ -20,12 +20,34 @@ float hades::calculate_grid_size(float cell_size, int step) noexcept
 	return cell_size * std::pow(2.f, static_cast<float>(step));
 }
 
+float hades::calculate_grid_size(const grid_vars &g)
+{
+	return calculate_grid_size(g.size->load(), g.step->load());
+}
+
 hades::int32 hades::calculate_grid_step_for_size(float cell_size, float target_size) noexcept
 {
 	const auto a = target_size / cell_size;
 	const auto b = std::sqrt(a);
 	const auto c = std::ceil(b);
 	return static_cast<int32>(c) - 1;
+}
+
+hades::int32 hades::calculate_grid_step_for_size(const grid_vars &g, float t)
+{
+
+	return calculate_grid_step_for_size(g.size->load(), t);
+}
+
+hades::grid_vars hades::get_console_grid_vars()
+{
+	return grid_vars{ 
+		console::get_bool(cvars::editor_grid, cvars::default_value::editor_grid),
+		console::get_bool(cvars::editor_grid_snap, cvars::default_value::editor_grid_snap),
+		console::get_float(cvars::editor_grid_size, cvars::default_value::editor_grid_size),
+		console::get_int(cvars::editor_grid_step, cvars::default_value::editor_grid_step),
+		console::get_int(cvars::editor_grid_step_max, cvars::default_value::editor_grid_step_max) 
+	};
 }
 
 hades::level_editor_grid::level_editor_grid() :

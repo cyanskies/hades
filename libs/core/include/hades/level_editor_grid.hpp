@@ -11,8 +11,21 @@ namespace hades
 {
 	void create_level_editor_grid_variables();
 
+	struct grid_vars
+	{
+		console::property_bool enabled;
+		console::property_bool snap;
+		console::property_float size;
+		console::property_int step;
+		console::property_int step_max;
+	};
+
+	grid_vars get_console_grid_vars();
+
 	float calculate_grid_size(float cell_size, int step) noexcept;
+	float calculate_grid_size(const grid_vars&);
 	int32 calculate_grid_step_for_size(float cell_size, float target_size) noexcept;
+	int32 calculate_grid_step_for_size(const grid_vars&, float target_size);
 
 	class level_editor_grid final : public level_editor_component
 	{

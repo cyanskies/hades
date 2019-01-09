@@ -123,7 +123,7 @@ namespace hades
 		template<typename T, std::size_t Size>
 		inline bool input_imp(gui &g, std::string_view l, std::array<T, Size> &v, gui::input_text_flags f)
 		{
-			return g.input_scalar_array(g, l, v, f);
+			return g.input_scalar_array(l, v, f);
 		}
 
 		//specialisation for static sized char array buffers
@@ -200,7 +200,7 @@ namespace hades
 				return "%.6f";
 		}();
 
-		return InputScalarN(to_string(label).data(), data_type, v.data(), v.size(), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), v.size(), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}
 }
 

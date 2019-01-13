@@ -247,6 +247,7 @@ namespace hades
 			r.shape.setSize({ size, size });
 			r.shape.setFillColor(region_colour);
 			_edit.held_corner = rect_corners::bottom_right;
+			_edit.corner = true;
 			_brush = brush_type::region_corner_drag;
 		}
 		else if (_show_regions
@@ -322,23 +323,38 @@ namespace hades
 					|| corner == rect_corners::bottom_right;
 			}();
 
-			if (top)
-			{
+			auto &r = _regions[_edit.selected].shape;
+			auto[x, y, width, height] = r.getGlobalBounds();
 
-			}
+			auto x2 = x + width,
+				y2 = y + height;
+
+			if (top)
+				y = pos.y;
 
 			if (bottom)
-			{
-			}
+				y2 = pos.y;
 
 			if (left)
-			{
-			}
+				x = pos.x;
 
 			if (right)
-			{
-			}
+				x2 = pos.x;
+
+			/*if (x > x2)
+				std::swap(x, x2);
+
+			if (y > y2)
+				std::swap(y, y2);*/
+
+			width = std::max(x2 - x, _region_min_size->load());
+			height = std::max(y2 - y, _region_min_size->load());
+
+			r.setPosition(x, y);
+			r.setSize({ width, height });
 		}
+
+		return;
 
 		if (_brush == brush_type::region_edge_drag)
 		{

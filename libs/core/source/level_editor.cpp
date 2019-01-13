@@ -341,4 +341,5 @@ void hades::create_level_editor_console_vars()
 {
 	create_editor_console_variables();
 	create_level_editor_grid_variables();
+	create_level_editor_regions_variables();
 }

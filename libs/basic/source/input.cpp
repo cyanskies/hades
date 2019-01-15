@@ -19,9 +19,10 @@ namespace hades
 			x_axis = std::max(x_axis, other.x_axis);
 			y_axis = std::max(y_axis, other.y_axis);
 
-			//TODO: should we do this?
-			x_axis = std::clamp<decltype(x_axis)>(x_axis, 0, 100);
-			y_axis = std::clamp<decltype(y_axis)>(y_axis, 0, 100);
+			////TODO: should we do this?
+			// No, we shouldn't, it bugs the mouse input
+			//x_axis = std::clamp<decltype(x_axis)>(x_axis, 0, 100);
+			//y_axis = std::clamp<decltype(y_axis)>(y_axis, 0, 100);
 		}
 	}
 

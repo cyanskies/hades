@@ -26,6 +26,7 @@ namespace hades
 			const rect_t<vector_int::value_type> window{ 0, 0, size.x, size.y };
 			return is_within(pos, window);
 		}
+
 		vector_float to_world_coords(const sf::RenderTarget &t, vector_int pos, const sf::View &v)
 		{
 			const auto r = t.mapPixelToCoords({ pos.x, pos.y }, v);

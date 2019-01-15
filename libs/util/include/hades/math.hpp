@@ -69,7 +69,8 @@ namespace hades
 		top_left,
 		top_right,
 		bottom_right,
-		bottom_left
+		bottom_left,
+		last
 	};
 
 	template<typename T>

@@ -195,7 +195,7 @@ namespace hades
 			if constexpr (std::is_same_v<T, int>)
 				return "%d";
 			else if constexpr (std::is_same_v<T, float>)
-				return "%%.%df";
+				return "%.3f";
 			else if constexpr (std::is_same_v<T, double>)
 				return "%.6f";
 		}();

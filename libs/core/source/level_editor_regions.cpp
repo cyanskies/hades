@@ -1,6 +1,7 @@
 #include "hades/level_editor_regions.hpp"
 
 #include "hades/collision.hpp"
+#include "hades/exceptions.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_editor_grid.hpp"
 #include "hades/mouse_input.hpp"
@@ -79,14 +80,20 @@ namespace hades
 					//position
 					const auto position = region.shape.getPosition();
 					auto pos = std::array{ position.x, position.y };
-					g.input("position"sv, pos);
-					region.shape.setPosition(pos[0], pos[1]);
+					if (g.input("position"sv, pos))
+					{
+						region.shape.setPosition(pos[0], pos[1]);
+						_on_selected(_edit.selected);
+					}
 
 					//size
 					const auto size = region.shape.getSize();
 					auto siz = std::array{ size.x, size.y };
-					g.input("size"sv, siz);
-					region.shape.setSize({ siz[0], siz[1] });
+					if (g.input("size"sv, siz))
+					{
+						region.shape.setSize({ siz[0], siz[1] });
+						_on_selected(_edit.selected);
+					}
 				}
 			}
 		}
@@ -111,8 +118,8 @@ namespace hades
 
 	static void generate_selection_rect(level_editor_regions::region_edit::array_t &rects, rect_float area)
 	{
-		constexpr auto thickness = 1.f;
-		constexpr auto default_length = 5.f;
+		constexpr auto thickness = 4.f;
+		constexpr auto default_length = 8.f;
 		
 		const auto length = std::min(default_length, std::min(area.width, area.height));
 
@@ -238,6 +245,7 @@ namespace hades
 			&& _brush == brush_type::region_place
 			&& snap_pos == pos)
 		{
+			//TODO: this block looks quite messy
 			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
 
 			_edit.selected = _regions.size();
@@ -249,6 +257,8 @@ namespace hades
 			_edit.held_corner = rect_corners::bottom_right;
 			_edit.corner = true;
 			_brush = brush_type::region_corner_drag;
+			using namespace std::string_literals;
+			r.name.setString("Region"s + to_string(++_new_region_name_counter));
 		}
 		else if (_show_regions
 			&& _brush == brush_type::region_selector)
@@ -275,18 +285,60 @@ namespace hades
 		}
 	}
 
-	void level_editor_regions::on_drag(mouse_pos m)
+	constexpr rect_corners flip_horizontal(const rect_corners c)
 	{
-		const auto snap_pos = calculate_pos(m, _grid);
-
-		const auto pos = vector_float{
-			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
-			std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
+		constexpr auto horizontal_swap = std::array{
+			rect_corners::top_right,
+			rect_corners::top_left,
+			rect_corners::bottom_left,
+			rect_corners::bottom_right
 		};
 
+		assert(c < rect_corners::last);
+
+		return horizontal_swap[c];
+	}
+
+	constexpr rect_corners flip_vertical(const rect_corners c)
+	{
+		constexpr auto vertical_swap = std::array{
+			rect_corners::bottom_left,
+			rect_corners::bottom_right,
+			rect_corners::top_right,
+			rect_corners::top_left
+		};
+
+		assert(c < rect_corners::last);
+
+		return vertical_swap[c];
+	}
+
+	constexpr direction flip(const direction d)
+	{
+		constexpr auto swap = std::array{
+			direction::right,
+			direction::left,
+			direction::bottom,
+			direction::top
+		};
+
+		assert(d < direction::last);
+
+		return swap[static_cast<decltype(swap)::size_type>(d)];
+	}
+
+	void level_editor_regions::on_drag(mouse_pos m)
+	{
 		if (_brush == brush_type::region_corner_drag
 			|| _brush == brush_type::region_edge_drag)
 		{
+			const auto snap_pos = calculate_pos(m, _grid);
+
+			const auto pos = vector_float{
+				std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
+				std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
+			};
+
 			const auto c = _edit.corner;
 			const auto edge = _edit.held_edge;
 			const auto corner = _edit.held_corner;
@@ -341,121 +393,54 @@ namespace hades
 			if (right)
 				x2 = pos.x;
 
-			/*if (x > x2)
+			//swap the selected edge, or corner to allow inverting the region
+			if (x > x2)
+			{
 				std::swap(x, x2);
 
+				if (c)
+					_edit.held_corner = flip_horizontal(corner);
+				else
+					_edit.held_edge = flip(edge);
+			}
+
 			if (y > y2)
-				std::swap(y, y2);*/
+			{
+				std::swap(y, y2);
 
-			width = std::max(x2 - x, _region_min_size->load());
-			height = std::max(y2 - y, _region_min_size->load());
+				if (c)
+					_edit.held_corner = flip_vertical(corner);
+				else
+					_edit.held_edge = flip(edge);
+			}
+
+			assert(x2 >= x);
+			assert(y2 >= y);
+
+			width = x2 - x;
+			height = y2 - y;
 
 			r.setPosition(x, y);
 			r.setSize({ width, height });
 		}
-
-		return;
-
-		if (_brush == brush_type::region_edge_drag)
-		{
-			assert(_edit.selected < static_cast<int32>(_regions.size()));
-
-			auto &r = _regions[_edit.selected].shape;
-			const auto bounds = r.getGlobalBounds();
-
-			const auto x = _edit.held_edge == direction::left ?
-				pos.x : bounds.left;
-
-			const auto y = _edit.held_edge == direction::top ?
-				pos.y : bounds.top;
-
-			const auto width = [=] {
-				if (_edit.held_edge == direction::left)
-					return bounds.width + x - bounds.left;
-				else if (_edit.held_edge == direction::right)
-				{
-					const auto x2 = bounds.left + bounds.width;
-					return bounds.width + pos.x - x2;
-				}
-				else
-					return bounds.width;
-			}();
-
-			const auto height = [=] {
-				if (_edit.held_edge == direction::top)
-					return bounds.height + y - bounds.top;
-				else if (_edit.held_edge == direction::bottom)
-				{
-					const auto y2 = bounds.top + bounds.height;
-					return bounds.height + pos.y - y2;
-				}
-				else
-					return bounds.height;
-			}();
-
-			r.setPosition(x, y);
-			r.setSize({ width, height });
-		}
-		else if (_brush == brush_type::region_corner_drag)
-		{
-			assert(_edit.selected < static_cast<int32>(_regions.size()));
-
-			auto &r = _regions[_edit.selected].shape;
-			const auto bounds = r.getGlobalBounds();
-			const auto c = _edit.held_corner;
-
-			const auto x = c == rect_corners::top_left
-				|| c == rect_corners::bottom_left ?
-				pos.x : bounds.left;
-
-			const auto y = c == rect_corners::top_left
-				|| c == rect_corners::top_right ?
-				pos.y : bounds.top;
-
-			const auto width = [=] {
-				if (c == rect_corners::top_left 
-					|| c == rect_corners::bottom_left)
-				{
-					return bounds.width + pos.x - bounds.left;
-				}
-				else if(c == rect_corners::top_right
-					|| c == rect_corners::bottom_right)
-				{
-					return pos.x - bounds.left;
-				}
-				else
-					return bounds.width;
-			}();
-
-			const auto min_width = std::max(10.f, width);
-
-			const auto height = [=] {
-				if (c == rect_corners::top_left
-					|| c == rect_corners::top_right)
-				{
-					return bounds.height + pos.y - bounds.top;
-				}
-				else if (c == rect_corners::bottom_left
-					|| c == rect_corners::bottom_right)
-				{
-					return pos.y - bounds.top;
-				}
-				else
-					return bounds.height;
-			}();
-
-			const auto min_height = std::max(10.f, height);
-
-			r.setPosition(x, y);
-			r.setSize({ min_width, min_height });
-		}// !if(brush == corner || edge)
 	}
 
 	void level_editor_regions::on_drag_end(mouse_pos)
 	{
 		if (_brush == brush_type::region_edge_drag
 			|| _brush == brush_type::region_corner_drag)
+		{
+			//expand shape to meet minimum size setting
+			auto &r = _regions[_edit.selected];
+			auto [w, h] = r.shape.getSize();
+
+			w = std::max(w, _region_min_size->load());
+			h = std::max(h, _region_min_size->load());
+
+			r.shape.setSize({ w, h });
+
 			_brush = brush_type::region_selector;
+		}
 	}
 
 	void level_editor_regions::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
@@ -467,6 +452,9 @@ namespace hades
 				t.draw(region.shape, s);
 				t.draw(region.name, s);
 			}
+
+			for (const auto &r : _edit.selection_lines)
+				t.draw(r);
 		}
 	}
 

@@ -91,7 +91,6 @@ namespace hades::detail
 		const auto mouse_position = actions.find(input::mouse_position);
 		assert(mouse_position != std::end(actions));
 
-		//view scrolling
 		if (mouse_position->active)
 		{
 			//world scroll
@@ -116,28 +115,24 @@ namespace hades::detail
 				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level.map_x), static_cast<float>(_level.map_y) });
 			}
 
+			const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
+
 			if (_active_brush != invalid_brush)
-			{
-				//generate draw preview
-				const auto world_coords = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
-				_generate_brush_preview(_active_brush, dt, world_coords);
-			}
+				_generate_brush_preview(_active_brush, dt, world_mouse_pos);
+
+			const auto mouse_left = actions.find(input::mouse_left);
+			assert(mouse_left != std::end(actions));
+			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
+
+			if (mouse::is_click(_mouse_left))
+				_component_on_click(_active_brush, world_mouse_pos);
+			else if (mouse::is_drag_start(_mouse_left))
+				_component_on_drag_start(_active_brush, world_mouse_pos);
+			else if (mouse::is_dragging(_mouse_left))
+				_component_on_drag(_active_brush, world_mouse_pos);
+			else if (mouse::is_drag_end(_mouse_left))
+				_component_on_drag_end(_active_brush, world_mouse_pos);
 		}
-
-		const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
-
-		const auto mouse_left = actions.find(input::mouse_left);
-		assert(mouse_left != std::end(actions));
-		mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
-
-		if (mouse::is_click(_mouse_left))
-			_component_on_click(_active_brush, world_mouse_pos);
-		else if (mouse::is_drag_start(_mouse_left))
-			_component_on_drag_start(_active_brush, world_mouse_pos);
-		else if (mouse::is_dragging(_mouse_left))
-			_component_on_drag(_active_brush, world_mouse_pos);
-		else if (mouse::is_drag_end(_mouse_left))
-			_component_on_drag_end(_active_brush, world_mouse_pos);
 
 		_update_gui(dt);
 	}

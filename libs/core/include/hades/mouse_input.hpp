@@ -48,6 +48,7 @@ namespace hades
 			bool is_down = false;
 			bool clicked = false;
 
+			//NOTE: click pos is in screen coords
 			std::conditional_t<EnableDrag || EnableDoubleClick, vector_int, disabled> click_pos;
 			std::conditional_t<EnableDoubleClick, double_click_data, disabled> double_clicked;
 			std::conditional_t<EnableDrag, drag_data, disabled> drag;

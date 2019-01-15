@@ -422,6 +422,8 @@ namespace hades
 
 			r.setPosition(x, y);
 			r.setSize({ width, height });
+
+			_on_selected(_edit.selected);
 		}
 	}
 
@@ -518,24 +520,28 @@ namespace hades
 		{
 			_brush = brush_type::region_edge_drag;
 			_edit.held_edge = direction::top;
+			_edit.corner = false;
 		}
 		//right
 		else if (i == line_index::right_middle)
 		{
 			_brush = brush_type::region_edge_drag;
 			_edit.held_edge = direction::right;
+			_edit.corner = false;
 		}
 		//bottom
 		else if (i == line_index::bottom_middle)
 		{
 			_brush = brush_type::region_edge_drag;
 			_edit.held_edge = direction::bottom;
+			_edit.corner = false;
 		}
 		//left
 		else if (i == line_index::left_middle)
 		{
 			_brush = brush_type::region_edge_drag;
 			_edit.held_edge = direction::left;
+			_edit.corner = false;
 		}
 		else
 			throw std::out_of_range{ "line index for region drag out of range" };

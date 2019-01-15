@@ -127,7 +127,7 @@ namespace hades::detail
 			if (mouse::is_click(_mouse_left))
 				_component_on_click(_active_brush, world_mouse_pos);
 			else if (mouse::is_drag_start(_mouse_left))
-				_component_on_drag_start(_active_brush, world_mouse_pos);
+				_component_on_drag_start(_active_brush, mouse::to_world_coords(t, _mouse_left.click_pos, _world_view));
 			else if (mouse::is_dragging(_mouse_left))
 				_component_on_drag(_active_brush, world_mouse_pos);
 			else if (mouse::is_drag_end(_mouse_left))

@@ -69,7 +69,10 @@ namespace hades
 			region_corner_drag
 		};
 
+		//generates selection lines
 		void _on_selected(index_t);
+		//selects the correct drag point depending on the selection
+		//line index
 		void _on_drag_begin(region_edit::array_t::size_type);
 
 		bool _show_regions = true;

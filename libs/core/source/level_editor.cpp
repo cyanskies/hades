@@ -149,7 +149,7 @@ namespace hades::detail
 		rt.draw(_gui);
 	}
 
-	void level_editor_impl::_set_active_brush(std::size_t index)
+	void level_editor_impl::_set_active_brush(std::size_t index) noexcept
 	{
 		_active_brush = index;
 	}

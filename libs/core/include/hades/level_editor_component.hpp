@@ -62,7 +62,7 @@ namespace hades
 			_get_tags_at = get_tags;
 		}
 
-		void activate_brush()
+		void activate_brush() noexcept
 		{
 			std::invoke(_activate_brush);
 		}

@@ -100,23 +100,29 @@ namespace hades
 		g.window_end();
 	}
 
+	//NOTE: this layout must be kept in sync with
+	// edge_map and corner_map
 	enum class line_index : std::size_t {
-		top_left,
 		top_middle,
+		edge_begin = top_middle,
+		right_middle,
+		bottom_middle,
+		left_middle,
+		top_left,
+		edge_end = top_left,
+		corner_begin = edge_end,
 		top_right,
 		right_top,
-		right_middle,
 		right_bottom,
 		bottom_right,
-		bottom_middle,
 		bottom_left,
 		left_bottom,
-		left_middle,
 		left_top,
-		last
+		corner_end,
+		last = corner_end
 	};
 
-	static void generate_selection_rect(level_editor_regions::region_edit::array_t &rects, rect_float area)
+	static void generate_selection_rect(level_editor_regions::region_edit::array_t &rects, rect_float area) noexcept
 	{
 		constexpr auto thickness = 4.f;
 		constexpr auto default_length = 8.f;
@@ -133,25 +139,29 @@ namespace hades
 		sf::RectangleShape l{};
 		l.setFillColor(sf::Color::White);
 		l.setSize({ length, thickness });
-		l.setPosition(area.x, top_y);
-		rects[static_cast<T>(line_index::top_left)] = l;
-
+		
 		//top_middle
 		l.setPosition(area.x + half_width, top_y);
 		rects[static_cast<T>(line_index::top_middle)] = l;
 
+		//bottom_middle
+		const auto bottom_y = area.y + area.height;
+		l.setPosition(area.x + half_width, bottom_y);
+		rects[static_cast<T>(line_index::bottom_middle)] = l;
+
+		//top_left
+		const auto corner_hori_length = length + thickness;
+		l.setSize({ corner_hori_length, thickness });
+		l.setPosition(area.x - thickness, top_y);
+		rects[static_cast<T>(line_index::top_left)] = l;
+
+		//bottom_left
+		l.setPosition(area.x - thickness, bottom_y);
+		rects[static_cast<T>(line_index::bottom_left)] = l;
+
 		//top_right
 		l.setPosition(area.x + area.width - length, top_y);
 		rects[static_cast<T>(line_index::top_right)] = l;
-
-		//bottom_left
-		const auto bottom_y = area.y + area.height;
-		l.setPosition(area.x, bottom_y);
-		rects[static_cast<T>(line_index::bottom_left)] = l;
-
-		//bottom_middle
-		l.setPosition(area.x + half_width, bottom_y);
-		rects[static_cast<T>(line_index::bottom_middle)] = l;
 
 		//bottom_right
 		l.setPosition(area.x + area.width - length, bottom_y);
@@ -167,21 +177,21 @@ namespace hades
 		l.setPosition(right_x, area.y + half_height);
 		rects[static_cast<T>(line_index::right_middle)] = l;
 
-		//right_bottom
-		l.setPosition(right_x, area.y + area.height);
-		rects[static_cast<T>(line_index::right_bottom)] = l;
-
-		//left_top
-		const auto left_x = area.x - thickness;
-		l.setPosition(left_x, area.y);
-		rects[static_cast<T>(line_index::left_top)] = l;
-
 		//left_middle
+		const auto left_x = area.x - thickness;
 		l.setPosition(left_x, area.y + half_height);
 		rects[static_cast<T>(line_index::left_middle)] = l;
 
+		//right_bottom
+		l.setPosition(right_x, area.y + area.height - length);
+		rects[static_cast<T>(line_index::right_bottom)] = l;
+
+		//left_top
+		l.setPosition(left_x, area.y);
+		rects[static_cast<T>(line_index::left_top)] = l;
+
 		//left_bottom
-		l.setPosition(left_x, area.y + area.height);
+		l.setPosition(left_x, area.y + area.height - length);
 		rects[static_cast<T>(line_index::left_bottom)] = l;
 	}
 
@@ -285,8 +295,9 @@ namespace hades
 		}
 	}
 
-	constexpr rect_corners flip_horizontal(const rect_corners c)
+	constexpr rect_corners flip_horizontal(const rect_corners c) noexcept
 	{
+		//NOTE: this will break if the layout of rect_corners changes
 		constexpr auto horizontal_swap = std::array{
 			rect_corners::top_right,
 			rect_corners::top_left,
@@ -296,11 +307,12 @@ namespace hades
 
 		assert(c < rect_corners::last);
 
-		return horizontal_swap[c];
+		return horizontal_swap[static_cast<decltype(horizontal_swap)::size_type>(c)];
 	}
 
-	constexpr rect_corners flip_vertical(const rect_corners c)
+	constexpr rect_corners flip_vertical(const rect_corners c) noexcept
 	{
+		//NOTE: this will break if the layout of rect_corners changes
 		constexpr auto vertical_swap = std::array{
 			rect_corners::bottom_left,
 			rect_corners::bottom_right,
@@ -310,11 +322,12 @@ namespace hades
 
 		assert(c < rect_corners::last);
 
-		return vertical_swap[c];
+		return vertical_swap[static_cast<decltype(vertical_swap)::size_type>(c)];
 	}
 
-	constexpr direction flip(const direction d)
+	constexpr direction flip(const direction d) noexcept
 	{
+		//NOTE: this will break if the layout of direction changes
 		constexpr auto swap = std::array{
 			direction::right,
 			direction::left,
@@ -339,7 +352,7 @@ namespace hades
 				std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
 			};
 
-			const auto c = _edit.corner;
+			const auto c = _brush == brush_type::region_corner_drag;
 			const auto edge = _edit.held_edge;
 			const auto corner = _edit.held_corner;
 
@@ -485,66 +498,47 @@ namespace hades
 
 	void level_editor_regions::_on_drag_begin(region_edit::array_t::size_type index)
 	{
+		//NOTE: both of these tables will not work,
+		// if the layout of line_index changes
+		constexpr auto edge_map = std::array{
+			direction::top,
+			direction::right,
+			direction::bottom,
+			direction::left,
+		};
+
+		constexpr auto corner_offset = edge_map.size();
+
+		constexpr auto corner_map = std::array{
+			rect_corners::top_left,
+			rect_corners::top_right,
+			rect_corners::top_right,
+			rect_corners::bottom_right,
+			rect_corners::bottom_right,
+			rect_corners::bottom_left,
+			rect_corners::bottom_left,
+			rect_corners::top_left,
+		};
+
 		const auto i = static_cast<line_index>(index);
 
-		//top left corner
-		if (i == line_index::top_left
-			|| i == line_index::left_top)
-		{
-			_brush = brush_type::region_corner_drag;
-			_edit.held_corner = rect_corners::top_left;
-		}
-		//top right
-		else if (i == line_index::top_right
-			|| i == line_index::right_top)
-		{
-			_brush = brush_type::region_corner_drag;
-			_edit.held_corner = rect_corners::top_right;
-		}
-		//bottom right
-		else if (i == line_index::bottom_right
-			|| i == line_index::right_bottom)
-		{
-			_brush = brush_type::region_corner_drag;
-			_edit.held_corner = rect_corners::bottom_right;
-		}
-		//bottom left
-		else if (i == line_index::bottom_left
-			|| i == line_index::left_bottom)
-		{
-			_brush = brush_type::region_corner_drag;
-			_edit.held_corner = rect_corners::bottom_left;
-		}
-		//top
-		else if (i == line_index::top_middle)
+		if (i >= line_index::edge_begin
+			&& i < line_index::edge_end)
 		{
 			_brush = brush_type::region_edge_drag;
-			_edit.held_edge = direction::top;
 			_edit.corner = false;
+			_edit.held_edge = edge_map[index];
 		}
-		//right
-		else if (i == line_index::right_middle)
+		else if (i >= line_index::corner_begin
+			&& i < line_index::corner_end)
 		{
-			_brush = brush_type::region_edge_drag;
-			_edit.held_edge = direction::right;
-			_edit.corner = false;
-		}
-		//bottom
-		else if (i == line_index::bottom_middle)
-		{
-			_brush = brush_type::region_edge_drag;
-			_edit.held_edge = direction::bottom;
-			_edit.corner = false;
-		}
-		//left
-		else if (i == line_index::left_middle)
-		{
-			_brush = brush_type::region_edge_drag;
-			_edit.held_edge = direction::left;
-			_edit.corner = false;
+			_brush = brush_type::region_corner_drag;
+			_edit.corner = true;
+			assert(index >= corner_offset);
+			_edit.held_corner = corner_map[index - corner_offset];
 		}
 		else
-			throw std::out_of_range{ "line index for region drag out of range" };
+			throw invalid_argument{ "line index for region drag out of range" };	
 	}
 
 	void create_level_editor_regions_variables()

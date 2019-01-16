@@ -128,8 +128,10 @@ namespace hades
 		template<typename T>
 		void create_property(std::string_view s, T v)
 		{
-			if(property_provider)
+			if (property_provider)
 				return property_provider->create(s, v);
+			else
+				throw provider_unavailable{ "property provideder not available" };
 		}
 
 		// Property global functions are required to work even when the property provider is absent

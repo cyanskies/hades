@@ -19,6 +19,8 @@
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
+//TODO: add noexcept wherever possible
+
 namespace hades::detail
 {
 	constexpr auto mouse_drag_enabled = true;

@@ -115,6 +115,32 @@ namespace hades
 		};
 	}
 
+	namespace detail
+	{
+		template<typename T>
+		auto &get_corner_impl(rect_corners c, T &a)
+		{
+			static_assert(std::is_array_v<T>);
+			static_assert(a.size() == 4);
+			assert(c >= rect_corners::first);
+			assert(c < rect_corners::last);
+			const auto index = static_cast<std::decay_t<decltype(a)>::size_type>(c);
+			return a[index];
+		}
+	}
+
+	template<typename T>
+	const point_t<T> &get_corner(rect_corners c, const std::array<point_t<T>, 4> &a)
+	{
+		return detail::get_corner_impl(c, a);
+	}
+
+	template<typename T>
+	point_t<T> &get_corner(rect_corners c, std::array<point_t<T>, 4> &a)
+	{
+		return detail::get_corner_impl(c, a);
+	}
+
 	template<typename T>
 	T distance(point_t<T> a, point_t<T> b)
 	{

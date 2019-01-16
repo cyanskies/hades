@@ -42,6 +42,7 @@ namespace hades
 	template<typename U, typename V>
 	bool collision_test(U first, V second);
 
+	//NOTE: the layout of direction is depended on by other code.
 	enum class direction {
 		left,
 		right,

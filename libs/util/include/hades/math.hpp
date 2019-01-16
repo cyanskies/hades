@@ -65,8 +65,10 @@ namespace hades
 	template<typename T>
 	T clamp(T value, T min, T max);
 
-	enum rect_corners : std::size_t {
-		top_left,
+	//NOTE: the layout of rect_coners is depended on by other code.
+	enum class rect_corners : std::size_t {
+		first,
+		top_left = first,
 		top_right,
 		bottom_right,
 		bottom_left,
@@ -75,6 +77,12 @@ namespace hades
 
 	template<typename T>
 	std::array<point_t<T>, 4> corners(rect_t<T>);
+
+	template<typename T>
+	const point_t<T> &get_corner(rect_corners, const std::array<point_t<T>, 4>&);
+
+	template<typename T>
+	point_t<T> &get_corner(rect_corners, std::array<point_t<T>, 4>&);
 
 	//returns the distance between two points
 	template<typename T>

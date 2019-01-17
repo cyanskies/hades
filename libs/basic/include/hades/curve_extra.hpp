@@ -77,7 +77,7 @@ namespace hades::resources
 
 	struct curve : public resource_type<curve_t>
 	{
-		curve_type curve_type = curve_type::error;
+        curve_type c_type = curve_type::error;
 		curve_variable_type data_type = curve_variable_type::error;
 		bool sync = false,
 			save = false,

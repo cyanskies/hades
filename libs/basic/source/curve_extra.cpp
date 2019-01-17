@@ -1,6 +1,7 @@
 #include "hades/curve_extra.hpp"
 
 #include <string_view>
+#include <type_traits>
 
 #include "hades/parser.hpp"
 
@@ -156,7 +157,7 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-			new_curve->curve_type	= get_scalar(*c, "type"sv,	new_curve->curve_type, read_curve_type);
+            new_curve->c_type	= get_scalar(*c, "type"sv,	new_curve->c_type, read_curve_type);
 			new_curve->data_type	= get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
 			new_curve->sync			= get_scalar(*c, "sync"sv,  new_curve->sync);
 			new_curve->save			= get_scalar(*c, "save"sv,  new_curve->save);
@@ -183,7 +184,7 @@ namespace hades::resources
 
 	bool is_curve_valid(const resources::curve &c, const curve_default_value &v) noexcept
 	{
-		if (c.curve_type == curve_type::error)
+        if (c.c_type == curve_type::error)
 			return false;
 
 		using resources::curve_variable_type;
@@ -249,10 +250,11 @@ namespace hades::resources
 
 			if constexpr (curve_types::is_vector_type_v<T>)
 			{
-				if constexpr (std::is_same_v<T::value_type, unique_id>)
-					v = n.to_sequence<T::value_type>(data::make_uid);
+                using ValueType = typename T::value_type;
+                if constexpr (std::is_same_v<ValueType, unique_id>)
+                    v = n.to_sequence<ValueType>(data::make_uid);
 				else
-					v = n.to_sequence<T::value_type>();
+                    v = n.to_sequence<ValueType>();
 			}
 			else
 			{
@@ -269,14 +271,6 @@ namespace hades::resources
 
 namespace hades
 {
-	template<resources::curve_variable_type t>
-	types::string to_string(const resources::curve_default_value &v)
-	{
-		using T = resources::as_curve_type_t<t>;
-		const auto value = resources::get_curve_default_value<T>(v);
-		return to_string(value);
-	}
-
 	template<>
 	types::string to_string<std::monostate>(std::monostate value)
 	{

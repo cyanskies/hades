@@ -26,13 +26,13 @@ namespace objects
 		//position
 		const auto position_id = data->get_uid("position");
 		auto position_c = hades::data::FindOrCreate<curve>(position_id, hades::empty_id, data);
-		position_c->curve_type = hades::curve_type::linear;
+		position_c->c_type = hades::curve_type::linear;
 		position_c->data_type = hades::resources::curve_variable_type::vector_int;
 		position_c->default_value = std::vector<int_t>{ 0, 0 };
 		//size
 		const auto size_id = data->get_uid("size");
 		auto size_c = hades::data::FindOrCreate<curve>(size_id, hades::empty_id, data);
-		size_c->curve_type = hades::curve_type::linear;
+		size_c->c_type = hades::curve_type::linear;
 		size_c->data_type = hades::resources::curve_variable_type::vector_int;
 		size_c->default_value = std::vector<int_t>{ 8, 8 };
 	}

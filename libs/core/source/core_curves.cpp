@@ -13,7 +13,7 @@ namespace hades
 
 	static void setup_curve(resources::curve &c)
 	{
-		c.curve_type = curve_type::linear;
+		c.c_type = curve_type::linear;
 		c.data_type = resources::curve_variable_type::float_t;
 		c.default_value = 0.f;
 	}
@@ -24,7 +24,7 @@ namespace hades
 		using resources::curve;
 		name_id = d.get_uid("name"sv);
 		auto name_c = d.find_or_create<curve>(name_id, unique_id::zero);
-		name_c->curve_type = curve_type::step;
+		name_c->c_type = curve_type::step;
 		name_c->data_type = resources::curve_variable_type::string;
 		name_c->default_value = string{};
 
@@ -39,13 +39,13 @@ namespace hades
 		collision_groups_id = d.get_uid("collision-groups");
 		auto *col_groups = d.find_or_create<curve>(collision_groups_id, unique_id::zero);
 
-		col_groups->curve_type = curve_type::step;
+		col_groups->c_type = curve_type::step;
 		col_groups->data_type = resources::curve_variable_type::vector_unique;
 		col_groups->default_value = resources::curve_types::vector_unique{};
 
 		tags_id = d.get_uid("tags");
 		auto *tags = d.find_or_create<curve>(tags_id, unique_id::zero);
-		tags->curve_type = curve_type::step;
+		tags->c_type = curve_type::step;
 		tags->data_type = resources::curve_variable_type::vector_unique;
 		tags->default_value = resources::curve_types::vector_unique{};
 	}

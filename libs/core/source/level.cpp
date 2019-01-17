@@ -15,7 +15,7 @@ namespace hades
 		if (c.exists({ id, curve->id }))
 			c.erase({ id, curve->id });
 
-		hades::curve<T> curve_instance{ curve->curve_type };
+		hades::curve<T> curve_instance{ curve->c_type };
 
 		assert(std::holds_alternative<T>(value));
 

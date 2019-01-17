@@ -248,3 +248,5 @@ install_manifest.txt
 .vs
 imgui.ini
 *.a
+
+yaml-cpp\.pc

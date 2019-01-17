@@ -35,7 +35,7 @@ namespace hades {
 		constexpr auto always_false_v = always_false<Ts...>::value;
 
 		template<typename ...Ts>
-		constexpr auto always_true_v = !always_false_v<Ts...>::value;
+        constexpr auto always_true_v = !always_false_v<Ts...>;
 	}
 
 	using namespace types;

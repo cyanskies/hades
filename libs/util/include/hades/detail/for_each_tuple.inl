@@ -71,7 +71,7 @@ namespace hades::detail
 	}
 
 	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
-	inline auto for_each_worker_r(Tuple &t, Func f, Args... args)
+    inline decltype(auto) for_each_worker_r(Tuple &t, Func f, Args... args)
 		noexcept(for_each_r_noexcept < std::size_t{ 0u }, Tuple, Func, Args...>())
 	{
 		using T = std::tuple_element_t<Count, Tuple>;
@@ -131,7 +131,7 @@ namespace hades
 	}
 
 	template<typename Tuple, typename Func, typename ...Args>
-	auto for_each_tuple_r(Tuple &t, Func f, Args ...args)  
+    decltype(auto) for_each_tuple_r(Tuple &t, Func f, Args ...args)
 		noexcept(noexcept(detail::for_each_worker_r < std::size_t{ 0u }>(t, f, args...)))
 	{
 		assert(std::tuple_size_v<Tuple> > 0);

@@ -1,9 +1,9 @@
 #ifndef HADES_CONSOLEVARS_HPP
 #define HADES_CONSOLEVARS_HPP
 
-#include "hades/console_variables.hpp"
-
 #include <string_view>
+
+#include "hades/types.hpp"
 
 namespace hades
 {
@@ -50,9 +50,9 @@ namespace hades
 
 			constexpr auto video_fullscreen = false;
 			constexpr auto video_resizable = false;
-			constexpr auto video_width = 800;
-			constexpr auto video_height = 600;
-			constexpr auto video_depth = 32;
+            constexpr int32 video_width = 800;
+            constexpr int32 video_height = 600;
+            constexpr int32 video_depth = 32;
 		}
 	}
 }

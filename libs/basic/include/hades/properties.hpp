@@ -5,6 +5,7 @@
 #include <exception>
 #include <memory>
 #include <string_view>
+#include <utility>
 
 #include "hades/exceptions.hpp"
 #include "hades/types.hpp"
@@ -129,7 +130,7 @@ namespace hades
 		void create_property(std::string_view s, T v)
 		{
 			if (property_provider)
-				return property_provider->create(s, v);
+                property_provider->create(s, std::forward<T>(v));
 			else
 				throw provider_unavailable{ "property provideder not available" };
 		}

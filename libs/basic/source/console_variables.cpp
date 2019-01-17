@@ -1,7 +1,7 @@
 #include "hades/console_variables.hpp"
 
 #include "hades/properties.hpp"
-#include "Hades/types.hpp"
+#include "hades/types.hpp"
 
 namespace hades
 {

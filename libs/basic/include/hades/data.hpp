@@ -86,11 +86,11 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
-			try_get_return<typename T> try_get(unique_id id);
+            try_get_return<T> try_get(unique_id id);
 
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>
-			try_get_return<typename T> try_get(unique_id id, const no_load_t);
+            try_get_return<T> try_get(unique_id id, const no_load_t);
 
 			//creates a resource with the value of ptr
 			//and assigns it to the name id

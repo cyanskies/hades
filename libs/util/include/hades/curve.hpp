@@ -107,12 +107,12 @@ namespace hades {
 
 		static constexpr auto is_curve_nothrow_copy_assignable_v = std::conjunction<
 			std::is_nothrow_copy_constructible<curve_type>,
-			std::is_nothrow_constructible<typename DataType>,
-			std::is_nothrow_copy_assignable<typename DataType>,
+            std::is_nothrow_constructible<DataType>,
+            std::is_nothrow_copy_assignable<DataType>,
 			std::is_nothrow_swappable<basic_curve>>::value;
 
 		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
-			std::is_nothrow_swappable<typename DataType>,
+            std::is_nothrow_swappable<DataType>,
 			std::is_nothrow_swappable<curve_type>>::value;
 
 		basic_curve(const basic_curve &other)

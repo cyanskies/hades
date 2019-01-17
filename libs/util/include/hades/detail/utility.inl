@@ -1,6 +1,7 @@
 #include "hades/utility.hpp"
 
 #include <charconv>
+#include <functional>
 #include <sstream>
 #include <string_view>
 
@@ -158,7 +159,7 @@ namespace hades
 			// or	 : T, T, T, T, T
 			// or	 : [T, T, T, T, T, T]
 
-			using value_type = T::value_type;
+            using value_type = typename T::value_type;
 
 			//remove the braces at begining and end if present
 			const auto first_brace = str.find_first_of('[');

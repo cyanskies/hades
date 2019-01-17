@@ -92,7 +92,7 @@ namespace hades
 		}
 
 		template<class T>
-		inline data_manager::try_get_return<typename T> data_manager::try_get(unique_id id)
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id)
 		{
 			auto res = try_get<T>(id, no_load);
 
@@ -108,7 +108,7 @@ namespace hades
 		}
 
 		template<class T>
-		inline data_manager::try_get_return<typename T> data_manager::try_get(unique_id id, const no_load_t)
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t)
 		{
 			auto res = try_get_resource(id);
 			if (!res)

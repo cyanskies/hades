@@ -2,6 +2,7 @@
 #define HADES_UTIL_UTILITY_HPP
 
 #include <random>
+#include <stdexcept>
 
 #include "hades/types.hpp"
 

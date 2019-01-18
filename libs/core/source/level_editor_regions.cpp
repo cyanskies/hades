@@ -257,8 +257,9 @@ namespace hades
 		{
 			//TODO: this block looks quite messy
 			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
-
-			_edit.selected = _regions.size();
+			const auto r_size = _regions.size();
+			assert(r_size < std::numeric_limits<int32>::max());
+			_edit.selected = static_cast<int32>(r_size);
 			auto &r = _regions.emplace_back();
 			r.shape.setPosition({ pos.x,pos.y });
 			const auto size = _region_min_size->load();
@@ -485,7 +486,9 @@ namespace hades
 	void level_editor_regions::_on_selected(index_t i)
 	{
 		assert(_regions.size() > i);
-		_edit.selected = i;
+		assert(i < std::numeric_limits<int32>::max());
+		_edit.selected = static_cast<int32>(i);
+
 		const auto &reg = _regions[_edit.selected];
 
 		const auto position = reg.shape.getPosition();

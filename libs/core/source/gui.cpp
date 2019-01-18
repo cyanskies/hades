@@ -631,13 +631,15 @@ namespace hades
 	void gui::columns_begin(std::size_t count, bool border)
 	{
 		_active_assert();
-		ImGui::Columns(count, nullptr, border);
+		assert(count < std::numeric_limits<int>::max());
+		ImGui::Columns(static_cast<int>(count), nullptr, border);
 	}
 
 	void gui::columns_begin(std::string_view id, std::size_t count, bool border)
 	{
 		_active_assert();
-		ImGui::Columns(count, to_string(id).data(), border);
+		assert(count < std::numeric_limits<int>::max());
+		ImGui::Columns(static_cast<int>(count), to_string(id).data(), border);
 	}
 
 	void gui::columns_next()
@@ -786,7 +788,9 @@ namespace hades
 		cfg.FontDataOwnedByAtlas = false;
 		//const cast, because f_atlas demands control of the ptr
 		//though it won't actually do anything, since FontDataOwned is set to false
-		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), f->source_buffer.size(), 13.f, &cfg);
+		const auto size = f->source_buffer.size();
+		assert(size < std::numeric_limits<int>::max());
+		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), static_cast<int>(size), 13.f, &cfg);
 		_generate_atlas();
 
 		return out;

@@ -200,7 +200,10 @@ namespace hades
 				return "%.6f";
 		}();
 
-		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), v.size(), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		const auto components = v.size();
+		assert(components < std::numeric_limits<int>::max());
+
+		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), static_cast<int>(components), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}
 }
 

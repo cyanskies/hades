@@ -124,7 +124,7 @@ namespace ortho_terrain
 			return tiles::GetErrorTile();
 
 		auto max = tiles.size() - 1;
-		auto pos = hades::random(0u, max);
+		auto pos = hades::random({ 0 }, max);
 		return tiles[pos];
 	}
 

@@ -26,7 +26,7 @@ namespace tiles
 	//enables objects as well
 	void EnableTiles(hades::data::data_system*);
 	//tile_count_t::max is the largest amount of tiles that can be in a tileset, or map
-	using tile_count_t = hades::types::uint32;
+	using tile_count_t = std::size_t;
 	using draw_size_t = hades::types::int8;
 
 	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<hades::level_size_t, hades::level_size_t> size, tile_size_t tile_size);

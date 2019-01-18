@@ -17,10 +17,14 @@ hades::types::string utf16_to_utf8(std::wstring input)
 	assert(!input.empty());
 
 	//get buffer size by omitting output param
-	auto buffer_size = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
+	const auto buffer_size = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
 	std::vector<char> buffer(buffer_size);
 	//write output into buffer
-	auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), buffer.size(), NULL, NULL);
+
+	assert(buffer_size == buffer.size());
+	const auto size = buffer.size();
+	assert(size < std::numeric_limits<int>::max());
+	const auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), static_cast<int>(size), NULL, NULL);
 	assert(written_amount == buffer_size);
 
 	return hades::types::string{ buffer.data() };

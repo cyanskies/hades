@@ -401,7 +401,7 @@ namespace hades
 		if (anims.empty())
 			return nullptr;
 
-		const auto index = random(0u, anims.size() - 1);
+		const auto index = random(std::size_t{ 0 }, anims.size() - 1);
 
 		return anims[index];
 	}

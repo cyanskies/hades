@@ -124,7 +124,7 @@ namespace hades
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;
-		int recentOutputPos;
+		std::size_t recentOutputPos;
 	};
 
 	// ==================

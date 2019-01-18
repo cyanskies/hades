@@ -39,7 +39,7 @@ namespace hades
 		struct background_settings_window
 		{
 			bool open = false;
-			int32 selected_layer = 0;
+			std::size_t selected_layer = 0;
 			string animation_input;
 		};
 

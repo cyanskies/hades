@@ -53,7 +53,7 @@ namespace hades
 
 		struct vector_curve_edit
 		{
-			int32 selected = 0;
+			std::size_t selected = 0;
 			const resources::curve *target = nullptr;
 		};
 

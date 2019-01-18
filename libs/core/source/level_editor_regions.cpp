@@ -134,7 +134,7 @@ namespace hades
 		//top_left
 		const auto top_y = area.y - thickness;
 
-		using T = level_editor_regions::region_edit::array_t::size_type;
+		using T = std::decay_t<decltype(rects)>::size_type;
 
 		sf::RectangleShape l{};
 		l.setFillColor(sf::Color::White);
@@ -244,6 +244,9 @@ namespace hades
 
 	void level_editor_regions::on_drag_start(mouse_pos m)
 	{
+		if (!_show_regions)
+			return;
+
 		const auto snap_pos = calculate_pos(m, _grid);
 
 		const auto pos = vector_float{
@@ -251,15 +254,13 @@ namespace hades
 			std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
 		};
 
-		if (_show_regions
-			&& _brush == brush_type::region_place
+		if (_brush == brush_type::region_place
 			&& snap_pos == pos)
 		{
 			//TODO: this block looks quite messy
 			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
 			const auto r_size = _regions.size();
-			assert(r_size < std::numeric_limits<int32>::max());
-			_edit.selected = static_cast<int32>(r_size);
+			_edit.selected = r_size;
 			auto &r = _regions.emplace_back();
 			r.shape.setPosition({ pos.x,pos.y });
 			const auto size = _region_min_size->load();
@@ -271,30 +272,56 @@ namespace hades
 			using namespace std::string_literals;
 			r.name.setString("Region"s + to_string(++_new_region_name_counter));
 		}
-		else if (_show_regions
-			&& _brush == brush_type::region_selector)
+		else if (_brush == brush_type::region_selector)
 		{
-			using index_t = region_edit::array_t::size_type;
-			for (auto i = index_t{ 0 }; i < _edit.selection_lines.size(); ++i)
-			{
-				const auto global_bounds = _edit.selection_lines[i].getGlobalBounds();
+			//body drag
+			auto target = region_edit::nothing_selected;
 
-				const auto bounds = rect_float{ 
-					global_bounds.left, 
-					global_bounds.top, 
-					global_bounds.width, 
-					global_bounds.height 
+			const auto begin = std::begin(_regions);
+			const auto size = std::size(_regions);
+			for (auto i = std::size_t{ 0 }; i  < size; ++i)
+			{
+				const auto &r = _regions[i];
+				const auto bounds = r.shape.getGlobalBounds();
+				const auto rect = rect_float{ 
+					bounds.left,
+					bounds.top, 
+					bounds.width, 
+					bounds.height 
 				};
 
-				if (collision_test(bounds, m))
+				if (collision_test(rect, m))
+					target = i;
+			}
+			//edge stretch
+
+
+
+			if (_edit.selected != region_edit::nothing_selected)
+			{
+				//check for edge and corner grabs
+				using index_t = region_edit::array_t::size_type;
+				for (auto i = index_t{ 0 }; i < _edit.selection_lines.size(); ++i)
 				{
-					_on_drag_begin(i);
-					_drag_start = pos;
-					break;
+					const auto global_bounds = _edit.selection_lines[i].getGlobalBounds();
+
+					const auto bounds = rect_float{
+						global_bounds.left,
+						global_bounds.top,
+						global_bounds.width,
+						global_bounds.height
+					};
+
+					if (collision_test(bounds, m))
+					{
+						_on_drag_begin(i);
+						_drag_start = pos;
+						break;
+					}
 				}
 			}
-		}
-	}
+		}//if(region_selector)
+	}//on_drag_start()
 
 	constexpr rect_corners flip_horizontal(const rect_corners c) noexcept
 	{
@@ -486,8 +513,7 @@ namespace hades
 	void level_editor_regions::_on_selected(index_t i)
 	{
 		assert(_regions.size() > i);
-		assert(i < std::numeric_limits<int32>::max());
-		_edit.selected = static_cast<int32>(i);
+		_edit.selected = i;
 
 		const auto &reg = _regions[_edit.selected];
 

@@ -35,8 +35,8 @@ namespace hades
 			using array_t = std::array<sf::RectangleShape, 12u>;
 
 			constexpr static auto nothing_selected = 
-				std::numeric_limits<int32>::max();
-			int32 selected = nothing_selected;
+				std::numeric_limits<index_t>::max();
+			index_t selected = nothing_selected;
 			bool corner = false;
 			rect_corners held_corner{};
 			direction held_edge{};

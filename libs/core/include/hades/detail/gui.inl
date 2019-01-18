@@ -27,7 +27,7 @@ namespace hades
 
 	template<typename Container>
 	inline detail::listbox_with_string<Container> gui::listbox(std::string_view label,
-		int32 &current_item, const Container& container, int height_in_items)
+		std::size_t &current_item, const Container& container, int height_in_items)
 	{
 		using T = typename Container::value_type;
 		static_assert(is_string_v<T>);
@@ -35,10 +35,14 @@ namespace hades
 
 		_active_assert();
 
+		//convert the current item into an int to pass into IMGUI
+		auto current_as_int = static_cast<int>(current_item);
+		assert(current_as_int == current_item);
+
 		//NOTE: container is not modified, but ListBox() only accepts non-const
 		auto &cont = const_cast<Container&>(container);
 
-		return ImGui::ListBox(to_string(label).data(), &current_item,
+		const auto result = ImGui::ListBox(to_string(label).data(), &current_as_int,
 			[](void *data, int index, const char **out_text)->bool {
 			assert(index >= 0);
 			const auto i = static_cast<std::size_t>(index);
@@ -57,11 +61,17 @@ namespace hades
 			}(*at);
 			return true;
 		}, &cont, static_cast<int32>(std::size(container)), height_in_items);
+
+		//update the current_item ref
+		assert(current_as_int >= 0);
+		current_item = static_cast<std::size_t>(current_as_int);
+
+		return result;
 	}
 
 	template<typename Container>
 	inline detail::listbox_no_string<Container> gui::listbox(std::string_view label,
-		int32 &current_item, const Container &container, int height_in_items)
+		std::size_t &current_item, const Container &container, int height_in_items)
 	{
 		using T = typename Container::value_type;
 		return listbox(label, current_item, container, to_string<T>,
@@ -69,7 +79,7 @@ namespace hades
 	}
 
 	template<typename Container, typename ToString>
-	inline bool gui::listbox(std::string_view label, int32 &current_item,
+	inline bool gui::listbox(std::string_view label, std::size_t &current_item,
 		const Container &container, ToString to_string_func,
 		int height_in_items)
 	{
@@ -201,9 +211,10 @@ namespace hades
 		}();
 
 		const auto components = v.size();
-		assert(components < std::numeric_limits<int>::max());
+		const auto int_components = static_cast<int>(components);
+		assert(components == int_components);
 
-		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), static_cast<int>(components), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), int_components, NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}
 }
 

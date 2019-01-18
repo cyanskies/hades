@@ -825,7 +825,7 @@ namespace hades
 					if (std::empty(container))
 						target.selected = 0;
 					else
-						target.selected = std::clamp(target.selected, 0, static_cast<int32>(std::size(container)) - 1);
+						target.selected = std::clamp(target.selected, { 0 }, std::size(container) - 1);
 				}
 
 				if (g.button("move up"sv) && target.selected > 0)

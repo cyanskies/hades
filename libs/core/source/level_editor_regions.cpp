@@ -37,8 +37,18 @@ namespace hades
 				activate_brush();
 			}
 
-			if (g.toolbar_button("show/hide region"sv))
+			if (g.toolbar_button("show/hide regions"sv))
 				_show_regions = !_show_regions;
+
+			if (g.toolbar_button("remove region")
+				&& _edit.selected != region_edit::nothing_selected)
+			{
+				assert(_edit.selected < _regions.size());
+
+				const auto target = std::begin(_regions) + _edit.selected;
+				_regions.erase(target);
+				_edit.selected = region_edit::nothing_selected;
+			}
 		}
 
 		g.main_toolbar_end();
@@ -47,12 +57,18 @@ namespace hades
 		{
 			if (g.collapsing_header("regions"sv))
 			{
-				if (g.listbox("##region_list"sv, _edit.selected, _regions, [](const auto &r)->string {
+				constexpr auto listbox_str = "##region_list"sv;
+				constexpr auto region_to_string = [](const auto &r)->string {
 					return r.name.getString();
-				}))
-				{
-					_on_selected(_edit.selected);
-				}
+				};
+
+				//set index to 0 if nothing is selected
+				//this stops an out of bounds error in listbox
+				auto index = _edit.selected == region_edit::nothing_selected
+					? std::size_t{ 0 } : _edit.selected;
+
+				if (g.listbox(listbox_str, index, _regions, region_to_string))
+					_on_selected(index);
 			}
 
 			if (g.collapsing_header("region properties"sv))
@@ -139,14 +155,16 @@ namespace hades
 		sf::RectangleShape l{};
 		l.setFillColor(sf::Color::White);
 		l.setSize({ length, thickness });
+
+		const auto size_offset = length / 2.f;
 		
 		//top_middle
-		l.setPosition(area.x + half_width, top_y);
+		l.setPosition(area.x + half_width - size_offset, top_y);
 		rects[static_cast<T>(line_index::top_middle)] = l;
 
 		//bottom_middle
 		const auto bottom_y = area.y + area.height;
-		l.setPosition(area.x + half_width, bottom_y);
+		l.setPosition(area.x + half_width - size_offset, bottom_y);
 		rects[static_cast<T>(line_index::bottom_middle)] = l;
 
 		//top_left
@@ -174,12 +192,12 @@ namespace hades
 		rects[static_cast<T>(line_index::right_top)] = l;
 
 		//right_middle
-		l.setPosition(right_x, area.y + half_height);
+		l.setPosition(right_x, area.y + half_height - size_offset);
 		rects[static_cast<T>(line_index::right_middle)] = l;
 
 		//left_middle
 		const auto left_x = area.x - thickness;
-		l.setPosition(left_x, area.y + half_height);
+		l.setPosition(left_x, area.y + half_height - size_offset);
 		rects[static_cast<T>(line_index::left_middle)] = l;
 
 		//right_bottom
@@ -257,48 +275,65 @@ namespace hades
 		if (_brush == brush_type::region_place
 			&& snap_pos == pos)
 		{
-			//TODO: this block looks quite messy
-			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
 			const auto r_size = _regions.size();
-			_edit.selected = r_size;
 			auto &r = _regions.emplace_back();
+
 			r.shape.setPosition({ pos.x,pos.y });
 			const auto size = _region_min_size->load();
 			r.shape.setSize({ size, size });
+
+			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
 			r.shape.setFillColor(region_colour);
-			_edit.held_corner = rect_corners::bottom_right;
-			_edit.corner = true;
-			_brush = brush_type::region_corner_drag;
+			
 			using namespace std::string_literals;
 			r.name.setString("Region"s + to_string(++_new_region_name_counter));
+
+			_on_selected(r_size);
+
+			_edit.held_corner = rect_corners::bottom_right;
+			//_edit.corner = true;
+			_brush = brush_type::region_corner_drag;
 		}
 		else if (_brush == brush_type::region_selector)
 		{
 			//body drag
-			auto target = region_edit::nothing_selected;
+			const auto target = [m, &regions = _regions] {
+				const auto begin = std::begin(regions);
+				const auto size = std::size(regions);
+				for (auto i = std::size_t{ 0 }; i < size; ++i)
+				{
+					const auto bounds = regions[i].shape.getGlobalBounds();
+					const auto rect = rect_float{
+						bounds.left,
+						bounds.top,
+						bounds.width,
+						bounds.height
+					};
 
-			const auto begin = std::begin(_regions);
-			const auto size = std::size(_regions);
-			for (auto i = std::size_t{ 0 }; i  < size; ++i)
+					if (collision_test(rect, m))
+						return i;
+				}
+
+				return region_edit::nothing_selected;
+			}();
+
+			if (target != region_edit::nothing_selected)
 			{
-				const auto &r = _regions[i];
-				const auto bounds = r.shape.getGlobalBounds();
-				const auto rect = rect_float{ 
-					bounds.left,
-					bounds.top, 
-					bounds.width, 
-					bounds.height 
-				};
+				//start region drag
+				const auto region_pos = _regions[target].shape.getPosition();
 
-				if (collision_test(rect, m))
-					target = i;
+				//offset between the mouse
+				//and the origion of the region{0, 0}
+				_edit.drag_offset = { m.x - region_pos.x, m.y - region_pos.y };
+
+				_edit.selected = target;
+				_brush = brush_type::region_move;
+				_on_selected(target);
 			}
 			//edge stretch
-
-
-
-			if (_edit.selected != region_edit::nothing_selected)
+			else if (_edit.selected != region_edit::nothing_selected)
 			{
+				//we can only corner drag the selected rect
 				//check for edge and corner grabs
 				using index_t = region_edit::array_t::size_type;
 				for (auto i = index_t{ 0 }; i < _edit.selection_lines.size(); ++i)
@@ -315,7 +350,6 @@ namespace hades
 					if (collision_test(bounds, m))
 					{
 						_on_drag_begin(i);
-						_drag_start = pos;
 						break;
 					}
 				}
@@ -370,16 +404,37 @@ namespace hades
 
 	void level_editor_regions::on_drag(mouse_pos m)
 	{
-		if (_brush == brush_type::region_corner_drag
-			|| _brush == brush_type::region_edge_drag)
-		{
-			const auto snap_pos = calculate_pos(m, _grid);
+		const auto snap_pos = calculate_pos(m, _grid);
 
-			const auto pos = vector_float{
-				std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
-				std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
+		const auto pos = vector_float{
+			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
+			std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
+		};
+
+		if (_brush == brush_type::region_move)
+		{
+			const auto position = pos - _edit.drag_offset;
+			const auto size = _regions[_edit.selected].shape.getSize();
+
+			const auto target_bounds = rect_float{ 
+				position.x, position.y,
+				size.x, size.y 
 			};
 
+			const auto clamp_area = rect_float{ 
+				0.f, 0.f,
+				static_cast<float>(_level_limits.x),
+				static_cast<float>(_level_limits.y) 
+			};
+
+			const auto final_bounds = clamp_rect(target_bounds, clamp_area);
+			_regions[_edit.selected].shape.setPosition(final_bounds.x, final_bounds.y);
+
+			_on_selected(_edit.selected);
+		}
+		else if (_brush == brush_type::region_corner_drag
+			|| _brush == brush_type::region_edge_drag)
+		{
 			const auto c = _brush == brush_type::region_corner_drag;
 			const auto edge = _edit.held_edge;
 			const auto corner = _edit.held_corner;
@@ -470,6 +525,8 @@ namespace hades
 
 	void level_editor_regions::on_drag_end(mouse_pos)
 	{
+		if (_brush == brush_type::region_move)
+			_brush = brush_type::region_selector;
 		if (_brush == brush_type::region_edge_drag
 			|| _brush == brush_type::region_corner_drag)
 		{
@@ -496,8 +553,11 @@ namespace hades
 				t.draw(region.name, s);
 			}
 
-			for (const auto &r : _edit.selection_lines)
-				t.draw(r);
+			if (_edit.selected != region_edit::nothing_selected)
+			{
+				for (const auto &r : _edit.selection_lines)
+					t.draw(r);
+			}
 		}
 	}
 
@@ -513,6 +573,8 @@ namespace hades
 	void level_editor_regions::_on_selected(index_t i)
 	{
 		assert(_regions.size() > i);
+		activate_brush();
+
 		_edit.selected = i;
 
 		const auto &reg = _regions[_edit.selected];
@@ -555,14 +617,12 @@ namespace hades
 			&& i < line_index::edge_end)
 		{
 			_brush = brush_type::region_edge_drag;
-			_edit.corner = false;
 			_edit.held_edge = edge_map[index];
 		}
 		else if (i >= line_index::corner_begin
 			&& i < line_index::corner_end)
 		{
 			_brush = brush_type::region_corner_drag;
-			_edit.corner = true;
 			assert(index >= corner_offset);
 			_edit.held_corner = corner_map[index - corner_offset];
 		}

@@ -37,12 +37,11 @@ namespace hades
 			constexpr static auto nothing_selected = 
 				std::numeric_limits<index_t>::max();
 			index_t selected = nothing_selected;
-			bool corner = false;
 			rect_corners held_corner{};
 			direction held_edge{};
 			string name;
 			array_t selection_lines;
-			vector_float drag_start;
+			vector_float drag_offset;
 		};
 
 		level_editor_regions();

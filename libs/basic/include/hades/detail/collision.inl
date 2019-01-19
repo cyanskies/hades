@@ -394,7 +394,7 @@ namespace hades
 			}
 			else if (x0 < x1)
 				return x1;
-			else if (x0 + w0 > x1 + x1)
+			else if (x0 + w0 > x1 + w1)
 				return x1 + w1 - w0;
 			
 			return x0;

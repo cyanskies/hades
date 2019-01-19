@@ -35,6 +35,13 @@ namespace hades
 			unique_id animation = unique_id::zero;
 		};
 
+		struct region
+		{
+			colour colour;
+			rect_float bounds;
+			string name;
+		};
+
 		hades::types::string name;
 		hades::types::string description;
 
@@ -46,12 +53,13 @@ namespace hades
 		//the id of the next entity to be placed, or spawned in-game
 		entity_id next_id = entity_id{ static_cast<entity_id::value_type>(bad_entity) + 1 };
 
-		//TODO: background, flat colour, paralax image, paralax loop image
-		//set paralax to 0 to get a static image
-		//layered images with different paralax?
+		//backgrounds
 		colour background_colour = colours::black;
 		std::vector<background_layer> background_layers;
 		
+		//trigger regions
+		std::vector<region> regions;
+
 		//TODO: tilemaps
 		//TODO: terrain
 	};

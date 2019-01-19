@@ -14,7 +14,47 @@ namespace hades
 
 	void level_editor_regions::level_load(const level &l)
 	{
+		_edit.selected = region_edit::nothing_selected;
+		_regions.clear();
+
 		_level_limits = { l.map_x, l.map_y };
+
+		_regions.reserve(l.regions.size());
+
+		for (const auto &r : l.regions)
+		{
+			auto shape = sf::RectangleShape{};
+			shape.setPosition(r.bounds.x, r.bounds.y);
+			shape.setSize({ r.bounds.width, r.bounds.height });
+			shape.setFillColor({ r.colour.r, r.colour.g, r.colour.b, r.colour.a });
+
+			auto text = sf::Text{};
+			text.setString(r.name);
+			text.setPosition(r.bounds.x, r.bounds.y);
+		}
+	}
+
+	level level_editor_regions::level_save(level l) const
+	{
+		assert(l.regions.empty());
+		l.regions.reserve(_regions.size());
+		for (const auto &r : _regions)
+		{
+			const auto sf_bounds = r.shape.getGlobalBounds();
+			const auto bounds = rect_float{ 
+				sf_bounds.left,
+				sf_bounds.top,
+				sf_bounds.width,
+				sf_bounds.height
+			};
+
+			const auto col = r.shape.getFillColor();
+			const auto c = colour{ col.r, col.g, col.b, col.a };
+			const auto name = r.name.getString().toUtf8();
+			l.regions.emplace_back(c, bounds, name);
+		}
+
+		return l;
 	}
 
 	void level_editor_regions::gui_update(gui &g, editor_windows&)
@@ -34,6 +74,7 @@ namespace hades
 			{
 				_brush = brush_type::region_selector;
 				_show_regions = true;
+				_edit.selected = region_edit::nothing_selected;
 				activate_brush();
 			}
 
@@ -110,6 +151,13 @@ namespace hades
 						region.shape.setSize({ siz[0], siz[1] });
 						_on_selected(_edit.selected);
 					}
+
+					//colour
+					const auto colour = region.shape.getFillColor();
+					auto col = std::array{ colour.r, colour.g, colour.b, colour.a };
+					static_assert(std::is_same_v<uint8, decltype(col)::value_type>);
+					if (g.colour_picker4("colour"sv, col))
+						region.shape.setFillColor({ col[0], col[1], col[2], col[3] });
 				}
 			}
 		}
@@ -551,12 +599,6 @@ namespace hades
 			{
 				t.draw(region.shape, s);
 				t.draw(region.name, s);
-			}
-
-			if (_edit.selected != region_edit::nothing_selected)
-			{
-				for (const auto &r : _edit.selection_lines)
-					t.draw(r);
 			}
 		}
 	}

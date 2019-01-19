@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Text.hpp"
 
 #include "hades/collision.hpp"
+#include "hades/font.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/level_editor_grid.hpp"
@@ -47,6 +48,7 @@ namespace hades
 		level_editor_regions();
 
 		void level_load(const level&) override;
+		level level_save(level l) const override;
 
 		void gui_update(gui&, editor_windows&) override;
 
@@ -78,10 +80,10 @@ namespace hades
 		brush_type _brush = brush_type::region_place;
 		console::property_float _region_min_size;
 		container_t _regions;
+		const resources::font *_font = nullptr;
 		region_edit _edit;
 		uint32 _new_region_name_counter{};
 		grid_vars _grid = get_console_grid_vars();
-		vector_float _drag_start{};
 		vector_t<level_size_t> _level_limits;
 	};
 }

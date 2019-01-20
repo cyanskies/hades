@@ -17,6 +17,7 @@ namespace hades
 
 	//Same as above, returns a vector containing the return values of
 	//each function call, function must return the same type for all elements
+	//FIXME: this doesn't work, generates errors with ResultType
 	template<typename Tuple, typename Func, typename...Args>
     decltype(auto) for_each_tuple_r(Tuple &tuple, Func function, Args... args)
 		noexcept(noexcept(detail::for_each_worker_r < std::size_t{ 0u } > (t, f, args...)));

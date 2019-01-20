@@ -45,6 +45,7 @@ namespace hades::detail
 	protected:
 		using brush_index_t = std::size_t;
 
+		virtual level _component_on_new(level) const = 0;
 		virtual void _component_on_load(const level&) = 0;
 		virtual level _component_on_save(level) const = 0;
 		virtual void _component_on_click(brush_index_t, vector_float) = 0;
@@ -112,6 +113,7 @@ namespace hades
 	class basic_level_editor final : public detail::level_editor_impl
 	{
 	private:
+		level _component_on_new(level) const override;
 		void _component_on_load(const level&) override;
 		level _component_on_save(level) const override;
 		//returns the sum of tags reported by components for that location

@@ -20,6 +20,16 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline level basic_level_editor<Components...>::_component_on_new(level l) const
+	{
+		for_each_tuple(_editor_components, [&l](auto &&c) {
+			l = c.level_new(std::move(l));
+		});
+
+		return l;
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_load(const level &l)
 	{
 		for_each_tuple(_editor_components, [&l](auto &&c) {

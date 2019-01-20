@@ -246,7 +246,18 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::new_level, _window_flags.new_level))
 			{
-				_gui.button("Create"sv);
+				if (_gui.button("Create"sv))
+				{
+					level l;
+					l.map_x = _new_level_options.width;
+					l.map_y = _new_level_options.height;
+
+					_window_flags.new_level = false;
+
+					l = _component_on_new(l);
+					_component_on_load(l);
+				}
+
 				_gui.layout_horizontal();
 				if (_gui.button("Cancel"))
 					_window_flags.new_level = false;

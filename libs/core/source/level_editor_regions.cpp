@@ -1,7 +1,9 @@
 #include "hades/level_editor_regions.hpp"
 
 #include "hades/collision.hpp"
+#include "hades/data.hpp"
 #include "hades/exceptions.hpp"
+#include "hades/font.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_editor_grid.hpp"
 #include "hades/mouse_input.hpp"
@@ -9,8 +11,11 @@
 namespace hades
 {
 	level_editor_regions::level_editor_regions()
-		: _region_min_size{ console::get_float(cvars::region_min_size) }
-	{}
+		: _font{ data::get<resources::font>(resources::default_font_id())},
+		_region_min_size{ console::get_float(cvars::region_min_size) }
+	{
+	
+	}
 
 	void level_editor_regions::level_load(const level &l)
 	{
@@ -31,6 +36,7 @@ namespace hades
 			auto text = sf::Text{};
 			text.setString(r.name);
 			text.setPosition(r.bounds.x, r.bounds.y);
+			text.setFont(_font->value);
 		}
 	}
 
@@ -50,8 +56,8 @@ namespace hades
 
 			const auto col = r.shape.getFillColor();
 			const auto c = colour{ col.r, col.g, col.b, col.a };
-			const auto name = r.name.getString().toUtf8();
-			l.regions.emplace_back(c, bounds, name);
+			const string name = r.name.getString().toAnsiString();
+			l.regions.emplace_back(level::region{ c, bounds, name });
 		}
 
 		return l;
@@ -334,6 +340,7 @@ namespace hades
 			r.shape.setFillColor(region_colour);
 			
 			using namespace std::string_literals;
+			r.name.setFont(_font->value);
 			r.name.setString("Region"s + to_string(++_new_region_name_counter));
 
 			_on_selected(r_size);

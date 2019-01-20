@@ -7,14 +7,15 @@
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
-#include "Hades/Console.hpp"
-#include "Hades/Data.hpp"
-#include "Hades/data_system.hpp"
-#include "Hades/files.hpp"
-#include "Hades/resource/fonts.hpp"
+#include "hades/Console.hpp"
+#include "hades/Data.hpp"
+#include "hades/data_system.hpp"
+#include "hades/files.hpp"
+#include "hades/font.hpp"
+#include "hades/resource/fonts.hpp"
 #include "hades/utility.hpp"
 
-#include "Hades/curve_extra.hpp"
+#include "hades/curve_extra.hpp"
 #include "hades/parser.hpp"
 #include "hades/texture.hpp"
 #include "hades/yaml_parser.hpp"
@@ -39,6 +40,16 @@ namespace hades
 	void RegisterCommonResources(hades::data::data_system *data)
 	{
 		data->register_resource_type("strings", resources::parseString);
+
+		//create default font
+		//we do it here because the resource isn't availble yet
+		//in hades-core
+		//TODO: move to hades core
+		auto f = data->find_or_create<resources::font>(resources::default_font_id(), unique_id::zero);
+		assert(f);
+
+		f->value.loadFromMemory(default_font.data(), default_font.size());
+		f->loaded = true;
 	}
 
 	namespace resources

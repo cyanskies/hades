@@ -5,7 +5,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/System/String.hpp"
 
-#include "Hades/resource/fonts.hpp"
+#include "hades/data.hpp"
 #include "Hades/System.hpp"
 #include "Hades/Utility.hpp"
 
@@ -16,7 +16,7 @@ namespace hades
 {
 	ConsoleView::ConsoleView() : Overlay(true)
 	{
-		_font.loadFromMemory(console_font::data, console_font::length);
+		_font = data::get<resources::font>(resources::default_font_id());
 		_fade = console::get_int("con_fade", 180);
 		_charSize = console::get_int("con_charactersize", 15);
 	}
@@ -135,7 +135,7 @@ namespace hades
 		const auto char_size = ValidCharSize(_charSize);
 
 		_currentInput.setCharacterSize(char_size);
-		_currentInput.setFont(_font);
+		_currentInput.setFont(_font->value);
 
 		const auto offset = char_size;
 		_editLine.setPosition(0.f, size.y - _editLine.getSize().y - offset);
@@ -182,7 +182,7 @@ namespace hades
 		const auto char_size = ValidCharSize(_charSize);
 
 		std::vector<sf::Text> output;
-		output.push_back({ sf::String{}, _font, char_size });
+		output.push_back({ sf::String{}, _font->value, char_size });
 		auto &text = output.back();
 		text.setPosition({ 0.f, height });
 		text.setOutlineColor(col);
@@ -194,12 +194,12 @@ namespace hades
 		{
 			const auto str = s + ' ';
 			const auto current_line = output.back().getString();
-			const sf::Text test_text{ current_line + str, _font, char_size };
+			const sf::Text test_text{ current_line + str, _font->value, char_size };
 			const auto bounds = test_text.getGlobalBounds();
 			if (bounds.width > max_width)
 			{
 				const auto bounds = output.back().getGlobalBounds();
-				output.push_back({ '\t' + s + ' ', _font, char_size });
+				output.push_back({ '\t' + s + ' ', _font->value, char_size });
 				auto &t = output.back();
 				t.setPosition({ 0.f, bounds.top + bounds.height });
 				t.setOutlineColor(col);

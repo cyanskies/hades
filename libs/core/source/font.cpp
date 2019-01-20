@@ -59,5 +59,11 @@ namespace hades
 
 namespace hades::resources
 {
+	unique_id default_font_id()
+	{
+		static const auto id = unique_id{};
+		return id;
+	}
+
 	font::font() : resource_type<sf::Font>(load_font) {}
 }

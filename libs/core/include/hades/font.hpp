@@ -13,6 +13,8 @@ namespace hades
 
 	namespace resources
 	{
+		unique_id default_font_id();
+
 		struct font : public resource_type<sf::Font>
 		{
 			font();

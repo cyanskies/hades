@@ -10,6 +10,7 @@
 #include "SFML/Graphics/View.hpp"
 
 #include "Hades/Debug.hpp"
+#include "hades/font.hpp"
 #include "Hades/Logging.hpp"
 #include "Hades/Properties.hpp"
 #include "Hades/Types.hpp"
@@ -48,7 +49,7 @@ namespace hades
 		sf::View _view;
 		sf::View _textView;
 
-		sf::Font _font;
+		const resources::font *_font = nullptr;
 		std::vector<sf::Text> _previousOutput;
 		sf::Text _currentInput;
 		sf::RectangleShape _backdrop, _editLine;

@@ -46,7 +46,7 @@ namespace hades
 		static const unique_id_t<id_type> zero;
 	private:
 		//initialise the static counter with the types smallest value
-		static type _count;
+		inline static type _count{};
 		type _value;
 	};
 

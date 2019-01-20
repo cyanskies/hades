@@ -2,6 +2,7 @@
 #define HADES_LEVEL_HPP
 
 #include "hades/level_interface.hpp"
+#include "hades/math.hpp"
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
 #include "hades/curve.hpp"

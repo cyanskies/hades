@@ -44,10 +44,10 @@ namespace hades
 			//this should be used when writing parsers
 			//allows creating a ptr to a resource that hasn't actually been defined yet
 			template<class T>
-			T* find_or_create(unique_id target, unique_id mod);
+			[[nodiscard]] T* find_or_create(unique_id target, unique_id mod);
 
 			template<typename T>
-			std::vector<T*> find_or_create(const std::vector<unique_id> &target, unique_id mod);
+			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id> &target, unique_id mod);
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;

@@ -10,6 +10,8 @@
 
 namespace hades
 {
+	constexpr auto char_size = 8u;
+
 	level_editor_regions::level_editor_regions()
 		: _font{ data::get<resources::font>(resources::default_font_id())},
 		_region_min_size{ console::get_float(cvars::region_min_size) }
@@ -35,6 +37,7 @@ namespace hades
 
 			auto text = sf::Text{};
 			text.setString(r.name);
+			text.setCharacterSize(char_size);
 			text.setPosition(r.bounds.x, r.bounds.y);
 			text.setFont(_font->value);
 		}
@@ -332,7 +335,7 @@ namespace hades
 			const auto r_size = _regions.size();
 			auto &r = _regions.emplace_back();
 
-			r.shape.setPosition({ pos.x,pos.y });
+			r.shape.setPosition(pos.x,pos.y);
 			const auto size = _region_min_size->load();
 			r.shape.setSize({ size, size });
 
@@ -341,7 +344,9 @@ namespace hades
 			
 			using namespace std::string_literals;
 			r.name.setFont(_font->value);
+			r.name.setCharacterSize(char_size);
 			r.name.setString("Region"s + to_string(++_new_region_name_counter));
+			r.name.setPosition(pos.x, pos.y);
 
 			_on_selected(r_size);
 
@@ -484,6 +489,7 @@ namespace hades
 
 			const auto final_bounds = clamp_rect(target_bounds, clamp_area);
 			_regions[_edit.selected].shape.setPosition(final_bounds.x, final_bounds.y);
+			_regions[_edit.selected].name.setPosition(final_bounds.x, final_bounds.y);
 
 			_on_selected(_edit.selected);
 		}
@@ -573,6 +579,7 @@ namespace hades
 
 			r.setPosition(x, y);
 			r.setSize({ width, height });
+			_regions[_edit.selected].name.setPosition(x, y);
 
 			_on_selected(_edit.selected);
 		}

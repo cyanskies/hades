@@ -40,6 +40,8 @@ namespace hades
 			text.setCharacterSize(char_size);
 			text.setPosition(r.bounds.x, r.bounds.y);
 			text.setFont(_font->value);
+
+			_regions.emplace_back(region{ shape, text });
 		}
 	}
 

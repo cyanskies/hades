@@ -10,6 +10,8 @@
 
 #include "Hades/archive.hpp"
 
+//TODO: use filesystem path instead of string
+
 namespace hades
 {
 	namespace files

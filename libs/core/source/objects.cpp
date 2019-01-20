@@ -627,6 +627,9 @@ namespace hades
 
 		//get objects
 		const auto object_node = n.get_child(obj_str);
+		if (!object_node)
+			return;
+
 		const auto object_list = object_node->get_children();
 
 		for (const auto &o : object_list)

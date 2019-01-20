@@ -98,6 +98,71 @@ namespace hades
 	static constexpr auto level_name_str = "name"sv;
 	static constexpr auto level_description_str = "desc"sv;
 
+	static constexpr auto level_regions_str = "regions"sv;
+
+	void write_regions_from_level(const level &l, data::writer &w)
+	{
+		//regions:
+		//    - [name, r, g, b, a, x, y, w, h]
+
+		w.start_sequence(level_regions_str);
+
+		for(const auto &r : l.regions)
+		{
+			w.start_sequence();
+			w.write(r.name);
+
+			w.write(r.colour.r);
+			w.write(r.colour.g);
+			w.write(r.colour.b);
+			w.write(r.colour.a);
+			
+			w.write(r.bounds.x);
+			w.write(r.bounds.y);
+			w.write(r.bounds.width);
+			w.write(r.bounds.height);
+			w.end_sequence();
+		}
+
+		w.end_sequence();
+	}
+
+	void read_regions_into_level(const data::parser_node &p, level &l)
+	{
+		//regions:
+		//    - [name, r, g, b, a, x, y, w, h]
+
+		assert(l.regions.empty());
+
+		const auto region_node = p.get_child(level_regions_str);
+		const auto regions = region_node->get_children();
+
+		for (const auto &r : regions)
+		{
+			assert(r);
+			const auto v = r->get_children();
+			assert(v.size() == 9);
+
+			const auto name = v[0]->to_string();
+
+			const auto r = v[1]->to_scalar<uint8>(),
+				g = v[2]->to_scalar<uint8>(),
+				b = v[3]->to_scalar<uint8>(),
+				a = v[4]->to_scalar<uint8>();
+
+			const auto c = colour{ r, g, b, a };
+
+			const auto x = v[5]->to_scalar<float>(),
+				y = v[6]->to_scalar<float>(),
+				w = v[7]->to_scalar<float>(),
+				h = v[8]->to_scalar<float>();
+
+			const auto rect = rect_float{ x, y, w, h };
+
+			l.regions.emplace_back(level::region{ c, rect, name });
+		}
+	}
+
 	string serialise(const level &l)
 	{
 		auto w = data::make_writer();
@@ -114,6 +179,9 @@ namespace hades
 
 		write_objects_from_level(l, *w);
 		//write terrain info
+
+		//write trigger data
+		write_regions_from_level(l, *w);
 
 		w->end_map();
 		return w->get_string();
@@ -137,7 +205,10 @@ namespace hades
 		l.map_y = data::parse_tools::get_scalar<level_size_t>(*level_node, level_height_str, l.map_y);
 
 		read_objects_into_level(*level_node, l);
-		//TODO: make_default_parser?
+		
+		//read trigger data
+		read_regions_into_level(*level_node, l);
+
 		return l;
 	}
 

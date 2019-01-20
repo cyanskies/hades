@@ -1,6 +1,10 @@
 #include "hades/yaml_writer.hpp"
 
+#include <cassert>
+
 #include "yaml-cpp/emitter.h"
+
+#include "hades/types.hpp"
 
 namespace
 {
@@ -12,15 +16,25 @@ namespace
 			_emitter << YAML::BeginMap;
 		}
 
+		void start_sequence() override
+		{
+			_emitter << YAML::Flow << YAML::BeginSeq;
+		}
+
 		void start_sequence(std::string_view key) override
 		{
 			_emitter << YAML::Key << hades::to_string(key);
-			_emitter << YAML::Value << YAML::Flow << YAML::BeginSeq;
+			_emitter << YAML::Value << YAML::BeginSeq;
 		}
 
 		void end_sequence() override
 		{
 			_emitter << YAML::EndSeq;
+		}
+
+		void start_map() override
+		{
+			_emitter << YAML::BeginMap;
 		}
 
 		void start_map(std::string_view value) override
@@ -45,9 +59,12 @@ namespace
 			_emitter << YAML::Value << hades::to_string(value);
 		}
 
-		std::string get_string() const override
+		hades::string get_string() const override
 		{
-			return _emitter.c_str();
+			assert(_emitter.good());
+			const auto s = hades::string{ _emitter.c_str() };
+			return s + '\n'; //manually add the final newline(emitter sometimes misses it)
+								//no harm in having it twice
 		}
 	private:
 		YAML::Emitter _emitter;

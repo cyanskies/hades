@@ -18,14 +18,16 @@ namespace hades::data
 	class writer
 	{
 	public:
+		virtual void start_sequence() = 0;
 		virtual void start_sequence(std::string_view) = 0;
 		virtual void end_sequence() = 0;
+		virtual void start_map() = 0;
 		virtual void start_map(std::string_view) = 0;
 		virtual void end_map() = 0;
 		virtual void write(std::string_view) = 0;
 		virtual void write(std::string_view key, std::string_view value) = 0;
 
-		virtual std::string get_string() const = 0;
+		virtual string get_string() const = 0;
 
 		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
 		void start_map(T value)

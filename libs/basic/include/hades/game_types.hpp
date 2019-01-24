@@ -1,6 +1,9 @@
 #ifndef HADES_GAME_TYPES_HPP
 #define HADES_GAME_TYPES_HPP
 
+#include <string_view>
+#include <vector>
+
 #include "hades/strong_typedef.hpp"
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
@@ -32,7 +35,19 @@ namespace hades
 	//used for position ranges and sizes
 	using world_unit = float;
 
-	//something else?
+	//tag types
+	//these are used for listing capabilities or effect info
+	using tag_t = unique_id;
+	using tag_list = std::vector<tag_t>;
+
+	//uses the unique_id overloads of to_str and from_str
+
+	//engines support types
+
+	//limit is 65535, well in excess of current hardware capabilities
+	//  max texture size for older hardware is 512
+	//  max size for modern hardware is 8192 or higher
+	using texture_size_t = uint16;
 }
 
 #endif //!HADES_GAME_TYPES_HPP

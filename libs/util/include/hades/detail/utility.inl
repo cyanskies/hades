@@ -27,6 +27,16 @@ namespace hades
 		return random(random_generator);
 	}
 
+	template<typename Iter>
+	typename std::iterator_traits<Iter>::reference random_element(Iter first, Iter last)
+	{
+		const auto dist = std::distance(first, last);
+		const auto target = random(decltype(dist){}, dist);
+
+		std::advance(first, target);
+		return *first;
+	}
+
 	inline bool random()
 	{
 		return random(0, 1) != 0;

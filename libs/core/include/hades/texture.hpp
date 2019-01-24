@@ -4,6 +4,7 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "hades/data.hpp"
+#include "hades/game_types.hpp"
 #include "hades/resource_base.hpp"
 
 namespace hades
@@ -20,9 +21,7 @@ namespace hades
 		{
 			texture();
 
-			using size_type = types::uint16; //limit is 65535, well in excess of current hardware capabilities
-			//max texture size for older hardware is 512
-			//max size for modern hardware is 8192 or higher
+			using size_type = texture_size_t;
 			size_type width = 0, height = 0;
 			bool smooth = false, repeat = false, mips = false;
 		};

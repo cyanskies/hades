@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include "hades/exceptions.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -15,25 +16,31 @@ namespace hades
 		class data_manager;
 
 		//TODO: move the exceptions to data.hpp
-
-		//the requested resource doesn't exist
-		class resource_null : public std::runtime_error
+		class resource_error : public runtime_error
 		{
 		public:
-			using std::runtime_error::runtime_error;
+			using runtime_error::runtime_error;
+		};
+
+		//the requested resource doesn't exist
+		class resource_null : public resource_error
+		{
+		public:
+			using resource_error::resource_error;
 		};
 
 		//the requested resource isn't of the type it is claimed to be
-		class resource_wrong_type : public std::runtime_error
+		class resource_wrong_type : public resource_error
 		{
 		public:
-			using std::runtime_error::runtime_error;
+			using resource_error::resource_error;
 		};
 
-		class resource_name_already_used : public std::runtime_error
+		//unique_id is already associated with a resource
+		class resource_name_already_used : public resource_error
 		{
 		public:
-			using std::runtime_error::runtime_error;
+			using resource_error::resource_error;
 		};
 	}
 

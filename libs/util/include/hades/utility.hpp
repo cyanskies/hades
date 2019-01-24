@@ -22,6 +22,10 @@ namespace hades {
 
 	inline bool random();
 
+	template<typename Iter>
+	typename std::iterator_traits<Iter>::reference
+		random_element(Iter first, Iter last);
+
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors
 

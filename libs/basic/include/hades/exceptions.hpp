@@ -8,7 +8,16 @@
 
 namespace hades
 {
+	//base class for errors that can occur at runtime
+	//can be used to catch only hades runtime errors
+	class runtime_error : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
 	//thrown when an argument is out of range, null or otherwise refused by the function
+	//NOTE: these are programmer errors, and shouldn't be handled by normal program execution
 	class invalid_argument : public std::invalid_argument
 	{
 	public:

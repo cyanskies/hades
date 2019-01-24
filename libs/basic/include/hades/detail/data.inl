@@ -80,15 +80,16 @@ namespace hades
 		T *data_manager::get(unique_id id, const no_load_t)
 		{
 			auto res = get_resource(id);
-			auto out = dynamic_cast<T*>(res);
 
-			if (!out)
+			try
+			{
+				return dynamic_cast<T&>(*res);
+			}
+			catch (const std::bad_cast &e)
 			{
 				throw resource_wrong_type("Tried to get resource using wrong type, unique_id was: " + get_as_string(id)
 					+ ", requested type was: " + typeid(T).name());
 			}
-
-			return out;
 		}
 
 		template<class T>

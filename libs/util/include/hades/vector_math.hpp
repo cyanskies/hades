@@ -13,8 +13,8 @@ namespace hades
 	{
 		using value_type = T;
 
-		constexpr vector_t() noexcept = default;
-		constexpr vector_t(T x, T y) noexcept : x(x), y(y) {}
+		constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) {}
+		constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>) : x(x), y(y) {}
 
 		~vector_t() noexcept = default;
 	

@@ -5,12 +5,15 @@
 
 #include "hades/data.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/table.hpp"
 
 namespace hades
 {
 	using namespace std::string_view_literals;
 	constexpr auto tilesets_name = "tilesets"sv;
 	constexpr auto tile_settings_name = "tile-settings"sv;
+	constexpr auto air_tileset_name = "air-tileset"sv;
+	constexpr auto error_tileset_name = "error-tileset"sv;
 
 	namespace id
 	{
@@ -28,12 +31,12 @@ namespace hades
 		d.register_resource_type(tilesets_name, parse_tilesets);
 
 		//create error tileset and add a default error tile
-		id::error_tileset = unique_id{};
+		id::error_tileset = hades::data::make_uid(error_tileset_name);
 		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero);
 		const resources::tile error_tile{};
 		error_tset->tiles.emplace_back(error_tile);
 
-		id::empty_tileset = unique_id{};
+		id::empty_tileset = hades::data::make_uid(air_tileset_name);
 		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero);
 		const resources::tile empty_tile{};
 		empty_tset->tiles.emplace_back(empty_tile);
@@ -122,9 +125,8 @@ namespace hades::resources
 		const auto &s = get_tile_settings();
 		assert(s.empty_tileset);
 		const auto tset = s.empty_tileset;
-		const auto begin = std::begin(tset->tiles);
-		const auto end = std::end(tset->tiles);
-		return random_element(begin, end);
+		assert(!tset->tiles.empty());
+		return tset->tiles.front();
 	}
 }
 
@@ -290,6 +292,8 @@ namespace hades
 	{
 		try
 		{
+			tile_count_t offset{};
+
 			for (const auto &tset : r.tilesets)
 			{
 				const auto tileset = data::get<resources::tileset>(std::get<unique_id>(tset));
@@ -298,8 +302,10 @@ namespace hades
 				for (auto iter = begin; iter != end; ++iter)
 				{
 					if (*iter == t)
-						return std::distance(begin, iter);
+						return offset + std::distance(begin, iter);
 				}
+
+				offset += std::size(tileset->tiles);
 			}
 		}
 		catch (const data::resource_error &e)
@@ -313,6 +319,8 @@ namespace hades
 
 	tile_count_t get_tile_id(const tile_map &m, const resources::tile &t)
 	{
+		tile_count_t offset{};
+
 		for (const auto *tileset : m.tilesets)
 		{
 			const auto begin = std::begin(tileset->tiles);
@@ -320,10 +328,179 @@ namespace hades
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-					return std::distance(begin, iter);		
+					return offset + std::distance(begin, iter);		
 			}
+
+			offset += std::size(tileset->tiles);
 		}
 
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this tile_map" };
+	}
+
+	tile_count_t make_tile_id(tile_map &m, const resources::tile &t)
+	{
+		tile_count_t offset{};
+
+		for (const auto *tileset : m.tilesets)
+		{
+			const auto begin = std::begin(tileset->tiles);
+			const auto end = std::end(tileset->tiles);
+			for (auto iter = begin; iter != end; ++iter)
+			{
+				if (*iter == t)
+					return offset + std::distance(begin, iter);
+			}
+
+			offset += std::size(tileset->tiles);
+		};
+
+		const auto tileset = get_parent_tileset(t);
+
+		if (!tileset)
+			throw tileset_not_found{ "unable to find a tileset containing this tile" };
+
+		m.tilesets.emplace_back(tileset);
+		for (auto iter = std::begin(tileset->tiles); iter != std::end(tileset->tiles); ++iter)
+		{
+			if (*iter == t)
+				return offset + std::distance(std::begin(tileset->tiles), iter);
+		}
+
+		throw tile_error{ "unable to add tile id for this tile_map" };
+	}
+
+	static tile_count_t flat_position(tile_position p, tile_count_t w)
+	{
+		if (p.x < 0 || p.y < 0)
+			throw invalid_argument{ "cannot caculate the position of a tile in negative space" };
+
+		//unsigned position
+		const auto u_p = static_cast<vector_t<tile_count_t>>(p);
+		return (u_p.y * w) + u_p.x;
+	}
+
+	const resources::tile &get_tile_at(const tile_map &t, tile_position p)
+	{
+		const auto index = flat_position(p, t.width);
+		return get_tile(t, t.tiles[index]);
+	}
+
+	const tag_list &get_tags_at(const tile_map &t, tile_position p)
+	{
+		const auto &tile = get_tile_at(t, p);
+		return tile.tags;
+	}
+
+	tile_map make_map(tile_position s, const resources::tile &t)
+	{
+		if (s.x < 0 || s.y < 0)
+			throw invalid_argument{ "cannot make a tile map with a negative size" };
+
+		const auto tileset = get_parent_tileset(t);
+		if (!tileset)
+			throw tileset_not_found{ "unable to find the tileset for tile passed into make_map" };
+
+		auto m = tile_map{};
+		m.tilesets.emplace_back(tileset);
+		m.width = s.y;
+
+		const auto index = get_tile_id(m, t);
+
+		const auto length = static_cast<std::size_t>(s.x * s.y);
+		m.tiles.reserve(length);
+		std::fill_n(std::back_inserter(m.tiles), length, index);
+
+		return m;
+	}
+
+	void resize_map_relative(tile_map &m, vector_int top_left, vector_int bottom_right, const resources::tile &t)
+	{
+		const auto current_height = m.tiles.size() / m.width;
+		const auto current_width = m.width;
+
+		const auto new_height = current_height - top_left.y + bottom_right.y;
+		const auto new_width = current_width - top_left.x + bottom_right.x;
+
+		resize_map(m, { new_width, new_height }, { -top_left.x, -top_left.y }, t);
+	}
+
+	void resize_map_relative(tile_map &t, vector_int top_left, vector_int bottom_right)
+	{
+		try
+		{
+			const auto empty_tile = resources::get_empty_tile();
+			resize_map_relative(t, top_left, bottom_right, empty_tile);
+		}
+		catch (const data::resource_error &e)
+		{
+			throw tileset_not_found{ "unable to find the empty tileset" };
+		}
+	}
+
+	void resize_map(tile_map &m, vector_int size, vector_int offset, const resources::tile &t)
+	{
+		const auto tile = make_tile_id(m, t);
+		const auto new_map = always_table(vector_int{}, vector_int{ size.x, size.y }, tile);
+
+		auto current_map = table<tile_count_t>{ offset,
+			size, tile_count_t{} };
+
+		auto &current_tiles = current_map.data();
+		assert(current_tiles.size() == m.tiles.size());
+		std::copy(std::begin(m.tiles), std::end(m.tiles), std::begin(current_tiles));
+
+		const auto resized_map = combine_table(new_map, current_map, [](auto &&, auto &&rhs)
+		{
+			return rhs;
+		});
+
+		assert(resized_map.size() == size);
+		
+		m.width = size.x;
+		const auto &new_tiles = resized_map.data();
+
+		std::copy(std::begin(new_tiles), std::end(new_tiles), std::begin(m.tiles));
+	}
+
+	void resize_map(tile_map &t, vector_int size, vector_int offset)
+	{
+		try
+		{
+			const auto empty_tile = resources::get_empty_tile();
+			resize_map(t, size, offset, empty_tile);
+		}
+		catch (const data::resource_error &e)
+		{
+			throw tileset_not_found{ "unable to find the empty tileset" };
+		}
+	}
+
+	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size)
+	{
+		return make_position_rect(position, { size, size });
+	}
+
+	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size)
+	{
+		return make_position_square({ middle.x - half_size, middle.y - half_size }, half_size * 2);
+	}
+
+	std::vector<tile_position> make_position_rect(tile_position position, tile_position size)
+	{
+		auto positions = std::vector<tile_position>{};
+		positions.reserve(size.x * size.y);
+
+		for (tile_count_t y = 0; y < size.y; ++y)
+			for (tile_count_t x = 0; x < size.x; ++x)
+				positions.emplace_back(position.x + x, position.y + y);
+
+		return positions;
+	}
+
+	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius)
+	{
+		//TODO: 
+		//? not sure how to implement this
+		return std::vector<tile_position>();
 	}
 }

@@ -138,23 +138,31 @@ namespace hades
 	//gets the tile id in a format appropriate for storing in tile map
 	// exceptions: tile_not_found
 	tile_count_t get_tile_id(const tile_map&, const resources::tile&);
+	//returns a tile id usable for that tile_map, adds the needed tileset to the map
+	// exceptions: tileset_not_found
+	tile_count_t make_tile_id(tile_map&, const resources::tile&);
 
 	//for getting information out of a tile map
 	using tile_position = vector_int;
 	const resources::tile& get_tile_at(const tile_map&, tile_position);
 	const tag_list &get_tags_at(const tile_map&, tile_position);
 
-	tile_map make_map(rect_int size, const resources::tile&);
+	// exceptions: tileset_not_found
+	tile_map make_map(tile_position size, const resources::tile&);
 
 	//set the vectors relative to the current size
 	//eg, to expand the map in all directions
 	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
 	// tiles that fall outside the new size are erased
 	// new areas will be set to tile&
-	void resize_map(tile_map&, vector_int top_left, vector_int bottom_right,
+	void resize_map_relative(tile_map&, vector_int top_left, vector_int bottom_right,
 		const resources::tile&);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map(tile_map&, vector_int top_left, vector_int bottom_right);
+	void resize_map_relative(tile_map&, vector_int top_left, vector_int bottom_right);
+	//as above, places current map content at offset
+	void resize_map(tile_map&, vector_int size, vector_int offset, const resources::tile&);
+	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
+	void resize_map(tile_map&, vector_int size, vector_int offset);
 
 	//for editing a tile map
 	void place_tile(tile_map&, tile_position, tile_count_t);
@@ -165,7 +173,7 @@ namespace hades
 
 	//helpers to create a list of positions in a desired shape
 	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size);
-	std::vector<tile_position> make_position_square(tile_position middle, tile_count_t half_size);
+	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size);
 
 	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
 

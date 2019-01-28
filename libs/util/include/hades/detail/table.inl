@@ -1,152 +1,58 @@
 #include "hades/table.hpp"
 
 #include <cassert>
+#include <optional>
 #include <vector>
+
+#include "hades/math.hpp"
 
 namespace hades
 {
-	namespace {
+	template<typename T>
+	inline table<T>::table(const virtual_table<T> &v) : table(v.position(), v.size(), T{})
+	{
+		const auto size = { _width, _data.size() / _width };
+		const auto end = _position + size;
 
-		//returns a table large enough to hold both of the arguments
-		template<typename Value, typename SizeType = std::vector<Value>::size_type>
-		table<Value, SizeType> superset(const table<Value, SizeType> &lhs, const table<Value, SizeType> &rhs)
-		{
-			auto lpos = lhs.position(), rpos = rhs.position();
-			auto minx = std::min(lpos.x, rpos.y),
-				miny = std::min(lpos.y, rpos.y);
-
-			auto lmax = lpos + lhs.size(), rmax = rpos + rhs.size();
-
-			auto maxx = std::max(lmax.x, rmax.x),
-				maxy = std::max(lmax.y, rmax.y);
-
-			table<Value, SizeType>::index_type size{ maxx - minx, maxy - miny }, position{ minx, miny };
-
-			return table<Value, SizeType>(size, position);
-		}
-
-		template<typename Value, typename SizeType = std::vector<Value>::size_type>
-		table<Value, SizeType> as_table(const virtual_table<Value, SizeType> &v)
-		{
-			table<Value, SizeType> t(v.size(), v.position());
-
-			auto start = v.position();
-			auto end = start + v.size();
-
-			for (auto y = start.y; y < end.y; ++y)
-				for (auto x = start.x; x < end.x; ++x)
-					t[{x, y}] += v[{x, y}];
-
-			return t;
-		}
+		for (auto y = _offset.y; sy < end.y; ++y)
+			for (auto x = _offset.x; sx < end.x; ++x)
+				_data[{x, y}] = v[{x, y}];
 	}
 
-	template<typename Index>
-	table_index<Index> operator+(table_index<Index> lhs, const table_index<Index> &rhs)
+	template<typename Value>
+	typename table<Value>::value_type& table<Value>::operator[](index_type index)
 	{
-		return lhs += rhs;
+		return _data[index.y * index.x + index.x];
 	}
 
-	template<typename Index>
-	table_index<Index>& operator+=(table_index<Index> &lhs, const table_index<Index> &rhs)
+	template<typename Value>
+	typename const table<Value>::value_type& table<Value>::operator[](index_type index) const
 	{
-		lhs.x += rhs.x;
-		lhs.y += rhs.y;
-
-		return lhs;
+		return _data[index.y * index.x + index.x];
 	}
 
-	template<typename Index>
-	table_index<Index> operator-(table_index<Index> lhs, const table_index<Index> &rhs)
+	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
+	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor f)
 	{
-		return lhs -= rhs;
-	}
+		auto t = table<typename TableFirst::value_type>{ l };
 
-	template<typename Index>
-	table_index<Index>& operator-=(table_index<Index> &lhs, const table_index<Index> &rhs)
-	{
-		lhs.x -= rhs.x;
-		lhs.y -= rhs.y;
+		const auto first_pos = l.position();
+		const auto first_siz = l.size();
 
-		return lhs;
-	}
+		const auto bounds = 
+			rect_t<TableFirst::size_type>{
+			first_pos.x, first_pos.y, first_siz.x, first_siz.y
+		};
 
-	template<typename Value, typename SizeType>
-	table<Value, SizeType> table<Value, SizeType>::get_subset(index_type offset, index_type size) const
-	{
-		table<Value, SizeType> t(offset, size);
+		const auto pos = r.position();
+		const auto siz = r.size();
+		const auto end = pos + siz;
 
-		auto start = offset;
-		auto end = start + size;
-
-		for (auto ty = 0, sy = start.y; sy < end.y; ++ty, ++sy)
-			for (auto tx = 0, sx = start.x; sx < end.x; ++tx, ++sx)
-				t[{tx, ty}] += this->[{sx, sy}];
+		for (auto y = pos.y; y < end.y; ++y)
+			for (auto x = pos.x; x < end.x; ++x)
+				if (intersects(bounds, { x, y, 0, 0 }))
+					t[{x, y}] = std::invoke(f, t[{x, y}], r[{x, y}]);
 
 		return t;
-	}
-	template<typename Value, typename SizeType>
-	typename table<Value, SizeType>::value_type& table<Value, SizeType>::operator[](index_type index)
-	{
-		return _data[index.y * index.x + index.x];
-	}
-
-	template<typename Value, typename SizeType>
-	typename const table<Value, SizeType>::value_type& table<Value, SizeType>::operator[](index_type index) const
-	{
-		return _data[index.y * index.x + index.x];
-	}
-
-	template<typename Value, typename SizeType>
-	void table<Value, SizeType>::clear()
-	{
-		_data.clear();
-	}
-
-	template<typename Value, typename SizeType>
-	table<Value, SizeType> operator+(table<Value, SizeType> lhs, const table<Value, SizeType> &rhs)
-	{
-		return lhs += rhs;
-	}
-
-	template<typename Value, typename SizeType>
-	table<Value, SizeType>& operator+=(table<Value, SizeType> &lhs, const table<Value, SizeType> &rhs)
-	{
-		//get a table that covers the area for both tables
-		auto t = superset(lhs, rhs);
-
-		//add all the data from lhs to t
-		auto start = lhs.position();
-		auto end = start + lhs.size();
-
-		for (auto y = start.y; y < end.y; ++y)
-			for (auto x = start.x; x < end.x; ++x)
-				t[{x, y}] += rhs[{x, y}];
-
-		//add all the data from rhs to t
-		start = rhs.position();
-		end = start + rhs.size();
-
-		for (auto y = start.y; y < end.y; ++y)
-			for (auto x = start.x; x < end.x; ++x)
-				t[{x, y}] += rhs[{x, y}];
-
-		std::swap(t, lhs);
-
-		return lhs;
-	}
-
-	template<typename Value, typename SizeType>
-	table<Value, SizeType> operator+(table<Value, SizeType> lhs, const virtual_table<Value, SizeType> &rhs)
-	{
-		return lhs += rhs;
-	}
-
-	template<typename Value, typename SizeType>
-	table<Value, SizeType>& operator+=(table<Value, SizeType> &lhs, const virtual_table<Value, SizeType> &rhs)
-	{
-		auto t = as_table(rhs);
-
-		return lhs += t;
 	}
 }

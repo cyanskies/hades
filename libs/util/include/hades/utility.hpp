@@ -17,13 +17,13 @@ namespace hades {
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	inline bool floatEqual(float a, float b);
 
-	class bad_cast : public std::runtime_error
+	class overflow_error : public std::overflow_error
 	{
 	public: 
-		using std::runtime_error::runtime_error;
+		using std::overflow_error::overflow_error;
 	};
 
-	//converts value to unsigned, throws bad_cast if out of range
+	//converts value to unsigned, throws overflow_error if out of range
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_cast(T value);
 
@@ -31,7 +31,7 @@ namespace hades {
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_clamp_cast(T value) noexcept;
 
-	//converts value to signed, throws bad_cast if out of range
+	//converts value to signed, throws overflow_error if out of range
 	template<typename T>
 	constexpr std::make_signed_t<T> signed_cast(T value);
 
@@ -53,7 +53,7 @@ namespace hades {
 	constexpr T size_clamp_cast(U) noexcept;
 
 	//converts one integer type to another
-	//throws bad_cast if the value doesn't fit in the new range
+	//throws overflow_error if the value doesn't fit in the new range
 	template<typename T, typename U>
 	constexpr T integer_cast(U);
 

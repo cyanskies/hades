@@ -24,7 +24,7 @@ namespace hades
 		else if (value > T{})
 			return static_cast<U>(value);
 		else
-			throw bad_cast{ "bad unsigned cast; tried to cast a negative value to unsigned" };
+			throw overflow_error{ "overflow_error; tried to cast a negative value to unsigned" };
 	}
 
 	template<typename T>
@@ -47,7 +47,7 @@ namespace hades
 		if constexpr (std::is_signed_v<T>)
 			return value;
 		else if (value > static_cast<T>(std::numeric_limits<S>::max()))
-			throw bad_cast{ "bad signed cast; value was too large for signed type" };
+			throw overflow_error{ "overflow_error; value was too large for signed type" };
 		else
 			return static_cast<S>(value);
 	}
@@ -98,11 +98,11 @@ namespace hades
 			//only need to check min value if integer types are signed
 			if constexpr (std::is_signed_v<T>)
 				if (i < static_cast<U>(std::numeric_limits<T>::min()))
-					throw bad_cast{ "bas size_cast value is smaller than target type can hold" };
+					throw overflow_error{ "overflow_error value is smaller than target type can hold" };
 			
 			//check max value
 			if (i > static_cast<U>(std::numeric_limits<T>::max()))
-				throw bad_cast{ "bad size_cast value is larger than target type can hold" };
+				throw overflow_error{ "overflow_error value is larger than target type can hold" };
 
 			return static_cast<T>(i);
 		}

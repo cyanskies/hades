@@ -17,6 +17,50 @@ namespace hades {
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	inline bool floatEqual(float a, float b);
 
+	class bad_cast : public std::runtime_error
+	{
+	public: 
+		using std::runtime_error::runtime_error;
+	};
+
+	//converts value to unsigned, throws bad_cast if out of range
+	template<typename T>
+	constexpr std::make_unsigned_t<T> unsigned_cast(T value);
+
+	//converts value to unsigned clamps to representable value if out of range
+	template<typename T>
+	constexpr std::make_unsigned_t<T> unsigned_clamp_cast(T value) noexcept;
+
+	//converts value to signed, throws bad_cast if out of range
+	template<typename T>
+	constexpr std::make_signed_t<T> signed_cast(T value);
+
+	//converts value to signed, clamps to representable values
+	template<typename T>
+	constexpr std::make_signed_t<T> signed_clamp_cast(T value) noexcept;
+
+	template<typename T>
+	constexpr auto sign_swap_cast(T value);
+
+	template<typename T>
+	constexpr auto sign_swap_clamp_cast(T value) noexcept;
+
+	//TODO: size cast, for safe casting between different sized integers
+	template<typename T, typename U>
+	constexpr T size_cast(U);
+
+	template<typename T, typename U>
+	constexpr T size_clamp_cast(U) noexcept;
+
+	//converts one integer type to another
+	//throws bad_cast if the value doesn't fit in the new range
+	template<typename T, typename U>
+	constexpr T integer_cast(U);
+
+	//converts one integer type to another
+	template<typename T, typename U>
+	constexpr T integer_clamp_cast(U) noexcept;
+
 	template<typename T>
 	T random(T min, T max);
 

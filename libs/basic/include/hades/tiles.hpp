@@ -7,8 +7,21 @@
 #include "hades/resource_base.hpp"
 #include "hades/vector_math.hpp"
 
-//TODO: system for working with logical tiles, needs to support generating a tilemap
+// system for working with logical tiles
 // editing a tilemap, and getting tag_lists from the map
+
+namespace hades::resources
+{
+	//fwd declaration
+	// tiles cannot be drawn unless linked against hades-core
+	// which defines textures
+	struct texture;
+}
+
+namespace hades::detail
+{
+	using find_make_texture_f = resources::texture* (*)(data::data_manager&, unique_id, unique_id);
+}
 
 namespace hades
 {
@@ -16,14 +29,13 @@ namespace hades
 	// this is to allow logical gameplay tilemap usage
 	// without bringing in graphics resources and linkage
 	void register_tiles_resources(data::data_manager&);
+	//as above, but loads textures from the requested function
+	void register_tiles_resources(data::data_manager&, detail::find_make_texture_f);
 }
 
 //resources for loading tiles and tilesets
 namespace hades::resources
 {
-	//fwd declaration
-	struct texture;
-
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;
 
@@ -31,7 +43,7 @@ namespace hades::resources
 	{
 		//texture and [left, top] are used for drawing
 		const resources::texture *texture = nullptr;
-		tile_size_t left = 0, top = 0;
+		tile_size_t left{}, top{};
 		//used for game logic
 		tag_list tags{};
 	};
@@ -43,7 +55,7 @@ namespace hades::resources
 	//contains all the tiles defined by a particular tileset
 	//used to map the integers in maps to actual tiles
 	struct tileset_t {};
-	struct tileset : public hades::resources::resource_type<tileset_t>
+	struct tileset : public resource_type<tileset_t>
 	{
 		tileset();
 
@@ -55,7 +67,7 @@ namespace hades::resources
 	{
 		tile_settings();
 
-		tile_size_t tile_size = 0;
+		tile_size_t tile_size{};
 		const tileset *error_tileset = nullptr;
 		const tileset *empty_tileset = nullptr;
 
@@ -64,7 +76,7 @@ namespace hades::resources
 
 	//exceptions: all three throw resource_error
 	// either as resource_null or resource_wrong_type
-	const tile_settings &get_tile_settings();
+	const tile_settings *get_tile_settings();
 	const tile &get_error_tile();
 	const tile &get_empty_tile();
 }
@@ -172,6 +184,7 @@ namespace hades
 	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&);
 
 	//helpers to create a list of positions in a desired shape
+	//TODO: move to general game logic
 	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size);
 	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size);
 

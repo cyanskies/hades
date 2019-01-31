@@ -8,18 +8,23 @@
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/texture.hpp"
+#include "hades/tiles.hpp"
 #include "hades/utility.hpp"
-
-//functions for loading and parsing tile data
 
 namespace hades
 {
-	using namespace std::string_view_literals;
-	constexpr auto tile_settings_name = "tile-settings"sv;
-
-	namespace ids
+	void register_tile_map_resources(data::data_manager &d)
 	{
-		unique_id tile_settings = unique_id::zero;
+		//register dependent resources
+		register_texture_resource(d);
+		register_tiles_resources(d, [](data::data_manager &d, unique_id id, unique_id mod) {
+			return d.find_or_create<resources::texture>(id, mod);
+		});
+
+		//add texture to error tile
+
+		//add texture to tilemap loading
+
 	}
 
 	void register_tiles(data::data_manager &d)
@@ -784,4 +789,5 @@ namespace hades
 
 		return e;
 	}
+
 }

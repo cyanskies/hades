@@ -4,11 +4,18 @@
 #include <tuple>
 
 #include "hades/data.hpp"
+#include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/table.hpp"
 
 namespace hades
 {
+	namespace detail
+	{
+		static find_make_texture_f find_make_texture{};
+	}
+
+	using namespace std::string_literals;
 	using namespace std::string_view_literals;
 	constexpr auto tilesets_name = "tilesets"sv;
 	constexpr auto tile_settings_name = "tile-settings"sv;
@@ -27,13 +34,24 @@ namespace hades
 
 	void register_tiles_resources(data::data_manager &d)
 	{
+		register_tiles_resources(d, [](data::data_manager&, unique_id, unique_id)->resources::texture*
+		{
+			return nullptr;
+		});
+	}
+
+	void register_tiles_resources(data::data_manager &d, detail::find_make_texture_f fm_texture)
+	{
 		d.register_resource_type(tile_settings_name, parse_tile_settings);
 		d.register_resource_type(tilesets_name, parse_tilesets);
+
+		const auto error_texture = unique_id{};
+		auto texture = std::invoke(fm_texture, d, unique_id::zero, unique_id::zero);
 
 		//create error tileset and add a default error tile
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
 		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero);
-		const resources::tile error_tile{};
+		const resources::tile error_tile{ texture };
 		error_tset->tiles.emplace_back(error_tile);
 
 		id::empty_tileset = hades::data::make_uid(air_tileset_name);
@@ -47,6 +65,100 @@ namespace hades
 		settings->error_tileset = error_tset;
 		settings->empty_tileset = empty_tset;
 		settings->tile_size = 8;
+
+		detail::find_make_texture = fm_texture;
+	}
+
+	void parse_tile_settings(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	{
+		//tile-settings:
+		//  tile-size: 32
+		//	error-tileset
+
+		const auto id = d.get_uid(tile_settings_name);
+		auto s = d.get<resources::tile_settings>(id);
+		assert(s);
+
+		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
+	}
+
+	static void add_tiles_to_tileset(std::vector<resources::tile> &tile_list,
+		const resources::texture *texture, texture_size_t left,
+		texture_size_t top, tile_count_t width,	tile_count_t count,
+		const tag_list &tags, resources::tile_size_t tile_size)
+	{
+		texture_size_t x = 0, y = 0;
+		tile_count_t current_count{};
+		
+		while (current_count <= count)
+		{
+			tile_list.emplace_back(resources::tile{
+				texture,
+				left + x * tile_size,
+				top + y * tile_size,
+				tags 
+			});
+
+			if (x >= width)
+			{
+				x = 0;
+				++y;
+			}
+
+			++current_count;
+		}
+	}
+
+	void parse_tilesets(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	{
+		//tilesets:
+		//	sand: <// tileset name, these must be unique
+		//		- {
+		//			texture: <// texture to draw the tiles from
+		//			left: <// pixel start of tileset; default: 0
+		//			top: <// pixel left of tileset; default: 0
+		//			tiles_per_row: <// number of tiles per row
+		//			tile_count: <// total amount of tiles in tileset; default: tiles_per_row
+		//			tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
+		//		}
+
+		const auto tile_size = resources::get_tile_settings()->tile_size;
+
+		const auto tileset_list = n.get_children();
+
+		for (const auto &tileset_n : tileset_list)
+		{
+			const auto name = tileset_n->to_string();
+			const auto id = d.get_uid(name);
+
+			const auto tile_groups = tileset_n->get_children();
+			if (tile_groups.empty())
+				continue;
+
+			auto tileset = d.find_or_create<resources::tileset>(id, mod);
+			assert(tileset);
+
+			for (const auto &tile_group : tile_groups)
+			{
+				using namespace data::parse_tools;
+
+				const auto tex_id = get_unique(*tile_group, "texture"sv, unique_id::zero);
+				const resources::texture *tex = 
+					std::invoke(detail::find_make_texture, d, tex_id, mod);
+
+				const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
+				const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
+
+				const auto width = get_scalar(*tile_group, "tiles-per-row"sv, tile_count_t{});
+				const auto tile_count = get_scalar(*tile_group, "tile-count"sv, tile_count_t{});
+
+				const auto tags = get_unique_sequence(*tile_group, "tags"sv, tag_list{});
+
+				add_tiles_to_tileset(tileset->tiles, tex, left, top, width,
+					tile_count, tags, tile_size);
+			}
+		}
+
 	}
 }
 
@@ -80,8 +192,9 @@ namespace hades::resources
 		{
 			if (t.texture)
 			{
-				const auto tex = reinterpret_cast<const resource_base*>(t.texture);
-				data::get<texture>(tex->id);
+				const auto res = reinterpret_cast<const resource_base*>(t.texture);
+				const auto texture = d.get_resource(res->id);
+				texture->load(d);
 			}
 		}
 	}
@@ -97,6 +210,9 @@ namespace hades::resources
 
 		if (s.error_tileset)
 			data::get<tileset>(s.error_tileset->id);
+
+		for (const auto t : s.tilesets)
+			data::get<tileset>(t->id);
 	}
 
 	tileset::tileset() : resource_type<tileset_t>(load_tileset)
@@ -105,16 +221,16 @@ namespace hades::resources
 	tile_settings::tile_settings() : resource_type<tile_settings_t>(load_tile_settings)
 	{}
 
-	const tile_settings &get_tile_settings()
+	const tile_settings *get_tile_settings()
 	{
-		return *data::get<tile_settings>(id::tile_settings);
+		return data::get<tile_settings>(id::tile_settings);
 	}
 
 	const tile &get_error_tile()
 	{
-		const auto &s = get_tile_settings();
-		assert(s.error_tileset);
-		const auto tset = s.error_tileset;
+		const auto s = get_tile_settings();
+		assert(s->error_tileset);
+		const auto tset = s->error_tileset;
 		const auto begin = std::begin(tset->tiles);
 		const auto end = std::end(tset->tiles);
 		return random_element(begin, end);
@@ -122,9 +238,9 @@ namespace hades::resources
 
 	const tile &get_empty_tile()
 	{
-		const auto &s = get_tile_settings();
-		assert(s.empty_tileset);
-		const auto tset = s.empty_tileset;
+		const auto s = get_tile_settings();
+		assert(s->empty_tileset);
+		const auto tset = s->empty_tileset;
 		assert(!tset->tiles.empty());
 		return tset->tiles.front();
 	}
@@ -235,9 +351,9 @@ namespace hades
 
 	const resources::tileset *get_parent_tileset(const resources::tile &t)
 	{
-		const auto &s = resources::get_tile_settings();
+		const auto s = resources::get_tile_settings();
 		
-		for (const auto *tileset : s.tilesets)
+		for (const auto *tileset : s->tilesets)
 			for (const auto &tile : tileset->tiles)
 				if (tile == t)
 					return tileset;
@@ -421,7 +537,12 @@ namespace hades
 		const auto new_height = current_height - top_left.y + bottom_right.y;
 		const auto new_width = current_width - top_left.x + bottom_right.x;
 
-		resize_map(m, { new_width, new_height }, { -top_left.x, -top_left.y }, t);
+		const auto size = vector_int{
+			signed_cast(new_width),
+			signed_cast(new_height)
+		};
+
+		resize_map(m, size, { -top_left.x, -top_left.y }, t);
 	}
 
 	void resize_map_relative(tile_map &t, vector_int top_left, vector_int bottom_right)
@@ -433,7 +554,8 @@ namespace hades
 		}
 		catch (const data::resource_error &e)
 		{
-			throw tileset_not_found{ "unable to find the empty tileset" };
+			const auto m = "unable to find the empty tileset: "s + e.what();
+			throw tileset_not_found{ m };
 		}
 	}
 
@@ -471,18 +593,22 @@ namespace hades
 		}
 		catch (const data::resource_error &e)
 		{
-			throw tileset_not_found{ "unable to find the empty tileset" };
+			const auto m = "unable to find the empty tileset: "s + e.what();
+			throw tileset_not_found{ m };
 		}
 	}
 
 	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size)
 	{
-		return make_position_rect(position, { size, size });
+		const auto int_size = signed_cast(size);
+
+		return make_position_rect(position, { int_size, int_size });
 	}
 
 	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size)
 	{
-		return make_position_square({ middle.x - half_size, middle.y - half_size }, half_size * 2);
+		const auto int_half_size = signed_cast(half_size);
+		return make_position_square({ middle.x - int_half_size, middle.y - int_half_size }, int_half_size * 2);
 	}
 
 	std::vector<tile_position> make_position_rect(tile_position position, tile_position size)
@@ -490,17 +616,53 @@ namespace hades
 		auto positions = std::vector<tile_position>{};
 		positions.reserve(size.x * size.y);
 
-		for (tile_count_t y = 0; y < size.y; ++y)
-			for (tile_count_t x = 0; x < size.x; ++x)
+		for (int32 y = 0; y < size.y; ++y)
+			for (int32 x = 0; x < size.x; ++x)
 				positions.emplace_back(position.x + x, position.y + y);
 
 		return positions;
 	}
 
-	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius)
+	std::vector<tile_position> make_position_circle(tile_position p, tile_count_t radius)
 	{
-		//TODO: 
-		//? not sure how to implement this
-		return std::vector<tile_position>();
+		const auto rad = signed_cast(radius);
+
+		const auto top = tile_position{ 0, 0 - rad };
+		const auto bottom = tile_position{ 0, 0 + rad };
+
+		std::vector<tile_position> out;
+		out.reserve(rad * 4);
+
+		out.emplace_back(top + p);
+
+		const auto r2 = rad * rad;
+		for (auto y = top.y + 1; y < bottom.y; ++y)
+		{
+			//find x for every y between the top and bottom of the circle
+
+			//x2 + y2 = r2
+			//x2 = r2 - y2
+			//x = sqrt(r2 - y2)
+			const auto y2 = y * y;
+			const auto a = r2 - y2;
+			assert(a >= 0);
+			const auto x_root = std::sqrt(a);
+			double fract{};
+			const auto x_double = std::modf(x_root, &fract);
+
+			if (fract != .0)
+				continue;
+
+			const auto x_int = std::abs(static_cast<tile_position::value_type>(x_double));
+			const auto bounds = std::array{ -x_int, x_int };
+			
+			//push the entire line of the circle into out
+			for (auto x = bounds[0]; x <= bounds[1]; x++)
+				out.emplace_back(x + p.x, y + p.y);
+		}
+
+		out.emplace_back(bottom + p);
+
+		return out;
 	}
 }

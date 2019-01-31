@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 
+#include "hades/utility.hpp"
 #include "hades/vector_math.hpp"
 
 //a type representing an arbitarily sized table
@@ -14,8 +15,6 @@
 //TODO: adding tables together should be able to create larger tables
 
 namespace hades {
-
-	template<typename T>
 	using table_index_t = vector_int;
 
 	//a virtual table base class, for table data that can be generated on demand.
@@ -81,7 +80,7 @@ namespace hades {
 			_offset = p;
 		}
 
-		index_type size() const { return index_type{ _width, _data.size() / _width }; }
+		index_type size() const { return index_type{ _width, integer_cast<index_type::value_type>(_data.size()) / _width }; }
 
 		std::vector<value_type> &data()
 		{
@@ -112,10 +111,10 @@ namespace hades {
 	{};
 
 	template<typename T, template <typename> typename U>
-	struct is_table<U<T>> : std::bool_constant<std::is_base_of_v<virtual_table<T>, U<T>>
+	struct is_table<U<T>> : std::bool_constant<std::is_base_of_v<virtual_table<T>, U<T>>>
 	{};
 
-	template<T>
+	template<typename T>
 	constexpr auto is_table_v = is_table<T>::value;
 
 	//combines two tables using CombineFunctor

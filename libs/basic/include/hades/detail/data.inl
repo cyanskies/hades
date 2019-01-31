@@ -83,9 +83,9 @@ namespace hades
 
 			try
 			{
-				return dynamic_cast<T&>(*res);
+				return &dynamic_cast<T&>(*res);
 			}
-			catch (const std::bad_cast &e)
+			catch (const std::bad_cast&)
 			{
 				throw resource_wrong_type("Tried to get resource using wrong type, unique_id was: " + get_as_string(id)
 					+ ", requested type was: " + typeid(T).name());

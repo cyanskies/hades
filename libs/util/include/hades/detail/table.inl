@@ -11,12 +11,12 @@ namespace hades
 	template<typename T>
 	inline table<T>::table(const virtual_table<T> &v) : table(v.position(), v.size(), T{})
 	{
-		const auto size = { _width, _data.size() / _width };
-		const auto end = _position + size;
+		const auto size = index_type{ _width, integer_cast<index_type::value_type>(_data.size()) / _width };
+		const auto end = _offset + size;
 
-		for (auto y = _offset.y; sy < end.y; ++y)
-			for (auto x = _offset.x; sx < end.x; ++x)
-				_data[{x, y}] = v[{x, y}];
+		for (auto y = _offset.y; y < end.y; ++y)
+			for (auto x = _offset.x; x < end.x; ++x)
+				(*this)[index_type{x, y}] = v[index_type{x, y}];
 	}
 
 	template<typename Value>

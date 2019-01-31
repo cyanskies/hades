@@ -6,6 +6,7 @@
 
 #include "hades/strong_typedef.hpp"
 #include "hades/types.hpp"
+#include "hades/uniqueid.hpp"
 #include "hades/utility.hpp"
 
 namespace hades

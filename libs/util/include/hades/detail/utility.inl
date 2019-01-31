@@ -15,6 +15,154 @@ namespace hades
 	}
 
 	template<typename T>
+	constexpr std::make_unsigned_t<T> unsigned_cast(T value)
+	{
+		using U = std::make_unsigned_t<T>;
+
+		if constexpr (std::is_unsigned_v<T>)
+			return value;
+		else if (value > T{})
+			return static_cast<U>(value);
+		else
+			throw bad_cast{ "bad unsigned cast; tried to cast a negative value to unsigned" };
+	}
+
+	template<typename T>
+	constexpr std::make_unsigned_t<T> unsigned_clamp_cast(T value) noexcept
+	{
+		using U = std::make_unsigned_t<T>;
+
+		if constexpr (std::is_unsigned_v<T>)
+			return value;
+		else if (value > T{})
+			return static_cast<U>(value);
+		else
+			return U{};
+	}
+
+	template<typename T>
+	constexpr std::make_signed_t<T> signed_cast(T value)
+	{
+		using S = std::make_signed_t<T>;
+		if constexpr (std::is_signed_v<T>)
+			return value;
+		else if (value > static_cast<T>(std::numeric_limits<S>::max()))
+			throw bad_cast{ "bad signed cast; value was too large for signed type" };
+		else
+			return static_cast<S>(value);
+	}
+
+	template<typename T>
+	constexpr std::make_signed_t<T> signed_clamp_cast(T value) noexcept
+	{
+		using S = std::make_signed_t<T>;
+		if constexpr (std::is_signed_v<T>)
+			return value;
+		else if (value > static_cast<T>(std::numeric_limits<S>::max()))
+			return std::numeric_limits<S>::max();
+		else
+			return static_cast<S>(value);
+	}
+
+	template<typename T>
+	constexpr auto sign_swap_cast(T value)
+	{
+		if constexpr (std::is_signed_v<T>)
+			return unsigned_cast(value);
+		else
+			return signed_cast(value);
+	}
+
+	template<typename T>
+	constexpr auto sign_swap_clamp_cast(T value) noexcept
+	{
+		if constexpr (std::is_signed_v<T>)
+			return unsigned_clamp_cast(value);
+		else
+			return signed_clamp_cast(value);
+	}
+
+	template<typename T, typename U>
+	constexpr T size_cast(U i)
+	{
+		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
+			"size_cast only supports integers");
+
+		static_assert(std::is_signed_v<T> == std::is_signed_v<U>,
+			"size_cast integers must both be signed, or both unsigned");
+
+		if constexpr (sizeof(T) >= sizeof(U))
+			return i;
+		else
+		{
+			//only need to check min value if integer types are signed
+			if constexpr (std::is_signed_v<T>)
+				if (i < static_cast<U>(std::numeric_limits<T>::min()))
+					throw bad_cast{ "bas size_cast value is smaller than target type can hold" };
+			
+			//check max value
+			if (i > static_cast<U>(std::numeric_limits<T>::max()))
+				throw bad_cast{ "bad size_cast value is larger than target type can hold" };
+
+			return static_cast<T>(i);
+		}
+	}
+	
+	template<typename T, typename U>
+	constexpr T size_clamp_cast(U i) noexcept
+	{
+		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
+			"size_cast only supports integers");
+
+		static_assert(std::is_signed_v<T> == std::is_signed_v<U>,
+			"size_cast integers must both be signed, or both unsigned");
+
+		if constexpr (sizeof(T) >= sizeof(U))
+			return i;
+		else
+		{
+			//only need to check min value if integer types are signed
+			if constexpr (std::is_signed_v<T>)
+				if (i < static_cast<U>(std::numeric_limits<T>::min()))
+					return std::numeric_limits<T>::min();
+
+			//check max value
+			if (i > static_cast<U>(std::numeric_limits<T>::max()))
+				return std::numeric_limits<T>::max();
+
+			return static_cast<T>(i);
+		}
+	}
+
+	template<typename T, typename U>
+	constexpr T integer_cast(U i)
+	{
+		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
+			"integer_cast only supports integers");
+
+		if constexpr (std::is_same_v<T, U>)
+			return i;
+		else if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
+			return size_cast<T>(i);
+		else
+			return size_cast<T>(sign_swap_cast(i));
+	}
+
+	template<typename T, typename U>
+	constexpr T integer_clamp_cast(U i) noexcept
+	{
+		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
+			"integer_clamp_cast only supports integers");
+
+		if constexpr (std::is_same_v<T, U>)
+			return i;
+		else if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
+			return size_clamp_cast<T>(i);
+		else
+			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
+	}
+
+	template<typename T>
 	T random(T min, T max)
 	{
 		if (min == max)

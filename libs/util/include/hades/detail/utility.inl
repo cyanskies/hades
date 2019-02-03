@@ -162,6 +162,40 @@ namespace hades
 			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
 	}
 
+	template<typename T, typename U>
+	constexpr T float_cast(U i)
+	{
+		static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
+		static_assert(std::is_integral_v<U>, "float cast only converts integers");
+
+		if (i > static_cast<U>(std::numeric_limits<T>::max()))
+			throw overflow_error{ "overflow_error value is larger than target type can hold" };
+
+		//floats are always signed, but our integer might not be
+		//if the integer in unsigned then the lower bound isn't an issue
+		if constexpr (std::is_signed_v<U>)
+			if(i < static_cast<U>(std::numeric_limits<T>::min()))
+				throw overflow_error{ "overflow_error value is larger than target type can hold" };
+
+		return static_cast<T>(i);
+	}
+
+	template<typename T, typename U>
+	constexpr T float_clamp_cast(U) noexcept
+	{
+		static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
+		static_assert(std::is_integral_v<U>, "float cast only converts integers");
+
+		if (i > static_cast<U>(std::numeric_limits<T>::max()))
+			return std::numeric_limits<T>::max();
+
+		if constexpr (std::is_signed_v<U>)
+			if (i < static_cast<U>(std::numeric_limits<T>::min()))
+				std::numeric_limits<T>::min();
+
+		return static_cast<T>(i);
+	}
+
 	template<typename T>
 	T random(T min, T max)
 	{

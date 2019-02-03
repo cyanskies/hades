@@ -193,7 +193,8 @@ namespace hades
 			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height },  { texture_quad.x +  texture_quad.width, texture_quad.y +  texture_quad.height } }, //bottom right
 			sf::Vertex{ { quad.x, quad.y + quad.height },  { texture_quad.x, texture_quad.y +  texture_quad.height } } //bottom left
 		};
-}
+	}
+
 	void register_animation_resource(data::data_manager &d)
 	{
 		using namespace std::string_view_literals;

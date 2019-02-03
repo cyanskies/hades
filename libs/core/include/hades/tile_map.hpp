@@ -11,6 +11,7 @@
 #include "hades/texture.hpp"
 #include "hades/tiles.hpp"
 #include "hades/types.hpp"
+#include "hades/vertex_buffer.hpp"
 
 //adds support for drawing tile maps
 
@@ -32,34 +33,39 @@ namespace hades
 		using runtime_error::runtime_error;
 	};
 
-	//TODO: split chunks based on visible area
-	//a class for rendering MapData as a tile map
-	class TileMap : public sf::Drawable
+	//an immutable type for drawing tile_map instances
+	class immutable_tile_map : public sf::Drawable
 	{
 	public:
-		TileMap() = default;
-		TileMap(const MapData&);
+		immutable_tile_map() = default;
+		immutable_tile_map(const tile_map&);
 
-		virtual ~TileMap() {}
+		virtual ~immutable_tile_map() {}
 
-		virtual void create(const MapData&);
+		virtual void create(const tile_map&);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		sf::FloatRect getLocalBounds() const;
+		rect_float get_local_bounds() const;
 
 	protected:
-		using vArray = std::pair<const hades::resources::texture*, VertexArray>;
-		std::vector<vArray> Chunks;
+		struct texture_layer
+		{
+			const resources::texture *texture = nullptr;
+			vertex_buffer vertex;
+		};
+
+		std::vector<texture_layer> texture_layers;
+		rect_float local_bounds;
 	};
 
-	//an expanded upon TileMap, that allows changing the map on the fly
+	//an expanded upon immutable_tile_map, that allows changing the map on the fly
 	//mostly used for editors
-	class MutableTileMap final : public TileMap
+	class mutable_tile_map final : public immutable_tile_map
 	{
 	public:
-		MutableTileMap() = default;
-		MutableTileMap(const MapData&);
+		mutable_tile_map() = default;
+		mutable_tile_map(const MapData&);
 
 		void create(const MapData&) override;
 		void update(const MapData&);

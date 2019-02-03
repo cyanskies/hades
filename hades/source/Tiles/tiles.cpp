@@ -213,10 +213,10 @@ namespace tiles
 	}
 
 	//=========================================//
-	//					TileMap				   //
+	//					immutable_tile_map				   //
 	//=========================================//
 
-	TileMap::TileMap(const MapData &map)
+	immutable_tile_map::immutable_tile_map(const MapData &map)
 	{
 		create(map);
 	}
@@ -239,7 +239,7 @@ namespace tiles
 		return output;
 	}
 
-	void TileMap::create(const MapData &map_data)
+	void immutable_tile_map::create(const MapData &map_data)
 	{
 		const auto &tiles = std::get<TileArray>(map_data);
 		const auto width = std::get<tile_count_t>(map_data);
@@ -323,7 +323,7 @@ namespace tiles
 		Chunks.push_back(std::make_pair(current_tex, array));
 	}
 
-	void TileMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	void immutable_tile_map::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
 		for (const auto &s : Chunks)
 		{
@@ -333,7 +333,7 @@ namespace tiles
 		}
 	}
 
-	sf::FloatRect TileMap::getLocalBounds() const
+	sf::FloatRect immutable_tile_map::getLocalBounds() const
 	{
 		if (Chunks.empty() || Chunks[0].second.empty())
 			return sf::FloatRect();
@@ -365,15 +365,15 @@ namespace tiles
 	}
 
 	//=========================================//
-	//				MutableTileMap			   //
+	//				mutable_tile_map			   //
 	//=========================================//
 
-	MutableTileMap::MutableTileMap(const MapData &map)
+	mutable_tile_map::mutable_tile_map(const MapData &map)
 	{
 		create(map);
 	}
 
-	void MutableTileMap::create(const MapData &map_data)
+	void mutable_tile_map::create(const MapData &map_data)
 	{
 		//store the tiles and width
 		_tiles = std::get<TileArray>(map_data);
@@ -382,7 +382,7 @@ namespace tiles
 		const auto tile_settings = GetTileSettings();
 		_tile_size = tile_settings->tile_size;
 
-		TileMap::create(map_data);
+		immutable_tile_map::create(map_data);
 	}
 
 	sf::Vector2u InflatePosition(tile_count_t i, tile_count_t width)
@@ -393,12 +393,12 @@ namespace tiles
 		return { x, y };
 	}
 
-	void MutableTileMap::update(const MapData &map_data)
+	void mutable_tile_map::update(const MapData &map_data)
 	{
 		const auto &[tiles, width] = map_data;
 		if (tiles.size() != _tiles.size()
 			|| width != _width)
-			throw tile_map_exception("TileMap::update must be called with a map of the same size and width");
+			throw tile_map_exception("immutable_tile_map::update must be called with a map of the same size and width");
 		
 		for (std::size_t i = 0; i < tiles.size(); ++i)
 		{
@@ -453,7 +453,7 @@ namespace tiles
 		return changed;
 	}
 
-	void MutableTileMap::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
+	void mutable_tile_map::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
 	{
 		//ensure the tile has a valid texture obj
 		assert(t.texture);
@@ -474,12 +474,12 @@ namespace tiles
 		}
 	}
 
-	MapData MutableTileMap::getMap() const
+	MapData mutable_tile_map::getMap() const
 	{
 		return { _tiles, _width };
 	}
 
-	void MutableTileMap::setColour(sf::Color c)
+	void mutable_tile_map::setColour(sf::Color c)
 	{
 		_colour = c;
 		for (auto &a : Chunks)
@@ -489,7 +489,7 @@ namespace tiles
 		}
 	}
 
-	void MutableTileMap::_updateTile(const sf::Vector2u &position, const tile &t)
+	void mutable_tile_map::_updateTile(const sf::Vector2u &position, const tile &t)
 	{
 		//find the array to place it in
 		vArray *targetArray = nullptr;
@@ -549,7 +549,7 @@ namespace tiles
 		}
 	}
 
-	void MutableTileMap::_removeTile(VertexArray &a, const sf::Vector2u &position)
+	void mutable_tile_map::_removeTile(VertexArray &a, const sf::Vector2u &position)
 	{
 		const auto pixelPos = position * _tile_size;
 		VertexArray::const_iterator target = a.cend();
@@ -566,7 +566,7 @@ namespace tiles
 		a.erase(target, target + VertexPerTile);
 	}
 
-	void MutableTileMap::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
+	void mutable_tile_map::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
 	{
 		auto &vertArray = a;
 		std::size_t firstVert = vertArray.size();
@@ -584,7 +584,7 @@ namespace tiles
 		//this is a big error
 		if (firstVert == vertArray.size())
 		{
-			LOGERROR("TileMap; unable to find vertex for modification");
+			LOGERROR("immutable_tile_map; unable to find vertex for modification");
 			throw std::logic_error("failed to find needed vertex");
 		}
 
@@ -597,7 +597,7 @@ namespace tiles
 			vertArray[i] = newQuad[i - firstVert];
 	}
 
-	void MutableTileMap::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
+	void mutable_tile_map::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
 	{
 		const auto pixelPos = position * _tile_size;
 		const auto newQuad = CreateTile(pixelPos.x, pixelPos.y, t.left, t.top, _tile_size);

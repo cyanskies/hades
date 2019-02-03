@@ -5,6 +5,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
+#include "hades/animation.hpp"
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/texture.hpp"
@@ -22,280 +23,70 @@ namespace hades
 		});
 
 		//add texture to error tile
-
-		//add texture to tilemap loading
-
-	}
-
-	void register_tiles(data::data_manager &d)
-	{
-		//tiles depends on texture
-		register_texture_resource(d);
-
-		
-		//create texture for error_tile
-		const unique_id error_tile_texture{};
-		auto error_t_tex = d.find_or_create<hades::resources::texture>(error_tile_texture, unique_id::zero);
-		/*error_t_tex->loaded = true;
-		error_t_tex->value.loadFromMemory(error_tile::data, error_tile::len);*/
-
-		
-		//create texture for empty tile
-		const auto empty_tile_texture = hades::unique_id{};
-		auto empty_t_tex = d.find_or_create<hades::resources::texture>(empty_tile_texture, unique_id::zero);
-		sf::Image empty_i;
-		empty_i.create(1u, 1u, sf::Color::Transparent);
-		empty_t_tex->value.loadFromImage(empty_i);
-		empty_t_tex->value.setRepeated(true);
-		empty_t_tex->repeat = true;
-
-	}
-
-	std::tuple<tile_count_t, tile_count_t> CalculateTileCount(std::tuple<hades::level_size_t, hades::level_size_t> size, tile_size_t tile_size)
-	{
-		auto[x, y] = size;
-		if (x % tile_size != 0
-			|| y % tile_size != 0)
-			throw tile_map_exception("Level size was not multiple of tile size");
-
-		return { x / tile_size, y / tile_size };
-	}
-
-	constexpr VertexArray::size_type VertexPerTile = 6u;
-
-	MapData as_mapdata(const RawMap &map)
-	{
-		MapData out;
-		std::get<tile_count_t>(out) = std::get<tile_count_t>(map);
-
-		using Tileset = std::tuple<const resources::tileset*, tile_count_t>;
-		std::vector<Tileset> tilesets;
-
-		//get all the tilesets
-		for (const auto &t : std::get<std::vector<TileSetInfo>>(map))
-		{
-			const auto start_id = std::get<tile_count_t>(t);
-			const auto tileset_id = std::get<hades::unique_id>(t);
-			const auto tileset = hades::data::get<resources::tileset>(tileset_id);
-			assert(tileset);
-			tilesets.push_back({ tileset, start_id });
-		}
-
-		const auto &source_tiles = std::get<std::vector<tile_count_t>>(map);
-		auto &tiles = std::get<TileArray>(out);
-		tiles.reserve(source_tiles.size());
-		//for each tile, get it's actual tile value
-		for (const auto &t : source_tiles)
-		{
-			Tileset tset = { nullptr, 0 };
-			for (const auto &s : tilesets)
-			{
-				if (t >= std::get<tile_count_t>(s))
-					tset = s;
-				else
-					break;
-			}
-
-			const auto tileset = std::get<const resources::tileset*>(tset);
-			const auto count = t - std::get<tile_count_t>(tset);
-			assert(tileset);
-			assert(tileset->tiles.size() > count);
-			tiles.push_back(tileset->tiles[count]);
-		}
-
-		assert(source_tiles.size() == std::get<TileArray>(out).size());
-
-		return out;
-	}
-
-	hades::types::int32 find_tile_number(const TileArray &tiles, const tile &t)
-	{
-		for (std::size_t i = 0; i < tiles.size(); ++i)
-		{
-			if (t == tiles[i])
-				return static_cast<hades::types::int32>(i);
-		}
-
-		return -1;
-	}
-
-	std::vector<std::tuple<const resources::tileset*, tile_count_t>> get_tilesets_for_map(TileArray tiles)
-	{
-		struct tileset_info {
-			const resources::tileset* tileset = nullptr;
-			hades::types::int32 max_id = -1;
-		};
-
-		std::vector<tileset_info> tilesets;
-
-		for (const auto &tset_id : resources::Tilesets)
-		{
-			const auto tset = hades::data::get<resources::tileset>(tset_id);
-			tilesets.push_back({ tset });
-		}
-
-		//remove duplicate tiles, we're only interested in one of each unique tile
-		hades::remove_duplicates(tiles);
-		
-		for (const auto &t : tiles)
-		{
-			for (auto &tset : tilesets)
-			{
-				auto tile_number = find_tile_number(tset.tileset->tiles, t);
-				if (tile_number != -1)
-				{
-					tset.max_id = tset.tileset->tiles.size();
-					break;
-				}
-			}
-		}
-
-		std::vector<std::tuple<const resources::tileset*, tile_count_t>> out;
-
-		for (const auto &tset : tilesets)
-		{
-			if (tset.max_id >= 0)
-				out.push_back({ tset.tileset, tset.max_id });
-		}
-
-		return out;
-	}
-
-	RawMap as_rawmap(const MapData &map)
-	{
-		assert(std::get<0>(map).size() % std::get<1>(map) == 0);
-		//store the map width
-		const auto width = std::get<tile_count_t>(map);
-
-		const auto &tiles = std::get<TileArray>(map);
-		//a list of tilesets, to tilesets starting id
-		const auto tilesets_max = get_tilesets_for_map(tiles);
-
-		auto start_id = 0;
-
-		struct tileset_info {
-			const resources::tileset* ptr = nullptr;
-			hades::types::int32 start_id = -1;
-		};
-
-		std::vector<tileset_info> tilesets;
-
-		for (const auto &tset : tilesets_max)
-		{
-			tilesets.push_back({ std::get<const resources::tileset*>(tset), start_id });
-			start_id += std::get<tile_count_t>(tset);
-		}
-
-		std::vector<tile_count_t> tile_list;
-		tile_list.reserve(tiles.size());
-
-		//for each tile, add its tileset to the tilesets list,
-		// and record the highest tile_id used from that tileset.
-		for (const auto &t : tiles)
-		{
-			//the target tileset will be stored here
-			const resources::tileset* tset = nullptr;
-			tile_count_t tileset_start_id = 0;
-			tile_count_t tile_id = 0;
-
-			for (const auto &tileset : tilesets)
-			{
-				const auto tileset_ptr = tileset.ptr;
-				for (TileArray::size_type i = 0; i < tileset_ptr->tiles.size(); ++i)
-				{
-					if (t == tileset_ptr->tiles[i])
-					{
-						tset = tileset_ptr;
-						tile_id = i;
-						tileset_start_id = tileset.start_id;
-						break;
-					}
-				}
-
-				//tileset has already been found
-				if (tset)
-					break;
-			}
-
-			//by now we should have found the tileset and tile id,
-			//if not then saving is impossible
-			assert(tset);
-			//add whatever was found
-			tile_list.push_back(tile_id + tileset_start_id);
-		}
-
-		std::vector<TileSetInfo> tileset_output;
-
-		for (const auto &s : tilesets)
-			tileset_output.push_back({s.ptr->id, s.start_id});
-
-		return { tileset_output, tile_list, width };
-	}
-
-	//converts tile positions in the flat map to a 2d position on the screen
-	//NOTE: this returns a pixel position with the maps origin in the top left corner(0, 0).
-	std::tuple<hades::types::int32, hades::types::int32> GetGridPosition(hades::types::uint32 tile_number,
-		hades::types::uint32 tiles_per_row, tile_size_t tile_size)
-	{
-		return std::make_tuple((tile_number % tiles_per_row) * tile_size,
-			static_cast<int>(std::floor(tile_number / static_cast<float>(tiles_per_row)) * tile_size));
+		const auto settings = resources::get_tile_settings();
+		const auto &error_tile = resources::get_error_tile();
+		auto error_tex = d.find_or_create<resources::texture>(error_tile.texture->id, unique_id::zero);
+		error_tex->height = error_tex->width = settings->tile_size;
+		error_tex->repeat = true;
+		sf::Image img{};
+		img.create(1u, 1u, nullptr);
+		img.setPixel(0u, 0u, sf::Color::Magenta);
+		error_tex->value.loadFromImage(img);
+		error_tex->value.setRepeated(true);
+		error_tex->value.setSmooth(false);
+		error_tex->loaded = true;
 	}
 
 	//=========================================//
-	//					TileMap				   //
+	//					immutable_tile_map				   //
 	//=========================================//
 
-	TileMap::TileMap(const MapData &map)
+	immutable_tile_map::immutable_tile_map(const tile_map &map)
 	{
 		create(map);
 	}
 
-	std::array<sf::Vertex, VertexPerTile> CreateTile(hades::types::int32 left, hades::types::int32 top, hades::types::int32 texLeft, hades::types::int32 texTop, hades::types::uint16 tile_size)
+	std::tuple<tile_count_t, tile_count_t> to_2d_position(tile_count_t width, std::size_t index)
 	{
-		std::array<sf::Vertex, VertexPerTile> output;
-		// top-left
-		output[0] = { { static_cast<float>(left), static_cast<float>(top) },{ static_cast<float>(texLeft), static_cast<float>(texTop) } };
-		//top-right
-		output[1] = { { static_cast<float>(left + tile_size), static_cast<float>(top) },{ static_cast<float>(texLeft + tile_size), static_cast<float>(texTop) } };
-		//bottom-right
-		output[2] = { { static_cast<float>(left + tile_size), static_cast<float>(top + tile_size) },
-		{ static_cast<float>(texLeft + tile_size), static_cast<float>(texTop + tile_size) } };
-		//bottom-left
-		output[3] = { { static_cast<float>(left), static_cast<float>(top + tile_size) },{ static_cast<float>(texLeft), static_cast<float>(texTop + tile_size) } };
-		output[4] = output[0];
-		output[5] = output[2];
-
-		return output;
+		return {
+			index % width,
+			index / width			
+		};
 	}
 
-	void TileMap::create(const MapData &map_data)
+	void immutable_tile_map::create(const tile_map &map_data)
 	{
-		const auto &tiles = std::get<TileArray>(map_data);
-		const auto width = std::get<tile_count_t>(map_data);
+		const auto &tiles = map_data.tiles;
+		const auto width = map_data.width;
 
 		//generate a drawable array
-		Chunks.clear();
+		texture_layers.clear();
 
-		const auto settings = GetTileSettings();
+		const auto settings = resources::get_tile_settings();
 		const auto tile_size = settings->tile_size;
 
-		tile_count_t count = 0;
-
-		struct Tile {
-			hades::types::int32 x, y;
-			tile t;
+		local_bounds = rect_float{
+			0.f, 0.f,
+			static_cast<float>(width * tile_size),
+			static_cast<float>((tiles.size() / width) * tile_size)
 		};
 
-		std::vector<std::pair<const hades::resources::texture*, Tile>> map;
+		struct map_tile {
+			const resources::texture *texture = nullptr;
+			tile_count_t x{}, y{};
+			const resources::tile *tile = nullptr;
+		};
+
+		//collect info about each cell in the map
+		std::vector<map_tile> map;
 		std::vector<const hades::resources::texture*> tex_cache;
-		for (const auto &t : tiles)
+		for (auto i = std::size_t{}; i < std::size(tiles); ++i)
 		{
+			const auto &t = get_tile(map_data, tiles[i]);
+
 			//skip 'empty' tiles, no need to render a transparent texture
-			if (t.texture->id == id::empty_tile_texture)
-			{
-				++count;
+			if (!t.texture)
 				continue;
-			}
 
 			const hades::resources::texture* texture = nullptr;
 
@@ -312,17 +103,16 @@ namespace hades
 			}
 
 			assert(texture);
-			const auto [x, y] = GetGridPosition(count, width, tile_size);
+			const auto [x, y] = to_2d_position(i, width);
 
-			const Tile ntile{ x, y, t };
-			map.push_back(std::make_pair(texture, ntile));
-
-			count++;
+			const map_tile ntile{ texture, x * tile_size, y *tile_size, &t };
+			map.emplace_back(ntile);
 		}
 
 		//sort the tiles by texture;
 		std::sort(map.begin(), map.end(), [](const auto &lhs, const auto &rhs) {
-			return lhs.first < rhs.first;
+			constexpr auto less = std::less<const resources::texture*>{};
+			return less(lhs.first, rhs.first);
 		});
 
 		//whole map is tranparent
@@ -330,79 +120,82 @@ namespace hades
 		if (map.empty())
 			return;
 
-		auto current_tex = map.front().first;
-		VertexArray array;
+		auto current_tex = map.front().texture;
+		std::vector<sf::Vertex> v_array;
+		v_array.reserve(map.size() * std::tuple_size_v<poly_quad>);
+
+		auto finalise_layer = [](std::vector<texture_layer> &layers, const resources::texture *t, const std::vector<sf::Vertex> &v)
+		{
+			auto &l = layers.emplace_back(
+				texture_layer{
+					t,
+					vertex_buffer{sf::PrimitiveType::Triangles,sf::VertexBuffer::Usage::Static}
+				}
+			);
+
+			l.vertex.set_verts(v);
+		};
 
 		for (const auto &t : map)
 		{
-			//change array
-			if (t.first != current_tex)
+			//change array once we've added every tile with this texture
+			if (t.texture != current_tex)
 			{
-				Chunks.push_back(std::make_pair(current_tex, array));
-				current_tex = t.first;
-				array.clear();
+				finalise_layer(texture_layers, current_tex, v_array);
+
+				current_tex = t.texture;
+				v_array.clear();
 			}
+
+			//float_cast
+			const auto quad_rect = rect_float{
+				float_cast(t.x),
+				float_cast(t.y),
+				float_cast(t.x + tile_size),
+				float_cast(t.y + tile_size)
+			};
+
+			const auto text_rect = rect_float{
+				float_cast(t.tile->left),
+				float_cast(t.tile->top),
+				float_cast(t.tile->left + tile_size),
+				float_cast(t.tile->top + tile_size)
+			};
 
 			//set vertex position and tex coordinates
-			auto vertex_tile = CreateTile(t.second.x, t.second.y, t.second.t.left, t.second.t.top, tile_size);
+			const auto vertex_tile = make_quad_animation(quad_rect, text_rect);
+
 			for (const auto& v : vertex_tile)
-				array.push_back(v);
+				v_array.push_back(v);
 		}
 
-		Chunks.push_back(std::make_pair(current_tex, array));
+		finalise_layer(texture_layers, current_tex, v_array);
 	}
 
-	void TileMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	void immutable_tile_map::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		for (const auto &s : Chunks)
+		for (const auto &s : texture_layers)
 		{
-			states.texture = &s.first->value;
-			states.transform * getTransform();
-			target.draw(s.second.data(), s.second.size(), sf::Triangles, states);
+			states.texture = &s.texture->value;
+			target.draw(s.vertex, states);
 		}
 	}
 
-	sf::FloatRect TileMap::getLocalBounds() const
+	rect_float immutable_tile_map::get_local_bounds() const
 	{
-		if (Chunks.empty() || Chunks[0].second.empty())
-			return sf::FloatRect();
-
-		const auto &first = Chunks[0].second[0].position;
-
-		float top = first.y,
-			left = first.x,
-			right = first.x,
-			bottom = first.y;
-
-		for (const auto &varray : Chunks)
-		{
-			for (const auto &v : varray.second)
-			{
-				if (v.position.x > right)
-					right = v.position.x;
-				else if (v.position.x < left)
-					left = v.position.x;
-
-				if (v.position.y > bottom)
-					bottom = v.position.y;
-				else if (v.position.y < top)
-					top = v.position.y;
-			}
-		}
-
-		return sf::FloatRect(left, top, right - left, bottom - top);
+		return local_bounds;
 	}
 
 	//=========================================//
-	//				MutableTileMap			   //
+	//				mutable_tile_map			   //
 	//=========================================//
 
-	MutableTileMap::MutableTileMap(const MapData &map)
+	mutable_tile_map::mutable_tile_map(const MapData &map)
 	{
 		create(map);
 	}
 
-	void MutableTileMap::create(const MapData &map_data)
+	void mutable_tile_map::create(const MapData &map_data)
 	{
 		//store the tiles and width
 		_tiles = std::get<TileArray>(map_data);
@@ -411,7 +204,7 @@ namespace hades
 		const auto tile_settings = GetTileSettings();
 		_tile_size = tile_settings->tile_size;
 
-		TileMap::create(map_data);
+		immutable_tile_map::create(map_data);
 	}
 
 	sf::Vector2u InflatePosition(tile_count_t i, tile_count_t width)
@@ -422,12 +215,12 @@ namespace hades
 		return { x, y };
 	}
 
-	void MutableTileMap::update(const MapData &map_data)
+	void mutable_tile_map::update(const MapData &map_data)
 	{
 		const auto &[tiles, width] = map_data;
 		if (tiles.size() != _tiles.size()
 			|| width != _width)
-			throw tile_map_exception("TileMap::update must be called with a map of the same size and width");
+			throw tile_map_exception("immutable_tile_map::update must be called with a map of the same size and width");
 		
 		for (std::size_t i = 0; i < tiles.size(); ++i)
 		{
@@ -482,7 +275,7 @@ namespace hades
 		return changed;
 	}
 
-	void MutableTileMap::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
+	void mutable_tile_map::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
 	{
 		//ensure the tile has a valid texture obj
 		assert(t.texture);
@@ -503,27 +296,27 @@ namespace hades
 		}
 	}
 
-	MapData MutableTileMap::getMap() const
+	MapData mutable_tile_map::getMap() const
 	{
 		return { _tiles, _width };
 	}
 
-	void MutableTileMap::setColour(sf::Color c)
+	void mutable_tile_map::setColour(sf::Color c)
 	{
 		_colour = c;
-		for (auto &a : Chunks)
+		for (auto &a : texture_layers)
 		{
 			for (auto &v : a.second)
 				v.color = c;
 		}
 	}
 
-	void MutableTileMap::_updateTile(const sf::Vector2u &position, const tile &t)
+	void mutable_tile_map::_updateTile(const sf::Vector2u &position, const tile &t)
 	{
 		//find the array to place it in
-		vArray *targetArray = nullptr;
+		VertexArray *targetArray = nullptr;
 
-		for (auto &a : Chunks)
+		for (auto &a : texture_layers)
 		{
 			if (a.first == t.texture)
 			{
@@ -535,19 +328,19 @@ namespace hades
 		//create a new vertex array if needed
 		if (!targetArray)
 		{
-			Chunks.push_back({ t.texture, VertexArray() });
-			targetArray = &Chunks.back();
+			texture_layers.push_back({ t.texture, VertexArray() });
+			targetArray = &texture_layers.back();
 		}
 
 		//ensure a new array has been selected to place the tiles into
 		assert(targetArray);
 
 		//find the location of the current tile
-		vArray *currentArray = nullptr;
+		VertexArray *currentArray = nullptr;
 
 		const auto pixelPos = position * _tile_size;
 
-		for (auto &a : Chunks)
+		for (auto &a : texture_layers)
 		{
 			//check the that vertex array still has an expected number of elements
 			assert(a.second.size() % VertexPerTile == 0);
@@ -578,7 +371,7 @@ namespace hades
 		}
 	}
 
-	void MutableTileMap::_removeTile(VertexArray &a, const sf::Vector2u &position)
+	void mutable_tile_map::_removeTile(VertexArray &a, const sf::Vector2u &position)
 	{
 		const auto pixelPos = position * _tile_size;
 		VertexArray::const_iterator target = a.cend();
@@ -595,7 +388,7 @@ namespace hades
 		a.erase(target, target + VertexPerTile);
 	}
 
-	void MutableTileMap::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
+	void mutable_tile_map::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
 	{
 		auto &vertArray = a;
 		std::size_t firstVert = vertArray.size();
@@ -613,7 +406,7 @@ namespace hades
 		//this is a big error
 		if (firstVert == vertArray.size())
 		{
-			LOGERROR("TileMap; unable to find vertex for modification");
+			LOGERROR("immutable_tile_map; unable to find vertex for modification");
 			throw std::logic_error("failed to find needed vertex");
 		}
 
@@ -626,7 +419,7 @@ namespace hades
 			vertArray[i] = newQuad[i - firstVert];
 	}
 
-	void MutableTileMap::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
+	void mutable_tile_map::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
 	{
 		const auto pixelPos = position * _tile_size;
 		const auto newQuad = CreateTile(pixelPos.x, pixelPos.y, t.left, t.top, _tile_size);

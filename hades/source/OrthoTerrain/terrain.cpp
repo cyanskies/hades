@@ -76,7 +76,7 @@ namespace ortho_terrain
 	{
 		assert(!map.empty());
 		if (map[0].size() % width != 0)
-			throw exception("TileMap is not rectangular, map width: " + hades::to_string(width) + ", tile_count: " + hades::to_string(map[0].size()));
+			throw exception("immutable_tile_map is not rectangular, map width: " + hades::to_string(width) + ", tile_count: " + hades::to_string(map[0].size()));
 
 		const auto coloumns = map[0].size() / width;
 
@@ -261,7 +261,7 @@ namespace ortho_terrain
 			throw exception("Map malformed, should contain a layer for each terrain in terrainset");
 
 		for (const auto &l : map.tile_map_stack)
-			Map.emplace_back(tiles::TileMap({ l, width }));
+			Map.emplace_back(tiles::immutable_tile_map({ l, width }));
 	}
 
 	void TerrainMap::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -270,7 +270,7 @@ namespace ortho_terrain
 			l.draw(target, states);
 	}
 	
-	sf::FloatRect GetBounds(const std::vector<const tiles::TileMap*> &map)
+	sf::FloatRect GetBounds(const std::vector<const tiles::immutable_tile_map*> &map)
 	{
 		if (map.empty())
 			return sf::FloatRect{};
@@ -292,7 +292,7 @@ namespace ortho_terrain
 
 	sf::FloatRect TerrainMap::getLocalBounds() const
 	{
-		std::vector<const tiles::TileMap*> map;
+		std::vector<const tiles::immutable_tile_map*> map;
 		for (const auto &layer : Map)
 			map.emplace_back(&layer);
 
@@ -337,7 +337,7 @@ namespace ortho_terrain
 
 		_terrain_layers.clear();
 		for (const auto &tiles : new_map)
-			_terrain_layers.emplace_back(tiles::MutableTileMap{ {std::get<tiles::TileArray>(tiles), width} });
+			_terrain_layers.emplace_back(tiles::mutable_tile_map{ {std::get<tiles::TileArray>(tiles), width} });
 
 		std::swap(new_map, _tile_layers);
 		std::swap(verts, _vdata);
@@ -389,7 +389,7 @@ namespace ortho_terrain
 		));
 
 		for (const auto &tiles : t_array)
-			_terrain_layers.emplace_back(tiles::MutableTileMap{ {tiles, width} });
+			_terrain_layers.emplace_back(tiles::mutable_tile_map{ {tiles, width} });
 
 		//apply colour if it's already been set
 		setColour(_colour);
@@ -403,7 +403,7 @@ namespace ortho_terrain
 
 	sf::FloatRect MutableTerrainMap::getLocalBounds() const
 	{
-		std::vector<const tiles::TileMap*> map;
+		std::vector<const tiles::immutable_tile_map*> map;
 		for (const auto &layer : _terrain_layers)
 			map.emplace_back(&layer);
 

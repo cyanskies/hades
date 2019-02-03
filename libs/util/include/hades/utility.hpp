@@ -61,6 +61,14 @@ namespace hades {
 	template<typename T, typename U>
 	constexpr T integer_clamp_cast(U) noexcept;
 
+	//converts an integer type to a float type
+	//throws overflow_error if the value would not fin in the new range
+	template<typename T = float, typename U>
+	constexpr T float_cast(U);
+
+	template<typename T = float, typename U>
+	constexpr T float_clamp_cast(U) noexcept;
+
 	template<typename T>
 	T random(T min, T max);
 

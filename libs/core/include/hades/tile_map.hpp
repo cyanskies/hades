@@ -34,6 +34,7 @@ namespace hades
 	};
 
 	//an immutable type for drawing tile_map instances
+	//this is much more performant that the variant that supports changing the map
 	class immutable_tile_map : public sf::Drawable
 	{
 	public:
@@ -52,8 +53,11 @@ namespace hades
 		struct texture_layer
 		{
 			const resources::texture *texture = nullptr;
-			vertex_buffer vertex;
+			std::vector<sf::Vertex> vertex;
+			vertex_buffer buffer;
 		};
+
+		void create(const tile_map&, sf::VertexBuffer::Usage);
 
 		std::vector<texture_layer> texture_layers;
 		rect_float local_bounds;
@@ -65,30 +69,25 @@ namespace hades
 	{
 	public:
 		mutable_tile_map() = default;
-		mutable_tile_map(const MapData&);
+		mutable_tile_map(const tile_map&);
 
-		void create(const MapData&) override;
-		void update(const MapData&);
-		//draw over a tile
-		//amount is the number of rows of adjacent tiles to replace as well.
-		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const tile&, const sf::Vector2i &position, draw_size_t amount = 0);
-
-		void setColour(sf::Color c);
-
-		MapData getMap() const;
+		void create(const tile_map&) override;
+		void update(const tile_map&);
+		
+		//replaces the tiles in the listed positions with tile&
+		//use the helpers in tiles.hpp to create position vectors in various shapes
+		void place_tile(tile_position, const resources::tile&);
+		void place_tile(const std::vector<tile_position>&, const resources::tile&);
+		
+		tile_map get_map() const;
 
 	private:
-		void _updateTile(const sf::Vector2u &position, const tile &t);
-		void _replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t);
-		void _removeTile(VertexArray &a, const sf::Vector2u &position);
-		void _addTile(VertexArray &a, const sf::Vector2u &position, const tile& t);
+		void _update_tile(tile_position, const resources::tile&);
+		void _replace_tile(texture_layer&, tile_position, const resources::tile&);
+		void _remove_tile(texture_layer&, tile_position);
+		void _add_tile(texture_layer&, tile_position, const resources::tile&);
 
-		tile_size_t _tile_size;
-		tile_count_t _width;
-		TileArray _tiles;
-		sf::Color _colour = sf::Color::White;
-		tile_count_t _vertex_width;
+		tile_map _tiles;
 	};
 }
 

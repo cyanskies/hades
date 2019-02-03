@@ -46,7 +46,7 @@ namespace hades
 		create(map);
 	}
 
-	std::tuple<tile_count_t, tile_count_t> to_2d_position(tile_count_t width, std::size_t index)
+	vector_t<tile_count_t> to_2d_position(tile_count_t width, std::size_t index)
 	{
 		return {
 			index % width,
@@ -55,6 +55,25 @@ namespace hades
 	}
 
 	void immutable_tile_map::create(const tile_map &map_data)
+	{
+		create(map_data, sf::VertexBuffer::Usage::Static);
+	}
+
+	void immutable_tile_map::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	{
+		for (const auto &s : texture_layers)
+		{
+			states.texture = &s.texture->value;
+			target.draw(s.buffer, states);
+		}
+	}
+
+	rect_float immutable_tile_map::get_local_bounds() const
+	{
+		return local_bounds;
+	}
+
+	void immutable_tile_map::create(const tile_map &map_data, sf::VertexBuffer::Usage usage)
 	{
 		const auto &tiles = map_data.tiles;
 		const auto width = map_data.width;
@@ -103,9 +122,9 @@ namespace hades
 			}
 
 			assert(texture);
-			const auto [x, y] = to_2d_position(i, width);
+			const auto p = to_2d_position(i, width);
 
-			const map_tile ntile{ texture, x * tile_size, y *tile_size, &t };
+			const map_tile ntile{ texture, p.x * tile_size, p.y *tile_size, &t };
 			map.emplace_back(ntile);
 		}
 
@@ -124,16 +143,19 @@ namespace hades
 		std::vector<sf::Vertex> v_array;
 		v_array.reserve(map.size() * std::tuple_size_v<poly_quad>);
 
-		auto finalise_layer = [](std::vector<texture_layer> &layers, const resources::texture *t, const std::vector<sf::Vertex> &v)
+		auto finalise_layer = [](std::vector<texture_layer> &layers,
+			const resources::texture *t, const std::vector<sf::Vertex> &v,
+			sf::VertexBuffer::Usage u)
 		{
 			auto &l = layers.emplace_back(
 				texture_layer{
 					t,
-					vertex_buffer{sf::PrimitiveType::Triangles,sf::VertexBuffer::Usage::Static}
+					v,
+					vertex_buffer{sf::PrimitiveType::Triangles, u}
 				}
 			);
 
-			l.vertex.set_verts(v);
+			l.buffer.set_verts(l.vertex);
 		};
 
 		for (const auto &t : map)
@@ -141,7 +163,7 @@ namespace hades
 			//change array once we've added every tile with this texture
 			if (t.texture != current_tex)
 			{
-				finalise_layer(texture_layers, current_tex, v_array);
+				finalise_layer(texture_layers, current_tex, v_array, usage);
 
 				current_tex = t.texture;
 				v_array.clear();
@@ -169,87 +191,43 @@ namespace hades
 				v_array.push_back(v);
 		}
 
-		finalise_layer(texture_layers, current_tex, v_array);
-	}
-
-	void immutable_tile_map::draw(sf::RenderTarget& target, sf::RenderStates states) const
-	{
-		for (const auto &s : texture_layers)
-		{
-			states.texture = &s.texture->value;
-			target.draw(s.vertex, states);
-		}
-	}
-
-	rect_float immutable_tile_map::get_local_bounds() const
-	{
-		return local_bounds;
+		finalise_layer(texture_layers, current_tex, v_array, usage);
 	}
 
 	//=========================================//
 	//				mutable_tile_map			   //
 	//=========================================//
 
-	mutable_tile_map::mutable_tile_map(const MapData &map)
+	constexpr auto vertex_usage = sf::VertexBuffer::Usage::Dynamic;
+
+	mutable_tile_map::mutable_tile_map(const tile_map &map)
 	{
 		create(map);
 	}
 
-	void mutable_tile_map::create(const MapData &map_data)
+	void mutable_tile_map::create(const tile_map &map_data)
 	{
 		//store the tiles and width
-		_tiles = std::get<TileArray>(map_data);
-		_width = std::get<tile_count_t>(map_data);
-
-		const auto tile_settings = GetTileSettings();
-		_tile_size = tile_settings->tile_size;
-
-		immutable_tile_map::create(map_data);
+		_tiles = map_data;
+		immutable_tile_map::create(map_data, vertex_usage);
 	}
 
-	sf::Vector2u InflatePosition(tile_count_t i, tile_count_t width)
+	void mutable_tile_map::update(const tile_map &map)
 	{
-		const auto x = i % width;
-		const auto y = i / width;
-
-		return { x, y };
-	}
-
-	void mutable_tile_map::update(const MapData &map_data)
-	{
-		const auto &[tiles, width] = map_data;
-		if (tiles.size() != _tiles.size()
-			|| width != _width)
-			throw tile_map_exception("immutable_tile_map::update must be called with a map of the same size and width");
+		if (map.tiles.size() != _tiles.tiles.size()
+			|| map.width != _tiles.width)
+			throw tile_map_error("immutable_tile_map::update must be called with a map of the same size and width");
 		
-		for (std::size_t i = 0; i < tiles.size(); ++i)
+		for (auto i = std::size_t{}; i < map.tiles.size(); ++i)
 		{
-			if(tiles[i] != _tiles[i])
-				_updateTile(InflatePosition(i, width), tiles[i]);
+			if (map.tiles[i] != _tiles.tiles[i])
+			{
+				const auto &t = get_tile(map, i);
+				_update_tile(to_2d_position(map.width, i), t);
+			}
 		}
 
-		_tiles = tiles;
-	}
-
-	std::vector<sf::Vector2i> AllPositions(const sf::Vector2i &position, tiles::draw_size_t amount)
-	{
-		if (amount == 0)
-			return { position };
-
-		const auto end = position +
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::floor(amount / 2.f), std::floor(amount / 2.f) });
-		const auto start_position = sf::Vector2i(position) -
-			static_cast<sf::Vector2i>(sf::Vector2f{ std::ceil(amount / 2.f), std::ceil(amount / 2.f) });
-
-		std::vector<sf::Vector2i> positions;
-
-		for (auto r = start_position.x; r < end.x; ++r)
-		{
-			for (auto c = start_position.y; c < end.y; ++c)
-				positions.push_back({ r, c });
-		}
-
-		return positions;
+		_tiles = map;
 	}
 
 	tile_count_t FlatPosition(const sf::Vector2u &position, tile_count_t width)
@@ -275,80 +253,73 @@ namespace hades
 		return changed;
 	}
 
-	void mutable_tile_map::replace(const tile& t, const sf::Vector2i &position,draw_size_t amount)
+	void mutable_tile_map::place_tile(tile_position p, const resources::tile &t)
 	{
-		//ensure the tile has a valid texture obj
-		assert(t.texture);
-
-		const auto positions = AllPositions(position, amount);
-
-		for (const auto &p : positions)
-		{
-			const auto position = sf::Vector2u(p);
-			//tried to place a tile outside the map
-			if (!IsWithin(_tiles, position, _width))
-				continue;
-
-			_updateTile(position, t);
-
-			//write the tile to the tile vector
-			Write(_tiles, position, _width, t);
-		}
+		hades::place_tile(_tiles, p, t);
+		_update_tile(p, t);
 	}
 
-	MapData mutable_tile_map::getMap() const
+	void mutable_tile_map::place_tile(const std::vector<tile_position> &positions, const resources::tile &t)
 	{
-		return { _tiles, _width };
+		hades::place_tile(_tiles, positions, t);
+		
+		for(auto p : positions)
+			_update_tile(p, t);
 	}
 
-	void mutable_tile_map::setColour(sf::Color c)
+	tile_map mutable_tile_map::get_map() const
 	{
-		_colour = c;
-		for (auto &a : texture_layers)
-		{
-			for (auto &v : a.second)
-				v.color = c;
-		}
+		return _tiles;
 	}
 
-	void mutable_tile_map::_updateTile(const sf::Vector2u &position, const tile &t)
+	void mutable_tile_map::_update_tile(tile_position p, const resources::tile &t)
 	{
 		//find the array to place it in
-		VertexArray *targetArray = nullptr;
+		texture_layer *layer = nullptr;
 
 		for (auto &a : texture_layers)
 		{
-			if (a.first == t.texture)
+			if (a.texture == t.texture)
 			{
-				targetArray = &a;
+				layer = &a;
 				break;
 			}
 		}
 
 		//create a new vertex array if needed
-		if (!targetArray)
+		if (!layer)
 		{
-			texture_layers.push_back({ t.texture, VertexArray() });
-			targetArray = &texture_layers.back();
+			texture_layer l{ t.texture };
+			l.buffer = vertex_buffer{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Dynamic };
+
+			layer = &texture_layers.emplace_back(l);
 		}
 
 		//ensure a new array has been selected to place the tiles into
-		assert(targetArray);
+		assert(layer);
 
 		//find the location of the current tile
-		VertexArray *currentArray = nullptr;
+		texture_layer *current_layer = nullptr;
 
-		const auto pixelPos = position * _tile_size;
+		const auto tile_size = resources::get_tile_settings()->tile_size;
 
-		for (auto &a : texture_layers)
+		const auto pixel_pos = p * signed_cast(tile_size);
+
+		constexpr auto vert_per_tile = std::tuple_size_v<poly_quad>;
+
+		for (auto &l : texture_layers)
 		{
-			//check the that vertex array still has an expected number of elements
-			assert(a.second.size() % VertexPerTile == 0);
-			for (std::size_t i = 0; i != a.second.size(); i += VertexPerTile)
+			for (auto i = std::size_t{}; i != l.vertex.size(); i += vert_per_tile)
 			{
-				if (static_cast<sf::Vector2u>(a.second[i].position) == pixelPos)
+				//TODO: is this a safe conversion?
+				vector_int p{
+					l.vertex[i].position.x,
+					l.vertex[i].position.y
+				};
+
+				if (p == pixel_pos)
 				{
-					currentArray = &a;
+					current_layer = &l;
 					break;
 				}
 			}
@@ -356,129 +327,117 @@ namespace hades
 
 		//if the arrays are the same, then replace the quad
 		//otherwise remove the quad from the old array and insert into the new one
-		if (currentArray == targetArray)
+		if (layer == current_layer)
 		{
-			_replaceTile(targetArray->second, position, t);
+			_replace_tile(*layer, p, t);
 		}
-		else if (currentArray)
+		else if (current_layer)
 		{
-			_removeTile(currentArray->second, position);
-			_addTile(targetArray->second, position, t);
+			_remove_tile(*current_layer, p);
+			_add_tile(*layer, p, t);
 		}
 		else // tile isn't currently in an array, just add the tile
 		{
-			_addTile(targetArray->second, position, t);
+			_add_tile(*layer, p, t);
 		}
 	}
 
-	void mutable_tile_map::_removeTile(VertexArray &a, const sf::Vector2u &position)
+	void mutable_tile_map::_remove_tile(texture_layer &l, tile_position p)
 	{
-		const auto pixelPos = position * _tile_size;
-		VertexArray::const_iterator target = a.cend();
+		const auto tile_size = resources::get_tile_settings()->tile_size;
+		const auto pixel_pos = p * signed_cast(tile_size);
+		auto target = std::cend(l.vertex);
 
-		for (auto iter = a.cbegin(); iter != a.cend(); iter += VertexPerTile)
+		constexpr auto verts_per_tile = std::tuple_size_v<poly_quad>;
+		for (auto iter = std::cbegin(l.vertex); iter != std::cend(l.vertex); iter += verts_per_tile)
 		{
-			if (pixelPos == static_cast<sf::Vector2u>(iter->position))
+			auto p = vector_int{
+				iter->position.x,
+				iter->position.y
+			};
+
+			if (pixel_pos == p)
+			{
+				target = iter;
+				break;
+			}
+		}
+		auto end = target;
+		std::advance(end, verts_per_tile);
+		l.vertex.erase(target, end);
+		l.buffer.set_verts(l.vertex);
+	}
+
+	void mutable_tile_map::_replace_tile(texture_layer &l, tile_position p, const resources::tile &t)
+	{
+		auto target = std::end(l.vertex);
+		const auto tile_size = resources::get_tile_settings()->tile_size;
+		const auto pixel_pos = p * signed_cast(tile_size);
+		constexpr auto verts_per_tile = std::tuple_size_v<poly_quad>;
+		for (auto iter = std::begin(l.vertex); iter != std::end(l.vertex); std::advance(iter, verts_per_tile))
+		{
+			const auto p = vector_int{
+				iter->position.x,
+				iter->position.y
+			};
+
+			if (p == pixel_pos)
 			{
 				target = iter;
 				break;
 			}
 		}
 
-		a.erase(target, target + VertexPerTile);
-	}
-
-	void mutable_tile_map::_replaceTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
-	{
-		auto &vertArray = a;
-		std::size_t firstVert = vertArray.size();
-		const auto vertPosition = position * _tile_size;
-		for (std::size_t i = 0; i < firstVert; i += VertexPerTile)
-		{
-			if (static_cast<sf::Vector2u>(vertArray[i].position) == vertPosition)
-			{
-				firstVert = i;
-				break;
-			}
-		}
-
 		//vertex position not found
 		//this is a big error
-		if (firstVert == vertArray.size())
+		if (target == std::end(l.vertex))
 		{
-			LOGERROR("immutable_tile_map; unable to find vertex for modification");
-			throw std::logic_error("failed to find needed vertex");
+			throw tile_map_error("failed to find needed vertex");
 		}
 
-		auto newQuad = CreateTile(vertPosition.x, vertPosition.y, t.left, t.top, _tile_size);
+		const auto rect = rect_float{
+			pixel_pos.x,
+			pixel_pos.y,
+			pixel_pos.x + tile_size,
+			pixel_pos.y + tile_size
+		};
 
-		for (auto &v : newQuad)
-			v.color = _colour;
+		const auto tex_rect = rect_float{
+			t.left,
+			t.top,
+			t.left + tile_size,
+			t.top + tile_size
+		};
 
-		for (auto i = firstVert; i < firstVert + VertexPerTile; ++i)
-			vertArray[i] = newQuad[i - firstVert];
+		const auto quad = make_quad_animation(rect, tex_rect);
+		std::copy(std::begin(quad), std::end(quad), target);
+
+		l.buffer.set_verts(l.vertex);
 	}
 
-	void mutable_tile_map::_addTile(VertexArray &a, const sf::Vector2u &position, const tile& t)
+	void mutable_tile_map::_add_tile(texture_layer &l, tile_position p, const resources::tile &t)
 	{
-		const auto pixelPos = position * _tile_size;
-		const auto newQuad = CreateTile(pixelPos.x, pixelPos.y, t.left, t.top, _tile_size);
+		const auto tile_size = resources::get_tile_settings()->tile_size;
+		const auto pixel_pos = p * signed_cast(tile_size);
 
-		for (const auto &q : newQuad)
-			a.push_back(q);
-	}
+		const auto quad_rect = rect_float{
+			pixel_pos.x,
+			pixel_pos.y,
+			pixel_pos.x + tile_size,
+			pixel_pos.y + tile_size
+		};
 
-	const resources::tile_settings *GetTileSettings()
-	{
-		if (id::tile_settings == hades::unique_id::zero)
-		{
-			const auto message = "tile-settings undefined. GetTileSettings()";
-			LOGERROR(message)
-			throw tile_map_exception(message);
-		}
+		const auto tex_rect = rect_float{
+			t.left,
+			t.top,
+			t.left + tile_size,
+			t.top + tile_size
+		};
 
-		try
-		{
-			return hades::data::get<resources::tile_settings>(id::tile_settings);
-		}
-		catch (hades::data::resource_wrong_type&)
-		{
-			const auto message = "The UID for the tile settings has been reused for another resource type";
-			LOGERROR(message);
-			throw tile_map_exception(message);
-		}
-	}
+		const auto quad = make_quad_animation(quad_rect, tex_rect);
 
-	const TileArray &GetErrorTileset()
-	{
-		const auto settings = GetTileSettings();
-		if (!settings->error_tileset)
-		{
-			LOGWARNING("No error tileset");
-			const auto backup_tileset = hades::data::get<resources::tileset>(resources::Tilesets.front());
-			return backup_tileset->tiles;
-		}
-
-		return settings->error_tileset->tiles;
-	}
-
-	tile GetErrorTile()
-	{
-		const auto tset = GetErrorTileset();
-		if (tset.empty())
-			return tile();
-
-		const auto i = hades::random(0u, tset.size() - 1);
-		return tset[i];
-	}
-
-	tile GetEmptyTile()
-	{
-		static const auto tile_settings = GetTileSettings();
-		assert(!tile_settings->empty_tileset->tiles.empty());
-		static const auto t = tile_settings->empty_tileset->tiles.front();
-
-		return t;
+		std::copy(std::begin(quad), std::end(quad), std::back_inserter(l.vertex));
+		l.buffer.set_verts(l.vertex);
 	}
 
 	constexpr auto tiles = "tiles";

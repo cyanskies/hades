@@ -439,13 +439,19 @@ namespace hades
 
 		assert(a.tex);
 
-		return image_button(
+		//push the animation address, so that animations with the same texture
+		// dont have the same id
+		push_id(&a);
+		auto result = image_button(
 			*a.tex,
 			rect_float{ x, y, float_cast(a.width), float_cast(a.height) },
 			size,
 			background_colour,
 			tint_colour
 		);
+		pop_id();
+
+		return result;
 	}
 
 	bool gui::checkbox(std::string_view label, bool &checked)

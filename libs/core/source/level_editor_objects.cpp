@@ -200,10 +200,12 @@ namespace hades
 			else
 				name = data::get_as_string(o->id);
 
+			g.push_id(o);
 			if (const auto ico = get_editor_icon(*o); ico)
 				clicked = g.image_button(*ico, button_size);	
 			else
 				clicked = g.button(name, button_size_no_img);
+			g.pop_id();
 
 			g.tooltip(name);
 

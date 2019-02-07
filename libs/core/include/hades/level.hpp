@@ -6,6 +6,7 @@
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
 #include "hades/curve.hpp"
+#include "hades/tiles.hpp"
 #include "hades/uniqueid.hpp"
 
 // a level is a playable area
@@ -61,8 +62,10 @@ namespace hades
 		//trigger regions
 		std::vector<region> regions;
 
-		//TODO: tilemaps
-		//TODO: terrain
+		//tile map
+		raw_map tile_map_layer;
+		
+		//terrain map
 	};
 
 	struct level_save

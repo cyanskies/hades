@@ -76,7 +76,6 @@ namespace hades
 		
 		//replaces the tiles in the listed positions with tile&
 		//use the helpers in tiles.hpp to create position vectors in various shapes
-		void place_tile(tile_position, const resources::tile&);
 		void place_tile(const std::vector<tile_position>&, const resources::tile&);
 		
 		tile_map get_map() const;

@@ -20,9 +20,6 @@ namespace hades::resources
 		//    object-groups:
 		//        group-name: [elms, elms]
 
-		if (object_settings_id == unique_id::zero)
-			object_settings_id = unique_id{};
-
 		auto settings = d.find_or_create<level_editor_object_settings>(object_settings_id, mod);
 
 		const auto object_groups = node.get_child("object-groups"sv);
@@ -57,6 +54,11 @@ namespace hades
 		register_objects(d);
 
 		d.register_resource_type(level_editor_object_resource_name, resources::parse_level_editor_object_resource);
+
+		//create default settings object
+		object_settings_id = unique_id{};
+		d.find_or_create<resources::level_editor_object_settings>(object_settings_id, unique_id::zero);
+
 	}
 
 	level_editor_objects::level_editor_objects() :
@@ -179,11 +181,13 @@ namespace hades
 
 		g.indent();
 
+		const auto indent_amount = g.get_item_rect_max().x;
+
 		auto x2 = 0.f;
 		for (const auto o : objects)
 		{
 			const auto new_x2 = x2 + button_size.x;
-			if (new_x2 < toolbox_width)
+			if (indent_amount + new_x2 < toolbox_width)
 				g.layout_horizontal();
 			else
 				g.indent();
@@ -243,6 +247,8 @@ namespace hades
 
 		g.main_toolbar_end();
 
+		//TODO
+		//if(*)
 		g.window_begin(editor::gui_names::toolbox);
 
 		const auto toolbox_width = g.get_item_rect_max().x;
@@ -252,8 +258,8 @@ namespace hades
 			g.checkbox("show objects"sv, _show_objects);
 			g.checkbox("allow_intersection"sv, _allow_intersect);
 
-			constexpr auto all_str = "all"sv;
-			constexpr auto all_index = 0u;
+			/*constexpr auto all_str = "all"sv;
+			constexpr auto all_index = 0u;*/
 			auto on_click_object = [this](const resources::object *o) {
 				activate_brush();
 				_brush_type = brush_type::object_place;

@@ -13,6 +13,7 @@
 #include "hades/level_editor_objects.hpp"
 #include "hades/level_editor_level_properties.hpp"
 #include "hades/level_editor_regions.hpp"
+#include "hades/level_editor_tiles.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/state.hpp"
@@ -135,6 +136,7 @@ namespace hades
 	//standard level editor
 	using level_editor = basic_level_editor<
 		level_editor_level_props,
+		level_editor_tiles,
 		level_editor_objects,
 		level_editor_regions,
 		level_editor_grid

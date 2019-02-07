@@ -150,7 +150,7 @@ namespace hades::data
 		{
 			const auto property_node = node.get_child(property_name);
 			if (property_node)
-				return property_node->to_sequence<T>(std::move(current_value), convert);
+				return property_node->merge_sequence<T>(std::move(current_value), convert);
 			else
 				return current_value;
 		}

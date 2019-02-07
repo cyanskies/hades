@@ -12,16 +12,18 @@ tile-settings:
 
 tilesets:
     example-tileset:
-        texture: tiles-tex
-        tiles:
-            top: 0
-            left: 0
-            tiles_per_row: 1
-            tile_count: 1
+        - {
+            texture: tiles-tex,
+            top: 0,
+            left: 0,
+            tiles-per-row: 1,
+            tile-count: 1,
+        }
     example-tileset2:
-        texture: tiles-tex
-        tiles:
-            top: 0
-            left: 8
-            tiles_per_row: 8
-            tile_count: 32
+        - {
+            texture: tiles-tex,
+            top: 0,
+            left: 8,
+            tiles-per-row: 8,
+            tile-count: 32,
+        }

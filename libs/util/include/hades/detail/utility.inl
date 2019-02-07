@@ -163,36 +163,13 @@ namespace hades
 	}
 
 	template<typename T, typename U>
-	constexpr T float_cast(U i)
+	constexpr T float_cast(U i) noexcept
 	{
 		static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
 		static_assert(std::is_integral_v<U>, "float cast only converts integers");
 
-		if (i > static_cast<U>(std::numeric_limits<T>::max()))
-			throw overflow_error{ "overflow_error value is larger than target type can hold" };
-
-		//floats are always signed, but our integer might not be
-		//if the integer in unsigned then the lower bound isn't an issue
-		if constexpr (std::is_signed_v<U>)
-			if(i < static_cast<U>(std::numeric_limits<T>::min()))
-				throw overflow_error{ "overflow_error value is larger than target type can hold" };
-
-		return static_cast<T>(i);
-	}
-
-	template<typename T, typename U>
-	constexpr T float_clamp_cast(U) noexcept
-	{
-		static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
-		static_assert(std::is_integral_v<U>, "float cast only converts integers");
-
-		if (i > static_cast<U>(std::numeric_limits<T>::max()))
-			return std::numeric_limits<T>::max();
-
-		if constexpr (std::is_signed_v<U>)
-			if (i < static_cast<U>(std::numeric_limits<T>::min()))
-				std::numeric_limits<T>::min();
-
+		//float can store values larger than any integer
+		//TODO: I'd like to detect severe loss of precision and warn, but i don't know how
 		return static_cast<T>(i);
 	}
 
@@ -212,7 +189,10 @@ namespace hades
 	template<typename Iter>
 	typename std::iterator_traits<Iter>::reference random_element(Iter first, Iter last)
 	{
-		const auto dist = std::distance(first, last);
+		if (first == last)
+			return *first;
+
+		const auto dist = std::distance(first, last) - 1;
 		const auto target = random(decltype(dist){}, dist);
 
 		std::advance(first, target);

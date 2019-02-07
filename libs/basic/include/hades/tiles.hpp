@@ -4,8 +4,10 @@
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
 #include "hades/math.hpp"
+#include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/vector_math.hpp"
+#include "hades/writer.hpp"
 
 // system for working with logical tiles
 // editing a tilemap, and getting tag_lists from the map
@@ -79,6 +81,8 @@ namespace hades::resources
 	const tile_settings *get_tile_settings();
 	const tile &get_error_tile();
 	const tile &get_empty_tile();
+
+	unique_id get_tile_settings_id() noexcept;
 }
 
 //tile_map system
@@ -118,6 +122,10 @@ namespace hades
 		std::vector<tile_count_t> tiles;
 		tile_count_t width;
 	};
+
+	//read and write raw maps
+	void write_raw_map(const raw_map&, data::writer&);
+	raw_map read_raw_map(const data::parser_node&);
 
 	//this is a map that can be used for game logic
 	struct tile_map

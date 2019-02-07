@@ -20,33 +20,11 @@ set(HADES_SRC
 	yaml_parser.cpp
 	yaml_writer.cpp
 	Objects/resources.cpp
-	OrthoTerrain/terrain.cpp
-	OrthoTerrain/utility.cpp
-	OrthoTerrain/generator.cpp
-	OrthoTerrain/resources.cpp
-	Tiles/generator.cpp
-	Tiles/resources.cpp
-	Tiles/serialise.cpp
-	Tiles/tiles.cpp
 )
-
-source_group("Tiles" FILES
-	Tiles/editor.cpp
-	Tiles/generator.cpp
-	Tiles/resources.cpp
-	Tiles/serialise.cpp
-	Tiles/tiles.cpp)
 
 source_group("Objects" FILES
 	Objects/editor.cpp
 	Objects/resources.cpp)
-
-source_group("OrthoTerrain" FILES
-	OrthoTerrain/editor.cpp
-	OrthoTerrain/terrain.cpp
-	OrthoTerrain/utility.cpp
-	OrthoTerrain/generator.cpp
-	OrthoTerrain/resources.cpp)
 
 # Library to build
 set(HADES_LIB ${PROJECT_NAME})

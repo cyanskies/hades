@@ -82,7 +82,7 @@ namespace hades::data
 			const std::vector<unique_id> &default_value);
 
 		std::vector<unique_id> merge_unique_sequence(const parser_node &node, std::string_view property_name,
-			const std::vector<unique_id> &current_value);
+			std::vector<unique_id> current_value);
 
 		template<class T, typename ConversionFunc = nullptr_t>
 		std::vector<T> get_sequence(const parser_node &node, std::string_view property_name,

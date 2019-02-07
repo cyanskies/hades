@@ -341,6 +341,7 @@ void hades::register_level_editor_resources(data::data_manager &d)
 {
 	register_background_resource(d); //used by level_editor_level_properties
 	register_level_editor_object_resources(d);
+	register_level_editor_tiles_resources(d);
 }
 
 void hades::create_level_editor_console_vars()

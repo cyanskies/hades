@@ -1,102 +1,254 @@
-#ifndef HADES_LEVEL_EDITOR_REGIONS_HPP
-#define HADES_LEVEL_EDITOR_REGIONS_HPP
+#include "hades/level_editor_tiles.hpp"
 
-#include <array>
-#include <vector>
-
-#include "SFML/Graphics/RectangleShape.hpp"
-#include "SFML/Graphics/Text.hpp"
-
-#include "hades/collision.hpp"
-#include "hades/font.hpp"
-#include "hades/level.hpp"
-#include "hades/level_editor_component.hpp"
-#include "hades/level_editor_grid.hpp"
-#include "hades/math.hpp"
-#include "hades/properties.hpp"
+#include "hades/gui.hpp"
+#include "hades/mouse_input.hpp"
+#include "hades/tiles.hpp"
 
 namespace hades
 {
-	void create_level_editor_regions_variables();
-
-	class level_editor_regions final : public level_editor_component
+	void register_level_editor_tiles_resources(data::data_manager &d)
 	{
-	public:
-		struct region
+		register_tile_map_resources(d);
+	}
+
+	level_editor_tiles::level_editor_tiles()
+		: _settings{resources::get_tile_settings()}
+	{}
+
+	level level_editor_tiles::level_new(level l) const
+	{
+		const auto tile_size = _settings->tile_size;
+		const auto size = vector_int{
+			signed_cast(l.map_x / tile_size),
+			signed_cast(l.map_y / tile_size)
+		};
+
+		if (size.x * tile_size != l.map_x ||
+			size.y * tile_size != l.map_y)
+			LOGWARNING("new map size must be a multiple of tile size: [" +
+				to_string(tile_size) + "], will be adjusted to the a valid value");
+
+		const auto &tile = 
+			_new_options.tile ? *_new_options.tile : resources::get_empty_tile();
+
+		const auto map = make_map(size, tile);
+		l.tile_map_layer = to_raw_map(map);
+
+		return l;
+	}
+
+	void level_editor_tiles::level_load(const level &l)
+	{
+		_level_size = { l.map_x, l.map_y };
+
+		const auto tile_size = _settings->tile_size;
+		const auto size = vector_int{
+			signed_cast(l.map_x / tile_size),
+			signed_cast(l.map_y / tile_size)
+		};
+
+		if (size.x * tile_size != l.map_x ||
+			size.y * tile_size != l.map_y)
+			LOGWARNING("loaded map size must be a multiple of tile size: [" + 
+				to_string(tile_size) + "], level will be adjusted to a valid value");
+
+		if (l.tile_map_layer.tiles.empty())
 		{
-			sf::RectangleShape shape;
-			sf::Text name;
-		};
-
-		using container_t = std::vector<region>;
-		using index_t = container_t::size_type;
-
-		struct region_edit
+			const auto map = make_map(size, resources::get_empty_tile());
+			_tiles.create(map);
+		}
+		else
 		{
-			using array_t = std::array<sf::RectangleShape, 12u>;
+			const auto map = to_tile_map(l.tile_map_layer);
+			_tiles.create(map);
+		}
+	}
 
-			constexpr static auto nothing_selected = 
-				std::numeric_limits<index_t>::max();
-			index_t selected = nothing_selected;
-			rect_corners held_corner{};
-			direction held_edge{};
-			string name;
-			array_t selection_lines;
-			vector_float drag_offset;
-		};
+	level level_editor_tiles::level_save(level l) const
+	{
+		return l;
+	}
 
-		level_editor_regions();
+	template<typename OnClick>
+	static void add_tile_buttons(gui &g, float toolbox_width, const std::vector<resources::tile> &tiles, OnClick on_click)
+	{
+		static_assert(std::is_invocable_v<OnClick, resources::tile*>);
 
-		void level_load(const level&) override;
-		level level_save(level l) const override;
+		constexpr auto button_size = vector_float{ 25.f, 25.f };
 
-		void gui_update(gui&, editor_windows&) override;
+		const auto tile_size = float_cast(resources::get_tile_settings()->tile_size);
 
-		void on_click(mouse_pos) override;
+		g.indent();
 
-		void on_drag_start(mouse_pos) override;
-		void on_drag(mouse_pos) override;
-		void on_drag_end(mouse_pos) override;
+		const auto indent_amount = g.get_item_rect_max().x;
 
-		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
-		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
+		auto x2 = 0.f;
+		for (const auto &t : tiles)
+		{
+			const auto new_x2 = x2 + button_size.x;
+			if (indent_amount + new_x2 < toolbox_width)
+				g.layout_horizontal();
+			else
+				g.indent();
 
-	private:
-		enum class brush_type {
-			region_place,
-			region_selector,
-			region_move,
-			region_edge_drag,
-			region_corner_drag
-		};
+			const auto x = float_cast(t.left),
+				y = float_cast(t.top);
 
-		//generates selection lines
-		void _on_selected(index_t);
-		//selects the correct drag point depending on the selection
-		//line index
-		void _on_drag_begin(region_edit::array_t::size_type);
+			const auto tex_coords = rect_float{
+				x,
+				y,
+				tile_size,
+				tile_size
+			};
 
-		bool _show_regions = true;
-		brush_type _brush = brush_type::region_place;
-		console::property_float _region_min_size;
-		container_t _regions;
-		const resources::font *_font = nullptr;
-		region_edit _edit;
-		uint32 _new_region_name_counter{};
-		grid_vars _grid = get_console_grid_vars();
-		vector_t<level_size_t> _level_limits;
-	};
+			assert(t.texture);
+
+			//need to push a prefix to avoid the id clashing from the same texture
+			g.push_id(&t);
+			if (g.image_button(*t.texture, tex_coords, button_size))
+				std::invoke(on_click, &t);
+			g.pop_id();
+
+			x2 = g.get_item_rect_max().x;
+		}
+	}
+
+	void level_editor_tiles::gui_update(gui &g, editor_windows &w)
+	{
+		using namespace std::string_view_literals;
+
+		if (g.main_toolbar_begin())
+		{
+			if (g.toolbar_button("tiles"sv))
+			{
+				activate_brush();
+				_tile = nullptr;
+			};
+		}
+
+		g.main_toolbar_end();
+
+		if (g.window_begin(editor::gui_names::toolbox))
+		{
+			const auto toolbox_width = g.get_item_rect_max().x;
+
+			if (g.collapsing_header("tiles"sv))
+			{
+				auto on_click = [this](const resources::tile *t) {
+					activate_brush();
+					_tile = t;
+				};
+
+				//each tileset
+				for (const auto tileset : _settings->tilesets)
+				{
+					const auto name = data::get_as_string(tileset->id);
+
+					g.indent();
+					if (g.collapsing_header(name))
+						add_tile_buttons(g,toolbox_width, tileset->tiles, on_click);
+				}
+			}
+		}
+
+		g.window_end();
+		//create tile picker
+		//main toolbox
+
+		//draw size
+		//draw shape
+
+		//tiles
+		// organised by tileset
+
+		if (w.new_level && g.window_begin(editor::gui_names::new_level))
+		{
+			auto dialog_pos = g.window_position().x;
+			auto dialog_size = g.get_item_rect_max().x;
+			//select default tile
+			auto tilesets = _settings->tilesets;
+			tilesets.push_back(_settings->empty_tileset);
+			
+			using namespace std::string_literals;
+			auto string = "tileset"s;
+			if (_new_options.tileset != nullptr)
+				string = data::get_as_string(_new_options.tileset->id);
+
+			if (g.combo_begin("tilesets"sv, string))
+			{
+				const auto empty_tileset = _settings->empty_tileset;
+				if (g.selectable(data::get_as_string(empty_tileset->id), empty_tileset == _new_options.tileset))
+					_new_options.tileset = empty_tileset;
+
+				for (const auto tileset : _settings->tilesets)
+				{
+					if (g.selectable(data::get_as_string(tileset->id), tileset == _new_options.tileset))
+						_new_options.tileset = tileset;
+				}
+				
+				g.combo_end();
+			}
+
+			if (_new_options.tileset == _settings->empty_tileset)
+				_new_options.tile = &resources::get_empty_tile();
+			else if (_new_options.tileset != nullptr)
+			{
+				auto on_click = [this](const resources::tile *t){
+					_new_options.tile = t;
+				};
+
+				add_tile_buttons(g, dialog_pos + dialog_size, _new_options.tileset->tiles, on_click);
+			}
+
+			g.window_end();
+		}
+	}
+
+	static void draw_on(level_editor_tiles::mouse_pos p, const resources::tile_size_t tile_size, const resources::tile &t,
+		level_editor_tiles::draw_shape shape, mutable_tile_map &m, tile_count_t size)
+	{
+		const auto pos = mouse::snap_to_grid(p, float_cast(tile_size));
+
+		const auto positions = [&] {
+			const auto p = vector_int{
+				static_cast<int>(pos.x),
+				static_cast<int>(pos.y)
+			};
+
+			if (level_editor_tiles::draw_shape::square == shape)
+				return make_position_square_from_centre(p, size);
+			else
+				return make_position_circle(p, size);
+		}();
+
+		m.place_tile(positions, t);
+	}
+
+	void level_editor_tiles::make_brush_preview(time_duration, mouse_pos p)
+	{
+		assert(_settings);
+		assert(_tile);
+		
+		const auto empty = make_map(_level_size, resources::get_empty_tile());
+		_preview.update(empty);
+
+		draw_on(p, _settings->tile_size, *_tile, _shape, _preview, _size);
+	}
+
+	void level_editor_tiles::on_click(mouse_pos p)
+	{
+		assert(_settings);
+		assert(_tile);
+		draw_on(p, _settings->tile_size, *_tile, _shape, _tiles, _size);
+	}
+
+	void level_editor_tiles::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	{
+		t.draw(_tiles, s);
+	}
+
+	void level_editor_tiles::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	{
+		t.draw(_preview, s);
+	}
 }
-
-namespace hades::cvars
-{
-	using namespace std::string_view_literals;
-	constexpr auto region_min_size = "region_min_size"sv;
-}
-
-namespace hades::cvars::default_value
-{
-	constexpr auto region_min_size = 8.f;
-}
-
-#endif //!HADES_LEVEL_EDITOR_REGIONS_HPP

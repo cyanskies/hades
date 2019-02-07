@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
 std::string_view defaultGame()
 {
-	return "objects";
+	return "dev";
 }
 
 void resourceTypes(hades::data::data_system &data)

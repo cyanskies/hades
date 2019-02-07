@@ -11,6 +11,7 @@
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "hades/math.hpp"
 #include "hades/timers.hpp"
 #include "hades/vector_math.hpp"
 
@@ -20,6 +21,7 @@ namespace hades
 	{
 		struct animation;
 		struct font;
+		struct texture;
 	}
 
 	namespace detail
@@ -178,6 +180,14 @@ namespace hades
 		void group_end();
 		void dummy(vector_float size = {});
 
+		//ids
+		// push these onto the id stack to make later ids unique
+		// ids are a hash of the entire stack
+		void push_id(std::string_view); 
+		void push_id(int32);
+		void push_id(const void*);
+		void pop_id();
+
 		//text widgets
 		void text(std::string_view);
 		void text_coloured(std::string_view, const sf::Color&);
@@ -198,7 +208,9 @@ namespace hades
 		bool small_button(std::string_view label);
 		bool invisible_button(std::string_view label, const vector &size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
+		void image(const resources::texture&, const rect_float &text_coords, const vector &size, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
+		bool image_button(const resources::texture&, const rect_float &text_coords, const vector &size, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
 		bool image_button(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
 		bool checkbox(std::string_view label, bool &checked); //returns true on checked changed
 		bool radio_button(std::string_view label, bool active);

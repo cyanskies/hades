@@ -297,6 +297,30 @@ namespace hades
 		ImGui::Dummy({ s.x, s.y });
 	}
 
+	void gui::push_id(std::string_view s)
+	{
+		_active_assert();
+		ImGui::PushID(&*std::begin(s), &*std::end(s));
+	}
+
+	void gui::push_id(int32 i)
+	{
+		_active_assert();
+		ImGui::PushID(i);
+	}
+
+	void gui::push_id(const void *ptr)
+	{
+		_active_assert();
+		ImGui::PushID(ptr);
+	}
+
+	void gui::pop_id()
+	{
+		_active_assert();
+		ImGui::PopID();
+	}
+
 	void gui::text(std::string_view s)
 	{
 		_active_assert();
@@ -352,21 +376,60 @@ namespace hades
 		return ImGui::ArrowButton(to_string(label).data(), static_cast<ImGuiDir>(d));
 	}
 
-	//NOTE: image* functions are untested
+	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector &size, const sf::Color &tint_colour, const sf::Color &border_colour)
+	{
+		_active_assert();
+
+		const auto x = text_coords.x,
+			y = text_coords.y,
+			width = text_coords.width,
+			height = text_coords.height;
+
+		const auto tex_width = t.width;
+		const auto tex_height = t.height;
+
+		ImGui::Image(const_cast<resources::texture*>(&t), //ImGui only accepts these as non-const void* 
+			{ size.x, size.y },
+			{ x / tex_width, y / tex_height }, // normalised coords
+			{ (x + width) / tex_width,  (y + height) / tex_width }, // absolute pos for bottom right corner, also normalised
+			to_imvec4(tint_colour),
+			to_imvec4(border_colour));
+	}
+
 	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
 		const auto[x, y] = animation::get_frame(a, time);
 
-		const auto tex_width = a.tex->width;
-		const auto tex_height = a.tex->height;
+		assert(a.tex);
 
-		ImGui::Image(const_cast<resources::texture*>(a.tex), //ImGui only accepts these as non-const void* 
+		return image(*a.tex,
+			rect_float{ x, y, float_cast(a.width), float_cast(a.height) },
+			size, 
+			tint_colour,
+			border_colour
+		);
+	}
+
+	bool gui::image_button(const resources::texture &texture, const rect_float &text_coords, const vector &size, const sf::Color &background_colour, const sf::Color &tint_colour)
+	{
+		_active_assert();
+
+		const auto x = text_coords.x,
+			y = text_coords.y,
+			width = text_coords.width,
+			height = text_coords.height;
+
+		const auto tex_width = texture.width;
+		const auto tex_height = texture.height;
+
+		return ImGui::ImageButton(const_cast<resources::texture*>(&texture), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
 			{ x / tex_width, y / tex_height }, // normalised coords
-			{ (x + a.width) / tex_width,  (y + a.height) / tex_width }, // absolute pos for bottom right corner, also normalised
-			to_imvec4(tint_colour),
-			to_imvec4(border_colour));
+			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
+			-1, // frame padding
+			to_imvec4(background_colour),
+			to_imvec4(tint_colour));
 	}
 
 	bool gui::image_button(const resources::animation &a, const vector &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
@@ -374,16 +437,15 @@ namespace hades
 		_active_assert();
 		const auto[x, y] = animation::get_frame(a, time);
 
-		const auto tex_width = a.tex->width;
-		const auto tex_height = a.tex->height;
+		assert(a.tex);
 
-		return ImGui::ImageButton(const_cast<resources::texture*>(a.tex), //ImGui only accepts these as non-const void* 
-			{ size.x, size.y },
-			{ x / tex_width, y / tex_height }, // normalised coords
-			{ (x + a.width) / tex_width,  (y + a.height) / tex_width }, // absolute pos for bottom right corner, also normalised
-			-1, // frame padding
-			to_imvec4(background_colour),
-			to_imvec4(tint_colour));
+		return image_button(
+			*a.tex,
+			rect_float{ x, y, float_cast(a.width), float_cast(a.height) },
+			size,
+			background_colour,
+			tint_colour
+		);
 	}
 
 	bool gui::checkbox(std::string_view label, bool &checked)

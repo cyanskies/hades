@@ -23,14 +23,19 @@ namespace hades
 		});
 
 		//add texture to error tile
-		const auto settings = resources::get_tile_settings();
-		const auto &error_tile = resources::get_error_tile();
+		//const auto settings = resources::get_tile_settings();
+		//const auto &error_tile = resources::get_error_tile();
+		const auto settings = 
+			d.find_or_create<resources::tile_settings>(resources::get_tile_settings_id(), unique_id::zero);
+		assert(settings);
+		assert(settings->error_tileset);
+		assert(!settings->error_tileset->tiles.empty());
+		const auto &error_tile = settings->error_tileset->tiles[0];
 		auto error_tex = d.find_or_create<resources::texture>(error_tile.texture->id, unique_id::zero);
 		error_tex->height = error_tex->width = settings->tile_size;
 		error_tex->repeat = true;
 		sf::Image img{};
-		img.create(1u, 1u, nullptr);
-		img.setPixel(0u, 0u, sf::Color::Magenta);
+		img.create(1u, 1u, sf::Color::Magenta);
 		error_tex->value.loadFromImage(img);
 		error_tex->value.setRepeated(true);
 		error_tex->value.setSmooth(false);
@@ -122,7 +127,7 @@ namespace hades
 			}
 
 			assert(texture);
-			const auto p = to_2d_position(i, width);
+			const auto p = to_2d_position(width, i);
 
 			const map_tile ntile{ texture, p.x * tile_size, p.y *tile_size, &t };
 			map.emplace_back(ntile);
@@ -131,7 +136,7 @@ namespace hades
 		//sort the tiles by texture;
 		std::sort(map.begin(), map.end(), [](const auto &lhs, const auto &rhs) {
 			constexpr auto less = std::less<const resources::texture*>{};
-			return less(lhs.first, rhs.first);
+			return less(lhs.texture, rhs.texture);
 		});
 
 		//whole map is tranparent
@@ -187,8 +192,7 @@ namespace hades
 			//set vertex position and tex coordinates
 			const auto vertex_tile = make_quad_animation(quad_rect, text_rect);
 
-			for (const auto& v : vertex_tile)
-				v_array.push_back(v);
+			std::copy(std::begin(vertex_tile), std::end(vertex_tile), std::back_inserter(v_array));
 		}
 
 		finalise_layer(texture_layers, current_tex, v_array, usage);
@@ -228,35 +232,6 @@ namespace hades
 		}
 
 		_tiles = map;
-	}
-
-	tile_count_t FlatPosition(const sf::Vector2u &position, tile_count_t width)
-	{
-		return position.y * width + position.x;
-	}
-
-	template<class T>
-	bool IsWithin(std::vector<T> &dest, const sf::Vector2u &position, tile_count_t width)
-	{
-		const auto pos = FlatPosition(position, width);
-		return pos < dest.size() &&
-			position.x < width;
-	}
-
-	//returns true if the value in dest was changed
-	template<class T>
-	bool Write(std::vector<T> &dest, const sf::Vector2u &position, tile_count_t width, const T &value)
-	{
-		const auto pos = FlatPosition(position, width);
-		const auto changed = dest[pos] != value;
-		dest[pos] = value;
-		return changed;
-	}
-
-	void mutable_tile_map::place_tile(tile_position p, const resources::tile &t)
-	{
-		hades::place_tile(_tiles, p, t);
-		_update_tile(p, t);
 	}
 
 	void mutable_tile_map::place_tile(const std::vector<tile_position> &positions, const resources::tile &t)
@@ -312,9 +287,10 @@ namespace hades
 			for (auto i = std::size_t{}; i != l.vertex.size(); i += vert_per_tile)
 			{
 				//TODO: is this a safe conversion?
+				//we must loose fractional component
 				vector_int p{
-					l.vertex[i].position.x,
-					l.vertex[i].position.y
+					static_cast<vector_int::value_type>(l.vertex[i].position.x),
+					static_cast<vector_int::value_type>(l.vertex[i].position.y)
 				};
 
 				if (p == pixel_pos)
@@ -352,8 +328,8 @@ namespace hades
 		for (auto iter = std::cbegin(l.vertex); iter != std::cend(l.vertex); iter += verts_per_tile)
 		{
 			auto p = vector_int{
-				iter->position.x,
-				iter->position.y
+				static_cast<vector_int::value_type>(iter->position.x),
+				static_cast<vector_int::value_type>(iter->position.y)
 			};
 
 			if (pixel_pos == p)
@@ -377,8 +353,8 @@ namespace hades
 		for (auto iter = std::begin(l.vertex); iter != std::end(l.vertex); std::advance(iter, verts_per_tile))
 		{
 			const auto p = vector_int{
-				iter->position.x,
-				iter->position.y
+				static_cast<vector_int::value_type>(iter->position.x),
+				static_cast<vector_int::value_type>(iter->position.y)
 			};
 
 			if (p == pixel_pos)
@@ -396,17 +372,17 @@ namespace hades
 		}
 
 		const auto rect = rect_float{
-			pixel_pos.x,
-			pixel_pos.y,
-			pixel_pos.x + tile_size,
-			pixel_pos.y + tile_size
+			float_cast(pixel_pos.x),
+			float_cast(pixel_pos.y),
+			float_cast(pixel_pos.x + tile_size),
+			float_cast(pixel_pos.y + tile_size)
 		};
 
 		const auto tex_rect = rect_float{
-			t.left,
-			t.top,
-			t.left + tile_size,
-			t.top + tile_size
+			float_cast(t.left),
+			float_cast(t.top),
+			float_cast(t.left + tile_size),
+			float_cast(t.top + tile_size)
 		};
 
 		const auto quad = make_quad_animation(rect, tex_rect);
@@ -421,17 +397,17 @@ namespace hades
 		const auto pixel_pos = p * signed_cast(tile_size);
 
 		const auto quad_rect = rect_float{
-			pixel_pos.x,
-			pixel_pos.y,
-			pixel_pos.x + tile_size,
-			pixel_pos.y + tile_size
+			float_cast(pixel_pos.x),
+			float_cast(pixel_pos.y),
+			float_cast(pixel_pos.x + tile_size),
+			float_cast(pixel_pos.y + tile_size)
 		};
 
 		const auto tex_rect = rect_float{
-			t.left,
-			t.top,
-			t.left + tile_size,
-			t.top + tile_size
+			float_cast(t.left),
+			float_cast(t.top),
+			float_cast(t.left + tile_size),
+			float_cast(t.top + tile_size)
 		};
 
 		const auto quad = make_quad_animation(quad_rect, tex_rect);
@@ -439,107 +415,4 @@ namespace hades
 		std::copy(std::begin(quad), std::end(quad), std::back_inserter(l.vertex));
 		l.buffer.set_verts(l.vertex);
 	}
-
-	constexpr auto tiles = "tiles";
-	constexpr auto tilesets = "tilesets";
-	constexpr auto map = "map";
-
-	void ReadTileLayerFromYaml(const YAML::Node &t, tile_layer &target)
-	{
-		// tilesets:
-		//     - [name, gid]
-		// map: [1,2,3,4...]
-		// width: 1
-
-		//tilesets
-		const auto tilesets_node = t[tilesets];
-		if (tilesets_node.IsDefined() && tilesets_node.IsSequence())
-		{
-			for (const auto tset : tilesets_node)
-			{
-				if (!tset.IsSequence() || tset.size() != 2)
-				{
-					//TODO:
-					//error, invalid file
-				}
-
-				const auto name = tset[0];
-				const auto name_str = name.as<hades::types::string>();
-				const auto first_id = tset[1];
-				const auto id = first_id.as<tile_count_t>();
-
-				target.tilesets.push_back({ name_str, id });
-			}
-		}
-
-		//map data
-		const auto map_node = t[map];
-		if (map_node.IsDefined() && map_node.IsSequence())
-		{
-			for (const auto tile : map_node)
-				target.tiles.push_back(tile.as<tile_count_t>());
-		}
-	}
-
-	void ReadTilesFromYaml(const YAML::Node &n, level &target)
-	{
-		//level root
-		//
-		//tiles:
-		//    tilesets:
-		//        - [name, gid]
-		//    map: [1,2,3,4...]
-		//    width: 1
-
-		const auto t = n[tiles];
-
-		if (!t.IsDefined() || !t.IsMap())
-			return;
-
-		ReadTileLayerFromYaml(t, target.tiles);
-	}
-
-	YAML::Emitter &WriteTileLayerToYaml(const tile_layer &l, YAML::Emitter &e)
-	{
-		e << YAML::BeginMap;
-		if (!l.tilesets.empty())
-		{
-			e << YAML::Key << tilesets;
-
-			e << YAML::Value << YAML::BeginSeq;
-			for (const auto &t : l.tilesets)
-			{
-				e << YAML::Flow << YAML::BeginSeq;
-				e << std::get<hades::types::string>(t) << std::get<tile_count_t>(t);
-				e << YAML::EndSeq;
-			}
-			e << YAML::EndSeq;
-		}
-
-		if (!l.tiles.empty())
-		{
-			e << YAML::Key << map;
-			e << YAML::Value << YAML::Flow << YAML::BeginSeq;
-			for (const auto t : l.tiles)
-				e << t;
-
-			e << YAML::EndSeq;
-		}
-
-		e << YAML::EndMap;
-
-		return e;
-	}
-
-	YAML::Emitter &WriteTilesToYaml(const level &l, YAML::Emitter &e)
-	{
-		//write tiles
-		e << YAML::Key << tiles;
-		e << YAML::Value;
-		
-		WriteTileLayerToYaml(l.tiles, e);
-
-		return e;
-	}
-
 }

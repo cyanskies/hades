@@ -641,20 +641,14 @@ namespace hades
 		if (s.x < 0 || s.y < 0)
 			throw invalid_argument{ "cannot make a tile map with a negative size" };
 
-		const auto tileset = get_parent_tileset(t);
-		if (!tileset)
-			throw tileset_not_found{ "unable to find the tileset for tile passed into make_map" };
-
 		auto m = tile_map{};
-		m.tilesets.emplace_back(tileset);
 		m.width = s.y;
 
-		const auto index = get_tile_id(m, t);
+		const auto index = make_tile_id(m, t);
 
 		const auto length = static_cast<std::size_t>(s.x * s.y);
-		m.tiles.reserve(length);
-		std::fill_n(std::back_inserter(m.tiles), length, index);
-
+		m.tiles = std::vector<tile_count_t>(length, index);
+		assert(m.tiles.size() == length);
 		return m;
 	}
 

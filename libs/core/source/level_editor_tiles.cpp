@@ -12,7 +12,8 @@ namespace hades
 	}
 
 	level_editor_tiles::level_editor_tiles()
-		: _settings{resources::get_tile_settings()}
+		: _empty_tile{ &resources::get_empty_tile() },
+		_settings{ resources::get_tile_settings() }
 	{}
 
 	level level_editor_tiles::level_new(level l) const
@@ -41,22 +42,26 @@ namespace hades
 	{
 		_level_size = { l.map_x, l.map_y };
 
+		assert(_settings);
 		const auto tile_size = _settings->tile_size;
-		const auto size = vector_int{
+		const auto size = tile_position{
 			signed_cast(l.map_x / tile_size),
 			signed_cast(l.map_y / tile_size)
 		};
+
+		_level_tile_size = size;
 
 		if (size.x * tile_size != l.map_x ||
 			size.y * tile_size != l.map_y)
 			LOGWARNING("loaded map size must be a multiple of tile size: [" + 
 				to_string(tile_size) + "], level will be adjusted to a valid value");
 
+		assert(_empty_tile);
+		const auto empty_map = make_map(size, *_empty_tile);
+		_empty_preview.create(empty_map);
+
 		if (l.tile_map_layer.tiles.empty())
-		{
-			const auto map = make_map(size, resources::get_empty_tile());
-			_tiles.create(map);
-		}
+			_tiles.create(empty_map);
 		else
 		{
 			const auto map = to_tile_map(l.tile_map_layer);
@@ -227,10 +232,18 @@ namespace hades
 	void level_editor_tiles::make_brush_preview(time_duration, mouse_pos p)
 	{
 		assert(_settings);
+		assert(_empty_tile);
 		assert(_tile);
 		
-		const auto empty = make_map(_level_size, resources::get_empty_tile());
-		_preview.update(empty);
+		_preview = _empty_preview;
+
+		if (p.x < 0
+			|| p.y < 0)
+			return;
+
+		if (p.x > _level_size.x
+			|| p.y > _level_size.y)
+			return;
 
 		draw_on(p, _settings->tile_size, *_tile, _shape, _preview, _size);
 	}

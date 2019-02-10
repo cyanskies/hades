@@ -40,12 +40,15 @@ namespace hades
 		};
 
 		new_level_options _new_options{};
+		tile_position _level_tile_size;
 		vector_t<level_size_t> _level_size;
 		draw_shape _shape{ draw_shape::square };
 		tile_count_t _size{};
 		const resources::tile_settings *_settings = nullptr;
+		const resources::tile *_empty_tile = nullptr;
 		const resources::tile *_tile = nullptr;
 		mutable_tile_map _tiles;
+		mutable_tile_map _empty_preview;
 		mutable_tile_map _preview;
 	};
 }

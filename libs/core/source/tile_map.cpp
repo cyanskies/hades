@@ -178,15 +178,15 @@ namespace hades
 			const auto quad_rect = rect_float{
 				float_cast(t.x),
 				float_cast(t.y),
-				float_cast(t.x + tile_size),
-				float_cast(t.y + tile_size)
+				float_cast(tile_size),
+				float_cast(tile_size)
 			};
 
 			const auto text_rect = rect_float{
 				float_cast(t.tile->left),
 				float_cast(t.tile->top),
-				float_cast(t.tile->left + tile_size),
-				float_cast(t.tile->top + tile_size)
+				float_cast(tile_size),
+				float_cast(tile_size)
 			};
 
 			//set vertex position and tex coordinates

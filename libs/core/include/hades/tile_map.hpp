@@ -39,6 +39,7 @@ namespace hades
 	{
 	public:
 		immutable_tile_map() = default;
+		immutable_tile_map(const immutable_tile_map&) = default;
 		immutable_tile_map(const tile_map&);
 
 		virtual ~immutable_tile_map() {}
@@ -69,7 +70,10 @@ namespace hades
 	{
 	public:
 		mutable_tile_map() = default;
+		mutable_tile_map(const mutable_tile_map&) = default;
 		mutable_tile_map(const tile_map&);
+
+		mutable_tile_map &operator=(const mutable_tile_map&) = default;
 
 		void create(const tile_map&) override;
 		void update(const tile_map&);

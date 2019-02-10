@@ -299,7 +299,6 @@ namespace hades
 		//    width: 1
 
 		//we should be pointing at a tile_layer
-		w.start_map();
 
 		w.start_sequence(tilesets_str);
 		for (const auto [id, gid] : m.tilesets)
@@ -311,14 +310,13 @@ namespace hades
 		}
 		w.end_sequence();
 
-		w.start_sequence(map_str);
+		w.write(map_str, ""sv);
+		w.start_sequence();
 		for (const auto t : m.tiles)
 			w.write(t);
 		w.end_sequence();
 
 		w.write(width_str, m.width);
-
-		w.end_map();
 	}
 
 	raw_map read_raw_map(const data::parser_node &p)

@@ -100,10 +100,15 @@ namespace hades
 
 	static constexpr auto level_regions_str = "regions"sv;
 
+	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
+
 	void write_regions_from_level(const level &l, data::writer &w)
 	{
 		//regions:
 		//    - [name, r, g, b, a, x, y, w, h]
+
+		if (l.regions.empty())
+			return;
 
 		w.start_sequence(level_regions_str);
 
@@ -135,6 +140,10 @@ namespace hades
 		assert(l.regions.empty());
 
 		const auto region_node = p.get_child(level_regions_str);
+
+		if (!region_node)
+			return;
+
 		const auto regions = region_node->get_children();
 
 		for (const auto &r : regions)
@@ -179,7 +188,9 @@ namespace hades
 
 		write_objects_from_level(l, *w);
 		//write terrain info
-
+		w->start_map(level_tiles_layer_str);
+		write_raw_map(l.tile_map_layer, *w);
+		w->end_map();
 		//write trigger data
 		write_regions_from_level(l, *w);
 
@@ -208,6 +219,9 @@ namespace hades
 		
 		//read trigger data
 		read_regions_into_level(*level_node, l);
+
+		const auto tiles = level_node->get_child(level_tiles_layer_str);
+		l.tile_map_layer = read_raw_map(*tiles);
 
 		return l;
 	}

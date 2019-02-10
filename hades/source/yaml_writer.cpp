@@ -56,7 +56,9 @@ namespace
 		void write(std::string_view key, std::string_view value) override
 		{
 			_emitter << YAML::Key << hades::to_string(key);
-			_emitter << YAML::Value << hades::to_string(value);
+			_emitter << YAML::Value;
+			if(!value.empty())
+				_emitter << hades::to_string(value);
 		}
 
 		hades::string get_string() const override

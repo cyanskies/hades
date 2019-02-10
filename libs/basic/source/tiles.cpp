@@ -728,9 +728,9 @@ namespace hades
 			return;
 
 		//ignore placements outside of the map
-		const auto index = p.y *m.width + p.x;
+		const auto index = p.y * m.width + p.x;
 		if (unsigned_cast(p.x) > m.width ||
-			index > m.tiles.size())
+			index >= m.tiles.size())
 			return;
 
 		m.tiles[index] = t;
@@ -769,6 +769,9 @@ namespace hades
 
 	std::vector<tile_position> make_position_rect(tile_position position, tile_position size)
 	{
+		if (size == tile_position{})
+			return { position };
+
 		auto positions = std::vector<tile_position>{};
 		positions.reserve(size.x * size.y);
 

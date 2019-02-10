@@ -21,7 +21,7 @@ namespace hades
 
 		if constexpr (std::is_unsigned_v<T>)
 			return value;
-		else if (value > T{})
+		else if (value >= T{})
 			return static_cast<U>(value);
 		else
 			throw overflow_error{ "overflow_error; tried to cast a negative value to unsigned" };
@@ -160,17 +160,6 @@ namespace hades
 			return size_clamp_cast<T>(i);
 		else
 			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
-	}
-
-	template<typename T, typename U>
-	constexpr T float_cast(U i) noexcept
-	{
-		static_assert(std::is_floating_point_v<T>, "T must be a floating point type");
-		static_assert(std::is_integral_v<U>, "float cast only converts integers");
-
-		//float can store values larger than any integer
-		//TODO: I'd like to detect severe loss of precision and warn, but i don't know how
-		return static_cast<T>(i);
 	}
 
 	template<typename T>

@@ -41,6 +41,25 @@ namespace hades
 			!is_string_v<typename Cont::value_type> ||
 			std::is_same_v<std::string_view, typename Cont::value_type>,
 			bool>;
+
+		template<typename T>
+		struct valid_input_scalar_t : std::false_type
+		{};
+
+		template<>
+		struct valid_input_scalar_t<int> : std::true_type
+		{};
+
+		template<>
+		struct valid_input_scalar_t<float> : std::true_type
+		{};
+
+		template<>
+		struct valid_input_scalar_t<double> : std::true_type
+		{};
+
+		template<typename T>
+		constexpr auto valid_input_scalar_v = valid_input_scalar_t<T>::value;
 	}
 
 	class gui : public sf::Drawable

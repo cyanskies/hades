@@ -404,7 +404,7 @@ namespace hades
 		assert(a.tex);
 
 		return image(*a.tex,
-			rect_float{ x, y, float_cast(a.width), float_cast(a.height) },
+			rect_float{ x, y, static_cast<float>(a.width), static_cast<float>(a.height) },
 			size, 
 			tint_colour,
 			border_colour
@@ -444,7 +444,7 @@ namespace hades
 		push_id(&a);
 		auto result = image_button(
 			*a.tex,
-			rect_float{ x, y, float_cast(a.width), float_cast(a.height) },
+			rect_float{ x, y, static_cast<float>(a.width), static_cast<float>(a.height) },
 			size,
 			background_colour,
 			tint_colour

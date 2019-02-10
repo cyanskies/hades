@@ -169,6 +169,8 @@ namespace hades
 	{
 		_active_assert();
 
+		static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
+
 		constexpr auto func = [&] {
 			if constexpr (std::is_same_v<T, int>)
 				return [&](auto &v, auto &step, auto &step_fast) {
@@ -192,6 +194,9 @@ namespace hades
 	{
 		_active_assert();
 
+		static_assert(detail::valid_input_scalar_v<T>,
+			"gui::input_scalar_array only accepts std::array<int>, std::array<float> and std::array<double>");
+
 		constexpr auto data_type = [] {
 			if constexpr (std::is_same_v<T, int>)
 				return ImGuiDataType_S32;
@@ -211,7 +216,7 @@ namespace hades
 		}();
 
 		const auto components = v.size();
-		const auto int_components = static_cast<int>(components);
+		const auto int_components = integer_cast<int>(components);
 		assert(components == int_components);
 
 		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), int_components, NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));

@@ -11,11 +11,6 @@ namespace hades
 		register_tile_map_resources(d);
 	}
 
-	level_editor_tiles::level_editor_tiles()
-		: _empty_tile{ &resources::get_empty_tile() },
-		_settings{ resources::get_tile_settings() }
-	{}
-
 	level level_editor_tiles::level_new(level l) const
 	{
 		const auto tile_size = _settings->tile_size;
@@ -49,15 +44,12 @@ namespace hades
 			signed_cast(l.map_y / tile_size)
 		};
 
-		_level_tile_size = size;
-
 		if (size.x * tile_size != l.map_x ||
 			size.y * tile_size != l.map_y)
 			LOGWARNING("loaded map size must be a multiple of tile size: [" + 
 				to_string(tile_size) + "], level will be adjusted to a valid value");
 
-		assert(_empty_tile);
-		const auto empty_map = make_map(size, *_empty_tile);
+		const auto empty_map = make_map(size, resources::get_empty_tile());
 		_empty_preview.create(empty_map);
 
 		if (l.tile_map_layer.tiles.empty())
@@ -71,6 +63,8 @@ namespace hades
 
 	level level_editor_tiles::level_save(level l) const
 	{
+		const auto map = _tiles.get_map();
+		l.tile_map_layer = to_raw_map(map);
 		return l;
 	}
 
@@ -81,7 +75,7 @@ namespace hades
 
 		constexpr auto button_size = vector_float{ 25.f, 25.f };
 
-		const auto tile_size = float_cast(resources::get_tile_settings()->tile_size);
+		const auto tile_size = static_cast<float>(resources::get_tile_settings()->tile_size);
 
 		g.indent();
 
@@ -96,8 +90,8 @@ namespace hades
 			else
 				g.indent();
 
-			const auto x = float_cast(t.left),
-				y = float_cast(t.top);
+			const auto x = static_cast<float>(t.left),
+				y = static_cast<float>(t.top);
 
 			const auto tex_coords = rect_float{
 				x,
@@ -129,6 +123,13 @@ namespace hades
 				activate_brush();
 				_tile = nullptr;
 			};
+
+			//TODO: a good way to indicate drawing with the tile eraser?
+			if (g.toolbar_button("tiles eraser"sv))
+			{
+				activate_brush();
+				_tile = &resources::get_empty_tile();
+			}
 		}
 
 		g.main_toolbar_end();
@@ -139,6 +140,12 @@ namespace hades
 
 			if (g.collapsing_header("tiles"sv))
 			{
+				constexpr auto size_min = int{ 0 };
+				constexpr auto size_max = int{ 6 };
+
+				g.input_scalar("drawing size"sv, _size);
+				_size = std::clamp(_size, size_min, size_max);
+
 				auto on_click = [this](const resources::tile *t) {
 					activate_brush();
 					_tile = t;
@@ -204,7 +211,7 @@ namespace hades
 
 				add_tile_buttons(g, dialog_pos + dialog_size, _new_options.tileset->tiles, on_click);
 			}
-
+			
 			g.window_end();
 		}
 	}
@@ -212,19 +219,21 @@ namespace hades
 	static void draw_on(level_editor_tiles::mouse_pos p, const resources::tile_size_t tile_size, const resources::tile &t,
 		level_editor_tiles::draw_shape shape, mutable_tile_map &m, tile_count_t size)
 	{
-		const auto pos = mouse::snap_to_grid(p, float_cast(tile_size));
+		const auto pos = mouse::snap_to_grid(p, static_cast<float>(tile_size));
+
+		const auto t_size = signed_cast(tile_size);
+
+		const auto pos_int = vector_int { 
+			static_cast<int>(pos.x) / t_size,
+			static_cast<int>(pos.y) / t_size,
+		};
 
 		const auto positions = [&] {
-			const auto p = vector_int{
-				static_cast<int>(pos.x),
-				static_cast<int>(pos.y)
-			};
-
 			if (level_editor_tiles::draw_shape::square == shape)
-				return make_position_square_from_centre(p, size);
+				return make_position_square_from_centre(pos_int, size);
 			else
-				return make_position_circle(p, size);
-		}();
+				return make_position_circle(pos_int, size);
+		} ();
 
 		m.place_tile(positions, t);
 	}
@@ -232,7 +241,6 @@ namespace hades
 	void level_editor_tiles::make_brush_preview(time_duration, mouse_pos p)
 	{
 		assert(_settings);
-		assert(_empty_tile);
 		assert(_tile);
 		
 		_preview = _empty_preview;

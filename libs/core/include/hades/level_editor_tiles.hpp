@@ -17,8 +17,6 @@ namespace hades
 			circle
 		};
 
-		level_editor_tiles();
-
 		level level_new(level l) const override;
 		void level_load(const level&) override;
 		level level_save(level l) const override;
@@ -28,6 +26,7 @@ namespace hades
 		void make_brush_preview(time_duration, mouse_pos) override;
 
 		void on_click(mouse_pos) override;
+		//TODO: on drag
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
@@ -40,12 +39,10 @@ namespace hades
 		};
 
 		new_level_options _new_options{};
-		tile_position _level_tile_size;
 		vector_t<level_size_t> _level_size;
 		draw_shape _shape{ draw_shape::square };
-		tile_count_t _size{};
-		const resources::tile_settings *_settings = nullptr;
-		const resources::tile *_empty_tile = nullptr;
+		int _size{};
+		const resources::tile_settings *_settings{ resources::get_tile_settings() };
 		const resources::tile *_tile = nullptr;
 		mutable_tile_map _tiles;
 		mutable_tile_map _empty_preview;

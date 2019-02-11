@@ -65,7 +65,7 @@ namespace hades::resources
 	};
 
 	struct tile_settings_t {};
-	struct tile_settings final : public::hades::resources::resource_type<tile_settings_t>
+	struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 	{
 		tile_settings();
 
@@ -135,6 +135,9 @@ namespace hades
 		std::vector<tile_count_t> tiles;
 		tile_count_t width;
 	};
+
+	//throws tile_error, if the tile_map is malformed
+	tile_position get_size(const tile_map&);
 
 	//converts a raw map into a tile map
 	// exceptions: tileset_not_found

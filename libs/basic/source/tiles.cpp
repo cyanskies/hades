@@ -360,6 +360,18 @@ namespace hades
 		return map;
 	}
 
+	tile_position get_size(const tile_map &t)
+	{
+		if (t.width == 0 ||
+			t.tiles.empty())
+			throw tile_error{ "malformed tile_map" };
+
+		return tile_position{
+			signed_cast(t.width),
+			signed_cast(t.tiles.size() / t.width)
+		};
+	}
+
 	tile_map to_tile_map(const raw_map &r)
 	{
 		//tile_maps must be editable

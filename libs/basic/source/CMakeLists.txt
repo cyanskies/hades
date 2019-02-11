@@ -10,6 +10,7 @@ set(HADES_BASIC_SRC
 	parser.cpp
 	properties.cpp
 	system.cpp
+	terrain.cpp
 	tiles.cpp
 	timers.cpp
 	writer.cpp
@@ -27,6 +28,7 @@ set(HADES_BASIC_SRC
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
+	../include/hades/terrain.hpp
 	../include/hades/tiles.hpp
 	../include/hades/timers.hpp
 	../include/hades/writer.hpp
@@ -54,6 +56,7 @@ source_group("Headers" FILES
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
 	../include/hades/system.hpp
+	../include/hades/terrain.hpp
 	../include/hades/tiles.hpp
 	../include/hades/timers.hpp
 	../include/hades/writer.hpp

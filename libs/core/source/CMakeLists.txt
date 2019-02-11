@@ -28,6 +28,7 @@ set(HADES_CORE_SRC
 	sprite_batch.cpp
 	standard_paths.cpp
 	state.cpp
+	terrain_map.cpp
 	texture.cpp
 	tiled_sprite.cpp
 	tile_map.cpp
@@ -59,6 +60,7 @@ set(HADES_CORE_SRC
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
+	../include/hades/terrain_map.hpp
 	../include/hades/texture.hpp
 	../include/hades/tiled_sprite.hpp
 	../include/hades/tile_map.hpp
@@ -101,6 +103,7 @@ source_group("Headers" FILES
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
+	../include/hades/terrain_map.hpp
 	../include/hades/texture.hpp
 	../include/hades/tiled_sprite.hpp
 	../include/hades/tile_map.hpp

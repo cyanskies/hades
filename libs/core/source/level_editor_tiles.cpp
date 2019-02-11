@@ -140,6 +140,22 @@ namespace hades
 
 			if (g.collapsing_header("tiles"sv))
 			{
+				constexpr auto draw_shapes = std::array{
+					"square"sv,
+					"circle"sv
+				};
+
+				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_shape)]))
+				{
+					if (g.selectable(draw_shapes[0], _shape == draw_shape::square))
+						_shape = draw_shape::square;
+
+					if (g.selectable(draw_shapes[1], _shape == draw_shape::circle))
+						_shape = draw_shape::circle;
+
+					g.combo_end();
+				}
+
 				constexpr auto size_min = int{ 0 };
 				constexpr auto size_max = int{ 6 };
 

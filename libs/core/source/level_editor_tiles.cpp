@@ -279,6 +279,11 @@ namespace hades
 		draw_on(p, _settings->tile_size, *_tile, _shape, _tiles, _size);
 	}
 
+	void level_editor_tiles::on_drag(mouse_pos p)
+	{
+		on_click(p);
+	}
+
 	void level_editor_tiles::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		t.draw(_tiles, s);

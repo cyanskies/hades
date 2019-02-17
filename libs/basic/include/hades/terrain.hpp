@@ -10,32 +10,42 @@
 namespace hades
 {
 	void register_terrain_resources(data::data_manager&);
+	void register_terrain_resources(data::data_manager&, detail::find_make_texture_f);
 }
 
 namespace hades::resources
 {
-	struct terrain : tileset
+	//NOTE: see http://www.cr31.co.uk/stagecast/wang/2corn.html
+	//values for 2-corner transitions
+	//named based on which tile corners are 'empty'
+	//the order is important for the algorithm to work
+	enum transition_tile_type : std::size_t {
+		transition_begin,
+		none = transition_begin,
+		top_right,
+		bottom_right,
+		top_right_bottom_right,
+		bottom_left,
+		top_right_bottom_left,
+		bottom_left_right,
+		top_right_bottom_left_right,
+		top_left,
+		top_left_right,
+		top_left_bottom_right,
+		top_left_right_bottom_right,
+		top_left_bottom_left,
+		top_left_right_bottom_left,
+		top_left_bottom_left_right,
+		all,
+		transition_end
+	};
+
+	struct terrain final : tileset
 	{
 		terrain();
 
-		//named as this terrain interacts with empty
-		//NOTE: WARNING: This is the reverse of the intuitive naming scheme
-		std::vector<tile>
-			full, // whole tile is terrain
-			top_left_corner,	//only the bottom right is empty
-			top_right_corner,	//only the bottom left is empty
-			bottom_left_corner, //only the top right is empty
-			bottom_right_corner,//only the top left is empty
-			top,	//bottom is empty
-			left,	//right is empty
-			right,	//left is empty
-			bottom, //top is empty
-			top_left_circle,	// all is empty except bottom right
-			top_right_circle,	// all is empty except bottom left
-			bottom_left_circle, // all is empty except top right
-			bottom_right_circle,// all is empty except top left
-			left_diagonal, //empty in top right, and bottom left corners
-			right_diagonal; // empty in top left, and bottom right corners
+		//an array of tiles for each transition_type, except all(which should be an empty tile)
+		std::array<std::vector<tile>, top_left_bottom_left_right> terrain_transition_tiles;
 
 		//NOTE: also has access to std::vector<tile> tiles
 		// which contains all the tiles from the above lists as well
@@ -43,18 +53,18 @@ namespace hades::resources
 		tag_list tags;
 	};
 
-	struct terrainset_t {};
+	struct terrainset_t final {};
 
-	struct terrainset : resource_type<terrainset_t>
+	struct terrainset final : resource_type<terrainset_t>
 	{
 		terrainset();
 
 		std::vector<const terrain*> terrains;
 	};
 
-	struct terrain_settings_t {};
+	struct terrain_settings_t final {};
 
-	struct terrain_settings : tile_settings
+	struct terrain_settings final : tile_settings
 	{
 		terrain_settings();
 
@@ -62,6 +72,9 @@ namespace hades::resources
 		std::vector<const terrain*> terrains;
 		std::vector<const terrainset*> terrainsets;
 	};
+
+	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
+	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type);
 }
 
 namespace hades

@@ -24,13 +24,13 @@ namespace hades
 
 	namespace id
 	{
-		unique_id tile_settings = unique_id::zero;
-		unique_id error_tileset = unique_id::zero;
-		unique_id empty_tileset = unique_id::zero;
+		static unique_id tile_settings = unique_id::zero;
+		static unique_id error_tileset = unique_id::zero;
+		static unique_id empty_tileset = unique_id::zero;
 	}
 
-	void parse_tile_settings(unique_id mod, const data::parser_node&, data::data_manager&);
-	void parse_tilesets(unique_id mod, const data::parser_node&, data::data_manager&);
+	static void parse_tile_settings(unique_id mod, const data::parser_node&, data::data_manager&);
+	static void parse_tilesets(unique_id mod, const data::parser_node&, data::data_manager&);
 
 	void register_tiles_resources(data::data_manager &d)
 	{
@@ -69,7 +69,7 @@ namespace hades
 		detail::find_make_texture = fm_texture;
 	}
 
-	void parse_tile_settings(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	static void parse_tile_settings(unique_id mod, const data::parser_node &n, data::data_manager &d)
 	{
 		//tile-settings:
 		//  tile-size: 32
@@ -85,7 +85,7 @@ namespace hades
 	static void add_tiles_to_tileset(std::vector<resources::tile> &tile_list,
 		const resources::texture *texture, texture_size_t left,
 		texture_size_t top, tile_count_t width,	tile_count_t count,
-		const tag_list &tags, resources::tile_size_t tile_size)
+		resources::tile_size_t tile_size)
 	{
 		texture_size_t x = 0, y = 0;
 		tile_count_t current_count{};
@@ -95,8 +95,7 @@ namespace hades
 			tile_list.emplace_back(resources::tile{
 				texture,
 				left + x * tile_size,
-				top + y * tile_size,
-				tags 
+				top + y * tile_size 
 			});
 
 			if (++x == width)
@@ -109,23 +108,80 @@ namespace hades
 		}
 	}
 
-	void parse_tilesets(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	void resources::detail::parse_tiles(unique_id mod, resources::tileset &tileset, resources::tile_settings &settings, const data::parser_node &n, data::data_manager &d)
+	{
+		using namespace data::parse_tools;
+		const auto tags = get_unique_sequence(n, "tags"sv, tag_list{});
+
+		const auto tile_groups_parent = n.get_child("tiles"sv);
+		if (!tile_groups_parent)
+			return;
+
+		const auto tile_groups = tile_groups_parent->get_children();
+		if (tile_groups.empty())
+			return;
+
+		for (const auto &tile_group : tile_groups)
+		{
+			const auto tex_id = get_unique(*tile_group, "texture"sv, unique_id::zero);
+
+			if (tex_id == unique_id::zero)
+			{
+				const auto name = d.get_as_string(tileset.id);
+				const auto m = "error parsing tileset: " + name + ", tilegroup is missing texture";
+				LOGERROR(m);
+				continue;
+			}
+
+			const resources::texture *tex =
+				std::invoke(hades::detail::find_make_texture, d, tex_id, mod);
+
+			const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
+			const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
+
+			const auto width = get_scalar(*tile_group, "tiles-per-row"sv, tile_count_t{});
+
+			if (width == tile_count_t{})
+			{
+				const auto name = d.get_as_string(tileset.id);
+				const auto m = "error parsing tileset: " + name + ", tiles-per-row is 0";
+				LOGERROR(m);
+				continue;
+			}
+
+			const auto tile_count = get_scalar(*tile_group, "tile-count"sv, tile_count_t{});
+
+			if (tile_count == tile_count_t{})
+			{
+				const auto name = d.get_as_string(tileset.id);
+				const auto m = "error parsing tileset: " + name + ", tile-count is 0";
+				LOGERROR(m);
+				continue;
+			}
+
+			add_tiles_to_tileset(tileset.tiles, tex, left, top, width,
+				tile_count, settings.tile_size);
+
+			settings.tilesets.emplace_back(&tileset);
+		}
+	}
+
+	static void parse_tilesets(unique_id mod, const data::parser_node &n, data::data_manager &d)
 	{
 		//tilesets:
 		//	sand: <// tileset name, these must be unique
-		//		- {
-		//			texture: <// texture to draw the tiles from
-		//			left: <// pixel start of tileset; default: 0
-		//			top: <// pixel left of tileset; default: 0
-		//			tiles_per_row: <// number of tiles per row
-		//			tile_count: <// total amount of tiles in tileset; default: tiles_per_row
-		//			tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
-		//		}
+		//		tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
+		//		tiles:
+		//			- {
+		//				texture: <// texture to draw the tiles from
+		//				left: <// pixel start of tileset; default: 0
+		//				top: <// pixel left of tileset; default: 0
+		//				tiles_per_row: <// number of tiles per row
+		//				tile_count: <// total amount of tiles in tileset; default: tiles_per_row
+		//			}
 
 		auto tile_settings = d.find_or_create<resources::tile_settings>(id::tile_settings, mod);
 		assert(tile_settings);
-		const auto tile_size = tile_settings->tile_size;
-
 		const auto tileset_list = n.get_children();
 
 		for (const auto &tileset_n : tileset_list)
@@ -133,68 +189,40 @@ namespace hades
 			const auto name = tileset_n->to_string();
 			const auto id = d.get_uid(name);
 
-			const auto tile_groups = tileset_n->get_children();
-			if (tile_groups.empty())
-				continue;
-
 			auto tileset = d.find_or_create<resources::tileset>(id, mod);
-			assert(tileset);
 
-			for (const auto &tile_group : tile_groups)
-			{
-				using namespace data::parse_tools;
-
-				const auto tex_id = get_unique(*tile_group, "texture"sv, unique_id::zero);
-
-				if (tex_id == unique_id::zero)
-				{
-					const auto m = "error parsing tileset: " + name + ", tilegroup is missing texture";
-					LOGERROR(m);
-					continue;
-				}
-
-				const resources::texture *tex = 
-					std::invoke(detail::find_make_texture, d, tex_id, mod);
-
-				const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
-				const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
-
-				const auto width = get_scalar(*tile_group, "tiles-per-row"sv, tile_count_t{});
-
-				if (width == tile_count_t{})
-				{
-					const auto m = "error parsing tileset: " + name + ", tiles-per-row is 0";
-					LOGERROR(m);
-					continue;
-				}
-
-				const auto tile_count = get_scalar(*tile_group, "tile-count"sv, tile_count_t{});
-
-				if (tile_count == tile_count_t{})
-				{
-					const auto m = "error parsing tileset: " + name + ", tile-count is 0";
-					LOGERROR(m);
-					continue;
-				}
-
-				const auto tags = get_unique_sequence(*tile_group, "tags"sv, tag_list{});
-
-				add_tiles_to_tileset(tileset->tiles, tex, left, top, width,
-					tile_count, tags, tile_size);
-			}
-
-			tile_settings->tilesets.emplace_back(tileset);
+			resources::detail::parse_tiles(mod, *tileset, *tile_settings, *tileset_n, d);
 		}
-
 	}
 }
 
 namespace hades::resources
 {
+	constexpr std::string_view get_tilesets_name() noexcept
+	{
+		return tilesets_name;
+	}
+
+	constexpr std::string_view get_tile_settings_name() noexcept
+	{
+		return tile_settings_name;
+	}
+
+	constexpr std::string_view get_empty_tileset_name() noexcept
+	{
+		return air_tileset_name;
+	}
+
+	constexpr std::string_view get_error_tileset_name() noexcept
+	{
+		return error_tileset_name;
+	}
+
 	bool operator==(const tile &lhs, const tile &rhs)
 	{
 		return lhs.left == rhs.left &&
 			lhs.texture == rhs.texture &&
+			lhs.source == rhs.source &&
 			lhs.top == rhs.top;
 	}
 
@@ -205,11 +233,11 @@ namespace hades::resources
 
 	bool operator<(const tile &lhs, const tile &rhs)
 	{
-		return std::tie(lhs.texture, lhs.left, lhs.top)
-			< std::tie(rhs.texture, rhs.left, rhs.top);
+		return std::tie(lhs.texture, lhs.left, lhs.top, lhs.source)
+			< std::tie(rhs.texture, rhs.left, rhs.top, rhs.source);
 	}
 
-	void load_tileset(resource_type<tileset_t> &r, data::data_manager &d)
+	static void load_tileset(resource_type<tileset_t> &r, data::data_manager &d)
 	{
 		assert(dynamic_cast<tileset*>(&r));
 
@@ -229,7 +257,7 @@ namespace hades::resources
 		tset.loaded = true;
 	}
 
-	void load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d)
+	void detail::load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d)
 	{
 		assert(dynamic_cast<tile_settings*>(&r));
 
@@ -247,10 +275,14 @@ namespace hades::resources
 		s.loaded = true;
 	}
 
-	tileset::tileset() : resource_type<tileset_t>(load_tileset)
+	tileset::tileset() : resource_type{ load_tileset } {}
+
+	tileset::tileset(loader_func f) : resource_type{ f } {}
+
+	tile_settings::tile_settings() : resource_type{ detail::load_tile_settings }
 	{}
 
-	tile_settings::tile_settings() : resource_type<tile_settings_t>(load_tile_settings)
+	tile_settings::tile_settings(loader_func f) : resource_type{ f }
 	{}
 
 	const tile_settings *get_tile_settings()
@@ -258,7 +290,7 @@ namespace hades::resources
 		return data::get<tile_settings>(id::tile_settings);
 	}
 
-	const tile &get_error_tile()
+	tile get_error_tile()
 	{
 		const auto s = get_tile_settings();
 		assert(s->error_tileset);
@@ -268,7 +300,7 @@ namespace hades::resources
 		return random_element(begin, end);
 	}
 
-	const tile &get_empty_tile()
+	tile get_empty_tile()
 	{
 		const auto s = get_tile_settings();
 		assert(s->empty_tileset);
@@ -501,7 +533,7 @@ namespace hades
 		return nullptr;
 	}
 
-	const resources::tile &get_tile(const raw_map &r, tile_count_t t)
+	resources::tile get_tile(const raw_map &r, tile_count_t t)
 	{
 		try
 		{
@@ -525,7 +557,7 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this raw_map" };
 	}
 
-	const resources::tile &get_tile(const tile_map &m, tile_count_t t)
+	resources::tile get_tile(const tile_map &m, tile_count_t t)
 	{
 		tile_count_t start{};
 
@@ -624,6 +656,13 @@ namespace hades
 		throw tile_error{ "unable to add tile id for this tile_map" };
 	}
 
+	const tag_list &get_tags(const resources::tile &t)
+	{
+		//TODO: if source == null, is bad tag
+		assert(t.source);
+		return t.source->tags;
+	}
+
 	static tile_count_t flat_position(tile_position p, tile_count_t w)
 	{
 		if (p.x < 0 || p.y < 0)
@@ -634,7 +673,7 @@ namespace hades
 		return (u_p.y * w) + u_p.x;
 	}
 
-	const resources::tile &get_tile_at(const tile_map &t, tile_position p)
+	resources::tile get_tile_at(const tile_map &t, tile_position p)
 	{
 		const auto index = flat_position(p, t.width);
 		return get_tile(t, t.tiles[index]);
@@ -643,7 +682,7 @@ namespace hades
 	const tag_list &get_tags_at(const tile_map &t, tile_position p)
 	{
 		const auto &tile = get_tile_at(t, p);
-		return tile.tags;
+		return get_tags(tile);
 	}
 
 	tile_map make_map(tile_position s, const resources::tile &t)

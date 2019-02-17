@@ -38,17 +38,27 @@ namespace hades
 //resources for loading tiles and tilesets
 namespace hades::resources
 {
+	constexpr std::string_view get_tilesets_name() noexcept;
+	constexpr std::string_view get_tile_settings_name() noexcept;
+	constexpr std::string_view get_empty_tileset_name() noexcept;
+	constexpr std::string_view get_error_tileset_name() noexcept;
+
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;
+
+	struct tileset;
 
 	struct tile
 	{
 		//texture and [left, top] are used for drawing
 		const resources::texture *texture = nullptr;
 		tile_size_t left{}, top{};
-		//used for game logic
-		tag_list tags{};
+		const tileset *source = nullptr;
 	};
+
+	//bad tile can be used as a sentinal
+	//only bad tile should ever have a null source
+	constexpr auto bad_tile = tile{};
 
 	bool operator==(const tile &lhs, const tile &rhs);
 	bool operator!=(const tile &lhs, const tile &rhs);
@@ -60,14 +70,17 @@ namespace hades::resources
 	struct tileset : public resource_type<tileset_t>
 	{
 		tileset();
+		tileset(loader_func);
 
-		std::vector<tile> tiles;
+		std::vector<tile> tiles; 
+		tag_list tags{};
 	};
 
 	struct tile_settings_t {};
 	struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 	{
 		tile_settings();
+		tile_settings(loader_func);
 
 		tile_size_t tile_size{};
 		const tileset *error_tileset = nullptr;
@@ -76,11 +89,17 @@ namespace hades::resources
 		std::vector<const tileset*> tilesets;
 	};
 
+	namespace detail
+	{
+		void parse_tiles(unique_id mod, resources::tileset &tileset, resources::tile_settings &settings, const data::parser_node &n, data::data_manager &d);
+		void load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d);
+	}
+
 	//exceptions: all three throw resource_error
 	// either as resource_null or resource_wrong_type
 	const tile_settings *get_tile_settings();
-	const tile &get_error_tile();
-	const tile &get_empty_tile();
+	tile get_error_tile();
+	tile get_empty_tile();
 
 	unique_id get_tile_settings_id() noexcept;
 }
@@ -136,6 +155,7 @@ namespace hades
 		tile_count_t width;
 	};
 
+	using tile_position = vector_int;
 	//throws tile_error, if the tile_map is malformed
 	tile_position get_size(const tile_map&);
 
@@ -150,10 +170,10 @@ namespace hades
 
 	//get tile from raw_map
 	// exceptions: tile_not_found, tileset_not_found
-	const resources::tile& get_tile(const raw_map&, tile_count_t);
+	resources::tile get_tile(const raw_map&, tile_count_t);
 	//get tile from tile map
 	// exceptions: tile_not_found
-	const resources::tile& get_tile(const tile_map&, tile_count_t);
+	resources::tile get_tile(const tile_map&, tile_count_t);
 
 	//gets the tile id in a format appropriate for storing in a raw map
 	// exceptions: tileset_not_found and tile_not_found
@@ -165,9 +185,10 @@ namespace hades
 	// exceptions: tileset_not_found
 	tile_count_t make_tile_id(tile_map&, const resources::tile&);
 
+	const tag_list &get_tags(const resources::tile&);
+
 	//for getting information out of a tile map
-	using tile_position = vector_int;
-	const resources::tile& get_tile_at(const tile_map&, tile_position);
+	resources::tile get_tile_at(const tile_map&, tile_position);
 	const tag_list &get_tags_at(const tile_map&, tile_position);
 
 	// exceptions: tileset_not_found

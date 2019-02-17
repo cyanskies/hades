@@ -72,6 +72,8 @@ namespace hades::data
 
 	namespace parse_tools
 	{
+		//TODO: rename these to try_
+		//and add throwing parsers
 		template<class T, typename ConversionFunc = nullptr_t>
 		T get_scalar(const parser_node &node, std::string_view property_name,
 			T default_value, ConversionFunc convert = nullptr);

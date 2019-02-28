@@ -3,6 +3,7 @@
 
 #include <random>
 #include <stdexcept>
+#include <utility>
 
 #include "hades/types.hpp"
 
@@ -69,6 +70,18 @@ namespace hades {
 	template<typename Iter>
 	typename std::iterator_traits<Iter>::reference
 		random_element(Iter first, Iter last);
+
+	template<typename Index2D, typename T>
+	T to_1d_index(Index2D pos, T array_width);
+
+	template<typename T>
+	T to_1d_index(std::pair<T, T> index, T array_width);
+
+	template<typename Index2D, typename T>
+	Index2D to_2d_index(T index, T array_width);
+
+	template<typename T>
+	std::pair<T, T> to_2d_index(T index, T array_width);
 
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors

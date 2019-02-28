@@ -30,7 +30,7 @@ namespace hades::resources
 		const texture* tex = nullptr;
 		time_duration duration = time_duration::zero();
 		types::int32 width = 0, height = 0;
-		const shader *anim_shader = nullptr;
+		//const shader *anim_shader = nullptr;
 	};
 }
 

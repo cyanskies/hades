@@ -4,6 +4,7 @@
 #include "hades/resource_base.hpp"
 
 #include "hades/data.hpp"
+#include "hades/math.hpp"
 #include "hades/tiles.hpp"
 
 //tiles namespace is for the terrain editing and rendering subsystem
@@ -75,12 +76,26 @@ namespace hades::resources
 
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
 	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type);
+
+	tile get_random_tile(const terrain&, transition_tile_type);
 }
 
 namespace hades
 {
+	class terrain_error : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
+	using terrain_count_t = tile_count_t;
+
 	struct raw_terrain_map
 	{
+		unique_id terrainset;
+		std::vector<terrain_count_t> terrain_vertex;
+
+		std::vector<raw_map> terrain_layers;
 		raw_map tile_layer;
 	};
 
@@ -96,19 +111,63 @@ namespace hades
 		tile_map tile_layer;
 	};
 
+	//converts a raw map into a tile map
+	// exceptions: tileset_not_found, terrain_error
+	terrain_map to_terrain_map(const raw_terrain_map&);
+	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
+	raw_terrain_map to_raw_map(const terrain_map&);
+
 	//type for positioning vertex in a terrain map
 	using terrain_vertex_position = tile_position;
 
+	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*);
+
+	terrain_count_t get_width(const terrain_map&);
 	terrain_vertex_position get_size(const terrain_map&);
 
 	//index tile_corners using rect_corners from math.hpp
 	using tile_corners = std::array<const resources::terrain*, 4u>;
 	const resources::terrain *get_corner(const tile_corners&, rect_corners);
 
+	//pass a array indicating which corners have terrain in them
+	//the array should be indexed according to rect_corners in math.hpp
+	resources::transition_tile_type get_transition_type(const std::array<bool, 4u>&);
+	//Iter1 and Iter 2 must point to terrain*
+	template<typename  Iter1, typename Iter2>
+	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end);
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position);
-	//get terrain at vertex
-	//get terrainquad from tile
+	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
+
+	//set the vectors relative to the current size
+	//eg, to expand the map in all directions
+	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
+	// tiles that fall outside the new size are erased
+	// new areas will be set to tile&
+	void resize__map_relative(terrain_map&, vector_int top_left, vector_int bottom_right,
+		const resources::terrain&);
+	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
+	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right);
+	//as above, places current map content at offset
+	void resize_map(terrain_map&, vector_int size, vector_int offset, const resources::terrain&);
+	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
+	void resize_map(terrain_map&, vector_int size, vector_int offset);
+
+	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
+	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
+
+	//for editing a terrain map
+	void place_tile(terrain_map&, tile_position, const resources::tile&);
+	//positions outside the map will be ignored
+	void place_tile(terrain_map&, const std::vector<tile_position>&, const resources::tile&);
+
+	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*);
+	//positions outside the map will be ignored
+	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*);
+
+	//use the make_position_* functions from tiles.hpp
 }
+
+#include "hades/detail/terrain.inl"
 
 #endif // !HADES_TERRAIN_HPP

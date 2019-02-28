@@ -188,6 +188,41 @@ namespace hades
 		return *first;
 	}
 
+	template<typename Index2D, typename T>
+	T to_1d_index(Index2D pos, T array_width)
+	{
+		return to_1d_index({ integer_cast<T>(pos.x), integer_cast<T>(pos.y) }, array_width);
+	}
+	
+	template<typename T>
+	T to_1d_index(std::pair<T, T> index, T w)
+	{
+		if constexpr (std::is_signed_v<T>)
+		{
+			if (index.first < 0 || index.second < 0)
+				throw std::invalid_argument{ "cannot caculate 1d index in negative space" };
+		}
+
+		return index.second * w + index.first;
+	}
+
+	template<typename Index2D, typename T>
+	Index2D to_2d_index(T i, T w)
+	{
+		static_assert(std::is_constructible_v<Index2D, T, T>);
+
+		return Index2D{
+			i / w,
+			i % w
+		};
+	}
+
+	template<typename T>
+	std::pair<T, T> to_2d_index(T i, T w)
+	{
+		return to_2d_index<std::pair<T, T>>(i, w);
+	}
+
 	inline bool random()
 	{
 		return random(0, 1) != 0;

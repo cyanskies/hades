@@ -663,19 +663,10 @@ namespace hades
 		return t.source->tags;
 	}
 
-	static tile_count_t flat_position(tile_position p, tile_count_t w)
-	{
-		if (p.x < 0 || p.y < 0)
-			throw invalid_argument{ "cannot caculate the position of a tile in negative space" };
-
-		//unsigned position
-		const auto u_p = static_cast<vector_t<tile_count_t>>(p);
-		return (u_p.y * w) + u_p.x;
-	}
-
 	resources::tile get_tile_at(const tile_map &t, tile_position p)
 	{
-		const auto index = flat_position(p, t.width);
+		const auto index = to_1d_index(p, t.width);
+		assert(index < std::size(t.tiles));
 		return get_tile(t, t.tiles[index]);
 	}
 
@@ -734,7 +725,7 @@ namespace hades
 	void resize_map(tile_map &m, vector_int size, vector_int offset, const resources::tile &t)
 	{
 		const auto tile = make_tile_id(m, t);
-		const auto new_map = always_table(vector_int{}, vector_int{ size.x, size.y }, tile);
+		const auto new_map = always_table{ vector_int{}, vector_int{ size.x, size.y }, tile };
 
 		auto current_map = table<tile_count_t>{ offset,
 			size, tile_count_t{} };

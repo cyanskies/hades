@@ -74,6 +74,9 @@ namespace hades::resources
 		std::vector<const terrainset*> terrainsets;
 	};
 
+	const terrain_settings *get_terrain_settings();
+	const terrain *get_empty_terrain();
+
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
 	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type);
 
@@ -93,6 +96,8 @@ namespace hades
 	struct raw_terrain_map
 	{
 		unique_id terrainset;
+		//terrain vertex are indexed starting at 1
+		// 0 is reserved for the empty vertex
 		std::vector<terrain_count_t> terrain_vertex;
 
 		std::vector<raw_map> terrain_layers;
@@ -115,7 +120,7 @@ namespace hades
 	// exceptions: tileset_not_found, terrain_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
 	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
-	raw_terrain_map to_raw_map(const terrain_map&);
+	raw_terrain_map to_raw_terrain_map(const terrain_map&);
 
 	//type for positioning vertex in a terrain map
 	using terrain_vertex_position = tile_position;
@@ -124,6 +129,9 @@ namespace hades
 
 	terrain_count_t get_width(const terrain_map&);
 	terrain_vertex_position get_size(const terrain_map&);
+
+	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position);
+	bool within_map(const terrain_map&, terrain_vertex_position position);
 
 	//index tile_corners using rect_corners from math.hpp
 	using tile_corners = std::array<const resources::terrain*, 4u>;

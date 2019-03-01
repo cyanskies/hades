@@ -38,10 +38,9 @@ namespace hades
 //resources for loading tiles and tilesets
 namespace hades::resources
 {
-	constexpr std::string_view get_tilesets_name() noexcept;
-	constexpr std::string_view get_tile_settings_name() noexcept;
-	constexpr std::string_view get_empty_tileset_name() noexcept;
-	constexpr std::string_view get_error_tileset_name() noexcept;
+	std::string_view get_tilesets_name() noexcept;
+	std::string_view get_tile_settings_name() noexcept;
+	std::string_view get_empty_tileset_name() noexcept;
 
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;

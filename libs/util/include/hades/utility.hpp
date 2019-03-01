@@ -89,6 +89,9 @@ namespace hades {
 	template<typename Container>
 	decltype(auto) remove_duplicates(Container &cont);
 
+	template<typename Container, typename Less>
+	decltype(auto) remove_duplicates(Container &cont, Less less);
+
 	template<typename Container, typename Less, typename Equal>
 	decltype(auto) remove_duplicates(Container &cont, Less less, Equal equal);
 

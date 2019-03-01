@@ -1,5 +1,7 @@
 #include "hades/terrain.hpp"
 
+#include <map>
+
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
 #include "hades/tiles.hpp"
@@ -54,16 +56,18 @@ namespace hades
 		auto empty_id = d.get_uid(resources::get_empty_tileset_name());
 		auto empty = d.find_or_create<resources::terrain>(empty_id, unique_id::zero);
 
+		const auto empty_tile = resources::tile{ nullptr, 0u, 0u, empty };
+
 		//fill all the terrain tile lists with a default constructed tile
-		apply_to_terrain(*empty, [](std::vector<resources::tile>&v) {
-			v.emplace_back();
+		apply_to_terrain(*empty, [&empty_tile](std::vector<resources::tile>&v) {
+			v.emplace_back(empty_tile);
 		});
 
 		terrain_settings->empty_terrain = empty;
 		terrain_settings->empty_tileset = empty;
 
 		//register tile resources
-		register_tiles_resources(d);
+		register_tiles_resources(d, func);
 
 		//replace the tileset and tile settings parsers
 		using namespace std::string_view_literals;
@@ -72,19 +76,66 @@ namespace hades
 		d.register_resource_type("terrainset"sv, resources::parse_terrainset);
 	}
 
-	//TODO: should this be terrain_count_t instead?
-	static std::size_t get_terrain_index(const resources::terrainset *set, const resources::terrain *t)
+	static terrain_count_t get_terrain_index(const resources::terrainset *set, const resources::terrain *t)
 	{
 		assert(set && t);
 
-		auto index = std::size_t{};
+		for (auto i = terrain_count_t{}; i < set->terrains.size(); ++i)
+			if (set->terrains[i] == t)
+				return i;
 
-		for (index; index < set->terrains.size(); ++index)
-			if (set->terrains[index] == t)
-				return index;
+		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
+	}
 
-		//TODO: terrain error
-		throw std::exception{};
+	terrain_map to_terrain_map(const raw_terrain_map &r)
+	{
+		auto m = terrain_map{};
+
+		m.terrainset = data::get<resources::terrainset>(r.terrainset);
+		
+		const auto empty = resources::get_empty_terrain();
+		std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
+			std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_count_t t) {
+			if (t == terrain_count_t{})
+				return empty;
+
+			assert(t <= std::size(terrains));
+			return terrains[t - 1u];
+		});
+
+		m.tile_layer = to_tile_map(r.tile_layer);
+		std::transform(std::begin(r.terrain_layers), std::end(r.terrain_layers),
+			std::back_inserter(m.terrain_layers), to_tile_map);
+
+		return m;
+	}
+
+	raw_terrain_map to_raw_terrain_map(const terrain_map &t)
+	{
+		auto m = raw_terrain_map{};
+
+		m.terrainset = t.terrainset->id;
+
+		//build a replacement lookup table
+		auto t_map = std::map<const resources::terrain*, terrain_count_t>{};
+		const auto empty = resources::get_empty_terrain();
+		//add the empty terrain with the index 0
+		t_map.emplace(empty, terrain_count_t{});
+		//add the rest of the terrains, offset the index by 1
+		for (auto i = terrain_count_t{}; i < std::size(t.terrainset->terrains); ++i)
+			t_map.emplace(t.terrainset->terrains[i], i + 1u);
+
+		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
+			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain *t) {
+			return t_map.at(t);
+		});
+
+		m.tile_layer = to_raw_map(t.tile_layer);
+
+		std::transform(std::begin(t.terrain_layers), std::end(t.terrain_layers),
+			std::back_inserter(m.terrain_layers), to_raw_map);
+
+		return m;
 	}
 
 	terrain_map make_map(tile_position size, const resources::terrainset *terrainset, const resources::terrain *t)
@@ -131,6 +182,29 @@ namespace hades
 		return tile_size + terrain_vertex_position{1, 1};
 	}
 
+	bool within_map(terrain_vertex_position s, terrain_vertex_position p)
+	{
+		if (p.x < 0 ||
+			p.y < 0 ||
+			p.x > s.x ||
+			p.y > s.y)
+			return false;
+
+		return true;
+	}
+
+	bool within_map(const terrain_map &m, terrain_vertex_position p)
+	{
+		const auto s = get_size(m);
+		return within_map(s, p);
+	}
+
+	const resources::terrain *get_corner(const tile_corners &t, rect_corners c)
+	{
+		static_assert(std::is_same_v<std::size_t, std::underlying_type_t<rect_corners>>);
+		return t[static_cast<std::size_t>(c)];
+	}
+
 	resources::transition_tile_type get_transition_type(const std::array<bool, 4u> &arr)
 	{
 		auto type = uint8{};
@@ -145,6 +219,38 @@ namespace hades
 			type += 4u;
 
 		return static_cast<resources::transition_tile_type>(type);
+	}
+
+	tile_corners get_terrain_at_tile(const terrain_map &m, tile_position p)
+	{
+		const auto w = get_width(m);
+
+		//a tile position should always point to the top left of a tile vertex
+		const auto top_left = to_1d_index(p, w);
+		//if the 1d index of the top left is correct
+		//then their should always be a vertex to its right
+		assert(top_left < w);
+		const auto top_right = top_left + 1u;
+		++p.y;
+		const auto bottom_left = to_1d_index(p, w);
+		const auto bottom_right = bottom_left + 1u;
+		//same for the vertex below them, they should be before the end of the vector
+		assert(bottom_left < std::size(m.terrain_vertex));
+
+		assert(rect_corners::bottom_right < rect_corners::bottom_left);
+
+		return std::array{
+			m.terrain_vertex[top_left],
+			m.terrain_vertex[top_right],
+			m.terrain_vertex[bottom_right],
+			m.terrain_vertex[bottom_left]
+		};
+	}
+
+	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
+	{
+		const auto index = to_1d_index(p, get_width(m));
+		return m.terrain_vertex[index];
 	}
 
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)
@@ -167,30 +273,17 @@ namespace hades
 
 	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position> &v)
 	{
-		using T = terrain_vertex_position::value_type;
-		T min_x{std::numeric_limits<T>::max()},
-			max_x{std::numeric_limits<T>::min()},
-			min_y{std::numeric_limits<T>::max()},
-			max_y{std::numeric_limits<T>::min()};
+		auto out = std::vector<tile_position>{};
 
 		for (const auto p : v)
 		{
-			min_x = std::min(min_x, p.x);
-			max_x = std::max(max_x, p.x);
-			min_y = std::min(min_y, p.y);
-			max_y = std::max(max_y, p.y);
+			const auto pos = get_adjacent_tiles(p);
+			out.insert(std::end(out), std::begin(pos), std::end(pos));
 		}
 
-		--min_x;
-		--min_y;
-		++max_x;
-		++max_y;
-
-		auto out = std::vector<tile_position>{};
-
-		for (min_y; min_y <= max_y; ++min_y)
-			for (min_x; min_x <= max_x; ++max_x)
-				out.emplace_back(tile_position{ min_x, min_y });
+		remove_duplicates(out, [](tile_position lhs, tile_position rhs) {
+			return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
+		});
 
 		return out;
 	}
@@ -205,11 +298,6 @@ namespace hades
 	void place_tile(terrain_map &m, const std::vector<tile_position> &p, const resources::tile &t) 
 	{
 		place_tile(m.tile_layer, p, t);
-	}
-
-	static tile_count_t get_vertex_index(const terrain_map &m, terrain_vertex_position p)
-	{
-		const auto size = get_size(m);
 	}
 
 	static void place_terrain_internal(terrain_map &m, terrain_vertex_position p, const resources::terrain *t)
@@ -253,11 +341,7 @@ namespace hades
 
 	void place_terrain(terrain_map &m, terrain_vertex_position p, const resources::terrain *t)
 	{
-		const auto s = get_size(m);
-		if (p.x > 0 &&
-			p.y > 0 &&
-			p.x <= s.x &&
-			p.y <= s.y)
+		if (within_map(m, p))
 		{
 			place_terrain_internal(m, p, t);
 			update_tile_layers(m, p, t);
@@ -269,15 +353,8 @@ namespace hades
 	{
 		const auto s = get_size(m);
 		for (const auto p : positions)
-		{
-			if (p.x > 0 &&
-				p.y > 0 &&
-				p.x <= s.x &&
-				p.y <= s.y)
-			{
+			if (within_map(s, p))
 				place_terrain_internal(m, p, t);
-			}
-		}
 
 		update_tile_layers(m, positions, t);
 	}
@@ -350,6 +427,8 @@ namespace hades::resources
 	template<class U = std::vector<tile>, class W>
 	U& get_transition(transition_tile_type type, W& t)
 	{
+		//TODO: return ref to empty tileset?
+		// for type == all
 		assert(type < all);
 		assert(type < std::size(t.terrain_transition_tiles));
 		return t.terrain_transition_tiles[type];
@@ -571,6 +650,17 @@ namespace hades::resources
 		}
 
 		remove_duplicates(settings->terrainsets);
+	}
+
+	const terrain_settings *get_terrain_settings()
+	{
+		return data::get<terrain_settings>(id::terrain_settings);
+	}
+
+	const terrain *get_empty_terrain()
+	{
+		const auto settings = get_terrain_settings();
+		return settings->empty_terrain;
 	}
 
 	std::vector<tile>& get_transitions(terrain &t, transition_tile_type ty)

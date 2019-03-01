@@ -199,7 +199,7 @@ namespace hades
 	}
 
 	//=========================================//
-	//				mutable_tile_map			   //
+	//				mutable_tile_map		   //
 	//=========================================//
 
 	constexpr auto vertex_usage = sf::VertexBuffer::Usage::Dynamic;

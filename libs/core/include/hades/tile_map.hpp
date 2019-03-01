@@ -15,11 +15,6 @@
 
 //adds support for drawing tile maps
 
-namespace hades::data
-{
-	class data_system;
-}
-
 namespace hades
 {
 	//registers the resources needed to use tilemaps

@@ -69,10 +69,10 @@ target_include_directories(${HADES_UTIL_LIB} PUBLIC ../include)
 target_compile_options(${HADES_UTIL_LIB} PRIVATE
                            # clang/GCC warnings
                            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion">
+                                "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
                            # MSVC warnings
                            $<$<CXX_COMPILER_ID:MSVC>:
-                                "/W4">)
+                                "/W4" >)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${HADES_UTIL_LIB}

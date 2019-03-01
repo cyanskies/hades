@@ -231,8 +231,15 @@ namespace hades
 	template<typename Container>
 	decltype(auto) remove_duplicates(Container &cont)
 	{
-		return remove_duplicates(cont, std::begin(cont), std::end(cont),
-			std::less<typename Container::value_type>{}, std::equal_to<typename Container::value_type>{});
+		return remove_duplicates(cont,
+			std::less<typename Container::value_type>{});
+	}
+
+	template<typename Container, typename Less>
+	decltype(auto) remove_duplicates(Container &cont, Less less)
+	{
+		return remove_duplicates(cont, less,
+			std::equal_to<typename Container::value_type>{});
 	}
 
 	template<typename Container, typename Less, typename Equal>
@@ -244,7 +251,7 @@ namespace hades
 	template<typename Container, typename Iter>
 	Iter remove_duplicates(Container &cont, Iter first, Iter last)
 	{
-		return remove_duplicates(first, last, std::less<typename Iter::value_type>{}, std::equal_to<typename Iter::value_type>{});
+		return remove_duplicates(cont, first, last, std::less<typename Iter::value_type>{}, std::equal_to<typename Iter::value_type>{});
 	}
 
 	template<typename Container, typename Iter, typename Less, typename Equal>
@@ -252,7 +259,7 @@ namespace hades
 	{
 		std::stable_sort(first, last, less);
 		const auto last_unique = std::unique(first, last, equal);
-		return cont.erase(last_unique, std::end(cont));
+		return cont.erase(last_unique, last);
 	}
 
 	template<typename Out>

@@ -9,7 +9,7 @@ namespace hades
 {
 	void register_level_editor_tiles_resources(data::data_manager&);
 
-	class level_editor_tiles final : public level_editor_component
+	class level_editor_tiles : public level_editor_component
 	{
 	public:
 		enum class draw_shape {

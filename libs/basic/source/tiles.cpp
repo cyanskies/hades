@@ -15,7 +15,7 @@ namespace hades
 		static find_make_texture_f find_make_texture{};
 	}
 
-	using namespace std::string_literals;
+	//using namespace std::string_literals;
 	using namespace std::string_view_literals;
 	constexpr auto tilesets_name = "tilesets"sv;
 	constexpr auto tile_settings_name = "tile-settings"sv;
@@ -51,13 +51,16 @@ namespace hades
 		//create error tileset and add a default error tile
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
 		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero);
-		const resources::tile error_tile{ texture };
+		const resources::tile error_tile{ texture, 0u, 0u, error_tset };
 		error_tset->tiles.emplace_back(error_tile);
 
 		id::empty_tileset = hades::data::make_uid(air_tileset_name);
 		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero);
-		const resources::tile empty_tile{};
-		empty_tset->tiles.emplace_back(empty_tile);
+		if (std::empty(empty_tset->tiles))
+		{
+			const resources::tile empty_tile{ nullptr, 0u, 0u, empty_tset };
+			empty_tset->tiles.emplace_back(empty_tile);
+		}
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::make_uid(tile_settings_name);
@@ -198,24 +201,19 @@ namespace hades
 
 namespace hades::resources
 {
-	constexpr std::string_view get_tilesets_name() noexcept
+	std::string_view get_tilesets_name() noexcept
 	{
 		return tilesets_name;
 	}
 
-	constexpr std::string_view get_tile_settings_name() noexcept
+	std::string_view get_tile_settings_name() noexcept
 	{
 		return tile_settings_name;
 	}
 
-	constexpr std::string_view get_empty_tileset_name() noexcept
+	std::string_view get_empty_tileset_name() noexcept
 	{
 		return air_tileset_name;
-	}
-
-	constexpr std::string_view get_error_tileset_name() noexcept
-	{
-		return error_tileset_name;
 	}
 
 	bool operator==(const tile &lhs, const tile &rhs)
@@ -710,16 +708,8 @@ namespace hades
 
 	void resize_map_relative(tile_map &t, vector_int top_left, vector_int bottom_right)
 	{
-		try
-		{
-			const auto empty_tile = resources::get_empty_tile();
-			resize_map_relative(t, top_left, bottom_right, empty_tile);
-		}
-		catch (const data::resource_error &e)
-		{
-			const auto m = "unable to find the empty tileset: "s + e.what();
-			throw tileset_not_found{ m };
-		}
+		const auto empty_tile = resources::get_empty_tile();
+		resize_map_relative(t, top_left, bottom_right, empty_tile);
 	}
 
 	void resize_map(tile_map &m, vector_int size, vector_int offset, const resources::tile &t)
@@ -749,16 +739,8 @@ namespace hades
 
 	void resize_map(tile_map &t, vector_int size, vector_int offset)
 	{
-		try
-		{
-			const auto empty_tile = resources::get_empty_tile();
-			resize_map(t, size, offset, empty_tile);
-		}
-		catch (const data::resource_error &e)
-		{
-			const auto m = "unable to find the empty tileset: "s + e.what();
-			throw tileset_not_found{ m };
-		}
+		const auto empty_tile = resources::get_empty_tile();
+		resize_map(t, size, offset, empty_tile);
 	}
 
 	void place_tile(tile_map &m, tile_position p, tile_count_t t)

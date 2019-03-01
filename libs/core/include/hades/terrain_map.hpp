@@ -1,120 +1,57 @@
-#ifndef ORTHO_TERRAIN_HPP
-#define ORTHO_TERRAIN_HPP
-
-#include <optional>
-#include <vector>
+#ifndef HADES_TERRAIN_MAP_HPP
+#define HADES_TERRAIN_MAP_HPP
 
 #include "SFML/Graphics/Drawable.hpp"
-#include "SFML/Graphics/Sprite.hpp"
-#include "SFML/Graphics/Transformable.hpp"
-#include "SFML/Graphics/VertexArray.hpp"
 
-#include "hades/quad_map.hpp"
-#include "hades/types.hpp"
-#include "hades/uniqueId.hpp"
+#include "hades/terrain.hpp"
+#include "hades/tile_map.hpp"
 
-#include "OrthoTerrain/resources.hpp"
-
-#include "Tiles/tiles.hpp"
-
-namespace ortho_terrain
+namespace hades
 {
-	void EnableTerrain(hades::data::data_system *d);
+	void register_terrain_map_resources(data::data_manager&);
 
-	//terrain vertex is a vector of verticies, each row is 1 element longer than the equivalent tile array
-	//and contains one extra row
-	using TerrainVertex = std::vector<const resources::terrain*>;
-	using vertex_count_t = tiles::tile_count_t;
-	TerrainVertex AsTerrainVertex(const std::vector<tiles::TileArray> &map, const std::vector<const resources::terrain*> &terrainset, tiles::tile_count_t width);
-	std::tuple<vertex_count_t, vertex_count_t> CalculateVertCount(std::tuple<tiles::tile_count_t, tiles::tile_count_t> count);
-	const resources::terrain *FindTerrain(const tiles::TileArray &layer, const std::vector<const resources::terrain*> &terrain_set);
-
-	struct TerrainMapData
-	{
-		//terain_set.size() == tile_map_stack.size()
-		//terrain_set implicitly has a empty layer at the front
-		std::vector<const resources::terrain*> terrain_set;
-		//terrain maps are stored as a variable sized stack of tile layers
-		std::vector<tiles::TileArray> tile_map_stack;
-	};
-
-	TerrainMapData ReplaceTerrain(const TerrainMapData &map, TerrainVertex &verts, tiles::tile_count_t width, const resources::terrain *t, sf::Vector2i pos, tiles::draw_size_t size);
-
-	//thrown by functions in the ortho-terrain namespace
-	//for unrecoverable errors
-	class exception : public std::runtime_error
+	class immutable_terrain_map  final : public sf::Drawable
 	{
 	public:
-		using std::runtime_error::runtime_error;
-	};
+		immutable_terrain_map() = default;
+		immutable_terrain_map(const immutable_terrain_map&) = default;
+		immutable_terrain_map(const terrain_map&);
 
-	class TerrainMap : public sf::Drawable, public sf::Transformable
-	{
-	public:
-		TerrainMap() = default;
-		TerrainMap(const TerrainMapData&, tiles::tile_count_t width);
-
-		void create(const TerrainMapData&, tiles::tile_count_t width);
+		void create(const terrain_map&);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		sf::FloatRect getLocalBounds() const;
-
-	protected:
-		std::vector<tiles::TileMap> Map;
-	};
-
-	class MutableTerrainMap : public sf::Drawable, public sf::Transformable
-	{
-	public:
-		MutableTerrainMap() = default;
-		MutableTerrainMap(const TerrainMapData&, tiles::tile_count_t width);
-
-		//loads a map
-		void create(const TerrainMapData&, tiles::tile_count_t width);
-		//creates a new black map with the specified settings
-		void create(std::vector<const resources::terrain*> tset, const resources::terrain *t, tiles::tile_count_t width, tiles::tile_count_t height);
-
-		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-
-		sf::FloatRect getLocalBounds() const;
-
-		//draw over a tile
-		//amount is the number of rows of adjacent tiles to replace as well.
-		//eg amount = 1, draws over 9 tiles worth,
-		void replace(const resources::terrain *t, const sf::Vector2i &position, tiles::draw_size_t amount = 0);
-
-		void setColour(sf::Color c);
-
-		TerrainMapData getMap() const;
+		rect_float get_local_bounds() const;
 
 	private:
-		std::vector<tiles::MutableTileMap> _terrain_layers;
-		using tile_layer = std::tuple<const resources::terrain*, tiles::TileArray>;
-		std::vector<tile_layer> _tile_layers;
-		tiles::tile_count_t _width = 0u;
-		sf::Color _colour = sf::Color::White;
-		TerrainVertex _vdata;
+		immutable_tile_map _tile_layer;
+		std::vector<immutable_tile_map> _terrain_layers;
 	};
 
-	struct terrain_layer
+	class mutable_terrain_map  final : public sf::Drawable
 	{
-		std::vector<tiles::tile_layer> tile_layers;
-		std::vector<hades::types::string> terrainset;
+	public:
+		mutable_terrain_map() = default;
+		mutable_terrain_map(const mutable_terrain_map&) = default;
+		mutable_terrain_map(const terrain_map&);
+
+		void create(const terrain_map&);
+		void update(const terrain_map&);
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+		rect_float get_local_bounds() const;
+
+		void place_tile(const std::vector<tile_position>&, const resources::tile&);
+		void place_terrain(const std::vector<terrain_vertex_position>&, const resources::terrain*);
+
+		terrain_map get_map() const;
+
+	private:
+		terrain_map _map;
+		mutable_tile_map _tile_layer;
+		std::vector<mutable_tile_map> _terrain_layers;
 	};
-
-	TerrainMapData as_terraindata(const terrain_layer &l, tiles::tile_count_t width);
-	terrain_layer as_terrain_layer(const TerrainMapData &m, tiles::tile_count_t width);
-
-	struct level : public tiles::level
-	{
-		terrain_layer terrain;
-	};
-
-	//reads terrain from the yaml node and stores it in target
-	void ReadTerrainFromYaml(const YAML::Node&, level &target);
-	//does the reverse of the above function
-	YAML::Emitter &WriteTerrainToYaml(const level&, YAML::Emitter &);
 }
 
-#endif // !ORTHO_TERRAIN_HPP
+#endif // !HADES_TERRAIN_MAP_HPP

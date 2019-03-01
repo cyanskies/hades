@@ -56,6 +56,8 @@ namespace hades
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
 			unique_id mod = unique_id::zero;
+
+			//TODO: depricate this
 			//the file this resource should be loaded from
 			//the path of the mod for resources that are parsed and not loaded
 			types::string source;
@@ -90,6 +92,7 @@ namespace hades
 					_resource_loader(*this, d);
 			}
 
+			//TODO: deprecate this
 			//the actual resource
 			T value;
 		private:
@@ -100,7 +103,7 @@ namespace hades
 
 		struct mod : public resource_type<mod_t>
 		{
-			// source == the name of the archive containing the mode
+			// source == the name of the archive containing the mod
 			// dependencies: a list of mods this mod depends on
 			std::vector<unique_id> dependencies,
 				//names: unique id's provided by this mod

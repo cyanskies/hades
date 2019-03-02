@@ -118,11 +118,11 @@ namespace hades
 
 		if (g.main_toolbar_begin())
 		{
-			if (g.toolbar_button("tiles"sv))
+			/*if (g.toolbar_button("tiles"sv))
 			{
 				activate_brush();
 				_tile = nullptr;
-			};
+			};*/
 
 			//TODO: a good way to indicate drawing with the tile eraser?
 			if (g.toolbar_button("tiles eraser"sv))

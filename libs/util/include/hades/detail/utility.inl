@@ -251,7 +251,7 @@ namespace hades
 	template<typename Container, typename Iter>
 	Iter remove_duplicates(Container &cont, Iter first, Iter last)
 	{
-		return remove_duplicates(cont, first, last, std::less<typename Iter::value_type>{}, std::equal_to<typename Iter::value_type>{});
+		return remove_duplicates(cont, first, last, std::less<std::iterator_traits<Iter>::value_type>{}, std::equal_to<std::iterator_traits<Iter>::value_type>{});
 	}
 
 	template<typename Container, typename Iter, typename Less, typename Equal>

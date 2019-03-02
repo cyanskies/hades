@@ -143,6 +143,7 @@ namespace hades
 			return g.input_text(l, v, f);
 		}
 	}
+
 	template<typename T>
 	inline bool gui::input(std::string_view label, T &v, input_text_flags f)
 	{
@@ -220,6 +221,42 @@ namespace hades
 		assert(components == int_components);
 
 		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), int_components, NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+	}
+
+	template<typename InputIt, typename MakeButton>
+	void gui_make_horizontal_wrap_buttons(gui &g, float right_max, InputIt first, InputIt last, MakeButton make_button)
+	{
+		using T = std::iterator_traits<InputIt>::value_type;
+		using TRef = std::iterator_traits<InputIt>::reference;
+		using TPtr = std::iterator_traits<InputIt>::pointer;
+
+		constexpr auto button_size = vector_float{ 25.f, 25.f };
+
+		g.indent();
+
+		const auto indent_amount = g.get_item_rect_max().x;
+
+		auto x2 = 0.f;
+		while (first != last)
+		{
+			const auto new_x2 = x2 + button_size.x;
+			if (indent_amount + new_x2 < toolbox_width)
+				g.layout_horizontal();
+			else
+				g.indent();
+			
+			if constexpr (std::is_invocable_v<MakeButton, gui&, T> ||
+				std::is_invocable_v<MakeButton, gui&, TRef> ||
+				std::is_invocable_v<MakeButton, gui&, const TRef>)
+				std::invoke(make_button, g, *first++);
+			else if constexpr (std::is_invocable_v<MakeButton, gui&, TPtr> ||
+				std::is_invocable_v<MakeButton, gui&, const TPtr>)
+				std::invoke(make_button, g, &*first++);
+			else
+				static_assert(always_false_v<MakeButton>, "MakeButton must have the following definition: void(gui&, T); where T can be any of(T, T&, const T&, T*, const T*");
+
+			x2 = g.get_item_rect_max().x;
+		}
 	}
 }
 

@@ -48,6 +48,7 @@ namespace hades {
 
 	using namespace types;
 
+	// identify string types, these can all be converted to hades::string
 	template<typename T> struct is_string : std::false_type{};
 	template<> struct is_string<string> : std::true_type {};
 	template<> struct is_string<const char*> : std::true_type {};
@@ -55,6 +56,20 @@ namespace hades {
 
 	template<typename T>
 	constexpr bool is_string_v = is_string<T>::value;
+
+	//identify tuple-like types
+	//these should support tuple_size, tuple_element and get<>
+	template<typename T, typename = void>
+	struct is_tuple : std::false_type {};
+
+	//black magic for checking for a complete definition of tuple_size<T>
+	template<typename T>
+	struct is_tuple<T,
+		std::enable_if_t<sizeof(std::tuple_size<T>) == sizeof(std::tuple_size<T>)>> 
+		: std::true_type {};
+
+	template<typename T>
+	constexpr auto is_tuple_v = is_tuple<T>::value;
 }
 
 #endif //HADES_UTIL_TYPES_HPP

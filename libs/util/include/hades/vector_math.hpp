@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <tuple>
+#include <type_traits>
 
 #include "hades/types.hpp"
 
@@ -13,34 +14,22 @@ namespace hades
 	{
 		using value_type = T;
 
-		constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) {}
-		constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>) : x(x), y(y) {}
+		constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
+		//construct from T, or objects holding Ts
+		constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>);
+		template<typename U, std::enable_if_t<is_tuple_v<U>, int> = 0>
+		constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		template<typename U, std::enable_if_t<!is_tuple_v<U>, int> = 0>
+		constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
 
-		~vector_t() noexcept = default;
-	
-		template<typename U>
-		constexpr vector_t(const vector_t<U> &other) noexcept : x(static_cast<T>(other.x)), y(static_cast<T>(other.y))
-		{}
+		constexpr vector_t(const vector_t&) noexcept(std::is_nothrow_constructible_v<T, T>) = default;
 
-		template<typename U>
-		constexpr vector_t(vector_t<U> &&other) noexcept : x(static_cast<T>(other.x)), y(static_cast<T>(other.y))
-		{}
+		~vector_t() noexcept(std::is_nothrow_destructible_v<T>) = default;
 
-		template<typename U>
-		constexpr vector_t &operator=(const vector_t<U> &other) noexcept
-		{
-			x = static_cast<T>(other.x);
-			y = static_cast<T>(other.y);
-			return *this;
-		}
-
-		template<typename U>
-		constexpr vector_t &operator=(vector_t<U> &&other) noexcept
-		{
-			x = static_cast<T>(other.x);
-			y = static_cast<T>(other.y);
-			return *this;
-		}
+		//assign from objects holding Ts
+		//template<typename U, std::enable_if_t<is_tuple_v<U>, int> = 0>
+		//constexpr vector_t &operator=(const U&) noexcept(std::is_nothrow_assignable_v<T, T>);
+		constexpr vector_t &operator=(const vector_t&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
 
 		T x{}, y{};
 	};

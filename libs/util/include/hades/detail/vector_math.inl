@@ -2,12 +2,39 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 #include <type_traits>
 
 #include "hades/utility.hpp"
 
 namespace hades
 {
+	template<typename T>
+	constexpr vector_t<T>::vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>)
+		: x{ x }, y{ y }
+	{}
+
+	template<typename T>
+	template<typename U, std::enable_if_t<is_tuple_v<U>, int>>
+	constexpr vector_t<T>::vector_t(const U &u) noexcept(std::is_nothrow_constructible_v<T, T>)
+		: x{std::get<0>(u)}, y{std::get<1>(u)}
+	{
+		static_assert(std::is_same_v<T, std::tuple_element_t<0, U>> && 
+			std::is_same_v<T, std::tuple_element<1, U>> && 
+			std::tuple_size_v<U> == 2u,
+			"a tuple like type can only be used to contruct a vector_t "
+			"if it contains two elements of the same type as vector_t::value_type");
+	}
+
+	template<typename T>
+	template<typename U, std::enable_if_t<!is_tuple_v<U>, int>>
+	constexpr vector_t<T>::vector_t(const U &u) noexcept(std::is_nothrow_constructible_v<T, T>)
+		: x{ u.x }, y{ u.y }
+	{
+		static_assert(std::is_same_v<T, decltype(u.x)> && std::is_same_v<T, decltype(u.y)>,
+			"x and y must both be the same type as vector_t::value_type");
+	}
+
 	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs)
 	{

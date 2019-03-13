@@ -196,6 +196,24 @@ namespace hades::detail
 
 		using namespace std::string_view_literals;
 
+		constexpr auto error_str = "error"sv;
+
+		if (_error_modal)
+			_gui.open_modal(error_str);
+
+		if (_gui.modal_begin(error_str))
+		{
+			_gui.text(_error_msg);
+
+			if (_gui.button("ok"sv))
+			{
+				_error_modal = false;
+				_gui.close_current_modal();
+			}
+
+			_gui.modal_end();
+		}
+
 		//make main menu
 		const auto main_menu_created = _gui.main_menubar_begin();
 		assert(main_menu_created);
@@ -252,10 +270,17 @@ namespace hades::detail
 					l.map_x = _new_level_options.width;
 					l.map_y = _new_level_options.height;
 
-					_window_flags.new_level = false;
-
-					l = _component_on_new(l);
-					_component_on_load(l);
+					try 
+					{
+						l = _component_on_new(l);
+						_component_on_load(l);
+						_window_flags.new_level = false;
+					}
+					catch (const new_level_editor_error &e)
+					{
+						_error_modal = true;
+						_error_msg = e.what();
+					}
 				}
 
 				_gui.layout_horizontal();

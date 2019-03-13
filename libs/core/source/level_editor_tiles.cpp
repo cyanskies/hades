@@ -56,6 +56,7 @@ namespace hades
 			_tiles.create(empty_map);
 		else
 		{
+			//TODO: resize if not the correct size
 			const auto map = to_tile_map(l.tile_map_layer);
 			_tiles.create(map);
 		}

@@ -73,7 +73,8 @@ namespace hades
 		using namespace std::string_view_literals;
 		//register tile resources
 		d.register_resource_type(resources::get_tilesets_name(), resources::parse_terrain);
-		d.register_resource_type("terrainset"sv, resources::parse_terrainset);
+		d.register_resource_type("terrain"sv, resources::parse_terrain);
+		d.register_resource_type("terrainsets"sv, resources::parse_terrainset);
 	}
 
 	static terrain_count_t get_terrain_index(const resources::terrainset *set, const resources::terrain *t)
@@ -87,25 +88,180 @@ namespace hades
 		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
 	}
 
+	static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, terrain_count_t w, tile_position p)
+	{
+		//a tile position should always point to the top left of a tile vertex
+		const auto top_left = to_1d_index(p, w - 1);
+		//if the 1d index of the top left is correct
+		//then their should always be a vertex to its right
+		assert(top_left / w < w);
+		const auto top_right = top_left + 1u;
+		++p.y;
+		const auto bottom_left = to_1d_index(p, w - 1);
+		const auto bottom_right = bottom_left + 1u;
+		//same for the vertex below them, they should be before the end of the vector
+		assert(bottom_left < std::size(v));
+
+		assert(rect_corners::bottom_right < rect_corners::bottom_left);
+
+		return std::array{
+			v[top_left],
+			v[top_right],
+			v[bottom_right],
+			v[bottom_left]
+		};
+	}
+
+	template<typename InputIt>
+	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, terrain_count_t w, InputIt first, InputIt last)
+	{
+		auto out = tile_map{};
+		out.width = w - 1;
+		out.tilesets = std::vector<const resources::tileset*>{
+			resources::get_empty_terrain(),
+			*first
+		};
+
+		const auto tile_w = w - 1;
+
+		for (auto i = std::size_t{}; i < std::size(v); ++i)
+		{
+			const auto p = to_2d_index(i, w);
+			if (p.first == tile_w)
+				continue;
+
+			const auto pos = tile_position{
+				signed_cast(p.first),
+				signed_cast(p.second)
+			};
+
+			const auto corners = get_terrain_at_tile(v, w, pos);
+			const auto type = get_transition_type(corners, first, last);
+			const auto tile = resources::get_random_tile(**first, type);
+			out.tiles.emplace_back(get_tile_id(out, tile));
+		}
+
+		return out;
+	}
+
+	static std::vector<tile_map> generate_terrain_layers(const resources::terrainset *t, const std::vector<const resources::terrain*> &v, terrain_count_t width)
+	{
+		auto out = std::vector<tile_map>{};
+
+		const auto end = std::cend(t->terrains);
+		for (auto iter = std::cbegin(t->terrains); iter != end; ++iter)
+			out.emplace_back(generate_layer(v, width, iter, end));
+
+		return out;
+	}
+
+	bool is_valid(const raw_terrain_map &r)
+	{
+		if (std::empty(r.tile_layer.tiles) ||
+			r.tile_layer.width < 1)
+		{
+			LOGWARNING("raw terrain map must have a valid tile layer in ordre to compute size");
+			return false;
+		}
+
+		//check the the map has a valid terrain vertex
+		const auto[tile_x, tile_y] = to_2d_index(std::size(r.tile_layer.tiles), r.tile_layer.width);
+		const auto terrain_size = terrain_vertex_position{
+			signed_cast(tile_x + 1u),
+			signed_cast(tile_y + 1u)
+		};
+
+		const auto vertex_length = terrain_size.x * terrain_size.y;
+
+		if (!std::empty(r.terrain_vertex) &&
+			std::size(r.terrain_vertex) != vertex_length)
+		{
+			LOGWARNING("raw map terrain vertex list should be the same number of tiles as the tile_layer, or it should be empty.");
+			return false;
+		}
+
+		if (!std::empty(r.terrain_layers))
+		{
+			const auto size = get_size(r.tile_layer);
+			if (std::any_of(std::begin(r.terrain_layers), std::end(r.terrain_layers), [size](auto &&l) {
+				return get_size(l) != size;
+			}))
+			{
+				LOGWARNING("raw terrain map, if tile data for terrain layers is present, then those layers must be the same size as the tile-layer");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool is_valid(const raw_terrain_map &r, vector_int level_size, resources::tile_size_t tile_size)
+	{
+		if (!is_valid(r))
+			return false;
+
+		//check the scale and size of the map is correct for the level size
+		const auto size = tile_position{
+			signed_cast(level_size.x / tile_size),
+			signed_cast(level_size.y / tile_size)
+		};
+
+		const auto tilemap_size = get_size(r.tile_layer);
+
+		if (tilemap_size != size)
+		{
+			LOGWARNING("loaded map size must be a multiple of tile size: [" +
+				to_string(tile_size) + "], level will be adjusted to a valid value");
+
+			return false;
+		}
+
+		return true;
+	}
+
 	terrain_map to_terrain_map(const raw_terrain_map &r)
 	{
+		if(!is_valid(r))
+			throw terrain_error{ "raw terrain map is not valid" };
+
 		auto m = terrain_map{};
 
 		m.terrainset = data::get<resources::terrainset>(r.terrainset);
 		
-		const auto empty = resources::get_empty_terrain();
-		std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
-			std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_count_t t) {
-			if (t == terrain_count_t{})
-				return empty;
-
-			assert(t <= std::size(terrains));
-			return terrains[t - 1u];
-		});
-
+		//tile layer is required to be valid
 		m.tile_layer = to_tile_map(r.tile_layer);
-		std::transform(std::begin(r.terrain_layers), std::end(r.terrain_layers),
-			std::back_inserter(m.terrain_layers), to_tile_map);
+		const auto size = get_size(m.tile_layer);
+
+		const auto empty = resources::get_empty_terrain();
+		//if the terrain_vertex isn't present, then fill with empty
+		if (std::empty(m.terrain_vertex))
+			m.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), empty);
+		else
+		{
+			std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
+				std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_count_t t) {
+				if (t == terrain_count_t{})
+					return empty;
+
+				assert(t <= std::size(terrains));
+				return terrains[t - 1u];
+			});
+		}
+
+		// if the terrain layers are empty then generate them
+		if (std::empty(r.terrain_layers))
+		{
+			m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x + 1);
+		}
+		else
+		{
+			std::transform(std::begin(r.terrain_layers), std::end(r.terrain_layers),
+				std::back_inserter(m.terrain_layers), to_tile_map);
+		}
+
+		//if we dont have the correct number of terrain_layers
+		if (std::size(m.terrainset->terrains) != std::size(m.terrain_layers))
+			throw terrain_error{ "terrain map missing some terrain layers, or has too many" };
 
 		return m;
 	}
@@ -225,26 +381,7 @@ namespace hades
 	{
 		const auto w = get_width(m);
 
-		//a tile position should always point to the top left of a tile vertex
-		const auto top_left = to_1d_index(p, w);
-		//if the 1d index of the top left is correct
-		//then their should always be a vertex to its right
-		assert(top_left < w);
-		const auto top_right = top_left + 1u;
-		++p.y;
-		const auto bottom_left = to_1d_index(p, w);
-		const auto bottom_right = bottom_left + 1u;
-		//same for the vertex below them, they should be before the end of the vector
-		assert(bottom_left < std::size(m.terrain_vertex));
-
-		assert(rect_corners::bottom_right < rect_corners::bottom_left);
-
-		return std::array{
-			m.terrain_vertex[top_left],
-			m.terrain_vertex[top_right],
-			m.terrain_vertex[bottom_right],
-			m.terrain_vertex[bottom_left]
-		};
+		return get_terrain_at_tile(m.terrain_vertex, w, p);
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
@@ -358,7 +495,6 @@ namespace hades
 
 		update_tile_layers(m, positions, t);
 	}
-
 }
 
 namespace hades::resources
@@ -427,21 +563,29 @@ namespace hades::resources
 	template<class U = std::vector<tile>, class W>
 	U& get_transition(transition_tile_type type, W& t)
 	{
-		//TODO: return ref to empty tileset?
-		// for type == all
-		assert(type < all);
+		if constexpr (std::is_const_v<U>)
+		{
+			if (type == none)
+				return get_empty_terrain()->tiles;
+		}
+		else
+			assert(type != none);
+
+		//we store the 'all' tiles in the 'none' index
+		//since it is unused
+		if (type == all)
+			type = none;
 		assert(type < std::size(t.terrain_transition_tiles));
 		return t.terrain_transition_tiles[type];
 	}
 
 	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, const hades::resources::texture *tex,
-		const std::vector<transition_tile_type> &tiles, const int32 tiles_per_row, const tile_size_t tile_size)
+		const std::vector<transition_tile_type> &tiles, const tile_count_t tiles_per_row, const tile_size_t tile_size)
 	{
 		auto count = tile_size_t{};
 		for (auto &t : tiles)
 		{
-			if (t >= transition_end)
-				continue; //TODO: log error
+			assert(t <= transition_end);
 
 			const auto tile_pos = vector_t{
 				(count % tiles_per_row) * tile_size + start_pos.x,
@@ -449,6 +593,12 @@ namespace hades::resources
 			};
 
 			++count;
+
+			if (t == none)
+			{
+				LOGWARNING("skipping terrain tile, layouts cannot contain the 'none' transition");
+				continue;
+			}
 
 			auto &transition_vector = get_transition(t, terrain);
 
@@ -468,7 +618,6 @@ namespace hades::resources
 				top_right, top_right_bottom_right, top_right_bottom_left, top_right_bottom_left_right,
 				top_left, top_left_bottom_right, top_left_bottom_left, top_left_bottom_left_right,
 				top_left_right, top_left_right_bottom_right, top_left_right_bottom_left, all };
-
 
 		std::vector<transition_tile_type> out;
 
@@ -543,6 +692,11 @@ namespace hades::resources
 		const auto tile_count = get_scalar<int32>(p, "tile-count"sv, -1);
 		const auto tiles_per_row = get_scalar<int32>(p, "tiles-per-row"sv, -1);
 
+		if (tiles_per_row < 0)
+		{
+			LOGERROR("a terrain group must provide tiles-per-row");
+		}
+
 		const auto left = get_scalar<int32>(p, "left"sv, 0);
 		const auto top = get_scalar<int32>(p, "top"sv, 0);
 
@@ -575,20 +729,21 @@ namespace hades::resources
 		//		tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
 		//		tiles: <//for drawing individual tiles, we let the tileset parser handle it
 		//			- {
-		//				texture: <// texture to draw the tiles from
+		//				texture: <// texture to draw the tiles from; required
 		//				left: <// pixel start of tileset; default: 0
 		//				top: <// pixel left of tileset; default: 0
-		//				tiles_per_row: <// number of tiles per row
+		//				tiles_per_row: <// number of tiles per row; required
 		//				tile_count: <// total amount of tiles in tileset; default: tiles_per_row
 		//			}
 		//		terrain:
 		//			- {
-		//				texture:
-		//				left:
-		//				top:
-		//				tiles-per-row:
-		//				tile_count:
-		//				layout: //either war3, a single unique_id, or a set of tile_count unique_ids
+		//				texture: <// as above
+		//				left: <// as above
+		//				top: <// as above
+		//				tiles-per-row: <// as above
+		//				tile_count: <// optional; default is the length of layout
+		//				layout: //either war3, a single unique_id, or a set of tile_count unique_ids; required
+		//						// see parse_layout()::transition_names for a list of unique_ids
 		//			}
 
 		const auto terrains_list = p.get_children();
@@ -598,11 +753,7 @@ namespace hades::resources
 		for (const auto &terrain_node : terrains_list)
 		{
 			using namespace std::string_view_literals;
-			const auto name_n = terrain_node->get_child("name"sv);
-			if (!name_n)
-				continue;
-
-			const auto name = name_n->to_string();
+			const auto name = terrain_node->to_string();
 			const auto id = d.get_uid(name);
 
 			auto terrain = d.find_or_create<resources::terrain>(id, m);
@@ -620,6 +771,9 @@ namespace hades::resources
 
 			settings->terrains.emplace_back(terrain);
 		}
+
+		remove_duplicates(settings->terrains);
+		remove_duplicates(settings->tilesets);
 	}
 
 	static void parse_terrainset(unique_id mod, const data::parser_node &n, data::data_manager &d)
@@ -638,8 +792,7 @@ namespace hades::resources
 
 			auto t = d.find_or_create<terrainset>(id, mod);
 
-			const auto seq = terrainset_n->get_child();
-			auto unique_list = seq->merge_sequence(t->terrains, [mod, &d](std::string_view s) {
+			auto unique_list = terrainset_n->merge_sequence(t->terrains, [mod, &d](std::string_view s) {
 				const auto i = d.get_uid(s);
 				return d.find_or_create<terrain>(i, mod);
 			});

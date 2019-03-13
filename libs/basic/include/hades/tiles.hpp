@@ -156,6 +156,7 @@ namespace hades
 
 	using tile_position = vector_int;
 	//throws tile_error, if the tile_map is malformed
+	tile_position get_size(const raw_map&);
 	tile_position get_size(const tile_map&);
 
 	//converts a raw map into a tile map

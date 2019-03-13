@@ -1,0 +1,48 @@
+mod:
+    name: terrain
+
+textures:
+    tex-grey:
+        width: 32
+        height: 32 
+        source: "terrain/indev-grey.png"
+    tex-orange:
+        width: 32
+        height: 32
+        source: "terrain/indev-orange.png"
+    tex-green:
+        width: 32
+        height: 32
+        source: "terrain/indev-green.png"
+
+tile-settings:
+    tile-size: 8
+
+terrain:
+    grey-terrain:
+        terrain:
+            - {
+                texture: tex-grey,
+                tiles-per-row: 4,
+                layout: war3,
+            }
+        tags: grey
+    orange-terrain:
+        terrain:
+            - {
+                texture: tex-orange,
+                tiles-per-row: 4,
+                layout: war3,
+            }
+        tags: orange
+    green-terrain:
+        terrain:
+            - {
+                texture: tex-green,
+                tiles-per-row: 4,
+                layout: war3,
+            }
+        tags: green
+
+terrainsets:
+    example-terrainset: [grey-terrain, orange-terrain, green-terrain]

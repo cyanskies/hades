@@ -10,12 +10,17 @@
 namespace hades
 {
 	template<typename T>
-	constexpr vector_t<T>::vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>)
+	inline constexpr vector_t<T>::vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>)
 		: x{ x }, y{ y }
 	{}
 
 	template<typename T>
-	template<typename U, std::enable_if_t<is_tuple_v<U>, int>>
+	inline constexpr vector_t<T>::vector_t(const std::pair<T, T> &p) noexcept(std::is_nothrow_constructible_v<T, T>)
+		: x{ p.first }, y{ p.second}
+	{}
+
+	template<typename T>
+	template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int>>
 	constexpr vector_t<T>::vector_t(const U &u) noexcept(std::is_nothrow_constructible_v<T, T>)
 		: x{std::get<0>(u)}, y{std::get<1>(u)}
 	{

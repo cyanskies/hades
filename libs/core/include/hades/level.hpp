@@ -6,6 +6,7 @@
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
 #include "hades/curve.hpp"
+#include "hades/terrain.hpp"
 #include "hades/tiles.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -66,6 +67,9 @@ namespace hades
 		raw_map tile_map_layer;
 		
 		//terrain map
+		unique_id terrainset = unique_id::zero;
+		std::vector<terrain_count_t> terrain_vertex;
+		std::vector<raw_map> terrain_layers;
 	};
 
 	struct level_save

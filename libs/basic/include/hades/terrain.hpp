@@ -18,7 +18,8 @@ namespace hades::resources
 {
 	//NOTE: see http://www.cr31.co.uk/stagecast/wang/2corn.html
 	//values for 2-corner transitions
-	//named based on which tile corners are 'empty'
+	//named based on which tile corners hold a terrain
+	// other corners are empty
 	//the order is important for the algorithm to work
 	enum transition_tile_type : std::size_t {
 		transition_begin,
@@ -46,7 +47,8 @@ namespace hades::resources
 		terrain();
 
 		//an array of tiles for each transition_type, except all(which should be an empty tile)
-		std::array<std::vector<tile>, top_left_bottom_left_right> terrain_transition_tiles;
+		//use get_transitions() to access the correct element
+		std::array<std::vector<tile>, all> terrain_transition_tiles;
 
 		//NOTE: also has access to std::vector<tile> tiles
 		// which contains all the tiles from the above lists as well
@@ -75,6 +77,7 @@ namespace hades::resources
 	};
 
 	const terrain_settings *get_terrain_settings();
+	const terrain *get_terrain(const resources::tile&);
 	const terrain *get_empty_terrain();
 
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
@@ -98,11 +101,17 @@ namespace hades
 		unique_id terrainset;
 		//terrain vertex are indexed starting at 1
 		// 0 is reserved for the empty vertex
+		//if empty, then should be filled with empty vertex
 		std::vector<terrain_count_t> terrain_vertex;
 
+		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
+
 		raw_map tile_layer;
 	};
+
+	bool is_valid(const raw_terrain_map&);
+	bool is_valid(const raw_terrain_map&, vector_int level_size, resources::tile_size_t tile_size);
 
 	struct terrain_map
 	{
@@ -165,6 +174,7 @@ namespace hades
 	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
 
 	//for editing a terrain map
+	//use the make_position_* functions from tiles.hpp
 	void place_tile(terrain_map&, tile_position, const resources::tile&);
 	//positions outside the map will be ignored
 	void place_tile(terrain_map&, const std::vector<tile_position>&, const resources::tile&);
@@ -172,8 +182,6 @@ namespace hades
 	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*);
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*);
-
-	//use the make_position_* functions from tiles.hpp
 }
 
 #include "hades/detail/terrain.inl"

@@ -240,7 +240,7 @@ namespace hades
 		while (first != last)
 		{
 			const auto new_x2 = x2 + button_size.x;
-			if (indent_amount + new_x2 < toolbox_width)
+			if (indent_amount + new_x2 < right_max)
 				g.layout_horizontal();
 			else
 				g.indent();

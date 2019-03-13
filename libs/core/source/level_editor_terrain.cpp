@@ -1,9 +1,298 @@
 #include "hades/level_editor_terrain.hpp"
 
+#include "hades/gui.hpp"
+
 namespace hades
 {
 	void register_level_editor_terrain_resources(data::data_manager &d)
 	{
 		register_terrain_map_resources(d);
+	}
+
+	level_editor_terrain::level_editor_terrain() :
+		_settings{resources::get_terrain_settings()}
+	{}
+
+	level level_editor_terrain::level_new(level l) const
+	{
+		if (!_new_options.terrain_set ||
+			!_new_options.terrain)
+		{
+			const auto msg = "must select a terrain set and a starting terrain";
+			LOGERROR(msg);
+			throw new_level_editor_error{ msg };
+		}
+
+		if (l.map_x % _settings->tile_size != 0 ||
+			l.map_y % _settings->tile_size != 0)
+		{
+			const auto msg = "level size must be a multiple of tile size("
+				+ to_string(_settings->tile_size) +")";
+
+			LOGERROR(msg);
+			throw new_level_editor_error{ msg };
+		}
+				
+		const auto size = tile_position{
+			signed_cast(l.map_x / _settings->tile_size),
+			signed_cast(l.map_y / _settings->tile_size)
+		};
+
+		const auto map = make_map(size, _new_options.terrain_set, _new_options.terrain);
+		const auto raw = to_raw_terrain_map(map);
+		l.terrainset = raw.terrainset;
+		l.terrain_layers = raw.terrain_layers;
+		l.tile_map_layer = raw.tile_layer;
+		l.terrain_vertex = raw.terrain_vertex;
+
+		return l;
+	}
+
+	void level_editor_terrain::level_load(const level &l)
+	{
+		auto map_raw = raw_terrain_map{ l.terrainset,
+			l.terrain_vertex,
+			l.terrain_layers,
+			l.tile_map_layer
+		};
+
+		//check the scale and size of the map
+		assert(_settings);
+		const auto tile_size = _settings->tile_size;
+
+		const auto size = tile_position{
+			signed_cast(l.map_x / tile_size),
+			signed_cast(l.map_y / tile_size)
+		};
+
+		//change the raw map so it can be validly converted into a terrain_map
+		//generate a empty tile layer of the correct size
+		if (std::empty(map_raw.tile_layer.tiles) ||
+			map_raw.tile_layer.width == tile_count_t{})
+		{
+			map_raw.tile_layer.width = size.x;
+			map_raw.tile_layer.tilesets.clear();
+			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_terrain()->id, 0u);
+			map_raw.tile_layer.tiles = std::vector<tile_count_t>(size.x * size.y, tile_count_t{});
+		}
+
+		//if terrainset is empty then assign one
+		assert(!std::empty(_settings->terrainsets));
+		map_raw.terrainset = _settings->terrainsets.front()->id;
+
+		const auto map = to_terrain_map(map_raw);
+
+		//TODO: if size != to level xy, then resize the map
+
+		_map.create(map);
+		_current.terrain_set = map.terrainset;
+	}
+
+	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
+	{
+		using namespace std::string_view_literals;
+
+		if (g.main_toolbar_begin())
+		{
+			if (g.toolbar_button("terrain eraser"sv))
+			{
+				activate_brush();
+				_brush = brush_type::erase;
+			}
+		}
+
+		g.main_toolbar_end();
+
+		if (g.window_begin(editor::gui_names::toolbox))
+		{
+			const auto toolbox_width = g.get_item_rect_max().x;
+
+			if (g.collapsing_header("map drawing settings"sv))
+			{
+				constexpr auto draw_shapes = std::array{
+					"square"sv,
+					"circle"sv
+				};
+
+				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_shape)]))
+				{
+					if (g.selectable(draw_shapes[0], _shape == draw_shape::rect))
+						_shape = draw_shape::rect;
+
+					if (g.selectable(draw_shapes[1], _shape == draw_shape::circle))
+						_shape = draw_shape::circle;
+
+					g.combo_end();
+				}
+
+				constexpr auto size_min = int{ 0 };
+				constexpr auto size_max = int{ 6 };
+
+				g.input_scalar("drawing size"sv, _size);
+				_size = std::clamp(_size, size_min, size_max);
+			}
+
+			if (g.collapsing_header("tiles"sv))
+			{
+				auto on_click = [this](resources::tile t) {
+					activate_brush();
+					_brush = brush_type::draw_tile;
+					_tile = t;
+				};
+
+				auto make_button = [this, on_click](gui &g, const resources::tile &t) {
+					constexpr auto button_size = gui::vector{
+						25,
+						25
+					};
+
+					const auto x = static_cast<float>(t.left),
+						y = static_cast<float>(t.top);
+
+					const auto tile_size = static_cast<float>(_tile_size);
+
+					const auto tex_coords = rect_float{
+						x,
+						y,
+						tile_size,
+						tile_size
+					};
+
+					//need to push a prefix to avoid the id clashing from the same texture
+					g.push_id(&t);
+					if (g.image_button(*t.texture, tex_coords, button_size))
+						std::invoke(on_click, t);
+					g.pop_id();
+				};
+
+				//each tileset
+				//the tiles from a terrain wont appear here unless
+				//they are listed under the tiles: tag in the terrain
+				for (const auto tileset : _settings->tilesets)
+				{
+					const auto name = data::get_as_string(tileset->id);
+
+					g.indent();
+					if (g.collapsing_header(name))
+						gui_make_horizontal_wrap_buttons(g, toolbox_width, std::begin(tileset->tiles), std::end(tileset->tiles), make_button);
+				}
+			}
+
+			if (g.collapsing_header("terrain"sv))
+			{
+				auto on_click = [this](const resources::terrain *t) {
+					activate_brush();
+					_brush = brush_type::draw_terrain;
+					_current.terrain = t;
+				};
+
+				auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
+					constexpr auto button_size = gui::vector{
+						25,
+						25
+					};
+
+					assert(!std::empty(terrain->tiles));
+					const auto t = terrain->tiles.front();
+
+					const auto x = static_cast<float>(t.left),
+						y = static_cast<float>(t.top);
+					
+					const auto tile_size = static_cast<float>(_tile_size);
+
+					const auto tex_coords = rect_float{
+						x,
+						y,
+						tile_size,
+						tile_size
+					};
+
+					//need to push a prefix to avoid the id clashing from the same texture
+					g.push_id(terrain);
+					if (g.image_button(*t.texture, tex_coords, button_size))
+						std::invoke(on_click, terrain);
+					g.pop_id();
+				};
+
+				assert(_current.terrain_set);
+
+				g.indent();
+				gui_make_horizontal_wrap_buttons(g, toolbox_width,
+					std::begin(_current.terrain_set->terrains),
+					std::end(_current.terrain_set->terrains), make_button);
+			}
+		}
+		g.window_end();
+		
+		if (w.new_level)
+		{
+			if (g.window_begin(editor::gui_names::new_level))
+			{
+				auto dialog_pos = g.window_position().x;
+				auto dialog_size = g.get_item_rect_max().x;
+				
+				using namespace std::string_literals;
+				auto string = "none"s;
+				if (_new_options.terrain_set != nullptr)
+					string = data::get_as_string(_new_options.terrain_set->id);
+
+				if (g.combo_begin("terrain set"sv, string))
+				{
+					for (const auto tset : _settings->terrainsets)
+					{
+						if (g.selectable(data::get_as_string(tset->id), tset == _new_options.terrain_set))
+							_new_options.terrain_set = tset;
+					}
+
+					g.combo_end();
+				}
+
+				if (_new_options.terrain_set != nullptr)
+				{
+					auto on_click = [this](const resources::terrain *t) {
+						_new_options.terrain = t;
+					};
+
+					auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
+						constexpr auto button_size = gui::vector{
+							25,
+							25
+						};
+
+						assert(!std::empty(terrain->tiles));
+						const auto t = terrain->tiles.front();
+
+						const auto x = static_cast<float>(t.left),
+							y = static_cast<float>(t.top);
+
+						const auto tile_size = static_cast<float>(_tile_size);
+
+						const auto tex_coords = rect_float{
+							x,
+							y,
+							tile_size,
+							tile_size
+						};
+
+						//need to push a prefix to avoid the id clashing from the same texture
+						g.push_id(terrain);
+						if (g.image_button(*t.texture, tex_coords, button_size))
+							std::invoke(on_click, terrain);
+						g.pop_id();
+					};
+
+					gui_make_horizontal_wrap_buttons(g, dialog_pos + dialog_size,
+						std::begin(_new_options.terrain_set->terrains),
+						std::end(_new_options.terrain_set->terrains), make_button);
+				}
+
+			}
+			g.window_end();
+		}
+	}
+
+	void level_editor_terrain::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	{
+		t.draw(_map, s);
 	}
 }

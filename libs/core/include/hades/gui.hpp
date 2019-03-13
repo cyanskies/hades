@@ -409,8 +409,15 @@ namespace hades
 		void show_tooltip(std::string_view); //always shows a tooltip
 
 		//TODO: popups
+		void open_popup(std::string_view);
+		void popup_end();
+		void close_current_popup();
 
-		//TODO: modal dialog, window that blocks all other input
+		//modal dialogs(block input behind them)
+		void open_modal(std::string_view);
+		bool modal_begin(std::string_view, window_flags flags = window_flags::none);
+		void modal_end();
+		void close_current_modal();
 
 		//columns
 		void columns_begin(std::size_t count = 1u, bool border = true);

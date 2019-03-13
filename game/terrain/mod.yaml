@@ -1,4 +1,4 @@
 mod:
-    name: ortho_terrain
+    name: terrain
 
 include: game.yaml

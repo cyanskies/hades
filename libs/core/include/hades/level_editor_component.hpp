@@ -36,6 +36,18 @@ namespace hades::editor
 
 namespace hades
 {
+	class level_editor_error : public runtime_error
+	{
+	public:
+		using runtime_error::runtime_error;
+	};
+
+	class new_level_editor_error : public level_editor_error
+	{
+	public:
+		using level_editor_error::level_editor_error;
+	};
+
 	class gui;
 	struct mission;
 	
@@ -72,6 +84,8 @@ namespace hades
 			std::invoke(_get_tags_at, r);
 		}
 
+		//compoenents can throw new_level_editor_error
+		// if they with to prevent creation of a new level,
 		virtual level level_new(level l) const { return l; };
 		virtual void level_load(const level&) {};
 		virtual level level_save(level l) const { return l; };

@@ -227,7 +227,13 @@ namespace hades
 			if (map.tiles[i] != _tiles.tiles[i])
 			{
 				const auto &t = get_tile(map, i);
-				_update_tile(to_2d_position(map.width, i), t);
+				const auto p = to_2d_index(i, map.width);
+				const auto pos = tile_position{
+					static_cast<int32>(p.first),
+					static_cast<int32>(p.second)
+				};
+
+				_update_tile(pos, t);
 			}
 		}
 

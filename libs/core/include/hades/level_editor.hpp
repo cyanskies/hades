@@ -87,6 +87,9 @@ namespace hades::detail
 		void _save();
 		void _update_gui(time_duration);
 
+		bool _error_modal = false;
+		string _error_msg = "no error";
+
 		level_editor_component::editor_windows _window_flags;
 		gui _gui;
 		level _level;

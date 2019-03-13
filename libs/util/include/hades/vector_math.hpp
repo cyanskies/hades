@@ -7,6 +7,25 @@
 
 #include "hades/types.hpp"
 
+namespace hades::detail
+{
+	template<typename T, typename U>
+	constexpr bool vector_t_good_tuple_f()
+	{
+		if constexpr (is_tuple_v<U>)
+		{
+			return std::tuple_size_v<U> == 2 &&
+				std::tuple_element_t<0u, U> == T &&
+				std::tuple_element_t<1u, U> == T;
+		}
+
+		return false;
+	}
+
+	template<typename T, typename U>
+	constexpr auto vector_t_good_tuple_v = vector_t_good_tuple_f<T, U>();
+}
+
 namespace hades
 {
 	template<typename T>
@@ -17,18 +36,16 @@ namespace hades
 		constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
 		//construct from T, or objects holding Ts
 		constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>);
-		template<typename U, std::enable_if_t<is_tuple_v<U>, int> = 0>
-		constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int> = 0>
+		explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
 		template<typename U, std::enable_if_t<!is_tuple_v<U>, int> = 0>
-		constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		explicit constexpr vector_t(const std::pair<T, T>&) noexcept(std::is_nothrow_constructible_v<T, T>);
 
 		constexpr vector_t(const vector_t&) noexcept(std::is_nothrow_constructible_v<T, T>) = default;
 
 		~vector_t() noexcept(std::is_nothrow_destructible_v<T>) = default;
 
-		//assign from objects holding Ts
-		//template<typename U, std::enable_if_t<is_tuple_v<U>, int> = 0>
-		//constexpr vector_t &operator=(const U&) noexcept(std::is_nothrow_assignable_v<T, T>);
 		constexpr vector_t &operator=(const vector_t&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
 
 		T x{}, y{};

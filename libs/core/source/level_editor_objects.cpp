@@ -361,7 +361,10 @@ namespace hades
 			auto sprite = sf::Sprite{};
 			animation::apply(*anim, time_point{}, sprite);
 			const auto anim_size = vector_int{ anim->width, anim->height };
-			const auto round_size = static_cast<vector_int>(size);
+			const auto round_size = vector_int{
+				static_cast<int32>(size.x), 
+				static_cast<int32>(size.y)
+			};
 
 			if (anim_size != round_size)
 			{

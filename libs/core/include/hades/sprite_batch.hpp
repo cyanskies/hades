@@ -103,6 +103,7 @@ namespace hades
 
 		rect_float _draw_clamp{};
 
+		//TODO: vertex_buffer
 		using vertex_batch = std::pair<sprite_utility::sprite_settings, std::vector<sf::Vertex>>;
 		std::vector<vertex_batch> _vertex;
 		

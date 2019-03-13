@@ -4,4 +4,4 @@ mod:
     name: dev
     depends:
         - objects
-        - tiles
+        - terrain

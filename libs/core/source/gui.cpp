@@ -696,6 +696,45 @@ namespace hades
 		ImGui::SetTooltip(to_string(s).c_str());
 	}
 
+	void gui::open_popup(std::string_view s)
+	{
+		_active_assert();
+		ImGui::OpenPopup(to_string(s).c_str());
+	}
+
+	void gui::popup_end()
+	{
+		_active_assert();
+		ImGui::EndPopup();
+	}
+
+	void gui::close_current_popup()
+	{
+		_active_assert();
+		ImGui::CloseCurrentPopup();
+	}
+
+	void gui::open_modal(std::string_view s)
+	{
+		open_popup(s);
+	}
+
+	bool gui::modal_begin(std::string_view s, window_flags flags)
+	{
+		_active_assert();
+		return ImGui::BeginPopupModal(to_string(s).c_str(), nullptr, static_cast<ImGuiWindowFlags>(flags));
+	}
+
+	void gui::modal_end()
+	{
+		popup_end();
+	}
+
+	void gui::close_current_modal()
+	{
+		close_current_popup();
+	}
+
 	void gui::columns_begin(std::size_t count, bool border)
 	{
 		_active_assert();

@@ -114,7 +114,7 @@ namespace hades
 	void resources::detail::parse_tiles(unique_id mod, resources::tileset &tileset, resources::tile_settings &settings, const data::parser_node &n, data::data_manager &d)
 	{
 		using namespace data::parse_tools;
-		const auto tags = get_unique_sequence(n, "tags"sv, tag_list{});
+		tileset.tags = get_unique_sequence(n, "tags"sv, tileset.tags);
 
 		const auto tile_groups_parent = n.get_child("tiles"sv);
 		if (!tile_groups_parent)
@@ -196,6 +196,8 @@ namespace hades
 
 			resources::detail::parse_tiles(mod, *tileset, *tile_settings, *tileset_n, d);
 		}
+
+		remove_duplicates(tile_settings->tilesets);
 	}
 }
 
@@ -390,7 +392,8 @@ namespace hades
 		return map;
 	}
 
-	tile_position get_size(const tile_map &t)
+	template<typename T>
+	static tile_position get_size_impl(const T &t)
 	{
 		if (t.width == 0 ||
 			t.tiles.empty())
@@ -400,6 +403,16 @@ namespace hades
 			signed_cast(t.width),
 			signed_cast(t.tiles.size() / t.width)
 		};
+	}
+
+	tile_position get_size(const raw_map &t)
+	{
+		return get_size_impl(t);
+	}
+
+	tile_position get_size(const tile_map &t)
+	{
+		return get_size_impl(t);
 	}
 
 	tile_map to_tile_map(const raw_map &r)

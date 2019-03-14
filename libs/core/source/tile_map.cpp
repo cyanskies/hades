@@ -226,7 +226,7 @@ namespace hades
 		{
 			if (map.tiles[i] != _tiles.tiles[i])
 			{
-				const auto &t = get_tile(map, i);
+				const auto &t = get_tile(map, map.tiles[i]);
 				const auto p = to_2d_index(i, map.width);
 				const auto pos = tile_position{
 					static_cast<int32>(p.first),

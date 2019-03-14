@@ -88,27 +88,55 @@ namespace hades
 		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
 	}
 
+	static tile_corners make_empty_corners()
+	{
+		const auto empty = resources::get_empty_terrain();
+		return std::array{ empty, empty, empty, empty };
+	}
+
 	static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, terrain_count_t w, tile_position p)
 	{
+		auto out = make_empty_corners();
+
+		const auto map_size = terrain_vertex_position{ 
+			signed_cast(w),
+			signed_cast(std::size(v) / w)
+		};
+
+		if (!within_map(map_size - terrain_vertex_position{ 1, 1 }, p))
+			return out;
+		
 		//a tile position should always point to the top left of a tile vertex
-		const auto top_left = to_1d_index(p, w - 1);
+		const auto top_left_i = to_1d_index(p, w);
 		//if the 1d index of the top left is correct
 		//then their should always be a vertex to its right
-		assert(top_left / w < w);
-		const auto top_right = top_left + 1u;
-		++p.y;
-		const auto bottom_left = to_1d_index(p, w - 1);
-		const auto bottom_right = bottom_left + 1u;
+		const auto top_right_i = top_left_i + 1u;
+		const auto bottom_left_i = top_left_i + w;
+		const auto bottom_right_i = bottom_left_i + 1u;
 		//same for the vertex below them, they should be before the end of the vector
-		assert(bottom_left < std::size(v));
+
+		out[static_cast<std::size_t>(rect_corners::top_left)] = v[top_left_i];
+
+		if(p.x < w)
+			out[static_cast<std::size_t>(rect_corners::top_right)] = v[top_right_i];
+
+		if (p.y < map_size.y)
+			out[static_cast<std::size_t>(rect_corners::bottom_left)] = v[bottom_left_i];
+
+		if (p.x < w && p.y < map_size.y)
+			out[static_cast<std::size_t>(rect_corners::bottom_right)] = v[bottom_right_i];
+
+		return out;
+
+		if (bottom_right_i >= std::size(v))
+			return make_empty_corners();
 
 		assert(rect_corners::bottom_right < rect_corners::bottom_left);
-
 		return std::array{
-			v[top_left],
-			v[top_right],
-			v[bottom_right],
-			v[bottom_left]
+			v[top_left_i],
+			v[top_right_i],
+			v[bottom_right_i],
+			v[bottom_left_i]
 		};
 	}
 
@@ -131,8 +159,8 @@ namespace hades
 				continue;
 
 			const auto pos = tile_position{
-				signed_cast(p.first),
-				signed_cast(p.second)
+				signed_cast(p.first) - 1,
+				signed_cast(p.second) - 1
 			};
 
 			const auto corners = get_terrain_at_tile(v, w, pos);
@@ -165,10 +193,10 @@ namespace hades
 		}
 
 		//check the the map has a valid terrain vertex
-		const auto[tile_x, tile_y] = to_2d_index(std::size(r.tile_layer.tiles), r.tile_layer.width);
+		const auto size = get_size(r.tile_layer);
 		const auto terrain_size = terrain_vertex_position{
-			signed_cast(tile_x + 1u),
-			signed_cast(tile_y + 1u)
+			signed_cast(size.x + 1u),
+			signed_cast(size.y + 1u)
 		};
 
 		const auto vertex_length = terrain_size.x * terrain_size.y;
@@ -182,7 +210,6 @@ namespace hades
 
 		if (!std::empty(r.terrain_layers))
 		{
-			const auto size = get_size(r.tile_layer);
 			if (std::any_of(std::begin(r.terrain_layers), std::end(r.terrain_layers), [size](auto &&l) {
 				return get_size(l) != size;
 			}))
@@ -299,27 +326,36 @@ namespace hades
 		assert(terrainset);
 		assert(t);
 
-		const auto index = get_terrain_index(terrainset, t);
-
 		auto map = terrain_map{};
 		map.terrainset = terrainset;
 		map.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), t);
 
 		const auto empty_layer = make_map(size, resources::get_empty_tile());
 
-		const auto end = std::size(terrainset->terrains);
-		for (auto i = std::size_t{}; i < end; ++i)
+		if (t != resources::get_empty_terrain())
 		{
-			if (i == index)
+			//fill in the correct terrain layer
+			const auto index = get_terrain_index(terrainset, t);
+
+			const auto end = std::size(terrainset->terrains);
+			for (auto i = std::size_t{}; i < end; ++i)
 			{
-				map.terrain_layers.emplace_back(make_map(
-					size,
-					resources::get_random_tile(*terrainset->terrains[i],
-						resources::transition_tile_type::none)
-				));
+				if (i == index)
+				{
+					map.terrain_layers.emplace_back(make_map(
+						size,
+						resources::get_random_tile(*terrainset->terrains[i],
+							resources::transition_tile_type::none)
+					));
+				}
+				else
+					map.terrain_layers.emplace_back(empty_layer);
 			}
-			else 
-				map.terrain_layers.emplace_back(empty_layer);
+		}
+		else
+		{
+			//otherwise all layers can be blank
+			map.terrain_layers = std::vector<tile_map>(std::size(terrainset->terrains), empty_layer);
 		}
 
 		map.tile_layer = empty_layer;
@@ -341,12 +377,14 @@ namespace hades
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p)
 	{
 		if (p.x < 0 ||
-			p.y < 0 ||
-			p.x > s.x ||
-			p.y > s.y)
+			p.y < 0 )
 			return false;
 
-		return true;
+		if(p.x < s.x &&
+			p.y < s.y)
+			return true;
+
+		return false;
 	}
 
 	bool within_map(const terrain_map &m, terrain_vertex_position p)
@@ -750,6 +788,8 @@ namespace hades::resources
 		auto settings = d.get<resources::terrain_settings>(id::terrain_settings);
 		assert(settings);
 
+		const auto tile_size = settings->tile_size;
+
 		for (const auto &terrain_node : terrains_list)
 		{
 			using namespace std::string_view_literals;
@@ -759,16 +799,17 @@ namespace hades::resources
 			auto terrain = d.find_or_create<resources::terrain>(id, m);
 			assert(terrain);
 			//parse_tiles will fill in the tags and tiles
-			resources::detail::parse_tiles(m, *terrain, *settings, *terrain_node, d);
+			resources::detail::parse_tiles(m, *terrain, tile_size, *terrain_node, d);
 
 			const auto terrain_n = terrain_node->get_child("terrain"sv);
 			if (terrain_n)
 			{
 				const auto terrain_group = terrain_n->get_children();
 				for (const auto &group : terrain_group)
-					parse_terrain_group(m, *terrain, *group, d, settings->tile_size);
+					parse_terrain_group(m, *terrain, *group, d, tile_size);
 			}
 
+			settings->tilesets.emplace_back(terrain);
 			settings->terrains.emplace_back(terrain);
 		}
 

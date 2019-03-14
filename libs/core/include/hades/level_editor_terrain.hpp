@@ -20,13 +20,13 @@ namespace hades
 
 		void gui_update(gui&, editor_windows&) override;
 
-		//void make_brush_preview(time_duration, mouse_pos) override;
+		void make_brush_preview(time_duration, mouse_pos) override;
 
 		//void on_click(mouse_pos) override;
 		//void on_drag(mouse_pos) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
-		//void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
+		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
 		enum class brush_type {
@@ -55,6 +55,10 @@ namespace hades
 		brush_type _brush = brush_type::no_brush;
 		draw_shape _shape = draw_shape::rect;
 		int _size = 0;
+
+		//brush preview
+		mutable_terrain_map _clear_preview;
+		mutable_terrain_map _preview;
 
 		//selected tile/terrain
 		resources::tile _tile = resources::bad_tile;

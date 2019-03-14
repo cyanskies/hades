@@ -111,7 +111,7 @@ namespace hades
 		}
 	}
 
-	void resources::detail::parse_tiles(unique_id mod, resources::tileset &tileset, resources::tile_settings &settings, const data::parser_node &n, data::data_manager &d)
+	void resources::detail::parse_tiles(unique_id mod, resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d)
 	{
 		using namespace data::parse_tools;
 		tileset.tags = get_unique_sequence(n, "tags"sv, tileset.tags);
@@ -163,9 +163,7 @@ namespace hades
 			}
 
 			add_tiles_to_tileset(tileset.tiles, tex, left, top, width,
-				tile_count, settings.tile_size);
-
-			settings.tilesets.emplace_back(&tileset);
+				tile_count, tile_size);
 		}
 	}
 
@@ -187,6 +185,8 @@ namespace hades
 		assert(tile_settings);
 		const auto tileset_list = n.get_children();
 
+		const auto tile_size = tile_settings->tile_size;
+
 		for (const auto &tileset_n : tileset_list)
 		{
 			const auto name = tileset_n->to_string();
@@ -194,7 +194,9 @@ namespace hades
 
 			auto tileset = d.find_or_create<resources::tileset>(id, mod);
 
-			resources::detail::parse_tiles(mod, *tileset, *tile_settings, *tileset_n, d);
+			resources::detail::parse_tiles(mod, *tileset, tile_size, *tileset_n, d);
+
+			tile_settings->tilesets.emplace_back(tileset);
 		}
 
 		remove_duplicates(tile_settings->tilesets);
@@ -763,8 +765,9 @@ namespace hades
 			return;
 
 		//ignore placements outside of the map
-		const auto index = p.y * m.width + p.x;
-		if (unsigned_cast(p.x) > m.width ||
+		
+		const auto index = to_1d_index(p, m.width);
+		if (unsigned_cast(p.x) >= m.width ||
 			index >= m.tiles.size())
 			return;
 

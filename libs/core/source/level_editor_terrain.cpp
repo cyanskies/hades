@@ -81,10 +81,14 @@ namespace hades
 		map_raw.terrainset = _settings->terrainsets.front()->id;
 
 		const auto map = to_terrain_map(map_raw);
-
+		
 		//TODO: if size != to level xy, then resize the map
 
+		const auto empty_map = make_map(size, map.terrainset, _empty_terrain);
+
 		_map.create(map);
+		_clear_preview.create(empty_map);
+
 		_current.terrain_set = map.terrainset;
 	}
 
@@ -281,6 +285,9 @@ namespace hades
 						g.pop_id();
 					};
 
+					if (g.button("empty"sv))
+						std::invoke(on_click, _empty_terrain);
+
 					gui_make_horizontal_wrap_buttons(g, dialog_pos + dialog_size,
 						std::begin(_new_options.terrain_set->terrains),
 						std::end(_new_options.terrain_set->terrains), make_button);
@@ -291,8 +298,39 @@ namespace hades
 		}
 	}
 
-	void level_editor_terrain::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
-		t.draw(_map, s);
+		_preview = _clear_preview;
+		
+		const auto draw_pos = tile_position{
+			static_cast<tile_position::value_type>(p.x / _settings->tile_size),
+			static_cast<tile_position::value_type>(p.y / _settings->tile_size)
+		};
+
+		const auto positions = [this, draw_pos] {
+			if (_shape == draw_shape::rect)
+				return make_position_square(draw_pos, _size);
+			else if (_shape == draw_shape::circle)
+				return make_position_circle(draw_pos, _size);
+
+			return std::vector<tile_position>{};
+		}();
+
+		if (_brush == brush_type::draw_terrain)
+			_preview.place_terrain(positions, _current.terrain);
+		else if (_brush == brush_type::draw_tile)
+			_preview.place_tile(positions, _tile);
+
+		//TODO: draw some kind of indicator for erasing
+	}
+
+	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)
+	{
+		r.draw(_map, s);
+	}
+
+	void level_editor_terrain::draw_brush_preview(sf::RenderTarget &r, time_duration, sf::RenderStates s)
+	{
+		r.draw(_preview, s);
 	}
 }

@@ -321,7 +321,7 @@ namespace hades
 		else if (_brush == brush_type::draw_tile)
 			_preview.place_tile(positions, _tile);
 
-		//TODO: draw some kind of indicator for erasing
+		//TODO: draw some kind of indicator for erasing using place tile
 	}
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)

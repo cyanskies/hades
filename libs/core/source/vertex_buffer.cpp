@@ -62,14 +62,18 @@ namespace hades
 			const auto vertex_count = vertex.size();
 			if constexpr (std::is_same_v<T, sf::VertexBuffer>)
 			{
-				if (count < vertex_count)
+				if (count <= vertex_count)
 				{
-					v.create(0u);
+					if (count == 0u)
+						v.create(vertex_count);
+
+					v.update(std::data(vertex), vertex_count, 0u);
+				}
+				else
+				{
 					v.create(vertex_count);
 					v.update(vertex.data());
 				}
-				else //count >= vertex.size()
-					v.update(vertex.data(), vertex_count, 0u);
 			}
 			else // VertexArray
 			{

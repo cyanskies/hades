@@ -422,15 +422,9 @@ namespace hades
 			//top row
 			{p.x - 1, p.y -1},
 			{p.x, p.y -1},
-			{p.x + 1, p.y -1},
 			//middle row
 			{p.x - 1, p.y},
-			p,
-			{p.x + 1, p.y},
-			//bottom row
-			{p.x - 1, p.y + 1},
-			{p.x, p.y + 1},
-			{p.x + 1, p.y + 1},
+			p
 		};
 	}
 
@@ -476,13 +470,13 @@ namespace hades
 		//so that they dont obscure the new terrain
 		place_tile(m.tile_layer, positions, resources::get_empty_tile());
 
+		const auto begin = std::cbegin(m.terrainset->terrains);
 		const auto end = std::cend(m.terrainset->terrains);
 		auto terrain_iter = std::begin(m.terrainset->terrains);
 		auto layer_iter = std::begin(m.terrain_layers);
 		assert(std::size(m.terrain_layers) == std::size(m.terrainset->terrains));
 		for (terrain_iter, layer_iter; terrain_iter != end; ++terrain_iter, ++layer_iter)
 		{
-			assert(layer_iter != std::end(m.terrain_layers));
 			for (const auto p : positions)
 			{
 				//get the terrain corners for this tile
@@ -492,12 +486,12 @@ namespace hades
 					return t == other_t;
 				};
 
-				//get the transition, only looking for terrains bellow the current one
+				//get the transition, only looking for terrains above the current one
 				const auto transition = [&] {
 					if (std::none_of(std::begin(corners), std::end(corners), equal_terrain))
 						return resources::transition_tile_type::none;
 					else
-						return get_transition_type(corners, terrain_iter, end);
+						return get_transition_type(corners, begin, std::next(terrain_iter));
 				}();
 
 				const auto tile = resources::get_random_tile(**terrain_iter, transition);

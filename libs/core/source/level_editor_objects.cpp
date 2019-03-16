@@ -599,7 +599,8 @@ namespace hades
 
 	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
 	{
-		if (g.input_text("Name_id"sv, text))
+		using namespace std::string_literals;
+		if (g.input_text("Name_id##"s + to_string(o.id), text))
 		{
 			//if the new name is empty, and the old name isn't
 			if (text == string{}

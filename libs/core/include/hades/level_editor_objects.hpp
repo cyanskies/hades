@@ -15,9 +15,6 @@
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 
-// TODO: 
-// Add support for regions
-
 namespace hades::resources
 {
 	struct level_editor_object_settings_t {};

@@ -45,7 +45,7 @@ namespace hades
 		void place_tile(const std::vector<tile_position>&, const resources::tile&);
 		void place_terrain(const std::vector<terrain_vertex_position>&, const resources::terrain*);
 
-		terrain_map get_map() const;
+		const terrain_map &get_map() const;
 
 	private:
 		terrain_map _map;

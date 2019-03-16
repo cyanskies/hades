@@ -104,7 +104,7 @@ namespace hades
 			iter->update(*iter2);
 	}
 
-	terrain_map mutable_terrain_map::get_map() const
+	const terrain_map &mutable_terrain_map::get_map() const
 	{
 		return _map;
 	}

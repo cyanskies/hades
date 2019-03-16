@@ -52,8 +52,6 @@ namespace hades::resources
 
 		//NOTE: also has access to std::vector<tile> tiles
 		// which contains all the tiles from the above lists as well
-
-		tag_list tags;
 	};
 
 	struct terrainset_t final {};
@@ -155,6 +153,9 @@ namespace hades
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position);
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
+
+	//NOTE: the result of this function may contain duplicates
+	tag_list get_tags_at(const terrain_map&, tile_position);
 
 	//set the vectors relative to the current size
 	//eg, to expand the map in all directions

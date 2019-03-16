@@ -329,6 +329,34 @@ namespace hades
 		//TODO: draw some kind of indicator for erasing using place tile
 	}
 
+	tag_list level_editor_terrain::get_tags_at_location(rect_float location) const
+	{
+		//TODO: maybe move this to utility?
+		constexpr auto snap_to_floor = [](float val, int mul)->float {
+			const auto diff = std::remainder(val, static_cast<float>(mul));
+			return std::trunc(val - diff);
+		};
+
+		const auto tile_size = signed_cast(_settings->tile_size);
+		const auto loc = rect_int{
+			static_cast<int>(snap_to_floor(location.x, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.y, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.width + tile_size, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.height + tile_size, tile_size)) / tile_size,
+		};
+
+		const auto positions = make_position_rect({ loc.x, loc.y }, { loc.width, loc.height });
+
+		auto out = tag_list{};
+		for (const auto p : positions)
+		{
+			const auto tags = hades::get_tags_at(_map.get_map(), p);
+			std::copy(std::begin(tags), std::end(tags), std::back_inserter(out));
+		}
+
+		return out;
+	}
+
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);

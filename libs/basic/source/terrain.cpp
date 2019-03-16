@@ -416,6 +416,20 @@ namespace hades
 		return m.terrain_vertex[index];
 	}
 
+	tag_list get_tags_at(const terrain_map &m, tile_position p)
+	{
+		const auto corners = get_terrain_at_tile(m, p);
+
+		tag_list out;
+		for (const auto *t : corners)
+		{
+			assert(t);
+			std::copy(std::begin(t->tags), std::end(t->tags), std::back_inserter(out));
+		}
+
+		return out;
+	}
+
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)
 	{
 		return {

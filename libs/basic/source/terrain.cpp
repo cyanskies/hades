@@ -249,7 +249,7 @@ namespace hades
 
 		const auto empty = resources::get_empty_terrain();
 		//if the terrain_vertex isn't present, then fill with empty
-		if (std::empty(m.terrain_vertex))
+		if (std::empty(r.terrain_vertex))
 			m.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), empty);
 		else
 		{

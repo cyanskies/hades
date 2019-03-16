@@ -78,7 +78,8 @@ namespace hades
 
 		//if terrainset is empty then assign one
 		assert(!std::empty(_settings->terrainsets));
-		map_raw.terrainset = _settings->terrainsets.front()->id;
+		if(map_raw.terrainset == unique_id::zero)
+			map_raw.terrainset = _settings->terrainsets.front()->id;
 
 		const auto map = to_terrain_map(map_raw);
 		

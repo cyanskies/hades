@@ -298,23 +298,27 @@ namespace hades
 		}
 	}
 
+	static std::vector<tile_position> get_tile_positions(level_editor_terrain::mouse_pos p,
+		resources::tile_size_t tile_size, level_editor_terrain::draw_shape shape, int size)
+	{
+		const auto draw_pos = tile_position{
+			static_cast<tile_position::value_type>(p.x / tile_size),
+			static_cast<tile_position::value_type>(p.y / tile_size)
+		};
+
+		if (shape == level_editor_terrain::draw_shape::rect)
+			return make_position_square(draw_pos, size);
+		else if (shape == level_editor_terrain::draw_shape::circle)
+			return make_position_circle(draw_pos, size);
+
+		return std::vector<tile_position>{};
+	}
+
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
 		_preview = _clear_preview;
-		
-		const auto draw_pos = tile_position{
-			static_cast<tile_position::value_type>(p.x / _settings->tile_size),
-			static_cast<tile_position::value_type>(p.y / _settings->tile_size)
-		};
 
-		const auto positions = [this, draw_pos] {
-			if (_shape == draw_shape::rect)
-				return make_position_square(draw_pos, _size);
-			else if (_shape == draw_shape::circle)
-				return make_position_circle(draw_pos, _size);
-
-			return std::vector<tile_position>{};
-		}();
+		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
 
 		if (_brush == brush_type::draw_terrain)
 			_preview.place_terrain(positions, _current.terrain);
@@ -322,6 +326,23 @@ namespace hades
 			_preview.place_tile(positions, _tile);
 
 		//TODO: draw some kind of indicator for erasing using place tile
+	}
+
+	void level_editor_terrain::on_click(mouse_pos p)
+	{
+		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
+
+		if (_brush == brush_type::draw_terrain)
+			_map.place_terrain(positions, _current.terrain);
+		else if (_brush == brush_type::draw_tile)
+			_map.place_tile(positions, _tile);
+		else if (_brush == brush_type::erase)
+			_map.place_terrain(positions, _empty_terrain);
+	}
+
+	void level_editor_terrain::on_drag(mouse_pos p)
+	{
+		on_click(p);
 	}
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)

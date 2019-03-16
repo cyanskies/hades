@@ -83,6 +83,7 @@ namespace hades
 		void _update_tile(tile_position, const resources::tile&);
 		void _replace_tile(texture_layer&, tile_position, resources::tile_size_t, const resources::tile&);
 		void _remove_tile(texture_layer&, tile_position);
+		void _remove_layer(const resources::texture*);
 		void _add_tile(texture_layer&, tile_position, resources::tile_size_t, const resources::tile&);
 
 		tile_map _tiles;

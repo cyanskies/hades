@@ -332,6 +332,12 @@ namespace hades
 			_remove_tile(*current_layer, pixel_pos);
 			if(layer)//only write into a new layer if we have one
 				_add_tile(*layer, pixel_pos, tile_size, t);
+			else
+			{
+				//remove layer if its empty
+				if (std::empty(current_layer->vertex))
+					_remove_layer(current_layer->texture);
+			}
 		}
 		else // tile isn't currently in an array, just add the tile
 		{
@@ -361,6 +367,17 @@ namespace hades
 		std::advance(end, verts_per_tile);
 		l.vertex.erase(target, end);
 		l.buffer.set_verts(l.vertex);
+	}
+
+	void mutable_tile_map::_remove_layer(const resources::texture *t)
+	{
+		assert(t);
+		const auto iter = std::find_if(std::begin(texture_layers),
+			std::end(texture_layers), [t](auto &layer) {
+			return t == layer.texture;
+		});
+
+		texture_layers.erase(iter);
 	}
 
 	void mutable_tile_map::_replace_tile(texture_layer &l, tile_position pos, resources::tile_size_t tile_size, const resources::tile &t)

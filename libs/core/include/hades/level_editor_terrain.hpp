@@ -21,7 +21,7 @@ namespace hades
 
 		level level_new(level l) const override;
 		void level_load(const level&) override;
-		//level level_save(level l) const override;
+		level level_save(level l) const override;
 
 		void gui_update(gui&, editor_windows&) override;
 

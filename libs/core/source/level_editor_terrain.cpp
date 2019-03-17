@@ -93,6 +93,18 @@ namespace hades
 		_current.terrain_set = map.terrainset;
 	}
 
+	level level_editor_terrain::level_save(level l) const
+	{
+		auto raw = to_raw_terrain_map(_map.get_map());
+
+		l.tile_map_layer = std::move(raw.tile_layer);
+		l.terrainset = raw.terrainset;
+		l.terrain_vertex = std::move(raw.terrain_vertex);
+		l.terrain_layers = std::move(raw.terrain_layers);
+
+		return l;
+	}
+
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
 	{
 		using namespace std::string_view_literals;

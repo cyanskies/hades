@@ -5,6 +5,7 @@
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
 #include "hades/tiles.hpp"
+#include "hades/writer.hpp"
 
 namespace hades::resources
 {
@@ -232,6 +233,60 @@ namespace hades
 		}
 
 		return true;
+	}
+
+	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
+	{
+		// we start in a terrain: node
+
+		//terrainset
+		//terrain vertex
+		// tile layers
+
+		using namespace std::string_view_literals;
+		w.write("terrainset"sv, m.terrainset);
+
+		w.start_map("terrain_vertex"sv);
+		w.start_sequence();
+		for (const auto t : m.terrain_vertex)
+			w.write(t);
+		w.end_sequence();
+		w.end_map();
+
+		w.start_sequence("terrain_layers"sv);
+		for (const auto &l : m.terrain_layers)
+		{
+			w.start_map();
+			write_raw_map(l, w);
+			w.end_map();
+		}
+
+		w.end_sequence();
+	}
+
+	std::tuple<unique_id, std::vector<terrain_count_t>, std::vector<raw_map>>
+		read_raw_terrain_map(const data::parser_node &p)
+	{
+		//terrain:
+		//	terrainset:
+		//	terrain_vertex:
+		//	terrain_layers:
+
+		using namespace std::string_view_literals;
+		constexpr auto terrainset_str = "terrainset"sv;
+		constexpr auto terrain_vertex_str = "terrain_vertex"sv;
+		constexpr auto terrain_layers_str = "terrain_layers"sv;
+		
+		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_id::zero);
+		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_count_t>{});
+
+		auto layers = std::vector<raw_map>{};
+
+		const auto layer_node = p.get_child(terrain_layers_str);
+		for (const auto &l : layer_node->get_children())
+			layers.emplace_back(read_raw_map(*l));
+
+		return { terrainset, terrain_vertex, layers };
 	}
 
 	terrain_map to_terrain_map(const raw_terrain_map &r)

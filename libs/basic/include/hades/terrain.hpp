@@ -111,6 +111,12 @@ namespace hades
 	bool is_valid(const raw_terrain_map&);
 	bool is_valid(const raw_terrain_map&, vector_int level_size, resources::tile_size_t tile_size);
 
+	//NOTE: doesn't write the tile layer, this must be done seperately
+	//		with write_raw_map(m.tile_layer, ...);
+	void write_raw_terrain_map(const raw_terrain_map &m, data::writer &w);
+	std::tuple<unique_id, std::vector<terrain_count_t>, std::vector<raw_map>>
+		read_raw_terrain_map(const data::parser_node &p);
+
 	struct terrain_map
 	{
 		//a terrainset lists the terrain types that can be used in a level

@@ -273,7 +273,7 @@ namespace hades::detail
 					try 
 					{
 						l = _component_on_new(l);
-						_component_on_load(l);
+						_load(l);
 						_window_flags.new_level = false;
 					}
 					catch (const new_level_editor_error &e)

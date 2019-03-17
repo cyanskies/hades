@@ -43,6 +43,7 @@ namespace hades
 			string animation_input;
 		};
 
+		level level_new(level l) const override;
 		void level_load(const level&) override;
 		level level_save(level l) const override;
 

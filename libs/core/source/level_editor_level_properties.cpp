@@ -193,6 +193,13 @@ namespace hades
 		g.window_end();
 	}
 
+	level level_editor_level_props::level_new(level l) const
+	{
+		l.name = _new_name;
+		l.description = _new_desc;
+		return l;
+	}
+
 	void level_editor_level_props::level_load(const level &l)
 	{
 		_new_name = editor::new_level_name;

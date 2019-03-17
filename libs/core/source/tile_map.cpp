@@ -98,7 +98,7 @@ namespace hades
 		struct map_tile {
 			const resources::texture *texture = nullptr;
 			tile_count_t x{}, y{};
-			const resources::tile *tile = nullptr;
+			resources::tile tile;
 		};
 
 		//collect info about each cell in the map
@@ -106,7 +106,7 @@ namespace hades
 		std::vector<const hades::resources::texture*> tex_cache;
 		for (auto i = std::size_t{}; i < std::size(tiles); ++i)
 		{
-			const auto &t = get_tile(map_data, tiles[i]);
+			const auto t = get_tile(map_data, tiles[i]);
 
 			//skip 'empty' tiles, no need to render a transparent texture
 			if (!t.texture)
@@ -129,7 +129,7 @@ namespace hades
 			assert(texture);
 			const auto p = to_2d_position(width, i);
 
-			const map_tile ntile{ texture, p.x * tile_size, p.y *tile_size, &t };
+			const map_tile ntile{ texture, p.x * tile_size, p.y *tile_size, t };
 			map.emplace_back(ntile);
 		}
 
@@ -183,8 +183,8 @@ namespace hades
 			};
 
 			const auto text_rect = rect_float{
-				static_cast<float>(t.tile->left),
-				static_cast<float>(t.tile->top),
+				static_cast<float>(t.tile.left),
+				static_cast<float>(t.tile.top),
 				static_cast<float>(tile_size),
 				static_cast<float>(tile_size)
 			};

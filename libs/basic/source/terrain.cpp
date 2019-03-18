@@ -132,27 +132,28 @@ namespace hades
 	template<typename InputIt>
 	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, terrain_count_t w, InputIt first, InputIt last)
 	{
+		//NOTE: w2 and h are 0 based, and one less than vertex width and height
+		//this is good, it means they are equal to the tile width/height
+		assert(!std::empty(v));
+		const auto[w2, h] = to_2d_index(std::size(v) - 1, w);
+		assert(w == w2 + 1);
+
 		auto out = tile_map{};
-		out.width = w - 1;
+		out.width = w2;
 		out.tilesets = std::vector<const resources::tileset*>{
 			resources::get_empty_terrain(),
 			*first
 		};
 
-		const auto tile_w = w - 1;
+		const auto size = w2 * h;
 
-		for (auto i = std::size_t{}; i < std::size(v); ++i)
+		for (auto i = std::size_t{}; i < size; ++i)
 		{
-			const auto p = to_2d_index(i, w);
-			if (p.first == tile_w)
-				continue;
+			const auto [x, y] = to_2d_index(i, w2);
 
-			const auto pos = tile_position{
-				signed_cast(p.first) - 1,
-				signed_cast(p.second) - 1
-			};
+			assert(x < w2);
 
-			const auto corners = get_terrain_at_tile(v, w, pos);
+			const auto corners = get_terrain_at_tile(v, w, { signed_cast(x), signed_cast(y) });
 			const auto type = get_transition_type(corners, first, last);
 			const auto tile = resources::get_random_tile(**first, type);
 			out.tiles.emplace_back(get_tile_id(out, tile));
@@ -332,6 +333,8 @@ namespace hades
 		//if we dont have the correct number of terrain_layers
 		if (std::size(m.terrainset->terrains) != std::size(m.terrain_layers))
 			throw terrain_error{ "terrain map missing some terrain layers, or has too many" };
+
+		assert(is_valid(to_raw_terrain_map(m)));
 
 		return m;
 	}

@@ -211,6 +211,8 @@ namespace hades
 	{
 		static_assert(std::is_constructible_v<Index2D, T, T>);
 
+		assert(w != 0);
+
 		return Index2D{
 			i % w,
 			i / w

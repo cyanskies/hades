@@ -98,6 +98,8 @@ namespace hades
 	{
 		hades::place_terrain(_map, p, t);
 		
+		_tile_layer.update(_map.tile_layer);
+
 		auto iter = std::begin(_terrain_layers);
 		auto iter2 = std::begin(_map.terrain_layers);
 		for (iter, iter2; iter != std::end(_terrain_layers); ++iter, ++iter2)

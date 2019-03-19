@@ -167,6 +167,7 @@ namespace hades
 		return l;
 	}
 
+	//TODO: replace calls to this with the helper in gui
 	template<typename Func>
 	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
 	{
@@ -249,7 +250,7 @@ namespace hades
 
 		g.main_toolbar_end();
 
-		//TODO
+		//TODO:
 		//if(*)
 		g.window_begin(editor::gui_names::toolbox);
 
@@ -554,18 +555,40 @@ namespace hades
 		if (_brush_type == brush_type::object_place)
 		{
 			assert(_held_object);
-			_try_place_object(pos, *_held_object);
+
+			//TODO: pull this grid snap logic into a function, its repeated in
+			//		a few functions here, and in level_editor_regions
+			const auto snapped_pos = [&] {
+				if (_grid->load() && _grid_snap->load())
+				{
+					const auto cell_size = calculate_grid_size(*_grid_size, *_grid_step);
+					return mouse::snap_to_grid(pos, cell_size);
+				}
+
+				return pos;
+			}();
+
+			_try_place_object(snapped_pos, *_held_object);
 		}
 
 		//TODO: if object selector_selection rect stretch the rect
-
 	}
 
 	void level_editor_objects::on_drag_end(mouse_pos pos)
 	{
 		if (_brush_type == brush_type::object_drag)
 		{
-			if (_try_place_object(pos, *_held_object))
+			const auto snapped_pos = [&] {
+				if (_grid->load() && _grid_snap->load())
+				{
+					const auto cell_size = calculate_grid_size(*_grid_size, *_grid_step);
+					return mouse::snap_to_grid(pos, cell_size);
+				}
+
+				return pos;
+			}();
+
+			if (_try_place_object(snapped_pos, *_held_object))
 			{
 				const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id = _held_object->id](auto &&o){
 					return id == o.id;

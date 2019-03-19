@@ -695,7 +695,7 @@ namespace hades
 			throw invalid_argument{ "cannot make a tile map with a negative size" };
 
 		auto m = tile_map{};
-		m.width = s.y;
+		m.width = s.x;
 
 		const auto index = make_tile_id(m, t);
 

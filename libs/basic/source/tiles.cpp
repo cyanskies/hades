@@ -824,8 +824,8 @@ namespace hades
 	{
 		const auto rad = signed_cast(radius);
 
-		const auto top = tile_position{ 0, 0 - rad };
-		const auto bottom = tile_position{ 0, 0 + rad };
+		const auto top = tile_position{ 0, -rad };
+		const auto bottom = tile_position{ 0, rad };
 
 		std::vector<tile_position> out;
 		out.reserve(rad * 4);
@@ -843,14 +843,10 @@ namespace hades
 			const auto y2 = y * y;
 			const auto a = r2 - y2;
 			assert(a >= 0);
-			const auto x_root = std::sqrt(a);
-			double fract{};
-			const auto x_double = std::modf(x_root, &fract);
+			const auto x_root = std::sqrt(static_cast<float>(a));
+			const auto x_float = std::trunc(x_root);
 
-			if (fract != .0)
-				continue;
-
-			const auto x_int = std::abs(static_cast<tile_position::value_type>(x_double));
+			const auto x_int = std::abs(static_cast<tile_position::value_type>(x_float));
 			const auto bounds = std::array{ -x_int, x_int };
 			
 			//push the entire line of the circle into out

@@ -9,7 +9,6 @@ set(HADES_SRC
 	data_system.cpp
   	ExportedCurves.cpp
 	GameInstance.cpp
-	GridArea.cpp
 	main.cpp
 	mission.cpp
 	RenderInstance.cpp
@@ -19,12 +18,7 @@ set(HADES_SRC
 	StateManager.cpp
 	yaml_parser.cpp
 	yaml_writer.cpp
-	Objects/resources.cpp
 )
-
-source_group("Objects" FILES
-	Objects/editor.cpp
-	Objects/resources.cpp)
 
 # Library to build
 set(HADES_LIB ${PROJECT_NAME})

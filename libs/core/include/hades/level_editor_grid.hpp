@@ -13,6 +13,7 @@ namespace hades
 
 	struct grid_vars
 	{
+		console::property_bool auto_mode;
 		console::property_bool enabled;
 		console::property_bool snap;
 		console::property_float size;
@@ -27,23 +28,19 @@ namespace hades
 	int32 calculate_grid_step_for_size(float cell_size, float target_size) noexcept;
 	int32 calculate_grid_step_for_size(const grid_vars&, float target_size);
 
+	template<typename T>
+	vector_t<T> snap_to_grid(vector_t<T> p, const grid_vars&);
+
 	class level_editor_grid final : public level_editor_component
 	{
 	public:
-		level_editor_grid();
-		
 		void level_load(const level&) override;
 		void gui_update(gui&, editor_windows&) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 	private:
 		grid _grid;
-
-		console::property_bool _enabled;
-		console::property_bool _snap;
-		console::property_float _size;
-		console::property_int _step;
-		console::property_int _step_max;
+		grid_vars _grid_vars = get_console_grid_vars();
 	};
 }
 
@@ -73,5 +70,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_grid_step_max = 5;
 	constexpr auto editor_grid_step = 1;
 }
+
+#include "hades/detail/level_editor_grid.inl"
 
 #endif //!HADES_LEVEL_EDITOR_GRID_HPP

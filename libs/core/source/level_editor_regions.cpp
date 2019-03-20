@@ -71,6 +71,7 @@ namespace hades
 	void level_editor_regions::gui_update(gui &g, editor_windows&)
 	{
 		using namespace std::string_view_literals;
+		using namespace std::string_literals;
 
 		if (g.main_toolbar_begin())
 		{
@@ -133,7 +134,7 @@ namespace hades
 				{
 					auto &region = _regions[_edit.selected];
 					// change region name
-					g.input_text("name"sv, _edit.name);
+					g.input_text("name##"s + to_string(_edit.selected), _edit.name);
 
 					const auto end = std::end(_regions);
 					auto used_name = std::find_if(std::begin(_regions), end, [name = _edit.name](const auto &r) {
@@ -304,27 +305,12 @@ namespace hades
 		r.name.setPosition(area.x, area.y);
 	}
 
-	static vector_float calculate_pos(level_editor_regions::mouse_pos m,
-		const grid_vars &g)
-	{
-		const auto cell_size = calculate_grid_size(g);
-		const auto grid_enabled = g.enabled->load();
-		const auto grid_snap = g.snap->load();
-
-		return [grid_enabled, grid_snap, m, cell_size] {
-			if (grid_enabled && grid_snap)
-				return mouse::snap_to_grid(m, cell_size);
-			else
-				return m;
-		}();
-	}
-
 	void level_editor_regions::on_drag_start(mouse_pos m)
 	{
 		if (!_show_regions)
 			return;
 
-		const auto snap_pos = calculate_pos(m, _grid);
+		const auto snap_pos = snap_to_grid(m, _grid);
 
 		const auto pos = vector_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
@@ -466,7 +452,7 @@ namespace hades
 
 	void level_editor_regions::on_drag(mouse_pos m)
 	{
-		const auto snap_pos = calculate_pos(m, _grid);
+		const auto snap_pos = snap_to_grid(m, _grid);
 
 		const auto pos = vector_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),

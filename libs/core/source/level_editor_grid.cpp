@@ -42,6 +42,7 @@ hades::int32 hades::calculate_grid_step_for_size(const grid_vars &g, float t)
 hades::grid_vars hades::get_console_grid_vars()
 {
 	return grid_vars{ 
+		console::get_bool(cvars::editor_grid_auto, cvars::default_value::editor_grid_auto),
 		console::get_bool(cvars::editor_grid, cvars::default_value::editor_grid),
 		console::get_bool(cvars::editor_grid_snap, cvars::default_value::editor_grid_snap),
 		console::get_float(cvars::editor_grid_size, cvars::default_value::editor_grid_size),
@@ -50,18 +51,10 @@ hades::grid_vars hades::get_console_grid_vars()
 	};
 }
 
-hades::level_editor_grid::level_editor_grid() :
-	_enabled{ console::get_bool(cvars::editor_grid, cvars::default_value::editor_grid) },
-	_snap{ console::get_bool(cvars::editor_grid_snap, cvars::default_value::editor_grid_snap) },
-	_size{ console::get_float(cvars::editor_grid_size, cvars::default_value::editor_grid_size) },
-	_step{ console::get_int(cvars::editor_grid_step, cvars::default_value::editor_grid_step) },
-	_step_max{ console::get_int(cvars::editor_grid_step_max, cvars::default_value::editor_grid_step_max) }
-{
-}
-
 void hades::level_editor_grid::level_load(const level &l)
 {
-	_grid.set_all({ {static_cast<float>(l.map_x), static_cast<float>(l.map_y)}, calculate_grid_size(*_size, *_step), colours::white });
+	_grid.set_all({ {static_cast<float>(l.map_x), static_cast<float>(l.map_y)},
+		calculate_grid_size(*_grid_vars.size, *_grid_vars.step), colours::white });
 }
 
 void hades::level_editor_grid::gui_update(gui &g, editor_windows &)
@@ -71,29 +64,29 @@ void hades::level_editor_grid::gui_update(gui &g, editor_windows &)
 	if (g.main_toolbar_begin())
 	{
 		if (g.toolbar_button("show/hide grid"sv))
-			_enabled->store(!_enabled->load());
+			_grid_vars.enabled->store(!_grid_vars.enabled->load());
 		if (g.toolbar_button("snap to grid"sv))
-			_snap->store(!_snap->load());
+			_grid_vars.snap->store(!_grid_vars.snap->load());
 		if (g.toolbar_button("grid grow"sv))
-			_step->store(*_step + 1);
+			_grid_vars.step->store(*_grid_vars.step + 1);
 		if (g.toolbar_button("grid shrink"sv))
-			_step->store(*_step - 1);
+			_grid_vars.step->store(*_grid_vars.step - 1);
 	}
 
 	g.main_toolbar_end();
 
 	//update the grid with any possible changes
-	if (*_step > *_step_max)
-		_step->store(*_step_max);
-	else if (*_step < cvars::default_value::editor_grid_step)
-		_step->store(cvars::default_value::editor_grid_step);
+	if (*_grid_vars.step > *_grid_vars.step_max)
+		_grid_vars.step->store(*_grid_vars.step_max);
+	else if (*_grid_vars.step < cvars::default_value::editor_grid_step)
+		_grid_vars.step->store(cvars::default_value::editor_grid_step);
 
-	const auto size = calculate_grid_size(*_size, *_step);
+	const auto size = calculate_grid_size(*_grid_vars.size, *_grid_vars.step);
 	_grid.set_cell_size(size);
 }
 
 void hades::level_editor_grid::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 {
-	if (*_enabled)
+	if (*_grid_vars.enabled)
 		t.draw(_grid, s);
 }

@@ -71,6 +71,7 @@ set(HADES_CORE_SRC
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_editor.inl
+	../include/hades/detail/level_editor_grid.inl
 	../include/hades/detail/level_interface.inl
 	../include/hades/detail/level_editor_objects.inl
 	../include/hades/detail/mouse_input.inl
@@ -118,6 +119,7 @@ source_group("Detail" FILES
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_editor.inl
+	../include/hades/detail/level_editor_grid.inl
 	../include/hades/detail/level_interface.inl
 	../include/hades/detail/level_editor_objects.inl
 	../include/hades/detail/mouse_input.inl

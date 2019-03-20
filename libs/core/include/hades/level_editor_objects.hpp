@@ -9,6 +9,7 @@
 #include "SFML/Graphics/RectangleShape.hpp"
 
 #include "hades/level_editor_component.hpp"
+#include "hades/level_editor_grid.hpp"
 #include "hades/objects.hpp"
 #include "hades/properties.hpp"
 #include "hades/quad_map.hpp"
@@ -89,7 +90,6 @@ namespace hades
 			size_y
 		};
 
-		vector_float _calculate_position(vector_float pos) const;
 		void _make_property_editor(gui&);
 		template<typename MakeBoundRect, typename SetChangedProperty>
 		void _make_positional_property_edit_field(gui&, std::string_view,
@@ -127,12 +127,7 @@ namespace hades
 		std::array<curve_info, 4> _curve_properties;
 
 		//grid info for snapping
-		console::property_bool _grid;
-		console::property_bool _grid_snap;
-		console::property_bool _grid_auto;
-		console::property_float _grid_size;
-		console::property_int _grid_step;
-		console::property_int _grid_step_max;
+		grid_vars _grid = get_console_grid_vars();
 	};
 }
 

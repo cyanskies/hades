@@ -26,7 +26,8 @@ namespace hades
 	using nanoseconds = std::chrono::nanoseconds;
 	using microseconds = std::chrono::microseconds;
 	using milliseconds = std::chrono::milliseconds;
-	using seconds = basic_second<float>;
+	using seconds = std::chrono::seconds;
+	using seconds_float = basic_second<float>;
 
 	using time_duration = time_point::duration;
 

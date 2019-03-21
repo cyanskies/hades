@@ -1,13 +1,8 @@
 #include "Hades/App.hpp"
 
 #include <cassert>
-#include <functional>
-#include <future>
-#include <memory>
 #include <string>
-#include <sstream>
 
-#include "SFML/System/Clock.hpp"
 #include "SFML/Window/Event.hpp"
 
 #include "zlib.h" //for zlib version
@@ -16,13 +11,11 @@
 #include "hades/core_resources.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/Debug.hpp"
-#include "Hades/files.hpp"
 #include "Hades/Logging.hpp"
-#include "Hades/parallel_jobs.hpp"
 #include "hades/parser.hpp"
 #include "Hades/Properties.hpp"
-#include "Hades/simple_resources.hpp"
-#include "Hades/time.hpp"
+#include "hades/simple_resources.hpp"
+#include "hades/timers.hpp"
 #include "hades/writer.hpp"
 #include "hades/yaml_parser.hpp"
 #include "hades/yaml_writer.hpp"
@@ -204,20 +197,18 @@ namespace hades
 		//however we don't have a system to blend renderstates,
 		//we use curves instead.
 
-		//tickrate is the amount of time simulated at any one tick
-		const auto tickrate = _console.getValue<types::int32>(cvars::client_tick_time),
-			maxframetime  = _console.getValue<types::int32>(cvars::client_max_tick);
+		//ticks per second, dt = 1 / tick_rate
+		const auto tick_rate = _console.getInt(cvars::client_tick_rate);
+		const auto maxframetime = _console.getInt(cvars::client_max_tick);
+		auto last_frame_time = _console.getFloat(cvars::client_previous_frametime);
 
-		assert(tickrate && "failed to get tick rate value from console");
+		assert(tick_rate && "failed to get tick rate value from console");
 
-		sf::Clock time;
-		time.restart();
+		//auto t = time_duration{}; // < total accumulated time of application
+		auto current_time = time_clock::now();
+		auto accumulator = time_duration{};
 
 		bool running = true;
-
-		//currentTime is the total running time of the application
-		sf::Time currentTime = time.getElapsedTime();
-		sf::Time accumulator = sf::Time::Zero;
 
 		while(running && _window.isOpen())
 		{
@@ -225,19 +216,24 @@ namespace hades
 			if(!activeState)
 				break;
 
-			const sf::Time dt = sf::milliseconds(*tickrate);
+			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
-			const sf::Time newTime = time.getElapsedTime();
-			sf::Time frameTime = newTime - currentTime;
+			const auto new_time = time_clock::now();
+			auto frame_time = new_time - current_time;
 
-			if (frameTime > sf::milliseconds(*maxframetime))
-				frameTime = sf::milliseconds(*maxframetime);
+			//store framerate
+			{
+				using milliseconds_float = basic_duration<float, std::chrono::milliseconds::period>;
+				const auto frame_time_ms = time_cast<milliseconds_float>(frame_time);
+				last_frame_time->store(frame_time_ms.count());
+			}
 
-			currentTime = newTime;
-			accumulator += frameTime;
+			constexpr auto max_accumulator_overflow = time_cast<time_duration>(seconds_float{ 0.25f });
+			if (frame_time > max_accumulator_overflow)
+				frame_time = max_accumulator_overflow;
 
-			//the total amount of time this frame has taken.
-			sf::Time thisFrame = sf::Time::Zero;
+			current_time = new_time;
+			accumulator += frame_time;
 
 			//perform additional logic updates if we're behind on logic
 			while( accumulator >= dt)
@@ -245,9 +241,9 @@ namespace hades
 				auto events = handleEvents(activeState);
 				_input.generate_state(events);
 
-				activeState->update(to_standard_time(dt), _window, _input.input_state());
+				activeState->update(dt, _window, _input.input_state());
+				//t += dt;
 				accumulator -= dt;
-				thisFrame += dt;
 			}
 
 			if (_window.isOpen())
@@ -255,16 +251,8 @@ namespace hades
 				_window.clear();
 				//drawing must pass the frame time, so that the renderer can
 				//interpolate between frames
-				const auto totalFrameTime = thisFrame + accumulator;
-				activeState->draw(_window, to_standard_time(totalFrameTime));
+				activeState->draw(_window, frame_time);
 
-				////store gl states while drawing sfgui elements
-				//_window.pushGLStates();
-				//activeState->updateGui(totalFrameTime);
-				//_sfgui.Display(_window);
-				//_window.popGLStates(); // restore sfml gl states
-
-				//activeState->drawAfterGui(_window, totalFrameTime);
 				//update the console interface.
 				if (_consoleView)
 					_consoleView->update();

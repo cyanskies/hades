@@ -13,6 +13,8 @@
 
 //This header provides resources for built in types
 
+//TODO: move strings to basic_resources
+
 namespace hades
 {
 	namespace data

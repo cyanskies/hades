@@ -22,8 +22,9 @@ namespace hades
 		//shared for level, mission and mod editors
 
 		//client vars
-		constexpr auto client_tick_time = "c_ticktime"; //the amount of time each tick represents
-		constexpr auto client_max_tick = "c_maxframetime"; //the max amount of time that can be spent on a single frame
+		constexpr auto client_tick_rate = "c_tickrate"; //number of ticks to calculate per second
+		constexpr auto client_max_tick = "c_maxframetime"; //the max amount of time that can be spent on a single frame in ms
+		constexpr auto client_previous_frametime = "c_previous_frametime"; // time taken to generate the last frame
 
 		//file vars
 		constexpr auto file_portable = "file_portable"; //if portable is true, saves and configs are stored in game directory
@@ -45,8 +46,10 @@ namespace hades
 
 		namespace default_value
 		{
+			constexpr auto client_tickrate = 30;
 			constexpr auto client_tick_time = 30;
 			constexpr auto client_tick_max = 150;
+			constexpr auto client_previous_frametime = -1.f;
 
 			constexpr auto video_fullscreen = false;
 			constexpr auto video_resizable = false;

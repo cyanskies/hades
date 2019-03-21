@@ -36,9 +36,9 @@ namespace hades
 		}
 		if (const auto s_pos = s.find(second_ext); s_pos != npos)
 		{
-			const auto second_count = from_string<seconds::rep>(s.substr(0, s_pos));
-			//hades::seconds is a float, needs time_cast to cast safely
-			return time_cast<time_duration>(seconds{ second_count });
+			const auto second_count = from_string<seconds_float::rep>(s.substr(0, s_pos));
+			//hades::seconds_float is a float, needs time_cast to cast safely
+			return time_cast<time_duration>(seconds_float{ second_count });
 		}
 		else if (const auto ns_pos = s.find(nano_ext); ns_pos != npos)
 		{

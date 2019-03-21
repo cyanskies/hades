@@ -1,6 +1,6 @@
 namespace hades::mouse
 {
-	constexpr time_duration double_click_time = time_cast<time_duration>(seconds{ 0.30f });
+	constexpr time_duration double_click_time = time_cast<time_duration>(seconds_float{ 0.30f });
 	constexpr auto double_click_distance = 6;
 	constexpr auto drag_distance = 6;
 

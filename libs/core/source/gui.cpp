@@ -117,7 +117,7 @@ namespace hades
 		//record the change in time
 		_activate_context();
 		auto &io = ImGui::GetIO();
-		io.DeltaTime = time_cast<seconds>(dt).count();
+		io.DeltaTime = time_cast<seconds_float>(dt).count();
 	}
 
 	void gui::frame_begin()

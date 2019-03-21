@@ -120,7 +120,7 @@ namespace hades
 		{
 			const auto message = "The requested entityid is already attached to this system. EntityId: "
 				+ to_string(entity) + ", System: " + "err" + ", at time: " +
-				to_string(std::chrono::duration_cast<seconds>(t.time_since_epoch()).count()) + "s";
+				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
 			//ent is already attached
 			throw system_already_attached{message};
 		}
@@ -142,7 +142,7 @@ namespace hades
 		{
 			const auto message = "The requested entityid isn't attached to this system. EntityId: "
 				+ to_string(entity) + ", System: " + "err" + ", at time: " +
-				to_string(std::chrono::duration_cast<seconds>(t.time_since_epoch()).count()) + "s";
+				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
 			throw system_already_attached{ message };
 		}
 

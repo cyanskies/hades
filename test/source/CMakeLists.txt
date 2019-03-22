@@ -7,6 +7,7 @@ set(HADES_EXAMPLE_SRC
 	gui_state.cpp
 	input_names.cpp
 	main.cpp
+	simple_instance_state.cpp
 	Snake.cpp
 	snake_loader.cpp
 )

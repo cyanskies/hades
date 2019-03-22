@@ -300,7 +300,9 @@ namespace hades
 	void gui::push_id(std::string_view s)
 	{
 		_active_assert();
-		ImGui::PushID(&*std::begin(s), &*std::end(s));
+		assert(!std::empty(s));
+		auto *last = &*(--std::end(s));
+		ImGui::PushID(&*std::begin(s), ++last);
 	}
 
 	void gui::push_id(int32 i)

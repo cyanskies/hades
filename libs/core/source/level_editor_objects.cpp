@@ -286,17 +286,14 @@ namespace hades
 			}
 		}
 
-		/*if (g.collapsing_header("regions"sv))
-		{
-
-		}*/
-
 		if (g.collapsing_header("properties"sv))
 		{
 			if (_brush_type == brush_type::object_selector
 				&& _held_object)
 			{
+				g.push_id(to_string(_held_object->id));
 				_make_property_editor(g);
+				g.pop_id();
 			}
 			else
 			{
@@ -592,8 +589,7 @@ namespace hades
 
 	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
 	{
-		using namespace std::string_literals;
-		if (g.input_text("Name_id##"s + to_string(o.id), text))
+		if (g.input_text("Name_id"sv, text))
 		{
 			//if the new name is empty, and the old name isn't
 			if (text == string{}

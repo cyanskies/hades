@@ -132,9 +132,10 @@ namespace hades
 				}
 				else
 				{
+					g.push_id(to_string(_edit.selected));
 					auto &region = _regions[_edit.selected];
 					// change region name
-					g.input_text("name##"s + to_string(_edit.selected), _edit.name);
+					g.input_text("name"sv, _edit.name);
 
 					const auto end = std::end(_regions);
 					auto used_name = std::find_if(std::begin(_regions), end, [name = _edit.name](const auto &r) {
@@ -170,6 +171,8 @@ namespace hades
 					static_assert(std::is_same_v<uint8, decltype(col)::value_type>);
 					if (g.colour_picker4("colour"sv, col))
 						region.shape.setFillColor({ col[0], col[1], col[2], col[3] });
+
+					g.pop_id();
 				}
 			}
 		}

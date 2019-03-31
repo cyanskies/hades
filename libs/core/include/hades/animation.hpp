@@ -7,7 +7,7 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/colour.hpp"
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/texture.hpp"
 #include "hades/timers.hpp"
 

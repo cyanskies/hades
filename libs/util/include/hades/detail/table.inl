@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 
 namespace hades
 {

@@ -1,7 +1,7 @@
 #include "hades/tiles.hpp"
 
+#include <array>
 #include <numeric>
-#include <tuple>
 
 #include "hades/data.hpp"
 #include "hades/parser.hpp"

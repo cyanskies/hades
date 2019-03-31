@@ -7,7 +7,6 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/colour.hpp"
-#include "hades/math.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades

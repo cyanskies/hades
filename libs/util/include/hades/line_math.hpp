@@ -5,7 +5,7 @@
 #include <optional>
 #include <tuple>
 
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades

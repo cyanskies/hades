@@ -4,7 +4,7 @@
 #include "hades/resource_base.hpp"
 
 #include "hades/data.hpp"
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/tiles.hpp"
 
 //tiles namespace is for the terrain editing and rendering subsystem

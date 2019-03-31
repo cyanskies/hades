@@ -6,7 +6,7 @@
 #include "SFML/Graphics/View.hpp"
 
 #include "hades/data.hpp"
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/timers.hpp"
 
 namespace hades

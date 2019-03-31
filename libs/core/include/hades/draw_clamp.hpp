@@ -5,7 +5,7 @@
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
 
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 
 namespace hades
 {

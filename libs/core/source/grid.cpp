@@ -1,29 +1,23 @@
 #include "hades/grid.hpp"
 
+#include <array>
+#include <cassert>
+
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
+
+#include "hades/animation.hpp"
 
 namespace hades
 {
 	static constexpr auto quad_vert_count = 6;
-	static std::array<sf::Vertex, quad_vert_count> make_quad(vector_float p, vector_float s, sf::Color c)
+	static std::array<sf::Vertex, quad_vert_count> make_quad(vector_float p, vector_float s, colour c)
 	{
-		return std::array<sf::Vertex, quad_vert_count>{ {
-				//first tri
-			{ {p.x, p.y}, c },
-			{ {p.x + s.x, p.y}, c },
-			{ {p.x, p.y + s.y}, c },
-			//second tri
-			{ {p.x + s.x, p.y}, c },
-			{ {p.x + s.x, p.y + s.y}, c },
-			{ {p.x, p.y + s.y}, c }
-		}};
+		return make_quad_colour({ p.x, p.y, s.x, s.y }, c);
 	}
 
 	static std::vector<sf::Vertex> make_grid(const grid::grid_properties &p)
 	{
-		const auto sf_colour = sf::Color{ p.line_colour.r, p.line_colour.g, p.line_colour.b, p.line_colour.a };
-
 		const auto rows = static_cast<int32>(std::floor(p.grid_size.y / p.cell_size));
 		const auto cols = static_cast<int32>(std::floor(p.grid_size.x / p.cell_size));
 
@@ -37,7 +31,7 @@ namespace hades
 		for (auto y = 0.f; y < p.grid_size.y; y += p.cell_size)
 		{
 			auto quad = make_quad({ row_left, y },
-				{ p.grid_size.x, p.line_thickness }, sf_colour);
+				{ p.grid_size.x, p.line_thickness }, p.line_colour);
 			
 			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
 		}
@@ -49,7 +43,7 @@ namespace hades
 		for (auto x = 0.f; x < p.grid_size.x; x += p.cell_size)
 		{
 			auto quad = make_quad({ x, coloumn_top },
-				{ p.line_thickness, p.grid_size.y }, sf_colour);
+				{ p.line_thickness, p.grid_size.y }, p.line_colour);
 
 			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
 		}

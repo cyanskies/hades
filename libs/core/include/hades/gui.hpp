@@ -11,7 +11,7 @@
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Window/Event.hpp"
 
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/timers.hpp"
 #include "hades/vector_math.hpp"
 

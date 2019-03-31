@@ -4,7 +4,7 @@
 #include <tuple>
 #include <vector>
 
-#include "hades/math.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 
@@ -12,7 +12,7 @@
 //rect_t
 //point_t
 //circle_t
-//multipoint_t
+//polygon_t
 
 //algorithms work best with floating point types.
 
@@ -24,21 +24,25 @@ namespace hades
 		T x, y, r;
 	};
 
-	//TODO: right angle triangles
+	template<typename T>
+	struct polygon_t
+	{
+		vector_t<T> position;
+		std::vector<point_t<T>> vertex;
+	};
 
 	//the following functions all support
 	//supports:
 	//point_t
 	//rect_t
 	//circle_t
-	//triangle_t
 
 	//returns true if the objects are intersecting
 	//supports:
 	//point_t
 	//rect_t
 	//circle_t
-	//triangle_t
+
 	template<typename U, typename V>
 	bool collision_test(U first, V second);
 
@@ -66,7 +70,6 @@ namespace hades
 	//supports:
 	//circle_t
 	//rectangle_t
-	//triangle_t
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 

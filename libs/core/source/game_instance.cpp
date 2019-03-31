@@ -1,25 +1,21 @@
-#include "Hades/GameInstance.hpp"
+#include "hades/game_instance.hpp"
 
 #include <cassert>
 
 #include "hades/data.hpp"
 #include "hades/parallel_jobs.hpp"
-#include "hades/simple_resources.hpp"
+#include "hades/core_resources.hpp"
 #include "hades/time.hpp"
 
 namespace hades 
 {
-	GameInstance::GameInstance(level_save sv) : GameInterface(sv), _input(curve_type::step)
+	GameInstance::GameInstance(level_save sv) : game_interface(sv), _input(curve_type::step)
 	{
 		//TODO: store input history in sv file and restore it on load
 	}
 
-	void GameInstance::tick(sf::Time dt)
+	void GameInstance::tick(time_duration dt)
 	{
-		const auto current_duration = to_standard_time(_currentTime);
-		const auto current_time = time_point{ current_duration };
-		const auto dt_duration = to_standard_time(dt);
-
 		//take a copy of the current active systems and entity attachments, 
 		//changes to this wont take effect untill the next tick
 		const auto systems = [this] {
@@ -40,7 +36,7 @@ namespace hades
 				continue;
 
 			assert(s.system);
-			const auto entities = s.attached_entities.get().get(current_time);
+			const auto entities = s.attached_entities.get().get(_current_time);
 
 			for (const auto ent : entities)
 			{
@@ -49,8 +45,8 @@ namespace hades
 					s.system->id,
 					this,
 					nullptr, //mission data //TODO:
-					current_time,
-					dt_duration
+					_current_time,
+					dt
 				});
 
 				_jobs.run(j);
@@ -65,14 +61,12 @@ namespace hades
 
 		//advance the game clock
 		//this is the only time the clock can be changed
-		_currentTime += dt;
+		_current_time += dt;
 	}
 
-	void GameInstance::insertInput(input_system::action_set input, sf::Time t)
+	void GameInstance::insertInput(input_system::action_set input, time_point t)
 	{
-		const auto duration = to_standard_time(t);
-		const auto current_time = time_point{ duration };
-		_input.set(current_time, input);
+		_input.set(t, input);
 	}
 
 	template<typename T>
@@ -103,22 +97,20 @@ namespace hades
 		return output;
 	}
 
-	exported_curves GameInstance::getChanges(sf::Time t) const
+	exported_curves GameInstance::getChanges(time_point t) const
 	{
-		//return all frames between currenttime - t and time.max	
-		const auto startTime = _currentTime - t;
-		const auto time = to_standard_time_point(startTime);
-		const auto &curves = getCurves();
+		//return all frames between t and time.max	
+		const auto &curves = get_curves();
 
 		exported_curves output;
 
 		using namespace resources::curve_types;
 		//load all the frames from the specified time into the exported data
 		//TODO: half of the curve types are missing
-		output.int_curves = GetExportedSet<int_t>(time, curves.int_curves.data());
-		output.bool_curves = GetExportedSet<bool_t>(time, curves.bool_curves.data());
-		output.string_curves = GetExportedSet<string>(time, curves.string_curves.data());
-		output.int_vector_curves = GetExportedSet<resources::curve_types::vector_int>(time, curves.int_vector_curves.data());
+		output.int_curves = GetExportedSet<int_t>(t, curves.int_curves.data());
+		output.bool_curves = GetExportedSet<bool_t>(t, curves.bool_curves.data());
+		output.string_curves = GetExportedSet<string>(t, curves.string_curves.data());
+		output.int_vector_curves = GetExportedSet<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
 
 		//add in entityNames and variable Id mappings
 		output.entity_names = _newEntityNames;
@@ -126,11 +118,9 @@ namespace hades
 		return output;
 	}
 
-	void GameInstance::nameEntity(entity_id entity, const types::string &name, sf::Time t)
+	void GameInstance::nameEntity(entity_id entity, const types::string &name, time_point time)
 	{
 		assert(entity < entity_id{ _next });
-
-		const auto time = to_standard_time_point(t);
 
 		while (true) //NOTE: not a fan of while(true), is there another way to write this without repeating code?
 		{

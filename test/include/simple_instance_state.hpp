@@ -1,7 +1,14 @@
 #ifndef TEST_SIMPLE_INSTANCE_HPP
 #define TEST_SIMPLE_INSTANCE_HPP
 
-#include "Hades/State.hpp"
+#include <memory>
+
+#include "hades/data.hpp"
+//#include "hades/RenderInstance.hpp"
+#include "hades/Server.hpp"
+#include "hades/state.hpp"
+
+void register_simple_instance_resources(hades::data::data_manager&);
 
 class simple_instance_state final : public hades::state
 {
@@ -16,6 +23,7 @@ public:
 
 private:
 	sf::View _view;
+	std::unique_ptr<hades::server_hub> _server;
 };
 
 #endif //TEST_CONSOLETEST_HPP

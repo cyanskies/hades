@@ -11,6 +11,7 @@
 
 #include "hades/any_map.hpp"
 #include "hades/curve_extra.hpp"
+#include "hades/exceptions.hpp"
 #include "hades/shared_guard.hpp"
 #include "hades/shared_map.hpp"
 //#include "Hades/simple_resources.hpp"
@@ -73,19 +74,19 @@ namespace hades
 	template<>
 	curve_data::curve_map<resources::curve_types::vector_unique> &get_curve_list(curve_data &data);
 
-	class system_already_attached : public std::runtime_error
+	class system_already_attached : public runtime_error
 	{
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
 	};
 
-	class system_not_attached : public std::runtime_error
+	class system_not_attached : public runtime_error
 	{
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
 	};
 
-	class curve_not_registered : public std::logic_error
+	class curve_not_registered : public runtime_error
 	{
-		using std::logic_error::logic_error;
+		using runtime_error::runtime_error;
 	};
 
 	using property_map = any_map<unique_id>;
@@ -95,34 +96,34 @@ namespace hades
 
 	//this is the interface that is available to jobs and systems
 	//it supports multi threading the whole way though
-	class GameInterface
+	class game_interface
 	{
 	public:
-		virtual ~GameInterface() {}
+		virtual ~game_interface() {}
 
-		GameInterface(const level_save&);
+		game_interface(const level_save&);
 
 		//creates an entity with no curves or systems attached to it
-		entity_id createEntity();
-		entity_id getEntityId(const types::string &name, time_point t) const;
+		entity_id create_entity();
+		entity_id get_entity_id(const types::string &name, time_point t) const;
 
-		curve_data &getCurves();
-		const curve_data &getCurves() const;
+		curve_data &get_curves();
+		const curve_data &get_curves() const;
 
 		//const property_map &getProperties() const;
 
 		//attach/detach entities from systems
-		void attachSystem(entity_id, unique_id, time_point t);
-		void detachSystem(entity_id, unique_id, time_point t);
+		void attach_system(entity_id, unique_id, time_point t);
+		void detach_system(entity_id, unique_id, time_point t);
 
 	protected:
 		//TODO: do these need to remain?
-		GameSystem& FindSystem(unique_id);
-		GameSystem& install_system(unique_id sys);
+		game_system& FindSystem(unique_id);
+		game_system& install_system(unique_id sys);
 
 		shared_guard<name_curve_t> _entity_names = name_curve_t{ curve_type::step };
 		mutable std::mutex _system_list_mut;
-		std::vector<GameSystem> _systems;
+		std::vector<game_system> _systems;
 
 		std::atomic<entity_id::value_type> _next = static_cast<entity_id::value_type>(bad_entity) + 1;
 	private:
@@ -132,17 +133,7 @@ namespace hades
 		//property_map _properties;
 	};
 
-	class system_already_installed : public std::logic_error
-	{
-		using std::logic_error::logic_error;
-	};
-
-	class system_null : public std::logic_error
-	{
-		using std::logic_error::logic_error;
-	};
-
-	void InstallSystem(resources::system*, std::shared_mutex&, std::vector<GameSystem>&);
+	void InstallSystem(resources::system*, std::shared_mutex&, std::vector<game_system>&);
 }
 
 #include "hades/detail/level_interface.inl"

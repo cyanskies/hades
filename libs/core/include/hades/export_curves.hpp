@@ -1,5 +1,5 @@
-#ifndef HADES_EXPORTEDCURVES_HPP
-#define HADES_EXPORTEDCURVES_HPP
+#ifndef HADES_EXPORTCURVES_HPP
+#define HADES_EXPORTCURVES_HPP
 
 #include "hades/curve_extra.hpp"
 #include "hades/level_interface.hpp"
@@ -42,4 +42,4 @@ namespace hades
 	};
 }
 
-#endif //HADES_EXPORTEDCURVES_HPP
+#endif //HADES_EXPORTCURVES_HPP

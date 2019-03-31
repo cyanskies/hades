@@ -4,7 +4,7 @@
 #include "Hades/State.hpp"
 
 #include "hades/texture.hpp"
-#include "Hades/GameInstance.hpp"
+#include "hades/game_instance.hpp"
 
 //A snake game
 

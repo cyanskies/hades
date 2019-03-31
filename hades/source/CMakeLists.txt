@@ -7,8 +7,6 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	data_system.cpp
-  	ExportedCurves.cpp
-	GameInstance.cpp
 	main.cpp
 	mission.cpp
 	RenderInstance.cpp

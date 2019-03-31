@@ -1,8 +1,18 @@
 #include "Hades/Server.hpp"
-#include "Hades/GameInstance.hpp"
+
+#include "Hades/game_system.hpp"
+#include "hades/game_instance.hpp"
 
 namespace hades
 {
+	void register_game_server_resources(data::data_manager &d)
+	{
+		register_objects(d);
+
+		//TODO: support scripted or embeded systems
+		//register_systems_resources();
+	}
+
 	class local_server_hub;
 
 	class local_server_level : public server_level
@@ -14,24 +24,29 @@ namespace hades
 		void update() override
 		{}
 
-		void tick(sf::Time dt)
+		void tick(time_duration dt)
 		{
 			_game.tick(dt);
 		}
 
-		void handle_request(hades::action a) override
+		void send_request(action a) override
 		{
 			/*yeeaarrrghhh*/
 		}
 
-		exported_curves get_changes(sf::Time dt) override
+		void send_request(std::vector<action> a) override
+		{
+			/*yeeaarrrghhh*/
+		}
+
+		exported_curves get_changes(time_point dt) override
 		{
 			return _game.getChanges(dt);
 		}
 
 		exported_curves resync() override
 		{
-			return _game.getChanges(sf::Time{});
+			return _game.getChanges(time_point{});
 		}
 
 	private:
@@ -47,12 +62,12 @@ namespace hades
 		local_server_hub(level_save lvl) : _level{ lvl, this }//, _game_instance{lvl}
 		{}
 
-		void update(sf::Time dt) override
+		void update(time_duration dt) override
 		{
 			tick(dt);
 		}
 
-		void tick(sf::Time dt)
+		void tick(time_duration dt)
 		{
 			//tick the mission contruct
 			//_game_instance.tick(dt);
@@ -62,19 +77,19 @@ namespace hades
 			_level.tick(dt);
 		}
 
-		void send_request() override
+		/*void send_request() override
 		{
 
-		}
+		}*/
 
-		exported_curves get_updates(sf::Time dt) override
+		exported_curves get_updates(time_point dt) override
 		{
 			return _level.get_changes(dt);
 		}
 
-		exported_curves resync(sf::Time) override
+		exported_curves resync(time_point) override
 		{
-			return get_updates(sf::Time{});
+			return get_updates(time_point{});
 		}
 
 		void get_mission() override
@@ -82,13 +97,10 @@ namespace hades
 
 		}
 
-		server_level* connect_to_level() override
+		server_level* connect_to_level(unique_id) override
 		{
 			return &_level;
 		}
-
-		void connect_to_level(/*level token*/int) override
-		{}
 
 		void disconnect_from_level() override
 		{}

@@ -9,8 +9,10 @@ set(HADES_CORE_SRC
 	core_curves.cpp
 	core_resources.cpp
 	draw_clamp.cpp
+	export_curves.cpp
 	files.cpp
 	font.cpp
+	game_instance.cpp
 	game_system.cpp
 	grid.cpp
 	gui.cpp
@@ -41,8 +43,10 @@ set(HADES_CORE_SRC
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/draw_clamp.hpp
+	../include/hades/export_curves.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
+	../include/hades/game_instance.hpp
 	../include/hades/game_system.hpp
 	../include/hades/grid.hpp
 	../include/hades/gui.hpp
@@ -86,8 +90,10 @@ source_group("Headers" FILES
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
 	../include/hades/draw_clamp.hpp
+	../include/hades/export_curves.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
+	../include/hades/game_instance.hpp
 	../include/hades/game_system.hpp
 	../include/hades/grid.hpp
 	../include/hades/gui.hpp

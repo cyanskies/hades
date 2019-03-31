@@ -22,7 +22,7 @@
 namespace hades
 {
 	//fwd declaration
-	class GameInterface;
+	class game_interface;
 	class RenderInterface;
 
 	class system_error : public std::runtime_error
@@ -40,11 +40,11 @@ namespace hades
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
-		GameInterface* level_data;
+		game_interface* level_data;
 		//mission data interface
 		// contains players, 
 		// and... just the players
-		GameInterface* mission_data;
+		game_interface* mission_data;
 		//the current time, and the time to advance by(t + dt)
 		time_point current_time;
 		time_duration dt;
@@ -99,19 +99,19 @@ namespace hades
 
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
-	struct GameSystem
+	struct game_system
 	{
-		GameSystem(const resources::system* s) : system(s)
+		game_system(const resources::system* s) : system(s)
 		{}
 
-		GameSystem(const resources::system* s, name_list nl) : system(s), attached_entities(std::move(nl))
+		game_system(const resources::system* s, name_list nl) : system(s), attached_entities(std::move(nl))
 		{}
 
-		GameSystem(const GameSystem&) = default;
-		GameSystem(GameSystem&&) = default;
+		game_system(const game_system&) = default;
+		game_system(game_system&&) = default;
 
-		GameSystem &operator=(const GameSystem&) = default;
-		GameSystem &operator=(GameSystem&&) = default;
+		game_system &operator=(const game_system&) = default;
+		game_system &operator=(game_system&&) = default;
 
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::system* system = nullptr;
@@ -122,7 +122,7 @@ namespace hades
 	//program provided systems should be attatched to the renderer or 
 	//gameinstance depending on what kind of system they are
 
-	//scripted systems should be listed in the GameSystem: and RenderSystem: lists in
+	//scripted systems should be listed in the game_system: and RenderSystem: lists in
 	//the mod files that added them
 
 	//TODO: add render systems here

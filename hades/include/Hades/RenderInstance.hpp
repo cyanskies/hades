@@ -1,7 +1,7 @@
 #ifndef HADES_RENDERINSTANCE_HPP
 #define HADES_RENDERINSTANCE_HPP
 
-#include "Hades/ExportedCurves.hpp"
+#include "hades/export_curves.hpp"
 #include "Hades/RenderInterface.hpp"
 #include "hades/timers.hpp"
 

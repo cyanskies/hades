@@ -10,7 +10,7 @@ namespace hades
 	const auto zero_time = time_point{};
 
 	template<typename T>
-	void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
+	static void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
 	{
 		if (c.exists({ id, curve->id }))
 			c.erase({ id, curve->id });
@@ -19,11 +19,8 @@ namespace hades
 
 		assert(std::holds_alternative<T>(value));
 
-		if (!resources::is_set(value))
-			throw curve_error("curve is missing a value");
-
-		if (!resources::is_curve_valid(*curve, value))
-			throw curve_error("curve has wrong type");
+		assert(resources::is_set(value));
+		assert(resources::is_curve_valid(*curve, value));
 
 		const auto &val = std::get<T>(value);
 		curve_instance.insert(zero_time, val);
@@ -31,9 +28,12 @@ namespace hades
 		c.create({ id, curve->id }, curve_instance);
 	}
 
-	void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
+	static void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
 	{
 		using namespace resources;
+
+		if (std::holds_alternative<std::monostate>(value))
+			value = reset_default_value(*curve);
 
 		if (!resources::is_curve_valid(*curve, value))
 			throw std::runtime_error("unexpected curve type");
@@ -44,7 +44,7 @@ namespace hades
 		}, value);
 	}
 
-	std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
+	static std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
 	{
 		//search list
 		const auto sys_iter = std::find(std::begin(system_list), std::end(system_list), s);
@@ -58,7 +58,7 @@ namespace hades
 		return pos;
 	}
 
-	void add_object_to_save(curve_data &c, entity_id id, const resources::object *o)
+	static void add_object_to_save(curve_data &c, entity_id id, const resources::object *o)
 	{
 		for (const auto b : o->base)
 			add_object_to_save(c, id, b);
@@ -67,7 +67,7 @@ namespace hades
 			add_curve_from_object(c, id, curve, value);
 	}
 
-	void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
+	static void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
 	{
 		assert(system_list.size() == attach_list.size());
 
@@ -103,7 +103,7 @@ namespace hades
 	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
 	static constexpr auto level_terrain_str = "terrain"sv;
 
-	void write_regions_from_level(const level &l, data::writer &w)
+	static void write_regions_from_level(const level &l, data::writer &w)
 	{
 		//regions:
 		//    - [name, r, g, b, a, x, y, w, h]
@@ -133,7 +133,7 @@ namespace hades
 		w.end_sequence();
 	}
 
-	void read_regions_into_level(const data::parser_node &p, level &l)
+	static void read_regions_into_level(const data::parser_node &p, level &l)
 	{
 		//regions:
 		//    - [name, r, g, b, a, x, y, w, h]
@@ -249,7 +249,7 @@ namespace hades
 			//record entity name if present
 			if (!o.name_id.empty())
 			{
-				auto names = sv.names.get(zero_time);
+				auto names = sv.names.empty() ? std::map<string, entity_id>{} : sv.names.get(zero_time);
 				names.emplace(o.name_id, o.id);
 				sv.names.set(zero_time, names);
 			}

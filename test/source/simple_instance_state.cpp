@@ -1,6 +1,7 @@
 #include "simple_instance_state.hpp"
 
 #include "hades/console_variables.hpp"
+#include "Hades/game_system.hpp"
 #include "hades/files.hpp"
 #include "hades/level.hpp"
 #include "hades/Main.hpp"
@@ -8,9 +9,33 @@
 
 using namespace std::string_view_literals;
 
+void simple_on_connect(hades::job_system&, hades::render_job_data &d)
+{
+	const auto entity = d.entity;
+}
+
+void simple_on_tick(hades::job_system&, hades::render_job_data &d)
+{
+	const auto entity = d.entity;
+}
+
+void simple_on_disconnect(hades::job_system&, hades::render_job_data &d)
+{
+	const auto entity = d.entity;
+}
+
 void register_simple_instance_resources(hades::data::data_manager &d)
 {
 	hades::register_game_server_resources(d);
+
+	hades::make_render_system("simple_render"sv,
+		nullptr,
+		simple_on_connect,
+		simple_on_disconnect,
+		simple_on_tick,
+		nullptr,
+		d
+	);
 }
 
 void simple_instance_state::init()

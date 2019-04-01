@@ -7,6 +7,7 @@
 //#include "hades/RenderInstance.hpp"
 #include "hades/Server.hpp"
 #include "hades/state.hpp"
+#include "Hades/timers.hpp"
 
 void register_simple_instance_resources(hades::data::data_manager&);
 
@@ -24,6 +25,7 @@ public:
 private:
 	sf::View _view;
 	std::unique_ptr<hades::server_hub> _server;
+	hades::time_point _current_time;
 };
 
 #endif //TEST_CONSOLETEST_HPP

@@ -50,7 +50,7 @@ namespace hades
 		}
 
 	private:
-		GameInstance _game;
+		game_instance _game;
 		
 		local_server_hub *_server; 
 		//entities
@@ -107,7 +107,7 @@ namespace hades
 
 	private:
 		//mission game instance
-		//GameInstance _game_instance;
+		//game_instance _game_instance;
 		//players
 		
 		//levels

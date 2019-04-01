@@ -18,11 +18,10 @@ namespace hades
 	//represents the logic side of an individual level or game
 	//TODO:
 	// support saving
-	class GameInstance : public game_interface
+	class game_instance : public game_interface
 	{
 	public:
-		GameInstance();
-		GameInstance(level_save);
+		game_instance(level_save);
 
 		//triggers all systems with the specified time change
 		void tick(time_duration dt);

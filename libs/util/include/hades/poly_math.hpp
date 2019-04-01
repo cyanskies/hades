@@ -16,6 +16,8 @@ namespace hades
 
 	namespace polygon
 	{
+		//#ref: https://www.youtube.com/watch?v=7Ik2vowGcU0
+
 		//moves the position of the poly and translates the vertex
 		//the total location of all vertex stays the same,
 		//but the position will have moved by the amount passed in

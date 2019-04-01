@@ -26,6 +26,7 @@ namespace hades
 
 	namespace mouse
 	{
+		//TODO: make general version of this for actions in input.hpp
 		template<bool EnableDrag = true, bool EnableDoubleClick = true>
 		struct mouse_button_state
 		{

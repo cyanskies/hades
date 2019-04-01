@@ -1,7 +1,7 @@
 #ifndef TEST_SNAKE_HPP
 #define TEST_SNAKE_HPP
 
-#include "Hades/State.hpp"
+#include "hades/state.hpp"
 
 #include "hades/texture.hpp"
 #include "hades/game_instance.hpp"
@@ -20,7 +20,8 @@ public:
 	void resume() override;
 
 private:
-	hades::GameInstance _gameLogic;
+	hades::game_instance _gameLogic;
+
 };
 
 namespace snake

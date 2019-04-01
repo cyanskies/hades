@@ -9,12 +9,12 @@
 
 namespace hades 
 {
-	GameInstance::GameInstance(level_save sv) : game_interface(sv), _input(curve_type::step)
+	game_instance::game_instance(level_save sv) : game_interface(sv), _input(curve_type::step)
 	{
 		//TODO: store input history in sv file and restore it on load
 	}
 
-	void GameInstance::tick(time_duration dt)
+	void game_instance::tick(time_duration dt)
 	{
 		//take a copy of the current active systems and entity attachments, 
 		//changes to this wont take effect untill the next tick
@@ -64,14 +64,14 @@ namespace hades
 		_current_time += dt;
 	}
 
-	void GameInstance::insertInput(input_system::action_set input, time_point t)
+	void game_instance::insertInput(input_system::action_set input, time_point t)
 	{
 		_input.set(t, input);
 	}
 
 	template<typename T>
-	std::vector<exported_curves::export_set<T>> GetExportedSet(time_point t, typename shared_map<std::pair<entity_id, variable_id>, \
-		curve<T>>::data_array data)
+	static std::vector<exported_curves::export_set<T>> get_exported_set(time_point t,
+		typename shared_map<std::pair<entity_id, variable_id>, curve<T>>::data_array data)
 	{
 		std::vector<exported_curves::export_set<T>> output;
 		for (auto c : data)
@@ -97,7 +97,7 @@ namespace hades
 		return output;
 	}
 
-	exported_curves GameInstance::getChanges(time_point t) const
+	exported_curves game_instance::getChanges(time_point t) const
 	{
 		//return all frames between t and time.max	
 		const auto &curves = get_curves();
@@ -107,10 +107,10 @@ namespace hades
 		using namespace resources::curve_types;
 		//load all the frames from the specified time into the exported data
 		//TODO: half of the curve types are missing
-		output.int_curves = GetExportedSet<int_t>(t, curves.int_curves.data());
-		output.bool_curves = GetExportedSet<bool_t>(t, curves.bool_curves.data());
-		output.string_curves = GetExportedSet<string>(t, curves.string_curves.data());
-		output.int_vector_curves = GetExportedSet<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
+		output.int_curves = get_exported_set<int_t>(t, curves.int_curves.data());
+		output.bool_curves = get_exported_set<bool_t>(t, curves.bool_curves.data());
+		output.string_curves = get_exported_set<string>(t, curves.string_curves.data());
+		output.int_vector_curves = get_exported_set<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
 
 		//add in entityNames and variable Id mappings
 		output.entity_names = _newEntityNames;
@@ -118,7 +118,7 @@ namespace hades
 		return output;
 	}
 
-	void GameInstance::nameEntity(entity_id entity, const types::string &name, time_point time)
+	void game_instance::nameEntity(entity_id entity, const types::string &name, time_point time)
 	{
 		assert(entity < entity_id{ _next });
 

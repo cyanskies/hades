@@ -100,8 +100,8 @@ namespace hades
 		auto out = make_empty_corners();
 
 		const auto map_size = terrain_vertex_position{ 
-			signed_cast(w),
-			signed_cast(std::size(v) / w)
+			integer_cast<terrain_vertex_position::value_type>(w),
+			integer_cast<terrain_vertex_position::value_type>(std::size(v) / w)
 		};
 
 		if (!within_map(map_size - terrain_vertex_position{ 1, 1 }, p))
@@ -153,7 +153,7 @@ namespace hades
 
 			assert(x < w2);
 
-			const auto corners = get_terrain_at_tile(v, w, { signed_cast(x), signed_cast(y) });
+			const auto corners = get_terrain_at_tile(v, w, { integer_cast<int32>(x), integer_cast<int32>(y) });
 			const auto type = get_transition_type(corners, first, last);
 			const auto tile = resources::get_random_tile(**first, type);
 			out.tiles.emplace_back(get_tile_id(out, tile));
@@ -706,7 +706,7 @@ namespace hades::resources
 			auto &transition_vector = get_transition(t, terrain);
 
 			assert(tile_pos.x >= 0 && tile_pos.y >= 0);
-			const auto tile = resources::tile{ tex, tile_pos.x, tile_pos.y, &terrain };
+			const auto tile = resources::tile{ tex, integer_cast<tile_size_t>(tile_pos.x), integer_cast<tile_size_t>(tile_pos.y), &terrain };
 			transition_vector.emplace_back(tile);
 			terrain.tiles.emplace_back(tile);
 		}

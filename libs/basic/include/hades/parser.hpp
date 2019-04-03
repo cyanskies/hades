@@ -4,19 +4,26 @@
 #include <memory>
 #include <vector>
 
+#include "hades/exceptions.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
 namespace hades::data
 {
-	//thrown by all the to_* functions in the parser_node class
-	class parser_convert_exception : public std::runtime_error
+	class parser_exception : public runtime_error
 	{
 	public:
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
 	};
-	//parser_node, represents either string node
 
+	//thrown by all the to_* functions in the parser_node class
+	class parser_convert_exception : public parser_exception
+	{
+	public:
+		using parser_exception::parser_exception;
+	};
+
+	//parser_node, represents either string node
 	class parser_node
 	{
 	public:
@@ -68,6 +75,8 @@ namespace hades::data
 	using make_parser_f = std::unique_ptr<parser_node>(*)(std::string_view);
 
 	void set_default_parser(make_parser_f);
+
+	//NOTE: can throw parser_exception on error
 	std::unique_ptr<parser_node> make_parser(std::string_view);
 
 	namespace parse_tools

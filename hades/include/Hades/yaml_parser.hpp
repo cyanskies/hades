@@ -4,6 +4,8 @@
 #include <memory>
 #include <string_view>
 
+#include "hades/parser.hpp"
+
 //TODO: remove
 namespace YAML
 {
@@ -12,16 +14,10 @@ namespace YAML
 
 namespace hades::data
 {
-	//thrown by make_yaml_parser
-	//TODO: replace with generic parser_exception in parser.hpp
-	//for compat with make_default_parser
-	class yaml_parse_exception : public std::runtime_error
-	{
-	public:
-		using std::runtime_error::runtime_error;
-	};
+	using yaml_parse_exception = parser_exception;
 
 	class parser_node;
+	//NOTE: throws yaml_parse_exception on error
 	std::unique_ptr<parser_node> make_yaml_parser(std::string_view src);
 	//TODO: remove
 	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src);

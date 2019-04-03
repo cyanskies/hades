@@ -430,10 +430,12 @@ namespace hades
 		if (!get)
 			throw std::runtime_error{ "Failed to find property value" };
 
+		using ValueType = std::decay_t<decltype(value)>;
+
 		std::visit([identifier, &value](auto &&arg) {
 			using U = std::decay_t<decltype(arg)>;
 			using W = std::decay_t<U::element_type::value_type>;
-			if constexpr (std::is_same_v<std::decay_t<decltype(value)>, W>)
+			if constexpr (std::is_same_v<ValueType, W>)
 				*arg = value;
 			else
 				throw console::property_wrong_type("name: " + to_string(identifier) + ", value: " + to_string(value));

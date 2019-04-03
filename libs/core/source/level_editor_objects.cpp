@@ -795,7 +795,7 @@ namespace hades
 
 				assert(target.selected >= 0);
 				if(static_cast<std::size_t>(target.selected) < std::size(value))
-					make_vector_edit_field(g, o, *c, target.selected, value);	
+					make_vector_edit_field(g, o, *c, integer_cast<int32>(target.selected), value);	
 				else
 				{
 					string empty{};

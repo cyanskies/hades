@@ -226,9 +226,9 @@ namespace hades
 	template<typename InputIt, typename MakeButton>
 	void gui_make_horizontal_wrap_buttons(gui &g, float right_max, InputIt first, InputIt last, MakeButton make_button)
 	{
-		using T = std::iterator_traits<InputIt>::value_type;
-		using TRef = std::iterator_traits<InputIt>::reference;
-		using TPtr = std::iterator_traits<InputIt>::pointer;
+		using T = typename std::iterator_traits<InputIt>::value_type;
+		using TRef = typename std::iterator_traits<InputIt>::reference;
+		using TPtr = typename std::iterator_traits<InputIt>::pointer;
 
 		constexpr auto button_size = vector_float{ 25.f, 25.f };
 

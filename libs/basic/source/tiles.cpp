@@ -402,8 +402,8 @@ namespace hades
 			throw tile_error{ "malformed tile_map" };
 
 		return tile_position{
-			signed_cast(t.width),
-			signed_cast(t.tiles.size() / t.width)
+			integer_cast<tile_position::value_type>(t.width),
+			integer_cast<tile_position::value_type>(t.tiles.size() / t.width)
 		};
 	}
 
@@ -714,8 +714,8 @@ namespace hades
 		const auto new_width = current_width - top_left.x + bottom_right.x;
 
 		const auto size = vector_int{
-			signed_cast(new_width),
-			signed_cast(new_height)
+			integer_cast<int32>(new_width),
+			integer_cast<int32>(new_height)
 		};
 
 		resize_map(m, size, { -top_left.x, -top_left.y }, t);
@@ -794,14 +794,14 @@ namespace hades
 
 	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size)
 	{
-		const auto int_size = signed_cast(size);
+		const auto int_size = integer_cast<int32>(size);
 
 		return make_position_rect(position, { int_size, int_size });
 	}
 
 	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size)
 	{
-		const auto int_half_size = signed_cast(half_size);
+		const auto int_half_size = integer_cast<int32>(half_size);
 		return make_position_square({ middle.x - int_half_size, middle.y - int_half_size }, int_half_size * 2);
 	}
 
@@ -822,7 +822,7 @@ namespace hades
 
 	std::vector<tile_position> make_position_circle(tile_position p, tile_count_t radius)
 	{
-		const auto rad = signed_cast(radius);
+		const auto rad = integer_cast<int32>(radius);
 
 		const auto top = tile_position{ 0, -rad };
 		const auto bottom = tile_position{ 0, rad };

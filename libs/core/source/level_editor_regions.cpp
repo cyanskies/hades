@@ -585,12 +585,11 @@ namespace hades
 		{
 			//expand shape to meet minimum size setting
 			auto &r = _regions[_edit.selected];
-			auto [w, h] = r.shape.getSize();
+			auto size = r.shape.getSize();
+			size.x = std::max(size.x, _region_min_size->load());
+			size.y = std::max(size.y, _region_min_size->load());
 
-			w = std::max(w, _region_min_size->load());
-			h = std::max(h, _region_min_size->load());
-
-			r.shape.setSize({ w, h });
+			r.shape.setSize(size);
 
 			_brush = brush_type::region_selector;
 		}

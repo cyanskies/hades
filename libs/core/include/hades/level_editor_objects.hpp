@@ -40,7 +40,7 @@ namespace hades
 			editor_object_instance() noexcept = default;
 			editor_object_instance(const object_instance&);
 
-			sprite_batch::sprite_id sprite_id = sprite_utility::sprite::bad_sprite_id;
+			sprite_batch::sprite_id sprite_id = sprite_utility::bad_sprite_id;
 		};
 
 		struct curve_info

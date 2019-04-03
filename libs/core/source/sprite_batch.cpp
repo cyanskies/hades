@@ -43,7 +43,7 @@ namespace hades
 
 		//must own a shared lock on sbatch
 		//throws hades::invalid_argument if id doesn't corrispond to a stored sprite
-		static found_sprite find_sprite(std::vector<batch> &sbatch, sprite::sprite_id id)
+		static found_sprite find_sprite(std::vector<batch> &sbatch, sprite_id id)
 		{
 			for (auto batch_index = 0u; batch_index < sbatch.size(); ++batch_index)
 			{
@@ -142,7 +142,7 @@ namespace hades
 	{
 		const auto lk = std::scoped_lock{ _collection_mutex };
 
-		const auto id = ++_id_count;
+		const auto id = sprite_id{ ++static_cast<sprite_id::value_type&>(_id_count) };
 		//store the id for later lookup
 		_used_ids.push_back(id);
 
@@ -177,7 +177,7 @@ namespace hades
 	{
 		const auto lk = std::scoped_lock{ _collection_mutex };
 
-		const auto id = ++_id_count;
+		const auto id = sprite_id{ ++static_cast<sprite_id::value_type&>(_id_count) };
 		//store the id for later lookup
 		_used_ids.push_back(id);
 

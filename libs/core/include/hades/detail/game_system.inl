@@ -11,26 +11,26 @@ namespace hades
 		template<typename JobData, typename Func>
 		inline auto make_system_func(Func f)
 		{
-			if constexpr (std::is_invocable_r_v<bool, Func, job_system&, system_job_data>)
+			if constexpr (std::is_invocable_r_v<bool, Func, job_system&, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					return std::invoke(f, j, std::move(job_data));
 				};
 			}
-			else if constexpr (std::is_invocable_v<Func, job_system&, system_job_data>)
+			else if constexpr (std::is_invocable_v<Func, job_system&, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					std::invoke(f, j, std::move(job_data));
 					return true;
 				};
 			}
-			else if constexpr (std::is_invocable_r_v<bool, Func, system_job_data>)
+			else if constexpr (std::is_invocable_r_v<bool, Func, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					return std::invoke(f, std::move(job_data));
 				};
 			}
-			else if constexpr (std::is_invocable_v<Func, system_job_data>)
+			else if constexpr (std::is_invocable_v<Func, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					std::invoke(f, std::move(job_data));

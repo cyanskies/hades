@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/rectangle_math.hpp"
+#include "Hades/strong_typedef.hpp"
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
 
@@ -37,16 +38,16 @@ namespace hades
 
 		bool operator==(const sprite_settings &lhs, const sprite_settings &rhs);
 
+		struct sprite_id_tag {};
+		using sprite_id = strong_typedef<sprite_id_tag, int32>;
+		constexpr auto bad_sprite_id = sprite_id{ std::numeric_limits<sprite_id::value_type>::min() };
+
 		struct sprite
 		{
 			sprite() = default;
 			sprite(const sprite &other);
 			sprite &operator=(const sprite &other);
 			
-			using sprite_id = int64;
-
-			static constexpr auto bad_sprite_id = std::numeric_limits<sprite_id>::min();
-
 			std::mutex mut;
 			sprite_id id = bad_sprite_id;
 			vector_float position{};
@@ -57,16 +58,19 @@ namespace hades
 
 		bool operator==(const sprite &lhs, const sprite &rhs);
 
+		//TODO: move this to cpp if not needed in headercpp default noexcept movec
 		using index_type = std::size_t;
 		//				           //batch index,//sprite index, sprite ptr
 		using found_sprite = std::tuple<index_type, index_type, sprite*>;
+
+		//TODO: named structs for this and the vertex batch
 		using batch = std::pair<sprite_utility::sprite_settings, std::vector<sprite_utility::sprite>>;
 	}
 
 	class sprite_batch : public sf::Drawable
 	{
 	public:
-		using sprite_id = sprite_utility::sprite::sprite_id;
+		using sprite_id = sprite_utility::sprite_id;
 
 		sprite_batch() = default;
 		sprite_batch(const sprite_batch&);
@@ -78,6 +82,7 @@ namespace hades
 		//clears all of the stored data
 		void clear();
 
+		//===Thread Safe===
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *a, time_point t,
 			sprite_utility::layer_t l, vector_float p, vector_float s);
@@ -88,7 +93,8 @@ namespace hades
 		void set_layer(sprite_id id, sprite_utility::layer_t l);
 		void set_position(sprite_id id, vector_float pos);
 		void set_size(sprite_id id, vector_float size);
-		
+		//===End Thread Safe===
+
 		void draw_clamp(const rect_float &worldCoords);
 
 		void prepare();
@@ -96,7 +102,7 @@ namespace hades
 
 	private:
 		//mutex to ensure two threads don't try to add/search/erase from the two collections at the same time
-		mutable std::shared_mutex _collection_mutex; 
+		mutable std::shared_mutex _collection_mutex;  //TODO: split into sprite_mutex, vertex_mutex, id_mutex
 
 		using batch = sprite_utility::batch;
 		std::vector<batch> _sprites;
@@ -107,9 +113,10 @@ namespace hades
 		using vertex_batch = std::pair<sprite_utility::sprite_settings, std::vector<sf::Vertex>>;
 		std::vector<vertex_batch> _vertex;
 		
-		//to speed up usage of exists() cache all the id's from this frame
+		//TODO: stack of returned ids, from destroy_sprite
+		//to speed up usage of exists()
 		std::vector<sprite_id> _used_ids;
-		sprite_id _id_count = sprite_utility::sprite::bad_sprite_id + 1;
+		sprite_id _id_count = sprite_id{ static_cast<sprite_id::value_type>(sprite_utility::bad_sprite_id) + 1 };
 	};
 
 	void swap(sprite_batch&, sprite_batch&);

@@ -84,7 +84,7 @@ namespace hades
 
 	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
 	{
-		if (o.sprite_id == sprite_utility::sprite::bad_sprite_id)
+		if (o.sprite_id == sprite_utility::bad_sprite_id)
 			o.sprite_id = s.create_sprite();
 
 		const auto position = get_position(o);

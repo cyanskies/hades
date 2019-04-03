@@ -13,8 +13,9 @@ set(HADES_UTIL_SRC
 	../include/hades/poly_math.hpp
 	../include/hades/rectangle_math.hpp
 	../include/hades/shared_guard.hpp
-	../include/hades/table.hpp
 	../include/hades/shared_map.hpp
+	../include/hades/strong_typedef.hpp
+	../include/hades/table.hpp
 	../include/hades/types.hpp
 	../include/hades/uniqueid.hpp
 	../include/hades/utility.hpp
@@ -27,8 +28,8 @@ set(HADES_UTIL_SRC
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/poly_math.inl
 	../include/hades/detail/rectangle_math.inl
-	../include/hades/detail/table.inl
 	../include/hades/detail/shared_map.inl
+	../include/hades/detail/table.inl
 	../include/hades/detail/utility.inl
 	../include/hades/detail/vector_math.inl
 )

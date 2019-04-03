@@ -18,8 +18,11 @@ namespace hades
 		using tag_type = Tag;
 		using value_type = T;
 
+		//TODO: enable_if is_default_constructable
 		constexpr strong_typedef() noexcept = default;
-		explicit constexpr strong_typedef(value_type v) noexcept : _value{ std::move_if_noexcept(v) }
+		//TODO: enable_if is_move_constructable or is_copy_constructable
+		explicit constexpr strong_typedef(value_type v) noexcept(std::is_nothrow_move_constructible_v<T>) 
+			: _value{ std::move_if_noexcept(v) }
 		{}
 
 		~strong_typedef() noexcept = default;

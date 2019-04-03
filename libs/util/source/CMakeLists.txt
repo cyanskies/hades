@@ -44,6 +44,7 @@ set_target_properties(${HADES_UTIL_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
 target_include_directories(${HADES_UTIL_LIB} PUBLIC ../include)
 
+# Add compiler flags for extra warnings
 target_compile_options(${HADES_UTIL_LIB} PRIVATE
                            # clang/GCC warnings
                            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:

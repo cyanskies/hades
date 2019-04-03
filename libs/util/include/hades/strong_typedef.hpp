@@ -12,11 +12,12 @@ namespace hades
 	// use by:
 	// struct type_t {};
 	// using type = strong_typedef<type_t, value_type>;
-	template<typename Tag, typename T>
+	template<typename Tag, typename T, bool ArithmeticOperators = false>
 	struct strong_typedef
 	{
 		using tag_type = Tag;
 		using value_type = T;
+		static constexpr bool arithmatic_flag = ArithmeticOperators;
 
 		//TODO: enable_if is_default_constructable
 		constexpr strong_typedef() noexcept = default;
@@ -50,6 +51,64 @@ namespace hades
 			return swap(static_cast<V&>(l), static_cast<V&>(r));
 		}
 
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator++()
+		{
+			++_value;
+			return *this;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator++(int)
+		{
+			const auto tmp{ *this };
+			operator++();
+			return tmp;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator--()
+		{
+			--_value;
+			return *this;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator--(int)
+		{
+			const auto tmp{ *this };
+			operator--();
+			return tmp;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator+=(const strong_typedef &rhs)
+		{
+			_value += rhs._value;
+			return *this;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator-=(const strong_typedef &rhs)
+		{
+			_value -= rhs._value;
+			return *this;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator*=(const strong_typedef &rhs)
+		{
+			_value *= rhs._value;
+			return *this;
+		}
+
+		template<typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef>>>
+		strong_typedef &operator/=(const strong_typedef &rhs)
+		{
+			_value /= rhs._value;
+			return *this;
+		}
+
 	private:
 		value_type _value{};
 	};
@@ -62,6 +121,9 @@ namespace hades
 
 	template<typename T>
 	constexpr auto is_strong_typedef_v = is_strong_typedef<T>::value;
+
+	template<typename T, typename = std::enable_if_t<is_strong_typedef_v<T>>>
+	constexpr auto strong_typedef_operators_enabled_v = T::arithmetic_flag && std::is_arithmetic_v<typename T::value_type>;
 
 	template<typename Tag, typename T>
 	constexpr bool operator==(const strong_typedef<Tag, T> &l, const strong_typedef<Tag, T> &r)
@@ -79,6 +141,34 @@ namespace hades
 	constexpr bool operator<(const strong_typedef<Tag, T> &l, const strong_typedef<Tag, T> &r)
 	{
 		return static_cast<T>(l) < static_cast<T>(r);
+	}
+
+	template<typename Tag, typename T, typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	strong_typedef<Tag, T> operator+(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
+	{
+		lhs += rhs;
+		return lhs;
+	}
+
+	template<typename Tag, typename T, typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	strong_typedef<Tag, T> operator-(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T>& rhs)
+	{
+		lhs -= rhs;
+		return lhs;
+	}
+
+	template<typename Tag, typename T, typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	strong_typedef<Tag, T> operator*(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T>& rhs)
+	{
+		lhs *= rhs;
+		return lhs;
+	}
+
+	template<typename Tag, typename T, typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	strong_typedef<Tag, T> operator/(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T>& rhs)
+	{
+		lhs /= rhs;
+		return lhs;
 	}
 
 	template<typename Tag, typename T>

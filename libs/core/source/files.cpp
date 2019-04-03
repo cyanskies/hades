@@ -34,8 +34,7 @@ namespace hades {
 		{
 			auto stream = make_stream(modPath, fileName);
 			const auto size = stream.getSize();
-			assert(size >= 0 &&
-				integer_cast<buffer::size_type>(size) <= std::numeric_limits<buffer::size_type>::max());
+			
 			buffer buff(integer_cast<buffer::size_type>(size));
 			stream.read(&buff[0], size);
 

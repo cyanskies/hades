@@ -10,7 +10,6 @@ set(HADES_SRC
 	main.cpp
 	mission.cpp
 	RenderInstance.cpp
-	RenderInterface.cpp
 	Server.cpp
 	simple_resources.cpp
 	StateManager.cpp

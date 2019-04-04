@@ -1,25 +1,18 @@
-#ifndef HADES_RENDERINTERFACE_HPP
-#define HADES_RENDERINTERFACE_HPP
+#ifndef HADES_RENDER_INTERFACE_HPP
+#define HADES_RENDER_INTERFACE_HPP
 
 #include "hades/level_interface.hpp"
 #include "hades/sprite_batch.hpp"
 
 namespace hades
 {
-	class RendererInterface : public game_interface
-	{
-	public:
-		//controls for messing with sprites
-		sprite_batch  *getSprites();
-	protected:
-		sprite_batch  _sprites;
-	};
-
 	class render_interface
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
 		using sprite_layer = sprite_utility::layer_t;
+
+		//===Thread-Safe===
 
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *, time_point,
@@ -36,6 +29,23 @@ namespace hades
 		using drawable_id = strong_typedef<drawable_id_tag, int32>;
 		using drawable_layer = sprite_layer;
 
+		static constexpr drawable_id bad_drawable_id = drawable_id{ std::numeric_limits<drawable_id::value_type>::min() };
+
+		using get_drawable = sf::Drawable& (*)(std::any&);
+
+		struct drawable_object
+		{
+			drawable_id id = bad_drawable_id;
+			std::any storage;
+			get_drawable get = nullptr;
+		};
+
+		struct object_layer
+		{
+			sprite_layer layer;
+			std::vector<drawable_object> objects;
+		};
+
 		drawable_id create_drawable();
 
 		drawable_id create_drawable_ptr(const sf::Drawable*, sprite_layer);
@@ -48,9 +58,16 @@ namespace hades
 
 		void destroy_drawable(drawable_id);
 
+		//===End Thread-Safe===
+
 	private:
-		drawable_id _create_drawable_any(std::any drawable, sprite_layer);
+		drawable_id _create_drawable_any(std::any drawable, get_drawable, sprite_layer);
+
+		//sprite batch is already thread safe
+		sprite_batch _sprite_batch;
+		mutable std::shared_mutex _object_mutex;
+		std::vector<object_layer> _object_layers;
 	};
 }
 
-#endif //HADES_RENDERINTERFACE_HPP
+#endif //HADES_RENDER_INTERFACE_HPP

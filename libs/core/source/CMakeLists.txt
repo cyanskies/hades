@@ -27,6 +27,7 @@ set(HADES_CORE_SRC
 	level_interface.cpp
 	mouse_input.cpp
 	objects.cpp
+	render_interface.cpp
 	sf_input.cpp
 	sprite_batch.cpp
 	standard_paths.cpp
@@ -62,6 +63,7 @@ set(HADES_CORE_SRC
 	../include/hades/level_interface.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
+	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp

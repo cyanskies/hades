@@ -143,6 +143,7 @@ namespace hades
 		const auto lk = std::scoped_lock{ _collection_mutex };
 
 		const auto id = sprite_id{ ++static_cast<sprite_id::value_type&>(_id_count) };
+		assert(id != bad_sprite_id);
 		//store the id for later lookup
 		_used_ids.push_back(id);
 
@@ -178,6 +179,7 @@ namespace hades
 		const auto lk = std::scoped_lock{ _collection_mutex };
 
 		const auto id = sprite_id{ ++static_cast<sprite_id::value_type&>(_id_count) };
+		assert(id != bad_sprite_id);
 		//store the id for later lookup
 		_used_ids.push_back(id);
 
@@ -214,7 +216,7 @@ namespace hades
 		return id;
 	}
 
-	bool sprite_batch::exists(typename sprite_batch::sprite_id id) const
+	bool sprite_batch::exists(typename sprite_batch::sprite_id id) const noexcept
 	{
 		const auto lock = std::shared_lock{ _collection_mutex };
 		return std::find(std::begin(_used_ids), std::end(_used_ids), id) != std::end(_used_ids);

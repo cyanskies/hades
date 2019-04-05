@@ -7,6 +7,7 @@
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
+#include "hades/exceptions.hpp"
 #include "hades/rectangle_math.hpp"
 #include "Hades/strong_typedef.hpp"
 #include "hades/timers.hpp"
@@ -67,6 +68,18 @@ namespace hades
 		using batch = std::pair<sprite_utility::sprite_settings, std::vector<sprite_utility::sprite>>;
 	}
 
+	class sprite_batch_error : public runtime_error
+	{
+	public:
+		using runtime_error::runtime_error;
+	};
+
+	class sprite_batch_invalid_id : public sprite_batch_error
+	{
+	public:
+		using sprite_batch_error::sprite_batch_error;
+	};
+
 	class sprite_batch : public sf::Drawable
 	{
 	public:
@@ -86,7 +99,8 @@ namespace hades
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *a, time_point t,
 			sprite_utility::layer_t l, vector_float p, vector_float s);
-		bool exists(sprite_id id) const;
+		bool exists(sprite_id id) const noexcept;
+		//NOTE: functions that accept sprite_id can throw sprite_batch_invalid_id
 		void destroy_sprite(sprite_id id);
 
 		void set_animation(sprite_id id, const resources::animation *a, time_point t);
@@ -114,6 +128,7 @@ namespace hades
 		std::vector<vertex_batch> _vertex;
 		
 		//TODO: stack of returned ids, from destroy_sprite
+		//		only if we actually are at risk of wrapping back to bad_sprite_id
 		//to speed up usage of exists()
 		std::vector<sprite_id> _used_ids;
 		sprite_id _id_count = sprite_id{ static_cast<sprite_id::value_type>(sprite_utility::bad_sprite_id) + 1 };

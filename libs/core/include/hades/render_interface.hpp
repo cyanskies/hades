@@ -47,8 +47,13 @@ namespace hades
 			{}
 
 			drawable_object(const drawable_object& rhs)
-				: id{ rhs.id }, storage{ rhs.storage }, get{ rhs.get }
-			{}
+			{
+				const auto lock = std::lock_guard{ rhs.mutex };
+
+				id = rhs.id;
+				storage = rhs.storage;
+				get = rhs.get;
+			}
 
 			drawable_object(drawable_object&& rhs) noexcept
 				: id{ rhs.id }, storage{ std::move(rhs) }, get{ rhs.get }
@@ -56,22 +61,30 @@ namespace hades
 
 			drawable_object& operator=(const drawable_object& rhs)
 			{
+				const auto lock = std::scoped_lock{ mutex, rhs.mutex };
+
 				id = rhs.id;
 				storage = rhs.storage;
 				get = rhs.get;
+
+				return *this;
 			}
 
 			drawable_object& operator=(drawable_object&& rhs) noexcept
 			{
+				const auto lock = std::scoped_lock{ mutex, rhs.mutex };
+
 				id = rhs.id;
 				storage = std::move(rhs.storage);
 				get = rhs.get;
+
+				return *this;
 			}
 
 			drawable_id id = bad_drawable_id;
 			std::any storage;
 			get_drawable get = nullptr;
-			std::mutex mutex;
+			mutable std::mutex mutex;
 		};
 
 		struct object_layer
@@ -122,8 +135,11 @@ namespace hades
 		drawable_id _make_new_id();
 		void _destroy_id(drawable_id);
 		void _add_to_layer(drawable_object, sprite_layer);
-		void _remove_from_layer(drawable_id, std::vector<object_layer>::size_type layer_index, std::vector<drawable_object>::size_type obj_index);
+		void _remove_from_layer(drawable_id,
+			std::vector<object_layer>::size_type layer_index,
+			std::vector<drawable_object>::size_type obj_index) noexcept;
 		drawable_id _create_drawable_any(std::any drawable, get_drawable, sprite_layer);
+		void _update_drawable_any(drawable_id, std::any drawable, get_drawable, sprite_layer);
 
 		//sprite batch is already thread safe
 		sprite_batch _sprite_batch;
@@ -136,12 +152,26 @@ namespace hades
 		std::vector<object_layer> _object_layers;
 	};
 
+	namespace detail
+	{
+		template<typename T>
+		inline sf::Drawable& get_drawable_from_any(std::any& a) noexcept
+		{
+			return std::any_cast<T>(a);
+		}
+	}
+
 	template<typename Drawable>
 	inline render_interface::drawable_id render_interface::create_drawable_copy(Drawable d, sprite_layer l)
 	{
-		return _create_drawable_any(d, [](std::any & a)->const sf::Drawable& {
-				return std::any_cast<Drawable>(a);
-			}, l);
+		return _create_drawable_any(d, detail::get_drawable_from_any<Drawable>, l);
+	}
+
+	template<typename Drawable>
+	inline void render_interface::update_drawable_copy(drawable_id id, Drawable d, sprite_layer l)
+	{
+		_update_drawable_any(id, std::move_if_noexcept(d),
+			detail::get_drawable_from_any<Drawable>, l);
 	}
 }
 

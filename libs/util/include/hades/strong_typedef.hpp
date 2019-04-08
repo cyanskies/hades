@@ -214,6 +214,20 @@ namespace hades
 	}
 
 	template<typename Tag, typename T, bool B>
+	constexpr strong_typedef<Tag, T, B> increment(strong_typedef<Tag, T, B>& v) noexcept(noexcept(++static_cast<T&>(v)))
+	{
+		return strong_typedef<Tag, T, B>{++static_cast<T&>(v)};
+	}
+
+	template<typename Tag, typename T, bool B>
+	constexpr strong_typedef<Tag, T, B> post_increment(strong_typedef<Tag, T, B>& v) noexcept(noexcept(increment(v)))
+	{
+		const auto prev = v;
+		increment(v);
+		return prev;
+	}
+
+	template<typename Tag, typename T, bool B>
 	string to_string(strong_typedef<Tag, T, B> e)
 	{
 		return to_string(static_cast<T&>(e));

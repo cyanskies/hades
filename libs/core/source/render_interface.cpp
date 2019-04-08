@@ -134,38 +134,26 @@ namespace hades
 
 	void render_interface::update_drawable_ptr(drawable_id id, const sf::Drawable *d, sprite_layer l)
 	{
-		auto object = found_object{};
+		_update_drawable_any(id, d, get_ptr_from_any, l);
+	}
+
+	void render_interface::destroy_drawable(drawable_id id)
+	{
+		auto obj = found_object{};
 
 		{
 			const auto lock = std::shared_lock{ _object_mutex };
-			object = find_object(id, _object_layers);
-
-			if (l == _object_layers[object.layer_index].layer)
-			{
-				const auto obj_lock = std::lock_guard{ object.object->mutex };
-				object.object->storage = d;
-				object.object->get = get_ptr_from_any;
-				return;
-			}
+			obj = find_object(id, _object_layers);
 		}
 
-		assert(object.object);
-		auto obj = drawable_object{ std::move(*object.object) };
-
-		_remove_from_layer(id, object.layer_index, object.drawable_index);
-		_add_to_layer(std::move(obj), l);
-	}
-
-	//TODO: this should be a helper in strong_typedef probably
-	static constexpr render_interface::drawable_id increment_drawable_id(render_interface::drawable_id& id) noexcept
-	{
-		return render_interface::drawable_id{ ++static_cast<render_interface::drawable_id::value_type&>(id) };
+		_destroy_id(id);
+		_remove_from_layer(id, obj.layer_index, obj.drawable_index);
 	}
 
 	render_interface::drawable_id render_interface::_make_new_id()
 	{
 		const auto lock = std::lock_guard{ _drawable_id_mutex };
-		const auto id = increment_drawable_id(_drawable_id);
+		const auto id = increment(_drawable_id);
 
 		//NOTE: if this is fired then we have used up all the ids
 		//		will have to implement id reclamation strategy, or expand the id type
@@ -248,7 +236,8 @@ namespace hades
 	}
 
 	void render_interface::_remove_from_layer(drawable_id id,
-		layer_size_type layer_index, obj_size_type index)
+		std::vector<object_layer>::size_type layer_index,
+		std::vector<drawable_object>::size_type index) noexcept
 	{
 		const auto lock = std::lock_guard{ _object_mutex };
 
@@ -274,5 +263,30 @@ namespace hades
 		const auto id = _make_new_id();
 		_add_to_layer({ id, drawable, func }, l);
 		return id;
+	}
+
+	void render_interface::_update_drawable_any(
+		drawable_id id, std::any drawable, get_drawable func, sprite_layer l)
+	{
+		auto object = found_object{};
+
+		{
+			const auto lock = std::shared_lock{ _object_mutex };
+			object = find_object(id, _object_layers);
+
+			if (l == _object_layers[object.layer_index].layer)
+			{
+				const auto obj_lock = std::lock_guard{ object.object->mutex };
+				object.object->storage = std::move(drawable);
+				object.object->get = func;
+				return;
+			}
+		}
+
+		assert(object.object);
+		auto obj = drawable_object{ std::move(*object.object) };
+
+		_remove_from_layer(id, object.layer_index, object.drawable_index);
+		_add_to_layer(std::move(obj), l);
 	}
 }

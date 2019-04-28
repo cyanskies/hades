@@ -1,7 +1,7 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-#include "hades/level_interface.hpp"
+#include "hades/level_curve_data.hpp"
 #include "hades/math.hpp"
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
@@ -81,6 +81,7 @@ namespace hades
 		curve_data curves;
 		entity_id next_id = bad_entity;
 		name_curve_t names{ curve_type::step };
+		//TODO: input curve
 		
 		//list of systems
 		using system_list = std::vector<const resources::system*>;

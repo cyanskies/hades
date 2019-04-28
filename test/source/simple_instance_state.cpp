@@ -45,6 +45,10 @@ void simple_instance_state::init()
 	const auto lvl_sv = hades::make_save_from_level(level);
 
 	_server = hades::create_server(lvl_sv);
+	_level = _server->connect_to_level(hades::unique_id::zero);
+
+	const auto level_state = _level->get_changes();
+	//_client_instance.input_updates(level_state);
 }
 
 bool simple_instance_state::handle_event(const hades::event & windowEvent)
@@ -54,11 +58,14 @@ bool simple_instance_state::handle_event(const hades::event & windowEvent)
 
 void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarget &t, hades::input_system::action_set a)
 {
-	//_server->
+	_server->update(dt);
 }
 
-void simple_instance_state::draw(sf::RenderTarget & target, hades::time_duration deltaTime)
+void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
 {
+	const auto changes = _level->get_changes();
+	//_client_instance.input_updates(changes);
+	//_client_instance.
 }
 
 void simple_instance_state::reinit()

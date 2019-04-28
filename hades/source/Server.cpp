@@ -15,13 +15,10 @@ namespace hades
 
 	class local_server_hub;
 
-	class local_server_level : public server_level
+	class local_server_level final : public server_level
 	{
 	public:
 		local_server_level(level_save sv, local_server_hub *server) : _game(sv), _server(server)
-		{}
-
-		void update() override
 		{}
 
 		void tick(time_duration dt)
@@ -39,14 +36,15 @@ namespace hades
 			/*yeeaarrrghhh*/
 		}
 
-		exported_curves get_changes(time_point dt) override
+		exported_curves get_changes(time_point dt) const override
 		{
-			return _game.getChanges(dt);
+			_last_update_time = _level_time;
+			return _game.get_changes(dt);
 		}
 
-		exported_curves resync() override
+		exported_curves get_changes() const override
 		{
-			return _game.getChanges(time_point{});
+			return get_changes(_last_update_time);
 		}
 
 	private:
@@ -54,9 +52,14 @@ namespace hades
 		
 		local_server_hub *_server; 
 		//entities
+
+		time_point _level_time;
+		time_point _instance_time;
+		mutable time_point _last_update_time;
 	};
 
-	class local_server_hub : public server_hub
+	//TODO: handle advertising local network and accepting connections from remote_server_hubs
+	class local_server_hub final : public server_hub
 	{
 	public:
 		local_server_hub(level_save lvl) : _level{ lvl, this }//, _game_instance{lvl}
@@ -64,11 +67,7 @@ namespace hades
 
 		void update(time_duration dt) override
 		{
-			tick(dt);
-		}
-
-		void tick(time_duration dt)
-		{
+			_server_time += dt;
 			//tick the mission contruct
 			//_game_instance.tick(dt);
 
@@ -77,19 +76,16 @@ namespace hades
 			_level.tick(dt);
 		}
 
-		/*void send_request() override
+		exported_curves get_updates(time_point dt) const override
 		{
-
-		}*/
-
-		exported_curves get_updates(time_point dt) override
-		{
+			_last_local_update_request = _server_time;
 			return _level.get_changes(dt);
 		}
 
-		exported_curves resync(time_point) override
+		exported_curves get_updates() const override
 		{
-			return get_updates(time_point{});
+			const auto dt = _last_local_update_request;
+			return get_updates(dt);
 		}
 
 		void get_mission() override
@@ -110,9 +106,16 @@ namespace hades
 		//game_instance _game_instance;
 		//players
 		
+		mutable time_point _last_local_update_request;
+		time_point _server_time;
+		time_point _start_time;
+
 		//levels
 		local_server_level _level;
 	};
+
+	//has to handle networking and resulving unique_id differences between hosts
+	//remote server hub
 
 	std::unique_ptr<server_hub> create_server(level_save lvl)
 	{

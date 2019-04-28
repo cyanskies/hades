@@ -1,5 +1,6 @@
 #include "hades/level.hpp"
 
+#include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
@@ -256,7 +257,11 @@ namespace hades
 
 			//add curves from parents
 			if (o.obj_type)
+			{
 				add_object_to_save(sv.curves, o.id, o.obj_type);
+				//add the object type as a curve
+				add_curve_from_object(sv.curves, o.id, get_object_type_curve(), o.obj_type->id);
+			}
 
 			//add curves from object info
 			for (const auto[curve, value] : o.curves)

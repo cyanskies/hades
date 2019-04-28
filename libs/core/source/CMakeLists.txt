@@ -17,6 +17,7 @@ set(HADES_CORE_SRC
 	grid.cpp
 	gui.cpp
 	level.cpp
+	level_curve_data.cpp
 	level_editor.cpp
 	level_editor_grid.cpp
 	level_editor_level_properties.cpp
@@ -27,6 +28,7 @@ set(HADES_CORE_SRC
 	level_interface.cpp
 	mouse_input.cpp
 	objects.cpp
+	render_instance.cpp
 	render_interface.cpp
 	sf_input.cpp
 	sprite_batch.cpp
@@ -52,6 +54,7 @@ set(HADES_CORE_SRC
 	../include/hades/grid.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
+	../include/hades/level_curve_data.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
 	../include/hades/level_editor_grid.hpp
@@ -63,6 +66,7 @@ set(HADES_CORE_SRC
 	../include/hades/level_interface.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
+	../include/hades/render_instance.hpp
 	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
 	../include/hades/sprite_batch.hpp
@@ -100,6 +104,7 @@ source_group("Headers" FILES
 	../include/hades/grid.hpp
 	../include/hades/gui.hpp
 	../include/hades/level.hpp
+	../include/hades/level_curve_data.hpp
 	../include/hades/level_editor.hpp
 	../include/hades/level_editor_component.hpp
 	../include/hades/level_editor_grid.hpp
@@ -111,6 +116,8 @@ source_group("Headers" FILES
 	../include/hades/level_interface.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
+	../include/hades/render_instance.hpp
+	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp

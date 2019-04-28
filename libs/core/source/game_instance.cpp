@@ -9,19 +9,15 @@
 
 namespace hades 
 {
-	game_instance::game_instance(level_save sv) : game_interface(sv), _input(curve_type::step)
+	game_instance::game_instance(level_save sv) : _game(sv)
 	{
-		//TODO: store input history in sv file and restore it on load
 	}
 
 	void game_instance::tick(time_duration dt)
 	{
 		//take a copy of the current active systems and entity attachments, 
 		//changes to this wont take effect untill the next tick
-		const auto systems = [this] {
-			const auto lock = std::lock_guard{ _system_list_mut };
-			return _systems;
-		} ();
+		const auto systems = _game.get_systems();
 
 		//NOTE: frame multithreading begins
 		// anything that isn't atomic or protected by a lock
@@ -43,7 +39,7 @@ namespace hades
 				const auto j = _jobs.create_child(parent_job, s.system->tick, system_job_data{
 					ent,
 					s.system->id,
-					this,
+					&_game,
 					nullptr, //mission data //TODO:
 					_current_time,
 					dt
@@ -64,9 +60,9 @@ namespace hades
 		_current_time += dt;
 	}
 
-	void game_instance::insertInput(input_system::action_set input, time_point t)
+	void game_instance::add_input(input_system::action_set input, time_point t)
 	{
-		_input.set(t, input);
+		_game.add_input(std::move(input), t);
 	}
 
 	template<typename T>
@@ -97,10 +93,10 @@ namespace hades
 		return output;
 	}
 
-	exported_curves game_instance::getChanges(time_point t) const
+	exported_curves game_instance::get_changes(time_point t) const
 	{
 		//return all frames between t and time.max	
-		const auto &curves = get_curves();
+		const auto &curves = _game.get_curves();
 
 		exported_curves output;
 
@@ -112,38 +108,9 @@ namespace hades
 		output.string_curves = get_exported_set<string>(t, curves.string_curves.data());
 		output.int_vector_curves = get_exported_set<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
 
-		//add in entityNames and variable Id mappings
-		output.entity_names = _newEntityNames;
+		//add in entityNames
+		//output.entity_names = _newEntityNames;
 		
 		return output;
-	}
-
-	void game_instance::nameEntity(entity_id entity, const types::string &name, time_point time)
-	{
-		assert(entity < entity_id{ _next });
-
-		while (true) //NOTE: not a fan of while(true), is there another way to write this without repeating code?
-		{
-			const auto ent_names = _entity_names.get();
-			auto updated_names = ent_names;
-			//get the closest list of names to the current time
-			auto name_map = updated_names.get(time);
-
-			//if entities can be renamed
-			name_map[name] = entity;
-
-			//if entities can not be renamed
-			//if (name_map.find(name) != std::end(name_map))
-			//	name_map[name] = entity;
-			//else
-			//	;//throw?
-
-			//insert the new name map back into the curve
-			updated_names.insert(time, name_map);
-
-			//replace the shared name list with the updated one
-			if (_entity_names.compare_exchange(ent_names, updated_names))
-				break; //if we were successful, then break, otherwise run the loop again.
-		}
 	}
 }

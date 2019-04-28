@@ -4,7 +4,8 @@
 #include <memory>
 
 #include "hades/data.hpp"
-//#include "hades/RenderInstance.hpp"
+#include "hades/render_instance.hpp"
+#include "Hades/render_interface.hpp"
 #include "hades/Server.hpp"
 #include "hades/state.hpp"
 #include "Hades/timers.hpp"
@@ -24,7 +25,10 @@ public:
 
 private:
 	sf::View _view;
-	std::unique_ptr<hades::server_hub> _server;
+	hades::server_ptr _server;
+	hades::level_ptr _level = nullptr;
+	hades::render_instance _client_instance;
+	hades::render_interface _drawable_output;
 	hades::time_point _current_time;
 };
 

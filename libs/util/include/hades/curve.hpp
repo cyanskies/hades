@@ -116,32 +116,31 @@ namespace hades {
 			std::is_nothrow_swappable<curve_type>>::value;
 
 		basic_curve(const basic_curve &other)
-			noexcept(is_curve_nothrow_copy_assignable_v)
-		{
-			*this = other;
-		}
+			noexcept(is_curve_nothrow_copy_assignable_v) :
+			_type{other._type}, _data{other._data}
+		{}
 
 		basic_curve(basic_curve &&other)
-			noexcept(is_curve_nothrow_move_assignable_v)
-		{
-			*this = std::move(other);
-		}
+			noexcept(is_curve_nothrow_move_assignable_v) :
+			_type{other._type}, _data{std::move(other._data)}
+		{}
 
 		basic_curve &operator=(const basic_curve &other)
 			noexcept(is_curve_nothrow_copy_assignable_v)
 		{
-			basic_curve<Time, Data> c{ other._type };
-			c._data = other._data;
-
-			std::swap(*this, c);
+			basic_curve<Time, Data> c{ other };
+			using std::swap;
+			swap(c._data, _data);
+			_type = c._type;
 			return *this;
 		}
 
 		basic_curve &operator=(basic_curve &&other)
 			noexcept(is_curve_nothrow_move_assignable_v)
 		{
-			std::swap(_data, other._data);
-			std::swap(_type, other._type);
+			using std::swap;
+			swap(_data, other._data);
+			swap(_type, other._type);
 			return *this;
 		}
 
@@ -265,9 +264,9 @@ namespace hades {
 		curve_type type() const noexcept { return _type; }
 
 		template<typename T, typename D>
-		friend bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs);
+		friend bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept;
 		template<typename T, typename D>
-		friend bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs);
+		friend bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept;
 
 	private:
 		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
@@ -277,7 +276,7 @@ namespace hades {
 			if (_type == curve_type::const_c)
 			{
 				//replace the only value with the new one
-				_data.insert({ Time(), value });
+				_data.insert({ Time{}, value });
 			}
 			else
 			{
@@ -297,6 +296,7 @@ namespace hades {
 			if (_data.size() == 1)
 				return IterPair(_data.begin(), _data.begin());
 
+			//what can lower bound throw? this prevents the method being noexcept
 			auto next = std::lower_bound(_data.begin(), _data.end(), at);
 			if (next == _data.end())
 				next = ++_data.begin();
@@ -309,13 +309,13 @@ namespace hades {
 	};
 
 	template<typename T, typename D>
-	bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs)
+	bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept
 	{
 		return lhs._type == rhs._type && lhs._data == rhs._data;
 	}
 
 	template<typename T, typename D>
-	bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs)
+	bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept
 	{
 		return !(rhs == lhs);
 	}

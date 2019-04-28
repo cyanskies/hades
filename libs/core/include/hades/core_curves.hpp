@@ -23,6 +23,7 @@ namespace hades
 	vector_curve get_size_curve();
 	const resources::curve* get_collision_group_curve();
 	const resources::curve* get_tags_curve();
+	const resources::curve* get_object_type_curve();
 }
 
 #endif //!HADES_CORE_CURVES_HPP

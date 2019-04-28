@@ -18,15 +18,19 @@ namespace hades
 	class server_level
 	{
 	public:
-		//pumps the network and prepares for get_changes and handle_request
-		virtual void update() = 0; 
 		//gets updated curves
-		virtual exported_curves get_changes(time_point) = 0;
+		//get all changes since time_point
+		virtual exported_curves get_changes(time_point) const = 0;
+		//get all changes since last call to get_changes
+		virtual exported_curves get_changes() const = 0;
 		//sends player input
 		virtual void send_request(action a) = 0;
 		virtual void send_request(std::vector<action>) = 0;
-		//
-		virtual exported_curves resync() = 0;
+
+		//current level time
+		//virtual time_point get_level_time() = 0;
+		//time the level started at, from level save
+		//virtual time_point get_level_start_time() = 0;
 	};
 
 	using level_ptr = server_level*;
@@ -40,14 +44,23 @@ namespace hades
 		virtual void update(time_duration) = 0; //noop on remote server
 		//virtual void send_request(unique_id lvl, action a) = 0;
 		//get all updates since time_point
-		virtual exported_curves get_updates(time_point) = 0;
+		//NOTE: these are for getting mission state, not level state
+		virtual exported_curves get_updates(time_point) const = 0;
+		//get all updates since last call to any get_updates func
+		virtual exported_curves get_updates() const = 0;
 		//get server state at time_point
-		virtual exported_curves resync(time_point) = 0;
+		//virtual exported_curves resync(time_point) = 0;
+
+		//get the server start time, either 0,
+		//or the time loaded from the save file
+		//virtual time_point get_start_time() = 0;
+		//get the servers current time
+		//virtual time_point get_current_time() = 0;
 
 		//get source_file level1.mission or whatever
 		virtual void get_mission() = 0;
 
-		virtual server_level* connect_to_level(unique_id) = 0;
+		virtual server_level *connect_to_level(unique_id) = 0;
 		virtual void disconnect_from_level() = 0;
 	};
 

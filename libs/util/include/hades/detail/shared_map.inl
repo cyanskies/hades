@@ -15,18 +15,13 @@ namespace hades {
 
 	template<typename Key, typename Value>
 	shared_map<Key, Value>::shared_map(shared_map &&rhs) :
-		_idDispatch(rhs._idDispatch), _ids(rhs._ids), _components(rhs._components),
-		_componentMutex(rhs._componentMutex.size())
-	{
-
-	}
+		_idDispatch(std::move(rhs._idDispatch)), _ids(std::move(rhs._ids)),
+		_components(std::move(rhs._components)), _componentMutex(rhs._componentMutex.size())
+	{}
 
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get(key_type id) const
 	{
-		if (!exists(id))
-			throw std::runtime_error("id is not stored in this vector.");
-
 		auto index = _getIndex(id);
 
 		//always open a shared lock to the vectors before accessing them
@@ -39,6 +34,24 @@ namespace hades {
 		assert(index < _components.size());
 
 		return _components[index];
+	}
+
+	template<typename Key, typename Value>
+	inline void shared_map<Key, Value>::set(key_type id, value_type value)
+	{
+		auto index = _getIndex(id);
+
+		//always open a shared lock to the vectors before accessing them
+		read_lock vectlk(_vectorMutex, std::defer_lock);
+		assert(index < _componentMutex.size());
+
+		//always open an exclusive lock to the Key before accessing it.
+		std::unique_lock<mutex_type> complk(_componentMutex[index], std::defer_lock);
+		std::lock(vectlk, complk);
+		assert(index < _components.size());
+
+		_components[index] = std::move(value);
+		return;
 	}
 
 	//algorithm from:
@@ -72,10 +85,7 @@ namespace hades {
 	void shared_map<Key, Value>::sort()
 	{
 		//take exclusive locks
-		std::lock(_vectorMutex, _dispatchMutex);
-		std::lock_guard<mutex_type> guardVec{ _vectorMutex, std::adopt_lock };
-		std::lock_guard<mutex_type> guardDis{ _dispatchMutex, std::adopt_lock };
-
+		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
 
 		//confirm that all of the mutexs are unlocked
 		for (auto &&m : _componentMutex)
@@ -119,14 +129,9 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::create(key_type id, value_type value)
 	{
-		if (exists(id))
-			throw std::runtime_error("Cannot create the same Key more than once. Id was: " + hades::as_string(id));
-
 		//exclusive locks
-		std::lock(_vectorMutex, _dispatchMutex);
-		std::lock_guard<mutex_type> guardVector(_vectorMutex, std::adopt_lock);
-		std::lock_guard<mutex_type> guardDispatch(_dispatchMutex, std::adopt_lock);
-
+		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
+		
 		auto newpos = _components.size();
 		_components.emplace_back(value);
 		_ids.emplace_back(id);
@@ -143,9 +148,6 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::erase(key_type id)
 	{
-		if (!exists(id))
-			throw std::runtime_error("Tried to remove id that isn't contained.");
-
 		auto index = _getIndex(id);
 
 		assert(index < _componentMutex.size());
@@ -179,9 +181,6 @@ namespace hades {
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::lock_return shared_map<Key, Value>::exchange_lock(key_type id, value_type expected) const
 	{
-		if (!exists(id))
-			throw std::runtime_error("id is not stored in this vector.");
-
 		auto index = _getIndex(id);
 
 		std::shared_lock<mutex_type> vectlk(_vectorMutex);
@@ -203,9 +202,7 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::exchange_release(key_type id, exchange_token &&token) const
 	{
-		if (!exists(id))
-			throw std::runtime_error("id is not stored in this vector.");
-		else if (!token.owns_lock())
+		if (!token.owns_lock())
 			throw std::runtime_error("token is invalid.");
 
 		auto tok = std::move(token);
@@ -223,9 +220,7 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
 	{
-		if (!exists(id))
-			throw std::runtime_error("id is not stored in this vector.");
-		else if (!token.owns_lock())
+		if (!token.owns_lock())
 			throw std::runtime_error("token is invalid.");
 
 		auto tok = std::move(token);
@@ -244,14 +239,14 @@ namespace hades {
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::data_array shared_map<Key, Value>::data() const
 	{
-		std::lock(_vectorMutex, _dispatchMutex);
-		std::lock_guard<mutex_type> vectorGuard( _vectorMutex, std::adopt_lock ),
-			dispatchGuard( _dispatchMutex, std::adopt_lock );
-
+		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
 		//confirm that all of the mutexs are unlocked
-		for (auto &&m : _componentMutex)
-			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
+		for (auto&& m : _componentMutex)
+		{
+			const auto u_lock = std::unique_lock<mutex_type>{ m, std::try_to_lock };
+			if (!u_lock)
 				throw std::runtime_error("Cannot copy data while any Key mutexes are still being held.");
+		}
 
 		data_array output;
 		output.reserve(_idDispatch.size());
@@ -269,6 +264,10 @@ namespace hades {
 		assert((_components.size() == _ids.size()) &&
 			(_ids.size() == _componentMutex.size()));
 		read_lock lk(_dispatchMutex);
-		return _idDispatch.find(id)->second;
+		const auto result = _idDispatch.find(id);
+		if(result == std::end(_idDispatch))
+			throw std::runtime_error("id is not stored in this vector.");
+
+		return result->second;
 	}
 }

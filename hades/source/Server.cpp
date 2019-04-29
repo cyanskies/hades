@@ -24,6 +24,7 @@ namespace hades
 		void tick(time_duration dt)
 		{
 			_game.tick(dt);
+			_level_time += dt;
 		}
 
 		void send_request(action a) override

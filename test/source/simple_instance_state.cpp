@@ -38,6 +38,26 @@ void register_simple_instance_resources(hades::data::data_manager &d)
 	);
 }
 
+void print_changes(const hades::exported_curves& e)
+{
+	std::size_t count = 0;
+
+	count += std::size(e.bool_curves);
+	count += std::size(e.entity_names);
+	count += std::size(e.float_curves);
+	count += std::size(e.float_vector_curves);
+	count += std::size(e.int_curves);
+	count += std::size(e.int_vector_curves);
+	count += std::size(e.object_ref_curves);
+	count += std::size(e.object_ref_vector_curves);
+	count += std::size(e.string_curves);
+	count += std::size(e.unique_curves);
+	count += std::size(e.unique_vector_curves);
+
+	const auto msg = "changes size = " + hades::to_string(count);
+	LOG(msg);
+}
+
 void simple_instance_state::init()
 {
 	const auto lvl_str = hades::files::as_string(defaultGame(), "new_level.lvl"sv);
@@ -48,7 +68,8 @@ void simple_instance_state::init()
 	_level = _server->connect_to_level(hades::unique_id::zero);
 
 	const auto level_state = _level->get_changes();
-	//_client_instance.input_updates(level_state);
+	print_changes(level_state);
+	_client_instance.input_updates(level_state);
 }
 
 bool simple_instance_state::handle_event(const hades::event & windowEvent)
@@ -64,7 +85,8 @@ void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarg
 void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
 {
 	const auto changes = _level->get_changes();
-	//_client_instance.input_updates(changes);
+	print_changes(changes);
+	_client_instance.input_updates(changes);
 	//_client_instance.
 }
 

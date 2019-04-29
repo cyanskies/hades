@@ -79,9 +79,9 @@ namespace hades::resources
 	{
         curve_type c_type = curve_type::error;
 		curve_variable_type data_type = curve_variable_type::error;
-		bool sync = false,
-			save = false,
-			trim = false;
+		bool sync = false, //sync shares the value with clients
+			save = false, //save records the value in save files
+			trim = false; //[depricated(!save)]old data in the curve can be removed to save space
 		curve_default_value default_value{};
 	};
 

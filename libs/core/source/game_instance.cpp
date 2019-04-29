@@ -87,7 +87,8 @@ namespace hades
 			while (lower != c.second.end())
 				s.frames.push_back(*lower++);
 
-			output.push_back(s);
+			if(std::size(s.frames) > 0)
+				output.push_back(s);
 		}
 
 		return output;
@@ -104,8 +105,12 @@ namespace hades
 		//load all the frames from the specified time into the exported data
 		//TODO: half of the curve types are missing
 		output.int_curves = get_exported_set<int_t>(t, curves.int_curves.data());
+		output.float_curves = get_exported_set<float_t>(t, curves.float_curves.data());
 		output.bool_curves = get_exported_set<bool_t>(t, curves.bool_curves.data());
 		output.string_curves = get_exported_set<string>(t, curves.string_curves.data());
+		output.object_ref_curves = get_exported_set<object_ref>(t, curves.object_ref_curves.data());
+		output.unique_curves = get_exported_set<unique>(t, curves.unique_curves.data());
+
 		output.int_vector_curves = get_exported_set<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
 
 		//add in entityNames

@@ -17,6 +17,7 @@ namespace hades
 		c.c_type = curve_type::linear;
 		c.data_type = resources::curve_variable_type::float_t;
 		c.default_value = 0.f;
+		c.sync = true;
 	}
 
 	void register_core_curves(data::data_manager &d)
@@ -29,6 +30,7 @@ namespace hades
 		name_c->c_type = curve_type::step;
 		name_c->data_type = resources::curve_variable_type::string;
 		name_c->default_value = string{};
+		name_c->sync = true;
 
 		// the position curves store the objects 2d position
 		posx_id = d.get_uid("position-x"sv);
@@ -56,12 +58,14 @@ namespace hades
 		tags->c_type = curve_type::step;
 		tags->data_type = resources::curve_variable_type::vector_unique;
 		tags->default_value = resources::curve_types::vector_unique{};
+		tags->sync = true;
 		// object type is the unique_id of the objects type
 		object_type_id = d.get_uid("object-type"sv);
 		auto obj_type = d.find_or_create<curve>(object_type_id, unique_id::zero);
 		obj_type->c_type = curve_type::const_c;
 		obj_type->data_type = resources::curve_variable_type::unique;
 		obj_type->default_value = resources::curve_types::unique::zero;
+		obj_type->sync = true;
 	}
 
 	static const resources::curve *get_curve(unique_id i)

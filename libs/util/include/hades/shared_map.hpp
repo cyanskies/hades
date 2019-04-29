@@ -23,6 +23,10 @@
 
 namespace hades {
 
+	//TODO: proper exceptions
+	// currenty throws runtime error if id requested is missing
+	// or locks are being held incorrectly
+
 	template<typename Key, typename Value>
 	class shared_map
 	{
@@ -39,6 +43,9 @@ namespace hades {
 
 		//returns a copy of the component for id
 		value_type get(key_type id) const;
+
+		//sets the value without any locking
+		void set(key_type id, value_type value);
 
 		//sorts the data by id for faster access
 		//never call during system update
@@ -98,6 +105,6 @@ namespace hades {
 	};
 }
 
-#include "detail/shared_map.inl"
+#include "hades/detail/shared_map.inl"
 
 #endif // !HADES_UTIL_TRANSACTIONALMAP_HPP

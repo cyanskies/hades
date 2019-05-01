@@ -114,4 +114,29 @@ namespace hades
 		merge_input(input.object_ref_vector_curves, curves);
 		merge_input(input.unique_vector_curves, curves);
 	}
+
+	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)
+	{
+		const auto systems = _game.get_systems();
+
+		assert(_jobs.ready());
+		const auto parent_job = _jobs.create();
+
+		for (const auto& s : systems)
+		{
+			const auto entities_curve = s.attached_entities.get();
+			const auto ents = entities_curve.get(t);
+
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child(parent_job, s.system->tick,
+					render_job_data{ e, &_game, m, t, i });
+
+				_jobs.run(j);
+			}
+		}
+
+		_jobs.wait(parent_job);
+		_jobs.clear();
+	}
 }

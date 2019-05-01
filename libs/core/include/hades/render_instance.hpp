@@ -13,7 +13,8 @@ namespace hades
 	{
 	public:
 		void input_updates(const exported_curves &input);
-		void make_frame_at(time_point t, render_interface&);
+		void make_frame_at(time_point t, render_implementation *mission, render_interface&);
+		render_implementation *get_interface();
 
 	private:
 		render_implementation _game;

@@ -123,8 +123,6 @@ namespace hades
 	{
 		//entity to run on
 		entity_id entity = bad_entity;
-		//unique id of this system TODO: is this needed?
-		unique_id system = unique_id::zero;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -135,13 +133,8 @@ namespace hades
 		game_interface *mission_data = nullptr;
 		//the current time, and the time to advance too(t + dt)
 		time_point current_time;
-		//do we need dt for the renderer?
-
 		//render output interface
-		render_interface *render_output = nullptr;
-
-		//the input over time for systems to look at TODO: find another way to do this
-		//const curve<sf::Time, input_system::action_set> *actions;
+		render_interface &render_output;
 	};
 
 	namespace resources

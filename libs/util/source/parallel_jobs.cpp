@@ -104,7 +104,7 @@ namespace hades
 	void job_system::_init(types::int32 threads)
 	{
 		if (threads > 0)
-			_thread_count = static_cast<std::size_t>(threads - 1);
+			_thread_count = static_cast<std::size_t>(threads) - 1;
 		else if (std::thread::hardware_concurrency() == 0)
 			_thread_count = 0;
 		else

@@ -57,13 +57,15 @@ namespace hades
 			//throws resource_null if the id doesn't refer to a resource
 			resources::resource_base *get_resource(unique_id id);
 			//as above, returns null if the id doesn't refer to a resource
-			resources::resource_base *try_get_resource(unique_id id);
+			resources::resource_base *try_get_resource(unique_id id) noexcept;
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
+			// throws resource_null or resource_wrong_type
 			template<class T>
 			T *get(unique_id id);
 
 			//gets a non-owning ptr to the resource represented by id
+			// throws resource_null or resource_wrong_type
 			template<class T>
 			T *get(unique_id id, const no_load_t);
 
@@ -86,11 +88,11 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
-            try_get_return<T> try_get(unique_id id);
+            try_get_return<T> try_get(unique_id id) noexcept;
 
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>
-            try_get_return<T> try_get(unique_id id, const no_load_t);
+            try_get_return<T> try_get(unique_id id, const no_load_t) noexcept;
 
 			//creates a resource with the value of ptr
 			//and assigns it to the name id

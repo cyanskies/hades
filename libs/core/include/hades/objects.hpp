@@ -87,10 +87,9 @@ namespace hades
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
 	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
 
-	//ensures that a vector curve(position/size/etc...) have a valid state(2 elements)
-	//NOTE: usually used as const auto value = ValidVectorCurve(GetCurve(object, curve_ptr));
-	//TODO: depricate
-	curve_value valid_vector_curve(hades::resources::curve_default_value v);
+	std::vector<const resources::render_system*> get_render_systems(const resources::object& o);
+
+	[[deprecated]] curve_value valid_vector_curve(hades::resources::curve_default_value v);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	const hades::resources::animation *get_random_animation(const object_instance &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);

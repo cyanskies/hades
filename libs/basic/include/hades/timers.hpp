@@ -46,6 +46,8 @@ namespace hades
 
 	float normalise_time(time_point, time_duration);
 
+	//TODO: to_string(time_point), to_string(duration)
+
 	time_duration duration_from_string(std::string_view);
 
 	//Thread safe.

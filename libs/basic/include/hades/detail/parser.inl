@@ -124,7 +124,7 @@ namespace hades::data
 	namespace parse_tools
 	{
 		template<class T, typename ConversionFunc>
-		T get_scalar(const parser_node &node, std::string_view property_name, T default_value,
+		inline T get_scalar(const parser_node &node, std::string_view property_name, T default_value,
 			ConversionFunc convert)
 		{
 			const auto property_node = node.get_child(property_name);
@@ -135,7 +135,7 @@ namespace hades::data
 		}
 
 		template<class T, typename ConversionFunc>
-		std::vector<T> get_sequence(const parser_node &node, std::string_view property_name, 
+		inline std::vector<T> get_sequence(const parser_node &node, std::string_view property_name, 
 			const std::vector<T> &default_value, ConversionFunc convert)
 		{
 			const auto property_node = node.get_child(property_name);
@@ -146,13 +146,32 @@ namespace hades::data
 		}
 
 		template<class T, typename ConversionFunc>
-		std::vector<T> merge_sequence(const parser_node & node, std::string_view property_name, std::vector<T> current_value, ConversionFunc convert)
+		inline std::vector<T> merge_sequence(const parser_node & node,
+			std::string_view property_name, std::vector<T> current_value, ConversionFunc convert)
 		{
 			const auto property_node = node.get_child(property_name);
 			if (property_node)
 				return property_node->merge_sequence<T>(std::move(current_value), convert);
 			else
 				return current_value;
+		}
+
+		inline unique_id get_unique(const parser_node& node,
+			std::string_view property_name, unique_id default_value)
+		{
+			return get_scalar(node, property_name, default_value, &make_uid);
+		}
+
+		inline std::vector<unique_id> get_unique_sequence(const parser_node& node,
+			std::string_view property_name, const std::vector<unique_id>& default_value)
+		{
+			return get_sequence(node, property_name, default_value, &make_uid);
+		}
+
+		inline std::vector<unique_id> merge_unique_sequence(const parser_node& node,
+			std::string_view property_name, std::vector<unique_id> current_value)
+		{
+			return merge_sequence(node, property_name, std::move(current_value), &make_uid);
 		}
 	}
 }

@@ -22,6 +22,8 @@ namespace hades
 
 	void register_core_curves(data::data_manager &d)
 	{
+		register_curve_resource(d);
+
 		using namespace std::string_view_literals;
 		using resources::curve;
 		// the objects name, usually the name of the object type
@@ -103,5 +105,10 @@ namespace hades
 	const resources::curve* get_object_type_curve()
 	{
 		return get_curve(object_type_id);
+	}
+
+	unique_id get_object_type_curve_id() noexcept
+	{
+		return object_type_id;
 	}
 }

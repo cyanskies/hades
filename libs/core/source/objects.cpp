@@ -112,12 +112,12 @@ namespace hades::resources
 
 			//game systems
 			const auto current_system_ids = data::get_uid(obj->systems);
-			const auto system_ids = get_sequence(*o, "systems"sv, current_system_ids);
+			const auto system_ids = merge_unique_sequence(*o, "systems"sv, current_system_ids);
 			obj->systems = d.find_or_create<const system>(system_ids, mod);
 
 			//render systems
 			const auto current_render_system_ids = data::get_uid(obj->render_systems);
-			const auto render_system_ids = get_sequence(*o, "client-systems"sv, current_system_ids);
+			const auto render_system_ids = merge_unique_sequence(*o, "client-systems"sv, current_system_ids);
 			obj->render_systems = d.find_or_create<const render_system>(render_system_ids, mod);
 		}
 
@@ -377,6 +377,23 @@ namespace hades
 	{
 		auto curves = GetAllCurvesSimple(&o);
 		return unique_curves(curves);
+	}
+
+	std::vector<const resources::render_system*> get_render_systems(const resources::object& o)
+	{
+		auto out = std::vector<const resources::render_system*>{};
+
+		for (const auto b : o.base)
+		{
+			const auto base_out = get_render_systems(*b);
+			out.reserve(std::size(out) + std::size(base_out));
+			std::copy(std::begin(base_out), std::end(base_out), std::back_inserter(out));
+		}
+
+		out.reserve(std::size(out) + std::size(o.render_systems));
+		std::copy(std::begin(o.render_systems), std::end(o.render_systems), std::back_inserter(out));
+
+		return out;
 	}
 
 	const hades::resources::animation *get_editor_icon(const resources::object &o)

@@ -12,11 +12,9 @@ namespace hades::data
 
 namespace hades
 {
-	//NOTE: curve resources should be registered before calling this
 	void register_core_curves(data::data_manager&);
 
-	//NOTE: the get_* functions throw curve_error
-	// if the curve doesn't exist as a resource
+	//NOTE: the get_* functions throw data::resource_null or data::resource_wrong_type
 	const resources::curve* get_name_curve();
 	using vector_curve = std::tuple<const resources::curve*, const resources::curve*>;
 	vector_curve get_position_curve();
@@ -24,6 +22,8 @@ namespace hades
 	const resources::curve* get_collision_group_curve();
 	const resources::curve* get_tags_curve();
 	const resources::curve* get_object_type_curve();
+
+	unique_id get_object_type_curve_id() noexcept;
 }
 
 #endif //!HADES_CORE_CURVES_HPP

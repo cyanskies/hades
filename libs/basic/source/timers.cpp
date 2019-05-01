@@ -34,12 +34,6 @@ namespace hades
 			const auto milli_count = from_string<milliseconds::rep>(s.substr(0, ms_pos));
 			return milliseconds{ milli_count };
 		}
-		if (const auto s_pos = s.find(second_ext); s_pos != npos)
-		{
-			const auto second_count = from_string<seconds_float::rep>(s.substr(0, s_pos));
-			//hades::seconds_float is a float, needs time_cast to cast safely
-			return time_cast<time_duration>(seconds_float{ second_count });
-		}
 		else if (const auto ns_pos = s.find(nano_ext); ns_pos != npos)
 		{
 			const auto nano_count = from_string<nanoseconds::rep>(s.substr(0, ns_pos));
@@ -49,6 +43,12 @@ namespace hades
 		{
 			const auto micro_count = from_string<microseconds::rep>(s.substr(0, us_pos));
 			return microseconds{ micro_count };
+		}
+		else if (const auto s_pos = s.find(second_ext); s_pos != npos)
+		{
+			const auto second_count = from_string<seconds_float::rep>(s.substr(0, s_pos));
+			//hades::seconds_float is a float, needs time_cast to cast safely
+			return time_cast<time_duration>(seconds_float{ second_count });
 		}
 		
 		//default with no extention is ms

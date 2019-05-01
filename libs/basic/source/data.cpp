@@ -56,7 +56,7 @@ namespace hades
 			return res->second.get();
 		}
 
-		resources::resource_base *data_manager::try_get_resource(unique_id id)
+		resources::resource_base *data_manager::try_get_resource(unique_id id) noexcept
 		{
 			auto res = _resources.find(id);
 			return res == std::end(_resources) ? nullptr : res->second.get();

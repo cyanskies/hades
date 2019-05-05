@@ -2,6 +2,7 @@
 #define HADES_UTIL_VALUEGUARD_HPP
 
 #include <mutex>
+#include <utility>
 
 #include "hades/transactional.hpp"
 
@@ -25,10 +26,11 @@ namespace hades {
 		value_guard(const value_guard& other) : _value(other.load()) {}
 		virtual ~value_guard() = default;
 
-		void operator=(value desired)
+		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value>>>
+		void operator=(T &&desired)
 		{
 			std::lock_guard<mutex> lk(_mutex);
-			_value = std::move(desired);
+			_value = std::forward<T>(desired);
 		}
 
 		void operator=(const value_guard&) = delete;
@@ -49,12 +51,13 @@ namespace hades {
 			return load();
 		}
 
-		bool compare_exchange(const value &expected, value desired)
+		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value>>>
+		bool compare_exchange(const value &expected, T &&desired)
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			if (_value == expected)
 			{
-				_value = std::move(desired);
+				_value = std::forward<T>(desired);
 				return true;
 			}
 
@@ -74,18 +77,19 @@ namespace hades {
 		}
 
 		//releases the lock that is already held, without commiting the changes
-		void exchange_release(exchange_token token) const
+		void exchange_release(exchange_token token) const noexcept
 		{
 			assert(token.owns_lock());
-			assert(token.mutex == _mutex);
+			assert(*token.mutex() == _mutex);
 		}
 
 		//releases the lock after exchanging the value
-		void exchange_resolve(value desired, exchange_token &&token)
+		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value>>>
+		void exchange_resolve(T &&desired, exchange_token &&token)
 		{
 			assert(token.owns_lock());
-			assert(token.mutex == _mutex);
-			_value = std::move_if_noexcept(desired);
+			assert(*token.mutex() == _mutex);
+			_value = std::forward<T>(desired);
 		}
 
 		constexpr bool is_lock_free() const noexcept { return false; }

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <exception>
 #include <numeric> // for std::iota
+#include <utility> // for std::forward
 
 #include "hades/types.hpp"
 
@@ -37,7 +38,8 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	inline void shared_map<Key, Value>::set(key_type id, value_type value)
+	template<typename T, typename>
+	inline void shared_map<Key, Value>::set(key_type id, T &&value)
 	{
 		auto index = _getIndex(id);
 
@@ -50,7 +52,7 @@ namespace hades {
 		std::lock(vectlk, complk);
 		assert(index < _components.size());
 
-		_components[index] = std::move(value);
+		_components[index] = std::forward<T>(value);
 		return;
 	}
 
@@ -90,7 +92,7 @@ namespace hades {
 		//confirm that all of the mutexs are unlocked
 		for (auto &&m : _componentMutex)
 			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
-				throw std::runtime_error("Cannot sort while any Key mutexes are still being held.");
+				throw shared_map_locked_elements{ "Cannot sort shared map while any Key mutexes are still being held." };
 
 		//generate the sorting map
 		std::less<key_type> less;
@@ -112,8 +114,7 @@ namespace hades {
 		return _idDispatch.find(id) != _idDispatch.end();
 	}
 
-
-	template<class A>
+	/*template<class A>
 	types::string as_string(A value)
 	{
 		return to_string(value);
@@ -124,7 +125,7 @@ namespace hades {
 	{
 		const auto &[a, b] = value;
 		return to_string(a) + "::" + to_string(b);
-	}
+	}*/
 
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::create(key_type id, value_type value)
@@ -148,23 +149,19 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::erase(key_type id)
 	{
-		auto index = _getIndex(id);
+		const auto index = _getIndex(id);
 
 		assert(index < _componentMutex.size());
 
 		//exclusive locks
-		std::lock(_vectorMutex, _dispatchMutex);
-		std::lock_guard<mutex_type> guardVector(_vectorMutex, std::adopt_lock);
-		std::lock_guard<mutex_type> guardDispatch(_dispatchMutex, std::adopt_lock);
+		const auto lock = std::scoped_lock(_vectorMutex, _dispatchMutex);
 
 		//if index isn't the last entry, then swap it so that it's at the end
 		if (index < _components.size() - 1)
 		{
 			//always open an exclusive lock to the Key before accessing it.
 			//we lock the end aswell so we can swap and erase easily
-			std::lock(_componentMutex[index], _componentMutex.back());
-            std::lock_guard<mutex_type> guardcomponent(_componentMutex[index], std::adopt_lock);
-            std::lock_guard<mutex_type> guardcompback(_componentMutex.back(), std::adopt_lock);
+			const auto lock_comp = std::scoped_lock{ _componentMutex[index], _componentMutex.back() };
 
 			//swap index and back
 			std::swap(_components[index], _components.back());
@@ -200,53 +197,42 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	void shared_map<Key, Value>::exchange_release(key_type id, exchange_token &&token) const
+	void shared_map<Key, Value>::exchange_release(key_type id, exchange_token token) const noexcept
 	{
-		if (!token.owns_lock())
-			throw std::runtime_error("token is invalid.");
+		const auto valid_token = [&]()->bool {
+			const auto index = _getIndex(id);
+			const auto read_lock{ _vectorMutex };
+	
+			return token.owns_lock() && 
+				index < std::size(_components) &&
+				token.mutex() == &_componentMutex[index];
+		};
 
-		auto tok = std::move(token);
-
-		auto index = _getIndex(id);
-
-		read_lock vectlk(_vectorMutex);
-		assert(index < _components.size());
-
-		if (&*tok.mutex() != &_componentMutex[index])
-			throw std::runtime_error("exchange token is not for this key.");
-		//let the token go out of scope to unlock the mutex
+		assert(std::invoke(valid_token));
 	}
 
 	template<typename Key, typename Value>
-	void shared_map<Key, Value>::exchange_resolve(key_type id, value_type desired, exchange_token &&token)
+	template<typename T, typename>
+	void shared_map<Key, Value>::exchange_resolve(key_type id, T &&desired, exchange_token token)
 	{
-		if (!token.owns_lock())
-			throw std::runtime_error("token is invalid.");
-
-		auto tok = std::move(token);
-
-		auto index = _getIndex(id);
-
-		std::shared_lock<mutex_type> vectlk(_vectorMutex);
+		assert(token.owns_lock())
+		const auto index = _getIndex(id);
+		const auto lock_vect = read_lock{ _vectorMutex };
 		assert(index < _components.size());
+		assert(token.mutex() == &_componentMutex[index]);
 
-		if (&*tok.mutex() != &_componentMutex[index])
-			throw std::runtime_error("exchange token is not for this key.");
-
-		_components[index] = desired;
+		_components[index] = std::forward<T>(desired);
 	}
 
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::data_array shared_map<Key, Value>::data() const
 	{
 		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
+
 		//confirm that all of the mutexs are unlocked
 		for (auto&& m : _componentMutex)
-		{
-			const auto u_lock = std::unique_lock<mutex_type>{ m, std::try_to_lock };
-			if (!u_lock)
-				throw std::runtime_error("Cannot copy data while any Key mutexes are still being held.");
-		}
+			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
+				throw shared_map_locked_elements{ "Cannot copy data while any Key mutexes are still being held." };
 
 		data_array output;
 		output.reserve(_idDispatch.size());
@@ -266,7 +252,7 @@ namespace hades {
 		read_lock lk(_dispatchMutex);
 		const auto result = _idDispatch.find(id);
 		if(result == std::end(_idDispatch))
-			throw std::runtime_error("id is not stored in this vector.");
+			throw shared_map_invalid_id{ "id is not stored in this shared_map." };
 
 		return result->second;
 	}

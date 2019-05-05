@@ -25,9 +25,17 @@
 
 namespace hades {
 
-	//TODO: proper exceptions
-	// currenty throws runtime error if id requested is missing
-	// or locks are being held incorrectly
+	class shared_map_invalid_id : public transactional_error
+	{
+	public:
+		using transactional_error::transactional_error;
+	};
+
+	class shared_map_locked_elements : public transactional_error
+	{
+	public:
+		using transactional_error::transactional_error;
+	};
 
 	template<typename Key, typename Value>
 	class shared_map
@@ -40,17 +48,22 @@ namespace hades {
 		using lock_return = std::tuple<bool, exchange_token>;
 
 		shared_map() = default;
+		//TODO: should these stay deleted?
 		shared_map(const shared_map&);
 		shared_map(shared_map&&);
 
 		//returns a copy of the component for id
 		value_type get(key_type id) const;
 
-		//sets the value without any locking
-		void set(key_type id, value_type value);
+		//sets the value without any exchange locking
+		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value_type>>>
+		void set(key_type id, T &&value);
 
 		//sorts the data by id for faster access
 		//never call during system update
+		//TODO: deprecate
+		// i dont see why being sorted would make anything faster
+		// we use the dispatch map to find stuff anyway
 		void sort();
 
 		//returns true if the Vector contains an entry for the id
@@ -67,9 +80,10 @@ namespace hades {
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value
 		lock_return exchange_lock(key_type id, value_type expected) const;
 		//releases the lock that is already held, without commiting the changes
-		void exchange_release(key_type id, exchange_token &&token) const;
+		void exchange_release(key_type id, exchange_token token) const noexcept;
 		//releases the lock after exchanging the value
-		void exchange_resolve(key_type id, value_type desired, exchange_token &&token);
+		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value_type>>>
+		void exchange_resolve(key_type id, T &&desired, exchange_token token);
 
 		//get_data
 		//return vector of id's to values

@@ -51,7 +51,7 @@ namespace hades
 		data_map _bag;
 	};
 
-	//like any_map, however acceptable types are contrained to ...Types
+	//like any_map, however acceptable types are constrained to ...Types
 	template<typename Key, typename ...Types>
 	class var_map
 	{

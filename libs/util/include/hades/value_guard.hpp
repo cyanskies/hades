@@ -3,6 +3,8 @@
 
 #include <mutex>
 
+#include "hades/transactional.hpp"
+
 // a thread safe wrapper for arbitary value types.
 namespace hades {
 	template<typename value, typename mutex = std::mutex>
@@ -37,6 +39,11 @@ namespace hades {
 			return _value;
 		}
 
+		value get() const
+		{
+			return load();
+		}
+
 		operator value() const
 		{
 			return load();
@@ -55,7 +62,7 @@ namespace hades {
 		}
 
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value
-		lock_return exchange_lock(value expected) const
+		lock_return exchange_lock(const value &expected) const
 		{
 			exchange_token lk{_mutex};
 			bool success{ _value == expected };
@@ -65,18 +72,20 @@ namespace hades {
 
 			return std::make_tuple(success, std::move(lk));
 		}
+
 		//releases the lock that is already held, without commiting the changes
-		void exchange_release(exchange_token &&token) const
+		void exchange_release(exchange_token token) const
 		{
 			assert(token.owns_lock());
 			assert(token.mutex == _mutex);
 		}
+
 		//releases the lock after exchanging the value
 		void exchange_resolve(value desired, exchange_token &&token)
 		{
 			assert(token.owns_lock());
 			assert(token.mutex == _mutex);
-			_value = desired;
+			_value = std::move_if_noexcept(desired);
 		}
 
 		constexpr bool is_lock_free() const noexcept { return false; }
@@ -86,6 +95,9 @@ namespace hades {
 		mutable mutex _mutex;
 		value _value;
 	};
+
+	template<typename T, typename U>
+	struct is_transactional<value_guard<T, U>> : std::true_type {};
 }
 
 #endif // !HADES_UTIL_VALUEGUARD_HPP

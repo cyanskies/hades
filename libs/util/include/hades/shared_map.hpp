@@ -8,6 +8,8 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/transactional.hpp"
+
 //a thread safe storage system for entity components
 //stores a vector of components, once entry for each entity that possesses that component type
 
@@ -103,6 +105,9 @@ namespace hades {
 		//array of components, the main data held by this structure
 		component_array _components;
 	};
+
+	template<typename T, typename U>
+	struct is_transactional<shared_map<T, U>> : std::true_type {};
 }
 
 #include "hades/detail/shared_map.inl"

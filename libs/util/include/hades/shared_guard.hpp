@@ -3,7 +3,8 @@
 
 #include <shared_mutex>
 
-#include "value_guard.hpp"
+#include "hades/value_guard.hpp"
+#include "hades/transactional.hpp"
 
 // a thread safe wrapper for arbitary value types.
 // support concurrent reads for values that do not change often
@@ -30,6 +31,9 @@ namespace hades {
 			return get();
 		}
 	};
+
+	template<typename T, typename U>
+	struct is_transactional<shared_guard<T, U>> : std::true_type {};
 }
 
 #endif // !HADES_UTIL_SHAREDGUARD_HPP

@@ -277,7 +277,8 @@ namespace hades
 			return r == UNZ_OK;
 		}
 
-		types::uint16 count_separators(std::string_view s)
+		static std::string_view::iterator::difference_type 
+			count_separators(std::string_view s)
 		{
 			constexpr char separator1 = '\\';
 			constexpr char separator2 = '/';
@@ -548,7 +549,11 @@ namespace hades
 			deflate_stream.zfree = Z_NULL;
 			deflate_stream.opaque = Z_NULL;
 
-			deflate_stream.avail_in = stream.size(); // size of input, string + terminator
+			//uint as defined by zlib
+			using z_uint = uInt;
+
+			deflate_stream.avail_in = 
+				integer_cast<z_uint>(std::size(stream)); // size of input, string + terminator
 			deflate_stream.next_in = reinterpret_cast<unsigned char*>(stream.data()); // input char array
 			
 			// the actual compression work.
@@ -556,11 +561,14 @@ namespace hades
 			if (ret != Z_OK)
 				throw archive_exception("failed to initialise zlib deflate");
 
+			//unsigned long as defined by zlib;
+			using z_ulong = uLong;
+
 			//get the size
-			auto size = deflateBound(&deflate_stream, stream.size());
+			const auto size = deflateBound(&deflate_stream, integer_cast<z_ulong>(std::size(stream)));
 
 			buffer out{ size };
-			deflate_stream.avail_out = out.size(); // size of output
+			deflate_stream.avail_out = integer_cast<z_uint>(std::size(out)); // size of output
 			deflate_stream.next_out = reinterpret_cast<unsigned char*>(out.data()); // output char array
 
 			ret = deflate(&deflate_stream, Z_FINISH);
@@ -580,8 +588,13 @@ namespace hades
 			infstream.zalloc = Z_NULL;
 			infstream.zfree = Z_NULL;
 			infstream.opaque = Z_NULL;
+
+			//uint as defined by zlib
+			using z_uint = uInt;
+
 			// setup "b" as the input and "c" as the compressed output
-			infstream.avail_in = stream.size(); // size of input
+			infstream.avail_in =
+				integer_cast<z_uint>(std::size(stream)); // size of input
 			infstream.next_in = reinterpret_cast<unsigned char*>(stream.data()); // input char array
 			//infstream.avail_out = (uInt)sizeof(c); // size of output
 			//infstream.next_out = (Bytef *)c; // output char array
@@ -597,7 +610,7 @@ namespace hades
 			while (cont)
 			{
 				buffer buf{ stream.size() };
-				infstream.avail_out = buf.size();
+				infstream.avail_out = integer_cast<z_uint>(std::size(buf));
 				infstream.next_out = reinterpret_cast<unsigned char*>(buf.data());
 				ret = inflate(&infstream, Z_NO_FLUSH);
 				if (ret == Z_STREAM_END)

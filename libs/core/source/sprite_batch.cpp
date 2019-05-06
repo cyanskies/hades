@@ -410,10 +410,23 @@ namespace hades
 		}
 	}
 
+	std::vector<sprite_utility::layer_t> sprite_batch::get_layer_list() const
+	{
+		auto out = std::vector<sprite_utility::layer_t>{};
+
+		for (const auto& s : _sprites)
+		{
+			if (s.first.layer != out.back())
+				out.emplace_back(s.first.layer);
+		}
+
+		return out;
+	}
+
 	void sprite_batch::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		const auto lock = std::scoped_lock{ _collection_mutex };
-		for (auto &va : _vertex)
+		//const auto lock = std::scoped_lock{ _collection_mutex };
+		for (const auto &va : _vertex)
 		{
 			const auto &settings = va.first;
 			auto state = states;
@@ -423,6 +436,25 @@ namespace hades
 			//	state.shader = &settings.shader->value;
 
 			target.draw(va.second.data(), va.second.size(), sf::PrimitiveType::Triangles, state);
+		}
+	}
+
+	void sprite_batch::draw(sf::RenderTarget &t, sprite_utility::layer_t l, sf::RenderStates s) const
+	{
+		for (const auto &vert : _vertex)
+		{
+			const auto &settings = vert.first;
+			if (settings.layer > l)
+				break;
+			else if (settings.layer != l)
+				continue;
+
+			auto state = s;
+			if (settings.texture)
+				state.texture = &settings.texture->value;
+
+			t.draw(std::data(vert.second), std::size(vert.second),
+				sf::PrimitiveType::Triangles, state);
 		}
 	}
 

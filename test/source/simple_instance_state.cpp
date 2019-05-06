@@ -87,7 +87,9 @@ void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration 
 	const auto changes = _level->get_changes();
 	print_changes(changes);
 	_client_instance.input_updates(changes);
-	//_client_instance.
+	_current_time += deltaTime;
+	_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
+	target.draw(_drawable_output);
 }
 
 void simple_instance_state::reinit()

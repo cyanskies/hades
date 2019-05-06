@@ -5,6 +5,8 @@
 #include <mutex>
 #include <vector>
 
+#include "SFML/Graphics/Drawable.hpp"
+
 #include "hades/exceptions.hpp"
 #include "hades/level_interface.hpp"
 #include "hades/sprite_batch.hpp"
@@ -23,12 +25,15 @@ namespace hades
 		using render_interface_error::render_interface_error;
 	};
 
-	class render_interface
+	//allows batching of sprites and drawables
+	// drawables on the same layer as sprites
+	// will be draw before the sprites
+
+	class render_interface final : public sf::Drawable
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
 		using sprite_layer = sprite_utility::layer_t;
-
 
 		struct drawable_id_tag {};
 		using drawable_id = strong_typedef<drawable_id_tag, int32>;
@@ -36,7 +41,7 @@ namespace hades
 
 		static constexpr drawable_id bad_drawable_id = drawable_id{ std::numeric_limits<drawable_id::value_type>::min() };
 
-		using get_drawable = const sf::Drawable& (*)(std::any&);
+		using get_drawable = const sf::Drawable& (*)(const std::any&);
 
 		struct drawable_object
 		{
@@ -118,18 +123,20 @@ namespace hades
 		drawable_id create_drawable();
 
 		drawable_id create_drawable_ptr(const sf::Drawable*, sprite_layer);
-		template<typename Drawable>
-		drawable_id create_drawable_copy(Drawable, sprite_layer);
+		template<typename DrawableObject>
+		drawable_id create_drawable_copy(DrawableObject&&, sprite_layer);
 
 		bool drawable_exists(drawable_id) const noexcept;
 
 		void update_drawable_ptr(drawable_id, const sf::Drawable*, sprite_layer);
-		template<typename Drawable>
-		void update_drawable_copy(drawable_id, Drawable, sprite_layer);
+		template<typename DrawableObject>
+		void update_drawable_copy(drawable_id, DrawableObject&&, sprite_layer);
 
 		void destroy_drawable(drawable_id);
 
 		//===End Thread-Safe===
+
+		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const;
 
 	private:
 		drawable_id _make_new_id();
@@ -155,24 +162,24 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
-		inline sf::Drawable& get_drawable_from_any(std::any& a) noexcept
+		inline const sf::Drawable& get_drawable_from_any(const std::any& a) noexcept
 		{
-			return std::any_cast<T>(a);
+			return std::any_cast<&T>(a);
 		}
 	}
 
-	template<typename Drawable>
-	inline render_interface::drawable_id render_interface::create_drawable_copy(Drawable d, sprite_layer l)
+	template<typename DrawableObject>
+	inline render_interface::drawable_id render_interface::create_drawable_copy(DrawableObject &&d, sprite_layer l)
 	{
-		return _create_drawable_any(d, detail::get_drawable_from_any<Drawable>, l);
+		return _create_drawable_any(std::forward(d), detail::get_drawable_from_any<Drawable>, l);
 	}
 
-	template<typename Drawable>
-	inline void render_interface::update_drawable_copy(drawable_id id, Drawable d, sprite_layer l)
+	template<typename DrawableObject>
+	inline void render_interface::update_drawable_copy(drawable_id id, DrawableObject &&d, sprite_layer l)
 	{
-		_update_drawable_any(id, std::move_if_noexcept(d),
+		_update_drawable_any(id, std::forward(d),
 			detail::get_drawable_from_any<Drawable>, l);
 	}
 }
 
-#endif //HADES_RENDER_INTERFACE_HPP
+#endif //!HADES_RENDER_INTERFACE_HPP

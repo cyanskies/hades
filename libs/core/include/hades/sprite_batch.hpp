@@ -80,7 +80,7 @@ namespace hades
 		using sprite_batch_error::sprite_batch_error;
 	};
 
-	class sprite_batch : public sf::Drawable
+	class sprite_batch final : public sf::Drawable
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
@@ -112,7 +112,11 @@ namespace hades
 		void draw_clamp(const rect_float &worldCoords);
 
 		void prepare();
-		virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates{}) const override;
+
+		std::vector<sprite_utility::layer_t> get_layer_list() const;
+
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates{}) const override;
+		void draw(sf::RenderTarget& target, sprite_utility::layer_t, sf::RenderStates states = sf::RenderStates{}) const;
 
 	private:
 		//mutex to ensure two threads don't try to add/search/erase from the two collections at the same time

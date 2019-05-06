@@ -1,5 +1,9 @@
 #include "hades/render_interface.hpp"
 
+#include <algorithm>
+
+#include "SFML/Graphics/RenderTarget.hpp"
+
 namespace hades 
 {
 	render_interface::sprite_id render_interface::create_sprite()
@@ -115,14 +119,14 @@ namespace hades
 		return _create_drawable_any({}, nullptr, {});
 	}
 
-	static const sf::Drawable &get_ptr_from_any(std::any& a)
+	static const sf::Drawable &get_ptr_from_any(const std::any& a)
 	{
 		return *std::any_cast<const sf::Drawable*>(a);
 	}
 
 	render_interface::drawable_id render_interface::create_drawable_ptr(const sf::Drawable *d, sprite_layer l)
 	{
-		return _create_drawable_any(d, get_ptr_from_any,l);
+		return _create_drawable_any(d, get_ptr_from_any, l);
 	}
 
 	bool render_interface::drawable_exists(drawable_id id) const noexcept
@@ -148,6 +152,25 @@ namespace hades
 
 		_destroy_id(id);
 		_remove_from_layer(id, obj.layer_index, obj.drawable_index);
+	}
+
+	void render_interface::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	{
+		auto drawable_iter = std::begin(_object_layers);
+		const auto layer_ids = _sprite_batch.get_layer_list();
+
+		auto layer = std::min(layer_ids.front(), drawable_iter->layer);
+
+		while (layer < layer_ids.back() ||
+			layer < _object_layers.back().layer)
+		{
+			if (drawable_iter != std::end(_object_layers) &&
+				drawable_iter->layer == layer)
+				for (const auto& d : drawable_iter->objects)
+					t.draw(d.get(d.storage), s);
+
+			_sprite_batch.draw(t, layer, s);
+		}
 	}
 
 	render_interface::drawable_id render_interface::_make_new_id()
@@ -261,7 +284,7 @@ namespace hades
 	render_interface::drawable_id render_interface::_create_drawable_any(std::any drawable, get_drawable func, sprite_layer l)
 	{	
 		const auto id = _make_new_id();
-		_add_to_layer({ id, drawable, func }, l);
+		_add_to_layer({ id, std::move(drawable), func }, l);
 		return id;
 	}
 

@@ -3,6 +3,7 @@
 # C++ source files
 set(HADES_UTIL_SRC
 	parallel_jobs.cpp
+	time.cpp
 	transaction.cpp
 	utility.cpp
 	../include/hades/any_map.hpp
@@ -17,6 +18,7 @@ set(HADES_UTIL_SRC
 	../include/hades/shared_map.hpp
 	../include/hades/strong_typedef.hpp
 	../include/hades/table.hpp
+	../include/hades/time.hpp
 	../include/hades/transaction.hpp
 	../include/hades/transactional.hpp
 	../include/hades/types.hpp

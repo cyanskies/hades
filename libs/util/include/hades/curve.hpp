@@ -3,12 +3,12 @@
 
 #include <algorithm>
 #include <cassert>
-#include <exception>
-#include <set>
+#include <map>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 #include "hades/types.hpp"
 
 //A set of curve classes for variables
@@ -17,66 +17,26 @@
 //keyframes can be overridden as the simulation catches up to them for accuracy
 
 namespace hades {
-	template<typename Time, typename Data>
-	struct basic_keyframe
-	{
-		basic_keyframe(Time at)
-			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_constructible_v<Data>)
-			: t(at) {}
-
-		basic_keyframe(Time at, Data data)
-			noexcept(std::is_nothrow_copy_constructible_v<Time> && std::is_nothrow_copy_constructible_v<Data>)
-			: t(at), value(data) {}
-
-		Time t;
-		Data value;
-	};
-
-	template<typename T>
-	using keyframe = basic_keyframe<time_point, T>;
-
 	//TODO: move lerp into the utility header
-	template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+	template<typename T, typename std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
+	T lerp(T first, T second, float alpha) noexcept
+	{
+		return (1.f - alpha) * first + alpha * second;
+	}
+
+	template<typename T, typename std::enable_if_t<!std::is_arithmetic_v<T>, int> = 0>
 	T lerp(T first, T second, float alpha)
 	{
-		return (1 - alpha) * first + alpha * second;
+		throw std::logic_error{"called lerp with a non-arithmetic type"};
 	}
 
 	template<typename T>
-	T lerp(T first, T second, float alpha)
+	using keyframe = std::pair<time_point, T>;
+	
+	template<typename T>
+	constexpr bool keyframe_less(const keyframe<T> &a, const keyframe<T> &b) noexcept
 	{
-		assert(false);
-		return first;
-	}
-
-	template<typename Time, typename Data>
-	bool operator==(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
-	{
-		return lhs.t == rhs.t && lhs.value == rhs.value;
-	}
-
-	template<typename Time, typename Data>
-	bool operator!=(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
-	{
-		return !(lhs == rhs);
-	}
-
-	template<typename Time, typename Data>
-	bool operator<(const basic_keyframe<Time, Data> &lhs, const basic_keyframe<Time, Data> &rhs)
-	{
-		return lhs.t < rhs.t;
-	}
-
-	template<typename Time, typename Data>
-	bool operator<(const basic_keyframe<Time, Data> &lhs, const Time &rhs)
-	{
-		return lhs.t < rhs;
-	}
-
-	template<typename Time, typename Data>
-	bool operator<(const Time &lhs, const basic_keyframe<Time, Data> &rhs)
-	{
-		return lhs < rhs.t;
+		return a.first < b.first;
 	}
 
 	enum class curve_type {
@@ -93,12 +53,13 @@ namespace hades {
 		using std::runtime_error::runtime_error;
 	};
 
-	template<typename Time, typename Data>
+	template<typename Data>
 	class basic_curve final
 	{
 	public:
-		using frame_t = basic_keyframe<Time, Data>;
-		using DataType = std::set<frame_t>;
+		using Time = time_point;
+		using frame_t = std::pair<Time, Data>;
+		using DataType = std::map<Time, Data>;
 
 		explicit basic_curve(curve_type type) 
 			noexcept(std::is_nothrow_copy_constructible_v<curve_type> && std::is_nothrow_constructible_v<DataType>)
@@ -128,7 +89,7 @@ namespace hades {
 		basic_curve &operator=(const basic_curve &other)
 			noexcept(is_curve_nothrow_copy_assignable_v)
 		{
-			basic_curve<Time, Data> c{ other };
+			basic_curve<Data> c{ other };
 			using std::swap;
 			swap(c._data, _data);
 			_type = c._type;
@@ -148,7 +109,7 @@ namespace hades {
 		//when you add a keyframe, all keyframes after it are erased
 		void set(Time at, Data value)
 		{
-			_insertFrame(at, value, true);
+			_insertFrame(at, std::move_if_noexcept(value), true);
 		}
 
 		//inserting a keyframe doesn't remove other frames, but may still replace a frame at the same time as the new frame.
@@ -171,38 +132,38 @@ namespace hades {
 			// then just return the closest keyframe
 			const auto last = --_data.end();
 
-			if (at < *_data.begin())
-				return _data.begin()->value;
-			else if (*last < at)
-				return last->value;
+			if (at < _data.begin()->first)
+				return _data.begin()->second;
+			else if (last->first < at)
+				return last->second;
 
 			if (_type == curve_type::const_c)
 			{
 				if (_data.empty())
 					throw curve_error("Tried to read from empty CONST curve");
 
-				return _data.begin()->value;
+				return _data.begin()->second;
 			}
 			else if (_type == curve_type::linear)
 			{
-				const auto d = _getRange(at);
+				const auto [a, b] = _getRange(at);
 
-				const auto first = at - d.first->t;
-				const auto second = d.second->t - d.first->t;
+				const auto first = at - a->first;
+				const auto second = b->first - a->first;
 
 				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
 
 				using hades::lerp;
-				return lerp(d.first->value, d.second->value, interp);
+				return lerp(a->second, b->second, interp);
 			}
 			else if (_type == curve_type::step)
 			{
-				const auto d = _getRange(at);
+				const auto [a,b] = _getRange(at);
 
-				if (d.second->t <= at)
-					return d.second->value;
+				if (b->first <= at)
+					return b->second;
 
-				return d.first->value;
+				return a->second;
 			}
 
 			throw curve_error("Malformed curve");
@@ -226,16 +187,17 @@ namespace hades {
 		//returns all keyframes between the specified times
 		std::vector<frame_t> getBetween(Time first, Time second) const
 		{
-			auto begin = begin(), end = end();
-			auto lower = std::lower_bound(begin, end, first);
+			auto begin = this->begin(), end = this->end();
+			auto lower = std::lower_bound(begin, end, keyframe<Data>{ first, Data{} }, keyframe_less<Data>);
 			if (lower == end)
 				lower = begin;
-			auto upper = std::upper_bound(begin, end, second);
+			auto upper = std::upper_bound(begin, end, keyframe<Data>{ second, Data{} }, keyframe_less<Data>);
 			if (upper == end &&
 				lower != upper)
 				--upper;
 
-			std::vector<basic_keyframe<Time, Data>> output;
+			std::vector<keyframe<Data>> output;
+			output.reserve(std::distance(lower, upper));
 
 			while (lower != upper)
 				output.push_back(*lower++);
@@ -263,65 +225,67 @@ namespace hades {
 		//For converting to the usable Curve Types
 		curve_type type() const noexcept { return _type; }
 
-		template<typename T, typename D>
-		friend bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept;
-		template<typename T, typename D>
-		friend bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept;
+		template<typename D>
+		friend bool operator==(const basic_curve<D> &lhs, const basic_curve<D> &rhs) noexcept;
+		template<typename D>
+		friend bool operator!=(const basic_curve<D> &lhs, const basic_curve<D> &rhs) noexcept;
 
 	private:
-		using IterPair = std::pair<typename DataType::iterator, typename DataType::iterator>;
+		using IterPair = std::pair<typename DataType::const_iterator, typename DataType::const_iterator>;
 
 		void _insertFrame(Time at, Data value, bool erase = false)
 		{
 			if (_type == curve_type::const_c)
 			{
-				//replace the only value with the new one
-				_data.insert({ Time{}, value });
+				_data.insert_or_assign(Time{}, std::move(value));
 			}
 			else
 			{
-				auto iter = _data.insert({ at, value });
+				auto [iter, succeded] = _data.insert_or_assign(at, value);
+				std::ignore = succeded;
 
 				//if the insertion was successful and isn't the last element
 				//in the container
-				if (erase && iter.second && (iter.first != --_data.end()))
+				if (erase && (iter != --_data.end()))
 					//erase everything after the newly inserted keyframe
-					_data.erase(++iter.first, _data.end());
+					_data.erase(++iter, _data.end());
 			}
+
+			return;
 		}
 
 		//returns the keyframes either side of 'at'
 		IterPair _getRange(Time at) const
 		{
 			if (_data.size() == 1)
-				return IterPair(_data.begin(), _data.begin());
+				return IterPair{ std::begin(_data), std::begin(_data) };
 
-			//what can lower bound throw? this prevents the method being noexcept
-			auto next = std::lower_bound(_data.begin(), _data.end(), at);
+			//what can lower bound throw?(bad_alloc) this prevents the method being noexcept
+			auto next = std::lower_bound(_data.begin(), _data.end(), keyframe<Data>{ at, Data{} }, keyframe_less<Data>);
 			if (next == _data.end())
 				next = ++_data.begin();
 
-			return IterPair(--next, next);
+			return IterPair{ std::prev(next), next };
 		}
 
 		DataType _data;
 		curve_type _type;
 	};
 
-	template<typename T, typename D>
-	bool operator==(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept
+	template<typename T>
+	bool operator==(const basic_curve<T> &lhs, const basic_curve<T> &rhs) noexcept
 	{
 		return lhs._type == rhs._type && lhs._data == rhs._data;
 	}
 
-	template<typename T, typename D>
-	bool operator!=(const basic_curve<T, D> &lhs, const basic_curve<T, D> &rhs) noexcept
+	template<typename T>
+	bool operator!=(const basic_curve<T> &lhs, const basic_curve<T> &rhs) noexcept
 	{
 		return !(rhs == lhs);
 	}
 
 	template<class T>
-	using curve = basic_curve<time_point, T>;
+	using curve = basic_curve<T>;
 }
 
 #endif //HADES_UTIL_CURVES_HPP

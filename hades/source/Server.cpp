@@ -8,7 +8,7 @@ namespace hades
 	void register_game_server_resources(data::data_manager &d)
 	{
 		register_objects(d);
-
+		register_game_system_resources(d);
 		//TODO: support scripted or embeded systems
 		//register_systems_resources();
 	}

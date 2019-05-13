@@ -14,11 +14,30 @@ namespace hades
 		return _systems;
 	}
 
+	template<typename SystemType>
+	inline std::vector<const typename SystemType::system_t*> common_implementation<SystemType>::get_new_systems() const
+	{
+		const auto lock = std::scoped_lock{ _system_list_mut };
+		return _new_systems;
+	}
+
+	template<typename SystemType>
+	inline void common_implementation<SystemType>::clear_new_systems()
+	{
+		_new_systems.clear();
+	}
+
+	template<typename SystemType>
+	inline std::any& common_implementation<SystemType>::get_system_data(unique_id key)
+	{
+		return _system_data[key];
+	}
+
 	namespace detail
 	{
 		template<typename SystemResource, typename System>
 		static inline System& install_system(unique_id sys,
-			std::vector<System>& systems, std::mutex& mutex)
+			std::vector<System>& systems, std::vector<const SystemResource*>& sys_r, std::mutex& mutex)
 		{
 			//we MUST already be locked before we get here
 			assert(!mutex.try_lock());
@@ -31,12 +50,13 @@ namespace hades
 			));
 
 			const auto new_system = hades::data::get<SystemResource>(sys);
+			sys_r.emplace_back(new_system);
 			return systems.emplace_back(new_system);
 		}
 
 		template<typename SystemResource, typename System>
-		static inline System& find_system(unique_id id, std::vector<System>& systems,
-			std::mutex& mutex)
+		static inline System& find_system(unique_id id, std::vector<System>& systems, 
+			std::vector<const SystemResource*> &sys_r, std::mutex& mutex)
 		{
 			//we MUST already be locked before we get here
 			assert(!mutex.try_lock());
@@ -47,7 +67,7 @@ namespace hades
 					return s;
 			}
 
-			return install_system<SystemResource>(id, systems, mutex);
+			return install_system<SystemResource>(id, systems, sys_r, mutex);
 		}
 	}
 
@@ -56,8 +76,12 @@ namespace hades
 	{
 		const auto lock = std::lock_guard{ _system_list_mut };
 
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _system_list_mut);
-		auto ents = system.attached_entities.get();
+		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems, _system_list_mut);
+		name_list ents = system.attached_entities.get();
+
+		if (ents.empty())
+			ents.set(time_point{ nanoseconds{-1} }, {});
+
 		auto ent_list = ents.get(t);
 		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
 		if (found != ent_list.end())
@@ -79,7 +103,7 @@ namespace hades
 	{
 		const auto lock = std::lock_guard{ _system_list_mut };
 
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _system_list_mut);
+		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems, _system_list_mut);
 		auto ents = system.attached_entities.get();
 		auto ent_list = ents.get(t);
 		auto found = std::find(ent_list.begin(), ent_list.end(), entity);

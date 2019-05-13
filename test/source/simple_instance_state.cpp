@@ -40,6 +40,7 @@ void register_simple_instance_resources(hades::data::data_manager &d)
 
 void print_changes(const hades::exported_curves& e)
 {
+#if false
 	std::size_t count = 0;
 
 	count += std::size(e.bool_curves);
@@ -56,6 +57,7 @@ void print_changes(const hades::exported_curves& e)
 
 	const auto msg = "changes size = " + hades::to_string(count);
 	LOG(msg);
+#endif
 }
 
 void simple_instance_state::init()
@@ -89,6 +91,7 @@ void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration 
 	_client_instance.input_updates(changes);
 	_current_time += deltaTime;
 	_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
+	_drawable_output.prepare();
 	target.draw(_drawable_output);
 }
 

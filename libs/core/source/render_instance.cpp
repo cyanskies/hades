@@ -27,7 +27,7 @@ namespace hades
 			}();
 
 			for (auto& f : frames)
-				new_curve.set(f.t, f.value);
+				new_curve.set(f.first, f.second);
 
 			if (exists)
 				output_curves.set(id, new_curve);
@@ -48,8 +48,7 @@ namespace hades
 
 						// the time_point of obj-type should be 
 						// the creation time of the entity
-						const auto t = frames[0].t;
-						const auto type = frames[0].value;
+						const auto [t, type] = frames[0];
 
 						//use callback to request object setup
 						std::invoke(callback, ent, type, t);
@@ -117,26 +116,90 @@ namespace hades
 
 	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)
 	{
+		assert(_jobs.ready());
+		const auto on_create_parent = _jobs.create();
+		const auto new_systems = _game.get_new_systems();
+
+		std::vector<job_system::job*> jobs;
+		for (const auto s : new_systems)
+		{
+			const auto j = _jobs.create_child(on_create_parent, s->on_create, render_job_data{
+				 bad_entity, &_game, m, t, i, _game.get_system_data(s->id)
+				});
+
+			jobs.emplace_back(j);
+			
+		}
+
+		_jobs.run(jobs);
+		_jobs.wait(on_create_parent);
+
 		const auto systems = _game.get_systems();
 
-		assert(_jobs.ready());
-		const auto parent_job = _jobs.create();
+		//call on_connect for new entities
+		const auto on_connect_parent = _jobs.create();
+		jobs.clear();
+		for (const auto s : systems)
+		{
+			const auto ents = get_added_entites(s.attached_entities, _prev_frame, t);
+			auto& sys_data = _game.get_system_data(s.system->id);
+			 
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child(on_connect_parent, s.system->on_connect,
+					render_job_data{ e, &_game, m, t, i, sys_data });
 
-		for (const auto& s : systems)
+				jobs.emplace_back(j);
+			}
+		}
+
+		_jobs.run(jobs);
+		_jobs.wait(on_connect_parent);
+
+		//call on_disconnect for removed entities
+		const auto on_disconnect_parent = _jobs.create();
+		jobs.clear();
+		for (const auto s : systems)
+		{
+			const auto ents = get_removed_entites(s.attached_entities, _prev_frame, t);
+			auto& sys_data = _game.get_system_data(s.system->id);
+
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child(on_disconnect_parent, s.system->on_disconnect,
+					render_job_data{ e, &_game, m, t, i, sys_data });
+
+				jobs.emplace_back(j);
+			}
+		}
+
+		_jobs.run(jobs);
+		_jobs.wait(on_disconnect_parent);
+
+		//call on_tick for systems
+		const auto on_tick_parent = _jobs.create();
+		jobs.clear();
+		for (auto& s : systems)
 		{
 			const auto entities_curve = s.attached_entities.get();
 			const auto ents = entities_curve.get(t);
 
+			auto& sys_data = _game.get_system_data(s.system->id);
+
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child(parent_job, s.system->tick,
-					render_job_data{ e, &_game, m, t, i });
+				const auto j = _jobs.create_child(on_tick_parent, s.system->tick,
+					render_job_data{ e, &_game, m, t, i, sys_data });
 
-				_jobs.run(j);
+				jobs.emplace_back(j);
 			}
 		}
 
-		_jobs.wait(parent_job);
+		_jobs.run(jobs);
+		_jobs.wait(on_tick_parent);
 		_jobs.clear();
+
+		_game.clear_new_systems();
+		_prev_frame = t;
 	}
 }

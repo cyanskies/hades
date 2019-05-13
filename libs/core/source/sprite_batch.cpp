@@ -413,11 +413,12 @@ namespace hades
 	std::vector<sprite_utility::layer_t> sprite_batch::get_layer_list() const
 	{
 		auto out = std::vector<sprite_utility::layer_t>{};
+		auto prev = std::numeric_limits<sprite_utility::layer_t>::min();
 
 		for (const auto& s : _sprites)
 		{
-			if (s.first.layer != out.back())
-				out.emplace_back(s.first.layer);
+			if (s.first.layer != prev)
+				prev = out.emplace_back(s.first.layer);
 		}
 
 		return out;

@@ -59,12 +59,12 @@ namespace hades
 		_input.insert(t, std::move(a));
 	}
 
-	curve_data& common_implementation_base::get_curves()
+	curve_data& common_implementation_base::get_curves() noexcept
 	{
 		return _curves;
 	}
 
-	const curve_data& common_implementation_base::get_curves() const
+	const curve_data& common_implementation_base::get_curves() const noexcept
 	{
 		return _curves;
 	}

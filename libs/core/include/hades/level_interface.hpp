@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <unordered_map>
 #include <vector>
 
 #include "hades/any_map.hpp"
@@ -47,8 +48,8 @@ namespace hades
 	public:
 		virtual ~common_interface() = default;
 
-		virtual curve_data &get_curves() = 0;
-		virtual const curve_data &get_curves() const = 0;
+		virtual curve_data &get_curves() noexcept = 0;
+		virtual const curve_data &get_curves() const noexcept = 0;
 	};
 
 	//this is the interface that is available to server jobs and systems
@@ -83,8 +84,8 @@ namespace hades
 		void name_entity(entity_id, std::string_view, time_point);
 		void add_input(input_system::action_set, time_point);
 
-		curve_data& get_curves() override final;
-		const curve_data& get_curves() const override final;
+		curve_data& get_curves() noexcept override final;
+		const curve_data& get_curves() const noexcept override final;
 
 	private:
 		curve_data _curves;
@@ -100,9 +101,15 @@ namespace hades
 	class common_implementation : public common_implementation_base
 	{
 	public:
+		using system_resource = typename SystemType::system_t;
+
 		explicit common_implementation(const level_save&);
 
 		std::vector<SystemType> get_systems() const;
+		std::vector<const system_resource*> get_new_systems() const;
+		void clear_new_systems();
+
+		std::any &get_system_data(unique_id);
 
 		void attach_system(entity_id, unique_id, time_point t) override final;
 		void detach_system(entity_id, unique_id, time_point t) override final;
@@ -110,6 +117,8 @@ namespace hades
 	protected:
 		mutable std::mutex _system_list_mut;
 		std::vector<SystemType> _systems;
+		std::vector<const system_resource*> _new_systems;
+		std::unordered_map<unique_id, std::any> _system_data;
 	};
 
 	class game_implementation final : public common_implementation<game_system>

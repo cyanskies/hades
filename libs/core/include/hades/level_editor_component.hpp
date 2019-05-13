@@ -81,7 +81,7 @@ namespace hades
 
 		tag_list get_tags_at(rect_float r)
 		{
-			std::invoke(_get_tags_at, r);
+			return std::invoke(_get_tags_at, r);
 		}
 
 		//compoenents can throw new_level_editor_error

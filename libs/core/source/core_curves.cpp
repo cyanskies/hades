@@ -107,6 +107,16 @@ namespace hades
 		return get_curve(object_type_id);
 	}
 
+	vector_curve_id get_position_curve_id() noexcept
+	{
+		return { posx_id, posy_id };
+	}
+
+	vector_curve_id get_size_curve_id() noexcept
+	{
+		return { sizx_id, sizy_id };
+	}
+
 	unique_id get_object_type_curve_id() noexcept
 	{
 		return object_type_id;

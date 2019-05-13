@@ -5,7 +5,7 @@
 #include "hades/data.hpp"
 #include "hades/parallel_jobs.hpp"
 #include "hades/core_resources.hpp"
-#include "hades/time.hpp"
+#include "hades/sf_time.hpp"
 
 namespace hades 
 {
@@ -83,7 +83,7 @@ namespace hades
 
 			//get the rest of the data
 			s.entity = c.first.first;
-			auto lower = std::lower_bound(c.second.begin(), c.second.end(), t);
+			auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
 			while (lower != c.second.end())
 				s.frames.push_back(*lower++);
 

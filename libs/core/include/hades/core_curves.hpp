@@ -23,6 +23,10 @@ namespace hades
 	const resources::curve* get_tags_curve();
 	const resources::curve* get_object_type_curve();
 
+	using vector_curve_id = std::tuple<unique_id, unique_id>;
+	vector_curve_id get_position_curve_id() noexcept;
+	vector_curve_id get_size_curve_id() noexcept;
+
 	unique_id get_object_type_curve_id() noexcept;
 }
 

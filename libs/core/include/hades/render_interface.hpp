@@ -136,6 +136,7 @@ namespace hades
 
 		//===End Thread-Safe===
 
+		void prepare(); //must be called before draw if using sprites
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const;
 
 	private:

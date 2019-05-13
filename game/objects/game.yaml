@@ -132,6 +132,7 @@ objects:
             - [cool, true]
             - [quote, ahhh]
             - [numbers, [1, 2, 3, 4]]
+        client-systems: simple-renderer
     ball:
         editor-icon: ball-anim
         editor-anim: [ball-anim]
@@ -139,3 +140,4 @@ objects:
             - [size-x, 8]
             - [size-y, 8]
             - [collision-groups, ground]
+        client-systems: simple-renderer

@@ -17,6 +17,8 @@
 
 namespace hades
 {
+	void register_game_system_resources(data::data_manager&);
+
 	//fwd declaration
 	class game_interface;
 	
@@ -85,6 +87,9 @@ namespace hades
 	const variable_id bad_variable = variable_id::zero;
 
 	using name_list = curve<resources::curve_types::vector_object_ref>;
+	
+	resources::curve_types::vector_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
+	resources::curve_types::vector_object_ref get_removed_entites(const name_list&, time_point last_frame, time_point this_frame);
 
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
@@ -100,7 +105,7 @@ namespace hades
 		{}
 
 		game_system(const game_system&) = default;
-		game_system(game_system&&) = default;
+		game_system(game_system&&) noexcept = default;
 
 		game_system &operator=(const game_system&) = default;
 		game_system &operator=(game_system&&) = default;
@@ -135,6 +140,8 @@ namespace hades
 		time_point current_time;
 		//render output interface
 		render_interface &render_output;
+		//system data
+		std::any &system_data;
 	};
 
 	namespace resources
@@ -168,7 +175,7 @@ namespace hades
 		{}
 
 		render_system(const render_system&) = default;
-		render_system(render_system&&) = default;
+		render_system(render_system&&) noexcept = default;
 
 		render_system& operator=(const render_system&) = default;
 		render_system& operator=(render_system&&) = default;

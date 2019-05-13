@@ -32,6 +32,8 @@ namespace hades
 		{
 			throw render_interface_invalid_id{ e.what() };
 		}
+
+		return;
 	}
 
 	void render_interface::set_animation(sprite_id id, const resources::animation *a, time_point t)
@@ -44,6 +46,8 @@ namespace hades
 		{
 			throw render_interface_invalid_id{ e.what() };
 		}
+
+		return;
 	}
 
 	void render_interface::set_layer(sprite_id id, sprite_layer l)
@@ -56,6 +60,8 @@ namespace hades
 		{
 			throw render_interface_invalid_id{ e.what() };
 		}
+
+		return;
 	}
 
 	void render_interface::set_position(sprite_id id, vector_float p)
@@ -68,6 +74,8 @@ namespace hades
 		{
 			throw render_interface_invalid_id{ e.what() };
 		}	
+
+		return;
 	}
 
 	void render_interface::set_size(sprite_id id, vector_float s)
@@ -80,6 +88,8 @@ namespace hades
 		{
 			throw render_interface_invalid_id{ e.what() };
 		}
+
+		return;
 	}
 
 	using layer_size_type = std::vector<render_interface::object_layer>::size_type;
@@ -139,6 +149,7 @@ namespace hades
 	void render_interface::update_drawable_ptr(drawable_id id, const sf::Drawable *d, sprite_layer l)
 	{
 		_update_drawable_any(id, d, get_ptr_from_any, l);
+		return;
 	}
 
 	void render_interface::destroy_drawable(drawable_id id)
@@ -152,25 +163,65 @@ namespace hades
 
 		_destroy_id(id);
 		_remove_from_layer(id, obj.layer_index, obj.drawable_index);
+		return;
+	}
+
+	void render_interface::prepare()
+	{
+		_sprite_batch.prepare();
 	}
 
 	void render_interface::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
+		using sprite_utility::layer_t;
+
+		constexpr auto layer_max = std::numeric_limits<layer_t>::max();
+		constexpr auto layer_min = std::numeric_limits<layer_t>::min();
+
 		auto drawable_iter = std::begin(_object_layers);
 		const auto layer_ids = _sprite_batch.get_layer_list();
+		auto sprite_iter = std::begin(layer_ids);
 
-		auto layer = std::min(layer_ids.front(), drawable_iter->layer);
+		//get the lowest layer, and the max layers for each tpe
+		const auto [starting_layer, last_sprite_layer, last_object_layer] = [&]()->std::tuple<layer_t, layer_t, layer_t> {
+			if (drawable_iter != std::end(_object_layers) &&
+				sprite_iter != std::end(layer_ids))
+				return { std::min(*sprite_iter, drawable_iter->layer), layer_ids.back(), _object_layers.back().layer };
+			else if (drawable_iter == std::end(_object_layers) &&
+				sprite_iter != std::end(layer_ids))
+				return { *sprite_iter, layer_ids.back() , layer_min };
+			else if (sprite_iter == std::end(layer_ids) &&
+				drawable_iter != std::end(_object_layers))
+				return { drawable_iter->layer, layer_min, _object_layers.back().layer };
+			else
+				return { layer_max, layer_min, layer_min };
+		}();
 
-		while (layer < layer_ids.back() ||
-			layer < _object_layers.back().layer)
+		const auto final_layer = std::max(last_sprite_layer, last_object_layer);
+		auto layer = starting_layer;
+
+		while (layer <= final_layer)
 		{
 			if (drawable_iter != std::end(_object_layers) &&
 				drawable_iter->layer == layer)
+			{
 				for (const auto& d : drawable_iter->objects)
 					t.draw(d.get(d.storage), s);
 
-			_sprite_batch.draw(t, layer, s);
+				++drawable_iter;
+			}
+
+			if (sprite_iter != std::end(layer_ids) &&
+				*sprite_iter == layer)
+			{
+				_sprite_batch.draw(t, layer, s);
+				++sprite_iter;
+			}
+
+			++layer;
 		}
+
+		return;
 	}
 
 	render_interface::drawable_id render_interface::_make_new_id()
@@ -199,6 +250,8 @@ namespace hades
 
 		std::iter_swap(iter, std::rbegin(_used_drawable_ids));
 		_used_drawable_ids.pop_back();
+
+		return;
 	}
 
 	void render_interface::_add_to_layer(drawable_object obj, sprite_layer l)
@@ -246,6 +299,8 @@ namespace hades
 		assert(layer_index < std::size(_object_layers));
 
 		_object_layers[layer_index].objects.emplace_back(std::move(obj));
+
+		return;
 	}
 
 	static void fixup_index(render_interface::drawable_id id,
@@ -256,6 +311,8 @@ namespace hades
 		const auto obj = find_object(id, obj_layers);
 		layer_index = obj.layer_index;
 		index = obj.drawable_index;
+
+		return;
 	}
 
 	void render_interface::_remove_from_layer(drawable_id id,
@@ -279,6 +336,8 @@ namespace hades
 		std::advance(iter, index);
 		std::iter_swap(iter, std::rbegin(_object_layers[layer_index].objects));
 		_object_layers[layer_index].objects.pop_back();
+
+		return;
 	}
 
 	render_interface::drawable_id render_interface::_create_drawable_any(std::any drawable, get_drawable func, sprite_layer l)
@@ -311,5 +370,7 @@ namespace hades
 
 		_remove_from_layer(id, object.layer_index, object.drawable_index);
 		_add_to_layer(std::move(obj), l);
+
+		return;
 	}
 }

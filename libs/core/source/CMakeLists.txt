@@ -69,6 +69,7 @@ set(HADES_CORE_SRC
 	../include/hades/render_instance.hpp
 	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sf_time.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
@@ -76,7 +77,6 @@ set(HADES_CORE_SRC
 	../include/hades/texture.hpp
 	../include/hades/tiled_sprite.hpp
 	../include/hades/tile_map.hpp
-	../include/hades/time.hpp
 	../include/hades/vertex_buffer.hpp
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
@@ -119,6 +119,7 @@ source_group("Headers" FILES
 	../include/hades/render_instance.hpp
 	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sf_time.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
 	../include/hades/state.hpp
@@ -126,7 +127,6 @@ source_group("Headers" FILES
 	../include/hades/texture.hpp
 	../include/hades/tiled_sprite.hpp
 	../include/hades/tile_map.hpp
-	../include/hades/time.hpp
 	../include/hades/vertex_buffer.hpp
 )
 

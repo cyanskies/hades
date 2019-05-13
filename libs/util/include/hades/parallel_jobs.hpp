@@ -47,10 +47,12 @@ namespace hades
 		job* create();
 		template<typename Func, typename JobData>
 		job* create(Func, JobData);
+		job* create_child(job* parent);
 		template<typename Func, typename JobData>
 		job* create_child(job* parent, Func, JobData);
 
 		void run(job*);
+		void run(const std::vector<job*>&);
 		void wait(job*);
 		void clear();
 

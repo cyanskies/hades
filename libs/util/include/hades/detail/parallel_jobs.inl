@@ -48,7 +48,7 @@ namespace hades
 	inline job_system::job* job_system::create(Func func,
 		JobData data)
 	{
-		assert(func);
+		//TODO: some static asserts here and in create_child
 		//create a new job and store it in the global jobstore
 		auto job_ptr = create();
 		job_ptr->function = detail::create_job_invoker(*this, func, data);
@@ -59,10 +59,8 @@ namespace hades
 	inline job_system::job* job_system::create_child(job_system::job* parent,
 		Func func, JobData data)
 	{
-		auto j = create(func, data);
-		j->parent_job = parent;
-		//increment parents child count
-		++(parent->unfinished_children);
+		auto j = create_child(parent);
+		j->function = detail::create_job_invoker(*this, func, data);
 		return j;
 	}
 }

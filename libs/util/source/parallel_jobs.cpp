@@ -62,6 +62,15 @@ namespace hades
 		return &*_jobs.back();
 	}
 
+	job_system::job* job_system::create_child(job* parent)
+	{
+		auto j = create();
+		j->parent_job = parent;
+		//increment parents child count
+		++(parent->unfinished_children);
+		return j;
+	}
+
 	void job_system::run(job_system::job* j)
 	{
 		const auto id = _thread_id();
@@ -69,6 +78,15 @@ namespace hades
 		std::ignore = lock;
 		assert(queue);
 		queue->push_front(j);
+	}
+
+	void job_system::run(const std::vector<job*> &vect)
+	{
+		const auto id = _thread_id();
+		auto [queue, lock] = _get_queue(id);
+		std::ignore = lock;
+		assert(queue);
+		queue->insert(std::begin(*queue), std::begin(vect), std::end(vect));
 	}
 
 	void job_system::wait(job_system::job* job)

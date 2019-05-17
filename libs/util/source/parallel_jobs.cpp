@@ -16,11 +16,24 @@ namespace hades
 		constexpr auto t_main_thread_id = std::numeric_limits<thread_id>::max();
 	}
 
-	job_system::job::job(const job &other)
-		: function(other.function), parent_job(other.parent_job), unfinished_children(other.unfinished_children.load())
+	struct job
+	{
+		job() noexcept = default;
+		job(const job&);
+		job& operator=(const job&);
+
+		job_function function;
+		job* parent_job = nullptr;
+		job* rparent_job = nullptr;
+		std::atomic<types::int32> unfinished_children = 1;
+	};
+
+	job::job(const job &other)
+		: function(other.function), parent_job(other.parent_job), 
+		rparent_job(other.rparent_job), unfinished_children(other.unfinished_children.load())
 	{}
 
-	job_system::job& job_system::job::operator=(const job &other)
+	job& job::operator=(const job &other)
 	{
 		job j{ other };
 		std::swap(*this, j);
@@ -55,14 +68,14 @@ namespace hades
 		return _jobs.empty() && cv_lock.owns_lock();
 	}
 
-	job_system::job* job_system::create()
+	job* job_system::create()
 	{
 		lock_t guard{ _jobs_mutex };
 		_jobs.emplace_back(std::make_unique<job>());
 		return &*_jobs.back();
 	}
 
-	job_system::job* job_system::create_child(job* parent)
+	job* job_system::create_child(job* parent)
 	{
 		auto j = create();
 		j->parent_job = parent;
@@ -71,7 +84,14 @@ namespace hades
 		return j;
 	}
 
-	void job_system::run(job_system::job* j)
+	job* job_system::create_rchild(job* r)
+	{
+		auto j = create();
+		j->rparent_job = r;
+		return j;
+	}
+
+	void job_system::run(job* j)
 	{
 		const auto id = _thread_id();
 		auto [queue, lock] = _get_queue(id);
@@ -89,12 +109,18 @@ namespace hades
 		queue->insert(std::begin(*queue), std::begin(vect), std::end(vect));
 	}
 
-	void job_system::wait(job_system::job* job)
+	static bool is_finished(const job* j)
+	{
+		//if it's 0 or less than one, then the job has been completed
+		return j->unfinished_children <= 1;
+	}
+
+	void job_system::wait(job* job)
 	{
 		assert(job);
 		_condition.notify_all();
 
-		while (!_is_finished(job))
+		while (!is_finished(job))
 		{
 			//find another job to run
 			auto j = _find_job();
@@ -110,7 +136,7 @@ namespace hades
 		//clear all the thread queues
 		for (std::size_t i = 0; i < _thread_count; ++i)
 		{
-			lock_t qlk(_worker_queues_mutex[i]);
+			auto lock = std::scoped_lock{ _worker_queues_mutex[i] };
 			_worker_queues[i].clear();
 		}
 
@@ -174,19 +200,16 @@ namespace hades
 		}
 	}
 
-	bool job_system::_is_ready(const job *j) const
+	static bool is_ready(const job *j)
 	{
+		if (j->rparent_job)
+			return j->unfinished_children == 1 &&
+			is_finished(j->rparent_job);
 		//when children == 1, then only this jobs actual task is left to do.
 		return j->unfinished_children == 1;
 	}
 
-	bool job_system::_is_finished(const job *j) const
-	{
-		//if it's 0 or less than one, then the job has been completed
-		return j->unfinished_children <= 1;
-	}
-
-	void job_system::_finish(job *j)
+	static void finish(job *j)
 	{
 		assert(j);
 		//mark job as complete
@@ -194,7 +217,7 @@ namespace hades
 		if (c == 0)
 		{
 			if (j->parent_job)
-				_finish(j->parent_job);
+				finish(j->parent_job);
 		}
 	}
 
@@ -206,7 +229,7 @@ namespace hades
 		return { q, std::move(lock) };
 	}
 
-	job_system::job* job_system::_find_job()
+	job* job_system::_find_job()
 	{
 		job* j = nullptr;
 		const auto id = _thread_id();
@@ -230,7 +253,7 @@ namespace hades
 		return j;
 	}
 
-	job_system::job *job_system::_steal_job(thread_id id)
+	job *job_system::_steal_job(thread_id id)
 	{
 		//find the queue with the most jobs, and take half of them into our queue
 		//we know our queue must be empty
@@ -277,7 +300,7 @@ namespace hades
 	void job_system::_ready_wait(job *j)
 	{
 		assert(j);
-		while (!_is_ready(j))
+		while (!is_ready(j))
 		{
 			//find another job to run
 			auto j2 = _find_job();
@@ -289,7 +312,7 @@ namespace hades
 	void job_system::_execute(job *j)
 	{
 		assert(j);
-		if (j->unfinished_children > 1)
+		if (!is_ready(j))
 			_ready_wait(j);
 
 		if (j->function)
@@ -297,7 +320,7 @@ namespace hades
 			detail::t_current_job = j;
 			//if true, the job completed properly, if false, it wants another go later
 			if (j->function())
-				_finish(j);
+				finish(j);
 			else
 				run(j);//requeue the job
 
@@ -315,5 +338,26 @@ namespace hades
 	{
 		std::unique_lock<std::mutex> cv_lock(_condition_mutex, std::try_to_lock);
 		return cv_lock.owns_lock();
+	}
+
+	job* job_system::_create(job_function f)
+	{
+		auto job_ptr = create();
+		job_ptr->function = std::move(f);
+		return job_ptr;
+	}
+
+	job* job_system::_create_child(job *p, job_function f)
+	{
+		auto j = create_child(p);
+		j->function = std::move(f);
+		return j;
+	}
+
+	job* job_system::_create_rchild(job *p, job_function f)
+	{
+		auto j = create_rchild(p);
+		j->function = std::move(f);
+		return j;
 	}
 }

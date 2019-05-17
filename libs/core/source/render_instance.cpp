@@ -120,7 +120,7 @@ namespace hades
 		const auto on_create_parent = _jobs.create();
 		const auto new_systems = _game.get_new_systems();
 
-		std::vector<job_system::job*> jobs;
+		std::vector<job*> jobs;
 		for (const auto s : new_systems)
 		{
 			const auto j = _jobs.create_child(on_create_parent, s->on_create, render_job_data{

@@ -19,22 +19,12 @@ namespace hades
 		using thread_id = std::size_t;
 	}
 
+	struct job;
+	using job_function = std::function<bool(void)>;
+
 	class job_system
 	{
 	public:
-		using job_function = std::function<bool(void)>;
-
-		struct job
-		{
-			job() = default;
-			job(const job&);
-			job& operator=(const job&);
-			
-			job_function function;
-			job* parent_job = nullptr;
-			std::atomic<types::int32> unfinished_children = 1;
-		};
-
 		//choses the number of threads based on hardware support
 		job_system();
 		//if threads is positive, then that many threads will be used when wait is called
@@ -47,9 +37,17 @@ namespace hades
 		job* create();
 		template<typename Func, typename JobData>
 		job* create(Func, JobData);
+
+		//parent will not begin until all children are finished
 		job* create_child(job* parent);
 		template<typename Func, typename JobData>
 		job* create_child(job* parent, Func, JobData);
+
+		//reverse_children
+		//children will not begin until parent is finished
+		job* create_rchild(job* rparent);
+		template<typename Func, typename JobData>
+		job* create_rchild(job* rparent, Func, JobData);
 
 		void run(job*);
 		void run(const std::vector<job*>&);
@@ -68,15 +66,16 @@ namespace hades
 		thread_id _thread_id() const;
 		void _worker_init(thread_id);
 		void _worker_function(thread_id);
-		bool _is_ready(const job*) const;
-		bool _is_finished(const job*) const;
-		void _finish(job*);
 		locked_queue _get_queue(thread_id);
 		job* _find_job();
 		job* _steal_job(thread_id);
 		void _ready_wait(job*);
 		void _execute(job*);
 		bool _threads_ready() const;
+
+		job* _create(job_function);
+		job* _create_child(job*, job_function);
+		job* _create_rchild(job*, job_function);
 
 		thread_id _main_thread_id() const;
 		job* _main_current_job = nullptr;

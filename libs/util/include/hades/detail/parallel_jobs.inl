@@ -10,7 +10,7 @@ namespace hades
 	namespace detail
 	{
 		template<typename Func, typename JobData>
-		job_system::job_function create_job_invoker(job_system &j, Func f, JobData d)
+		job_function create_job_invoker(job_system &j, Func f, JobData d)
 		{
 			if constexpr(std::is_invocable_r_v<bool, Func, job_system&, JobData>)
 			{
@@ -45,22 +45,22 @@ namespace hades
 	}
 
 	template<typename Func, typename JobData>
-	inline job_system::job* job_system::create(Func func,
+	inline job* job_system::create(Func func,
 		JobData data)
 	{
-		//TODO: some static asserts here and in create_child
-		//create a new job and store it in the global jobstore
-		auto job_ptr = create();
-		job_ptr->function = detail::create_job_invoker(*this, func, data);
-		return job_ptr;
+		return _create(detail::create_job_invoker(*this, func, data));
 	}
 
 	template<typename Func, typename JobData>
-	inline job_system::job* job_system::create_child(job_system::job* parent,
+	inline job* job_system::create_child(job* parent,
 		Func func, JobData data)
 	{
-		auto j = create_child(parent);
-		j->function = detail::create_job_invoker(*this, func, data);
-		return j;
+		return _create_child(parent, detail::create_job_invoker(*this, func, data));
+	}
+
+	template<typename Func, typename JobData>
+	inline job* job_system::create_rchild(job* rparent, Func func, JobData data)
+	{
+		return _create_rchild(rparent, detail::create_job_invoker(*this, func, data));
 	}
 }

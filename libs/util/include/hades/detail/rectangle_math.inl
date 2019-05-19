@@ -104,10 +104,10 @@ namespace hades
 	std::array<point_t<T>, 4> corners(rect_t<T> r)
 	{
 		return {
-			point_t{r.x, r.y},
-			point_t{r.x + r.width, r.y},
-			point_t{r.x + r.width, r.y + r.height},
-			point_t{r.x, r.y + r.height}
+			point_t<T>{r.x, r.y},
+			point_t<T>{r.x + r.width, r.y},
+			point_t<T>{r.x + r.width, r.y + r.height},
+			point_t<T>{r.x, r.y + r.height}
 		};
 	}
 

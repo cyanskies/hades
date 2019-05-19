@@ -12,10 +12,10 @@ namespace hades::line
 		const auto c = corners(r);
 
 		return {
-			line_t<T>{ c[rect_corners::bottom_left], c[rect_corners::top_left] }, //left
-			line_t<T>{ c[rect_corners::bottom_right], c[rect_corners::top_right] }, //right
-			line_t<T>{ c[rect_corners::top_right], c[rect_corners::top_left] }, //top
-			line_t<T>{ c[rect_corners::bottom_right], c[rect_corners::bottom_left] }  //bottom
+			line_t<T>{ c[static_cast<std::size_t>(rect_corners::bottom_left)], c[static_cast<std::size_t>(rect_corners::top_left)] }, //left
+			line_t<T>{ c[static_cast<std::size_t>(rect_corners::bottom_right)], c[static_cast<std::size_t>(rect_corners::top_right)] }, //right
+			line_t<T>{ c[static_cast<std::size_t>(rect_corners::top_right)], c[static_cast<std::size_t>(rect_corners::top_left)] }, //top
+			line_t<T>{ c[static_cast<std::size_t>(rect_corners::bottom_right)], c[static_cast<std::size_t>(rect_corners::bottom_left)] }  //bottom
 		};
 	}
 

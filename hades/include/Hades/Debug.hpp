@@ -7,11 +7,13 @@
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/System/Vector2.hpp"
 
+#include "Hades/drawable.hpp"
+
 namespace hades
 {
 	namespace debug
 	{
-		class Overlay : public sf::Drawable
+		class Overlay : public drawable
 		{
 		public:
 			explicit Overlay(bool fullscreen = false);
@@ -28,11 +30,13 @@ namespace hades
 			//NOTE: failing to override this function if fullscreen == true will
 			//prevent your overlay from being rendered
 			virtual void setFullscreenSize(sf::Vector2f);
+
+			virtual void update();
 			//draws the overlay to the screen.
 			//if fullscreen is true, then the overlay must provide it's own view
 			//otherwise the view is already arranged for the overlay
 			//and is the size returned by getSize()
-			virtual void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override = 0;
+			void draw(time_duration, sf::RenderTarget&, sf::RenderStates = {}) override = 0;
 
 			//if fullscreen then the size is specified by the window manager
 			bool fullscreen() const;
@@ -43,13 +47,14 @@ namespace hades
 			mutable bool _invalid;
 		};
 
-		class OverlayManager : public sf::Drawable
+		class OverlayManager : public drawable
 		{
 		public:
 			Overlay* createOverlay(std::unique_ptr<Overlay>);
 			Overlay* destroyOverlay(Overlay*);
 
-			void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
+			void update();
+			void draw(time_duration, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) override;
 
 			void setWindowSize(sf::Vector2u);
 

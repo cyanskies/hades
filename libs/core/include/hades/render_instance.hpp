@@ -21,7 +21,7 @@ namespace hades
 	private:
 		time_point _prev_frame{ nanoseconds{-1} };
 		render_implementation _game;
-		job_system _jobs;
+		job_system _jobs; //TODO: get threadcount from console
 		std::unordered_map<unique_id, std::any> _system_data;
 	};
 }

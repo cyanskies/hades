@@ -22,6 +22,8 @@ namespace hades
 	struct job;
 	using job_function = std::function<bool(void)>;
 
+	job* get_parent(job*);
+
 	class job_system
 	{
 	public:
@@ -48,6 +50,10 @@ namespace hades
 		job* create_rchild(job* rparent);
 		template<typename Func, typename JobData>
 		job* create_rchild(job* rparent, Func, JobData);
+
+		job* create_child_rchild(job* parent, job* rparent);
+		template<typename Func, typename JobData>
+		job* create_child_rchild(job* parent, job* rparent, Func, JobData);
 
 		void run(job*);
 		void run(const std::vector<job*>&);
@@ -76,6 +82,7 @@ namespace hades
 		job* _create(job_function);
 		job* _create_child(job*, job_function);
 		job* _create_rchild(job*, job_function);
+		job* _create_child_rchild(job*, job*, job_function);
 
 		thread_id _main_thread_id() const;
 		job* _main_current_job = nullptr;

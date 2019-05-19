@@ -63,4 +63,10 @@ namespace hades
 	{
 		return _create_rchild(rparent, detail::create_job_invoker(*this, func, data));
 	}
+
+	template<typename Func, typename JobData>
+	inline job* job_system::create_child_rchild(job* parent, job* rparent, Func f, JobData d)
+	{
+		return _create_child_rchild(parent, rparent, detail::create_job_invoker(*this, f, d));
+	}
 }

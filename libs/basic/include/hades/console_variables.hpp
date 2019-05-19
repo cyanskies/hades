@@ -42,6 +42,9 @@ namespace hades
 		constexpr auto video_height = "vid_height"; // resolution height
 		constexpr auto video_depth = "vid_depth"; // colour bit depth
 
+		//debug vars
+		constexpr auto fps = "fps"; // 0 = off; 1 = show frametime in ms; 2 = show fps
+
 		//server host and connection settings
 
 		namespace default_value
@@ -51,11 +54,19 @@ namespace hades
 			constexpr auto client_tick_max = 150;
 			constexpr auto client_previous_frametime = -1.f;
 
+			constexpr auto file_portable = false;
+			constexpr auto file_deflate = true;
+
+			constexpr auto console_charsize = 15;
+			constexpr auto console_fade = 180;
+
 			constexpr auto video_fullscreen = false;
 			constexpr auto video_resizable = false;
             constexpr int32 video_width = 800;
             constexpr int32 video_height = 600;
             constexpr int32 video_depth = 32;
+
+			constexpr int32 fps = 0;
 		}
 	}
 }

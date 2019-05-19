@@ -23,10 +23,21 @@ namespace hades
 		console::create_property(cvars::file_portable,	file_defaults);
 		console::create_property(cvars::file_deflate,	!file_defaults);
 
+		console::create_property(cvars::console_charsize, cvars::default_value::console_charsize);
+		console::create_property(cvars::console_fade, cvars::default_value::console_fade);
+
 		console::create_property(cvars::video_fullscreen,	cvars::default_value::video_fullscreen);
 		console::create_property(cvars::video_resizable,	cvars::default_value::video_resizable);
 		console::create_property(cvars::video_width,		cvars::default_value::video_width);
 		console::create_property(cvars::video_height,		cvars::default_value::video_height);
 		console::create_property(cvars::video_depth,		cvars::default_value::video_depth);
+
+		#ifdef NDEBUG
+			constexpr auto fps_default = cvars::default_value::fps;
+		#else
+			constexpr auto fps_default = 1;
+		#endif
+
+		console::create_property(cvars::fps, fps_default);
 	}
 }

@@ -13,6 +13,7 @@
 #include "hades/any_map.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/exceptions.hpp"
+#include "hades/input.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/shared_guard.hpp"
 #include "hades/shared_map.hpp"

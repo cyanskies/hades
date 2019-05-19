@@ -5,6 +5,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/System/String.hpp"
 
+#include "hades/console_variables.hpp"
 #include "hades/data.hpp"
 #include "Hades/System.hpp"
 #include "Hades/Utility.hpp"
@@ -17,8 +18,8 @@ namespace hades
 	ConsoleView::ConsoleView() : Overlay(true)
 	{
 		_font = data::get<resources::font>(resources::default_font_id());
-		_fade = console::get_int("con_fade", 180);
-		_charSize = console::get_int("con_charactersize", 15);
+		_fade = console::get_int(cvars::console_fade, cvars::default_value::console_fade);
+		_charSize = console::get_int(cvars::console_charsize, cvars::default_value::console_charsize);
 	}
 
 	void ConsoleView::setFullscreenSize(sf::Vector2f size)
@@ -26,18 +27,18 @@ namespace hades
 		_reinit(size);
 	}
 
-	void ConsoleView::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	void ConsoleView::draw(time_duration, sf::RenderTarget& target, sf::RenderStates states)
 	{
 		target.setView(_view);
-		target.draw(_backdrop);
+		target.draw(_backdrop, states);
 
 		target.setView(_textView);
 		for (auto &t : _previousOutput)
-			target.draw(t);
+			target.draw(t, states);
 
 		target.setView(_view);
-		target.draw(_editLine);
-		target.draw(_currentInput);
+		target.draw(_editLine, states);
+		target.draw(_currentInput, states);
 	}
 
 	sf::View setTextView(const sf::Text &last, sf::Vector2f size, float lineHeight, float extraHeight)
@@ -46,7 +47,7 @@ namespace hades
 			last.getGlobalBounds().height + lineHeight * 2 - extraHeight, size.x, size.y });
 	}
 
-	unsigned int ValidCharSize(hades::console::property_int char_size)
+	static unsigned int ValidCharSize(hades::console::property_int char_size)
 	{
 		const auto n = char_size->load();
 		if (n < 0)
@@ -152,7 +153,7 @@ namespace hades
 		_textView = setTextView(_previousOutput.back(), size, static_cast<float>(offset), _editLine.getSize().y);
 	}
 
-	float GetTextHeight(const std::vector<sf::Text> &text)
+	static float GetTextHeight(const std::vector<sf::Text> &text)
 	{
 		float height = 0.f;
 

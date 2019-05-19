@@ -7,6 +7,7 @@ set(HADES_SRC
 	Console.cpp
 	ConsoleView.cpp
 	data_system.cpp
+	fps_display.cpp
 	main.cpp
 	mission.cpp
 	RenderInstance.cpp

@@ -17,24 +17,19 @@
 
 namespace hades
 {
-	constexpr auto console_character_size = "con_charactersize";
-	constexpr auto console_fade = "con_fade";
-	constexpr auto console_character_size_d = 15;
-	constexpr auto console_fade_d = 180;
-
 	class ConsoleWrongEvent : public std::logic_error
 	{
 	public:
 		using std::logic_error::logic_error;
 	};
 
-	class ConsoleView : public debug::Overlay
+	class ConsoleView final : public debug::Overlay
 	{
 	public:
 		ConsoleView();
 
 		void setFullscreenSize(sf::Vector2f) override;
-		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) const override;
+		void draw(time_duration, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) override;
 
 		void update();
 		void enterText(const sf::Event &context);

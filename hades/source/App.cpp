@@ -11,6 +11,7 @@
 #include "hades/core_resources.hpp"
 #include "Hades/Data.hpp"
 #include "Hades/Debug.hpp"
+#include "Hades/fps_display.hpp"
 #include "Hades/Logging.hpp"
 #include "hades/parser.hpp"
 #include "Hades/Properties.hpp"
@@ -258,8 +259,8 @@ namespace hades
 					_consoleView->update();
 
 				//draw overlays
-				_window.draw(_overlayMan);
-
+				_overlayMan.draw(frame_time, _window);
+				
 				_window.display();
 			}
 		}
@@ -521,6 +522,23 @@ namespace hades
 			};
 
 			_console.add_function("uncompress", uncompress_dir, true);
+		}
+
+		//debug funcs
+		{
+			//fps display
+			auto fps = [](const argument_list &args) {
+				if (args.size() != 1)
+					throw invalid_argument("fps function expects one argument");
+
+				const auto param = args[0];
+				const auto int_param = from_string<int32>(param);
+				create_fps_overlay(int_param);
+
+				return true;
+			};
+
+			_console.add_function("show_fps", fps, true);
 		}
 	}
 }//hades

@@ -1,5 +1,5 @@
 #ifndef HADES_CORE_CURVES_HPP
-#define HADES_CORE_CURVE_HPP
+#define HADES_CORE_CURVES_HPP
 
 #include <tuple>
 

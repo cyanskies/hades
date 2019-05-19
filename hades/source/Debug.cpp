@@ -1,6 +1,7 @@
 #include "Hades/Debug.hpp"
 
 #include <algorithm>
+#include <cassert>
 
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/View.hpp"
@@ -25,6 +26,10 @@ namespace hades
 		void Overlay::setFullscreenSize(sf::Vector2f)
 		{
 			_invalid = true;
+		}
+
+		void Overlay::update()
+		{
 		}
 
 		bool Overlay::fullscreen() const
@@ -61,9 +66,17 @@ namespace hades
 			return ptr;
 		}
 
-		void OverlayManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
+		void OverlayManager::update()
+		{
+			for (auto& o : _overlays)
+				o->update();
+		}
+
+		void OverlayManager::draw(time_duration dt, sf::RenderTarget& target, sf::RenderStates states)
 		{
 			types::uint32 nextDrawY = 0;
+
+			const auto display = static_cast<sf::Vector2f>(target.getSize());
 
 			for (auto &overlay : _overlays)
 			{
@@ -74,14 +87,19 @@ namespace hades
 				{
 					//arrange the next view
 					const auto size = overlay->getSize();
-					if (size == sf::Vector2f())
-						continue;
 
-					sf::View v{ {0.f, static_cast<float>(nextDrawY), size.x, size.y} };
+					sf::View v{ {0.f, 0.f, size.x, size.y} };
+					v.setViewport({
+						0.f, nextDrawY / display.y,
+						size.x / display.x,
+						size.y / display.y
+						}
+					);
+
 					target.setView(v);
 					nextDrawY += static_cast<types::uint32>(size.y);
 				}
-				overlay->draw(target, states);
+				overlay->draw(dt, target, states);
 			}
 		}
 

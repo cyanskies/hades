@@ -92,6 +92,7 @@ void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration 
 	_current_time += deltaTime;
 	_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
 	_drawable_output.prepare();
+	target.setView(_view);
 	target.draw(_drawable_output);
 }
 

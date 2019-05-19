@@ -128,17 +128,12 @@ namespace hades
 				});
 
 			jobs.emplace_back(j);
-			
 		}
-
-		_jobs.run(jobs);
-		_jobs.wait(on_create_parent);
 
 		const auto systems = _game.get_systems();
 
 		//call on_connect for new entities
 		const auto on_connect_parent = _jobs.create();
-		jobs.clear();
 		for (const auto s : systems)
 		{
 			const auto ents = get_added_entites(s.attached_entities, _prev_frame, t);
@@ -146,19 +141,15 @@ namespace hades
 			 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child(on_connect_parent, s.system->on_connect,
+				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, s.system->on_connect,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);
 			}
 		}
 
-		_jobs.run(jobs);
-		_jobs.wait(on_connect_parent);
-
 		//call on_disconnect for removed entities
 		const auto on_disconnect_parent = _jobs.create();
-		jobs.clear();
 		for (const auto s : systems)
 		{
 			const auto ents = get_removed_entites(s.attached_entities, _prev_frame, t);
@@ -166,19 +157,15 @@ namespace hades
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child(on_disconnect_parent, s.system->on_disconnect,
+				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, s.system->on_disconnect,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);
 			}
 		}
 
-		_jobs.run(jobs);
-		_jobs.wait(on_disconnect_parent);
-
 		//call on_tick for systems
 		const auto on_tick_parent = _jobs.create();
-		jobs.clear();
 		for (auto& s : systems)
 		{
 			const auto entities_curve = s.attached_entities.get();
@@ -188,7 +175,7 @@ namespace hades
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child(on_tick_parent, s.system->tick,
+				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, s.system->tick,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);

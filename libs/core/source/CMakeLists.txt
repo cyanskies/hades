@@ -6,6 +6,7 @@ set(HADES_CORE_SRC
 	archive.cpp
 	background.cpp
 	camera.cpp
+	console_functions.cpp
 	core_curves.cpp
 	core_resources.cpp
 	draw_clamp.cpp
@@ -43,8 +44,10 @@ set(HADES_CORE_SRC
 	../include/hades/archive.hpp
 	../include/hades/background.hpp
 	../include/hades/camera.hpp
+	../include/hades/console_functions.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
+	../include/hades/drawable.hpp
 	../include/hades/draw_clamp.hpp
 	../include/hades/export_curves.hpp
 	../include/hades/files.hpp
@@ -93,8 +96,10 @@ source_group("Headers" FILES
 	../include/hades/archive.hpp
 	../include/hades/background.hpp
 	../include/hades/camera.hpp
+	../include/hades/console_functions.hpp
 	../include/hades/core_curves.hpp
 	../include/hades/core_resources.hpp
+	../include/hades/drawable.hpp
 	../include/hades/draw_clamp.hpp
 	../include/hades/export_curves.hpp
 	../include/hades/files.hpp

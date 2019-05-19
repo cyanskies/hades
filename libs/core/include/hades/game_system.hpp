@@ -9,8 +9,7 @@
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
-#include "hades/input.hpp"
-#include "hades/parallel_jobs.hpp"
+//#include "hades/input.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/shared_guard.hpp"
 #include "hades/timers.hpp"
@@ -21,6 +20,7 @@ namespace hades
 
 	//fwd declaration
 	class game_interface;
+	class job_system;
 	
 	class system_error : public runtime_error
 	{

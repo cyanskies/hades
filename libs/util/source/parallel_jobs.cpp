@@ -91,6 +91,13 @@ namespace hades
 		return j;
 	}
 
+	job* job_system::create_child_rchild(job* parent, job* rparent)
+	{
+		auto j = create_child(parent);
+		j->rparent_job = rparent;
+		return j;
+	}
+
 	void job_system::run(job* j)
 	{
 		const auto id = _thread_id();
@@ -136,7 +143,7 @@ namespace hades
 		//clear all the thread queues
 		for (std::size_t i = 0; i < _thread_count; ++i)
 		{
-			auto lock = std::scoped_lock{ _worker_queues_mutex[i] };
+			const auto lock = std::scoped_lock{ _worker_queues_mutex[i] };
 			_worker_queues[i].clear();
 		}
 
@@ -359,5 +366,18 @@ namespace hades
 		auto j = create_rchild(p);
 		j->function = std::move(f);
 		return j;
+	}
+
+	job* job_system::_create_child_rchild(job *p, job *rp, job_function f)
+	{
+		auto j = create_child_rchild(p, rp);
+		j->function = std::move(f);
+		return j;
+	}
+
+	job* get_parent(job *j)
+	{
+		assert(j);
+		return j->parent_job;
 	}
 }

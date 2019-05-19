@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "hades/data.hpp"
+#include "hades/game_system.hpp"
 #include "hades/parallel_jobs.hpp"
 #include "hades/core_resources.hpp"
 #include "hades/sf_time.hpp"
@@ -15,48 +16,79 @@ namespace hades
 
 	void game_instance::tick(time_duration dt)
 	{
-		//take a copy of the current active systems and entity attachments, 
-		//changes to this wont take effect untill the next tick
-		const auto systems = _game.get_systems();
+		//TODO: this function pattern is used here and in render_instance,
+		//		would it be possible to bring it out into a template?
+		assert(_jobs.ready());
+		const auto on_create_parent = _jobs.create();
+		const auto new_systems = _game.get_new_systems();
 
-		//NOTE: frame multithreading begins
-		// anything that isn't atomic or protected by a lock
-		// must be read only
-
-		const auto parent_job = _jobs.create();
-
-		//create jobs for all systems to work on their entities
-		for(const auto &s : systems)
+		std::vector<job*> jobs;
+		for (const auto s : new_systems)
 		{
-			if (!s.system->tick)
-				continue;
-
-			assert(s.system);
-			const auto entities = s.attached_entities.get().get(_current_time);
-
-			for (const auto ent : entities)
-			{
-				const auto j = _jobs.create_child(parent_job, s.system->tick, system_job_data{
-					ent,
-					s.system->id,
-					&_game,
-					nullptr, //mission data //TODO:
-					_current_time,
-					dt
+			const auto j = _jobs.create_child(on_create_parent, s->on_create, system_job_data{
+				 bad_entity, &_game, nullptr, _current_time, dt, _game.get_system_data(s->id)
 				});
 
-				_jobs.run(j);
+			jobs.emplace_back(j);
+		}
+
+		const auto systems = _game.get_systems();
+
+		//call on_connect for new entities
+		const auto on_connect_parent = _jobs.create();
+		for (const auto &s : systems)
+		{
+			const auto ents = get_added_entites(s.attached_entities, _current_time, _current_time + dt);
+			auto& sys_data = _game.get_system_data(s.system->id);
+
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, s.system->on_connect,
+					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
+
+				jobs.emplace_back(j);
 			}
 		}
 
-		_jobs.wait(parent_job);
+		//call on_disconnect for removed entities
+		const auto on_disconnect_parent = _jobs.create();
+		for (const auto &s : systems)
+		{
+			const auto ents = get_removed_entites(s.attached_entities, _current_time, _current_time + dt);
+			auto& sys_data = _game.get_system_data(s.system->id);
 
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, s.system->on_disconnect,
+					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
+
+				jobs.emplace_back(j);
+			}
+		}
+
+		//call on_tick for systems
+		const auto on_tick_parent = _jobs.create();
+		for (const auto &s : systems)
+		{
+			const auto entities_curve = s.attached_entities.get();
+			const auto ents = entities_curve.get(_current_time);
+
+			auto& sys_data = _game.get_system_data(s.system->id);
+
+			for (const auto e : ents)
+			{
+				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, s.system->tick,
+					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
+
+				jobs.emplace_back(j);
+			}
+		}
+
+		_jobs.run(jobs);
+		_jobs.wait(on_tick_parent);
 		_jobs.clear();
 
-		//NOTE: frame multithreading ends
-
-		//advance the game clock
-		//this is the only time the clock can be changed
+		_game.clear_new_systems();
 		_current_time += dt;
 	}
 

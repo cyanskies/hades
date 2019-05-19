@@ -32,8 +32,6 @@ namespace hades
 	{
 		//entity to run on
 		entity_id entity = bad_entity;
-		//unique id of this system TODO: is this needed?
-		unique_id system = unique_id::zero;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -46,6 +44,9 @@ namespace hades
 		//the current time, and the time to advance by(t + dt)
 		time_point current_time;
 		time_duration dt;
+
+		//system data
+		std::any& system_data;
 	};
 
 	namespace resources

@@ -9,6 +9,8 @@
 
 namespace hades::detail
 {
+	//TODO: compilers have flags fot fast vd precise floating point math
+	//		we should toggle those and use std::sqrt rather than this tricky shit
 	//NOTE: Fast Inverse Square Root
 	// from: https://en.wikipedia.org/wiki/Fast_inverse_square_root
 	template<typename Float32>

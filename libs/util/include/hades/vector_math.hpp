@@ -10,7 +10,7 @@
 namespace hades::detail
 {
 	template<typename T, typename U>
-	constexpr bool vector_t_good_tuple_f()
+	constexpr bool vector_t_good_tuple_f() noexcept
 	{
 		if constexpr (is_tuple_v<U>)
 		{
@@ -28,6 +28,15 @@ namespace hades::detail
 
 namespace hades
 {
+	// fast reciprocal square root
+	//computes fast inverse square root
+	//eg: 1/sqrt(x)
+	//only valid for 32 and 64bit iec559 and ieee754
+	template<typename Float,
+		typename std::enable_if_t<std::is_floating_point_v<Float>&&
+		std::numeric_limits<Float>::is_iec559, int> = 0>
+	Float frsqrt(Float) noexcept;
+
 	template<typename T>
 	struct vector_t
 	{
@@ -55,22 +64,22 @@ namespace hades
 	using vector_float = vector_t<float>;
 
 	template<typename T>
-	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs);
+	constexpr vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> operator*(const vector_t<T> &lhs, T rhs);
+	constexpr vector_t<T> operator*(const vector_t<T> &lhs, T rhs) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs);
+	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs) noexcept;
 
 	//TODO: this should be pol_vector_t
 	template<typename T>
@@ -89,53 +98,53 @@ namespace hades
 	{
 		//returns the length of the vector
 		template<typename T>
-		constexpr T magnitude(vector_t<T>);
+		T magnitude(vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr T magnitude_squared(vector_t<T> v);
+		constexpr T magnitude_squared(vector_t<T> v) noexcept;
 
 		//returns the angle of the vector
 		template<typename T>
-		constexpr T angle(vector_t<T>);
+		T angle(vector_t<T>) noexcept;
 
 		template<typename T>
-		T x_comp(rad_vector_t<T>);
+		constexpr T x_comp(rad_vector_t<T>) noexcept;
 
 		template<typename T>
-		T y_comp(rad_vector_t<T>);
+		constexpr T y_comp(rad_vector_t<T>) noexcept;
 
 		//changes the length of a vector to match the provided length
 		template<typename T>
-		constexpr vector_t<T> resize(vector_t<T>, T length);
+		vector_t<T> resize(vector_t<T>, T length) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> unit(vector_t<T>);
+		vector_t<T> unit(vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr T distance(vector_t<T>, vector_t<T>);
+		T distance(vector_t<T>, vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> reverse(vector_t<T>);
+		constexpr vector_t<T> reverse(vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> abs(vector_t<T>);
+		vector_t<T> abs(vector_t<T>) noexcept;
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>
-		constexpr vector_t<T> perpendicular(vector_t<T>);
+		constexpr vector_t<T> perpendicular(vector_t<T>) noexcept;
 
 		//returns a vector that points 280 degrees of the origional vector
 		template<typename T>
-		constexpr vector_t<T> perpendicular_reverse(vector_t<T>);
+		constexpr vector_t<T> perpendicular_reverse(vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max);
+		constexpr vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max) noexcept;
 
 		template<typename T>
-		constexpr T dot(vector_t<T> a, vector_t<T> b);
+		constexpr T dot(vector_t<T> a, vector_t<T> b) noexcept;
 
 		template <typename T>
-		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis);
+		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis) noexcept;
 	}
 }
 

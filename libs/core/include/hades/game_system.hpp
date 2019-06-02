@@ -195,6 +195,40 @@ namespace hades
 	{
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
+
+	//functions for managed 
+
+	namespace game
+	{
+		//get_system_data<>
+	}
+
+	namespace game::mission
+	{
+		//get_curve_x
+		//set_curve_x
+		//get_level_index(level_id)
+	}
+
+	namespace game::level
+	{
+		//get_curve_x
+		//set_curve_x
+
+		//get_curve_x(levelid, x)
+		//set_curve_x(levelid, x;
+	}
+
+	namespace render
+	{
+		//get_system_data
+	}
+
+	namespace render::mission
+	{ }
+
+	namespace render::level
+	{ }
 }
 
 #include "hades/detail/game_system.inl"

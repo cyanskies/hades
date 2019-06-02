@@ -14,6 +14,7 @@ set(HADES_UTIL_SRC
 	../include/hades/parallel_jobs.hpp
 	../include/hades/poly_math.hpp
 	../include/hades/rectangle_math.hpp
+	../include/hades/shared_any_map.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/shared_map.hpp
 	../include/hades/strong_typedef.hpp
@@ -33,6 +34,7 @@ set(HADES_UTIL_SRC
 	../include/hades/detail/parallel_jobs.inl
 	../include/hades/detail/poly_math.inl
 	../include/hades/detail/rectangle_math.inl
+	../include/hades/detail/shared_any_map.inl
 	../include/hades/detail/shared_map.inl
 	../include/hades/detail/table.inl
 	../include/hades/detail/transaction.inl

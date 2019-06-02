@@ -130,6 +130,14 @@ namespace hades
 	}
 
 	template<typename Key>
+	inline void shared_any_map<Key>::clear()
+	{
+		const auto lock = std::scoped_lock{ _map_mutex };
+		_map.clear();
+		return;
+	}
+
+	template<typename Key>
 	template<typename T>
 	inline shared_any_map<Key>::lock_return shared_any_map<Key>::exchange_lock(key_type id, const T&& expected) const
 	{

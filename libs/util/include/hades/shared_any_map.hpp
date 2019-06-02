@@ -2,7 +2,6 @@
 #define HADES_SHARED_ANY_MAP_HPP
 
 #include <any>
-#include <cstddef> //for size_t
 #include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
@@ -62,6 +61,7 @@ namespace hades
 		//slow during system update
 		//should never really be done anyway
 		void erase(key_type id);
+		void clear();
 
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value
 		template<typename T>

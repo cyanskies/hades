@@ -2,9 +2,9 @@
 #define HADES_SHARED_ANY_MAP_HPP
 
 #include <any>
-#include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
+#include <unordered_map>
 
 #include "hades/shared_map.hpp"
 #include "hades/transactional.hpp"

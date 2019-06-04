@@ -9,7 +9,7 @@ namespace hades
 	{
 		const auto lock = std::scoped_lock(other._map_mutex);
 
-		for (auto&& elm : _map)
+		for (auto&& elm : other._map)
 			if (!std::shared_lock<mutex_type>{ elm.second.mut, std::try_to_lock })
 				throw shared_map_locked_elements{ "Cannot copy shared any map while some elements are locked" };
 
@@ -22,6 +22,10 @@ namespace hades
 		const auto lock = std::scoped_lock(_map_mutex, other._map_mutex);
 
 		for (auto&& elm : _map)
+			if (!std::shared_lock<mutex_type>{ elm.second.mut, std::try_to_lock })
+				throw shared_map_locked_elements{ "Cannot copy shared any map while some elements are locked" };
+
+		for (auto&& elm : other._map)
 			if (!std::shared_lock<mutex_type>{ elm.second.mut, std::try_to_lock })
 				throw shared_map_locked_elements{ "Cannot copy shared any map while some elements are locked" };
 

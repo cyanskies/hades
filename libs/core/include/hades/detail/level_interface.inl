@@ -28,7 +28,7 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline std::any& common_implementation<SystemType>::get_system_data(unique_id key)
+	inline system_data_t& common_implementation<SystemType>::get_system_data(unique_id key)
 	{
 		return _system_data[key];
 	}

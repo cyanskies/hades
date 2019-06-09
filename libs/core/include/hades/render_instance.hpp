@@ -1,7 +1,7 @@
 #ifndef HADES_RENDER_INSTANCE_HPP
 #define HADES_RENDER_INSTANCE_HPP
 
-#include<unordered_map>
+#include <unordered_map>
 
 #include "hades/export_curves.hpp"
 #include "hades/level_interface.hpp"
@@ -22,7 +22,7 @@ namespace hades
 		time_point _prev_frame{ nanoseconds{-1} };
 		render_implementation _game;
 		job_system _jobs; //TODO: get threadcount from console
-		std::unordered_map<unique_id, std::any> _system_data;
+		//std::unordered_map<unique_id, system_data_t> _system_data;
 	};
 }
 

@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "hades/data.hpp"
+#include "hades/transaction.hpp"
 
 namespace hades
 {
@@ -70,5 +71,68 @@ namespace hades
 	inline void make_render_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
 	{
 		detail::make_system<resources::render_system, render_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
+	}
+
+	namespace detail
+	{
+		thread_local render_job_data* render_data_ptr = nullptr;
+		thread_local transaction render_transaction;
+		thread_local bool render_data_async = true;
+	}
+
+	namespace render
+	{
+		template<typename T>
+		T get_system_value(unique_id key)
+		{
+			assert(detail::render_data_ptr);
+
+			if (detail::render_data_async)
+				return detail::render_transaction.get(detail::render_data_ptr->system_data, key);
+			else
+				return detail::render_data_ptr->system_data.get_no_async(key);
+		}
+
+		template<typename T>
+		void set_system_value(unique_id, T&& value)
+		{
+			assert(detail::render_data_ptr);
+
+			if (detail::render_data_async)
+				return detail::render_data_ptr->system_data.get(key);
+			else
+				return detail::render_data_ptr->system_data.get_no_async(key);
+		}
+	}
+
+	namespace render::level
+	{
+		template<typename T>
+		T get_curve(curve_index_t i)
+		{
+			assert(detail::render_data_ptr);
+
+			auto &curves = detail::render_data_ptr->level_data->get_curves();
+			auto &curve_map = get_curve_list<T>(curves);
+
+			if (detail::render_data_async)
+				return detail::render_transaction.get(i, curve_map);
+			else
+				return curve_map.get(i);
+		}
+
+		template<typename T>
+		void set_curve(curve_index_t i, T&& value)
+		{
+			assert(detail::render_data_ptr);
+
+			auto& curves = detail::render_data_ptr->level_data->get_curves();
+			auto& curve_map = get_curve_list<std::decay_t<T>>(curves);
+
+			if (detail::render_data_async)
+				return detail::render_transaction.set(curve_map, i, std::forward(value);
+			else
+				return curve_map.set(i, std::forward(value));
+		}
 	}
 }

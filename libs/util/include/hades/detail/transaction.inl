@@ -196,4 +196,95 @@ namespace hades
 		entry_t &entry = std::any_cast<entry_t&>(map_entry->data);
 		entry.new_value = std::forward(value);
 	}
+
+	namespace any_detail
+	{
+		template< typename Ty, typename Key, template<typename> typename Map>
+		struct map_type
+		{
+			Key key;
+			Map<Key>* ref;
+			Ty starting_value;
+			Ty new_value;
+			typename Map<Key>::exchange_token lock_token;
+		};
+
+		template<typename Ty, typename Key, template<typename> typename Map>
+		typename transaction::commit_entry* find_map(const Key& k, const Map<Key>& m, std::vector<transaction::commit_entry>& v)
+		{
+			using map_t = map_type<Ty, Key, Map>;
+
+			for (auto& elm : v)
+			{
+				const map_t* val = std::any_cast<map_t>(&elm.data);
+				if (val &&
+					std::tie(&val->ref, val->key) == std::tie(&m, k))
+				{
+					return &elm;
+				}
+			}
+
+			return nullptr;
+		}
+	}
+
+	template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
+	inline Ty hades::transaction::get(const Key& key, TransactionalAnyMap<Key>& map)
+	{
+		using map_t = TransactionalAnyMap<Key>;
+
+		static_assert(is_transactional_v<map_t>);
+		assert(!any_detail::find_map<Ty>(key, map, _data));
+
+		using entry_t = any_detail::map_type<Ty, Key, TransactionalAnyMap>;
+
+		//make new entry
+		auto entry = entry_t{ key, &map };
+		const auto out = entry.new_value = entry.starting_value = transactional::get(key, map);
+
+		const auto get_lock = [](std::any& a)->bool {
+			entry_t& entry = std::any_cast<entry_t&>(a);
+			auto [success, lock] = transactional::exchange_lock(entry.key,
+				entry.starting_value, *entry.ref);
+			entry.lock_token = std::move(lock);
+			return success;
+		};
+
+		const auto release_lock = [](std::any& a)->void {
+			entry_t& entry = std::any_cast<entry_t&>(a);
+			transactional::exchange_release(entry.key,
+				*entry.ref, std::move(entry.lock_token));
+			entry.lock_token = decltype(entry.lock_token){};
+		};
+
+		const auto resolve_lock = [](std::any& a)->void {
+			entry_t& entry = std::any_cast<entry_t&>(a);
+			transactional::exchange_resolve(entry.key, *entry.ref,
+				std::move(entry.new_value), std::move(entry.lock_token));
+			entry.lock_token = decltype(entry.lock_token){};
+		};
+
+		commit_entry c{
+			get_lock,
+			release_lock,
+			resolve_lock,
+			std::move(entry);
+		};
+
+		_data.emplace_back(std::move(c));
+
+		return out;
+	}
+
+	template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
+	inline void hades::transaction::set(TransactionalAnyMap<Key>&  map, const Key& key, Ty&& value)
+	{
+		commit_entry* map_entry = any_detail::find_map<Ty>(key, map, _data);
+		assert(map_entry);
+
+		using entry_t = any_detail::map_type<Ty, Key, TransactionalAnyMap>;
+
+		entry_t& entry = std::any_cast<entry_t&>(map_entry->data);
+		entry.new_value = std::forward(value);
+	}
 }

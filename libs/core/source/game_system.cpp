@@ -15,11 +15,6 @@ namespace hades
 		static constexpr auto name = "simple-renderer"sv;
 		static unique_id id = unique_id::zero;
 
-		struct system_data final
-		{
-			shared_map<entity_id, render_interface::sprite_id> sprite_ids;
-		};
-
 		struct entity_info
 		{
 			vector_float position;
@@ -60,16 +55,16 @@ namespace hades
 		static void on_create(hades::job_system&, hades::render_job_data& d)
 		{
 			assert(d.entity == bad_entity);
-			d.system_data = system_data{};
+			//d.system_data = system_data{};
 		}
 
 		static void on_connect(hades::job_system&, hades::render_job_data& d)
 		{
 			const auto entity = d.entity;
 			assert(entity != bad_entity);
-			auto &dat = std::any_cast<system_data&>(d.system_data);
+			//auto &dat = std::any_cast<system_data&>(d.system_data);
 
-			assert(!dat.sprite_ids.exists(d.entity));
+			//assert(!dat.sprite_ids.exists(d.entity));
 
 			const auto ent = get_entity_info(d);
 
@@ -80,12 +75,12 @@ namespace hades
 				d.current_time, render_interface::sprite_layer{},
 				ent.position, ent.size);
 
-			dat.sprite_ids.create(d.entity, sprite_id);
+			//dat.sprite_ids.create(d.entity, sprite_id);
 		}
 
 		static void on_tick(hades::job_system&, hades::render_job_data& d)
 		{
-			const auto entity = d.entity;
+			/*const auto entity = d.entity;
 			assert(entity != bad_entity);
 
 			auto& dat = std::any_cast<system_data&>(d.system_data);
@@ -97,7 +92,7 @@ namespace hades
 				d.render_output.set_position(s_id, ent.position);
 				d.render_output.set_size(s_id, ent.size);
 				d.render_output.set_animation(s_id, ent.anim, d.current_time);
-			}
+			}*/
 
 			return;
 		}
@@ -107,12 +102,12 @@ namespace hades
 			const auto entity = d.entity;
 			assert(entity != bad_entity);
 
-			auto& dat = std::any_cast<system_data&>(d.system_data);
+			/*auto& dat = std::any_cast<system_data&>(d.system_data);
 			if (dat.sprite_ids.exists(d.entity))
 			{
 				const auto s_id = dat.sprite_ids.get(d.entity);
 				d.render_output.destroy_sprite(s_id);
-			}
+			}*/
 
 			return;
 		}
@@ -120,7 +115,7 @@ namespace hades
 		static void on_destroy(hades::job_system&, hades::render_job_data& d)
 		{
 			assert(d.entity == bad_entity);
-			d.system_data.reset();
+			//d.system_data.reset();
 			return;
 		}
 	}
@@ -179,5 +174,26 @@ namespace hades
 			std::back_inserter(output));
 
 		return output;
+	}
+
+	void set_render_data(render_job_data *j, bool async)
+	{
+		assert(j);
+		detail::render_data_ptr = j;
+		detail::render_data_async = async;
+	}
+
+	void abort_render_job()
+	{
+		assert(detail::render_data_ptr);
+		detail::render_transaction.abort();
+		detail::render_data_ptr = nullptr;
+	}
+
+	void finish_render_job()
+	{
+		assert(detail::render_data_ptr);
+		detail::render_transaction.commit();
+		detail::render_data_ptr = nullptr;
 	}
 }

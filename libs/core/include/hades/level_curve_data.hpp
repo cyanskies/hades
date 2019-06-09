@@ -9,11 +9,12 @@
 namespace hades
 {
 	using name_curve_t = curve<std::map<types::string, entity_id>>;
+	using curve_index_t = std::pair<entity_id, variable_id>;
 
 	struct curve_data
 	{
 		template<class T>
-		using curve_map = shared_map< std::pair<entity_id, variable_id>, curve<T> >;	
+		using curve_map = shared_map< curve_index_t, curve<T> >;
 
 		curve_map<resources::curve_types::int_t> int_curves;
 		curve_map<resources::curve_types::float_t> float_curves;

@@ -31,13 +31,20 @@ namespace hades
 		template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
 		Ty get(const Key &key, TransactionalMap<Key, Ty> &map);
 
+		template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
+		Ty get(const Key& key, TransactionalAnyMap<Key>& map);
+
 		template<typename Ty, template<typename> typename TransactionalGuard>
 		void set(TransactionalGuard<Ty> &guard, Ty &&value);
 
 		template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
 		void set(TransactionalMap<Key, Ty>& guard, const Key &key, Ty &&value);
 		
+		template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
+		void set(TransactionalAnyMap<Key>& guard, const Key& key, Ty&& value);
+
 		bool commit();
+		void abort() noexcept;
 
 	private:
 		std::vector<commit_entry> _data;

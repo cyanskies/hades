@@ -110,7 +110,7 @@ namespace hades
 		std::vector<const system_resource*> get_new_systems() const;
 		void clear_new_systems();
 
-		std::any &get_system_data(unique_id);
+		system_data_t &get_system_data(unique_id);
 
 		void attach_system(entity_id, unique_id, time_point t) override final;
 		void detach_system(entity_id, unique_id, time_point t) override final;
@@ -119,7 +119,7 @@ namespace hades
 		mutable std::mutex _system_list_mut;
 		std::vector<SystemType> _systems;
 		std::vector<const system_resource*> _new_systems;
-		std::unordered_map<unique_id, std::any> _system_data;
+		std::unordered_map<unique_id, system_data_t> _system_data;
 	};
 
 	class game_implementation final : public common_implementation<game_system>

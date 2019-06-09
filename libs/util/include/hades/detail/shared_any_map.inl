@@ -58,6 +58,28 @@ namespace hades
 
 	template<typename Key>
 	template<typename T>
+	inline T shared_any_map<Key>::get_no_async(key_type k) const
+	{
+		assert(exists(k));
+
+		try
+		{
+			const auto& elm = _map.at(k);
+
+			return std::any_cast<T>(elm.data);
+		}
+		catch (const std::out_of_range& e)
+		{
+			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + e.what() };
+		}
+		catch (const std::bad_any_cast& e)
+		{
+			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + e.what() };
+		}
+	}
+
+	template<typename Key>
+	template<typename T>
 	inline shared_any_map<Key>::ptr_return_t<T> shared_any_map<Key>::get_pointer(key_type k) const
 	{
 		assert(exists(k));
@@ -143,7 +165,7 @@ namespace hades
 
 	template<typename Key>
 	template<typename T>
-	inline shared_any_map<Key>::lock_return shared_any_map<Key>::exchange_lock(key_type id, const T&& expected) const
+	inline typename shared_any_map<Key>::lock_return shared_any_map<Key>::exchange_lock(key_type id, const T&& expected) const
 	{
 		assert(exists(k));
 		const auto lock = std::shared_lock{ _map_mutex };
@@ -156,7 +178,7 @@ namespace hades
 			const auto ptr = std::any_cast<T>(&elm.data);
 
 			if (!ptr)
-				throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type");
+				throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type" };
 
 			if (*ptr == expected)
 				return { true, std::move(elm_lock) };

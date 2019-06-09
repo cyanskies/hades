@@ -29,4 +29,9 @@ namespace hades
 
 		return false;
 	}
+
+	void transaction::abort() noexcept
+	{
+		_data.clear();
+	}
 }

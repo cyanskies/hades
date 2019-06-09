@@ -32,12 +32,17 @@ namespace hades
 			std::any data;
 		};
 
-		shared_any_map() noexcept = default;
+		shared_any_map() = default;
 		shared_any_map(const shared_any_map&);
 		shared_any_map& operator=(const shared_any_map&);
 
 		template<typename T>
 		T get(key_type k) const;
+
+		//gets the value without locking
+		//not safe for multithreading
+		template<typename T>
+		T get_no_async(key_type k) const;
 
 		template<typename T>
 		using ptr_return_t = std::pair<const T*, std::shared_lock<mutex_type>>;

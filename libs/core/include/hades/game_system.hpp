@@ -9,8 +9,9 @@
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
-//#include "hades/input.hpp"
+#include "hades/level_curve_data.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/shared_any_map.hpp"
 #include "hades/shared_guard.hpp"
 #include "hades/timers.hpp"
 
@@ -27,6 +28,8 @@ namespace hades
 	public:
 		using runtime_error::runtime_error;
 	};
+
+	using system_data_t = shared_any_map<unique_id>;
 
 	struct system_job_data
 	{
@@ -46,7 +49,7 @@ namespace hades
 		time_duration dt;
 
 		//system data
-		std::any& system_data;
+		system_data_t& system_data;
 	};
 
 	namespace resources
@@ -142,7 +145,7 @@ namespace hades
 		//render output interface
 		render_interface &render_output;
 		//system data
-		std::any &system_data;
+		system_data_t &system_data;
 	};
 
 	namespace resources
@@ -196,7 +199,12 @@ namespace hades
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
-	//functions for managed 
+	//functions for game state access
+
+	using
+
+	void set_game_data();
+	void clear_game_data();
 
 	namespace game
 	{
@@ -219,16 +227,42 @@ namespace hades
 		//set_curve_x(levelid, x;
 	}
 
+	void set_render_data(render_job_data*, bool async = true);
+	void abort_render_job();
+	void finish_render_job();
+
 	namespace render
 	{
-		//get_system_data
+		template<typename T>
+		T get_system_value(unique_id);
+		
+		template<typename T>
+		void set_system_value(unique_id, T&& value);
 	}
 
 	namespace render::mission
-	{ }
+	{
+		template<typename T>
+		T get_curve(curve_index_t);
+
+		template<typename T>
+		void set_curve(curve_index_t, T&& value);
+	}
 
 	namespace render::level
-	{ }
+	{
+		template<typename T>
+		T get_curve(curve_index_t);
+
+		template<typename T>
+		T get_curve(unique_id, curve_index_t);
+
+		template<typename T>
+		void set_curve(curve_index_t, T&& value);
+
+		template<typename T>
+		void set_curve(unique_id, curve_index_t, T&& value);
+	}
 }
 
 #include "hades/detail/game_system.inl"

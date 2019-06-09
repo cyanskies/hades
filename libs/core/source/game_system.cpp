@@ -176,24 +176,58 @@ namespace hades
 		return output;
 	}
 
+	static thread_local render_job_data *render_data_ptr = nullptr;
+	static thread_local transaction render_transaction{};
+	static thread_local bool render_async = true;
+
 	void set_render_data(render_job_data *j, bool async)
 	{
 		assert(j);
-		detail::render_data_ptr = j;
-		detail::render_data_async = async;
+		render_data_ptr = j;
+		render_async = async;
 	}
 
 	void abort_render_job()
 	{
-		assert(detail::render_data_ptr);
-		detail::render_transaction.abort();
-		detail::render_data_ptr = nullptr;
+		assert(render_data_ptr);
+		render_transaction.abort();
+		render_data_ptr = nullptr;
 	}
 
 	void finish_render_job()
 	{
-		assert(detail::render_data_ptr);
-		detail::render_transaction.commit();
-		detail::render_data_ptr = nullptr;
+		assert(render_data_ptr);
+		render_transaction.commit();
+		render_data_ptr = nullptr;
+	}
+
+	void render::destroy_system_value(unique_id id)
+	{
+		assert(render_data_ptr);
+		render_data_ptr->system_data.erase(id);
+	}
+
+	void render::clear_system_values()
+	{
+		assert(render_data_ptr);
+		render_data_ptr->system_data.clear();
+	}
+
+	namespace detail
+	{
+		render_job_data* get_render_data_ptr()
+		{
+			return render_data_ptr;
+		}
+
+		transaction& get_render_transaction()
+		{
+			return render_transaction;
+		}
+		
+		bool get_render_data_async()
+		{
+			return render_async;
+		}
 	}
 }

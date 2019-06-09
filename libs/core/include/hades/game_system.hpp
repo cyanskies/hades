@@ -84,12 +84,6 @@ namespace hades
 		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
-	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
-	//curves need to be identified often by a consistant lookup name
-	//we do the same with variable Ids since they also need to be unique and easily network transferrable
-	using variable_id = unique_id;
-	const variable_id bad_variable = variable_id::zero;
-
 	using name_list = curve<resources::curve_types::vector_object_ref>;
 	
 	resources::curve_types::vector_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
@@ -201,10 +195,10 @@ namespace hades
 
 	//functions for game state access
 
-	using
+	//using
 
-	void set_game_data();
-	void clear_game_data();
+	//void set_game_data();
+	//void clear_game_data();
 
 	namespace game
 	{
@@ -234,10 +228,16 @@ namespace hades
 	namespace render
 	{
 		template<typename T>
+		void create_system_value(unique_id, T&& value);
+
+		template<typename T>
 		T get_system_value(unique_id);
 		
 		template<typename T>
 		void set_system_value(unique_id, T&& value);
+
+		void destroy_system_value(unique_id);
+		void clear_system_values();
 	}
 
 	namespace render::mission
@@ -246,7 +246,7 @@ namespace hades
 		T get_curve(curve_index_t);
 
 		template<typename T>
-		void set_curve(curve_index_t, T&& value);
+		void set_curve(curve_index_t i, T&& value);
 	}
 
 	namespace render::level

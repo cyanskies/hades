@@ -75,33 +75,44 @@ namespace hades
 
 	namespace detail
 	{
-		thread_local render_job_data* render_data_ptr = nullptr;
-		thread_local transaction render_transaction;
-		thread_local bool render_data_async = true;
+		inline render_job_data* get_render_data_ptr();
+		inline transaction &get_render_transaction();
+		inline bool get_render_data_async();
 	}
 
 	namespace render
 	{
 		template<typename T>
+		void create_system_value(unique_id, T&& value)
+		{
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
+			ptr->system_data.create(key, std::forward(value));
+			return;
+		}
+
+		template<typename T>
 		T get_system_value(unique_id key)
 		{
-			assert(detail::render_data_ptr);
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
 
-			if (detail::render_data_async)
-				return detail::render_transaction.get(detail::render_data_ptr->system_data, key);
+			if (get_render_data_async())
+				return detail::get_render_transaction().get<T>(ptr->system_data, key);
 			else
-				return detail::render_data_ptr->system_data.get_no_async(key);
+				return ptr->system_data.get_no_async(key);
 		}
 
 		template<typename T>
 		void set_system_value(unique_id, T&& value)
 		{
-			assert(detail::render_data_ptr);
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
 
-			if (detail::render_data_async)
-				return detail::render_data_ptr->system_data.get(key);
+			if (detail::get_render_data_async())
+				return detail::get_render_transaction().set(ptr->system_data, key, std::forward(value));
 			else
-				return detail::render_data_ptr->system_data.get_no_async(key);
+				return ptr->system_data.set(key, std::forward(value));
 		}
 	}
 
@@ -110,13 +121,14 @@ namespace hades
 		template<typename T>
 		T get_curve(curve_index_t i)
 		{
-			assert(detail::render_data_ptr);
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
 
-			auto &curves = detail::render_data_ptr->level_data->get_curves();
+			auto &curves = ptr->level_data->get_curves();
 			auto &curve_map = get_curve_list<T>(curves);
 
-			if (detail::render_data_async)
-				return detail::render_transaction.get(i, curve_map);
+			if (detail::get_render_data_async())
+				return detail::get_render_transaction().get(i, curve_map);
 			else
 				return curve_map.get(i);
 		}
@@ -124,13 +136,14 @@ namespace hades
 		template<typename T>
 		void set_curve(curve_index_t i, T&& value)
 		{
-			assert(detail::render_data_ptr);
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
 
-			auto& curves = detail::render_data_ptr->level_data->get_curves();
+			auto& curves = ptr->level_data->get_curves();
 			auto& curve_map = get_curve_list<std::decay_t<T>>(curves);
 
-			if (detail::render_data_async)
-				return detail::render_transaction.set(curve_map, i, std::forward(value);
+			if (detail::get_render_data_async())
+				return detail::get_render_transaction().set(curve_map, i, std::forward(value));
 			else
 				return curve_map.set(i, std::forward(value));
 		}

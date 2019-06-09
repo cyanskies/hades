@@ -3,11 +3,16 @@
 
 #include "hades/curve_extra.hpp"
 #include "hades/shared_map.hpp"
-#include "hades/game_system.hpp"
 #include "hades/types.hpp"
 
 namespace hades
 {
+	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
+	//curves need to be identified often by a consistant lookup name
+	//we do the same with variable Ids since they also need to be unique and easily network transferrable
+	using variable_id = unique_id;
+	const variable_id bad_variable = variable_id::zero;
+
 	using name_curve_t = curve<std::map<types::string, entity_id>>;
 	using curve_index_t = std::pair<entity_id, variable_id>;
 
@@ -67,7 +72,6 @@ namespace hades
 
 	template<>
 	curve_data::curve_map<resources::curve_types::vector_unique>& get_curve_list(curve_data& data);
-
 }
 
 #endif //!HADES_LEVEL_CURVE_DATA_HPP

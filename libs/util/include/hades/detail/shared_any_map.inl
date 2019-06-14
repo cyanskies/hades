@@ -36,6 +36,7 @@ namespace hades
 	template<typename T>
 	inline T shared_any_map<Key>::get(key_type k) const
 	{
+		using Ty = std::decay_t<T>;
 		assert(exists(k));
 		const auto lock = std::shared_lock{ _map_mutex };
 
@@ -44,7 +45,7 @@ namespace hades
 			const auto& elm = _map.at(k);
 			const auto elm_lock = std::shared_lock{ elm.mut };
 
-			return std::any_cast<T>(elm.data);
+			return std::any_cast<Ty>(elm.data);
 		}
 		catch (const std::out_of_range& e)
 		{
@@ -66,7 +67,7 @@ namespace hades
 		{
 			const auto& elm = _map.at(k);
 
-			return std::any_cast<T>(elm.data);
+			return std::any_cast<std::decay_t<T>>(elm.data);
 		}
 		catch (const std::out_of_range& e)
 		{
@@ -90,7 +91,7 @@ namespace hades
 			const auto& elm = _map.at(k);
 			const auto elm_lock = std::shared_lock{ elm.mut };
 
-			return { std::any_cast<T>(&elm.data), std::move(elm_lock) };
+			return { std::any_cast<std::decay_t<T>>(&elm.data), std::move(elm_lock) };
 		}
 		catch (const std::out_of_range& e)
 		{

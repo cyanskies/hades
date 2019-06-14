@@ -117,16 +117,15 @@ namespace hades
 	template<typename Func>
 	static auto make_job_function_wrapper(Func f)
 	{
-		return [f](job_system& j, render_job_data d)->bool {
+		return [f](job_system& j, render_job_data d) {
 			set_render_data(&d);
 
 			const auto ret = std::invoke(f, j, d);
+
 			if (ret)
-				return finish_render_job();
+				finish_render_job();
 			else
 				abort_render_job();
-
-			return ret;
 		};
 	}
 
@@ -139,7 +138,7 @@ namespace hades
 		std::vector<job*> jobs;
 		for (const auto s : new_systems)
 		{
-			const auto j = _jobs.create_child(on_create_parent, make_job_function_wrapper(s->on_create), render_job_data{
+			const auto j = _jobs.create_child(on_create_parent, s->on_create, render_job_data{
 				 bad_entity, &_game, m, t, i, _game.get_system_data(s->id)
 				});
 
@@ -157,8 +156,7 @@ namespace hades
 			 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_connect_parent,
-					on_create_parent, make_job_function_wrapper(s.system->on_connect),
+				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, s.system->on_connect,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);
@@ -174,8 +172,7 @@ namespace hades
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_disconnect_parent, 
-					on_connect_parent, make_job_function_wrapper(s.system->on_disconnect),
+				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, s.system->on_disconnect,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);
@@ -193,8 +190,7 @@ namespace hades
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_tick_parent, 
-					on_disconnect_parent, make_job_function_wrapper(s.system->tick),
+				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, s.system->tick,
 					render_job_data{ e, &_game, m, t, i, sys_data });
 
 				jobs.emplace_back(j);

@@ -58,7 +58,7 @@ namespace hades
 
 		static void on_create()
 		{
-			assert(render::get_entity() == bad_entity);
+			assert(render::get_entity() != bad_entity);
 			render::create_system_value(sprite_id_list, sprite_id_t{});
 		}
 
@@ -198,11 +198,11 @@ namespace hades
 		render_data_ptr = nullptr;
 	}
 
-	bool finish_render_job()
+	void finish_render_job()
 	{
 		assert(render_data_ptr);
+		render_transaction.commit();
 		render_data_ptr = nullptr;
-		return render_transaction.commit();
 	}
 
 	entity_id render::get_entity()

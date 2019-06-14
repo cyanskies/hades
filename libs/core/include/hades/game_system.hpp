@@ -227,8 +227,14 @@ namespace hades
 
 	namespace render
 	{
+		entity_id get_entity();
+		render_interface& get_render_output();
+		time_point get_time();
+
 		template<typename T>
 		void create_system_value(unique_id, T&& value);
+
+		bool system_value_exists(unique_id);
 
 		template<typename T>
 		T get_system_value(unique_id);
@@ -242,26 +248,45 @@ namespace hades
 
 	namespace render::mission
 	{
+		/*template<typename T>
+		T get_curve(entity_id, variable_id);
+		
 		template<typename T>
-		T get_curve(curve_index_t);
-
-		template<typename T>
-		void set_curve(curve_index_t i, T&& value);
+		void set_curve(entity_id, variable_id, T&& value);*/
 	}
 
 	namespace render::level
 	{
+		//get curve from this level
 		template<typename T>
-		T get_curve(curve_index_t);
+		curve<T> get_curve(variable_id);
 
 		template<typename T>
+		curve<T> get_curve(curve_index_t);
+
+		template<typename T>
+		inline curve<T> get_curve(entity_id e, variable_id v)
+		{ return get_curve<T>(curve_index_t{ e, v }); }
+
+		//render systems are currently read only
+		/*template<typename T>
+		void set_curve(variable_id, T&& value);
+
+		template<typename T>
+		void set_curve(entity_id, variable_id, T&& value);*/
+
+		//get curve from a different level
+		/*template<typename T>
 		T get_curve(unique_id, curve_index_t);
-
+		
 		template<typename T>
+		T get_curve(unique_id, entity_id, variable_id);*/
+
+		/*template<typename T>
 		void set_curve(curve_index_t, T&& value);
 
 		template<typename T>
-		void set_curve(unique_id, curve_index_t, T&& value);
+		void set_curve(unique_id, curve_index_t, T&& value);*/
 	}
 }
 

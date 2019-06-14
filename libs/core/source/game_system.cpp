@@ -22,15 +22,17 @@ namespace hades
 			const resources::animation* anim = nullptr;
 		};
 
-		static entity_info get_entity_info(const hades::render_job_data& d)
+		static entity_info get_entity_info(entity_id e)
 		{
-			const auto ent = d.entity;
-			const auto& curves = d.level_data->get_curves();
+			using namespace resources::curve_types;
+
+			const auto time = render::get_time();
+			const auto ent = render::get_entity();
 			const auto [x, y] = get_position_curve_id();
 			const auto [size_x, size_y] = get_size_curve_id();
 			const auto obj_type = get_object_type_curve_id();
-			const auto obj_curve = curves.unique_curves.get({ ent, obj_type });
-			const auto obj_id = obj_curve.get(d.current_time);
+			const auto obj_curve = render::level::get_curve<unique>(ent, obj_type);
+			const auto obj_id = obj_curve.get(time);
 
 			const auto object = data::get<resources::object>(obj_id);
 			const auto anims = get_editor_animations(*object);
@@ -38,44 +40,49 @@ namespace hades
 			if (std::empty(anims))
 				return {};
 
-			const auto px = curves.float_curves.get({ ent, x });
-			const auto py = curves.float_curves.get({ ent, y });
+			const auto px = render::level::get_curve<float_t>(ent, x);
+			const auto py = render::level::get_curve<float_t>(ent, y);
 
-			const auto sx = curves.float_curves.get({ ent, size_x });
-			const auto sy = curves.float_curves.get({ ent, size_y });
-
+			const auto sx = render::level::get_curve<float_t>(ent, size_x);
+			const auto sy = render::level::get_curve<float_t>(ent, size_y);
 			
 			return entity_info{
-				vector_float{ px.get(d.current_time), py.get(d.current_time) },
-				vector_float{ sx.get(d.current_time), sy.get(d.current_time) },
+				hades::vector_float{ px.get(time), py.get(time) },
+				hades::vector_float{ sx.get(time), sy.get(time) },
 				random_element(std::begin(anims), std::end(anims))
 			};
 		}
 
-		static void on_create(hades::job_system&, hades::render_job_data& d)
+		static const auto sprite_id_list = unique_id{};
+		using sprite_id_t = std::map<entity_id, sprite_utility::sprite_id>;
+
+		static void on_create()
 		{
-			assert(d.entity == bad_entity);
-			//d.system_data = system_data{};
+			assert(render::get_entity() != bad_entity);
+			render::create_system_value(sprite_id_list, sprite_id_t{});
 		}
 
-		static void on_connect(hades::job_system&, hades::render_job_data& d)
+		static void on_connect()
 		{
-			const auto entity = d.entity;
+			const auto entity = render::get_entity();
 			assert(entity != bad_entity);
-			//auto &dat = std::any_cast<system_data&>(d.system_data);
+			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 
-			//assert(!dat.sprite_ids.exists(d.entity));
+			assert(dat.find(entity) == std::end(dat));
 
-			const auto ent = get_entity_info(d);
+			const auto ent = get_entity_info(entity);
 
 			if (ent.anim == nullptr)
 				return;
 
-			const auto sprite_id = d.render_output.create_sprite(ent.anim,
-				d.current_time, render_interface::sprite_layer{},
+			const auto sprite_id = render::get_render_output().create_sprite(ent.anim,
+				render::get_time(), render_interface::sprite_layer{},
 				ent.position, ent.size);
 
-			//dat.sprite_ids.create(d.entity, sprite_id);
+			dat.emplace(entity, sprite_id);
+			render::set_system_value(sprite_id_list, dat);
+
+			return;
 		}
 
 		static void on_tick(hades::job_system&, hades::render_job_data& d)
@@ -102,20 +109,17 @@ namespace hades
 			const auto entity = d.entity;
 			assert(entity != bad_entity);
 
-			/*auto& dat = std::any_cast<system_data&>(d.system_data);
-			if (dat.sprite_ids.exists(d.entity))
-			{
-				const auto s_id = dat.sprite_ids.get(d.entity);
-				d.render_output.destroy_sprite(s_id);
-			}*/
+			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			if (const auto s_id = dat.find(entity); s_id != std::end(dat))
+				d.render_output.destroy_sprite(s_id->second);
 
 			return;
 		}
 
-		static void on_destroy(hades::job_system&, hades::render_job_data& d)
+		static void on_destroy()
 		{
-			assert(d.entity == bad_entity);
-			//d.system_data.reset();
+			assert(render::get_entity() == bad_entity);
+			render::clear_system_values();
 			return;
 		}
 	}
@@ -199,6 +203,30 @@ namespace hades
 		assert(render_data_ptr);
 		render_transaction.commit();
 		render_data_ptr = nullptr;
+	}
+
+	entity_id render::get_entity()
+	{
+		assert(render_data_ptr);
+		return render_data_ptr->entity;
+	}
+
+	render_interface& render::get_render_output()
+	{
+		assert(render_data_ptr);
+		return render_data_ptr->render_output;
+	}
+
+	time_point render::get_time()
+	{
+		assert(render_data_ptr);
+		return render_data_ptr->current_time;
+	}
+
+	bool render::system_value_exists(unique_id id)
+	{
+		assert(render_data_ptr);
+		return render_data_ptr->system_data.exists(id);
 	}
 
 	void render::destroy_system_value(unique_id id)

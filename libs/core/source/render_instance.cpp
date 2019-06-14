@@ -114,6 +114,21 @@ namespace hades
 		merge_input(input.unique_vector_curves, curves);
 	}
 
+	template<typename Func>
+	static auto make_job_function_wrapper(Func f)
+	{
+		return [f](job_system& j, render_job_data d) {
+			set_render_data(&d);
+
+			const auto ret = std::invoke(f, j, d);
+
+			if (ret)
+				finish_render_job();
+			else
+				abort_render_job();
+		};
+	}
+
 	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)
 	{
 		assert(_jobs.ready());

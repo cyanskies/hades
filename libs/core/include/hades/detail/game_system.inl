@@ -12,12 +12,15 @@ namespace hades
 		template<typename JobData, typename Func>
 		inline auto make_system_func(Func f)
 		{
+			//this function is a bit ugly
+			//bool func(job_system&, JobData)
 			if constexpr (std::is_invocable_r_v<bool, Func, job_system&, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					return std::invoke(f, j, std::move(job_data));
 				};
 			}
+			//non-bool func(job_system&, JobData)
 			else if constexpr (std::is_invocable_v<Func, job_system&, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
@@ -25,12 +28,14 @@ namespace hades
 					return true;
 				};
 			}
+			//bool func(JobData)
 			else if constexpr (std::is_invocable_r_v<bool, Func, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
 					return std::invoke(f, std::move(job_data));
 				};
 			}
+			//non-bool func(JobData)
 			else if constexpr (std::is_invocable_v<Func, JobData>)
 			{
 				return [f](job_system &j, JobData job_data)->bool {
@@ -38,9 +43,40 @@ namespace hades
 					return true;
 				};
 			}
+			//bool func(job_system&)
+			else if constexpr (std::is_invocable_r_v<bool, Func, job_system&>)
+			{
+				return [f](job_system& j, JobData job_data)->bool {
+					return std::invoke(f, j);
+				};
+			}
+			//non-bool func(job_system&)
+			else if constexpr (std::is_invocable_v<Func, job_system&>)
+			{
+				return [f](job_system& j, JobData job_data)->bool {
+					std::invoke(f, j);
+					return true;
+				};
+			}
+			//bool func()
+			else if constexpr (std::is_invocable_r_v<bool, Func>)
+			{
+				return [f](job_system& j, JobData job_data)->bool {
+					return std::invoke(f);
+				};
+			}
+			//non-bool func()
+			else if constexpr (std::is_invocable_v<Func>)
+			{
+				return [f](job_system& j, JobData job_data)->bool {
+					std::invoke(f);
+					return true;
+				};
+			}
+			//not provided
 			else if constexpr (std::is_null_pointer_v<Func>)
 				return f;
-			else
+			else //not invocable
 				static_assert(always_false<Func>::value,
 					"system functions must be a function object with the following definition: bool func(hades::job_system&, hades::system_job_data), the return and job_system ref are optional");
 		}
@@ -83,11 +119,11 @@ namespace hades
 	namespace render
 	{
 		template<typename T>
-		void create_system_value(unique_id, T&& value)
+		void create_system_value(unique_id key, T&& value)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-			ptr->system_data.create(key, std::forward(value));
+			ptr->system_data.create(key, std::forward<T>(value));
 			return;
 		}
 
@@ -97,29 +133,39 @@ namespace hades
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
 
-			if (get_render_data_async())
-				return detail::get_render_transaction().get<T>(ptr->system_data, key);
+			if (detail::get_render_data_async())
+				return detail::get_render_transaction().get<T>(key, ptr->system_data);
 			else
-				return ptr->system_data.get_no_async(key);
+				return ptr->system_data.get_no_async<T>(key);
 		}
 
 		template<typename T>
-		void set_system_value(unique_id, T&& value)
+		void set_system_value(unique_id key, T&& value)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
 
 			if (detail::get_render_data_async())
-				return detail::get_render_transaction().set(ptr->system_data, key, std::forward(value));
+				return detail::get_render_transaction().set(ptr->system_data, key, std::forward<T>(value));
 			else
-				return ptr->system_data.set(key, std::forward(value));
+				return ptr->system_data.set(key, std::forward<T>(value));
 		}
 	}
 
 	namespace render::level
 	{
 		template<typename T>
-		T get_curve(curve_index_t i)
+		curve<T> get_curve(variable_id v)
+		{
+			auto ptr = detail::get_render_data_ptr();
+			assert(ptr);
+
+
+			return curve<T>();
+		}
+
+		template<typename T>
+		curve<T> get_curve(curve_index_t i)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
@@ -133,7 +179,7 @@ namespace hades
 				return curve_map.get(i);
 		}
 
-		template<typename T>
+		/*template<typename T>
 		void set_curve(curve_index_t i, T&& value)
 		{
 			auto ptr = detail::get_render_data_ptr();
@@ -146,6 +192,6 @@ namespace hades
 				return detail::get_render_transaction().set(curve_map, i, std::forward(value));
 			else
 				return curve_map.set(i, std::forward(value));
-		}
+		}*/
 	}
 }

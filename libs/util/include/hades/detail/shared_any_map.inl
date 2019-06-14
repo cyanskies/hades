@@ -48,11 +48,11 @@ namespace hades
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + to_string(e.what()) };
 		}
 		catch(const std::bad_any_cast& e)
 		{
-			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + e.what() };
+			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + to_string(e.what()) };
 		}
 	}
 
@@ -70,11 +70,11 @@ namespace hades
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + to_string(e.what()) };
 		}
 		catch (const std::bad_any_cast& e)
 		{
-			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + e.what() };
+			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + to_string(e.what()) };
 		}
 	}
 
@@ -94,7 +94,7 @@ namespace hades
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::get_pointer, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::get_pointer, tried to access unknown id: " + to_string(e.what()) };
 		}
 	}
 
@@ -109,11 +109,11 @@ namespace hades
 		{
 			auto& elm = _map.at(id);
 			const auto elm_lock = std::scoped_lock{ elm.mut };
-			elm.data = std::forward(value);
+			elm.data = std::forward<T>(value);
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::set, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::set, tried to access unknown id: " + to_string(e.what()) };
 		}
 
 		return;
@@ -127,7 +127,7 @@ namespace hades
 
 		const auto lock = std::scoped_lock{ _map_mutex };
 
-		const auto ret = _map.try_emplace(id, std::forward(value));
+		const auto ret = _map.try_emplace(id, std::forward<T>(value));
 
 		if (!ret.second)
 			throw shared_map_invalid_id{ "tried to create an entry using an id that was already used." };
@@ -165,14 +165,14 @@ namespace hades
 
 	template<typename Key>
 	template<typename T>
-	inline typename shared_any_map<Key>::lock_return shared_any_map<Key>::exchange_lock(key_type id, const T&& expected) const
+	inline typename shared_any_map<Key>::lock_return shared_any_map<Key>::exchange_lock(key_type id, const T& expected) const
 	{
-		assert(exists(k));
+		assert(exists(id));
 		const auto lock = std::shared_lock{ _map_mutex };
 
 		try
 		{
-			const auto& elm = _map.at(k);
+			const auto& elm = _map.at(id);
 			auto elm_lock = std::unique_lock{ elm.mut };
 
 			const auto ptr = std::any_cast<T>(&elm.data);
@@ -190,7 +190,7 @@ namespace hades
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + to_string(e.what()) };
 		}
 	}
 
@@ -204,7 +204,7 @@ namespace hades
 
 			return token.owns_lock() &&
 				it != std::end(_map) &&
-				token.mutex() == &it->mut;
+				token.mutex() == &it->second.mut;
 		};
 
 		assert(std::invoke(valid_token));
@@ -220,14 +220,14 @@ namespace hades
 
 		try
 		{
-			auto& elm = _map.at(id);
+			auto &elm = _map.at(id);
 			assert(token.mutex() == &elm.mut);
 			assert(token.owns_lock());
-			elm.data = std::forward(desired);
+			elm.data = std::forward<T>(desired);
 		}
 		catch (const std::out_of_range& e)
 		{
-			throw shared_map_invalid_id{ "shared_any_map::exchange_resolve, tried to access unknown id: " + e.what() };
+			throw shared_map_invalid_id{ "shared_any_map::exchange_resolve, tried to access unknown id: " + to_string(e.what()) };
 		}
 
 		return;

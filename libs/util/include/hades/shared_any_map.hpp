@@ -28,8 +28,11 @@ namespace hades
 
 		struct data_block
 		{
+			template<typename T>
+			explicit data_block(T&& t) : data{ std::forward<T>(t) } {}
+
+			std::any data; 
 			mutable mutex_type mut;
-			std::any data;
 		};
 
 		shared_any_map() = default;
@@ -70,7 +73,7 @@ namespace hades
 
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value
 		template<typename T>
-		lock_return exchange_lock(key_type id, const T &&expected) const;
+		lock_return exchange_lock(key_type id, const T &expected) const;
 		//releases the lock that is already held, without commiting the changes
 		void exchange_release(key_type id, exchange_token token) const noexcept;
 		//releases the lock after exchanging the value

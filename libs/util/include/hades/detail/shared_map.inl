@@ -201,7 +201,7 @@ namespace hades {
 	{
 		const auto valid_token = [&]()->bool {
 			const auto index = _getIndex(id);
-			const auto read_lock{ _vectorMutex };
+			const auto lock = read_lock{ _vectorMutex };
 	
 			return token.owns_lock() && 
 				index < std::size(_components) &&
@@ -215,7 +215,7 @@ namespace hades {
 	template<typename T, typename>
 	void shared_map<Key, Value>::exchange_resolve(key_type id, T &&desired, exchange_token token)
 	{
-		assert(token.owns_lock())
+		assert(token.owns_lock());
 		const auto index = _getIndex(id);
 		const auto lock_vect = read_lock{ _vectorMutex };
 		assert(index < _components.size());
@@ -244,7 +244,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	typename shared_map<Key, Value>::size_type shared_map<Key, Value>::_getIndex(Key id) const
+	typename shared_map<Key, Value>::size_type shared_map<Key, Value>::_getIndex(key_type id) const
 	{
 		//index is olny useful if the arrays are all the same size, so we'll check the invarient here.
 		assert((_components.size() == _ids.size()) &&

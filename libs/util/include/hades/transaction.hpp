@@ -25,25 +25,36 @@ namespace hades
 			std::any data;
 		};
 
+		//get will safely get the value, caching it and the address of the guard/map 
+		//in order to process the commit
 		template<typename Ty, template<typename> typename TransactionalGuard>
-		Ty get(TransactionalGuard<Ty> &guard);
-
+		Ty get(const TransactionalGuard<Ty> &guard);
 		template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
-		Ty get(const Key &key, TransactionalMap<Key, Ty> &map);
-
+		Ty get(const Key &key, const TransactionalMap<Key, Ty> &map);
 		template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
-		Ty get(const Key& key, TransactionalAnyMap<Key>& map);
+		Ty get(const Key& key, const TransactionalAnyMap<Key>& map);
 
+		//returns the cached value or the most recently set value
+		template<typename Ty, template<typename> typename TransactionalGuard>
+		Ty peek(const TransactionalGuard<Ty>& guard) const;
+		template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
+		Ty peek(const Key& key, const TransactionalMap<Key, Ty>& map) const;
+		template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
+		Ty peek(const Key& key, const TransactionalAnyMap<Key>& map) const;
+
+		//set will write to the new value into the cache
 		template<typename Ty, template<typename> typename TransactionalGuard>
 		void set(TransactionalGuard<Ty> &guard, Ty &&value);
-
 		template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
 		void set(TransactionalMap<Key, Ty>& guard, const Key &key, Ty &&value);
-		
 		template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
 		void set(TransactionalAnyMap<Key>& guard, const Key& key, Ty&& value);
 
+		//commit will apply all the changes as a single action
+		//if it fails, then none of the values will have been writen
 		bool commit();
+
+		//abort releases all the references and clears the cache
 		void abort() noexcept;
 
 	private:

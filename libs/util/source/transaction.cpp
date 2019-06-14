@@ -9,6 +9,7 @@ namespace hades
 		auto iter = begin;
 		for (iter; iter != end; ++iter)
 		{
+			//TODO: check that function ptrs were set
 			const auto r = std::invoke(iter->exchange_lock, iter->data);
 			if (!r)
 				break;

@@ -18,6 +18,7 @@
 
 namespace hades {
 	//TODO: move lerp into the utility header
+	//define lerpable
 	template<typename T, typename std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
 	T lerp(T first, T second, float alpha) noexcept
 	{
@@ -61,6 +62,7 @@ namespace hades {
 		using frame_t = std::pair<Time, Data>;
 		using DataType = std::map<Time, Data>;
 
+		basic_curve() = default;
 		explicit basic_curve(curve_type type) 
 			noexcept(std::is_nothrow_copy_constructible_v<curve_type> && std::is_nothrow_constructible_v<DataType>)
 			: _type(type)
@@ -269,7 +271,7 @@ namespace hades {
 		}
 
 		DataType _data;
-		curve_type _type;
+		curve_type _type = curve_type::error;
 	};
 
 	template<typename T>

@@ -230,6 +230,14 @@ namespace hades
 		return random(0, 1) != 0;
 	}
 
+	template<typename Func>
+	finally_t<Func> make_finally(Func&& f)
+	{
+		static_assert(std::is_nothrow_invocable_v<Func>, 
+			"make_finally only accepts a callable that accepts no arguments and is noexcept");
+		return finally_t<Func>{std::forward<Func>(f)};
+	}
+
 	template<typename Container>
 	decltype(auto) remove_duplicates(Container &cont)
 	{

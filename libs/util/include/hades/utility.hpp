@@ -83,6 +83,20 @@ namespace hades {
 	template<typename T>
 	std::pair<T, T> to_2d_index(T index, T array_width);
 
+	template<typename Func>
+	struct finally_t
+	{
+		~finally_t() noexcept
+		{
+			std::invoke(f);
+		}
+
+		Func f;
+	};
+
+	template<typename Func>
+	finally_t<Func> make_finally(Func&& f);
+
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors
 

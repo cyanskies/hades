@@ -34,22 +34,22 @@ namespace hades
 		};
 
 		template<typename Ty, template<typename> typename Guard>
-		inline transaction::commit_entry *find_guard(const Guard<Ty> &g, std::vector<transaction::commit_entry> &v)
+		inline guard_type<Ty, Guard> *find_guard(const Guard<Ty> &g, std::vector<transaction::commit_entry> &v)
 		{
 			using guard_t = guard_type<Ty, Guard>;
 
 			for (const auto& c : v)
 			{
-				const guard_t *val = std::any_cast<guard_t>(&val.data);
+				guard_t *val = std::any_cast<guard_t>(&val.data);
 				if (val && val->c_ref == &g)
-					return &c;
+					return val;
 			}
 
 			return nullptr;
 		}
 
 		template<typename Ty, template<typename> typename Guard>
-		inline const transaction::commit_entry* find_guard(const Guard<Ty>& g, const std::vector<transaction::commit_entry>& v)
+		inline const auto* find_guard(const Guard<Ty>& g, const std::vector<transaction::commit_entry>& v)
 		{
 			//find guard never writes to vect, so it's safe to const_cast it
 			std::vector<transaction::commit_entry>& vect = const_cast<std::vector<transaction::commit_entry>>(v);
@@ -128,8 +128,7 @@ namespace hades
 		using guard_type = guard_detail::guard_type<Ty, TransactionalGuard>;
 
 		const auto entry = guard_detail::find_guard(guard, _data);
-		const guard_type& g = std::any_cast<const guard_type&>(entry->data);
-		return g.new_value;
+		return entry->new_value;
 	}
 
 	template<typename Ty, template<typename> typename TransactionalGuard>
@@ -138,14 +137,12 @@ namespace hades
 		static_assert(is_transactional_v<TransactionalGuard<Ty>>);
 		using guard_type = guard_detail::guard_type<Ty, TransactionalGuard>;
 
-		auto entry = guard_detail::find_guard(guard, _data);
+		auto g = guard_detail::find_guard(guard, _data);
 		//it's an error to set a guard than hasn't been stored yet
-		assert(entry);
-
-		guard_type &g = std::any_cast<guard_type&>(entry->data);
-		assert(g.c_ref == &guard);
-		g.ref = &guard;
-		g.new_value = std::forward<Ty>(value);
+		assert(g);
+		assert(g->c_ref == &guard);
+		g->ref = &guard;
+		g->new_value = std::forward<Ty>(value);
 		return;
 	}
 
@@ -179,18 +176,18 @@ namespace hades
 		};
 
 		template<typename Key, typename Ty, template<typename, typename> typename Map>
-		typename transaction::commit_entry* find_map(const Key& k, const Map<Key, Ty>& m, std::vector<transaction::commit_entry> &v)
+		inline map_type<Key, Ty, Map>* find_map(const Key& k, const Map<Key, Ty>& m, std::vector<transaction::commit_entry> &v)
 		{
 			using map_t = map_type<Key, Ty, Map>;
 			const Map<Key, Ty>* c_m = &m;
 
 			for (auto &elm : v)
 			{
-				const map_t* val = std::any_cast<map_t>(&elm.data);
+				map_t* val = std::any_cast<map_t>(&elm.data);
 				if (val &&
 					std::tie(val->c_ref, val->key) == std::tie(c_m, k))
 				{
-					return &elm;
+					return val;
 				}
 			}
 
@@ -198,7 +195,7 @@ namespace hades
 		}
 
 		template<typename Key, typename Ty, template<typename, typename> typename Map>
-		typename const transaction::commit_entry* find_map(const Key& k, const Map<Key, Ty>& m, const std::vector<transaction::commit_entry>& v)
+		inline const auto* find_map(const Key& k, const Map<Key, Ty>& m, const std::vector<transaction::commit_entry>& v)
 		{
 			std::vector<transaction::commit_entry>& vect = const_cast<std::vector<transaction::commit_entry>&>(v);
 			return find_map(k, m, vect);
@@ -257,25 +254,19 @@ namespace hades
 	template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
 	inline Ty transaction::peek(const Key& key, const TransactionalMap<Key, Ty>& map) const
 	{
-		const commit_entry* map_entry = map_detail::find_map(key, map, _data);
+		const auto map_entry = map_detail::find_map(key, map, _data);
 		assert(map_entry);
-		using entry_t = map_detail::map_type<Key, Ty, TransactionalMap>;
-		const entry_t& entry = std::any_cast<const entry_t&>(map_entry->data);
-		return entry.new_value;
+		return map_entry->new_value;
 	}
 
 	template<typename Key, typename Ty, template<typename, typename> typename TransactionalMap>
 	inline void hades::transaction::set(TransactionalMap<Key, Ty> &map, const Key &key, Ty&& value)
 	{
-		commit_entry *map_entry = map_detail::find_map(key, map, _data);
-		assert(map_entry);
-
-		using entry_t = map_detail::map_type<Key, Ty, TransactionalMap>;
-
-		entry_t &entry = std::any_cast<entry_t&>(map_entry->data);
-		assert(entry.c_ref == &map);
-		entry.ref = &map;
-		entry.new_value = std::forward<Ty>(value);
+		auto entry = map_detail::find_map(key, map, _data);
+		assert(entry);
+		assert(entry->c_ref == &map);
+		entry->ref = &map;
+		entry->new_value = std::forward<Ty>(value);
 	}
 
 	namespace any_detail
@@ -307,18 +298,18 @@ namespace hades
 		};
 
 		template<typename Ty, typename Key, template<typename> typename Map>
-		typename transaction::commit_entry* find_map(const Key& k, const Map<Key>& m, std::vector<transaction::commit_entry>& v)
+		inline map_type<std::decay_t<Ty>, Key, Map>* find_map(const Key& k, const Map<Key>& m, std::vector<transaction::commit_entry>& v)
 		{
-			using map_t = map_type<Ty, Key, Map>;
+			using map_t = map_type<std::decay_t<Ty>, Key, Map>;
 			const Map<Key> *c_m = &m;
 
 			for (auto& elm : v)
 			{
-				const map_t* val = std::any_cast<map_t>(&elm.data);
+				map_t* val = std::any_cast<map_t>(&elm.data);
 				if (val &&
 					std::tie(val->c_ref, val->key) == std::tie(c_m, k))
 				{
-					return &elm;
+					return val;
 				}
 			}
 
@@ -326,7 +317,7 @@ namespace hades
 		}
 
 		template<typename Ty, typename Key, template<typename> typename Map>
-		typename const transaction::commit_entry* find_map(const Key& k, const Map<Key>& m, const std::vector<transaction::commit_entry>& v)
+		inline const auto *find_map(const Key& k, const Map<Key>& m, const std::vector<transaction::commit_entry>& v)
 		{
 			std::vector<transaction::commit_entry>& vect = const_cast<std::vector<transaction::commit_entry>&>(v);
 			return find_map(k, m, vect);
@@ -364,8 +355,9 @@ namespace hades
 
 		const auto resolve_lock = [](std::any& a)->void {
 			entry_t& entry = std::any_cast<entry_t&>(a);
-			transactional::exchange_resolve(entry.key, *entry.ref,
-				std::move(entry.new_value), std::move(entry.lock_token));
+			if(entry.ref)
+				transactional::exchange_resolve(entry.key, *entry.ref,
+					std::move(entry.new_value), std::move(entry.lock_token));
 			entry.lock_token = decltype(entry.lock_token){};
 		};
 
@@ -384,25 +376,19 @@ namespace hades
 	template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
 	inline Ty transaction::peek(const Key& key, const TransactionalAnyMap<Key>& map) const
 	{
-		const commit_entry* map_entry = any_detail::find_map<Ty>(key, map, _data);
-		assert(map_entry);
-		using entry_t = any_detail::map_type<Ty, Key, TransactionalAnyMap>;
-		const entry_t& entry = std::any_cast<const entry_t&>(map_entry->data);
-		return entry.new_value;
+		const auto entry = any_detail::find_map<Ty>(key, map, _data);
+		assert(entry);
+		return entry->new_value;
 	}
 
 	template<typename Ty, typename Key, template<typename> typename TransactionalAnyMap>
 	inline void hades::transaction::set(TransactionalAnyMap<Key>&  map, const Key& key, Ty&& value)
 	{
-		commit_entry* map_entry = any_detail::find_map<Ty>(key, map, _data);
-		assert(map_entry);
-
-		using entry_t = any_detail::map_type<Ty, Key, TransactionalAnyMap>;
-
-		entry_t& entry = std::any_cast<entry_t&>(map_entry->data);
-		assert(entry.c_ref == &map);
-		entry.ref = &map;
-		entry.new_value = std::forward<Ty>(value);
+		auto entry = any_detail::find_map<Ty>(key, map, _data);
+		assert(entry);
+		assert(entry->c_ref == &map);
+		entry->ref = &map;
+		entry->new_value = std::forward<Ty>(value);
 		return;
 	}
 }

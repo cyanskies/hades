@@ -1,5 +1,7 @@
 #include "hades/transaction.hpp"
 
+#include "hades/utility.hpp"
+
 namespace hades
 {
 	bool transaction::commit()
@@ -15,17 +17,16 @@ namespace hades
 				break;
 		}
 
+		const auto finally = make_finally([this]() noexcept {
+			_data.clear();
+		});
+
 		if (iter == end)
 		{
-			for (auto iter2 = begin; iter2 != end; ++iter2)
+			for (iter = begin; iter != end; ++iter)
 				std::invoke(iter->commit, iter->data);
 
 			return true;
-		}
-		else
-		{
-			for (auto iter2 = begin; iter2 != iter; ++iter2)
-				std::invoke(iter2->release, iter->data);
 		}
 
 		return false;

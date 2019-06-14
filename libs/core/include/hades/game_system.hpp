@@ -223,7 +223,7 @@ namespace hades
 
 	void set_render_data(render_job_data*, bool async = true);
 	void abort_render_job();
-	void finish_render_job();
+	bool finish_render_job();
 
 	namespace render
 	{

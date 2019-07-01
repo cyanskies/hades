@@ -111,9 +111,165 @@ namespace hades
 
 	namespace detail
 	{
-		inline render_job_data* get_render_data_ptr();
-		inline transaction &get_render_transaction();
-		inline bool get_render_data_async();
+		system_job_data* get_game_data_ptr();
+		transaction& get_game_transaction();
+		bool get_game_data_async();
+
+		template<typename T>
+		curve<T> get_game_curve(game_interface *l, curve_index_t i)
+		{
+			assert(l);
+			auto& curves = l->get_curves();
+			auto& curve_map = get_curve_list<T>(curves);
+
+			if (detail::get_game_data_async())
+				return detail::get_game_transaction().get(i, curve_map);
+			else
+				return curve_map.get_no_async(i);
+		}
+
+		template<typename T>
+		void set_game_curve(game_interface *l, curve_index_t i, curve<T> c)
+		{
+			assert(l);
+
+			auto& curves = l->get_curves();
+			auto& target_curve_list = get_curve_list<T>(curves);
+
+			if (detail::get_game_data_async())
+				detail::get_game_transaction().set(target_curve_list, i, std::move(c));
+			else
+				target_curve_list.set(i, std::move(c));
+
+			return;
+		}
+
+		template<typename T>
+		void set_game_value(game_interface *l, curve_index_t i, time_point t, T&& v)
+		{
+			assert(l);
+
+			auto& curves = l->get_curves();
+			auto& target_curve_type = get_curve_list<T>(curves);
+
+			if (detail::get_game_data_async())
+			{
+				auto c = detail::get_game_transaction().peek(i, target_curve_type);
+				c.set(t, std::forward<T>(v));
+				detail::get_game_transaction().set(target_curve_type, i, std::forward<T>(c));
+			}
+			else
+			{
+				auto c = target_curve_type.get_no_async(i);
+				c.set(i, t);
+				target_curve_type.set(i, c);
+			}
+
+			return;
+		}
+
+		render_job_data* get_render_data_ptr();
+		transaction &get_render_transaction();
+		bool get_render_data_async();
+
+		template<typename T>
+		curve<T> get_render_curve(game_interface *l, curve_index_t i)
+		{
+			assert(l);
+
+			auto& curves = l->get_curves();
+			auto& curve_map = get_curve_list<T>(curves);
+
+			if (detail::get_render_data_async())
+				return detail::get_render_transaction().get(i, curve_map);
+			else
+				return curve_map.get_no_async(i);
+		}
+	}
+
+	namespace game
+	{
+		template<typename T>
+		void create_system_value(unique_id key, T&& value)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+			ptr->system_data.create(key, std::forward<T>(value));
+		}
+
+		template<typename T>
+		void set_system_value(unique_id key, T&& value)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+			if (detail::get_game_data_async())
+				detail::get_game_transaction().set(ptr->system_data, key, std::forward<T>(value));
+			else
+				ptr->system_data.set(key, std::forward<T>(value));
+		}
+
+		template<typename T>
+		T get_system_value(unique_id key)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+			if (detail::get_game_data_async())
+				return detail::get_game_transaction().get<T>(ptr->system_data, key);
+			else
+				return ptr->system_data.get_no_async<T>(key);
+		}
+	}
+
+	namespace game::level
+	{
+		template<typename T>
+		curve<T> get_curve(variable_id v)
+		{
+			auto ent = game::get_entity();
+			return get_curve<T>({ ent, v });
+		}
+
+		template<typename T>
+		curve<T> get_curve(curve_index_t i)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+
+			return detail::get_game_curve<T>(ptr->level_data, i);
+		}
+
+		template<typename T>
+		T get_value(curve_index_t i, time_point t)
+		{
+			const auto curve = get_curve<T>(i);
+			return curve.get(t);
+		}
+
+		template<typename T>
+		T get_value(variable_id v, time_point t)
+		{
+			const auto e = game::get_entity();
+			const auto c = get_curve<T>(e, v);
+			return c.get(t);
+		}
+
+		template<typename T>
+		void set_curve(curve_index_t i, curve<T> c)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+
+			return detail::set_game_curve(ptr->level_data, i, std::move(c));
+		}
+
+		template<typename T>
+		void set_value(curve_index_t i, time_point t, T&& v)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+
+			return detail::set_game_value(ptr->level_data, i, t, std::forward<T>(v));
+		}
 	}
 
 	namespace render
@@ -157,11 +313,8 @@ namespace hades
 		template<typename T>
 		curve<T> get_curve(variable_id v)
 		{
-			auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
-
-
-			return curve<T>();
+			auto ent = render::get_entity();
+			return get_curve<T>({ ent, v });
 		}
 
 		template<typename T>
@@ -170,13 +323,14 @@ namespace hades
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
 
-			auto &curves = ptr->level_data->get_curves();
-			auto &curve_map = get_curve_list<T>(curves);
+			return detail::get_render_curve<T>(ptr->level_data, i);
+		}
 
-			if (detail::get_render_data_async())
-				return detail::get_render_transaction().get(i, curve_map);
-			else
-				return curve_map.get(i);
+		template<typename T>
+		T get_value(curve_index_t i, time_point t)
+		{
+			auto curve = get_curve<T>(i);
+			return curve.get(t);
 		}
 
 		/*template<typename T>

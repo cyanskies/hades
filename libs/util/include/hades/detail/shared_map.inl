@@ -38,6 +38,17 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
+	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get_no_async(key_type id) const
+	{
+		auto index = _getIndex(id);
+		
+		assert(index < _componentMutex.size());
+		assert(index < _components.size());
+
+		return _components[index];
+	}
+
+	template<typename Key, typename Value>
 	template<typename T, typename>
 	inline void shared_map<Key, Value>::set(key_type id, T &&value)
 	{

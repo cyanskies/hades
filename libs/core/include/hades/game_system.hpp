@@ -193,32 +193,102 @@ namespace hades
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
+
+	//TODO: move to level_interface?
 	//functions for game state access
 
 	//using
 
-	//void set_game_data();
-	//void clear_game_data();
+	void set_game_data(system_job_data*, bool async = true);
+	void abort_game_job();
+	bool finish_game_job();
 
 	namespace game
 	{
-		//get_system_data<>
+		entity_id get_entity();
+
+		time_point get_last_time();
+		time_duration get_delta_time();
+		time_point get_time();
+
+		template<typename T>
+		void create_system_value(unique_id, T&& value);
+
+		bool system_value_exists(unique_id);
+
+		template<typename T>
+		T get_system_value(unique_id);
+
+		template<typename T>
+		void set_system_value(unique_id, T&& value);
+
+		void destroy_system_value(unique_id);
+		void clear_system_values();
 	}
 
 	namespace game::mission
 	{
 		//get_curve_x
 		//set_curve_x
+		//get_value
+		//set_value
 		//get_level_index(level_id)
 	}
 
 	namespace game::level
 	{
-		//get_curve_x
-		//set_curve_x
+		template<typename T>
+		curve<T> get_curve(variable_id);
 
-		//get_curve_x(levelid, x)
-		//set_curve_x(levelid, x;
+		template<typename T>
+		curve<T> get_curve(curve_index_t);
+
+		template<typename T>
+		inline curve<T> get_curve(entity_id e, variable_id v)
+		{ return get_curve<T>(curve_index_t{ e, v }); }
+
+		template<typename T>
+		T get_value(curve_index_t, time_point);
+
+		template<typename T>
+		T get_value(variable_id, time_point);
+
+		template<typename T>
+		T get_value(entity_id e, variable_id v, time_point t)
+		{ return get_value<T>({ e,v }, t); }
+
+
+		template<typename T>
+		inline void set_curve(variable_id v, curve<T> c)
+		{
+			const auto e = get_entity();
+			return set_curve(curve_index_t{ e, v }, std::move(c));
+		}
+
+		template<typename T>
+		void set_curve(curve_index_t, curve<T>);
+
+		template<typename T>
+		inline void set_curve(entity_id e, variable_id v, curve<T> c)
+		{
+			return set_curve<T>(curve_index_t{ e, v }, std::move(c));
+		}
+
+		template<typename T>
+		void set_value(curve_index_t, time_point, T&&);
+
+		template<typename T>
+		inline void set_value(variable_id v, T&& val)
+		{
+			const auto e = get_entity();
+			return set_value(curve_index_t{ e, v }, std::forward<T>(val));
+		}
+
+		template<typename T>
+		inline void set_value(entity_id e, variable_id v, T&& val)
+		{
+			return set_value(curve_index_t{ e, v }, std::forward<T>(val));
+		}
 	}
 
 	void set_render_data(render_job_data*, bool async = true);
@@ -267,6 +337,9 @@ namespace hades
 		template<typename T>
 		inline curve<T> get_curve(entity_id e, variable_id v)
 		{ return get_curve<T>(curve_index_t{ e, v }); }
+
+		template<typename T>
+		T get_value(curve_index_t, time_point);
 
 		//render systems are currently read only
 		/*template<typename T>

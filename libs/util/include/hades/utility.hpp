@@ -94,6 +94,7 @@ namespace hades {
 		Func f;
 	};
 
+	// returns an object that calls f when it goes out of scope
 	template<typename Func>
 	finally_t<Func> make_finally(Func&& f);
 

@@ -180,6 +180,78 @@ namespace hades
 		return output;
 	}
 
+	static thread_local system_job_data* game_data_ptr = nullptr;
+	static thread_local transaction game_transaction{};
+	static thread_local bool game_async = true;
+
+	void set_game_data(system_job_data *d, bool async)
+	{
+		assert(d);
+		game_data_ptr = d;
+		game_async = async;
+		return;
+	}
+
+	void abort_game_job()
+	{
+		assert(game_data_ptr);
+		game_data_ptr = nullptr;
+		game_transaction.abort();
+		return;
+	}
+
+	bool finish_game_job()
+	{
+		assert(game_data_ptr);
+		game_data_ptr = nullptr;
+		return game_transaction.commit();
+	}
+
+	namespace game
+	{
+		entity_id hades::game::get_entity()
+		{
+			assert(game_data_ptr);
+			return game_data_ptr->entity;
+		}
+
+		time_point get_last_time()
+		{
+			assert(game_data_ptr);
+			return game_data_ptr->current_time;
+		}
+
+		time_duration get_delta_time()
+		{
+			assert(game_data_ptr);
+			return game_data_ptr->dt;
+		}
+
+		time_point get_time()
+		{
+			assert(game_data_ptr);
+			return game_data_ptr->current_time + game_data_ptr->dt;
+		}
+
+		bool system_value_exists(unique_id key)
+		{
+			assert(game_data_ptr);
+			return game_data_ptr->system_data.exists(key);
+		}
+
+		void destroy_system_value(unique_id key)
+		{
+			assert(game_data_ptr);
+			game_data_ptr->system_data.erase(key);
+		}
+
+		void clear_system_values()
+		{
+			assert(game_data_ptr);
+			game_data_ptr->system_data.clear();
+		}
+	}
+
 	static thread_local render_job_data *render_data_ptr = nullptr;
 	static thread_local transaction render_transaction{};
 	static thread_local bool render_async = true;
@@ -189,6 +261,7 @@ namespace hades
 		assert(j);
 		render_data_ptr = j;
 		render_async = async;
+		return;
 	}
 
 	void abort_render_job()
@@ -196,6 +269,7 @@ namespace hades
 		assert(render_data_ptr);
 		render_transaction.abort();
 		render_data_ptr = nullptr;
+		return;
 	}
 
 	bool finish_render_job()
@@ -243,6 +317,21 @@ namespace hades
 
 	namespace detail
 	{
+		system_job_data* get_game_data_ptr()
+		{
+			return game_data_ptr;
+		}
+
+		transaction& get_game_transaction()
+		{
+			return game_transaction;
+		}
+
+		bool get_game_data_async()
+		{
+			return game_async;
+		}
+
 		render_job_data* get_render_data_ptr()
 		{
 			return render_data_ptr;

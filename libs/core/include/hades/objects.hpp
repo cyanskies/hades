@@ -3,16 +3,18 @@
 
 #include <vector>
 
+#include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
-#include "hades/game_system.hpp"
 #include "hades/resource_base.hpp"
-#include "hades/types.hpp"
 #include "hades/vector_math.hpp"
 #include "hades/writer.hpp"
 
 namespace hades::resources
 {
 	struct animation;
+	struct curve;
+	struct render_system;
+	struct system;
 	
 	struct object_t
 	{};
@@ -87,6 +89,7 @@ namespace hades
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
 	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
 
+	std::vector<const resources::system*> get_systems(const resources::object& o);
 	std::vector<const resources::render_system*> get_render_systems(const resources::object& o);
 
 	[[deprecated]] curve_value valid_vector_curve(hades::resources::curve_default_value v);

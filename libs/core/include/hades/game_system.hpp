@@ -10,6 +10,7 @@
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
 #include "hades/level_curve_data.hpp"
+#include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/shared_any_map.hpp"
 #include "hades/shared_guard.hpp"
@@ -193,7 +194,6 @@ namespace hades
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
-
 	//TODO: move to level_interface?
 	//functions for game state access
 
@@ -205,10 +205,17 @@ namespace hades
 
 	namespace game
 	{
-		entity_id get_entity();
+		using namespace resources::curve_types;
 
+		object_ref get_object() noexcept;
+
+		//the time of the previous update
 		time_point get_last_time();
+		//the time between this update and the previous one
 		time_duration get_delta_time();
+		//the current time
+		//we need to calculate the state at this time
+		//using values from last_time
 		time_point get_time();
 
 		template<typename T>
@@ -237,58 +244,56 @@ namespace hades
 
 	namespace game::level
 	{
+		//void return_level() //restores the origional level
+		//void switch_level(level_id)
+
+		//NOTE: for the following functions(get/set curves/values)
+		// if the object_ref is not provided, it is set to game::get_object()
+		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
+		// and game::get_time() for set_* functions
+		
+		template<typename T>
+		curve<T> get_curve(object_ref, variable_id);
+		template<typename T>
+		curve<T> get_curve(curve_index_t);
 		template<typename T>
 		curve<T> get_curve(variable_id);
 
 		template<typename T>
-		curve<T> get_curve(curve_index_t);
-
-		template<typename T>
-		inline curve<T> get_curve(entity_id e, variable_id v)
-		{ return get_curve<T>(curve_index_t{ e, v }); }
-
+		T get_value(object_ref, variable_id, time_point);
 		template<typename T>
 		T get_value(curve_index_t, time_point);
-
 		template<typename T>
 		T get_value(variable_id, time_point);
+		template<typename T>
+		T get_value(object_ref, variable_id);
+		template<typename T>
+		T get_value(curve_index_t);
+		template<typename T>
+		T get_value(variable_id);
 
 		template<typename T>
-		T get_value(entity_id e, variable_id v, time_point t)
-		{ return get_value<T>({ e,v }, t); }
-
-
-		template<typename T>
-		inline void set_curve(variable_id v, curve<T> c)
-		{
-			const auto e = get_entity();
-			return set_curve(curve_index_t{ e, v }, std::move(c));
-		}
-
+		void set_curve(object_ref, variable_id, curve<T>);
 		template<typename T>
 		void set_curve(curve_index_t, curve<T>);
+		template<typename T>
+		void set_curve(variable_id, curve<T>);
 
 		template<typename T>
-		inline void set_curve(entity_id e, variable_id v, curve<T> c)
-		{
-			return set_curve<T>(curve_index_t{ e, v }, std::move(c));
-		}
-
+		void set_value(object_ref, variable_id, time_point, T&&);
 		template<typename T>
 		void set_value(curve_index_t, time_point, T&&);
-
 		template<typename T>
-		inline void set_value(variable_id v, T&& val)
-		{
-			const auto e = get_entity();
-			return set_value(curve_index_t{ e, v }, std::forward<T>(val));
-		}
-
+		void set_value(variable_id, time_point, T&&);
 		template<typename T>
-		inline void set_value(entity_id e, variable_id v, T&& val)
-		{
-			return set_value(curve_index_t{ e, v }, std::forward<T>(val));
-		}
+		void set_value(object_ref, variable_id, T&&);
+		template<typename T>
+		void set_value(curve_index_t, T&&);
+		template<typename T>
+		void set_value(variable_id v, T&&);
+
+		//an object is always created at game::get_time() time.
+		object_ref create_object(object_instance);
 	}
 
 	void set_render_data(render_job_data*, bool async = true);
@@ -297,7 +302,8 @@ namespace hades
 
 	namespace render
 	{
-		entity_id get_entity();
+		using namespace resources::curve_types;
+		object_ref get_object();
 		render_interface& get_render_output();
 		time_point get_time();
 
@@ -314,6 +320,10 @@ namespace hades
 
 		void destroy_system_value(unique_id);
 		void clear_system_values();
+
+		//drawing functions
+
+
 	}
 
 	namespace render::mission
@@ -335,7 +345,7 @@ namespace hades
 		curve<T> get_curve(curve_index_t);
 
 		template<typename T>
-		inline curve<T> get_curve(entity_id e, variable_id v)
+		inline curve<T> get_curve(object_ref e, variable_id v)
 		{ return get_curve<T>(curve_index_t{ e, v }); }
 
 		template<typename T>

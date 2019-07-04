@@ -84,7 +84,7 @@ namespace hades
 			}
 		}
 
-		_jobs.run(jobs);
+		_jobs.run(std::begin(jobs), std::end(jobs));
 		_jobs.wait(on_tick_parent);
 		_jobs.clear();
 

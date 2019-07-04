@@ -112,6 +112,7 @@ namespace hades
 	namespace detail
 	{
 		system_job_data* get_game_data_ptr();
+		game_interface* get_game_level_ptr();
 		transaction& get_game_transaction();
 		bool get_game_data_async();
 
@@ -156,13 +157,13 @@ namespace hades
 			{
 				auto c = detail::get_game_transaction().peek(i, target_curve_type);
 				c.set(t, std::forward<T>(v));
-				detail::get_game_transaction().set(target_curve_type, i, std::forward<T>(c));
+				detail::get_game_transaction().set(target_curve_type, i, std::move(c));
 			}
 			else
 			{
 				auto c = target_curve_type.get_no_async(i);
-				c.set(i, t);
-				target_curve_type.set(i, c);
+				c.set(t, std::forward<T>(v));
+				target_curve_type.set(i, std::move(c));
 			}
 
 			return;
@@ -214,7 +215,7 @@ namespace hades
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 			if (detail::get_game_data_async())
-				return detail::get_game_transaction().get<T>(ptr->system_data, key);
+				return detail::get_game_transaction().get<T>(key, ptr->system_data);
 			else
 				return ptr->system_data.get_no_async<T>(key);
 		}
@@ -223,9 +224,15 @@ namespace hades
 	namespace game::level
 	{
 		template<typename T>
+		curve<T> get_curve(object_ref e, variable_id v)
+		{
+			return get_curve<T>(curve_index_t{ e, v });
+		}
+
+		template<typename T>
 		curve<T> get_curve(variable_id v)
 		{
-			auto ent = game::get_entity();
+			auto ent = game::get_object();
 			return get_curve<T>({ ent, v });
 		}
 
@@ -239,6 +246,12 @@ namespace hades
 		}
 
 		template<typename T>
+		inline T get_value(object_ref e, variable_id v, time_point t)
+		{
+			return get_value<T>({ e,v }, t);
+		}
+
+		template<typename T>
 		T get_value(curve_index_t i, time_point t)
 		{
 			const auto curve = get_curve<T>(i);
@@ -248,9 +261,31 @@ namespace hades
 		template<typename T>
 		T get_value(variable_id v, time_point t)
 		{
-			const auto e = game::get_entity();
-			const auto c = get_curve<T>(e, v);
-			return c.get(t);
+			return get_value<T>(curve_index_t{ game::get_object(), v }, t);
+		}
+
+		template<typename T>
+		T get_value(object_ref o, variable_id v)
+		{
+			return get_value<T>(curve_index_t{ o, v });
+		}
+
+		template<typename T>
+		T get_value(curve_index_t i)
+		{
+			return get_value<T>(i, get_last_time());
+		}
+
+		template<typename T>
+		inline T get_value(variable_id v)
+		{
+			return get_value<T>(curve_index_t{ get_object(), v });
+		}
+
+		template<typename T>
+		inline void set_curve(object_ref e, variable_id v, curve<T> c)
+		{
+			return set_curve<T>(curve_index_t{ e, v }, std::move(c));
 		}
 
 		template<typename T>
@@ -263,12 +298,49 @@ namespace hades
 		}
 
 		template<typename T>
+		inline void set_curve(variable_id v, curve<T> c)
+		{
+			const auto e = get_object();
+			return set_curve(curve_index_t{ e, v }, std::move(c));
+		}
+
+		template<typename T>
+		void set_value(object_ref o, variable_id v, time_point t, T&& val)
+		{
+			return set_value(curve_index_t{ o, v }, t, std::forward<T>(val));
+		}
+
+		template<typename T>
 		void set_value(curve_index_t i, time_point t, T&& v)
 		{
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 
 			return detail::set_game_value(ptr->level_data, i, t, std::forward<T>(v));
+		}
+
+		template<typename T>
+		void set_value(variable_id v, time_point t, T&& val)
+		{
+			return set_value(curve_index_t{ get_object(), v }, t, std::forward<T>(val));
+		}
+
+		template<typename T>
+		void set_value(object_ref e, variable_id v, T&& val)
+		{
+			return set_value(curve_index_t{ e, v }, get_time(), std::forward<T>(val));
+		}
+
+		template<typename T>
+		void set_value(curve_index_t i, T&& t)
+		{
+			return set_value(i, get_time(), std::forward<T>(t));
+		}
+
+		template<typename T>
+		void set_value(variable_id v, T&& val)
+		{
+			return set_value(curve_index_t{ get_object(), v }, std::forward<T>(val));
 		}
 	}
 
@@ -313,7 +385,7 @@ namespace hades
 		template<typename T>
 		curve<T> get_curve(variable_id v)
 		{
-			auto ent = render::get_entity();
+			auto ent = get_object();
 			return get_curve<T>({ ent, v });
 		}
 

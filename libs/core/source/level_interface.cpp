@@ -1,5 +1,6 @@
 #include "Hades/level_interface.hpp"
 
+#include "hades/core_curves.hpp"
 #include "hades/data.hpp"
 #include "hades/level.hpp"
 #include "hades/game_system.hpp"
@@ -14,6 +15,56 @@ namespace hades
 	entity_id common_implementation_base::create_entity()
 	{
 		return entity_id{ ++_next };
+	}
+
+	entity_id common_implementation_base::create_entity(const object_instance &o,
+		time_point t)
+	{
+		const auto id = o.id == bad_entity ? create_entity() : o.id;
+		
+		if(!std::empty(o.name_id))
+			name_entity(id, o.name_id, t);
+
+		//add all the curves from o to the entity 'id'
+		auto& curves = get_curves();
+		for (const auto& [c, v] : o.curves)
+		{
+			assert(c);
+			assert(!v.valueless_by_exception());
+			const auto index = curve_index_t{ id, c->id };
+
+			std::visit([&](auto&& v)->void {
+				using T = std::decay_t<decltype(v)>;				
+				auto curve_map = get_curve_list<T>(curves);
+				if (!curve_map.exists(index))
+				{
+					auto new_curve = curve<T>{ c->c_type };
+					new_curve.set(t, std::move_if_noexcept(v));
+					curve_map.create(index, std::move(new_curve));
+				}
+
+				return;
+				}, v);
+		}
+
+		//add object type as a curve
+		assert(o.obj_type);
+		const auto obj_type_c = get_object_type_curve();
+		assert(obj_type_c);
+
+		using ObjType = resources::curve_types::unique;
+		auto obj_type = curve<ObjType>{ obj_type_c->c_type };
+		obj_type.set(t, o.obj_type->id);
+
+		auto &obj_type_curves = get_curve_list<ObjType>(curves);
+		obj_type_curves.create(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
+
+		//attach systems
+		const auto systems = get_systems(*o.obj_type);
+		for (const auto s : systems)
+			attach_system(id, s->id, t);
+
+		return id;
 	}
 
 	entity_id common_implementation_base::get_entity_id(std::string_view name, time_point t) const

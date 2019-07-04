@@ -60,12 +60,12 @@ namespace hades
 	public:
 		//creates an entity with no curves or systems attached to it
 		virtual entity_id create_entity() = 0;
+		//writes curves and other settings from object_instance into entity id
+		//if any of the curves already exist then they will be skipped,
+		//entity name will also not be applied
+		virtual entity_id create_entity(const object_instance&, time_point) = 0;
 		//virtual entity_id create_entity(const resources::object*) = 0;
 		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
-
-		//adds all the curves and effects of object* to entity_id
-		//doesnt replace curves that are already present
-		//virtual void update_entity(entity_id, const resources::object*) = 0;
 
 		//attach/detach entities from systems
 		virtual void attach_system(entity_id, unique_id, time_point t) = 0;
@@ -80,6 +80,7 @@ namespace hades
 		explicit common_implementation_base(const level_save&);
 
 		entity_id create_entity() override final;
+		entity_id create_entity(const object_instance&, time_point) override final;
 		entity_id get_entity_id(std::string_view, time_point t) const override final;
 
 		void name_entity(entity_id, std::string_view, time_point);

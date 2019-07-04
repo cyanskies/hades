@@ -22,12 +22,12 @@ namespace hades
 			const resources::animation* anim = nullptr;
 		};
 
-		static entity_info get_entity_info(entity_id e)
+		static entity_info get_entity_info(resources::curve_types::object_ref e)
 		{
 			using namespace resources::curve_types;
 
 			const auto time = render::get_time();
-			const auto ent = render::get_entity();
+			const auto ent = render::get_object();
 			const auto [x, y] = get_position_curve_id();
 			const auto [size_x, size_y] = get_size_curve_id();
 			const auto obj_type = get_object_type_curve_id();
@@ -58,13 +58,13 @@ namespace hades
 
 		static void on_create()
 		{
-			assert(render::get_entity() == bad_entity);
+			assert(render::get_object() == bad_entity);
 			render::create_system_value(sprite_id_list, sprite_id_t{});
 		}
 
 		static void on_connect()
 		{
-			const auto entity = render::get_entity();
+			const auto entity = render::get_object();
 			assert(entity != bad_entity);
 			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 
@@ -118,7 +118,7 @@ namespace hades
 
 		static void on_destroy()
 		{
-			assert(render::get_entity() == bad_entity);
+			assert(render::get_object() == bad_entity);
 			render::clear_system_values();
 			return;
 		}
@@ -181,13 +181,16 @@ namespace hades
 	}
 
 	static thread_local system_job_data* game_data_ptr = nullptr;
+	static thread_local game_interface* game_current_level_ptr = nullptr;
 	static thread_local transaction game_transaction{};
 	static thread_local bool game_async = true;
+	static thread_local std::vector<object_instance> game_new_objects;
 
 	void set_game_data(system_job_data *d, bool async)
 	{
 		assert(d);
 		game_data_ptr = d;
+		game_current_level_ptr = d->level_data;
 		game_async = async;
 		return;
 	}
@@ -203,13 +206,24 @@ namespace hades
 	bool finish_game_job()
 	{
 		assert(game_data_ptr);
+		const auto commit_success = game_transaction.commit();
+
+		if (commit_success)
+		{
+			//TODO: store ptr to the level the object was created for
+			// currently we can only create objects in the level the system is running in
+			for (const auto& o : game_new_objects)
+				game_data_ptr->level_data->create_entity(o, game::get_time());
+		}
+
 		game_data_ptr = nullptr;
-		return game_transaction.commit();
+		game_current_level_ptr = nullptr;
+		return commit_success;
 	}
 
 	namespace game
 	{
-		entity_id hades::game::get_entity()
+		object_ref get_object() noexcept
 		{
 			assert(game_data_ptr);
 			return game_data_ptr->entity;
@@ -252,6 +266,20 @@ namespace hades
 		}
 	}
 
+	namespace game::level
+	{
+		object_ref create_object(object_instance obj)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+			assert(obj.id == bad_entity);
+			obj.id = ptr->level_data->create_entity();
+
+			const auto& o = game_new_objects.emplace_back(std::move(obj));
+			return o.id;
+		}
+	}
+
 	static thread_local render_job_data *render_data_ptr = nullptr;
 	static thread_local transaction render_transaction{};
 	static thread_local bool render_async = true;
@@ -279,7 +307,7 @@ namespace hades
 		return render_transaction.commit();
 	}
 
-	entity_id render::get_entity()
+	resources::curve_types::object_ref render::get_object()
 	{
 		assert(render_data_ptr);
 		return render_data_ptr->entity;
@@ -319,7 +347,14 @@ namespace hades
 	{
 		system_job_data* get_game_data_ptr()
 		{
+			assert(game_data_ptr);
 			return game_data_ptr;
+		}
+
+		game_interface* get_game_level_ptr()
+		{
+			assert(game_current_level_ptr);
+			return game_current_level_ptr;
 		}
 
 		transaction& get_game_transaction()

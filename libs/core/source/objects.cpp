@@ -28,16 +28,25 @@ namespace hades::resources
 		using namespace data::parse_tools;
 
 		const auto curve_id = curve_info[0]->to_scalar<unique_id>();
-		const auto curve_ptr = data::get<curve>(curve_id);
-		//NOTE: curve_ptr must be valid, get<> throws otherwise
-
-		if (curve_info.size() == 2)
+		
+		try
 		{
-			const auto value = curve_from_node(*curve_ptr, *curve_info[1]);
-			return { curve_ptr, value };
-		}
+			const auto curve_ptr = data::get<curve>(curve_id);
+			//NOTE: curve_ptr must be valid, get<> throws otherwise
 
-		return { curve_ptr, curve_default_value{} };		
+			if (curve_info.size() == 2)
+			{
+				const auto value = curve_from_node(*curve_ptr, *curve_info[1]);
+				return { curve_ptr, value };
+			}
+
+			return { curve_ptr, curve_default_value{} };
+		}
+		catch (const data::resource_null&)
+		{
+			const auto name = curve_info[0]->to_string();
+			throw invalid_curve{ "\'" + name + "\' has not been registered as a resource name" };
+		}
 	}
 
 	static void parse_objects(hades::unique_id mod, const data::parser_node &node, hades::data::data_manager &d)
@@ -91,22 +100,33 @@ namespace hades::resources
 			{
 				for (const auto &c : curves_node->get_children())
 				{
-					const auto [curve, value] = get_curve_info(*c, mod);
-
-					//curve_info returns nullptr if 
-					//c has no children
-					if (curve)
+					try
 					{
-						const auto prev = std::find(std::begin(obj->curves), std::end(obj->curves), object::curve_obj{ curve, value });
-						
-						//if the curve is already in the list, then just replace it's value
-						//otherwise add it
-						if (prev == std::end(obj->curves))
-							obj->curves.emplace_back(curve, value);
-						else
-							*prev = { curve,value };
+						const auto [curve, value] = get_curve_info(*c, mod);
+
+						//curve_info returns nullptr if 
+						//c has no children
+						if (curve)
+						{
+							const auto prev = std::find(std::begin(obj->curves), std::end(obj->curves), object::curve_obj{ curve, value });
+
+							//if the curve is already in the list, then just replace it's value
+							//otherwise add it
+							if (prev == std::end(obj->curves))
+								obj->curves.emplace_back(curve, value);
+							else
+								*prev = { curve,value };
+						}
+						//TODO: else: error
 					}
-					//TODO: else: error
+					catch (const invalid_curve& c)
+					{
+						//get curve info will throw this if the curve type is unregistered
+						// or its values are invalid
+						using namespace std::string_literals;
+						const auto msg = "Unable to add curve to object type: " + name + ", reason was: "s + c.what();
+						LOGERROR(msg);
+					}
 				}
 			}
 
@@ -160,6 +180,9 @@ namespace hades
 	}
 
 	using curve_obj = resources::object::curve_obj;
+
+	//TODO: FIXME: many of the functions below are recursive
+	//			they should be changed to be iterative instead
 
 	//returns nullptr if the curve wasn't found
 	//returns the curve with the value unset if it was found but not set
@@ -377,6 +400,23 @@ namespace hades
 	{
 		auto curves = GetAllCurvesSimple(&o);
 		return unique_curves(curves);
+	}
+
+	std::vector<const resources::system*> get_systems(const resources::object& o)
+	{
+		auto out = std::vector<const resources::system*>{};
+
+		for (const auto b : o.base)
+		{
+			const auto base_out = get_systems(*b);
+			out.reserve(std::size(out) + std::size(base_out));
+			std::copy(std::begin(base_out), std::end(base_out), std::back_inserter(out));
+		}
+
+		out.reserve(std::size(out) + std::size(o.systems));
+		std::copy(std::begin(o.systems), std::end(o.systems), std::back_inserter(out));
+
+		return out;
 	}
 
 	std::vector<const resources::render_system*> get_render_systems(const resources::object& o)

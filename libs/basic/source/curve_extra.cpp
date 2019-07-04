@@ -64,7 +64,7 @@ namespace hades::resources
 		using resources::curve_variable_type;
 		//TODO: move into the switch
 		if (c.data_type == curve_variable_type::error)
-			throw invalid_curve{"Tried to call reset_default_value on an invalid curve"};
+			throw invalid_curve{to_string(c.id) + " is an invalid curve type, it may not have been registered"};
 
 		using namespace resources::curve_types;
 

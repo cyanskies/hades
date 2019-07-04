@@ -56,7 +56,8 @@ namespace hades
 		job* create_child_rchild(job* parent, job* rparent, Func, JobData);
 
 		void run(job*);
-		void run(const std::vector<job*>&);
+		template<typename InputIt>
+		void run(InputIt first, InputIt last);
 		void wait(job*);
 		void clear();
 

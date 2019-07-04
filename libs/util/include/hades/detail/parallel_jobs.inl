@@ -69,4 +69,16 @@ namespace hades
 	{
 		return _create_child_rchild(parent, rparent, detail::create_job_invoker(*this, f, d));
 	}
+
+	template<typename InputIt>
+	inline void job_system::run(InputIt first, InputIt last)
+	{
+		static_assert(std::is_same_v<std::iterator_traits<InputIt>::value_type, job*>);
+		const auto id = _thread_id();
+		auto [queue, lock] = _get_queue(id);
+		std::ignore = lock;
+		assert(queue);
+		queue->insert(std::begin(*queue), first, last);
+		return;
+	}
 }

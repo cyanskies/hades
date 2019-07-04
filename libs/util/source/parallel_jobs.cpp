@@ -107,15 +107,6 @@ namespace hades
 		queue->push_front(j);
 	}
 
-	void job_system::run(const std::vector<job*> &vect)
-	{
-		const auto id = _thread_id();
-		auto [queue, lock] = _get_queue(id);
-		std::ignore = lock;
-		assert(queue);
-		queue->insert(std::begin(*queue), std::begin(vect), std::end(vect));
-	}
-
 	static bool is_finished(const job* j)
 	{
 		//if it's 0 or less than one, then the job has been completed

@@ -6,6 +6,9 @@ namespace hades
 {
 	bool transaction::commit()
 	{
+		if (std::empty(_data))
+			return true;
+
 		const auto begin = std::begin(_data);
 		const auto end = std::end(_data);
 		auto iter = begin;

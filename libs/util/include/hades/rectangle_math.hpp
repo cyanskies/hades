@@ -24,6 +24,9 @@ namespace hades
 	template<typename T>
 	constexpr bool operator!=(const rect_t<T> &lhs, const rect_t<T> &rhs);
 
+	template<typename T>
+	constexpr bool operator<(const rect_t<T>& lhs, const rect_t<T>& rhs) noexcept;
+
 	using rect_int = rect_t<int32>;
 	using rect_float = rect_t<float>;
 

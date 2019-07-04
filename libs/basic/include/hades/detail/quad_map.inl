@@ -1,10 +1,12 @@
+#include "hades/quad_map.hpp"
+
 #include <cassert>
 #include <map>
 #include <limits>
+#include <stack>
 #include <vector>
 
 #include "hades/exceptions.hpp"
-#include "hades/quad_map.hpp"
 
 namespace hades
 {
@@ -17,6 +19,19 @@ namespace hades
 		key_type key;
 		rect_type rect;
 	};
+
+	template<typename T, typename U>
+	constexpr bool operator==(const quad_data<T, U>&l, const quad_data<T, U>& r) noexcept
+	{
+		return l.key == r.key &&
+			l.rect == r.rect;
+	}
+
+	template<typename T, typename U>
+	constexpr bool operator<(const quad_data<T, U>& l, const quad_data<T, U>& r) noexcept
+	{
+		return std::tie(l.key, l.rect) < std::tie(r.key, r.rect);
+	}
 
 	template<template<typename> typename Rect, typename T>
 	constexpr Rect<T> make_max_rect()
@@ -150,6 +165,11 @@ namespace hades
 			}
 		}
 
+		template<typename T, typename U>
+		friend constexpr bool operator==(const quad_tree<T, U>& lhs, const quad_tree<T, U>& rhs);
+		template<typename T, typename U>
+		friend std::vector<typename quad_node<T, U>::value_type> flatten(const quad_node<T, U>& n);
+
 	private:
 		rect_type _area = make_max_rect<rect_type>();
 		types::uint32 _bucket_cap = 1u;
@@ -158,6 +178,42 @@ namespace hades
 		using _child_vector_type = std::vector<node_type>;
 		_child_vector_type _children;
 	};
+
+	template<typename T, typename U>
+	std::vector<typename quad_node<T, U>::value_type> flatten(const quad_node<T, U>& n)
+	{
+		auto out = std::vector<typename quad_node<T, U>::value_type>{};
+		std::stack<const quad_node<T, U>*> stack;
+		stack.emplace(&n);
+		while (!std::empty(stack))
+		{
+			const auto top = stack.top();
+			stack.pop();
+			std::copy(std::begin(top->_data), std::end(top->_data), std::back_inserter(out));
+			for (const auto& c : top->_children)
+				stack.push(&c);
+		}
+		return out;
+	}
+
+	template<typename T, typename U>
+	constexpr bool operator==(const quad_tree<T, U>& lhs, const quad_tree<T, U>& rhs)
+	{
+		if (lhs._rootNode._area != rhs._rootNode._area)
+			return false;
+
+		auto lnode = flatten(lhs._rootNode);
+		auto rnode = flatten(rhs._rootNode);
+
+		if (std::size(lnode) != std::size(rnode))
+			return false;
+
+		//sort the nodes
+		std::sort(std::begin(lnode), std::end(lnode));
+		std::sort(std::begin(rnode), std::end(rnode));
+
+		return lnode == rnode;
+	}
 
 	template<class Key, typename Rect>
 	quad_tree<Key, Rect>::quad_tree(const rect_type &area, types::int32 _bucket_cap) : _rootNode(area, static_cast<types::uint32>(_bucket_cap))

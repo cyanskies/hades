@@ -30,6 +30,13 @@ namespace hades
 	}
 
 	template<typename T>
+	constexpr bool operator<(const rect_t<T>& l, const rect_t<T>& r) noexcept
+	{
+		return std::tie(l.x, l.y, l.width, l.height) <
+			std::tie(r.x, r.y, r.width, r.height);
+	}
+
+	template<typename T>
 	rect_t<T> to_rect(rect_centre_t<T> r)
 	{
 		return {

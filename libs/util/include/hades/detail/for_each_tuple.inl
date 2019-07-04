@@ -122,6 +122,8 @@ namespace hades::detail
 
 namespace hades
 {
+	//TODO: rewrite these to not be recursive
+
 	template<typename Tuple, typename Func, typename ...Args>
 	void for_each_tuple(Tuple &t, Func f, Args... args) 
 		noexcept(noexcept(detail::for_each_worker<std::size_t{ 0u }>(t, f, args...)))

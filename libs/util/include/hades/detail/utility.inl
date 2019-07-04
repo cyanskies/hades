@@ -162,17 +162,32 @@ namespace hades
 			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
 	}
 
+	namespace detail
+	{
+		template<typename T, typename std::enable_if_t<std::is_integral_v<T>, int> = 0>
+		T random(T min, T max)
+		{
+			std::uniform_int_distribution<T> random(min, max);
+			return random(random_generator);
+		}
+
+		template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+		T random(T min, T max)
+		{
+			std::uniform_real_distribution<T> random(min, max);
+			return random(random_generator);
+		}
+	}
+
 	template<typename T>
 	T random(T min, T max)
 	{
 		if (min == max)
 			return min;
 		else if (min > max)
-			return random(max, min);
+			return detail::random(max, min);
 
-		std::uniform_int_distribution<T> random(min, max);
-
-		return random(random_generator);
+		return detail::random(min, max);
 	}
 
 	template<typename Iter>

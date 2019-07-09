@@ -51,27 +51,27 @@ namespace hades
 			return swap(static_cast<V&>(l), static_cast<V&>(r));
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef operator+() const noexcept
 		{
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef operator-() const noexcept(noexcept(-_value))
 		{
 			return -_value;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator++() noexcept(noexcept(++_value))
 		{
 			++_value;
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
-		constexpr strong_typedef operator++(int) 
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		constexpr strong_typedef operator++(int)
 			noexcept(noexcept(operator++()) && std::is_nothrow_constructible_v<T, T>)
 		{
 			const auto tmp{ *this };
@@ -79,15 +79,15 @@ namespace hades
 			return tmp;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator--() noexcept(noexcept(--_value))
 		{
 			--_value;
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
-		constexpr strong_typedef operator--(int) 
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		constexpr strong_typedef operator--(int)
 			noexcept(noexcept(operator--()) && std::is_nothrow_copy_constructible_v<T, T>)
 		{
 			const auto tmp{ *this };
@@ -95,7 +95,7 @@ namespace hades
 			return tmp;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator+=(const strong_typedef &rhs)
 			noexcept(noexcept(_value += rhs._value))
 		{
@@ -103,7 +103,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator-=(const strong_typedef &rhs)
 			noexcept(noexcept(_value -= rhs._value))
 		{
@@ -111,7 +111,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator*=(const strong_typedef &rhs)
 			noexcept(noexcept(_value *= rhs._value))
 		{
@@ -119,7 +119,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator/=(const strong_typedef &rhs)
 			noexcept(noexcept(_value /= rhs._value))
 		{
@@ -127,13 +127,14 @@ namespace hades
 			return *this;
 		}
 
-		template<typename = std::enable_if_t<arithmatic_flag>>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
 		constexpr strong_typedef &operator%=(const strong_typedef &rhs)
 			noexcept(noexcept(_value %= rhs._value))
 		{
 			_value %= rhs._value;
 			return *this;
 		}
+
 	private:
 		value_type _value{};
 	};

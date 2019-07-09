@@ -46,9 +46,29 @@ namespace hades {
 
 		static buffer read_raw(std::string_view path)
 		{
-			std::ifstream file(path, std::ios_base::binary | std::ios_base::in);
+			using namespace std::string_literals;
+			//TODO: check if file is present.
 
+			if(!fs::exists(path))
+				throw file_exception{ "File not found: "s + to_string(path), file_exception::error_code::FILE_NOT_FOUND };
+
+			std::ifstream file{ path, std::ios_base::binary | std::ios_base::in };
+
+			if (!file.is_open())
+				throw file_exception{ "Failed to open "s + to_string(path) + " for input"s, file_exception::error_code::FILE_NOT_OPEN };
+
+			//find out the file size
+			file.ignore(std::numeric_limits<std::streamsize>::max());
+			assert(file.eof());
+			const auto size = integer_cast<std::size_t>(file.gcount());
+			//seek to begining
+			file.clear();
+			file.seekg(0, std::ios::beg);
+
+			//reserve a buffer to store the file
 			buffer buf{};
+			buf.reserve(size);
+
 			while (!file.eof())
 				buf.push_back(static_cast<std::byte>(file.get()));
 

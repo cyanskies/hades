@@ -147,7 +147,8 @@ namespace hades
 				PERMISSION_DENIED
 			};
 
-			file_exception(const char* what, error_code code) : std::runtime_error(what), _code(code) {}
+			file_exception(const char* what, error_code code) : std::runtime_error{ what }, _code{ code } {}
+			file_exception(std::string what, error_code code) : std::runtime_error{ what }, _code{ code } {}
 
 			error_code code() const
 			{

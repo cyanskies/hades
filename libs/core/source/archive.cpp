@@ -604,7 +604,8 @@ namespace hades
 			if (ret != Z_OK)
 				throw archive_exception("failed to initialise zlib inflate");
 
-			buffer out;
+			buffer out{};
+			out.reserve(std::size(stream));
 
 			bool cont = true;
 			while (cont)

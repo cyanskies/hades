@@ -41,7 +41,7 @@ namespace hades::resources
 	std::string_view get_tilesets_name() noexcept;
 	std::string_view get_tile_settings_name() noexcept;
 	std::string_view get_empty_tileset_name() noexcept;
-
+	
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;
 
@@ -138,7 +138,7 @@ namespace hades
 		std::vector<tileset_info> tilesets;
 		//tiles are stored as ids based on the tileset size in tileset_info
 		std::vector<tile_count_t> tiles;
-		tile_count_t width;
+		tile_count_t width{};
 	};
 
 	//read and write raw maps
@@ -151,7 +151,7 @@ namespace hades
 		std::vector<const resources::tileset*> tilesets;
 		//tiles are stored as full ids according to each tileset
 		std::vector<tile_count_t> tiles;
-		tile_count_t width;
+		tile_count_t width{};
 	};
 
 	using tile_position = vector_int;

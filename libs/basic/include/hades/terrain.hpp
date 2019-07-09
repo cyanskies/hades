@@ -70,14 +70,20 @@ namespace hades::resources
 		terrain_settings();
 
 		const terrain *empty_terrain = nullptr;
+		const terrainset* empty_terrainset = nullptr;
 		std::vector<const terrain*> terrains;
 		std::vector<const terrainset*> terrainsets;
 	};
 
 	const terrain_settings *get_terrain_settings();
 	const terrain *get_terrain(const resources::tile&);
-	const terrain *get_empty_terrain();
 
+	std::string_view get_empty_terrainset_name() noexcept;
+	const terrain *get_empty_terrain();
+	//NOTE: used for maps with no tile terrains
+	// returns a terrainset only holding the empty terrain
+	const terrainset* get_empty_terrainset();
+	
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
 	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type);
 
@@ -120,7 +126,7 @@ namespace hades
 	struct terrain_map
 	{
 		//a terrainset lists the terrain types that can be used in a level
-		const resources::terrainset *terrainset;
+		const resources::terrainset *terrainset = nullptr;
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;

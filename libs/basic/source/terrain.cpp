@@ -54,7 +54,7 @@ namespace hades
 		id::terrain_settings = d.get_uid(resources::get_tile_settings_name());
 		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_id::zero);
 
-		auto empty_id = d.get_uid(resources::get_empty_tileset_name());
+		const auto empty_id = d.get_uid(resources::get_empty_tileset_name());
 		auto empty = d.find_or_create<resources::terrain>(empty_id, unique_id::zero);
 
 		const auto empty_tile = resources::tile{ nullptr, 0u, 0u, empty };
@@ -66,6 +66,12 @@ namespace hades
 
 		terrain_settings->empty_terrain = empty;
 		terrain_settings->empty_tileset = empty;
+
+		const auto empty_tset_id = d.get_uid(resources::get_empty_terrainset_name());
+		auto empty_tset = d.find_or_create<resources::terrainset>(empty_tset_id, unique_id::zero);
+		empty_tset->terrains.emplace_back(empty);
+
+		terrain_settings->empty_terrainset = empty_tset;
 
 		//register tile resources
 		register_tiles_resources(d, func);
@@ -320,9 +326,16 @@ namespace hades
 		}
 
 		// if the terrain layers are empty then generate them
+		
 		if (std::empty(r.terrain_layers))
 		{
-			m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x + 1);
+			if (m.terrainset == resources::get_empty_terrainset())
+				m.terrain_layers.emplace_back(m.tile_layer);
+			else
+			{
+				m.terrain_layers = generate_terrain_layers(m.terrainset,
+					m.terrain_vertex, integer_cast<terrain_count_t>(size.x) + 1);
+			}
 		}
 		else
 		{
@@ -347,9 +360,11 @@ namespace hades
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_count_t>{};
+
 		const auto empty = resources::get_empty_terrain();
 		//add the empty terrain with the index 0
 		t_map.emplace(empty, terrain_count_t{});
+
 		//add the rest of the terrains, offset the index by 1
 		for (auto i = terrain_count_t{}; i < std::size(t.terrainset->terrains); ++i)
 			t_map.emplace(t.terrainset->terrains[i], i + 1u);
@@ -913,13 +928,29 @@ namespace hades::resources
 
 	const terrain_settings *get_terrain_settings()
 	{
-		return data::get<terrain_settings>(id::terrain_settings);
+		auto t = data::get<terrain_settings>(id::terrain_settings);
+		assert(t);
+		return t;
+	}
+
+	std::string_view get_empty_terrainset_name() noexcept
+	{
+		using namespace::std::string_view_literals;
+		return "air-terrainset"sv;
 	}
 
 	const terrain *get_empty_terrain()
 	{
 		const auto settings = get_terrain_settings();
+		assert(settings->empty_terrain);
 		return settings->empty_terrain;
+	}
+
+	const terrainset* get_empty_terrainset()
+	{
+		const auto settings = get_terrain_settings();
+		assert(settings->empty_terrainset);
+		return settings->empty_terrainset;
 	}
 
 	std::vector<tile>& get_transitions(terrain &t, transition_tile_type ty)

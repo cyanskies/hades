@@ -14,7 +14,8 @@ namespace hades::detail
 {
 	level_editor_impl::level_editor_impl()
 	{
-		const auto default_size = console::get_int(cvars::editor_level_default_size);
+		const auto default_size = console::get_int(cvars::editor_level_default_size,
+			cvars::default_value::editor_level_default_size);
 
 		_level.map_x = *default_size;
 		_level.map_y = *default_size;
@@ -29,12 +30,17 @@ namespace hades::detail
 
 	void level_editor_impl::init()
 	{
-		_camera_height = console::get_int(cvars::editor_camera_height_px);
-		_toolbox_width = console::get_int(cvars::editor_toolbox_width);
-		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width);
+		_camera_height = console::get_int(cvars::editor_camera_height_px,
+			cvars::default_value::editor_camera_height_px);
+		_toolbox_width = console::get_int(cvars::editor_toolbox_width,
+			cvars::default_value::editor_toolbox_width);
+		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width,
+			cvars::default_value::editor_toolbox_auto_width);
 
-		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size);
-		_scroll_rate = console::get_float(cvars::editor_scroll_rate);
+		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size, 
+			cvars::default_value::editor_scroll_margin_size);
+		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
+			cvars::default_value::editor_scroll_rate);
 
 		_new_level_options.width = _level.map_x;
 		_new_level_options.height = _level.map_y;
@@ -66,9 +72,12 @@ namespace hades::detail
 
 	void level_editor_impl::reinit()
 	{
-		const auto width = console::get_int(cvars::video_width);
-		const auto height = console::get_int(cvars::video_height);
-		const auto view_height = console::get_int(cvars::editor_camera_height_px);
+		const auto width = console::get_int(cvars::video_width,
+			cvars::default_value::video_width);
+		const auto height = console::get_int(cvars::video_height,
+			cvars::default_value::video_height);
+		const auto view_height = console::get_int(cvars::editor_camera_height_px,
+			cvars::default_value::editor_camera_height_px);
 
 		_window_width = static_cast<float>(*width);
 		_window_height = static_cast<float>(*height);

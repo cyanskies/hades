@@ -65,21 +65,31 @@ namespace hades
 			signed_cast(l.map_y / tile_size)
 		};
 
+		assert(size.x >= 0 && size.y >= 0);
+
 		//change the raw map so it can be validly converted into a terrain_map
 		//generate a empty tile layer of the correct size
 		if (std::empty(map_raw.tile_layer.tiles) ||
 			map_raw.tile_layer.width == tile_count_t{})
 		{
-			map_raw.tile_layer.width = size.x;
+			map_raw.tile_layer.width = integer_cast<tile_count_t>(size.x);
 			map_raw.tile_layer.tilesets.clear();
 			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_terrain()->id, 0u);
-			map_raw.tile_layer.tiles = std::vector<tile_count_t>(size.x * size.y, tile_count_t{});
+
+ 			map_raw.tile_layer.tiles = std::vector<tile_count_t>(
+				static_cast<std::size_t>(size.x) * static_cast<std::size_t>(size.y),
+				tile_count_t{}
+			);
 		}
 
 		//if terrainset is empty then assign one
-		assert(!std::empty(_settings->terrainsets));
-		if(map_raw.terrainset == unique_id::zero)
-			map_raw.terrainset = _settings->terrainsets.front()->id;
+		if (map_raw.terrainset == unique_id::zero)
+		{
+			if (std::empty(_settings->terrainsets))
+				map_raw.terrainset = _settings->empty_terrainset->id;
+			else
+				map_raw.terrainset = _settings->terrainsets.front()->id;
+		}
 
 		const auto map = to_terrain_map(map_raw);
 		
@@ -233,10 +243,15 @@ namespace hades
 
 				assert(_current.terrain_set);
 
-				g.indent();
-				gui_make_horizontal_wrap_buttons(g, toolbox_width,
-					std::begin(_current.terrain_set->terrains),
-					std::end(_current.terrain_set->terrains), make_button);
+				//if we have the empty terrainset then skip this,
+				// the menu would be useless anyway
+				if (_current.terrain_set != _empty_terrainset)
+				{
+					g.indent();
+					gui_make_horizontal_wrap_buttons(g, toolbox_width,
+						std::begin(_current.terrain_set->terrains),
+						std::end(_current.terrain_set->terrains), make_button);
+				}
 			}
 		}
 		g.window_end();
@@ -257,6 +272,7 @@ namespace hades
 				{
 					for (const auto tset : _settings->terrainsets)
 					{
+						assert(tset);
 						if (g.selectable(data::get_as_string(tset->id), tset == _new_options.terrain_set))
 							_new_options.terrain_set = tset;
 					}

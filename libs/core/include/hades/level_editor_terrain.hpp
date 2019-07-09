@@ -51,6 +51,7 @@ namespace hades
 
 		resources::tile _empty_tile = resources::get_empty_tile();
 		const resources::terrain * _empty_terrain = resources::get_empty_terrain();
+		const resources::terrainset* _empty_terrainset = resources::get_empty_terrainset();
 		resources::tile_size_t _tile_size = resources::get_tile_settings()->tile_size;
 
 		//brush settings

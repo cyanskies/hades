@@ -18,7 +18,6 @@ set(HADES_CORE_SRC
 	grid.cpp
 	gui.cpp
 	level.cpp
-	level_curve_data.cpp
 	level_editor.cpp
 	level_editor_grid.cpp
 	level_editor_level_properties.cpp

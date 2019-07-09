@@ -94,7 +94,7 @@ namespace hades {
 
 	private:
 		index_type _offset;
-		size_type _width;
+		size_type _width{};
 		std::vector<value_type> _data;
 	};
 

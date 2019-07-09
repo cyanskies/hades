@@ -7,6 +7,7 @@
 
 namespace hades
 {
+	//called automatically by app.cpp
 	void create_core_console_variables();
 
 	namespace cvars

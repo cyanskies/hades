@@ -30,6 +30,9 @@ namespace hades::detail
 	class level_editor_impl : public state
 	{
 	public:
+		using brush_index_t = std::size_t;
+		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
+
 		level_editor_impl();
 		level_editor_impl(level);
 
@@ -44,8 +47,6 @@ namespace hades::detail
 		void draw(sf::RenderTarget&, time_duration) override;
 
 	protected:
-		using brush_index_t = std::size_t;
-
 		virtual level _component_on_new(level) const = 0;
 		virtual void _component_on_load(const level&) = 0;
 		virtual level _component_on_save(level) const = 0;
@@ -104,7 +105,6 @@ namespace hades::detail
 		time_point _total_run_time;
 
 		//currently active brush
-		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
 		brush_index_t _active_brush = invalid_brush;
 	};
 }

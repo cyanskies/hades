@@ -102,9 +102,8 @@ namespace hades
 		{
 			if (com_iter->request == command)
 			{
-				job(com_iter->arguments);
+				ret = job(com_iter->arguments);
 				com_iter = commands.erase(com_iter);
-				ret = true;
 			}
 			else
 				++com_iter;

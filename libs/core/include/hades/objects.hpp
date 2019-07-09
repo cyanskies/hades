@@ -52,6 +52,7 @@ namespace hades::resources
 
 namespace hades
 {
+	//registers animations and core curves as well
 	void register_objects(hades::data::data_manager&);
 
 	//represents an instance of an object in a level file

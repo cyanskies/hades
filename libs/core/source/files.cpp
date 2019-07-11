@@ -23,6 +23,7 @@ namespace hades {
 			const auto buf = as_raw(modPath, fileName);
 
 			types::string out;
+			out.reserve(std::size(buf));
 			//convert buff to str
 			std::transform(std::begin(buf), std::end(buf), std::back_inserter(out),
 				[](auto i) { return static_cast<char>(i); });

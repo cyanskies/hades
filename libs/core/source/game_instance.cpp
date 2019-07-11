@@ -14,6 +14,22 @@ namespace hades
 	{
 	}
 
+	template<typename Func>
+	static constexpr auto make_job_function_wrapper(Func f) noexcept
+	{
+		return [f](job_system& j, system_job_data d)->bool {
+			set_game_data(&d);
+
+			const auto ret = std::invoke(f, j, d);
+			if (ret)
+				return finish_game_job();
+			else
+				abort_game_job();
+
+			return ret;
+		};
+	}
+
 	void game_instance::tick(time_duration dt)
 	{
 		//TODO: this function pattern is used here and in render_instance,
@@ -25,7 +41,10 @@ namespace hades
 		std::vector<job*> jobs;
 		for (const auto s : new_systems)
 		{
-			const auto j = _jobs.create_child(on_create_parent, s->on_create, system_job_data{
+			if (!s->on_create)
+				continue;
+
+			const auto j = _jobs.create_child(on_create_parent, make_job_function_wrapper(s->on_create), system_job_data{
 				 bad_entity, &_game, nullptr, _current_time, dt, _game.get_system_data(s->id)
 				});
 
@@ -38,12 +57,15 @@ namespace hades
 		const auto on_connect_parent = _jobs.create();
 		for (const auto &s : systems)
 		{
+			if (!s.system->on_connect)
+				continue;
+
 			const auto ents = get_added_entites(s.attached_entities, _current_time, _current_time + dt);
 			auto& sys_data = _game.get_system_data(s.system->id);
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, s.system->on_connect,
+				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, make_job_function_wrapper(s.system->on_connect),
 					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
 
 				jobs.emplace_back(j);
@@ -54,12 +76,15 @@ namespace hades
 		const auto on_disconnect_parent = _jobs.create();
 		for (const auto &s : systems)
 		{
+			if (!s.system->on_disconnect)
+				continue;
+
 			const auto ents = get_removed_entites(s.attached_entities, _current_time, _current_time + dt);
 			auto& sys_data = _game.get_system_data(s.system->id);
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, s.system->on_disconnect,
+				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, make_job_function_wrapper(s.system->on_disconnect),
 					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
 
 				jobs.emplace_back(j);
@@ -70,6 +95,9 @@ namespace hades
 		const auto on_tick_parent = _jobs.create();
 		for (const auto &s : systems)
 		{
+			if (!s.system->tick)
+				continue;
+
 			const auto entities_curve = s.attached_entities.get();
 			const auto ents = entities_curve.get(_current_time);
 
@@ -77,7 +105,7 @@ namespace hades
 
 			for (const auto e : ents)
 			{
-				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, s.system->tick,
+				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, make_job_function_wrapper(s.system->tick),
 					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
 
 				jobs.emplace_back(j);

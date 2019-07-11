@@ -1,5 +1,7 @@
 #include "hades/render_instance.hpp"
 
+#include <type_traits>
+
 #include "hades/core_curves.hpp"
 
 namespace hades 
@@ -115,7 +117,7 @@ namespace hades
 	}
 
 	template<typename Func>
-	static auto make_job_function_wrapper(Func f)
+	static constexpr auto make_job_function_wrapper(Func f) noexcept
 	{
 		return [f](job_system& j, render_job_data d)->bool {
 			set_render_data(&d);
@@ -139,8 +141,11 @@ namespace hades
 		std::vector<job*> jobs;
 		for (const auto s : new_systems)
 		{
+			if (!s->on_create)
+				continue;
+
 			const auto j = _jobs.create_child(on_create_parent, make_job_function_wrapper(s->on_create), render_job_data{
-				 bad_entity, &_game, m, t, i, _game.get_system_data(s->id)
+					bad_entity, &_game, m, t, i, _game.get_system_data(s->id)
 				});
 
 			jobs.emplace_back(j);
@@ -152,6 +157,9 @@ namespace hades
 		const auto on_connect_parent = _jobs.create();
 		for (const auto s : systems)
 		{
+			if (!s.system->on_connect)
+				continue;
+
 			const auto ents = get_added_entites(s.attached_entities, _prev_frame, t);
 			auto& sys_data = _game.get_system_data(s.system->id);
 			 
@@ -169,6 +177,9 @@ namespace hades
 		const auto on_disconnect_parent = _jobs.create();
 		for (const auto s : systems)
 		{
+			if (!s.system->on_disconnect)
+				continue;
+
 			const auto ents = get_removed_entites(s.attached_entities, _prev_frame, t);
 			auto& sys_data = _game.get_system_data(s.system->id);
 
@@ -186,6 +197,9 @@ namespace hades
 		const auto on_tick_parent = _jobs.create();
 		for (auto& s : systems)
 		{
+			if (!s.system->tick)
+				continue;
+
 			const auto entities_curve = s.attached_entities.get();
 			const auto ents = entities_curve.get(t);
 

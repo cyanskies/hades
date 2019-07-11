@@ -4,6 +4,7 @@
 #include "hades/data.hpp"
 #include "hades/level.hpp"
 #include "hades/game_system.hpp"
+#include "hades/objects.hpp"
 
 namespace hades 
 {
@@ -27,7 +28,8 @@ namespace hades
 
 		//add all the curves from o to the entity 'id'
 		auto& curves = get_curves();
-		for (const auto& [c, v] : o.curves)
+		//FIXME: get_all_curves is returning curves that are infected with std::monostate.
+		/*for (const auto& [c, v] : get_all_curves(o))
 		{
 			assert(c);
 			assert(!v.valueless_by_exception());
@@ -45,7 +47,7 @@ namespace hades
 
 				return;
 				}, v);
-		}
+		}*/
 
 		//add object type as a curve
 		assert(o.obj_type);

@@ -231,10 +231,12 @@ namespace hades
 		read_regions_into_level(*level_node, l);
 
 		const auto tiles = level_node->get_child(level_tiles_layer_str);
-		l.tile_map_layer = read_raw_map(*tiles);
+		if(tiles)
+			l.tile_map_layer = read_raw_map(*tiles);
 
 		const auto terrain = level_node->get_child(level_terrain_str);
-		std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = read_raw_terrain_map(*terrain);
+		if(terrain)
+			std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = read_raw_terrain_map(*terrain);
 
 		return l;
 	}

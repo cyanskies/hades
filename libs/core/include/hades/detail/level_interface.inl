@@ -75,27 +75,30 @@ namespace hades
 	inline void common_implementation<SystemType>::attach_system(entity_id entity, unique_id sys, time_point t)
 	{
 		const auto lock = std::lock_guard{ _system_list_mut };
-
+		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems, _system_list_mut);
-		name_list ents = system.attached_entities.get();
+		
+		thread_local static name_list old, updated;
+		do {
+			updated = old = system.attached_entities.get();
 
-		if (ents.empty())
-			ents.set(time_point{ nanoseconds{-1} }, {});
+			if (updated.empty())
+				updated.set(time_point{ nanoseconds{-1} }, {});
 
-		auto ent_list = ents.get(t);
-		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
-		if (found != ent_list.end())
-		{
-			const auto message = "The requested entityid is already attached to this system. EntityId: "
-				+ to_string(entity) + ", System: " + "err" + ", at time: " +
-				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
-			//ent is already attached
-			throw system_already_attached{ message };
-		}
+			auto ent_list = updated.get(t);
+			auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+			if (found != ent_list.end())
+			{
+				const auto message = "The requested entityid is already attached to this system. EntityId: "
+					+ to_string(entity) + ", System: " + "err" + ", at time: " +
+					to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
+				//ent is already attached
+				throw system_already_attached{ message };
+			}
 
-		ent_list.emplace_back(entity);
-		ents.insert(t, ent_list);
-		system.attached_entities = ents;
+			ent_list.emplace_back(entity);
+			updated.insert(t, ent_list);
+		} while (!system.attached_entities.compare_exchange(old, std::move(updated)));
 	}
 
 	template<typename SystemType>

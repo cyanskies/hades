@@ -216,6 +216,8 @@ namespace hades
 				game_data_ptr->level_data->create_entity(o, game::get_time());
 		}
 
+		game_new_objects.clear();
+
 		game_data_ptr = nullptr;
 		game_current_level_ptr = nullptr;
 		return commit_success;

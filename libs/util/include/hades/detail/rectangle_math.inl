@@ -17,9 +17,9 @@ namespace hades
 	template<typename T>
 	constexpr bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs)
 	{
-		return lhs.x == rhs.x,
-			lhs.y == rhs.y,
-			lhs.height == rhs.height,
+		return lhs.x == rhs.x &&
+			lhs.y == rhs.y &&
+			lhs.height == rhs.height &&
 			lhs.width == rhs.width;
 	}
 

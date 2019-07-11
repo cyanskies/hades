@@ -60,26 +60,17 @@ namespace hades {
 	public:
 		using Time = time_point;
 		using frame_t = std::pair<Time, Data>;
-		using DataType = std::map<Time, Data>;
+		using DataType = std::vector<frame_t>;
 
 		basic_curve() = default;
-		explicit basic_curve(curve_type type) 
-			noexcept(std::is_nothrow_copy_constructible_v<curve_type> && std::is_nothrow_constructible_v<DataType>)
-			: _type(type)
+		explicit basic_curve(curve_type type) : _type{type}
 		{}
-
-		static constexpr auto is_curve_nothrow_copy_assignable_v = std::conjunction<
-			std::is_nothrow_copy_constructible<curve_type>,
-            std::is_nothrow_constructible<DataType>,
-            std::is_nothrow_copy_assignable<DataType>,
-			std::is_nothrow_swappable<basic_curve>>::value;
 
 		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
             std::is_nothrow_swappable<DataType>,
-			std::is_nothrow_swappable<curve_type>>::value;
+			std::is_nothrow_copy_assignable<curve_type>>::value;
 
-		basic_curve(const basic_curve &other)
-			noexcept(is_curve_nothrow_copy_assignable_v) :
+		basic_curve(const basic_curve &other) :
 			_type{other._type}, _data{other._data}
 		{}
 
@@ -89,7 +80,6 @@ namespace hades {
 		{}
 
 		basic_curve &operator=(const basic_curve &other)
-			noexcept(is_curve_nothrow_copy_assignable_v)
 		{
 			basic_curve<Data> c{ other };
 			using std::swap;
@@ -239,18 +229,21 @@ namespace hades {
 		{
 			if (_type == curve_type::const_c)
 			{
-				_data.insert_or_assign(Time{}, std::move(value));
+				if (std::empty(_data))
+					_data.emplace_back(Time{}, std::move(value));
+				else
+					_data[0] = frame_t{ Time{}, std::move(value) };
 			}
 			else
 			{
-				auto [iter, succeded] = _data.insert_or_assign(at, value);
-				std::ignore = succeded;
-
+				const auto location = _getRange(at);
+				const auto iter = _data.emplace(location.second, frame_t{ at, std::move(value) });
 				//if the insertion was successful and isn't the last element
 				//in the container
-				if (erase && (iter != --_data.end()))
+				if (const auto target = std::next(iter);
+					erase && target != std::end(_data))
 					//erase everything after the newly inserted keyframe
-					_data.erase(++iter, _data.end());
+					_data.erase(target, std::end(_data));
 			}
 
 			return;
@@ -259,7 +252,9 @@ namespace hades {
 		//returns the keyframes either side of 'at'
 		IterPair _getRange(Time at) const
 		{
-			if (_data.size() == 1)
+			if (std::empty(_data))
+				return IterPair{ std::end(_data), std::end(_data) };
+			else if (_data.size() == 1)
 				return IterPair{ std::begin(_data), std::begin(_data) };
 
 			//what can lower bound throw?(bad_alloc) this prevents the method being noexcept

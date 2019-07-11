@@ -112,7 +112,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
-		shared_guard<name_list> attached_entities = name_list(curve_type::step);
+		shared_guard<name_list> attached_entities = name_list{ curve_type::step };
 	};
 
 	//program provided systems should be attatched to the renderer or 

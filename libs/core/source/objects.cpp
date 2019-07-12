@@ -1,6 +1,7 @@
 #include "hades/objects.hpp"
 
 #include <algorithm>
+#include <stack>
 
 #include "hades/animation.hpp"
 #include "hades/core_curves.hpp"
@@ -314,70 +315,67 @@ namespace hades
 		using curve = hades::resources::curve;
 		using value = hades::resources::curve_default_value;
 
-		const auto less = [](const curve_obj &lhs, const curve_obj &rhs) {
-			const auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
-			assert(c1 && c2);
-			return c1->id < c2->id;
-		};
-
-		const auto equal = [](const curve_obj &lhs, const curve_obj &rhs) {
-			const auto c1 = std::get<const curve*>(lhs), c2 = std::get<const curve*>(rhs);
-			const auto &v1 = std::get<value>(lhs), &v2 = std::get<value>(rhs);
-			assert(c1 && c2);
-			return c1->id == c2->id
-				&& v1 == v2;
-		};
-
-		hades::remove_duplicates(list, less, equal);
-
-		curve_list output;
+		std::stable_sort(std::begin(list), std::end(list), [](auto&& lhs, auto& rhs) {
+			return std::get<const curve*>(lhs)->id < std::get<const curve*>(rhs)->id;
+			});
 
 		//for each unique curve, we want to keep the 
 		//first with an assigned value or the last if their is no value
-		auto first = std::begin(list);
 		const auto last = std::end(list);
-		while (first != last)
+		auto iter = std::begin(list);
+		curve_list output;
+		while (iter != last)
 		{
 			value v{};
-			const auto c = std::get<const curve*>(*first);
+			const auto c = std::get<const curve*>(*iter);
+			assert(c);
 			//while each item represents the same curve c
 			//store the value if it is set
 			//and then find the next different curve
 			// or iterate to the next c
 			do {
-				auto val = std::get<value>(*first);
+				const auto &val = std::get<value>(*iter);
 				if (hades::resources::is_set(val))
 				{
 					v = val;
-					first = std::find_if_not(first, last, [c](const curve_obj &lhs) {
+					iter = std::find_if_not(iter, last, [c](const curve_obj &lhs) {
 						return c == std::get<const curve*>(lhs);
 					});
 				}
 				else
-					++first;
-			} while (first != last && std::get<const curve*>(*first) == c);
+					++iter;
+			} while (iter != last && std::get<const curve*>(*iter) == c);
 
 			//store c and v in output
+			if (!resources::is_set(v))
+				v = resources::reset_default_value(*c);
 			output.emplace_back(c, v);
 		}
 
 		return output;
 	}
 
-	static curve_list GetAllCurvesSimple(const resources::object *o)
+	static curve_list get_all_curves_iterative(const resources::object* o)
 	{
-		assert(o);
-		curve_list out;
+		using object = resources::object;
+		std::stack<const object*> objects{};
+		curve_list out{};
+		objects.emplace(o);
 
-		for (auto c : o->curves)
-			out.push_back(c);
-
-		for (auto obj : o->base)
+		do 
 		{
-			assert(obj);
-			auto curves = GetAllCurvesSimple(obj);
-			std::move(std::begin(curves), std::end(curves), std::back_inserter(out));
-		}
+			const auto cur = objects.top();
+			objects.pop();
+
+			std::copy(std::begin(cur->curves), std::end(cur->curves), std::back_inserter(out));
+
+			auto iter = std::rbegin(cur->base);
+			const auto end = std::rend(cur->base);
+			do
+			{
+				objects.emplace(*iter);
+			}while(++iter != end);
+		}while (!std::empty(objects));
 
 		return out;
 	}
@@ -390,16 +388,16 @@ namespace hades
 			output.push_back(c);
 
 		assert(o.obj_type);
-		auto inherited_curves = GetAllCurvesSimple(o.obj_type);
+		auto inherited_curves = get_all_curves_iterative(o.obj_type);
 		std::move(std::begin(inherited_curves), std::end(inherited_curves), std::back_inserter(output));
 
-		return unique_curves(output);
+		return unique_curves(std::move(output));
 	}
 	
 	curve_list get_all_curves(const resources::object &o)
 	{
-		auto curves = GetAllCurvesSimple(&o);
-		return unique_curves(curves);
+		auto curves = get_all_curves_iterative(&o);
+		return unique_curves(std::move(curves));
 	}
 
 	std::vector<const resources::system*> get_systems(const resources::object& o)

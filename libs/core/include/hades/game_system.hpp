@@ -194,15 +194,26 @@ namespace hades
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
+	
+	//extra types that cannot be defined in
+	//game_types.hpp due to circular includes
+
+	//world unit type
+	//used for position ranges and sizes
+	//game_unit is used to measure distance in the game world
+	using world_unit_t = resources::curve_types::float_t;
+	using world_vector_t = vector_t<world_unit_t>;
+	using world_rect_t = rect_t<world_unit_t>;
+
 	//TODO: move to level_interface?
 	//functions for game state access
 
-	//using
-
+	//funcs to call before a system gets control, and to clean up after
 	void set_game_data(system_job_data*, bool async = true);
 	void abort_game_job();
 	bool finish_game_job();
 
+	//game contains general functions available to game systems
 	namespace game
 	{
 		using namespace resources::curve_types;
@@ -210,13 +221,13 @@ namespace hades
 		object_ref get_object() noexcept;
 
 		//the time of the previous update
-		time_point get_last_time();
+		time_point get_last_time() noexcept;
 		//the time between this update and the previous one
-		time_duration get_delta_time();
+		time_duration get_delta_time() noexcept;
 		//the current time
 		//we need to calculate the state at this time
 		//using values from last_time
-		time_point get_time();
+		time_point get_time() noexcept;
 
 		template<typename T>
 		void create_system_value(unique_id, T&& value);
@@ -233,14 +244,22 @@ namespace hades
 		void clear_system_values();
 	}
 
+	//game::mission contains functions for accessing mission state
 	namespace game::mission
 	{
 		//get_curve_x
 		//set_curve_x
-		//get_value
+
+		//NOTE: get/set_value simplyfy access to linear, const and step curves
+		//		pulse curves, or any work with keyframes requires accessing the actual curve
+ 		//get_value
 		//set_value
 		//get_level_index(level_id)
 	}
+
+	//game::level for accessing and mutating the current level state
+	//	the current level is the one containing game::get_object()
+	//	you can change to a different level with the change_level function
 
 	namespace game::level
 	{
@@ -294,12 +313,30 @@ namespace hades
 
 		//an object is always created at game::get_time() time.
 		object_ref create_object(object_instance);
+
+		//helper functions for accessing common curves
+		//position
+		world_vector_t get_position(object_ref, time_point);
+		world_vector_t get_position(object_ref);
+		world_vector_t get_position();
+		void set_position(object_ref, world_unit_t x, world_unit_t y, time_point);
+		void set_position(object_ref, world_unit_t x, world_unit_t y);
+		void set_position(world_unit_t x, world_unit_t y);
+
+		//size
+		world_vector_t get_size(object_ref, time_point);
+		world_vector_t get_size(object_ref);
+		world_vector_t get_size();
+		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point);
+		void set_size(object_ref, world_unit_t w, world_unit_t h);
+		void set_size(world_unit_t w, world_unit_t h);
 	}
 
 	void set_render_data(render_job_data*, bool async = true);
 	void abort_render_job();
 	bool finish_render_job();
 
+	//render access functions allow a const view of the game state
 	namespace render
 	{
 		using namespace resources::curve_types;

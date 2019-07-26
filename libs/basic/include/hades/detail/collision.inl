@@ -285,6 +285,30 @@ namespace hades
 		return move;
 	}
 
+	template<typename T, template<typename> typename U, typename Iter>
+	collision_move_return<T, Iter>
+		safe_move(U<T> object, vector_t<T> move, Iter iter, Iter end)
+	{
+		//calculate move for each member of others
+		//return the shortest move, along with the index for that member
+		auto move_out = move;
+		auto move_mag = vector::magnitude_squared(move);
+		auto iter_out = end;
+		for (iter; iter != end; ++iter)
+		{
+			const auto this_move = safe_move(object, move, *iter);
+			const auto this_mag = vector::magnitude_squared(this_move);
+			if (this_mag < move_mag)
+			{
+				move_out = this_move;
+				move_mag = this_mag;
+				iter_out = iter;
+			}
+		}
+
+		return { move_out, iter_out };
+	}
+
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other)
 	{

@@ -106,6 +106,7 @@ namespace hades
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
 	inline void make_render_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
 	{
+		//TODO: pass const render_job_data instead
 		detail::make_system<resources::render_system, render_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
@@ -121,7 +122,7 @@ namespace hades
 		{
 			assert(l);
 			auto& curves = l->get_curves();
-			auto& curve_map = get_curve_list<T>(curves);
+			auto& curve_map = hades::get_curve_list<T>(curves);
 
 			if (detail::get_game_data_async())
 				return detail::get_game_transaction().get(i, curve_map);
@@ -135,7 +136,7 @@ namespace hades
 			assert(l);
 
 			auto& curves = l->get_curves();
-			auto& target_curve_list = get_curve_list<T>(curves);
+			auto& target_curve_list = hades::get_curve_list<T>(curves);
 
 			if (detail::get_game_data_async())
 				detail::get_game_transaction().set(target_curve_list, i, std::move(c));
@@ -151,7 +152,7 @@ namespace hades
 			assert(l);
 
 			auto& curves = l->get_curves();
-			auto& target_curve_type = get_curve_list<T>(curves);
+			auto& target_curve_type = hades::get_curve_list<T>(curves);
 
 			if (detail::get_game_data_async())
 			{
@@ -179,7 +180,7 @@ namespace hades
 			assert(l);
 
 			auto& curves = l->get_curves();
-			auto& curve_map = get_curve_list<T>(curves);
+			auto& curve_map = hades::get_curve_list<T>(curves);
 
 			if (detail::get_render_data_async())
 				return detail::get_render_transaction().get(i, curve_map);

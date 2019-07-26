@@ -21,6 +21,9 @@ namespace hades
 	template<typename T>
 	constexpr auto is_transactional_v = is_transactional<T>::value;
 
+	//TODO: update transactional classes to support using generation ids to avoid large comparisons
+	// such functions should have _gen postfix, and return exchange_token_gen tokens
+
 	namespace transactional
 	{
 		//functions for guards

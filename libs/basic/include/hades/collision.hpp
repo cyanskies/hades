@@ -31,6 +31,8 @@ namespace hades
 		std::vector<point_t<T>> vertex;
 	};
 
+	//TODO: collision traits
+
 	//the following functions all support
 	//supports:
 	//point_t
@@ -64,6 +66,19 @@ namespace hades
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other);
 	
+	template<typename T, typename Iter>
+	struct collision_move_return
+	{
+		vector_t<T> move;
+		Iter other;
+	};
+
+	//as above, but accepts a container of collision objects to compare against
+	//returns both the final move, and an iterator pointing to the colliding object
+	template<typename T, template<typename> typename U, typename Iter>
+	collision_move_return<T, Iter>
+	safe_move(U<T> object, vector_t<T> move, Iter begin, Iter end);
+
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//uses as much of the movement vector as possible allowing sliding along walls, etc
 	//if return value == move, then no collision occured
@@ -72,6 +87,11 @@ namespace hades
 	//rectangle_t
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
+
+	//TODO: collision_incident,
+	// returns a vector representing the angle of incident
+	//template<typename T, template<typename> typename U, template<typename> typename V>
+	//vector_t<T> collision_incident(U<T> object, vector_t<T> move, V<T> other);
 
 	//returns the rect side that collisded
 	template<typename T, template<typename> typename U>

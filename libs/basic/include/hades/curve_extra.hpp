@@ -46,18 +46,42 @@ namespace hades::resources
 
 		template <>
 		struct is_vector_type<vector_int> : public std::true_type {};
-
 		template <>
 		struct is_vector_type<vector_float> : public std::true_type {};
-
 		template <>
 		struct is_vector_type<vector_object_ref> : public std::true_type {};
-
 		template <>
 		struct is_vector_type<vector_unique> : public std::true_type {};
 
 		template<typename T>
 		constexpr auto is_vector_type_v = is_vector_type<T>::value;
+
+		template<typename T>
+		struct is_curve_type : public std::false_type {};
+
+		template<>
+		struct is_curve_type<int_t> : public std::true_type {};
+		template<>
+		struct is_curve_type<float_t> : public std::true_type {};
+		template<>
+		struct is_curve_type<bool_t> : public std::true_type {};
+		template<>
+		struct is_curve_type<string> : public std::true_type {};
+		template<>
+		struct is_curve_type<object_ref> : public std::true_type {};
+		template<>
+		struct is_curve_type<unique> : public std::true_type {};
+		template<>
+		struct is_curve_type<vector_int> : public std::true_type {};
+		template<>
+		struct is_curve_type<vector_float> : public std::true_type {};
+		template<>
+		struct is_curve_type<vector_object_ref> : public std::true_type {};
+		template<>
+		struct is_curve_type<vector_unique> : public std::true_type {};
+
+		template<typename T>
+		constexpr auto is_curve_type_v = is_curve_type<T>::value;
 	}
 
 	using curve_default_value = std::variant<

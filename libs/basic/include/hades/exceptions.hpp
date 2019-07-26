@@ -24,13 +24,21 @@ namespace hades
 		using std::invalid_argument::invalid_argument;
 	};
 
-	//thrown when a global function depends on a previously registered backend provider
-	//when using the provided app class or hades_main this should never been thrown
-	// as the built-in app setup should register all of these for you
-	class provider_unavailable : public std::logic_error
+	//don't try to catch this, thrown for programmer errors, by functions that
+	// are never meant to be called, like invalid SFINAE branches
+	class logic_error : public std::logic_error
 	{
 	public:
 		using std::logic_error::logic_error;
+	};
+
+	//thrown when a global function depends on a previously registered backend provider
+	//when using the provided app class or hades_main this should never been thrown
+	// as the built-in app setup should register all of these for you
+	class provider_unavailable : public logic_error
+	{
+	public:
+		using logic_error::logic_error;
 	};
 }
 

@@ -19,14 +19,34 @@
 namespace hades {
 	//TODO: move lerp into the utility header
 	//define lerpable
-	template<typename T, typename std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
-	T lerp(T first, T second, float alpha) noexcept
+	template<typename Float,
+		typename std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	constexpr Float lerp(Float a, Float b, Float t) noexcept
 	{
-		return (1.f - alpha) * first + alpha * second;
+		//algorithm recommended for consistancy in P0811R2 : https://wg21.link/p0811r2
+		if (a <= 0 && b >= 0 ||
+			a >= 0 && b <= 0)
+			return t * b + (1.f - t) * a;
+
+		//TODO: >= ? to account for float inaccuracy
+		if (t == 1) return b;
+
+		const auto x = a + t * (b - a);
+		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
 	}
 
-	template<typename T, typename std::enable_if_t<!std::is_arithmetic_v<T>, int> = 0>
-	T lerp(T first, T second, float alpha)
+	template<typename T,
+		typename std::enable_if_t<std::is_arithmetic_v<T> && !std::is_floating_point_v<T>, int> = 0>
+	constexpr T lerp(T a, T b, float32 t) noexcept
+	{
+		//TODO: is this the correct way to do this?
+		return lerp(static_cast<float32>(a), static_cast<float32>(b), t);
+	}
+
+	//NOTE: define provided to allow compilation of path that will never be called
+	template<typename T,
+		typename std::enable_if_t<!std::is_arithmetic_v<T> && !std::is_floating_point_v<T>, int> = 0>
+	T lerp(T a, T b, float32 t)
 	{
 		throw std::logic_error{"called lerp with a non-arithmetic type"};
 	}
@@ -152,19 +172,21 @@ namespace hades {
 			{
 				const auto [a,b] = _getRange(at);
 
-				if (b->first <= at)
+				if (b != std::end(_data) && b->first <= at)
 					return b->second;
 
 				return a->second;
 			}
-
-			throw curve_error("Malformed curve");
+			else
+				throw curve_error("Malformed curve");
 		}
 
 		//These are the only valid ways to get data from a Pulse
 		//returns the closest frame before at
 		frame_t getPrevious(Time at) const
 		{
+			//TODO: FIXME: if the curve has no keyframes then d.first might be std::end
+			//std::optional?
 			auto d = _getRange(at);
 			return *d.first;
 		}
@@ -173,6 +195,7 @@ namespace hades {
 		frame_t getNext(Time at) const
 		{
 			auto d = _getRange(at);
+			//FIXME: TODO: d.second might be std::end	
 			return *d.second;
 		}
 
@@ -255,7 +278,7 @@ namespace hades {
 			if (std::empty(_data))
 				return IterPair{ std::end(_data), std::end(_data) };
 			else if (_data.size() == 1)
-				return IterPair{ std::begin(_data), std::begin(_data) };
+				return IterPair{ std::begin(_data), std::end(_data) };
 
 			//what can lower bound throw?(bad_alloc) this prevents the method being noexcept
 			auto next = std::lower_bound(_data.begin(), _data.end(), keyframe<Data>{ at, Data{} }, keyframe_less<Data>);

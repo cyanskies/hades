@@ -4,10 +4,12 @@
 #include <string_view>
 #include <vector>
 
+#include "hades/rectangle_math.hpp"
 #include "hades/strong_typedef.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/utility.hpp"
+#include "hades/vector_math.hpp"
 
 namespace hades
 {
@@ -31,10 +33,6 @@ namespace hades
 	}
 
 	//level size type
-
-	//world unit type
-	//used for position ranges and sizes
-	using world_unit = float;
 
 	//tag types
 	//these are used for listing capabilities or effect info

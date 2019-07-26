@@ -121,5 +121,8 @@ namespace hades
 		ent_list.erase(found);
 		ents.insert(t, ent_list);
 		system.attached_entities = ents;
+
+		//TODO: call destroy system?
+		// maybe system on-destroy doesn't need to exist
 	}
 }

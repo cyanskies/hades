@@ -82,6 +82,7 @@ set(HADES_CORE_SRC
 	../include/hades/vertex_buffer.hpp
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
+	../include/hades/detail/level_curve_data.inl
 	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_editor_grid.inl
 	../include/hades/detail/level_interface.inl
@@ -137,6 +138,7 @@ source_group("Headers" FILES
 source_group("Detail" FILES
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
+	../include/hades/detail/level_curve_data.inl
 	../include/hades/detail/level_editor.inl
 	../include/hades/detail/level_editor_grid.inl
 	../include/hades/detail/level_interface.inl

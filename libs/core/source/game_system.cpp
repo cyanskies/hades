@@ -87,19 +87,19 @@ namespace hades
 
 		static void on_tick(hades::job_system&, hades::render_job_data& d)
 		{
-			/*const auto entity = d.entity;
+			const auto entity = d.entity;
 			assert(entity != bad_entity);
 
-			auto& dat = std::any_cast<system_data&>(d.system_data);
-
-			if (dat.sprite_ids.exists(d.entity))
+			//TODO: use proper rendering interface functions
+			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			if (auto sprite = dat.find(entity); sprite != std::end(dat))
 			{
-				const auto ent = get_entity_info(d);
-				const auto s_id = dat.sprite_ids.get(d.entity);
+				const auto ent = get_entity_info(entity);
+				const auto &s_id = sprite->second;
 				d.render_output.set_position(s_id, ent.position);
 				d.render_output.set_size(s_id, ent.size);
 				d.render_output.set_animation(s_id, ent.anim, d.current_time);
-			}*/
+			}
 
 			return;
 		}
@@ -231,19 +231,19 @@ namespace hades
 			return game_data_ptr->entity;
 		}
 
-		time_point get_last_time()
+		time_point get_last_time() noexcept
 		{
 			assert(game_data_ptr);
 			return game_data_ptr->current_time;
 		}
 
-		time_duration get_delta_time()
+		time_duration get_delta_time() noexcept
 		{
 			assert(game_data_ptr);
 			return game_data_ptr->dt;
 		}
 
-		time_point get_time()
+		time_point get_time() noexcept
 		{
 			assert(game_data_ptr);
 			return game_data_ptr->current_time + game_data_ptr->dt;
@@ -279,6 +279,84 @@ namespace hades
 
 			const auto& o = game_new_objects.emplace_back(std::move(obj));
 			return o.id;
+		}
+
+		world_vector_t get_position(object_ref o, time_point t)
+		{
+			//TODO: is it ok to cache the curve ptrs
+			static const auto curves = get_position_curve_id();
+			return {
+				get_value<world_unit_t>(o, std::get<0>(curves), t),
+				get_value<world_unit_t>(o, std::get<1>(curves), t)
+			};
+		}
+
+		world_vector_t get_position(object_ref o)
+		{
+			return get_position(o, game::get_last_time());
+		}
+
+		world_vector_t get_position()
+		{
+			return get_position(get_object());
+		}
+
+		void set_position(object_ref o, world_unit_t x, world_unit_t y, time_point t)
+		{
+			static const auto curves = get_position_curve_id();
+			set_value(o, std::get<0>(curves), x);
+			set_value(o, std::get<1>(curves), y);
+			return;
+		}
+
+		void set_position(object_ref o, world_unit_t x, world_unit_t y)
+		{
+			set_position(o, x, y, get_time());
+			return;
+		}
+
+		void set_position(world_unit_t x, world_unit_t y)
+		{
+			set_position(get_object(), x, y);
+			return;
+		}
+
+		world_vector_t get_size(object_ref o, time_point t)
+		{
+			static const auto curve = get_size_curve_id();
+			return {
+				get_value<world_unit_t>(o, std::get<0>(curve), t),
+				get_value<world_unit_t>(o, std::get<1>(curve), t)
+			};
+		}
+
+		world_vector_t get_size(object_ref o)
+		{
+			return get_size(o, get_last_time());
+		}
+
+		world_vector_t get_size()
+		{
+			return get_size(get_object());
+		}
+
+		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
+		{
+			static const auto curves = get_size_curve_id();
+			set_value(o, std::get<0>(curves), w);
+			set_value(o, std::get<1>(curves), h);
+			return;
+		}
+		
+		void set_size(object_ref o, world_unit_t w, world_unit_t h)
+		{
+			set_size(o, w, h, get_time());
+			return;
+		}
+		
+		void set_size(world_unit_t w, world_unit_t h)
+		{
+			set_size(get_object(), w, h);
 		}
 	}
 

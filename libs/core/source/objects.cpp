@@ -369,12 +369,15 @@ namespace hades
 
 			std::copy(std::begin(cur->curves), std::end(cur->curves), std::back_inserter(out));
 
-			auto iter = std::rbegin(cur->base);
-			const auto end = std::rend(cur->base);
-			do
+			if (!std::empty(cur->base))
 			{
-				objects.emplace(*iter);
-			}while(++iter != end);
+				auto iter = std::rbegin(cur->base);
+				const auto end = std::rend(cur->base);
+				do
+				{
+					objects.emplace(*iter);
+				} while (++iter != end);
+			}
 		}while (!std::empty(objects));
 
 		return out;

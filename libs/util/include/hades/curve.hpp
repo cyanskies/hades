@@ -18,7 +18,12 @@
 
 namespace hades {
 	//TODO: move lerp into the utility header
-	//define lerpable
+	template<typename T>
+	struct lerpable : public std::bool_constant< std::is_floating_point_v<T>> {};
+
+	template<typename T>
+	constexpr auto lerpable_v = lerpable<T>::value;
+
 	template<typename Float,
 		typename std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	constexpr Float lerp(Float a, Float b, Float t) noexcept
@@ -35,17 +40,9 @@ namespace hades {
 		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
 	}
 
-	template<typename T,
-		typename std::enable_if_t<std::is_arithmetic_v<T> && !std::is_floating_point_v<T>, int> = 0>
-	constexpr T lerp(T a, T b, float32 t) noexcept
-	{
-		//TODO: is this the correct way to do this?
-		return lerp(static_cast<float32>(a), static_cast<float32>(b), t);
-	}
-
 	//NOTE: define provided to allow compilation of path that will never be called
 	template<typename T,
-		typename std::enable_if_t<!std::is_arithmetic_v<T> && !std::is_floating_point_v<T>, int> = 0>
+		typename std::enable_if_t<!lerpable_v<T>, int> = 0>
 	T lerp(T a, T b, float32 t)
 	{
 		throw std::logic_error{"called lerp with a non-arithmetic type"};
@@ -250,22 +247,55 @@ namespace hades {
 
 		void _insertFrame(Time at, Data value, bool erase = false)
 		{
+			auto iter = std::end(_data);
+
 			if (_type == curve_type::const_c)
 			{
 				if (std::empty(_data))
-					_data.emplace_back(Time{}, std::move(value));
+					_data.emplace_back(at, std::move(value));
 				else
-					_data[0] = frame_t{ Time{}, std::move(value) };
+					_data[0] = frame_t{ at, std::move(value) };
+
+				return;
 			}
 			else
 			{
-				const auto location = _getRange(at);
-				const auto iter = _data.emplace(location.second, frame_t{ at, std::move(value) });
-				//if the insertion was successful and isn't the last element
-				//in the container
-				if (const auto target = std::next(iter);
-					erase && target != std::end(_data))
-					//erase everything after the newly inserted keyframe
+				const auto [pre, post] = _getRange(at);
+				
+				if (_type == curve_type::step)
+				{
+					if (pre != std::end(_data)
+						&& value == pre->second)
+						return;
+				}
+				else if (_type == curve_type::linear)
+				{
+					if constexpr (lerpable_v<Data>)
+					{
+						if (pre != std::end(_data)
+							&& post != std::end(_data))
+						{
+							const auto total_duration =
+								time_cast<seconds_float>(post->first - pre->first);
+							const auto dur = time_cast<seconds_float>(post->first - at);
+
+							const auto lerp_value = lerp(pre->second,
+								post->second, dur.count() / total_duration.count());
+
+							if (lerp_value == value)
+								return;
+						}
+					}
+				}
+
+				iter = _data.emplace(post, frame_t{ at, std::move(value) });
+			}
+
+			if (iter != std::end(_data))
+			{
+				const auto target = std::next(iter);
+				//erase everything after the newly inserted keyframe
+				if(erase && target != std::end(_data))
 					_data.erase(target, std::end(_data));
 			}
 
@@ -284,6 +314,9 @@ namespace hades {
 			auto next = std::lower_bound(_data.begin(), _data.end(), keyframe<Data>{ at, Data{} }, keyframe_less<Data>);
 			if (next == _data.end())
 				next = ++_data.begin();
+
+			if (next == std::begin(_data))
+				return { next, std::end(_data) };
 
 			return IterPair{ std::prev(next), next };
 		}

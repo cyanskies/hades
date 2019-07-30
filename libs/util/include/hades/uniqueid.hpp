@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_UNIQUEID_HPP
 #define HADES_UTIL_UNIQUEID_HPP
 
+#include <atomic>
 #include <cassert>
 #include <limits>
 
@@ -46,12 +47,12 @@ namespace hades
 		static const unique_id_t<id_type> zero;
 	private:
 		//initialise the static counter with the types smallest value
-		inline static type _count{};
+		inline static std::atomic<type> _count{};
 		type _value;
 	};
 
 	template<typename id_type>
-	id_type unique_id_t<id_type>::_count = std::numeric_limits<id_type>::min();
+	std::atomic<id_type> unique_id_t<id_type>::_count = std::numeric_limits<id_type>::min();
 
 	template<typename id_type>
 	const unique_id_t<id_type> unique_id_t<id_type>::zero;
@@ -67,11 +68,12 @@ namespace hades
 }
 
 namespace std {
-	template <> struct hash<hades::unique_id>
+	template <typename T> 
+	struct hash<hades::unique_id_t<T>>
 	{
-		size_t operator()(const hades::unique_id& key) const
+		size_t operator()(const hades::unique_id_t<T>& key) const noexcept
 		{
-			std::hash<hades::unique_id::type> h;
+			const auto h = std::hash<T>{};
 			return h(key.get());
 		}
 	};

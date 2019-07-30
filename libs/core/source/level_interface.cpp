@@ -29,7 +29,7 @@ namespace hades
 		//add all the curves from o to the entity 'id'
 		auto& curves = get_curves();
 		//FIXME: get_all_curves is returning curves that are infected with std::monostate.
-		/*for (const auto& [c, v] : get_all_curves(o))
+		for (const auto& [c, v] : get_all_curves(o))
 		{
 			assert(c);
 			assert(!v.valueless_by_exception());
@@ -37,7 +37,7 @@ namespace hades
 
 			std::visit([&](auto&& v)->void {
 				using T = std::decay_t<decltype(v)>;				
-				auto curve_map = get_curve_list<T>(curves);
+				auto &curve_map = get_curve_list<T>(curves);
 				if (!curve_map.exists(index))
 				{
 					auto new_curve = curve<T>{ c->c_type };
@@ -47,7 +47,7 @@ namespace hades
 
 				return;
 				}, v);
-		}*/
+		}
 
 		//add object type as a curve
 		assert(o.obj_type);

@@ -11,7 +11,7 @@ namespace hades
 	constexpr static auto empty_struct = empty_struct_t{};
 
 	template<typename T, typename Callback = empty_struct_t>
-	static void merge_input(const std::vector<exported_curves::export_set<T>>& input, curve_data& output, Callback callback = empty_struct)
+	static void merge_input(const std::vector<exported_curves::export_set<T>> & input, curve_data & output, time_point time = time_point{}, Callback callback = empty_struct)
 	{
 		auto& output_curves = get_curve_list<T>(output);
 		for (const auto& [ent, var, frames] : input)
@@ -48,12 +48,18 @@ namespace hades
 						//it should only ever have a single keyframe
 						assert(std::size(frames) == 1);
 
+						//TODO: if we set the time point based on this then,
+						// we often skip on_connect, since it will need to,
+						// have happened in the past, we need to pass _lastFrame
+						// so that we connect after we find out about it,
+						// not when the object was origionally created on the server
+
 						// the time_point of obj-type should be 
 						// the creation time of the entity
-						const auto [t, type] = frames[0];
+						const auto type = frames[0];
 
 						//use callback to request object setup
-						std::invoke(callback, ent, type, t);
+						std::invoke(callback, ent, type.second, time);
 					}
 				}
 			}
@@ -108,7 +114,7 @@ namespace hades
 			setup_systems_for_new_object(e, u, t, *game);
 		};
 
-		merge_input(input.unique_curves, curves, obj_type_callback);
+		merge_input(input.unique_curves, curves, _current_frame, obj_type_callback);
 
 		merge_input(input.int_vector_curves, curves);
 		merge_input(input.float_vector_curves, curves);
@@ -116,110 +122,21 @@ namespace hades
 		merge_input(input.unique_vector_curves, curves);
 	}
 
-	template<typename Func>
-	static constexpr auto make_job_function_wrapper(Func f) noexcept
-	{
-		return [f](job_system& j, render_job_data d)->bool {
-			set_render_data(&d);
-
-			const auto ret = std::invoke(f, j, d);
-			if (ret)
-				return finish_render_job();
-			else
-				abort_render_job();
-
-			return ret;
-		};
-	}
-
 	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)
 	{
-		assert(_jobs.ready());
-		const auto on_create_parent = _jobs.create();
-		const auto new_systems = _game.get_new_systems();
+		const auto dt = time_duration{ t - _current_frame };
 
-		std::vector<job*> jobs;
-		for (const auto s : new_systems)
-		{
-			if (!s->on_create)
-				continue;
+		auto make_render_job_data = [m, &i](entity_id e, game_interface* g, time_point prev,
+			time_duration dt, system_data_t* d)->render_job_data {
+				return render_job_data{ e, g, m, prev + dt, &i, d };
+		};
 
-			const auto j = _jobs.create_child(on_create_parent, make_job_function_wrapper(s->on_create), render_job_data{
-					bad_entity, &_game, m, t, i, _game.get_system_data(s->id)
-				});
+		const auto next = update_level(_jobs, _prev_frame, _current_frame, dt,
+			_game, make_render_job_data);
 
-			jobs.emplace_back(j);
-		}
+		_prev_frame = _current_frame;
+		_current_frame = next;
 
-		const auto systems = _game.get_systems();
-
-		//call on_connect for new entities
-		const auto on_connect_parent = _jobs.create();
-		for (const auto s : systems)
-		{
-			if (!s.system->on_connect)
-				continue;
-
-			const auto ents = get_added_entites(s.attached_entities, _prev_frame, t);
-			auto& sys_data = _game.get_system_data(s.system->id);
-			 
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_connect_parent,
-					on_create_parent, make_job_function_wrapper(s.system->on_connect),
-					render_job_data{ e, &_game, m, t, i, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		//call on_disconnect for removed entities
-		const auto on_disconnect_parent = _jobs.create();
-		for (const auto s : systems)
-		{
-			if (!s.system->on_disconnect)
-				continue;
-
-			const auto ents = get_removed_entites(s.attached_entities, _prev_frame, t);
-			auto& sys_data = _game.get_system_data(s.system->id);
-
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_disconnect_parent, 
-					on_connect_parent, make_job_function_wrapper(s.system->on_disconnect),
-					render_job_data{ e, &_game, m, t, i, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		//call on_tick for systems
-		const auto on_tick_parent = _jobs.create();
-		for (auto& s : systems)
-		{
-			if (!s.system->tick)
-				continue;
-
-			const auto entities_curve = s.attached_entities.get();
-			const auto ents = entities_curve.get(t);
-
-			auto& sys_data = _game.get_system_data(s.system->id);
-
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_tick_parent, 
-					on_disconnect_parent, make_job_function_wrapper(s.system->tick),
-					render_job_data{ e, &_game, m, t, i, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		_jobs.run(std::begin(jobs), std::end(jobs));
-		_jobs.wait(on_tick_parent);
-		_jobs.clear();
-
-		_game.clear_new_systems();
-		_prev_frame = t;
+		assert(_current_frame == t);
 	}
 }

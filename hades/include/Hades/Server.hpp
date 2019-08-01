@@ -7,6 +7,10 @@
 #include "hades/level.hpp"
 #include "hades/timers.hpp"
 
+//TODO: move to hades-core
+//	replace get_changes return with a struct containing curves and other data
+//  need to tell the client the target gametime they should be drawing
+
 namespace hades
 {
 	void register_game_server_resources(data::data_manager&);

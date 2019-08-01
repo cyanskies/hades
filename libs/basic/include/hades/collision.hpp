@@ -75,6 +75,7 @@ namespace hades
 
 	//as above, but accepts a container of collision objects to compare against
 	//returns both the final move, and an iterator pointing to the colliding object
+	// if no collision has been found, then it will return [move, end]
 	template<typename T, template<typename> typename U, typename Iter>
 	collision_move_return<T, Iter>
 	safe_move(U<T> object, vector_t<T> move, Iter begin, Iter end);

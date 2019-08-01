@@ -126,14 +126,21 @@ namespace hades
 	class game_implementation final : public common_implementation<game_system>
 	{
 	public:
+		using system_type = game_system;
+
 		explicit game_implementation(const level_save&);
 	};
 
 	class render_implementation final : public common_implementation<render_system>
 	{
 	public:
+		using system_type = render_system;
 		render_implementation();
 	};
+
+	template<typename ImplementationType, typename MakeGameStructFn>
+	time_point update_level(job_system&, time_point, time_duration,
+		ImplementationType&, MakeGameStructFn);
 }
 
 #include "hades/detail/level_interface.inl"

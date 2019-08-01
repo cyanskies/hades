@@ -14,110 +14,16 @@ namespace hades
 	{
 	}
 
-	template<typename Func>
-	static constexpr auto make_job_function_wrapper(Func f) noexcept
-	{
-		return [f](job_system& j, system_job_data d)->bool {
-			set_game_data(&d);
-
-			const auto ret = std::invoke(f, j, d);
-			if (ret)
-				return finish_game_job();
-			else
-				abort_game_job();
-
-			return ret;
-		};
-	}
-
 	void game_instance::tick(time_duration dt)
 	{
-		//TODO: this function pattern is used here and in render_instance,
-		//		would it be possible to bring it out into a template?
-		assert(_jobs.ready());
-		const auto on_create_parent = _jobs.create();
-		const auto new_systems = _game.get_new_systems();
+		auto make_game_struct = [](entity_id e, game_interface* g, time_point t, time_duration dt, system_data_t* d)->system_job_data {
+			return system_job_data{ e, g, nullptr, t, dt, d };
+		};
 
-		std::vector<job*> jobs;
-		for (const auto s : new_systems)
-		{
-			if (!s->on_create)
-				continue;
-
-			const auto j = _jobs.create_child(on_create_parent, make_job_function_wrapper(s->on_create), system_job_data{
-				 bad_entity, &_game, nullptr, _current_time, dt, _game.get_system_data(s->id)
-				});
-
-			jobs.emplace_back(j);
-		}
-
-		const auto systems = _game.get_systems();
-
-		//call on_connect for new entities
-		const auto on_connect_parent = _jobs.create();
-		for (const auto &s : systems)
-		{
-			if (!s.system->on_connect)
-				continue;
-
-			const auto ents = get_added_entites(s.attached_entities, _current_time, _current_time + dt);
-			auto& sys_data = _game.get_system_data(s.system->id);
-
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_connect_parent, on_create_parent, make_job_function_wrapper(s.system->on_connect),
-					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		//call on_disconnect for removed entities
-		const auto on_disconnect_parent = _jobs.create();
-		for (const auto &s : systems)
-		{
-			if (!s.system->on_disconnect)
-				continue;
-
-			const auto ents = get_removed_entites(s.attached_entities, _current_time, _current_time + dt);
-			auto& sys_data = _game.get_system_data(s.system->id);
-
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_disconnect_parent, on_connect_parent, make_job_function_wrapper(s.system->on_disconnect),
-					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		//call on_tick for systems
-		const auto on_tick_parent = _jobs.create();
-		for (const auto &s : systems)
-		{
-			if (!s.system->tick)
-				continue;
-
-			const auto entities_curve = s.attached_entities.get();
-			const auto ents = entities_curve.get(_current_time);
-
-			auto& sys_data = _game.get_system_data(s.system->id);
-
-			for (const auto e : ents)
-			{
-				const auto j = _jobs.create_child_rchild(on_tick_parent, on_disconnect_parent, make_job_function_wrapper(s.system->tick),
-					system_job_data{ e, &_game, nullptr, _current_time, dt, sys_data });
-
-				jobs.emplace_back(j);
-			}
-		}
-
-		_jobs.run(std::begin(jobs), std::end(jobs));
-		_jobs.wait(on_tick_parent);
-		_jobs.clear();
-
-		_game.clear_new_systems();
-		_current_time += dt;
+		const auto next = update_level(_jobs, _prev_time, _current_time, dt, _game, make_game_struct);
+		_prev_time = _current_time;
+		_current_time = next;
+		return;
 	}
 
 	void game_instance::add_input(input_system::action_set input, time_point t)

@@ -46,11 +46,11 @@ namespace hades
 		// and... just the players
 		game_interface *mission_data = nullptr;
 		//the current time, and the time to advance by(t + dt)
-		time_point current_time;
+		time_point prev_time;
 		time_duration dt;
 
 		//system data
-		system_data_t& system_data;
+		system_data_t *system_data = nullptr;
 	};
 
 	namespace resources
@@ -138,9 +138,9 @@ namespace hades
 		//the current time, and the time to advance too(t + dt)
 		time_point current_time;
 		//render output interface
-		render_interface &render_output;
+		render_interface *render_output = nullptr;
 		//system data
-		system_data_t &system_data;
+		system_data_t *system_data = nullptr;
 	};
 
 	namespace resources
@@ -218,6 +218,13 @@ namespace hades
 	{
 		using namespace resources::curve_types;
 
+		template<typename T>
+		struct curve_keyframe
+		{
+			T value;
+			time_point time;
+		};
+
 		object_ref get_object() noexcept;
 
 		//the time of the previous update
@@ -278,6 +285,21 @@ namespace hades
 		template<typename T>
 		curve<T> get_curve(variable_id);
 
+		//gets the keyframe on or befre the time point
+		//use set_value to write a keyframe
+		template<typename T>
+		curve_keyframe<T> get_keyframe(curve_index_t, time_point);
+		template<typename T>
+		curve_keyframe<T> get_keyframe(object_ref, variable_id, time_point);
+		template<typename T>
+		curve_keyframe<T> get_keyframe(variable_id, time_point);
+		template<typename T>
+		curve_keyframe<T> get_keyframe(curve_index_t);
+		template<typename T>
+		curve_keyframe<T> get_keyframe(object_ref, variable_id);
+		template<typename T>
+		curve_keyframe<T> get_keyframe(variable_id);
+
 		template<typename T>
 		T get_value(object_ref, variable_id, time_point);
 		template<typename T>
@@ -298,6 +320,7 @@ namespace hades
 		template<typename T>
 		void set_curve(variable_id, curve<T>);
 
+		//seting value will remove all keyframes after time_point
 		template<typename T>
 		void set_value(object_ref, variable_id, time_point, T&&);
 		template<typename T>
@@ -341,7 +364,7 @@ namespace hades
 	{
 		using namespace resources::curve_types;
 		object_ref get_object();
-		render_interface& get_render_output();
+		render_interface *get_render_output();
 		time_point get_time();
 
 		template<typename T>

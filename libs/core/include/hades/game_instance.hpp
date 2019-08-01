@@ -37,6 +37,8 @@ namespace hades
 	private:
 		//the games starting time, is always 0
 		constexpr static time_point _start_time{};
+		
+		time_point _prev_time{};
 		//the current time, this is the sum of all dt from the game ticks
 		time_point _current_time{};
 

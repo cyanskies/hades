@@ -309,6 +309,12 @@ namespace hades
 		o.curves.push_back({ &c, std::move(v) });
 	}
 
+	void set_curve(object_instance& o, const unique_id i, curve_value v)
+	{
+		const auto c = data::get<resources::curve>(i);
+		set_curve(o, *c, v);
+	}
+
 	static curve_list unique_curves(curve_list list)
 	{
 		//list should not contain any nullptr curves

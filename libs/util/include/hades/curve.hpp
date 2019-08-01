@@ -137,12 +137,14 @@ namespace hades {
 			if (_data.empty())
 				throw curve_error("Tried to call get() on an empty curve");
 
+			if (std::size(_data) == 1)
+				return _data[0].second;
 			//if we're before the start of the data or after the end
 			// then just return the closest keyframe
 			const auto last = --_data.end();
 
-			if (at < _data.begin()->first)
-				return _data.begin()->second;
+			if (at < _data[0].first)
+				return _data[0].second;
 			else if (last->first < at)
 				return last->second;
 
@@ -156,6 +158,9 @@ namespace hades {
 			else if (_type == curve_type::linear)
 			{
 				const auto [a, b] = _getRange(at);
+
+				if (b == std::end(_data))
+					return a->second;
 
 				const auto first = at - a->first;
 				const auto second = b->first - a->first;
@@ -311,12 +316,10 @@ namespace hades {
 				return IterPair{ std::begin(_data), std::end(_data) };
 
 			//what can lower bound throw?(bad_alloc) this prevents the method being noexcept
-			auto next = std::lower_bound(_data.begin(), _data.end(), keyframe<Data>{ at, Data{} }, keyframe_less<Data>);
-			if (next == _data.end())
-				next = ++_data.begin();
-
+			const auto next = std::upper_bound(_data.begin(), _data.end(), keyframe<Data>{ at, Data{} }, keyframe_less<Data>);
+			
 			if (next == std::begin(_data))
-				return { next, std::end(_data) };
+				return { next, next };
 
 			return IterPair{ std::prev(next), next };
 		}

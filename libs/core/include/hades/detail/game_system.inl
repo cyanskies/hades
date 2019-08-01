@@ -131,6 +131,24 @@ namespace hades
 		}
 
 		template<typename T>
+		game::curve_keyframe<T> get_game_curve_frame(game_interface* l, curve_index_t i, time_point t)
+		{
+			assert(l);
+			auto& curves = l->get_curves();
+			auto& curve_map = hades::get_curve_list<T>(curves);
+
+			const auto curve = [i, t, &curve_map]() {
+				if (detail::get_game_data_async())
+					return detail::get_game_transaction().get(i, curve_map);
+				else
+					return curve_map.get_no_async(i);
+			}();
+
+			const auto [time, value] = curve.getPrevious(t);
+			return { value, time };
+		}
+
+		template<typename T>
 		void set_game_curve(game_interface *l, curve_index_t i, curve<T> c)
 		{
 			assert(l);
@@ -196,7 +214,7 @@ namespace hades
 		{
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
-			ptr->system_data.create(key, std::forward<T>(value));
+			ptr->system_data->create(key, std::forward<T>(value));
 		}
 
 		template<typename T>
@@ -205,9 +223,9 @@ namespace hades
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 			if (detail::get_game_data_async())
-				detail::get_game_transaction().set(ptr->system_data, key, std::forward<T>(value));
+				detail::get_game_transaction().set(*ptr->system_data, key, std::forward<T>(value));
 			else
-				ptr->system_data.set(key, std::forward<T>(value));
+				ptr->system_data->set(key, std::forward<T>(value));
 		}
 
 		template<typename T>
@@ -216,9 +234,9 @@ namespace hades
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 			if (detail::get_game_data_async())
-				return detail::get_game_transaction().get<T>(key, ptr->system_data);
+				return detail::get_game_transaction().get<T>(key, *ptr->system_data);
 			else
-				return ptr->system_data.get_no_async<T>(key);
+				return ptr->system_data->get_no_async<T>(key);
 		}
 	}
 
@@ -244,6 +262,45 @@ namespace hades
 			assert(ptr);
 
 			return detail::get_game_curve<T>(ptr->level_data, i);
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(curve_index_t index, time_point t)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			assert(ptr);
+
+			return detail::get_game_curve_frame<T>(ptr->level_data, index, t);
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(object_ref o, variable_id i, time_point t)
+		{
+			return get_keyframe<T>(curve_index_t{ o, i }, t);
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(variable_id i, time_point t)
+		{
+			return get_keyframe<T>(get_object(), i, t);
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(curve_index_t index)
+		{
+			return get_keyframe<T>(index, get_last_time());
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(object_ref o, variable_id i)
+		{
+			return get_keyframe<T>(o, i, get_last_time());
+		}
+
+		template<typename T>
+		curve_keyframe<T> get_keyframe(variable_id i)
+		{
+			return get_keyframe<T>(get_object(), i, get_last_time());
 		}
 
 		template<typename T>
@@ -352,7 +409,7 @@ namespace hades
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-			ptr->system_data.create(key, std::forward<T>(value));
+			ptr->system_data->create(key, std::forward<T>(value));
 			return;
 		}
 
@@ -363,9 +420,9 @@ namespace hades
 			assert(ptr);
 
 			if (detail::get_render_data_async())
-				return detail::get_render_transaction().get<T>(key, ptr->system_data);
+				return detail::get_render_transaction().get<T>(key, *ptr->system_data);
 			else
-				return ptr->system_data.get_no_async<T>(key);
+				return ptr->system_data->get_no_async<T>(key);
 		}
 
 		template<typename T>
@@ -375,9 +432,9 @@ namespace hades
 			assert(ptr);
 
 			if (detail::get_render_data_async())
-				return detail::get_render_transaction().set(ptr->system_data, key, std::forward<T>(value));
+				return detail::get_render_transaction().set(*ptr->system_data, key, std::forward<T>(value));
 			else
-				return ptr->system_data.set(key, std::forward<T>(value));
+				return ptr->system_data->set(key, std::forward<T>(value));
 		}
 	}
 

@@ -87,6 +87,7 @@ namespace hades
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c);
 	curve_value get_curve(const resources::object &o, const hades::resources::curve &c);
 	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v);
+	void set_curve(object_instance& o, const unique_id i, curve_value v);
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
 	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
 

@@ -14,12 +14,16 @@ namespace hades
 	class render_instance
 	{
 	public:
+		//TODO: should this sync the time between server client?
+		// YES, since our curve data is all still in server time
 		void input_updates(const exported_curves &input);
 		void make_frame_at(time_point t, render_implementation *mission, render_interface &output);
 		render_implementation *get_interface();
 
 	private:
-		time_point _prev_frame{ nanoseconds{-1} };
+		time_point _current_frame;
+		time_point _prev_frame{};
+
 		render_implementation _game;
 		job_system _jobs; //TODO: get threadcount from console
 		//std::unordered_map<unique_id, system_data_t> _system_data;

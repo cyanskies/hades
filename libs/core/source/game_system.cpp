@@ -75,7 +75,7 @@ namespace hades
 			if (ent.anim == nullptr)
 				return;
 
-			const auto sprite_id = render::get_render_output().create_sprite(ent.anim,
+			const auto sprite_id = render::get_render_output()->create_sprite(ent.anim,
 				render::get_time(), render_interface::sprite_layer{},
 				ent.position, ent.size);
 
@@ -96,9 +96,9 @@ namespace hades
 			{
 				const auto ent = get_entity_info(entity);
 				const auto &s_id = sprite->second;
-				d.render_output.set_position(s_id, ent.position);
-				d.render_output.set_size(s_id, ent.size);
-				d.render_output.set_animation(s_id, ent.anim, d.current_time);
+				d.render_output->set_position(s_id, ent.position);
+				d.render_output->set_size(s_id, ent.size);
+				d.render_output->set_animation(s_id, ent.anim, render::get_time());
 			}
 
 			return;
@@ -111,7 +111,7 @@ namespace hades
 
 			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 			if (const auto s_id = dat.find(entity); s_id != std::end(dat))
-				d.render_output.destroy_sprite(s_id->second);
+				d.render_output->destroy_sprite(s_id->second);
 
 			return;
 		}
@@ -234,7 +234,7 @@ namespace hades
 		time_point get_last_time() noexcept
 		{
 			assert(game_data_ptr);
-			return game_data_ptr->current_time;
+			return game_data_ptr->prev_time;
 		}
 
 		time_duration get_delta_time() noexcept
@@ -246,25 +246,25 @@ namespace hades
 		time_point get_time() noexcept
 		{
 			assert(game_data_ptr);
-			return game_data_ptr->current_time + game_data_ptr->dt;
+			return game_data_ptr->prev_time + game_data_ptr->dt;
 		}
 
 		bool system_value_exists(unique_id key)
 		{
 			assert(game_data_ptr);
-			return game_data_ptr->system_data.exists(key);
+			return game_data_ptr->system_data->exists(key);
 		}
 
 		void destroy_system_value(unique_id key)
 		{
 			assert(game_data_ptr);
-			game_data_ptr->system_data.erase(key);
+			game_data_ptr->system_data->erase(key);
 		}
 
 		void clear_system_values()
 		{
 			assert(game_data_ptr);
-			game_data_ptr->system_data.clear();
+			game_data_ptr->system_data->clear();
 		}
 	}
 
@@ -393,7 +393,7 @@ namespace hades
 		return render_data_ptr->entity;
 	}
 
-	render_interface& render::get_render_output()
+	render_interface *render::get_render_output()
 	{
 		assert(render_data_ptr);
 		return render_data_ptr->render_output;
@@ -408,19 +408,19 @@ namespace hades
 	bool render::system_value_exists(unique_id id)
 	{
 		assert(render_data_ptr);
-		return render_data_ptr->system_data.exists(id);
+		return render_data_ptr->system_data->exists(id);
 	}
 
 	void render::destroy_system_value(unique_id id)
 	{
 		assert(render_data_ptr);
-		render_data_ptr->system_data.erase(id);
+		render_data_ptr->system_data->erase(id);
 	}
 
 	void render::clear_system_values()
 	{
 		assert(render_data_ptr);
-		render_data_ptr->system_data.clear();
+		render_data_ptr->system_data->clear();
 	}
 
 	namespace detail

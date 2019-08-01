@@ -124,7 +124,7 @@ namespace hades::resources
 		return curve_from_node(current_value, *value_node);
 	}
 
-	void parse_curves(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	void parse_curves(unique_id mod, const data::parser_node& n, data::data_manager& d)
 	{
 		//curves:
 		//		name:
@@ -147,7 +147,7 @@ namespace hades::resources
 		constexpr auto resource_type = "curve"sv;
 		const auto curves = n.get_children();
 
-		for (const auto &c : curves)
+		for (const auto& c : curves)
 		{
 			const auto name = c->to_string();
 			const auto id = d.get_uid(name);
@@ -157,10 +157,10 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-            new_curve->c_type	= get_scalar(*c, "type"sv,	new_curve->c_type, read_curve_type);
-			new_curve->data_type	= get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
-			new_curve->sync			= get_scalar(*c, "sync"sv,  new_curve->sync);
-			new_curve->save			= get_scalar(*c, "save"sv,  new_curve->save);
+			new_curve->c_type = get_scalar(*c, "type"sv, new_curve->c_type, read_curve_type);
+			new_curve->data_type = get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
+			new_curve->sync = get_scalar(*c, "sync"sv, new_curve->sync);
+			new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
 
 			if (old_type != new_curve->data_type)
 				new_curve->default_value = reset_default_value(*new_curve);
@@ -170,11 +170,6 @@ namespace hades::resources
 			if (!is_curve_valid(*new_curve))
 				throw invalid_curve{ "get_default_value returned an invalid curve" };
 		}
-	}
-
-	constexpr bool is_set(const curve_default_value &v) noexcept
-	{
-		return !std::holds_alternative<std::monostate>(v);
 	}
 
 	bool is_curve_valid(const resources::curve &c) noexcept

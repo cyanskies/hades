@@ -131,7 +131,7 @@ namespace hades {
 			if (!found_in_custom)
 			{
 				#ifdef NDEBUG
-				return ResourceStream(modPath, fileName);
+				return ResourceStream("./" + to_string(modPath), fileName);
 				#else
 				const auto found_in_dir = stream.open("./", fileName);
 				if (!found_in_dir)
@@ -189,7 +189,8 @@ namespace hades {
 
 		ResourceStream::ResourceStream(std::string_view modPath, std::string_view fileName)
 		{
-			open(modPath, fileName);
+			if (!open(modPath, fileName))
+				throw file_exception{ "unable to find file", file_exception::error_code::FILE_NOT_FOUND };
 		}
 
 		//acceptable zip extensions
@@ -198,37 +199,46 @@ namespace hades {
 		//? data == data file
 		constexpr auto extensions = std::array{ "zip" };
 
-		bool ResourceStream::open(std::string_view modPath, std::string_view fileName)
+		static std::tuple<bool, string> path_exists(const string& mod, const string& file) noexcept
 		{
-			//check if modPath exists as a archive or directory
+			fs::path parent = fs::path{ mod }.parent_path();
+
+			if (!fs::exists(parent))
+				return {};
+			//iterate through directory and search for modpath.ext
+			//and modpath/.
+			fs::directory_iterator directory{ parent };
+
 			bool pathDirectory = false;
-			types::string pathArchive{};
-			const types::string mod{ modPath };
-			const types::string file{ fileName };
+			string pathArchive;
+
+			//get archive name
+			const auto namepos = mod.find_last_of('/');
+			const auto archive_name = mod.substr(namepos + 1, mod.length() - namepos);
+
+			for (auto d : directory)
 			{
-				fs::path parent = fs::path{ mod }.parent_path();
-				//iterate through directory and search for modpath.ext
-				//and modpath/.
-				fs::directory_iterator directory{ parent };
-
-				//get archive name
-				const auto namepos = mod.find_last_of('/');
-				const auto archive_name = mod.substr(namepos + 1, mod.length() - namepos);
-
-				for (auto d : directory)
+				if (d.path().stem() == archive_name)
 				{
-					if (d.path().stem() == archive_name)
+					if (fs::is_directory(d))
+						pathDirectory = true;
+					else if (std::any_of(std::begin(extensions), std::end(extensions),
+						[ext = d.path().extension()](auto&& other){ return ext == other; }))
 					{
-						if (fs::is_directory(d))
-							pathDirectory = true;
-						else if(std::any_of(std::begin(extensions), std::end(extensions),
-							[ext = d.path().extension()](auto &&other){ return ext == other; }))
-						{
-							pathArchive = d.path().string();
-						}
+						pathArchive = d.path().string();
 					}
 				}
 			}
+
+			return { pathDirectory, pathArchive };
+		}
+
+		bool ResourceStream::open(std::string_view modPath, std::string_view fileName)
+		{
+			//check if modPath exists as a archive or directory
+			const types::string mod{ modPath };
+			const types::string file{ fileName };
+			const auto [pathDirectory, pathArchive] = path_exists(mod, file);
 
 			bool found = false;
 			//tryload from directory

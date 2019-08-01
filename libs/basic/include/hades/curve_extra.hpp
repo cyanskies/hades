@@ -111,7 +111,11 @@ namespace hades::resources
 
 	[[nodiscard]] curve_default_value reset_default_value(const curve &c);
 
-	constexpr bool is_set(const curve_default_value&) noexcept;
+	constexpr bool is_set(const curve_default_value& v) noexcept
+	{
+		return !std::holds_alternative<std::monostate>(v);
+	}
+	
 	bool is_curve_valid(const resources::curve&) noexcept;
 	bool is_curve_valid(const resources::curve&, const curve_default_value&) noexcept;
 

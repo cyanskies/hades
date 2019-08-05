@@ -40,7 +40,7 @@ namespace hades {
 	template<typename Key, typename Value>
 	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get_no_async(key_type id) const
 	{
-		auto index = _getIndex(id);
+		auto index = _get_index_noasync(id);
 		
 		assert(index < _componentMutex.size());
 		assert(index < _components.size());
@@ -263,6 +263,17 @@ namespace hades {
 		read_lock lk(_dispatchMutex);
 		const auto result = _idDispatch.find(id);
 		if(result == std::end(_idDispatch))
+			throw shared_map_invalid_id{ "id is not stored in this shared_map." };
+
+		return result->second;
+	}
+	template<typename Key, typename Value>
+	inline typename shared_map<Key, Value>::size_type shared_map<Key, Value>::_get_index_noasync(key_type id) const
+	{
+		assert((_components.size() == _ids.size()) &&
+			(_ids.size() == _componentMutex.size()));
+		const auto result = _idDispatch.find(id);
+		if (result == std::end(_idDispatch))
 			throw shared_map_invalid_id{ "id is not stored in this shared_map." };
 
 		return result->second;

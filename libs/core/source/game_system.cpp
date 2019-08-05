@@ -186,7 +186,7 @@ namespace hades
 	static thread_local bool game_async = true;
 	static thread_local std::vector<object_instance> game_new_objects;
 
-	void set_game_data(system_job_data *d, bool async)
+	void set_game_data(system_job_data *d, bool async) noexcept
 	{
 		assert(d);
 		game_data_ptr = d;
@@ -272,13 +272,19 @@ namespace hades
 	{
 		object_ref create_object(object_instance obj)
 		{
+			//TODO: handle time better
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 			assert(obj.id == bad_entity);
-			obj.id = ptr->level_data->create_entity();
+			if (detail::get_game_data_async())
+			{
+				obj.id = ptr->level_data->create_entity();
 
-			const auto& o = game_new_objects.emplace_back(std::move(obj));
-			return o.id;
+				const auto& o = game_new_objects.emplace_back(std::move(obj));
+				return o.id;
+			}
+			else
+				return ptr->level_data->create_entity(std::move(obj), get_time());
 		}
 
 		world_vector_t get_position(object_ref o, time_point t)
@@ -364,7 +370,7 @@ namespace hades
 	static thread_local transaction render_transaction{};
 	static thread_local bool render_async = true;
 
-	void set_render_data(render_job_data *j, bool async)
+	void set_render_data(render_job_data *j, bool async) noexcept
 	{
 		assert(j);
 		render_data_ptr = j;

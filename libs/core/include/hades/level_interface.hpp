@@ -103,6 +103,7 @@ namespace hades
 	class common_implementation : public common_implementation_base
 	{
 	public:
+		using system_type = SystemType;
 		using system_resource = typename SystemType::system_t;
 
 		explicit common_implementation(const level_save&);
@@ -126,21 +127,28 @@ namespace hades
 	class game_implementation final : public common_implementation<game_system>
 	{
 	public:
-		using system_type = game_system;
-
 		explicit game_implementation(const level_save&);
 	};
 
 	class render_implementation final : public common_implementation<render_system>
 	{
 	public:
-		using system_type = render_system;
 		render_implementation();
 	};
 
-	template<typename ImplementationType, typename MakeGameStructFn>
-	time_point update_level(job_system&, time_point, time_duration,
-		ImplementationType&, MakeGameStructFn);
+	namespace update_level_tags
+	{
+		struct update_level_auto_tag {};
+		constexpr update_level_auto_tag auto_tag;
+		struct update_level_async_tag {};
+		constexpr update_level_async_tag async_tag;
+		struct update_level_noasync_tag {};
+		constexpr update_level_noasync_tag noasync_tag;
+	}
+
+	template<typename ImplementationType, typename MakeGameStructFn, typename ModeTag = update_level_tags::update_level_auto_tag>
+	time_point update_level(job_system&, time_point, time_point, time_duration,
+		ImplementationType&, MakeGameStructFn, ModeTag = update_level_tags::auto_tag);
 }
 
 #include "hades/detail/level_interface.inl"

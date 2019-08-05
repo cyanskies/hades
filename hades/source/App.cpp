@@ -538,6 +538,10 @@ namespace hades
 			};
 
 			_console.add_function("show_fps", fps, true);
+
+			#ifndef NDEBUG
+				fps({ "1" });
+			#endif
 		}
 	}
 }//hades

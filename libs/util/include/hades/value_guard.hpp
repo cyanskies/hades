@@ -46,6 +46,11 @@ namespace hades {
 			return load();
 		}
 
+		value &get_noasync() const
+		{
+			return _value;
+		}
+
 		operator value() const
 		{
 			return load();
@@ -62,6 +67,11 @@ namespace hades {
 			}
 
 			return false;
+		}
+
+		void set(value v)
+		{
+			_value = std::move(v);
 		}
 
 		//returns true if the lock was granted, the lock is only granted if expected == the current stored value

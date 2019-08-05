@@ -7,6 +7,8 @@ namespace hades
 {
 	void create_core_console_variables()
 	{
+		console::create_property(cvars::server_threadcount, cvars::default_value::server_threadcount);
+
 		console::create_property(cvars::client_tick_rate, cvars::default_value::client_tickrate);
 		console::create_property(cvars::client_max_tick, cvars::default_value::client_tick_max);
 		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime);

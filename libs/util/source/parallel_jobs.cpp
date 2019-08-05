@@ -143,6 +143,32 @@ namespace hades
 		_jobs.clear();
 	}
 
+	void job_system::change_thread_count(int32 threads)
+	{
+		_join.store(true);
+		_condition.notify_all();
+
+		for (auto& t : _thread_pool)
+		{
+			assert(t.joinable());
+			t.detach();
+		}
+
+		_join = false;
+		_main_current_job = nullptr;
+
+		if (threads == 0)
+			threads = 1;
+
+		_init(threads);
+		_create_threads();
+	}
+
+	std::size_t job_system::get_thread_count() const noexcept
+	{
+		return _thread_count + 1;
+	}
+
 	void job_system::_init(types::int32 threads)
 	{
 		if (threads > 0)

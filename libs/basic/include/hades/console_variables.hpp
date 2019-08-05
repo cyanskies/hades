@@ -17,11 +17,16 @@ namespace hades
 		// none currently?
 		//s_* server variables
 		// server framerate and so on
+		//c_* client variables
+		// main game loop comtrols
 		//a_* for audio settings
 		//n_* for network settings
 		//editor_* for game editor settings
 		//shared for level, mission and mod editors
 
+		//server vars
+		constexpr auto server_threadcount = "s_threads"; //number of threads to use in the game and rendering server
+														// -1 = auto, 0/1 = no threading, otherwise the number of threads to use
 		//client vars
 		constexpr auto client_tick_rate = "c_tickrate"; //number of ticks to calculate per second
 		constexpr auto client_max_tick = "c_maxframetime"; //the max amount of time that can be spent on a single frame in ms
@@ -44,12 +49,15 @@ namespace hades
 		constexpr auto video_depth = "vid_depth"; // colour bit depth
 
 		//debug vars
+		//TODO: remove, this is handled by a console function
 		constexpr auto fps = "fps"; // 0 = off; 1 = show frametime in ms; 2 = show fps
 
 		//server host and connection settings
 
 		namespace default_value
 		{
+			constexpr auto server_threadcount = -1;
+
 			constexpr auto client_tickrate = 30;
 			constexpr auto client_tick_time = 30;
 			constexpr auto client_tick_max = 150;

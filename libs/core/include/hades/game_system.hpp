@@ -61,6 +61,7 @@ namespace hades
 		//a system stores a job function
 		struct system : public resource_type<system_t>
 		{
+			//TODO: dont accept job_data anymoe, same for render system
 			using system_func = std::function<bool(job_system&, system_job_data)>;
 
 			system_func on_create, //called on system creation(or large time leap)
@@ -89,7 +90,7 @@ namespace hades
 	
 	resources::curve_types::vector_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
 	resources::curve_types::vector_object_ref get_removed_entites(const name_list&, time_point last_frame, time_point this_frame);
-
+	
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
 	struct game_system
@@ -112,6 +113,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
+		//TODO: check that this needs to be guarded, its only mutated in syncronus mode
 		shared_guard<name_list> attached_entities = name_list{ curve_type::step };
 	};
 
@@ -209,7 +211,7 @@ namespace hades
 	//functions for game state access
 
 	//funcs to call before a system gets control, and to clean up after
-	void set_game_data(system_job_data*, bool async = true);
+	void set_game_data(system_job_data*, bool async = true) noexcept;
 	void abort_game_job();
 	bool finish_game_job();
 
@@ -355,7 +357,7 @@ namespace hades
 		void set_size(world_unit_t w, world_unit_t h);
 	}
 
-	void set_render_data(render_job_data*, bool async = true);
+	void set_render_data(render_job_data*, bool async = true) noexcept;
 	void abort_render_job();
 	bool finish_render_job();
 

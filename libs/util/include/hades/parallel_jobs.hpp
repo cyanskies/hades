@@ -61,6 +61,10 @@ namespace hades
 		void wait(job*);
 		void clear();
 
+		void change_thread_count(int32);
+
+		std::size_t get_thread_count() const noexcept;
+
 	private:
 		using worker_queue = std::deque<job*>;
 		using lock_t = std::lock_guard<std::mutex>;

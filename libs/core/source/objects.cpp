@@ -161,6 +161,7 @@ namespace hades::resources
 		}
 
 		//all of the other resources used by objects are parse-only and don't require loading
+		r.loaded = true;
 	}
 
 	//TODO: define load object, needs to laod all resources that the object uses

@@ -102,7 +102,7 @@ namespace hades {
 		using write_lock = std::lock_guard<mutex_type>;
 
 		size_type _getIndex(key_type id) const;
-
+		size_type _get_index_noasync(key_type id) const;
 		//guards access to the two vectors
 		//must be taken in exclusive mode to modify the size of the vectors(id_array, _components and _componentMutex)
 		mutable mutex_type _vectorMutex;

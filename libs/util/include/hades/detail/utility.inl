@@ -7,11 +7,14 @@
 
 namespace hades
 {
-	//replace with logic similar to that displayed in the example
+	//based on logic from
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-	inline bool floatEqual(float a, float b)
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	inline bool float_near_equal(Float a, Float b, int32 ulp)
 	{
-		return fabs(a - b) <= std::numeric_limits<float>::epsilon() * 4;
+		return std::abs(a - b) <= std::numeric_limits<Float>::epsilon() * std::abs(a + b) * ulp
+			// unless the result is subnormal
+			|| std::abs(a - b) < std::numeric_limits<Float>::min();
 	}
 
 	template<typename T>

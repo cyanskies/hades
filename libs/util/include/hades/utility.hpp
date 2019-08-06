@@ -16,7 +16,8 @@ namespace hades {
 
 	//replace with logic similar to that displayed in the example
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-	inline bool floatEqual(float a, float b);
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2);
 
 	class overflow_error : public std::overflow_error
 	{

@@ -7,11 +7,18 @@ namespace hades
 {
 	void create_core_console_variables()
 	{
-		console::create_property(cvars::server_threadcount, cvars::default_value::server_threadcount);
+		#ifdef NDEBUG
+				constexpr auto server_threads = cvars::default_value::server_threadcount;
+		#else
+				constexpr auto server_threads = int32{ 0 };
+		#endif
+
+		console::create_property(cvars::server_threadcount, server_threads);
 
 		console::create_property(cvars::client_tick_rate, cvars::default_value::client_tickrate);
 		console::create_property(cvars::client_max_tick, cvars::default_value::client_tick_max);
 		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime);
+		console::create_property(cvars::client_tick_count, cvars::default_value::client_tick_count);
 
 		//in debug we want portable = true 
 		//					deflate = false

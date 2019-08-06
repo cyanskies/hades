@@ -300,7 +300,7 @@ namespace hades
 
 				if (s.system->tick)
 				{
-					const auto entities_curve = s.attached_entities.get();
+					const auto &entities_curve = s.attached_entities.get_noasync();
 					d.attached_ents = entities_curve.get(prev_time);
 				}
 
@@ -399,9 +399,12 @@ namespace hades
 			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
 		}
 
+		const auto server_v = server_threads->load();
+		bool noasync = threads < 2 ||
+			(current_count == 1 && (server_v == 0 || server_v == 1));
+
 		//auto
-		if (threads <= 1 ||
-			current_count == 1)
+		if (noasync)
 			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
 		else
 		{

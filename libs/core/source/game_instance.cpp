@@ -10,7 +10,8 @@
 
 namespace hades 
 {
-	game_instance::game_instance(level_save sv) : _game(sv)
+	game_instance::game_instance(level_save sv) : _game(sv), 
+		_jobs{*console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount)}
 	{
 	}
 
@@ -40,12 +41,12 @@ namespace hades
 		{
 			exported_curves::export_set<T> s;
 			s.variable = c.first.second;
-			
-			auto curve = data::get<resources::curve>(s.variable);
-			assert(curve);
-			//skip if this curve shouldn't sync to the client
-			if (!curve->sync)
-				continue;
+			//TODO: cache this somewhere so wi don't hit a mutex every loop
+			//auto curve = data::get<resources::curve>(s.variable);
+			//assert(curve);
+			////skip if this curve shouldn't sync to the client
+			//if (!curve->sync)
+			//	continue;
 
 			//get the rest of the data
 			s.entity = c.first.first;

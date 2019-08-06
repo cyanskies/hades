@@ -52,8 +52,11 @@ namespace hades
 
 		quad_node(const rect_type &area, types::uint32 _bucket_cap) : _area(area), _bucket_cap(_bucket_cap)
 		{
+			assert(_bucket_cap > 0);
 			_children.reserve(4);
 		}
+
+		//TODO: move constructor/operator
 
 		rect_type area() const
 		{
@@ -179,6 +182,8 @@ namespace hades
 		_child_vector_type _children;
 	};
 
+	static_assert(std::is_move_assignable_v<quad_node<int32, rect_float>>);
+
 	template<typename T, typename U>
 	std::vector<typename quad_node<T, U>::value_type> flatten(const quad_node<T, U>& n)
 	{
@@ -216,10 +221,13 @@ namespace hades
 	}
 
 	template<class Key, typename Rect>
-	quad_tree<Key, Rect>::quad_tree(const rect_type &area, types::int32 _bucket_cap) : _rootNode(area, static_cast<types::uint32>(_bucket_cap))
+	quad_tree<Key, Rect>::quad_tree(const rect_type &area, types::int32 _bucket_cap) : _rootNode(area, unsigned_cast(_bucket_cap))
 	{
-		if (_bucket_cap < 1)
-			throw invalid_argument("quad_tree bucket capacity must be greater than 0");
+	}
+
+	template<class Key, typename Rect>
+	inline quad_tree<Key, Rect>::quad_tree(types::int32 bucket_cap) :_rootNode{ quad_tree::rect_type{}, unsigned_cast(bucket_cap) }
+	{
 	}
 
 	template<class Key, typename Rect>

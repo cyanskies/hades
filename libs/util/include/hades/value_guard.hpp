@@ -46,7 +46,7 @@ namespace hades {
 			return load();
 		}
 
-		value &get_noasync() const
+		const value &get_noasync() const
 		{
 			return _value;
 		}

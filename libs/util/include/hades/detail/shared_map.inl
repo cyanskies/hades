@@ -38,7 +38,7 @@ namespace hades {
 	}
 
 	template<typename Key, typename Value>
-	typename shared_map<Key, Value>::value_type shared_map<Key, Value>::get_no_async(key_type id) const
+	typename shared_map<Key, Value>::value_type &shared_map<Key, Value>::get_no_async(key_type id)
 	{
 		auto index = _get_index_noasync(id);
 		
@@ -124,19 +124,6 @@ namespace hades {
 		read_lock lk(_dispatchMutex);
 		return _idDispatch.find(id) != _idDispatch.end();
 	}
-
-	/*template<class A>
-	types::string as_string(A value)
-	{
-		return to_string(value);
-	}
-
-	template<typename A, typename B, template<typename, typename> typename C> 
-	types::string as_string(C<A, B> value)
-	{
-		const auto &[a, b] = value;
-		return to_string(a) + "::" + to_string(b);
-	}*/
 
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::create(key_type id, value_type value)

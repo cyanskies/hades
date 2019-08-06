@@ -137,7 +137,7 @@ namespace hades
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
 
-			const auto curve = [i, t, &curve_map]() {
+			const auto &curve = [i, t, &curve_map]() {
 				if (detail::get_game_data_async())
 					return detail::get_game_transaction().get(i, curve_map);
 				else
@@ -180,9 +180,9 @@ namespace hades
 			}
 			else
 			{
-				auto c = target_curve_type.get_no_async(i);
+				auto &c = target_curve_type.get_no_async(i);
 				c.set(t, std::forward<T>(v));
-				target_curve_type.set(i, std::move(c));
+				//target_curve_type.set(i, std::move(c));
 			}
 
 			return;

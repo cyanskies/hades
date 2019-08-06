@@ -6,16 +6,17 @@ namespace hades
 {
 	float normalise_time(time_point t, time_duration d) noexcept
 	{
+		static_assert(std::is_same_v<time_point::duration, time_duration>);
+
 		if (d == time_duration::zero())
 			return 0.f;
 
-		const auto duration_point = time_point{ d };
+		const auto total_time = static_cast<float>(t.time_since_epoch().count());
+		const auto duration_point = static_cast<float>(d.count());
 
-		//reduce t untill is is less than one duration;
-		while (t > duration_point)
-			t -= d;
+		const auto normal = std::fmod(total_time, duration_point);
 
-		return  static_cast<float>(t.time_since_epoch().count()) / static_cast<float>(d.count());
+		return normal / duration_point;
 	}
 
 	time_duration duration_from_string(std::string_view s) noexcept

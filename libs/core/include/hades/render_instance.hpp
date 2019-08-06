@@ -14,6 +14,7 @@ namespace hades
 	class render_instance
 	{
 	public:
+		render_instance();
 		//TODO: should this sync the time between server client?
 		// YES, since our curve data is all still in server time
 		void input_updates(const exported_curves &input);

@@ -45,11 +45,13 @@ namespace hades
 
 		struct sprite
 		{
+			using mutex_type = std::mutex;
+
 			sprite() = default;
 			sprite(const sprite &other);
 			sprite &operator=(const sprite &other);
 			
-			std::mutex mut;
+			mutex_type mut;
 			sprite_id id = bad_sprite_id;
 			vector_float position{};
 			vector_float size{};
@@ -84,6 +86,8 @@ namespace hades
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
+		using shared_mutex_type = std::shared_mutex;
+		using mutex_type = std::mutex;
 
 		sprite_batch() = default;
 		sprite_batch(const sprite_batch&);
@@ -91,6 +95,8 @@ namespace hades
 		sprite_batch &operator=(const sprite_batch&);
 
 		void swap(sprite_batch&);
+
+		void set_async(bool = true);
 
 		//clears all of the stored data
 		void clear();
@@ -119,8 +125,9 @@ namespace hades
 		void draw(sf::RenderTarget& target, sprite_utility::layer_t, sf::RenderStates states = sf::RenderStates{}) const;
 
 	private:
+		bool _async = true;
 		//mutex to ensure two threads don't try to add/search/erase from the two collections at the same time
-		mutable std::shared_mutex _collection_mutex;  //TODO: split into sprite_mutex, vertex_mutex, id_mutex
+		mutable shared_mutex_type _collection_mutex;  //TODO: split into sprite_mutex, vertex_mutex, id_mutex
 
 		using batch = sprite_utility::batch;
 		std::vector<batch> _sprites;

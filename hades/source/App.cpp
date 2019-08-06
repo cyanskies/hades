@@ -201,6 +201,7 @@ namespace hades
 		const auto tick_rate = _console.getInt(cvars::client_tick_rate);
 		const auto maxframetime = _console.getInt(cvars::client_max_tick); // NOTE: unused
 		auto last_frame_time = _console.getFloat(cvars::client_previous_frametime);
+		auto frame_tick_count = _console.getInt(cvars::client_tick_count);
 
 		assert(tick_rate && "failed to get tick rate value from console");
 
@@ -208,6 +209,7 @@ namespace hades
 		auto current_time = time_clock::now();
 		auto accumulator = time_duration{};
 
+		int32 frame_ticks = 1;
 		bool running = true;
 
 		while(running && _window.isOpen())
@@ -234,7 +236,7 @@ namespace hades
 
 			current_time = new_time;
 			accumulator += frame_time;
-
+			
 			//perform additional logic updates if we're behind on logic
 			while(accumulator >= dt)
 			{
@@ -244,7 +246,11 @@ namespace hades
 				activeState->update(dt, _window, _input.input_state());
 				//t += dt;
 				accumulator -= dt;
+				++frame_ticks;
 			}
+
+			frame_tick_count->store(frame_ticks);
+			frame_ticks = 1;
 
 			if (_window.isOpen())
 			{

@@ -54,7 +54,7 @@ namespace hades {
 
 		//returns a copy of the component for id
 		value_type get(key_type id) const;
-		value_type get_no_async(key_type id) const;
+		value_type &get_no_async(key_type id);
 
 		//sets the value without any exchange locking
 		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value_type>>>

@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "hades/core_curves.hpp"
+#include "hades/render_interface.hpp"
 
 namespace hades 
 {
@@ -100,6 +101,11 @@ namespace hades
 			game.attach_system(e, s->id, t);
 	}
 
+	render_instance::render_instance() 
+		: _jobs{*console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount)}
+	{
+	}
+
 	void render_instance::input_updates(const exported_curves& input)
 	{
 		auto& curves = _game.get_curves();
@@ -130,6 +136,11 @@ namespace hades
 			time_duration dt, system_data_t* d)->render_job_data {
 				return render_job_data{ e, g, m, prev + dt, &i, d };
 		};
+
+		static const auto server_threads = console::get_int(cvars::server_threadcount);
+		const auto threads = server_threads->load();
+		bool async = threads == -1 || threads > 1;
+		i.set_async(async);
 
 		const auto next = update_level(_jobs, _prev_frame, _current_frame, dt,
 			_game, make_render_job_data);

@@ -310,8 +310,8 @@ namespace hades
 		void set_position(object_ref o, world_unit_t x, world_unit_t y, time_point t)
 		{
 			static const auto curves = get_position_curve_id();
-			set_value(o, std::get<0>(curves), x);
-			set_value(o, std::get<1>(curves), y);
+			set_value(o, std::get<0>(curves), t, x);
+			set_value(o, std::get<1>(curves), t, y);
 			return;
 		}
 

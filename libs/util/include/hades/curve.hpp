@@ -263,38 +263,59 @@ namespace hades {
 
 				return;
 			}
-			else
-			{
-				const auto [pre, post] = _getRange(at);
+
+			const auto [pre, post] = _getRange(at);
 				
-				if (_type == curve_type::step)
+			if (_type == curve_type::step)
+			{
+				if (pre != std::end(_data)
+					&& value == pre->second)
+					return;
+			}
+			else if (_type == curve_type::linear)
+			{
+				if constexpr (lerpable_v<Data>)
 				{
-					if (pre != std::end(_data)
-						&& value == pre->second)
-						return;
-				}
-				else if (_type == curve_type::linear)
-				{
-					if constexpr (lerpable_v<Data>)
+					if (pre != std::end(_data) && std::size(_data) > 1)
 					{
-						if (pre != std::end(_data)
-							&& post != std::end(_data))
+						if (post != std::end(_data))
 						{
 							const auto total_duration =
 								time_cast<seconds_float>(post->first - pre->first);
-							const auto dur = time_cast<seconds_float>(post->first - at);
+							const auto dur = time_cast<seconds_float>(at - pre->first);
 
 							const auto lerp_value = lerp(pre->second,
 								post->second, dur.count() / total_duration.count());
 
-							if (lerp_value == value)
+							//if adding this keyframe wouldn't change the,
+							//value at any time, then we can just skip it
+							if (float_near_equal(lerp_value, value))
 								return;
+						}
+						else
+						{
+							const auto prepre = std::prev(pre);
+							const auto total_duration = time_cast<seconds_float>(at - prepre->first);
+							const auto dur = time_cast<seconds_float>(pre->first - prepre->first);
+							const auto lerp_value = lerp(prepre->second, value, dur.count() / total_duration.count());
+
+							//if this new keyframe just continues a linear progression
+							// then we can calculate the old 'last' frame
+							// by lerping the one before it and the new last frame
+							// so we'll just replace the old last frame with the new one
+							if (float_near_equal(lerp_value, pre->second))
+							{
+								const auto pos = std::distance(std::cbegin(_data), pre);
+								//no need to move, lerpable is floating point
+								_data[pos] = { at, value };
+								return;
+							}
 						}
 					}
 				}
-
-				iter = _data.emplace(post, frame_t{ at, std::move(value) });
 			}
+
+			iter = _data.emplace(post, frame_t{ at, std::move(value) });
 
 			if (iter != std::end(_data))
 			{

@@ -41,6 +41,10 @@ namespace hades
 
 		static constexpr drawable_id bad_drawable_id = drawable_id{ std::numeric_limits<drawable_id::value_type>::min() };
 
+		using mutex_type = std::mutex;
+		using shared_mutex_type = std::shared_mutex;
+
+
 		using get_drawable = const sf::Drawable& (*)(const std::any&);
 
 		struct drawable_object
@@ -89,7 +93,7 @@ namespace hades
 			drawable_id id = bad_drawable_id;
 			std::any storage;
 			get_drawable get = nullptr;
-			mutable std::mutex mutex;
+			mutable mutex_type mutex;
 		};
 
 		struct object_layer
@@ -104,6 +108,8 @@ namespace hades
 		};
 
 		static_assert(std::is_nothrow_move_assignable_v<object_layer>);
+
+		void set_async(bool = true);
 
 		//===Thread-Safe===
 
@@ -149,14 +155,17 @@ namespace hades
 		drawable_id _create_drawable_any(std::any drawable, get_drawable, sprite_layer);
 		void _update_drawable_any(drawable_id, std::any drawable, get_drawable, sprite_layer);
 
+		bool _async = true;
 		//sprite batch is already thread safe
 		sprite_batch _sprite_batch;
 
-		mutable std::shared_mutex _drawable_id_mutex;
+		//TODO: draw clamp, like sprite batch
+
+		mutable shared_mutex_type _drawable_id_mutex;
 		std::vector<drawable_id> _used_drawable_ids;
 		drawable_id _drawable_id = bad_drawable_id;
 
-		mutable std::shared_mutex _object_mutex;
+		mutable shared_mutex_type _object_mutex;
 		std::vector<object_layer> _object_layers;
 	};
 

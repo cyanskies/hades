@@ -31,6 +31,7 @@ namespace hades
 		constexpr auto client_tick_rate = "c_tickrate"; //number of ticks to calculate per second
 		constexpr auto client_max_tick = "c_maxframetime"; //the max amount of time that can be spent on a single frame in ms
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // time taken to generate the last frame
+		constexpr auto client_tick_count = "c_ticks_per_frame"; //number of ticks taken to generate the previous frame
 
 		//file vars
 		constexpr auto file_portable = "file_portable"; //if portable is true, saves and configs are stored in game directory
@@ -62,6 +63,7 @@ namespace hades
 			constexpr auto client_tick_time = 30;
 			constexpr auto client_tick_max = 150;
 			constexpr auto client_previous_frametime = -1.f;
+			constexpr auto client_tick_count = 0;
 
 			constexpr auto file_portable = false;
 			constexpr auto file_deflate = true;

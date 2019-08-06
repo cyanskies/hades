@@ -25,6 +25,7 @@ namespace hades
 
 		quad_tree() : _rootNode(rect_type{}, 1) {}
 		quad_tree(const rect_type &area, types::int32 bucket_cap);
+		quad_tree(types::int32 bucket_cap);
 
 		template<typename T, typename U>
 		friend constexpr bool operator==(const quad_tree<T, U>&, const quad_tree<T, U>&);

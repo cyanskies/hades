@@ -364,13 +364,31 @@ namespace hades
 			return current_time;
 		}
 
-		static inline void update_thread_count(job_system& j, int32 s_threads, std::size_t threads, std::size_t current)
+		static inline void update_thread_count(job_system& j, std::size_t threads)
 		{
-			if (s_threads == -1)
-				s_threads = integer_cast<int32>(threads);
+			const auto current = j.get_thread_count();
 
-			if (s_threads != current)
-				j.change_thread_count(s_threads);
+			if (threads != current)
+				j.change_thread_count(threads);
+		}
+
+		inline std::size_t get_update_thread_count() noexcept
+		{
+			static const auto threads = std::thread::hardware_concurrency();
+
+			if (threads < 2)
+				return 1;
+
+			static const auto server_threads = console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount);
+			const auto server_v = server_threads->load();
+
+			if (server_v == 0 || server_v == 1)
+				return 1;
+
+			if (server_v == -1)
+				return threads;
+
+			return std::min(threads, integer_cast<std::size_t>(server_v));
 		}
 	}
 
@@ -389,27 +407,17 @@ namespace hades
 		if constexpr (std::is_same_v<ModeTag, update_level_tags::update_level_noasync_tag>)
 			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
 
-		static const auto server_threads = console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount);
-		const auto current_count = jobsys.get_thread_count();
-		static const auto threads = std::thread::hardware_concurrency();
+		const auto threads = detail::get_update_thread_count();
+
+		detail::update_thread_count(jobsys, threads);
 
 		if constexpr (std::is_same_v<ModeTag, update_level_tags::update_level_async_tag>)
-		{
-			detail::update_thread_count(jobsys, server_threads, threads, current_count);
 			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
-		}
-
-		const auto server_v = server_threads->load();
-		bool noasync = threads < 2 ||
-			(current_count == 1 && (server_v == 0 || server_v == 1));
 
 		//auto
-		if (noasync)
+		if (threads < 2)
 			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
 		else
-		{
-			detail::update_thread_count(jobsys, *server_threads, threads, current_count);
-			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
-		}		
+			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);	
 	}
 }

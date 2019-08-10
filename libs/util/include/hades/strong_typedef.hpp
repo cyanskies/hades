@@ -136,7 +136,7 @@ namespace hades
 		}
 
 	private:
-		value_type _value{};
+		value_type _value;
 	};
 
 	template<typename T>

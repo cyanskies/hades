@@ -19,24 +19,23 @@ namespace hades
 		{
 			const auto id = std::decay_t<decltype(output_curves)>::key_type{ ent, var };
 			const auto exists = output_curves.exists(id);
-			auto new_curve = [exists, id, &output_curves]() {
-				if (exists)
-					return output_curves.get(id);
-				else
-				{
-					const auto c = data::get<resources::curve>(id.second);
-					return curve<T>{ c->c_type };
-				}
-			}();
-
-			for (auto& f : frames)
-				new_curve.set(f.first, f.second);
 
 			if (exists)
-				output_curves.set(id, new_curve);
+			{
+				auto& c = output_curves.get_no_async(id);
+
+				for (auto& f : frames)
+					c.set(f.first, f.second);
+			}
 			else
 			{
-				output_curves.create(id, new_curve);
+				const auto c = data::get<resources::curve>(id.second);
+				auto new_c = curve<T>{ c->c_type };
+
+				for (auto& f : frames)
+					new_c.set(f.first, f.second);
+
+				output_curves.create(id, std::move(new_c));
 
 				//NOTE: special case to check unique curves for the object-type curve
 				if constexpr (std::is_same_v<T, resources::curve_types::unique>)
@@ -138,8 +137,8 @@ namespace hades
 		};
 
 		static const auto server_threads = console::get_int(cvars::server_threadcount);
-		const auto threads = server_threads->load();
-		bool async = threads == -1 || threads > 1;
+		const auto threads = detail::get_update_thread_count();
+		bool async = threads > 1;
 		i.set_async(async);
 
 		const auto next = update_level(_jobs, _prev_frame, _current_frame, dt,

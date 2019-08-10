@@ -191,17 +191,56 @@ namespace hades
 		}
 	}
 
+	static void record_tick_stats(const std::vector<time_duration>& times,
+		console::property_float avg, console::property_float max, console::property_float min) noexcept
+	{
+		auto max_t = time_duration{};
+		auto min_t = time_duration{ seconds{500} };
+		auto accumulator = time_duration{};
+
+		for(const auto &t : times)
+		{
+			max_t = std::max(t, max_t);
+			min_t = std::min(t, min_t);
+			accumulator += t;
+		}
+
+		const auto count = std::size(times);
+
+		if (count == 0)
+		{
+			avg->store(0.f);
+			min->store(0.f);
+			max->store(0.f);
+			return;
+		}
+
+		const auto max_f = time_cast<milliseconds_float>(max_t);
+		const auto min_f = time_cast<milliseconds_float>(min_t);
+		const auto avg_f = time_cast<milliseconds_float>(accumulator / count);
+		avg->store(avg_f.count());
+		min->store(min_f.count());
+		max->store(max_f.count());
+		return;
+	}
+
 	bool App::run()
 	{
 		//We copy the famous gaffer on games timestep here.
 		//however we don't have a system to blend renderstates,
 		//we use curves instead.
 
+		//TODO: use safe functions for this from the console:: namespace
 		//ticks per second, dt = 1 / tick_rate
 		const auto tick_rate = _console.getInt(cvars::client_tick_rate);
-		const auto maxframetime = _console.getInt(cvars::client_max_tick); // NOTE: unused
+		//const auto maxframetime = _console.getInt(cvars::client_max_tick); // NOTE: unused
+		auto avg_tick_time = _console.getFloat(cvars::client_avg_tick_time);
+		auto max_tick_time = _console.getFloat(cvars::client_max_tick_time);
+		auto min_tick_time = _console.getFloat(cvars::client_min_tick_time);
+		auto total_tick_time = _console.getFloat(cvars::client_total_tick_time);
 		auto last_frame_time = _console.getFloat(cvars::client_previous_frametime);
 		auto frame_tick_count = _console.getInt(cvars::client_tick_count);
+		auto frame_draw_time = _console.getFloat(cvars::render_drawtime);
 
 		assert(tick_rate && "failed to get tick rate value from console");
 
@@ -210,6 +249,7 @@ namespace hades
 		auto accumulator = time_duration{};
 
 		int32 frame_ticks = 1;
+		auto prev_tick_times = std::vector<time_duration>{};
 		bool running = true;
 
 		while(running && _window.isOpen())
@@ -236,10 +276,15 @@ namespace hades
 
 			current_time = new_time;
 			accumulator += frame_time;
-			
+
+			prev_tick_times.clear();
+
+			const auto update_start = time_clock::now();
+
 			//perform additional logic updates if we're behind on logic
 			while(accumulator >= dt)
 			{
+				const auto tick_start = time_clock::now();
 				auto events = handleEvents(activeState);
 				_input.generate_state(events);
 
@@ -247,13 +292,21 @@ namespace hades
 				//t += dt;
 				accumulator -= dt;
 				++frame_ticks;
+				prev_tick_times.emplace_back(time_clock::now() - tick_start);
 			}
+
+			const auto update_time = time_cast<milliseconds_float>(time_clock::now() - update_start);
+			total_tick_time->store(update_time.count());
+
+			record_tick_stats(prev_tick_times, avg_tick_time, max_tick_time, min_tick_time);
 
 			frame_tick_count->store(frame_ticks);
 			frame_ticks = 1;
 
 			if (_window.isOpen())
 			{
+				const auto draw_start = time_clock::now();
+
 				_window.clear();
 				//drawing must pass the frame time, so that the renderer can
 				//interpolate between frames
@@ -267,6 +320,10 @@ namespace hades
 				_overlayMan.draw(frame_time, _window);
 				
 				_window.display();
+
+				const auto total_draw_time = time_clock::now() - draw_start;
+				const auto float_draw_time = time_cast<milliseconds_float>(total_draw_time);
+				frame_draw_time->store(float_draw_time.count());
 			}
 		}
 

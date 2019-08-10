@@ -89,12 +89,12 @@ namespace hades {
 		//get_data
 		//return vector of id's to values
 		using data_array = std::vector<std::pair<key_type, value_type>>;
-		data_array data() const;
+		const data_array& data_no_async() const noexcept;
 	private:
 
 		using size_type = std::size_t;
 		using dispatch_map = std::map<key_type, size_type>;
-		using component_array = std::vector<value_type>;
+		using component_array = data_array;
 		using id_array = std::vector<key_type>;
 		using mutex_array = std::vector<mutex_type>;
 		using exclusive_lock = std::unique_lock<mutex_type>;

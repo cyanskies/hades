@@ -315,7 +315,13 @@ namespace hades {
 				}
 			}
 
-			iter = _data.emplace(post, frame_t{ at, std::move(value) });
+			if (pre != std::end(_data) && pre->first == at)
+			{
+				const auto pos = std::distance(std::cbegin(_data), pre);
+				_data[pos].second = std::move(value);
+			}
+			else
+				iter = _data.emplace(post, frame_t{ at, std::move(value) });
 
 			if (iter != std::end(_data))
 			{

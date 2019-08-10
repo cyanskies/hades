@@ -34,7 +34,7 @@ namespace hades {
 		std::lock(vectlk, complk);
 		assert(index < _components.size());
 
-		return _components[index];
+		return _components[index].second;
 	}
 
 	template<typename Key, typename Value>
@@ -45,7 +45,7 @@ namespace hades {
 		assert(index < _componentMutex.size());
 		assert(index < _components.size());
 
-		return _components[index];
+		return _components[index].second;
 	}
 
 	template<typename Key, typename Value>
@@ -63,7 +63,7 @@ namespace hades {
 		std::lock(vectlk, complk);
 		assert(index < _components.size());
 
-		_components[index] = std::forward<T>(value);
+		_components[index].second = std::forward<T>(value);
 		return;
 	}
 
@@ -132,7 +132,7 @@ namespace hades {
 		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
 		
 		auto newpos = _components.size();
-		_components.emplace_back(value);
+		_components.emplace_back( id, value );
 		_ids.emplace_back(id);
 		_idDispatch.insert({ id, newpos });
 
@@ -147,6 +147,7 @@ namespace hades {
 	template<typename Key, typename Value>
 	void shared_map<Key, Value>::erase(key_type id)
 	{
+		//TODO: check this for correctness
 		const auto index = _getIndex(id);
 
 		assert(index < _componentMutex.size());
@@ -184,7 +185,7 @@ namespace hades {
 
 		assert(index < _components.size());
 		//if the value in expected matches the store number then grant the lock
-		if (_components[index] == expected)
+		if (_components[index].second == expected)
 			return std::make_tuple(true, std::move(complk));
 		else
 		{
@@ -219,26 +220,13 @@ namespace hades {
 		assert(index < _components.size());
 		assert(token.mutex() == &_componentMutex[index]);
 
-		_components[index] = std::forward<T>(desired);
+		_components[index].second = std::forward<T>(desired);
 	}
 
 	template<typename Key, typename Value>
-	typename shared_map<Key, Value>::data_array shared_map<Key, Value>::data() const
+	inline const typename shared_map<Key, Value>::data_array& shared_map<Key, Value>::data_no_async() const noexcept
 	{
-		const auto lock = std::scoped_lock{ _vectorMutex, _dispatchMutex };
-
-		//confirm that all of the mutexs are unlocked
-		for (auto&& m : _componentMutex)
-			if (!std::unique_lock<mutex_type>{ m, std::try_to_lock })
-				throw shared_map_locked_elements{ "Cannot copy data while any Key mutexes are still being held." };
-
-		data_array output;
-		output.reserve(_idDispatch.size());
-		//make a copy of the data;
-		for (auto key_data : _idDispatch)
-			output.push_back({ key_data.first, _components[key_data.second] });
-
-		return output;
+		return _components;
 	}
 
 	template<typename Key, typename Value>

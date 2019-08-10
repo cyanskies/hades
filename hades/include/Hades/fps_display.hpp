@@ -27,6 +27,13 @@ namespace hades
 
 	private:
 		console::property_float _frame_time;
+		console::property_int _tick_per_frame;
+		console::property_float _tick_avg;
+		console::property_float _tick_max;
+		console::property_float _tick_min;
+		console::property_float _tick_total;
+		console::property_float _draw_time;
+
 		sf::Text _text;
 		const resources::font *_font;
 		fps_mode _mode{ off };

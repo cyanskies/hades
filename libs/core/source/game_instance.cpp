@@ -34,10 +34,10 @@ namespace hades
 
 	template<typename T>
 	static std::vector<exported_curves::export_set<T>> get_exported_set(time_point t,
-		typename shared_map<std::pair<entity_id, variable_id>, curve<T>>::data_array data)
+		const typename shared_map<std::pair<entity_id, variable_id>, curve<T>>::data_array &data)
 	{
 		std::vector<exported_curves::export_set<T>> output;
-		for (auto c : data)
+		for (const auto &c : data)
 		{
 			exported_curves::export_set<T> s;
 			s.variable = c.first.second;
@@ -52,10 +52,10 @@ namespace hades
 			s.entity = c.first.first;
 			auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
 			while (lower != c.second.end())
-				s.frames.push_back(*lower++);
+				s.frames.emplace_back(*lower++);
 
 			if(std::size(s.frames) > 0)
-				output.push_back(s);
+				output.emplace_back(std::move(s));
 		}
 
 		return output;
@@ -71,14 +71,14 @@ namespace hades
 		using namespace resources::curve_types;
 		//load all the frames from the specified time into the exported data
 		//TODO: half of the curve types are missing
-		output.int_curves = get_exported_set<int_t>(t, curves.int_curves.data());
-		output.float_curves = get_exported_set<float_t>(t, curves.float_curves.data());
-		output.bool_curves = get_exported_set<bool_t>(t, curves.bool_curves.data());
-		output.string_curves = get_exported_set<string>(t, curves.string_curves.data());
-		output.object_ref_curves = get_exported_set<object_ref>(t, curves.object_ref_curves.data());
-		output.unique_curves = get_exported_set<unique>(t, curves.unique_curves.data());
+		output.int_curves = get_exported_set<int_t>(t, curves.int_curves.data_no_async());
+		output.float_curves = get_exported_set<float_t>(t, curves.float_curves.data_no_async());
+		output.bool_curves = get_exported_set<bool_t>(t, curves.bool_curves.data_no_async());
+		output.string_curves = get_exported_set<string>(t, curves.string_curves.data_no_async());
+		output.object_ref_curves = get_exported_set<object_ref>(t, curves.object_ref_curves.data_no_async());
+		output.unique_curves = get_exported_set<unique>(t, curves.unique_curves.data_no_async());
 
-		output.int_vector_curves = get_exported_set<resources::curve_types::vector_int>(t, curves.int_vector_curves.data());
+		output.int_vector_curves = get_exported_set<resources::curve_types::vector_int>(t, curves.int_vector_curves.data_no_async());
 
 		//add in entityNames
 		//output.entity_names = _newEntityNames;

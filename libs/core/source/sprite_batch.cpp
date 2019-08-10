@@ -342,11 +342,17 @@ namespace hades
 
 		bool needs_move = false;
 
+		if (_async)
 		{
-			auto lock = std::shared_lock<decltype(_collection_mutex)>{};
-			if(_async)
-				lock = std::shared_lock{ _collection_mutex };
+			const auto lock = std::shared_lock{ _collection_mutex };
 
+			const auto found = sprite_utility::find_sprite(_sprites, id);
+			const auto batch = std::get<0>(found);
+
+			needs_move = _sprites[batch].first.texture != a->tex;
+		}
+		else
+		{
 			const auto found = sprite_utility::find_sprite(_sprites, id);
 			const auto batch = std::get<0>(found);
 

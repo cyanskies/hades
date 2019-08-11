@@ -41,8 +41,8 @@ namespace hades
 
 		static constexpr drawable_id bad_drawable_id = drawable_id{ std::numeric_limits<drawable_id::value_type>::min() };
 
-		using mutex_type = std::mutex;
-		using shared_mutex_type = std::shared_mutex;
+		using mutex_type = spinlock;
+		using shared_mutex_type = shared_spinlock;
 
 
 		using get_drawable = const sf::Drawable& (*)(const std::any&);

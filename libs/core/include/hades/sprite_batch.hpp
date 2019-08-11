@@ -9,7 +9,8 @@
 
 #include "hades/exceptions.hpp"
 #include "hades/rectangle_math.hpp"
-#include "Hades/strong_typedef.hpp"
+#include "hades/spinlock.hpp"
+#include "hades/strong_typedef.hpp"
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
 
@@ -45,12 +46,12 @@ namespace hades
 
 		struct sprite
 		{
-			using mutex_type = std::mutex;
+			using mutex_type = spinlock;
 
 			sprite() = default;
 			sprite(const sprite &other);
 			sprite &operator=(const sprite &other);
-			
+
 			mutex_type mut;
 			sprite_id id = bad_sprite_id;
 			vector_float position{};
@@ -86,8 +87,8 @@ namespace hades
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
-		using shared_mutex_type = std::shared_mutex;
-		using mutex_type = std::mutex;
+		using shared_mutex_type = shared_spinlock;
+		using mutex_type = spinlock;
 
 		sprite_batch() = default;
 		sprite_batch(const sprite_batch&);
@@ -115,8 +116,6 @@ namespace hades
 		void set_size(sprite_id id, vector_float size);
 		//===End Thread Safe===
 
-		void draw_clamp(const rect_float &worldCoords);
-
 		void prepare();
 
 		std::vector<sprite_utility::layer_t> get_layer_list() const;
@@ -131,8 +130,6 @@ namespace hades
 
 		using batch = sprite_utility::batch;
 		std::vector<batch> _sprites;
-
-		rect_float _draw_clamp{};
 
 		//TODO: vertex_buffer
 		using vertex_batch = std::pair<sprite_utility::sprite_settings, std::vector<sf::Vertex>>;

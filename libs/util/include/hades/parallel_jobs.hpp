@@ -24,6 +24,7 @@ namespace hades
 
 	job* get_parent(job*);
 
+	//TODO: should this move to spinlocks?
 	class job_system
 	{
 	public:

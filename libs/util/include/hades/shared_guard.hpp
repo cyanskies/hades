@@ -6,10 +6,10 @@
 #include "hades/value_guard.hpp"
 #include "hades/transactional.hpp"
 
-// a thread safe wrapper for arbitary value types.
+// a transactional wrapper for arbitary value types.
 // support concurrent reads for values that do not change often
 namespace hades {
-	template<typename value, typename mutex = std::shared_mutex>
+	template<typename value, typename mutex = shared_spinlock>
 	class shared_guard : public value_guard<value, mutex>
 	{
 	public:

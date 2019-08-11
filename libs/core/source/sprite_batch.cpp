@@ -96,14 +96,13 @@ namespace hades
 
 	using namespace sprite_utility;
 
-	sprite_batch::sprite_batch(const sprite_batch &other) : _sprites{other._sprites}, _draw_clamp{other._draw_clamp},
+	sprite_batch::sprite_batch(const sprite_batch &other) : _sprites{other._sprites},
 		_vertex{other._vertex}, _used_ids{other._used_ids}, _id_count{other._id_count}
 	{}
 
 	sprite_batch &sprite_batch::operator=(const sprite_batch &other)
 	{
 		_sprites = other._sprites;
-		_draw_clamp = other._draw_clamp;
 		_vertex = other._vertex;
 		_used_ids = other._used_ids;
 		_id_count = other._id_count;
@@ -115,7 +114,6 @@ namespace hades
 		auto func = [&](sprite_batch &other) {
 			using std::swap;
 			swap(_sprites, other._sprites);
-			swap(_draw_clamp, other._draw_clamp);
 			swap(_vertex, other._vertex);
 			swap(_used_ids, other._used_ids);
 			swap(_id_count, other._id_count);
@@ -445,11 +443,6 @@ namespace hades
 			sprite->size = size;
 	}
 
-	void sprite_batch::draw_clamp(const rect_float &r)
-	{
-		_draw_clamp = r;
-	}
-
 	using poly_square = poly_quad;
 	
 	static poly_square make_square(const sprite_utility::sprite &s)
@@ -502,16 +495,6 @@ namespace hades
 			//make the vertex data
 			for (const auto &s : _sprites[i].second)
 			{
-				//only test for draw culling if the draw area has been set
-				if (_draw_clamp != rect_float{})
-				{
-					const auto sprite_bounds = rect_float{ s.position.x, s.position.y, s.size.x, s.size.y };
-
-					//skip if the sprite isn't in the draw area
-					if (!intersects(_draw_clamp, sprite_bounds))
-						continue;
-				}
-
 				poly_square vertex = s.animation && s.animation->tex ? make_square_animation(s) : make_square(s);
 				std::move(std::begin(vertex), std::end(vertex), std::back_inserter(*buffer));
 			}

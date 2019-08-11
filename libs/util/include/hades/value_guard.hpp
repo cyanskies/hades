@@ -4,11 +4,12 @@
 #include <mutex>
 #include <utility>
 
+#include "hades/spinlock.hpp"
 #include "hades/transactional.hpp"
 
-// a thread safe wrapper for arbitary value types.
+// a transactional wrapper for arbitary value types.
 namespace hades {
-	template<typename value, typename mutex = std::mutex>
+	template<typename value, typename mutex = spinlock>
 	class value_guard
 	{
 	public:
@@ -27,10 +28,11 @@ namespace hades {
 		virtual ~value_guard() = default;
 
 		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value>>>
-		void operator=(T &&desired)
+		T& operator=(T &&desired)
 		{
 			std::lock_guard<mutex> lk(_mutex);
 			_value = std::forward<T>(desired);
+			return _value;
 		}
 
 		void operator=(const value_guard&) = delete;
@@ -69,6 +71,7 @@ namespace hades {
 			return false;
 		}
 
+		//set is not threadsafe
 		void set(value v)
 		{
 			_value = std::move(v);
@@ -102,8 +105,8 @@ namespace hades {
 			_value = std::forward<T>(desired);
 		}
 
-		constexpr bool is_lock_free() const noexcept { return false; }
-		static constexpr bool is_always_lock_free = false;
+		constexpr bool is_lock_free() const noexcept { return lock_free_mutex_v<mutex>; }
+		static constexpr bool is_always_lock_free = lock_free_mutex_v<mutex>;
 
 	protected:
 		mutable mutex _mutex;

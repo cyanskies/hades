@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/spinlock.hpp"
 #include "hades/transactional.hpp"
 
 //a thread safe storage system for entity components
@@ -43,7 +44,7 @@ namespace hades {
 	public:
 		using value_type = Value;
 		using key_type = Key;
-		using mutex_type = std::shared_mutex;
+		using mutex_type = shared_spinlock;
 		using exchange_token = std::unique_lock<mutex_type>;
 		using lock_return = std::tuple<bool, exchange_token>;
 

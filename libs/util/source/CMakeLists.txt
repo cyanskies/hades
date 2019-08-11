@@ -17,6 +17,7 @@ set(HADES_UTIL_SRC
 	../include/hades/shared_any_map.hpp
 	../include/hades/shared_guard.hpp
 	../include/hades/shared_map.hpp
+	../include/hades/spinlock.hpp
 	../include/hades/strong_typedef.hpp
 	../include/hades/table.hpp
 	../include/hades/time.hpp

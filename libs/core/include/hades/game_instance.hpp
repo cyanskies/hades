@@ -32,7 +32,7 @@ namespace hades
 		//also sends entity name mappings
 		//  t: send all keyframes after this point
 		//		default is max time
-		exported_curves get_changes(time_point t) const;
+		void get_changes(exported_curves&, time_point t) const;
 
 	private:
 		//the games starting time, is always 0

@@ -37,15 +37,15 @@ namespace hades
 			/*yeeaarrrghhh*/
 		}
 
-		exported_curves get_changes(time_point dt) const override
+		void get_changes(exported_curves &exp, time_point dt) const override
 		{
 			_last_update_time = _level_time;
-			return _game.get_changes(dt);
+			return _game.get_changes(exp, dt);
 		}
 
-		exported_curves get_changes() const override
+		void get_changes(exported_curves& exp) const override
 		{
-			return get_changes(_last_update_time);
+			return get_changes(exp, _last_update_time);
 		}
 
 	private:
@@ -77,16 +77,16 @@ namespace hades
 			_level.tick(dt);
 		}
 
-		exported_curves get_updates(time_point dt) const override
+		void get_updates(exported_curves& exp, time_point dt) const override
 		{
 			_last_local_update_request = _server_time;
-			return _level.get_changes(dt);
+			return _level.get_changes(exp, dt);
 		}
 
-		exported_curves get_updates() const override
+		void get_updates(exported_curves &exp) const override
 		{
 			const auto dt = _last_local_update_request;
-			return get_updates(dt);
+			return get_updates(exp, dt);
 		}
 
 		void get_mission() override

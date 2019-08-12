@@ -23,10 +23,11 @@ namespace hades
 	{
 	public:
 		//gets updated curves
+		//recommended to keep the exported_curves object between frames
 		//get all changes since time_point
-		virtual exported_curves get_changes(time_point) const = 0;
+		virtual void get_changes(exported_curves&, time_point) const = 0;
 		//get all changes since last call to get_changes
-		virtual exported_curves get_changes() const = 0;
+		virtual void get_changes(exported_curves&) const = 0;
 		//sends player input
 		virtual void send_request(action a) = 0;
 		virtual void send_request(std::vector<action>) = 0;
@@ -49,9 +50,9 @@ namespace hades
 		//virtual void send_request(unique_id lvl, action a) = 0;
 		//get all updates since time_point
 		//NOTE: these are for getting mission state, not level state
-		virtual exported_curves get_updates(time_point) const = 0;
+		virtual void get_updates(exported_curves&, time_point) const = 0;
 		//get all updates since last call to any get_updates func
-		virtual exported_curves get_updates() const = 0;
+		virtual void get_updates(exported_curves&) const = 0;
 		//get server state at time_point
 		//virtual exported_curves resync(time_point) = 0;
 

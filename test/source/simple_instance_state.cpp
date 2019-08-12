@@ -69,9 +69,9 @@ void simple_instance_state::init()
 	_server = hades::create_server(lvl_sv);
 	_level = _server->connect_to_level(hades::unique_id::zero);
 
-	const auto level_state = _level->get_changes();
+	/*const auto level_state = _level->get_changes();
 	print_changes(level_state);
-	_client_instance.input_updates(level_state);
+	_client_instance.input_updates(level_state);*/
 }
 
 bool simple_instance_state::handle_event(const hades::event & windowEvent)
@@ -86,9 +86,9 @@ void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarg
 
 void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
 {
-	const auto changes = _level->get_changes();
+	/*const auto changes = _level->get_changes();
 	print_changes(changes);
-	_client_instance.input_updates(changes);
+	_client_instance.input_updates(changes);*/
 	_current_time += deltaTime;
 	_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
 	_drawable_output.prepare();

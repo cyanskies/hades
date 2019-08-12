@@ -31,24 +31,22 @@ namespace hades
 			const auto [x, y] = get_position_curve_id();
 			const auto [size_x, size_y] = get_size_curve_id();
 			const auto obj_type = get_object_type_curve_id();
-			const auto obj_curve = render::level::get_curve<unique>(ent, obj_type);
-			const auto obj_id = obj_curve.get(time);
-
+			const auto obj_id = render::level::get_value<unique>({ ent, obj_type }, time);
 			const auto object = data::get<resources::object>(obj_id);
 			const auto anims = get_editor_animations(*object);
 
 			if (std::empty(anims))
 				return {};
 
-			const auto px = render::level::get_curve<float_t>(ent, x);
-			const auto py = render::level::get_curve<float_t>(ent, y);
+			const auto px = render::level::get_value<float_t>({ ent, x }, time);
+			const auto py = render::level::get_value<float_t>({ ent, y }, time);
 
-			const auto sx = render::level::get_curve<float_t>(ent, size_x);
-			const auto sy = render::level::get_curve<float_t>(ent, size_y);
+			const auto sx = render::level::get_value<float_t>({ ent, size_x }, time);
+			const auto sy = render::level::get_value<float_t>({ ent, size_y }, time);
 			
 			return entity_info{
-				hades::vector_float{ px.get(time), py.get(time) },
-				hades::vector_float{ sx.get(time), sy.get(time) },
+				hades::vector_float{ px, py },
+				hades::vector_float{ sx, sy },
 				random_element(std::begin(anims), std::end(anims))
 			};
 		}
@@ -60,6 +58,7 @@ namespace hades
 		{
 			assert(render::get_object() == bad_entity);
 			render::create_system_value(sprite_id_list, sprite_id_t{});
+			return;
 		}
 
 		static void on_connect()
@@ -80,12 +79,12 @@ namespace hades
 				ent.position, ent.size);
 
 			dat.emplace(entity, sprite_id);
-			render::set_system_value(sprite_id_list, dat);
+			render::set_system_value(sprite_id_list, std::move(dat));
 
 			return;
 		}
 
-		static void on_tick(hades::job_system&, hades::render_job_data& d)
+		static void on_tick(hades::render_job_data& d)
 		{
 			const auto entity = d.entity;
 			assert(entity != bad_entity);
@@ -112,6 +111,9 @@ namespace hades
 			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 			if (const auto s_id = dat.find(entity); s_id != std::end(dat))
 				d.render_output->destroy_sprite(s_id->second);
+
+			dat.erase(entity);
+			render::set_system_value(sprite_id_list, std::move(dat));
 
 			return;
 		}

@@ -61,7 +61,7 @@ namespace hades
 	template<typename T>
 	inline T shared_any_map<Key>::get_no_async(key_type k) const
 	{
-		assert(exists(k));
+		assert(exists_no_async(k));
 
 		try
 		{
@@ -103,13 +103,10 @@ namespace hades
 	template<typename T>
 	inline void shared_any_map<Key>::set(key_type id, T&& value)
 	{
-		assert(exists(id));
-		const auto lock = std::shared_lock{ _map_mutex };
-
+		assert(exists_no_async(id));
 		try
 		{
 			auto& elm = _map.at(id);
-			const auto elm_lock = std::scoped_lock{ elm.mut };
 			elm.data = std::forward<T>(value);
 		}
 		catch (const std::out_of_range& e)
@@ -140,6 +137,12 @@ namespace hades
 	inline bool shared_any_map<Key>::exists(key_type id) const
 	{
 		const auto lock = std::shared_lock{ _map_mutex };
+		return _map.find(id) != std::end(_map);
+	}
+
+	template<typename Key>
+	inline bool shared_any_map<Key>::exists_no_async(key_type id) const
+	{
 		return _map.find(id) != std::end(_map);
 	}
 

@@ -59,6 +59,7 @@ namespace hades
 
 		//returns true if the Vector contains an entry for the id
 		bool exists(key_type id) const;
+		bool exists_no_async(key_type id) const;
 
 		//Creates a new entry in the Vector for the id
 		//slow during system update

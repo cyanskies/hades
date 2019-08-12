@@ -42,7 +42,7 @@ namespace hades
 		{
 			const auto ft = _frame_time->load();
 			const auto time = ft == 0 ? 0.01f : ft;
-			str = "fps: " + to_string(1000 / time) + "ms";
+			str = "fps: " + to_string(static_cast<int32>(1000 / time));
 		}
 
 		str += "\nticks per frame: " + to_string(_tick_per_frame->load());

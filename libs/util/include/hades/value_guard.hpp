@@ -43,6 +43,12 @@ namespace hades {
 			return _value;
 		}
 
+		//NOTE: we ignore the value, we are always guarded by mutex
+		value load(std::memory_order) const
+		{
+			return load();
+		}
+
 		value get() const
 		{
 			return load();
@@ -69,6 +75,13 @@ namespace hades {
 			}
 
 			return false;
+		}
+
+		//NOTE: we ignore the order, we are always relaxed
+		void store(value v, std::memory_order = std::memory_order_relaxed)
+		{
+			std::lock_guard<mutex> lk(_mutex);
+			_value = std::move(v);
 		}
 
 		//set is not threadsafe

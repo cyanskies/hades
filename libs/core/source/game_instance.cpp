@@ -37,9 +37,9 @@ namespace hades
 		const typename shared_map<std::pair<entity_id, variable_id>, curve<T>>::data_array &data)
 	{
 		std::vector<exported_curves::export_set<T>> output;
+		exported_curves::export_set<T> s;
 		for (const auto &c : data)
 		{
-			exported_curves::export_set<T> s;
 			s.variable = c.first.second;
 			//TODO: cache this somewhere so wi don't hit a mutex every loop
 			//auto curve = data::get<resources::curve>(s.variable);
@@ -51,6 +51,7 @@ namespace hades
 			//get the rest of the data
 			s.entity = c.first.first;
 			auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
+			s.frames.clear();
 			while (lower != c.second.end())
 				s.frames.emplace_back(*lower++);
 

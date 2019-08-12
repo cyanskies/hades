@@ -56,7 +56,7 @@ namespace hades
 
 			T load()
 			{
-				return _value;
+				return _value.load(std::memory_order_relaxed);
 			}
 
 			T load_default()
@@ -66,12 +66,7 @@ namespace hades
 
 			void store(T desired)
 			{
-				_value = desired;
-			}
-
-			T compare_exchange(T &expected, T desired)
-			{
-				return _value.compare_exchange(expected, desired);
+				_value.store(desired, std::memory_order_release);
 			}
 
 		private:

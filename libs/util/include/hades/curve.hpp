@@ -3,10 +3,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <deque>
 #include <map>
 #include <stdexcept>
 #include <tuple>
-#include <vector>
 
 #include "hades/time.hpp"
 #include "hades/types.hpp"
@@ -65,6 +65,7 @@ namespace hades {
 		pulse // data between keyframes is null
 	};
 
+	//TODO: base on hades error
 	class curve_error : public std::runtime_error
 	{
 	public:
@@ -77,7 +78,7 @@ namespace hades {
 	public:
 		using Time = time_point;
 		using frame_t = std::pair<Time, Data>;
-		using DataType = std::vector<frame_t>;
+		using DataType = std::deque<frame_t>;
 
 		basic_curve() = default;
 		explicit basic_curve(curve_type type) : _type{type}

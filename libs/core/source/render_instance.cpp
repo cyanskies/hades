@@ -18,7 +18,7 @@ namespace hades
 		for (const auto& [ent, var, frames] : input)
 		{
 			const auto id = std::decay_t<decltype(output_curves)>::key_type{ ent, var };
-			const auto exists = output_curves.exists(id);
+			const auto exists = output_curves.exists_no_async(id);
 
 			if (exists)
 			{
@@ -29,6 +29,7 @@ namespace hades
 			}
 			else
 			{
+				//TODO: cache these somewhere local, only need the c_types
 				const auto c = data::get<resources::curve>(id.second);
 				auto new_c = curve<T>{ c->c_type };
 

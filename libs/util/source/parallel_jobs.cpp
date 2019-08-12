@@ -16,30 +16,6 @@ namespace hades
 		constexpr auto t_main_thread_id = std::numeric_limits<thread_id>::max();
 	}
 
-	struct job
-	{
-		job() noexcept = default;
-		job(const job&);
-		job& operator=(const job&);
-
-		job_function function;
-		job* parent_job = nullptr;
-		job* rparent_job = nullptr;
-		std::atomic<types::int32> unfinished_children = 1;
-	};
-
-	job::job(const job &other)
-		: function(other.function), parent_job(other.parent_job), 
-		rparent_job(other.rparent_job), unfinished_children(other.unfinished_children.load())
-	{}
-
-	job& job::operator=(const job &other)
-	{
-		job j{ other };
-		std::swap(*this, j);
-		return *this;
-	}
-
 	job_system::job_system() : job_system(-1)
 	{}
 
@@ -71,8 +47,7 @@ namespace hades
 	job* job_system::create()
 	{
 		lock_t guard{ _jobs_mutex };
-		_jobs.emplace_back(std::make_unique<job>());
-		return &*_jobs.back();
+		return &_jobs.emplace_back();
 	}
 
 	job* job_system::create_child(job* parent)

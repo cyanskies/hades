@@ -10,18 +10,34 @@
 #include <tuple>
 #include <vector>
 
-#include <hades/types.hpp>
+#include "hades/spinlock.hpp"
+#include "hades/types.hpp"
 
 namespace hades 
 {
+	using job_function = std::function<bool(void)>;
+
 	namespace detail
 	{
 		using thread_id = std::size_t;
+
+		struct job
+		{
+			job() = default;
+			job(const job&) = delete;
+			job& operator=(const job&) = delete;
+			job(job&&) = delete;
+			job& operator=(job&&) = delete;
+
+			job_function function;
+			job* parent_job = nullptr;
+			job* rparent_job = nullptr;
+			std::atomic<types::uint32> unfinished_children = 1;
+		};
 	}
 
-	struct job;
-	using job_function = std::function<bool(void)>;
-
+	using detail::job;
+	
 	job* get_parent(job*);
 
 	//TODO: should this move to spinlocks?
@@ -32,6 +48,7 @@ namespace hades
 		job_system();
 		//if threads is positive, then that many threads will be used when wait is called
 		//otherwise the number of threads is chosen based on hardware support
+		//NOTE: passing 0 or 1 will only use the main thread
 		job_system(types::int32 threads);
 		~job_system();
 
@@ -68,8 +85,8 @@ namespace hades
 
 	private:
 		using worker_queue = std::deque<job*>;
-		using lock_t = std::lock_guard<std::mutex>;
-		using queue_lock = std::unique_lock<std::mutex>;
+		using lock_t = std::lock_guard<spinlock>;
+		using queue_lock = std::unique_lock<spinlock>;
 		using locked_queue = std::tuple<worker_queue*, queue_lock>;
 		using thread_id = detail::thread_id;
 
@@ -99,10 +116,10 @@ namespace hades
 		thread_list _thread_pool;
 		using worker_queue_list = std::vector<worker_queue>;
 		worker_queue_list _worker_queues;
-		using worker_mutex_list = std::vector<std::mutex>;
+		using worker_mutex_list = std::vector<spinlock>;
 		mutable worker_mutex_list _worker_queues_mutex;
-		std::vector<std::unique_ptr<job>> _jobs;
-		mutable std::mutex _jobs_mutex;
+		std::deque<job> _jobs;
+		mutable spinlock _jobs_mutex;
 		
 		std::condition_variable _condition;
 		mutable std::mutex _condition_mutex;

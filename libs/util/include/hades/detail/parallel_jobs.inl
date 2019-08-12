@@ -14,7 +14,6 @@ namespace hades
 		{
 			if constexpr(std::is_invocable_r_v<bool, Func, job_system&, JobData>)
 			{
-				//auto jj = std::ref(j);
 				return [j = std::ref(j), f, d]()->bool {
 					return std::invoke(f, j, d);
 				};

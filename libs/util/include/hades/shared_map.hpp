@@ -2,11 +2,11 @@
 #define HADES_TRANSACTIONALMAP_HPP
 
 #include <cstddef> //for size_t
+#include <deque>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
 #include <tuple>
-#include <vector>
 
 #include "hades/spinlock.hpp"
 #include "hades/transactional.hpp"
@@ -61,15 +61,9 @@ namespace hades {
 		template<typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, value_type>>>
 		void set(key_type id, T &&value);
 
-		//sorts the data by id for faster access
-		//never call during system update
-		//TODO: deprecate
-		// i dont see why being sorted would make anything faster
-		// we use the dispatch map to find stuff anyway
-		void sort();
-
 		//returns true if the Vector contains an entry for the id
 		bool exists(key_type id) const;
+		bool exists_no_async(key_type id) const;
 
 		//Creates a new entry in the Vector for the id
 		//slow during system update
@@ -89,15 +83,14 @@ namespace hades {
 
 		//get_data
 		//return vector of id's to values
-		using data_array = std::vector<std::pair<key_type, value_type>>;
+		using data_array = std::deque<std::pair<key_type, value_type>>;
 		const data_array& data_no_async() const noexcept;
 	private:
 
 		using size_type = std::size_t;
 		using dispatch_map = std::map<key_type, size_type>;
 		using component_array = data_array;
-		using id_array = std::vector<key_type>;
-		using mutex_array = std::vector<mutex_type>;
+		using mutex_array = std::deque<mutex_type>;
 		using exclusive_lock = std::unique_lock<mutex_type>;
 		using read_lock = std::shared_lock<mutex_type>;
 		using write_lock = std::lock_guard<mutex_type>;
@@ -112,10 +105,6 @@ namespace hades {
 
 		//a map to connect ids to array addresses
 		dispatch_map _idDispatch;
-
-		//these arrays must all remain sorted together, the array id in one corrisponds to the same data in the others
-		//array of id's, so that we can find id's from array indexs
-		id_array _ids;
 		//array of mutexs to guard access to the Component array entries
 		mutable mutex_array _componentMutex;
 		//array of components, the main data held by this structure

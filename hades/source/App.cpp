@@ -590,6 +590,7 @@ namespace hades
 		{
 			//fps display
 			auto fps = [](const argument_list &args) {
+				//TODO: why would this throw
 				if (args.size() != 1)
 					throw invalid_argument("fps function expects one argument");
 

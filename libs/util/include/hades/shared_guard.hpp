@@ -20,6 +20,11 @@ namespace hades {
 
 		using value_guard<value, mutex>::operator=;
 
+		value load(std::memory_order = std::memory_order_relaxed) const
+		{
+			return get();
+		}
+
 		value get() const
 		{
 			std::shared_lock<mutex>(_mutex);

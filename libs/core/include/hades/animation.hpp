@@ -48,9 +48,15 @@ namespace hades::animation
 
 namespace hades
 {
-	using poly_quad = std::array<sf::Vertex, 6u>;
+	constexpr static auto quad_vert_count = 6u;
+	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
 	poly_quad make_quad_colour(rect_float quad, colour);
-	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad);
+	poly_quad make_quad_animation(vector_float pos, const resources::animation&, const animation::animation_frame&) noexcept;
+	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation&, const animation::animation_frame&) noexcept;
+	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;
+
+	//functions for updating vertex data
+	using poly_raw = poly_quad::pointer;
 
 	void register_animation_resource(data::data_manager&);
 }

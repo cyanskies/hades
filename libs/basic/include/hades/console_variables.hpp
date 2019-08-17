@@ -28,7 +28,7 @@ namespace hades
 		constexpr auto render_drawtime = "r_drawtime"; //reports the time taken to generate and display the last frame in ms
 
 		//server vars
-		constexpr auto server_threadcount = "s_threads"; //number of threads to use in the game and rendering server
+		constexpr auto server_threadcount = "s_threads"; //number of threads to use in the game server
 														// -1 = auto, 0/1 = no threading, otherwise the number of threads to use
 		//client vars
 		constexpr auto client_tick_rate = "c_tickrate"; //number of ticks to calculate per second

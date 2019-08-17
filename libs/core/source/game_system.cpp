@@ -52,7 +52,33 @@ namespace hades
 		}
 
 		static const auto sprite_id_list = unique_id{};
-		using sprite_id_t = std::map<entity_id, sprite_utility::sprite_id>;
+		using sprite_id_t = std::vector<std::pair<entity_id, sprite_utility::sprite_id>>;
+
+		sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e)
+		{
+			for (const auto& x : v)
+			{
+				if (x.first == e)
+					return x.second;
+			}
+
+			return sprite_utility::bad_sprite_id;
+		}
+
+		void erase(sprite_id_t& v, entity_id e)
+		{
+			for (auto it = std::begin(v); it != std::end(v); ++it)
+			{
+				if (it->first == e)
+				{
+					std::iter_swap(it, std::rbegin(v));
+					v.pop_back();
+					return;
+				}
+			}
+
+			return;
+		}
 
 		static void on_create()
 		{
@@ -67,8 +93,6 @@ namespace hades
 			assert(entity != bad_entity);
 			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 
-			assert(dat.find(entity) == std::end(dat));
-
 			const auto ent = get_entity_info(entity);
 
 			if (ent.anim == nullptr)
@@ -78,7 +102,7 @@ namespace hades
 				render::get_time(), render_interface::sprite_layer{},
 				ent.position, ent.size);
 
-			dat.emplace(entity, sprite_id);
+			dat.emplace_back(entity, sprite_id);
 			render::set_system_value(sprite_id_list, std::move(dat));
 
 			return;
@@ -90,11 +114,11 @@ namespace hades
 			assert(entity != bad_entity);
 
 			//TODO: use proper rendering interface functions
-			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
-			if (auto sprite = dat.find(entity); sprite != std::end(dat))
+			const auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
 			{
 				const auto ent = get_entity_info(entity);
-				const auto &s_id = sprite->second;
+				const auto &s_id = sprite;
 				d.render_output->set_position(s_id, ent.position);
 				d.render_output->set_size(s_id, ent.size);
 				d.render_output->set_animation(s_id, ent.anim, render::get_time());
@@ -109,10 +133,10 @@ namespace hades
 			assert(entity != bad_entity);
 
 			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
-			if (const auto s_id = dat.find(entity); s_id != std::end(dat))
-				d.render_output->destroy_sprite(s_id->second);
+			if (const auto s_id = find(dat, entity); s_id != sprite_utility::bad_sprite_id)
+				d.render_output->destroy_sprite(s_id);
 
-			dat.erase(entity);
+			erase(dat, entity);
 			render::set_system_value(sprite_id_list, std::move(dat));
 
 			return;

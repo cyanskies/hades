@@ -180,12 +180,16 @@ namespace hades
 
 	void render_interface::prepare()
 	{
-		_sprite_batch.prepare();
+		_sprite_batch.apply();
 	}
 
 	void render_interface::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
 		using sprite_utility::layer_t;
+
+		t.draw(_sprite_batch, s);
+
+		return;
 
 		constexpr auto layer_max = std::numeric_limits<layer_t>::max();
 		constexpr auto layer_min = std::numeric_limits<layer_t>::min();

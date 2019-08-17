@@ -12,11 +12,15 @@ namespace hades
 	constexpr static auto empty_struct = empty_struct_t{};
 
 	template<typename T, typename Callback = empty_struct_t>
-	static void merge_input(const std::vector<exported_curves::export_set<T>> & input, curve_data & output, time_point time = time_point{}, Callback callback = empty_struct)
+	static void merge_input(const std::vector<exported_curves::export_set<T>> & input, std::size_t size, curve_data & output, time_point time = time_point{}, Callback callback = empty_struct)
 	{
+		//TODO: use size
 		auto& output_curves = get_curve_list<T>(output);
-		for (const auto& [ent, var, frames] : input)
+
+		auto index = std::size_t();
+		while(index < size)// (const auto& [ent, var, frames] : input)
 		{
+			const auto& [ent, var, frames] = input[index];
 			const auto id = std::decay_t<decltype(output_curves)>::key_type{ ent, var };
 			const auto exists = output_curves.exists_no_async(id);
 
@@ -24,6 +28,7 @@ namespace hades
 			{
 				auto& c = output_curves.get_no_async(id);
 
+				//TODO: bulk insertion for curves
 				for (auto& f : frames)
 					c.set(f.first, f.second);
 			}
@@ -64,6 +69,8 @@ namespace hades
 					}
 				}
 			}
+
+			++index;
 		}
 	}
 
@@ -110,22 +117,22 @@ namespace hades
 	{
 		auto& curves = _game.get_curves();
 
-		merge_input(input.int_curves, curves);
-		merge_input(input.float_curves, curves);
-		merge_input(input.bool_curves, curves);
-		merge_input(input.string_curves, curves);
-		merge_input(input.object_ref_curves, curves);
+		merge_input(input.int_curves, input.sizes[0], curves);
+		merge_input(input.float_curves, input.sizes[1], curves);
+		merge_input(input.bool_curves, input.sizes[2], curves);
+		merge_input(input.string_curves, input.sizes[3], curves);
+		merge_input(input.object_ref_curves, input.sizes[4], curves);
 
 		auto obj_type_callback = [game = &_game](entity_id e, unique_id u, time_point t){
 			setup_systems_for_new_object(e, u, t, *game);
 		};
 
-		merge_input(input.unique_curves, curves, _current_frame, obj_type_callback);
+		merge_input(input.unique_curves, input.sizes[5], curves, _current_frame, obj_type_callback);
 
-		merge_input(input.int_vector_curves, curves);
-		merge_input(input.float_vector_curves, curves);
-		merge_input(input.object_ref_vector_curves, curves);
-		merge_input(input.unique_vector_curves, curves);
+		merge_input(input.int_vector_curves, input.sizes[6], curves);
+		merge_input(input.float_vector_curves, input.sizes[7], curves);
+		merge_input(input.object_ref_vector_curves, input.sizes[8], curves);
+		merge_input(input.unique_vector_curves, input.sizes[9], curves);
 	}
 
 	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)

@@ -309,7 +309,7 @@ namespace hades
 		//NOTE: this is the latest in a frame that we can call this
 		// all on_* functions and other non-const functions should 
 		// have already been called if appropriate
-		_sprites.prepare();
+		_sprites.apply();
 	}
 
 	static bool within_level(vector_float pos, vector_float size, vector_float level_size)
@@ -573,8 +573,10 @@ namespace hades
 
 	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
-		if(_show_objects)
+		if (_show_objects)
+		{
 			t.draw(_sprites, s);
+		}
 	}
 
 	template<std::size_t Length>

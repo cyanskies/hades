@@ -181,17 +181,33 @@ namespace hades
 		};
 	}
 
-	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad)
+	poly_quad make_quad_animation(vector_float p, const resources::animation &a, const animation::animation_frame &f) noexcept
 	{
+		return make_quad_animation(p, {static_cast<float32>(a.width), static_cast<float32>(a.height)}, a, f);
+	}
+
+	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation& a, const animation::animation_frame& f) noexcept
+	{
+		return make_quad_animation({ pos, size }, { std::get<0>(f), std::get<1>(f),
+			static_cast<float32>(a.width), static_cast<float32>(a.height) });
+	}
+
+	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept
+	{
+		const auto quad_right_x = quad.x + quad.width;
+		const auto quad_bottom_y = quad.y + quad.height;
+		const auto tex_right_x = texture_quad.x + texture_quad.width;
+		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
+
 		return poly_quad{
 			//first triange
 			sf::Vertex{ {quad.x, quad.y}, { texture_quad.x, texture_quad.y } }, //top left
-			sf::Vertex{ { quad.x + quad.width, quad.y }, { texture_quad.x +  texture_quad.width, texture_quad.y } }, //top right
-			sf::Vertex{ { quad.x, quad.y + quad.height }, { texture_quad.x, texture_quad.y +  texture_quad.height } }, //bottom left
+			sf::Vertex{ { quad_right_x, quad.y }, { tex_right_x, texture_quad.y } }, //top right
+			sf::Vertex{ { quad.x, quad_bottom_y }, { texture_quad.x, tex_bottom_y } }, //bottom left
 			//second triange
-			sf::Vertex{ { quad.x + quad.width, quad.y },{ texture_quad.x +  texture_quad.width, texture_quad.y } }, //top right
-			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height },  { texture_quad.x +  texture_quad.width, texture_quad.y +  texture_quad.height } }, //bottom right
-			sf::Vertex{ { quad.x, quad.y + quad.height },  { texture_quad.x, texture_quad.y +  texture_quad.height } } //bottom left
+			sf::Vertex{ { quad_right_x, quad.y },{ tex_right_x, texture_quad.y } }, //top right
+			sf::Vertex{ { quad_right_x, quad_bottom_y },  { tex_right_x, tex_bottom_y } }, //bottom right
+			sf::Vertex{ { quad.x, quad_bottom_y },  { texture_quad.x, tex_bottom_y } } //bottom left
 		};
 	}
 

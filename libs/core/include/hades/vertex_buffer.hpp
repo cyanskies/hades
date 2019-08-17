@@ -8,6 +8,8 @@
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/Graphics/VertexBuffer.hpp"
 
+#include "hades/animation.hpp"
+
 namespace hades
 {
 	//vertex buffer class, with fallback to array if the buffer is not available
@@ -33,6 +35,39 @@ namespace hades
 
 	private:
 		std::variant<sf::VertexArray, sf::VertexBuffer> _verts;
+	};
+
+	class quad_buffer : public sf::Drawable
+	{
+	public:
+		quad_buffer() = default;
+		quad_buffer(sf::VertexBuffer::Usage) noexcept;
+
+		quad_buffer(const quad_buffer&);
+		quad_buffer& operator=(const quad_buffer&);
+
+		quad_buffer(quad_buffer&&) noexcept;
+		quad_buffer& operator=(quad_buffer&&) noexcept;
+
+		~quad_buffer() noexcept = default;
+
+		//returns the number of quads
+		std::size_t size() const noexcept;
+
+		void append(const poly_quad&);
+		poly_quad get_quad(std::size_t) noexcept;
+		void replace(const poly_quad&, std::size_t) noexcept;
+		void swap(std::size_t, std::size_t) noexcept;
+		void pop_back() noexcept;
+
+		void apply();
+
+		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
+
+	private:
+		static constexpr auto _prim_type = sf::PrimitiveType::Triangles;
+		std::vector<sf::Vertex> _verts;
+		sf::VertexBuffer _buffer{ _prim_type, sf::VertexBuffer::Usage::Stream };
 	};
 }
 

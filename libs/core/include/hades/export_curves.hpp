@@ -29,6 +29,7 @@ namespace hades
 		//TODO: this should be synced on connection only
 		// this is covered by the unique_id sync table
 		//std::vector<std::pair<VariableId, types::string>> variable_names;
+		std::array<std::size_t, 10u> sizes;
 
 		std::vector<export_set<resources::curve_types::int_t>> int_curves;
 		std::vector<export_set<resources::curve_types::float_t>> float_curves;

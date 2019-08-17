@@ -10,8 +10,7 @@
 
 namespace hades
 {
-	static constexpr auto quad_vert_count = 6;
-	static std::array<sf::Vertex, quad_vert_count> make_quad(vector_float p, vector_float s, colour c)
+	static poly_quad make_quad(vector_float p, vector_float s, colour c)
 	{
 		return make_quad_colour({ p.x, p.y, s.x, s.y }, c);
 	}

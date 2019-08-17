@@ -95,4 +95,116 @@ namespace hades
 			t.draw(v, s);
 		}, _verts);
 	}
+
+	quad_buffer::quad_buffer(sf::VertexBuffer::Usage u) noexcept : _buffer{_prim_type, u}
+	{
+		return;
+	}
+
+	quad_buffer::quad_buffer(const quad_buffer& rhs) : _verts{ rhs._verts }, _buffer{rhs._buffer}
+	{
+		return;
+	}
+
+	quad_buffer& quad_buffer::operator=(const quad_buffer& rhs)
+	{
+		_verts = rhs._verts;
+		_buffer = rhs._buffer;
+		return *this;
+	}
+
+	quad_buffer::quad_buffer(quad_buffer &&rhs) noexcept : _verts{std::move(rhs._verts)}
+	{
+		std::swap(_buffer, rhs._buffer);
+		return;
+	}
+
+	quad_buffer& quad_buffer::operator=(quad_buffer &&rhs) noexcept
+	{
+		std::swap(_verts, rhs._verts);
+		std::swap(_buffer, rhs._buffer);
+		return *this;
+	}
+
+	std::size_t quad_buffer::size() const noexcept
+	{
+		return std::size(_verts) / quad_vert_count;
+	}
+
+	void quad_buffer::append(const poly_quad& q) 
+	{
+		for (const auto& v : q)
+			_verts.emplace_back(v);
+		return;
+	}
+
+	poly_quad quad_buffer::get_quad(std::size_t offset) noexcept
+	{
+		offset *= quad_vert_count;
+
+		auto out = poly_quad{};
+		assert(offset + std::size(out) <= std::size(_verts));
+
+		for (auto i = std::size_t{}; i < std::size(out); ++i)
+			out[i] = _verts[i];
+
+		return out;
+	}
+	
+	void quad_buffer::replace(const poly_quad& q, std::size_t offset) noexcept
+	{
+		offset *= quad_vert_count;
+		assert(offset + std::size(q) <= std::size(_verts));
+
+		for (auto i = std::size_t{}; i < std::size(q); ++i)
+			_verts[i + offset] = q[i];
+
+		return;
+	}
+	
+	void quad_buffer::swap(std::size_t offset1, std::size_t offset2) noexcept
+	{
+		offset1 *= quad_vert_count;
+		offset2 *= quad_vert_count;
+		assert(offset1 + quad_vert_count <= std::size(_verts));
+		assert(offset2 + quad_vert_count <= std::size(_verts));
+
+		for (auto i = std::size_t{}; i < quad_vert_count; ++i)
+			std::swap(_verts[i + offset1], _verts[i + offset2]);
+		return;
+	}
+
+	void quad_buffer::pop_back() noexcept
+	{
+		//remove the last 6 vertexes'
+		_verts.pop_back();
+		_verts.pop_back();
+		_verts.pop_back();
+		_verts.pop_back();
+		_verts.pop_back();
+		_verts.pop_back();
+	}
+	
+	void quad_buffer::apply()
+	{
+		if (!sf::VertexBuffer::isAvailable())
+			return;
+
+		const auto size = std::size(_verts);
+
+		if (size != _buffer.getVertexCount())
+			_buffer.create(size);
+
+		_buffer.update(_verts.data());
+		return;
+	}
+	
+	void quad_buffer::draw(sf::RenderTarget& t, sf::RenderStates s) const
+	{
+		if (sf::VertexBuffer::isAvailable())
+			t.draw(_buffer, s);
+		else
+			t.draw(_verts.data(), std::size(_verts), _prim_type, s);
+		return;
+	}
 }

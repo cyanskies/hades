@@ -20,8 +20,10 @@ namespace hades
 		auto make_game_struct = [](entity_id e, game_interface* g, time_point t, time_duration dt, system_data_t* d)->system_job_data {
 			return system_job_data{ e, g, nullptr, t, dt, d };
 		};
+		
+		static const auto threads = console::get_int(cvars::server_threadcount);
 
-		const auto next = update_level(_jobs, _prev_time, _current_time, dt, _game, make_game_struct);
+		const auto next = update_level(_jobs, _prev_time, _current_time, dt, _game, threads->load(), make_game_struct);
 		_prev_time = _current_time;
 		_current_time = next;
 		return;

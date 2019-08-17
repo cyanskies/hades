@@ -25,6 +25,7 @@ namespace hades
 		//shared for level, mission and mod editors
 
 		//render vars
+		constexpr auto render_threadcount = "r_threads"; // same as s_threadcount
 		constexpr auto render_drawtime = "r_drawtime"; //reports the time taken to generate and display the last frame in ms
 
 		//server vars
@@ -64,6 +65,7 @@ namespace hades
 
 		namespace default_value
 		{
+			constexpr auto render_threadcount = -1;
 			constexpr auto render_drawtime = 0.f;
 
 			constexpr auto server_threadcount = -1;

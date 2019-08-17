@@ -110,6 +110,10 @@ namespace hades
 		using sprite_batch_error::sprite_batch_error;
 	};
 
+	//TODO: im worried i might be locking at a to granular level
+	//		also if threading performance doesn't improve, we could just remove
+	//		all the locking primatives(which are also preventing a number of classes
+	//		from being trivially copyable)
 	class sprite_batch final : public sf::Drawable
 	{
 	public:
@@ -138,6 +142,8 @@ namespace hades
 		bool exists(sprite_id id) const noexcept;
 		void destroy_sprite(sprite_id id);
 
+		void set_sprite(sprite_id, const resources::animation* a, time_point t,
+			sprite_utility::layer_t l, vector_float p, vector_float s);
 		void set_position(sprite_id id, vector_float pos);
 		void set_animation(sprite_id id, const resources::animation *a, time_point t);
 		void set_position_animation(sprite_id, vector_float pos, const resources::animation* a, time_point t);

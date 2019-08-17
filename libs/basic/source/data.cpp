@@ -8,12 +8,12 @@ namespace hades
 {
 	namespace data
 	{
-		using lock_t = std::unique_lock<std::shared_mutex>;
-		using shared_lock_t = std::shared_lock<std::shared_mutex>;
+		using lock_t = std::unique_lock<shared_spinlock>;
+		using shared_lock_t = std::shared_lock<shared_spinlock>;
 
 		namespace detail
 		{
-			static std::shared_mutex Mutex;
+			static shared_spinlock Mutex;
 			static data_manager* ptr = nullptr;
 			void set_data_manager_ptr(data_manager* new_ptr)
 			{
@@ -30,7 +30,7 @@ namespace hades
 				return std::make_tuple(ptr, std::move(lock));
 			}
 
-			using data_manager_shared = std::tuple<const data_manager*, std::shared_lock<std::shared_mutex>>;
+			using data_manager_shared = std::tuple<const data_manager*, std::shared_lock<shared_spinlock>>;
 
 			data_manager_shared get_data_manager_ptr_shared()
 			{

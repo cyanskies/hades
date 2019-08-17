@@ -42,6 +42,18 @@ namespace hades
 		return;
 	}
 
+	void render_interface::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_layer l, vector_float position, vector_float size)
+	{
+		try
+		{
+			_sprite_batch.set_sprite(id, a, t, l, position, size);
+		}
+		catch (const sprite_batch_invalid_id& e)
+		{
+			throw render_interface_invalid_id{ e.what() };
+		}
+	}
+
 	void render_interface::set_animation(sprite_id id, const resources::animation *a, time_point t)
 	{
 		try

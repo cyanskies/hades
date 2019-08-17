@@ -119,9 +119,8 @@ namespace hades
 			{
 				const auto ent = get_entity_info(entity);
 				const auto &s_id = sprite;
-				d.render_output->set_position(s_id, ent.position);
-				d.render_output->set_size(s_id, ent.size);
-				d.render_output->set_animation(s_id, ent.anim, render::get_time());
+				d.render_output->set_sprite(s_id, ent.anim, render::get_time(),
+					render_interface::sprite_layer{}, ent.position, ent.size);
 			}
 
 			return;

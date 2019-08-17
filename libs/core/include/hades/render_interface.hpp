@@ -121,6 +121,8 @@ namespace hades
 		//NOTE: functions that accept sprite_id or drawable_id can throw render_instance_invalid_id
 		void destroy_sprite(sprite_id);
 
+		void set_sprite(sprite_id, const resources::animation*, time_point,
+			sprite_layer, vector_float position, vector_float size);
 		void set_animation(sprite_id, const resources::animation *, time_point);
 		void set_layer(sprite_id, sprite_layer);
 		void set_position(sprite_id, vector_float position);

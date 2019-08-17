@@ -7,6 +7,13 @@ namespace hades
 {
 	void create_core_console_variables()
 	{
+		#ifdef NDEBUG
+				constexpr auto render_threads = cvars::default_value::render_threadcount;
+		#else
+				constexpr auto render_threads = int32{ 0 };
+		#endif
+		console::create_property(cvars::render_threadcount, render_threads);
+
 		console::create_property(cvars::render_drawtime, cvars::default_value::render_drawtime);
 
 		#ifdef NDEBUG
@@ -14,7 +21,6 @@ namespace hades
 		#else
 				constexpr auto server_threads = int32{ 0 };
 		#endif
-
 		console::create_property(cvars::server_threadcount, server_threads);
 
 		console::create_property(cvars::client_tick_rate, cvars::default_value::client_tickrate);

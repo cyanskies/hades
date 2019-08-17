@@ -33,7 +33,7 @@ namespace hades {
 			a >= 0 && b <= 0)
 			return t * b + (1.f - t) * a;
 
-		//TODO: >= ? to account for float inaccuracy
+		//TODO: float_near_equal to account for float inaccuracy
 		if (t == 1) return b;
 
 		const auto x = a + t * (b - a);
@@ -253,6 +253,7 @@ namespace hades {
 
 		void _insertFrame(Time at, Data value, bool erase = false)
 		{
+			//TODO: optimise for time > end and value == end.value
 			auto iter = std::end(_data);
 
 			if (_type == curve_type::const_c)

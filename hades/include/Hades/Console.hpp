@@ -12,6 +12,8 @@
 #include "hades/types.hpp"
 #include "hades/system.hpp"
 
+//TODO: replace mutex with spinlock and recheck all the mutex usage
+
 //Console is a unique engine object for holding game wide properties
 //it also exposes dev commands
 //it also provides logging functionality

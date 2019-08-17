@@ -148,7 +148,7 @@ namespace hades
 
 	template<typename ImplementationType, typename MakeGameStructFn, typename ModeTag = update_level_tags::update_level_auto_tag>
 	time_point update_level(job_system&, time_point, time_point, time_duration,
-		ImplementationType&, MakeGameStructFn, ModeTag = update_level_tags::auto_tag);
+		ImplementationType&, int32 threads, MakeGameStructFn, ModeTag = update_level_tags::auto_tag);
 }
 
 #include "hades/detail/level_interface.inl"

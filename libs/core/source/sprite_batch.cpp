@@ -254,6 +254,20 @@ namespace hades
 		return;
 	}
 
+	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector_float p, vector_float s)
+	{
+		_apply_changes(id, [a, t, l, p, siz = s](sprite s) noexcept {
+			s.animation = a;
+			s.animation_progress = t;
+			s.layer = l;
+			s.position = p;
+			s.size = siz;
+			return s;
+		});
+
+		return;
+	}
+
 	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector_float pos)
 	{
 		_apply_changes(id, [pos](sprite s) noexcept {

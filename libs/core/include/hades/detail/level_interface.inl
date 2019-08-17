@@ -372,30 +372,27 @@ namespace hades
 				j.change_thread_count(threads);
 		}
 
-		inline std::size_t get_update_thread_count() noexcept
+		inline std::size_t get_update_thread_count(int32 desired) noexcept
 		{
 			static const auto threads = std::thread::hardware_concurrency();
 
 			if (threads < 2)
 				return 1;
 
-			static const auto server_threads = console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount);
-			const auto server_v = server_threads->load();
-
-			if (server_v == 0 || server_v == 1)
+			if (desired == 0 || desired == 1)
 				return 1;
 
-			if (server_v == -1)
+			if (desired == -1)
 				return threads;
 
-			return std::min(threads, integer_cast<std::size_t>(server_v));
+			return std::min(threads, integer_cast<std::size_t>(desired));
 		}
 	}
 
 	//generic update function for use in both client and server game instances
 	template<typename ImplementationType, typename MakeGameStructFn, typename ModeTag>
 	time_point update_level(job_system& jobsys, time_point before_prev, time_point prev_time, time_duration dt,
-		ImplementationType& impl, MakeGameStructFn make_game_struct, ModeTag tag_v)
+		ImplementationType& impl, int32 desired_threads, MakeGameStructFn make_game_struct, ModeTag tag_v)
 	{
 		using system_type = typename ImplementationType::system_type;
 		using job_data_type = typename system_type::job_data_t;
@@ -407,7 +404,7 @@ namespace hades
 		if constexpr (std::is_same_v<ModeTag, update_level_tags::update_level_noasync_tag>)
 			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
 
-		const auto threads = detail::get_update_thread_count();
+		const auto threads = detail::get_update_thread_count(desired_threads);
 
 		detail::update_thread_count(jobsys, threads);
 

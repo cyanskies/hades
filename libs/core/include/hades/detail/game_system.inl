@@ -131,6 +131,17 @@ namespace hades
 		}
 
 		template<typename T>
+		curve<T> &get_game_curve_ref(game_interface* l, curve_index_t i)
+		{
+			assert(l);
+			assert(get_game_data_async() == false);
+			auto& curves = l->get_curves();
+			auto& curve_map = hades::get_curve_list<T>(curves);
+
+			return curve_map.get_no_async(i);
+		}
+
+		template<typename T>
 		game::curve_keyframe<T> get_game_curve_frame(game_interface* l, curve_index_t i, time_point t)
 		{
 			assert(l);
@@ -312,8 +323,16 @@ namespace hades
 		template<typename T>
 		T get_value(curve_index_t i, time_point t)
 		{
-			const auto curve = get_curve<T>(i);
-			return curve.get(t);
+			if (detail::get_game_data_async())
+			{
+				const auto curve = get_curve<T>(i);
+				return curve.get(t);
+			}
+			else
+			{
+				const auto& curve = detail::get_game_curve_ref(detail::get_game_data_ptr(), i);
+				return curve.get(t);
+			}
 		}
 
 		template<typename T>

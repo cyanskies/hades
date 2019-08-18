@@ -21,21 +21,6 @@ namespace hades
 				//&& lhs.shader == rhs.shader;
 		}
 
-		sprite::sprite(const sprite &other) noexcept : id{ other.id }, position{ other.position },
-			size{ other.size }, animation{ other.animation }, animation_progress{ other.animation_progress }
-		{}
-
-		sprite &sprite::operator=(const sprite &other) noexcept
-		{
-			id = other.id;
-			position = other.position;
-			size = other.size;
-			animation = other.animation;
-			animation_progress = other.animation_progress;
-
-			return *this;
-		}
-
 		bool operator==(const sprite &lhs, const sprite &rhs) noexcept
 		{
 			return lhs.id == rhs.id;
@@ -44,48 +29,18 @@ namespace hades
 
 	using namespace sprite_utility;
 
-	sprite_batch::sprite_batch(const sprite_batch& other) : _sprites{other._sprites}, _vertex{other._vertex},
-		_ids{other._ids}, _id_count{other._id_count}
-	{}
-
-	sprite_batch::sprite_batch(sprite_batch&& other) noexcept : _sprites{ std::move(other._sprites) }, _vertex{ std::move(other._vertex) },
-		_ids{ std::move(other._ids) }, _id_count{ other._id_count }
-	{}
-
-	sprite_batch& sprite_batch::operator=(const sprite_batch&o)
-	{
-		_sprites = o._sprites;
-		_vertex = o._vertex;
-		_ids = o._ids;
-		_id_count = o._id_count;
-
-		return *this;
-	}
-
-	sprite_batch& sprite_batch::operator=(sprite_batch&& o) noexcept
-	{
-		_sprites = std::move(o._sprites);
-		_vertex = std::move(o._vertex);
-		_ids = std::move(o._ids);
-		_id_count = std::move(o._id_count);
-
-		return *this;
-	}
-
 	void sprite_batch::clear()
 	{
 		_sprites.clear();
 
 		for (auto& v : _vertex)
+		{
 			v.buffer = quad_buffer{};
+			v.sprites.clear();
+		}
 
 		_ids.clear();
 
-		return;
-	}
-
-	void sprite_batch::set_async(bool a)
-	{
 		return;
 	}
 
@@ -98,13 +53,11 @@ namespace hades
 		return;
 	}
 
-	//NOTE: requires a shared lock on the sprite collection
 	static std::size_t find_batch(const sprite_utility::sprite_settings s, const std::deque<sprite_utility::batch> &v) noexcept
 	{
 		auto index = std::size(v);
 		for (auto i = std::size_t{}; i != std::size(v); ++i)
 		{
-			std::shared_lock{ v[i].mutex };
 			if (v[i].settings == s)
 			{
 				index = i;
@@ -117,18 +70,10 @@ namespace hades
 
 	sprite_id sprite_batch::create_sprite()
 	{
-		sprite_id id;
+		auto id = increment(_id_count) ;
+		assert(id != bad_sprite_id);
 
-		{
-			const auto lock = std::scoped_lock{ _id_mutex };
-			id = increment(_id_count);
-			assert(id != bad_sprite_id);
-		}
-
-		sprite s;
-		s.id = id;
-
-		_add_sprite(s);
+		_add_sprite({ id });
 
 		return id;
 	}
@@ -136,30 +81,16 @@ namespace hades
 	typename sprite_batch::sprite_id sprite_batch::create_sprite(const resources::animation *a, time_point t,
 		sprite_utility::layer_t l, vector_float p, vector_float s)
 	{
-		sprite_id id;
+		const auto id = increment(_id_count);
+		assert(id != bad_sprite_id);
 
-		{
-			const auto lock = std::scoped_lock{ _id_mutex };
-			id = increment(_id_count);
-			assert(id != bad_sprite_id);
-		}
-
-		sprite sp;
-		sp.id = id;
-		sp.position = p;
-		sp.size = s;
-		sp.layer = l;
-		sp.animation = a;
-		sp.animation_progress = t;
-
-		_add_sprite(sp);
+		_add_sprite({ id, p, s, l, a, t });
 
 		return id;
 	}
 
 	bool sprite_batch::exists(typename sprite_batch::sprite_id id) const noexcept
 	{
-		const auto lock = std::shared_lock{ _id_mutex };
 		for (const auto s : _ids)
 		{
 			if (s.id == id)
@@ -173,40 +104,32 @@ namespace hades
 	{
 		index_t batch_index = _find_sprite(id);
 
-		{
-			auto lock1 = std::shared_lock{ _sprites_mutex, std::defer_lock };
-			auto lock2 = std::shared_lock{ _vertex_mutex, std::defer_lock };
-			const auto lock = std::scoped_lock{ lock1, lock2 };
+		auto& s_batch = _sprites[batch_index];
+		auto& v_batch = _vertex[batch_index];
 
-			auto& s_batch = _sprites[batch_index];
-			auto& v_batch = _vertex[batch_index];
-
-			const auto batch_locks = std::scoped_lock{ s_batch.mutex, v_batch.mutex };
-
-			index_t index;
+		const auto index = [id, &v_batch]()->index_t {
 			for (auto i = index_t{}; i < std::size(v_batch.sprites); ++i)
 			{
 				if (v_batch.sprites[i] == id)
-				{
-					index = i;
-					break;
-				}
+					return i;
 			}
+			return std::size(v_batch.sprites);
+		}();
+		assert(index != std::size( v_batch.sprites));
 
-			const auto last = std::size(v_batch.sprites) - 1;
-			if (index != last)
-			{
-				std::swap(s_batch.sprites[index], s_batch.sprites[last]);
-				std::swap(v_batch.sprites[index], v_batch.sprites[last]);
-				v_batch.buffer.swap(index, last);
-			}
-
-			s_batch.sprites.pop_back();
-			v_batch.sprites.pop_back();
-			v_batch.buffer.pop_back();
+		const auto last = std::size(v_batch.sprites) - 1;
+		if (index != last)
+		{
+			std::swap(s_batch.sprites[index], s_batch.sprites[last]);
+			std::swap(v_batch.sprites[index], v_batch.sprites[last]);
+			v_batch.buffer.swap(index, last);
 		}
 
-		const auto lock = std::scoped_lock{ _id_mutex };
+		s_batch.sprites.pop_back();
+		v_batch.sprites.pop_back();
+		v_batch.buffer.pop_back();
+	
+		//remove from id list
 		for (auto i = std::size_t{}; i < std::size(_ids); ++i)
 		{
 			if (_ids[i].id == id)
@@ -298,6 +221,22 @@ namespace hades
 		return out;
 	}
 
+	std::vector<sprite_batch::layer_info> sprite_batch::get_layer_info_list() const
+	{
+		const auto layers = get_layer_list();
+		auto layer_data = std::vector<layer_info>{};
+		layer_data.reserve(std::size(layers));
+
+		for (auto i = std::size_t{}; i < std::size(layers); ++i)
+			layer_data.emplace_back(layer_info{ layers[i], i });
+
+		std::sort(std::begin(layer_data), std::end(layer_data), [](layer_info a, layer_info b) {
+			return a.l < b.l;
+			});
+
+		return layer_data;
+	}
+
 	void sprite_batch::apply()
 	{
 		for (auto& v : _vertex)
@@ -307,23 +246,7 @@ namespace hades
 
 	void sprite_batch::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	{
-		const auto layers = get_layer_list();
-
-		struct info {
-			layer_t l;
-			index_t i;
-		};
-
-		auto layer_data = std::vector<info>{};
-		layer_data.reserve(std::size(layers));
-
-		for (auto i = std::size_t{}; i < std::size(layers); ++i)
-			layer_data.emplace_back(info{ layers[i], i });
-
-		std::sort(std::begin(layer_data), std::end(layer_data), [](info a, info b) {
-			return a.l < b.l;
-		});
-
+		const auto layer_data = get_layer_info_list();
 		for (const auto layer : layer_data)
 			draw(target, layer.i, states);
 
@@ -356,7 +279,6 @@ namespace hades
 
 	sprite_batch::index_t sprite_batch::_find_sprite(sprite_id id) const
 	{
-		const auto lock = std::shared_lock{ _id_mutex };
 		for (const auto s : _ids)
 		{
 			if (s.id == id)
@@ -367,110 +289,56 @@ namespace hades
 	}
 
 	//remove a sprite from its current batch,
-	//insert it into a more appropriate one
 	sprite sprite_batch::_remove_sprite(sprite_id id, index_t current, index_t index)
 	{
-		sprite s;
+		auto& s_batch = _sprites[current];
+		auto& v_batch = _vertex[current];
 
-		{
-			auto lock1 = std::shared_lock{ _sprites_mutex, std::defer_lock };
-			auto lock2 = std::shared_lock{ _vertex_mutex, std::defer_lock };
-			const auto lock = std::scoped_lock{ lock1, lock2 };
+		const auto last = std::size(v_batch.sprites) - 1;
 
-			auto* s_batch = &_sprites[current];
-			auto* v_batch = &_vertex[current];
+		const auto s = s_batch.sprites[index];
 
-			const auto batch_locks = std::scoped_lock{ s_batch->mutex, v_batch->mutex };
-			
-			//if our index data is stale
-			if (index >= std::size(v_batch->sprites) || v_batch->sprites[index] != id)
-			{
-				//find it again
-				index = std::size(v_batch->sprites);
-				for (auto i = index_t{}; i < std::size(v_batch->sprites); ++i)
-				{
-					if (v_batch->sprites[i] == id)
-					{
-						index = i;
-						break;
-					}
-				}
+		//remove sprite
+		std::swap(s_batch.sprites[index], s_batch.sprites[last]);
+		std::swap(v_batch.sprites[index], v_batch.sprites[last]);
+		v_batch.buffer.swap(index, last);
 
-				//TODO: if index == std::size(v_batch->sprites)
-				//	we're not even in the right batch :/
-				//	just give up?
-			}
-
-			const auto last = std::size(v_batch->sprites) - 1;
-
-			s = s_batch->sprites[index];
-
-			std::swap(s_batch->sprites[index], s_batch->sprites[last]);
-			std::swap(v_batch->sprites[index], v_batch->sprites[last]);
-			v_batch->buffer.swap(index, last);
-
-			s_batch->sprites.pop_back();
-			v_batch->sprites.pop_back();
-			v_batch->buffer.pop_back();
-		}
-
-		{
-			const auto lock = std::scoped_lock{ _id_mutex };
-			auto index = std::size(_ids);
-
+		s_batch.sprites.pop_back();
+		v_batch.sprites.pop_back();
+		v_batch.buffer.pop_back();
+	
+		//reinsert
+		const auto id_index = [id, &_ids = _ids]() {
 			for (auto i = std::size_t{}; i < std::size(_ids); ++i)
 			{
 				if (_ids[i].id == id)
-				{
-					index = i;
-					break;
-				}
+					return i;
 			}
-			assert(index < std::size(_ids));
+			return std::size(_ids);
+		}();
+		assert(id_index != std::size(_ids));
 
-			const auto last = std::size(_ids) - 1;
-
-			std::swap(_ids[index], _ids[last]);
-			_ids.pop_back();
-		}
-
+		const auto id_last = std::size(_ids) - 1;
+		std::swap(_ids[id_index], _ids[id_last]);
+		_ids.pop_back();
+	
 		return s;
 	}
 
 	void sprite_batch::_add_sprite(sprite s)
 	{
-		index_t index;
 		const auto settings = sprite_settings{ s.layer, s.animation->tex };
+		const index_t index = find_batch(settings, _sprites);
 
-		{
-			const auto share_lock = std::shared_lock{ _sprites_mutex };
-			index = find_batch(settings, _sprites);
-		}
-
+		//no batch matches the desired settings
 		if (index == std::size(_sprites))
 		{
-			const auto lock = std::scoped_lock{ _sprites_mutex, _vertex_mutex };
-
-			//we have to search again, in case someone else just made this batch
-			index = find_batch(settings, _sprites);
-			if (index == std::size(_sprites))
-			{
-				_sprites.emplace_back(sprite_utility::batch{ settings, std::vector<sprite_utility::sprite>{} });
-				_vertex.emplace_back();
-			}
+			_sprites.emplace_back(sprite_utility::batch{ settings, std::vector<sprite_utility::sprite>{} });
+			_vertex.emplace_back();
 		}
 
-		{
-			const auto lock = std::scoped_lock{ _id_mutex };
-			_ids.emplace_back(sprite_pos{ s.id, index });
-		}
+		_ids.emplace_back(sprite_pos{ s.id, index });
 
-		auto sprite_lock = std::shared_lock{ _sprites_mutex, std::defer_lock };
-		auto vertex_lock = std::shared_lock{ _vertex_mutex, std::defer_lock };
-		const auto lock = std::scoped_lock(sprite_lock, vertex_lock);
-
-		const auto s_lock = std::scoped_lock{ _sprites[index].mutex,
-												_vertex[index].mutex };
 		_sprites[index].sprites.emplace_back(s);
 		const auto frame = animation::get_frame(*s.animation, s.animation_progress);
 		_vertex[index].buffer.append(make_quad_animation(s.position, s.size, *s.animation, frame));

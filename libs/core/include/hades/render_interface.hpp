@@ -2,7 +2,6 @@
 #define HADES_RENDER_INTERFACE_HPP
 
 #include <any>
-#include <mutex>
 #include <vector>
 
 #include "SFML/Graphics/Drawable.hpp"
@@ -40,78 +39,22 @@ namespace hades
 		using drawable_layer = sprite_layer;
 
 		static constexpr drawable_id bad_drawable_id = drawable_id{ std::numeric_limits<drawable_id::value_type>::min() };
-
-		using mutex_type = spinlock;
-		using shared_mutex_type = shared_spinlock;
-
-
 		using get_drawable = const sf::Drawable& (*)(const std::any&);
 
 		struct drawable_object
 		{
-			drawable_object() = default;
-
-			drawable_object(drawable_id i, std::any a, get_drawable f) noexcept
-				: id{ i }, storage{ std::move(a) }, get{ f }
-			{}
-
-			drawable_object(const drawable_object& rhs)
-			{
-				const auto lock = std::lock_guard{ rhs.mutex };
-
-				id = rhs.id;
-				storage = rhs.storage;
-				get = rhs.get;
-			}
-
-			drawable_object(drawable_object&& rhs) noexcept
-				: id{ rhs.id }, storage{ std::move(rhs) }, get{ rhs.get }
-			{}
-
-			drawable_object& operator=(const drawable_object& rhs)
-			{
-				const auto lock = std::scoped_lock{ mutex, rhs.mutex };
-
-				id = rhs.id;
-				storage = rhs.storage;
-				get = rhs.get;
-
-				return *this;
-			}
-
-			drawable_object& operator=(drawable_object&& rhs) noexcept
-			{
-				const auto lock = std::scoped_lock{ mutex, rhs.mutex };
-
-				id = rhs.id;
-				storage = std::move(rhs.storage);
-				get = rhs.get;
-
-				return *this;
-			}
-
 			drawable_id id = bad_drawable_id;
 			std::any storage;
 			get_drawable get = nullptr;
-			mutable mutex_type mutex;
 		};
 
 		struct object_layer
 		{
-			object_layer() = default;
-			object_layer(sprite_layer l, std::vector<drawable_object> v) noexcept
-				: layer{ l }, objects{ std::move(v) }
-			{}
-
 			sprite_layer layer;
 			std::vector<drawable_object> objects;
 		};
 
 		static_assert(std::is_nothrow_move_assignable_v<object_layer>);
-
-		void set_async(bool = true);
-
-		//===Thread-Safe===
 
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *, time_point,
@@ -142,8 +85,6 @@ namespace hades
 
 		void destroy_drawable(drawable_id);
 
-		//===End Thread-Safe===
-
 		void prepare(); //must be called before draw if using sprites
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const;
 
@@ -157,17 +98,10 @@ namespace hades
 		drawable_id _create_drawable_any(std::any drawable, get_drawable, sprite_layer);
 		void _update_drawable_any(drawable_id, std::any drawable, get_drawable, sprite_layer);
 
-		bool _async = true;
-		//sprite batch is already thread safe
 		sprite_batch _sprite_batch;
 
-		//TODO: draw clamp, like sprite batch
-
-		mutable shared_mutex_type _drawable_id_mutex;
 		std::vector<drawable_id> _used_drawable_ids;
 		drawable_id _drawable_id = bad_drawable_id;
-
-		mutable shared_mutex_type _object_mutex;
 		std::vector<object_layer> _object_layers;
 	};
 

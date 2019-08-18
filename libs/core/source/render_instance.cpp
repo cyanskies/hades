@@ -144,16 +144,8 @@ namespace hades
 				return render_job_data{ e, g, m, prev + dt, &i, d };
 		};
 
-		//TODO: retire multithreaded rendering for good
-		// seriously, 80% of time stuck in deadlock avoidance
-		static const auto server_threads = console::get_int(cvars::render_threadcount);
-		const auto desired_threads = server_threads->load();
-		const auto threads = detail::get_update_thread_count(desired_threads);
-		bool async = threads > 1;
-		i.set_async(async);
-
 		const auto next = update_level(_jobs, _prev_frame, _current_frame, dt,
-			_game, desired_threads, make_render_job_data);
+			_game, 0, make_render_job_data, update_level_tags::noasync_tag);
 
 		_prev_frame = _current_frame;
 		_current_frame = next;

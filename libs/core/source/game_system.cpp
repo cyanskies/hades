@@ -399,7 +399,7 @@ namespace hades
 	{
 		assert(j);
 		render_data_ptr = j;
-		render_async = async;
+		render_async = false;
 		return;
 	}
 

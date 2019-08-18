@@ -6,12 +6,6 @@
 
 namespace hades 
 {
-	void render_interface::set_async(bool a)
-	{
-		_async = a;
-		_sprite_batch.set_async(a);
-	}
-
 	render_interface::sprite_id render_interface::create_sprite()
 	{
 		return _sprite_batch.create_sprite();
@@ -120,7 +114,6 @@ namespace hades
 		render_interface::drawable_object* object = nullptr;
 	};
 
-	//NOTE: requires a lock on object_mutex
 	static found_object find_object(render_interface::drawable_id id,
 		std::vector<render_interface::object_layer> &object_layers)
 	{
@@ -159,11 +152,6 @@ namespace hades
 
 	bool render_interface::drawable_exists(drawable_id id) const noexcept
 	{
-		std::shared_lock<decltype(_drawable_id_mutex)> lock{};
-
-		if(_async)
-			lock = std::shared_lock{ _drawable_id_mutex };
-
 		return std::find(std::begin(_used_drawable_ids),
 			std::end(_used_drawable_ids), id) != std::end(_used_drawable_ids);
 	}
@@ -176,14 +164,7 @@ namespace hades
 
 	void render_interface::destroy_drawable(drawable_id id)
 	{
-		auto obj = found_object{};
-
-		{
-			std::shared_lock<decltype(_object_mutex)> lock{};
-			if(_async)
-				lock = std::shared_lock{ _object_mutex };
-			obj = find_object(id, _object_layers);
-		}
+		const auto obj = find_object(id, _object_layers);
 
 		_destroy_id(id);
 		_remove_from_layer(id, obj.layer_index, obj.drawable_index);
@@ -202,6 +183,8 @@ namespace hades
 		t.draw(_sprite_batch, s);
 
 		return;
+
+		//TODO: make this less crazy
 
 		constexpr auto layer_max = std::numeric_limits<layer_t>::max();
 		constexpr auto layer_min = std::numeric_limits<layer_t>::min();
@@ -254,49 +237,28 @@ namespace hades
 
 	render_interface::drawable_id render_interface::_make_new_id()
 	{
-		auto func = [&]() {
-			const auto id = increment(_drawable_id);
+		const auto id = increment(_drawable_id);
 
-			//NOTE: if this is fired then we have used up all the ids
-			//		will have to implement id reclamation strategy, or expand the id type
-			assert(id != bad_drawable_id);
+		//NOTE: if this is fired then we have used up all the ids
+		//		will have to implement id reclamation strategy, or expand the id type
+		assert(id != bad_drawable_id);
 
-			_used_drawable_ids.emplace_back(id);
+		_used_drawable_ids.emplace_back(id);
 
-			return id;
-		};
-
-		if (_async)
-		{
-			const auto lock = std::scoped_lock{ _drawable_id_mutex };
-			return func();
-		}
-		
-		return func();
+		return id;
 	}
 
 	void render_interface::_destroy_id(drawable_id id)
 	{
-		auto func = [&]() {
-			const auto iter = std::find(std::begin(_used_drawable_ids), std::end(_used_drawable_ids), id);
-			if (iter == std::end(_used_drawable_ids))
-			{
-				const auto message = "Tried to delete an id that wasn't listed in the used id list, id was: " + to_string(id);
-				throw render_interface_invalid_id{ message };
-			}
-
-			std::iter_swap(iter, std::rbegin(_used_drawable_ids));
-			_used_drawable_ids.pop_back();
-		};
-
-		if (_async)
+		const auto iter = std::find(std::begin(_used_drawable_ids), std::end(_used_drawable_ids), id);
+		if (iter == std::end(_used_drawable_ids))
 		{
-			const auto lock = std::lock_guard{ _drawable_id_mutex };
-			func();
+			const auto message = "Tried to delete an id that wasn't listed in the used id list, id was: " + to_string(id);
+			throw render_interface_invalid_id{ message };
 		}
-		else
-			func();
 
+		std::iter_swap(iter, std::rbegin(_used_drawable_ids));
+		_used_drawable_ids.pop_back();
 		return;
 	}
 
@@ -305,69 +267,44 @@ namespace hades
 		using size_type = layer_size_type;
 		constexpr auto no_index = std::numeric_limits<size_type>::max();
 
-		auto func = [&] {
-			auto layer_index = no_index;
-			for (auto i = size_type{}; i < std::size(_object_layers); ++i)
+		auto layer_index = no_index;
+		for (auto i = size_type{}; i < std::size(_object_layers); ++i)
+		{
+			if (_object_layers[i].layer == l)
 			{
-				if (_object_layers[i].layer == l)
+				layer_index = i;
+				break;
+			}
+		}
+
+		// Unable to find correct layer
+		// so make it
+		if (layer_index == no_index)
+		{
+			const auto end = std::end(_object_layers);
+			auto iter = std::begin(_object_layers);
+
+			for (auto iter2 = std::next(iter); iter != end; ++iter, ++iter2)
+			{
+				if (iter->layer > l)
+					break;
+				if ((iter->layer < l &&
+					iter2 == end) ||
+					(iter->layer < l &&
+						iter2->layer > l))
 				{
-					layer_index = i;
+					iter = iter2;
 					break;
 				}
 			}
 
-			// Unable to find correct layer
-			// so make it
-			if (layer_index == no_index)
-			{
-				const auto end = std::end(_object_layers);
-				auto iter = std::begin(_object_layers);
-
-				for (auto iter2 = std::next(iter); iter != end; ++iter, ++iter2)
-				{
-					if (iter->layer > l)
-						break;
-					if ((iter->layer < l &&
-						iter2 == end) ||
-						(iter->layer < l &&
-							iter2->layer > l))
-					{
-						iter = iter2;
-						break;
-					}
-				}
-
-				const auto location = _object_layers.emplace(iter, l, std::vector<drawable_object>{});
-				layer_index = std::distance(std::begin(_object_layers), location);
-			}
-
-			assert(layer_index < std::size(_object_layers));
-
-			_object_layers[layer_index].objects.emplace_back(std::move(obj));
-
-			return;
-		};
-
-		if (_async)
-		{
-			const auto lock = std::lock_guard{ _object_mutex };
-			func();
+			const auto location = _object_layers.emplace(iter, object_layer{ l, std::vector<drawable_object>{} });
+			layer_index = std::distance(std::begin(_object_layers), location);
 		}
-		else
-			func();
 
-		return;
-	}
+		assert(layer_index < std::size(_object_layers));
 
-	static void fixup_index(render_interface::drawable_id id,
-		layer_size_type& layer_index,
-		obj_size_type& index,
-		std::vector<render_interface::object_layer> obj_layers)
-	{
-		const auto obj = find_object(id, obj_layers);
-		layer_index = obj.layer_index;
-		index = obj.drawable_index;
-
+		_object_layers[layer_index].objects.emplace_back(std::move(obj));
 		return;
 	}
 
@@ -375,35 +312,12 @@ namespace hades
 		std::vector<object_layer>::size_type layer_index,
 		std::vector<drawable_object>::size_type index) noexcept
 	{
-		auto func = [&]() {
-			//NOTE: this can only happen if someone takes the lock and
-		//		changes the object structure after getting the 
-		//		index with the shared lock
-		// check that the indicies are in range, and that we're still
-		// pointing at the correct object
-			if (layer_index >= std::size(_object_layers) ||
-				index >= std::size(_object_layers[layer_index].objects) ||
-				_object_layers[layer_index].objects[index].id != id)
-				fixup_index(id, layer_index, index, _object_layers);
-
-			//remove the object
-			auto iter = std::begin(_object_layers[layer_index].objects);
-			std::advance(iter, index);
-			std::iter_swap(iter, std::rbegin(_object_layers[layer_index].objects));
-			_object_layers[layer_index].objects.pop_back();
-
-			return;
-		};
-
-		if (_async)
-		{
-			const auto lock = std::lock_guard{ _object_mutex };
-			func();
-		}
-		else
-			func();
-
-		return;		
+		//remove the object
+		auto iter = std::begin(_object_layers[layer_index].objects);
+		std::advance(iter, index);
+		std::iter_swap(iter, std::rbegin(_object_layers[layer_index].objects));
+		_object_layers[layer_index].objects.pop_back();
+		return;
 	}
 
 	render_interface::drawable_id render_interface::_create_drawable_any(std::any drawable, get_drawable func, sprite_layer l)
@@ -416,31 +330,14 @@ namespace hades
 	void render_interface::_update_drawable_any(
 		drawable_id id, std::any drawable, get_drawable func, sprite_layer l)
 	{
-		auto object = found_object{};
 
+		auto object = find_object(id, _object_layers);
+
+		if (l == _object_layers[object.layer_index].layer)
 		{
-			auto lock = std::shared_lock<decltype(_object_mutex)>{};
-			if(_async)
-				lock = std::shared_lock{ _object_mutex };
-
-			object = find_object(id, _object_layers);
-
-			if (l == _object_layers[object.layer_index].layer)
-			{
-				if (_async)
-				{
-					const auto obj_lock = std::lock_guard{ object.object->mutex };
-					object.object->storage = std::move(drawable);
-					object.object->get = func;	
-				}
-				else
-				{
-					object.object->storage = std::move(drawable);
-					object.object->get = func;
-				}
-
-				return;
-			}
+			object.object->storage = std::move(drawable);
+			object.object->get = func;
+			return;
 		}
 
 		assert(object.object);

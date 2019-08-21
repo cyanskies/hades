@@ -151,16 +151,13 @@ namespace hades
 			}
 			else
 			{
+				//multithreading is disabled for render jobs
+				assert(false);
 				return [f](job_system& j, render_job_data d)->bool {
 					set_render_data(&d);
-
-					const auto ret = std::invoke(f, j, d);
-					if (ret)
-						return finish_render_job();
-					else
-						abort_render_job();
-
-					return ret;
+					std::invoke(f, j, d);
+					finish_render_job();
+					return true;
 				};
 			}
 		}
@@ -269,7 +266,7 @@ namespace hades
 
 		static inline void set_data(render_job_data* d, bool async = true) noexcept
 		{
-			return set_render_data(d, async);
+			return set_render_data(d);
 		}
 
 		template<typename ImplementationType, typename MakeGameStructFn>

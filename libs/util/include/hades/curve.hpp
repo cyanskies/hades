@@ -130,6 +130,11 @@ namespace hades {
 
 		Data get(Time at) const
 		{
+			return get_ref(at);
+		}
+
+		const Data &get_ref(Time at) const
+		{
 			assert(_type != curve_type::pulse);
 
 			if (_type == curve_type::pulse)
@@ -169,6 +174,7 @@ namespace hades {
 				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
 
 				using hades::lerp;
+				//NOTE: binds to const ref, this should be ok?
 				return lerp(a->second, b->second, interp);
 			}
 			else if (_type == curve_type::step)

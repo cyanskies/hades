@@ -204,17 +204,13 @@ namespace hades
 		bool get_render_data_async();
 
 		template<typename T>
-		curve<T> get_render_curve(game_interface *l, curve_index_t i)
+		const curve<T>& get_render_curve(game_interface *l, curve_index_t i)
 		{
 			assert(l);
 
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
-
-			if (detail::get_render_data_async())
-				return detail::get_render_transaction().get(i, curve_map);
-			else
-				return curve_map.get_no_async(i);
+			return curve_map.get_no_async(i);
 		}
 	}
 
@@ -330,7 +326,7 @@ namespace hades
 			}
 			else
 			{
-				const auto& curve = detail::get_game_curve_ref(detail::get_game_data_ptr(), i);
+				const auto& curve = detail::get_game_curve_ref<T>(detail::get_game_data_ptr()->level_data, i);
 				return curve.get(t);
 			}
 		}
@@ -433,15 +429,11 @@ namespace hades
 		}
 
 		template<typename T>
-		T get_system_value(unique_id key)
+		T &get_system_value(unique_id key)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-
-			if (detail::get_render_data_async())
-				return detail::get_render_transaction().get<T>(key, *ptr->system_data);
-			else
-				return ptr->system_data->get_no_async<T>(key);
+			return ptr->system_data->get_no_async<T>(key);
 		}
 
 		template<typename T>
@@ -449,25 +441,21 @@ namespace hades
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-
-			if (detail::get_render_data_async())
-				return detail::get_render_transaction().set(*ptr->system_data, key, std::forward<T>(value));
-			else
-				return ptr->system_data->set(key, std::forward<T>(value));
+			return ptr->system_data->set(key, std::forward<T>(value));
 		}
 	}
 
 	namespace render::level
 	{
 		template<typename T>
-		curve<T> get_curve(variable_id v)
+		const curve<T>& get_curve(variable_id v)
 		{
 			auto ent = get_object();
 			return get_curve<T>({ ent, v });
 		}
 
 		template<typename T>
-		curve<T> get_curve(curve_index_t i)
+		const curve<T>& get_curve(curve_index_t i)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
@@ -476,10 +464,10 @@ namespace hades
 		}
 
 		template<typename T>
-		T get_value(curve_index_t i, time_point t)
+		const T &get_value(curve_index_t i, time_point t)
 		{
-			auto curve = get_curve<T>(i);
-			return curve.get(t);
+			auto &curve = get_curve<T>(i);
+			return curve.get_ref(t);
 		}
 
 		/*template<typename T>

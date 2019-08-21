@@ -59,15 +59,39 @@ namespace hades
 
 	template<typename Key>
 	template<typename T>
-	inline T shared_any_map<Key>::get_no_async(key_type k) const
+	inline const T &shared_any_map<Key>::get_no_async(key_type k) const
 	{
 		assert(exists_no_async(k));
 
 		try
 		{
 			const auto& elm = _map.at(k);
+			const auto ptr = std::any_cast<std::decay_t<T>>(&elm.data);
+			assert(ptr);
+			return *ptr;
+		}
+		catch (const std::out_of_range& e)
+		{
+			throw shared_map_invalid_id{ "shared_any_map::get, tried to access unknown id: " + to_string(e.what()) };
+		}
+		catch (const std::bad_any_cast& e)
+		{
+			throw shared_map_bad_type{ "tried to access shared_any_map element as the wrong type: " + to_string(e.what()) };
+		}
+	}
 
-			return std::any_cast<std::decay_t<T>>(elm.data);
+	template<typename Key>
+	template<typename T>
+	inline T& shared_any_map<Key>::get_no_async(key_type k)
+	{
+		assert(exists_no_async(k));
+
+		try
+		{
+			auto& elm = _map.at(k);
+			auto ptr = std::any_cast<std::decay_t<T>>(&elm.data);
+			assert(ptr);
+			return *ptr;
 		}
 		catch (const std::out_of_range& e)
 		{

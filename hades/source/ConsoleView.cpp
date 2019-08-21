@@ -33,6 +33,7 @@ namespace hades
 		target.draw(_backdrop, states);
 
 		target.setView(_textView);
+
 		for (auto &t : _previousOutput)
 			target.draw(t, states);
 
@@ -81,7 +82,7 @@ namespace hades
 				_input.pop_back();
 		}
 		//'\033' is the octal code for ESC; clear the input
-		else if (text == "\033")
+		else if (text == "\033") //doesnt work
 			_input.clear();
 		//don't add special control characters
 		else if (text != "\n" && text != "\r"

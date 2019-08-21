@@ -100,6 +100,7 @@ namespace hades
 
 		void set_sprite(sprite_id, const resources::animation* a, time_point t,
 			sprite_utility::layer_t l, vector_float p, vector_float s);
+		void set_sprite(sprite_id, time_point t, vector_float p, vector_float s);
 		void set_position(sprite_id id, vector_float pos);
 		void set_animation(sprite_id id, const resources::animation *a, time_point t);
 		void set_position_animation(sprite_id, vector_float pos, const resources::animation* a, time_point t);

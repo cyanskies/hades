@@ -48,6 +48,11 @@ namespace hades
 		}
 	}
 
+	void render_interface::set_sprite(sprite_id id, time_point t, vector_float p, vector_float s)
+	{
+		_sprite_batch.set_sprite(id, t, p, s);
+	}
+
 	void render_interface::set_animation(sprite_id id, const resources::animation *a, time_point t)
 	{
 		try

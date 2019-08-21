@@ -15,6 +15,9 @@ namespace hades
 		static constexpr auto name = "simple-renderer"sv;
 		static unique_id id = unique_id::zero;
 
+		static const auto sprite_id_list = unique_id{};
+		using sprite_id_t = std::vector<std::pair<entity_id, sprite_utility::sprite_id>>;
+
 		struct entity_info
 		{
 			vector_float position;
@@ -22,14 +25,32 @@ namespace hades
 			const resources::animation* anim = nullptr;
 		};
 
+		static entity_info get_some_entity_info(resources::curve_types::object_ref e)
+		{
+			const auto time = render::get_time();
+			const auto ent = render::get_object();
+
+			const auto [x, y] = get_position_curve_id();
+			const auto [size_x, size_y] = get_size_curve_id();
+
+			const auto px = render::level::get_value<float_t>({ ent, x }, time);
+			const auto py = render::level::get_value<float_t>({ ent, y }, time);
+
+			const auto sx = render::level::get_value<float_t>({ ent, size_x }, time);
+			const auto sy = render::level::get_value<float_t>({ ent, size_y }, time);
+
+			return entity_info{
+				hades::vector_float{ px, py },
+				hades::vector_float{ sx, sy }
+			};
+		}
+
 		static entity_info get_entity_info(resources::curve_types::object_ref e)
 		{
 			using namespace resources::curve_types;
 
 			const auto time = render::get_time();
 			const auto ent = render::get_object();
-			const auto [x, y] = get_position_curve_id();
-			const auto [size_x, size_y] = get_size_curve_id();
 			const auto obj_type = get_object_type_curve_id();
 			const auto obj_id = render::level::get_value<unique>({ ent, obj_type }, time);
 			const auto object = data::get<resources::object>(obj_id);
@@ -38,21 +59,10 @@ namespace hades
 			if (std::empty(anims))
 				return {};
 
-			const auto px = render::level::get_value<float_t>({ ent, x }, time);
-			const auto py = render::level::get_value<float_t>({ ent, y }, time);
-
-			const auto sx = render::level::get_value<float_t>({ ent, size_x }, time);
-			const auto sy = render::level::get_value<float_t>({ ent, size_y }, time);
-			
-			return entity_info{
-				hades::vector_float{ px, py },
-				hades::vector_float{ sx, sy },
-				random_element(std::begin(anims), std::end(anims))
-			};
+			auto entity = get_some_entity_info(e);
+			entity.anim = random_element(std::begin(anims), std::end(anims));
+			return entity;
 		}
-
-		static const auto sprite_id_list = unique_id{};
-		using sprite_id_t = std::vector<std::pair<entity_id, sprite_utility::sprite_id>>;
 
 		sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e)
 		{
@@ -71,7 +81,7 @@ namespace hades
 			{
 				if (it->first == e)
 				{
-					std::iter_swap(it, std::rbegin(v));
+					*it = *std::rbegin(v);
 					v.pop_back();
 					return;
 				}
@@ -117,10 +127,10 @@ namespace hades
 			const auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
 			if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
 			{
-				const auto ent = get_entity_info(entity);
+				const auto ent = get_some_entity_info(entity);
 				const auto &s_id = sprite;
-				d.render_output->set_sprite(s_id, ent.anim, render::get_time(),
-					render_interface::sprite_layer{}, ent.position, ent.size);
+				d.render_output->set_sprite(s_id, render::get_time(),
+					ent.position, ent.size);
 			}
 
 			return;
@@ -395,27 +405,20 @@ namespace hades
 	static thread_local transaction render_transaction{};
 	static thread_local bool render_async = true;
 
-	void set_render_data(render_job_data *j, bool async) noexcept
+	void set_render_data(render_job_data *j) noexcept
 	{
 		assert(j);
 		render_data_ptr = j;
-		render_async = false;
 		return;
 	}
 
-	void abort_render_job()
+	void finish_render_job() noexcept
 	{
 		assert(render_data_ptr);
-		render_transaction.abort();
+		#ifndef NDEBUG
 		render_data_ptr = nullptr;
+		#endif
 		return;
-	}
-
-	bool finish_render_job()
-	{
-		assert(render_data_ptr);
-		render_data_ptr = nullptr;
-		return render_transaction.commit();
 	}
 
 	resources::curve_types::object_ref render::get_object()

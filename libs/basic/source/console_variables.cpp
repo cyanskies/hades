@@ -52,13 +52,5 @@ namespace hades
 		console::create_property(cvars::video_width,		cvars::default_value::video_width);
 		console::create_property(cvars::video_height,		cvars::default_value::video_height);
 		console::create_property(cvars::video_depth,		cvars::default_value::video_depth);
-
-		#ifdef NDEBUG
-			constexpr auto fps_default = cvars::default_value::fps;
-		#else
-			constexpr auto fps_default = 1;
-		#endif
-
-		console::create_property(cvars::fps, fps_default);
 	}
 }

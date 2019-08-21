@@ -25,7 +25,7 @@ namespace hades
 		//shared for level, mission and mod editors
 
 		//render vars
-		constexpr auto render_threadcount = "r_threads"; // same as s_threadcount
+		constexpr auto render_threadcount = "r_threads"; // [[deprecated]] same as s_threadcount
 		constexpr auto render_drawtime = "r_drawtime"; //reports the time taken to generate and display the last frame in ms
 
 		//server vars
@@ -37,7 +37,7 @@ namespace hades
 		constexpr auto client_max_tick_time = "c_max_tick_time"; // reports the longest tick time of the frame in ms
 		constexpr auto client_min_tick_time = "c_min_tick_time"; // reports the longest tick time of the frame in ms
 		constexpr auto client_total_tick_time = "c_total_tick_time"; //reports the total time taken to do liguc update 
-		constexpr auto client_max_tick = "c_max_allowed_frametime"; //the max amount of time that can be spent on a single frame in ms
+		constexpr auto client_max_tick = "c_max_allowed_frametime"; // [[deprecated]] the max amount of time that can be spent on a single frame in ms
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_tick_count = "c_ticks_per_frame"; // reports number of ticks taken to generate the previous frame
 
@@ -56,10 +56,6 @@ namespace hades
 		constexpr auto video_width = "vid_width"; // resolution width
 		constexpr auto video_height = "vid_height"; // resolution height
 		constexpr auto video_depth = "vid_depth"; // colour bit depth
-
-		//debug vars
-		//TODO: remove, this is handled by a console function
-		constexpr auto fps = "fps"; // 0 = off; 1 = show frametime in ms; 2 = show fps
 
 		//server host and connection settings
 
@@ -91,8 +87,6 @@ namespace hades
             constexpr int32 video_width = 800;
             constexpr int32 video_height = 600;
             constexpr int32 video_depth = 32;
-
-			constexpr int32 fps = 0;
 		}
 	}
 }

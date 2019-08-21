@@ -357,9 +357,8 @@ namespace hades
 		void set_size(world_unit_t w, world_unit_t h);
 	}
 
-	void set_render_data(render_job_data*, bool async = true) noexcept;
-	void abort_render_job();
-	bool finish_render_job();
+	void set_render_data(render_job_data*) noexcept;
+	void finish_render_job() noexcept;
 
 	//render access functions allow a const view of the game state
 	namespace render
@@ -375,7 +374,7 @@ namespace hades
 		bool system_value_exists(unique_id);
 
 		template<typename T>
-		T get_system_value(unique_id);
+		T &get_system_value(unique_id);
 		
 		template<typename T>
 		void set_system_value(unique_id, T&& value);
@@ -401,17 +400,17 @@ namespace hades
 	{
 		//get curve from this level
 		template<typename T>
-		curve<T> get_curve(variable_id);
+		const curve<T>& get_curve(variable_id);
 
 		template<typename T>
-		curve<T> get_curve(curve_index_t);
+		const curve<T>& get_curve(curve_index_t);
 
 		template<typename T>
-		inline curve<T> get_curve(object_ref e, variable_id v)
+		inline const curve<T> &get_curve(object_ref e, variable_id v)
 		{ return get_curve<T>(curve_index_t{ e, v }); }
 
 		template<typename T>
-		T get_value(curve_index_t, time_point);
+		const T &get_value(curve_index_t, time_point);
 
 		//render systems are currently read only
 		/*template<typename T>

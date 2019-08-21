@@ -45,14 +45,16 @@ namespace hades
 		//gets the value without locking
 		//not safe for multithreading
 		template<typename T>
-		T get_no_async(key_type k) const;
+		const T &get_no_async(key_type k) const;
+		template<typename T>
+		T& get_no_async(key_type k);
 
 		template<typename T>
 		using ptr_return_t = std::pair<const T*, std::shared_lock<mutex_type>>;
 
 		template<typename T>
 		ptr_return_t<T> get_pointer(key_type k) const;
-		
+
 		//sets the value without any exchange locking
 		template<typename T>
 		void set(key_type id, T &&value);

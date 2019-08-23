@@ -22,6 +22,12 @@ namespace hades::detail
 	}
 
 	template<>
+	inline curve_data::curve_map<resources::curve_types::vec2_float>& get_curve_list(curve_data& data) noexcept
+	{
+		return data.vec2_float_curves;
+	}
+
+	template<>
 	inline curve_data::curve_map<resources::curve_types::bool_t>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.bool_curves;
@@ -46,25 +52,25 @@ namespace hades::detail
 	}
 
 	template<>
-	inline curve_data::curve_map<resources::curve_types::vector_int>& get_curve_list(curve_data& data) noexcept
+	inline curve_data::curve_map<resources::curve_types::collection_int>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.int_vector_curves;
 	}
 
 	template<>
-	inline curve_data::curve_map<resources::curve_types::vector_float>& get_curve_list(curve_data& data) noexcept
+	inline curve_data::curve_map<resources::curve_types::collection_float>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.float_vector_curves;
 	}
 
 	template<>
-	inline curve_data::curve_map<resources::curve_types::vector_object_ref>& get_curve_list(curve_data& data) noexcept
+	inline curve_data::curve_map<resources::curve_types::collection_object_ref>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.object_ref_vector_curves;
 	}
 
 	template<>
-	inline curve_data::curve_map<resources::curve_types::vector_unique>& get_curve_list(curve_data& data) noexcept
+	inline curve_data::curve_map<resources::curve_types::collection_unique>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.unique_vector_curves;
 	}

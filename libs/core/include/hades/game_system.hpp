@@ -86,10 +86,10 @@ namespace hades
 		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
-	using name_list = curve<resources::curve_types::vector_object_ref>;
+	using name_list = curve<resources::curve_types::collection_object_ref>;
 	
-	resources::curve_types::vector_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
-	resources::curve_types::vector_object_ref get_removed_entites(const name_list&, time_point last_frame, time_point this_frame);
+	resources::curve_types::collection_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
+	resources::curve_types::collection_object_ref get_removed_entites(const name_list&, time_point last_frame, time_point this_frame);
 	
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
@@ -280,6 +280,8 @@ namespace hades
 		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
 		// and game::get_time() for set_* functions
 		
+		object_ref get_object_from_name(std::string_view, time_point);
+
 		template<typename T>
 		curve<T> get_curve(object_ref, variable_id);
 		template<typename T>
@@ -340,6 +342,8 @@ namespace hades
 		object_ref create_object(object_instance);
 
 		//helper functions for accessing common curves
+		world_rect_t get_world_bounds();
+
 		//position
 		world_vector_t get_position(object_ref, time_point);
 		world_vector_t get_position(object_ref);

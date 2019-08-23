@@ -10,7 +10,7 @@ namespace hades
 {
 	common_implementation_base::common_implementation_base(const level_save& sv) 
 		: _entity_names{ sv.names },
-		_next{ static_cast<entity_id::value_type>(sv.next_id) }, _curves(sv.curves)
+		_next{ static_cast<entity_id::value_type>(sv.next_id) }, _curves{ sv.curves }
 	{}
 
 	entity_id common_implementation_base::create_entity()
@@ -81,7 +81,7 @@ namespace hades
 
 	void common_implementation_base::name_entity(entity_id entity, std::string_view name, time_point time)
 	{
-		assert(entity < entity_id{ _next });
+		assert(entity < entity_id{ _next + 1 });
 
 		name_curve_t ent_names{ curve_type::error }, updated_names{ curve_type::error };
 		do
@@ -137,6 +137,37 @@ namespace hades
 			systems.emplace_back(sv.systems[i], std::move(attach_list[i]));
 
 		_systems = std::move(systems);
+
+		//create the special world entity
+		//set the world size from the level source
+		//creates the world entity if it didn't already exist
+		auto world_ent = get_entity_id(world_entity_name, time_point{});
+
+		if (world_ent == bad_entity)
+		{
+			world_ent = create_entity();
+			name_entity(world_ent, world_entity_name, time_point{});
+		}
+
+		const auto [size_x, size_y] = get_size_curve_id();
+		auto& float_curves = get_curve_list<resources::curve_types::float_t>(get_curves());
+		const auto x_id = curve_index_t{ world_ent, size_x },
+			y_id = curve_index_t{ world_ent, size_y };
+
+		//create the world size if it hasn't already been done 
+		if (!float_curves.exists_no_async(x_id))
+		{
+			curve<resources::curve_types::float_t> s_x{ curve_type::const_c };
+			s_x.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_x));
+			float_curves.create(x_id, std::move(s_x));
+		}
+
+		if (!float_curves.exists_no_async(y_id))
+		{
+			curve<resources::curve_types::float_t> s_y{ curve_type::const_c };
+			s_y.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_y));
+			float_curves.create(y_id, std::move(s_y));
+		}
 	}
 
 	render_implementation::render_implementation()

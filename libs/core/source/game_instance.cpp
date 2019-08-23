@@ -80,12 +80,13 @@ namespace hades
 		//TODO: half of the curve types are missing
 		get_exported_set<int_t>(output.int_curves, output.sizes[0], t, curves.int_curves.data_no_async());
 		get_exported_set<float_t>(output.float_curves, output.sizes[1], t, curves.float_curves.data_no_async());
-		get_exported_set<bool_t>(output.bool_curves, output.sizes[2], t, curves.bool_curves.data_no_async());
-		get_exported_set<string>(output.string_curves, output.sizes[3], t, curves.string_curves.data_no_async());
-		get_exported_set<object_ref>(output.object_ref_curves, output.sizes[4], t, curves.object_ref_curves.data_no_async());
-		get_exported_set<unique>(output.unique_curves, output.sizes[5], t, curves.unique_curves.data_no_async());
+		get_exported_set<vec2_float>(output.vec2_float_curves, output.sizes[2], t, curves.vec2_float_curves.data_no_async());
+		get_exported_set<bool_t>(output.bool_curves, output.sizes[3], t, curves.bool_curves.data_no_async());
+		get_exported_set<string>(output.string_curves, output.sizes[4], t, curves.string_curves.data_no_async());
+		get_exported_set<object_ref>(output.object_ref_curves, output.sizes[5], t, curves.object_ref_curves.data_no_async());
+		get_exported_set<unique>(output.unique_curves, output.sizes[6], t, curves.unique_curves.data_no_async());
 
-		get_exported_set<resources::curve_types::vector_int>(output.int_vector_curves, output.sizes[6], t, curves.int_vector_curves.data_no_async());
+		get_exported_set<resources::curve_types::collection_int>(output.int_vector_curves, output.sizes[7], t, curves.int_vector_curves.data_no_async());
 
 		//add in entityNames
 		//output.entity_names = _newEntityNames;

@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 namespace hades::detail
 {
@@ -42,26 +43,45 @@ namespace hades
 	{
 		using value_type = T;
 
-		constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
-		//construct from T, or objects holding Ts
-		constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>);
-		template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int> = 0>
-		explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
-		template<typename U, std::enable_if_t<!is_tuple_v<U>, int> = 0>
-		explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
-		explicit constexpr vector_t(const std::pair<T, T>&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		//constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
+		////construct from T, or objects holding Ts
+		//constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>);
+		//template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int> = 0>
+		//explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		//template<typename U, std::enable_if_t<!is_tuple_v<U>, int> = 0>
+		//explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		//explicit constexpr vector_t(const std::pair<T, T>&) noexcept(std::is_nothrow_constructible_v<T, T>);
 
-		constexpr vector_t(const vector_t&) noexcept(std::is_nothrow_constructible_v<T, T>) = default;
+		//constexpr vector_t(const vector_t&) noexcept(std::is_nothrow_constructible_v<T, T>) = default;
 
-		~vector_t() noexcept(std::is_nothrow_destructible_v<T>) = default;
+		//~vector_t() noexcept(std::is_nothrow_destructible_v<T>) = default;
 
-		constexpr vector_t &operator=(const vector_t&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
+		//constexpr vector_t &operator=(const vector_t&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
 
-		T x{}, y{};
+		T x, y;
 	};
 
-	using vector_int = vector_t<int32>;
-	using vector_float = vector_t<float>;
+	static_assert(std::is_trivially_constructible_v<vector_t<int32>>);
+	//static_assert(std::is_trivially_assignable_v<vector_t<int32>>);
+	static_assert(std::is_trivially_copyable_v<vector_t<int32>>);
+
+	template<typename T>
+	struct lerpable<vector_t<T>> : public std::bool_constant<lerpable_v<T>> {};
+
+	template<typename Float, typename std::enable_if_t<lerpable_v<vector_t<Float>>, int> = 0>
+	constexpr vector_t<Float> lerp(vector_t<Float> a, vector_t<Float> b, Float t) noexcept
+	{
+		return {
+			lerp(a.x, b.x, t),
+			lerp(a.y, b.y, t)
+		};
+	}
+
+	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_near_equal(Vector<Float> a, Vector<Float> b, int32 units_after_decimal = 2) noexcept
+	{
+		return float_near_equal(a.x, b.x) && float_near_equal(a.y, b.y);
+	}
 
 	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
@@ -80,6 +100,9 @@ namespace hades
 
 	template<typename T>
 	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs) noexcept;
+
+	using vector_int = vector_t<int32>;
+	using vector_float = vector_t<float>;
 
 	//TODO: this should be pol_vector_t
 	template<typename T>

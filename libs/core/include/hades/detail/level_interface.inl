@@ -284,7 +284,7 @@ namespace hades
 			struct update_data
 			{
 				const ImplementationType::system_resource *system = nullptr;
-				resources::curve_types::vector_object_ref added_ents, attached_ents, removed_ents;
+				resources::curve_types::collection_object_ref added_ents, attached_ents, removed_ents;
 			};
 
 			//collect entity lists upfront, so that they don't change mid update

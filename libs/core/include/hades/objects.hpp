@@ -113,7 +113,7 @@ namespace hades
 	vector_float get_size(const resources::object &o);
 	void set_size(object_instance &o, vector_float v);
 
-	using tag_list = resources::curve_types::vector_unique;
+	using tag_list = resources::curve_types::collection_unique;
 	tag_list get_collision_groups(const object_instance &o);
 	tag_list get_collision_groups(const resources::object &o);
 

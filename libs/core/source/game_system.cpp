@@ -179,7 +179,7 @@ namespace hades
 		);
 	}
 
-	resources::curve_types::vector_object_ref get_added_entites(const name_list& nl_curve, time_point last_frame, time_point this_frame)
+	resources::curve_types::collection_object_ref get_added_entites(const name_list& nl_curve, time_point last_frame, time_point this_frame)
 	{
 		assert(!std::empty(nl_curve));
 		auto prev = nl_curve.get(last_frame);
@@ -188,7 +188,7 @@ namespace hades
 		std::sort(std::begin(prev), std::end(prev));
 		std::sort(std::begin(next), std::end(next));
 
-		auto output = resources::curve_types::vector_object_ref{};
+		auto output = resources::curve_types::collection_object_ref{};
 
 		std::set_difference(std::begin(next), std::end(next),
 			std::begin(prev), std::end(prev),
@@ -197,7 +197,7 @@ namespace hades
 		return output;
 	}
 
-	resources::curve_types::vector_object_ref get_removed_entites(const name_list &nl_curve, time_point last_frame, time_point this_frame)
+	resources::curve_types::collection_object_ref get_removed_entites(const name_list &nl_curve, time_point last_frame, time_point this_frame)
 	{
 		assert(!std::empty(nl_curve));
 		auto prev = nl_curve.get(last_frame);
@@ -206,7 +206,7 @@ namespace hades
 		std::sort(std::begin(prev), std::end(prev));
 		std::sort(std::begin(next), std::end(next));
 
-		auto output = resources::curve_types::vector_object_ref{};
+		auto output = resources::curve_types::collection_object_ref{};
 
 		std::set_difference(std::begin(prev), std::end(prev),
 			std::begin(next), std::end(next),
@@ -305,6 +305,12 @@ namespace hades
 
 	namespace game::level
 	{
+		object_ref get_object_from_name(std::string_view n, time_point t)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			return ptr->get_entity_id(n, t);
+		}
+
 		object_ref create_object(object_instance obj)
 		{
 			//TODO: handle time better
@@ -320,6 +326,13 @@ namespace hades
 			}
 			else
 				return ptr->level_data->create_entity(std::move(obj), get_time());
+		}
+
+		world_rect_t get_world_bounds()
+		{
+			const auto world_ent = get_object_from_name(world_entity_name, time_point{});
+			//TODO: get actual value
+			return world_rect_t{};
 		}
 
 		world_vector_t get_position(object_ref o, time_point t)

@@ -82,7 +82,7 @@ namespace hades
 
 			auto &attch = attach_list[sys_index];
 
-			auto ent_list = attch.empty() ? resources::curve_types::vector_object_ref{} : attch.get(zero_time);
+			auto ent_list = attch.empty() ? resources::curve_types::collection_object_ref{} : attch.get(zero_time);
 
 			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
 			{

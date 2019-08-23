@@ -705,7 +705,7 @@ namespace hades::resources
 		{
 			assert(t <= transition_end);
 
-			const auto tile_pos = vector_t{
+			const auto tile_pos = vector_t<tile_size_t>{
 				(count % tiles_per_row) * tile_size + start_pos.x,
 				(count / tiles_per_row) * tile_size + start_pos.y
 			};

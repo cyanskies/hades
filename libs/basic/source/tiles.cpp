@@ -815,7 +815,7 @@ namespace hades
 
 		for (int32 y = 0; y < size.y; ++y)
 			for (int32 x = 0; x < size.x; ++x)
-				positions.emplace_back(position.x + x, position.y + y);
+				positions.emplace_back(tile_position{ position.x + x, position.y + y });
 
 		return positions;
 	}
@@ -851,7 +851,7 @@ namespace hades
 			
 			//push the entire line of the circle into out
 			for (auto x = bounds[0]; x <= bounds[1]; x++)
-				out.emplace_back(x + p.x, y + p.y);
+				out.emplace_back(tile_position{ x + p.x, y + p.y });
 		}
 
 		out.emplace_back(bottom + p);

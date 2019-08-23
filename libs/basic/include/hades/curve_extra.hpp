@@ -26,35 +26,45 @@ namespace hades
 
 namespace hades::resources
 {
-	enum class curve_variable_type { error, int_t, float_t, bool_t, string, object_ref, unique, vector_int, vector_float, vector_object_ref, vector_unique };
+	enum class curve_variable_type { error, int_t, float_t, vec2_float, bool_t,
+		string, object_ref, unique, collection_int, collection_float,
+		collection_object_ref, collection_unique };
 
 	namespace curve_types
 	{
-		using int_t = hades::types::int32;
-		using float_t = float;
+		using int_t = int32;
+		using float_t = float32;
+		using vec2_float = vector_float;
 		using bool_t = bool;
-		using string = hades::types::string;
+		using string = types::string;
 		using object_ref = entity_id;
-		using unique = hades::unique_id;
-		using vector_int = std::vector<int_t>;
-		using vector_float = std::vector<float_t>;
-		using vector_object_ref = std::vector<object_ref>;
-		using vector_unique = std::vector<unique>;
+		using unique = unique_id;
+		using collection_int = std::vector<int_t>;
+		using collection_float = std::vector<float_t>;
+		using collection_object_ref = std::vector<object_ref>;
+		using collection_unique = std::vector<unique>;
 
 		template <typename T>
-		struct is_vector_type : public std::false_type {};
+		struct is_vector_type : std::false_type {};
+		template <>
+		struct is_vector_type<vec2_float> : public std::true_type {};
 
+		template <typename T>
+		constexpr auto is_vector_type_v = is_vector_type<T>::value;
+
+		template <typename T>
+		struct is_collection_type : public std::false_type {};
 		template <>
-		struct is_vector_type<vector_int> : public std::true_type {};
+		struct is_collection_type<collection_int> : public std::true_type {};
 		template <>
-		struct is_vector_type<vector_float> : public std::true_type {};
+		struct is_collection_type<collection_float> : public std::true_type {};
 		template <>
-		struct is_vector_type<vector_object_ref> : public std::true_type {};
+		struct is_collection_type<collection_object_ref> : public std::true_type {};
 		template <>
-		struct is_vector_type<vector_unique> : public std::true_type {};
+		struct is_collection_type<collection_unique> : public std::true_type {};
 
 		template<typename T>
-		constexpr auto is_vector_type_v = is_vector_type<T>::value;
+		constexpr auto is_collection_type_v = is_collection_type<T>::value;
 
 		template<typename T>
 		struct is_curve_type : public std::false_type {};
@@ -64,6 +74,8 @@ namespace hades::resources
 		template<>
 		struct is_curve_type<float_t> : public std::true_type {};
 		template<>
+		struct is_curve_type<vec2_float> : public std::true_type {};
+		template<>
 		struct is_curve_type<bool_t> : public std::true_type {};
 		template<>
 		struct is_curve_type<string> : public std::true_type {};
@@ -72,13 +84,13 @@ namespace hades::resources
 		template<>
 		struct is_curve_type<unique> : public std::true_type {};
 		template<>
-		struct is_curve_type<vector_int> : public std::true_type {};
+		struct is_curve_type<collection_int> : public std::true_type {};
 		template<>
-		struct is_curve_type<vector_float> : public std::true_type {};
+		struct is_curve_type<collection_float> : public std::true_type {};
 		template<>
-		struct is_curve_type<vector_object_ref> : public std::true_type {};
+		struct is_curve_type<collection_object_ref> : public std::true_type {};
 		template<>
-		struct is_curve_type<vector_unique> : public std::true_type {};
+		struct is_curve_type<collection_unique> : public std::true_type {};
 
 		template<typename T>
 		constexpr auto is_curve_type_v = is_curve_type<T>::value;
@@ -88,14 +100,15 @@ namespace hades::resources
 		std::monostate,
 		curve_types::int_t, 
 		curve_types::float_t,
+		curve_types::vec2_float,
 		curve_types::bool_t, 
 		curve_types::string, 
 		curve_types::object_ref,
 		curve_types::unique, 
-		curve_types::vector_int,
-		curve_types::vector_float,
-		curve_types::vector_object_ref,
-		curve_types::vector_unique>;
+		curve_types::collection_int,
+		curve_types::collection_float,
+		curve_types::collection_object_ref,
+		curve_types::collection_unique>;
 
 	struct curve_t {};
 

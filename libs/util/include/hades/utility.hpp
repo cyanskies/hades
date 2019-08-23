@@ -14,10 +14,28 @@ namespace hades {
 		std::default_random_engine random_generator{ rd() };
 	}
 
+	template<typename T>
+	struct lerpable : public std::bool_constant< std::is_floating_point_v<T>> {};
+
+	template<typename T>
+	constexpr auto lerpable_v = lerpable<T>::value;
+
+	template<typename Float,
+		typename std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+		constexpr Float lerp(Float a, Float b, Float t) noexcept;
+
+	//NOTE: define provided to allow compilation of path that will never be called
+	template<typename T,
+		typename std::enable_if_t<!lerpable_v<T>, int> = 0>
+		T lerp(T a, T b, float32 t)
+	{
+		throw std::logic_error{ "called lerp with a non-arithmetic type" };
+	}
+
 	//replace with logic similar to that displayed in the example
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2);
+	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;
 
 	class overflow_error : public std::overflow_error
 	{

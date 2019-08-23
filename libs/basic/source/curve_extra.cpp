@@ -39,6 +39,8 @@ namespace hades::resources
 			return curve_variable_type::int_t;
 		else if (s == "float"sv)
 			return curve_variable_type::float_t;
+		else if (s == "vec2_float"sv)
+			return curve_variable_type::vec2_float;
 		else if (s == "bool"sv)
 			return curve_variable_type::bool_t;
 		else if (s == "string"sv)
@@ -47,14 +49,15 @@ namespace hades::resources
 			return curve_variable_type::object_ref;
 		else if (s == "unique"sv)
 			return curve_variable_type::unique;
+		//TODO: rename to *_collection
 		else if (s == "int_vector"sv)
-			return curve_variable_type::vector_int;
+			return curve_variable_type::collection_int;
 		else if (s == "float_vector"sv)
-			return curve_variable_type::vector_float;
+			return curve_variable_type::collection_float;
 		else if (s == "obj_ref_vector"sv)
-			return curve_variable_type::vector_object_ref;
+			return curve_variable_type::collection_object_ref;
 		else if (s == "unique_vector"sv)
-			return curve_variable_type::vector_unique;
+			return curve_variable_type::collection_unique;
 		else
 			return curve_variable_type::error;
 	}
@@ -78,6 +81,9 @@ namespace hades::resources
 		case curve_variable_type::float_t:
 			default_value.emplace<float_t>();
 			break;
+		case curve_variable_type::vec2_float:
+			default_value.emplace<vec2_float>();
+			break;
 		case curve_variable_type::bool_t:
 			default_value.emplace<bool_t>();
 			break;
@@ -90,17 +96,17 @@ namespace hades::resources
 		case curve_variable_type::unique:
 			default_value.emplace<unique>();
 			break;
-		case curve_variable_type::vector_int:
-			default_value.emplace<vector_int>();
+		case curve_variable_type::collection_int:
+			default_value.emplace<collection_int>();
 			break;
-		case curve_variable_type::vector_float:
-			default_value.emplace<vector_float>();
+		case curve_variable_type::collection_float:
+			default_value.emplace<collection_float>();
 			break;
-		case curve_variable_type::vector_object_ref:
-			default_value.emplace<vector_object_ref>();
+		case curve_variable_type::collection_object_ref:
+			default_value.emplace<collection_object_ref>();
 			break;
-		case curve_variable_type::vector_unique:
-			default_value.emplace<vector_unique>();
+		case curve_variable_type::collection_unique:
+			default_value.emplace<collection_unique>();
 			break;
 		}
 
@@ -193,6 +199,8 @@ namespace hades::resources
 			return std::holds_alternative<int_t>(v);
 		case curve_variable_type::float_t:
 			return std::holds_alternative<float_t>(v);
+		case curve_variable_type::vec2_float:
+			return std::holds_alternative<vec2_float>(v);
 		case curve_variable_type::bool_t:
 			return std::holds_alternative<bool_t>(v);
 		case curve_variable_type::string:
@@ -201,20 +209,46 @@ namespace hades::resources
 			return std::holds_alternative<object_ref>(v);
 		case curve_variable_type::unique:
 			return std::holds_alternative<unique>(v);
-		case curve_variable_type::vector_int:
-			return std::holds_alternative<vector_int>(v);
-		case curve_variable_type::vector_float:
-			return std::holds_alternative<vector_float>(v);
-		case curve_variable_type::vector_object_ref:
-			return std::holds_alternative<vector_object_ref>(v);
-		case curve_variable_type::vector_unique:
-			return std::holds_alternative<vector_unique>(v);
+		case curve_variable_type::collection_int:
+			return std::holds_alternative<collection_int>(v);
+		case curve_variable_type::collection_float:
+			return std::holds_alternative<collection_float>(v);
+		case curve_variable_type::collection_object_ref:
+			return std::holds_alternative<collection_object_ref>(v);
+		case curve_variable_type::collection_unique:
+			return std::holds_alternative<collection_unique>(v);
 		default:
 			return false;
 		}
 	}
 
+	template<typename T>
+	static T vector_t_from_string(std::string_view str)
+	{
+		static_assert(resources::curve_types::is_vector_type_v<T>);
+		const auto elms = vector_from_string<std::vector<typename T::value_type>>(str);
+		const auto siz = std::size(elms);
 
+		if (siz != 2u)
+		{
+			if(siz == 0u)
+			{
+				//TODO: warn, bad
+				return { T::value_type{}, T::value_type{} };
+			}
+
+			//size must be > 2
+			//TODO: warn excess elms lost
+		}
+
+		auto out = T{};
+		
+		out.x = elms[0];
+		if (siz != 1)
+			out.y = elms[1];
+
+		return out;
+	}
 
 	resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
 	{
@@ -227,8 +261,10 @@ namespace hades::resources
 			using T = std::decay_t<decltype(v)>;
 
 			using namespace resources::curve_types;
-			if constexpr (is_vector_type_v<T>)
+			if constexpr (is_collection_type_v<T>)
 				v = vector_from_string<T>(str);
+			else if constexpr (is_vector_type_v<T>)
+				v = vector_t_from_string<T>(str);
 			else
 				v = from_string<T>(str);
 		}, out);
@@ -244,6 +280,23 @@ namespace hades::resources
 			using T = std::decay_t<decltype(v)>;
 
 			if constexpr (curve_types::is_vector_type_v<T>)
+			{
+				using value_type = typename T::value_type;
+				const auto seq = n.to_sequence<value_type>();
+				const auto size = std::size(seq);
+				if (size < 2)
+				{
+					//TODO: warn bad, leave default state
+					return;
+				}
+				else if (size > 2)
+				{
+					//TODO: warn, excess elements ignored
+				}
+
+				v = T{ seq[0], seq[1] };
+			}
+			else if constexpr (curve_types::is_collection_type_v<T>)
 			{
                 using ValueType = typename T::value_type;
                 if constexpr (std::is_same_v<ValueType, unique_id>)
@@ -283,6 +336,13 @@ namespace hades
 		return curve_to_string(std::get<0>(curve), std::get<1>(curve));
 	}
 
+	template<typename T>
+	static string vector_t_to_string(const T &v)
+	{
+		static_assert(resources::curve_types::is_vector_type_v<T>);
+		return "[" + to_string(v.x) + ", " + to_string(v.y) + "]";
+	}
+
 	types::string curve_to_string(const resources::curve &c, const resources::curve_default_value &v)
 	{
 		if (!resources::is_curve_valid(c) ||
@@ -291,8 +351,10 @@ namespace hades
 
 		return std::visit([](auto&& t)->types::string {
 			using T = std::decay_t<decltype(t)>;
-			if constexpr (resources::curve_types::is_vector_type_v<T>)
+			if constexpr (resources::curve_types::is_collection_type_v<T>)
 				return to_string(std::begin(t), std::end(t));
+			else if constexpr (resources::curve_types::is_vector_type_v<T>)
+				return vector_t_to_string(t);
 			else
 				return to_string(t);
 		}, v);

@@ -23,6 +23,7 @@ namespace hades
 
 		curve_map<resources::curve_types::int_t> int_curves;
 		curve_map<resources::curve_types::float_t> float_curves;
+		curve_map<resources::curve_types::vec2_float> vec2_float_curves;
 		//no linear curves here
 		curve_map<resources::curve_types::bool_t> bool_curves;
 		curve_map<resources::curve_types::string> string_curves;
@@ -30,10 +31,10 @@ namespace hades
 		curve_map<resources::curve_types::unique> unique_curves;
 
 		//no linear curves here either
-		curve_map<resources::curve_types::vector_int> int_vector_curves;
-		curve_map<resources::curve_types::vector_float> float_vector_curves;
-		curve_map<resources::curve_types::vector_object_ref> object_ref_vector_curves;
-		curve_map<resources::curve_types::vector_unique> unique_vector_curves;
+		curve_map<resources::curve_types::collection_int> int_vector_curves;
+		curve_map<resources::curve_types::collection_float> float_vector_curves;
+		curve_map<resources::curve_types::collection_object_ref> object_ref_vector_curves;
+		curve_map<resources::curve_types::collection_unique> unique_vector_curves;
 	};
 
 	template<typename T>

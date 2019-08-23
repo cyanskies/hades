@@ -7,10 +7,26 @@
 
 namespace hades
 {
+	template<typename Float,
+		typename std::enable_if_t<std::is_floating_point_v<Float>, int>>
+		constexpr Float lerp(Float a, Float b, Float t) noexcept
+	{
+		//algorithm recommended for consistancy in P0811R2 : https://wg21.link/p0811r2
+		if (a <= 0 && b >= 0 ||
+			a >= 0 && b <= 0)
+			return t * b + (1.f - t) * a;
+
+		//TODO: float_near_equal to account for float inaccuracy
+		if (t == 1) return b;
+
+		const auto x = a + t * (b - a);
+		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
+	}
+
 	//based on logic from
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
-	inline bool float_near_equal(Float a, Float b, int32 ulp)
+	inline bool float_near_equal(Float a, Float b, int32 ulp) noexcept
 	{
 		return std::abs(a - b) <= std::numeric_limits<Float>::epsilon() * std::abs(a + b) * ulp
 			// unless the result is subnormal

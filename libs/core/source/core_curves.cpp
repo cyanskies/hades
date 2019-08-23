@@ -26,6 +26,7 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		using resources::curve;
+
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
 		auto name_c = d.find_or_create<curve>(name_id, unique_id::zero);
@@ -51,15 +52,15 @@ namespace hades
 		auto col_groups = d.find_or_create<curve>(collision_groups_id, unique_id::zero);
 
 		col_groups->c_type = curve_type::step;
-		col_groups->data_type = resources::curve_variable_type::vector_unique;
-		col_groups->default_value = resources::curve_types::vector_unique{};
+		col_groups->data_type = resources::curve_variable_type::collection_unique;
+		col_groups->default_value = resources::curve_types::collection_unique{};
 
 		// tags for this object
 		tags_id = d.get_uid("tags"sv);
 		auto tags = d.find_or_create<curve>(tags_id, unique_id::zero);
 		tags->c_type = curve_type::step;
-		tags->data_type = resources::curve_variable_type::vector_unique;
-		tags->default_value = resources::curve_types::vector_unique{};
+		tags->data_type = resources::curve_variable_type::collection_unique;
+		tags->default_value = resources::curve_types::collection_unique{};
 		tags->sync = true;
 		// object type is the unique_id of the objects type
 		object_type_id = d.get_uid("object-type"sv);

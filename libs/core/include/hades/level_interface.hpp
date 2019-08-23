@@ -23,6 +23,8 @@
 
 namespace hades
 {
+	constexpr auto world_entity_name = "world";
+
 	class system_already_attached : public runtime_error
 	{
 		using runtime_error::runtime_error;

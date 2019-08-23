@@ -68,7 +68,7 @@ namespace hades
 			return detail::frsqrt64(f);
 	}
 
-	template<typename T>
+	/*template<typename T>
 	inline constexpr vector_t<T>::vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>)
 		: x{ x }, y{ y }
 	{}
@@ -97,7 +97,7 @@ namespace hades
 	{
 		static_assert(std::is_same_v<T, decltype(u.x)> && std::is_same_v<T, decltype(u.y)>,
 			"x and y must both be the same type as vector_t::value_type");
-	}
+	}*/
 
 	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept

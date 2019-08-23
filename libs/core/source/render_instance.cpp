@@ -119,20 +119,21 @@ namespace hades
 
 		merge_input(input.int_curves, input.sizes[0], curves);
 		merge_input(input.float_curves, input.sizes[1], curves);
-		merge_input(input.bool_curves, input.sizes[2], curves);
-		merge_input(input.string_curves, input.sizes[3], curves);
-		merge_input(input.object_ref_curves, input.sizes[4], curves);
+		merge_input(input.vec2_float_curves, input.sizes[2], curves);
+		merge_input(input.bool_curves, input.sizes[3], curves);
+		merge_input(input.string_curves, input.sizes[4], curves);
+		merge_input(input.object_ref_curves, input.sizes[5], curves);
 
 		auto obj_type_callback = [game = &_game](entity_id e, unique_id u, time_point t){
 			setup_systems_for_new_object(e, u, t, *game);
 		};
 
-		merge_input(input.unique_curves, input.sizes[5], curves, _current_frame, obj_type_callback);
+		merge_input(input.unique_curves, input.sizes[6], curves, _current_frame, obj_type_callback);
 
-		merge_input(input.int_vector_curves, input.sizes[6], curves);
-		merge_input(input.float_vector_curves, input.sizes[7], curves);
-		merge_input(input.object_ref_vector_curves, input.sizes[8], curves);
-		merge_input(input.unique_vector_curves, input.sizes[9], curves);
+		merge_input(input.int_vector_curves, input.sizes[7], curves);
+		merge_input(input.float_vector_curves, input.sizes[8], curves);
+		merge_input(input.object_ref_vector_curves, input.sizes[9], curves);
+		merge_input(input.unique_vector_curves, input.sizes[10], curves);
 	}
 
 	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)

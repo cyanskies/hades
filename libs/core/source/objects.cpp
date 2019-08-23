@@ -41,7 +41,7 @@ namespace hades::resources
 				return { curve_ptr, value };
 			}
 
-			return { curve_ptr, curve_default_value{} };
+			return { curve_ptr, curve_ptr->default_value };
 		}
 		catch (const data::resource_null&)
 		{
@@ -226,7 +226,7 @@ namespace hades
 
 	curve_value valid_vector_curve(hades::resources::curve_default_value v)
 	{
-		using vector_int = hades::resources::curve_types::vector_int;
+		using vector_int = hades::resources::curve_types::collection_int;
 		assert(std::holds_alternative<vector_int>(v));
 
 		//the provided value is valid
@@ -572,9 +572,9 @@ namespace hades
 	}
 
 	template<typename Object, typename GetCurve>
-	static inline resources::curve_types::vector_unique get_vec_unique_impl(const Object &o, GetCurve get_vec_curve)
+	static inline resources::curve_types::collection_unique get_vec_unique_impl(const Object &o, GetCurve get_vec_curve)
 	{
-		using group = resources::curve_types::vector_unique;
+		using group = resources::curve_types::collection_unique;
 
 		static_assert(std::is_invocable_r_v<const resources::curve*, GetCurve>);
 
@@ -592,12 +592,12 @@ namespace hades
 		}
 	}
 
-	resources::curve_types::vector_unique get_collision_groups(const object_instance &o)
+	resources::curve_types::collection_unique get_collision_groups(const object_instance &o)
 	{
 		return get_vec_unique_impl(o, get_collision_group_curve);
 	}
 
-	resources::curve_types::vector_unique get_collision_groups(const resources::object &o)
+	resources::curve_types::collection_unique get_collision_groups(const resources::object &o)
 	{
 		return get_vec_unique_impl(o, get_collision_group_curve);
 	}

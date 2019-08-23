@@ -11,6 +11,9 @@
 using namespace std::string_view_literals;
 constexpr auto level_editor_object_resource_name = "level-editor-object-settings"sv;
 static auto object_settings_id = hades::unique_id::zero;
+constexpr auto reserved_object_names = { 
+	"world" // reserved for the world object
+};
 
 namespace hades::resources
 {
@@ -591,6 +594,14 @@ namespace hades
 
 	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
 	{
+		enum class reason {
+			ok,
+			already_taken,
+			reserved_name
+		};
+
+		auto name_reason = reason::ok;
+
 		if (g.input_text("Name_id"sv, text))
 		{
 			//if the new name is empty, and the old name isn't
@@ -608,6 +619,11 @@ namespace hades
 
 				name_map.erase(begin);
 				o.name_id.clear();
+			}
+			else if (const auto iter = std::find(std::begin(reserved_object_names),
+				std::end(reserved_object_names), text))
+			{
+				name_reason = reason::reserved_name;
 			}
 			else if (const auto iter = name_map.find(text);
 				iter == std::end(name_map))
@@ -630,15 +646,19 @@ namespace hades
 				name_map.emplace(text, o.id);
 				o.name_id = text;
 			}
+			else
+				name_reason = reason::already_taken;
 		}
 
 		//if the editbox is different to the current name,
 		//then something must have stopped it from being commited
-		if (text != o.name_id)
+		if (name_reason == reason::already_taken)
 		{
 			if (const auto iter = name_map.find(text); iter->second != o.id)
 				g.show_tooltip("This name is already being used");
 		}
+		else if (name_reason == reason::reserved_name)
+			g.show_tooltip("This name is reserved");
 	}
 
 	static rect_float get_bounds(object_instance &o)
@@ -720,9 +740,9 @@ namespace hades
 	}
 
 	template<>
-	static void make_vector_edit_field<resources::curve_types::vector_unique>
+	static void make_vector_edit_field<resources::curve_types::collection_unique>
 		(gui &g, object_instance &o, const resources::curve &c, int32 selected, 
-		const resources::curve_types::vector_unique &value)
+		const resources::curve_types::collection_unique &value)
 	{
 		auto iter = std::cbegin(value);
 		std::advance(iter, selected);
@@ -745,9 +765,9 @@ namespace hades
 
 	template<>
 	static void make_vector_edit_field
-		<resources::curve_types::vector_object_ref>(gui &g, object_instance &o,
+		<resources::curve_types::collection_object_ref>(gui &g, object_instance &o,
 			const resources::curve &c, int32 selected,
-			const resources::curve_types::vector_object_ref &value)
+			const resources::curve_types::collection_object_ref &value)
 	{
 		auto iter = std::begin(value);
 		std::advance(iter, selected);
@@ -871,8 +891,10 @@ namespace hades
 
 			if constexpr (!std::is_same_v<std::monostate, T>)
 			{
-				if constexpr (resources::curve_types::is_vector_type_v<T>)
+				if constexpr (resources::curve_types::is_collection_type_v<T>)
 					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, target);
+				else if constexpr (resources::curve_types::is_vector_type_v<T>)
+					; //TODO: FIXME: add this, cannot edit position or size without this
 				else
 					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
 			}
@@ -922,6 +944,7 @@ namespace hades
 		// can be useful for players the world or other significant objects
 		make_name_id_property(g, o, _entity_name_id_uncommited, _entity_names);
 
+		//TODO: switch to vector position
 		auto &pos_x = _curve_properties[curve_index::pos_x];
 		auto &pos_y = _curve_properties[curve_index::pos_y];
 
@@ -954,6 +977,8 @@ namespace hades
 			g.show_tooltip("The value of y position would cause an collision");
 			pos_y.value = pos.y;
 		}
+
+		//TODO: vector sizes
 
 		//size
 		auto &siz_x = _curve_properties[curve_index::size_x];

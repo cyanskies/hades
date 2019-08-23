@@ -10,44 +10,16 @@
 
 #include "hades/time.hpp"
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 //A set of curve classes for variables
 //curves allow values to interpolated by comparing keyframes
 //keyframes should be estimated in advance so that clients can use them for prediction
 //keyframes can be overridden as the simulation catches up to them for accuracy
 
+//TODO: rewrite this whole class so the logic makes more sense
+
 namespace hades {
-	//TODO: move lerp into the utility header
-	template<typename T>
-	struct lerpable : public std::bool_constant< std::is_floating_point_v<T>> {};
-
-	template<typename T>
-	constexpr auto lerpable_v = lerpable<T>::value;
-
-	template<typename Float,
-		typename std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	constexpr Float lerp(Float a, Float b, Float t) noexcept
-	{
-		//algorithm recommended for consistancy in P0811R2 : https://wg21.link/p0811r2
-		if (a <= 0 && b >= 0 ||
-			a >= 0 && b <= 0)
-			return t * b + (1.f - t) * a;
-
-		//TODO: float_near_equal to account for float inaccuracy
-		if (t == 1) return b;
-
-		const auto x = a + t * (b - a);
-		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
-	}
-
-	//NOTE: define provided to allow compilation of path that will never be called
-	template<typename T,
-		typename std::enable_if_t<!lerpable_v<T>, int> = 0>
-	T lerp(T a, T b, float32 t)
-	{
-		throw std::logic_error{"called lerp with a non-arithmetic type"};
-	}
-
 	template<typename T>
 	using keyframe = std::pair<time_point, T>;
 	
@@ -76,12 +48,17 @@ namespace hades {
 	class basic_curve final
 	{
 	public:
+		using value_type = Data;
 		using Time = time_point;
 		using frame_t = std::pair<Time, Data>;
 		using DataType = std::deque<frame_t>;
 
 		basic_curve() = default;
 		explicit basic_curve(curve_type type) : _type{type}
+		{}
+
+		basic_curve(curve_type type, Data value) : _type{type}, 
+			_data{ {Time{}, std::move(value)} }
 		{}
 
 		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
@@ -133,7 +110,10 @@ namespace hades {
 			return get_ref(at);
 		}
 
-		const Data &get_ref(Time at) const
+		//FIXME: find solution for this,
+		// need to be able to return lerped data
+		// without breaking reference return?
+		const Data& get_ref(Time at) const
 		{
 			assert(_type != curve_type::pulse);
 
@@ -156,10 +136,11 @@ namespace hades {
 
 			if (_type == curve_type::const_c)
 			{
+				//TODO: catch bad access rather than test extra here?
 				if (_data.empty())
 					throw curve_error("Tried to read from empty CONST curve");
 
-				return _data.begin()->second;
+				return _data.front().second;
 			}
 			else if (_type == curve_type::linear)
 			{
@@ -174,8 +155,8 @@ namespace hades {
 				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
 
 				using hades::lerp;
-				//NOTE: binds to const ref, this should be ok?
-				return lerp(a->second, b->second, interp);
+				_const_storage = lerp(a->second, b->second, interp);
+				return _const_storage;
 			}
 			else if (_type == curve_type::step)
 			{
@@ -268,7 +249,6 @@ namespace hades {
 					_data.emplace_back(at, std::move(value));
 				else
 					_data[0] = frame_t{ at, std::move(value) };
-
 				return;
 			}
 
@@ -360,6 +340,10 @@ namespace hades {
 		}
 
 		DataType _data;
+		// stores the value of a const curve(to avoid alloc)
+		// also stores the result of lerp in a linear curve
+		// so that the result can be returned by ref
+		mutable Data _const_storage;
 		curve_type _type = curve_type::error;
 	};
 

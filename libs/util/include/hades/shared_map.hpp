@@ -3,7 +3,7 @@
 
 #include <cstddef> //for size_t
 #include <deque>
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
 #include <tuple>
@@ -88,7 +88,7 @@ namespace hades {
 	private:
 
 		using size_type = std::size_t;
-		using dispatch_map = std::map<key_type, size_type>;
+		using dispatch_map = std::unordered_map<key_type, size_type>;
 		using component_array = data_array;
 		using mutex_array = std::deque<mutex_type>;
 		using exclusive_lock = std::unique_lock<mutex_type>;

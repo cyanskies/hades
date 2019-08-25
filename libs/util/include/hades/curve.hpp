@@ -340,8 +340,7 @@ namespace hades {
 		}
 
 		DataType _data;
-		// stores the value of a const curve(to avoid alloc)
-		// also stores the result of lerp in a linear curve
+		// stores the result of lerp in a linear curve
 		// so that the result can be returned by ref
 		mutable Data _const_storage;
 		curve_type _type = curve_type::error;

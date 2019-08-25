@@ -23,7 +23,7 @@ namespace hades
 		_text = sf::Text{ "", _font->value , integer_cast<unsigned int>(text_size->load()) };
 
 		assert(mode >= fps_mode::off);
-		assert(mode <= fps_mode::fps);
+		assert(mode < fps_mode::last);
 	}
 
 	sf::Vector2f fps_overlay::getSize() const
@@ -36,21 +36,40 @@ namespace hades
 	{
 		auto str = string{};
 
+		_text.setColor(sf::Color::White);
+		_text.setFillColor(sf::Color::White);
+
 		if (_mode == frame_time)
+		{
 			str = "frametime: " + to_string(_frame_time->load()) + "ms";
+		}
 		else if (_mode == fps)
 		{
 			const auto ft = _frame_time->load();
 			const auto time = ft == 0 ? 0.01f : ft;
-			str = "fps: " + to_string(static_cast<int32>(1000 / time));
+			const auto fps = static_cast<int32>(1000 / time);
+			str = "fps: " + to_string(fps);
+			if (fps < 30)
+			{
+				_text.setColor(sf::Color::Red);
+				_text.setFillColor(sf::Color::Red);
+			}
+			else if (fps < 60)
+			{
+				_text.setColor(sf::Color::Yellow);
+				_text.setFillColor(sf::Color::Yellow);
+			}
 		}
-
-		str += "\nticks per frame: " + to_string(_tick_per_frame->load());
-		str += "\nmin ticktime: " + to_string(_tick_min->load()) + "ms\n"
-			+ "max ticktime: " + to_string(_tick_max->load()) + "ms\n"
-			+ "avg ticktime: " + to_string(_tick_avg->load()) + "ms\n"
-			+ "update time: " + to_string(_tick_total->load()) + "ms\n"
-			+ "draw time: " + to_string(_draw_time->load()) + "ms";
+		else if (_mode == diag)
+		{
+			str = "frametime: " + to_string(_frame_time->load()) + "ms";
+			str += "\nticks per frame: " + to_string(_tick_per_frame->load());
+			str += "\nmin ticktime: " + to_string(_tick_min->load()) + "ms\n"
+				+ "max ticktime: " + to_string(_tick_max->load()) + "ms\n"
+				+ "avg ticktime: " + to_string(_tick_avg->load()) + "ms\n"
+				+ "update time: " + to_string(_tick_total->load()) + "ms\n"
+				+ "draw time: " + to_string(_draw_time->load()) + "ms";
+		}
 
 		_text.setString(std::move(str));
 
@@ -66,7 +85,7 @@ namespace hades
 
 		if (mode <= fps_mode::off)
 			fps_display = debug::DestroyOverlay(fps_display);
-		else if (mode <= fps_mode::fps)
+		else if (mode < fps_mode::last)
 		{
 			fps_display = debug::DestroyOverlay(fps_display);
 			fps_display = debug::CreateOverlay(std::make_unique<fps_overlay>(static_cast<fps_mode>(mode)));

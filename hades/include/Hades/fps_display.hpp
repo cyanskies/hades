@@ -15,8 +15,10 @@ namespace hades
 		enum fps_mode
 		{
 			off,
+			diag,
 			frame_time,
-			fps
+			fps,
+			last
 		};
 
 		fps_overlay(fps_mode mode);

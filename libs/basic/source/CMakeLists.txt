@@ -20,6 +20,7 @@ set(HADES_BASIC_SRC
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
+	../include/hades/game_loop.hpp
 	../include/hades/game_types.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
@@ -35,6 +36,7 @@ set(HADES_BASIC_SRC
 	../include/hades/detail/collision.inl
 	../include/hades/detail/curve_extra.inl
 	../include/hades/detail/data.inl
+	../include/hades/detail/game_loop.inl
 	../include/hades/detail/input.inl
 	../include/hades/detail/parser.inl
 	../include/hades/detail/quad_map.inl
@@ -48,6 +50,7 @@ source_group("Headers" FILES
 	../include/hades/curve_extra.hpp
 	../include/hades/data.hpp
 	../include/hades/exceptions.hpp
+	../include/hades/game_loop.hpp
 	../include/hades/game_types.hpp
 	../include/hades/input.hpp
 	../include/hades/logging.hpp
@@ -66,6 +69,7 @@ source_group("Detail" FILES
 	../include/hades/detail/collision.inl
 	../include/hades/detail/curve_extra.inl
 	../include/hades/detail/data.inl
+	../include/hades/detail/game_loop.inl
 	../include/hades/detail/input.inl
 	../include/hades/detail/parser.inl
 	../include/hades/detail/quad_map.inl

@@ -1,6 +1,8 @@
 #ifndef HADES_LEVEL_CURVE_DATA_HPP
 #define HADES_LEVEL_CURVE_DATA_HPP
 
+//#include <unordered_map>
+
 #include "hades/curve_extra.hpp"
 #include "hades/shared_map.hpp"
 #include "hades/types.hpp"
@@ -15,7 +17,23 @@ namespace hades
 
 	using name_curve_t = curve<std::map<types::string, entity_id>>;
 	using curve_index_t = std::pair<entity_id, variable_id>;
+}
 
+namespace std {
+	template<>
+	struct hash<hades::curve_index_t> {
+	public:
+		size_t operator()(const hades::curve_index_t& c) const
+		{
+			size_t h1 = std::hash<hades::entity_id::value_type>{}(static_cast<hades::entity_id::value_type>(c.first));
+			size_t h2 = std::hash<hades::variable_id::type>{}(c.second.get());
+			return h1 ^ (h2 << 1);
+		}
+	};
+}
+
+namespace hades
+{
 	struct curve_data
 	{
 		template<class T>

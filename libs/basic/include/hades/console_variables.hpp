@@ -61,10 +61,10 @@ namespace hades
 
 		namespace default_value
 		{
-			constexpr auto render_threadcount = -1;
+			constexpr auto render_threadcount = 0; // deprecated
 			constexpr auto render_drawtime = 0.f;
 
-			constexpr auto server_threadcount = -1;
+			constexpr auto server_threadcount = 0; // deprecated
 
 			constexpr auto client_tickrate = 30;
 			constexpr auto client_tick_time = 30;

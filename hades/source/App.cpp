@@ -12,6 +12,7 @@
 #include "Hades/Data.hpp"
 #include "Hades/Debug.hpp"
 #include "Hades/fps_display.hpp"
+#include "hades/game_loop.hpp"
 #include "Hades/Logging.hpp"
 #include "hades/parser.hpp"
 #include "Hades/Properties.hpp"
@@ -250,9 +251,11 @@ namespace hades
 
 		int32 frame_ticks = 1;
 		auto prev_tick_times = std::vector<time_duration>{};
-		bool running = true;
 
-		while(running && _window.isOpen())
+		game_loop_timing gl_times;
+		performance_statistics game_loop_metrics;
+
+		while(_window.isOpen())
 		{
 			state *activeState = _states.getActiveState();
 			if(!activeState)
@@ -260,71 +263,52 @@ namespace hades
 
 			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
-			const auto new_time = time_clock::now();
-			auto frame_time = new_time - current_time;
-
-			//store framerate
-			{
-				using milliseconds_float = basic_duration<float, std::chrono::milliseconds::period>;
-				const auto frame_time_ms = time_cast<milliseconds_float>(frame_time);
-				last_frame_time->store(frame_time_ms.count());
-			}
-
-			constexpr auto max_accumulator_overflow = time_cast<time_duration>(seconds_float{ 0.25f });
-			if (frame_time > max_accumulator_overflow)
-				frame_time = max_accumulator_overflow;
-
-			current_time = new_time;
-			accumulator += frame_time;
-
-			prev_tick_times.clear();
-
-			const auto update_start = time_clock::now();
-
-			//perform additional logic updates if we're behind on logic
-			while(accumulator >= dt)
-			{
-				const auto tick_start = time_clock::now();
-				auto events = handleEvents(activeState);
+			auto on_tick = [this, dt, state = activeState]() {
+				const auto events = handleEvents(state);
 				_input.generate_state(events);
+				state->update(dt, _window, _input.input_state());
+			};
 
-				activeState->update(dt, _window, _input.input_state());
-				//t += dt;
-				accumulator -= dt;
-				++frame_ticks;
-				prev_tick_times.emplace_back(time_clock::now() - tick_start);
-			}
-
-			const auto update_time = time_cast<milliseconds_float>(time_clock::now() - update_start);
-			total_tick_time->store(update_time.count());
-
-			record_tick_stats(prev_tick_times, avg_tick_time, max_tick_time, min_tick_time);
-
-			frame_tick_count->store(frame_ticks);
-			frame_ticks = 1;
-
-			if (_window.isOpen())
-			{
-				const auto draw_start = time_clock::now();
+			auto on_draw = [this, state = activeState](time_duration dt) {
+				if (!_window.isOpen())
+					return;
 
 				_window.clear();
 				//drawing must pass the frame time, so that the renderer can
 				//interpolate between frames
-				activeState->draw(_window, frame_time);
+				state->draw(_window, dt);
 
 				//update the console interface.
 				if (_consoleView)
 					_consoleView->update();
 
 				//draw overlays
-				_overlayMan.draw(frame_time, _window);
-				
-				_window.display();
+				_overlayMan.draw(dt, _window);
 
-				const auto total_draw_time = time_clock::now() - draw_start;
-				const auto float_draw_time = time_cast<milliseconds_float>(total_draw_time);
-				frame_draw_time->store(float_draw_time.count());
-			}
+				_window.display();
+				return;
+			};
+
+			game_loop(gl_times, dt, on_tick, on_draw, game_loop_metrics);
+
+			//tick stats
+			record_tick_stats(game_loop_metrics.tick_times, avg_tick_time, max_tick_time, min_tick_time);
+			
+			//frame time
+			using milliseconds_float = basic_duration<float, std::chrono::milliseconds::period>;
+			const auto frame_time_ms = time_cast<milliseconds_float>(game_loop_metrics.previous_frame_time);
+			last_frame_time->store(frame_time_ms.count());
+
+			//total update time
+			const auto update_time = time_cast<milliseconds_float>(game_loop_metrics.update_duration);
+			total_tick_time->store(update_time.count());
+
+			//tick count
+			frame_tick_count->store(integer_cast<int32>(game_loop_metrics.tick_count));
+		
+			//drawing time
+			const auto float_draw_time = time_cast<milliseconds_float>(game_loop_metrics.draw_duration);
+			frame_draw_time->store(float_draw_time.count());
 		}
 
 		return EXIT_SUCCESS;
@@ -588,8 +572,8 @@ namespace hades
 
 		//debug funcs
 		{
-			//fps display
-			auto fps = [](const argument_list &args) {
+			//stats display
+			auto stats = [](const argument_list &args) {
 				//TODO: why would this throw
 				if (args.size() != 1)
 					throw invalid_argument("fps function expects one argument");
@@ -601,10 +585,10 @@ namespace hades
 				return true;
 			};
 
-			_console.add_function("show_fps", fps, true);
+			_console.add_function("stats", stats, true);
 
 			#ifndef NDEBUG
-				fps({ "1" });
+			stats({ "1" });
 			#endif
 		}
 	}

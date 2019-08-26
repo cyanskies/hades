@@ -43,20 +43,14 @@ namespace hades
 	{
 		using value_type = T;
 
-		//constexpr vector_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
-		////construct from T, or objects holding Ts
-		//constexpr vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>);
-		//template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int> = 0>
-		//explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
-		//template<typename U, std::enable_if_t<!is_tuple_v<U>, int> = 0>
-		//explicit constexpr vector_t(const U&) noexcept(std::is_nothrow_constructible_v<T, T>);
-		//explicit constexpr vector_t(const std::pair<T, T>&) noexcept(std::is_nothrow_constructible_v<T, T>);
+		template<typename T>
+		constexpr vector_t<T>& operator+=(const vector_t<T>& rhs) noexcept
+		{
+			x += rhs.x;
+			y += rhs.y;
 
-		//constexpr vector_t(const vector_t&) noexcept(std::is_nothrow_constructible_v<T, T>) = default;
-
-		//~vector_t() noexcept(std::is_nothrow_destructible_v<T>) = default;
-
-		//constexpr vector_t &operator=(const vector_t&) noexcept(std::is_nothrow_copy_assignable_v<T>) = default;
+			return *this;
+		}
 
 		T x, y;
 	};

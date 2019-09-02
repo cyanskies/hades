@@ -12,25 +12,62 @@
 #include "hades/level_curve_data.hpp"
 #include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
-#include "hades/shared_any_map.hpp"
-#include "hades/shared_guard.hpp"
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 
 namespace hades
 {
 	void register_game_system_resources(data::data_manager&);
 
-	//fwd declaration
-	class game_interface;
-	class job_system;
-	
 	class system_error : public runtime_error
 	{
 	public:
 		using runtime_error::runtime_error;
 	};
 
-	using system_data_t = shared_any_map<unique_id>;
+	using system_data_t = std::any;
+
+	template<typename SystemType>
+	class system_behaviours
+	{
+	public:
+		using system_type = SystemType;
+		using system_resource = typename SystemType::system_t;
+
+		std::vector<SystemType> get_systems() const
+		{
+			return _systems;
+		}
+
+		std::vector<const system_resource*> get_new_systems() const
+		{
+			return _new_systems;
+		}
+
+		void clear_new_systems() noexcept
+		{
+			_new_systems.clear();
+		}
+
+		system_data_t& get_system_data(unique_id key)
+		{
+			return _system_data[key];
+		}
+
+		//TODO: should systems be considered static for entity lifetime?
+		void attach_system(entity_id, unique_id, time_point t);
+		void detach_system(entity_id, unique_id, time_point t);
+
+		//TODO: sleep_ent(count || duration)
+		//TODO: wake_ents(dt)
+
+	private:
+		std::vector<SystemType> _systems;
+		std::vector<const system_resource*> _new_systems;
+		std::unordered_map<unique_id, system_data_t> _system_data;
+	};
+
+	//fwd
+	class game_interface;
 
 	struct system_job_data
 	{
@@ -45,9 +82,10 @@ namespace hades
 		// contains players, 
 		// and... just the players
 		game_interface *mission_data = nullptr;
-		//the current time, and the time to advance by(t + dt)
+		//the previous time, and the time to advance by(t + dt)
 		time_point prev_time;
 		time_duration dt;
+		// current_time = prev_time + dt
 
 		//system data
 		system_data_t *system_data = nullptr;
@@ -62,7 +100,7 @@ namespace hades
 		struct system : public resource_type<system_t>
 		{
 			//TODO: dont accept job_data anymoe, same for render system
-			using system_func = std::function<bool(job_system&, system_job_data)>;
+			using system_func = std::function<void()>;
 
 			system_func on_create, //called on system creation(or large time leap)
 				on_connect,			//called when attached to an entity(or large time leap)
@@ -71,7 +109,7 @@ namespace hades
 				on_destroy;			//called on system destruction(or large time leap, before on_* functions)
 			//	on_event?
 
-			std::any system_info; //stores the system object or script reference.
+			//std::any system_info; //stores the system object or script reference.
 			//if loaded from a manifest then it should be loaded from scripts
 			//if it's provided by the application, then source is empty, and no laoder function is provided.
 		};
@@ -113,8 +151,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
-		//TODO: check that this needs to be guarded, its only mutated in syncronus mode
-		shared_guard<name_list> attached_entities = name_list{ curve_type::step };
+		name_list attached_entities{ curve_type::step };
 	};
 
 	//program provided systems should be attatched to the renderer or 
@@ -124,20 +161,28 @@ namespace hades
 	//the mod files that added them
 
 	class render_interface;
+	struct render_system;
+	class common_interface;
 
 	struct render_job_data
 	{
+		//the system currently running
+		unique_id system = unique_id::zero;
 		//entity to run on
 		entity_id entity = bad_entity;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
-		game_interface *level_data = nullptr;
+		const common_interface *level_data = nullptr;
 		//mission data interface
 		// contains players, 
 		// and... just the players
-		game_interface *mission_data = nullptr;
-		//the current time, and the time to advance too(t + dt)
+		//game_interface *mission_data = nullptr;
+
+		//for sleeping system updates
+		system_behaviours<render_system>* systems = nullptr;
+
+		//the current time
 		time_point current_time;
 		//render output interface
 		render_interface *render_output = nullptr;
@@ -152,7 +197,7 @@ namespace hades
 
 		struct render_system : public resource_type<render_system_t>
 		{
-			using system_func = std::function<bool(job_system&, render_job_data)>;
+			using system_func = std::function<void()>;
 
 			system_func on_create,
 				on_connect,
@@ -160,7 +205,7 @@ namespace hades
 				tick,
 				on_destroy;
 
-			std::any system_info;
+			//std::any system_info;
 		};
 	}
 
@@ -184,7 +229,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system *system = nullptr;
 		//list of entities attached to this system, over time
-		shared_guard<name_list> attached_entities = name_list{ curve_type::step };
+		name_list attached_entities{ curve_type::step };
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
@@ -211,9 +256,7 @@ namespace hades
 	//functions for game state access
 
 	//funcs to call before a system gets control, and to clean up after
-	void set_game_data(system_job_data*, bool async = true) noexcept;
-	void abort_game_job();
-	bool finish_game_job();
+	void set_game_data(system_job_data*) noexcept;
 
 	//game contains general functions available to game systems
 	namespace game
@@ -238,19 +281,13 @@ namespace hades
 		//using values from last_time
 		time_point get_time() noexcept;
 
+		//system data is a data store persisted between frames
+		// it is per-level and is never saved
 		template<typename T>
-		void create_system_value(unique_id, T&& value);
-
-		bool system_value_exists(unique_id);
-
+		T &get_system_data();
 		template<typename T>
-		T get_system_value(unique_id);
-
-		template<typename T>
-		void set_system_value(unique_id, T&& value);
-
-		void destroy_system_value(unique_id);
-		void clear_system_values();
+		void set_system_data(T&& value);
+		void destroy_system_data();
 	}
 
 	//game::mission contains functions for accessing mission state
@@ -362,7 +399,6 @@ namespace hades
 	}
 
 	void set_render_data(render_job_data*) noexcept;
-	void finish_render_job() noexcept;
 
 	//render access functions allow a const view of the game state
 	namespace render
@@ -373,22 +409,12 @@ namespace hades
 		time_point get_time();
 
 		template<typename T>
-		void create_system_value(unique_id, T&& value);
-
-		bool system_value_exists(unique_id);
-
+		T &get_system_data();
 		template<typename T>
-		T &get_system_value(unique_id);
-		
-		template<typename T>
-		void set_system_value(unique_id, T&& value);
-
-		void destroy_system_value(unique_id);
-		void clear_system_values();
+		void set_system_data(T value);
+		void destroy_system_data();
 
 		//drawing functions
-
-
 	}
 
 	namespace render::mission

@@ -10,20 +10,16 @@
 
 namespace hades 
 {
-	game_instance::game_instance(level_save sv) : _game(sv), 
-		_jobs{*console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount)}
-	{
-	}
+	game_instance::game_instance(level_save sv) : _game(sv)
+	{}
 
 	void game_instance::tick(time_duration dt)
 	{
 		auto make_game_struct = [](entity_id e, game_interface* g, time_point t, time_duration dt, system_data_t* d)->system_job_data {
 			return system_job_data{ e, g, nullptr, t, dt, d };
 		};
-		
-		static const auto threads = console::get_int(cvars::server_threadcount);
-
-		const auto next = update_level(_jobs, _prev_time, _current_time, dt, _game, threads->load(), make_game_struct);
+	
+		const auto next = detail::update_level_sync(_prev_time, _current_time, dt, _game, make_game_struct);
 		_prev_time = _current_time;
 		_current_time = next;
 		return;
@@ -36,7 +32,7 @@ namespace hades
 
 	template<typename T>
 	static void get_exported_set(std::vector<exported_curves::export_set<T>>& output, std::size_t &size, time_point t,
-		const typename shared_map<std::pair<entity_id, variable_id>, curve<T>>::data_array &data)
+		const curve_data::curve_map<T> &data)
 	{
 		auto index = std::size_t{};
 		for (const auto &c : data)
@@ -78,19 +74,24 @@ namespace hades
 		using namespace resources::curve_types;
 		//load all the frames from the specified time into the exported data
 		//TODO: half of the curve types are missing
-		get_exported_set<int_t>(output.int_curves, output.sizes[0], t, curves.int_curves.data_no_async());
-		get_exported_set<float_t>(output.float_curves, output.sizes[1], t, curves.float_curves.data_no_async());
-		get_exported_set<vec2_float>(output.vec2_float_curves, output.sizes[2], t, curves.vec2_float_curves.data_no_async());
-		get_exported_set<bool_t>(output.bool_curves, output.sizes[3], t, curves.bool_curves.data_no_async());
-		get_exported_set<string>(output.string_curves, output.sizes[4], t, curves.string_curves.data_no_async());
-		get_exported_set<object_ref>(output.object_ref_curves, output.sizes[5], t, curves.object_ref_curves.data_no_async());
-		get_exported_set<unique>(output.unique_curves, output.sizes[6], t, curves.unique_curves.data_no_async());
+		get_exported_set<int_t>(output.int_curves, output.sizes[0], t, curves.int_curves);
+		get_exported_set<float_t>(output.float_curves, output.sizes[1], t, curves.float_curves);
+		get_exported_set<vec2_float>(output.vec2_float_curves, output.sizes[2], t, curves.vec2_float_curves);
+		get_exported_set<bool_t>(output.bool_curves, output.sizes[3], t, curves.bool_curves);
+		get_exported_set<string>(output.string_curves, output.sizes[4], t, curves.string_curves);
+		get_exported_set<object_ref>(output.object_ref_curves, output.sizes[5], t, curves.object_ref_curves);
+		get_exported_set<unique>(output.unique_curves, output.sizes[6], t, curves.unique_curves);
 
-		get_exported_set<resources::curve_types::collection_int>(output.int_vector_curves, output.sizes[7], t, curves.int_vector_curves.data_no_async());
+		get_exported_set<resources::curve_types::collection_int>(output.int_vector_curves, output.sizes[7], t, curves.int_vector_curves);
 
 		//add in entityNames
 		//output.entity_names = _newEntityNames;
 		
 		return;
+	}
+
+	const game_interface* game_instance::get_interface() const noexcept
+	{
+		return &_game;
 	}
 }

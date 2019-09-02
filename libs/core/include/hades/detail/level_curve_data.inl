@@ -84,4 +84,13 @@ namespace hades
 	{
 		return detail::get_curve_list<std::decay_t<T>>(data);
 	}
+
+	template<typename T>
+	inline const curve_data::curve_map<std::decay_t<T>>& get_curve_list(const curve_data& data)
+		noexcept(resources::curve_types::is_curve_type_v<std::decay_t<T>>)
+	{
+		//NOTE: we return a const ref
+		auto &unconst_data = const_cast<curve_data&>(data);
+		return get_curve_list<T>(unconst_data);
+	}
 }

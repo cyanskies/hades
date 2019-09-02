@@ -93,7 +93,7 @@ namespace hades
 		static void on_create()
 		{
 			assert(render::get_object() == bad_entity);
-			render::create_system_value(sprite_id_list, sprite_id_t{});
+			render::set_system_data(sprite_id_t{});
 			return;
 		}
 
@@ -101,7 +101,7 @@ namespace hades
 		{
 			const auto entity = render::get_object();
 			assert(entity != bad_entity);
-			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			auto &dat = render::get_system_data<sprite_id_t>();
 
 			const auto ent = get_entity_info(entity);
 
@@ -113,40 +113,43 @@ namespace hades
 				ent.position, ent.size);
 
 			dat.emplace_back(entity, sprite_id);
-			render::set_system_value(sprite_id_list, std::move(dat));
+			render::set_system_data(std::move(dat));
 
 			return;
 		}
 
-		static void on_tick(hades::render_job_data& d)
+		static void on_tick()
 		{
-			const auto entity = d.entity;
+			auto render_output = render::get_render_output();
+			const auto entity = render::get_object();
 			assert(entity != bad_entity);
 
 			//TODO: use proper rendering interface functions
-			const auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			const auto &dat = render::get_system_data<sprite_id_t>();
 			if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
 			{
 				const auto ent = get_some_entity_info(entity);
 				const auto &s_id = sprite;
-				d.render_output->set_sprite(s_id, render::get_time(),
+				render_output->set_sprite(s_id, render::get_time(),
 					ent.position, ent.size);
 			}
 
 			return;
 		}
 
-		static void on_disconnect(hades::job_system&, hades::render_job_data& d)
+		static void on_disconnect()
 		{
-			const auto entity = d.entity;
+			auto render_output = render::get_render_output();
+
+			const auto entity = render::get_object();
 			assert(entity != bad_entity);
 
-			auto dat = render::get_system_value<sprite_id_t>(sprite_id_list);
+			auto &dat = render::get_system_data<sprite_id_t>();
 			if (const auto s_id = find(dat, entity); s_id != sprite_utility::bad_sprite_id)
-				d.render_output->destroy_sprite(s_id);
+				render_output->destroy_sprite(s_id);
 
 			erase(dat, entity);
-			render::set_system_value(sprite_id_list, std::move(dat));
+			render::set_system_data(std::move(dat));
 
 			return;
 		}
@@ -154,7 +157,7 @@ namespace hades
 		static void on_destroy()
 		{
 			assert(render::get_object() == bad_entity);
-			render::clear_system_values();
+			render::destroy_system_data();
 			return;
 		}
 	}
@@ -188,7 +191,8 @@ namespace hades
 		std::sort(std::begin(prev), std::end(prev));
 		std::sort(std::begin(next), std::end(next));
 
-		auto output = resources::curve_types::collection_object_ref{};
+		static auto output = resources::curve_types::collection_object_ref{};
+		output.clear();
 
 		std::set_difference(std::begin(next), std::end(next),
 			std::begin(prev), std::end(prev),
@@ -206,7 +210,8 @@ namespace hades
 		std::sort(std::begin(prev), std::end(prev));
 		std::sort(std::begin(next), std::end(next));
 
-		auto output = resources::curve_types::collection_object_ref{};
+		static auto output = resources::curve_types::collection_object_ref{};
+		output.clear();
 
 		std::set_difference(std::begin(prev), std::end(prev),
 			std::begin(next), std::end(next),
@@ -217,45 +222,13 @@ namespace hades
 
 	static thread_local system_job_data* game_data_ptr = nullptr;
 	static thread_local game_interface* game_current_level_ptr = nullptr;
-	static thread_local transaction game_transaction{};
-	static thread_local bool game_async = true;
-	static thread_local std::vector<object_instance> game_new_objects;
 
-	void set_game_data(system_job_data *d, bool async) noexcept
+	void set_game_data(system_job_data *d) noexcept
 	{
 		assert(d);
 		game_data_ptr = d;
 		game_current_level_ptr = d->level_data;
-		game_async = async;
 		return;
-	}
-
-	void abort_game_job()
-	{
-		assert(game_data_ptr);
-		game_data_ptr = nullptr;
-		game_transaction.abort();
-		return;
-	}
-
-	bool finish_game_job()
-	{
-		assert(game_data_ptr);
-		const auto commit_success = game_transaction.commit();
-
-		if (commit_success)
-		{
-			//TODO: store ptr to the level the object was created for
-			// currently we can only create objects in the level the system is running in
-			for (const auto& o : game_new_objects)
-				game_data_ptr->level_data->create_entity(o, game::get_time());
-		}
-
-		game_new_objects.clear();
-
-		game_data_ptr = nullptr;
-		game_current_level_ptr = nullptr;
-		return commit_success;
 	}
 
 	namespace game
@@ -284,22 +257,10 @@ namespace hades
 			return game_data_ptr->prev_time + game_data_ptr->dt;
 		}
 
-		bool system_value_exists(unique_id key)
+		void destroy_system_data()
 		{
 			assert(game_data_ptr);
-			return game_data_ptr->system_data->exists(key);
-		}
-
-		void destroy_system_value(unique_id key)
-		{
-			assert(game_data_ptr);
-			game_data_ptr->system_data->erase(key);
-		}
-
-		void clear_system_values()
-		{
-			assert(game_data_ptr);
-			game_data_ptr->system_data->clear();
+			game_data_ptr->system_data->reset();
 		}
 	}
 
@@ -317,15 +278,7 @@ namespace hades
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
 			assert(obj.id == bad_entity);
-			if (detail::get_game_data_async())
-			{
-				obj.id = ptr->level_data->create_entity();
-
-				const auto& o = game_new_objects.emplace_back(std::move(obj));
-				return o.id;
-			}
-			else
-				return ptr->level_data->create_entity(std::move(obj), get_time());
+			return ptr->level_data->create_entity(std::move(obj), get_time());
 		}
 
 		world_rect_t get_world_bounds()
@@ -415,22 +368,11 @@ namespace hades
 	}
 
 	static thread_local render_job_data *render_data_ptr = nullptr;
-	static thread_local transaction render_transaction{};
-	static thread_local bool render_async = true;
 
 	void set_render_data(render_job_data *j) noexcept
 	{
 		assert(j);
 		render_data_ptr = j;
-		return;
-	}
-
-	void finish_render_job() noexcept
-	{
-		assert(render_data_ptr);
-		#ifndef NDEBUG
-		render_data_ptr = nullptr;
-		#endif
 		return;
 	}
 
@@ -452,22 +394,10 @@ namespace hades
 		return render_data_ptr->current_time;
 	}
 
-	bool render::system_value_exists(unique_id id)
+	void render::destroy_system_data()
 	{
 		assert(render_data_ptr);
-		return render_data_ptr->system_data->exists(id);
-	}
-
-	void render::destroy_system_value(unique_id id)
-	{
-		assert(render_data_ptr);
-		render_data_ptr->system_data->erase(id);
-	}
-
-	void render::clear_system_values()
-	{
-		assert(render_data_ptr);
-		render_data_ptr->system_data->clear();
+		render_data_ptr->system_data->reset();
 	}
 
 	namespace detail
@@ -484,29 +414,9 @@ namespace hades
 			return game_current_level_ptr;
 		}
 
-		transaction& get_game_transaction()
-		{
-			return game_transaction;
-		}
-
-		bool get_game_data_async()
-		{
-			return game_async;
-		}
-
 		render_job_data* get_render_data_ptr()
 		{
 			return render_data_ptr;
-		}
-
-		transaction& get_render_transaction()
-		{
-			return render_transaction;
-		}
-		
-		bool get_render_data_async()
-		{
-			return render_async;
 		}
 	}
 }

@@ -14,14 +14,12 @@ namespace hades
 	template<typename SystemType>
 	inline std::vector<SystemType> common_implementation<SystemType>::get_systems() const
 	{
-		const auto lock = std::scoped_lock{ _system_list_mut };
 		return _systems;
 	}
 
 	template<typename SystemType>
 	inline std::vector<const typename SystemType::system_t*> common_implementation<SystemType>::get_new_systems() const
 	{
-		const auto lock = std::scoped_lock{ _system_list_mut };
 		return _new_systems;
 	}
 
@@ -37,15 +35,13 @@ namespace hades
 		return _system_data[key];
 	}
 
+	//TODO: deprecate this
 	namespace detail
 	{
 		template<typename SystemResource, typename System>
-		static inline System& install_system(unique_id sys,
-			std::vector<System>& systems, std::vector<const SystemResource*>& sys_r, std::mutex& mutex)
+		static inline System& install_system_old(unique_id sys,
+			std::vector<System>& systems, std::vector<const SystemResource*>& sys_r)
 		{
-			//we MUST already be locked before we get here
-			assert(!mutex.try_lock());
-
 			//never install a system more than once.
 			assert(std::none_of(std::begin(systems), std::end(systems),
 				[sys](const auto & system) {
@@ -59,59 +55,53 @@ namespace hades
 		}
 
 		template<typename SystemResource, typename System>
-		static inline System& find_system(unique_id id, std::vector<System>& systems, 
-			std::vector<const SystemResource*> &sys_r, std::mutex& mutex)
+		static inline System& find_system_old(unique_id id, std::vector<System>& systems, 
+			std::vector<const SystemResource*> &sys_r)
 		{
-			//we MUST already be locked before we get here
-			assert(!mutex.try_lock());
-
 			for (auto& s : systems)
 			{
 				if (s.system->id == id)
 					return s;
 			}
 
-			return install_system<SystemResource>(id, systems, sys_r, mutex);
+			return install_system_old<SystemResource>(id, systems, sys_r);
 		}
 	}
 
 	template<typename SystemType>
 	inline void common_implementation<SystemType>::attach_system(entity_id entity, unique_id sys, time_point t)
 	{
-		const auto lock = std::lock_guard{ _system_list_mut };
 		//systems cannot be created or destroyed while we are editing the entity list
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems, _system_list_mut);
+		auto& system = detail::find_system_old<SystemType::system_t>(sys, _systems, _new_systems);
 		
-		thread_local static name_list old, updated;
-		do {
-			updated = old = system.attached_entities.get();
+		auto updated = system.attached_entities;
 
-			if (updated.empty())
-				updated.set(time_point{ nanoseconds{-1} }, {});
+		if (updated.empty())
+			updated.set(time_point{ nanoseconds{-1} }, {});
 
-			auto ent_list = updated.get(t);
-			auto found = std::find(ent_list.begin(), ent_list.end(), entity);
-			if (found != ent_list.end())
-			{
-				const auto message = "The requested entityid is already attached to this system. EntityId: "
-					+ to_string(entity) + ", System: " + "err" + ", at time: " +
-					to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
-				//ent is already attached
-				throw system_already_attached{ message };
-			}
+		auto ent_list = updated.get(t);
+		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+		if (found != ent_list.end())
+		{
+			const auto message = "The requested entityid is already attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
+			//ent is already attached
+			throw system_already_attached{ message };
+		}
 
-			ent_list.emplace_back(entity);
-			updated.insert(t, ent_list);
-		} while (!system.attached_entities.compare_exchange(old, std::move(updated)));
+		ent_list.emplace_back(entity);
+		updated.insert(t, std::move(ent_list));
+
+		std::swap(updated, system.attached_entities);
+		return;
 	}
 
 	template<typename SystemType>
 	inline void common_implementation<SystemType>::detach_system(entity_id entity, unique_id sys, time_point t)
 	{
-		const auto lock = std::lock_guard{ _system_list_mut };
-
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems, _system_list_mut);
-		auto ents = system.attached_entities.get();
+		auto& system = detail::find_system_old<SystemType::system_t>(sys, _systems, _new_systems);
+		auto ents = system.attached_entities;
 		auto ent_list = ents.get(t);
 		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
 		if (found == ent_list.end())
@@ -124,153 +114,25 @@ namespace hades
 
 		ent_list.erase(found);
 		ents.insert(t, ent_list);
-		system.attached_entities = ents;
-
-		//TODO: call destroy system?
-		// maybe system on-destroy doesn't need to exist
+		std::swap(system.attached_entities, ents);
+		return;
+		//TODO: call destroy system
 	}
 
 	namespace detail
 	{
-		template<typename GameStruct, typename Func>
-		static constexpr auto make_job_function_wrapper(Func f) noexcept
+		static inline void set_data(system_job_data* d) noexcept
 		{
-			if constexpr (std::is_same_v<GameStruct, system_job_data>)
-			{
-				return [f](job_system& j, system_job_data d)->bool {
-					set_game_data(&d);
-
-					const auto ret = std::invoke(f, j, d);
-					if (ret)
-						return finish_game_job();
-					else
-						abort_game_job();
-
-					return ret;
-				};
-			}
-			else
-			{
-				//multithreading is disabled for render jobs
-				assert(false);
-				return [f](job_system& j, render_job_data d)->bool {
-					set_render_data(&d);
-					std::invoke(f, j, d);
-					finish_render_job();
-					return true;
-				};
-			}
+			return set_game_data(d);
 		}
 
-		template<typename ImplementationType, typename MakeGameStructFn>
-		time_point update_level_async(job_system& jobsys, time_point before_prev, time_point prev_time, time_duration dt,
-			ImplementationType& impl, MakeGameStructFn make_game_struct)
-		{
-			const auto current_time = prev_time + dt;
-
-			using system_type = typename ImplementationType::system_type;
-			using job_data_type = typename system_type::job_data_t;
-
-			assert(jobsys.ready());
-			const auto on_create_parent = jobsys.create();
-			const auto new_systems = impl.get_new_systems();
-
-			std::vector<job*> jobs;
-			for (const auto s : new_systems)
-			{
-				if (!s->on_create)
-					continue;
-
-				const auto j = jobsys.create_child(on_create_parent, make_job_function_wrapper<job_data_type>(s->on_create),
-					std::invoke(make_game_struct, bad_entity, &impl, prev_time, dt, &impl.get_system_data(s->id)));
-
-				jobs.emplace_back(j);
-			}
-
-			impl.clear_new_systems();
-			const auto systems = impl.get_systems();
-
-			//call on_connect for new entities
-			const auto on_connect_parent = jobsys.create();
-			for (const auto s : systems)
-			{
-				if (!s.system->on_connect)
-					continue;
-
-				const auto ents = get_added_entites(s.attached_entities, before_prev, prev_time);
-				auto& sys_data = impl.get_system_data(s.system->id);
-
-				for (const auto e : ents)
-				{
-					const auto j = jobsys.create_child_rchild(on_connect_parent,
-						on_create_parent, make_job_function_wrapper<job_data_type>(s.system->on_connect),
-						std::invoke(make_game_struct, e, &impl, prev_time, dt, &sys_data));
-
-					jobs.emplace_back(j);
-				}
-			}
-
-			//call on_disconnect for removed entities
-			const auto on_disconnect_parent = jobsys.create();
-			for (const auto s : systems)
-			{
-				if (!s.system->on_disconnect)
-					continue;
-
-				const auto ents = get_removed_entites(s.attached_entities, before_prev, prev_time);
-				auto& sys_data = impl.get_system_data(s.system->id);
-
-				for (const auto e : ents)
-				{
-					const auto j = jobsys.create_child_rchild(on_disconnect_parent,
-						on_connect_parent, make_job_function_wrapper<job_data_type>(s.system->on_disconnect),
-						std::invoke(make_game_struct, e, &impl, prev_time, dt, &sys_data));
-
-					jobs.emplace_back(j);
-				}
-			}
-
-			//call on_tick for systems
-			const auto on_tick_parent = jobsys.create();
-			for (auto& s : systems)
-			{
-				if (!s.system->tick)
-					continue;
-
-				const auto entities_curve = s.attached_entities.get();
-				const auto ents = entities_curve.get(prev_time);
-
-				auto& sys_data = impl.get_system_data(s.system->id);
-
-				for (const auto e : ents)
-				{
-					const auto j = jobsys.create_child_rchild(on_tick_parent,
-						on_disconnect_parent, make_job_function_wrapper<job_data_type>(s.system->tick),
-						std::invoke(make_game_struct, e, &impl, prev_time, dt, &sys_data));
-
-					jobs.emplace_back(j);
-				}
-			}
-
-			jobsys.run(std::begin(jobs), std::end(jobs));
-			jobsys.wait(on_tick_parent);
-			jobsys.clear();
-
-			return current_time;
-		}
-		
-		static inline void set_data(system_job_data* d, bool async = true) noexcept
-		{
-			return set_game_data(d, async);
-		}
-
-		static inline void set_data(render_job_data* d, bool async = true) noexcept
+		static inline void set_data(render_job_data* d) noexcept
 		{
 			return set_render_data(d);
 		}
 
 		template<typename ImplementationType, typename MakeGameStructFn>
-		time_point update_level_sync(job_system& j, time_point before_prev, time_point prev_time, time_duration dt,
+		time_point update_level_sync(time_point before_prev, time_point prev_time, time_duration dt,
 			ImplementationType& impl, MakeGameStructFn make_game_struct)
 		{
 			const auto current_time = prev_time + dt;
@@ -296,10 +158,7 @@ namespace hades
 					d.added_ents = get_added_entites(s.attached_entities, before_prev, prev_time);
 
 				if (s.system->tick)
-				{
-					const auto &entities_curve = s.attached_entities.get_noasync();
-					d.attached_ents = entities_curve.get(prev_time);
-				}
+					d.attached_ents = s.attached_entities.get(prev_time);
 
 				if(s.system->on_disconnect)
 					d.removed_ents = get_removed_entites(s.attached_entities, before_prev, prev_time);
@@ -313,8 +172,8 @@ namespace hades
 					continue;
 
 				auto game_data = std::invoke(make_game_struct, bad_entity, &impl, prev_time, dt, &impl.get_system_data(s->id));
-				set_data(&game_data, false);
-				std::invoke(s->on_create, j, game_data);
+				set_data(&game_data);
+				std::invoke(s->on_create);
 			}
 
 			impl.clear_new_systems();
@@ -326,8 +185,8 @@ namespace hades
 				for (const auto e : u.added_ents)
 				{
 					game_data.entity = e;
-					set_data(&game_data, false);
-					std::invoke(u.system->on_connect, j, game_data);
+					set_data(&game_data);
+					std::invoke(u.system->on_connect);
 				}
 			}
 
@@ -339,8 +198,8 @@ namespace hades
 				for (const auto e : u.removed_ents)
 				{
 					game_data.entity = e;
-					set_data(&game_data, false);
-					std::invoke(u.system->on_disconnect, j, game_data);
+					set_data(&game_data);
+					std::invoke(u.system->on_disconnect);
 				}
 			}
 
@@ -353,65 +212,103 @@ namespace hades
 				for (const auto e : u.attached_ents)
 				{
 					game_data.entity = e;
-					set_data(&game_data, false);
-					std::invoke(u.system->tick, j, game_data);
+					set_data(&game_data);
+					std::invoke(u.system->tick);
 				}
 			}
 
 			return current_time;
 		}
-
-		static inline void update_thread_count(job_system& j, std::size_t threads)
-		{
-			const auto current = j.get_thread_count();
-
-			if (threads != current)
-				j.change_thread_count(threads);
-		}
-
-		inline std::size_t get_update_thread_count(int32 desired) noexcept
-		{
-			static const auto threads = std::thread::hardware_concurrency();
-
-			if (threads < 2)
-				return 1;
-
-			if (desired == 0 || desired == 1)
-				return 1;
-
-			if (desired == -1)
-				return threads;
-
-			return std::min(threads, integer_cast<std::size_t>(desired));
-		}
 	}
 
-	//generic update function for use in both client and server game instances
-	template<typename ImplementationType, typename MakeGameStructFn, typename ModeTag>
-	time_point update_level(job_system& jobsys, time_point before_prev, time_point prev_time, time_duration dt,
-		ImplementationType& impl, int32 desired_threads, MakeGameStructFn make_game_struct, ModeTag tag_v)
+	template<typename Interface, typename SystemType, typename MakeGameStructFn>
+	time_point update_level(time_point before_prev, time_point prev_time, time_duration dt,
+		Interface& interface, system_behaviours<SystemType> &sys, MakeGameStructFn make_game_struct)
 	{
-		using system_type = typename ImplementationType::system_type;
-		using job_data_type = typename system_type::job_data_t;
-
-		static_assert(std::is_invocable_r_v<job_data_type, MakeGameStructFn,
-			entity_id, game_interface*, time_point, time_duration, system_data_t*>,
+		using job_data_type = typename SystemType::job_data_t;
+		static_assert(std::is_invocable_r_v<job_data_type, MakeGameStructFn, unique_id,
+			entity_id, Interface*, system_behaviours<SystemType>*, time_point, time_duration, system_data_t*>,
 			"make_game_struct must return the correct job_data_type");
 
-		if constexpr (std::is_same_v<ModeTag, update_level_tags::update_level_noasync_tag>)
-			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
+		const auto current_time = prev_time + dt;
+		
+		const auto new_systems = sys.get_new_systems();
+		const auto systems = sys.get_systems();
 
-		const auto threads = detail::get_update_thread_count(desired_threads);
+		struct update_data
+		{
+			const SystemType::system_t* system = nullptr;
+			resources::curve_types::collection_object_ref added_ents, attached_ents, removed_ents;
+		};
 
-		detail::update_thread_count(jobsys, threads);
+		//collect entity lists upfront, so that they don't change mid update
+		std::vector<update_data> data;
+		for (const auto& s : systems)
+		{
+			update_data d{ s.system };
+			if (s.system->on_connect)
+				d.added_ents = get_added_entites(s.attached_entities, before_prev, prev_time);
 
-		if constexpr (std::is_same_v<ModeTag, update_level_tags::update_level_async_tag>)
-			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
+			if (s.system->tick)
+				d.attached_ents = s.attached_entities.get(prev_time);
 
-		//auto
-		if (threads < 2)
-			return detail::update_level_sync(jobsys, before_prev, prev_time, dt, impl, make_game_struct);
-		else
-			return detail::update_level_async(jobsys, before_prev, prev_time, dt, impl, make_game_struct);	
+			if (s.system->on_disconnect)
+				d.removed_ents = get_removed_entites(s.attached_entities, before_prev, prev_time);
+
+			data.emplace_back(std::move(d));
+		}
+
+		for (const auto s : new_systems)
+		{
+			if (!s->on_create)
+				continue;
+
+			auto game_data = std::invoke(make_game_struct, s->id, bad_entity, &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
+			detail::set_data(&game_data);
+			std::invoke(s->on_create);
+		}
+
+		sys.clear_new_systems();
+		//call on_connect for new entities
+		for (const auto& u : data)
+		{
+			auto& sys_data = sys.get_system_data(u.system->id);
+			auto game_data = std::invoke(make_game_struct, u.system->id, bad_entity, &interface, &sys, prev_time, dt, &sys_data);
+			for (const auto e : u.added_ents)
+			{
+				game_data.entity = e;
+				detail::set_data(&game_data);
+				std::invoke(u.system->on_connect);
+			}
+		}
+
+		//call on_disconnect for removed entities
+		for (const auto& u : data)
+		{
+			auto& sys_data = sys.get_system_data(u.system->id);
+			auto game_data = std::invoke(make_game_struct, u.system->id, bad_entity, &interface, &sys, prev_time, dt, &sys_data);
+			for (const auto e : u.removed_ents)
+			{
+				game_data.entity = e;
+				detail::set_data(&game_data);
+				std::invoke(u.system->on_disconnect);
+			}
+		}
+
+		//call on_tick for systems
+		for (const auto& u : data)
+		{
+			auto& sys_data = sys.get_system_data(u.system->id);
+			auto game_data = std::invoke(make_game_struct, u.system->id, bad_entity, &interface, &sys, prev_time, dt, &sys_data);
+
+			for (const auto e : u.attached_ents)
+			{
+				game_data.entity = e;
+				detail::set_data(&game_data);
+				std::invoke(u.system->tick);
+			}
+		}
+
+		return current_time;
 	}
 }

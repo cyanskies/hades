@@ -36,7 +36,6 @@ namespace hades
 	{
 		auto str = string{};
 
-		_text.setColor(sf::Color::White);
 		_text.setFillColor(sf::Color::White);
 
 		if (_mode == frame_time)
@@ -50,15 +49,9 @@ namespace hades
 			const auto fps = static_cast<int32>(1000 / time);
 			str = "fps: " + to_string(fps);
 			if (fps < 30)
-			{
-				_text.setColor(sf::Color::Red);
 				_text.setFillColor(sf::Color::Red);
-			}
 			else if (fps < 60)
-			{
-				_text.setColor(sf::Color::Yellow);
 				_text.setFillColor(sf::Color::Yellow);
-			}
 		}
 		else if (_mode == diag)
 		{

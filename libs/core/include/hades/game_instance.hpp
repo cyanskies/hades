@@ -5,7 +5,6 @@
 #include "hades/game_system.hpp"
 #include "hades/level_interface.hpp"
 #include "hades/level.hpp"
-#include "hades/parallel_jobs.hpp"
 #include "hades/timers.hpp"
 
 namespace hades
@@ -34,6 +33,8 @@ namespace hades
 		//		default is max time
 		void get_changes(exported_curves&, time_point t) const;
 
+		const game_interface* get_interface() const noexcept;
+
 	private:
 		//the games starting time, is always 0
 		constexpr static time_point _start_time{};
@@ -45,8 +46,6 @@ namespace hades
 		game_implementation _game;
 		//each tick will generate events that are handled at the end of that tick
 		//events created by other events will be handled at the end of the next tick
-
-		job_system _jobs;
 	};
 }
 

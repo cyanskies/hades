@@ -7,83 +7,21 @@
 
 namespace hades 
 {
-	struct empty_struct_t {};
-
-	constexpr static auto empty_struct = empty_struct_t{};
-
-	template<typename T, typename Callback = empty_struct_t>
-	static void merge_input(const std::vector<exported_curves::export_set<T>> & input, std::size_t size, curve_data & output, time_point time = time_point{}, Callback callback = empty_struct)
-	{
-		//TODO: use size
-		auto& output_curves = get_curve_list<T>(output);
-
-		auto index = std::size_t();
-		while(index < size)// (const auto& [ent, var, frames] : input)
-		{
-			const auto& [ent, var, frames] = input[index];
-			const auto id = std::decay_t<decltype(output_curves)>::key_type{ ent, var };
-			const auto exists = output_curves.exists_no_async(id);
-
-			if (exists)
-			{
-				auto& c = output_curves.get_no_async(id);
-
-				//TODO: bulk insertion for curves
-				for (auto& f : frames)
-					c.set(f.first, f.second);
-			}
-			else
-			{
-				//TODO: cache these somewhere local, only need the c_types
-				const auto c = data::get<resources::curve>(id.second);
-				auto new_c = curve<T>{ c->c_type };
-
-				for (auto& f : frames)
-					new_c.set(f.first, f.second);
-
-				output_curves.create(id, std::move(new_c));
-
-				//NOTE: special case to check unique curves for the object-type curve
-				if constexpr (std::is_same_v<T, resources::curve_types::unique>)
-				{
-					static_assert(std::is_invocable_v<Callback, entity_id, unique_id, time_point>,
-						"Callback must accept an entity id, object_type id and time point");
-					if (var == get_object_type_curve_id())
-					{
-						//the object type curve is a const type, 
-						//it should only ever have a single keyframe
-						assert(std::size(frames) == 1);
-
-						//TODO: if we set the time point based on this then,
-						// we often skip on_connect, since it will need to,
-						// have happened in the past, we need to pass _lastFrame
-						// so that we connect after we find out about it,
-						// not when the object was origionally created on the server
-
-						// the time_point of obj-type should be 
-						// the creation time of the entity
-						const auto type = frames[0];
-
-						//use callback to request object setup
-						std::invoke(callback, ent, type.second, time);
-					}
-				}
-			}
-
-			++index;
-		}
-	}
-
-	void setup_systems_for_new_object(entity_id e, unique_id obj_type,
-		time_point t, render_implementation& game)
+	static void setup_systems_for_new_object(entity_id e, unique_id obj_type,
+		time_point t, system_behaviours<render_system>& sys)
 	{
 		using namespace std::string_literals;
 
 		//TODO: implement to_string for timer types
-		const resources::object *o = nullptr;
 		try
 		{
-			o = data::get<resources::object>(obj_type);
+			const auto o = data::get<resources::object>(obj_type);
+
+			const auto systems = get_render_systems(*o);
+
+			for (const auto s : systems)
+				sys.attach_system(e, s->id, t);
+			return;
 		}
 		catch (const data::resource_null &e)
 		{
@@ -101,52 +39,61 @@ namespace hades
 			LOGERROR(msg);
 			return;
 		}
-
-		const auto systems = get_render_systems(*o);
-
-		for (const auto s : systems)
-			game.attach_system(e, s->id, t);
 	}
 
-	render_instance::render_instance() 
-		: _jobs{*console::get_int(cvars::server_threadcount, cvars::default_value::server_threadcount)}
+	static void activate_ents(const common_interface* i,
+		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
+		time_point time)
 	{
+		assert(i);
+		const auto &curves = i->get_curves();
+		const auto obj_type_var = get_object_type_curve_id();
+		//unique curves contain the object types for entities
+		for (const auto& [key, val] : curves.unique_curves)
+		{
+			if (key.second != obj_type_var)
+				continue;
+
+			if (activated.find(key.first) != std::end(activated))
+				continue;
+
+			assert(!val.empty());
+			const auto [t, o] = *val.begin();
+
+			//TODO: can we use the time from the curve,
+			//		might be possible after syncing the 
+			//		server and client time
+			setup_systems_for_new_object(key.first, o, time, systems);
+
+			activated.emplace(key.first);
+		}
+		return;
 	}
 
-	void render_instance::input_updates(const exported_curves& input)
+	render_instance::render_instance(const common_interface* i) : _interface{i}
 	{
-		auto& curves = _game.get_curves();
-
-		merge_input(input.int_curves, input.sizes[0], curves);
-		merge_input(input.float_curves, input.sizes[1], curves);
-		merge_input(input.vec2_float_curves, input.sizes[2], curves);
-		merge_input(input.bool_curves, input.sizes[3], curves);
-		merge_input(input.string_curves, input.sizes[4], curves);
-		merge_input(input.object_ref_curves, input.sizes[5], curves);
-
-		auto obj_type_callback = [game = &_game](entity_id e, unique_id u, time_point t){
-			setup_systems_for_new_object(e, u, t, *game);
-		};
-
-		merge_input(input.unique_curves, input.sizes[6], curves, _current_frame, obj_type_callback);
-
-		merge_input(input.int_vector_curves, input.sizes[7], curves);
-		merge_input(input.float_vector_curves, input.sizes[8], curves);
-		merge_input(input.object_ref_vector_curves, input.sizes[9], curves);
-		merge_input(input.unique_vector_curves, input.sizes[10], curves);
+		if(i)
+			activate_ents(i, _systems, _activated_ents, _current_frame);
+		return;
 	}
 
-	void render_instance::make_frame_at(time_point t, render_implementation *m, render_interface &i)
+	void render_instance::make_frame_at(time_point t, const common_interface *m, render_interface &i)
 	{
+		assert(_interface);
+
+		//check for new entities and setup systems
+		activate_ents(_interface, _systems, _activated_ents, _current_frame);
+
+		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
 
-		auto make_render_job_data = [m, &i](entity_id e, game_interface* g, time_point prev,
+		auto make_render_job_data = [m, &i](unique_id sys, entity_id e, const common_interface* g, system_behaviours<render_system> *s, time_point prev,
 			time_duration dt, system_data_t* d)->render_job_data {
-				return render_job_data{ e, g, m, prev + dt, &i, d };
+				return render_job_data{sys, e, g, s, prev + dt, &i, d };
 		};
 
-		const auto next = update_level(_jobs, _prev_frame, _current_frame, dt,
-			_game, 0, make_render_job_data, update_level_tags::noasync_tag);
+		const auto next = update_level(_prev_frame, _current_frame, dt,
+			*_interface, _systems, make_render_job_data);
 
 		_prev_frame = _current_frame;
 		_current_frame = next;

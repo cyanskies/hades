@@ -1,10 +1,9 @@
 #ifndef HADES_LEVEL_CURVE_DATA_HPP
 #define HADES_LEVEL_CURVE_DATA_HPP
 
-//#include <unordered_map>
+#include <unordered_map>
 
 #include "hades/curve_extra.hpp"
-#include "hades/shared_map.hpp"
 #include "hades/types.hpp"
 
 namespace hades
@@ -37,7 +36,7 @@ namespace hades
 	struct curve_data
 	{
 		template<class T>
-		using curve_map = shared_map< curve_index_t, curve<T> >;
+		using curve_map = std::unordered_map< curve_index_t, curve<T> >;
 
 		curve_map<resources::curve_types::int_t> int_curves;
 		curve_map<resources::curve_types::float_t> float_curves;
@@ -57,6 +56,10 @@ namespace hades
 
 	template<typename T>
 	inline curve_data::curve_map<std::decay_t<T>>& get_curve_list(curve_data& data) 
+		noexcept(resources::curve_types::is_curve_type_v<std::decay_t<T>>);
+
+	template<typename T>
+	inline const curve_data::curve_map<std::decay_t<T>>& get_curve_list(const curve_data& data)
 		noexcept(resources::curve_types::is_curve_type_v<std::decay_t<T>>);
 }
 

@@ -2,6 +2,8 @@
 #define HADES_UTIL_STRONG_TYPEDEF_HPP
 
 #include <algorithm>
+#include <functional>
+#include <type_traits>
 #include <utility>
 
 #include "hades/utility.hpp"
@@ -245,6 +247,30 @@ namespace hades
 	{
 		return strong_typedef<Tag, T, B>{ from_string<T>(s) };
 	}
+
+	template<typename, typename = std::void_t<>>
+	struct is_strong_typedef_hashable : std::false_type
+	{};
+
+	template<typename T>
+	struct is_strong_typedef_hashable < T, std::void_t<decltype(std::hash<T>{}) >> : std::true_type
+	{};
+}
+
+namespace std
+{
+	template <typename Tag, typename T, bool Arith>
+	struct hash<hades::strong_typedef<Tag, T, Arith>>
+	{
+		static_assert(hades::is_strong_typedef_hashable<T>::value, "The type of this strong_typedef doesn't support hashing");
+		using U = hades::strong_typedef<Tag, T, Arith>;
+
+		size_t operator()(const U& key) const noexcept
+		{
+			const auto h = std::hash<U::value_type>{};
+			return h(static_cast<U::value_type>(key));
+		}
+	};
 }
 
 #endif //!HADES_UTIL_STRONG_TYPEDEF_HPP

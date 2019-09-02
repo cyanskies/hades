@@ -3,7 +3,9 @@
 
 #include <any>
 #include <exception>
+#include <map>
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 #include <variant>
 

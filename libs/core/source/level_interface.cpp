@@ -28,7 +28,7 @@ namespace hades
 
 		//add all the curves from o to the entity 'id'
 		auto& curves = get_curves();
-		//FIXME: get_all_curves is returning curves that are infected with std::monostate.
+		
 		for (const auto& [c, v] : get_all_curves(o))
 		{
 			assert(c);
@@ -38,11 +38,11 @@ namespace hades
 			std::visit([&](auto&& v)->void {
 				using T = std::decay_t<decltype(v)>;				
 				auto &curve_map = get_curve_list<T>(curves);
-				if (!curve_map.exists(index))
+				if (curve_map.find(index) == std::end(curve_map))
 				{
 					auto new_curve = curve<T>{ c->c_type };
 					new_curve.set(t, std::move_if_noexcept(v));
-					curve_map.create(index, std::move(new_curve));
+					curve_map.emplace(index, std::move(new_curve));
 				}
 
 				return;
@@ -59,7 +59,7 @@ namespace hades
 		obj_type.set(t, o.obj_type->id);
 
 		auto &obj_type_curves = get_curve_list<ObjType>(curves);
-		obj_type_curves.create(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
+		obj_type_curves.emplace(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
 
 		//attach systems
 		const auto systems = get_systems(*o.obj_type);
@@ -71,8 +71,7 @@ namespace hades
 
 	entity_id common_implementation_base::get_entity_id(std::string_view name, time_point t) const
 	{
-		const auto names = _entity_names.get();
-		const auto name_map = names.get(t);
+		const auto name_map = _entity_names.get(t);
 		if (const auto ent_name = name_map.find(to_string(name)); ent_name != std::end(name_map))
 			return ent_name->second;
 
@@ -83,28 +82,10 @@ namespace hades
 	{
 		assert(entity < entity_id{ _next + 1 });
 
-		name_curve_t ent_names{ curve_type::error }, updated_names{ curve_type::error };
-		do
-		{
-			ent_names = _entity_names.get();
-			updated_names = ent_names;
-			//get the closest list of names to the current time
-			auto name_map = updated_names.get(time);
-
-			//if entities can be renamed
-			name_map[to_string(name)] = entity;
-
-			//if entities can not be renamed
-			//if (name_map.find(name) != std::end(name_map))
-			//	name_map[name] = entity;
-			//else
-			//	;//throw?
-
-			//insert the new name map back into the curve
-			updated_names.insert(time, name_map);
-
-			//replace the shared name list with the updated one
-		} while (!_entity_names.compare_exchange(ent_names, updated_names));
+		auto name_map = _entity_names.get(time);
+		name_map[to_string(name)] = entity;
+		_entity_names.insert(time, name_map);
+		return;
 	}
 
 	void common_implementation_base::add_input(input_system::action_set a, time_point t)
@@ -154,19 +135,20 @@ namespace hades
 		const auto x_id = curve_index_t{ world_ent, size_x },
 			y_id = curve_index_t{ world_ent, size_y };
 
+		//TODO: try_emplace to avoid multiple lookups
 		//create the world size if it hasn't already been done 
-		if (!float_curves.exists_no_async(x_id))
+		if (float_curves.find(x_id) == std::end(float_curves))
 		{
 			curve<resources::curve_types::float_t> s_x{ curve_type::const_c };
 			s_x.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_x));
-			float_curves.create(x_id, std::move(s_x));
+			float_curves.emplace(x_id, std::move(s_x));
 		}
 
-		if (!float_curves.exists_no_async(y_id))
+		if (float_curves.find(y_id) == std::end(float_curves))
 		{
 			curve<resources::curve_types::float_t> s_y{ curve_type::const_c };
 			s_y.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_y));
-			float_curves.create(y_id, std::move(s_y));
+			float_curves.emplace(y_id, std::move(s_y));
 		}
 	}
 

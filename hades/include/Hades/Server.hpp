@@ -5,6 +5,7 @@
 #include "hades/input.hpp"
 #include "hades/mission.hpp"
 #include "hades/level.hpp"
+#include "hades/level_curve_data.hpp"
 #include "hades/timers.hpp"
 
 //TODO: move to hades-core
@@ -31,6 +32,8 @@ namespace hades
 		//sends player input
 		virtual void send_request(action a) = 0;
 		virtual void send_request(std::vector<action>) = 0;
+
+		virtual const common_interface* get_interface() const noexcept = 0;
 
 		//current level time
 		//virtual time_point get_level_time() = 0;

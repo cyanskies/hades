@@ -9,19 +9,19 @@
 
 using namespace std::string_view_literals;
 
-void simple_on_connect(hades::job_system&, hades::render_job_data &d)
+void simple_on_connect()
 {
-	const auto entity = d.entity;
+	const auto entity =hades::render::get_object();
 }
 
-void simple_on_tick(hades::job_system&, hades::render_job_data &d)
+void simple_on_tick()
 {
-	const auto entity = d.entity;
+	const auto entity = hades::render::get_object();
 }
 
-void simple_on_disconnect(hades::job_system&, hades::render_job_data &d)
+void simple_on_disconnect()
 {
-	const auto entity = d.entity;
+	const auto entity = hades::render::get_object();
 }
 
 void register_simple_instance_resources(hades::data::data_manager &d)
@@ -90,7 +90,7 @@ void simple_instance_state::draw(sf::RenderTarget &target, hades::time_duration 
 	print_changes(changes);
 	_client_instance.input_updates(changes);*/
 	_current_time += deltaTime;
-	_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
+	//_client_instance.make_frame_at(_current_time, nullptr, _drawable_output);
 	_drawable_output.prepare();
 	target.setView(_view);
 	target.draw(_drawable_output);

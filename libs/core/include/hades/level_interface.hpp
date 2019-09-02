@@ -1,12 +1,7 @@
 #ifndef HADES_LEVEL_INTERFACE_HPP
 #define HADES_LEVEL_INTERFACE_HPP
 
-#include <atomic>
 #include <exception>
-#include <map>
-#include <memory>
-#include <mutex>
-#include <shared_mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -15,10 +10,8 @@
 #include "hades/exceptions.hpp"
 #include "hades/input.hpp"
 #include "hades/level_curve_data.hpp"
-#include "hades/shared_guard.hpp"
-#include "hades/shared_map.hpp"
 #include "hades/game_system.hpp"
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 #include "hades/types.hpp"
 
 namespace hades
@@ -45,7 +38,6 @@ namespace hades
 	//TODO: these should be either an interface or final
 
 	//defines a subset of interface available to render instances
-	//the members of curve_data are all thread safe, so this interface is too
 	class common_interface
 	{
 	public:
@@ -53,10 +45,14 @@ namespace hades
 
 		virtual curve_data &get_curves() noexcept = 0;
 		virtual const curve_data &get_curves() const noexcept = 0;
+
+		//gets an entity id from a unique name
+		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
 	};
 
-	//this is the interface that is available to server jobs and systems
-	//it supports multi threading the whole way though
+	//TODO: implement common_interface for remote hosts,
+	// just needs to accept and store data
+
 	class game_interface : public common_interface
 	{
 	public:
@@ -67,8 +63,8 @@ namespace hades
 		//entity name will also not be applied
 		virtual entity_id create_entity(const object_instance&, time_point) = 0;
 		//virtual entity_id create_entity(const resources::object*) = 0;
-		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
-
+		
+		//TODO: deprecate
 		//attach/detach entities from systems
 		virtual void attach_system(entity_id, unique_id, time_point t) = 0;
 		virtual void detach_system(entity_id, unique_id, time_point t) = 0;
@@ -93,14 +89,15 @@ namespace hades
 
 	private:
 		curve_data _curves;
-		shared_guard<name_curve_t> _entity_names = name_curve_t{ curve_type::step };
+		name_curve_t _entity_names{ curve_type::step };
 
 		curve<input_system::action_set> _input{ curve_type::step };
-		std::atomic<entity_id::value_type> _next = static_cast<entity_id::value_type>(next(bad_entity));
+		entity_id::value_type _next = static_cast<entity_id::value_type>(next(bad_entity));
 	};
 
 	//implements game_interface, this represents a game area,
 	//with entities and systems
+	//TODO: remove this from the implementation tree, and have it as a member of game_implementation
 	template<typename SystemType>
 	class common_implementation : public common_implementation_base
 	{
@@ -120,7 +117,6 @@ namespace hades
 		void detach_system(entity_id, unique_id, time_point t) override final;
 
 	protected:
-		mutable std::mutex _system_list_mut;
 		std::vector<SystemType> _systems;
 		std::vector<const system_resource*> _new_systems;
 		std::unordered_map<unique_id, system_data_t> _system_data;
@@ -132,25 +128,16 @@ namespace hades
 		explicit game_implementation(const level_save&);
 	};
 
+	//TODO: deprecate, render_instance replaces this entirely
 	class render_implementation final : public common_implementation<render_system>
 	{
 	public:
 		render_implementation();
 	};
 
-	namespace update_level_tags
-	{
-		struct update_level_auto_tag {};
-		constexpr update_level_auto_tag auto_tag;
-		struct update_level_async_tag {};
-		constexpr update_level_async_tag async_tag;
-		struct update_level_noasync_tag {};
-		constexpr update_level_noasync_tag noasync_tag;
-	}
-
-	template<typename ImplementationType, typename MakeGameStructFn, typename ModeTag = update_level_tags::update_level_auto_tag>
-	time_point update_level(job_system&, time_point, time_point, time_duration,
-		ImplementationType&, int32 threads, MakeGameStructFn, ModeTag = update_level_tags::auto_tag);
+	template<typename Interface, typename SystemType, typename MakeGameStructFn>
+	time_point update_level(time_point, time_point, time_duration,
+		Interface&, system_behaviours<SystemType>&, MakeGameStructFn);
 }
 
 #include "hades/detail/level_interface.inl"

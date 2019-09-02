@@ -13,7 +13,7 @@ namespace hades
 	template<typename T>
 	static void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
 	{
-		if (c.exists({ id, curve->id }))
+		if (c.find({ id, curve->id }) != std::end(c))
 			c.erase({ id, curve->id });
 
 		hades::curve<T> curve_instance{ curve->c_type };
@@ -26,7 +26,7 @@ namespace hades
 		const auto &val = std::get<T>(value);
 		curve_instance.insert(zero_time, val);
 
-		c.create({ id, curve->id }, curve_instance);
+		c.emplace(curve_index_t{ id, curve->id }, std::move(curve_instance));
 	}
 
 	static void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)

@@ -9,91 +9,107 @@ namespace hades
 {
 	namespace detail
 	{
-		template<typename JobData, typename Func>
-		inline auto make_system_func(Func f)
+		template<typename SystemResource, typename System>
+		static inline System& install_system(unique_id sys,
+			std::vector<System>& systems, std::vector<const SystemResource*>& sys_r)
 		{
-			//this function is a bit ugly
-			//bool func(job_system&, JobData)
-			if constexpr (std::is_invocable_r_v<bool, Func, job_system&, JobData>)
-			{
-				return [f](job_system &j, JobData job_data)->bool {
-					return std::invoke(f, j, std::move(job_data));
-				};
-			}
-			//non-bool func(job_system&, JobData)
-			else if constexpr (std::is_invocable_v<Func, job_system&, JobData>)
-			{
-				return [f](job_system &j, JobData job_data)->bool {
-					std::invoke(f, j, std::move(job_data));
-					return true;
-				};
-			}
-			//bool func(JobData)
-			else if constexpr (std::is_invocable_r_v<bool, Func, JobData>)
-			{
-				return [f](job_system &j, JobData job_data)->bool {
-					return std::invoke(f, std::move(job_data));
-				};
-			}
-			//non-bool func(JobData)
-			else if constexpr (std::is_invocable_v<Func, JobData>)
-			{
-				return [f](job_system &j, JobData job_data)->bool {
-					std::invoke(f, std::move(job_data));
-					return true;
-				};
-			}
-			//bool func(job_system&)
-			else if constexpr (std::is_invocable_r_v<bool, Func, job_system&>)
-			{
-				return [f](job_system& j, JobData job_data)->bool {
-					return std::invoke(f, j);
-				};
-			}
-			//non-bool func(job_system&)
-			else if constexpr (std::is_invocable_v<Func, job_system&>)
-			{
-				return [f](job_system& j, JobData job_data)->bool {
-					std::invoke(f, j);
-					return true;
-				};
-			}
-			//bool func()
-			else if constexpr (std::is_invocable_r_v<bool, Func>)
-			{
-				return [f](job_system& j, JobData job_data)->bool {
-					return std::invoke(f);
-				};
-			}
-			//non-bool func()
-			else if constexpr (std::is_invocable_v<Func>)
-			{
-				return [f](job_system& j, JobData job_data)->bool {
-					std::invoke(f);
-					return true;
-				};
-			}
-			//not provided
-			else if constexpr (std::is_null_pointer_v<Func>)
-				return f;
-			else //not invocable
-				static_assert(always_false<Func>::value,
-					"system functions must be a function object with the following definition: bool func(hades::job_system&, hades::system_job_data), the return and job_system ref are optional");
+			//never install a system more than once.
+			assert(std::none_of(std::begin(systems), std::end(systems),
+				[sys](const auto& system) {
+					return system.system->id == sys;
+				}
+			));
+
+			const auto new_system = hades::data::get<SystemResource>(sys);
+			sys_r.emplace_back(new_system);
+			return systems.emplace_back(new_system);
 		}
 
-		template<typename System, typename JobData, typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-		inline void make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
+		template<typename SystemResource, typename System>
+		static inline System& find_system(unique_id id, std::vector<System>& systems,
+			std::vector<const SystemResource*>& sys_r)
+		{
+			for (auto& s : systems)
+			{
+				if (s.system->id == id)
+					return s;
+			}
+
+			return install_system<SystemResource>(id, systems, sys_r);
+		}
+	}
+
+	template<typename SystemType>
+	inline void system_behaviours<SystemType>::attach_system(entity_id entity, unique_id sys, time_point t)
+	{
+		//systems cannot be created or destroyed while we are editing the entity list
+		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
+
+		auto updated = system.attached_entities;
+
+		if (updated.empty())
+			updated.set(time_point{ nanoseconds{-1} }, {});
+
+		auto ent_list = updated.get(t);
+		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+		if (found != ent_list.end())
+		{
+			const auto message = "The requested entityid is already attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
+			//ent is already attached
+			throw system_already_attached{ message };
+		}
+
+		ent_list.emplace_back(entity);
+		updated.insert(t, std::move(ent_list));
+
+		std::swap(updated, system.attached_entities);
+		return;
+	}
+
+	template<typename SystemType>
+	inline void system_behaviours<SystemType>::detach_system(entity_id entity, unique_id sys, time_point t)
+	{
+		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
+		auto ents = system.attached_entities;
+		auto ent_list = ents.get(t);
+		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+		if (found == ent_list.end())
+		{
+			const auto message = "The requested entityid isn't attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
+			throw system_already_attached{ message };
+		}
+
+		ent_list.erase(found);
+		ents.insert(t, ent_list);
+		std::swap(system.attached_entities, ents);
+		return;
+		//TODO: call destroy system
+		//we dont have the data we need for this
+	}
+
+	namespace detail
+	{
+		template<typename System, typename JobData, typename CreateFunc,
+			typename ConnectFunc, typename DisconnectFunc, typename TickFunc,
+			typename DestroyFunc>
+		inline void make_system(unique_id id, CreateFunc on_create,
+			ConnectFunc on_connect, DisconnectFunc on_disconnect,
+			TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 		{
 			auto sys = data.find_or_create<System>(id, unique_id::zero);
 
 			if (!sys)
 				throw system_error("unable to create requested system");
 
-			sys->on_create = make_system_func<JobData>(on_create);
-			sys->on_connect = make_system_func<JobData>(on_connect);
-			sys->on_disconnect = make_system_func<JobData>(on_disconnect);
-			sys->tick = make_system_func<JobData>(on_tick);
-			sys->on_destroy = make_system_func<JobData>(on_destroy);
+			sys->on_create = on_create;
+			sys->on_connect = on_connect;
+			sys->on_disconnect = on_disconnect;
+			sys->tick = on_tick;
+			sys->on_destroy = on_destroy;
 		}
 	}
 
@@ -114,31 +130,15 @@ namespace hades
 	{
 		system_job_data* get_game_data_ptr();
 		game_interface* get_game_level_ptr();
-		transaction& get_game_transaction();
-		bool get_game_data_async();
-
-		template<typename T>
-		curve<T> get_game_curve(game_interface *l, curve_index_t i)
-		{
-			assert(l);
-			auto& curves = l->get_curves();
-			auto& curve_map = hades::get_curve_list<T>(curves);
-
-			if (detail::get_game_data_async())
-				return detail::get_game_transaction().get(i, curve_map);
-			else
-				return curve_map.get_no_async(i);
-		}
 
 		template<typename T>
 		curve<T> &get_game_curve_ref(game_interface* l, curve_index_t i)
 		{
 			assert(l);
-			assert(get_game_data_async() == false);
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
 
-			return curve_map.get_no_async(i);
+			return curve_map.find(i)->second;
 		}
 
 		template<typename T>
@@ -148,12 +148,7 @@ namespace hades
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
 
-			const auto &curve = [i, t, &curve_map]() {
-				if (detail::get_game_data_async())
-					return detail::get_game_transaction().get(i, curve_map);
-				else
-					return curve_map.get_no_async(i);
-			}();
+			const auto& curve = curve_map.find(i)->second;
 
 			const auto [time, value] = curve.getPrevious(t);
 			return { value, time };
@@ -167,10 +162,7 @@ namespace hades
 			auto& curves = l->get_curves();
 			auto& target_curve_list = hades::get_curve_list<T>(curves);
 
-			if (detail::get_game_data_async())
-				detail::get_game_transaction().set(target_curve_list, i, std::move(c));
-			else
-				target_curve_list.set(i, std::move(c));
+			target_curve_list.insert_or_assign(i, std::move(c));
 
 			return;
 		}
@@ -182,68 +174,41 @@ namespace hades
 
 			auto& curves = l->get_curves();
 			auto& target_curve_type = hades::get_curve_list<T>(curves);
-
-			if (detail::get_game_data_async())
-			{
-				auto c = detail::get_game_transaction().peek(i, target_curve_type);
-				c.set(t, std::forward<T>(v));
-				detail::get_game_transaction().set(target_curve_type, i, std::move(c));
-			}
-			else
-			{
-				auto &c = target_curve_type.get_no_async(i);
-				c.set(t, std::forward<T>(v));
-				//target_curve_type.set(i, std::move(c));
-			}
-
+			auto &c = target_curve_type.find(i)->second;
+			c.set(t, std::forward<T>(v));
+		
 			return;
 		}
 
 		render_job_data* get_render_data_ptr();
-		transaction &get_render_transaction();
-		bool get_render_data_async();
 
 		template<typename T>
-		const curve<T>& get_render_curve(game_interface *l, curve_index_t i)
+		const curve<T>& get_render_curve(const common_interface *l, curve_index_t i)
 		{
 			assert(l);
 
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
-			return curve_map.get_no_async(i);
+			return curve_map.find(i)->second;
 		}
 	}
 
 	namespace game
 	{
 		template<typename T>
-		void create_system_value(unique_id key, T&& value)
+		void set_system_data(T&& value)
 		{
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
-			ptr->system_data->create(key, std::forward<T>(value));
+			*ptr->system_data = std::forward<T>(value);
 		}
 
 		template<typename T>
-		void set_system_value(unique_id key, T&& value)
+		T &get_system_data()
 		{
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr);
-			if (detail::get_game_data_async())
-				detail::get_game_transaction().set(*ptr->system_data, key, std::forward<T>(value));
-			else
-				ptr->system_data->set(key, std::forward<T>(value));
-		}
-
-		template<typename T>
-		T get_system_value(unique_id key)
-		{
-			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
-			if (detail::get_game_data_async())
-				return detail::get_game_transaction().get<T>(key, *ptr->system_data);
-			else
-				return ptr->system_data->get_no_async<T>(key);
+			return *std::any_cast<T>(ptr->system_data);
 		}
 	}
 
@@ -319,16 +284,8 @@ namespace hades
 		template<typename T>
 		T get_value(curve_index_t i, time_point t)
 		{
-			if (detail::get_game_data_async())
-			{
-				const auto curve = get_curve<T>(i);
-				return curve.get(t);
-			}
-			else
-			{
-				const auto& curve = detail::get_game_curve_ref<T>(detail::get_game_data_ptr()->level_data, i);
-				return curve.get(t);
-			}
+			const auto& curve = detail::get_game_curve_ref<T>(detail::get_game_data_ptr()->level_data, i);
+			return curve.get(t);
 		}
 
 		template<typename T>
@@ -420,28 +377,21 @@ namespace hades
 	namespace render
 	{
 		template<typename T>
-		void create_system_value(unique_id key, T&& value)
+		T &get_system_data()
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-			ptr->system_data->create(key, std::forward<T>(value));
-			return;
+			auto ret = std::any_cast<T>(ptr->system_data);
+			assert(ret);
+			return *ret;
 		}
 
 		template<typename T>
-		T &get_system_value(unique_id key)
+		void set_system_data(T value)
 		{
 			auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
-			return ptr->system_data->get_no_async<T>(key);
-		}
-
-		template<typename T>
-		void set_system_value(unique_id key, T&& value)
-		{
-			auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
-			return ptr->system_data->set(key, std::forward<T>(value));
+			ptr->system_data->emplace<std::decay_t<T>>(std::move(value));
 		}
 	}
 

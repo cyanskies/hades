@@ -271,8 +271,7 @@ namespace hades
 		{
 			if (_sprites[i].settings.layer == l)
 			{
-				s.texture = &_sprites[i].settings.texture->value;
-				t.draw(_vertex[i].buffer, s);
+				draw(t, i, s);
 				return;
 			}
 		}
@@ -284,7 +283,8 @@ namespace hades
 	{
 		assert(layer_index < std::size(_sprites));
 
-		s.texture = &_sprites[layer_index].settings.texture->value;
+		if(_sprites[layer_index].settings.texture)
+			s.texture = &_sprites[layer_index].settings.texture->value;
 		target.draw(_vertex[layer_index].buffer, s);
 		return;
 	}
@@ -339,7 +339,8 @@ namespace hades
 
 	void sprite_batch::_add_sprite(sprite s)
 	{
-		const auto settings = sprite_settings{ s.layer, s.animation->tex };
+		const auto settings = sprite_settings{ s.layer,
+			s.animation ? s.animation->tex : nullptr };
 		const index_t index = find_batch(settings, _sprites);
 
 		//no batch matches the desired settings
@@ -352,8 +353,14 @@ namespace hades
 		_ids.emplace_back(sprite_pos{ s.id, index });
 
 		_sprites[index].sprites.emplace_back(s);
-		const auto frame = animation::get_frame(*s.animation, s.animation_progress);
-		_vertex[index].buffer.append(make_quad_animation(s.position, s.size, *s.animation, frame));
+		if (s.animation)
+		{
+			const auto frame = animation::get_frame(*s.animation, s.animation_progress);
+			_vertex[index].buffer.append(make_quad_animation(s.position, s.size, *s.animation, frame));
+		}
+		else
+			_vertex[index].buffer.append(make_quad_colour({ s.position, s.size }, colours::white));
+
 		_vertex[index].sprites.emplace_back(s.id);
 
 		return;

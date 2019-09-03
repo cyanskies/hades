@@ -11,8 +11,12 @@ namespace hades
 		static_assert(std::is_invocable_v<SetChangedProperty, object_instance&, const rect_float&>,
 			"SetChangedProperty must have the following definition (object_instance&, const rect_float&)");
 
-		if (g.input(label, std::get<float>(c.value)))
+		const auto v = std::get<vector_float>(c.value);
+		auto value = std::array{ v.x, v.y };
+
+		if (g.input(label, value))
 		{
+			c.value = vector_float{ value[0], value[1] };
 			//TODO: must use both collision systems here
 			const auto rect = std::invoke(make_rect, o, c);
 			const auto safe_pos = _object_valid_location(position(rect), size(rect), o);

@@ -130,25 +130,18 @@ namespace hades
 			name_entity(world_ent, world_entity_name, time_point{});
 		}
 
-		const auto [size_x, size_y] = get_size_curve_id();
-		auto& float_curves = get_curve_list<resources::curve_types::float_t>(get_curves());
-		const auto x_id = curve_index_t{ world_ent, size_x },
-			y_id = curve_index_t{ world_ent, size_y };
+		const auto size_c = get_size_curve_id();
+		auto& float_curves = get_curve_list<resources::curve_types::vec2_float>(get_curves());
+		const auto size_id = curve_index_t{ world_ent, size_c };
 
 		//TODO: try_emplace to avoid multiple lookups
 		//create the world size if it hasn't already been done 
-		if (float_curves.find(x_id) == std::end(float_curves))
+		if (float_curves.find(size_id) == std::end(float_curves))
 		{
-			curve<resources::curve_types::float_t> s_x{ curve_type::const_c };
-			s_x.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_x));
-			float_curves.emplace(x_id, std::move(s_x));
-		}
-
-		if (float_curves.find(y_id) == std::end(float_curves))
-		{
-			curve<resources::curve_types::float_t> s_y{ curve_type::const_c };
-			s_y.set(time_point{}, static_cast<resources::curve_types::float_t>(sv.source.map_y));
-			float_curves.emplace(y_id, std::move(s_y));
+			curve<resources::curve_types::vec2_float> s_x{ curve_type::const_c };
+			s_x.set(time_point{}, { static_cast<resources::curve_types::float_t>(sv.source.map_x),
+				static_cast<resources::curve_types::float_t>(sv.source.map_y) });
+			float_curves.try_emplace(size_id, std::move(s_x));
 		}
 	}
 

@@ -30,18 +30,17 @@ namespace hades
 			const auto time = render::get_time();
 			const auto ent = render::get_object();
 
-			const auto [x, y] = get_position_curve_id();
-			const auto [size_x, size_y] = get_size_curve_id();
+			const auto pos = get_position_curve_id();
+			const auto size = get_size_curve_id();
+			using namespace resources::curve_types;
 
-			const auto px = render::level::get_value<float_t>({ ent, x }, time);
-			const auto py = render::level::get_value<float_t>({ ent, y }, time);
+			const auto px = render::level::get_value<vec2_float>({ ent, pos }, time);
 
-			const auto sx = render::level::get_value<float_t>({ ent, size_x }, time);
-			const auto sy = render::level::get_value<float_t>({ ent, size_y }, time);
+			const auto sx = render::level::get_value<vec2_float>({ ent, size }, time);
 
 			return entity_info{
-				hades::vector_float{ px, py },
-				hades::vector_float{ sx, sy }
+				px,
+				sx
 			};
 		}
 
@@ -292,10 +291,7 @@ namespace hades
 		{
 			//TODO: is it ok to cache the curve ptrs
 			static const auto curves = get_position_curve_id();
-			return {
-				get_value<world_unit_t>(o, std::get<0>(curves), t),
-				get_value<world_unit_t>(o, std::get<1>(curves), t)
-			};
+			return get_value<world_vector_t>(o, curves, t);
 		}
 
 		world_vector_t get_position(object_ref o)
@@ -311,8 +307,7 @@ namespace hades
 		void set_position(object_ref o, world_unit_t x, world_unit_t y, time_point t)
 		{
 			static const auto curves = get_position_curve_id();
-			set_value(o, std::get<0>(curves), t, x);
-			set_value(o, std::get<1>(curves), t, y);
+			set_value<world_vector_t>(o, curves, t, { x, y });
 			return;
 		}
 
@@ -331,10 +326,7 @@ namespace hades
 		world_vector_t get_size(object_ref o, time_point t)
 		{
 			static const auto curve = get_size_curve_id();
-			return {
-				get_value<world_unit_t>(o, std::get<0>(curve), t),
-				get_value<world_unit_t>(o, std::get<1>(curve), t)
-			};
+			return get_value<world_vector_t>(o, curve, t);
 		}
 
 		world_vector_t get_size(object_ref o)
@@ -350,8 +342,7 @@ namespace hades
 		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
 		{
 			static const auto curves = get_size_curve_id();
-			set_value(o, std::get<0>(curves), w);
-			set_value(o, std::get<1>(curves), h);
+			set_value<world_vector_t>(o, curves, { w, h });
 			return;
 		}
 		

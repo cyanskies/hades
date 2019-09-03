@@ -84,10 +84,8 @@ namespace hades
 		};
 
 		enum curve_index : std::size_t {
-			pos_x,
-			pos_y,
-			size_x,
-			size_y
+			pos,
+			size_index
 		};
 
 		void _make_property_editor(gui&);
@@ -124,7 +122,7 @@ namespace hades
 		std::unordered_map<string, entity_id> _entity_names; 
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;
-		std::array<curve_info, 4> _curve_properties;
+		std::array<curve_info, 2> _curve_properties;
 
 		//grid info for snapping
 		grid_vars _grid = get_console_grid_vars();

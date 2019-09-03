@@ -106,12 +106,12 @@ namespace hades
 	string get_name(const object_instance &o);
 	string get_name(const resources::object &o);
 	void set_name(object_instance &o, std::string_view);
-	vector_float get_position(const object_instance &o);
-	vector_float get_position(const resources::object &o);
-	void set_position(object_instance &o, vector_float v);
-	vector_float get_size(const object_instance &o);
-	vector_float get_size(const resources::object &o);
-	void set_size(object_instance &o, vector_float v);
+	resources::curve_types::vec2_float get_position(const object_instance &o);
+	resources::curve_types::vec2_float get_position(const resources::object &o);
+	void set_position(object_instance &o, resources::curve_types::vec2_float v);
+	resources::curve_types::vec2_float get_size(const object_instance &o);
+	resources::curve_types::vec2_float get_size(const resources::object &o);
+	void set_size(object_instance &o, resources::curve_types::vec2_float v);
 
 	using tag_list = resources::curve_types::collection_unique;
 	tag_list get_collision_groups(const object_instance &o);

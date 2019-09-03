@@ -445,22 +445,18 @@ namespace hades
 		return tags;
 	}
 
-	static void set_selected_info(const object_instance &o, string &name_id, std::array<level_editor_objects::curve_info, 4> &curve_info)
+	static void set_selected_info(const object_instance &o, string &name_id, std::array<level_editor_objects::curve_info, 2> &curve_info)
 	{
-		const auto [posx_curve, posy_curve] = get_position_curve();
-		const auto [sizx_curve, sizy_curve] = get_size_curve();
-		const auto posx = get_curve(o, *posx_curve);
-		const auto posy = get_curve(o, *posy_curve);
-		const auto sizx = get_curve(o, *sizx_curve);
-		const auto sizy = get_curve(o, *sizy_curve);
-
+		const auto pos_curve = get_position_curve();
+		const auto siz_curve = get_size_curve();
+		const auto posc = get_curve(o, *pos_curve);
+		const auto sizc = get_curve(o, *siz_curve);
+		
 		using curve_t = level_editor_objects::curve_info;
 
 		curve_info = std::array{
-			curve_t{posx_curve, posx},
-			curve_t{posy_curve, posy},
-			has_curve(o, *sizx_curve) ? curve_t{sizx_curve, sizx} : curve_t{},
-			has_curve(o, *sizy_curve) ? curve_t{sizy_curve, sizy} : curve_t{}
+			curve_t{pos_curve, posc},
+			has_curve(o, *siz_curve) ? curve_t{siz_curve, sizc} : curve_t{}
 		};
 
 		name_id = o.name_id;
@@ -718,6 +714,14 @@ namespace hades
 			set_curve(o, c, data::make_uid(u_string));
 	}
 
+	template<>
+	static void make_property_edit<vector_float>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const vector_float& value)
+	{
+		auto editval = std::array{ value.x, value.y };
+		if (g.input(name, editval))
+			set_curve(o, c, vector_float{editval[0], editval[1]});
+	}
+
 	//TODO: clean these three specialisations up to get rid of repeated code
 	template<typename T>
 	static void make_vector_edit_field(gui &g, object_instance &o, const resources::curve &c, int32 selected, const T &value)
@@ -893,8 +897,6 @@ namespace hades
 			{
 				if constexpr (resources::curve_types::is_collection_type_v<T>)
 					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, target);
-				else if constexpr (resources::curve_types::is_vector_type_v<T>)
-					; //TODO: FIXME: add this, cannot edit position or size without this
 				else
 					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
 			}
@@ -944,76 +946,45 @@ namespace hades
 		// can be useful for players the world or other significant objects
 		make_name_id_property(g, o, _entity_name_id_uncommited, _entity_names);
 
-		//TODO: switch to vector position
-		auto &pos_x = _curve_properties[curve_index::pos_x];
-		auto &pos_y = _curve_properties[curve_index::pos_y];
-
-		_make_positional_property_edit_field(g, "x position"sv, o, pos_x,
+		auto &pos = _curve_properties[curve_index::pos];
+		
+		_make_positional_property_edit_field(g, "position"sv, o, pos,
 			[](const auto &o, const auto&c) {
 			auto rect = rect_float{ get_position(o), get_size(o) }; 
-			rect.x = std::get<float>(c.value);
+			const auto pos = std::get<vector_float>(c.value);
+			rect.x = pos.x;
+			rect.y = pos.y;
 			return rect;
 		}, [](auto &&o, const auto &r) {
 			set_position(o, { r.x, r.y });
 		});
 
-		if (const auto pos = get_position(o); std::get<float>(pos_x.value) != pos.x)
+		if (const auto p = get_position(o); std::get<vector_float>(pos.value) != p)
 		{
-			g.show_tooltip("The value of x position would cause an collision");
-			pos_x.value = pos.x;
+			g.show_tooltip("The value of position would cause an collision");
+			pos.value = p;
 		}
-
-		_make_positional_property_edit_field(g, "y position"sv, o, pos_y,
-			[](const auto &o, const auto&c) {
-			auto rect = rect_float{ get_position(o), get_size(o) };
-			rect.y = std::get<float>(c.value);
-			return rect;
-		}, [](auto &&o, const auto &r) {
-			set_position(o, { r.x, r.y });
-		});
-
-		if (const auto pos = get_position(o); std::get<float>(pos_y.value) != pos.y)
-		{
-			g.show_tooltip("The value of y position would cause an collision");
-			pos_y.value = pos.y;
-		}
-
-		//TODO: vector sizes
 
 		//size
-		auto &siz_x = _curve_properties[curve_index::size_x];
-		auto &siz_y = _curve_properties[curve_index::size_y];
+		auto &siz = _curve_properties[curve_index::size_index];
 
-		if (const auto props_end = std::end(_curve_properties); siz_x.curve && siz_y.curve)
+		if (const auto props_end = std::end(_curve_properties); siz.curve)
 		{
-			_make_positional_property_edit_field(g, "x size"sv, o, siz_x,
+			_make_positional_property_edit_field(g, "size"sv, o, siz,
 				[](const auto &o, const auto&c) {
 				auto rect = rect_float{ get_position(o), get_size(o) };
-				rect.width = std::get<float>(c.value);
+				const auto size = std::get<vector_float>(c.value);
+				rect.width = size.x;
+				rect.height = size.y;
 				return rect;
 			}, [](auto &&o, const auto &r) {
 				set_size(o, { r.width, r.height });
 			});
 
-			if (const auto siz = get_size(o); std::get<float>(siz_x.value) != siz.x)
+			if (const auto s = get_size(o); std::get<vector_float>(siz.value) != s)
 			{
 				g.show_tooltip("The value of x size would cause an collision");
-				siz_x.value = siz.x;
-			}
-			
-			_make_positional_property_edit_field(g, "y size"sv, o, siz_y,
-				[](const auto &o, const auto&c) {
-				auto rect = rect_float{ get_position(o), get_size(o) };
-				rect.height = std::get<float>(c.value);
-				return rect;
-			}, [](auto &&o, const auto &r) {
-				set_size(o, { r.width, r.height });
-			});
-
-			if (const auto siz = get_size(o); std::get<float>(siz_y.value) != siz.y)
-			{
-				g.show_tooltip("The value of y size would cause an collision");
-				siz_y.value = siz.y;
+				siz.value = s;
 			}
 		}
 		

@@ -224,21 +224,6 @@ namespace hades
 		return std::make_tuple(curve_ptr, hades::resources::curve_default_value{});
 	}
 
-	curve_value valid_vector_curve(hades::resources::curve_default_value v)
-	{
-		using vector_int = hades::resources::curve_types::collection_int;
-		assert(std::holds_alternative<vector_int>(v));
-
-		//the provided value is valid
-		if (auto vector = std::get<vector_int>(v); vector.size() >= 2)
-			return v;
-
-		//invalid value, override with a minimum valid value
-		v = vector_int{0, 0};
-
-		return v;
-	}
-
 	object_instance make_instance(const resources::object *o)
 	{
 		return object_instance{ o };
@@ -527,48 +512,44 @@ namespace hades
 	}
 
 	template<typename Object, typename Func>
-	static inline vector_float get_vector_curve_impl(const Object &o, Func f)
+	static inline resources::curve_types::vec2_float get_vector_curve_impl(const Object &o, Func f)
 	{
-		const auto[x, y] = std::invoke(f);
-		const auto x_value = get_curve(o, *x);
-		const auto y_value = get_curve(o, *y);
-		assert(std::holds_alternative<float>(x_value));
-		assert(std::holds_alternative<float>(y_value));
-		return { std::get<float>(x_value), std::get<float>(y_value) };
+		const auto c = std::invoke(f);
+		const auto value = get_curve(o, *c);
+		assert(std::holds_alternative<resources::curve_types::vec2_float>(value));
+		return std::get<resources::curve_types::vec2_float>(value);
 	}
 
-	vector_float get_position(const object_instance &o)
+	resources::curve_types::vec2_float get_position(const object_instance &o)
 	{
 		return get_vector_curve_impl(o, get_position_curve);
 	}
 
-	vector_float get_position(const resources::object &o)
+	resources::curve_types::vec2_float get_position(const resources::object &o)
 	{
 		return get_vector_curve_impl(o, get_position_curve);
 	}
 
-	void set_position(object_instance & o, vector_float v)
+	void set_position(object_instance & o, resources::curve_types::vec2_float v)
 	{
-		const auto[posx, posy] = get_position_curve();
-		set_curve(o, *posx, v.x);
-		set_curve(o, *posy, v.y);
+		const auto pos = get_position_curve();
+		set_curve(o, *pos, v);
 	}
 
-	vector_float get_size(const object_instance &o)
+	resources::curve_types::vec2_float get_size(const object_instance &o)
 	{
 		return get_vector_curve_impl(o, get_size_curve);
 	}
 
-	vector_float get_size(const resources::object &o)
+	resources::curve_types::vec2_float get_size(const resources::object &o)
 	{
 		return get_vector_curve_impl(o, get_size_curve);
 	}
 
-	void set_size(object_instance &o, vector_float v)
+	void set_size(object_instance &o, resources::curve_types::vec2_float v)
 	{
-		const auto [sizx, sizy] = get_size_curve();
-		set_curve(o, *sizx, v.x);
-		set_curve(o, *sizy, v.y);
+		const auto siz = get_size_curve();
+		set_curve(o, *siz, v);
 	}
 
 	template<typename Object, typename GetCurve>

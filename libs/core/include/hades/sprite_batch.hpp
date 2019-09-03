@@ -13,9 +13,7 @@
 #include "hades/types.hpp"
 #include "hades/vertex_buffer.hpp"
 
-//A thread safe collection of animated sprites
-//the object manages batching draw calls to render more efficiently
-//the object also manages animation times.
+//sprite batching object
 
 namespace hades 
 {
@@ -190,11 +188,17 @@ namespace hades
 		s = std::invoke(f, s);
 		s_batch.sprites[s_index] = s;
 
-		const auto new_settings = sprite_settings{ s.layer, s.animation->tex };
+		const auto new_settings = sprite_settings{ s.layer,
+			s.animation ? s.animation->tex : nullptr };
 		if (new_settings == s_batch.settings)
 		{
-			const auto frame = animation::get_frame(*s.animation, s.animation_progress);
-			_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, *s.animation, frame), s_index);
+			if (s.animation)
+			{
+				const auto frame = animation::get_frame(*s.animation, s.animation_progress);
+				_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, *s.animation, frame), s_index);
+			}
+			else
+				_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::white), s_index);
 			return;
 		}
 	

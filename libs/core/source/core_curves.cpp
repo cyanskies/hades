@@ -4,10 +4,8 @@
 namespace hades
 {
 	static auto name_id = unique_id::zero;
-	static auto posx_id = unique_id::zero;
-	static auto posy_id = unique_id::zero;
-	static auto sizx_id = unique_id::zero;
-	static auto sizy_id = unique_id::zero;
+	static auto pos_id = unique_id::zero;
+	static auto siz_id = unique_id::zero;
 	static auto collision_groups_id = unique_id::zero;
 	static auto tags_id = unique_id::zero;
 	static auto object_type_id = unique_id::zero;
@@ -15,8 +13,8 @@ namespace hades
 	static void setup_curve(resources::curve &c)
 	{
 		c.c_type = curve_type::linear;
-		c.data_type = resources::curve_variable_type::float_t;
-		c.default_value = 0.f;
+		c.data_type = resources::curve_variable_type::vec2_float;
+		c.default_value = resources::curve_types::vec2_float{ 0.f, 0.f };
 		c.sync = true;
 	}
 
@@ -36,15 +34,11 @@ namespace hades
 		name_c->sync = true;
 
 		// the position curves store the objects 2d position
-		posx_id = d.get_uid("position-x"sv);
-		setup_curve(*d.find_or_create<curve>(posx_id, unique_id::zero));
-		posy_id = d.get_uid("position-y"sv);
-		setup_curve(*d.find_or_create<curve>(posy_id, unique_id::zero));
+		pos_id = d.get_uid("position"sv);
+		setup_curve(*d.find_or_create<curve>(pos_id, unique_id::zero));
 		// size curves store the objects 2d size
-		sizx_id = d.get_uid("size-x"sv);
-		setup_curve(*d.find_or_create<curve>(sizx_id, unique_id::zero));
-		sizy_id = d.get_uid("size-y"sv);
-		setup_curve(*d.find_or_create<curve>(sizy_id, unique_id::zero));
+		siz_id = d.get_uid("size"sv);
+		setup_curve(*d.find_or_create<curve>(siz_id, unique_id::zero));
 		// collision groups are used to check whether two objects collide
 		// or to check what terrain an object can move on
 		//TODO: should a sperate collision-terrain list be used for terrain collision?
@@ -83,14 +77,14 @@ namespace hades
 		return get_curve(name_id);
 	}
 
-	vector_curve get_position_curve()
+	const resources::curve* get_position_curve()
 	{
-		return { get_curve(posx_id), get_curve(posy_id) };
+		return get_curve(pos_id);
 	}
 	
-	vector_curve get_size_curve()
+	const resources::curve* get_size_curve()
 	{
-		return { get_curve(sizx_id), get_curve(sizy_id) };
+		return get_curve(siz_id);
 	}
 
 	const resources::curve * get_collision_group_curve()
@@ -108,14 +102,14 @@ namespace hades
 		return get_curve(object_type_id);
 	}
 
-	vector_curve_id get_position_curve_id() noexcept
+	unique_id get_position_curve_id() noexcept
 	{
-		return { posx_id, posy_id };
+		return pos_id;
 	}
 
-	vector_curve_id get_size_curve_id() noexcept
+	unique_id get_size_curve_id() noexcept
 	{
-		return { sizx_id, sizy_id };
+		return siz_id;
 	}
 
 	unique_id get_object_type_curve_id() noexcept

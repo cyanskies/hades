@@ -61,7 +61,11 @@ namespace hades
 		void pop_back() noexcept;
 
 		void apply();
+		// shink the vector and buffer size, to only the memory needed
+		// good for static data
+		void shrink_to_fit();
 
+		//NOTE: transforms are ignored for quad_buffers
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
 
 	private:

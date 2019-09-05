@@ -593,6 +593,38 @@ namespace hades
 		return get_vec_unique_impl(o, get_tags_curve);
 	}
 
+	static void write_curve(data::writer& w, const curve_obj& c)
+	{
+		const auto curve_ptr = std::get<0>(c);
+		assert(curve_ptr);
+		const auto name_str = to_string(curve_ptr->id);
+
+		std::visit([&name_str, &w](auto&& v) {
+			using T = std::decay_t<decltype(v)>;
+
+			if constexpr (std::is_same_v<T, std::monostate>)
+				throw logic_error{"monostate poisoning"};
+			else if constexpr (resources::curve_types::is_vector_type_v<T>)
+			{
+				w.start_sequence(name_str);
+				w.write(v.x);
+				w.write(v.y);
+				w.end_sequence();
+			}
+			else if constexpr (resources::curve_types::is_collection_type_v<T>)
+			{
+				w.start_sequence(name_str);
+				for(auto &elm : v)
+					w.write(elm);
+			}
+			else
+				w.write(name_str, v);
+
+			return;
+		}, std::get<1>(c));
+		return;
+	}
+
 	using namespace std::string_view_literals;
 	constexpr auto obj_str = "objects"sv,
 		obj_curves = "curves"sv,
@@ -639,11 +671,7 @@ namespace hades
 				w.start_map(obj_curves);
 				
 				for (const auto &c : o.curves)
-				{
-					const auto curve_ptr = std::get<0>(c);
-					assert(curve_ptr);
-					w.write(to_string(curve_ptr->id), curve_to_string(*curve_ptr, std::get<1>(c)));
-				}
+					write_curve(w, c);
 
 				//end curves:
 				w.end_map();
@@ -706,12 +734,8 @@ namespace hades
 				if (curve_id == unique_id::zero)
 					continue;
 
-				const auto curve_info = c->get_child();
-				if (!curve_info)
-					continue;
-
 				const auto curve_ptr = data::get<resources::curve>(curve_id);
-				const auto curve_value = resources::curve_from_node(*curve_ptr, *curve_info);
+				const auto curve_value = resources::curve_from_node(*curve_ptr, *c);
 
 				if (resources::is_set(curve_value))
 					obj.curves.emplace_back(curve_ptr, curve_value);

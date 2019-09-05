@@ -617,7 +617,7 @@ namespace hades
 				o.name_id.clear();
 			}
 			else if (const auto iter = std::find(std::begin(reserved_object_names),
-				std::end(reserved_object_names), text))
+				std::end(reserved_object_names), text); iter != std::end(reserved_object_names))
 			{
 				name_reason = reason::reserved_name;
 			}

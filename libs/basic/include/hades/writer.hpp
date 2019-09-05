@@ -8,6 +8,7 @@
 
 namespace hades::data
 {
+	//TODO: inherit from hades error
 	class write_error : public std::runtime_error
 	{
 	public:

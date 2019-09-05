@@ -87,6 +87,9 @@ namespace hades
 		void destroy_drawable(drawable_id);
 
 		void prepare(); //must be called before draw if using sprites
+		//NOTE: sprite_batch uses quad_buffer internally, for consistancy,
+		//		transforms passed through sf::RenderStates won't be applied
+		//		to anything drawn with the interface
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const;
 
 	private:

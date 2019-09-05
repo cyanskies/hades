@@ -4,6 +4,12 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
+static bool buffer_available()
+{
+	static const auto avail = sf::VertexBuffer::isAvailable();
+	return avail;
+}
+
 namespace hades
 {
 	vertex_buffer::vertex_buffer()
@@ -135,6 +141,13 @@ namespace hades
 	{
 		for (const auto& v : q)
 			_verts.emplace_back(v);
+		
+		if (buffer_available()
+			&& std::size(_verts) <= _buffer.getVertexCount())
+		{
+			_buffer.update(q.data(), std::size(q), std::size(_verts) - std::size(q));
+		}
+
 		return;
 	}
 
@@ -158,6 +171,12 @@ namespace hades
 
 		for (auto i = std::size_t{}; i < std::size(q); ++i)
 			_verts[i + offset] = q[i];
+
+		if (buffer_available()
+			&& offset + std::size(q) <= _buffer.getVertexCount())
+		{
+			_buffer.update(std::data(q), std::size(q), offset);
+		}
 
 		return;
 	}
@@ -187,24 +206,58 @@ namespace hades
 	
 	void quad_buffer::apply()
 	{
-		if (!sf::VertexBuffer::isAvailable())
+		if (!buffer_available())
 			return;
 
 		const auto size = std::size(_verts);
+		
+		if (const auto old_size = _buffer.getVertexCount(),
+			size = std::size(_verts);
+			old_size == 0)
+		{
+			//how many quads the buffer should be able to hold
+			constexpr auto starting_quad_capacity = 6u;
+			constexpr auto starting_size = starting_quad_capacity * quad_vert_count;
+			_buffer.create(std::max(starting_size, size));
+		}
+		else if (size > old_size)
+		{
+			constexpr auto growth_rate = 1.5f;
+			const auto next_size = static_cast<std::size_t>(old_size * growth_rate);
+			const auto remain = next_size % quad_vert_count;
+			
+			_buffer.create(next_size + remain);
+			_buffer.update(_verts.data(), size, std::size_t{});
+		}
 
-		if (size != _buffer.getVertexCount())
-			_buffer.create(size);
+		return;
+	}
 
-		_buffer.update(_verts.data());
+	void quad_buffer::shrink_to_fit()
+	{
+		_verts.shrink_to_fit();
+
+		if (buffer_available())
+		{
+			_buffer.create(std::size(_verts));
+			_buffer.update(_verts.data());
+		}
+
 		return;
 	}
 	
 	void quad_buffer::draw(sf::RenderTarget& t, sf::RenderStates s) const
 	{
-		if (sf::VertexBuffer::isAvailable())
-			t.draw(_buffer, s);
+		if (buffer_available())
+			t.draw(_buffer, std::size_t{}, std::size(_verts), s);
 		else
+		{
+			//NOTE: transforms from s won't apply when drawing with _buffer
+			//		for consistant results, we'll erase them from draws with
+			//		_verts as well
+			s.transform = sf::Transform{};
 			t.draw(_verts.data(), std::size(_verts), _prim_type, s);
+		}
 		return;
 	}
 }

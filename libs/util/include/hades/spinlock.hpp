@@ -49,13 +49,13 @@ namespace hades
 		{
 			auto desired = unlocked;
 			return _count.compare_exchange_strong(desired, exclusive_lock,
-				std::memory_order_relaxed, std::memory_order_relaxed);
+				std::memory_order_release, std::memory_order_relaxed);
 		}
 
 		void unlock() noexcept
 		{
 			assert(_count.load() == exclusive_lock);
-			_count.store(unlocked, std::memory_order_relaxed);
+			_count.store(unlocked, std::memory_order_release);
 		}
 
 		void lock_shared() noexcept
@@ -83,7 +83,7 @@ namespace hades
 
 		void unlock_shared() noexcept
 		{
-			auto val = _count.fetch_sub(1, std::memory_order_relaxed);
+			auto val = _count.fetch_sub(1, std::memory_order_release);
 			assert(val != exclusive_lock);
 		}
 

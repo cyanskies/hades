@@ -105,16 +105,42 @@ namespace hades {
 			_insertFrame(at, value);
 		}
 
+		//different path if data is linear
 		Data get(Time at) const
 		{
+			if (_type == curve_type::linear)
+			{
+				if (_data.empty())
+					throw curve_error("Tried to call get() on an empty curve");
+
+				if (std::size(_data) == 1u
+					|| at <= _data.front().first)
+					return _data.front().second;
+
+				if (at >= _data.back().first)
+					return _data.back().second;
+
+				const auto [a, b] = _getRange(at);
+
+				if (b == std::end(_data))
+					return a->second;
+
+				const auto first = at - a->first;
+				const auto second = b->first - a->first;
+
+				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
+
+				using hades::lerp;
+				return lerp(a->second, b->second, interp);
+			}
+
 			return get_ref(at);
 		}
 
-		//FIXME: find solution for this,
-		// need to be able to return lerped data
-		// without breaking reference return?
+		//NOTE: never call for linear data, cannot return ref to computed value
 		const Data& get_ref(Time at) const
 		{
+			assert(_type != curve_type::linear);
 			assert(_type != curve_type::pulse);
 
 			if (_type == curve_type::pulse)
@@ -131,7 +157,7 @@ namespace hades {
 
 			if (at < _data[0].first)
 				return _data[0].second;
-			else if (last->first < at)
+			else if (_data.back().first < at)
 				return last->second;
 
 			if (_type == curve_type::const_c)
@@ -142,22 +168,6 @@ namespace hades {
 
 				return _data.front().second;
 			}
-			else if (_type == curve_type::linear)
-			{
-				const auto [a, b] = _getRange(at);
-
-				if (b == std::end(_data))
-					return a->second;
-
-				const auto first = at - a->first;
-				const auto second = b->first - a->first;
-
-				const float interp = static_cast<float>(first.count()) / static_cast<float>(second.count());
-
-				using hades::lerp;
-				_const_storage = lerp(a->second, b->second, interp);
-				return _const_storage;
-			}
 			else if (_type == curve_type::step)
 			{
 				const auto [a,b] = _getRange(at);
@@ -167,13 +177,17 @@ namespace hades {
 
 				return a->second;
 			}
+			else if (_type == curve_type::linear)
+			{
+				throw curve_error{ "Cannot return a ref to a linear curve" };
+			}
 			else
 				throw curve_error("Malformed curve");
 		}
 
 		//These are the only valid ways to get data from a Pulse
 		//returns the closest frame before at
-		frame_t getPrevious(Time at) const
+		const frame_t &getPrevious(Time at) const
 		{
 			//TODO: FIXME: if the curve has no keyframes then d.first might be std::end
 			//std::optional?
@@ -182,7 +196,7 @@ namespace hades {
 		}
 
 		//returns the closest frame after at
-		frame_t getNext(Time at) const
+		const frame_t &getNext(Time at) const
 		{
 			auto d = _getRange(at);
 			//FIXME: TODO: d.second might be std::end	
@@ -190,7 +204,7 @@ namespace hades {
 		}
 
 		//returns all keyframes between the specified times
-		std::vector<frame_t> getBetween(Time first, Time second) const
+		std::vector<std::reference_wrapper<frame_t>> getBetween(Time first, Time second) const
 		{
 			auto begin = this->begin(), end = this->end();
 			auto lower = std::lower_bound(begin, end, keyframe<Data>{ first, Data{} }, keyframe_less<Data>);
@@ -205,7 +219,7 @@ namespace hades {
 			output.reserve(std::distance(lower, upper));
 
 			while (lower != upper)
-				output.push_back(*lower++);
+				output.emplace_back(std::ref(*lower++));
 
 			return output;
 		}
@@ -340,9 +354,6 @@ namespace hades {
 		}
 
 		DataType _data;
-		// stores the result of lerp in a linear curve
-		// so that the result can be returned by ref
-		mutable Data _const_storage;
 		curve_type _type = curve_type::error;
 	};
 

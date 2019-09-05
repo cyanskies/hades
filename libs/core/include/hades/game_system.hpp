@@ -184,6 +184,7 @@ namespace hades
 
 		//the current time
 		time_point current_time;
+		// dt?
 		//render output interface
 		render_interface *render_output = nullptr;
 		//system data
@@ -264,11 +265,7 @@ namespace hades
 		using namespace resources::curve_types;
 
 		template<typename T>
-		struct curve_keyframe
-		{
-			T value;
-			time_point time;
-		};
+		using curve_keyframe = keyframe<T>;
 
 		object_ref get_object() noexcept;
 
@@ -320,14 +317,17 @@ namespace hades
 		object_ref get_object_from_name(std::string_view, time_point);
 
 		template<typename T>
-		curve<T> get_curve(object_ref, variable_id);
+		const curve<T> &get_curve(object_ref, variable_id);
 		template<typename T>
-		curve<T> get_curve(curve_index_t);
+		const curve<T> &get_curve(curve_index_t);
 		template<typename T>
-		curve<T> get_curve(variable_id);
+		const curve<T> &get_curve(variable_id);
 
 		//gets the keyframe on or befre the time point
 		//use set_value to write a keyframe
+		template<typename T>
+		const curve_keyframe<T>& get_keyframe_ref(curve_index_t, time_point);
+		
 		template<typename T>
 		curve_keyframe<T> get_keyframe(curve_index_t, time_point);
 		template<typename T>
@@ -340,6 +340,9 @@ namespace hades
 		curve_keyframe<T> get_keyframe(object_ref, variable_id);
 		template<typename T>
 		curve_keyframe<T> get_keyframe(variable_id);
+
+		template<typename T>
+		const T& get_ref(curve_index_t, time_point);
 
 		template<typename T>
 		T get_value(object_ref, variable_id, time_point);
@@ -440,7 +443,10 @@ namespace hades
 		{ return get_curve<T>(curve_index_t{ e, v }); }
 
 		template<typename T>
-		const T &get_value(curve_index_t, time_point);
+		const T& get_ref(curve_index_t, time_point);
+
+		template<typename T>
+		const T get_value(curve_index_t, time_point);
 
 		//render systems are currently read only
 		/*template<typename T>

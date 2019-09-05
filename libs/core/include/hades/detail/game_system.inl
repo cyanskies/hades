@@ -142,7 +142,7 @@ namespace hades
 		}
 
 		template<typename T>
-		game::curve_keyframe<T> get_game_curve_frame(game_interface* l, curve_index_t i, time_point t)
+		const game::curve_keyframe<T> &get_game_curve_frame_ref(game_interface* l, curve_index_t i, time_point t)
 		{
 			assert(l);
 			auto& curves = l->get_curves();
@@ -150,8 +150,7 @@ namespace hades
 
 			const auto& curve = curve_map.find(i)->second;
 
-			const auto [time, value] = curve.getPrevious(t);
-			return { value, time };
+			return curve.getPrevious(t);
 		}
 
 		template<typename T>
@@ -215,34 +214,37 @@ namespace hades
 	namespace game::level
 	{
 		template<typename T>
-		curve<T> get_curve(object_ref e, variable_id v)
+		const curve<T> &get_curve(object_ref e, variable_id v)
 		{
 			return get_curve<T>(curve_index_t{ e, v });
 		}
 
 		template<typename T>
-		curve<T> get_curve(variable_id v)
+		const curve<T> &get_curve(variable_id v)
 		{
 			auto ent = game::get_object();
 			return get_curve<T>({ ent, v });
 		}
 
 		template<typename T>
-		curve<T> get_curve(curve_index_t i)
+		const curve<T> &get_curve(curve_index_t i)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
+			return detail::get_game_curve_ref<T>(ptr->level_data, i);
+		}
 
-			return detail::get_game_curve<T>(ptr->level_data, i);
+		template<typename T>
+		const curve_keyframe<T>& get_keyframe_ref(curve_index_t, time_point)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			return detail::get_game_curve_ref<T>(ptr->level_data, i);
 		}
 
 		template<typename T>
 		curve_keyframe<T> get_keyframe(curve_index_t index, time_point t)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
-
-			return detail::get_game_curve_frame<T>(ptr->level_data, index, t);
+			return detail::get_game_curve_frame_ref<T>(ptr->level_data, index, t);
 		}
 
 		template<typename T>
@@ -276,6 +278,13 @@ namespace hades
 		}
 
 		template<typename T>
+		const T& get_ref(curve_index_t i, time_point t)
+		{
+			auto &curve = get_curve(i);
+			return curve.get_ref(t);
+		}
+
+		template<typename T>
 		inline T get_value(object_ref e, variable_id v, time_point t)
 		{
 			return get_value<T>({ e,v }, t);
@@ -284,7 +293,7 @@ namespace hades
 		template<typename T>
 		T get_value(curve_index_t i, time_point t)
 		{
-			const auto& curve = detail::get_game_curve_ref<T>(detail::get_game_data_ptr()->level_data, i);
+			const auto& curve = get_curve<T>(i);
 			return curve.get(t);
 		}
 
@@ -322,8 +331,6 @@ namespace hades
 		void set_curve(curve_index_t i, curve<T> c)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
-
 			return detail::set_game_curve(ptr->level_data, i, std::move(c));
 		}
 
@@ -344,8 +351,6 @@ namespace hades
 		void set_value(curve_index_t i, time_point t, T&& v)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
-
 			return detail::set_game_value(ptr->level_data, i, t, std::forward<T>(v));
 		}
 
@@ -380,9 +385,7 @@ namespace hades
 		T &get_system_data()
 		{
 			auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
 			auto ret = std::any_cast<T>(ptr->system_data);
-			assert(ret);
 			return *ret;
 		}
 
@@ -390,7 +393,6 @@ namespace hades
 		void set_system_data(T value)
 		{
 			auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
 			ptr->system_data->emplace<std::decay_t<T>>(std::move(value));
 		}
 	}
@@ -414,10 +416,17 @@ namespace hades
 		}
 
 		template<typename T>
-		const T &get_value(curve_index_t i, time_point t)
+		const T& get_ref(curve_index_t, time_point)
 		{
-			auto &curve = get_curve<T>(i);
+			const auto &curve = get_curve<T>(i);
 			return curve.get_ref(t);
+		}
+
+		template<typename T>
+		const T get_value(curve_index_t i, time_point t)
+		{
+			const auto &curve = get_curve<T>(i);
+			return curve.get(t);
 		}
 
 		/*template<typename T>

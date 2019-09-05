@@ -306,10 +306,11 @@ namespace hades::resources
 			}
 			else
 			{
+				const auto value = n.get_child();
 				if constexpr (std::is_same_v<T, unique_id>)
-					v = n.to_scalar<T>(data::make_uid);
+					v = value->to_scalar<T>(data::make_uid);
 				else
-					v = n.to_scalar<T>();
+					v = value->to_scalar<T>();
 			}
 		}, value);
 

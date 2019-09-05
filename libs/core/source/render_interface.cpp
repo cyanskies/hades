@@ -183,61 +183,89 @@ namespace hades
 
 	void render_interface::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
-		using sprite_utility::layer_t;
+		//find the drawable* layers
+		auto layers = std::vector<sprite_utility::layer_t>{};
 
-		t.draw(_sprite_batch, s);
+		for (const auto& o : _object_layers)
+			layers.emplace_back(o.layer);
 
-		return;
+		struct layer_info {
+			sprite_utility::layer_t l;
+			std::size_t i;
+		};
 
-		//TODO: make this less crazy
+		auto layer_data = std::vector<layer_info>{};
+		layer_data.reserve(std::size(layers));
 
-		constexpr auto layer_max = std::numeric_limits<layer_t>::max();
-		constexpr auto layer_min = std::numeric_limits<layer_t>::min();
+		for (auto i = std::size_t{}; i < std::size(layers); ++i)
+			layer_data.emplace_back(layer_info{ layers[i], i });
 
-		auto drawable_iter = std::begin(_object_layers);
-		const auto layer_ids = _sprite_batch.get_layer_list();
-		auto sprite_iter = std::begin(layer_ids);
+		std::sort(std::begin(layer_data), std::end(layer_data), [](layer_info a, layer_info b) {
+			return a.l < b.l;
+		});
 
-		//get the lowest layer, and the max layers for each tpe
-		const auto [starting_layer, last_sprite_layer, last_object_layer] = [&]()->std::tuple<layer_t, layer_t, layer_t> {
-			if (drawable_iter != std::end(_object_layers) &&
-				sprite_iter != std::end(layer_ids))
-				return { std::min(*sprite_iter, drawable_iter->layer), layer_ids.back(), _object_layers.back().layer };
-			else if (drawable_iter == std::end(_object_layers) &&
-				sprite_iter != std::end(layer_ids))
-				return { *sprite_iter, layer_ids.back() , layer_min };
-			else if (sprite_iter == std::end(layer_ids) &&
-				drawable_iter != std::end(_object_layers))
-				return { drawable_iter->layer, layer_min, _object_layers.back().layer };
-			else
-				return { layer_max, layer_min, layer_min };
-		}();
+		const auto sprite_layers = _sprite_batch.get_layer_info_list();
 
-		const auto final_layer = std::max(last_sprite_layer, last_object_layer);
-		auto layer = starting_layer;
+		const auto s_size = std::size(sprite_layers),
+			o_size = std::size(layer_data);
 
-		while (layer <= final_layer)
+		if (s_size == 0 && o_size == 0)
+			return; //nothing to draw
+		else if (s_size == 0u)
 		{
-			if (drawable_iter != std::end(_object_layers) &&
-				drawable_iter->layer == layer)
+			//only drawable objects to draw
+			s.transform = sf::Transform{};
+
+			for (const auto& layer : layer_data)
 			{
-				for (const auto& d : drawable_iter->objects)
-					t.draw(d.get(d.storage), s);
-
-				++drawable_iter;
+				for (const auto& obj : _object_layers[layer.i].objects)
+					t.draw(std::invoke(obj.get, obj.storage), s);
 			}
-
-			if (sprite_iter != std::end(layer_ids) &&
-				*sprite_iter == layer)
-			{
-				_sprite_batch.draw(t, layer, s);
-				++sprite_iter;
-			}
-
-			++layer;
+			return;
 		}
+		else if (o_size == 0u)
+		{
+			//only sprite_batch to draw
+			for (const auto& layer : sprite_layers)
+				_sprite_batch.draw(t, layer.i, s);
+			return;
+		}
+		else
+		{
+			//interleave sprite_batch and drawable calls.
+			s.transform = sf::Transform{};
 
-		return;
+			const auto first = std::min(sprite_layers.front().l, layer_data.front().l);
+			const auto last = std::max(sprite_layers.back().l, layer_data.back().l);
+
+			auto s_iter = std::begin(sprite_layers);
+			auto o_iter = std::begin(layer_data);
+
+			const auto s_end = std::end(sprite_layers);
+			const auto o_end = std::end(layer_data);
+
+			for (auto i = first; i <= last; ++i)
+			{
+				while (o_iter != o_end
+					&& o_iter->l < i)
+					++o_iter;
+
+				if (o_iter != o_end)
+				{
+					for (const auto& obj : _object_layers[o_iter->i].objects)
+						t.draw(std::invoke(obj.get, obj.storage), s);
+				}
+
+				while (s_iter != s_end
+					&& s_iter->l < i)
+					++s_iter;
+
+				if (s_iter != s_end)
+					_sprite_batch.draw(t, s_iter->i, s);
+			}
+
+			return;
+		}
 	}
 
 	render_interface::drawable_id render_interface::_make_new_id()

@@ -285,6 +285,36 @@ namespace hades
 		}
 
 		template<typename T>
+		const T& get_ref(object_ref o, variable_id v, time_point t)
+		{
+			return get_ref<T>({ o, v }, t);
+		}
+
+		template<typename T>
+		const T& get_ref(variable_id v, time_point t)
+		{
+			return get_ref<T>({ get_object(), v }, t);
+		}
+
+		template<typename T>
+		const T& get_ref(curve_index_t i)
+		{
+			return get_ref<T>(c, get_last_time());
+		}
+
+		template<typename T>
+		const T& get_ref(variable_id v)
+		{
+			return get_ref<T>({ get_object(), v }, get_last_time());
+		}
+
+		template<typename T>
+		const T& get_ref(object_ref o, variable_id v)
+		{
+			return get_ref<T>({ o, v }, get_last_time());
+		}
+
+		template<typename T>
 		inline T get_value(object_ref e, variable_id v, time_point t)
 		{
 			return get_value<T>({ e,v }, t);

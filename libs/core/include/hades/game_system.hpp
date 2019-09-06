@@ -341,8 +341,20 @@ namespace hades
 		template<typename T>
 		curve_keyframe<T> get_keyframe(variable_id);
 
+		//returns a reference to the value stored in a curve at a specific time
+		// it is invalid to get a reference to a linear curve
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
+		template<typename T>
+		const T& get_ref(object_ref, variable_id, time_point);
+		template<typename T>
+		const T& get_ref(variable_id, time_point);
+		template<typename T>
+		const T& get_ref(curve_index_t);
+		template<typename T>
+		const T& get_ref(variable_id);
+		template<typename T>
+		const T& get_ref(object_ref, variable_id);
 
 		template<typename T>
 		T get_value(object_ref, variable_id, time_point);

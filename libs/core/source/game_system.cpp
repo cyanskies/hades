@@ -179,45 +179,7 @@ namespace hades
 			simple_renderer::on_destroy,
 			d
 		);
-	}
-
-	resources::curve_types::collection_object_ref get_added_entites(const name_list& nl_curve, time_point last_frame, time_point this_frame)
-	{
-		assert(!std::empty(nl_curve));
-		auto prev = nl_curve.get(last_frame);
-		auto next = nl_curve.get(this_frame);
-
-		std::sort(std::begin(prev), std::end(prev));
-		std::sort(std::begin(next), std::end(next));
-
-		static auto output = resources::curve_types::collection_object_ref{};
-		output.clear();
-
-		std::set_difference(std::begin(next), std::end(next),
-			std::begin(prev), std::end(prev),
-			std::back_inserter(output));
-
-		return output;
-	}
-
-	resources::curve_types::collection_object_ref get_removed_entites(const name_list &nl_curve, time_point last_frame, time_point this_frame)
-	{
-		assert(!std::empty(nl_curve));
-		auto prev = nl_curve.get(last_frame);
-		auto next = nl_curve.get(this_frame);
-
-		std::sort(std::begin(prev), std::end(prev));
-		std::sort(std::begin(next), std::end(next));
-
-		static auto output = resources::curve_types::collection_object_ref{};
-		output.clear();
-
-		std::set_difference(std::begin(prev), std::end(prev),
-			std::begin(next), std::end(next),
-			std::back_inserter(output));
-
-		return output;
-	}
+	}	
 
 	static thread_local system_job_data* game_data_ptr = nullptr;
 	static thread_local game_interface* game_current_level_ptr = nullptr;

@@ -150,4 +150,19 @@ namespace hades
 		return is_within(value.x, other.x, other.x + other.width)
 			&& is_within(value.y, other.y, other.y + other.height);
 	}
+
+	template<typename T>
+	bool is_within(rect_t<T> value, rect_t<T> other)
+	{
+		auto area = rect_t<T>{};
+		intersect_area(value, other, area);
+
+		if constexpr(std::is_floating_point_v<T>)
+		{
+			return float_near_equal(value.width, area.width)
+				&& float_near_equal(value.height, area.height);
+		}
+		else
+			return size(value) == size(area);
+	}
 }

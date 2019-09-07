@@ -114,8 +114,23 @@ namespace hades
 		std::vector<game_system> systems;
 		auto attach_list = sv.systems_attached;
 
+		//convert from curve<vector<entity_id>>
+		// to curve<vector<pair<entity_id, timePoint>>>
 		for (std::size_t i = 0; i < sv.systems.size(); ++i)
-			systems.emplace_back(sv.systems[i], std::move(attach_list[i]));
+		{
+			auto attached = name_list{};
+			for (const auto& a : attach_list[i])
+			{
+				auto ents = std::vector<attached_ent>{};
+				ents.reserve(std::size(a.second));
+				for (auto e : a.second)
+					ents.emplace_back(e, time_point{});
+
+				attached.set(a.first, std::move(ents));
+			}
+
+			systems.emplace_back(sv.systems[i], std::move(attached));
+		}
 
 		_systems = std::move(systems);
 

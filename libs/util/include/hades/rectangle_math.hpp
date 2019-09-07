@@ -2,6 +2,7 @@
 #define HADES_UTIL_RECT_MATH_HPP
 
 #include <array>
+#include <type_traits>
 
 #include "hades/types.hpp"
 #include "hades/math.hpp"
@@ -81,6 +82,10 @@ namespace hades
 
 	template<typename T>
 	bool is_within(point_t<T> value, rect_t<T> other);
+
+	//returns true if the first rectangle is entirely within the second
+	template<typename T>
+	bool is_within(rect_t<T> value, rect_t<T> other);
 }
 
 #include "hades/detail/rectangle_math.inl"

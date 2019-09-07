@@ -25,7 +25,11 @@ namespace hades
 	};
 
 	using system_data_t = std::any;
+	using attached_ent = std::pair<entity_id, time_point>;
+	using name_list = curve<std::vector<attached_ent>>;
 
+	//FIXME: if we scub time then the new_ents and removed_ents list for
+	//		the next frame won't be accurate
 	template<typename SystemType>
 	class system_behaviours
 	{
@@ -33,19 +37,16 @@ namespace hades
 		using system_type = SystemType;
 		using system_resource = typename SystemType::system_t;
 
-		std::vector<SystemType> get_systems() const
+		std::vector<SystemType>& get_systems()
 		{
 			return _systems;
 		}
 
-		std::vector<const system_resource*> get_new_systems() const
+		std::vector<const system_resource*> get_new_systems()
 		{
-			return _new_systems;
-		}
-
-		void clear_new_systems() noexcept
-		{
-			_new_systems.clear();
+			auto ret = std::vector<const system_resource*>{};
+			std::swap(ret, _new_systems);
+			return ret;
 		}
 
 		system_data_t& get_system_data(unique_id key)
@@ -53,12 +54,25 @@ namespace hades
 			return _system_data[key];
 		}
 
-		//TODO: should systems be considered static for entity lifetime?
+		//sets the state of the new and removed entity lists
+		//to the correct values for provided time
+		void set_current_time(time_point);
+
+		//get entites that have been added to the system
+		//since the last frame
+		std::vector<entity_id> get_new_entities(SystemType&);
+		//get all entities currently attached to the system
+		const name_list& get_entities(SystemType&) const;
+		//get entities that were removed from the system last frame
+		std::vector<entity_id> get_removed_entities(SystemType&);
+
 		void attach_system(entity_id, unique_id, time_point t);
 		void detach_system(entity_id, unique_id, time_point t);
+		//remove this entity from all systems
+		void detach_all(entity_id, time_point t);
 
-		//TODO: sleep_ent(count || duration)
-		//TODO: wake_ents(dt)
+		//this entity won't trigger on_tick events untill the provided time point
+		void sleep_entity(entity_id, unique_id, time_point until);
 
 	private:
 		std::vector<SystemType> _systems;
@@ -124,11 +138,6 @@ namespace hades
 		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
-	using name_list = curve<resources::curve_types::collection_object_ref>;
-	
-	resources::curve_types::collection_object_ref get_added_entites(const name_list&, time_point last_frame, time_point this_frame);
-	resources::curve_types::collection_object_ref get_removed_entites(const name_list&, time_point last_frame, time_point this_frame);
-	
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
 	struct game_system
@@ -152,6 +161,9 @@ namespace hades
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
 		name_list attached_entities{ curve_type::step };
+
+		std::vector<entity_id> new_ents;
+		std::vector<entity_id> removed_ents;
 	};
 
 	//program provided systems should be attatched to the renderer or 
@@ -229,8 +241,9 @@ namespace hades
 
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system *system = nullptr;
-		//list of entities attached to this system, over time
 		name_list attached_entities{ curve_type::step };
+		std::vector<entity_id> new_ents;
+		std::vector<entity_id> removed_ents;
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
@@ -253,7 +266,7 @@ namespace hades
 	using world_vector_t = resources::curve_types::vec2_float;
 	using world_rect_t = rect_t<world_unit_t>;
 
-	//TODO: move to level_interface?
+	//TODO: move to game_system_interface
 	//functions for game state access
 
 	//funcs to call before a system gets control, and to clean up after

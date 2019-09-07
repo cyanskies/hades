@@ -80,7 +80,10 @@ namespace hades
 			updated.set(time_point{ nanoseconds{-1} }, {});
 
 		auto ent_list = updated.get(t);
-		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
+			return ent.first == entity;
+		});
+
 		if (found != ent_list.end())
 		{
 			const auto message = "The requested entityid is already attached to this system. EntityId: "
@@ -90,7 +93,7 @@ namespace hades
 			throw system_already_attached{ message };
 		}
 
-		ent_list.emplace_back(entity);
+		ent_list.emplace_back(entity, time_point{});
 		updated.insert(t, std::move(ent_list));
 
 		std::swap(updated, system.attached_entities);
@@ -103,7 +106,10 @@ namespace hades
 		auto& system = detail::find_system_old<SystemType::system_t>(sys, _systems, _new_systems);
 		auto ents = system.attached_entities;
 		auto ent_list = ents.get(t);
-		auto found = std::find(ent_list.begin(), ent_list.end(), entity);
+		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
+			return entity == ent.first;
+		});
+
 		if (found == ent_list.end())
 		{
 			const auto message = "The requested entityid isn't attached to this system. EntityId: "
@@ -131,6 +137,59 @@ namespace hades
 			return set_render_data(d);
 		}
 
+		namespace old
+		{
+			static inline resources::curve_types::collection_object_ref get_added_entites(const name_list& nl_curve, time_point last_frame, time_point this_frame)
+			{
+				assert(!std::empty(nl_curve));
+				auto prev = nl_curve.get(last_frame);
+				auto next = nl_curve.get(this_frame);
+
+				std::sort(std::begin(prev), std::end(prev));
+				std::sort(std::begin(next), std::end(next));
+
+				static auto output = std::vector<attached_ent>{};
+				output.clear();
+
+				std::set_difference(std::begin(next), std::end(next),
+					std::begin(prev), std::end(prev),
+					std::back_inserter(output));
+
+				auto ret = std::vector<entity_id>{};
+				ret.reserve(std::size(output));
+
+				for (const auto& o : output)
+					ret.emplace_back(o.first);
+
+				return ret;
+			}
+
+			static inline resources::curve_types::collection_object_ref get_removed_entites(const name_list& nl_curve, time_point last_frame, time_point this_frame)
+			{
+				assert(!std::empty(nl_curve));
+				auto prev = nl_curve.get(last_frame);
+				auto next = nl_curve.get(this_frame);
+
+				std::sort(std::begin(prev), std::end(prev));
+				std::sort(std::begin(next), std::end(next));
+
+				static auto output = std::vector<attached_ent>{};
+				output.clear();
+
+				std::set_difference(std::begin(prev), std::end(prev),
+					std::begin(next), std::end(next),
+					std::back_inserter(output));
+
+				auto ret = std::vector<entity_id>{};
+				ret.reserve(std::size(output));
+
+				for (const auto& o : output)
+					ret.emplace_back(o.first);
+
+				return ret;
+			}
+		}
+
 		template<typename ImplementationType, typename MakeGameStructFn>
 		time_point update_level_sync(time_point before_prev, time_point prev_time, time_duration dt,
 			ImplementationType& impl, MakeGameStructFn make_game_struct)
@@ -155,13 +214,18 @@ namespace hades
 			{
 				update_data d{ s.system };
 				if (s.system->on_connect)
-					d.added_ents = get_added_entites(s.attached_entities, before_prev, prev_time);
+					d.added_ents = old::get_added_entites(s.attached_entities, before_prev, prev_time);
 
 				if (s.system->tick)
-					d.attached_ents = s.attached_entities.get(prev_time);
+				{
+					const auto &ents = s.attached_entities.get(prev_time);
+					d.attached_ents.reserve(std::size(ents));
+					for (const auto& e : ents)
+						d.attached_ents.emplace_back(e.first);
+				}
 
 				if(s.system->on_disconnect)
-					d.removed_ents = get_removed_entites(s.attached_entities, before_prev, prev_time);
+					d.removed_ents = old::get_removed_entites(s.attached_entities, before_prev, prev_time);
 
 				data.emplace_back(std::move(d));
 			}
@@ -232,8 +296,18 @@ namespace hades
 
 		const auto current_time = prev_time + dt;
 		
-		const auto new_systems = sys.get_new_systems();
-		const auto systems = sys.get_systems();
+		{
+			const auto new_systems = sys.get_new_systems();
+			for (const auto s : new_systems)
+			{
+				if (!s->on_create)
+					continue;
+
+				auto game_data = std::invoke(make_game_struct, s->id, bad_entity, &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
+				detail::set_data(&game_data);
+				std::invoke(s->on_create);
+			}
+		}
 
 		struct update_data
 		{
@@ -243,32 +317,34 @@ namespace hades
 
 		//collect entity lists upfront, so that they don't change mid update
 		std::vector<update_data> data;
-		for (const auto& s : systems)
+		
 		{
-			update_data d{ s.system };
-			if (s.system->on_connect)
-				d.added_ents = get_added_entites(s.attached_entities, before_prev, prev_time);
+			auto systems = sys.get_systems();
+			for (auto& s : systems)
+			{
+				update_data d{ s.system };
+				if (s.system->on_connect)
+					d.added_ents = sys.get_new_entities(s);
 
-			if (s.system->tick)
-				d.attached_ents = s.attached_entities.get(prev_time);
+				if (s.system->tick)
+				{
+					//only update entities that have passed their wake up time
+					const auto &ents = sys.get_entities(s).get(prev_time);
+					d.attached_ents.reserve(std::size(ents));
+					for (const auto& e : ents)
+					{
+						if (e.second <= current_time)
+							d.attached_ents.emplace_back(e.first);
+					}
+				}
 
-			if (s.system->on_disconnect)
-				d.removed_ents = get_removed_entites(s.attached_entities, before_prev, prev_time);
+				if (s.system->on_disconnect)
+					d.removed_ents = sys.get_removed_entities(s);
 
-			data.emplace_back(std::move(d));
+				data.emplace_back(std::move(d));
+			}
 		}
 
-		for (const auto s : new_systems)
-		{
-			if (!s->on_create)
-				continue;
-
-			auto game_data = std::invoke(make_game_struct, s->id, bad_entity, &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
-			detail::set_data(&game_data);
-			std::invoke(s->on_create);
-		}
-
-		sys.clear_new_systems();
 		//call on_connect for new entities
 		for (const auto& u : data)
 		{

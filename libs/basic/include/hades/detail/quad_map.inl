@@ -65,18 +65,23 @@ namespace hades
 
 		std::vector<value_type> find_collisions(const rect_type &rect) const
 		{
+			//TODO: convert to iterative loop
+			//		rather than recursive
 			std::vector<const node_type*> nodes;
 
 			for (auto &c : _children)
 			{
 				if (collision_test(rect, c.area()))
-					nodes.push_back(&c);
+					nodes.emplace_back(&c);
 			}
 
 			std::vector<value_type> out;
 
-			for (auto r : _data)
-				out.push_back(r);
+			for (const auto &r : _data)
+			{
+				if(collision_test(rect, r.rect))
+					out.emplace_back(r);
+			}
 
 			for (auto n : nodes)
 			{

@@ -8,6 +8,9 @@
 
 #include "hades/utility.hpp"
 
+//TODO: strong_typedef can accept a struct type with defines and constexpr values
+// in order to toggle capabilities
+
 namespace hades
 {
 	//a strong typedef around a type
@@ -234,6 +237,12 @@ namespace hades
 	constexpr strong_typedef<Tag, T, B> next(strong_typedef<Tag, T, B> v) noexcept(noexcept(increment(v)))
 	{
 		return increment(v);
+	}
+
+	template<typename Tag, typename T, bool B>
+	T to_value(strong_typedef<Tag, T, B> e)
+	{
+		return static_cast<T>(e);
 	}
 
 	template<typename Tag, typename T, bool B>

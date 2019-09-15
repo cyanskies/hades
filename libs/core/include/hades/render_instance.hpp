@@ -26,7 +26,7 @@ namespace hades
 		const common_interface* _interface = nullptr;
 		system_behaviours<render_system> _systems;
 		std::unordered_set<entity_id> _activated_ents;
-		render_implementation _game;
+		//render_implementation _game;
 	};
 }
 

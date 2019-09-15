@@ -37,12 +37,12 @@ namespace hades
 		using system_type = SystemType;
 		using system_resource = typename SystemType::system_t;
 
-		std::vector<SystemType>& get_systems()
+		std::vector<SystemType>& get_systems() noexcept
 		{
 			return _systems;
 		}
 
-		std::vector<const system_resource*> get_new_systems()
+		std::vector<const system_resource*> get_new_systems() noexcept
 		{
 			auto ret = std::vector<const system_resource*>{};
 			std::swap(ret, _new_systems);
@@ -53,6 +53,8 @@ namespace hades
 		{
 			return _system_data[key];
 		}
+
+		void set_attached(unique_id, name_list);
 
 		//sets the state of the new and removed entity lists
 		//to the correct values for provided time
@@ -82,11 +84,13 @@ namespace hades
 
 	//fwd
 	class game_interface;
+	struct game_system;
 
 	struct system_job_data
 	{
+		unique_id system = unique_id::zero;
 		//entity to run on
-		entity_id entity = bad_entity;
+		std::vector<entity_id> entity;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -96,6 +100,9 @@ namespace hades
 		// contains players, 
 		// and... just the players
 		game_interface *mission_data = nullptr;
+
+		system_behaviours<game_system>* systems = nullptr;
+
 		//the previous time, and the time to advance by(t + dt)
 		time_point prev_time;
 		time_duration dt;
@@ -181,7 +188,7 @@ namespace hades
 		//the system currently running
 		unique_id system = unique_id::zero;
 		//entity to run on
-		entity_id entity = bad_entity;
+		std::vector<entity_id> entity;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -280,7 +287,7 @@ namespace hades
 		template<typename T>
 		using curve_keyframe = keyframe<T>;
 
-		object_ref get_object() noexcept;
+		const std::vector<object_ref> &get_objects() noexcept;
 
 		//the time of the previous update
 		time_point get_last_time() noexcept;
@@ -303,6 +310,14 @@ namespace hades
 	//game::mission contains functions for accessing mission state
 	namespace game::mission
 	{
+		//world data
+
+		//object data
+
+		//common curves
+
+		//curves access
+
 		//get_curve_x
 		//set_curve_x
 
@@ -322,6 +337,9 @@ namespace hades
 		//void return_level() //restores the origional level
 		//void switch_level(level_id)
 
+		//world data
+		world_rect_t get_world_bounds();
+
 		//NOTE: for the following functions(get/set curves/values)
 		// if the object_ref is not provided, it is set to game::get_object()
 		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
@@ -330,11 +348,7 @@ namespace hades
 		object_ref get_object_from_name(std::string_view, time_point);
 
 		template<typename T>
-		const curve<T> &get_curve(object_ref, variable_id);
-		template<typename T>
 		const curve<T> &get_curve(curve_index_t);
-		template<typename T>
-		const curve<T> &get_curve(variable_id);
 
 		//gets the keyframe on or befre the time point
 		//use set_value to write a keyframe
@@ -344,86 +358,48 @@ namespace hades
 		template<typename T>
 		curve_keyframe<T> get_keyframe(curve_index_t, time_point);
 		template<typename T>
-		curve_keyframe<T> get_keyframe(object_ref, variable_id, time_point);
-		template<typename T>
-		curve_keyframe<T> get_keyframe(variable_id, time_point);
-		template<typename T>
 		curve_keyframe<T> get_keyframe(curve_index_t);
-		template<typename T>
-		curve_keyframe<T> get_keyframe(object_ref, variable_id);
-		template<typename T>
-		curve_keyframe<T> get_keyframe(variable_id);
-
+		
 		//returns a reference to the value stored in a curve at a specific time
 		// it is invalid to get a reference to a linear curve
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
 		template<typename T>
-		const T& get_ref(object_ref, variable_id, time_point);
-		template<typename T>
-		const T& get_ref(variable_id, time_point);
-		template<typename T>
 		const T& get_ref(curve_index_t);
-		template<typename T>
-		const T& get_ref(variable_id);
-		template<typename T>
-		const T& get_ref(object_ref, variable_id);
-
-		template<typename T>
-		T get_value(object_ref, variable_id, time_point);
+		
 		template<typename T>
 		T get_value(curve_index_t, time_point);
 		template<typename T>
-		T get_value(variable_id, time_point);
-		template<typename T>
-		T get_value(object_ref, variable_id);
-		template<typename T>
 		T get_value(curve_index_t);
-		template<typename T>
-		T get_value(variable_id);
-
-		template<typename T>
-		void set_curve(object_ref, variable_id, curve<T>);
+		
 		template<typename T>
 		void set_curve(curve_index_t, curve<T>);
-		template<typename T>
-		void set_curve(variable_id, curve<T>);
-
+		
 		//seting value will remove all keyframes after time_point
 		template<typename T>
-		void set_value(object_ref, variable_id, time_point, T&&);
-		template<typename T>
 		void set_value(curve_index_t, time_point, T&&);
-		template<typename T>
-		void set_value(variable_id, time_point, T&&);
-		template<typename T>
-		void set_value(object_ref, variable_id, T&&);
-		template<typename T>
-		void set_value(curve_index_t, T&&);
-		template<typename T>
-		void set_value(variable_id v, T&&);
-
+		
+		//object creation and destruction
 		//an object is always created at game::get_time() time.
 		object_ref create_object(object_instance);
 
-		//helper functions for accessing common curves
-		world_rect_t get_world_bounds();
+		//attach_syste,
+		//sleep_system
+		//detach system
 
+		//removes all systems from object
+		void destroy_object(object_ref);
+
+		//helper functions for accessing common curves
 		//position
 		world_vector_t get_position(object_ref, time_point);
 		world_vector_t get_position(object_ref);
-		world_vector_t get_position();
 		void set_position(object_ref, world_unit_t x, world_unit_t y, time_point);
-		void set_position(object_ref, world_unit_t x, world_unit_t y);
-		void set_position(world_unit_t x, world_unit_t y);
-
+		
 		//size
 		world_vector_t get_size(object_ref, time_point);
 		world_vector_t get_size(object_ref);
-		world_vector_t get_size();
 		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point);
-		void set_size(object_ref, world_unit_t w, world_unit_t h);
-		void set_size(world_unit_t w, world_unit_t h);
 	}
 
 	void set_render_data(render_job_data*) noexcept;
@@ -432,7 +408,7 @@ namespace hades
 	namespace render
 	{
 		using namespace resources::curve_types;
-		object_ref get_object();
+		const std::vector<object_ref> &get_objects();
 		render_interface *get_render_output();
 		time_point get_time();
 
@@ -458,14 +434,7 @@ namespace hades
 	{
 		//get curve from this level
 		template<typename T>
-		const curve<T>& get_curve(variable_id);
-
-		template<typename T>
 		const curve<T>& get_curve(curve_index_t);
-
-		template<typename T>
-		inline const curve<T> &get_curve(object_ref e, variable_id v)
-		{ return get_curve<T>(curve_index_t{ e, v }); }
 
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
@@ -492,6 +461,8 @@ namespace hades
 
 		template<typename T>
 		void set_curve(unique_id, curve_index_t, T&& value);*/
+
+		world_rect_t get_world_bounds();
 	}
 }
 

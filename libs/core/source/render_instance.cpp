@@ -87,9 +87,9 @@ namespace hades
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
 
-		auto make_render_job_data = [m, &i](unique_id sys, entity_id e, const common_interface* g, system_behaviours<render_system> *s, time_point prev,
+		auto make_render_job_data = [m, &i](unique_id sys, std::vector<entity_id> e, const common_interface* g, system_behaviours<render_system> *s, time_point prev,
 			time_duration dt, system_data_t* d)->render_job_data {
-				return render_job_data{sys, e, g, s, prev + dt, &i, d };
+				return render_job_data{sys, std::move(e), g, s, prev + dt, &i, d };
 		};
 
 		const auto next = update_level(_prev_frame, _current_frame, dt,

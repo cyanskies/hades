@@ -85,7 +85,7 @@ namespace hades
 
 	//returns true if the first rectangle is entirely within the second
 	template<typename T>
-	bool is_within(rect_t<T> value, rect_t<T> other);
+	bool is_within(rect_t<T> first, rect_t<T> second);
 }
 
 #include "hades/detail/rectangle_math.inl"

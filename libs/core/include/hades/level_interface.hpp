@@ -11,6 +11,7 @@
 #include "hades/input.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/game_system.hpp"
+#include "hades/terrain.hpp"
 #include "hades/time.hpp"
 #include "hades/types.hpp"
 
@@ -48,6 +49,11 @@ namespace hades
 
 		//gets an entity id from a unique name
 		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
+
+		//map info
+		//terrain()
+		virtual const terrain_map& get_world_terrain() const noexcept = 0;
+		virtual world_rect_t get_world_bounds() const noexcept = 0;
 	};
 
 	//TODO: implement common_interface for remote hosts,
@@ -87,12 +93,19 @@ namespace hades
 		curve_data& get_curves() noexcept override final;
 		const curve_data& get_curves() const noexcept override final;
 
+		const terrain_map& get_world_terrain() const noexcept override final;
+		world_rect_t get_world_bounds() const noexcept override final;
+
 	private:
 		curve_data _curves;
 		name_curve_t _entity_names{ curve_type::step };
 
 		curve<input_system::action_set> _input{ curve_type::step };
 		entity_id::value_type _next = static_cast<entity_id::value_type>(next(bad_entity));
+
+		//level info
+		terrain_map _terrain;
+		world_vector_t _size;
 	};
 
 	//implements game_interface, this represents a game area,
@@ -122,10 +135,21 @@ namespace hades
 		std::unordered_map<unique_id, system_data_t> _system_data;
 	};
 
-	class game_implementation final : public common_implementation<game_system>
+	class game_implementation final : public common_implementation_base
 	{
 	public:
 		explicit game_implementation(const level_save&);
+
+		void attach_system(entity_id e, unique_id i, time_point t) override
+		{ _systems.attach_system(e, i, t); }
+		void detach_system(entity_id e, unique_id i, time_point t) override
+		{ _systems.detach_system(e, i, t); }
+
+		system_behaviours<game_system>& get_systems() noexcept
+		{ return _systems; }
+
+	private:
+		system_behaviours<game_system> _systems;
 	};
 
 	//TODO: deprecate, render_instance replaces this entirely

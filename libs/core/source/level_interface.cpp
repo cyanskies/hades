@@ -9,9 +9,22 @@
 namespace hades 
 {
 	common_implementation_base::common_implementation_base(const level_save& sv) 
-		: _entity_names{ sv.names },
-		_next{ static_cast<entity_id::value_type>(sv.next_id) }, _curves{ sv.curves }
-	{}
+		: _entity_names{ sv.names }, 
+		_next{ static_cast<entity_id::value_type>(sv.next_id) }, _curves{ sv.curves },
+		_size{ static_cast<world_unit_t>(sv.source.map_x), static_cast<world_unit_t>(sv.source.map_y) }
+	{
+		if (!std::empty(sv.source.tile_map_layer.tiles))
+		{
+			const auto raw_map = raw_terrain_map{ 
+				sv.source.terrainset,
+				sv.source.terrain_vertex,
+				sv.source.terrain_layers,
+				sv.source.tile_map_layer 
+			};
+
+			_terrain = to_terrain_map(raw_map);
+		}
+	}
 
 	entity_id common_implementation_base::create_entity()
 	{
@@ -103,23 +116,29 @@ namespace hades
 		return _curves;
 	}
 
+	const terrain_map& common_implementation_base::get_world_terrain() const noexcept
+	{
+		return _terrain;
+	}
+
+	world_rect_t common_implementation_base::get_world_bounds() const noexcept
+	{
+		return world_rect_t{ world_vector_t{}, _size };
+	}
+
 	game_implementation::game_implementation(const level_save &sv) 
-		: common_implementation{sv}
+		: common_implementation_base{sv}
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves
 		assert(sv.systems.size() == sv.systems_attached.size());
-
-		//TODO: check that systems have been loaded by now
-		std::vector<game_system> systems;
-		auto attach_list = sv.systems_attached;
 
 		//convert from curve<vector<entity_id>>
 		// to curve<vector<pair<entity_id, timePoint>>>
 		for (std::size_t i = 0; i < sv.systems.size(); ++i)
 		{
 			auto attached = name_list{};
-			for (const auto& a : attach_list[i])
+			for (const auto& a : sv.systems_attached[i])
 			{
 				auto ents = std::vector<attached_ent>{};
 				ents.reserve(std::size(a.second));
@@ -129,34 +148,7 @@ namespace hades
 				attached.set(a.first, std::move(ents));
 			}
 
-			systems.emplace_back(sv.systems[i], std::move(attached));
-		}
-
-		_systems = std::move(systems);
-
-		//create the special world entity
-		//set the world size from the level source
-		//creates the world entity if it didn't already exist
-		auto world_ent = get_entity_id(world_entity_name, time_point{});
-
-		if (world_ent == bad_entity)
-		{
-			world_ent = create_entity();
-			name_entity(world_ent, world_entity_name, time_point{});
-		}
-
-		const auto size_c = get_size_curve_id();
-		auto& float_curves = get_curve_list<resources::curve_types::vec2_float>(get_curves());
-		const auto size_id = curve_index_t{ world_ent, size_c };
-
-		//TODO: try_emplace to avoid multiple lookups
-		//create the world size if it hasn't already been done 
-		if (float_curves.find(size_id) == std::end(float_curves))
-		{
-			curve<resources::curve_types::vec2_float> s_x{ curve_type::const_c };
-			s_x.set(time_point{}, { static_cast<resources::curve_types::float_t>(sv.source.map_x),
-				static_cast<resources::curve_types::float_t>(sv.source.map_y) });
-			float_curves.try_emplace(size_id, std::move(s_x));
+			_systems.set_attached(sv.systems[i]->id, std::move(attached));
 		}
 	}
 

@@ -11,17 +11,17 @@ using namespace std::string_view_literals;
 
 void simple_on_connect()
 {
-	const auto entity =hades::render::get_object();
+	const auto entity =hades::render::get_objects();
 }
 
 void simple_on_tick()
 {
-	const auto entity = hades::render::get_object();
+	const auto entity = hades::render::get_objects();
 }
 
 void simple_on_disconnect()
 {
-	const auto entity = hades::render::get_object();
+	const auto entity = hades::render::get_objects();
 }
 
 void register_simple_instance_resources(hades::data::data_manager &d)

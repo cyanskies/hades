@@ -15,11 +15,12 @@ namespace hades
 
 	void game_instance::tick(time_duration dt)
 	{
-		auto make_game_struct = [](entity_id e, game_interface* g, time_point t, time_duration dt, system_data_t* d)->system_job_data {
-			return system_job_data{ e, g, nullptr, t, dt, d };
+		auto make_game_struct = [](unique_id sys, std::vector<entity_id> e, game_interface* g, 
+			system_behaviours<game_system> *s, time_point t, time_duration dt, system_data_t* d)->system_job_data {
+			return system_job_data{ sys, std::move(e), g, nullptr, s, t, dt, d };
 		};
 	
-		const auto next = detail::update_level_sync(_prev_time, _current_time, dt, _game, make_game_struct);
+		const auto next = update_level<game_interface>(_prev_time, _current_time, dt, _game, _game.get_systems(), make_game_struct);
 		_prev_time = _current_time;
 		_current_time = next;
 		return;

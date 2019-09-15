@@ -152,17 +152,17 @@ namespace hades
 	}
 
 	template<typename T>
-	bool is_within(rect_t<T> value, rect_t<T> other)
+	bool is_within(rect_t<T> first, rect_t<T> second)
 	{
 		auto area = rect_t<T>{};
-		intersect_area(value, other, area);
+		intersect_area(first, second, area);
 
 		if constexpr(std::is_floating_point_v<T>)
 		{
-			return float_near_equal(value.width, area.width)
-				&& float_near_equal(value.height, area.height);
+			return float_near_equal(first.width, area.width)
+				&& float_near_equal(first.height, area.height);
 		}
 		else
-			return size(value) == size(area);
+			return size(first) == size(area);
 	}
 }

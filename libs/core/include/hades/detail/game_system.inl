@@ -40,6 +40,14 @@ namespace hades
 	}
 
 	template<typename SystemType>
+	inline void system_behaviours<SystemType>::set_attached(unique_id i, name_list c)
+	{
+		auto& s = detail::find_system(i, _systems, _new_systems);
+		s.attached_entities = std::move(c);
+		return;
+	}
+
+	template<typename SystemType>
 	inline void system_behaviours<SystemType>::set_current_time(time_point t)
 	{
 		for (auto& s : _systems)
@@ -102,12 +110,10 @@ namespace hades
 		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
 
-		auto updated = system.attached_entities;
+		if (system.attached_entities.empty())
+			system.attached_entities.set(time_point{ nanoseconds{-1} }, {});
 
-		if (updated.empty())
-			updated.set(time_point{ nanoseconds{-1} }, {});
-
-		auto ent_list = updated.get(t);
+		auto ent_list = system.attached_entities.get(t);
 		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
 			return ent.first == entity;
 		});
@@ -122,9 +128,8 @@ namespace hades
 		}
 
 		ent_list.emplace_back(entity, time_point{});
-		updated.insert(t, std::move(ent_list));
-
-		std::swap(updated, system.attached_entities);
+		system.attached_entities.insert(t, std::move(ent_list));
+		system.new_ents.emplace_back(entity);
 		return;
 	}
 
@@ -134,7 +139,7 @@ namespace hades
 		inline static void detach_system_impl(entity_id e, SystemType& sys, time_point t)
 		{
 			//removed from the active list
-			auto ents = sys.attached_ents.get(t);
+			auto ents = sys.attached_entities.get(t);
 			const auto remove_iter = std::remove_if(std::begin(ents), std::end(ents), [e](const attached_ent& ent) {
 				return e == ent.first;
 			});
@@ -143,7 +148,7 @@ namespace hades
 			if (remove_iter != std::end(ents))
 			{
 				ents.erase(remove_iter, std::end(ents));
-				sys.attached_ents.set(t, std::move(ents));
+				sys.attached_entities.set(t, std::move(ents));
 				//add to the removed list, for next frame to proccess
 				sys.removed_ents.emplace_back(e);
 			}
@@ -210,7 +215,6 @@ namespace hades
 		template<typename T>
 		curve<T> &get_game_curve_ref(game_interface* l, curve_index_t i)
 		{
-			assert(l);
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
 
@@ -218,14 +222,11 @@ namespace hades
 		}
 
 		template<typename T>
-		const game::curve_keyframe<T> &get_game_curve_frame_ref(game_interface* l, curve_index_t i, time_point t)
+		const game::curve_keyframe<T> &get_game_curve_frame_ref(const game_interface* l, curve_index_t i, time_point t)
 		{
-			assert(l);
-			auto& curves = l->get_curves();
-			auto& curve_map = hades::get_curve_list<T>(curves);
-
+			const auto& curves = l->get_curves();
+			const auto& curve_map = hades::get_curve_list<T>(curves);
 			const auto& curve = curve_map.find(i)->second;
-
 			return curve.getPrevious(t);
 		}
 
@@ -290,19 +291,6 @@ namespace hades
 	namespace game::level
 	{
 		template<typename T>
-		const curve<T> &get_curve(object_ref e, variable_id v)
-		{
-			return get_curve<T>(curve_index_t{ e, v });
-		}
-
-		template<typename T>
-		const curve<T> &get_curve(variable_id v)
-		{
-			auto ent = game::get_object();
-			return get_curve<T>({ ent, v });
-		}
-
-		template<typename T>
 		const curve<T> &get_curve(curve_index_t i)
 		{
 			auto ptr = detail::get_game_data_ptr();
@@ -310,29 +298,17 @@ namespace hades
 		}
 
 		template<typename T>
-		const curve_keyframe<T>& get_keyframe_ref(curve_index_t, time_point)
+		const curve_keyframe<T>& get_keyframe_ref(curve_index_t i, time_point t)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			return detail::get_game_curve_ref<T>(ptr->level_data, i);
+			return detail::get_game_curve_frame_ref<T>(ptr->level_data, i, t);
 		}
 
 		template<typename T>
 		curve_keyframe<T> get_keyframe(curve_index_t index, time_point t)
 		{
-			auto ptr = detail::get_game_data_ptr();
+			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_frame_ref<T>(ptr->level_data, index, t);
-		}
-
-		template<typename T>
-		curve_keyframe<T> get_keyframe(object_ref o, variable_id i, time_point t)
-		{
-			return get_keyframe<T>(curve_index_t{ o, i }, t);
-		}
-
-		template<typename T>
-		curve_keyframe<T> get_keyframe(variable_id i, time_point t)
-		{
-			return get_keyframe<T>(get_object(), i, t);
 		}
 
 		template<typename T>
@@ -342,58 +318,16 @@ namespace hades
 		}
 
 		template<typename T>
-		curve_keyframe<T> get_keyframe(object_ref o, variable_id i)
-		{
-			return get_keyframe<T>(o, i, get_last_time());
-		}
-
-		template<typename T>
-		curve_keyframe<T> get_keyframe(variable_id i)
-		{
-			return get_keyframe<T>(get_object(), i, get_last_time());
-		}
-
-		template<typename T>
 		const T& get_ref(curve_index_t i, time_point t)
 		{
-			auto &curve = get_curve(i);
+			const auto &curve = get_curve(i);
 			return curve.get_ref(t);
-		}
-
-		template<typename T>
-		const T& get_ref(object_ref o, variable_id v, time_point t)
-		{
-			return get_ref<T>({ o, v }, t);
-		}
-
-		template<typename T>
-		const T& get_ref(variable_id v, time_point t)
-		{
-			return get_ref<T>({ get_object(), v }, t);
 		}
 
 		template<typename T>
 		const T& get_ref(curve_index_t i)
 		{
 			return get_ref<T>(c, get_last_time());
-		}
-
-		template<typename T>
-		const T& get_ref(variable_id v)
-		{
-			return get_ref<T>({ get_object(), v }, get_last_time());
-		}
-
-		template<typename T>
-		const T& get_ref(object_ref o, variable_id v)
-		{
-			return get_ref<T>({ o, v }, get_last_time());
-		}
-
-		template<typename T>
-		inline T get_value(object_ref e, variable_id v, time_point t)
-		{
-			return get_value<T>({ e,v }, t);
 		}
 
 		template<typename T>
@@ -404,33 +338,9 @@ namespace hades
 		}
 
 		template<typename T>
-		T get_value(variable_id v, time_point t)
-		{
-			return get_value<T>(curve_index_t{ game::get_object(), v }, t);
-		}
-
-		template<typename T>
-		T get_value(object_ref o, variable_id v)
-		{
-			return get_value<T>(curve_index_t{ o, v });
-		}
-
-		template<typename T>
 		T get_value(curve_index_t i)
 		{
 			return get_value<T>(i, get_last_time());
-		}
-
-		template<typename T>
-		inline T get_value(variable_id v)
-		{
-			return get_value<T>(curve_index_t{ get_object(), v });
-		}
-
-		template<typename T>
-		inline void set_curve(object_ref e, variable_id v, curve<T> c)
-		{
-			return set_curve<T>(curve_index_t{ e, v }, std::move(c));
 		}
 
 		template<typename T>
@@ -441,19 +351,6 @@ namespace hades
 		}
 
 		template<typename T>
-		inline void set_curve(variable_id v, curve<T> c)
-		{
-			const auto e = get_object();
-			return set_curve(curve_index_t{ e, v }, std::move(c));
-		}
-
-		template<typename T>
-		void set_value(object_ref o, variable_id v, time_point t, T&& val)
-		{
-			return set_value(curve_index_t{ o, v }, t, std::forward<T>(val));
-		}
-
-		template<typename T>
 		void set_value(curve_index_t i, time_point t, T&& v)
 		{
 			auto ptr = detail::get_game_data_ptr();
@@ -461,27 +358,9 @@ namespace hades
 		}
 
 		template<typename T>
-		void set_value(variable_id v, time_point t, T&& val)
-		{
-			return set_value(curve_index_t{ get_object(), v }, t, std::forward<T>(val));
-		}
-
-		template<typename T>
-		void set_value(object_ref e, variable_id v, T&& val)
-		{
-			return set_value(curve_index_t{ e, v }, get_time(), std::forward<T>(val));
-		}
-
-		template<typename T>
 		void set_value(curve_index_t i, T&& t)
 		{
 			return set_value(i, get_time(), std::forward<T>(t));
-		}
-
-		template<typename T>
-		void set_value(variable_id v, T&& val)
-		{
-			return set_value(curve_index_t{ get_object(), v }, std::forward<T>(val));
 		}
 	}
 

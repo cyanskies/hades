@@ -25,18 +25,15 @@ namespace hades
 			const resources::animation* anim = nullptr;
 		};
 
-		static entity_info get_some_entity_info(resources::curve_types::object_ref e)
+		static entity_info get_some_entity_info(resources::curve_types::object_ref e, time_point t)
 		{
-			const auto time = render::get_time();
-			const auto ent = render::get_object();
-
 			const auto pos = get_position_curve_id();
 			const auto size = get_size_curve_id();
 			using namespace resources::curve_types;
 
-			const auto px = render::level::get_value<vec2_float>({ ent, pos }, time);
+			const auto px = render::level::get_value<vec2_float>({ e, pos }, t);
 
-			const auto sx = render::level::get_value<vec2_float>({ ent, size }, time);
+			const auto sx = render::level::get_value<vec2_float>({ e, size }, t);
 
 			return entity_info{
 				px,
@@ -44,26 +41,24 @@ namespace hades
 			};
 		}
 
-		static entity_info get_entity_info(resources::curve_types::object_ref e)
+		static entity_info get_entity_info(resources::curve_types::object_ref e, time_point t)
 		{
 			using namespace resources::curve_types;
 
-			const auto time = render::get_time();
-			const auto ent = render::get_object();
 			const auto obj_type = get_object_type_curve_id();
-			const auto obj_id = render::level::get_value<unique>({ ent, obj_type }, time);
+			const auto obj_id = render::level::get_value<unique>({ e, obj_type }, t);
 			const auto object = data::get<resources::object>(obj_id);
 			const auto anims = get_editor_animations(*object);
 
 			if (std::empty(anims))
 				return {};
 
-			auto entity = get_some_entity_info(e);
+			auto entity = get_some_entity_info(e, t);
 			entity.anim = random_element(std::begin(anims), std::end(anims));
 			return entity;
 		}
 
-		sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e)
+		static sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e)
 		{
 			for (const auto& x : v)
 			{
@@ -74,7 +69,7 @@ namespace hades
 			return sprite_utility::bad_sprite_id;
 		}
 
-		void erase(sprite_id_t& v, entity_id e)
+		static void erase(sprite_id_t& v, entity_id e)
 		{
 			for (auto it = std::begin(v); it != std::end(v); ++it)
 			{
@@ -91,71 +86,74 @@ namespace hades
 
 		static void on_create()
 		{
-			assert(render::get_object() == bad_entity);
 			render::set_system_data(sprite_id_t{});
 			return;
 		}
 
 		static void on_connect()
 		{
-			const auto entity = render::get_object();
-			assert(entity != bad_entity);
+			const auto& ents = render::get_objects();
+
 			auto &dat = render::get_system_data<sprite_id_t>();
+			const auto time = render::get_time();
+			for (const auto entity : ents)
+			{
+				const auto ent = get_entity_info(entity, time);
 
-			const auto ent = get_entity_info(entity);
+				if (ent.anim == nullptr)
+					return;
 
-			if (ent.anim == nullptr)
-				return;
+				const auto sprite_id = render::get_render_output()->create_sprite(ent.anim,
+					render::get_time(), render_interface::sprite_layer{},
+					ent.position, ent.size);
 
-			const auto sprite_id = render::get_render_output()->create_sprite(ent.anim,
-				render::get_time(), render_interface::sprite_layer{},
-				ent.position, ent.size);
+				dat.emplace_back(entity, sprite_id);
+			}
 
-			dat.emplace_back(entity, sprite_id);
-			render::set_system_data(std::move(dat));
-
+			//render::set_system_data(std::move(dat));
 			return;
 		}
 
 		static void on_tick()
 		{
 			auto render_output = render::get_render_output();
-			const auto entity = render::get_object();
-			assert(entity != bad_entity);
-
+			const auto& ents = render::get_objects();
 			//TODO: use proper rendering interface functions
 			const auto &dat = render::get_system_data<sprite_id_t>();
-			if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
-			{
-				const auto ent = get_some_entity_info(entity);
-				const auto &s_id = sprite;
-				render_output->set_sprite(s_id, render::get_time(),
-					ent.position, ent.size);
-			}
+			const auto time = render::get_time();
 
+			for (const auto entity : ents)
+			{
+				if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
+				{
+					const auto ent = get_some_entity_info(entity, time);
+					const auto& s_id = sprite;
+					render_output->set_sprite(s_id, render::get_time(),
+						ent.position, ent.size);
+				}
+			}
 			return;
 		}
 
 		static void on_disconnect()
 		{
 			auto render_output = render::get_render_output();
-
-			const auto entity = render::get_object();
-			assert(entity != bad_entity);
-
+			const auto& ents = render::get_objects();
+			
 			auto &dat = render::get_system_data<sprite_id_t>();
-			if (const auto s_id = find(dat, entity); s_id != sprite_utility::bad_sprite_id)
-				render_output->destroy_sprite(s_id);
+			for (const auto entity : ents)
+			{
+				if (const auto s_id = find(dat, entity); s_id != sprite_utility::bad_sprite_id)
+					render_output->destroy_sprite(s_id);
 
-			erase(dat, entity);
-			render::set_system_data(std::move(dat));
+				erase(dat, entity);
+			}
 
 			return;
 		}
 
 		static void on_destroy()
 		{
-			assert(render::get_object() == bad_entity);
 			render::destroy_system_data();
 			return;
 		}
@@ -194,7 +192,7 @@ namespace hades
 
 	namespace game
 	{
-		object_ref get_object() noexcept
+		const std::vector<object_ref> &get_objects() noexcept
 		{
 			assert(game_data_ptr);
 			return game_data_ptr->entity;
@@ -242,18 +240,22 @@ namespace hades
 			return ptr->level_data->create_entity(std::move(obj), get_time());
 		}
 
+		void destroy_object(object_ref)
+		{
+
+		}
+
 		world_rect_t get_world_bounds()
 		{
-			const auto world_ent = get_object_from_name(world_entity_name, time_point{});
-			//TODO: get actual value
-			return world_rect_t{};
+			const auto ptr = detail::get_game_data_ptr();
+			return ptr->level_data->get_world_bounds();
 		}
 
 		world_vector_t get_position(object_ref o, time_point t)
 		{
 			//TODO: is it ok to cache the curve ptrs
 			static const auto curves = get_position_curve_id();
-			return get_value<world_vector_t>(o, curves, t);
+			return get_value<world_vector_t>(curve_index_t{ o, curves }, t);
 		}
 
 		world_vector_t get_position(object_ref o)
@@ -261,15 +263,10 @@ namespace hades
 			return get_position(o, game::get_last_time());
 		}
 
-		world_vector_t get_position()
-		{
-			return get_position(get_object());
-		}
-
 		void set_position(object_ref o, world_unit_t x, world_unit_t y, time_point t)
 		{
 			static const auto curves = get_position_curve_id();
-			set_value<world_vector_t>(o, curves, t, { x, y });
+			set_value<world_vector_t>({ o, curves }, t, { x, y });
 			return;
 		}
 
@@ -279,16 +276,10 @@ namespace hades
 			return;
 		}
 
-		void set_position(world_unit_t x, world_unit_t y)
-		{
-			set_position(get_object(), x, y);
-			return;
-		}
-
 		world_vector_t get_size(object_ref o, time_point t)
 		{
 			static const auto curve = get_size_curve_id();
-			return get_value<world_vector_t>(o, curve, t);
+			return get_value<world_vector_t>({ o, curve }, t);
 		}
 
 		world_vector_t get_size(object_ref o)
@@ -296,27 +287,11 @@ namespace hades
 			return get_size(o, get_last_time());
 		}
 
-		world_vector_t get_size()
-		{
-			return get_size(get_object());
-		}
-
 		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
 		{
 			static const auto curves = get_size_curve_id();
-			set_value<world_vector_t>(o, curves, { w, h });
+			set_value<world_vector_t>({ o, curves }, { w, h });
 			return;
-		}
-		
-		void set_size(object_ref o, world_unit_t w, world_unit_t h)
-		{
-			set_size(o, w, h, get_time());
-			return;
-		}
-		
-		void set_size(world_unit_t w, world_unit_t h)
-		{
-			set_size(get_object(), w, h);
 		}
 	}
 
@@ -329,28 +304,38 @@ namespace hades
 		return;
 	}
 
-	resources::curve_types::object_ref render::get_object()
+	namespace render
 	{
-		assert(render_data_ptr);
-		return render_data_ptr->entity;
+		const std::vector<object_ref> &get_objects()
+		{
+			return render_data_ptr->entity;
+		}
+
+		render_interface* get_render_output()
+		{
+			assert(render_data_ptr);
+			return render_data_ptr->render_output;
+		}
+
+		time_point get_time()
+		{
+			assert(render_data_ptr);
+			return render_data_ptr->current_time;
+		}
+
+		void destroy_system_data()
+		{
+			assert(render_data_ptr);
+			render_data_ptr->system_data->reset();
+		}
 	}
 
-	render_interface *render::get_render_output()
+	namespace render::level
 	{
-		assert(render_data_ptr);
-		return render_data_ptr->render_output;
-	}
-
-	time_point render::get_time()
-	{
-		assert(render_data_ptr);
-		return render_data_ptr->current_time;
-	}
-
-	void render::destroy_system_data()
-	{
-		assert(render_data_ptr);
-		render_data_ptr->system_data->reset();
+		world_rect_t get_world_bounds()
+		{
+			return render_data_ptr->level_data->get_world_bounds();
+		}
 	}
 
 	namespace detail

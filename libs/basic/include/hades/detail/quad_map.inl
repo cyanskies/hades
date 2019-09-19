@@ -165,7 +165,6 @@ namespace hades
 				}
 				else
 				{
-					assert(s->first == id);
 					s->second->remove(id);
 					_stored.erase(s);
 					return;

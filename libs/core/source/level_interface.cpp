@@ -126,6 +126,15 @@ namespace hades
 		return world_rect_t{ world_vector_t{}, _size };
 	}
 
+	std::any& common_implementation_base::get_level_local_ref(unique_id u)
+	{
+		auto iter = _level_local.find(u);
+		if (iter != std::end(_level_local))
+			return iter->second;
+
+		throw runtime_error{ "tried to recover reference to level_local_value that doesn't exist" };
+	}
+
 	game_implementation::game_implementation(const level_save &sv) 
 		: common_implementation_base{sv}
 	{
@@ -153,6 +162,6 @@ namespace hades
 	}
 
 	render_implementation::render_implementation()
-		: common_implementation{ level_save{} }
+		: common_implementation_base{ level_save{} }
 	{}
 }

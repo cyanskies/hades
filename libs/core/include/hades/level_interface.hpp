@@ -54,6 +54,9 @@ namespace hades
 		//terrain()
 		virtual const terrain_map& get_world_terrain() const noexcept = 0;
 		virtual world_rect_t get_world_bounds() const noexcept = 0;
+
+		virtual std::any& get_level_local_ref(unique_id) = 0;
+		virtual void set_level_local_value(unique_id, std::any) = 0;
 	};
 
 	//TODO: implement common_interface for remote hosts,
@@ -96,6 +99,13 @@ namespace hades
 		const terrain_map& get_world_terrain() const noexcept override final;
 		world_rect_t get_world_bounds() const noexcept override final;
 
+		std::any& get_level_local_ref(unique_id) override final;
+		void set_level_local_value(unique_id u, std::any a) override final
+		{
+			_level_local.insert_or_assign(u, std::move(a));
+			return;
+		}
+
 	private:
 		curve_data _curves;
 		name_curve_t _entity_names{ curve_type::step };
@@ -106,33 +116,8 @@ namespace hades
 		//level info
 		terrain_map _terrain;
 		world_vector_t _size;
-	};
 
-	//implements game_interface, this represents a game area,
-	//with entities and systems
-	//TODO: remove this from the implementation tree, and have it as a member of game_implementation
-	template<typename SystemType>
-	class common_implementation : public common_implementation_base
-	{
-	public:
-		using system_type = SystemType;
-		using system_resource = typename SystemType::system_t;
-
-		explicit common_implementation(const level_save&);
-
-		std::vector<SystemType> get_systems() const;
-		std::vector<const system_resource*> get_new_systems() const;
-		void clear_new_systems();
-
-		system_data_t &get_system_data(unique_id);
-
-		void attach_system(entity_id, unique_id, time_point t) override final;
-		void detach_system(entity_id, unique_id, time_point t) override final;
-
-	protected:
-		std::vector<SystemType> _systems;
-		std::vector<const system_resource*> _new_systems;
-		std::unordered_map<unique_id, system_data_t> _system_data;
+		std::unordered_map<unique_id, std::any> _level_local;
 	};
 
 	class game_implementation final : public common_implementation_base
@@ -153,7 +138,7 @@ namespace hades
 	};
 
 	//TODO: deprecate, render_instance replaces this entirely
-	class render_implementation final : public common_implementation<render_system>
+	class render_implementation final : public common_implementation_base
 	{
 	public:
 		render_implementation();

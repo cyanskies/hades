@@ -28,8 +28,6 @@ namespace hades
 	using attached_ent = std::pair<entity_id, time_point>;
 	using name_list = curve<std::vector<attached_ent>>;
 
-	//FIXME: if we scub time then the new_ents and removed_ents list for
-	//		the next frame won't be accurate
 	template<typename SystemType>
 	class system_behaviours
 	{
@@ -56,8 +54,8 @@ namespace hades
 
 		void set_attached(unique_id, name_list);
 
-		//sets the state of the new and removed entity lists
-		//to the correct values for provided time
+		// call if time scrubbing, will set the new and removed ents
+		// correctly
 		void set_current_time(time_point);
 
 		//get entites that have been added to the system
@@ -74,7 +72,7 @@ namespace hades
 		void detach_all(entity_id, time_point t);
 
 		//this entity won't trigger on_tick events untill the provided time point
-		void sleep_entity(entity_id, unique_id, time_point until);
+		void sleep_entity(entity_id, unique_id, time_point from, time_point until);
 
 	private:
 		std::vector<SystemType> _systems;
@@ -337,8 +335,20 @@ namespace hades
 		//void return_level() //restores the origional level
 		//void switch_level(level_id)
 
+		//level local values
+		// these are not sent to clients or saved
+		// used for level local system data that is needed
+		// by multiple systems
+		// eg. collision trees
+		template<typename T>
+		T &get_level_local_ref(unique_id);
+		template<typename T>
+		void set_level_local_value(unique_id, T&&);
+
 		//world data
 		world_rect_t get_world_bounds();
+		//get terrain data
+		//get tile info?(tags)
 
 		//NOTE: for the following functions(get/set curves/values)
 		// if the object_ref is not provided, it is set to game::get_object()
@@ -383,9 +393,10 @@ namespace hades
 		//an object is always created at game::get_time() time.
 		object_ref create_object(object_instance);
 
-		//attach_syste,
-		//sleep_system
-		//detach system
+		//system config
+		void attach_system(object_ref, unique_id, time_point);
+		void sleep_system(object_ref, unique_id, time_point from, time_point until);
+		void detach_system(object_ref, unique_id, time_point);
 
 		//removes all systems from object
 		void destroy_object(object_ref);

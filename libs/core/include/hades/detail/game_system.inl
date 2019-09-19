@@ -172,6 +172,25 @@ namespace hades
 		return;
 	}
 
+	template<typename SystemType>
+	inline void system_behaviours<SystemType>::sleep_entity(entity_id e, unique_id s, time_point a, time_point b)
+	{
+		auto& sys = detail::find_system(s, _systems, _new_systems);
+		auto ents = sys.attached_entities.get(a);
+		for (auto& [entity, time] : ents)
+		{
+			if (e == entity)
+			{
+				time = b;
+				sys.attached_entities.set(a, std::move(ents));
+				return;
+			}
+		}
+
+		throw system_error{ "Tried to sleep an entity from a system they weren't attached too" };
+		return;
+	}
+
 	namespace detail
 	{
 		template<typename System, typename JobData, typename CreateFunc,
@@ -293,14 +312,14 @@ namespace hades
 		template<typename T>
 		const curve<T> &get_curve(curve_index_t i)
 		{
-			auto ptr = detail::get_game_data_ptr();
+			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_ref<T>(ptr->level_data, i);
 		}
 
 		template<typename T>
 		const curve_keyframe<T>& get_keyframe_ref(curve_index_t i, time_point t)
 		{
-			auto ptr = detail::get_game_data_ptr();
+			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_frame_ref<T>(ptr->level_data, i, t);
 		}
 
@@ -385,13 +404,6 @@ namespace hades
 	namespace render::level
 	{
 		template<typename T>
-		const curve<T>& get_curve(variable_id v)
-		{
-			auto ent = get_object();
-			return get_curve<T>({ ent, v });
-		}
-
-		template<typename T>
 		const curve<T>& get_curve(curve_index_t i)
 		{
 			auto ptr = detail::get_render_data_ptr();
@@ -413,20 +425,5 @@ namespace hades
 			const auto &curve = get_curve<T>(i);
 			return curve.get(t);
 		}
-
-		/*template<typename T>
-		void set_curve(curve_index_t i, T&& value)
-		{
-			auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
-
-			auto& curves = ptr->level_data->get_curves();
-			auto& curve_map = get_curve_list<std::decay_t<T>>(curves);
-
-			if (detail::get_render_data_async())
-				return detail::get_render_transaction().set(curve_map, i, std::forward(value));
-			else
-				return curve_map.set(i, std::forward(value));
-		}*/
 	}
 }

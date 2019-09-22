@@ -342,8 +342,6 @@ namespace hades
 		// eg. collision trees
 		template<typename T>
 		T &get_level_local_ref(unique_id);
-		template<typename T>
-		void set_level_local_value(unique_id, T&&);
 
 		//world data
 		world_rect_t get_world_bounds();
@@ -474,6 +472,13 @@ namespace hades
 		void set_curve(unique_id, curve_index_t, T&& value);*/
 
 		world_rect_t get_world_bounds();
+
+		//common curves
+		world_vector_t get_position(object_ref, time_point);
+		world_vector_t get_position(object_ref);
+
+		world_vector_t get_size(object_ref, time_point);
+		world_vector_t get_size(object_ref);
 	}
 }
 

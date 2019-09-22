@@ -72,6 +72,7 @@ namespace hades
 		return data::get<resources::curve>(i);
 	}
 
+	//TODO: should these all get the values as static?
 	const resources::curve* get_name_curve()
 	{
 		return get_curve(name_id);

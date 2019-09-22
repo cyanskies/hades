@@ -310,6 +310,17 @@ namespace hades
 	namespace game::level
 	{
 		template<typename T>
+		T& get_level_local_ref(unique_id id)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			auto &any = ptr->get_level_local_ref(id);
+			if (!any.has_value())
+				any.emplace<T>();
+
+			return *std::any_cast<T>(&any);
+		}
+
+		template<typename T>
 		const curve<T> &get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_game_data_ptr();

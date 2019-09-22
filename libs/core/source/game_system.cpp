@@ -27,17 +27,9 @@ namespace hades
 
 		static entity_info get_some_entity_info(resources::curve_types::object_ref e, time_point t)
 		{
-			const auto pos = get_position_curve_id();
-			const auto size = get_size_curve_id();
-			using namespace resources::curve_types;
-
-			const auto px = render::level::get_value<vec2_float>({ e, pos }, t);
-
-			const auto sx = render::level::get_value<vec2_float>({ e, size }, t);
-
 			return entity_info{
-				px,
-				sx
+				render::level::get_position(e, t),
+				render::level::get_size(e, t)
 			};
 		}
 
@@ -110,7 +102,6 @@ namespace hades
 				dat.emplace_back(entity, sprite_id);
 			}
 
-			//render::set_system_data(std::move(dat));
 			return;
 		}
 
@@ -336,6 +327,24 @@ namespace hades
 		{
 			return render_data_ptr->level_data->get_world_bounds();
 		}
+
+		world_vector_t get_position(object_ref o, time_point t)
+		{
+			const auto pos_id = get_position_curve_id();
+			return get_value<world_vector_t>({ o, pos_id }, t);
+		}
+
+		world_vector_t get_position(object_ref o)
+		{ return get_position(o, get_time()); }
+
+		world_vector_t get_size(object_ref o, time_point t)
+		{
+			const auto size_id = get_size_curve_id();
+			return get_value<world_vector_t>({ o, size_id }, t);
+		}
+
+		world_vector_t get_size(object_ref o)
+		{ return get_position(o, get_time()); }
 	}
 
 	namespace detail

@@ -141,13 +141,6 @@ namespace hades
 	{
 		for (const auto& v : q)
 			_verts.emplace_back(v);
-		
-		if (buffer_available()
-			&& std::size(_verts) <= _buffer.getVertexCount())
-		{
-			_buffer.update(q.data(), std::size(q), std::size(_verts) - std::size(q));
-		}
-
 		return;
 	}
 
@@ -172,12 +165,6 @@ namespace hades
 		for (auto i = std::size_t{}; i < std::size(q); ++i)
 			_verts[i + offset] = q[i];
 
-		if (buffer_available()
-			&& offset + std::size(q) <= _buffer.getVertexCount())
-		{
-			_buffer.update(std::data(q), std::size(q), offset);
-		}
-
 		return;
 	}
 	
@@ -188,8 +175,9 @@ namespace hades
 		assert(offset1 + quad_vert_count <= std::size(_verts));
 		assert(offset2 + quad_vert_count <= std::size(_verts));
 
-		for (auto i = std::size_t{}; i < quad_vert_count; ++i)
-			std::swap(_verts[i + offset1], _verts[i + offset2]);
+		std::swap_ranges(&_verts[offset1], &_verts[offset1 + quad_vert_count],
+			&_verts[offset2]);
+
 		return;
 	}
 
@@ -227,8 +215,9 @@ namespace hades
 			const auto remain = next_size % quad_vert_count;
 			
 			_buffer.create(next_size + remain);
-			_buffer.update(_verts.data(), size, std::size_t{});
 		}
+
+		_buffer.update(_verts.data(), size, std::size_t{});
 
 		return;
 	}

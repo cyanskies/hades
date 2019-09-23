@@ -70,6 +70,33 @@ namespace hades
 		return;
 	}
 
+	static void deactivate_ents(const common_interface* i,
+		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
+		time_point time)
+	{
+		assert(i);
+		const auto &curves = i->get_curves();
+		const auto alive_id = get_alive_curve_id();
+		for (const auto& [key, val] : curves.bool_curves)
+		{
+			if (key.second != alive_id)
+				continue;
+
+			const auto activated_iter = activated.find(key.first);
+			if (activated_iter == std::end(activated))
+				continue;
+
+			const auto alive = val.get(time);
+
+			if (!alive)
+			{
+				activated.erase(activated_iter);
+				systems.detach_all(key.first, time);
+			}
+		}
+		return;
+	}
+
 	render_instance::render_instance(const common_interface* i) : _interface{i}
 	{
 		if(i)
@@ -83,6 +110,7 @@ namespace hades
 
 		//check for new entities and setup systems
 		activate_ents(_interface, _systems, _activated_ents, _current_frame);
+		deactivate_ents(_interface, _systems, _activated_ents, _current_frame);
 
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };

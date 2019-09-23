@@ -3,6 +3,7 @@
 
 namespace hades
 {
+	static auto alive_id = unique_id::zero;
 	static auto name_id = unique_id::zero;
 	static auto pos_id = unique_id::zero;
 	static auto siz_id = unique_id::zero;
@@ -24,6 +25,13 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		using resources::curve;
+
+		alive_id = d.get_uid("alive"sv);
+		auto alive_c = d.find_or_create<curve>(alive_id, unique_id::zero);
+		alive_c->c_type = curve_type::step;
+		alive_c->data_type = resources::curve_variable_type::bool_t;
+		alive_c->default_value = true;
+		alive_c->sync = true;
 
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
@@ -101,6 +109,11 @@ namespace hades
 	const resources::curve* get_object_type_curve()
 	{
 		return get_curve(object_type_id);
+	}
+
+	unique_id get_alive_curve_id() noexcept
+	{
+		return alive_id;
 	}
 
 	unique_id get_position_curve_id() noexcept

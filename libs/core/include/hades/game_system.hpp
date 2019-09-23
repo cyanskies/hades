@@ -335,7 +335,7 @@ namespace hades
 		//void return_level() //restores the origional level
 		//void switch_level(level_id)
 
-		//level local values
+		//==level local values==
 		// these are not sent to clients or saved
 		// used for level local system data that is needed
 		// by multiple systems
@@ -343,11 +343,12 @@ namespace hades
 		template<typename T>
 		T &get_level_local_ref(unique_id);
 
-		//world data
+		//==world data==
 		world_rect_t get_world_bounds();
 		//get terrain data
 		//get tile info?(tags)
 
+		//==object data==
 		//NOTE: for the following functions(get/set curves/values)
 		// if the object_ref is not provided, it is set to game::get_object()
 		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
@@ -397,7 +398,7 @@ namespace hades
 		void detach_system(object_ref, unique_id, time_point);
 
 		//removes all systems from object
-		void destroy_object(object_ref);
+		void destroy_object(object_ref, time_point);
 
 		//helper functions for accessing common curves
 		//position
@@ -427,7 +428,10 @@ namespace hades
 		void set_system_data(T value);
 		void destroy_system_data();
 
-		//drawing functions
+		//TODO: drawing functions
+
+		//create/destroy sprite
+		//set_sprite
 	}
 
 	namespace render::mission
@@ -444,32 +448,10 @@ namespace hades
 		//get curve from this level
 		template<typename T>
 		const curve<T>& get_curve(curve_index_t);
-
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
-
 		template<typename T>
 		const T get_value(curve_index_t, time_point);
-
-		//render systems are currently read only
-		/*template<typename T>
-		void set_curve(variable_id, T&& value);
-
-		template<typename T>
-		void set_curve(entity_id, variable_id, T&& value);*/
-
-		//get curve from a different level
-		/*template<typename T>
-		T get_curve(unique_id, curve_index_t);
-		
-		template<typename T>
-		T get_curve(unique_id, entity_id, variable_id);*/
-
-		/*template<typename T>
-		void set_curve(curve_index_t, T&& value);
-
-		template<typename T>
-		void set_curve(unique_id, curve_index_t, T&& value);*/
 
 		world_rect_t get_world_bounds();
 

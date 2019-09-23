@@ -50,7 +50,7 @@ namespace hades
 			return entity;
 		}
 
-		static sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e)
+		static sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e) noexcept
 		{
 			for (const auto& x : v)
 			{
@@ -61,7 +61,7 @@ namespace hades
 			return sprite_utility::bad_sprite_id;
 		}
 
-		static void erase(sprite_id_t& v, entity_id e)
+		static void erase(sprite_id_t& v, entity_id e) noexcept
 		{
 			for (auto it = std::begin(v); it != std::end(v); ++it)
 			{
@@ -170,14 +170,16 @@ namespace hades
 		);
 	}	
 
-	static thread_local system_job_data* game_data_ptr = nullptr;
-	static thread_local game_interface* game_current_level_ptr = nullptr;
+	static system_job_data* game_data_ptr = nullptr;
+	static game_interface* game_current_level_ptr = nullptr;
+	static system_behaviours<game_system>* game_current_level_system_ptr = nullptr;
 
 	void set_game_data(system_job_data *d) noexcept
 	{
 		assert(d);
 		game_data_ptr = d;
 		game_current_level_ptr = d->level_data;
+		game_current_level_system_ptr = d->systems;
 		return;
 	}
 
@@ -191,25 +193,21 @@ namespace hades
 
 		time_point get_last_time() noexcept
 		{
-			assert(game_data_ptr);
 			return game_data_ptr->prev_time;
 		}
 
 		time_duration get_delta_time() noexcept
 		{
-			assert(game_data_ptr);
 			return game_data_ptr->dt;
 		}
 
 		time_point get_time() noexcept
 		{
-			assert(game_data_ptr);
 			return game_data_ptr->prev_time + game_data_ptr->dt;
 		}
 
 		void destroy_system_data()
 		{
-			assert(game_data_ptr);
 			game_data_ptr->system_data->reset();
 		}
 	}
@@ -231,9 +229,30 @@ namespace hades
 			return ptr->level_data->create_entity(std::move(obj), get_time());
 		}
 
-		void destroy_object(object_ref)
+		void attach_system(object_ref e, unique_id s, time_point t)
 		{
+			game_current_level_system_ptr->attach_system(e, s, t);
+			return;
+		}
 
+		void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
+		{
+			game_current_level_system_ptr->sleep_entity(e, s, from, until);
+			return;
+		}
+
+		void detach_system(object_ref e, unique_id s, time_point t)
+		{
+			game_current_level_system_ptr->detach_system(e, s, t);
+			return;
+		}
+
+		void destroy_object(object_ref e, time_point t)
+		{
+			const auto alive_id = get_alive_curve_id();
+			detail::set_game_value(game_current_level_ptr, { e, alive_id }, t, false);
+			game_current_level_system_ptr->detach_all(e, t);
+			return;
 		}
 
 		world_rect_t get_world_bounds()
@@ -359,6 +378,12 @@ namespace hades
 		{
 			assert(game_current_level_ptr);
 			return game_current_level_ptr;
+		}
+
+		system_behaviours<game_system>* get_game_systems_ptr()
+		{
+			assert(game_current_level_system_ptr);
+			return game_current_level_system_ptr;
 		}
 
 		render_job_data* get_render_data_ptr()

@@ -24,12 +24,12 @@ namespace hades
 		T x, y, r;
 	};
 
-	template<typename T>
+	/*template<typename T>
 	struct polygon_t
 	{
 		vector_t<T> position;
 		std::vector<point_t<T>> vertex;
-	};
+	};*/
 
 	//TODO: collision traits
 
@@ -40,11 +40,6 @@ namespace hades
 	//circle_t
 
 	//returns true if the objects are intersecting
-	//supports:
-	//point_t
-	//rect_t
-	//circle_t
-
 	template<typename U, typename V>
 	bool collision_test(U first, V second);
 
@@ -59,10 +54,6 @@ namespace hades
 
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//if return value == move, then no collision occured
-	//supports:
-	//circle_t
-	//rectangle_t
-	//triangle_t
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other);
 	
@@ -83,18 +74,14 @@ namespace hades
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//uses as much of the movement vector as possible allowing sliding along walls, etc
 	//if return value == move, then no collision occured
-	//supports:
-	//circle_t
-	//rectangle_t
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 
-	//TODO: collision_incident,
-	// returns a vector representing the angle of incident(the angle between move and the collision point of other)
+	//returns a vector normal from the point of collision
 	template<typename T, template<typename> typename U, template<typename> typename V>
 	vector_t<T> collision_normal(U<T> object, vector_t<T> move, V<T> other);
 
-	//returns the rect side that collisded
+	//returns the rect side that collided
 	template<typename T, template<typename> typename U>
 	direction collision_direction(U<T> prev, U<T> current, rect_t<T> other);
 

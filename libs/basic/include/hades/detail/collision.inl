@@ -151,6 +151,12 @@ namespace hades
 	template<typename T>
 	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, rect_t<T> other)
 	{
+		if (prev == prev + move)
+			return move;
+
+		if (collision_test(prev, other))
+			return { 0, 0 };
+
 		if (!collision_test(prev + move, other))
 			return move;
 
@@ -160,8 +166,9 @@ namespace hades
 
 		const auto intersect_vector = intersect - prev;
 		const auto move_mag = vector::magnitude(move);
-		const auto inter_mag = vector::magnitude(intersect_vector); //NOTE: was -1 here, why? it accidently inverted small move returns
-		return vector::resize(move, std::min(move_mag, inter_mag ));
+		const auto inter_mag = vector::magnitude(intersect_vector) - 1;
+		//if the -1 brought intersect_magnitude below 0, then clamp it to 0
+		return vector::resize(move, std::min(move_mag, inter_mag < 0 ? 0 : inter_mag ));
 	}
 
 	template<typename T>

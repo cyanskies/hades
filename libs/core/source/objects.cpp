@@ -128,6 +128,11 @@ namespace hades::resources
 						const auto msg = "Unable to add curve to object type: " + name + ", reason was: "s + c.what();
 						LOGERROR(msg);
 					}
+					catch (const bad_conversion& c)
+					{
+						const auto msg = "Unable to add curve to object type: " + name + ", bad type conversion: " + c.what();
+						LOGERROR(msg);
+					}
 				}
 			}
 

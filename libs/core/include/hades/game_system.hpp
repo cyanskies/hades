@@ -390,6 +390,7 @@ namespace hades
 		
 		//object creation and destruction
 		//an object is always created at game::get_time() time.
+		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
 		object_ref create_object(object_instance);
 
 		//system config

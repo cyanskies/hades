@@ -269,9 +269,19 @@ namespace hades
 
 			auto& curves = l->get_curves();
 			auto& target_curve_type = hades::get_curve_list<T>(curves);
-			auto &c = target_curve_type.find(i)->second;
+			auto iter = target_curve_type.find(i);
+
+			if (iter == std::end(target_curve_type))
+			{
+				//curve doesn't exist
+				const auto obj_id = to_string(to_value(i.first));
+				const auto curve = to_string(i.second);
+				LOGERROR("Tried to set missing curve, curve was: " + curve + ", object was: " + obj_id);
+				return;
+			}
+
+			auto &c = iter->second;
 			c.set(t, std::forward<T>(v));
-		
 			return;
 		}
 

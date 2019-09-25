@@ -248,5 +248,13 @@ namespace hades
 			assert(axis != vector_t<T>());
 			return axis * (dot(vector, axis) / magnitude_squared(axis));
 		}
+
+		template<typename T>
+		constexpr vector_t<T> reflect(vector_t<T> vector, vector_t<T> normal) noexcept
+		{
+			const auto mult = 2.f * dot(vector, normal);
+			const auto sub = normal * mult;
+			return vector - sub;
+		}
 	}
 }

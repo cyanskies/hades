@@ -90,9 +90,9 @@ namespace hades
 	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
 
 	//TODO: collision_incident,
-	// returns a vector representing the angle of incident
-	//template<typename T, template<typename> typename U, template<typename> typename V>
-	//vector_t<T> collision_incident(U<T> object, vector_t<T> move, V<T> other);
+	// returns a vector representing the angle of incident(the angle between move and the collision point of other)
+	template<typename T, template<typename> typename U, template<typename> typename V>
+	vector_t<T> collision_normal(U<T> object, vector_t<T> move, V<T> other);
 
 	//returns the rect side that collisded
 	template<typename T, template<typename> typename U>

@@ -162,6 +162,9 @@ namespace hades
 
 		template <typename T>
 		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis) noexcept;
+
+		template <typename T>
+		constexpr vector_t<T> reflect(vector_t<T> vector, vector_t<T> normal) noexcept;
 	}
 }
 

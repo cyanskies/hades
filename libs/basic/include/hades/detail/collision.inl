@@ -30,7 +30,7 @@ namespace hades
 			//FIXME: the collision is jittery
 			const auto[outside, inside] = line_outside_inside(start, end, other);
 
-			assert(inside != outside);
+			assert(inside != outside && "both line ends are the same, this is probably the same line being compared to itself");
 			const auto lines = line::from_rect(other);
 
 			//line value type
@@ -68,12 +68,10 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, point_t<T> object)
 	{
-		//NOTE: 
-		//type will be impossible to compare for equality
-
-		//point to point collisions aren't very usefull, 
-		//so this shouldn't be a problem
-		return current == object;
+		if constexpr (std::is_floating_point_v<T>)
+			return float_near_equal(current, object);
+		else
+			return current == object;
 	}
 
 	template<typename T>
@@ -162,7 +160,7 @@ namespace hades
 
 		const auto intersect_vector = intersect - prev;
 		const auto move_mag = vector::magnitude(move);
-		const auto inter_mag = vector::magnitude(intersect_vector) - 1;
+		const auto inter_mag = vector::magnitude(intersect_vector); //NOTE: was -1 here, why? it accidently inverted small move returns
 		return vector::resize(move, std::min(move_mag, inter_mag ));
 	}
 
@@ -314,6 +312,33 @@ namespace hades
 	{
 		static_assert(always_false<T, U<T>, V<T>>::value, "collision_move not defined for these types");
 		return move;
+	}
+
+
+	template<typename T>
+	vector_t<T> collision_normal(rect_t<T> object, vector_t<T> move, rect_t<T> other)
+	{
+		const auto direc = collision_direction(object, move, other);
+		switch (direc)
+		{
+		case direction::left:
+			return { -1, 0 };
+		case direction::right:
+			return { 1, 0 };
+		case direction::top:
+			return {0, -1};
+		case direction::bottom:
+			return {0, 1};
+		}
+
+		throw runtime_error{ "bad rectangle collision calculation" };
+	}
+
+	template<typename T, template<typename> typename U, template<typename> typename V>
+	vector_t<T> collision_normal(U<T> object, vector_t<T> move, V<T> other)
+	{
+		static_assert(always_false_v<U<T>, T, V<T>>, "collision incident hasn't been defined for these types");
+		return vector_t<T>{};
 	}
 
 	template<typename T, template<typename> typename U>

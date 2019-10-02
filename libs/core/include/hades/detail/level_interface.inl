@@ -32,13 +32,35 @@ namespace hades
 		
 		{
 			const auto new_systems = sys.get_new_systems();
+			auto& systems = sys.get_systems();
 			for (const auto s : new_systems)
 			{
 				if (!s->on_create)
 					continue;
 
-				//TODO: pass currently attached ents
-				auto game_data = std::invoke(make_game_struct, s->id, std::vector<entity_id>{}, &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
+				SystemType* system = nullptr;
+				for (auto &sys : systems)
+				{
+					if (sys.system == s)
+					{
+						system = &sys;
+						break;
+					}
+				}
+				assert(system);
+
+				//pass entities that are already attached to this system
+				//this will be entities that were already in the level file
+				//or save file before this time point
+				auto ents = std::vector<entity_id>{};
+				const auto current_ents = sys.get_entities(*system).get(prev_time);
+				ents.reserve(std::size(current_ents));
+				std::transform(std::begin(current_ents), std::end(current_ents), std::back_inserter(ents),
+					[](auto &&entity) {
+						return std::get<entity_id>(entity);
+				});
+
+				auto game_data = std::invoke(make_game_struct, s->id, std::move(ents), &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
 				detail::set_data(&game_data);
 				std::invoke(s->on_create);
 			}

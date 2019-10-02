@@ -105,6 +105,7 @@ namespace hades
 			if (tex->width == 0 || tex->height == 0)
 				tex->width = tex->height = 0;
 
+			//TODO: don't do this until someone tries to load the resource and fails
 			if (tex->width == 0)
 				tex->value = generate_default_texture();
 			else
@@ -126,6 +127,9 @@ namespace hades
 			try
 			{
 				auto fstream = files::make_stream(mod->source, tex.source);
+
+				//TODO: if !is_open generate err texture
+
 				tex.value.loadFromStream(fstream);
 				tex.value.setSmooth(tex.smooth);
 				tex.value.setRepeated(tex.repeat);

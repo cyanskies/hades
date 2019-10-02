@@ -14,6 +14,29 @@
 #include "hades/resource_base.hpp"
 #include "hades/time.hpp"
 
+//systems are used to modify the game state or the generate a frame for drawing
+
+//when a system is created on_create is called, and the currently attached ents are passed to it
+// on_create should be used to set up any background state(quad_maps or object registeries) that isn't stored in the game state
+
+//when an object is attached to a system, on_connect is called
+// on_connect is used to update background state, and invoke one off changes to the game state for objects
+// on_connect is only ever called once for each object
+
+//on_tick is called every game tick for any object attached to a system
+// on_tick is for general game logic
+// on_connect is always called for an object before on_tick
+// TODO: on_tick is always called for an object at least once? even if the object is destroyed by its on_connect handler?
+// TODO: can on_connect and on_tick occur on the same tick?
+
+//on_diconnect is called when an object is detached
+// it might spawn a death animation
+// disconenct the object from background states
+// no other on_* function will be called for this object after on_disconnect
+
+//on_destroy can be used to clean up background state
+// typically unused
+
 namespace hades
 {
 	void register_game_system_resources(data::data_manager&);
@@ -121,11 +144,11 @@ namespace hades
 			//TODO: dont accept job_data anymoe, same for render system
 			using system_func = std::function<void()>;
 
-			system_func on_create, //called on system creation(or large time leap)
-				on_connect,			//called when attached to an entity(or large time leap)
+			system_func on_create, //called on system creation
+				on_connect,			//called when attached to an entity
 				on_disconnect,     //called when detatched from ent
 				tick,				//called every tick
-				on_destroy;			//called on system destruction(or large time leap, before on_* functions)
+				on_destroy;			//called on system destruction
 			//	on_event?
 
 			//std::any system_info; //stores the system object or script reference.

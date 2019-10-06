@@ -22,7 +22,7 @@ namespace hades::detail
 		constexpr auto magic_constant = 0x5F375A86;
 
 		const auto f2 = f * 0.5f;
-		const auto threehalfs = 1.5f;
+		constexpr auto threehalfs = 1.5f;
 
 		uint32_t i;
 		static_assert(sizeof(Float32) == sizeof(uint32_t));
@@ -43,7 +43,7 @@ namespace hades::detail
 		constexpr auto magic_constant = 0x5FE6EB50C7B537A9;
 
 		const auto f2 = f * 0.5f;
-		const auto threehalfs = 1.5f;
+		constexpr auto threehalfs = 1.5f;
 
 		uint64_t i;
 		static_assert(sizeof(Float64) == sizeof(uint64_t));
@@ -71,37 +71,6 @@ namespace hades
 		else
 			return detail::frsqrt64(f);
 	}
-
-	/*template<typename T>
-	inline constexpr vector_t<T>::vector_t(T x, T y) noexcept(std::is_nothrow_constructible_v<T, T>)
-		: x{ x }, y{ y }
-	{}
-
-	template<typename T>
-	inline constexpr vector_t<T>::vector_t(const std::pair<T, T> &p) noexcept(std::is_nothrow_constructible_v<T, T>)
-		: x{ p.first }, y{ p.second}
-	{}
-
-	template<typename T>
-	template<typename U, std::enable_if_t<detail::vector_t_good_tuple_v<T, U>, int>>
-	constexpr vector_t<T>::vector_t(const U &u) noexcept(std::is_nothrow_constructible_v<T, T>)
-		: x{std::get<0>(u)}, y{std::get<1>(u)}
-	{
-		static_assert(std::is_same_v<T, std::tuple_element_t<0, U>> && 
-			std::is_same_v<T, std::tuple_element<1, U>> && 
-			std::tuple_size_v<U> == 2u,
-			"a tuple like type can only be used to contruct a vector_t "
-			"if it contains two elements of the same type as vector_t::value_type");
-	}
-
-	template<typename T>
-	template<typename U, std::enable_if_t<!is_tuple_v<U>, int>>
-	constexpr vector_t<T>::vector_t(const U &u) noexcept(std::is_nothrow_constructible_v<T, T>)
-		: x{ u.x }, y{ u.y }
-	{
-		static_assert(std::is_same_v<T, decltype(u.x)> && std::is_same_v<T, decltype(u.y)>,
-			"x and y must both be the same type as vector_t::value_type");
-	}*/
 
 	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept

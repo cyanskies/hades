@@ -1,37 +1,45 @@
-# Directory hades
+include(../../cmake.txt)
 
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+set(HADES_UTIL_SRC
+	source/parallel_jobs.cpp
+	source/time.cpp
+	source/transaction.cpp
+	source/utility.cpp
+	include/hades/any_map.hpp
+	include/hades/curve.hpp
+	include/hades/for_each_tuple.hpp
+	include/hades/line_math.hpp
+	include/hades/math.hpp
+	include/hades/parallel_jobs.hpp
+	include/hades/poly_math.hpp
+	include/hades/rectangle_math.hpp
+	include/hades/shared_any_map.hpp
+	include/hades/shared_guard.hpp
+	include/hades/shared_map.hpp
+	include/hades/spinlock.hpp
+	include/hades/strong_typedef.hpp
+	include/hades/table.hpp
+	include/hades/time.hpp
+	include/hades/transaction.hpp
+	include/hades/transactional.hpp
+	include/hades/types.hpp
+	include/hades/uniqueid.hpp
+	include/hades/utility.hpp
+	include/hades/value_guard.hpp
+	include/hades/vector_math.hpp
+	include/hades/detail/any_map.inl
+	include/hades/detail/for_each_tuple.inl
+	include/hades/detail/line_math.inl
+	include/hades/detail/math.inl
+	include/hades/detail/parallel_jobs.inl
+	include/hades/detail/poly_math.inl
+	include/hades/detail/rectangle_math.inl
+	include/hades/detail/shared_any_map.inl
+	include/hades/detail/shared_map.inl
+	include/hades/detail/table.inl
+	include/hades/detail/transaction.inl
+	include/hades/detail/utility.inl
+	include/hades/detail/vector_math.inl
+)
 
-# Specify default build type if none provided (before project() command)
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
-endif()
-
-# For generators with multiple configurations (like VS), only allow Debug and Release
-if(CMAKE_CONFIGURATION_TYPES)
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Limited configurations" FORCE)
-	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
-endif()
-
-project(hades-util)
-
-# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-#make visual studio debug the desired project by default
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT hades)
-
-# Global preprocessor options
-#this is to ignore the thousands of warnings that
-#yaml generates through iterator usage
-add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
-
-# C++ source code
-add_subdirectory(source)
-
-# Install include directory and license files
-install(DIRECTORY include
-		DESTINATION .)
+hades_make_library(hades-util include "${HADES_UTIL_SRC}")

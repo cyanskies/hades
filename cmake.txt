@@ -1,0 +1,102 @@
+#version 3.10 needed for CXX_STANDARD settings
+cmake_minimum_required(VERSION 3.10)
+
+#TODO: support LTCG whole program optimisation
+
+function(hades_make_common ARG_NAME)
+	# Specify default build type if none provided (before project() command)
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+	endif()
+
+	# available config types
+	if(CMAKE_CONFIGURATION_TYPES)
+		set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Limited configurations" FORCE)
+		mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
+	endif()
+
+	if(NOT BUILD_SHARED_LIBS)
+		add_definitions(-DSFML_STATIC)
+	endif()
+
+	project(${ARG_NAME})
+
+	# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
+	set(CMAKE_CXX_STANDARD 17 PARENT_SCOPE)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON PARENT_SCOPE) #we use variant
+	set(CMAKE_CXX_EXTENSIONS OFF PARENT_SCOPE)
+
+	#make visual studio debug the desired project by default
+	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${ARG_NAME})
+endfunction(hades_make_common)
+
+function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list
+  hades_make_common(${ARG_NAME})
+  
+  # Library to build
+  set(LIB_NAME ${ARG_NAME})
+
+  # Determine library suffixes depending on static/shared configuration
+  add_library(${LIB_NAME} ${ARG_FILES})
+  if(BUILD_SHARED_LIBS)
+    set_target_properties(${LIB_NAME} PROPERTIES DEBUG_POSTFIX -d)
+  else() 
+    set_target_properties(${LIB_NAME} PROPERTIES DEBUG_POSTFIX -s-d)
+    set_target_properties(${LIB_NAME} PROPERTIES RELEASE_POSTFIX -s)
+  endif()
+
+  target_include_directories(${LIB_NAME} PUBLIC ${ARG_INCLUDE})
+
+  # Add compiler flags for extra warnings
+  target_compile_options(${LIB_NAME} PRIVATE
+                             # clang/GCC warnings
+                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
+                             # MSVC warnings
+                             $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/W4" >)
+  if(${ARGC} GREATER 3)
+    target_link_libraries(${LIB_NAME} PUBLIC ${ARGV3})
+  endif()
+
+  # Install (use "bin" folder for DLL, "lib" for SO files)
+  install(TARGETS ${LIB_NAME}
+	 	  RUNTIME DESTINATION lib
+		  LIBRARY DESTINATION lib
+		  ARCHIVE DESTINATION lib)
+endfunction(hades_make_library)
+
+function(hades_make_exe ARG_NAME ARG_INCLUDE ARG_FILES) #DEPENDENCIES
+  hades_make_common(${ARG_NAME})
+  
+  # Library to build
+  set(EXE_NAME ${ARG_NAME})
+
+  # Determine library suffixes depending on static/shared configuration
+  add_executable(${EXE_NAME} ${ARG_FILES})
+  if(BUILD_SHARED_LIBS)
+    set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX -d)
+  else() 
+    set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX -s-d)
+    set_target_properties(${EXE_NAME} PROPERTIES RELEASE_POSTFIX -s)
+  endif()
+
+  target_include_directories(${EXE_NAME} PUBLIC ${ARG_INCLUDE})
+
+  # Add compiler flags for extra warnings
+  target_compile_options(${EXE_NAME} PRIVATE
+                             # clang/GCC warnings
+                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
+                             # MSVC warnings
+                             $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/W4" >)
+
+  if(${ARGC} GREATER 3)
+    target_link_libraries(${EXE_NAME} PUBLIC ${ARGV3})
+  endif()
+
+  # Install (use "bin" folder for DLL, "lib" for SO files)
+  install(TARGETS ${EXE_NAME}
+	 	  RUNTIME DESTINATION bin)
+endfunction(hades_make_exe)

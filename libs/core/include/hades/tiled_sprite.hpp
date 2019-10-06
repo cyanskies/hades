@@ -8,6 +8,8 @@
 #include "hades/vector_math.hpp"
 #include "hades/vertex_buffer.hpp"
 
+//a animated sprite with tiling
+
 namespace hades::resources
 {
 	struct animation;
@@ -20,6 +22,7 @@ namespace hades
 	public:
 		struct dont_regen_t {};
 
+		//pass tiled_sprite::dont_regen to defer regenerating the vertex array
 		void set_animation(const resources::animation*, time_point);
 		void set_animation(const resources::animation*, time_point, dont_regen_t);
 

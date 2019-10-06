@@ -16,6 +16,7 @@ namespace hades::detail
 	template<typename Float32>
 	Float32 frsqrt32(Float32 f) noexcept
 	{
+		static_assert(std::is_trivially_copyable_v<Float32>);
 		static_assert(sizeof(Float32) == 4);
 
 		constexpr auto magic_constant = 0x5F375A86;
@@ -23,11 +24,12 @@ namespace hades::detail
 		const auto f2 = f * 0.5f;
 		const auto threehalfs = 1.5f;
 
-		auto i = uint32_t{};
-		std::memcpy(&i, &f, std::size_t{ 4 });
+		auto i = uint32_t;
+		static_assert(sizeof(Float32) == sizeof(uint32_t));
+		std::memcpy(&i, &f, sizeof(Float32)); //std::bit_cast in c++20
 		i = magic_constant - (i >> 1);
 
-		std::memcpy(&f, &i, std::size_t{ 4 });
+		std::memcpy(&f, &i, sizeof(Float32));
 		f *= (threehalfs - (f2 * f * f));
 		return f;
 	}
@@ -35,6 +37,7 @@ namespace hades::detail
 	template<typename Float64>
 	Float64 frsqrt64(Float64 f) noexcept
 	{
+		static_assert(std::is_trivially_copyable_v<Float64>);
 		static_assert(sizeof(Float64) == 8);
 
 		constexpr auto magic_constant = 0x5FE6EB50C7B537A9;
@@ -42,11 +45,12 @@ namespace hades::detail
 		const auto f2 = f * 0.5f;
 		const auto threehalfs = 1.5f;
 
-		auto i = uint64_t{};
-		std::memcpy(&i, &f, std::size_t{ 8 });
+		auto i = uint64_t;
+		static_assert(sizeof(Float64) == sizeof(uint64_t));
+		std::memcpy(&i, &f, sizeof(Float64));
 		i = magic_constant - (i >> 1);
 
-		std::memcpy(&f, &i, std::size_t{ 8 });
+		std::memcpy(&f, &i, sizeof(Float64));
 		f *= (threehalfs - (f2 * f * f));
 		return f;
 	}

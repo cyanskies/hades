@@ -24,7 +24,7 @@ namespace hades::detail
 		const auto f2 = f * 0.5f;
 		const auto threehalfs = 1.5f;
 
-		auto i = uint32_t;
+		uint32_t i;
 		static_assert(sizeof(Float32) == sizeof(uint32_t));
 		std::memcpy(&i, &f, sizeof(Float32)); //std::bit_cast in c++20
 		i = magic_constant - (i >> 1);
@@ -45,7 +45,7 @@ namespace hades::detail
 		const auto f2 = f * 0.5f;
 		const auto threehalfs = 1.5f;
 
-		auto i = uint64_t;
+		uint64_t i;
 		static_assert(sizeof(Float64) == sizeof(uint64_t));
 		std::memcpy(&i, &f, sizeof(Float64));
 		i = magic_constant - (i >> 1);

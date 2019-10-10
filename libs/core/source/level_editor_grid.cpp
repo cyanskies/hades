@@ -82,7 +82,11 @@ void hades::level_editor_grid::gui_update(gui &g, editor_windows &)
 		_grid_vars.step->store(cvars::default_value::editor_grid_step);
 
 	const auto size = calculate_grid_size(*_grid_vars.size, *_grid_vars.step);
-	_grid.set_cell_size(size);
+	if (size != _previous_size)
+	{
+		_previous_size = size;
+		_grid.set_cell_size(size);
+	}
 }
 
 void hades::level_editor_grid::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)

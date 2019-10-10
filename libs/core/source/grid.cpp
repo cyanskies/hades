@@ -54,36 +54,35 @@ namespace hades
 	void grid::set_size(vector_float s)
 	{
 		_properties.grid_size = s;
-		_verticies = std::move(make_grid(_properties));
+		_verticies.set_verts(make_grid(_properties));
 	}
 
 	void grid::set_cell_size(float s)
 	{
 		_properties.cell_size = s;
-		_verticies = std::move(make_grid(_properties));
+		_verticies.set_verts(make_grid(_properties));
 	}
 
 	void grid::set_line_thickness(float t)
 	{
 		_properties.line_thickness = t;
-		_verticies = std::move(make_grid(_properties));
+		_verticies.set_verts(make_grid(_properties));
 	}
 
 	void grid::set_colour(colour c)
 	{
 		_properties.line_colour = c;
-		_verticies = std::move(make_grid(_properties));
+		_verticies.set_verts(make_grid(_properties));
 	}
 
 	void grid::set_all(grid_properties p)
 	{
 		_properties = std::move(p);
-		_verticies = make_grid(_properties);
+		_verticies.set_verts(make_grid(_properties));
 	}
 
 	void grid::draw(sf::RenderTarget &t, const sf::RenderStates s) const
 	{
-		t.draw(_verticies.data(), _verticies.size(),
-			sf::PrimitiveType::Triangles, s);
+		t.draw(_verticies, s);
 	}
 }

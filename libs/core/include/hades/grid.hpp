@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "SFML/Graphics/Drawable.hpp"
-#include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/colour.hpp"
 #include "hades/vector_math.hpp"
+#include "hades/vertex_buffer.hpp"
 
 namespace hades
 {
@@ -32,7 +32,7 @@ namespace hades
 
 	private:
 		grid_properties _properties;
-		std::vector<sf::Vertex> _verticies;
+		vertex_buffer _verticies{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Static };
 	};
 }
 

@@ -24,8 +24,6 @@ namespace hades
 
 	using level_size_t = hades::types::int32;
 
-	//A level is laid out in the same way as a save file
-	// but doesn't store the full curve history
 	struct level
 	{
 		struct background_layer
@@ -62,6 +60,15 @@ namespace hades
 		
 		//trigger regions
 		std::vector<region> regions;
+
+		//level scripts
+		//on_load
+		//on_save
+		//on_tick
+
+		//player and ai input script
+		unique_id player_input_script = unique_id::zero,
+			ai_input_script = unique_id::zero;
 
 		//tile map
 		raw_map tile_map_layer;

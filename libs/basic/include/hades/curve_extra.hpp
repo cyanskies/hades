@@ -35,6 +35,7 @@ namespace hades::resources
 		using int_t = int32;
 		using float_t = float32;
 		using vec2_float = vector_float;
+		//TODO: double_t
 		using bool_t = bool;
 		using string = types::string;
 		using object_ref = entity_id;

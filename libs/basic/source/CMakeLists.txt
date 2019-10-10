@@ -28,6 +28,7 @@ set(HADES_BASIC_SRC
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
+	../include/hades/server_actions.hpp
 	../include/hades/system.hpp
 	../include/hades/terrain.hpp
 	../include/hades/tiles.hpp
@@ -58,6 +59,7 @@ source_group("Headers" FILES
 	../include/hades/properties.hpp
 	../include/hades/quad_map.hpp
 	../include/hades/resource_base.hpp
+	../include/hades/server_actions.hpp
 	../include/hades/system.hpp
 	../include/hades/terrain.hpp
 	../include/hades/tiles.hpp

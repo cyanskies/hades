@@ -132,7 +132,7 @@ namespace hades
 	}
 
 	game_implementation::game_implementation(const level_save &sv) 
-		: common_implementation_base{sv}
+		: common_implementation_base{sv}, _save{sv}
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves

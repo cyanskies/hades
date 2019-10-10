@@ -26,6 +26,7 @@ set(HADES_CORE_SRC
 	level_editor_terrain.cpp
 	level_editor_tiles.cpp
 	level_interface.cpp
+	level_scripts.cpp
 	mouse_input.cpp
 	objects.cpp
 	render_instance.cpp
@@ -66,6 +67,7 @@ set(HADES_CORE_SRC
 	../include/hades/level_editor_terrain.hpp
 	../include/hades/level_editor_tiles.hpp
 	../include/hades/level_interface.hpp
+	../include/hades/level_scripts.hpp
 	../include/hades/mouse_input.hpp
 	../include/hades/objects.hpp
 	../include/hades/render_instance.hpp

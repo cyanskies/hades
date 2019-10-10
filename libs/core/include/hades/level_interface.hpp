@@ -9,6 +9,7 @@
 #include "hades/curve_extra.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/input.hpp"
+#include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/game_system.hpp"
 #include "hades/terrain.hpp"
@@ -133,8 +134,12 @@ namespace hades
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _systems; }
 
+		const level_save &get_level_save() noexcept
+		{ return _save; }
+
 	private:
 		system_behaviours<game_system> _systems;
+		level_save _save;
 	};
 
 	//TODO: deprecate, render_instance replaces this entirely

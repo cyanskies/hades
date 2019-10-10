@@ -25,6 +25,7 @@ namespace hades {
 		//portable types for float;
 		using float32 = std::float_t;
 		using float64 = std::double_t;
+		//long double
 
 		template<typename Float, typename = std::enable_if_t<std::is_floating_point_v<Float> && std::numeric_limits<Float>::has_infinity>>
 		constexpr auto infinity = std::numeric_limits<Float>::infinity();
@@ -33,9 +34,6 @@ namespace hades {
 		using string = std::string;
 
 		//using bool
-		//using float
-		//using double
-		//using long double
 
 		template<typename ...Types> struct always_false : public std::false_type {};
 

@@ -2,11 +2,15 @@
 
 #include "hades/animation.hpp"
 #include "hades/gui.hpp"
+#include "hades/level_scripts.hpp"
 
 namespace hades
 {
-	static void make_level_detail_window(gui &g, bool &open, string &name, string &description)
+	static void make_level_detail_window(gui &g, bool &open, string &name, string &description, unique_id &player_input, unique_id &ai_input)
 	{
+		static const auto& player_input_list = resources::get_player_input_list();
+		//static const auto &ai_input = resources::get_ai_input_list();
+
 		if (!open)
 			return;
 
@@ -18,6 +22,33 @@ namespace hades
 
 			g.input_text("Name"sv, name, gui::input_text_flags::auto_select_all);
 			g.input_text_multiline("Description"sv, description, vector_float{}, gui::input_text_flags::no_horizontal_scroll);
+
+			const auto preview = [player_input]()->string {
+				if (player_input == unique_id::zero)
+					return "none";
+				else
+					return data::get_as_string(player_input);
+			}();
+
+			if (g.combo_begin("player input", preview))
+			{
+				if (g.selectable("none"sv, unique_id::zero == player_input))
+					player_input = unique_id::zero;
+
+				for (const auto& id : player_input_list)
+				{
+					if (g.selectable(data::get_as_string(id), id == player_input))
+						player_input = id;
+				}
+
+				g.combo_end();
+			}
+
+			if (g.combo_begin("ai input", "none"))
+			{
+				g.selectable("none"sv, true);
+				g.combo_end();
+			}
 		}
 		g.window_end();
 	}
@@ -212,12 +243,17 @@ namespace hades
 							  static_cast<float>(l.map_y) });
 
 		_background.set_colour(colours::black);
+
+		_player_input = l.player_input_script;
+		_ai_input = l.ai_input_script;
 	}
 
 	level level_editor_level_props::level_save(level l) const
 	{
 		l.name = _level_name;
 		l.description = _level_desc;
+		l.player_input_script = _player_input;
+		l.ai_input_script = _ai_input;
 		return l;
 	}
 
@@ -289,7 +325,7 @@ namespace hades
 
 		g.main_menubar_end();
 
-		make_level_detail_window(g, _details_window, _level_name, _level_desc);
+		make_level_detail_window(g, _details_window, _level_name, _level_desc, _player_input, _ai_input);
 		make_background_detail_window(g, _background_settings,
 			_background_uncommitted, _background_window, _background);
 

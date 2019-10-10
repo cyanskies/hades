@@ -7,12 +7,11 @@
 #include "hades/level_editor_component.hpp"
 #include "hades/types.hpp"
 
-// TODO:
-// support for background colours, images(stretch, repeat, paralax)
-
 namespace hades
 {
 	//provides an interface for editing level name, properties, background colour
+	//TODO: set player input script and ai input script here too
+	//TODO: level load save scripts
 	class level_editor_level_props final : public level_editor_component
 	{
 	public:
@@ -51,17 +50,16 @@ namespace hades
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
-		//TODO: background object
-		//TODO: how to clip the background at the edges of the world
 		background_pick_window _background_pick_window;
 		background_settings _background_settings;
 		background_settings _background_uncommitted;
 		background_settings_window _background_window;
 		background _background;
 		bool _details_window = false;
-		//bool _background_window = false;
 		string _level_name, _new_name;
 		string _level_desc, _new_desc;
+		unique_id _player_input = unique_id::zero;
+		unique_id _ai_input = unique_id::zero;
 	};
 }
 

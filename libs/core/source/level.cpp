@@ -8,7 +8,7 @@
 
 namespace hades
 {
-	const auto zero_time = time_point{};
+	constexpr auto zero_time = time_point{};
 
 	template<typename T>
 	static void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
@@ -101,6 +101,8 @@ namespace hades
 
 	static constexpr auto level_regions_str = "regions"sv;
 
+	static constexpr auto level_scripts_input = "player_input"sv;
+
 	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
 	static constexpr auto level_terrain_str = "terrain"sv;
 
@@ -189,6 +191,11 @@ namespace hades
 			w->write(level_description_str, l.description);
 
 		write_objects_from_level(l, *w);
+
+		//level scripts
+		if(l.player_input_script != unique_id::zero)
+			w->write(level_scripts_input, l.player_input_script);
+
 		//write terrain info
 		w->start_map(level_tiles_layer_str);
 		write_raw_map(l.tile_map_layer, *w);
@@ -229,6 +236,9 @@ namespace hades
 		
 		//read trigger data
 		read_regions_into_level(*level_node, l);
+
+		//level scripts
+		l.player_input_script = data::parse_tools::get_unique(*level_node, level_scripts_input, l.player_input_script);
 
 		const auto tiles = level_node->get_child(level_tiles_layer_str);
 		if(tiles)

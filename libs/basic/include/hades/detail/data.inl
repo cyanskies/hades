@@ -89,9 +89,11 @@ namespace hades
 			{
 				using namespace std::string_literals;
 				const auto res_name = get_as_string(id);
-				const auto ty = typeid(T).name();
-				const auto msg = "Tried to get resource using wrong type, unique_id was: "s + res_name
-					+ ", requested type was: "s + ty;
+				const auto ty = string{ typeid(T).name() };
+				constexpr auto msg_pre = "Tried to get resource using wrong type, unique_id was: ";
+				constexpr auto msg_pro = ", requested type was: ";
+				const auto msg = msg_pre + res_name
+					+ msg_pro + ty;
 				throw resource_wrong_type{ msg };
 			}
 		}

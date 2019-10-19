@@ -6,6 +6,7 @@
 #include "hades/mission.hpp"
 #include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
+#include "hades/server_actions.hpp"
 #include "hades/timers.hpp"
 
 //TODO: move to hades-core
@@ -30,8 +31,7 @@ namespace hades
 		//get all changes since last call to get_changes
 		virtual void get_changes(exported_curves&) const = 0;
 		//sends player input
-		virtual void send_request(action a) = 0;
-		virtual void send_request(std::vector<action>) = 0;
+		virtual void send_request(std::vector<server_action>) = 0;
 
 		virtual const common_interface* get_interface() const noexcept = 0;
 

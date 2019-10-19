@@ -101,11 +101,6 @@ namespace hades
 		return;
 	}
 
-	void common_implementation_base::add_input(input_system::action_set a, time_point t)
-	{
-		_input.insert(t, std::move(a));
-	}
-
 	curve_data& common_implementation_base::get_curves() noexcept
 	{
 		return _curves;
@@ -131,8 +126,17 @@ namespace hades
 		return _level_local[u];
 	}
 
+	static const resources::player_input* get_if_player_input(const level_save& sv)
+	{
+		const auto id = sv.source.player_input_script;
+		if (id == unique_id::zero)
+			return nullptr;
+
+		return data::get<resources::player_input>(sv.source.player_input_script);
+	}
+
 	game_implementation::game_implementation(const level_save &sv) 
-		: common_implementation_base{sv}, _save{sv}
+		: common_implementation_base{sv}, _save{sv}, _player_input{get_if_player_input(sv)}
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves
@@ -155,6 +159,18 @@ namespace hades
 
 			_systems.set_attached(sv.systems[i]->id, std::move(attached));
 		}
+	}
+
+	void game_implementation::update_input_queue(std::vector<server_action> input, time_point t)
+	{
+		_input_history.emplace_back(input, t); //DEBUG: player input log, in actions, rather than keys
+		_input_queue = std::move(input);
+		return;
+	}
+
+	std::vector<server_action> game_implementation::get_and_clear_input_queue() noexcept
+	{
+		return std::exchange(_input_queue, {});
 	}
 
 	render_implementation::render_implementation()

@@ -25,7 +25,7 @@ namespace hades
 		//triggers all systems with the specified time change
 		void tick(time_duration dt);
 
-		void add_input(input_system::action_set input, time_point t);
+		void add_input(std::vector<server_action> input, time_point t);
 
 		//exports all the newest keyframes so that they can be transmitted across the network
 		//also sends entity name mappings

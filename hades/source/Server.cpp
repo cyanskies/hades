@@ -27,14 +27,10 @@ namespace hades
 			_level_time += dt;
 		}
 
-		void send_request(action a) override
+		void send_request(std::vector<server_action> a) override
 		{
-			/*yeeaarrrghhh*/
-		}
-
-		void send_request(std::vector<action> a) override
-		{
-			/*yeeaarrrghhh*/
+			_game.add_input(std::move(a), _level_time);
+			return;
 		}
 
 		void get_changes(exported_curves &exp, time_point dt) const override

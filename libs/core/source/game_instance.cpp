@@ -20,15 +20,15 @@ namespace hades
 			return system_job_data{ sys, std::move(e), g, nullptr, s, t, dt, d };
 		};
 	
-		const auto next = update_level<game_interface>(_prev_time, _current_time, dt, _game, _game.get_systems(), make_game_struct);
+		const auto next = update_level(_prev_time, _current_time, dt, _game, _game.get_systems(), make_game_struct);
 		_prev_time = _current_time;
 		_current_time = next;
 		return;
 	}
 
-	void game_instance::add_input(input_system::action_set input, time_point t)
+	void game_instance::add_input(std::vector<server_action> input, time_point t)
 	{
-		_game.add_input(std::move(input), t);
+		_game.update_input_queue(std::move(input), t);
 	}
 
 	template<typename T>

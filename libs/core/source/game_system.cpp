@@ -208,6 +208,7 @@ namespace hades
 
 		void destroy_system_data()
 		{
+			assert(game_data_ptr->system_data);
 			game_data_ptr->system_data->reset();
 		}
 	}

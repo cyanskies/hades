@@ -114,6 +114,26 @@ namespace hades
 			}
 		}
 
+		//input functions
+		//NOTE: input is only triggered on the server
+		//TODO: player functions per player slot,
+		if constexpr (std::is_same_v<std::decay_t<Interface>, game_implementation>)
+		{
+			const auto player_input_fn = interface.get_player_input_function();
+			if (player_input_fn)
+			{
+				auto input_q = interface.get_and_clear_input_queue();
+				//player input function, no system data available
+				using ent_list = resources::curve_types::collection_object_ref;
+				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys, prev_time, dt, nullptr);
+				detail::set_data(&game_data);
+				std::invoke(player_input_fn, std::move(input_q));
+			}
+
+
+			//TODO: ai input functions
+		}
+
 		//call on_disconnect for removed entities
 		for (auto& u : data)
 		{

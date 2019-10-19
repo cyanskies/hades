@@ -1,8 +1,8 @@
 #ifndef HADES_LEVEL_SCRIPTS_HPP
 #define HADES_LEVEL_SCRIPTS_HPP
 
-#include "hades/input.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/server_actions.hpp"
 #include "hades/uniqueid.hpp"
 
 namespace hades::data
@@ -18,8 +18,7 @@ namespace hades::resources
 	struct player_input_t {};
 	struct player_input : resource_type<player_input_t>
 	{
-		using action_set = input_system::action_set;
-		using player_input_fn = void(*)(action_set); // TODO: pass player id here for multi player games
+		using player_input_fn = void(*)(std::vector<server_action>); // TODO: pass player id here for multi player games
 
 		// either a ptr to the actual function
 		// or a lambda that calls an actual script

@@ -11,6 +11,7 @@
 #include "hades/input.hpp"
 #include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
+#include "hades/level_scripts.hpp"
 #include "hades/game_system.hpp"
 #include "hades/terrain.hpp"
 #include "hades/time.hpp"
@@ -92,7 +93,6 @@ namespace hades
 		entity_id get_entity_id(std::string_view, time_point t) const override final;
 
 		void name_entity(entity_id, std::string_view, time_point);
-		void add_input(input_system::action_set, time_point);
 
 		curve_data& get_curves() noexcept override final;
 		const curve_data& get_curves() const noexcept override final;
@@ -137,9 +137,24 @@ namespace hades
 		const level_save &get_level_save() noexcept
 		{ return _save; }
 
+		void update_input_queue(std::vector<server_action> input, time_point);
+		std::vector<server_action> get_and_clear_input_queue() noexcept;
+
+		resources::player_input::player_input_fn get_player_input_function() noexcept
+		{ 
+			if (_player_input)
+				return _player_input->function;
+			return nullptr;
+		}
+
 	private:
 		system_behaviours<game_system> _systems;
 		level_save _save;
+		std::vector<server_action> _input_queue;
+		using action_history = std::pair<std::vector<server_action>, time_point>;
+		std::vector<action_history> _input_history;
+		const resources::player_input* _player_input{ nullptr };
+		//ai_input
 	};
 
 	//TODO: deprecate, render_instance replaces this entirely

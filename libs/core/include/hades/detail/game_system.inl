@@ -121,9 +121,8 @@ namespace hades
 		if (found != ent_list.end())
 		{
 			const auto message = "The requested entityid is already attached to this system. EntityId: "
-				+ to_string(entity) + ", System: " + "err" + ", at time: " +
+				+ to_string(entity) + ", System: " + to_string(sys) + ", at time: " +
 				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
-			//ent is already attached
 			throw system_already_attached{ message };
 		}
 
@@ -210,6 +209,7 @@ namespace hades
 			sys->on_disconnect = on_disconnect;
 			sys->tick = on_tick;
 			sys->on_destroy = on_destroy;
+			return;
 		}
 	}
 
@@ -304,7 +304,7 @@ namespace hades
 		void set_system_data(T&& value)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
+			assert(ptr && ptr->system_data);
 			*ptr->system_data = std::forward<T>(value);
 		}
 
@@ -312,7 +312,7 @@ namespace hades
 		T &get_system_data()
 		{
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
+			assert(ptr && ptr->system_data);
 			return *std::any_cast<T>(ptr->system_data);
 		}
 	}
@@ -322,6 +322,7 @@ namespace hades
 		template<typename T>
 		T& get_level_local_ref(unique_id id)
 		{
+			static_assert(std::is_default_constructible_v<T>);
 			auto ptr = detail::get_game_level_ptr();
 			auto &any = ptr->get_level_local_ref(id);
 			if (!any.has_value())
@@ -427,7 +428,7 @@ namespace hades
 		template<typename T>
 		const curve<T>& get_curve(curve_index_t i)
 		{
-			auto ptr = detail::get_render_data_ptr();
+			const auto ptr = detail::get_render_data_ptr();
 			assert(ptr);
 
 			return detail::get_render_curve<T>(ptr->level_data, i);

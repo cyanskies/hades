@@ -30,6 +30,19 @@ function(hades_make_common ARG_NAME)
 	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${ARG_NAME})
 endfunction(hades_make_common)
 
+function(hades_make_compile_settings ARG_NAME)
+  # Add compiler flags for extra warnings
+  target_compile_options(${ARG_NAME} PRIVATE
+                             # clang/GCC warnings
+                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
+                             # MSVC warnings
+							 # GS- for no extra buffer overflow checks
+							 # W4 warning
+                             $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/GS-" "/W4" >)
+endfunction(hades_make_compile_settings)
+
 function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list
   hades_make_common(${ARG_NAME})
   
@@ -47,14 +60,8 @@ function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list
 
   target_include_directories(${LIB_NAME} PUBLIC ${ARG_INCLUDE})
 
-  # Add compiler flags for extra warnings
-  target_compile_options(${LIB_NAME} PRIVATE
-                             # clang/GCC warnings
-                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
-                             # MSVC warnings
-                             $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/W4" >)
+  hades_make_compile_settings(${LIB_NAME})
+
   if(${ARGC} GREATER 3)
     target_link_libraries(${LIB_NAME} PUBLIC ${ARGV3})
   endif()
@@ -74,23 +81,11 @@ function(hades_make_exe ARG_NAME ARG_INCLUDE ARG_FILES) #DEPENDENCIES
 
   # Determine library suffixes depending on static/shared configuration
   add_executable(${EXE_NAME} ${ARG_FILES})
-  if(BUILD_SHARED_LIBS)
-    set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX -d)
-  else() 
-    set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX -s-d)
-    set_target_properties(${EXE_NAME} PROPERTIES RELEASE_POSTFIX -s)
-  endif()
+  set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX -d)
 
   target_include_directories(${EXE_NAME} PUBLIC ${ARG_INCLUDE})
 
-  # Add compiler flags for extra warnings
-  target_compile_options(${EXE_NAME} PRIVATE
-                             # clang/GCC warnings
-                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
-                             # MSVC warnings
-                             $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/W4" >)
+  hades_make_compile_settings(${EXE_NAME})
 
   if(${ARGC} GREATER 3)
     target_link_libraries(${EXE_NAME} PUBLIC ${ARGV3})

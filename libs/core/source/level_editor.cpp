@@ -320,7 +320,7 @@ namespace hades::detail
 
 					if (!file.empty())
 					{
-						const auto l = deserialise(file);
+						const auto l = deserialise_level(file);
 						_load(l);
 					}
 				}

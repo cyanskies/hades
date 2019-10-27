@@ -36,7 +36,7 @@ namespace hades::detail
 		level_editor_impl();
 		level_editor_impl(level);
 
-		virtual ~level_editor_impl() noexcept = default;
+		~level_editor_impl() noexcept override = default;
 
 		void init() override;
 		bool handle_event(const event&) override;

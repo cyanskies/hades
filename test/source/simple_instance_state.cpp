@@ -63,7 +63,7 @@ void print_changes(const hades::exported_curves& e)
 void simple_instance_state::init()
 {
 	const auto lvl_str = hades::files::as_string(defaultGame(), "new_level.lvl"sv);
-	const auto level = hades::deserialise(lvl_str);
+	const auto level = hades::deserialise_level(lvl_str);
 	const auto lvl_sv = hades::make_save_from_level(level);
 
 	_server = hades::create_server(lvl_sv);

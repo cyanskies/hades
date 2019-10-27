@@ -76,8 +76,10 @@ namespace hades
 
 	//starting point
 	//std::shared_ptr<server_hub> create_server(mission_save mis);
-	server_ptr create_server(level_save lvl);
-	server_ptr connect_to_server(/*ip address*/);
+	server_ptr create_server(level_save lvl); //auto player assignment
+	server_ptr create_server(level_save lvl, int32 player_slot); //join as player x // obs for slot -1 or already taken 
+	server_ptr create_server(level_save lvl, std::string_view name_slot) //join as player in named slot
+	server_ptr connect_to_server(/*ip address*/); //auto player assignment
 }
 
 #endif //HADES_SERVER_HPP

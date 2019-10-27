@@ -215,7 +215,7 @@ namespace hades
 		return w->get_string();
 	}
 
-	level deserialise(std::string_view s)
+	level deserialise_level(std::string_view s)
 	{
 		const auto parser = data::make_parser(s);
 		const auto level_node = parser->get_child(level_str);

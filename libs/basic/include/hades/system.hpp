@@ -54,7 +54,7 @@ namespace hades
 		class system
 		{
 		public:
-			virtual ~system() {}
+			virtual ~system() noexcept = default;
 
 			//registers a function with the provided name, if replace = true, then any function with the same name will be replaced with this one
 			// note: this should not overwrite properties with the same name

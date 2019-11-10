@@ -52,9 +52,6 @@ namespace hades
 		console->add_function("vid_default", vid_default, true);
 	}
 
-	App::App() : _consoleView{ nullptr }, _sfVSync{ false }
-	{}
-
 	void App::init()
 	{
 		//record the global console as logger

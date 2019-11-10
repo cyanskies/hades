@@ -27,9 +27,6 @@ namespace hades
 	class App
 	{
 	public: 
-
-		App();
-
 		////////////////////////////////////////////////////////////
 		/// \brief Creates and starts most of the apps subsystems and config files.
 		///
@@ -87,11 +84,9 @@ namespace hades
 		
 		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
 		sf::RenderWindow _window;					///< SFML window object. 
-		bool _sfVSync;								///< Flag for SFML sync
+		bool _sfVSync = false;						///< Flag for SFML sync
 
-		ConsoleView *_consoleView;					///< The console interation devtool.
-
-		//sfg::SFGUI _sfgui;							///< SFGUI object
+		ConsoleView *_consoleView = nullptr;		///< The console interation devtool.
 	};
 
 	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);

@@ -24,7 +24,7 @@ namespace hades
 		public:
 			enum class log_verbosity { normal, error, warning };
 
-			virtual ~logger() {}
+			virtual ~logger() noexcept = default;
 			
 			virtual void echo(const string&) = 0;
 

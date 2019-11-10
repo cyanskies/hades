@@ -9,6 +9,8 @@
 
 namespace hades {
 	namespace types {
+		//TODO: just use fixed size def,
+		// leave the _fast in std::
 		//portable types for integers
 		using int8 = std::int_fast8_t;
 		using uint8 = std::uint_fast8_t;
@@ -22,6 +24,7 @@ namespace hades {
 		using int64 = std::int_fast64_t;
 		using uint64 = std::uint_fast64_t;
 
+		//TODO: no, just use float and double directly
 		//portable types for float;
 		using float32 = std::float_t;
 		using float64 = std::double_t;
@@ -32,8 +35,6 @@ namespace hades {
 
 		//defined names for common types
 		using string = std::string;
-
-		//using bool
 
 		template<typename ...Types> struct always_false : public std::false_type {};
 

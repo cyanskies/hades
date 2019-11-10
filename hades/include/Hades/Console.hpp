@@ -48,11 +48,7 @@ namespace hades
 		using Console_Function = console::function;
 		using Console_Function_No_Arg = console::function_no_argument;
 		using Console_String_Verbosity = console::logger::log_verbosity;
-		
-		Console() : recentOutputPos(0) {}
-
-		virtual ~Console() {}
-
+	
 		bool add_function(std::string_view identifier, Console_Function func, bool replace) override;
 		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
 		void erase_function(std::string_view identifier) override;
@@ -126,7 +122,7 @@ namespace hades
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;
-		std::size_t recentOutputPos;
+		std::size_t recentOutputPos = 0u;
 	};
 
 	// ==================

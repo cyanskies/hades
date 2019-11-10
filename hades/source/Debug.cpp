@@ -12,10 +12,8 @@ namespace hades
 {
 	namespace debug
 	{
-		Overlay::Overlay(bool fullscreen) : _fullscreen(fullscreen), _invalid(false)
+		Overlay::Overlay(bool fullscreen) : _fullscreen(fullscreen)
 		{}
-
-		Overlay::~Overlay() {}
 
 		sf::Vector2f Overlay::getSize() const
 		{
@@ -26,10 +24,6 @@ namespace hades
 		void Overlay::setFullscreenSize(sf::Vector2f)
 		{
 			_invalid = true;
-		}
-
-		void Overlay::update()
-		{
 		}
 
 		bool Overlay::fullscreen() const

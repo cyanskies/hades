@@ -18,7 +18,7 @@ namespace hades
 		public:
 			explicit Overlay(bool fullscreen = false);
 
-			virtual ~Overlay();
+			virtual ~Overlay() noexcept = default;
 			//returns the requested size of the overlay,
 			//this allows the debug manager to arrange the overlays correctly
 			//NOTE: failing to override this function if fullscreen == false, will prevent your
@@ -31,12 +31,12 @@ namespace hades
 			//prevent your overlay from being rendered
 			virtual void setFullscreenSize(sf::Vector2f);
 
-			virtual void update();
+			virtual void update() {}
 			//draws the overlay to the screen.
 			//if fullscreen is true, then the overlay must provide it's own view
 			//otherwise the view is already arranged for the overlay
 			//and is the size returned by getSize()
-			void draw(time_duration, sf::RenderTarget&, sf::RenderStates = {}) override = 0;
+			virtual void draw(time_duration, sf::RenderTarget&, sf::RenderStates = {}) = 0;
 
 			//if fullscreen then the size is specified by the window manager
 			bool fullscreen() const;
@@ -44,7 +44,7 @@ namespace hades
 
 		private:
 			bool _fullscreen;
-			mutable bool _invalid;
+			mutable bool _invalid = false;
 		};
 
 		class OverlayManager : public drawable

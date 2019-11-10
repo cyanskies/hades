@@ -928,7 +928,7 @@ namespace hades
 		int width = 0, height = 0;
 		unsigned char *texture_data = nullptr;
 		f_atlas.GetTexDataAsRGBA32(&texture_data, &width, &height);
-		f_atlas.TexID = static_cast<void*>(t);
+		f_atlas.SetTexID(t);
 
 		//make the texture
 		t->value.create(width, height);
@@ -938,6 +938,7 @@ namespace hades
 		t->value.setSmooth(false);
 		t->width = width;
 		t->height = height;
+		t->loaded = true;
 	}
 
 	//gui::static objects

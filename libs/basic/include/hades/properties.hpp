@@ -84,6 +84,7 @@ namespace hades
 			return std::make_shared< basic_property<T> >(value);
 		}
 
+		//TODO: use float32
 		using property_int = property<int32>;
 		using property_float = property<float>;
 		using property_bool = property<bool>;
@@ -91,7 +92,7 @@ namespace hades
 
 		class properties {
 		public:
-			virtual ~properties() {}
+			virtual ~properties() noexcept = default;
 
 			//creates the property and sets it's default value
 			virtual void create(std::string_view, int32 default_val) = 0;

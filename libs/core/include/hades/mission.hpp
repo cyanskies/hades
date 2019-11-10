@@ -6,12 +6,7 @@
 
 namespace hades
 {
-	//load level from file
-	/*  void load level()   */
-	//load save from file
-	/*  void load level save()   */
-
-	constexpr auto level_ext = "mission";
+	constexpr auto mission_ext = "mission";
 	constexpr auto save_ext = "msav";
 
 	struct mission

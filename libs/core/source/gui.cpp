@@ -115,7 +115,6 @@ namespace hades
 	void gui::update(time_duration dt)
 	{
 		//record the change in time
-		_activate_context();
 		auto &io = ImGui::GetIO();
 		io.DeltaTime = time_cast<seconds_float>(dt).count();
 	}
@@ -140,21 +139,6 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::ShowDemoWindow();
-	}
-
-	sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f })
-	{
-		const auto col = ImColor{ vert.col }.Value;
-		
-		return { {vert.pos.x, vert.pos.y},
-			sf::Color{static_cast<sf::Uint8>(col.x * 255.f),
-					static_cast<sf::Uint8>(col.y * 255.f), 
-					static_cast<sf::Uint8>(col.z * 255.f), 
-					static_cast<sf::Uint8>(col.w * 255.f)},
-			//uv coords are normalised for the texture size as [0.f, 1.f]
-			//we need to expand them to the range of [0, tex_size]
-			//same as the colours above
-			{vert.uv.x * tex_size.x, vert.uv.y * tex_size.y} };
 	}
 
 	bool gui::window_begin(std::string_view name, bool &closed, window_flags flags)
@@ -785,6 +769,21 @@ namespace hades
 		return { v.x, v.y };
 	}
 
+	static sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f })
+	{
+		const auto col = ImColor{ vert.col }.Value;
+
+		return { {vert.pos.x, vert.pos.y},
+			sf::Color{static_cast<sf::Uint8>(col.x * 255.f),
+					static_cast<sf::Uint8>(col.y * 255.f),
+					static_cast<sf::Uint8>(col.z * 255.f),
+					static_cast<sf::Uint8>(col.w * 255.f)},
+			//uv coords are normalised for the texture size as [0.f, 1.f]
+			//we need to expand them to the range of [0, tex_size]
+			//same as the colours above
+			{vert.uv.x * tex_size.x, vert.uv.y * tex_size.y} };
+	}
+
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
 	// this is done through the draw_clamp_window helper
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
@@ -842,6 +841,7 @@ namespace hades
 						static_cast<int32>(cmd.ClipRect.z - cmd.ClipRect.x),
 						static_cast<int32>(cmd.ClipRect.w - cmd.ClipRect.y) };
 
+					//TODO: should probably be draw_clamp_region; though people are unlikely to move the gui view around
 					target.draw(draw_clamp_window{ verts, clip_region }, state);
 				}
 
@@ -863,7 +863,7 @@ namespace hades
 		ImGui::SetCurrentContext(_my_context.get());
 	}
 
-	void gui::_active_assert() const
+	void gui::_active_assert() const noexcept
 	{
 		assert(_my_context);
 		assert(ImGui::GetCurrentContext() == _my_context.get());

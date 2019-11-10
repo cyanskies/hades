@@ -9,6 +9,7 @@
 #include "hades/level_editor_objects.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
+#include "..\include\hades\mission_editor.hpp"
 
 namespace hades::detail
 {

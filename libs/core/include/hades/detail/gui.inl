@@ -8,7 +8,7 @@ namespace hades
 	template<size_t Count>
 	inline void gui::indent()
 	{
-		size_t i = 0u;
+		std::size_t i = 0u;
 		while (i < Count)
 		{
 			dummy();

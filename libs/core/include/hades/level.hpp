@@ -20,7 +20,7 @@ namespace hades
 	/*  void load level save()   */
 
 	constexpr auto level_ext = "lvl";
-	constexpr auto save_ext = "sav";
+	constexpr auto level_save_ext = "sav";
 
 	using level_size_t = hades::types::int32;
 

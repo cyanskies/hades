@@ -73,8 +73,10 @@ namespace hades
 		gui &operator=(const gui&) = delete;
 		gui &operator=(gui&&) = default;
 
+		//should be called before using any gui function
 		void activate_context();
 
+		//this must be called at least once to get valid output
 		void set_display_size(vector_t<float> size);
 		
 		//input must be inserted before frame_begin
@@ -190,7 +192,7 @@ namespace hades
 
 		//layouts
 		void separator_horizontal();
-		template<size_t Count = 1u>
+		template<std::size_t Count = 1u>
 		void indent();
 		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal
@@ -389,12 +391,15 @@ namespace hades
 
 		//TODO: value
 
+
 		bool main_menubar_begin();
+		// Only call if main_menubar_begin() returns true
 		void main_menubar_end();
 		bool menubar_begin();
 		void menubar_end();
 		bool menu_begin(std::string_view, bool enabled = true);
-		void menu_end();                                                          
+		// Only call if menu_begin() returns true 
+		void menu_end();
 		bool menu_item(std::string_view, bool enabled = true);
 		bool menu_toggle_item(std::string_view, bool &selected, bool enabled = true);
 
@@ -455,7 +460,7 @@ namespace hades
 		using font = ImFont;
 
 		void _activate_context();
-		void _active_assert() const;
+		void _active_assert() const noexcept;
 		void _toolbar_layout_next();
 		static font* _get_font(const resources::font*);
 		static font* _create_font(const resources::font*);

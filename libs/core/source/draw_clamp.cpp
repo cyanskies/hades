@@ -31,8 +31,8 @@ namespace hades
 		*/
 
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(static_cast<GLsizei>(window_rect_pos.x),
-			static_cast<GLsizei>(window_rect_pos.y),
+		glScissor(static_cast<GLint>(window_rect_pos.x),
+			static_cast<GLint>(window_rect_pos.y),
 			static_cast<GLsizei>(_region.width),
 			static_cast<GLsizei>(_region.height));
 
@@ -44,8 +44,8 @@ namespace hades
 	void draw_clamp_window::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
 		glEnable(GL_SCISSOR_TEST);
-		glScissor(static_cast<GLsizei>(_region.x),
-			static_cast<GLsizei>(_region.y),
+		glScissor(static_cast<GLint>(_region.x),
+			static_cast<GLint>(_region.y),
 			static_cast<GLsizei>(_region.width),
 			static_cast<GLsizei>(_region.height));
 

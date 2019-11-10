@@ -9,26 +9,18 @@
 
 namespace hades {
 	namespace types {
-		//TODO: just use fixed size def,
-		// leave the _fast in std::
 		//portable types for integers
-		using int8 = std::int_fast8_t;
-		using uint8 = std::uint_fast8_t;
+		using int8 = std::int8_t;
+		using uint8 = std::uint8_t;
 
-		using int16 = std::int_fast16_t;
-		using uint16 = std::uint_fast16_t;
+		using int16 = std::int16_t;
+		using uint16 = std::uint16_t;
 
-		using int32 = std::int_fast32_t;
-		using uint32 = std::uint_fast32_t;
+		using int32 = std::int32_t;
+		using uint32 = std::uint32_t;
 
-		using int64 = std::int_fast64_t;
-		using uint64 = std::uint_fast64_t;
-
-		//TODO: no, just use float and double directly
-		//portable types for float;
-		using float32 = std::float_t;
-		using float64 = std::double_t;
-		//long double
+		using int64 = std::int64_t;
+		using uint64 = std::uint64_t;
 
 		template<typename Float, typename = std::enable_if_t<std::is_floating_point_v<Float> && std::numeric_limits<Float>::has_infinity>>
 		constexpr auto infinity = std::numeric_limits<Float>::infinity();

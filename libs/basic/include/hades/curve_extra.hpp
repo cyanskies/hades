@@ -33,7 +33,7 @@ namespace hades::resources
 	namespace curve_types
 	{
 		using int_t = int32;
-		using float_t = float32;
+		using float_t = float;
 		using vec2_float = vector_float;
 		//TODO: double_t
 		using bool_t = bool;

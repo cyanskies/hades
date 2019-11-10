@@ -15,7 +15,7 @@ namespace hades
 	namespace detail
 	{
 		using int_t = int32;
-		using float_t = float32;
+		using float_t = float;
 		using unique_t = unique_id;
 		using vector_int_t = std::vector<int_t>;
 		using vector_float_t = std::vector<float_t>;

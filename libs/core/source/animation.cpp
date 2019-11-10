@@ -183,13 +183,13 @@ namespace hades
 
 	poly_quad make_quad_animation(vector_float p, const resources::animation &a, const animation::animation_frame &f) noexcept
 	{
-		return make_quad_animation(p, {static_cast<float32>(a.width), static_cast<float32>(a.height)}, a, f);
+		return make_quad_animation(p, {static_cast<float>(a.width), static_cast<float>(a.height)}, a, f);
 	}
 
 	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation& a, const animation::animation_frame& f) noexcept
 	{
 		return make_quad_animation({ pos, size }, { std::get<0>(f), std::get<1>(f),
-			static_cast<float32>(a.width), static_cast<float32>(a.height) });
+			static_cast<float>(a.width), static_cast<float>(a.height) });
 	}
 
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept

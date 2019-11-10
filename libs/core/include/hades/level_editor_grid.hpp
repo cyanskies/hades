@@ -40,7 +40,7 @@ namespace hades
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 	private:
 		grid _grid;
-		float32 _previous_size{};
+		float _previous_size{};
 		grid_vars _grid_vars = get_console_grid_vars();
 	};
 }

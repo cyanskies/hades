@@ -256,7 +256,14 @@ namespace hades::detail
 				_window_flags.load_level = true;
 
 			if (_gui.menu_item("resize..."))
+			{
+				_resize_options.size = { _level_x, _level_y };
+				_resize_options.offset = {};
+				_resize_options.top_left = {};
+				_resize_options.bottom_right = {};
 				_window_flags.resize_level = true;
+			}
+
 			if (_gui.menu_item("save"sv))
 				_save();
 			if (_gui.menu_item("save as..."sv, !_mission_mode()))
@@ -356,10 +363,21 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::resize_level, _window_flags.resize_level))
 			{
+
+				if (_resize_options.offset.x < 0 || _resize_options.offset.y < 0 ||
+					_resize_options.offset.x + _level_x > _resize_options.size.x ||
+					_resize_options.offset.y + _level_y > _resize_options.size.y)
+					_gui.text_coloured("current offset or new size will cause some sections of the current map to be erased"sv, sf::Color::Red);
+				else
+					_gui.text_coloured("no problems"sv, sf::Color::Green);
+
 				if (_gui.button("Resize"sv))
 				{
 					try
 					{
+						auto l = *_level;
+						
+						//TODO:
 
 						_window_flags.resize_level = false;
 					}
@@ -372,18 +390,40 @@ namespace hades::detail
 
 				_gui.text("current size: " + to_string(_level_x) + ", " + to_string(_level_y));
 
-				auto new_size = std::array{ _resize_new_size.x, _resize_new_size.y };
-				_gui.input("new size", new_size);
-				_resize_new_size = { new_size[0], new_size[1] };
+				bool changed = false;
+				auto new_size = std::array{ _resize_options.size.x, _resize_options.size.y };
+				if (_gui.input("new size", new_size))
+					changed = true;
+				_resize_options.size = { new_size[0], new_size[1] };
 
-				auto new_offset = std::array{ _resize_current_offset.x, _resize_current_offset.y };
-				_gui.input("current map offset", new_offset);
-				_resize_current_offset = { new_offset[0], new_offset[1] };
+				auto new_offset = std::array{ _resize_options.offset.x, _resize_options.offset.y };
+				if (_gui.input("current map offset", new_offset))
+					changed = true;
+				_resize_options.offset = { new_offset[0], new_offset[1] };
 
-				if (_resize_current_offset.x < 0 || _resize_current_offset.y < 0 ||
-					_resize_current_offset.x + _level_x > _resize_new_size.x ||
-					_resize_current_offset.y + _level_y > _resize_new_size.y)
-					_gui.text_coloured("current offset or new size will cause some sections of the current map to be erased", sf::Color::Red);
+				if (changed)
+				{
+					_resize_options.top_left = _resize_options.offset;
+					_resize_options.bottom_right = _resize_options.size - 
+						(_resize_options.offset + vector_int{_level_x, _level_y});
+					changed = false;
+				}
+
+				if (_gui.input("expand left by", _resize_options.top_left.x))
+					changed = true;
+				if(_gui.input("expand top by", _resize_options.top_left.y))
+					changed = true;
+				if(_gui.input("expand bottom by", _resize_options.bottom_right.y))
+					changed = true;
+				if(_gui.input("expand right by", _resize_options.bottom_right.x))
+					changed = true;
+
+				if (changed)
+				{
+					_resize_options.offset = _resize_options.top_left;
+					_resize_options.size = _resize_options.bottom_right + 
+						vector_int{ _level_x, _level_y } + _resize_options.offset;
+				}
 			}
 			_gui.window_end();
 		}

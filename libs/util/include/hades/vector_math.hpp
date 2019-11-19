@@ -56,7 +56,7 @@ namespace hades
 	};
 
 	static_assert(std::is_trivially_constructible_v<vector_t<int32>>);
-	//static_assert(std::is_trivially_assignable_v<vector_t<int32>>);
+	static_assert(std::is_trivially_assignable_v<vector_t<int32>, vector_t<int32>>);
 	static_assert(std::is_trivially_copyable_v<vector_t<int32>>);
 
 	template<typename T>

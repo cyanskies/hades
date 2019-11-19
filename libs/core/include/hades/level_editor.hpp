@@ -90,6 +90,14 @@ namespace hades::detail
 			int32 width{}, height{};
 		};
 
+		struct resize_opt
+		{
+			vector_int size;
+			vector_int offset;
+			vector_int top_left;
+			vector_int bottom_right;
+		};
+
 		bool _mission_mode() const;
 		void _load(level*);
 		void _save();
@@ -105,12 +113,11 @@ namespace hades::detail
 		level *_level = nullptr;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 		new_level_opt _new_level_options;
+		resize_opt _resize_options;
 		string _load_level_mod;
 		string _load_level_path;
 		string _next_save_path = "new_level.lvl";
 		string _save_path;
-		vector_int _resize_new_size;
-		vector_int _resize_current_offset;
 
 		sf::RectangleShape _background;
 

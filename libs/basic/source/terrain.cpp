@@ -4,6 +4,7 @@
 
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
+#include "hades/table.hpp"
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"
 
@@ -429,7 +430,12 @@ namespace hades
 		return m.tile_layer.width + 1;
 	}
 
-	terrain_vertex_position get_size(const terrain_map &t)
+	tile_position get_size(const terrain_map& t)
+	{
+		return get_size(t.tile_layer);
+	}
+
+	terrain_vertex_position get_terrain_size(const terrain_map &t)
 	{
 		const auto tile_size = get_size(t.tile_layer);
 		return tile_size + terrain_vertex_position{1, 1};
@@ -501,6 +507,60 @@ namespace hades
 		}
 
 		return out;
+	}
+
+	void resize_map_relative(terrain_map& m, vector_int top_left, vector_int bottom_right, const resources::terrain* t)
+	{
+		const auto current_height = m.tile_layer.tiles.size() / m.tile_layer.width;
+		const auto current_width = m.tile_layer.width;
+
+		const auto new_height = current_height - top_left.y + bottom_right.y;
+		const auto new_width = current_width - top_left.x + bottom_right.x;
+
+		const auto size = vector_int{
+			integer_cast<int32>(new_width),
+			integer_cast<int32>(new_height)
+		};
+
+		resize_map(m, size, { -top_left.x, -top_left.y }, t);
+	}
+
+	void resize_map_relative(terrain_map& m, vector_int top_left, vector_int bottom_right)
+	{
+		const auto terrain = resources::get_empty_terrain();
+		resize_map_relative(m, top_left, bottom_right, terrain);
+	}
+
+	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
+	{
+		const auto old_size = get_size(m);
+		//resize tile layer
+		resize_map(m.tile_layer, s, o);
+
+		//update terrain vertex
+		const auto new_terrain = always_table{ {}, s + vector_int{1, 1}, t };
+		auto current_terrain = table<const resources::terrain*>{ o, old_size, nullptr };
+		auto& current_terrain_data = current_terrain.data();
+		assert(std::size(m.terrain_vertex) == std::size(current_terrain_data));
+		std::copy(std::begin(m.terrain_vertex), std::end(m.terrain_vertex), std::begin(current_terrain_data));
+
+		const auto resized_map = combine_table(new_terrain, current_terrain, [](auto&&, auto&& rhs) {
+			return rhs;
+		});
+
+		assert(std::size(resized_map) == s);
+
+		//regenerate terrain layers
+		m.terrain_layers = generate_terrain_layers(m.terrainset,
+			m.terrain_vertex, integer_cast<terrain_count_t>(s.x) + 1);
+
+		return;
+	}
+
+	void resize_map(terrain_map& m, vector_int size, vector_int offset)
+	{
+		const auto terrain = resources::get_empty_terrain();
+		resize_map(m, size, offset, terrain);
 	}
 
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)

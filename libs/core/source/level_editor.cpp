@@ -371,8 +371,15 @@ namespace hades::detail
 				}
 
 				_gui.text("current size: " + to_string(_level_x) + ", " + to_string(_level_y));
-				_gui.input("new size", _resize_new_size);
-				_gui.input("current map offset", _resize_current_offset);
+
+				auto new_size = std::array{ _resize_new_size.x, _resize_new_size.y };
+				_gui.input("new size", new_size);
+				_resize_new_size = { new_size[0], new_size[1] };
+
+				auto new_offset = std::array{ _resize_current_offset.x, _resize_current_offset.y };
+				_gui.input("current map offset", new_offset);
+				_resize_current_offset = { new_offset[0], new_offset[1] };
+
 				if (_resize_current_offset.x < 0 || _resize_current_offset.y < 0 ||
 					_resize_current_offset.x + _level_x > _resize_new_size.x ||
 					_resize_current_offset.y + _level_y > _resize_new_size.y)

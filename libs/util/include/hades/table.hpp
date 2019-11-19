@@ -120,6 +120,7 @@ namespace hades {
 	//combines two tables using CombineFunctor
 	//presses any areas of the second table onto the areas
 	//of first table that it overlaps
+	//return value is the size of the first table
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
 	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor);
 

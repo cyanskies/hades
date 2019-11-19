@@ -147,7 +147,9 @@ namespace hades
 	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*);
 
 	terrain_count_t get_width(const terrain_map&);
-	terrain_vertex_position get_size(const terrain_map&);
+	tile_position get_size(const terrain_map&);
+	//returns the size of the terrain vertex map(get_size + {1, 1})
+	terrain_vertex_position get_terrain_size(const terrain_map&);
 
 	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position);
 	bool within_map(const terrain_map&, terrain_vertex_position position);
@@ -174,12 +176,12 @@ namespace hades
 	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
 	// tiles that fall outside the new size are erased
 	// new areas will be set to tile&
-	void resize__map_relative(terrain_map&, vector_int top_left, vector_int bottom_right,
-		const resources::terrain&);
+	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right,
+		const resources::terrain*);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
 	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right);
 	//as above, places current map content at offset
-	void resize_map(terrain_map&, vector_int size, vector_int offset, const resources::terrain&);
+	void resize_map(terrain_map&, vector_int size, vector_int offset, const resources::terrain*);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
 	void resize_map(terrain_map&, vector_int size, vector_int offset);
 

@@ -35,6 +35,8 @@ namespace hades
 	{
 	public:
 		void level_load(const level&) override;
+		void level_resize(vector_int s, vector_int) override;
+
 		void gui_update(gui&, editor_windows&) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;

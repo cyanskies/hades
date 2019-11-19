@@ -736,7 +736,7 @@ namespace hades
 		const auto new_map = always_table{ vector_int{}, vector_int{ size.x, size.y }, tile };
 
 		auto current_map = table<tile_count_t>{ offset,
-			size, tile_count_t{} };
+			get_size(m), tile_count_t{} };
 
 		auto &current_tiles = current_map.data();
 		assert(current_tiles.size() == m.tiles.size());
@@ -752,7 +752,8 @@ namespace hades
 		m.width = size.x;
 		const auto &new_tiles = resized_map.data();
 
-		std::copy(std::begin(new_tiles), std::end(new_tiles), std::begin(m.tiles));
+		m.tiles.clear();
+		std::copy(std::begin(new_tiles), std::end(new_tiles), std::back_inserter(m.tiles));
 	}
 
 	void resize_map(tile_map &t, vector_int size, vector_int offset)

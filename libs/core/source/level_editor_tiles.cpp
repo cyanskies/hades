@@ -69,6 +69,14 @@ namespace hades
 		return l;
 	}
 
+	void level_editor_tiles::level_resize(vector_int s, vector_int o)
+	{
+		auto map = _tiles.get_map();
+		_level_size = s;
+		resize_map(map, s, o);
+		_tiles = mutable_tile_map{ map };
+	}
+
 	template<typename OnClick>
 	static void add_tile_buttons(gui &g, float toolbox_width, const std::vector<resources::tile> &tiles, OnClick on_click)
 	{

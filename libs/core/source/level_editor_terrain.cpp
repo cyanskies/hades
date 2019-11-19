@@ -115,6 +115,13 @@ namespace hades
 		return l;
 	}
 
+	void level_editor_terrain::level_resize(vector_int s, vector_int o)
+	{
+		auto map = _map.get_map();
+		resize_map(map, s, o);
+		_map = mutable_terrain_map{ map };
+	}
+
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
 	{
 		using namespace std::string_view_literals;

@@ -533,7 +533,7 @@ namespace hades
 
 	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
 	{
-		const auto old_size = get_size(m);
+		const auto old_size = get_terrain_size(m);
 		//resize tile layer
 		resize_map(m.tile_layer, s, o);
 
@@ -544,11 +544,11 @@ namespace hades
 		assert(std::size(m.terrain_vertex) == std::size(current_terrain_data));
 		std::copy(std::begin(m.terrain_vertex), std::end(m.terrain_vertex), std::begin(current_terrain_data));
 
-		const auto resized_map = combine_table(new_terrain, current_terrain, [](auto&&, auto&& rhs) {
+		auto resized_map = combine_table(new_terrain, current_terrain, [](auto&&, auto&& rhs) {
 			return rhs;
 		});
 
-		assert(std::size(resized_map) == s);
+		m.terrain_vertex = std::move(resized_map.data());
 
 		//regenerate terrain layers
 		m.terrain_layers = generate_terrain_layers(m.terrainset,

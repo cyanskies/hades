@@ -363,7 +363,6 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::resize_level, _window_flags.resize_level))
 			{
-
 				if (_resize_options.offset.x < 0 || _resize_options.offset.y < 0 ||
 					_resize_options.offset.x + _level_x > _resize_options.size.x ||
 					_resize_options.offset.y + _level_y > _resize_options.size.y)
@@ -372,20 +371,13 @@ namespace hades::detail
 					_gui.text_coloured("no problems"sv, sf::Color::Green);
 
 				if (_gui.button("Resize"sv))
-				{
-					try
-					{
-						auto l = *_level;
-						
-						//TODO:
+				{	
+					_component_on_resize(_resize_options.size, _resize_options.offset);
+					_level_x = _resize_options.size.x;
+					_level_y = _resize_options.size.y;
 
-						_window_flags.resize_level = false;
-					}
-					catch (const resize_level_editor_error & e)
-					{
-						_error_modal = true;
-						_error_msg = e.what();
-					}
+					reinit();
+					_window_flags.resize_level = false;
 				}
 
 				_gui.text("current size: " + to_string(_level_x) + ", " + to_string(_level_y));

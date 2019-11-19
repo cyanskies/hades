@@ -64,7 +64,7 @@ namespace hades {
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
-		table(index_type position, index_type size, T value) : _data(size.x * size.y, value), _offset(position) {}
+		table(index_type position, index_type size, T value) : _data(size.x* size.y, value), _offset(position), _width{ size.x } {}
 		table(const table&) = default;
 		table(const virtual_table<T>&);
 		table(table&&) = default;

@@ -33,14 +33,20 @@ endfunction(hades_make_common)
 function(hades_make_compile_settings ARG_NAME)
   # Add compiler flags for extra warnings
   target_compile_options(${ARG_NAME} PRIVATE
-                             # clang/GCC warnings
+							 #optimisations
+							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
+								# '/GS-' for no extra buffer overflow checks
+								$<$<CXX_COMPILER_ID:MSVC>:
+                                  "/GS-" "/O2" >
+								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "-O3" >
+							 >
+
+							 #warnings
                              $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
-                             # MSVC warnings
-							 # GS- for no extra buffer overflow checks
-							 # W4 warning
                              $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/W4" >)
+                                  "/W4" >)
 endfunction(hades_make_compile_settings)
 
 function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list

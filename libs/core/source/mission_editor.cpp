@@ -55,8 +55,8 @@ namespace hades
 		const auto width = console::get_int(cvars::video_width, cvars::default_value::video_width);
 		const auto height = console::get_int(cvars::video_height, cvars::default_value::video_height);
 
-		const auto fwidth = static_cast<float32>(width->load());
-		const auto fheight = static_cast<float32>(height->load());
+		const auto fwidth = static_cast<float>(width->load());
+		const auto fheight = static_cast<float>(height->load());
 
 		_gui_view.reset({ 0.f, 0.f, fwidth, fheight });
 		_gui.activate_context();
@@ -86,21 +86,252 @@ namespace hades
 
 	void mission_editor_t::_gui_menu_bar()
 	{
-		if (_gui.menu_begin("editor"))
+		if (_gui.menu_begin("file"))
 		{
-			_gui.menu_item("new...", false);
+			if (_gui.menu_item("new...", false))
+			{
+				;
+			}
+
 			_gui.menu_item("load...", false);
 			_gui.menu_item("save", false);
 			_gui.menu_item("save as...", false);
+			if (_gui.menu_item("exit"))
+				kill();
+			_gui.menu_end();
+		}
+
+		if (_gui.menu_begin("windows"))
+		{
+			_gui.menu_toggle_item("show level window", _level_window_state.open);
+			_gui.menu_toggle_item("show object window", _obj_w);
+			_gui.menu_toggle_item("show players window", _player_window_state.open);
 			_gui.menu_end();
 		}
 
 		return;
 	}
 
+	void mission_editor_t::_gui_players_window()
+	{
+	}
+
+	static string to_string(const mission_editor_t::level_info& l)
+	{
+		if (l.path)
+		{
+			const auto name = data::get_as_string(l.name);
+			return name + "(" + *l.path + ")";
+		}
+		else //TODO: asterisk to show 'dirty' levels
+			return data::get_as_string(l.name);
+	}
+
 	void mission_editor_t::_gui_level_window()
 	{
+		const auto add_level = [](level_window_state_t& s)
+		{
+			s.add_level_open = true;
+			s.add_level_external = false;
+			s.rename = false;
+			s.rename_index = -1;
+			s.new_level_name = string{};
+			s.new_level_path = string{};
+		};
+
+		const auto rename_level = [](level_window_state_t& s, const std::vector<level_info>& l)
+		{
+			assert(s.selected < std::size(l));
+
+			const auto& t = l[s.selected];
+
+			s.add_level_open = true;
+			s.add_level_external = t.path.has_value();
+			s.rename_index = s.selected;
+			s.rename = true;
+			s.new_level_name = to_string(t.name);
+			s.new_level_path = t.path.value_or(string{});
+		};
+
+		auto& s = _level_window_state;
+		
+		//====level window====
+
+		if (_gui.button("add..."))
+			add_level(s);
+
+		_gui.layout_horizontal();
+		if (_gui.button("remove") && !std::empty(_levels))
+		{
+			const auto last = std::size(_levels) - 1u;
+			if (s.rename)
+			{
+				if (s.selected == s.rename_index)
+					s.add_level_open = false;
+				else if (s.selected < s.rename_index)
+					--s.rename_index;
+			}
+
+			if (s.selected == 0u)
+			{
+				_levels.erase(std::begin(_levels));
+			}
+			else if (s.selected == last)
+			{
+				_levels.pop_back();
+				--s.selected;
+			}
+			else
+			{
+				auto it = std::begin(_levels);
+				std::advance(it, s.selected);
+				_levels.erase(it);
+				--s.selected;
+			}
+		}
+
+		_gui.button("move up");
+		_gui.layout_horizontal();
+		_gui.button("move down");
+
+		if (_gui.button("rename"))
+			rename_level(s, _levels);
+
+		_gui.layout_horizontal();
+		if (_gui.button("edit...") && !std::empty(_levels))
+		{
+			assert(s.selected < std::size(_levels));
+			auto& l = _levels[s.selected];
+			if(!l.path.has_value())
+				make_editor_state(l);
+		}
+
+		_gui.listbox("##levels", s.selected, _levels);
+
+		if (s.add_level_open)
+		{
+			if (_gui.window_begin("add level"))
+				_gui_add_level_window();
+			_gui.window_end();
+		}
+
 		return;
+	}
+
+	void mission_editor_t::_gui_add_level_window()
+	{
+		constexpr auto error_modal = "error##add_level";
+
+		auto& s = _level_window_state;
+
+		_gui.input("name", s.new_level_name);
+		_gui.checkbox("external level", s.add_level_external);
+		auto input_flags = gui::input_text_flags::readonly;
+		if (s.add_level_external)
+			input_flags = gui::input_text_flags::none;
+		else
+			s.new_level_path = string{};
+		_gui.input("level path", s.new_level_path, input_flags);
+
+		constexpr auto create = "create##ok_button";
+		constexpr auto update = "update##ok_button";
+
+		if (_gui.button(s.rename ? update : create))
+		{
+			using e = level_window_state_t::errors;
+
+			const auto id = data::make_uid(s.new_level_name);
+			const auto name_used = [id, index = s.rename_index](const std::vector<level_info>& l) {
+				if (std::empty(l))
+					return false;
+				
+				//index == -1 if this window is opened to create, rather than rename
+				if (index < 0)
+				{
+					return std::any_of(std::begin(l), std::end(l), [id](const level_info& l) {
+						return id == l.name;
+					});
+				}
+				else
+				{
+					assert(index < std::size(l));
+					const auto end = std::size(l);
+					for (auto i = std::size_t{}; i < end; ++i)
+					{
+						//ignore our own name
+						if (i != index && l[i].name == id)
+							return true;
+					}
+				}
+
+				return false;
+			};
+
+			if (s.new_level_name.empty())
+			{
+				s.current_error = e::name_empty;
+				_gui.open_modal(error_modal);
+			}
+			else if (name_used(_levels))
+			{
+				s.current_error = e::name_taken;
+				_gui.open_modal(error_modal);
+			}
+			else if (false/*TODO: check valid path*/)
+			{
+				s.current_error = e::path_not_found;
+				_gui.open_modal(error_modal);
+			}
+			else
+			{
+				s.add_level_open = false;
+				if (s.rename && !std::empty(_levels))
+				{
+					auto& l =_levels[integer_cast<std::size_t>(s.rename_index)];
+					l.name = id;
+					if (s.add_level_external)
+					{
+						l.path = s.new_level_path;
+						l.level = {};
+					}
+					else
+						l.path.reset();
+				}
+				else
+				{
+					auto l = level_info{ id };
+					if (s.add_level_external)
+						l.path = s.new_level_path;
+					_levels.emplace_back(std::move(l));
+				}
+			}
+		}
+
+		_gui.layout_horizontal();
+		if (_gui.button("cancel"))
+			s.add_level_open = false;
+
+		//===level error====
+		if (_gui.modal_begin(error_modal))
+		{
+			using errors = level_window_state_t::errors;
+
+			if (s.current_error == errors::name_empty)
+				_gui.text("a name must be provided");
+			else if (s.current_error == errors::name_taken)
+				_gui.text("the name provided is already used for a level in this mission");
+			else if (s.current_error == errors::path_not_found)
+				_gui.text("bad path");
+			else
+			{
+				LOGERROR("invalid 'current_error' in mission editor: add_level");
+			}
+
+			if (_gui.button("ok"))
+				_gui.close_current_modal();
+
+			_gui.modal_end();
+		}
 	}
 
 	void mission_editor_t::_gui_object_window()
@@ -113,21 +344,33 @@ namespace hades
 		_gui.activate_context();
 		_gui.update(dt);
 		_gui.frame_begin();
-		//_gui.show_demo_window();
-
+		
 		if (_gui.main_menubar_begin())
 		{
 			_gui_menu_bar();
 			_gui.main_menubar_end();
 		}
 
-		if (_gui.window_begin("Levels", _level_w))
-			_gui_level_window();
-		_gui.window_end();
-		
-		if (_gui.window_begin("Objects", _obj_w))
-			_gui_object_window();
-		_gui.window_end();
+		if (_player_window_state.open)
+		{
+			if (_gui.window_begin("Players", _player_window_state.open))
+				_gui_players_window();
+			_gui.window_end();
+		}
+
+		if (_level_window_state.open)
+		{
+			if (_gui.window_begin("Levels", _level_window_state.open))
+				_gui_level_window();
+			_gui.window_end();
+		}
+
+		if (_obj_w)
+		{
+			if (_gui.window_begin("Objects", _obj_w))
+				_gui_object_window();
+			_gui.window_end();
+		}
 
 		_gui.frame_end();
 	}

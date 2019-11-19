@@ -214,6 +214,7 @@ namespace hades
 		void text_coloured(std::string_view, const sf::Color&);
 		void text_disabled(std::string_view);
 		void text_bullet(std::string_view);
+		void text_wrapped(std::string_view);
 		
 		enum class direction : ImGuiDir 
 		{
@@ -265,7 +266,6 @@ namespace hades
 		detail::listbox_no_string<Container> listbox(std::string_view label,
 			std::size_t &current_item, const Container&, int height_in_items = -1);
 
-		//TODO: std::size_t
 		template<typename Container, typename ToString>
 		bool listbox(std::string_view label, std::size_t &current_item,
 			const Container&, ToString to_string_func, int height_in_items = -1);
@@ -414,13 +414,21 @@ namespace hades
 		void show_tooltip(std::string_view); //always shows a tooltip
 
 		//TODO: popups
+		//popup windows are defined by the popup_begin/popup_end functions
+		//they are flagged as open by calling open_popup elsewhere in the program
+		//they are otherwise normal windows, though they will close on any input
+		//not directed at them
 		void open_popup(std::string_view);
+		///void popip_begin()
+		//only call if popup_begin returned true
 		void popup_end();
 		void close_current_popup();
 
 		//modal dialogs(block input behind them)
+		//same as popups above, but input not directed at them is just ignored
 		void open_modal(std::string_view);
 		bool modal_begin(std::string_view, window_flags flags = window_flags::none);
+		//only call if modal_begin returned true
 		void modal_end();
 		void close_current_modal();
 

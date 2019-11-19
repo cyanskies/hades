@@ -25,6 +25,7 @@ namespace hades::editor::gui_names
 	constexpr auto new_level = "New Level"sv;
 	constexpr auto load_level = "Load Level"sv;
 	constexpr auto save_level = "Save Level"sv;
+	constexpr auto resize_level = "Resize Level"sv;
 }
 
 namespace hades::editor
@@ -48,6 +49,12 @@ namespace hades
 		using level_editor_error::level_editor_error;
 	};
 
+	class resize_level_editor_error : public level_editor_error
+	{
+	public:
+		using level_editor_error::level_editor_error;
+	};
+
 	class gui;
 	struct mission;
 	
@@ -57,6 +64,7 @@ namespace hades
 		struct editor_windows
 		{
 			bool new_level = false;
+			bool resize_level = false;
 			bool load_level = false;
 			bool save_level = false;
 		};
@@ -86,18 +94,18 @@ namespace hades
 
 		//compoenents can throw new_level_editor_error
 		// if they with to prevent creation of a new level,
-		virtual level level_new(level l) const { return l; };
-		virtual void level_load(const level&) {};
-		virtual level level_save(level l) const { return l; };
-		//TODO: level_resize
+		virtual level level_new(level l) const { return l; }
+		virtual void level_load(const level&) {}
+		virtual level level_save(level l) const { return l; }
+		virtual void level_resize(vector_int new_size, vector_int current_offset) {}
 
-		virtual void gui_update(gui&, editor_windows&) {};
+		virtual void gui_update(gui&, editor_windows&) {}
 
 		//mouse position, in world coords
 		using mouse_pos = vector_float;
 
 		//used to generate info for draw_brush_preview
-		virtual void make_brush_preview(time_duration, mouse_pos) {};
+		virtual void make_brush_preview(time_duration, mouse_pos) {}
 
 		//return any relevent tags for that location
 		virtual tag_list get_tags_at_location(rect_float) const { return {}; }

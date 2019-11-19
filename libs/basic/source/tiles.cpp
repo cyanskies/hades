@@ -90,15 +90,18 @@ namespace hades
 		texture_size_t top, tile_count_t width,	tile_count_t count,
 		resources::tile_size_t tile_size)
 	{
+		using resources::tile_size_t;
 		texture_size_t x = 0, y = 0;
 		tile_count_t current_count{};
 		
 		while (current_count < count)
 		{
+			const auto t_x = left + x * tile_size;
+			const auto t_y = top + y * tile_size;
 			tile_list.emplace_back(resources::tile{
 				texture,
-				left + x * tile_size,
-				top + y * tile_size 
+				integer_cast<tile_size_t>(t_x),
+				integer_cast<tile_size_t>(t_y)
 			});
 
 			if (++x == width)

@@ -74,6 +74,7 @@ namespace hades
 		std::size_t &current_item, const Container &container, int height_in_items)
 	{
 		using T = typename Container::value_type;
+		using hades::to_string;
 		return listbox(label, current_item, container, to_string<T>,
 			height_in_items);
 	}

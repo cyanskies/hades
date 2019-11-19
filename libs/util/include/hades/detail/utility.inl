@@ -343,9 +343,10 @@ namespace hades
 	template<typename T>
 	types::string to_string(T value)
 	{
-		return std::to_string(value);
+		using std::to_string;
+		return to_string(value);
 	}
-
+	
 	template<class First, class Last>
 	types::string to_string(First begin, Last end, std::string_view delim)
 	{

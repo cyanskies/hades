@@ -9,24 +9,35 @@
 #include "hades/level_editor_objects.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
-#include "..\include\hades\mission_editor.hpp"
+//#include "..\include\hades\mission_editor.hpp"
 
 namespace hades::detail
 {
-	level_editor_impl::level_editor_impl()
+	static void default_level(level& l)
 	{
 		const auto default_size = console::get_int(cvars::editor_level_default_size,
 			cvars::default_value::editor_level_default_size);
 
-		_level.map_x = *default_size;
-		_level.map_y = *default_size;
-		using namespace std::string_literals;
-		_level.name = editor::new_level_name;
-		_level.description = editor::new_level_description;
+		l.map_x = *default_size;
+		l.map_y = *default_size;
+		l.name = editor::new_level_name;
+		l.description = editor::new_level_description;
 	}
 
-	level_editor_impl::level_editor_impl(level l) : _level(std::move(l))
+	level_editor_impl::level_editor_impl()
+		: _level_ptr{std::make_unique<level>()}
 	{
+		_level = _level_ptr.get();
+
+		default_level(*_level);
+	}
+
+	level_editor_impl::level_editor_impl(const mission_editor_t* m, level* l)
+		: _mission_editor{m}, _level{l}
+	{
+		if (_level->map_x == 0 ||
+			_level->map_y == 0)
+			default_level(*_level);
 	}
 
 	void level_editor_impl::init()
@@ -43,8 +54,8 @@ namespace hades::detail
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
 			cvars::default_value::editor_scroll_rate);
 
-		_new_level_options.width = _level.map_x;
-		_new_level_options.height = _level.map_y;
+		_new_level_options.width = _level->map_x;
+		_new_level_options.height = _level->map_y;
 
 		//set world camera to 0, 0
 		_world_view.setCenter({});
@@ -83,10 +94,11 @@ namespace hades::detail
 		_window_width = static_cast<float>(*width);
 		_window_height = static_cast<float>(*height);
 
+		_gui.activate_context();
 		_gui_view.reset({ 0.f, 0.f, _window_width, _window_height });
 
 		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_height, _window_width);
-		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level.map_x), static_cast<float>(_level.map_y) });
+		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
 		_gui.set_display_size({ _window_width, _window_height });
 
 		_background.setSize({ _window_width, _window_height });
@@ -122,7 +134,7 @@ namespace hades::detail
 				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
-				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level.map_x), static_cast<float>(_level.map_y) });
+				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
 			}
 
 			const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
@@ -164,12 +176,17 @@ namespace hades::detail
 		_active_brush = index;
 	}
 
-	void level_editor_impl::_load(const level &l)
+	bool level_editor_impl::_mission_mode() const
 	{
-		_level_x = l.map_x;
-		_level_y = l.map_y;
+		return _mission_editor;
+	}
 
-		_component_on_load(l);
+	void level_editor_impl::_load(level *l)
+	{
+		_level_x = l->map_x;
+		_level_y = l->map_y;
+
+		_component_on_load(*l);
 
 		_level = l;
 
@@ -189,8 +206,9 @@ namespace hades::detail
 
 		try
 		{
-			files::write_file(_next_save_path, save);
-			_level = std::move(new_level);
+			if(!_mission_mode())
+				files::write_file(_next_save_path, save);
+			*_level = std::move(new_level);
 			_save_path = _next_save_path;
 		}
 		catch (const files::file_exception &e)
@@ -201,6 +219,7 @@ namespace hades::detail
 
 	void level_editor_impl::_update_gui(time_duration dt)
 	{
+		_gui.activate_context();
 		_gui.update(dt);
 		_gui.frame_begin();
 
@@ -208,6 +227,7 @@ namespace hades::detail
 
 		constexpr auto error_str = "error"sv;
 
+		//FIXME: remove this bool, just call open_model directly
 		if (_error_modal)
 			_gui.open_modal(error_str);
 
@@ -228,15 +248,33 @@ namespace hades::detail
 		const auto main_menu_created = _gui.main_menubar_begin();
 		assert(main_menu_created);
 
-		if (_gui.menu_begin("file"sv))
+		if (_gui.menu_begin("level editor"sv))
 		{
-			if (_gui.menu_item("new..."sv))
+			if (_gui.menu_item(_mission_mode() ? "reset to..."sv : "new..."sv))
 				_window_flags.new_level = true;
-			if(_gui.menu_item("load..."sv))
+			if(_gui.menu_item(_mission_mode() ? "replace from file..."sv : "load..."sv))
 				_window_flags.load_level = true;
-			_gui.menu_item("save"sv);
-			if (_gui.menu_item("save as..."sv))
+
+			if (_gui.menu_item("resize..."))
+				_window_flags.resize_level = true;
+			if (_gui.menu_item("save"sv))
+				_save();
+			if (_gui.menu_item("save as..."sv, !_mission_mode()))
 				_window_flags.save_level = true;
+			if (_mission_mode())
+			{
+				if (_gui.menu_item("return to mission editor"))
+				{
+					_save();
+					state::kill();
+				}
+			}
+			else
+			{
+				if (_gui.menu_item("exit editor"))
+					state::kill();
+			}
+			
 			_gui.menu_end();
 		}
 
@@ -282,8 +320,18 @@ namespace hades::detail
 
 					try 
 					{
-						l = _component_on_new(l);
-						_load(l);
+						if (_mission_mode())
+						{
+							auto lev = _component_on_new(l);
+							*_level = std::move(lev);
+							_load(_level);
+						}
+						else
+						{
+							_level_ptr = std::make_unique<level>(_component_on_new(l));
+							_load(_level_ptr.get());
+						}
+
 						_window_flags.new_level = false;
 					}
 					catch (const new_level_editor_error &e)
@@ -300,6 +348,35 @@ namespace hades::detail
 				_gui.text("Level Size: "sv);
 				_gui.input("Width"sv, _new_level_options.width);
 				_gui.input("Height"sv, _new_level_options.height);
+			}
+			_gui.window_end();
+		}
+
+		if (_window_flags.resize_level)
+		{
+			if (_gui.window_begin(editor::gui_names::resize_level, _window_flags.resize_level))
+			{
+				if (_gui.button("Resize"sv))
+				{
+					try
+					{
+
+						_window_flags.resize_level = false;
+					}
+					catch (const resize_level_editor_error & e)
+					{
+						_error_modal = true;
+						_error_msg = e.what();
+					}
+				}
+
+				_gui.text("current size: " + to_string(_level_x) + ", " + to_string(_level_y));
+				_gui.input("new size", _resize_new_size);
+				_gui.input("current map offset", _resize_current_offset);
+				if (_resize_current_offset.x < 0 || _resize_current_offset.y < 0 ||
+					_resize_current_offset.x + _level_x > _resize_new_size.x ||
+					_resize_current_offset.y + _level_y > _resize_new_size.y)
+					_gui.text_coloured("current offset or new size will cause some sections of the current map to be erased", sf::Color::Red);
 			}
 			_gui.window_end();
 		}
@@ -321,8 +398,17 @@ namespace hades::detail
 
 					if (!file.empty())
 					{
-						const auto l = deserialise_level(file);
-						_load(l);
+						if (_mission_mode())
+						{
+							auto l = deserialise_level(file);
+							*_level = std::move(l);
+							_load(_level);
+						}
+						else
+						{
+							_level_ptr = std::make_unique<level>(deserialise_level(file));
+							_load(_level_ptr.get());
+						}
 					}
 				}
 				_gui.text("leave mod empty to ignore"sv);
@@ -347,6 +433,7 @@ namespace hades::detail
 			_gui.window_end();
 		}
 
+		//TODO:
 		//make infobox
 		//make minimap
 

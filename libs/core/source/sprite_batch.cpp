@@ -311,9 +311,12 @@ namespace hades
 		const auto s = s_batch.sprites[index];
 
 		//remove sprite
-		std::swap(s_batch.sprites[index], s_batch.sprites[last]);
-		std::swap(v_batch.sprites[index], v_batch.sprites[last]);
-		v_batch.buffer.swap(index, last);
+		if (index != last)
+		{
+			std::swap(s_batch.sprites[index], s_batch.sprites[last]);
+			std::swap(v_batch.sprites[index], v_batch.sprites[last]);
+			v_batch.buffer.swap(index, last);
+		}
 
 		s_batch.sprites.pop_back();
 		v_batch.sprites.pop_back();

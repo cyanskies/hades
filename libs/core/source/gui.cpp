@@ -26,6 +26,8 @@ namespace hades
 		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()) };
 		assert(_my_context);
 
+		const auto prev_context = ImGui::GetCurrentContext();
+
 		_activate_context(); //context will only be activated by default if it is the only one
 
 		auto &io = ImGui::GetIO();
@@ -60,6 +62,8 @@ namespace hades
 		
 		frame_begin();
 		frame_end();
+
+		ImGui::SetCurrentContext(prev_context);
 	}
 
 	void gui::activate_context()
@@ -336,6 +340,13 @@ namespace hades
 		_active_assert();
 		bullet();
 		text(s);
+	}
+
+	void gui::text_wrapped(std::string_view s)
+	{
+		_active_assert();
+		ImGui::TextWrapped(to_string(s).data());
+		return;
 	}
 
 	bool gui::button(std::string_view label, const vector &size)
@@ -679,13 +690,13 @@ namespace hades
 	void gui::show_tooltip(std::string_view s)
 	{
 		_active_assert();
-		ImGui::SetTooltip(to_string(s).c_str());
+		ImGui::SetTooltip(to_string(s).data());
 	}
 
 	void gui::open_popup(std::string_view s)
 	{
 		_active_assert();
-		ImGui::OpenPopup(to_string(s).c_str());
+		ImGui::OpenPopup(to_string(s).data());
 	}
 
 	void gui::popup_end()
@@ -708,7 +719,7 @@ namespace hades
 	bool gui::modal_begin(std::string_view s, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::BeginPopupModal(to_string(s).c_str(), nullptr, static_cast<ImGuiWindowFlags>(flags));
+		return ImGui::BeginPopupModal(to_string(s).data(), nullptr, static_cast<ImGuiWindowFlags>(flags));
 	}
 
 	void gui::modal_end()

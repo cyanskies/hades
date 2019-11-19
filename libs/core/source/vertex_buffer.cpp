@@ -175,7 +175,7 @@ namespace hades
 		assert(offset1 + quad_vert_count <= std::size(_verts));
 		assert(offset2 + quad_vert_count <= std::size(_verts));
 
-		std::swap_ranges(&_verts[offset1], &_verts[offset1 + quad_vert_count],
+		std::swap_ranges(&_verts[offset1], &_verts[offset1 + (quad_vert_count - 1u)],
 			&_verts[offset2]);
 
 		return;

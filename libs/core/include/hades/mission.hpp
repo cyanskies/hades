@@ -1,6 +1,7 @@
 #ifndef HADES_MISSION_HPP
 #define HADES_MISSION_HPP
 
+#include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/objects.hpp"
 
@@ -26,6 +27,13 @@ namespace hades
 		//on_tick
 
 		//inline levels
+		struct level_element
+		{
+			unique_id name = unique_id::zero;
+			level level{};
+		};
+		std::vector<level_element> inline_levels;
+
 		//seperate levels
 	};
 
@@ -41,7 +49,12 @@ namespace hades
 		name_curve_t names{ curve_type::step, name_curve_t::value_type{} };
 
 		//level saves
-		//std::vector<unique_id, level_save>
+		struct level_save_element
+		{
+			unique_id name = unique_id::zero;
+			level_save save;
+		};
+		std::vector<level_save_element> level_saves;
 	};
 
 	string serialise(const mission&);

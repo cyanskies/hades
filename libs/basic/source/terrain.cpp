@@ -705,10 +705,8 @@ namespace hades::resources
 		{
 			assert(t <= transition_end);
 
-			const auto tile_pos = vector_t<tile_size_t>{
-				(count % tiles_per_row) * tile_size + start_pos.x,
-				(count / tiles_per_row) * tile_size + start_pos.y
-			};
+			const auto tile_x = (count % tiles_per_row) * tile_size + start_pos.x;
+			const auto tile_y = (count / tiles_per_row) * tile_size + start_pos.y;
 
 			++count;
 
@@ -720,8 +718,8 @@ namespace hades::resources
 
 			auto &transition_vector = get_transition(t, terrain);
 
-			assert(tile_pos.x >= 0 && tile_pos.y >= 0);
-			const auto tile = resources::tile{ tex, integer_cast<tile_size_t>(tile_pos.x), integer_cast<tile_size_t>(tile_pos.y), &terrain };
+			assert(tile_x >= 0 && tile_y >= 0);
+			const auto tile = resources::tile{ tex, integer_cast<tile_size_t>(tile_x), integer_cast<tile_size_t>(tile_y), &terrain };
 			transition_vector.emplace_back(tile);
 			terrain.tiles.emplace_back(tile);
 		}

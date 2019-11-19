@@ -22,6 +22,11 @@
 
 //TODO: add noexcept wherever possible
 
+namespace hades
+{
+	class mission_editor_t;
+}
+
 namespace hades::detail
 {
 	constexpr auto mouse_drag_enabled = true;
@@ -34,7 +39,7 @@ namespace hades::detail
 		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
 
 		level_editor_impl();
-		level_editor_impl(level);
+		level_editor_impl(const mission_editor_t*, level*);
 
 		~level_editor_impl() noexcept override = default;
 
@@ -50,6 +55,7 @@ namespace hades::detail
 		virtual level _component_on_new(level) const = 0;
 		virtual void _component_on_load(const level&) = 0;
 		virtual level _component_on_save(level) const = 0;
+		virtual void _component_on_resize(vector_int, vector_int) = 0;
 		virtual void _component_on_click(brush_index_t, vector_float) = 0;
 		virtual void _component_on_drag_start(brush_index_t, vector_float) = 0;
 		virtual void _component_on_drag(brush_index_t, vector_float) = 0;
@@ -84,7 +90,8 @@ namespace hades::detail
 			int32 width{}, height{};
 		};
 
-		void _load(const level&);
+		bool _mission_mode() const;
+		void _load(level*);
 		void _save();
 		void _update_gui(time_duration);
 
@@ -93,13 +100,18 @@ namespace hades::detail
 
 		level_editor_component::editor_windows _window_flags;
 		gui _gui;
-		level _level;
+		std::unique_ptr<level> _level_ptr; //used in level mode
+		const mission_editor_t* _mission_editor = nullptr;
+		level *_level = nullptr;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 		new_level_opt _new_level_options;
 		string _load_level_mod;
 		string _load_level_path;
 		string _next_save_path = "new_level.lvl";
 		string _save_path;
+		vector_int _resize_new_size;
+		vector_int _resize_current_offset;
+
 		sf::RectangleShape _background;
 
 		time_point _total_run_time;
@@ -116,10 +128,14 @@ namespace hades
 	template<typename ...Components>
 	class basic_level_editor final : public detail::level_editor_impl
 	{
+	public:
+		using detail::level_editor_impl::level_editor_impl;
+
 	private:
 		level _component_on_new(level) const override;
 		void _component_on_load(const level&) override;
 		level _component_on_save(level) const override;
+		void _component_on_resize(vector_int, vector_int) override;
 		//returns the sum of tags reported by components for that location
 		//may contain duplicates
 		tag_list _component_get_tags_at_location(rect_float) const;

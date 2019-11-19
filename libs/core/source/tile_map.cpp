@@ -297,7 +297,7 @@ namespace hades
 
 		const auto tile_size = resources::get_tile_settings()->tile_size;
 
-		const auto pixel_pos = p * signed_cast(tile_size);
+		const auto pixel_pos = p * integer_cast<int32>(tile_size);
 
 		constexpr auto vert_per_tile = std::tuple_size_v<poly_quad>;
 

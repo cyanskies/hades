@@ -48,6 +48,16 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_resize(vector_int size, vector_int offset)
+	{
+		for_each_tuple(_editor_components, [size, offset](auto&& c) {
+			c.level_resize(size, offset);
+			return;
+		});
+		return;
+	}
+
+	template<typename ...Components>
 	inline tag_list basic_level_editor<Components...>::_component_get_tags_at_location(rect_float area) const
 	{
 		auto func = [](auto &&c, rect_float rect)->tag_list {

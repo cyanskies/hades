@@ -42,18 +42,47 @@ namespace hades
 	protected:
 
 		// create the editor state for a level
-		virtual void make_editor_state(const mission_editor_t*, level*, unique_id) = 0;
+		virtual void make_editor_state(level_info &l) = 0;
 		// generate the starting state for a new mission
 		virtual mission new_mission();
 
 	private:
+		struct players_window_state_t
+		{
+			bool open = true;
+		};
+
+		struct level_window_state_t
+		{
+			enum class errors {
+				name_empty,
+				name_taken,
+				path_not_found
+			};
+
+			bool open = true;
+			bool add_level_open = false;
+			bool add_level_external; //indicates that the level is stored in a seperate file.
+			errors current_error;
+			bool rename;
+			string new_level_name;
+			string new_level_path;
+
+			int64 rename_index;
+			std::size_t selected{};
+		};
+
 		void _gui_menu_bar();
+		void _gui_players_window();
 		void _gui_level_window();
+		void _gui_add_level_window();
 		void _gui_object_window();
 		void _update_gui(time_duration dt);		
 
 		// ==gui vars==
-		bool _level_w = true, _obj_w = true;
+		bool _obj_w = true;
+		level_window_state_t _level_window_state;
+		players_window_state_t _player_window_state;
 		gui _gui;
 		time_point _editor_time;
 		vector_int _window_size;
@@ -80,9 +109,10 @@ namespace hades
 		using editor_type = LevelEditor;
 
 	protected:
-		void make_editor_state(const mission_editor_t* m, level* l, unique_id id) override
+		void make_editor_state(level_info &l) override
 		{
-			//static_assert(std::is_constructible_v<LevelEditor, const mission_editor_t*, level*, unique_id>);
+			static_assert(std::is_constructible_v<LevelEditor, const mission_editor_t*, level*>);
+			push_state(std::make_unique<LevelEditor>(this, &l.level));
 			return;
 		}
 	};

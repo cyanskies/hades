@@ -54,9 +54,6 @@ namespace hades::detail
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
 			cvars::default_value::editor_scroll_rate);
 
-		_new_level_options.width = _level->map_x;
-		_new_level_options.height = _level->map_y;
-
 		//set world camera to 0, 0
 		_world_view.setCenter({});
 
@@ -93,6 +90,9 @@ namespace hades::detail
 
 		_window_width = static_cast<float>(*width);
 		_window_height = static_cast<float>(*height);
+
+		_new_level_options.width = _level->map_x;
+		_new_level_options.height = _level->map_y;
 
 		_gui.activate_context();
 		_gui_view.reset({ 0.f, 0.f, _window_width, _window_height });

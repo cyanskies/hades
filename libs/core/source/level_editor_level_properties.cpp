@@ -257,6 +257,12 @@ namespace hades
 		return l;
 	}
 
+	void level_editor_level_props::level_resize(vector_int s, vector_int o)
+	{
+		_background.set_size({ static_cast<float>(s.x), static_cast<float>(s.y) });
+		return;
+	}
+
 	static bool make_background_pick_window(gui &g, level_editor_level_props::background_pick_window &w)
 	{
 		auto ret = false;

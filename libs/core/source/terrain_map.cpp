@@ -45,32 +45,32 @@ namespace hades
 	//		mutable_terrain_map			//
 	//==================================//
 
-	mutable_terrain_map::mutable_terrain_map(const terrain_map &t) :
-		_map{t}, _tile_layer{t.tile_layer}
+	mutable_terrain_map::mutable_terrain_map(terrain_map t) :
+		_map{ std::move(t) }, _tile_layer{ _map.tile_layer }
 	{
-		for (const auto &l : t.terrain_layers)
+		for (const auto &l : _map.terrain_layers)
 			_terrain_layers.emplace_back(l);
 	}
 
-	void mutable_terrain_map::create(const terrain_map &t)
+	void mutable_terrain_map::create(terrain_map t)
 	{
-		_map = t;
-		_tile_layer.create(t.tile_layer);
+		_map = std::move(t);
+		_tile_layer.create(_map.tile_layer);
 		_terrain_layers.clear();
-		for (const auto &l : t.terrain_layers)
+		for (const auto &l : _map.terrain_layers)
 			_terrain_layers.emplace_back(l);
 	}
 
-	void mutable_terrain_map::update(const terrain_map &t)
+	void mutable_terrain_map::update(terrain_map t)
 	{
-		_map = t;
-		_tile_layer.update(t.tile_layer);
+		_map = std::move(t);
+		_tile_layer.update(_map.tile_layer);
 
-		assert(std::size(t.terrain_layers) == std::size(_terrain_layers));
+		assert(std::size(_map.terrain_layers) == std::size(_terrain_layers));
 
-		auto iter = std::begin(t.terrain_layers);
+		auto iter = std::begin(_map.terrain_layers);
 		auto iter2 = std::begin(_terrain_layers);
-		for (iter, iter2; iter != std::end(t.terrain_layers); ++iter, ++iter2)
+		for (iter, iter2; iter != std::end(_map.terrain_layers); ++iter, ++iter2)
 			iter2->update(*iter);
 	}
 

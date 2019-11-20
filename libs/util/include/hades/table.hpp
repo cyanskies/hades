@@ -29,7 +29,8 @@ namespace hades {
 		virtual_table(index_type o, index_type s) : _offset(o), _size(s) {}
 		virtual ~virtual_table() {}
 
-		virtual value_type operator[](index_type) const = 0;
+		virtual value_type operator[](index_type);
+		virtual value_type operator[](size_type) const = 0;
 
 		index_type position() const { return _offset; }
 		index_type size() const { return _size; }
@@ -46,7 +47,7 @@ namespace hades {
 			: virtual_table{ position, size }, _always_value{ std::forward<T>(value) }
 		{}
 
-		T operator[](index_type) const override
+		T operator[](size_type) const override
 		{
 			return _always_value;
 		}
@@ -64,7 +65,7 @@ namespace hades {
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
-		table(index_type position, index_type size, T value) : _data(size.x* size.y, value), _offset(position), _width{ size.x } {}
+		table(index_type position, index_type size, T value) : _data(size.x* size.y, value), _offset{ position }, _width{ size.x } {}
 		table(const table&) = default;
 		table(const virtual_table<T>&);
 		table(table&&) = default;
@@ -73,6 +74,8 @@ namespace hades {
 		table& operator=(table&&) = default;
 		value_type& operator[](index_type);
 		const value_type& operator[](index_type) const;
+		value_type& operator[](size_type);
+		const value_type& operator[](size_type) const;
 
 		index_type position() const { return _offset; }
 		void set_position(index_type p)
@@ -123,6 +126,7 @@ namespace hades {
 	//return value is the size of the first table
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
 	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor);
+
 
 	//operators
 	/*template<typename T>

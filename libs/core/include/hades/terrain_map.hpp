@@ -33,10 +33,10 @@ namespace hades
 	public:
 		mutable_terrain_map() = default;
 		mutable_terrain_map(const mutable_terrain_map&) = default;
-		mutable_terrain_map(const terrain_map&);
+		mutable_terrain_map(terrain_map);
 
-		void create(const terrain_map&);
-		void update(const terrain_map&);
+		void create(terrain_map);
+		void update(terrain_map);
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 

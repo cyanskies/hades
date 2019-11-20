@@ -435,12 +435,6 @@ namespace hades
 		return get_size(t.tile_layer);
 	}
 
-	terrain_vertex_position get_terrain_size(const terrain_map &t)
-	{
-		const auto tile_size = get_size(t.tile_layer);
-		return tile_size + terrain_vertex_position{1, 1};
-	}
-
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p)
 	{
 		if (p.x < 0 ||
@@ -533,7 +527,7 @@ namespace hades
 
 	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
 	{
-		const auto old_size = get_terrain_size(m);
+		const auto old_size = get_size(m) + tile_position{1, 1};
 		//resize tile layer
 		resize_map(m.tile_layer, s, o);
 

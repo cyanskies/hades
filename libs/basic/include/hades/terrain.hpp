@@ -147,9 +147,8 @@ namespace hades
 	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*);
 
 	terrain_count_t get_width(const terrain_map&);
+	//returns the size of the map expressed in tiles
 	tile_position get_size(const terrain_map&);
-	//returns the size of the terrain vertex map(get_size + {1, 1})
-	terrain_vertex_position get_terrain_size(const terrain_map&);
 
 	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position);
 	bool within_map(const terrain_map&, terrain_vertex_position position);

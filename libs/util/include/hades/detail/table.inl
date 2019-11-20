@@ -5,35 +5,66 @@
 #include <vector>
 
 #include "hades/rectangle_math.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
+	namespace detail
+	{
+		//returns the 1d position of this rect in the global space
+		template<typename Vector2>
+		static inline typename Vector2::value_type offset(Vector2 position, Vector2 size)
+		{
+			return position.y * (size.x + position.x) + position.x;
+		}
+	}
+
+	template<typename Value>
+	inline typename virtual_table<Value>::value_type virtual_table<Value>::operator[](index_type i)
+	{
+		return operator[](to_1d_index(i, _size.x) - detail::offset(_offset, _size));
+	}
+
 	template<typename T>
 	inline table<T>::table(const virtual_table<T> &v) : table(v.position(), v.size(), T{})
 	{
-		const auto size = index_type{ _width, integer_cast<index_type::value_type>(_data.size()) / _width };
-		const auto end = _offset + size;
-
-		for (auto y = _offset.y; y < end.y; ++y)
-			for (auto x = _offset.x; x < end.x; ++x)
-				(*this)[index_type{x, y}] = v[index_type{x, y}];
+		const auto end = std::size(_data);
+		for (auto i = std::size_t{}; i != end; ++i)
+			_data[i] = v[i];
 	}
 
 	template<typename Value>
 	typename table<Value>::value_type& table<Value>::operator[](index_type index)
 	{
-		return _data[index.y * index.x + index.x];
+		const auto size = to_2d_index<index_type>(std::size(_data), _width);
+		return _data[to_1d_index(index, size.x) - detail::offset(_offset, size)];
 	}
 
 	template<typename Value>
 	typename const table<Value>::value_type& table<Value>::operator[](index_type index) const
 	{
-		return _data[index.y * index.x + index.x];
+		const auto size = to_2d_index<index_type>(std::size(_data), _width);
+		return _data[to_1d_index(index, size.x) - detail::offset(_offset, size)];
+	}
+
+	template<typename Value>
+	typename table<Value>::value_type& table<Value>::operator[](size_type index)
+	{
+		return _data[index];
+	}
+
+	template<typename Value>
+	typename const table<Value>::value_type& table<Value>::operator[](size_type index) const
+	{
+		return _data[index];
 	}
 
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
 	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor f)
 	{
+		static_assert(std::is_invocable_v<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>);
+		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>, TableFirst::value_type>);
+
 		const auto r_pos = r.position();
 		const auto r_siz = r.size();
 		const auto l_pos = l.position();

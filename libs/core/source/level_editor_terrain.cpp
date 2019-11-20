@@ -118,8 +118,13 @@ namespace hades
 	void level_editor_terrain::level_resize(vector_int s, vector_int o)
 	{
 		auto map = _map.get_map();
-		resize_map(map, s, o);
-		_map = mutable_terrain_map{ map };
+		const auto new_size_tiles = to_tiles(s, _tile_size);
+		const auto offset_tiles = to_tiles(o, _tile_size);
+
+		resize_map(map, new_size_tiles, offset_tiles);
+		auto empty_map = make_map(new_size_tiles, map.terrainset, _empty_terrain);
+		_clear_preview.create(std::move(empty_map));
+		_map.create(std::move(map));
 	}
 
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
@@ -330,6 +335,16 @@ namespace hades
 				}
 
 			}
+			g.window_end();
+		}
+
+		if (w.resize_level)
+		{
+			if (g.window_begin(editor::gui_names::resize_level))
+			{
+				g.text("terrain stuff");
+			}
+
 			g.window_end();
 		}
 	}

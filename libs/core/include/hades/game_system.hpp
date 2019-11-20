@@ -290,6 +290,7 @@ namespace hades
 	//world unit type
 	//used for position ranges and sizes
 	//game_unit is used to measure distance in the game world
+	// game units are world pixels expressed in floats
 	using world_unit_t = resources::curve_types::float_t;
 	using world_vector_t = resources::curve_types::vec2_float;
 	using world_rect_t = rect_t<world_unit_t>;

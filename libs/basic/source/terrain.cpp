@@ -177,6 +177,8 @@ namespace hades
 		for (auto iter = std::cbegin(t->terrains); iter != end; ++iter)
 			out.emplace_back(generate_layer(v, width, iter, end));
 
+		std::reverse(std::begin(out), std::end(out));
+
 		return out;
 	}
 

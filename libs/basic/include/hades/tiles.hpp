@@ -155,7 +155,15 @@ namespace hades
 	};
 
 	using tile_position = vector_int;
+
+	//tile to pixel consersions
+	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size);
+	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size);
+	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size);
+	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size);
+
 	//throws tile_error, if the tile_map is malformed
+	//returns the size of the map expressed in tiles
 	tile_position get_size(const raw_map&);
 	tile_position get_size(const tile_map&);
 

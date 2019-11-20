@@ -72,8 +72,10 @@ namespace hades
 	void level_editor_tiles::level_resize(vector_int s, vector_int o)
 	{
 		auto map = _tiles.get_map();
-		_level_size = s;
-		resize_map(map, s, o);
+		const auto new_size_tiles = to_tiles(s, _settings->tile_size);
+		const auto offset_tiles = to_tiles(o, _settings->tile_size);
+		_level_size = new_size_tiles;
+		resize_map(map, new_size_tiles, offset_tiles);
 		_tiles = mutable_tile_map{ map };
 	}
 

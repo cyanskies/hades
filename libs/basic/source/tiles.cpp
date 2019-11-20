@@ -410,6 +410,26 @@ namespace hades
 		};
 	}
 
+	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size)
+	{
+		return pixels / tile_size;
+	}
+
+	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size)
+	{
+		return pixels / integer_cast<vector_int::value_type>(tile_size);
+	}
+
+	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size)
+	{
+		return tiles * tile_size;
+	}
+
+	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size)
+	{
+		return tiles * integer_cast<tile_position::value_type>(tile_size);
+	}
+
 	tile_position get_size(const raw_map &t)
 	{
 		return get_size_impl(t);

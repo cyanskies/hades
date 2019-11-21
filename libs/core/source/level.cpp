@@ -93,7 +93,6 @@ namespace hades
 	}
 
 	using namespace std::string_view_literals;
-	static constexpr auto level_str = "level"sv;
 	static constexpr auto level_width_str = "width"sv;
 	static constexpr auto level_height_str = "height"sv;
 	static constexpr auto level_name_str = "name"sv;
@@ -176,76 +175,83 @@ namespace hades
 		}
 	}
 
-	string serialise(const level &l)
+	void serialise(const level& l, data::writer& w)
 	{
-		auto w = data::make_writer();
-		assert(w);
+		//w.start_map(level_str);
+		w.write(level_width_str, l.map_x);
+		w.write(level_height_str, l.map_y);
 
-		w->start_map(level_str);
-		w->write(level_width_str, l.map_x);
-		w->write(level_height_str, l.map_y);
+		if (!l.name.empty())
+			w.write(level_name_str, l.name);
+		if (!l.description.empty())
+			w.write(level_description_str, l.description);
 
-		if(!l.name.empty())
-			w->write(level_name_str, l.name);
-		if(!l.description.empty())
-			w->write(level_description_str, l.description);
-
-		write_objects_from_level(l, *w);
+		write_objects_from_level(l, w);
 
 		//level scripts
-		if(l.player_input_script != unique_id::zero)
-			w->write(level_scripts_input, l.player_input_script);
+		if (l.player_input_script != unique_id::zero)
+			w.write(level_scripts_input, l.player_input_script);
 
 		//write terrain info
-		w->start_map(level_tiles_layer_str);
-		write_raw_map(l.tile_map_layer, *w);
-		w->end_map();
+		w.start_map(level_tiles_layer_str);
+		write_raw_map(l.tile_map_layer, w);
+		w.end_map();
 
-		w->start_map(level_terrain_str);
+		w.start_map(level_terrain_str);
 		const auto raw = raw_terrain_map{ l.terrainset,
 			l.terrain_vertex, l.terrain_layers
 		};
 
-		write_raw_terrain_map(raw, *w);
-		w->end_map();
+		write_raw_terrain_map(raw, w);
+		w.end_map();
 		//write trigger data
-		write_regions_from_level(l, *w);
+		write_regions_from_level(l, w);
 
-		w->end_map();
+		//w.end_map();
+	}
+
+	string serialise(const level &l)
+	{
+		auto w = data::make_writer();
+		assert(w);
+		serialise(l, *w);
 		return w->get_string();
 	}
 
 	level deserialise_level(std::string_view s)
 	{
 		const auto parser = data::make_parser(s);
-		const auto level_node = parser->get_child(level_str);
-		level l{};
+		return deserialise_level(*parser);
+	}
 
-		//file_root:
-		//	level:
-		//		name:
-		//		desc:
-		//		size:
+	level deserialise_level(data::parser_node& level_node)
+	{
+		auto l = level{};
 
-		l.name = data::parse_tools::get_scalar<string>(*level_node, level_name_str, l.name);
-		l.description = data::parse_tools::get_scalar<string>(*level_node, level_description_str, l.description);
-		l.map_x = data::parse_tools::get_scalar<level_size_t>(*level_node, level_width_str, l.map_x);
-		l.map_y = data::parse_tools::get_scalar<level_size_t>(*level_node, level_height_str, l.map_y);
+		//level_node:
+		//	name:
+		//	desc:
+		//	size:
 
-		read_objects_into_level(*level_node, l);
-		
+		l.name = data::parse_tools::get_scalar<string>(level_node, level_name_str, l.name);
+		l.description = data::parse_tools::get_scalar<string>(level_node, level_description_str, l.description);
+		l.map_x = data::parse_tools::get_scalar<level_size_t>(level_node, level_width_str, l.map_x);
+		l.map_y = data::parse_tools::get_scalar<level_size_t>(level_node, level_height_str, l.map_y);
+
+		read_objects_into_level(level_node, l);
+
 		//read trigger data
-		read_regions_into_level(*level_node, l);
+		read_regions_into_level(level_node, l);
 
 		//level scripts
-		l.player_input_script = data::parse_tools::get_unique(*level_node, level_scripts_input, l.player_input_script);
+		l.player_input_script = data::parse_tools::get_unique(level_node, level_scripts_input, l.player_input_script);
 
-		const auto tiles = level_node->get_child(level_tiles_layer_str);
-		if(tiles)
+		const auto tiles = level_node.get_child(level_tiles_layer_str);
+		if (tiles)
 			l.tile_map_layer = read_raw_map(*tiles);
 
-		const auto terrain = level_node->get_child(level_terrain_str);
-		if(terrain)
+		const auto terrain = level_node.get_child(level_terrain_str);
+		if (terrain)
 			std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = read_raw_terrain_map(*terrain);
 
 		return l;

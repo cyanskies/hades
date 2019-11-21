@@ -103,8 +103,10 @@ namespace hades
 		// ^^ TODO: potential optimisation for the render instance?
 	};
 
+	void serialise(const level&, data::writer&);
 	string serialise(const level&);
 	level deserialise_level(std::string_view);
+	level deserialise_level(data::parser_node&);
 
 	level_save make_save_from_level(level l);
 }

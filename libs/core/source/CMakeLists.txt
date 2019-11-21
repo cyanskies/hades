@@ -27,6 +27,7 @@ set(HADES_CORE_SRC
 	level_editor_tiles.cpp
 	level_interface.cpp
 	level_scripts.cpp
+	mission.cpp
 	mission_editor.cpp
 	mouse_input.cpp
 	objects.cpp

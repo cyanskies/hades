@@ -81,11 +81,11 @@ namespace hades::resources
 		tile_settings();
 		tile_settings(loader_func);
 
-		tile_size_t tile_size{};
 		const tileset *error_tileset = nullptr;
 		const tileset *empty_tileset = nullptr;
 
-		std::vector<const tileset*> tilesets;
+		std::vector<const tileset*> tilesets; 
+		tile_size_t tile_size{};
 	};
 
 	namespace detail

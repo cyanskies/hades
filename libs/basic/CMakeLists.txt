@@ -1,37 +1,46 @@
-# Directory hades
+include(../../cmake.txt)
 
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+set(HADES_BASIC_SRC
+	source/console_variables.cpp
+	source/curve_extra.cpp
+	source/data.cpp
+	source/input.cpp
+	source/logging.cpp
+	source/parser.cpp
+	source/properties.cpp
+	source/system.cpp
+	source/terrain.cpp
+	source/tiles.cpp
+	source/timers.cpp
+	source/writer.cpp
+	include/hades/collision.hpp
+	include/hades/colour.hpp
+	include/hades/console_variables.hpp
+	include/hades/curve_extra.hpp
+	include/hades/data.hpp
+	include/hades/exceptions.hpp
+	include/hades/game_loop.hpp
+	include/hades/game_types.hpp
+	include/hades/input.hpp
+	include/hades/logging.hpp
+	include/hades/parser.hpp
+	include/hades/properties.hpp
+	include/hades/quad_map.hpp
+	include/hades/resource_base.hpp
+	include/hades/server_actions.hpp
+	include/hades/system.hpp
+	include/hades/terrain.hpp
+	include/hades/tiles.hpp
+	include/hades/timers.hpp
+	include/hades/writer.hpp
+	include/hades/detail/collision.inl
+	include/hades/detail/curve_extra.inl
+	include/hades/detail/data.inl
+	include/hades/detail/game_loop.inl
+	include/hades/detail/input.inl
+	include/hades/detail/parser.inl
+	include/hades/detail/quad_map.inl
+	include/hades/detail/writer.inl
+)
 
-# Specify default build type if none provided (before project() command)
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
-endif()
-
-# For generators with multiple configurations (like VS), only allow Debug and Release
-if(CMAKE_CONFIGURATION_TYPES)
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Limited configurations" FORCE)
-	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
-endif()
-
-project(hades-basic)
-
-# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-#make visual studio debug the desired project by default
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT hades)
-
-# Global preprocessor options
-#this is to ignore the thousands of warnings that
-#yaml generates through iterator usage
-add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
-
-# C++ source code
-add_subdirectory(source)
-
-# Install include directory and license files
-install(DIRECTORY include
-		DESTINATION .)
+hades_make_library(hades-basic include "${HADES_BASIC_SRC}" hades-util)

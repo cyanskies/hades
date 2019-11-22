@@ -368,6 +368,7 @@ namespace hades
 	template<class First, class Last>
 	types::string to_string(First begin, Last end, std::string_view delim, bracket_wrap_t wrap)
 	{
+		std::ignore = wrap; // tag type
 		const auto str = to_string(begin, end, delim);
 
 		using namespace std::string_literals;
@@ -439,7 +440,10 @@ namespace hades
 				if constexpr (custom_from_string)
 					out.emplace_back(std::invoke(from_string_func, e));
 				else
+				{
+					std::ignore = from_string_func;
 					out.emplace_back(from_string<value_type>(e));
+				}
 			}
 
 			return out;

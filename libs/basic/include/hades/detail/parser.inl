@@ -13,7 +13,10 @@ namespace hades::data
 			if constexpr (std::is_invocable_r_v<T, Converter, std::string_view>)
 				return std::invoke(conv, str);
 			else
+			{
+				std::ignore = conv;
 				return from_string<T>(str);
+			}
 		}
 	}
 

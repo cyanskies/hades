@@ -120,7 +120,7 @@ namespace hades::resources
 		constexpr auto property_name = "default_value"sv;
 
 		if (!is_curve_valid(current_value))
-			throw invalid_curve{ "Tried to call get_default_value on an invalid curve" };
+			throw invalid_curve{ "Tried to call get_default_value on an invalid curve while parsing mod: " + to_string(mod) };
 
 		const auto value_node = n.get_child(property_name);
 
@@ -323,6 +323,7 @@ namespace hades
 	template<>
 	types::string to_string<std::monostate>(std::monostate value)
 	{
+		std::ignore = value;
 		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised");
 		return {};
 	}

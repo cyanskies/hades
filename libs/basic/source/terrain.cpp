@@ -55,8 +55,8 @@ namespace hades
 		id::terrain_settings = d.get_uid(resources::get_tile_settings_name());
 		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_id::zero);
 
-		const auto empty_id = d.get_uid(resources::get_empty_tileset_name());
-		auto empty = d.find_or_create<resources::terrain>(empty_id, unique_id::zero);
+		const auto empty_tileset_id = d.get_uid(resources::get_empty_tileset_name());
+		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, unique_id::zero);
 
 		const auto empty_tile = resources::tile{ nullptr, 0u, 0u, empty };
 
@@ -201,7 +201,7 @@ namespace hades
 		const auto vertex_length = terrain_size.x * terrain_size.y;
 
 		if (!std::empty(r.terrain_vertex) &&
-			std::size(r.terrain_vertex) != vertex_length)
+			integer_cast<decltype(vertex_length)>(std::size(r.terrain_vertex)) != vertex_length)
 		{
 			LOGWARNING("raw map terrain vertex list should be the same number of tiles as the tile_layer, or it should be empty.");
 			return false;
@@ -774,7 +774,6 @@ namespace hades::resources
 
 			auto &transition_vector = get_transition(t, terrain);
 
-			assert(tile_x >= 0 && tile_y >= 0);
 			const auto tile = resources::tile{ tex, integer_cast<tile_size_t>(tile_x), integer_cast<tile_size_t>(tile_y), &terrain };
 			transition_vector.emplace_back(tile);
 			terrain.tiles.emplace_back(tile);

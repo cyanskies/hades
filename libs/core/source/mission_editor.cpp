@@ -1,5 +1,7 @@
 #include "hades/mission_editor.hpp"
 
+#include <filesystem>
+
 #include "hades/level_editor.hpp"
 
 namespace hades
@@ -23,7 +25,6 @@ namespace hades
 		//create an empty mission
 		_mission_desc = mis.description;
 		_mission_name = mis.name;
-		_mission_src = "new_mission.mission";
 
 		reinit();
 		return;
@@ -86,7 +87,7 @@ namespace hades
 
 	void mission_editor_t::_gui_menu_bar()
 	{
-		if (_gui.menu_begin("file"))
+		if (_gui.menu_begin("mission editor"))
 		{
 			if (_gui.menu_item("new...", false))
 			{
@@ -94,8 +95,10 @@ namespace hades
 			}
 
 			_gui.menu_item("load...", false);
-			_gui.menu_item("save", false);
-			_gui.menu_item("save as...", false);
+			if(_gui.menu_item("save", !std::empty(_mission_src)))
+				_save({_mission_src});
+			if (_gui.menu_item("save as..."))
+				_save_window.open = true;
 			if (_gui.menu_item("exit"))
 				kill();
 			_gui.menu_end();
@@ -372,6 +375,74 @@ namespace hades
 			_gui.window_end();
 		}
 
+		//save load dialogs
+		if (_save_window.open)
+		{
+			if (_gui.window_begin("Save", _save_window.open))
+			{
+				if (_gui.button("save"))
+					_save({ _save_window.path });
+				_gui.input("path", _save_window.path);
+			}
+			_gui.window_end();
+		}
+
+		if (_load_window.open)
+		{
+			if (_gui.window_begin("Load", _load_window.open))
+			{
+				if (_gui.button("load"))
+					_load({ _load_window.path });
+				_gui.input("path", _load_window.path);
+			}
+			_gui.window_end();
+		}
+
 		_gui.frame_end();
+	}
+
+	void mission_editor_t::_save(path p)
+	{
+		auto m = mission{};
+		m.description = _mission_desc;
+		m.name = _mission_name;
+	
+		for (const auto& l : _levels)
+		{
+			if (l.path)
+				m.external_levels.emplace_back(mission::external_level{ l.name, l.path.value() });
+			else
+				m.inline_levels.emplace_back(mission::level_element{ l.name, l.level });
+		}
+
+		const auto s = serialise(m);
+		files::write_file(p.string(), s);
+		_mission_src = p.generic_string();
+	}
+
+	void mission_editor_t::_load(path p)
+	{
+		const auto f = files::read_file(p.string());
+		auto m = deserialise_mission(f);
+		_mission_name = m.name;
+		_mission_desc = m.description;
+
+		for (auto& l : m.external_levels)
+		{
+			auto lev = level_info{};
+			lev.name = l.name;
+			lev.path = l.path;
+			_levels.emplace_back(std::move(lev));
+		}
+
+		for (auto& l : m.inline_levels)
+		{
+			auto lev = level_info{};
+			lev.name = l.name;
+			lev.level = std::move(l.level);
+			_levels.emplace_back(std::move(lev));
+		}
+
+		_mission_src = p.string();
 	}
 }

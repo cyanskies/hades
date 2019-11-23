@@ -32,6 +32,79 @@ namespace hades
 {
 	void register_level_editor_object_resources(data::data_manager&);
 
+	template<typename ObjectType = object_instance, typename OnChange = nullptr_t, typename IsValidPos = nullptr_t>
+	class object_editor_ui
+	{
+	public:
+		static_assert(std::is_base_of_v<object_instance, ObjectType> ||
+			std::is_same_v<object_instance, ObjectType>);
+
+		static_assert(std::is_same_v<OnChange, nullptr_t> ||
+			std::is_invocable_v<OnChange, ObjectType&>);
+
+		static_assert(std::is_same_v<IsValidPos, nullptr_t> ||
+			std::is_invocable_r_v<bool, IsValidPos, const rect_float&, const object_instance&>);
+
+		struct object_data
+		{
+			std::vector<ObjectType> objects;
+			std::unordered_map<string, entity_id> entity_names;
+			entity_id next_id = next(bad_entity);
+		};
+
+		struct vector_curve_edit
+		{
+			std::size_t selected = 0;
+			const resources::curve* target = nullptr;
+		};
+
+		explicit object_editor_ui(object_data* d)
+			: _data{d}
+		{
+			assert(_data);
+		}
+
+		object_editor_ui(object_data* d, OnChange change_func, IsValidPos isvalid_func)
+		: _data{ d }, _on_change{ change_func }, _is_valid_pos{ isvalid_func }
+		{
+			assert(_data);
+		}
+
+		void show_object_list_buttons(gui&);
+		void object_list_gui(gui&);
+		void object_properties(gui&);
+
+		void set_selected(entity_id id) noexcept;
+		ObjectType* get_obj(entity_id) noexcept;
+		void erase(entity_id);
+
+	private:
+		struct curve_info
+		{
+			const resources::curve* curve = nullptr;
+			resources::curve_default_value value;
+		};
+
+		template<typename MakeRect>
+		void _positional_property_field(gui&, std::string_view, ObjectType&, 
+			curve_info&, MakeRect);
+		void _property_editor(gui&);
+
+		//callbacks
+		OnChange _on_change;
+		IsValidPos _is_valid_pos;
+
+		//shared state
+		object_data *_data = nullptr;
+
+		//editing and ui data
+		entity_id _selected = bad_entity;
+		std::string _entity_name_id_uncommited;
+		vector_curve_edit _vector_curve_edit;
+		std::array<curve_info, 2> _curve_properties;
+
+	};
+
 	class level_editor_objects final : public level_editor_component
 	{
 	public:
@@ -41,18 +114,6 @@ namespace hades
 			editor_object_instance(const object_instance&);
 
 			sprite_batch::sprite_id sprite_id = sprite_utility::bad_sprite_id;
-		};
-
-		struct curve_info
-		{
-			const resources::curve* curve = nullptr;
-			resources::curve_default_value value;
-		};
-
-		struct vector_curve_edit
-		{
-			std::size_t selected = 0;
-			const resources::curve *target = nullptr;
 		};
 
 		using object_collision_tree = quad_tree<entity_id, rect_float>;
@@ -89,41 +150,35 @@ namespace hades
 			size_index
 		};
 
-		void _make_property_editor(gui&);
-		template<typename MakeBoundRect, typename SetChangedProperty>
-		void _make_positional_property_edit_field(gui&, std::string_view,
-			editor_object_instance&, curve_info&, MakeBoundRect, SetChangedProperty);
-
 		bool _object_valid_location(const rect_float&, const object_instance&) const;
-		bool _object_valid_location(vector_float pos, vector_float size, const object_instance&) const;
 		//removes object
 		void _remove_object(entity_id);
 		bool _try_place_object(vector_float pos, editor_object_instance);
-		void _update_quad_data(const object_instance &o);
+		void _update_changed_obj(editor_object_instance& o);
+		void _update_quad_data(const object_instance& o);
 
 		//editing settings and state
 		bool _show_objects = true;
 		bool _allow_intersect = false;
 		bool _show_regions = true;
 		brush_type _brush_type{ brush_type::object_selector };
-		const resources::level_editor_object_settings *_settings = nullptr;
+		const resources::level_editor_object_settings* _settings = nullptr;
 		std::optional<editor_object_instance> _held_object;
 		//objects for drawing
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 		sprite_batch _sprites;
 		//level info
-		entity_id::value_type _next_id = static_cast<entity_id::value_type>(bad_entity) + 1;
 		vector_float _level_limit;
-		//object instances
-		std::vector<editor_object_instance> _objects;
 		object_collision_tree _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
 		std::unordered_map<unique_id, object_collision_tree> _collision_quads;
-		//object data for editing
-		std::unordered_map<string, entity_id> _entity_names; 
-		std::string _entity_name_id_uncommited;
-		vector_curve_edit _vector_curve_edit;
-		std::array<curve_info, 2> _curve_properties;
+		//object instances
+		using obj_ui = object_editor_ui<editor_object_instance, 
+			std::function<void(editor_object_instance&)>,
+			std::function<bool(const rect_float & r, const object_instance & o)>>;
+
+		obj_ui::object_data _objects;
+		obj_ui _obj_ui;
 
 		//grid info for snapping
 		grid_vars _grid = get_console_grid_vars();

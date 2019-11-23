@@ -15,6 +15,8 @@ namespace hades
 		string name;
 		string description;
 
+		//players
+
 		//sequence of object
 		//list of curve values, not including defaults
 		std::vector<object_instance> objects;
@@ -35,6 +37,12 @@ namespace hades
 		std::vector<level_element> inline_levels;
 
 		//seperate levels
+		struct external_level 
+		{
+			unique_id name = unique_id::zero;
+			string path;
+		};
+		std::vector<external_level> external_levels;
 	};
 
 	struct mission_save

@@ -45,6 +45,14 @@ namespace hades
 			w->end_map();
 		}
 
+		if (!std::empty(m.external_levels))
+		{
+			w->start_map(ext_levels_str);
+			for (const auto& l : m.external_levels)
+				w->write(l.name, l.path);
+			w->end_map();
+		}
+
 		return w->get_string();
 	}
 

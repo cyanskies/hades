@@ -1,6 +1,7 @@
 #ifndef HADES_MISSION_EDITOR_HPP
 #define HADES_MISSION_EDITOR_HPP
 
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -28,7 +29,6 @@ namespace hades
 			unique_id name = unique_id::zero;
 			level level;
 			std::optional<string> path;
-			bool dirty = false;
 		};
 
 		void init() override;
@@ -37,10 +37,8 @@ namespace hades
 		void draw(sf::RenderTarget&, time_duration) override;
 		void reinit() override;
 		void resume() override;
-
 		
 	protected:
-
 		// create the editor state for a level
 		virtual void make_editor_state(level_info &l) = 0;
 		// generate the starting state for a new mission
@@ -72,17 +70,28 @@ namespace hades
 			std::size_t selected{};
 		};
 
+		struct save_load_dialog_t
+		{
+			bool open = false;
+			string path;
+		};
+
 		void _gui_menu_bar();
 		void _gui_players_window();
 		void _gui_level_window();
 		void _gui_add_level_window();
 		void _gui_object_window();
-		void _update_gui(time_duration dt);		
+		void _update_gui(time_duration dt);	
+		using path = std::filesystem::path;
+		void _save(path);
+		void _load(path);
 
 		// ==gui vars==
 		bool _obj_w = true;
 		level_window_state_t _level_window_state;
 		players_window_state_t _player_window_state;
+		save_load_dialog_t _save_window;
+		save_load_dialog_t _load_window;
 		gui _gui;
 		time_point _editor_time;
 		vector_int _window_size;

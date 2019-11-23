@@ -65,6 +65,13 @@ namespace hades
 	}
 
 	level_editor_objects::level_editor_objects()
+		: _obj_ui{ &_objects, [this](editor_object_instance& o) {
+				return _update_changed_obj(o);
+			},
+			[this](const rect_float& r, const object_instance& o)->bool {
+				return _object_valid_location(r, o);
+			}
+		}
 	{
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
@@ -103,7 +110,7 @@ namespace hades
 
 	void level_editor_objects::level_load(const level &l)
 	{
-		_next_id = static_cast<entity_id::value_type>(l.next_id);
+		_objects.next_id = l.next_id;
 		_level_limit = { static_cast<float>(l.map_x),
 						 static_cast<float>(l.map_y) };
 
@@ -147,9 +154,9 @@ namespace hades
 		}
 
 		using std::swap;
-		swap(_objects, objects);
+		swap(_objects.objects, objects);
 		swap(_sprites, sprites);
-		swap(_entity_names, names);
+		swap(_objects.entity_names, names);
 
 		_brush_type = brush_type::object_selector;
 		_held_object = std::nullopt;
@@ -158,9 +165,9 @@ namespace hades
 
 	level level_editor_objects::level_save(level l) const
 	{
-		l.next_id = entity_id{ _next_id };
-		l.objects.reserve(std::size(_objects));
-		std::copy(std::begin(_objects), std::end(_objects), std::back_inserter(l.objects));
+		l.next_id = _objects.next_id ;
+		l.objects.reserve(std::size(_objects.objects));
+		std::copy(std::begin(_objects.objects), std::end(_objects.objects), std::back_inserter(l.objects));
 		return l;
 	}
 
@@ -218,8 +225,6 @@ namespace hades
 	{
 		return o.id;
 	}
-
-	using vector_curve_edit = level_editor_objects::vector_curve_edit;
 
 	void level_editor_objects::gui_update(gui &g, editor_windows&)
 	{
@@ -293,19 +298,12 @@ namespace hades
 		{
 			if (_brush_type == brush_type::object_selector
 				&& _held_object)
-			{
-				g.push_id(to_string(_held_object->id));
-				_make_property_editor(g);
-				g.pop_id();
-			}
+				_obj_ui.set_selected(_held_object->id);
 			else
-			{
-				g.text("Nothing is selected"sv);
-				_vector_curve_edit = vector_curve_edit{};
-			}
+				_obj_ui.set_selected(bad_entity);
+
+			_obj_ui.object_properties(g);
 		}
-		else
-			_vector_curve_edit = vector_curve_edit{};
 
 		g.window_end();
 
@@ -427,7 +425,7 @@ namespace hades
 	{
 		auto tags = tag_list{};
 
-		for(const auto &o : _objects)
+		for(const auto &o : _objects.objects)
 		{
 			const auto pos = get_position(o);
 			const auto size = get_size(o);
@@ -443,23 +441,6 @@ namespace hades
 		}
 
 		return tags;
-	}
-
-	static void set_selected_info(const object_instance &o, string &name_id, std::array<level_editor_objects::curve_info, 2> &curve_info)
-	{
-		const auto pos_curve = get_position_curve();
-		const auto siz_curve = get_size_curve();
-		const auto posc = get_curve(o, *pos_curve);
-		const auto sizc = get_curve(o, *siz_curve);
-		
-		using curve_t = level_editor_objects::curve_info;
-
-		curve_info = std::array{
-			curve_t{pos_curve, posc},
-			has_curve(o, *siz_curve) ? curve_t{siz_curve, sizc} : curve_t{}
-		};
-
-		name_id = o.name_id;
 	}
 
 	static entity_id object_at(level_editor_objects::mouse_pos pos, 
@@ -489,15 +470,15 @@ namespace hades
 			if (id == bad_entity) // nothing under cursor
 				return;
 
-			const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id](auto &&o) {
+			const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id](auto &&o) {
 				return o.id == id;
 			});
 
 			//object was in quadmap but not objectlist
-			assert(obj != std::cend(_objects));
+			assert(obj != std::cend(_objects.objects));
 
 			_held_object = *obj;
-			set_selected_info(*_held_object, _entity_name_id_uncommited, _curve_properties);
+			_obj_ui.set_selected(_held_object->id);
 		}
 		else if (_brush_type == brush_type::object_place)
 		{
@@ -520,11 +501,11 @@ namespace hades
 			if (id == bad_entity)
 				return;
 
-			const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id](auto &&o) {
+			const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id](auto &&o) {
 				return id == o.id;
 			});
 
-			assert(obj != std::cend(_objects));
+			assert(obj != std::cend(_objects.objects));
 			_held_object = *obj;
 
 			_brush_type = brush_type::object_drag;
@@ -556,11 +537,11 @@ namespace hades
 
 			if (_try_place_object(snapped_pos, *_held_object))
 			{
-				const auto obj = std::find_if(std::cbegin(_objects), std::cend(_objects), [id = _held_object->id](auto &&o){
+				const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id = _held_object->id](auto &&o){
 					return id == o.id;
 				});
 
-				assert(obj != std::cend(_objects));
+				assert(obj != std::cend(_objects.objects));
 
 				_held_object = *obj;
 				update_selection_rect(*_held_object, _held_preview);
@@ -577,438 +558,15 @@ namespace hades
 			t.draw(_sprites, s);
 		}
 	}
-
-	template<std::size_t Length>
-	static string clamp_length(std::string_view str)
-	{
-		if (str.length() <= Length)
-			return to_string(str);
-
-		using namespace std::string_literals;
-		return to_string(str.substr(0, Length)) + "..."s;
-	}
-
-	static void make_name_id_property(gui &g, object_instance &o, string &text, std::unordered_map<string, entity_id> &name_map)
-	{
-		enum class reason {
-			ok,
-			already_taken,
-			reserved_name
-		};
-
-		auto name_reason = reason::ok;
-
-		if (g.input_text("Name_id"sv, text))
-		{
-			//if the new name is empty, and the old name isn't
-			if (text == string{}
-				&& !o.name_id.empty())
-			{
-				//remove name_id
-				auto begin = std::cbegin(name_map);
-				for (begin; ; ++begin)
-				{
-					assert(begin != std::cend(name_map));
-					if (begin->second == o.id)
-						break;
-				}
-
-				name_map.erase(begin);
-				o.name_id.clear();
-			}
-			else if (const auto iter = std::find(std::begin(reserved_object_names),
-				std::end(reserved_object_names), text); iter != std::end(reserved_object_names))
-			{
-				name_reason = reason::reserved_name;
-			}
-			else if (const auto iter = name_map.find(text);
-				iter == std::end(name_map))
-			{
-				//remove current name binding if present
-				if (!o.name_id.empty())
-				{
-					for (auto begin = std::cbegin(name_map); ; ++begin)
-					{
-						assert(begin != std::cend(name_map));
-						if (begin->second == o.id)
-						{
-							name_map.erase(begin);
-							break;
-						}
-					}
-				}
-
-				//apply
-				name_map.emplace(text, o.id);
-				o.name_id = text;
-			}
-			else
-				name_reason = reason::already_taken;
-		}
-
-		//if the editbox is different to the current name,
-		//then something must have stopped it from being commited
-		if (name_reason == reason::already_taken)
-		{
-			if (const auto iter = name_map.find(text); iter->second != o.id)
-				g.show_tooltip("This name is already being used");
-		}
-		else if (name_reason == reason::reserved_name)
-			g.show_tooltip("This name is reserved");
-	}
-
-	static rect_float get_bounds(object_instance &o)
-	{
-		return { get_position(o), get_size(o) };
-	}
-
-	template<typename T>
-	static void make_property_edit(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const T &value)
-	{
-		auto edit_value = value;
-		if (g.input(name, edit_value))
-			set_curve(o, c, edit_value);
-	}
-
-	template<>
-	static void make_property_edit<entity_id>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const entity_id &value)
-	{
-		auto value2 = static_cast<entity_id::value_type>(value);
-		make_property_edit(g, o, name, c, value2);
-		const auto ent_value = entity_id{ value2 };
-	}
-
-	template<>
-	static void make_property_edit<bool>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const bool &value)
-	{
-		using namespace std::string_view_literals;
-		constexpr auto tru = "true"sv;
-		constexpr auto fal = "false"sv;
-		if (g.combo_begin(name, value ? tru : fal))
-		{
-			bool true_opt = value;
-			bool false_opt = !true_opt;
-
-			if (g.selectable(tru, value))
-				set_curve(o, c, true);
-			if (g.selectable(fal, !value))
-				set_curve(o, c, false);
-
-			g.combo_end();
-		}
-	}
-
-	template<>
-	static void make_property_edit<string>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const string &value)
-	{
-		auto edit = value;
-		if (g.input_text(name, edit))
-			set_curve(o, c, edit);
-	}
-
-	template<>
-	static void make_property_edit<unique_id>(gui &g, object_instance &o, std::string_view name, const resources::curve &c, const unique_id &value)
-	{
-		auto u_string = data::get_as_string(value);
-		if (g.input_text(name, u_string))
-			set_curve(o, c, data::make_uid(u_string));
-	}
-
-	template<>
-	static void make_property_edit<vector_float>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const vector_float& value)
-	{
-		auto editval = std::array{ value.x, value.y };
-		if (g.input(name, editval))
-			set_curve(o, c, vector_float{editval[0], editval[1]});
-	}
-
-	//TODO: clean these three specialisations up to get rid of repeated code
-	template<typename T>
-	static void make_vector_edit_field(gui &g, object_instance &o, const resources::curve &c, int32 selected, const T &value)
-	{
-		auto iter = std::cbegin(value);
-		std::advance(iter, selected);
-
-		auto edit = *iter;
-
-		g.input("edit"sv, edit);
-
-		if (edit != *iter)
-		{
-			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = edit;
-			set_curve(o, c, container);
-		}
-	}
-
-	template<>
-	static void make_vector_edit_field<resources::curve_types::collection_unique>
-		(gui &g, object_instance &o, const resources::curve &c, int32 selected, 
-		const resources::curve_types::collection_unique &value)
-	{
-		auto iter = std::cbegin(value);
-		std::advance(iter, selected);
-
-		auto edit = data::get_as_string(*iter);
-
-		g.input("edit"sv, edit);
-
-		auto id = data::make_uid(edit);
-
-		if (id != *iter)
-		{
-			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = id;
-			set_curve(o, c, container);
-		}
-	}
-
-	template<>
-	static void make_vector_edit_field
-		<resources::curve_types::collection_object_ref>(gui &g, object_instance &o,
-			const resources::curve &c, int32 selected,
-			const resources::curve_types::collection_object_ref &value)
-	{
-		auto iter = std::begin(value);
-		std::advance(iter, selected);
-
-		auto edit = static_cast
-			<resources::curve_types::object_ref::value_type>(*iter);
-
-		g.input("edit"sv, edit);
-
-		const auto new_val = resources::curve_types::object_ref{ edit };
-
-		if (new_val != *iter)
-		{
-			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = new_val;
-
-			set_curve(o, c, container);
-		}
-	}
-
-	template<typename T>
-	static void make_vector_property_edit(gui &g, object_instance &o, std::string_view name, 
-		const resources::curve *c, const T &value, vector_curve_edit &target)
-	{
-		using namespace std::string_view_literals;
-
-		if (g.button("edit vector..."sv))
-			target.target = c;
-		g.layout_horizontal();
-		g.text(name);
-
-		if (target.target == c)
-		{
-			if (g.window_begin("edit vector"sv,gui::window_flags::no_collapse))
-			{
-				if (g.button("done"sv))
-					target = vector_curve_edit{};
-
-				g.text(name);
-				g.columns_begin(2u, false);
-				
-				g.listbox(std::string_view{}, target.selected, value);
-
-				g.columns_next();
-
-				assert(target.selected >= 0);
-				if(static_cast<std::size_t>(target.selected) < std::size(value))
-					make_vector_edit_field(g, o, *c, integer_cast<int32>(target.selected), value);	
-				else
-				{
-					string empty{};
-					g.input("edit"sv, empty, gui::input_text_flags::readonly);
-				}
-
-				if (g.button("add"sv))
-				{
-					auto container = value;
-					auto iter = std::begin(container);
-					++target.selected;
-					std::advance(iter, target.selected);
-
-					container.emplace(iter);
-					set_curve(o, *c, container);
-				}
-
-				g.layout_horizontal();
-
-				if (g.button("remove"sv) && !std::empty(value))
-				{
-					auto container = value;
-					auto iter = std::begin(container);
-					std::advance(iter, target.selected);
-					container.erase(iter);
-
-					set_curve(o, *c, container);
-					if (std::empty(container))
-						target.selected = 0;
-					else
-						target.selected = std::clamp(target.selected, { 0 }, std::size(container) - 1);
-				}
-
-				if (g.button("move up"sv) && target.selected > 0)
-				{
-					auto container = value;
-
-					auto at = std::begin(container);
-					std::advance(at, target.selected);
-					auto before = at - 1;
-
-					std::iter_swap(before, at);
-					--target.selected;
-					set_curve(o, *c, container);
-				}
-
-				if (g.button("move down"sv) && target.selected + 1 != std::size(value))
-				{
-					auto container = value;
-					auto at = std::begin(container);
-					std::advance(at, target.selected);
-					auto after = at + 1;
-					std::iter_swap(at, after);
-					++target.selected;
-					set_curve(o, *c, container);
-				}
-			}
-			g.window_end();
-		}
-	}
-
-	static void make_property_row(gui &g, object_instance &o, const resources::object::curve_obj &c, vector_curve_edit &target)
-	{
-		const auto[curve, value] = c;
-		
-		if (!resources::is_curve_valid(*curve, value))
-			return;
-
-		std::visit([&g, &o, &curve, &target](auto &&value) {
-			using T = std::decay_t<decltype(value)>;
-
-			if constexpr (!std::is_same_v<std::monostate, T>)
-			{
-				if constexpr (resources::curve_types::is_collection_type_v<T>)
-					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, target);
-				else
-					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
-			}
-
-		}, value);
-	}
-
-	void level_editor_objects::_make_property_editor(gui &g)
-	{
-		assert(_held_object);
-		const auto id = _held_object->id;
-
-		auto &o = [this, id]()->editor_object_instance& {
-			for (auto &o : _objects)
-			{
-				if (o.id == id)
-					return o;
-			}
-
-			throw std::logic_error{"object was selected, but not in object list."};
-		}();
-
-		const auto name = [&o] {
-			assert(o.obj_type);
-			using namespace std::string_literals;
-			const auto type = data::get_as_string(o.obj_type->id);
-			constexpr auto max_length = 15u;
-			if (!o.name_id.empty())
-				return clamp_length<max_length>(o.name_id) + "("s + clamp_length<max_length>(type) + ")"s;
-			else
-				return clamp_length<max_length>(type);
-		}();
-
-		using namespace std::string_view_literals;
-		using namespace std::string_literals;
-		g.text("Selected: "s + name);
-
-		//create the property editor
-
-		//id
-		//this is a display of the entities assigned id
-		// it cannot be modified
-		g.input_text("Id"sv, to_string(static_cast<entity_id::value_type>(o.id)), gui::input_text_flags::readonly);
-		
-		//name_id
-		//this is the unique name that systems can use to access this entity
-		// can be useful for players the world or other significant objects
-		make_name_id_property(g, o, _entity_name_id_uncommited, _entity_names);
-
-		auto &pos = _curve_properties[curve_index::pos];
-		
-		_make_positional_property_edit_field(g, "position"sv, o, pos,
-			[](const auto &o, const auto&c) {
-			auto rect = rect_float{ get_position(o), get_size(o) }; 
-			const auto pos = std::get<vector_float>(c.value);
-			rect.x = pos.x;
-			rect.y = pos.y;
-			return rect;
-		}, [](auto &&o, const auto &r) {
-			set_position(o, { r.x, r.y });
-		});
-
-		if (const auto p = get_position(o); std::get<vector_float>(pos.value) != p)
-		{
-			g.show_tooltip("The value of position would cause an collision");
-			pos.value = p;
-		}
-
-		//size
-		auto &siz = _curve_properties[curve_index::size_index];
-
-		if (const auto props_end = std::end(_curve_properties); siz.curve)
-		{
-			_make_positional_property_edit_field(g, "size"sv, o, siz,
-				[](const auto &o, const auto&c) {
-				auto rect = rect_float{ get_position(o), get_size(o) };
-				const auto size = std::get<vector_float>(c.value);
-				rect.width = size.x;
-				rect.height = size.y;
-				return rect;
-			}, [](auto &&o, const auto &r) {
-				set_size(o, { r.width, r.height });
-			});
-
-			if (const auto s = get_size(o); std::get<vector_float>(siz.value) != s)
-			{
-				g.show_tooltip("The value of x size would cause an collision");
-				siz.value = s;
-			}
-		}
-		
-		const auto all_curves = get_all_curves(o);
-		using curve_type = const resources::curve*;
-		for (auto &c : all_curves)
-		{
-			if (std::none_of(std::begin(_curve_properties),
-				std::end(_curve_properties), [&c](auto &&curve) 
-			{ return std::get<curve_type>(c) == curve.curve; }))
-				make_property_row(g, o, c, _vector_curve_edit);
-		}
-
-		_held_object = o;
-	}
-
-	bool level_editor_objects::_object_valid_location(const rect_float &r, const object_instance &o) const
+	
+	bool level_editor_objects::_object_valid_location(const rect_float& r, const object_instance& o) const
 	{
 		const auto id = o.id;
 
 		const auto collision_groups = get_collision_groups(o);
-		const auto &current_groups = _collision_quads;
+		const auto& current_groups = _collision_quads;
 
-		if(!within_level(position(r), size(r), _level_limit))
+		if (!within_level(position(r), size(r), _level_limit))
 			return false;
 
 		//for each group that this object is a member of
@@ -1016,46 +574,39 @@ namespace hades
 		//return true if any such collision would occur
 		const auto object_collision = std::any_of(std::begin(collision_groups), std::end(collision_groups),
 			[&current_groups, &r, id](const unique_id cg) {
-			const auto group_quadtree = current_groups.find(cg);
-			if (group_quadtree == std::end(current_groups))
-				return false;
+				const auto group_quadtree = current_groups.find(cg);
+				if (group_quadtree == std::end(current_groups))
+					return false;
 
-			const auto local_rects = group_quadtree->second.find_collisions(r);
+				const auto local_rects = group_quadtree->second.find_collisions(r);
 
-			return std::any_of(std::begin(local_rects), std::end(local_rects),
-				[&r, id](const quad_data<entity_id, rect_float> &other) {
-				return other.key != id && intersects(other.rect, r);
+				return std::any_of(std::begin(local_rects), std::end(local_rects),
+					[&r, id](const quad_data<entity_id, rect_float>& other) {
+						return other.key != id && intersects(other.rect, r);
+					});
 			});
-		});
 
 		//TODO: a way to ask the terrain system for it's say on this object?
 		return !object_collision;
 	}
 
-	bool level_editor_objects::_object_valid_location(vector_float pos, vector_float size, const object_instance &o) const
-	{
-		return _object_valid_location({ pos, size }, o);
-	}
-
 	void level_editor_objects::_remove_object(entity_id id)
 	{
 		//we assume the the object isn't duplicated in the object list
-		const auto obj = std::find_if(std::begin(_objects), std::end(_objects), [id](auto &&o) {
+		const auto obj = std::find_if(std::begin(_objects.objects), std::end(_objects.objects), [id](auto &&o) {
 			return o.id == id;
 		});
 
 		_sprites.destroy_sprite(obj->sprite_id);
 		_quad_selection.remove(obj->id);
 
-		for (auto &[name, tree] : _collision_quads)
+		for (auto& [name, tree] : _collision_quads)
 		{
 			std::ignore = name;
 			tree.remove(obj->id);
 		}
 
-		_entity_names.erase(obj->name_id);
-
-		_objects.erase(obj);
+		_obj_ui.erase(id);
 	}
 
 	bool level_editor_objects::_try_place_object(vector_float pos, editor_object_instance o)
@@ -1065,34 +616,43 @@ namespace hades
 		const auto new_entity = o.id == bad_entity;
 
 		if(new_entity)
-			o.id = entity_id{ _next_id + 1 };
+			o.id = next(_objects.next_id);
 		
-		const auto valid_location = _object_valid_location(pos, size, o);
+		const auto valid_location = _object_valid_location({ pos, size }, o);
 
 		if (valid_location || _allow_intersect)
 		{
 			if(new_entity)
-				++_next_id;
+				increment(_objects.next_id);
 
 			set_position(o, pos);
 			_update_quad_data(o);
 			update_object_sprite(o, _sprites);
 
-			const auto end = std::end(_objects);
+			const auto end = std::end(_objects.objects);
 
-			const auto obj = std::find_if(std::begin(_objects), end, [id = o.id](auto &&o) {
+			const auto obj = std::find_if(std::begin(_objects.objects), end, [id = o.id](auto &&o) {
 				return o.id == id;
 			});
 
 			if (obj == end)
-				_objects.emplace_back(std::move(o));
+				_objects.objects.emplace_back(std::move(o));
 			else
 				*obj = std::move(o);
+
+			//_obj_ui.set_selected(bad_entity);
 
 			return true;
 		}
 
 		return false;
+	}
+
+	void level_editor_objects::_update_changed_obj(editor_object_instance& o)
+	{
+		update_object_sprite(o, _sprites);
+		_update_quad_data(o);
+		return;
 	}
 
 	void level_editor_objects::_update_quad_data(const object_instance &o)

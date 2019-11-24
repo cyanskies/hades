@@ -237,6 +237,7 @@ namespace hades
 			activate_brush();
 			_brush_type = brush_type::object_selector;
 			_held_object.reset();
+			_obj_ui.set_selected(bad_entity);
 		}
 
 		if (g.toolbar_button("remove") 
@@ -247,6 +248,7 @@ namespace hades
 			_remove_object(_held_object->id);
 
 			_held_object.reset();
+			_obj_ui.set_selected(bad_entity);
 			_held_preview = sf::Sprite{};
 		}
 
@@ -296,12 +298,6 @@ namespace hades
 
 		if (g.collapsing_header("properties"sv))
 		{
-			if (_brush_type == brush_type::object_selector
-				&& _held_object)
-				_obj_ui.set_selected(_held_object->id);
-			else
-				_obj_ui.set_selected(bad_entity);
-
 			_obj_ui.object_properties(g);
 		}
 

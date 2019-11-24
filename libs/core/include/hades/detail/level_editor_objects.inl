@@ -1,5 +1,6 @@
 #include "hades/level_editor_objects.hpp"
 
+#include "hades/curve_extra.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/gui.hpp"
 
@@ -92,9 +93,18 @@ namespace hades::detail::obj_ui
 	template<typename T>
 	static void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value)
 	{
-		auto edit_value = value;
-		if (g.input(name, edit_value))
-			set_curve(o, c, edit_value);
+		if constexpr(resources::curve_types::is_vector_type_v<T>)
+		{
+			auto arr = std::array{ value.x, value.y };
+			if (g.input(name, arr))
+				set_curve(o, c, { arr[0], arr[1] });
+		}
+		else
+		{
+			auto edit_value = value;
+			if (g.input(name, edit_value))
+				set_curve(o, c, edit_value);
+		}
 	}
 
 	template<>
@@ -225,11 +235,13 @@ namespace hades::detail::obj_ui
 	}
 
 
-	template<typename T, typename Obj>
-	static void make_vector_property_edit(gui& g, object_instance& o, std::string_view name,
-		const resources::curve* c, const T& value, typename object_editor_ui<Obj>::vector_curve_edit& target)
+	template<typename T, typename U, typename V, typename Obj>
+	static void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
+		const resources::curve* c, const T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target)
 	{
 		using namespace std::string_view_literals;
+
+		using vector_curve_edit = typename object_editor_ui<Obj, U, V>::vector_curve_edit;
 
 		if (g.button("edit vector..."sv))
 			target.target = c;
@@ -314,9 +326,9 @@ namespace hades::detail::obj_ui
 		}
 	}
 
-	template<typename Obj>
-	static inline void make_property_row(gui& g, object_instance& o,
-		const resources::object::curve_obj& c, typename object_editor_ui<Obj>::vector_curve_edit& target)
+	template< typename T, typename U, typename Obj>
+	static inline void make_property_row(gui& g, Obj& o,
+		const resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target)
 	{
 		const auto [curve, value] = c;
 
@@ -324,12 +336,12 @@ namespace hades::detail::obj_ui
 			return;
 
 		std::visit([&g, &o, &curve, &target](auto&& value) {
-			using T = std::decay_t<decltype(value)>;
+			using Type = std::decay_t<decltype(value)>;
 
-			if constexpr (!std::is_same_v<std::monostate, T>)
+			if constexpr (!std::is_same_v<std::monostate, Type>)
 			{
-				if constexpr (resources::curve_types::is_collection_type_v<T>)
-					make_vector_property_edit(g, o, data::get_as_string(curve->id), curve, value, target);
+				if constexpr (resources::curve_types::is_collection_type_v<Type>)
+					make_vector_property_edit<Type, T, U>(g, o, data::get_as_string(curve->id), curve, value, target);
 				else
 					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
 			}
@@ -416,17 +428,14 @@ namespace hades
 		if (g.input(label, value))
 		{
 			c.value = vector_float{ value[0], value[1] };
-			//TODO: must use both collision systems here
+			
 			const auto rect = std::invoke(make_rect, o, c);
-			const auto safe_pos = std::invoke(_is_valid_pos, position(rect), size(rect), o);
+			const auto safe_pos = std::invoke(_is_valid_pos, rect, o);
 
-			//TODO: test safe_pos against map limits
-			if (safe_pos || _allow_intersect)
+			if (safe_pos)// TODO: fix this || _allow_intersect)
 			{
 				set_curve(o, c.curve->id, c.value);
 				std::invoke(_on_change, o);
-				_update_quad_data(o);
-				update_object_sprite(o, _sprites);
 			}
 		}
 	}
@@ -457,5 +466,59 @@ namespace hades
 		//immutable object id
 		g.input_text("id"sv, to_string(static_cast<entity_id::value_type>(o->id)), gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
+
+		//positional properties
+		if constexpr (visual_editor)
+		{
+			//position
+			auto& pos = _curve_properties[curve_index::pos];
+			_positional_property_field(g, "position", *o, pos, [](const ObjectType& o, const curve_info &c)->rect_float {
+				const auto size = get_size(o);
+				const auto pos = std::get<vector_float>(c.value);
+				return { pos, size };
+			});
+
+			//test for collision
+			const auto p = get_position(*o);
+			if (p != std::get<vector_float>(pos.value))
+			{
+				g.show_tooltip("The value of position would cause an collision");
+				pos.value = p;
+			}
+
+			auto& siz = _curve_properties[curve_index::size_index];
+			if (resources::is_set(siz.value))
+			{
+				_positional_property_field(g, "size", *o, siz, [](const ObjectType& o, const curve_info& c)->rect_float {
+					const auto size = std::get<vector_float>(c.value);
+					const auto pos = get_position(o);
+					return { pos, size };
+				});
+
+				//test for collision
+				const auto s = get_size(*o);
+				if (s != std::get<vector_float>(siz.value))
+				{
+					g.show_tooltip("The value of size would cause an collision");
+					siz.value = s;
+				}
+			}
+		}
+
+		//other properties
+		const auto all_curves = get_all_curves(*o);
+		using curve_type = const resources::curve*;
+		for (auto& c : all_curves)
+		{
+			if constexpr (visual_editor)
+			{
+				if (std::none_of(std::begin(_curve_properties),
+					std::end(_curve_properties), [&c](auto&& curve)
+					{ return std::get<curve_type>(c) == curve.curve; }))
+					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit);
+			}
+			else
+				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit);
+		}
 	}
 }

@@ -137,6 +137,6 @@ objects:
         editor-icon: ball-anim
         editor-anim: [ball-anim]
         curves:
-            - [size, 8, 8]
+            - [size, [8, 8]]
             - [collision-groups, ground]
         client-systems: simple-renderer

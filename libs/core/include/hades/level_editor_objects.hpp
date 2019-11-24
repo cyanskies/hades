@@ -40,10 +40,18 @@ namespace hades
 			std::is_same_v<object_instance, ObjectType>);
 
 		static_assert(std::is_same_v<OnChange, nullptr_t> ||
-			std::is_invocable_v<OnChange, ObjectType&>);
+			std::is_invocable_v<OnChange, ObjectType&>,
+			"If the OnChange callback is provided it must have the following signiture: auto OnChange(ObjectType&)");
 
 		static_assert(std::is_same_v<IsValidPos, nullptr_t> ||
-			std::is_invocable_r_v<bool, IsValidPos, const rect_float&, const object_instance&>);
+			std::is_invocable_r_v<bool, IsValidPos, const rect_float&, const object_instance&>,
+			"If the IsValidPos callback is provided it must have the following signiture: bool IsValidPos(const rect_float&, const object_instance&)");
+
+		static_assert(!std::is_same_v<OnChange, IsValidPos> || 
+			std::is_same_v<IsValidPos, nullptr_t> && std::is_same_v<OnChange, nullptr_t>,
+			"If one of the editor callbacks are provided, then both must be.");
+
+		static constexpr bool visual_editor = !std::is_same_v<OnChange, nullptr_t>;
 
 		struct object_data
 		{
@@ -56,6 +64,11 @@ namespace hades
 		{
 			std::size_t selected = 0;
 			const resources::curve* target = nullptr;
+		};
+
+		enum curve_index : std::size_t {
+			pos,
+			size_index
 		};
 
 		explicit object_editor_ui(object_data* d)
@@ -143,11 +156,6 @@ namespace hades
 			object_selector,
 			object_multiselect,
 			object_drag,
-		};
-
-		enum curve_index : std::size_t {
-			pos,
-			size_index
 		};
 
 		bool _object_valid_location(const rect_float&, const object_instance&) const;

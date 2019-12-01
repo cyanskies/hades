@@ -309,15 +309,15 @@ namespace hades
 		return _commandHistory;
 	}
 
-	void Console::echo(std::string_view message, Console_String_Verbosity verbosity)
+	void Console::echo(std::string message, Console_String_Verbosity verbosity)
 	{
-		echo(Console_String(message, verbosity));
+		echo(Console_String(std::move(message), verbosity));
 	}
 
-	void Console::echo(const Console_String &message)
+	void Console::echo(Console_String message)
 	{
 		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
-		TextBuffer.push_back(message);
+		TextBuffer.emplace_back(std::move(message));
 
 		#ifndef NDEBUG
 			std::cerr << message.text() << std::endl;

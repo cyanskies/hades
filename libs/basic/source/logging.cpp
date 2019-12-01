@@ -18,10 +18,10 @@ namespace hades
 	{
 		logger* log = nullptr;
 
-		void echo(const string& val)
+		void echo(string val)
 		{
 			if (log)
-				log->echo(val);
+				log->echo(std::move(val));
 			else
 			{
 				if (val.verbosity() == console::logger::log_verbosity::normal)

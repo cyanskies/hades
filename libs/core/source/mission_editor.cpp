@@ -108,6 +108,7 @@ namespace hades
 		{
 			_gui.menu_toggle_item("show level window", _level_window_state.open);
 			_gui.menu_toggle_item("show object window", _obj_w);
+			_gui.menu_toggle_item("show object properties windows", _obj_prop_w);
 			_gui.menu_toggle_item("show players window", _player_window_state.open);
 			_gui.menu_end();
 		}
@@ -339,6 +340,10 @@ namespace hades
 
 	void mission_editor_t::_gui_object_window()
 	{
+		_obj_ui.show_object_list_buttons(_gui);
+		_obj_ui.object_list_gui(_gui);
+		_obj_ui.object_properties(_gui);
+
 		return;
 	}
 
@@ -372,6 +377,13 @@ namespace hades
 		{
 			if (_gui.window_begin("Objects", _obj_w))
 				_gui_object_window();
+			_gui.window_end();
+		}
+
+		if (_obj_prop_w)
+		{
+			if (_gui.window_begin("Properties", _obj_prop_w))
+				_obj_ui.object_properties(_gui);
 			_gui.window_end();
 		}
 

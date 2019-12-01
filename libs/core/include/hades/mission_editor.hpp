@@ -88,6 +88,7 @@ namespace hades
 
 		// ==gui vars==
 		bool _obj_w = true;
+		bool _obj_prop_w = true;
 		level_window_state_t _level_window_state;
 		players_window_state_t _player_window_state;
 		save_load_dialog_t _save_window;
@@ -105,8 +106,13 @@ namespace hades
 
 		// players
 
-		//mission level
+		//levels
 		std::vector<level_info> _levels;
+
+		//objects
+		using obj_ui = object_editor_ui<object_instance>;
+		obj_ui::object_data _objects;
+		obj_ui _obj_ui{ &_objects };
 	};
 
 	//NOTE: LevelEditor must be a hades::state with a constructor that accepts

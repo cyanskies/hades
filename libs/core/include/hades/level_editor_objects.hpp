@@ -66,12 +66,7 @@ namespace hades
 			const resources::curve* target = nullptr;
 		};
 
-		enum curve_index : std::size_t {
-			pos,
-			size_index
-		};
-
-		explicit object_editor_ui(object_data* d)
+		explicit object_editor_ui(object_data* d) noexcept
 			: _data{d}
 		{
 			assert(_data);
@@ -98,10 +93,17 @@ namespace hades
 			resources::curve_default_value value;
 		};
 
+		enum class curve_index : std::size_t {
+			pos,
+			size_index
+		};
+
+		std::size_t _get_obj(entity_id) noexcept;
 		template<typename MakeRect>
 		void _positional_property_field(gui&, std::string_view, ObjectType&, 
 			curve_info&, MakeRect);
 		void _property_editor(gui&);
+		void _set_selected(std::size_t);
 
 		//callbacks
 		OnChange _on_change;
@@ -111,6 +113,7 @@ namespace hades
 		object_data *_data = nullptr;
 
 		//editing and ui data
+		std::size_t _obj_list_selected;
 		entity_id _selected = bad_entity;
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;

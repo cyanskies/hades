@@ -259,6 +259,12 @@ namespace hades
 		return to_2d_index<std::pair<T, T>>(i, w);
 	}
 
+	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int>>
+	constexpr std::underlying_type_t<Enum> enum_type(Enum e) noexcept
+	{
+		return static_cast<std::underlying_type_t<Enum>>(e);
+	}
+
 	inline bool random()
 	{
 		return random(0, 1) != 0;

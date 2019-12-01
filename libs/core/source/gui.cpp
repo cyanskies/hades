@@ -66,7 +66,7 @@ namespace hades
 		ImGui::SetCurrentContext(prev_context);
 	}
 
-	void gui::activate_context()
+	void gui::activate_context() noexcept
 	{
 		_activate_context();
 	}
@@ -862,12 +862,12 @@ namespace hades
 		});
 	}
 
-	constexpr std::string_view gui::version()
+	constexpr std::string_view gui::version() noexcept
 	{
 		return IMGUI_VERSION;
 	}
 
-	void gui::_activate_context()
+	void gui::_activate_context() noexcept
 	{
 		assert(_my_context);
 

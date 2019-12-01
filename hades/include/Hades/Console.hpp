@@ -78,8 +78,8 @@ namespace hades
 
 		console::command_history_list command_history() const override;
 
-		void echo(std::string_view message, Console_String_Verbosity verbosity = logger::log_verbosity::normal);
-		void echo(const Console_String &message) override;
+		void echo(std::string message, Console_String_Verbosity verbosity = logger::log_verbosity::normal);
+		void echo(Console_String message) override;
 
 		struct variable_t {};
 		struct function_t {};

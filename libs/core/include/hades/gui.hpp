@@ -68,13 +68,13 @@ namespace hades
 		gui();
 
 		gui(const gui&) = delete;
-		gui(gui&&) = default;
+		gui(gui&&) noexcept = default;
 
 		gui &operator=(const gui&) = delete;
-		gui &operator=(gui&&) = default;
+		gui &operator=(gui&&) noexcept = default;
 
 		//should be called before using any gui function
-		void activate_context();
+		void activate_context() noexcept;
 
 		//this must be called at least once to get valid output
 		void set_display_size(vector_t<float> size);
@@ -462,12 +462,12 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		static constexpr std::string_view version();
+		static constexpr std::string_view version() noexcept;
 
 	private:
 		using font = ImFont;
 
-		void _activate_context();
+		void _activate_context() noexcept;
 		void _active_assert() const noexcept;
 		void _toolbar_layout_next();
 		static font* _get_font(const resources::font*);
@@ -504,25 +504,25 @@ namespace hades
 	namespace details
 	{
 		template<typename Enum>
-		constexpr inline Enum enum_or(Enum lhs, Enum rhs)
+		constexpr inline Enum enum_or(Enum lhs, Enum rhs) noexcept
 		{
 			using T = std::underlying_type_t<Enum>;
 			return static_cast<Enum>(static_cast<T>(lhs) | static_cast<T>(rhs));
 		}
 	}
 
-	constexpr inline gui::window_flags operator|(gui::window_flags lhs, gui::window_flags rhs)
+	constexpr inline gui::window_flags operator|(gui::window_flags lhs, gui::window_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
 	}
 
 	//TODO: selrctable, combo, etc...
-	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs)
+	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
 	}
 
-	constexpr inline gui::tree_node_flags operator|(gui::tree_node_flags lhs, gui::tree_node_flags rhs)
+	constexpr inline gui::tree_node_flags operator|(gui::tree_node_flags lhs, gui::tree_node_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
 	}

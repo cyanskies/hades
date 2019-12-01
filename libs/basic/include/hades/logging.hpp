@@ -26,7 +26,7 @@ namespace hades
 
 			virtual ~logger() noexcept = default;
 			
-			virtual void echo(const string&) = 0;
+			virtual void echo(string) = 0;
 
 			virtual output_buffer get_new_output(log_verbosity max_verbosity) = 0;
 			virtual output_buffer get_output(log_verbosity max_verbosity) = 0;
@@ -35,12 +35,15 @@ namespace hades
 		class string
 		{
 		public:
-			explicit string(std::string_view message, const logger::log_verbosity &verb = logger::log_verbosity::normal) : _message(message), _verb(verb)
+			explicit string(std::string message, const logger::log_verbosity &verb = logger::log_verbosity::normal) noexcept
+				: _message{ std::move(message) }, _verb{ verb }
 			{}
 
-			string(std::string_view message, int line, std::string_view function, std::string_view file, std::string_view time,
-				const logger::log_verbosity &verb = logger::log_verbosity::error)
-				: _message(message), _verb(verb), _line(line), _function(function), _time(time)
+			string(std::string message, int line, std::string function, std::string file, std::string time,
+				const logger::log_verbosity &verb = logger::log_verbosity::error) noexcept
+				: _message{ std::move(message) }, _verb{ verb }, _line{ line },
+				_function{ std::move(function) }, _file{ std::move(file) },
+				_time{ std::move(time) }
 			{}
 
 			const types::string text() const { return _message; }
@@ -58,7 +61,7 @@ namespace hades
 		//TODO: set log ptr function, so log is hidden from users
 		extern logger *log;
 
-		void echo(const string&);
+		void echo(string);
 
 		console::output_buffer new_output(console::logger::log_verbosity max_verbosity = console::logger::log_verbosity::normal);
 		console::output_buffer output(console::logger::log_verbosity max_verbosity = console::logger::log_verbosity::normal);

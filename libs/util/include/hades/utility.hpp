@@ -102,6 +102,10 @@ namespace hades {
 	template<typename T>
 	std::pair<T, T> to_2d_index(T index, T array_width);
 
+	//convert Enum value to underlying type
+	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
+	constexpr std::underlying_type_t<Enum> enum_type(Enum e) noexcept;
+
 	template<typename Func>
 	struct finally_t
 	{

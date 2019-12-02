@@ -149,14 +149,11 @@ namespace hades {
 	std::string_view trim(std::string_view);
 
 	template<typename T>
-	types::string to_string(T value);
+	string to_string(T value);
 
-	template<>
-	types::string to_string<const char*>(const char* value);
-	template<>
-	types::string to_string<types::string>(types::string value);
-	template<>
-	types::string to_string<std::string_view>(std::string_view value);
+	string to_string(const char* value);
+	string to_string(types::string value);
+	string to_string(std::string_view value);
 
 	template<class First, class Last>
 	types::string to_string(First begin, Last end);

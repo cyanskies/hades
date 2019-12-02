@@ -354,7 +354,7 @@ namespace hades::detail::obj_ui
 	static inline string get_name(const object_instance &o)
 	{
 		using namespace std::string_literals;
-		const auto type = o.obj_type ? data::get_as_string(o.obj_type->id) : to_string(o.id);
+		const auto type = o.obj_type ? data::get_as_string(o.obj_type->id) : "no object type"s;
 		constexpr auto max_length = 15u;
 		if (!o.name_id.empty())
 			return clamp_length<max_length>(o.name_id) + "("s + clamp_length<max_length>(type) + ")"s;
@@ -365,11 +365,51 @@ namespace hades::detail::obj_ui
 
 namespace hades
 {
+	//TODO: handle objectlist == empty in all the editor_ui functions
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::show_object_list_buttons(gui& g)
 	{
-		g.button("add");
-		g.button("remove");
+		const auto &objs = resources::all_objects;
+
+		assert(_next_added_object_base < std::size(objs) + 1 || std::empty(objs));
+
+		const auto preview = [&objs](std::size_t index)->string {
+			if (index == std::size_t{})
+				return "none";
+			else
+				return to_string(objs[index - 1]->id);
+		}(_next_added_object_base);
+
+		if (g.combo_begin("object type", preview))
+		{
+			if (g.selectable("none", _next_added_object_base == std::size_t{}))
+				_next_added_object_base = std::size_t{};
+
+			const auto end = std::size(objs);
+			for (auto i = std::size_t{}; i < end; ++i)
+			{
+				const auto name = to_string(objs[i]->id);
+				if (g.selectable(name, _next_added_object_base == i + 1))
+					_next_added_object_base = i + 1;
+			}
+
+			g.combo_end();
+		}
+
+		if (g.button("add"))
+		{
+			if (_next_added_object_base == std::size_t{})
+				add();
+			else
+			{
+				const auto o_type = objs[_next_added_object_base - 1];
+				auto obj = ObjectType{ o_type };
+				add(std::move(obj));
+			}
+		}
+		g.layout_horizontal();
+		if (g.button("remove") && _obj_list_selected < std::size(_data->objects))
+			_erase(_obj_list_selected);
 		return;
 	}
 
@@ -418,15 +458,83 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::erase(entity_id id)
+	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add()
 	{
-		//we assume the the object isn't duplicated in the object list
-		const auto obj = std::find_if(std::begin(_data->objects), std::end(_data->objects), [id](auto&& o) {
-			return o.id == id;
-		});
+		static_assert(std::is_default_constructible_v<ObjectType>);
+		const auto id = post_increment(_data->next_id);
+		auto o = ObjectType{};
+		o.id = id;
+		_data->objects.emplace_back(std::move(o));
+		return id;
+	}
 
-		_data->entity_names.erase(obj->name_id);
-		_data->objects.erase(obj);
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add(ObjectType o)
+	{
+		assert(o.id == bad_entity);
+		const auto id = o.id = post_increment(_data->next_id);
+		_data->objects.emplace_back(std::move(o));
+		return id;
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::erase(const entity_id id)
+	{
+		const auto index = _get_obj(id);
+		_erase(index);
+		return;
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_add_remove_curve_window(gui& g)
+	{
+		using window = add_remove_curve_window;
+		auto& w = _add_remove_window_state;
+		auto open = true;
+
+		if (w.state == window::window_state::add)
+		{
+			
+			if (g.window_begin("add curve", open))
+			{
+				g.button("add");
+				g.layout_horizontal();
+				g.button("cancel");
+
+				g.listbox("", w.list_index, resources::get_all_curves(), [](auto&& c)->string {
+					return to_string(c->id);
+				});
+			}
+			g.window_end();
+		}
+		else if (w.state == window::window_state::remove)
+		{
+			if (g.window_begin("remove curve", open))
+			{
+				g.button("remove");
+				g.layout_horizontal();
+				g.button("cancel");
+			}
+			g.window_end();
+		}
+
+		if (open == false)
+			_reset_add_remove_curve_window();
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_erase(const std::size_t index)
+	{
+		assert(index < std::size(_data->objects));
+		const auto iter = std::next(std::begin(_data->objects), index);
+
+		_data->entity_names.erase(iter->name_id);
+		_data->objects.erase(iter);
+
+		if (std::empty(_data->objects))
+			_set_selected(index);
+		else if (index == std::size(_data->objects))
+			_set_selected(index - 1);
 		return;
 	}
 
@@ -448,7 +556,7 @@ namespace hades
 			const auto rect = std::invoke(make_rect, o, c);
 			const auto safe_pos = std::invoke(_is_valid_pos, rect, o);
 
-			if (safe_pos)// TODO: fix this || _allow_intersect)
+			if (safe_pos)
 			{
 				set_curve(o, c.curve->id, c.value);
 				std::invoke(_on_change, o);
@@ -469,22 +577,48 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline ObjectType* object_editor_ui<ObjectType, OnChange, IsValidPos>::_get_obj(std::size_t index) noexcept
+	{
+		assert(index < std::size(_data->objects));
+		return &_data->objects[index];
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_reset_add_remove_curve_window() noexcept
+	{
+		_add_remove_window_state = add_remove_curve_window{}; 
+		return;
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_property_editor(gui& g)
 	{
 		using namespace detail::obj_ui;
-		const auto o = get_obj(_selected);
-		assert(o);
-
+		const auto o = _get_obj(_obj_list_selected);
 		const auto name = detail::obj_ui::get_name(*o);
 
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
-		g.text("Selected: "s + name);
+		g.text("Selected: "s) + name);
 
 		//properties
 		//immutable object id
 		g.input_text("id"sv, to_string(static_cast<entity_id::value_type>(o->id)), gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
+		g.text("curves:");
+		if (g.button("add"))
+		{
+			_reset_add_remove_curve_window();
+			_add_remove_window_state.state = add_remove_curve_window::window_state::add;
+		}
+		g.layout_horizontal();
+		if(g.button("remove"))
+		{
+			_reset_add_remove_curve_window();
+			_add_remove_window_state.state = add_remove_curve_window::window_state::remove;
+		}
+
+		_add_remove_curve_window(g);
 
 		//positional properties
 		if constexpr (visual_editor)
@@ -540,13 +674,17 @@ namespace hades
 				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit);
 		}
 	}
+
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_set_selected(std::size_t index)
 	{
+		_reset_add_remove_curve_window();
+		_vector_curve_edit = vector_curve_edit{};
+
 		if (index >= std::size(_data->objects))
 		{
 			_selected = bad_entity;
-			_obj_list_selected = std::numeric_limits<std::size_t>::max();
+			_obj_list_selected = std::size_t{};
 			return;
 		}
 

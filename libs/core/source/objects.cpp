@@ -236,13 +236,17 @@ namespace hades
 
 	bool has_curve(const object_instance & o, const resources::curve & c)
 	{
+		//check object curve list
 		if (std::any_of(std::begin(o.curves), std::end(o.curves), [&c](auto &&curve) {
 			return std::get<const resources::curve*>(curve) == &c;
 		}))
 			return true;
 
-		assert(o.obj_type);
-		return has_curve(*o.obj_type, c);
+		//check obj prototype
+		if(o.obj_type)
+			return has_curve(*o.obj_type, c);
+
+		return false;
 	}
 
 	bool has_curve(const resources::object & o, const resources::curve & c)
@@ -252,21 +256,26 @@ namespace hades
 
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
 	{
-		for (auto cur : o.curves)
+		//check the objects curve list
+		for (const auto cur : o.curves)
 		{
-			auto curve = std::get<const hades::resources::curve*>(cur);
-			auto v = std::get<hades::resources::curve_default_value>(cur);
+			const auto curve = std::get<const hades::resources::curve*>(cur);
+			const auto v = std::get<hades::resources::curve_default_value>(cur);
 			assert(curve);
 			//if we have the right id and this
 			if (curve->id == c.id && hades::resources::is_set(v))
 				return v;
 		}
 
-		assert(o.obj_type);
-		auto out = TryGetCurve(o.obj_type, &c);
-		if (auto[curve, value] = out; curve && hades::resources::is_set(value))
-			return value;
+		//check the object prototype
+		if (o.obj_type)
+		{
+			const auto out = TryGetCurve(o.obj_type, &c);
+			if (const auto &[curve, value] = out; curve && hades::resources::is_set(value))
+				return value;
+		}
 
+		//return the curves default
 		assert(hades::resources::is_set(c.default_value));
 		return c.default_value;
 	}
@@ -312,18 +321,18 @@ namespace hades
 		using curve = hades::resources::curve;
 		using value = hades::resources::curve_default_value;
 
-		std::stable_sort(std::begin(list), std::end(list), [](auto&& lhs, auto& rhs) {
+		std::stable_sort(std::begin(list), std::end(list), [](auto&& lhs, auto&& rhs) {
 			return std::get<const curve*>(lhs)->id < std::get<const curve*>(rhs)->id;
-			});
+		});
 
 		//for each unique curve, we want to keep the 
 		//first with an assigned value or the last if their is no value
 		const auto last = std::end(list);
 		auto iter = std::begin(list);
-		curve_list output;
+		auto output = curve_list{};
 		while (iter != last)
 		{
-			value v{};
+			auto v = value{};
 			const auto c = std::get<const curve*>(*iter);
 			assert(c);
 			//while each item represents the same curve c
@@ -331,10 +340,10 @@ namespace hades
 			//and then find the next different curve
 			// or iterate to the next c
 			do {
-				const auto &val = std::get<value>(*iter);
+				auto &val = std::get<value>(*iter);
 				if (hades::resources::is_set(val))
 				{
-					v = val;
+					v = std::move(val);
 					iter = std::find_if_not(iter, last, [c](const curve_obj &lhs) {
 						return c == std::get<const curve*>(lhs);
 					});
@@ -346,7 +355,7 @@ namespace hades
 			//store c and v in output
 			if (!resources::is_set(v))
 				v = resources::reset_default_value(*c);
-			output.emplace_back(c, v);
+			output.emplace_back(c, std::move(v));
 		}
 
 		return output;
@@ -382,14 +391,18 @@ namespace hades
 
 	curve_list get_all_curves(const object_instance &o)
 	{
-		curve_list output;
+		auto output = curve_list{};
 
+		//curves from the instance
 		for (auto c : o.curves)
-			output.push_back(c);
+			output.emplace_back(std::move(c));
 
-		assert(o.obj_type);
-		auto inherited_curves = get_all_curves_iterative(o.obj_type);
-		std::move(std::begin(inherited_curves), std::end(inherited_curves), std::back_inserter(output));
+		//get curves from the prototype
+		if (o.obj_type)
+		{
+			auto inherited_curves = get_all_curves_iterative(o.obj_type);
+			std::move(std::begin(inherited_curves), std::end(inherited_curves), std::back_inserter(output));
+		}
 
 		return unique_curves(std::move(output));
 	}

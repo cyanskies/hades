@@ -96,8 +96,11 @@ namespace hades
 		template<typename Integer>
 		unsigned int CheckSizeLimits(Integer size)
 		{
-			if (size < 0)
-				throw archive_exception("Negative read size", archive_exception::error_code::FILE_READ);
+			if constexpr (std::is_signed_v<Integer>)
+			{
+				if (size < 0)
+					throw archive_exception("Negative read size", archive_exception::error_code::FILE_READ);
+			}
 
 			if (size > std::numeric_limits<unsigned int>::max())
 			{
@@ -416,7 +419,7 @@ namespace hades
 					in.seekg(std::ios::beg);
 					in.read(&buf[0], size);
 
-					const auto usize = CheckSizeLimits(size);
+					const auto usize = CheckSizeLimits(static_cast<std::streamoff>(size));
 					ret = zipWriteInFileInZip(zip, &buf[0], usize);
 					if (ret != ZIP_OK)
 						throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);

@@ -221,11 +221,6 @@ namespace hades
 		}
 	}
 
-	static entity_id get_selected_id(const object_instance &o)
-	{
-		return o.id;
-	}
-
 	void level_editor_objects::gui_update(gui &g, editor_windows&)
 	{
 		using namespace std::string_view_literals;
@@ -309,7 +304,7 @@ namespace hades
 		_sprites.apply();
 	}
 
-	static bool within_level(vector_float pos, vector_float size, vector_float level_size)
+	static bool within_level(vector_float pos, vector_float size, vector_float level_size) noexcept
 	{
 		if (const auto br_corner = pos + size; pos.x < 0.f || pos.y < 0.f
 			|| br_corner.x > level_size.x || br_corner.y > level_size.y)
@@ -565,6 +560,9 @@ namespace hades
 		if (!within_level(position(r), size(r), _level_limit))
 			return false;
 
+		if (_allow_intersect)
+			return true;
+
 		//for each group that this object is a member of
 		//check each neaby rect for a collision
 		//return true if any such collision would occur
@@ -579,8 +577,8 @@ namespace hades
 				return std::any_of(std::begin(local_rects), std::end(local_rects),
 					[&r, id](const quad_data<entity_id, rect_float>& other) {
 						return other.key != id && intersects(other.rect, r);
-					});
-			});
+				});
+		});
 
 		//TODO: a way to ask the terrain system for it's say on this object?
 		return !object_collision;
@@ -612,7 +610,7 @@ namespace hades
 		const auto new_entity = o.id == bad_entity;
 
 		if(new_entity)
-			o.id = next(_objects.next_id);
+			o.id = _objects.next_id;
 		
 		const auto valid_location = _object_valid_location({ pos, size }, o);
 

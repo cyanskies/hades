@@ -111,6 +111,8 @@ namespace hades::resources
 		curve_types::collection_object_ref,
 		curve_types::collection_unique>;
 
+	static_assert(std::is_move_constructible_v<curve_default_value>);
+
 	struct curve_t {};
 
 	struct curve : public resource_type<curve_t>
@@ -135,6 +137,13 @@ namespace hades::resources
 
 	curve_default_value curve_from_string(const resources::curve &c, std::string_view str);
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
+
+	template<typename T>
+	const curve* make_curve(data::data_manager&, unique_id name, curve_type, curve_variable_type, T default_value, bool sync, bool save);
+	template<typename T>
+	const curve* make_curve(data::data_manager&, std::string_view name, curve_type, curve_variable_type, T default_value, bool sync, bool save);
+
+	const std::vector<const curve*> &get_all_curves();
 }
 
 namespace hades
@@ -144,5 +153,7 @@ namespace hades
 
 	string curve_to_string(const resources::curve &c, const resources::curve_default_value &v);
 }
+
+#include "hades/detail/curve_extra.inl"
 
 #endif // !HADES_CURVE_EXTRA_HPP

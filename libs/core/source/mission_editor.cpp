@@ -342,7 +342,6 @@ namespace hades
 	{
 		_obj_ui.show_object_list_buttons(_gui);
 		_obj_ui.object_list_gui(_gui);
-		_obj_ui.object_properties(_gui);
 
 		return;
 	}

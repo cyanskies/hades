@@ -11,12 +11,13 @@ namespace hades
 	static auto tags_id = unique_id::zero;
 	static auto object_type_id = unique_id::zero;
 
-	static void setup_curve(resources::curve &c)
+	static void setup_position_curve(data::data_manager& d, unique_id id)
 	{
-		c.c_type = curve_type::linear;
-		c.data_type = resources::curve_variable_type::vec2_float;
-		c.default_value = resources::curve_types::vec2_float{ 0.f, 0.f };
-		c.sync = true;
+		resources::make_curve(d, id, curve_type::linear,
+			resources::curve_variable_type::vec2_float,
+			resources::curve_types::vec2_float{ 0.f, 0.f },
+			true, true);
+		return;
 	}
 
 	void register_core_curves(data::data_manager &d)
@@ -26,51 +27,50 @@ namespace hades
 		using namespace std::string_view_literals;
 		using resources::curve;
 
+		//TODO: use make_curve to produce these, so that they are properly registered
+
 		alive_id = d.get_uid("alive"sv);
-		auto alive_c = d.find_or_create<curve>(alive_id, unique_id::zero);
-		alive_c->c_type = curve_type::step;
-		alive_c->data_type = resources::curve_variable_type::bool_t;
-		alive_c->default_value = true;
-		alive_c->sync = true;
+		resources::make_curve(d, alive_id, curve_type::step, 
+			resources::curve_variable_type::bool_t, true, true, true);
 
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
-		auto name_c = d.find_or_create<curve>(name_id, unique_id::zero);
-		name_c->c_type = curve_type::step;
-		name_c->data_type = resources::curve_variable_type::string;
-		name_c->default_value = string{};
-		name_c->sync = true;
+		resources::make_curve(d, name_id, curve_type::step, resources::curve_variable_type::string, string{}, true, true);
 
 		// the position curves store the objects 2d position
 		pos_id = d.get_uid("position"sv);
-		setup_curve(*d.find_or_create<curve>(pos_id, unique_id::zero));
+		setup_position_curve(d, pos_id);
 		// size curves store the objects 2d size
 		siz_id = d.get_uid("size"sv);
-		setup_curve(*d.find_or_create<curve>(siz_id, unique_id::zero));
+		setup_position_curve(d, siz_id);
+		
 		// collision groups are used to check whether two objects collide
 		// or to check what terrain an object can move on
 		//TODO: should a sperate collision-terrain list be used for terrain collision?
 		collision_groups_id = d.get_uid("collision-groups"sv);
-		auto col_groups = d.find_or_create<curve>(collision_groups_id, unique_id::zero);
-
-		col_groups->c_type = curve_type::step;
-		col_groups->data_type = resources::curve_variable_type::collection_unique;
-		col_groups->default_value = resources::curve_types::collection_unique{};
+		resources::make_curve(d, collision_groups_id, curve_type::step,
+			resources::curve_variable_type::collection_unique,
+			resources::curve_types::collection_unique{},
+			false, //sync to client
+			false); //save to file
 
 		// tags for this object
 		tags_id = d.get_uid("tags"sv);
-		auto tags = d.find_or_create<curve>(tags_id, unique_id::zero);
-		tags->c_type = curve_type::step;
-		tags->data_type = resources::curve_variable_type::collection_unique;
-		tags->default_value = resources::curve_types::collection_unique{};
-		tags->sync = true;
+		resources::make_curve(d, tags_id, curve_type::step,
+			resources::curve_variable_type::collection_unique,
+			resources::curve_types::collection_unique{},
+			true, // sync to client
+			false); // save to file
+
 		// object type is the unique_id of the objects type
 		object_type_id = d.get_uid("object-type"sv);
-		auto obj_type = d.find_or_create<curve>(object_type_id, unique_id::zero);
-		obj_type->c_type = curve_type::const_c;
-		obj_type->data_type = resources::curve_variable_type::unique;
-		obj_type->default_value = resources::curve_types::unique::zero;
-		obj_type->sync = true;
+		resources::make_curve(d, object_type_id, curve_type::const_c,
+			resources::curve_variable_type::unique,
+			resources::curve_types::unique::zero,
+			true, //sync to client
+			false); // save to file
+
+		return;
 	}
 
 	static const resources::curve *get_curve(unique_id i)

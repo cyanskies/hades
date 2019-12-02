@@ -46,7 +46,7 @@ namespace hades::resources
 		render_system_list render_systems;
 	};
 
-
+	//TODO: hide behind func
 	extern std::vector<const object*> all_objects;
 }
 

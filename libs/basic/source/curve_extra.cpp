@@ -175,6 +175,8 @@ namespace hades::resources
 
 			if (!is_curve_valid(*new_curve))
 				throw invalid_curve{ "get_default_value returned an invalid curve" };
+
+			detail::add_to_curve_master_list(new_curve);
 		}
 	}
 
@@ -316,12 +318,25 @@ namespace hades::resources
 
 		return value;
 	}
+
+	static std::vector<const curve*> curve_master_list;
+
+	const std::vector<const curve*> &get_all_curves()
+	{
+		return curve_master_list;
+	}
+
+	void detail::add_to_curve_master_list(const curve* c)
+	{
+		curve_master_list.emplace_back(c);
+		remove_duplicates(curve_master_list);
+		return;
+	}
 }
 
 namespace hades
 {
-	template<>
-	types::string to_string<std::monostate>(std::monostate value)
+	static types::string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;
 		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised");
@@ -367,3 +382,4 @@ namespace hades
 		d.register_resource_type("curves", resources::parse_curves);
 	}
 }
+

@@ -82,8 +82,10 @@ namespace hades
 		void object_list_gui(gui&);
 		void object_properties(gui&);
 
-		void set_selected(entity_id id) noexcept;
+		void set_selected(entity_id) noexcept;
 		ObjectType* get_obj(entity_id) noexcept;
+		entity_id add();
+		entity_id add(ObjectType);
 		void erase(entity_id);
 
 	private:
@@ -98,7 +100,23 @@ namespace hades
 			size_index
 		};
 
+		struct add_remove_curve_window
+		{
+			enum class window_state {
+				closed,
+				add,
+				remove
+			};
+
+			window_state state = window_state::closed;
+			std::size_t list_index = std::size_t{};
+		};
+
+		void _add_remove_curve_window(gui&);
+		void _erase(std::size_t);
 		std::size_t _get_obj(entity_id) noexcept;
+		ObjectType* _get_obj(std::size_t) noexcept;
+		void _reset_add_remove_curve_window() noexcept;
 		template<typename MakeRect>
 		void _positional_property_field(gui&, std::string_view, ObjectType&, 
 			curve_info&, MakeRect);
@@ -113,12 +131,13 @@ namespace hades
 		object_data *_data = nullptr;
 
 		//editing and ui data
-		std::size_t _obj_list_selected;
+		std::size_t _obj_list_selected = std::size_t{};
+		std::size_t _next_added_object_base = std::size_t{};
 		entity_id _selected = bad_entity;
+		add_remove_curve_window _add_remove_window_state;
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;
 		std::array<curve_info, 2> _curve_properties;
-
 	};
 
 	class level_editor_objects final : public level_editor_component

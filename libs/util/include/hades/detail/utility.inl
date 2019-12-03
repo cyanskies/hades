@@ -346,19 +346,6 @@ namespace hades
 		}
 	}
 
-	namespace detail
-	{
-		template<typename = void, typename... Args>
-		struct to_string_overload : std::false_type {};
-
-		template<typename... Args>
-		struct to_string_overload<std::void_t<decltype(to_string(std::declval<Args>()...))>, Args...>
-			: std::true_type {};
-
-		template<typename... Args>
-		inline constexpr bool to_string_overload_v = to_string_overload<void, Args...>::value;
-	}
-
 	template<typename T>
 	string to_string(T value)
 	{

@@ -95,6 +95,9 @@ namespace hades::resources
 
 		template<typename T>
 		constexpr auto is_curve_type_v = is_curve_type<T>::value;
+
+		template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
+		string curve_type_to_string() noexcept;
 	}
 
 	using curve_default_value = std::variant<
@@ -148,6 +151,8 @@ namespace hades::resources
 
 namespace hades
 {
+	string to_string(resources::curve_variable_type) noexcept;
+	string to_string(curve_type) noexcept;
 	string to_string(const resources::curve &c);
 	string to_string(std::tuple<const resources::curve&, const resources::curve_default_value&> curve);
 

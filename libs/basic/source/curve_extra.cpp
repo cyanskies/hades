@@ -17,6 +17,7 @@ namespace hades
 
 namespace hades::resources
 {
+	//curve_type_from_string
 	curve_type read_curve_type(std::string_view s) noexcept
 	{
 		using namespace std::string_view_literals;
@@ -32,6 +33,7 @@ namespace hades::resources
 			return curve_type::error;
 	}
 
+	//curve_variable_type_from_string
 	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
 		using namespace std::string_view_literals;
@@ -49,8 +51,8 @@ namespace hades::resources
 			return curve_variable_type::object_ref;
 		else if (s == "unique"sv)
 			return curve_variable_type::unique;
-		//TODO: rename to *_collection
-		else if (s == "int_vector"sv)
+		//TODO: rename to collection_*
+		else if (s == "int_vector"sv || s == "int32_vector"sv)
 			return curve_variable_type::collection_int;
 		else if (s == "float_vector"sv)
 			return curve_variable_type::collection_float;
@@ -336,6 +338,57 @@ namespace hades::resources
 
 namespace hades
 {
+	string to_string(resources::curve_variable_type t) noexcept
+	{
+		using namespace std::string_literals;
+		using resources::curve_variable_type;
+		switch (t)
+		{
+		case curve_variable_type::int_t:
+			return "int32"s;
+		case curve_variable_type::float_t:
+			return "float"s;
+		case curve_variable_type::vec2_float:
+			return "vec2_float"s;
+		case curve_variable_type::bool_t:
+			return "bool"s;
+		case curve_variable_type::string:
+			return "string"s;
+		case curve_variable_type::object_ref:
+			return "obj_ref"s;
+		case curve_variable_type::unique:
+			return "unique"s;
+		case curve_variable_type::collection_int:
+			return "collection_int32"s;
+		case curve_variable_type::collection_float:
+			return "collection_float"s;
+		case curve_variable_type::collection_object_ref:
+			return "collection_obj_ref"s;
+		case curve_variable_type::collection_unique:
+			return "collection_unique"s;
+		default:
+			return "error"s;
+		}
+	}
+
+	string to_string(curve_type c) noexcept
+	{
+		using namespace std::string_literals;
+		switch (c)
+		{
+		case curve_type::const_c:
+			return "const"s;
+		case curve_type::linear:
+			return "linear"s;
+		case curve_type::step:
+			return "step"s;
+		case curve_type::pulse:
+			return "pulse"s;
+		default:
+			return "error"s;
+		}
+	}
+
 	static types::string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;

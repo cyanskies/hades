@@ -354,7 +354,7 @@ namespace hades::detail::obj_ui
 	static inline string get_name(const object_instance &o)
 	{
 		using namespace std::string_literals;
-		const auto type = o.obj_type ? data::get_as_string(o.obj_type->id) : "no object type"s;
+		const auto type = o.obj_type ? data::get_as_string(o.obj_type->id) : to_string(o.id);
 		constexpr auto max_length = 15u;
 		if (!o.name_id.empty())
 			return clamp_length<max_length>(o.name_id) + "("s + clamp_length<max_length>(type) + ")"s;
@@ -497,11 +497,34 @@ namespace hades
 			
 			if (g.window_begin("add curve", open))
 			{
-				g.button("add");
-				g.layout_horizontal();
-				g.button("cancel");
+				const auto& all_curves = resources::get_all_curves();
+				auto curves = std::vector<const resources::curve*>{};
+				curves.reserve(std::size(all_curves));
 
-				g.listbox("", w.list_index, resources::get_all_curves(), [](auto&& c)->string {
+				const auto o = _get_obj(_obj_list_selected);
+				std::copy_if(std::begin(all_curves), std::end(all_curves), std::back_inserter(curves),
+					[&o](auto&& curve) {
+						return !has_curve(*o, *curve);
+				});
+
+				assert(w.list_index < std::size(all_curves));
+				const auto c = curves[w.list_index];
+				assert(c);
+
+				if(g.button("add"))
+				{
+					set_curve(*o, *c, {});
+					open = false;
+				}
+				g.layout_horizontal();
+				if(g.button("cancel"))
+					open = false;
+
+				g.text("curve type: " + to_string(c->c_type));
+				g.text("data type: " + to_string(c->data_type));
+				g.text("default value: " + to_string(*c));
+
+				g.listbox("", w.list_index, curves, [](auto&& c)->string {
 					return to_string(c->id);
 				});
 			}
@@ -599,7 +622,7 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
-		g.text("Selected: "s) + name);
+		g.text("Selected: "s + name);
 
 		//properties
 		//immutable object id

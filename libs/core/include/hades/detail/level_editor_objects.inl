@@ -277,8 +277,12 @@ namespace hades::detail::obj_ui
 				{
 					auto container = value;
 					auto iter = std::begin(container);
-					++target.selected;
-					std::advance(iter, target.selected);
+
+					if (!std::empty(container))
+					{
+						++target.selected;
+						std::advance(iter, target.selected);
+					}
 
 					container.emplace(iter);
 					set_curve(o, *c, container);
@@ -497,17 +501,20 @@ namespace hades
 			
 			if (g.window_begin("add curve", open))
 			{
-				const auto& all_curves = resources::get_all_curves();
-				auto curves = std::vector<const resources::curve*>{};
-				curves.reserve(std::size(all_curves));
-
 				const auto o = _get_obj(_obj_list_selected);
-				std::copy_if(std::begin(all_curves), std::end(all_curves), std::back_inserter(curves),
-					[&o](auto&& curve) {
-						return !has_curve(*o, *curve);
-				});
 
-				assert(w.list_index < std::size(all_curves));
+				const auto curves = [&o]() {
+					const auto& all_curves = resources::get_all_curves();
+					auto curves = std::vector<const resources::curve*>{};
+					curves.reserve(std::size(all_curves));
+					std::copy_if(std::begin(all_curves), std::end(all_curves), std::back_inserter(curves),
+						[&o](auto&& curve) {
+							return !has_curve(*o, *curve);
+						});
+					return curves;
+				}();
+
+				assert(w.list_index < std::size(curves));
 				const auto c = curves[w.list_index];
 				assert(c);
 
@@ -534,9 +541,33 @@ namespace hades
 		{
 			if (g.window_begin("remove curve", open))
 			{
-				g.button("remove");
+				const auto o = _get_obj(_obj_list_selected);
+				const auto &curves = o->curves;
+				assert(w.list_index < std::size(curves));
+				const auto &curve = curves[w.list_index];
+				const auto c = std::get<const resources::curve*>(curve);
+				assert(c);
+
+				if (g.button("remove"))
+				{
+					const auto iter = std::next(std::begin(o->curves), w.list_index);
+					o->curves.erase(iter);
+					open = false;
+				}
 				g.layout_horizontal();
-				g.button("cancel");
+				if (g.button("cancel"))
+					open = false;
+
+				g.text("curve type: " + to_string(c->c_type));
+				g.text("data type: " + to_string(c->data_type));
+				const auto& value = std::get<resources::curve_default_value>(curve);
+				if(resources::is_set(value))
+					g.text("current value: " + curve_to_string(*c, value));
+				g.text("default value: " + to_string(*c));
+
+				g.listbox("", w.list_index, curves, [](auto&& c)->string {
+					return to_string(std::get<const resources::curve*>(c)->id);
+				});
 			}
 			g.window_end();
 		}
@@ -629,16 +660,23 @@ namespace hades
 		g.input_text("id"sv, to_string(static_cast<entity_id::value_type>(o->id)), gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
 		g.text("curves:");
-		if (g.button("add"))
+		const bool global_curves = !std::empty(resources::get_all_curves());
+		if (global_curves && g.button("add")) // dont show the 'add' button if thir are no addable curves
 		{
 			_reset_add_remove_curve_window();
 			_add_remove_window_state.state = add_remove_curve_window::window_state::add;
 		}
-		g.layout_horizontal();
-		if(g.button("remove"))
+
+		if (!std::empty(o->curves))
 		{
-			_reset_add_remove_curve_window();
-			_add_remove_window_state.state = add_remove_curve_window::window_state::remove;
+			if(global_curves) //only horizontal layout if the 'add' button was also present
+				g.layout_horizontal();
+
+			if (g.button("remove"))
+			{
+				_reset_add_remove_curve_window();
+				_add_remove_window_state.state = add_remove_curve_window::window_state::remove;
+			}
 		}
 
 		_add_remove_curve_window(g);

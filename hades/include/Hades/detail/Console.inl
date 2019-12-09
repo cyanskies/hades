@@ -61,8 +61,7 @@ namespace hades
 		{
 			return std::visit([var](auto &&arg)->console::property<T> {
 				using U = std::decay_t<decltype(arg)>;
-				using W = std::decay_t<U::element_type::value_type>;
-				if constexpr(std::is_same_v<std::decay_t<T>, W>)
+				if constexpr(std::is_same_v<console::property<T>, U>)
 					return arg;
 				else
 					throw console::property_wrong_type("name: " + to_string(var));

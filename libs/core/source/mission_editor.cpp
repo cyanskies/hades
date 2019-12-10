@@ -555,6 +555,15 @@ namespace hades
 				m.inline_levels.emplace_back(mission::level_element{ l.name, l.level });
 		}
 
+		for (const auto& p : _players)
+		{
+			mission::player player;
+			player.id = p.id;
+			player.name = p.name;
+			player.object = p.p_entity;
+			m.players.emplace_back(std::move(player));
+		}
+
 		const auto s = serialise(m);
 		files::write_file(p.string(), s);
 		_mission_src = p.generic_string();

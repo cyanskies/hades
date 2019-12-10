@@ -650,45 +650,43 @@ namespace hades
 		obj_next = "next_id"sv,
 		obj_name = "name"sv;
 
-	void write_objects_from_level(const hades::level &l, data::writer &w)
+	void serialise(const object_data& o, data::writer& w)
 	{
-		//level_root:
-			//next-id:
-			//objects:
-				//id:
-					//object-type
-					//name[opt]
-					//curves:
-						//curve_id: value
+		//root:
+		//	next-id:
+		//	objects:
+		//		entity_id:
+		//			obj-type:
+		//			name:
+		//			curves:
+		//				id: [curve] //see write_curve()
+		w.write(obj_next, o.next_id);
 
-		//next-id:
-		w.write(obj_next, l.next_id);
-
-		if (l.objects.empty())
+		if (std::empty(o.objects))
 			return;
 
 		//objects:
 		w.start_map(obj_str);
 
-		for (const auto &o : l.objects)
+		for (const auto& o : o.objects)
 		{
 			//id:
 			w.start_map(o.id);
 
-			//	object-type:
-			if(o.obj_type)
+			//object-type:
+			if (o.obj_type)
 				w.write(obj_type, o.obj_type->id);
 
-			//	name:
+			//name:
 			if (!o.name_id.empty())
 				w.write(obj_name, o.name_id);
 
 			if (!o.curves.empty())
 			{
-				//	curves:
+				//curves:
 				w.start_map(obj_curves);
-				
-				for (const auto &c : o.curves)
+
+				for (const auto& c : o.curves)
 					write_curve(w, c);
 
 				//end curves:
@@ -702,29 +700,31 @@ namespace hades
 		//end objects:
 		w.end_map();
 	}
-	
-	void read_objects_into_level(const data::parser_node &n, hades::level &l)
+
+	object_data deserialise_object_data(data::parser_node& n)
 	{
-		//level_root:
-			//next-id
-			//objects:
-				//id:
-					//object-type
-					//name[opt]
-					//curves:
-						//curve_id: value
+		//root:
+		//	next-id:
+		//	objects:
+		//		id:
+		//		object-type:
+		//		name[opt]:
+		//		curves:
+		//			curve_id: [curve] //see read_curve()
+
+		auto out = object_data{};
 
 		//read next id
-		l.next_id = data::parse_tools::get_scalar(n, obj_next, l.next_id);
+		out.next_id = data::parse_tools::get_scalar(n, obj_next, out.next_id);
 
 		//get objects
 		const auto object_node = n.get_child(obj_str);
 		if (!object_node)
-			return;
+			return out;
 
 		const auto object_list = object_node->get_children();
 
-		for (const auto &o : object_list)
+		for (const auto& o : object_list)
 		{
 			const auto id = o->to_scalar<entity_id>();
 
@@ -744,7 +744,7 @@ namespace hades
 			const auto curves_node = o->get_child(obj_curves);
 			const auto curves = curves_node->get_children();
 
-			for (const auto &c : curves)
+			for (const auto& c : curves)
 			{
 				const auto curve_id = c->to_scalar<unique_id>();
 				//TODO: log error?
@@ -761,7 +761,9 @@ namespace hades
 					;//TODO: warning, unable to parse curve value
 			}
 
-			l.objects.emplace_back(obj);
+			out.objects.emplace_back(obj);
 		}
+
+		return out;
 	}
 }

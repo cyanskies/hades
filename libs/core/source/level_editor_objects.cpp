@@ -110,7 +110,8 @@ namespace hades
 
 	void level_editor_objects::level_load(const level &l)
 	{
-		_objects.next_id = l.next_id;
+		const auto& o = l.objects;
+		_objects.next_id = o.next_id;
 		_level_limit = { static_cast<float>(l.map_x),
 						 static_cast<float>(l.map_y) };
 
@@ -123,9 +124,9 @@ namespace hades
 		//copy the objects into the editor
 		//and set up the sprites and quad data
 		std::vector<editor_object_instance> objects{};
-		objects.reserve(std::size(l.objects));
-		const auto end = std::end(l.objects);
-		for (auto iter = std::begin(l.objects); iter != end; ++iter)
+		objects.reserve(std::size(o.objects));
+		const auto end = std::end(o.objects);
+		for (auto iter = std::begin(o.objects); iter != end; ++iter)
 		{
 			//if the object has a name then try and apply it
 			const auto &name = iter->name_id;
@@ -165,9 +166,10 @@ namespace hades
 
 	level level_editor_objects::level_save(level l) const
 	{
-		l.next_id = _objects.next_id ;
-		l.objects.reserve(std::size(_objects.objects));
-		std::copy(std::begin(_objects.objects), std::end(_objects.objects), std::back_inserter(l.objects));
+		auto& o = l.objects;
+		o.next_id = _objects.next_id ;
+		o.objects.reserve(std::size(_objects.objects));
+		std::copy(std::begin(_objects.objects), std::end(_objects.objects), std::back_inserter(o.objects));
 		return l;
 	}
 

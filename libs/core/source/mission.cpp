@@ -11,16 +11,24 @@ namespace hades
 
 	constexpr auto name_str = "name"sv,
 		desc_str = "description"sv,
+		players_str = "players"sv,
 		obj_str = "objects"sv,
 		next_str = "next-id"sv,
 		levels_str = "inline-levels"sv,
 		ext_levels_str = "external-levels"sv;
+
+	constexpr auto player_name_str = "name"sv,
+		player_object_str = "object"sv;
 
 	string serialise(const mission& m)
 	{
 		//mission.mis
 		//name: string
 		//description: string
+		//players:
+		//	id:
+		//		name:
+		//		object:
 		//objects: //TODO:
 		//next-id: 
 		//scripts:
@@ -31,7 +39,21 @@ namespace hades
 		w->write(name_str, m.name);
 		w->write(desc_str, m.description);
 
-		//TODO: next-id and objects
+		//players
+		if (!std::empty(m.players))
+		{
+			w->start_map(players_str);
+			for (const auto& p : m.players)
+			{
+				w->start_map(p.id);
+				w->write(player_name_str, p.name);
+				w->write(player_object_str, p.object);
+				w->end_map();
+			}
+			w->end_map();
+		}
+
+		serialise(m.objects, *w);
 
 		if (!std::empty(m.inline_levels))
 		{
@@ -65,6 +87,23 @@ namespace hades
 
 		m.name = pt::get_scalar(*p, name_str, m.name);
 		m.description = pt::get_scalar(*p, desc_str, m.description);
+
+		//players
+		const auto players = p->get_child(players_str);
+		if (players)
+		{
+			const auto ps = players->get_children();
+			for (const auto& p : ps)
+			{
+				mission::player player;
+				player.id = p->to_scalar<unique_id>();
+				player.name = pt::get_scalar(*p, player_name_str, player.name);
+				player.object = pt::get_scalar(*p, player_object_str, player.object);
+				m.players.emplace_back(std::move(player));
+			}
+		}
+
+		m.objects = deserialise_object_data(*p);
 
 		const auto inline_levels = p->get_child(levels_str);
 		if (inline_levels)

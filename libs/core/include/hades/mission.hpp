@@ -16,12 +16,16 @@ namespace hades
 		string description;
 
 		//players
+		struct player
+		{
+			string name;
+			unique_id id = unique_id::zero;
+			entity_id object = bad_entity;
+		};
+		std::vector<player> players;
 
-		//sequence of object
-		//list of curve values, not including defaults
-		std::vector<object_instance> objects;
-		//the id of the next entity to be placed, or spawned in-game
-		entity_id next_id = next(bad_entity);
+		//game objects
+		object_data objects;
 
 		//scripts
 		//on_load

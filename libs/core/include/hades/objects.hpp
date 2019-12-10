@@ -120,11 +120,16 @@ namespace hades
 	tag_list get_tags(const object_instance &o);
 	tag_list get_tags(const resources::object &o);
 
-	struct level;
-	//reads the object tree from the level and writes it
-	void write_objects_from_level(const level&, data::writer&);
-	//read objects from the parser and save them in the level
-	void read_objects_into_level(const data::parser_node&, level&);
+	//container for saved object data
+	struct object_data
+	{
+		std::vector<object_instance> objects;
+		//the id of the next entity to be placed, or spawned in-game
+		entity_id next_id = next(bad_entity);
+	};
+
+	void serialise(const object_data&, data::writer&);
+	object_data deserialise_object_data(data::parser_node&);
 }
 
 #endif // !OBJECTS_OBJECTS_HPP

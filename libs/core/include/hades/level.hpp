@@ -48,11 +48,9 @@ namespace hades
 
 		//map size in pixels
 		level_size_t map_x = 0, map_y = 0;
-		//sequence of object
-		//list of curve values, not including defaults
-		std::vector<object_instance> objects;
-		//the id of the next entity to be placed, or spawned in-game
-		entity_id next_id = entity_id{ static_cast<entity_id::value_type>(bad_entity) + 1 };
+		
+		//objects
+		object_data objects;
 
 		//backgrounds
 		colour background_colour = colours::black;

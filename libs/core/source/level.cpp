@@ -186,7 +186,7 @@ namespace hades
 		if (!l.description.empty())
 			w.write(level_description_str, l.description);
 
-		write_objects_from_level(l, w);
+		serialise(l.objects, w);
 
 		//level scripts
 		if (l.player_input_script != unique_id::zero)
@@ -238,7 +238,7 @@ namespace hades
 		l.map_x = data::parse_tools::get_scalar<level_size_t>(level_node, level_width_str, l.map_x);
 		l.map_y = data::parse_tools::get_scalar<level_size_t>(level_node, level_height_str, l.map_y);
 
-		read_objects_into_level(level_node, l);
+		l.objects = deserialise_object_data(level_node);
 
 		//read trigger data
 		read_regions_into_level(level_node, l);
@@ -261,7 +261,7 @@ namespace hades
 	{
 		level_save sv;
 
-		for (const auto &o : l.objects)
+		for (const auto &o : l.objects.objects)
 		{
 			assert(o.id != bad_entity);
 
@@ -289,7 +289,7 @@ namespace hades
 			add_object_to_systems(sv.systems, sv.systems_attached, o.id, o.obj_type);
 		}
 
-		sv.next_id = l.next_id;
+		sv.next_id = l.objects.next_id;
 		sv.source = std::move(l);
 		return sv;
 	}

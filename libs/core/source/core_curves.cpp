@@ -7,6 +7,7 @@ namespace hades
 	static auto name_id = unique_id::zero;
 	static auto pos_id = unique_id::zero;
 	static auto siz_id = unique_id::zero;
+	static auto player_slot_id = unique_id::zero;
 	static auto collision_groups_id = unique_id::zero;
 	static auto tags_id = unique_id::zero;
 	static auto object_type_id = unique_id::zero;
@@ -70,6 +71,13 @@ namespace hades
 			true, //sync to client
 			false); // save to file
 
+		player_slot_id = d.get_uid("player-slot"sv);
+		resources::make_curve(d, player_slot_id, curve_type::step,
+			resources::curve_variable_type::unique,
+			resources::curve_types::unique{},
+			true,
+			true);
+
 		return;
 	}
 
@@ -89,6 +97,11 @@ namespace hades
 	const resources::curve* get_position_curve()
 	{
 		return get_curve(pos_id);
+	}
+
+	const resources::curve* get_player_slot_curve()
+	{
+		return get_curve(player_slot_id);
 	}
 	
 	const resources::curve* get_size_curve()

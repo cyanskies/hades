@@ -48,6 +48,8 @@ namespace hades
 		struct players_window_state_t
 		{
 			bool open = true;
+			std::size_t selected{};
+			bool edit_open = false;
 		};
 
 		struct level_window_state_t
@@ -70,10 +72,32 @@ namespace hades
 			std::size_t selected{};
 		};
 
+		struct player_dialog_t
+		{
+			enum class error_type{
+				none,
+				name_used,
+				name_missing,
+			};
+
+			bool open = false;
+			string name; //the internal slot name
+			string display_name;
+			bool create_ent = true;
+			error_type error = error_type::none;
+		};
+
 		struct save_load_dialog_t
 		{
 			bool open = false;
 			string path;
+		};
+
+		struct player
+		{
+			unique_id id = unique_id::zero; // the internal slot name
+			entity_id p_entity = bad_entity;
+			string name; //non-unique display name
 		};
 
 		void _gui_menu_bar();
@@ -91,6 +115,7 @@ namespace hades
 		bool _obj_prop_w = true;
 		level_window_state_t _level_window_state;
 		players_window_state_t _player_window_state;
+		player_dialog_t _player_dialog;
 		save_load_dialog_t _save_window;
 		save_load_dialog_t _load_window;
 		gui _gui;
@@ -105,6 +130,8 @@ namespace hades
 		string _mission_desc;
 
 		// players
+		const resources::curve* _player_slot_curve = nullptr;
+		std::vector<player> _players;
 
 		//levels
 		std::vector<level_info> _levels;

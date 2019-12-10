@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "hades/level_editor.hpp"
+#include "hades/objects.hpp"
 
 namespace hades
 {
@@ -15,11 +16,14 @@ namespace hades
 	void register_mission_editor_resources(data::data_manager& d)
 	{
 		register_level_editor_resources(d);
+		register_objects(d);
 		return;
 	}
 
 	void mission_editor_t::init()
 	{
+		_player_slot_curve = get_player_slot_curve();
+
 		const auto mis = new_mission();
 
 		//create an empty mission
@@ -91,7 +95,7 @@ namespace hades
 		{
 			if (_gui.menu_item("new...", false))
 			{
-				;
+				;//TODO:
 			}
 
 			_gui.menu_item("load...", false);
@@ -118,6 +122,131 @@ namespace hades
 
 	void mission_editor_t::_gui_players_window()
 	{
+		if (_gui.button("add..."))
+			_player_dialog.open = true;
+
+		if (!std::empty(_players))
+		{
+			_gui.layout_horizontal();
+			if (_gui.button("edit...") && !std::empty(_players))
+				_player_window_state.edit_open = true;
+			_gui.layout_horizontal();
+			if (_gui.button("remove"))
+			{
+				auto iter = std::next(std::begin(_players), _player_window_state.selected);
+
+				if(iter->p_entity != bad_entity)
+					_obj_ui.erase(iter->p_entity);
+
+				iter = _players.erase(iter);
+
+				if (_player_window_state.selected != 0
+					&& _player_window_state.selected == std::size(_players))
+					--_player_window_state.selected;
+			}
+
+			if (_gui.button("move up")
+				&& _player_window_state.selected > std::size_t{})
+			{
+				const auto iter = std::next(std::begin(_players), _player_window_state.selected);
+				std::iter_swap(iter, std::prev(iter));
+				--_player_window_state.selected;
+			}
+			_gui.layout_horizontal();
+			if (_gui.button("move down")
+				&& (_player_window_state.selected + 1) < std::size(_players))
+			{
+				const auto iter = std::next(std::begin(_players), _player_window_state.selected);
+				std::iter_swap(iter, std::next(iter));
+				++_player_window_state.selected;
+			}
+		}
+
+		//list
+		if (_gui.listbox("", _player_window_state.selected, _players, [](const player& p)->string {
+			return to_string(p.id);
+			}))
+		{
+			_player_dialog = player_dialog_t{};
+			//_player_edit_dialog //
+		}
+
+		//new player dialog
+		if (_player_dialog.open)
+		{
+			if (_gui.window_begin("new player", _player_dialog.open))
+			{
+				constexpr auto modal_name = "player creation error";
+
+				if (_gui.button("create"))
+				{
+					[&, this]() {
+						if (std::empty(_player_dialog.name))
+						{
+							_gui.open_modal(modal_name);
+							_player_dialog.error = player_dialog_t::error_type::name_missing;
+							return;
+						}
+
+						const auto id = data::make_uid(_player_dialog.name);
+
+						if (std::any_of(std::begin(_players), std::end(_players), [id](auto&& p) {
+							return id == p.id;
+							}))
+						{
+							_gui.open_modal(modal_name);
+							_player_dialog.error = player_dialog_t::error_type::name_used;
+							return;
+						}
+
+						auto& p = _players.emplace_back();
+						p.id = id;
+						p.name = _player_dialog.display_name;
+
+						if (_player_dialog.create_ent)
+						{
+							auto o = object_instance{};
+							set_curve(o, *_player_slot_curve, id);
+							p.p_entity = _obj_ui.add(std::move(o));
+						}
+
+						_player_dialog = player_dialog_t{};
+						return;
+					}();
+				}
+
+				_gui.input("name", _player_dialog.name);
+				_gui.input("display_name", _player_dialog.display_name);
+				_gui.checkbox("create entity", _player_dialog.create_ent);
+
+				//error dialog
+				if (_gui.modal_begin(modal_name))
+				{
+					_gui.text("Unable to create a new player with these settings");
+
+					switch (_player_dialog.error)
+					{
+					case player_dialog_t::error_type::name_missing:
+						_gui.text("players require a name");
+						break;
+					case player_dialog_t::error_type::name_used:
+						_gui.text("a player already has this name");
+						break;
+					default:
+						_gui.text("unknown error");
+					}
+
+					if (_gui.button("ok"))
+						_gui.close_current_modal();
+
+					_gui.modal_end();
+				}
+			}
+			_gui.window_end();
+
+			if (!_player_dialog.open)
+				_player_dialog = player_dialog_t{};
+		}
 	}
 
 	static string to_string(const mission_editor_t::level_info& l)

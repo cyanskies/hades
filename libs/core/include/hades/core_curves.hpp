@@ -17,6 +17,7 @@ namespace hades
 	//NOTE: the get_* functions throw data::resource_null or data::resource_wrong_type
 	const resources::curve* get_name_curve();
 	const resources::curve* get_position_curve();
+	const resources::curve* get_player_slot_curve();
 	const resources::curve* get_size_curve();
 	const resources::curve* get_collision_group_curve();
 	const resources::curve* get_tags_curve();

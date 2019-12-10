@@ -587,8 +587,8 @@ namespace hades
 
 		if (std::empty(_data->objects))
 			_set_selected(index);
-		else if (index == std::size(_data->objects))
-			_set_selected(index - 1);
+		else if (_obj_list_selected == std::size(_data->objects))
+			_set_selected(_obj_list_selected - 1);
 		return;
 	}
 

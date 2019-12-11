@@ -30,7 +30,7 @@ namespace hades
 	{
 		const auto end = std::size(_data);
 		for (auto i = std::size_t{}; i != end; ++i)
-			_data[i] = v[i];
+			_data[i] = v[integer_cast<virtual_table<T>::size_type>(i)];
 	}
 
 	template<typename Value>

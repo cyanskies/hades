@@ -2,6 +2,7 @@
 
 #include <string_view>
 
+#include "hades/level.hpp"
 #include "hades/parser.hpp"
 #include "hades/writer.hpp"
 
@@ -121,6 +122,11 @@ namespace hades
 
 	mission_save make_save_from_mission(mission l)
 	{
-		return mission_save{};
+		auto m = mission_save{};
+		m.objects = make_save_from_object_data(l.objects);
+		m.source = std::move(l);
+		//the server should convert leveld from source into saves as needed
+		//m.level_saves
+		return m;
 	}
 }

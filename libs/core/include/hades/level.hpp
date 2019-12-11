@@ -76,19 +76,13 @@ namespace hades
 		std::vector<terrain_count_t> terrain_vertex;
 		std::vector<raw_map> terrain_layers;
 	};
-
-	struct level_save
+	
+	struct object_save
 	{
-		//source level
-		level source;
-
-		//entity data
 		curve_data curves;
 		entity_id next_id = bad_entity;
-
 		name_curve_t names{ curve_type::step, name_curve_t::value_type{} };
-		//TODO: input curve
-		
+
 		//list of systems
 		using system_list = std::vector<const resources::system*>;
 		system_list systems;
@@ -101,12 +95,27 @@ namespace hades
 		// ^^ TODO: potential optimisation for the render instance?
 	};
 
+	struct level_save
+	{
+		//source level
+		level source;
+
+		//entity data
+		object_save objects;
+
+		using system_list = object_save::system_list;
+		using system_attachment_list = object_save::system_attachment_list;
+
+		//TODO: input curve
+	};
+
 	void serialise(const level&, data::writer&);
 	string serialise(const level&);
 	level deserialise_level(std::string_view);
 	level deserialise_level(data::parser_node&);
 
 	level_save make_save_from_level(level l);
+	object_save make_save_from_object_data(const object_data&);
 }
 
 #endif //HADES_LEVEL_HPP

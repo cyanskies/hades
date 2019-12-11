@@ -260,37 +260,44 @@ namespace hades
 	level_save make_save_from_level(level l)
 	{
 		level_save sv;
+		sv.objects = make_save_from_object_data(l.objects);
+		sv.source = std::move(l);
+		return sv;
+	}
 
-		for (const auto &o : l.objects.objects)
+	object_save make_save_from_object_data(const object_data& obj)
+	{
+		auto ents = object_save{};
+
+		for (const auto& o : obj.objects)
 		{
 			assert(o.id != bad_entity);
 
 			//record entity name if present
 			if (!o.name_id.empty())
 			{
-				auto names = sv.names.empty() ? std::map<string, entity_id>{} : sv.names.get(zero_time);
+				auto names = ents.names.empty() ? std::map<string, entity_id>{} : ents.names.get(zero_time);
 				names.emplace(o.name_id, o.id);
-				sv.names.set(zero_time, names);
+				ents.names.set(zero_time, names);
 			}
 
 			//add curves from parents
 			if (o.obj_type)
 			{
-				add_object_to_save(sv.curves, o.id, o.obj_type);
+				add_object_to_save(ents.curves, o.id, o.obj_type);
 				//add the object type as a curve
-				add_curve_from_object(sv.curves, o.id, get_object_type_curve(), o.obj_type->id);
+				add_curve_from_object(ents.curves, o.id, get_object_type_curve(), o.obj_type->id);
 			}
 
 			//add curves from object info
-			for (const auto[curve, value] : o.curves)
-				add_curve_from_object(sv.curves, o.id, curve, value);
+			for (const auto [curve, value] : o.curves)
+				add_curve_from_object(ents.curves, o.id, curve, value);
 
 			//add object to systems
-			add_object_to_systems(sv.systems, sv.systems_attached, o.id, o.obj_type);
+			add_object_to_systems(ents.systems, ents.systems_attached, o.id, o.obj_type);
 		}
 
-		sv.next_id = l.objects.next_id;
-		sv.source = std::move(l);
-		return sv;
+		ents.next_id = obj.next_id;
+		return ents;
 	}
 }

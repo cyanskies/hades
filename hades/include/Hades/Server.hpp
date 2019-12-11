@@ -13,6 +13,16 @@
 //	replace get_changes return with a struct containing curves and other data
 //  need to tell the client the target gametime they should be drawing
 
+// __levels and time__
+// game time is the mission time
+// systems updating in all levels need to use the mission time
+// otherwise inter-level comms will be broken
+
+// levels need to be independently pausable.
+// levels will have to store an offset time, accumulated as long as they were inactive for
+// the offset will have to be applied when accessing curves from inside the level
+// this will need to be saved to the level
+
 namespace hades
 {
 	void register_game_server_resources(data::data_manager&);

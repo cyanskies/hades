@@ -55,10 +55,7 @@ namespace hades
 		mission source;
 
 		//entity data
-		curve_data curves;
-		entity_id next_id = bad_entity;
-
-		name_curve_t names{ curve_type::step, name_curve_t::value_type{} };
+		object_save objects;
 
 		//level saves
 		struct level_save_element

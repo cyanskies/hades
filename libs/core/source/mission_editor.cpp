@@ -301,7 +301,7 @@ namespace hades
 			{
 				if (s.selected == s.rename_index)
 					s.add_level_open = false;
-				else if (s.selected < s.rename_index)
+				else if (signed_cast(s.selected) < s.rename_index)
 					--s.rename_index;
 			}
 
@@ -387,7 +387,7 @@ namespace hades
 				}
 				else
 				{
-					assert(index < std::size(l));
+					assert(index < signed_cast(std::size(l)));
 					const auto end = std::size(l);
 					for (auto i = std::size_t{}; i < end; ++i)
 					{

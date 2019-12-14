@@ -7,8 +7,11 @@
 
 namespace hades
 {
-	using time_clock = std::chrono::high_resolution_clock;
-	using time_point = std::chrono::high_resolution_clock::time_point;
+	//high res clock is allowed to be wall time, if it is wall time, we just have to use steady clock instead
+	using time_clock = std::conditional_t<std::chrono::high_resolution_clock::is_steady, std::chrono::high_resolution_clock, std::chrono::steady_clock>;
+	using time_point = time_clock::time_point;
+
+	using wall_clock = std::chrono::system_clock;
 
 	template<typename Rep, typename Period>
 	using basic_duration = std::chrono::duration<Rep, Period>;

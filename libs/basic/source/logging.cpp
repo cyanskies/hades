@@ -12,6 +12,8 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <time.h>
 
+#include "hades/time.hpp"
+
 namespace hades
 {
 	namespace console
@@ -50,8 +52,8 @@ namespace hades
 
 	types::string time()
 	{
-		const auto t = std::chrono::system_clock::now();
-		const auto ct = std::chrono::system_clock::to_time_t(t);
+		const auto t = wall_clock::now();
+		const auto ct = wall_clock::to_time_t(t);
 		//Use the updated C version of localtime
 		//for better threading security
 		tm time;

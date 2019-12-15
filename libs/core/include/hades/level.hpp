@@ -100,6 +100,9 @@ namespace hades
 		//source level
 		level source;
 
+		//total amount of unticked time when compared to the mission
+		time_duration sleep_time{};
+		time_point level_time; // the last tick time before being saved
 		//entity data
 		object_save objects;
 

@@ -9,8 +9,8 @@
 namespace hades 
 {
 	common_implementation_base::common_implementation_base(const level_save& sv) 
-		: _entity_names{ sv.names }, 
-		_next{ static_cast<entity_id::value_type>(sv.next_id) }, _curves{ sv.curves },
+		: _entity_names{ sv.objects.names }, 
+		_next{ static_cast<entity_id::value_type>(sv.objects.next_id) }, _curves{ sv.objects.curves },
 		_size{ static_cast<world_unit_t>(sv.source.map_x), static_cast<world_unit_t>(sv.source.map_y) }
 	{
 		if (!std::empty(sv.source.tile_map_layer.tiles))
@@ -140,14 +140,14 @@ namespace hades
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves
-		assert(sv.systems.size() == sv.systems_attached.size());
+		assert(sv.objects.systems.size() == sv.objects.systems_attached.size());
 
 		//convert from curve<vector<entity_id>>
 		// to curve<vector<pair<entity_id, timePoint>>>
-		for (std::size_t i = 0; i < sv.systems.size(); ++i)
+		for (std::size_t i = 0; i < sv.objects.systems.size(); ++i)
 		{
 			auto attached = name_list{};
-			for (const auto& a : sv.systems_attached[i])
+			for (const auto& a : sv.objects.systems_attached[i])
 			{
 				auto ents = std::vector<attached_ent>{};
 				ents.reserve(std::size(a.second));
@@ -157,7 +157,7 @@ namespace hades
 				attached.set(a.first, std::move(ents));
 			}
 
-			_systems.set_attached(sv.systems[i]->id, std::move(attached));
+			_systems.set_attached(sv.objects.systems[i]->id, std::move(attached));
 		}
 	}
 

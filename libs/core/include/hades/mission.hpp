@@ -4,6 +4,7 @@
 #include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/objects.hpp"
+#include "hades/time.hpp"
 
 namespace hades
 {
@@ -64,6 +65,8 @@ namespace hades
 			level_save save;
 		};
 		std::vector<level_save_element> level_saves;
+
+		time_point time;
 	};
 
 	string serialise(const mission&);

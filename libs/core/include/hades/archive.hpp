@@ -131,7 +131,7 @@ namespace hades::zip
 	{
 	public:
 		using char_t = std::byte;
-		using stream_t = std::basic_ifstream<char_t>;
+		using stream_t = std::ifstream;
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
 
@@ -179,7 +179,7 @@ namespace hades::zip
 	{
 	public:
 		using char_t = std::byte;
-		using stream_t = std::basic_ifstream<char_t>;
+		using stream_t = std::ifstream;
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
 
@@ -230,7 +230,7 @@ namespace hades::zip
 		std::size_t _buffer_end = std::size_t{};
 		std::streamsize _last_read;
 		::z_stream _zip_stream;
-		std::basic_ifstream<char_t> _stream;
+		std::ifstream _stream;
 	};
 
 

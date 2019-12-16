@@ -20,7 +20,7 @@ namespace hades::files
 	{
 	public:
 		using char_t = std::byte;
-		using stream_t = std::basic_ifstream<char_t>;
+		using stream_t = std::ifstream;
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
 

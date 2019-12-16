@@ -47,6 +47,13 @@ namespace hades
 				const auto message = to_string(e.what()) + " while parsing: " + to_string(game) + "/game.yaml";
 				LOGERROR(message);
 			}
+			catch (YAML::Exception & e)
+			{
+				//TODO: FIXME:
+				LOGERROR("YAML::Exception should never reach here, capture in parser");
+				const auto message = to_string(e.what()) + " while parsing: " + to_string(game) + "/game.yaml";
+				LOGERROR(message);
+			}
 		}
 
 		inline bool ContainsTab(std::string_view yaml)

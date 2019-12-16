@@ -26,9 +26,10 @@ namespace hades::files
 	{
 		if (!std::filesystem::exists(p))
 			throw file_not_found{ "file not found: " + p.string() };
-		auto f = stream_t{ p };
+		auto f = stream_t{ p, std::ios::in | std::ios::binary };
 		auto h = zip::zip_header{};
-		f.read(std::data(h), std::size(h));
+		using char_type = ifstream::stream_t::char_type;
+		f.read(reinterpret_cast<char_type*>(std::data(h)), std::size(h));
 		f.seekg({}, std::ios_base::beg);
 		if (zip::probably_compressed(h))
 			_stream.emplace<zip::izfstream>(std::move(f));
@@ -54,10 +55,17 @@ namespace hades::files
 			}, _stream);
 	}
 
+	struct read_visitor
+	{};
+
 	ifstream& ifstream::read(char_t* ptr, std::size_t size)
 	{
 		std::visit([ptr, size](auto&& stream) {
-			stream.read(ptr, size);
+			using T = std::decay_t<decltype(stream)>;
+			if constexpr(std::is_same_v<T, std::ifstream>)
+				stream.read(reinterpret_cast<std::ifstream::char_type*>(ptr), size);
+			else
+				stream.read(ptr, size);
 			return;
 			}, _stream);
 		return *this;
@@ -272,11 +280,7 @@ namespace hades::files
 		const auto size = stream.size();
 
 		buffer buff(integer_cast<buffer::size_type>(size));
-		stream.read(&buff[0], size);
-
-		if (zip::probably_compressed(buff))
-			buff = zip::inflate(buff);
-
+		stream.read(std::data(buff), size);
 		return buff;
 	}
 

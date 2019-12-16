@@ -211,7 +211,7 @@ namespace hades::detail
 			*_level = std::move(new_level);
 			_save_path = _next_save_path;
 		}
-		catch (const files::file_exception &e)
+		catch (const files::file_error &e)
 		{
 			LOGERROR(e.what());
 		}

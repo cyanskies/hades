@@ -408,7 +408,8 @@ namespace hades::zip
 	static void start_z_stream(izfstream::stream_t& s, z_stream& z)
 	{
 		zip_header h;
-		s.read(std::data(h), std::size(h));
+		using char_t = izfstream::stream_t::char_type;
+		s.read(reinterpret_cast<char_t*>(std::data(h)), std::size(h));
 		if (s.gcount() < std::size(h)
 			|| !probably_compressed(h)
 			|| !zlib_inflate_begin(z))
@@ -481,7 +482,8 @@ namespace hades::zip
 		if (std::empty(_buffer))
 		{
 			_buffer.resize(buffer_size);
-			_stream.read(std::data(_buffer), buffer_size);
+			using char_type = izfstream::stream_t::char_type;
+			_stream.read(reinterpret_cast<char_type*>(std::data(_buffer)), buffer_size);
 			_buffer_pos = std::size_t{};
 			_buffer_end = static_cast<std::size_t>(_stream.gcount());
 		}

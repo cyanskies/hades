@@ -11,17 +11,17 @@
 
 namespace hades
 {
-	types::string standard_file_directory()
+	std::filesystem::path standard_file_directory()
 	{
 		return "./";
 	}
 
-	types::string standard_config_directory()
+	std::filesystem::path standard_config_directory()
 	{
 		return "./config/";
 	}
 
-	types::string standard_save_directory()
+	std::filesystem::path standard_save_directory()
 	{
 		return "./save/";
 	}

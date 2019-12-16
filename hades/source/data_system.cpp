@@ -38,11 +38,11 @@ namespace hades
 				add_mod(game, true, "game.yaml");
 				game_loaded = true;
 			}
-			catch (const files::file_exception &f)
+			catch (const files::file_error &f)
 			{
 				LOGERROR(f.what());
 			}
-			catch (YAML::Exception &e)
+			catch (const parser_exception &e)
 			{
 				const auto message = to_string(e.what()) + " while parsing: " + to_string(game) + "/game.yaml";
 				LOGERROR(message);
@@ -214,7 +214,7 @@ namespace hades
 			{
 				include_yaml = files::as_string(mod_info->source, file);
 			}
-			catch (const files::file_exception &f)
+			catch (const files::file_error &f)
 			{
 				LOGERROR(f.what());
 				return;

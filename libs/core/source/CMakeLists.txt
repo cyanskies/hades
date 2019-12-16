@@ -34,6 +34,7 @@ set(HADES_CORE_SRC
 	render_instance.cpp
 	render_interface.cpp
 	sf_input.cpp
+	sf_streams.cpp
 	sprite_batch.cpp
 	standard_paths.cpp
 	state.cpp
@@ -78,6 +79,7 @@ set(HADES_CORE_SRC
 	../include/hades/render_instance.hpp
 	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sf_streams.hpp
 	../include/hades/sf_time.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp
@@ -131,6 +133,7 @@ source_group("Headers" FILES
 	../include/hades/render_instance.hpp
 	../include/hades/render_interface.hpp
 	../include/hades/sf_input.hpp
+	../include/hades/sf_streams.hpp
 	../include/hades/sf_time.hpp
 	../include/hades/sprite_batch.hpp
 	../include/hades/standard_paths.hpp

@@ -25,7 +25,7 @@ namespace hades
 			font.source_buffer = files::as_raw(mod->source, font.source);
 			font.value.loadFromMemory(font.source_buffer.data(), font.source_buffer.size());
 		}
-		catch (const files::file_exception &e)
+		catch (const files::file_error &e)
 		{
 			LOGERROR("Failed to load font: " + mod->source + "/" + font.source + ". " + e.what());
 		}

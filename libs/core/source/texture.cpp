@@ -2,9 +2,9 @@
 
 #include <array>
 
-#include "hades/files.hpp"
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
+#include "hades/sf_streams.hpp"
 
 namespace hades
 {
@@ -126,7 +126,7 @@ namespace hades
 
 			try
 			{
-				auto fstream = files::make_stream(mod->source, tex.source);
+				auto fstream = make_sf_stream( mod->source, tex.source );
 
 				//TODO: if !is_open generate err texture
 
@@ -137,7 +137,7 @@ namespace hades
 				if (tex.mips && !tex.value.generateMipmap())
 					LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
 			}
-			catch (const files::file_exception &e)
+			catch (const files::file_error &e)
 			{
 				LOGERROR("Failed to load texture: "s + mod->source + "/"s + tex.source + ". "s + e.what());
 			}

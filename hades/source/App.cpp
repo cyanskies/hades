@@ -523,7 +523,7 @@ namespace hades
 						zip::compress_directory(to_string(path));
 						return true;
 					}
-					catch (zip::archive_exception &e)
+					catch (files::file_error &e)
 					{
 						LOGERROR(e.what());
 					}

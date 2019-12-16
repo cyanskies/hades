@@ -63,7 +63,7 @@ int hades_main(int argc, char* argv[])
 			return true;
 		});
 	}
-	catch (hades::zip::archive_exception &e)
+	catch (hades::files::file_error &e)
 	{
 		LOGERROR(e.what());
 		return EXIT_FAILURE;
@@ -77,17 +77,8 @@ int hades_main(int argc, char* argv[])
 		hades::App app;
 
 		app.init();
-		try
-		{
-			app.postInit(commands);
-
-			returnCode = app.run();
-		}
-		catch(hades::zip::archive_exception &e)
-		{
-			//failed to read a resource from an archive //probably loading a mod.yaml
-			LOGERROR(e.what());
-		}
+		app.postInit(commands);
+		returnCode = app.run();
 
 		app.cleanUp();
 	}

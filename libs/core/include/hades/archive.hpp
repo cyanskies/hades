@@ -3,106 +3,267 @@
 
 #include <cstddef>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "zlib.h"
+
 #include "SFML/System/InputStream.hpp"
 
+#include "hades/exceptions.hpp"
 #include "hades/types.hpp"
 
 namespace hades
 {
 	//buffer of bytes
 	using buffer = std::vector<std::byte>;
+}
 
-	namespace zip
+namespace hades::files
+{
+	class file_error : public runtime_error
 	{
-		using unarchive = void*;
+	public:
+		using runtime_error::runtime_error;
+	};
 
-		class archive_exception : public std::runtime_error
+	class file_not_found : public file_error
+	{
+	public:
+		using file_error::file_error;
+	};
+
+	class file_not_open : public file_error
+	{
+	public:
+		using file_error::file_error;
+	};
+
+	/*UNREADABLE_FILE,
+		PATH_NOT_FOUND,
+		ARCHIVE_INVALID,
+		FILE_NOT_OPEN,
+		FILENAME_INVALID,
+		PERMISSION_DENIED*/
+}
+
+namespace hades::zip
+{
+	using unarchive = void*;
+
+	class archive_error : public files::file_error
+	{
+	public:
+		using file_error::file_error;
+	};
+
+	class file_not_found : public archive_error
+	{
+	public:
+		using archive_error::archive_error;
+	};
+
+	class file_not_open : public archive_error
+	{
+	public:
+		using archive_error::archive_error;
+	};
+
+	class archive_exception : public std::runtime_error
+	{
+	public:
+		enum class error_code
 		{
-		public:
-			enum class error_code
-			{
-				FILE_OPEN,
-				FILE_READ,
-				FILE_WRITE,
-				FILE_CLOSE,
-				FILE_ALREADY_OPEN,
-				FILE_NOT_OPEN,
-				FILE_NOT_FOUND,
-				OTHER
-			};
-
-			archive_exception(const char* what, error_code code = error_code::OTHER);
-
-			error_code code() const
-			{
-				return _code;
-			}
-
-		private:
-			error_code _code;
+			FILE_OPEN,
+			FILE_READ,
+			FILE_WRITE,
+			FILE_CLOSE,
+			FILE_ALREADY_OPEN,
+			FILE_NOT_OPEN,
+			FILE_NOT_FOUND,
+			OTHER
 		};
 
-		class archive_stream : public sf::InputStream
+		archive_exception(const char* what, error_code code = error_code::OTHER);
+
+		error_code code() const
 		{
-		public:
-			archive_stream(std::string_view archive);
-			archive_stream(archive_stream&&);
-			archive_stream(const archive_stream&) = delete;
-			archive_stream &operator=(archive_stream&&);
-			archive_stream &operator=(const archive_stream&) = delete;
+			return _code;
+		}
 
-			virtual ~archive_stream();
+	private:
+		error_code _code;
+	};
 
-			bool open(std::string_view filename);
-			bool is_open() const;
-			sf::Int64 read(void* data, sf::Int64 size);
-			sf::Int64 seek(sf::Int64 position);
-			sf::Int64 tell();
-			sf::Int64 getSize();
-		private:
-			void _close();
+	//in zip file stream
+	class archive_stream : public sf::InputStream
+	{
+	public:
+		archive_stream(std::string_view archive);
+		archive_stream(archive_stream&&);
+		archive_stream(const archive_stream&) = delete;
+		archive_stream& operator=(archive_stream&&);
+		archive_stream& operator=(const archive_stream&) = delete;
 
-			types::string _fileName;
-			bool _fileOpen;
-			unarchive _archive;
-		};
+		virtual ~archive_stream();
 
-		//returns raw data
-		buffer read_file_from_archive(std::string_view archive, std::string_view path);
+		bool open(std::string_view filename);
+		bool is_open() const;
+		sf::Int64 read(void* data, sf::Int64 size);
+		sf::Int64 seek(sf::Int64 position);
+		sf::Int64 tell();
+		sf::Int64 getSize();
+	private:
+		void _close();
 
-		//returns a file read as a string
-		types::string read_text_from_archive(std::string_view archive, std::string_view path);
+		types::string _fileName;
+		bool _fileOpen;
+		unarchive _archive;
+	};
 
-		//returns streamable data
-		archive_stream stream_file_from_archive(std::string_view archive, std::string_view path);
+	//in archive file stream
+	class iafstream
+	{
+	public:
+		using char_t = std::byte;
+		using stream_t = std::basic_ifstream<char_t>;
+		using pos_type = stream_t::traits_type::pos_type;
+		using off_type = stream_t::traits_type::off_type;
 
-		//ditermines if a file within an archive exists
-		bool file_exists(std::string_view archive, std::string_view path);
+		iafstream() noexcept = default;
+		iafstream(std::filesystem::path);
+		iafstream(std::filesystem::path archive, std::filesystem::path file);
 
-		//returns all files in the archive within the dir_path directory, can continue recursively
-		std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir, bool recursive = false);
+		iafstream(const iafstream&) = delete;
+		iafstream& operator=(const iafstream&) = delete;
 
-		//compress_directory
-		//path must be a directory
-		//will create a zip in the parent directory with the same name
-		void compress_directory(std::string_view path);
-		//uncompress archive
-		void uncompress_archive(std::string_view path);
+		iafstream(iafstream&&) noexcept = default;
+		iafstream& operator=(iafstream&&) noexcept = default;
+
+		~iafstream() noexcept;
+
+		void open(std::filesystem::path);
+		void close() noexcept;
+		bool is_open() const noexcept;
+
+		//throws archive_error and zip::file_not_found
+		void open_file(std::filesystem::path);
+		void close_file() noexcept;
+		bool is_file_open() const noexcept;
+
+		iafstream& read(char_t * buffer, std::size_t count);
+
+		//sizes and positions are based on the uncompressed file
+		//so usage of this class is the same as the equivalent ifstream on a normal file
+		std::streamsize gcount() const noexcept;
+
+		pos_type tellg();
+
+		bool eof() const noexcept;
+
+		void seekg(pos_type);
+		void seekg(off_type, std::ios_base::seekdir);
+	private:
+		unarchive _archive = nullptr;
+		std::streamsize _gcount{};
+		bool _file = false;
+	};
+
+	//in zlib file stream
+	class izfstream
+	{
+	public:
+		using char_t = std::byte;
+		using stream_t = std::basic_ifstream<char_t>;
+		using pos_type = stream_t::traits_type::pos_type;
+		using off_type = stream_t::traits_type::off_type;
+
+		izfstream() noexcept = default;
+		izfstream(std::filesystem::path);
+		izfstream(stream_t s); //stream will seek back to the begining
+
+		izfstream(const izfstream&) = delete;
+		izfstream& operator=(const izfstream&) = delete;
+
+		//std::ifstream is not noexcept movable
+		izfstream(izfstream&&) = default;
+		izfstream& operator=(izfstream&&) = default;
+
+		~izfstream() noexcept;
+
+		void open(std::filesystem::path);
+		void close() noexcept;
+
+		bool is_open() const noexcept
+		{
+			return _stream.is_open();
+		}
+
+		izfstream& read(char_t* buffer, std::size_t count);
+
+		//sizes and positions are based on the uncompressed file
+		//so usage of this class is the same as the equivalent ifstream on a normal file
+		std::streamsize gcount() const
+		{
+			return _last_read;
+		}
+
+		pos_type tellg();
+
+		bool eof() const
+		{
+			return _eof;
+		}
+
+		void seekg(pos_type);
+		void seekg(off_type, std::ios_base::seekdir);
+
+	private:
+		buffer _buffer;
+		bool _eof = false;
+		std::size_t _buffer_pos = std::size_t{};
+		std::size_t _buffer_end = std::size_t{};
+		std::streamsize _last_read;
+		::z_stream _zip_stream;
+		std::basic_ifstream<char_t> _stream;
+	};
 
 
-		bool probably_compressed(std::array<std::byte, 2> header);
-		bool probably_compressed(const buffer& stream);
+	//returns raw data
+	buffer read_file_from_archive(std::string_view archive, std::string_view path);
 
-		//both of these return archive exception on failure.
-		buffer deflate(buffer stream);
-		buffer inflate(buffer stream);
-	}
+	//returns a file read as a string
+	types::string read_text_from_archive(std::string_view archive, std::string_view path);
+
+	//returns streamable data
+	archive_stream stream_file_from_archive(std::string_view archive, std::string_view path);
+
+	//ditermines if a file within an archive exists
+	bool file_exists(std::filesystem::path archive, std::filesystem::path path);
+
+	//returns all files in the archive within the dir_path directory, can continue recursively
+	std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir, bool recursive = false);
+
+	//compress_directory
+	//path must be a directory
+	//will create a zip in the parent directory with the same name
+	void compress_directory(std::string_view path);
+	//uncompress archive
+	void uncompress_archive(std::string_view path);
+
+	//test for zip compression header
+	using zip_header = std::array<std::byte, 2u>;
+	bool probably_compressed(zip_header);
+	bool probably_compressed(const buffer& data);
+
+	//both of these return archive exception on failure.
+	buffer deflate(buffer uncompressed);
+	buffer inflate(buffer compressed);
 }
 
 #endif // hades_data_hpp

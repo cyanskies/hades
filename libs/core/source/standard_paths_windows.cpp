@@ -32,7 +32,7 @@ hades::types::string utf16_to_utf8(std::wstring input)
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
 //https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457(v=vs.85).aspx
-hades::types::string windows_directory(REFKNOWNFOLDERID target)
+std::filesystem::path windows_directory(REFKNOWNFOLDERID target)
 {
 	PWSTR path = NULL;
 	auto result = SHGetKnownFolderPath(target, 0, NULL, &path);
@@ -53,45 +53,42 @@ namespace hades
 {
 	using namespace std::string_literals;
 
-	types::string game()
+	static types::string game()
 	{
 		const auto name = hades::console::get_string("game", "game");
-		return *name;
+		return name->load() + "/";
 	}
 
 	//returns C:\\users\\<name>\\documents/gamename/
-	types::string user_custom_file_directory()
+	std::filesystem::path user_custom_file_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		if (*portable)
-			return "./"s;
+			return standard_file_directory();
 		else
-			return windows_directory(FOLDERID_Documents) + "/"s + to_string(game()) + "/"s;
+			return windows_directory(FOLDERID_Documents) / game();
 	}
 
-	types::string user_config_directory()
+	std::filesystem::path user_config_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		//if portable is defined, then load read only config from application root directory
 		if (*portable)
-			return "./config/"s;
+			return standard_config_directory();
 		else
-		{
-			const auto postfix = "/"s + to_string(game()) + "/config/"s;
-			return windows_directory(FOLDERID_Documents) + postfix;
-		}
+			return windows_directory(FOLDERID_Documents) / game() / "config/";
 	}
 
-	types::string user_save_directory()
+	std::filesystem::path user_save_directory()
 	{
 		static const auto portable = hades::console::get_bool("file_portable", false);
 
 		using namespace std::string_literals;
 		if (*portable)
-			return "./save/"s;
+			return standard_save_directory();
 		else
-			return windows_directory(FOLDERID_SavedGames) + "/"s + to_string(game()) + "/"s;
+			return windows_directory(FOLDERID_SavedGames) / game();
 	}
 }

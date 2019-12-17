@@ -78,8 +78,8 @@ namespace hades::zip
 		using off_type = stream_t::traits_type::off_type;
 
 		iafstream() noexcept = default;
-		explicit iafstream(std::filesystem::path);
-		iafstream(std::filesystem::path archive, std::filesystem::path file);
+		explicit iafstream(const std::filesystem::path&);
+		iafstream(const std::filesystem::path& archive, const std::filesystem::path& file);
 
 		iafstream(const iafstream&) = delete;
 		iafstream& operator=(const iafstream&) = delete;
@@ -89,12 +89,12 @@ namespace hades::zip
 
 		~iafstream() noexcept;
 
-		void open(std::filesystem::path);
+		void open(const std::filesystem::path&);
 		void close() noexcept;
 		bool is_open() const noexcept;
 
 		//throws archive_error and zip::file_not_found
-		void open_file(std::filesystem::path);
+		void open_file(const std::filesystem::path&);
 		void close_file() noexcept;
 		bool is_file_open() const noexcept;
 
@@ -126,7 +126,7 @@ namespace hades::zip
 		using off_type = stream_t::traits_type::off_type;
 
 		izfstream() noexcept = default;
-		explicit izfstream(std::filesystem::path);
+		explicit izfstream(const std::filesystem::path&);
 		explicit izfstream(stream_t s); //stream will seek back to the begining
 
 		izfstream(const izfstream&) = delete;
@@ -138,7 +138,7 @@ namespace hades::zip
 
 		~izfstream() noexcept;
 
-		void open(std::filesystem::path);
+		void open(const std::filesystem::path&);
 		void close() noexcept;
 
 		bool is_open() const noexcept
@@ -176,7 +176,7 @@ namespace hades::zip
 	};
 
 	//ditermines if a file within an archive exists
-	bool file_exists(std::filesystem::path archive, std::filesystem::path path);
+	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path);
 
 	//returns all files in the archive within the dir_path directory, can continue recursively
 	std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir, bool recursive = false);

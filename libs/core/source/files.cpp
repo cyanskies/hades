@@ -16,13 +16,13 @@ namespace fs = std::filesystem;
 
 namespace hades::files
 {
-	ifstream::ifstream(std::filesystem::path p)
+	ifstream::ifstream(const std::filesystem::path& p)
 	{
 		open(p);
 		return;
 	}
 
-	void ifstream::open(std::filesystem::path p)
+	void ifstream::open(const std::filesystem::path& p)
 	{
 		if (!std::filesystem::exists(p))
 			throw file_not_found{ "file not found: " + p.string() };
@@ -113,13 +113,13 @@ namespace hades::files
 
 namespace hades
 {
-	irfstream::irfstream(std::filesystem::path mod, std::filesystem::path file)
+	irfstream::irfstream(const std::filesystem::path& mod, const std::filesystem::path& file)
 	{
 		open(mod, file);
 		return;
 	}
 
-	void irfstream::open(std::filesystem::path m, std::filesystem::path f)
+	void irfstream::open(const std::filesystem::path& m, const std::filesystem::path& f)
 	{
 		//check debug path
 		#ifndef NDEBUG
@@ -226,7 +226,8 @@ namespace hades
 		return integer_cast<std::size_t>(static_cast<std::streamoff>(size));
 	}
 
-	bool irfstream::_try_open_from_dir(std::filesystem::path dir, std::filesystem::path mod, std::filesystem::path file)
+	bool irfstream::_try_open_from_dir(const std::filesystem::path& dir,
+		const std::filesystem::path& mod, const std::filesystem::path& file)
 	{
 		const auto f_path = dir / mod / file;
 		if (fs::exists(f_path))
@@ -240,7 +241,7 @@ namespace hades
 		return false;
 	}
 	
-	bool irfstream::_try_open_file(std::filesystem::path file)
+	bool irfstream::_try_open_file(const std::filesystem::path& file)
 	{
 		auto f = files::ifstream{ file };
 		const auto open = f.is_open();
@@ -249,7 +250,8 @@ namespace hades
 
 		return open;
 	}
-	bool irfstream::_try_open_archive(std::filesystem::path archive, std::filesystem::path file)
+	bool irfstream::_try_open_archive(const std::filesystem::path& archive,
+		const std::filesystem::path& file)
 	{
 		auto a = zip::iafstream{ archive, file };
 		const auto open = a.is_file_open();
@@ -284,31 +286,31 @@ namespace hades::files
 		return buff;
 	}
 
-	static buffer read_raw(std::string_view path)
+	static buffer read_raw(const std::filesystem::path& path)
 	{
 		using namespace std::string_literals;
-		//TODO: check if file is present.
-
+		
 		if (!fs::exists(path))
-			throw file_not_found{ "File not found: "s + to_string(path) };
+			throw file_not_found{ "File not found: "s + path.generic_string() };
 
 		std::ifstream file{ path, std::ios_base::binary | std::ios_base::in };
 
 		if (!file.is_open())
-			throw file_error{ "Failed to open "s + to_string(path) + " for input"s };
+			throw file_error{ "Failed to open "s + path.generic_string() + " for input"s };
 
 		//find out the file size
-		file.ignore(std::numeric_limits<std::streamsize>::max());
+		file.seekg({}, std::ios::end);
 		assert(file.eof());
-		const auto size = integer_cast<std::size_t>(file.gcount());
+		const auto size = integer_cast<std::size_t>(file.tellg());
 		//seek to begining
 		file.clear();
-		file.seekg(0, std::ios::beg);
+		file.seekg({}, std::ios::beg);
 
 		//reserve a buffer to store the file
 		buffer buf{};
 		buf.reserve(size);
 
+		//TODO: read more than one byte at a time
 		while (!file.eof())
 			buf.push_back(static_cast<std::byte>(file.get()));
 
@@ -318,70 +320,73 @@ namespace hades::files
 		return buf;
 	}
 
-	static types::string read_file_string(std::string_view path)
+	static string read_file_string(const std::filesystem::path& path)
 	{
 		const auto buffer = read_raw(path);
 
-		types::string out;
+		string out;
+		out.reserve(std::size(buffer));
 		std::transform(std::begin(buffer), std::end(buffer), std::back_inserter(out), [](const std::byte b) {
-			return static_cast<types::string::value_type>(b);
-			});
+			return static_cast<string::value_type>(b);
+		});
 
 		return out;
 	}
 
-	static types::string try_read(std::filesystem::path first_path, std::filesystem::path second_path, std::filesystem::path file_name)
+	static string try_read(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
+		const std::filesystem::path& file_name)
 	{
-		const auto first = read_file_string(std::filesystem::path{ first_path / file_name }.string());
+		assert(file_name.is_relative());
+		const auto first = read_file_string(first_path / file_name);
 
 		if (!first.empty())
 			return first;
 
-		const auto second = read_file_string(std::filesystem::path{ second_path / file_name }.string());
+		const auto second = read_file_string(second_path / file_name);
 
 		if (!second.empty())
 			return second;
 
-		const auto message = "Unable to find file: " + file_name.string();
+		const auto message = "Unable to find file: " + file_name.generic_string();
 		throw file_not_found{ message };
 	}
 
-	static ifstream try_stream(std::filesystem::path first,
-		std::filesystem::path second, std::filesystem::path path)
+	static ifstream try_stream(const std::filesystem::path& first,
+		const std::filesystem::path& second, const std::filesystem::path& path)
 	{
 		assert(path.is_relative());
-		const auto a = first / path;
+		auto a = first / path;
 		if (std::filesystem::exists(a))
-			return ifstream{ a };
+			return ifstream{ std::move(a) };
 
-		const auto b = second / path;
+		auto b = second / path;
 		if (std::filesystem::exists(b))
-			return ifstream{ b };
+			return ifstream{ std::move(b) };
 
 		return {};
 	}
 
-	ifstream stream_file(std::filesystem::path p)
+	ifstream stream_file(const std::filesystem::path& p)
 	{
 		return try_stream(hades::user_custom_file_directory(), std::filesystem::current_path(), p);
 	}
 
-	string read_file(std::string_view file_path)
+	string read_file(const std::filesystem::path& file_path)
 	{
-		return try_read(hades::user_custom_file_directory(), "./", file_path);
+		return try_read(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}
 
-	types::string read_save(std::string_view file_name)
+	string read_save(const std::filesystem::path& file_name)
 	{
 		return try_read(hades::user_save_directory(), standard_save_directory(), file_name);
 	}
 
-	types::string read_config(std::string_view file_name)
+	string read_config(const std::filesystem::path& file_name)
 	{
 		return try_read(hades::user_config_directory(), standard_config_directory(), file_name);
 	}
 
-	bool make_directory(fs::path dir)
+	bool make_directory(const fs::path& dir)
 	{
 		if (fs::exists(dir) && fs::is_directory(dir))
 			return true;
@@ -424,46 +429,6 @@ namespace hades::files
 		else
 			//todo throw instead
 			LOGERROR("Failed to open file for writing: " + target);
-	}
-
-	//acceptable zip extensions
-	//zip == standard zip
-	//? hdf == hades data file
-	//? data == data file
-	constexpr auto extensions = std::array{ "zip" };
-
-	static std::tuple<bool, string> path_exists(const string& mod, const string& file) noexcept
-	{
-		fs::path parent = fs::path{ mod }.parent_path();
-
-		if (!fs::exists(parent))
-			return {};
-		//iterate through directory and search for modpath.ext
-		//and modpath/.
-		fs::directory_iterator directory{ parent };
-
-		bool pathDirectory = false;
-		string pathArchive;
-
-		//get archive name
-		const auto namepos = mod.find_last_of('/');
-		const auto archive_name = mod.substr(namepos + 1, mod.length() - namepos);
-
-		for (auto d : directory)
-		{
-			if (d.path().stem() == archive_name)
-			{
-				if (fs::is_directory(d))
-					pathDirectory = true;
-				else if (std::any_of(std::begin(extensions), std::end(extensions),
-					[ext = d.path().extension()](auto&& other){ return ext == other; }))
-				{
-					pathArchive = d.path().string();
-				}
-			}
-		}
-
-		return { pathDirectory, pathArchive };
 	}
 
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path)

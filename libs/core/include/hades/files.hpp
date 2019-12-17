@@ -25,7 +25,7 @@ namespace hades::files
 		using off_type = stream_t::traits_type::off_type;
 
 		ifstream() = default;
-		explicit ifstream(std::filesystem::path);
+		explicit ifstream(const std::filesystem::path&);
 
 		ifstream(const ifstream&) = delete;
 		ifstream& operator=(const ifstream&) = delete;
@@ -34,7 +34,7 @@ namespace hades::files
 		ifstream(ifstream&&) = default;
 		ifstream& operator=(ifstream&&) = default;
 
-		void open(std::filesystem::path);
+		void open(const std::filesystem::path&);
 		void close() noexcept;
 		bool is_open() const noexcept;
 
@@ -52,18 +52,18 @@ namespace hades::files
 	};
 
 	//open streams to files, saves and configs
-	ifstream stream_file(std::filesystem::path);
-	ifstream stream_save(std::filesystem::path);
-	ifstream stream_config(std::filesystem::path);
+	ifstream stream_file(const std::filesystem::path&);
+	ifstream stream_save(const std::filesystem::path&);
+	ifstream stream_config(const std::filesystem::path&);
 
 	//reads file at path as a string
 	//will attempt to load from user_custom_file_directory first
-	string read_file(std::string_view file_path);
+	string read_file(const std::filesystem::path& file_path);
 	// as above, but checks the usersSaveDirectoryinstead
 	//reads save files and config files
-	types::string read_save(std::string_view file_name);
+	string read_save(const std::filesystem::path& file_name);
 	//as above, userConfigDir
-	types::string read_config(std::string_view file_name);
+	string read_config(const std::filesystem::path& file_name);
 }
 
 namespace hades
@@ -83,7 +83,7 @@ namespace hades
 		using off_type = stream_t::off_type;
 
 		irfstream() = default;
-		irfstream(std::filesystem::path mod, std::filesystem::path file);
+		irfstream(const std::filesystem::path& mod, const std::filesystem::path& file);
 
 		irfstream(const irfstream&) = delete;
 		irfstream& operator=(const irfstream&) = delete;
@@ -91,7 +91,7 @@ namespace hades
 		irfstream(irfstream&&) = default;
 		irfstream& operator=(irfstream&&) = default;
 
-		void open(std::filesystem::path mod, std::filesystem::path file);
+		void open(const std::filesystem::path& mod, const std::filesystem::path& file);
 		void close() noexcept;
 		bool is_open() const noexcept;
 
@@ -107,9 +107,9 @@ namespace hades
 		std::size_t size();
 
 	private:
-		bool _try_open_from_dir(std::filesystem::path dir, std::filesystem::path mod, std::filesystem::path file);
-		bool _try_open_file(std::filesystem::path file);
-		bool _try_open_archive(std::filesystem::path archive, std::filesystem::path file);
+		bool _try_open_from_dir(const std::filesystem::path& dir, const std::filesystem::path& mod, const std::filesystem::path& file);
+		bool _try_open_file(const std::filesystem::path& file);
+		bool _try_open_archive(const std::filesystem::path& archive, const std::filesystem::path& file);
 
 		std::variant<files::ifstream, zip::iafstream> _stream{};
 	};
@@ -119,7 +119,7 @@ namespace hades::files
 {
 	//reads game files either from directories or mod archives
 	//throws file_exception
-	types::string as_string(std::string_view modPath, std::string_view fileName);
+	string as_string(std::string_view modPath, std::string_view fileName);
 	//throws file_exception
 	buffer as_raw(std::string_view modPath, std::string_view fileName);
 

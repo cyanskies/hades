@@ -29,10 +29,10 @@ constexpr auto archive_ext = ".zip";
 namespace hades::zip
 {
 	//open a close unzip archives
-	unarchive open_archive(std::filesystem::path);
+	unarchive open_archive(const std::filesystem::path&);
 	void close_archive(unarchive f);
 
-	static bool file_exists(unarchive, fs::path);
+	static bool file_exists(unarchive, const fs::path&);
 
 	template<typename Integer>
 	static unsigned int CheckSizeLimits(Integer size)
@@ -55,13 +55,13 @@ namespace hades::zip
 		return static_cast<unsigned int>(size);
 	}
 
-	iafstream::iafstream(std::filesystem::path p)
+	iafstream::iafstream(const std::filesystem::path& p)
 	{
 		open(p);
 		return;
 	}
 
-	iafstream::iafstream(std::filesystem::path archive, std::filesystem::path file)
+	iafstream::iafstream(const std::filesystem::path& archive, const std::filesystem::path& file)
 		: iafstream{archive}
 	{
 		if(is_open())
@@ -75,7 +75,7 @@ namespace hades::zip
 		return;
 	}
 
-	void iafstream::open(std::filesystem::path p)
+	void iafstream::open(const std::filesystem::path& p)
 	{
 		_archive = open_archive(p);
 	}
@@ -102,7 +102,7 @@ namespace hades::zip
 		return;
 	}
 
-	void iafstream::open_file(std::filesystem::path p)
+	void iafstream::open_file(const std::filesystem::path& p)
 	{
 		assert(_archive);
 		if (_file)
@@ -282,7 +282,7 @@ namespace hades::zip
 
 	constexpr auto if_mode = std::ios_base::in | std::ios_base::binary;
 
-	izfstream::izfstream(std::filesystem::path p)
+	izfstream::izfstream(const std::filesystem::path& p)
 		: _stream{ p, if_mode }
 	{
 		if (!std::filesystem::exists(p))
@@ -309,7 +309,7 @@ namespace hades::zip
 		return;
 	}
 
-	void izfstream::open(std::filesystem::path p)
+	void izfstream::open(const std::filesystem::path& p)
 	{
 		assert(!is_open());
 		if (!std::filesystem::exists(p))
@@ -450,7 +450,7 @@ namespace hades::zip
 		return;
 	}
 
-	unarchive open_archive(fs::path path)
+	unarchive open_archive(const fs::path& path)
 	{
 		if (!fs::exists(path))
 			throw files::file_not_found{ "archive not found: " + path.generic_string() };
@@ -478,7 +478,7 @@ namespace hades::zip
 		//no sensitivity on any platform
 		case_sensitivity_none = 2;
 
-	bool file_exists(std::filesystem::path archive, std::filesystem::path path)
+	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path)
 	{
 		const auto a = open_archive(archive);
 		const auto ret = file_exists(a, path );
@@ -486,7 +486,7 @@ namespace hades::zip
 		return ret;
 	}
 
-	static bool file_exists(unarchive a, fs::path path)
+	static bool file_exists(unarchive a, const std::filesystem::path& path)
 	{
 		const auto r = unzLocateFile(a, path.string().c_str(), case_sensitivity_sensitive);
 		return r == UNZ_OK;
@@ -565,7 +565,7 @@ namespace hades::zip
 			LOGWARNING("Archive already exists overwriting: " + path + ".zip");
 			std::error_code errorc;
 			if (!fs::remove(path + ".zip", errorc))
-				archive_error{ "Unable to modify existing archive. Reason: " + errorc.message() };
+				throw archive_error{ "Unable to modify existing archive. Reason: " + errorc.message() };
 		}
 
 		types::string new_zip_path;

@@ -25,7 +25,7 @@ namespace hades::files
 		using off_type = stream_t::traits_type::off_type;
 
 		ifstream() = default;
-		ifstream(std::filesystem::path);
+		explicit ifstream(std::filesystem::path);
 
 		ifstream(const ifstream&) = delete;
 		ifstream& operator=(const ifstream&) = delete;

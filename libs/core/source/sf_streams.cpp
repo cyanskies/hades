@@ -61,9 +61,4 @@ namespace hades
 			return errorval;
 		}
 	}
-
-	sf_resource_stream make_sf_stream(std::filesystem::path mod, std::filesystem::path file)
-	{
-		return irfstream{ mod, file };
-	}
 }

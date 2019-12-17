@@ -14,7 +14,7 @@ namespace hades
 			: _stream{ mod, file }
 		{}
 
-		sf_resource_stream(irfstream s)
+		explicit sf_resource_stream(irfstream s)
 			: _stream{ std::move(s) }
 		{
 			if (!_stream.is_open())
@@ -30,8 +30,6 @@ namespace hades
 	private:
 		irfstream _stream;
 	};
-
-	sf_resource_stream make_sf_stream(std::filesystem::path mod, std::filesystem::path file);
 }
 
 #endif // !HADES_SF_STREAMS_HPP

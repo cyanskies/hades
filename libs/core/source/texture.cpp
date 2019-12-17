@@ -126,7 +126,7 @@ namespace hades
 
 			try
 			{
-				auto fstream = make_sf_stream( mod->source, tex.source );
+				auto fstream = sf_resource_stream{ mod->source, tex.source };
 
 				//TODO: if !is_open generate err texture
 

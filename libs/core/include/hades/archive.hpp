@@ -43,13 +43,6 @@ namespace hades::files
 	public:
 		using file_error::file_error;
 	};
-
-	/*UNREADABLE_FILE,
-		PATH_NOT_FOUND,
-		ARCHIVE_INVALID,
-		FILE_NOT_OPEN,
-		FILENAME_INVALID,
-		PERMISSION_DENIED*/
 }
 
 namespace hades::zip
@@ -62,6 +55,7 @@ namespace hades::zip
 		using file_error::file_error;
 	};
 
+	//TODO: archive member not found
 	class file_not_found : public archive_error
 	{
 	public:
@@ -74,58 +68,6 @@ namespace hades::zip
 		using archive_error::archive_error;
 	};
 
-	class archive_exception : public std::runtime_error
-	{
-	public:
-		enum class error_code
-		{
-			FILE_OPEN,
-			FILE_READ,
-			FILE_WRITE,
-			FILE_CLOSE,
-			FILE_ALREADY_OPEN,
-			FILE_NOT_OPEN,
-			FILE_NOT_FOUND,
-			OTHER
-		};
-
-		archive_exception(const char* what, error_code code = error_code::OTHER);
-
-		error_code code() const
-		{
-			return _code;
-		}
-
-	private:
-		error_code _code;
-	};
-
-	//in zip file stream
-	class archive_stream : public sf::InputStream
-	{
-	public:
-		archive_stream(std::string_view archive);
-		archive_stream(archive_stream&&);
-		archive_stream(const archive_stream&) = delete;
-		archive_stream& operator=(archive_stream&&);
-		archive_stream& operator=(const archive_stream&) = delete;
-
-		virtual ~archive_stream();
-
-		bool open(std::string_view filename);
-		bool is_open() const;
-		sf::Int64 read(void* data, sf::Int64 size);
-		sf::Int64 seek(sf::Int64 position);
-		sf::Int64 tell();
-		sf::Int64 getSize();
-	private:
-		void _close();
-
-		types::string _fileName;
-		bool _fileOpen;
-		unarchive _archive;
-	};
-
 	//in archive file stream
 	class iafstream
 	{
@@ -136,7 +78,7 @@ namespace hades::zip
 		using off_type = stream_t::traits_type::off_type;
 
 		iafstream() noexcept = default;
-		iafstream(std::filesystem::path);
+		explicit iafstream(std::filesystem::path);
 		iafstream(std::filesystem::path archive, std::filesystem::path file);
 
 		iafstream(const iafstream&) = delete;
@@ -184,13 +126,13 @@ namespace hades::zip
 		using off_type = stream_t::traits_type::off_type;
 
 		izfstream() noexcept = default;
-		izfstream(std::filesystem::path);
-		izfstream(stream_t s); //stream will seek back to the begining
+		explicit izfstream(std::filesystem::path);
+		explicit izfstream(stream_t s); //stream will seek back to the begining
 
 		izfstream(const izfstream&) = delete;
 		izfstream& operator=(const izfstream&) = delete;
 
-		//std::ifstream is not noexcept movable
+		//std::ifstream is not noexcept movable(MSVC, maybe everywhere)
 		izfstream(izfstream&&) = default;
 		izfstream& operator=(izfstream&&) = default;
 
@@ -232,16 +174,6 @@ namespace hades::zip
 		::z_stream _zip_stream;
 		std::ifstream _stream;
 	};
-
-
-	//returns raw data
-	buffer read_file_from_archive(std::string_view archive, std::string_view path);
-
-	//returns a file read as a string
-	types::string read_text_from_archive(std::string_view archive, std::string_view path);
-
-	//returns streamable data
-	archive_stream stream_file_from_archive(std::string_view archive, std::string_view path);
 
 	//ditermines if a file within an archive exists
 	bool file_exists(std::filesystem::path archive, std::filesystem::path path);

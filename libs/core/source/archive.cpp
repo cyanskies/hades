@@ -28,76 +28,19 @@ constexpr auto archive_ext = ".zip";
 
 namespace hades::zip
 {
-	archive_exception::archive_exception(const char* what, error_code code)
-		: std::runtime_error(what), _code(code)
-	{}
-
 	//open a close unzip archives
 	unarchive open_archive(std::filesystem::path);
 	void close_archive(unarchive f);
 
-	archive_stream::archive_stream(std::string_view archive) : _fileOpen(false), _archive(open_archive(archive))
-	{}
-
-	archive_stream::archive_stream(archive_stream&& rhs) : _fileOpen(rhs._fileOpen),
-		_archive(rhs._archive), _fileName(rhs._fileName)
-	{
-		rhs._archive = nullptr;
-		rhs._fileOpen = false;
-	}
-
-	archive_stream& archive_stream::operator=(archive_stream&& rhs)
-	{
-		_close();
-
-		_archive = rhs._archive;
-		rhs._archive = nullptr;
-		_fileOpen = rhs._fileOpen;
-		_fileOpen = false;
-		_fileName = std::move(rhs._fileName);
-
-		return *this;
-	}
-
-	archive_stream::~archive_stream()
-	{
-		//use zlib directly, since our wrappers might throw
-		_close();
-	}
-
 	static bool file_exists(unarchive, fs::path);
 
-	bool archive_stream::open(std::string_view filename)
-	{
-		if (_fileOpen)
-			throw archive_exception("This stream already has a file open", archive_exception::error_code::FILE_ALREADY_OPEN);
-
-		if (!file_exists(_archive, filename))
-			return false;
-
-		//open current file for reading
-		const auto r = unzOpenCurrentFile(_archive);
-		if (r != UNZ_OK)
-			return false;
-
-		_fileOpen = true;
-		_fileName = filename;
-
-		return _fileOpen;
-	}
-
-	bool archive_stream::is_open() const
-	{
-		return _fileOpen;
-	}
-
 	template<typename Integer>
-	unsigned int CheckSizeLimits(Integer size)
+	static unsigned int CheckSizeLimits(Integer size)
 	{
 		if constexpr (std::is_signed_v<Integer>)
 		{
 			if (size < 0)
-				throw archive_exception("Negative read size", archive_exception::error_code::FILE_READ);
+				throw archive_error{ "Negative read size" };
 		}
 
 		if (size > std::numeric_limits<unsigned int>::max())
@@ -106,96 +49,10 @@ namespace hades::zip
 			auto message = "Read size was too large. Max read size is: "
 				+ to_string(std::numeric_limits<unsigned int>::max()) + ", requested size was: "
 				+ to_string(size);
-			throw archive_exception(message.c_str(), archive_exception::error_code::FILE_READ);
+			throw archive_error{ message };
 		}
 
 		return static_cast<unsigned int>(size);
-	}
-
-	sf::Int64 archive_stream::read(void* data, sf::Int64 size)
-	{
-		if (data == nullptr)
-			throw std::invalid_argument("Must pass a valid buffer to archive_stream::read");
-
-		if (!_fileOpen)
-			throw archive_exception("Tried to read without an open file", archive_exception::error_code::FILE_NOT_OPEN);
-
-		if (size == 0)
-		{
-			LOGWARNING("Tried to read 0 bytes from file; archive_stream::read");
-			return 0;
-		}
-
-		//unsigned int type used by zlib
-		const auto usize = CheckSizeLimits(size);
-
-		buffer buff(static_cast<buffer::size_type>(usize));
-
-		auto amountRead = unzReadCurrentFile(_archive, &buff[0], usize);
-
-		memcpy(data, buff.data(), amountRead);
-
-		return amountRead;
-	}
-
-	sf::Int64 archive_stream::seek(sf::Int64 position)
-	{
-		if (!_fileOpen)
-			throw archive_exception("Tried to seek without an open file", archive_exception::error_code::FILE_NOT_OPEN);
-
-		//close and open the file to reset the seek ptr
-		if (unzCloseCurrentFile(_archive) == UNZ_CRCERROR)
-		{
-			//file closed but crc check indicates an error
-			LOGWARNING("CRC error in archive: " + _fileName);
-		}
-
-		_fileOpen = false;
-
-		if (!open(_fileName))
-			throw archive_exception(("Failed to open file in archive: " + _fileName).c_str(), archive_exception::error_code::FILE_OPEN);
-
-		auto upos = CheckSizeLimits(position);
-		buffer buff(static_cast<buffer::size_type>(upos));
-
-		sf::Int64 total = 0;
-
-		while (total < position)
-			total += read(buff.data(), position);
-
-		return total;
-	}
-
-	sf::Int64 archive_stream::tell()
-	{
-		if (!_fileOpen)
-			throw archive_exception("Tried to tell without an open file", archive_exception::error_code::FILE_NOT_OPEN);
-
-		return unztell64(_archive);
-	}
-
-	sf::Int64 archive_stream::getSize()
-	{
-		if (!_fileOpen)
-			throw archive_exception("Tried to get size without an open file", archive_exception::error_code::FILE_NOT_OPEN);
-
-		unz_file_info64 info;
-
-		const auto r = unzGetCurrentFileInfo64(_archive, &info, nullptr, 0, nullptr, 0, nullptr, 0);
-
-		if (r != UNZ_OK)
-			throw archive_exception("Unable to get file into.", archive_exception::error_code::FILE_READ);
-
-		return info.uncompressed_size;
-	}
-
-	void archive_stream::_close()
-	{
-		if (_fileOpen)
-			unzCloseCurrentFile(_archive); // returns error code if CRC check failed(we don't care at this point)
-
-		if (_archive)
-			unzClose(_archive); // returns UNZ_OK if everything was fine(what could go wrong that we would bother to report?)
 	}
 
 	iafstream::iafstream(std::filesystem::path p)
@@ -429,9 +286,9 @@ namespace hades::zip
 		: _stream{ p, if_mode }
 	{
 		if (!std::filesystem::exists(p))
-			throw archive_exception{ "cannot find file", archive_exception::error_code::FILE_NOT_FOUND };
+			throw files::file_not_found{ "cannot find file: " + p.generic_string() };
 		if (!_stream.is_open())
-			throw archive_exception{ "cannot open file", archive_exception::error_code::FILE_OPEN };
+			throw files::file_error{ "cannot open file: " + p.generic_string() };
 		start_z_stream(_stream, _zip_stream);
 		return;
 	}
@@ -440,7 +297,7 @@ namespace hades::zip
 		: _stream{ std::move(s) }
 	{
 		if (!_stream.is_open())
-			throw archive_exception{ "stream not open", archive_exception::error_code::FILE_NOT_OPEN };
+			throw files::file_not_open{ "stream passed to izfstream(stream_t) is not open" };
 		start_z_stream(_stream, _zip_stream);
 		return;
 	}
@@ -456,10 +313,10 @@ namespace hades::zip
 	{
 		assert(!is_open());
 		if (!std::filesystem::exists(p))
-			throw archive_exception{ "cannot find file", archive_exception::error_code::FILE_NOT_FOUND };
+			throw files::file_not_found{ "cannot find file: " + p.generic_string() };
 		_stream.open(p, if_mode);
 		if (!_stream.is_open())
-			throw archive_exception{ "cannot open file", archive_exception::error_code::FILE_OPEN };
+			throw files::file_error{ "cannot open file: " + p.generic_string() };
 		start_z_stream(_stream, _zip_stream);
 		return;
 	}
@@ -499,7 +356,7 @@ namespace hades::zip
 		if (ret == Z_STREAM_END)
 			_eof = true;
 		else if (ret != Z_OK)
-			throw archive_exception("failed to inflate");
+			throw archive_error("izfstream failed to inflate during read");
 
 		if (_zip_stream.avail_in == 0)
 		{
@@ -596,55 +453,22 @@ namespace hades::zip
 	unarchive open_archive(fs::path path)
 	{
 		if (!fs::exists(path))
-			throw files::file_not_found{ "archive not found: " + path.string() };
+			throw files::file_not_found{ "archive not found: " + path.generic_string() };
 		//open archive
 		unarchive a = unzOpen(path.string().c_str());
 
 		if (!a)
-			throw archive_exception(("unable to open archive: " + path.string()).c_str(), archive_exception::error_code::FILE_OPEN);
+			throw archive_error{ "unable to open archive: " + path.generic_string() };
 
 		return a;
 	}
 
-	void close_archive(unarchive f)
+	static void close_archive(unarchive f)
 	{
 		const auto r = unzClose(f);
 		if (r != UNZ_OK)
 			throw files::file_error{ "tried to close archive before closing file" };
 		return;
-	}
-
-	buffer read_file_from_archive(std::string_view archive, std::string_view path)
-	{
-		auto stream = stream_file_from_archive(archive, path);
-
-		const auto size = stream.getSize();
-		const auto usize = CheckSizeLimits(size);
-
-		buffer buff(static_cast<buffer::size_type>(usize));
-		stream.read(&buff[0], size);
-
-		return buff;
-	}
-
-	types::string read_text_from_archive(std::string_view archive, std::string_view path)
-	{
-		const auto buf = read_file_from_archive(archive, path);
-
-		types::string out;
-
-		std::transform(std::begin(buf), std::end(buf), std::back_inserter(out), [](hades::buffer::value_type v) {
-			return static_cast<char>(v);
-			});
-
-		return out;
-	}
-
-	archive_stream stream_file_from_archive(std::string_view archive, std::string_view path)
-	{
-		archive_stream str(archive);
-		str.open(path);
-		return str;
 	}
 
 	//no sensitivity on windows
@@ -686,7 +510,7 @@ namespace hades::zip
 
 		const auto ret = unzGoToFirstFile(zip);
 		if (ret != ZIP_OK)
-			throw archive_exception(("Error finding file in archive: " + to_string(archive)).c_str(), archive_exception::error_code::FILE_OPEN);
+			throw file_not_found{ "Error finding file in archive: " + to_string(archive) };
 
 		const auto separator_count = count_separators(dir_path);
 
@@ -728,11 +552,12 @@ namespace hades::zip
 	{
 		const types::string path{ path_view };
 
-		if (!fs::is_directory(path))
-			throw archive_exception(("Path is not a directory: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
-
 		if (!fs::exists(path))
-			throw archive_exception(("Directory not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
+			throw files::file_error{ "Directory not found: " + path };
+
+		if (!fs::is_directory(path))
+			throw files::file_error{ "Path is not a directory: " + path };
+
 
 		//overwrite if the file already exists
 		if (fs::exists(path + ".zip"))
@@ -740,7 +565,7 @@ namespace hades::zip
 			LOGWARNING("Archive already exists overwriting: " + path + ".zip");
 			std::error_code errorc;
 			if (!fs::remove(path + ".zip", errorc))
-				archive_exception(("Unable to modify existing archive. Reason: " + errorc.message()).c_str(), archive_exception::error_code::FILE_WRITE);
+				archive_error{ "Unable to modify existing archive. Reason: " + errorc.message() };
 		}
 
 		types::string new_zip_path;
@@ -750,12 +575,12 @@ namespace hades::zip
 		const auto name = --fs_path.end();
 
 		if (*name == ".")
-			throw archive_exception("Tried to open \"./\".", archive_exception::error_code::FILE_OPEN);
+			throw archive_error{ "Tried to open \"./\"." };
 
 		const auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
 
 		if (!zip)
-			throw archive_exception(("Error creating zip file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_WRITE);
+			throw archive_error{ "Error creating zip file: " + name->generic_string() };
 
 		LOG("Created archive: " + name->generic_string());
 
@@ -770,7 +595,7 @@ namespace hades::zip
 			const auto file_path = p.string();
 			const auto directory = fs_path.string();
 			if (file_path.find(directory) == types::string::npos)
-				throw archive_exception("Directory path isn't a subset of the file path, unexpected error", archive_exception::error_code::FILE_READ);
+				throw files::file_error{ "Directory path isn't a subset of the file path, unexpected error" };
 
 			auto file_name = file_path.substr(directory.length(), file_path.length() - directory.length());
 
@@ -782,7 +607,7 @@ namespace hades::zip
 
 			//NOTE: if this is firing, then we need to enable zip64 compression below
 			if (fs::file_size(p) > 0xffffffff)
-				throw archive_exception(("Cannot store file in archive: " + file_name + " file too large").c_str(), archive_exception::error_code::FILE_WRITE);
+				throw archive_error{ "Cannot store file in archive: " + file_name + " file too large" };
 
 			zip_fileinfo file_info{ tm_zip{}, 0, 0, 0 };
 			//no const for 'ret' the variable is resued a few times for other results
@@ -791,7 +616,8 @@ namespace hades::zip
 				Z_DEFAULT_COMPRESSION);
 
 			if (ret != ZIP_OK)
-				throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_WRITE);
+				throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: "
+				+ name->generic_string() };
 
 			using char_buffer = std::vector<char>;
 
@@ -810,19 +636,19 @@ namespace hades::zip
 				const auto usize = CheckSizeLimits(static_cast<std::streamoff>(size));
 				ret = zipWriteInFileInZip(zip, &buf[0], usize);
 				if (ret != ZIP_OK)
-					throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+					throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string() };
 			}
 
 			LOG("Wrote " + file_name + " to archive: " + name->generic_string());
 
 			ret = zipCloseFileInZip(zip);
 			if (ret != ZIP_OK)
-				throw archive_exception(("Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_OPEN);
+				throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string() };
 		}
 
 		const auto ret = zipClose(zip, nullptr);
 		if (ret != ZIP_OK)
-			throw archive_exception(("Error closing file: " + name->generic_string()).c_str(), archive_exception::error_code::FILE_CLOSE);
+			throw archive_error{ "Error closing file: " + name->generic_string() };
 
 		LOG("Completed creating archive: " + name->generic_string());
 	}
@@ -834,7 +660,7 @@ namespace hades::zip
 		//confirm is archive
 		fs::path fs_path(path);
 		if (!fs::exists(fs_path))
-			throw archive_exception(("Cannot open archive, file not found: " + path).c_str(), archive_exception::error_code::FILE_NOT_FOUND);
+			throw files::file_not_found{ "Cannot open archive, file not found: " + path };
 
 		//create directory if absent
 		const auto root_dir = fs_path.parent_path() / fs_path.stem();
@@ -844,7 +670,7 @@ namespace hades::zip
 		//NOTE: no const for ret, variable is resued later
 		auto ret = unzGoToFirstFile(archive);
 		if (ret != ZIP_OK)
-			throw archive_exception(("Error finding file in archive: " + path).c_str(), archive_exception::error_code::FILE_OPEN);
+			throw archive_error{ "Error finding file in archive: " + path };
 
 		LOG("Uncompressing archive: " + path);
 
@@ -858,7 +684,7 @@ namespace hades::zip
 
 			ret = unzGetCurrentFileInfo(archive, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
 			if (ret != ZIP_OK)
-				throw archive_exception("Error reading file info from archive", archive_exception::error_code::FILE_OPEN);
+				throw archive_error{ "Error reading file info from archive" };
 
 			const types::string filename(name.begin(), name.end());
 
@@ -870,7 +696,7 @@ namespace hades::zip
 			std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);
 
 			if (!file.is_open())
-				throw archive_exception(("Failed to create or open file: " + filename).c_str(), archive_exception::error_code::FILE_WRITE);
+				throw files::file_error{ "Failed to create or open file: " + filename };
 
 			//write data to file
 			const auto usize = CheckSizeLimits(info.uncompressed_size);
@@ -879,7 +705,7 @@ namespace hades::zip
 
 			ret = unzOpenCurrentFile(archive);
 			if (ret != ZIP_OK)
-				throw archive_exception(("Failed to open file in archive: " + path + filename).c_str(), archive_exception::error_code::FILE_OPEN);
+				throw archive_error{ "Failed to open file in archive: " + path + filename };
 
 			types::uint32 total_written = 0;
 
@@ -895,7 +721,7 @@ namespace hades::zip
 
 			ret = unzCloseCurrentFile(archive);
 			if (ret != ZIP_OK)
-				throw archive_exception(("Failed to close file in archive: " + path + filename).c_str(), archive_exception::error_code::FILE_CLOSE);
+				throw archive_error{ "Failed to close file in archive: " + path + filename };
 		} while (unzGoToNextFile(archive) != UNZ_END_OF_LIST_OF_FILE);
 
 		close_archive(archive);
@@ -950,7 +776,7 @@ namespace hades::zip
 		// the actual compression work.
 		auto ret = deflateInit(&deflate_stream, Z_BEST_COMPRESSION);
 		if (ret != Z_OK)
-			throw archive_exception("failed to initialise zlib deflate");
+			throw archive_error{ "failed to initialise zlib deflate" };
 
 		//unsigned long as defined by zlib;
 		using z_ulong = uLong;
@@ -964,11 +790,11 @@ namespace hades::zip
 
 		ret = deflate(&deflate_stream, Z_FINISH);
 		if (ret != Z_STREAM_END)
-			throw archive_exception("failed to deflate");
+			throw archive_error{ "failed to deflate" };
 		assert(ret == Z_STREAM_END);
 		ret = deflateEnd(&deflate_stream);
 		if (ret != Z_OK)
-			throw archive_exception("failed to finalise zlib deflate");
+			throw archive_error{ "failed to finalise zlib deflate" };
 
 		return { out.data(), reinterpret_cast<std::byte*>(deflate_stream.next_out) };
 	}
@@ -993,7 +819,7 @@ namespace hades::zip
 		 // the actual DE-compression work.
 		auto ret = inflateInit(&infstream);
 		if (ret != Z_OK)
-			throw archive_exception("failed to initialise zlib inflate");
+			throw archive_error{ "failed to initialise zlib inflate" };
 
 		buffer out{};
 		out.reserve(std::size(stream));
@@ -1008,7 +834,7 @@ namespace hades::zip
 			if (ret == Z_STREAM_END)
 				cont = false;
 			else if (ret != Z_OK)
-				throw archive_exception("failed to inflate");
+				throw archive_error{ "failed to inflate" };
 			out.reserve(out.size() + buf.size());
 			std::copy(buf.data(), reinterpret_cast<std::byte*>(infstream.next_out), std::back_inserter(out));
 
@@ -1018,7 +844,7 @@ namespace hades::zip
 
 		ret = inflateEnd(&infstream);
 		if (ret != Z_OK)
-			throw archive_exception("failed to finalise zlib inflate");
+			throw archive_error{ "failed to finalise zlib inflate" };
 
 		return out;
 	}

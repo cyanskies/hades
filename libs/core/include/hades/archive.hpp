@@ -170,7 +170,7 @@ namespace hades::zip
 		bool _eof = false;
 		std::size_t _buffer_pos = std::size_t{};
 		std::size_t _buffer_end = std::size_t{};
-		std::streamsize _last_read;
+		std::streamsize _last_read = std::streamsize{};
 		::z_stream _zip_stream;
 		std::ifstream _stream;
 	};
@@ -179,14 +179,14 @@ namespace hades::zip
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path);
 
 	//returns all files in the archive within the dir_path directory, can continue recursively
-	std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir, bool recursive = false);
+	std::vector<types::string> list_files_in_archive(const std::filesystem::path& archive, const std::filesystem::path& dir, bool recursive = false);
 
 	//compress_directory
 	//path must be a directory
 	//will create a zip in the parent directory with the same name
-	void compress_directory(std::string_view path);
+	void compress_directory(const std::filesystem::path& path);
 	//uncompress archive
-	void uncompress_archive(std::string_view path);
+	void uncompress_archive(const std::filesystem::path& path);
 
 	//test for zip compression header
 	using zip_header = std::array<std::byte, 2u>;

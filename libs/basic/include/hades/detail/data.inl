@@ -88,13 +88,8 @@ namespace hades
 			catch (const std::bad_cast&)
 			{
 				using namespace std::string_literals;
-				const auto res_name = get_as_string(id);
-				const auto ty = string{ typeid(T).name() };
-				constexpr auto msg_pre = "Tried to get resource using wrong type, unique_id was: ";
-				constexpr auto msg_pro = ", requested type was: ";
-				const auto msg = msg_pre + res_name
-					+ msg_pro + ty;
-				throw resource_wrong_type{ msg };
+				throw resource_wrong_type{ "Tried to get resource using wrong type, unique_id was: "s
+					+ get_as_string(id) + ", requested type was: "s + typeid(T).name() };
 			}
 		}
 

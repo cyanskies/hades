@@ -301,7 +301,7 @@ namespace hades::files
 		//find out the file size
 		file.seekg({}, std::ios::end);
 		assert(file.eof());
-		const auto size = integer_cast<std::size_t>(file.tellg());
+		const auto size = integer_cast<std::size_t>(static_cast<std::streamoff>(file.tellg()));
 		//seek to begining
 		file.clear();
 		file.seekg({}, std::ios::beg);

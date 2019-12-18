@@ -42,12 +42,7 @@ namespace hades
 
 			return;
 		}
-
 		throw console::property_missing(to_string(identifier));
-
-		auto var = std::make_shared<console::basic_property<T>>(value);
-	
-		_consoleVariables.insert(std::make_pair(to_string(identifier), var));
 	}
 
 	template<class T>

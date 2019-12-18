@@ -493,16 +493,18 @@ namespace hades::zip
 	}
 
 	static std::string_view::iterator::difference_type
-		count_separators(std::string_view s)
+		count_separators(const std::filesystem::path& p)
 	{
-		constexpr char separator1 = '\\';
+		//constexpr char separator1 = '\\';
 		constexpr char separator2 = '/';
+		
+		const auto s = p.generic_string();
 
-		auto sep_count = std::count(s.begin(), s.end(), separator1);
-		return sep_count + std::count(s.begin(), s.end(), separator2);
+		//auto sep_count = std::count(s.begin(), s.end(), separator1);
+		return std::count(s.begin(), s.end(), separator2);// = sep_count;
 	}
 
-	std::vector<types::string> list_files_in_archive(std::string_view archive, std::string_view dir_path, bool recursive)
+	std::vector<types::string> list_files_in_archive(const std::filesystem::path& archive, const std::filesystem::path& dir_path, bool recursive)
 	{
 		std::vector<types::string> output;
 
@@ -510,7 +512,7 @@ namespace hades::zip
 
 		const auto ret = unzGoToFirstFile(zip);
 		if (ret != ZIP_OK)
-			throw file_not_found{ "Error finding file in archive: " + to_string(archive) };
+			throw file_not_found{ "Error finding file in archive: " + archive.generic_string() };
 
 		const auto separator_count = count_separators(dir_path);
 
@@ -539,7 +541,10 @@ namespace hades::zip
 				if (recursive && count_separators(file_name) >= separator_count)
 					output.push_back(file_name);
 				else if (count_separators(file_name) == separator_count)
-					output.push_back(file_name.substr(dir_path.length(), file_name.length() - dir_path.length()));
+				{
+					const auto length = dir_path.generic_string().length();
+					output.push_back(file_name.substr(length, file_name.length() - length));
+				}
 			}
 		}
 
@@ -548,52 +553,47 @@ namespace hades::zip
 		return output;
 	}
 
-	void compress_directory(std::string_view path_view)
+	void compress_directory(const std::filesystem::path& path)
 	{
-		const types::string path{ path_view };
-
 		if (!fs::exists(path))
-			throw files::file_error{ "Directory not found: " + path };
+			throw files::file_error{ "Directory not found: " + path.generic_string() };
 
 		if (!fs::is_directory(path))
-			throw files::file_error{ "Path is not a directory: " + path };
+			throw files::file_error{ "Path is not a directory: " + path.generic_string() };
 
-
+		const auto archive_name = fs::path{ *--std::end(path) }.replace_extension(archive_ext);
+		const auto parent_folder = path / "..";
+		const auto final_path = parent_folder / archive_name;
+		const auto final_path_str = final_path.generic_string();
 		//overwrite if the file already exists
-		if (fs::exists(path + ".zip"))
+		if (fs::exists(final_path))
 		{
-			LOGWARNING("Archive already exists overwriting: " + path + ".zip");
+			LOGWARNING("Archive already exists overwriting: " + final_path_str);
 			std::error_code errorc;
-			if (!fs::remove(path + ".zip", errorc))
+			if (!fs::remove(final_path, errorc))
 				throw archive_error{ "Unable to modify existing archive. Reason: " + errorc.message() };
 		}
 
-		types::string new_zip_path;
-
-		fs::path fs_path(path);
-		const auto root = fs_path.parent_path();
-		const auto name = --fs_path.end();
-
-		if (*name == ".")
+		if (final_path.filename() == ".") // ???
 			throw archive_error{ "Tried to open \"./\"." };
 
-		const auto zip = zipOpen((root.generic_string() + "/" + name->generic_string() + archive_ext).c_str(), APPEND_STATUS_CREATE);
+		const auto zip = zipOpen(final_path_str.c_str(), APPEND_STATUS_CREATE);
 
 		if (!zip)
-			throw archive_error{ "Error creating zip file: " + name->generic_string() };
+			throw archive_error{ "Error creating zip file: " + final_path_str };
 
-		LOG("Created archive: " + name->generic_string());
+		LOG("Created archive: " + final_path_str);
 
 		//for each file in dir
 		//create new zip file
-		for (auto& f : fs::recursive_directory_iterator(fs_path))
+		for (auto& f : fs::recursive_directory_iterator(path))
 		{
 			const auto p = f.path();
 			if (fs::is_directory(p))
 				continue;
 
-			const auto file_path = p.string();
-			const auto directory = fs_path.string();
+			const auto file_path = p.generic_string();
+			const auto directory = path.generic_string();
 			if (file_path.find(directory) == types::string::npos)
 				throw files::file_error{ "Directory path isn't a subset of the file path, unexpected error" };
 
@@ -617,7 +617,7 @@ namespace hades::zip
 
 			if (ret != ZIP_OK)
 				throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: "
-				+ name->generic_string() };
+				+ final_path_str };
 
 			using char_buffer = std::vector<char>;
 
@@ -636,43 +636,40 @@ namespace hades::zip
 				const auto usize = CheckSizeLimits(static_cast<std::streamoff>(size));
 				ret = zipWriteInFileInZip(zip, &buf[0], usize);
 				if (ret != ZIP_OK)
-					throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string() };
+					throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + final_path_str };
 			}
 
-			LOG("Wrote " + file_name + " to archive: " + name->generic_string());
+			LOG("Wrote " + file_name + " to archive: " + final_path_str);
 
 			ret = zipCloseFileInZip(zip);
 			if (ret != ZIP_OK)
-				throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + name->generic_string() };
+				throw archive_error{ "Error writing file: " + p.filename().generic_string() + " to archive: " + final_path_str };
 		}
 
 		const auto ret = zipClose(zip, nullptr);
 		if (ret != ZIP_OK)
-			throw archive_error{ "Error closing file: " + name->generic_string() };
+			throw archive_error{ "Error closing file: " + final_path_str };
 
-		LOG("Completed creating archive: " + name->generic_string());
+		LOG("Completed creating archive: " + final_path_str);
 	}
 
-	void uncompress_archive(std::string_view path_view)
+	void uncompress_archive(const std::filesystem::path& fs_path)
 	{
-		const types::string path{ path_view };
-
 		//confirm is archive
-		fs::path fs_path(path);
 		if (!fs::exists(fs_path))
-			throw files::file_not_found{ "Cannot open archive, file not found: " + path };
+			throw files::file_not_found{ "Cannot open archive, file not found: " + fs_path.generic_string() };
 
 		//create directory if absent
 		const auto root_dir = fs_path.parent_path() / fs_path.stem();
 
-		const auto archive = open_archive(fs::path{ path });
+		const auto archive = open_archive(fs_path);
 
 		//NOTE: no const for ret, variable is resued later
 		auto ret = unzGoToFirstFile(archive);
 		if (ret != ZIP_OK)
-			throw archive_error{ "Error finding file in archive: " + path };
+			throw archive_error{ "Error finding file in archive: " + fs_path.generic_string() };
 
-		LOG("Uncompressing archive: " + path);
+		LOG("Uncompressing archive: " + fs_path.generic_string());
 
 		//for each file in directory
 		do {
@@ -686,17 +683,17 @@ namespace hades::zip
 			if (ret != ZIP_OK)
 				throw archive_error{ "Error reading file info from archive" };
 
-			const types::string filename(name.begin(), name.end());
+			const types::string filename_str(name.begin(), name.end());
+			const auto filename = fs::path{ filename_str };
 
-			const fs::path parent_dir(filename);
 			//create directory if it dosn't already exist
-			fs::create_directories(root_dir / parent_dir.parent_path()); //only creates missing directories
+			fs::create_directories(root_dir / filename.parent_path()); //only creates missing directories
 
 			//open file
-			std::ofstream file(root_dir.string() + "/" + filename, std::ios::binary | std::ios::trunc);
+			std::ofstream file(root_dir / filename, std::ios::binary | std::ios::trunc);
 
 			if (!file.is_open())
-				throw files::file_error{ "Failed to create or open file: " + filename };
+				throw files::file_error{ "Failed to create or open file: " + filename.generic_string() };
 
 			//write data to file
 			const auto usize = CheckSizeLimits(info.uncompressed_size);
@@ -705,11 +702,11 @@ namespace hades::zip
 
 			ret = unzOpenCurrentFile(archive);
 			if (ret != ZIP_OK)
-				throw archive_error{ "Failed to open file in archive: " + path + filename };
+				throw archive_error{ "Failed to open file in archive: " + (fs_path / filename).generic_string() };
 
 			types::uint32 total_written = 0;
 
-			LOG("Uncompressing file: " + filename + " from archive: " + path);
+			LOG("Uncompressing file: " + filename.generic_string() + " from archive: " + fs_path.generic_string());
 
 			//write the data to actual files
 			while (total_written < usize)
@@ -721,12 +718,12 @@ namespace hades::zip
 
 			ret = unzCloseCurrentFile(archive);
 			if (ret != ZIP_OK)
-				throw archive_error{ "Failed to close file in archive: " + path + filename };
+				throw archive_error{ "Failed to close file in archive: " + (fs_path / filename).generic_string() };
 		} while (unzGoToNextFile(archive) != UNZ_END_OF_LIST_OF_FILE);
 
 		close_archive(archive);
 
-		LOG("Finished uncompressing archive: " + path);
+		LOG("Finished uncompressing archive: " + fs_path.generic_string());
 	}
 
 	namespace header

@@ -143,6 +143,8 @@ namespace hades
 				if (_player_window_state.selected != 0
 					&& _player_window_state.selected == std::size(_players))
 					--_player_window_state.selected;
+
+				_player_window_state.edit_open = false;
 			}
 
 			if (_gui.button("move up")
@@ -160,6 +162,15 @@ namespace hades
 				std::iter_swap(iter, std::next(iter));
 				++_player_window_state.selected;
 			}
+
+			if (!std::empty(_players) && _players[_player_window_state.selected].p_entity != bad_entity)
+			{
+				_gui.layout_horizontal();
+				if (_gui.button("select object"))
+				{
+					_obj_ui.set_selected(_players[_player_window_state.selected].p_entity);
+				}
+			}
 		}
 
 		//list
@@ -168,7 +179,7 @@ namespace hades
 			}))
 		{
 			_player_dialog = player_dialog_t{};
-			//_player_edit_dialog //
+			_player_window_state.edit_open = false;
 		}
 
 		//new player dialog
@@ -216,7 +227,7 @@ namespace hades
 				}
 
 				_gui.input("name", _player_dialog.name);
-				_gui.input("display_name", _player_dialog.display_name);
+				_gui.input("display name", _player_dialog.display_name);
 				_gui.checkbox("create entity", _player_dialog.create_ent);
 
 				//error dialog
@@ -246,6 +257,24 @@ namespace hades
 
 			if (!_player_dialog.open)
 				_player_dialog = player_dialog_t{};
+		}
+
+		if (_player_window_state.edit_open)
+		{
+			if (_gui.window_begin("edit", _player_window_state.edit_open))
+			{
+				if (_gui.button("done"))
+					_player_window_state.edit_open = false;
+				auto& p = _players[_player_window_state.selected];
+				_gui.input_text("display name", p.name);
+				if (p.p_entity == bad_entity && _gui.button("make entity"))
+				{
+					auto o = object_instance{};
+					set_curve(o, *_player_slot_curve, p.id);
+					p.p_entity = _obj_ui.add(std::move(o));
+				}
+			}
+			_gui.window_end();
 		}
 	}
 

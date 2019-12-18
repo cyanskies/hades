@@ -267,7 +267,7 @@ namespace hades::zip
 		zip_header h;
 		using char_t = izfstream::stream_t::char_type;
 		s.read(reinterpret_cast<char_t*>(std::data(h)), std::size(h));
-		if (s.gcount() < static_cast<std::streamsize>(std::size(h))
+		if (s.gcount() < integer_cast<std::streamsize>(std::size(h))
 			|| !probably_compressed(h)
 			|| !zlib_inflate_begin(z))
 		{

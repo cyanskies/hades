@@ -6,6 +6,9 @@ set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "")
 
 add_subdirectory(yaml-cpp)
 add_subdirectory(zlib)
+#fix for out of tree builds, zconf.h would only appear in #include <zconf.h>
+#but zlib tries to find include "zconf.h"
+target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 #########################
 #cmake for imgui

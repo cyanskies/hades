@@ -16,6 +16,16 @@
 // The mission editor can be used to create playable missions
 // A mission is comprised of multiple levels
 
+namespace hades::cvars
+{
+	constexpr auto editor_mission_ext = "editor_mission_ext";
+
+	namespace default_value
+	{
+		constexpr auto editor_mission_ext = ".m";
+	}
+}
+
 namespace hades
 {
 	void create_mission_editor_console_variables();
@@ -110,6 +120,11 @@ namespace hades
 		void _save(path);
 		void _load(path);
 
+		// ==cvars==
+		console::property_str _mission_ext = 
+			console::get_string(cvars::editor_mission_ext,
+				cvars::default_value::editor_mission_ext);
+
 		// ==gui vars==
 		bool _obj_w = true;
 		bool _obj_prop_w = true;
@@ -125,7 +140,7 @@ namespace hades
 		sf::RectangleShape _backdrop;
 
 		// ==mission vars==
-		string _mission_src;
+		path _mission_src;
 		string _mission_name;
 		string _mission_desc;
 

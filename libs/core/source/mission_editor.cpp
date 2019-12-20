@@ -9,6 +9,8 @@ namespace hades
 {
 	void create_mission_editor_console_variables()
 	{
+		console::create_property(cvars::editor_mission_ext, cvars::default_value::editor_mission_ext);
+
 		create_level_editor_console_vars();
 		return;
 	}
@@ -98,11 +100,18 @@ namespace hades
 				;//TODO:
 			}
 
-			_gui.menu_item("load...", false);
+			if (_gui.menu_item("load..."))
+			{
+				_load_window.open = true;
+				_load_window.path = _mission_src.generic_string();
+			}
 			if(_gui.menu_item("save", !std::empty(_mission_src)))
 				_save({_mission_src});
 			if (_gui.menu_item("save as..."))
+			{
 				_save_window.open = true;
+				_save_window.path = _mission_src.generic_string();
+			}
 			if (_gui.menu_item("exit"))
 				kill();
 			_gui.menu_end();
@@ -550,7 +559,14 @@ namespace hades
 			if (_gui.window_begin("Save", _save_window.open))
 			{
 				if (_gui.button("save"))
-					_save({ _save_window.path });
+				{
+					auto path = std::filesystem::path{ _save_window.path };
+					if (!path.has_extension())
+						path.replace_extension(_mission_ext->load());
+
+					_save( std::move(path) );
+					_save_window.open = false;
+				}
 				_gui.input("path", _save_window.path);
 			}
 			_gui.window_end();
@@ -594,13 +610,13 @@ namespace hades
 		}
 
 		const auto s = serialise(m);
-		files::write_file(p.string(), s);
-		_mission_src = p.generic_string();
+		files::write_file(p, s);
+		_mission_src = std::move(p);
 	}
 
 	void mission_editor_t::_load(path p)
 	{
-		const auto f = files::read_file(p.string());
+		const auto f = files::read_file(p);
 		auto m = deserialise_mission(f);
 		_mission_name = m.name;
 		_mission_desc = m.description;
@@ -621,6 +637,6 @@ namespace hades
 			_levels.emplace_back(std::move(lev));
 		}
 
-		_mission_src = p.string();
+		_mission_src = p;
 	}
 }

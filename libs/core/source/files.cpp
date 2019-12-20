@@ -293,7 +293,7 @@ namespace hades::files
 		if (!fs::exists(path))
 			throw file_not_found{ "File not found: "s + path.generic_string() };
 
-		std::ifstream file{ path, std::ios_base::binary | std::ios_base::in };
+		std::ifstream file{ path, std::ios_base::binary };
 
 		if (!file.is_open())
 			throw file_error{ "Failed to open "s + path.generic_string() + " for input"s };
@@ -391,44 +391,40 @@ namespace hades::files
 		if (fs::exists(dir) && fs::is_directory(dir))
 			return true;
 
-		//TODO: return false if mising write permissions for the directory that exists
-
 		return fs::create_directories(dir);
 	}
 
-	void write_file(std::string_view path, std::string_view file_contents)
+	void write_file(const fs::path& path, std::string_view file_contents)
 	{
-		const auto userCustomFileDirectory = hades::user_custom_file_directory();
-		const auto target = userCustomFileDirectory.string() + to_string(path);
+		const auto p = user_custom_file_directory() / path;
 
-		fs::path p{ target };
 		if (!p.has_filename())
 		{
-			const auto message = "unable to write file, path didn't include a filename; path was: " + p.string();
+			const auto message = "unable to write file, path didn't include a filename; path was: " + p.generic_string();
 			throw file_error{ message };
 		}
 
-		auto parent = p.parent_path();
+		const auto parent = p.parent_path();
 		if (!make_directory(parent))
 		{
-			const auto message = "No write permission for directory or unable to create directory; was: " + parent.string();
+			const auto message = "No write permission for directory or unable to create directory; was: " + parent.generic_string();
 			throw file_error{ message };
 		}
 
-		buffer as_bytes{};
+		auto as_bytes = buffer{};
 
 		std::transform(std::begin(file_contents), std::end(file_contents), std::back_inserter(as_bytes), [](const auto c) {
 			return static_cast<std::byte>(c);
 			});
 
-		buffer output = zip::deflate(as_bytes);
+		const auto output = zip::deflate(std::move(as_bytes));
 
 		std::ofstream file{ p, std::ios::binary | std::ios::trunc };
 		if (file.is_open())
-			file.write(reinterpret_cast<const char*>(output.data()), output.size());
+			file.write(reinterpret_cast<const char*>(std::data(output)), std::size(output));
 		else
 			//todo throw instead
-			LOGERROR("Failed to open file for writing: " + target);
+			LOGERROR("Failed to open file for writing: " + p.generic_string());
 	}
 
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path)
@@ -442,7 +438,7 @@ namespace hades::files
 			return output;
 		}
 
-		for (auto& e : fs::directory_iterator(dir))
+		for (const auto& e : fs::directory_iterator(dir))
 			output.push_back(e.path().filename().string());
 
 		return output;

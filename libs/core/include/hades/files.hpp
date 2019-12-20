@@ -125,7 +125,7 @@ namespace hades::files
 
 	//writes file_contents to the file at path, will place UserCustomFileDirectory before path
 	//throws file_exception
-	void write_file(std::string_view path, std::string_view file_contents);
+	void write_file(const std::filesystem::path& path, std::string_view file_contents);
 	//same as above, calls UserSaveDirectory instead
 	void write_save(std::string_view);
 	//as above, calls UserConfigDir instead

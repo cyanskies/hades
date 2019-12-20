@@ -280,7 +280,7 @@ namespace hades::zip
 		return;
 	}
 
-	constexpr auto if_mode = std::ios_base::in | std::ios_base::binary;
+	constexpr auto if_mode = std::ios_base::binary;
 
 	izfstream::izfstream(const std::filesystem::path& p)
 		: _stream{ p, if_mode }
@@ -562,7 +562,7 @@ namespace hades::zip
 			throw files::file_error{ "Path is not a directory: " + path.generic_string() };
 
 		const auto archive_name = fs::path{ *--std::end(path) }.replace_extension(archive_ext);
-		const auto parent_folder = path / "..";
+		const auto parent_folder = path.parent_path();
 		const auto final_path = parent_folder / archive_name;
 		const auto final_path_str = final_path.generic_string();
 		//overwrite if the file already exists

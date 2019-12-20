@@ -23,6 +23,8 @@ namespace hades
 		//n_* for network settings
 		//editor_* for game editor settings
 		//shared for level, mission and mod editors
+		//m_ for mission
+		//l_ for level
 
 		//render vars
 		constexpr auto render_threadcount = "r_threads"; // [[deprecated]] same as s_threadcount

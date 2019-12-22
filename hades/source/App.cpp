@@ -126,7 +126,7 @@ namespace hades
 		//LOG("SFGUI " + std::to_string(SFGUI_MAJOR_VERSION) + "." + std::to_string(SFGUI_MINOR_VERSION) + "." + std::to_string(SFGUI_REVISION_VERSION));
 		LOG("zlib " + types::string(ZLIB_VERSION));
 		//yaml-cpp doesn't currently have a version macro
-		LOG("yaml-cpp 0.5.3"); //TODO: base this off the version compiled
+		LOG("yaml-cpp " + to_string(HADES_YAML_VERSION)); //TODO: base this off the version compiled
 		
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.

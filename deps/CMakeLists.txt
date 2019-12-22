@@ -5,10 +5,15 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "")
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "")
 
 add_subdirectory(yaml-cpp)
+#add preprocessor define for yaml version
+get_target_property(HADES_YAML_VERSION yaml-cpp VERSION)
+target_compile_definitions(yaml-cpp INTERFACE HADES_YAML_VERSION="${HADES_YAML_VERSION}")
+
 add_subdirectory(zlib)
 #fix for out of tree builds, zconf.h would only appear in #include <zconf.h>
 #but zlib tries to find include "zconf.h"
-target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)
+target_include_directories(zlibstatic PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)
 
 #########################
 #cmake for imgui

@@ -18,6 +18,7 @@ int hades_main(int argc, char* argv[]);
 /// Allows the app to register its default game archive.
 /// eg. return "hades";, will load hades.zip
 /////////////////////////////////////
+//TODO: make constexpr??
 std::string_view defaultGame();
 
 /////////////////////////////////////

@@ -9,7 +9,7 @@ namespace hades::detail::obj_ui
 {
 	//TODO: is this worth moving to the util lib
 	template<std::size_t Length>
-	static string clamp_length(std::string_view str)
+	string clamp_length(std::string_view str)
 	{
 		if (str.length() <= Length)
 			return to_string(str);
@@ -92,7 +92,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<typename T>
-	static void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value)
+	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value)
 	{
 		if constexpr(resources::curve_types::is_vector_type_v<T>)
 		{
@@ -109,7 +109,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_property_edit<entity_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const entity_id& value)
+	inline void make_property_edit<entity_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const entity_id& value)
 	{
 		auto value2 = static_cast<entity_id::value_type>(value);
 		make_property_edit(g, o, name, c, value2);
@@ -118,7 +118,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_property_edit<bool>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const bool& value)
+	inline void make_property_edit<bool>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const bool& value)
 	{
 		using namespace std::string_view_literals;
 		constexpr auto tru = "true"sv;
@@ -126,8 +126,7 @@ namespace hades::detail::obj_ui
 		if (g.combo_begin(name, value ? tru : fal))
 		{
 			bool true_opt = value;
-			bool false_opt = !true_opt;
-
+			
 			if (g.selectable(tru, value))
 				set_curve(o, c, true);
 			if (g.selectable(fal, !value))
@@ -138,7 +137,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_property_edit<string>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const string& value)
+	inline void make_property_edit<string>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const string& value)
 	{
 		auto edit = value;
 		if (g.input_text(name, edit))
@@ -146,7 +145,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_property_edit<unique_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const unique_id& value)
+	inline void make_property_edit<unique_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const unique_id& value)
 	{
 		auto u_string = data::get_as_string(value);
 		if (g.input_text(name, u_string))
@@ -154,7 +153,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_property_edit<vector_float>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const vector_float& value)
+	inline void make_property_edit<vector_float>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const vector_float& value)
 	{
 		auto editval = std::array{ value.x, value.y };
 		if (g.input(name, editval))
@@ -163,7 +162,7 @@ namespace hades::detail::obj_ui
 
 	//TODO: clean these three specialisations up to get rid of repeated code
 	template<typename T>
-	static void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value)
+	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value)
 	{
 		using namespace std::string_view_literals;
 		auto iter = std::cbegin(value);
@@ -184,7 +183,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	static inline void make_vector_edit_field<resources::curve_types::collection_unique>
+	inline void make_vector_edit_field<resources::curve_types::collection_unique>
 		(gui& g, object_instance& o, const resources::curve& c, int32 selected,
 			const resources::curve_types::collection_unique& value)
 	{
@@ -201,15 +200,15 @@ namespace hades::detail::obj_ui
 		if (id != *iter)
 		{
 			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = id;
+			auto container_iter = std::begin(container);
+			std::advance(container_iter, selected);
+			*container_iter = id;
 			set_curve(o, c, container);
 		}
 	}
 
 	template<>
-	static inline void make_vector_edit_field
+	inline void make_vector_edit_field
 		<resources::curve_types::collection_object_ref>(gui& g, object_instance& o,
 			const resources::curve& c, int32 selected,
 			const resources::curve_types::collection_object_ref& value)
@@ -228,9 +227,9 @@ namespace hades::detail::obj_ui
 		if (new_val != *iter)
 		{
 			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = new_val;
+			auto container_iter = std::begin(container);
+			std::advance(container_iter, selected);
+			*container_iter = new_val;
 
 			set_curve(o, c, container);
 		}
@@ -238,7 +237,7 @@ namespace hades::detail::obj_ui
 
 
 	template<typename T, typename U, typename V, typename Obj>
-	static void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
+	void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
 		const resources::curve* c, const T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target)
 	{
 		using namespace std::string_view_literals;
@@ -333,7 +332,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template< typename T, typename U, typename Obj>
-	static inline void make_property_row(gui& g, Obj& o,
+	inline void make_property_row(gui& g, Obj& o,
 		const resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target)
 	{
 		const auto [curve, value] = c;

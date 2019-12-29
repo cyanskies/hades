@@ -46,8 +46,13 @@ namespace hades
 				}
 			}
 
+			// NOTE: member variable ptr
+			// this is a work around for syntax error when T == resources::mod
+			// need to disambiguate r->mod when mod is also the name of T
+			// compiler mistakes mod for an illegal constructor call
+			auto member_ptr = &resources::resource_base::mod;
 			if (r)
-				r->mod = mod;
+				r->*member_ptr = mod;
 
 			return r;
 		}

@@ -97,7 +97,7 @@ namespace hades
 		virtual level level_new(level l) const { return l; }
 		virtual void level_load(const level&) {}
 		virtual level level_save(level l) const { return l; }
-		virtual void level_resize(vector_int new_size, vector_int current_offset) {}
+		virtual void level_resize(vector_int /*new_size*/, vector_int /*current_offset*/) {}
 
 		virtual void gui_update(gui&, editor_windows&) {}
 

@@ -26,11 +26,19 @@ namespace hades
 	{
 		_player_slot_curve = get_player_slot_curve();
 
-		const auto mis = new_mission();
 
-		//create an empty mission
-		_mission_desc = mis.description;
-		_mission_name = mis.name;
+		if (_mission_src == path{})
+		{
+			const auto mis = new_mission();
+
+			//create an empty mission
+			_mission_desc = mis.description;
+			_mission_name = mis.name;
+		}
+		else
+		{
+			//load from path
+		}
 
 		reinit();
 		return;

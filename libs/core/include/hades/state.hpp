@@ -44,7 +44,7 @@ namespace hades
 		virtual bool handle_event(const event&) { return false;  } //handle any events you want, unhandled events go through the input system
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
-		virtual void update(time_duration delta_time, const sf::RenderTarget &t, input_system::action_set a) {}
+		virtual void update(time_duration, const sf::RenderTarget&, input_system::action_set) {}
 		
 		//update animations and draw
 		//dtime is the last time since draw was called

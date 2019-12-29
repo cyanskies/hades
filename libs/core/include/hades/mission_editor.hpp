@@ -41,6 +41,9 @@ namespace hades
 			std::optional<string> path;
 		};
 
+		mission_editor_t() = default;
+		mission_editor_t(std::filesystem::path p) : _mission_src{ std::move(p) } {}
+
 		void init() override;
 		bool handle_event(const event&) override;
 		void update(time_duration dt, const sf::RenderTarget& t, input_system::action_set a) override;
@@ -164,6 +167,8 @@ namespace hades
 	{
 	public:
 		using editor_type = LevelEditor;
+
+		using mission_editor_t::mission_editor_t;
 
 	protected:
 		void make_editor_state(level_info &l) override

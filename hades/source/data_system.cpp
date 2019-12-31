@@ -256,7 +256,7 @@ namespace hades::data
 			//if this resource name has a parser then load it
 			auto parser = _resourceParsers[type];
 			if (parser)
-				std::invoke(parser, mod, *header->get_child(), *this);
+				std::invoke(parser, mod, *header, *this);
 		}
 
 		return;
@@ -287,7 +287,7 @@ namespace hades::data
 		mod_data->name = parse_tools::get_scalar<string>(*mod, "name", mod_data->name);
 
 		//check mod dependencies
-		const auto dependencies = mod->get_child();
+		const auto dependencies = mod->get_child("depends");
 		if (dependencies)
 		{
 			const auto deps = dependencies->to_sequence<string>();
@@ -297,12 +297,12 @@ namespace hades::data
 					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
 				}
 			}
-
-			//for every other headers, check for a header parser
-			parseYaml(modKey, modRoot);
-
-			LOG("Loaded mod: " + mod_data->name);
-			return;
 		}
+		
+		//for every other headers, check for a header parser
+		parseYaml(modKey, modRoot);
+
+		LOG("Loaded mod: " + mod_data->name);
+		return;
 	}
 }

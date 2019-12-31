@@ -798,9 +798,9 @@ namespace hades::resources
 
 		using namespace std::string_view_literals;
 
-		//named based on which tile corners are 'empty'
+		//named based on which tile corners have terrain in them
 		constexpr auto transition_names = std::array{
-			"none"sv,
+			"none"sv, // causes a tile skip
 			"top-right"sv,
 			"bottom-right"sv,
 			"top-right_bottom-right"sv,
@@ -814,7 +814,8 @@ namespace hades::resources
 			"top-left-right_bottom-right"sv,
 			"top-left_bottom-left"sv,
 			"top-left-right_bottom-left"sv,
-			"top-left_bottom-left-right"sv
+			"top-left_bottom-left-right"sv,
+			"all"sv
 		};
 
 		//check against named layouts
@@ -834,11 +835,9 @@ namespace hades::resources
 				if (transition_names[i] == str)
 				{
 					out.emplace_back(static_cast<transition_tile_type>(i));
-					continue;
+					break;
 				}
 			}
-
-			out.emplace_back(transition_tile_type::transition_end);
 		}
 
 		return out;

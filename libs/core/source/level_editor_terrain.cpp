@@ -304,6 +304,7 @@ namespace hades
 							25
 						};
 
+						//TODO: FIXME: hide empty tilesets from combobox rather than crash here
 						assert(!std::empty(terrain->tiles));
 						const auto t = terrain->tiles.front();
 

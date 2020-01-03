@@ -7,6 +7,7 @@
 #include "hades/Main.hpp"
 #include "hades/properties.hpp"
 
+using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 void simple_on_connect()
@@ -62,11 +63,11 @@ void print_changes(const hades::exported_curves& e)
 
 void simple_instance_state::init()
 {
-	const auto lvl_str = hades::files::as_string(defaultGame(), "new_level.lvl"sv);
+	const auto lvl_str = hades::files::read_file(hades::to_string(defaultGame()) + "/new_level.lvl"s);
 	const auto level = hades::deserialise_level(lvl_str);
 	const auto lvl_sv = hades::make_save_from_level(level);
 
-	_server = hades::create_server(lvl_sv);
+	//_server = hades::create_server(lvl_sv);
 	_level = _server->connect_to_level(hades::unique_id::zero);
 
 	/*const auto level_state = _level->get_changes();

@@ -432,7 +432,11 @@ namespace hades::detail
 						if (_load_level_mod.empty())
 							return files::read_file(_load_level_path);
 						else
-							return files::as_string(_load_level_mod, _load_level_path);
+						{
+							const auto mod_id = data::get_uid(_load_level_mod);
+							const auto mod = data::get<resources::mod>(mod_id);
+							return files::read_resource(mod, _load_level_path);
+						}
 					}();
 
 					if (!file.empty())

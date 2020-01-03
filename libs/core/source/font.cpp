@@ -22,7 +22,7 @@ namespace hades
 		try
 		{
 			//we store the font memory for the gui class to use
-			font.source_buffer = files::as_raw(mod->source, font.source);
+			font.source_buffer = files::raw_resource(mod, font.source);
 			font.value.loadFromMemory(font.source_buffer.data(), font.source_buffer.size());
 		}
 		catch (const files::file_error &e)

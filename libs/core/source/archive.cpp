@@ -186,8 +186,7 @@ namespace hades::zip
 		return;
 	}
 
-	constexpr auto buffer_size = std::size_t{ 131072 };
-	//constexpr auto buffer_size = std::size_t{ 16384 };
+	constexpr auto buffer_size = default_buffer_size;
 
 	void iafstream::seekg(off_type o, std::ios_base::seekdir d)
 	{

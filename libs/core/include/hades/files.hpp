@@ -9,8 +9,7 @@
 
 #include "Hades/archive.hpp"
 #include "hades/exceptions.hpp"
-
-//TODO: use filesystem path instead of string
+#include "hades/resource_base.hpp"
 
 namespace hades::files
 {
@@ -51,14 +50,17 @@ namespace hades::files
 		std::variant<stream_t, zip::izfstream> _stream{};
 	};
 
+	//TODO: check error paths/ throw file not found?
 	//open streams to files, saves and configs
 	ifstream stream_file(const std::filesystem::path&);
 	ifstream stream_save(const std::filesystem::path&);
 	ifstream stream_config(const std::filesystem::path&);
 
+	//TODO: check error paths/ throw file not found?
 	//reads file at path as a string
 	//will attempt to load from user_custom_file_directory first
 	string read_file(const std::filesystem::path& file_path);
+	buffer raw_file(const std::filesystem::path& file_path);
 	// as above, but checks the usersSaveDirectoryinstead
 	//reads save files and config files
 	string read_save(const std::filesystem::path& file_name);
@@ -117,13 +119,13 @@ namespace hades
 
 namespace hades::files
 {
-	//reads game files either from directories or mod archives
-	//throws file_exception
-	string as_string(std::string_view modPath, std::string_view fileName);
-	//throws file_exception
-	buffer as_raw(std::string_view modPath, std::string_view fileName);
+	//TODO: check error paths/ throw file not found?
+	irfstream stream_resource(const resources::mod*, const std::filesystem::path& path);
+	buffer raw_resource(const resources::mod*, const std::filesystem::path& path);
+	string read_resource(const resources::mod*, const std::filesystem::path& path);
 
-	//writes file_contents to the file at path, will place UserCustomFileDirectory before path
+	//writes file_contents to the file at path,
+	//will place UserCustomFileDirectory before path if portable flag isnt set
 	//throws file_exception
 	void write_file(const std::filesystem::path& path, std::string_view file_contents);
 	//same as above, calls UserSaveDirectory instead

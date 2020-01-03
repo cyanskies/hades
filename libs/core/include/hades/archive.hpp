@@ -22,6 +22,8 @@ namespace hades
 {
 	//buffer of bytes
 	using buffer = std::vector<std::byte>;
+	//NOTE: .net recently moved from 4kb default to 8kb
+	constexpr auto default_buffer_size = std::size_t{ 4096 }; //4kb buffer
 }
 
 namespace hades::files

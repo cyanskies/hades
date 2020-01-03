@@ -64,24 +64,31 @@ namespace hades
 	class local_server_hub final : public server_hub
 	{
 	public:
-		local_server_hub(level_save lvl) : _level{ lvl, this }//, _game_instance{lvl}
-		{}
+		local_server_hub(mission_save lvl)
+		{
+			//init the _mission_instance
+
+			for (auto& l : lvl.level_saves)
+				_levels.emplace_back(level{ l.name, local_server_level{ std::move(l.save), this } });
+		}
 
 		void update(time_duration dt) override
 		{
 			_server_time += dt;
 			//tick the mission contruct
-			//_game_instance.tick(dt);
+			//_mission_instance.tick(dt);
 
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
-			_level.tick(dt);
+			for(auto &l : _levels)
+				l.instance.tick(dt);
 		}
 
 		void get_updates(exported_curves& exp, time_point dt) const override
 		{
 			_last_local_update_request = _server_time;
-			return _level.get_changes(exp, dt);
+			return;
+			//return _level.get_changes(exp, dt);
 		}
 
 		void get_updates(exported_curves &exp) const override
@@ -95,31 +102,43 @@ namespace hades
 
 		}
 
-		server_level* connect_to_level(unique_id) override
+		server_level* connect_to_level(unique_id id) override
 		{
-			return &_level;
+			for (auto& l : _levels)
+			{
+				if (l.id == id)
+					return &l.instance;
+			}
+
+			return nullptr;
 		}
 
 		void disconnect_from_level() override
 		{}
 
 	private:
-		//mission game instance
-		//game_instance _game_instance;
-		//players
-		
 		mutable time_point _last_local_update_request;
 		time_point _server_time;
 		time_point _start_time;
 
+		//game_instance _mission_instance;
+		//players
+
 		//levels
-		local_server_level _level;
+		struct level
+		{
+			unique_id id = unique_id::zero;
+			local_server_level instance;
+		};
+
+		//NOTE: deque, need constant addresses
+		std::deque<level> _levels;
 	};
 
 	//has to handle networking and resulving unique_id differences between hosts
 	//remote server hub
 
-	std::unique_ptr<server_hub> create_server(level_save lvl)
+	std::unique_ptr<server_hub> create_server(mission_save lvl)
 	{
 		return std::make_unique<local_server_hub>(lvl);
 	}

@@ -7,7 +7,7 @@
 #include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
 #include "hades/server_actions.hpp"
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 
 //TODO: move to hades-core
 //	replace get_changes return with a struct containing curves and other data
@@ -22,6 +22,8 @@
 // levels will have to store an offset time, accumulated as long as they were inactive for
 // the offset will have to be applied when accessing curves from inside the level
 // this will need to be saved to the level
+
+//NOTE: current system doesn't support this, use mission time everywhere
 
 namespace hades
 {
@@ -85,10 +87,9 @@ namespace hades
 	using server_ptr = std::unique_ptr<server_hub>;
 
 	//starting point
-	//std::shared_ptr<server_hub> create_server(mission_save mis);
-	server_ptr create_server(level_save lvl); //auto player assignment
-	server_ptr create_server(level_save lvl, int32 player_slot); //join as player x // obs for slot -1 or already taken 
-	server_ptr create_server(level_save lvl, std::string_view name_slot); //join as player in named slot
+	server_ptr create_server(mission_save); //auto player assignment
+	server_ptr create_server(mission_save, int32 player_slot); //join as player x // obs for slot -1 or already taken 
+	server_ptr create_server(mission_save, std::string_view name_slot); //join as player in named slot
 	//server_ptr connect_to_server(/*ip address*/); //auto player assignment
 }
 

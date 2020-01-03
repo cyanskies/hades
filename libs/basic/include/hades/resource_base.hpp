@@ -46,6 +46,8 @@ namespace hades
 
 	namespace resources
 	{
+		struct mod; //fwd
+
 		struct resource_base
 		{
 			virtual ~resource_base() {}
@@ -55,7 +57,7 @@ namespace hades
 			unique_id id;
 			//the mod that the resource was most recently specified in
 			//not nessicarily the only mod to specify this resource.
-			unique_id mod = unique_id::zero;
+			unique_id mod = unique_id::zero; //TODO: make ptr
 
 			//TODO: depricate this
 			//the file this resource should be loaded from

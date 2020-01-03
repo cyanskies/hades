@@ -263,92 +263,57 @@ namespace hades
 
 namespace hades::files
 {
-	types::string as_string(std::string_view modPath, std::string_view fileName)
+	irfstream stream_resource(const resources::mod* m, const std::filesystem::path& path)
 	{
-		const auto buf = as_raw(modPath, fileName);
+		assert(m);
+		return irfstream{ { m->source }, path };
+	}
 
-		types::string out;
-		out.reserve(std::size(buf));
-		//convert buff to str
-		std::transform(std::begin(buf), std::end(buf), std::back_inserter(out),
-			[](auto i) { return static_cast<char>(i); });
+	template<typename ReturnType, typename Stream>
+	ReturnType from_stream(Stream& str)
+	{
+		str.seekg({}, std::ios_base::end);
+		const auto size = integer_cast<std::size_t>(static_cast<std::streamoff>(str.tellg()));
+		str.seekg({}, std::ios::beg);
+
+		auto out = ReturnType{};
+		out.reserve(size);
+
+		auto buf = buffer{ default_buffer_size };
+		while (std::size(out) != size)
+		{
+			if (str.eof())
+				break;
+
+			str.read(std::data(buf), default_buffer_size);
+			
+			const auto beg = std::begin(buf);
+			using diff_t = typename std::iterator_traits<std::decay_t<decltype(beg)>>::difference_type;
+			auto end = std::next(beg, integer_cast<diff_t>(str.gcount()));
+
+			if constexpr(std::is_same_v<buffer::value_type, typename ReturnType::value_type>)
+				std::copy(beg, end, std::back_inserter(out));
+			else
+			{
+				std::transform(beg, end, std::back_inserter(out), [](const std::byte b) {
+					return static_cast<typename ReturnType::value_type>(b);
+					});
+			}
+		}
 
 		return out;
 	}
 
-	buffer as_raw(std::string_view modPath, std::string_view fileName)
+	buffer raw_resource(const resources::mod* m, const std::filesystem::path& path)
 	{
-		auto stream = irfstream{ modPath, fileName };
-		const auto size = stream.size();
-
-		buffer buff(integer_cast<buffer::size_type>(size));
-		stream.read(std::data(buff), size);
-		return buff;
+		auto stream = stream_resource(m, path);
+		return from_stream<buffer>(stream);
 	}
 
-	static buffer read_raw(const std::filesystem::path& path)
+	string read_resource(const resources::mod* m, const std::filesystem::path& path)
 	{
-		using namespace std::string_literals;
-		
-		if (!fs::exists(path))
-			throw file_not_found{ "File not found: "s + path.generic_string() };
-
-		std::ifstream file{ path, std::ios_base::binary };
-
-		if (!file.is_open())
-			throw file_error{ "Failed to open "s + path.generic_string() + " for input"s };
-
-		//find out the file size
-		file.seekg({}, std::ios::end);
-		assert(file.eof());
-		const auto size = integer_cast<std::size_t>(static_cast<std::streamoff>(file.tellg()));
-		//seek to begining
-		file.clear();
-		file.seekg({}, std::ios::beg);
-
-		//reserve a buffer to store the file
-		buffer buf{};
-		buf.reserve(size);
-
-		//TODO: read more than one byte at a time
-		while (!file.eof())
-			buf.push_back(static_cast<std::byte>(file.get()));
-
-		if (zip::probably_compressed(buf))
-			return zip::inflate(buf);
-
-		return buf;
-	}
-
-	static string read_file_string(const std::filesystem::path& path)
-	{
-		const auto buffer = read_raw(path);
-
-		string out;
-		out.reserve(std::size(buffer));
-		std::transform(std::begin(buffer), std::end(buffer), std::back_inserter(out), [](const std::byte b) {
-			return static_cast<string::value_type>(b);
-		});
-
-		return out;
-	}
-
-	static string try_read(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
-		const std::filesystem::path& file_name)
-	{
-		assert(file_name.is_relative());
-		const auto first = read_file_string(first_path / file_name);
-
-		if (!first.empty())
-			return first;
-
-		const auto second = read_file_string(second_path / file_name);
-
-		if (!second.empty())
-			return second;
-
-		const auto message = "Unable to find file: " + file_name.generic_string();
-		throw file_not_found{ message };
+		auto str = stream_resource(m, path);
+		return from_stream<string>(str);
 	}
 
 	static ifstream try_stream(const std::filesystem::path& first,
@@ -366,6 +331,20 @@ namespace hades::files
 		return {};
 	}
 
+	static buffer try_raw(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
+		const std::filesystem::path& file_name)
+	{
+		auto stream = try_stream(first_path, second_path, file_name);
+		return from_stream<buffer>(stream);
+	}
+
+	static string try_read(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
+		const std::filesystem::path& file_name)
+	{
+		auto str = try_stream(first_path, second_path, file_name);
+		return from_stream<string>(str);
+	}
+
 	ifstream stream_file(const std::filesystem::path& p)
 	{
 		return try_stream(hades::user_custom_file_directory(), std::filesystem::current_path(), p);
@@ -374,6 +353,11 @@ namespace hades::files
 	string read_file(const std::filesystem::path& file_path)
 	{
 		return try_read(hades::user_custom_file_directory(), fs::current_path(), file_path);
+	}
+
+	buffer raw_file(const std::filesystem::path& file_path)
+	{
+		return try_raw(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}
 
 	string read_save(const std::filesystem::path& file_name)
@@ -411,6 +395,9 @@ namespace hades::files
 			throw file_error{ message };
 		}
 
+		//TODO: stream deflation
+		// we dont want to hold the whole stream in memory
+		// even though our input is
 		auto as_bytes = buffer{};
 
 		std::transform(std::begin(file_contents), std::end(file_contents), std::back_inserter(as_bytes), [](const auto c) {

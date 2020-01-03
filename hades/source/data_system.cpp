@@ -55,7 +55,9 @@ namespace hades::data
 	//mod is the name of a folder or archive containing a mod.yaml file
 	void data_system::add_mod(std::string_view mod, bool autoLoad, std::string_view name)
 	{
-		const auto modyaml = files::as_string(mod, name);
+		auto m = resources::mod{};
+		m.source = mod;
+		const auto modyaml = files::read_resource(&m, name);
 
 		if (ContainsTab(modyaml))
 			LOGWARNING("Yaml file: " + to_string(mod) + "/" + to_string(name) + " contains tabs, expect errors.");
@@ -63,10 +65,10 @@ namespace hades::data
 		const auto root = data::make_parser(modyaml);
 		if (autoLoad)
 			//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
-			parseMod(to_string(mod), *root, [this](std::string_view s) {this->add_mod(s, true); return true; });
+			parseMod(mod, *root, [this](std::string_view s) {this->add_mod(s, true); return true; });
 		else
 			//otherwise bind to loaded, returns false if dependent mod is not loaded
-			parseMod(to_string(mod), *root, std::bind(&data_system::loaded, this, std::placeholders::_1));
+			parseMod(mod, *root, std::bind(&data_system::loaded, this, std::placeholders::_1));
 
 		//record the list of loaded games/mods
 		if (name == "game.yaml")
@@ -210,7 +212,7 @@ namespace hades::data
 		auto mod_info = std::invoke(getMod, mod);
 		try
 		{
-			include_yaml = files::as_string(mod_info->source, file);
+			include_yaml = files::read_resource(mod_info, file);
 		}
 		catch (const files::file_error & f)
 		{

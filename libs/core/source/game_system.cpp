@@ -4,7 +4,6 @@
 #include "hades/core_curves.hpp"
 #include "hades/objects.hpp"
 #include "hades/render_interface.hpp"
-#include "hades/shared_map.hpp"
 
 namespace hades
 {

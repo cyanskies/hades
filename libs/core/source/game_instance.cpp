@@ -4,7 +4,6 @@
 
 #include "hades/data.hpp"
 #include "hades/game_system.hpp"
-#include "hades/parallel_jobs.hpp"
 #include "hades/core_resources.hpp"
 #include "hades/sf_time.hpp"
 

@@ -2,14 +2,12 @@
 #define HADES_UTIL_VALUEGUARD_HPP
 
 #include <mutex>
+#include <tuple>
 #include <utility>
-
-#include "hades/spinlock.hpp"
-#include "hades/transactional.hpp"
 
 // a transactional wrapper for arbitary value types.
 namespace hades {
-	template<typename value, typename mutex = spinlock>
+	template<typename value, typename mutex = std::mutex>
 	class value_guard
 	{
 	public:
@@ -118,16 +116,10 @@ namespace hades {
 			_value = std::forward<T>(desired);
 		}
 
-		constexpr bool is_lock_free() const noexcept { return lock_free_mutex_v<mutex>; }
-		static constexpr bool is_always_lock_free = lock_free_mutex_v<mutex>;
-
 	protected:
 		mutable mutex _mutex;
 		value _value;
 	};
-
-	template<typename T, typename U>
-	struct is_transactional<value_guard<T, U>> : std::true_type {};
 }
 
 #endif // !HADES_UTIL_VALUEGUARD_HPP

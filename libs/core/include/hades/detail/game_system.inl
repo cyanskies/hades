@@ -3,7 +3,6 @@
 #include <type_traits>
 
 #include "hades/data.hpp"
-#include "hades/transaction.hpp"
 
 namespace hades
 {

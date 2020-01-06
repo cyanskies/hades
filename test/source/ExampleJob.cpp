@@ -1,4 +1,3 @@
-#include "hades/shared_map.hpp"
 
 struct needed_info
 {

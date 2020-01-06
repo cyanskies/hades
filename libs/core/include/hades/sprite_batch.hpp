@@ -2,6 +2,8 @@
 #define HADES_SPRITE_BATCH_HPP
 
 #include <deque>
+#include <mutex>
+#include <shared_mutex>
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Vertex.hpp"
@@ -81,8 +83,8 @@ namespace hades
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
-		using shared_mutex_type = shared_spinlock;
-		using mutex_type = spinlock;
+		using shared_mutex_type = std::shared_mutex;
+		using mutex_type = std::mutex;
 		using index_t = std::size_t;
 
 		//clears all of the stored data

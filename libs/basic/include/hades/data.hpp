@@ -7,7 +7,6 @@
 #include <tuple>
 
 #include "hades/resource_base.hpp"
-#include "hades/spinlock.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/utility.hpp"
@@ -118,7 +117,7 @@ namespace hades
 		namespace detail
 		{
 			void set_data_manager_ptr(data_manager* ptr);
-			using exclusive_lock = std::unique_lock<shared_spinlock>;
+			using exclusive_lock = std::unique_lock<std::shared_mutex>;
 			//TODO: return data_manager& here instead; as user is not permitted to store the result
 			using data_manager_exclusive = std::tuple<data_manager*, exclusive_lock>;
 			data_manager_exclusive get_data_manager_exclusive_lock();

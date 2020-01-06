@@ -1,27 +1,18 @@
 include(../../cmake.txt)
 
 set(HADES_UTIL_SRC
-	source/parallel_jobs.cpp
 	source/time.cpp
-	source/transaction.cpp
 	source/utility.cpp
 	include/hades/any_map.hpp
 	include/hades/curve.hpp
 	include/hades/for_each_tuple.hpp
 	include/hades/line_math.hpp
 	include/hades/math.hpp
-	include/hades/parallel_jobs.hpp
 	include/hades/poly_math.hpp
 	include/hades/rectangle_math.hpp
-	include/hades/shared_any_map.hpp
-	include/hades/shared_guard.hpp
-	include/hades/shared_map.hpp
-	include/hades/spinlock.hpp
 	include/hades/strong_typedef.hpp
 	include/hades/table.hpp
 	include/hades/time.hpp
-	include/hades/transaction.hpp
-	include/hades/transactional.hpp
 	include/hades/types.hpp
 	include/hades/uniqueid.hpp
 	include/hades/utility.hpp
@@ -31,13 +22,9 @@ set(HADES_UTIL_SRC
 	include/hades/detail/for_each_tuple.inl
 	include/hades/detail/line_math.inl
 	include/hades/detail/math.inl
-	include/hades/detail/parallel_jobs.inl
 	include/hades/detail/poly_math.inl
 	include/hades/detail/rectangle_math.inl
-	include/hades/detail/shared_any_map.inl
-	include/hades/detail/shared_map.inl
 	include/hades/detail/table.inl
-	include/hades/detail/transaction.inl
 	include/hades/detail/utility.inl
 	include/hades/detail/vector_math.inl
 )

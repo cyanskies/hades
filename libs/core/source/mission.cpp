@@ -114,6 +114,10 @@ namespace hades
 			{
 				const auto name = l->to_string();
 				auto level = deserialise_level(*l);
+				m.inline_levels.emplace_back(mission::level_element{ 
+					data::make_uid(name), 
+					std::move(level) 
+					});
 			}
 		}
 

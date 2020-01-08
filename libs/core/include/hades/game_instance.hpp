@@ -33,6 +33,8 @@ namespace hades
 		//		default is max time
 		void get_changes(exported_curves&, time_point t) const;
 
+		time_point get_time(time_point mission_offset = time_point{}) const noexcept;
+
 		const game_interface* get_interface() const noexcept;
 
 	private:

@@ -36,7 +36,7 @@ namespace hades
 		t.draw(_tile_layer, s);
 	}
 
-	rect_float immutable_terrain_map::get_local_bounds() const
+	rect_float immutable_terrain_map::get_local_bounds() const noexcept
 	{
 		return _tile_layer.get_local_bounds();
 	}
@@ -83,7 +83,7 @@ namespace hades
 		t.draw(_tile_layer, s);
 	}
 
-	rect_float mutable_terrain_map::get_local_bounds() const
+	rect_float mutable_terrain_map::get_local_bounds() const noexcept
 	{
 		return _tile_layer.get_local_bounds();
 	}
@@ -106,7 +106,7 @@ namespace hades
 			iter->update(*iter2);
 	}
 
-	const terrain_map &mutable_terrain_map::get_map() const
+	const terrain_map &mutable_terrain_map::get_map() const noexcept
 	{
 		return _map;
 	}

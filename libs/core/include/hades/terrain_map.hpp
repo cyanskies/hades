@@ -21,7 +21,7 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		rect_float get_local_bounds() const;
+		rect_float get_local_bounds() const noexcept;
 
 	private:
 		immutable_tile_map _tile_layer;
@@ -40,12 +40,12 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-		rect_float get_local_bounds() const;
+		rect_float get_local_bounds() const noexcept;
 
 		void place_tile(const std::vector<tile_position>&, const resources::tile&);
 		void place_terrain(const std::vector<terrain_vertex_position>&, const resources::terrain*);
 
-		const terrain_map &get_map() const;
+		const terrain_map &get_map() const noexcept;
 
 	private:
 		terrain_map _map;

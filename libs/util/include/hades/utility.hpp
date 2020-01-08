@@ -27,7 +27,7 @@ namespace hades {
 	//NOTE: define provided to allow compilation of path that will never be called
 	template<typename T,
 		typename std::enable_if_t<!lerpable_v<T>, int> = 0>
-		T lerp(T a, T b, float t)
+		T lerp(T, T, float)
 	{
 		throw std::logic_error{ "called lerp with a non-arithmetic type" };
 	}

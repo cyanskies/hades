@@ -5,7 +5,7 @@
 
 namespace hades::camera
 {
-	void variable_width(sf::View &v, float static_height, float height, float width)
+	void variable_width(sf::View &v, float static_height, float width, float height)
 	{
 		const auto ratio = width / height;
 

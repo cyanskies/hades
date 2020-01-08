@@ -219,7 +219,7 @@ namespace hades
 
 		const auto components = v.size();
 		const auto int_components = integer_cast<int>(components);
-		assert(components == int_components);
+		assert(signed_cast(components) == int_components);
 
 		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), int_components, NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}

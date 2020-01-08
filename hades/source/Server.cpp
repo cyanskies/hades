@@ -76,12 +76,17 @@ namespace hades
 		{
 			_server_time += dt;
 			//tick the mission contruct
-			//_mission_instance.tick(dt);
+			_mission_instance->tick(dt);
 
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
 			for(auto &l : _levels)
 				l.instance.tick(dt);
+		}
+
+		time_point get_time() const noexcept override
+		{
+			return _mission_instance->get_time(_mission_instance->get_time());
 		}
 
 		void get_updates(exported_curves& exp, time_point dt) const override
@@ -118,10 +123,12 @@ namespace hades
 
 	private:
 		mutable time_point _last_local_update_request;
+		[[deprecated("get the time from the mission_instance")]]
 		time_point _server_time;
+		[[deprecated("get the time from the mission_instance")]]
 		time_point _start_time;
 
-		//game_instance _mission_instance;
+		std::optional<game_instance> _mission_instance;
 		//players
 
 		//levels

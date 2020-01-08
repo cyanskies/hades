@@ -49,7 +49,7 @@ namespace hades
 		//update animations and draw
 		//dtime is the last time since draw was called
 		//draw the game at the previous draw time + deltaTime
-		virtual void draw(sf::RenderTarget &target, time_duration delta_time) {}
+		virtual void draw(sf::RenderTarget &/*target*/, time_duration /*delta_time*/) {}
 
 		//support functions
 		virtual void reinit() {} //reinit because graphcs options changed, or state has been paused

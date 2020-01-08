@@ -37,6 +37,12 @@
 //on_destroy can be used to clean up background state
 // typically unused
 
+// fwds
+namespace hades
+{
+	struct terrain_map;
+}
+
 namespace hades
 {
 	void register_game_system_resources(data::data_manager&);
@@ -479,6 +485,8 @@ namespace hades
 		const T get_value(curve_index_t, time_point);
 
 		world_rect_t get_world_bounds();
+		const terrain_map& get_world_terrain() noexcept;
+		//get level data
 
 		//common curves
 		world_vector_t get_position(object_ref, time_point);

@@ -76,6 +76,8 @@ namespace hades
 		//virtual time_point get_start_time() = 0;
 		//get the servers current time
 		//virtual time_point get_current_time() = 0;
+		//returns the total mission time of the server
+		virtual time_point get_time() const noexcept = 0;
 
 		//get source_file level1.mission or whatever
 		virtual void get_mission() = 0;

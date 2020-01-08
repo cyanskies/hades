@@ -90,6 +90,12 @@ namespace hades
 		return;
 	}
 
+	time_point game_instance::get_time(time_point mission_offset) const noexcept
+	{
+		//TODO: levels should compensate with their sleep time.
+		return _current_time;
+	}
+
 	const game_interface* game_instance::get_interface() const noexcept
 	{
 		return &_game;

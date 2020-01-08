@@ -347,6 +347,11 @@ namespace hades
 			return render_data_ptr->level_data->get_world_bounds();
 		}
 
+		const terrain_map& get_world_terrain() noexcept
+		{
+			return render_data_ptr->level_data->get_world_terrain();
+		}
+
 		world_vector_t get_position(object_ref o, time_point t)
 		{
 			const auto pos_id = get_position_curve_id();

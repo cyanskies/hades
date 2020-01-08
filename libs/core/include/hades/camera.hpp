@@ -8,7 +8,7 @@ namespace sf
 
 namespace hades::camera
 {
-	void variable_width(sf::View&, float static_height, float height, float width);
+	void variable_width(sf::View&, float static_height, float width, float height);
 }
 
 #endif //!HADES_CAMERA_HPP

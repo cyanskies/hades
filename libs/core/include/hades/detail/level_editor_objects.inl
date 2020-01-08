@@ -125,8 +125,6 @@ namespace hades::detail::obj_ui
 		constexpr auto fal = "false"sv;
 		if (g.combo_begin(name, value ? tru : fal))
 		{
-			bool true_opt = value;
-			
 			if (g.selectable(tru, value))
 				set_curve(o, c, true);
 			if (g.selectable(fal, !value))

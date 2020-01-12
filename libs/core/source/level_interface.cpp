@@ -136,7 +136,7 @@ namespace hades
 	}
 
 	game_implementation::game_implementation(const level_save &sv) 
-		: common_implementation_base{sv}, _save{sv}, _player_input{get_if_player_input(sv)}
+		: common_implementation_base{sv}, _player_input{get_if_player_input(sv)}
 	{
 		// NOTE: this is checked on release when reading savefiles 
 		//       and converting levels into saves
@@ -151,6 +151,9 @@ namespace hades
 			{
 				auto ents = std::vector<attached_ent>{};
 				ents.reserve(std::size(a.second));
+				// NOTE: the time_point is for sleeping updates,
+				// a default constructed one if always correct,
+				// when loading a save
 				for (auto e : a.second)
 					ents.emplace_back(e, time_point{});
 

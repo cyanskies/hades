@@ -314,20 +314,25 @@ namespace hades
 		// so make it
 		if (layer_index == no_index)
 		{
+			
+
 			const auto end = std::end(_object_layers);
 			auto iter = std::begin(_object_layers);
 
-			for (auto iter2 = std::next(iter); iter != end; ++iter, ++iter2)
+			if (iter != end)
 			{
-				if (iter->layer > l)
-					break;
-				if ((iter->layer < l &&
-					iter2 == end) ||
-					(iter->layer < l &&
-						iter2->layer > l))
+				for (auto iter2 = std::next(iter); iter != end; ++iter, ++iter2)
 				{
-					iter = iter2;
-					break;
+					if (iter->layer > l)
+						break;
+					if ((iter->layer < l &&
+						iter2 == end) ||
+						(iter->layer < l &&
+							iter2->layer > l))
+					{
+						iter = iter2;
+						break;
+					}
 				}
 			}
 

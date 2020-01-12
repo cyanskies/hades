@@ -134,9 +134,6 @@ namespace hades
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _systems; }
 
-		const level_save &get_level_save() noexcept
-		{ return _save; }
-
 		void update_input_queue(std::vector<server_action> input, time_point);
 		std::vector<server_action> get_and_clear_input_queue() noexcept;
 
@@ -149,7 +146,6 @@ namespace hades
 
 	private:
 		system_behaviours<game_system> _systems;
-		level_save _save;
 		std::vector<server_action> _input_queue;
 		using action_history = std::pair<std::vector<server_action>, time_point>;
 		std::vector<action_history> _input_history;

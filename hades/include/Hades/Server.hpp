@@ -80,7 +80,7 @@ namespace hades
 		virtual time_point get_time() const noexcept = 0;
 
 		//get source_file level1.mission or whatever
-		virtual void get_mission() = 0;
+		virtual mission get_mission() = 0;
 
 		virtual server_level *connect_to_level(unique_id) = 0;
 		virtual void disconnect_from_level() = 0;

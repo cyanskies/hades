@@ -9,7 +9,7 @@
 
 namespace hades 
 {
-	game_instance::game_instance(level_save sv) : _game(sv)
+	game_instance::game_instance(const level_save& sv) : _game(sv)
 	{}
 
 	void game_instance::tick(time_duration dt)

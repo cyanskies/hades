@@ -20,7 +20,7 @@ namespace hades
 	class game_instance
 	{
 	public:
-		game_instance(level_save);
+		game_instance(const level_save&);
 
 		//triggers all systems with the specified time change
 		void tick(time_duration dt);

@@ -410,6 +410,7 @@ namespace hades
 		T &get_system_data()
 		{
 			auto ptr = detail::get_render_data_ptr();
+			assert(ptr->system_data->has_value());
 			auto ret = std::any_cast<T>(ptr->system_data);
 			return *ret;
 		}

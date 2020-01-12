@@ -1,7 +1,8 @@
 #include "Hades/Server.hpp"
 
-#include "Hades/game_system.hpp"
+#include "hades/game_system.hpp"
 #include "hades/game_instance.hpp"
+#include "hades/level.hpp"
 
 namespace hades
 {
@@ -18,7 +19,7 @@ namespace hades
 	class local_server_level final : public server_level
 	{
 	public:
-		local_server_level(level_save sv, local_server_hub *server) : _game(sv), _server(server)
+		local_server_level(const level_save& sv, local_server_hub *server) : _game(sv), _server(server)
 		{}
 
 		void tick(time_duration dt)
@@ -44,7 +45,7 @@ namespace hades
 			return get_changes(exp, _last_update_time);
 		}
 
-		virtual const common_interface* get_interface() const noexcept
+		const common_interface* get_interface() const noexcept override
 		{
 			return _game.get_interface();
 		}
@@ -65,11 +66,12 @@ namespace hades
 	{
 	public:
 		local_server_hub(mission_save lvl)
+			: _mission{ std::move(lvl) }
 		{
 			//init the _mission_instance
 
-			for (auto& l : lvl.level_saves)
-				_levels.emplace_back(level{ l.name, local_server_level{ std::move(l.save), this } });
+			for (auto& l : _mission.level_saves)
+				_levels.emplace_back(level{ l.name, local_server_level{ l.save, this } });
 		}
 
 		void update(time_duration dt) override
@@ -102,17 +104,46 @@ namespace hades
 			return get_updates(exp, dt);
 		}
 
-		void get_mission() override
+		mission get_mission() override
 		{
-
+			return _mission.source;
 		}
 
 		server_level* connect_to_level(unique_id id) override
 		{
+			//level is running
 			for (auto& l : _levels)
 			{
 				if (l.id == id)
 					return &l.instance;
+			}
+
+			//load level
+			//for (auto& l : _mission.level_saves)
+			//{
+			//	// TODO: load
+			//}
+
+			//for (auto& l : _mission.source.external_levels)
+			//{
+			//	if (l.name == id)
+			//	{
+			//		// TODO: how do we know if the file is in a mod or not?
+			//		// maybe forget externals
+			//		//const auto level_source = files::l.path;
+			//	}
+			//}
+
+			//create level
+			for (auto& l : _mission.source.inline_levels)
+			{
+				if (l.name == id)
+				{
+					const auto save = make_save_from_level(l.level);
+					auto new_level = level{ id, {save, this} };
+					auto &out = _levels.emplace_back(std::move(new_level));
+					return &out.instance;
+				}
 			}
 
 			return nullptr;
@@ -127,6 +158,10 @@ namespace hades
 		time_point _server_time;
 		[[deprecated("get the time from the mission_instance")]]
 		time_point _start_time;
+
+		//save file for the current game
+		//also stores the state for unloaded levels
+		mission_save _mission;
 
 		std::optional<game_instance> _mission_instance;
 		//players

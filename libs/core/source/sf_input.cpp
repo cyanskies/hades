@@ -1,4 +1,4 @@
-#include "Hades/sf_input.hpp"
+#include "hades/sf_input.hpp"
 
 #include <map>
 #include <tuple>
@@ -9,7 +9,7 @@
 #include "SFML/Window/Touch.hpp"
 #include "SFML/Window/Window.hpp"
 
-#include "hades/uniqueId.hpp"
+#include "hades/uniqueid.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades
@@ -24,11 +24,11 @@ namespace hades
 	template<sf::Keyboard::Key k>
 	interpreter_funcs keyboard()
 	{
-		auto realtime =  [] {
+		/*auto realtime =  [] {
 			action a{};
 			a.active = sf::Keyboard::isKeyPressed(k);
 			return a;
-		};
+		};*/
 
 		auto is_match = [](const sf::Event &e) {
 			if (e.type == sf::Event::KeyPressed ||
@@ -48,7 +48,7 @@ namespace hades
 			return a;
 		};
 
-		return { is_match, event_check, realtime };
+		return { is_match, event_check, nullptr };
 	}
 
 	bool in_window(sf::Vector2i pos, const sf::Window &window)
@@ -186,6 +186,9 @@ namespace hades
 
 	void register_sfml_input(const sf::Window &win, input_event_system &sys)
 	{
+		//TODO: use key symbols instead of names where appropriate
+		// eg "-" instead of "dash"
+
 		std::map<types::string, interpreter_funcs> interpreter_map;
 		//=====keyboard keys=====
 		//alpha
@@ -240,18 +243,18 @@ namespace hades
 		//special
 		interpreter_map.insert({ "lbracket", keyboard<sf::Keyboard::LBracket>() });
 		interpreter_map.insert({ "rbracket", keyboard<sf::Keyboard::RBracket>() });
-		interpreter_map.insert({ "semicolon", keyboard<sf::Keyboard::SemiColon>() });
+		interpreter_map.insert({ "semicolon", keyboard<sf::Keyboard::Semicolon>() });
 		interpreter_map.insert({ "comma", keyboard<sf::Keyboard::Comma>() });
 		interpreter_map.insert({ "period", keyboard<sf::Keyboard::Period>() });
 		interpreter_map.insert({ "quote", keyboard<sf::Keyboard::Quote>() });
 		interpreter_map.insert({ "slash", keyboard<sf::Keyboard::Slash>() });
-		interpreter_map.insert({ "backslash", keyboard<sf::Keyboard::BackSlash>() });
+		interpreter_map.insert({ "backslash", keyboard<sf::Keyboard::Backslash>() });
 		//i.insert({ "tilde", keyboard<sf::Keyboard::Num9>() });
 		interpreter_map.insert({ "equal", keyboard<sf::Keyboard::Equal>() });
-		interpreter_map.insert({ "dash", keyboard<sf::Keyboard::Dash>() });
+		interpreter_map.insert({ "dash", keyboard<sf::Keyboard::Hyphen>() });
 		interpreter_map.insert({ "space", keyboard<sf::Keyboard::Space>() });
-		interpreter_map.insert({ "return", keyboard<sf::Keyboard::Return>() });
-		interpreter_map.insert({ "backspace", keyboard<sf::Keyboard::BackSpace>() });
+		interpreter_map.insert({ "return", keyboard<sf::Keyboard::Enter>() });
+		interpreter_map.insert({ "backspace", keyboard<sf::Keyboard::Backspace>() });
 		interpreter_map.insert({ "tab", keyboard<sf::Keyboard::Tab>() });
 		interpreter_map.insert({ "pageup", keyboard<sf::Keyboard::PageUp>() });
 		interpreter_map.insert({ "pagedown", keyboard<sf::Keyboard::PageDown>() });

@@ -79,27 +79,28 @@ namespace hades
 			{
 				//for each interpreter
 				const auto interpreter = _event_interpreters.find({ (begin)->second });
-
+				auto interpretor_handled = false;
 				if (interpreter != std::end(_event_interpreters))
 				{
 					const std::tuple<action, bool> ret = check_events<Event>(*interpreter, events);
 					a.merge(std::get<action>(ret));
 					const bool event_handled = std::get<bool>(ret);
-					handled |= event_handled;
+					interpretor_handled |= event_handled;
 				}
 
 				//if none of the events resolved the interpreter
 				//then run the real-time input check if present
-				if (!handled)
+				if (!interpretor_handled)
 				{
 					const auto interpreter = _interpreters.find({ (begin)->second });
 					if (interpreter != std::end(_interpreters) && interpreter->input_check)
 					{
 						a.merge(interpreter->input_check());
-						handled = true;
-					}
-					
+						interpretor_handled = true;
+					}	
 				}
+
+				handled |= interpretor_handled;
 				++begin;
 			}
 

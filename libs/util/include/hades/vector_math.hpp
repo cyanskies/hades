@@ -8,25 +8,6 @@
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
 
-namespace hades::detail
-{
-	template<typename T, typename U>
-	constexpr bool vector_t_good_tuple_f() noexcept
-	{
-		if constexpr (is_tuple_v<U>)
-		{
-			return std::tuple_size_v<U> == 2 &&
-				std::tuple_element_t<0u, U> == T &&
-				std::tuple_element_t<1u, U> == T;
-		}
-
-		return false;
-	}
-
-	template<typename T, typename U>
-	constexpr auto vector_t_good_tuple_v = vector_t_good_tuple_f<T, U>();
-}
-
 namespace hades
 {
 	// fast reciprocal square root
@@ -43,13 +24,25 @@ namespace hades
 	{
 		using value_type = T;
 
-		template<typename T>
-		constexpr vector_t<T>& operator+=(const vector_t<T>& rhs) noexcept
+		constexpr vector_t& operator+=(const vector_t& rhs) noexcept
 		{
 			x += rhs.x;
 			y += rhs.y;
-
 			return *this;
+		}
+
+		//scalar multiplication
+		constexpr vector_t& operator*=(const T rhs) noexcept
+		{
+			x *= rhs;
+			y *= rhs;
+			return *this;
+		}
+
+		constexpr T& operator[](std::size_t i) noexcept
+		{
+			assert(i < 2);
+			return (&x)[i];
 		}
 
 		T x, y;
@@ -58,6 +51,7 @@ namespace hades
 	static_assert(std::is_trivially_constructible_v<vector_t<int32>>);
 	static_assert(std::is_trivially_assignable_v<vector_t<int32>, vector_t<int32>>);
 	static_assert(std::is_trivially_copyable_v<vector_t<int32>>);
+	static_assert(std::is_trivial_v<vector_t<int32>>);
 
 	template<typename T>
 	struct lerpable<vector_t<T>> : public std::bool_constant<lerpable_v<T>> {};

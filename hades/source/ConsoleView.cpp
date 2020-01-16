@@ -54,7 +54,7 @@ namespace hades
 		if (n < 0)
 			char_size->store(0);
 
-		return static_cast<unsigned int>(n);
+		return integer_cast<unsigned int>(n);
 	}
 
 	void ConsoleView::update()

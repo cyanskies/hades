@@ -12,7 +12,7 @@ namespace hades
 	class fps_overlay final : public debug::Overlay
 	{
 	public:
-		enum fps_mode
+		enum fps_mode //TODO: enum class
 		{
 			off,
 			diag,

@@ -52,7 +52,7 @@ namespace hades::zip
 			throw archive_error{ message };
 		}
 
-		return static_cast<unsigned int>(size);
+		return integer_cast<unsigned int>(size);
 	}
 
 	iafstream::iafstream(const std::filesystem::path& p)
@@ -341,7 +341,7 @@ namespace hades::zip
 			using char_type = izfstream::stream_t::char_type;
 			_stream.read(reinterpret_cast<char_type*>(std::data(_buffer)), buffer_size);
 			_buffer_pos = std::size_t{};
-			_buffer_end = static_cast<std::size_t>(_stream.gcount());
+			_buffer_end = integer_cast<std::size_t>(_stream.gcount());
 		}
 
 		//uint as defined by zlib
@@ -364,8 +364,8 @@ namespace hades::zip
 			_buffer_end = std::size_t{};
 		}
 
-		_last_read = static_cast<std::streamsize>(count) -
-			static_cast<std::streamsize>(_zip_stream.avail_out);
+		_last_read = integer_cast<std::streamsize>(count) -
+			integer_cast<std::streamsize>(_zip_stream.avail_out);
 
 		// i don't know why this is part of the std streams api
 		return *this;
@@ -697,7 +697,7 @@ namespace hades::zip
 			//write data to file
 			const auto usize = CheckSizeLimits(info.uncompressed_size);
 			using char_buffer = std::vector<char>;
-			char_buffer buff(static_cast<buffer::size_type>(usize));
+			char_buffer buff(integer_cast<buffer::size_type>(usize));
 
 			ret = unzOpenCurrentFile(archive);
 			if (ret != ZIP_OK)

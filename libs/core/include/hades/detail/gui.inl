@@ -36,7 +36,7 @@ namespace hades
 		_active_assert();
 
 		//convert the current item into an int to pass into IMGUI
-		auto current_as_int = static_cast<int>(current_item);
+		auto current_as_int = integer_cast<int>(current_item);
 		assert(current_as_int == current_item);
 
 		//NOTE: container is not modified, but ListBox() only accepts non-const
@@ -45,7 +45,7 @@ namespace hades
 		const auto result = ImGui::ListBox(to_string(label).data(), &current_as_int,
 			[](void *data, int index, const char **out_text)->bool {
 			assert(index >= 0);
-			const auto i = static_cast<std::size_t>(index);
+			const auto i = integer_cast<std::size_t>(index);
 			const auto &container = *static_cast<Container*>(data);
 			if (i > std::size(container))
 				return false;
@@ -60,11 +60,11 @@ namespace hades
 					return val; // must be a char*
 			}(*at);
 			return true;
-		}, &cont, static_cast<int32>(std::size(container)), height_in_items);
+		}, &cont, integer_cast<int32>(std::size(container)), height_in_items);
 
 		//update the current_item ref
 		assert(current_as_int >= 0);
-		current_item = static_cast<std::size_t>(current_as_int);
+		current_item = integer_cast<std::size_t>(current_as_int);
 
 		return result;
 	}

@@ -469,7 +469,7 @@ namespace hades
 
 				//get the next starting id
 				const auto iter2 = std::next(iter);
-				const auto end_id = [iter2, end, starting_id, tileset] {
+				const auto end_id = [iter2, end, starting_id = starting_id, tileset] {
 					if (iter2 != end)
 						return std::get<tile_count_t>(*iter2);
 					else
@@ -722,7 +722,7 @@ namespace hades
 
 		const auto index = make_tile_id(m, t);
 
-		const auto length = static_cast<std::size_t>(s.x * s.y);
+		const auto length = integer_cast<std::size_t>(s.x * s.y);
 		m.tiles = std::vector<tile_count_t>(length, index);
 		assert(m.tiles.size() == length);
 		return m;

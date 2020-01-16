@@ -16,8 +16,10 @@ namespace hades
 		constexpr rect_t(T x, T y, T width, T height) noexcept;
 		constexpr rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept;
 
-		T x{}, y{}, width{}, height{};
+		T x, y, width, height;
 	};
+
+	static_assert(std::is_trivial_v<rect_t<int32>>);
 
 	template<typename T>
 	constexpr bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs);
@@ -34,8 +36,10 @@ namespace hades
 	template<typename T>
 	struct rect_centre_t
 	{
-		T x{}, y{}, half_width{}, half_height{};
+		T x, y, half_width, half_height;
 	};
+
+	static_assert(std::is_trivial_v<rect_centre_t<int32>>);
 
 	using rect_centre_int = rect_centre_t<int32>;
 	using rect_centre_float = rect_centre_t<float>;

@@ -15,6 +15,31 @@ namespace hades
 		: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
 
 	template<typename T>
+	template<typename U>
+	inline constexpr hades::rect_t<T>::operator rect_t<U>() const noexcept
+	{
+		if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
+		{
+			return {
+				integer_cast<U>(x),
+				integer_cast<U>(y),
+				integer_cast<U>(width),
+				integer_cast<U>(height)
+			};
+		}
+		else 
+		{
+			//probably one of them is a float
+			return {
+				static_cast<U>(x),
+				static_cast<U>(y),
+				static_cast<U>(width),
+				static_cast<U>(height)
+			};
+		}
+	}
+
+	template<typename T>
 	constexpr bool operator==(const rect_t<T> &lhs, const rect_t<T> &rhs)
 	{
 		return lhs.x == rhs.x &&
@@ -37,7 +62,7 @@ namespace hades
 	}
 
 	template<typename T>
-	rect_t<T> to_rect(rect_centre_t<T> r)
+	constexpr rect_t<T> to_rect(rect_centre_t<T> r) noexcept
 	{
 		return {
 			r.x - r.half_width,
@@ -48,7 +73,7 @@ namespace hades
 	}
 
 	template<typename T>
-	rect_centre_t<T> to_rect_centre(rect_t<T> r)
+	constexpr rect_centre_t<T> to_rect_centre(rect_t<T> r) noexcept
 	{
 		r = normalise(r);
 		const vector_t<T> half_size{ r.width / 2, r.height / 2 };
@@ -56,25 +81,39 @@ namespace hades
 	}
 
 	template<typename T>
-	vector_t<T> position(const rect_t<T> &r)
+	constexpr vector_t<T> position(const rect_t<T> &r) noexcept
 	{
 		return { r.x, r.y };
 	}
 
 	template<typename T>
-	vector_t<T> size(const rect_t<T> &r)
+	constexpr vector_t<T> size(const rect_t<T> &r) noexcept
 	{
 		return { r.width, r.height };
 	}
 
 	template<typename T>
-	bool intersects(const rect_t<T> &l, const rect_t<T> &r)
+	constexpr bool aabb_test(const rect_t<T>& l, const rect_t<T>& r) noexcept
 	{
-		return intersect_area(l, r, rect_t<T>{});
+		const auto l_x2 = l.x + l.width;
+		const auto r_x2 = r.x + r.width;
+		const auto x_intersect = l.x < r_x2 && l_x2 > r.x;
+
+		const auto l_y2 = l.y + l.height;
+		const auto r_y2 = r.y + r.height;
+		const auto y_intersect = l.y < r_y2 && l_y2 > r.y;
+		
+		return x_intersect && y_intersect;
 	}
 
 	template<typename T>
-	bool intersect_area(const rect_t<T> &l, const rect_t<T> &r, rect_t<T> &a)
+	constexpr bool intersects(const rect_t<T> &l, const rect_t<T> &r) noexcept
+	{
+		return aabb_test(l, r);
+	}
+
+	template<typename T>
+	constexpr bool intersect_area(const rect_t<T> &l, const rect_t<T> &r, rect_t<T> &a) noexcept
 	{
 		// Rectangles with negative dimensions are allowed, so we must handle them correctly
 		const auto l_normal = normalise(l);
@@ -97,7 +136,7 @@ namespace hades
 	}
 
 	template<typename T>
-	rect_t<T> normalise(rect_t<T> r)
+	constexpr rect_t<T> normalise(rect_t<T> r) noexcept
 	{
 		return {
 			std::min(r.x, r.x + r.width),
@@ -108,7 +147,7 @@ namespace hades
 	}
 
 	template<typename T>
-	std::array<point_t<T>, 4> corners(rect_t<T> r)
+	constexpr std::array<point_t<T>, 4> corners(rect_t<T> r) noexcept
 	{
 		return {
 			point_t<T>{r.x, r.y},
@@ -121,7 +160,7 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
-		auto &get_corner_impl(rect_corners c, T &a)
+		constexpr auto &get_corner_impl(rect_corners c, T &a) noexcept
 		{
 			static_assert(std::is_array_v<T>);
 			static_assert(a.size() == 4);
@@ -133,26 +172,26 @@ namespace hades
 	}
 
 	template<typename T>
-	const point_t<T> &get_corner(rect_corners c, const std::array<point_t<T>, 4> &a)
+	constexpr const point_t<T> &get_corner(rect_corners c, const std::array<point_t<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	point_t<T> &get_corner(rect_corners c, std::array<point_t<T>, 4> &a)
+	constexpr point_t<T> &get_corner(rect_corners c, std::array<point_t<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	bool is_within(point_t<T> value, rect_t<T> other)
+	constexpr bool is_within(point_t<T> value, rect_t<T> other) noexcept
 	{
 		return is_within(value.x, other.x, other.x + other.width)
 			&& is_within(value.y, other.y, other.y + other.height);
 	}
 
 	template<typename T>
-	bool is_within(rect_t<T> first, rect_t<T> second)
+	constexpr bool is_within(rect_t<T> first, rect_t<T> second) noexcept
 	{
 		auto area = rect_t<T>{};
 		intersect_area(first, second, area);

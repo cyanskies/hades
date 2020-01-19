@@ -23,12 +23,7 @@ namespace hades
 	template<>
 	inline entity_id from_string<entity_id>(std::string_view s)
 	{
-		return entity_id{ from_string<entity_id::value_type>(s) };
-	}
-
-	inline string to_string(entity_id id)
-	{
-		return to_string(static_cast<entity_id::value_type>(id));
+		return strong_typedef_from_string<entity_id>(s);
 	}
 
 	//level size type

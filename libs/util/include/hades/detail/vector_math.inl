@@ -73,6 +73,27 @@ namespace hades
 	}
 
 	template<typename T>
+	template<typename U>
+	inline constexpr vector_t<T>::operator vector_t<U>() const noexcept
+	{
+		if constexpr (std::is_integral_v<T>&& std::is_integral_v<U>)
+		{
+			return {
+				integer_cast<U>(x),
+				integer_cast<U>(y)
+			};
+		}
+		else
+		{
+			//probably one of them is a float
+			return {
+				static_cast<U>(x),
+				static_cast<U>(y)
+			};
+		}
+	}
+
+	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept
 	{
 		return lhs.x == rhs.x && lhs.y == rhs.y;
@@ -109,13 +130,13 @@ namespace hades
 	}
 
 	template<typename T>
-	vector_t<T> to_vector(rad_vector_t<T> v)
+	vector_t<T> to_vector(pol_vector_t<T> v)
 	{
 		return { vector::x_comp(v), vector::y_comp(v) };
 	}
 
 	template<typename T>
-	rad_vector_t<T> to_rad_vector(vector_t<T> v)
+	pol_vector_t<T> to_rad_vector(vector_t<T> v)
 	{
 		return { vector::angle(v), vector::magnitude(v) };
 	}
@@ -146,13 +167,13 @@ namespace hades
 		}
 
 		template<typename T>
-		constexpr T x_comp(rad_vector_t<T> v) noexcept
+		constexpr T x_comp(pol_vector_t<T> v) noexcept
 		{
 			return v.m * std::cos(v.a);
 		}
 
 		template<typename T>
-		constexpr T y_comp(rad_vector_t<T> v) noexcept
+		constexpr T y_comp(pol_vector_t<T> v) noexcept
 		{
 			return v.m * std::sin(v.a);
 		}

@@ -315,7 +315,7 @@ namespace hades
 	}
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other)
+	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other, T friction)
 	{
 		static_assert(always_false<T, U<T>, V<T>>::value, "collision_move not defined for these types");
 		return move;
@@ -441,7 +441,7 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
-		T clamp_region(T x0, T w0, T x1, T w1)
+		constexpr T clamp_region(T x0, T w0, T x1, T w1) noexcept
 		{
 			if (w0 > w1)
 			{
@@ -458,7 +458,7 @@ namespace hades
 	}
 
 	template<typename T>
-	rect_t<T> clamp_rect(rect_t<T> rect, rect_t<T> region)
+	constexpr rect_t<T> clamp_rect(rect_t<T> rect, rect_t<T> region) noexcept
 	{
 		return { detail::clamp_region(rect.x, rect.width, region.x, region.width),
 				 detail::clamp_region(rect.y, rect.height, region.y, region.height),

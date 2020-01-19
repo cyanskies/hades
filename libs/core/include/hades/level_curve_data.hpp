@@ -24,7 +24,7 @@ namespace std {
 	public:
 		size_t operator()(const hades::curve_index_t& c) const
 		{
-			size_t h1 = std::hash<hades::entity_id::value_type>{}(static_cast<hades::entity_id::value_type>(c.first));
+			size_t h1 = std::hash<hades::entity_id::value_type>{}(hades::to_value(c.first));
 			size_t h2 = std::hash<hades::variable_id::type>{}(c.second.get());
 			return h1 ^ (h2 << 1);
 		}

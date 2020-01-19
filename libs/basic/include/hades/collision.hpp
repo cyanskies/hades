@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/poly_math.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
@@ -15,6 +16,24 @@
 //polygon_t
 
 //algorithms work best with floating point types.
+
+namespace hades::detail
+{
+	template<typename T>
+	struct is_collidable : std::false_type {};
+
+	template<typename T>
+	struct is_collidable<rect_t<T>> : std::true_type {};
+
+	template<typename T>
+	struct is_collidable<point_t<T>> : std::true_type {};
+
+	template<typename T>
+	struct is_collidable<polygon_t<T>> : std::true_type {};
+
+	template<typename T>
+	constexpr auto is_collidable_v = is_collidable<T>::value;
+}
 
 namespace hades
 {
@@ -74,8 +93,9 @@ namespace hades
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//uses as much of the movement vector as possible allowing sliding along walls, etc
 	//if return value == move, then no collision occured
+	//TODO: implement
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other);
+	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other, T collision_friction = 0);
 
 	//returns a vector normal from the point of collision
 	template<typename T, template<typename> typename U, template<typename> typename V>
@@ -90,15 +110,14 @@ namespace hades
 	rect_t<T> bounding_box(U<T> object);
 
 	//generates a circle that encompasses the whole object
-	template<typename T, template<typename> typename U>
-	rect_t<T> bounding_circle(U<T> object);
+	//template<typename T, template<typename> typename U>
+	//rect_t<T> bounding_circle(U<T> object);
 
 	//places rect within the region
 	//if rect is larger than the region,
 	//then rect is placed in it's centre
-	//TODO: move to math.hpp
 	template<typename T>
-	rect_t<T> clamp_rect(rect_t<T> rect, rect_t<T> region);
+	constexpr rect_t<T> clamp_rect(rect_t<T> rect, rect_t<T> region) noexcept;
 }
 
 #include "hades/detail/collision.inl"

@@ -16,8 +16,7 @@ namespace hades
 			a >= 0 && b <= 0)
 			return t * b + (1.f - t) * a;
 
-		//TODO: float_near_equal to account for float inaccuracy
-		if (t == 1) return b;
+		if (float_near_equal(t, 1.f)) return b;
 
 		const auto x = a + t * (b - a);
 		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);

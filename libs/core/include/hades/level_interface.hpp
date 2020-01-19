@@ -112,7 +112,7 @@ namespace hades
 		name_curve_t _entity_names{ curve_type::step };
 
 		curve<input_system::action_set> _input{ curve_type::step };
-		entity_id::value_type _next = static_cast<entity_id::value_type>(next(bad_entity));
+		entity_id::value_type _next = to_value(next(bad_entity));
 
 		//level info
 		terrain_map _terrain;

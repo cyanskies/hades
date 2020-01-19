@@ -165,16 +165,16 @@ namespace hades::animation
 
 namespace hades
 {
-	poly_quad make_quad_colour(rect_float quad, colour c)
+	poly_quad make_quad_colour(rect_float quad, colour c) noexcept
 	{
 		const auto col = sf::Color{ c.r, c.g, c.b, c.a };
 
 		return poly_quad{
-			//first triange
+			//first triangle
 			sf::Vertex{ {quad.x, quad.y}, col }, //top left
 			sf::Vertex{ {quad.x + quad.width, quad.y}, col }, //top right
 			sf::Vertex{ {quad.x, quad.y + quad.height}, col }, //bottom left
-			//second triange
+			//second triangle
 			sf::Vertex{ { quad.x + quad.width, quad.y }, col }, //top right
 			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height }, col }, //bottom right
 			sf::Vertex{ { quad.x, quad.y + quad.height }, col } //bottom left
@@ -200,11 +200,11 @@ namespace hades
 		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
 
 		return poly_quad{
-			//first triange
+			//first triangle
 			sf::Vertex{ {quad.x, quad.y}, { texture_quad.x, texture_quad.y } }, //top left
 			sf::Vertex{ { quad_right_x, quad.y }, { tex_right_x, texture_quad.y } }, //top right
 			sf::Vertex{ { quad.x, quad_bottom_y }, { texture_quad.x, tex_bottom_y } }, //bottom left
-			//second triange
+			//second triangle
 			sf::Vertex{ { quad_right_x, quad.y },{ tex_right_x, texture_quad.y } }, //top right
 			sf::Vertex{ { quad_right_x, quad_bottom_y },  { tex_right_x, tex_bottom_y } }, //bottom right
 			sf::Vertex{ { quad.x, quad_bottom_y },  { texture_quad.x, tex_bottom_y } } //bottom left

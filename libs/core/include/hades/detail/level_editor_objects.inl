@@ -654,7 +654,7 @@ namespace hades
 
 		//properties
 		//immutable object id
-		g.input_text("id"sv, to_string(static_cast<entity_id::value_type>(o->id)), gui::input_text_flags::readonly);
+		g.input_text("id"sv, to_string(o->id), gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
 		g.text("curves:");
 		const bool global_curves = !std::empty(resources::get_all_curves());

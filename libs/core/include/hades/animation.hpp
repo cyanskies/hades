@@ -50,7 +50,7 @@ namespace hades
 {
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
-	poly_quad make_quad_colour(rect_float quad, colour);
+	poly_quad make_quad_colour(rect_float quad, colour) noexcept;
 	poly_quad make_quad_animation(vector_float pos, const resources::animation&, const animation::animation_frame&) noexcept;
 	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation&, const animation::animation_frame&) noexcept;
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;

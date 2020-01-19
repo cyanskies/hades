@@ -15,7 +15,7 @@ namespace hades
 	//eg: 1/sqrt(x)
 	//only valid for 32 and 64bit iec559 and ieee754
 	template<typename Float,
-		typename std::enable_if_t<std::is_floating_point_v<Float>&&
+		typename std::enable_if_t<std::is_floating_point_v<Float> &&
 		std::numeric_limits<Float>::is_iec559, int> = 0>
 	Float frsqrt(Float) noexcept;
 
@@ -44,6 +44,9 @@ namespace hades
 			assert(i < 2);
 			return (&x)[i];
 		}
+
+		template<typename U>
+		explicit constexpr operator vector_t<U>() const noexcept;
 
 		T x, y;
 	};
@@ -92,18 +95,18 @@ namespace hades
 	using vector_int = vector_t<int32>;
 	using vector_float = vector_t<float>;
 
-	//TODO: this should be pol_vector_t
+	//TODO: polar vector type
 	template<typename T>
-	struct rad_vector_t
+	struct pol_vector_t
 	{
 		T a, m;
 	};
 
 	template<typename T>
-	vector_t<T> to_vector(rad_vector_t<T> v);
+	vector_t<T> to_vector(pol_vector_t<T> v);
 
 	template<typename T>
-	rad_vector_t<T> to_rad_vector(vector_t<T>);
+	pol_vector_t<T> to_rad_vector(vector_t<T>);
 
 	namespace vector
 	{
@@ -119,10 +122,10 @@ namespace hades
 		T angle(vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr T x_comp(rad_vector_t<T>) noexcept;
+		constexpr T x_comp(pol_vector_t<T>) noexcept;
 
 		template<typename T>
-		constexpr T y_comp(rad_vector_t<T>) noexcept;
+		constexpr T y_comp(pol_vector_t<T>) noexcept;
 
 		//changes the length of a vector to match the provided length
 		template<typename T>

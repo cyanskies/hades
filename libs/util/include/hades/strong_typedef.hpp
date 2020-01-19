@@ -251,10 +251,10 @@ namespace hades
 		return to_string(static_cast<T&>(e));
 	}
 
-	template<typename Tag, typename T, bool B>
-	strong_typedef<Tag, T, B> strong_typedef_from_string(std::string_view s)
+	template<typename T, std::enable_if_t<is_strong_typedef_v<T>, int> = 0>
+	T strong_typedef_from_string(std::string_view s)
 	{
-		return strong_typedef<Tag, T, B>{ from_string<T>(s) };
+		return T{ from_string<typename T::value_type>(s) };
 	}
 
 	template<typename, typename = std::void_t<>>

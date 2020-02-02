@@ -99,7 +99,7 @@ namespace hades
 	template<typename T>
 	struct pol_vector_t
 	{
-		T a, m;
+		T a, m; // angle, magnitude
 	};
 
 	template<typename T>

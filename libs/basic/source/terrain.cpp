@@ -818,6 +818,26 @@ namespace hades::resources
 			"all"sv
 		};
 
+		//short names, same values an order as the previous list
+		constexpr auto short_names = std::array{
+			"n"sv, // causes a tile skip
+			"tr"sv,
+			"br"sv,
+			"tr-br"sv,
+			"bl"sv,
+			"tr-bl"sv,
+			"blr"sv,
+			"tr-blr"sv,
+			"tl"sv,
+			"tlr"sv,
+			"tl-br"sv,
+			"tlr-br"sv,
+			"tl-bl"sv,
+			"tlr-bl"sv,
+			"tl-blr"sv,
+			"a"sv
+		};
+
 		//check against named layouts
 		if (s.size() == 1u)
 		{
@@ -832,7 +852,8 @@ namespace hades::resources
 		{
 			for (auto i = std::size_t{}; i < std::size(transition_names); ++i)
 			{
-				if (transition_names[i] == str)
+				if (transition_names[i] == str ||
+					short_names[i] == str)
 				{
 					out.emplace_back(static_cast<transition_tile_type>(i));
 					break;

@@ -7,9 +7,10 @@
 
 #include "hades/curve.hpp"
 #include "hades/data.hpp"
-#include "hades/game_types.hpp"
+#include "hades/entity_id.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
+#include "hades/vector_math.hpp"
 
 //extra functions and struct for loading curves as a resource
 

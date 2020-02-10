@@ -4,6 +4,8 @@
 #include <string_view>
 #include <vector>
 
+#include "hades/curve_extra.hpp"
+#include "hades/entity_id.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/strong_typedef.hpp"
 #include "hades/types.hpp"
@@ -13,20 +15,13 @@
 
 namespace hades
 {
-	//entity identification type
-	struct entity_id_t {};
-	using entity_id = strong_typedef<entity_id_t, int32>;
-
-	//constant value for a bad entity id
-	constexpr auto bad_entity = entity_id{std::numeric_limits<entity_id::value_type>::min()};
-	 
-	template<>
-	inline entity_id from_string<entity_id>(std::string_view s)
-	{
-		return strong_typedef_from_string<entity_id>(s);
-	}
-
-	//level size type
+	//world unit type
+	//used for position ranges and sizes
+	//game_unit is used to measure distance in the game world
+	// game units are world pixels expressed in floats
+	using world_unit_t = resources::curve_types::float_t;
+	using world_vector_t = resources::curve_types::vec2_float;
+	using world_rect_t = rect_t<world_unit_t>;
 
 	//tag types
 	//these are used for listing capabilities or effect info

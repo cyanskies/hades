@@ -19,23 +19,23 @@ namespace hades
 		static_assert(N == 0 || N > 2, "polygon_t must have either 0 vertex(dynamic), or greater than 2 vertex");
 
 		using value_type = T;
-		constexpr bool static_size = N != 0;
+		static const bool static_size = std::bool_constant<N != 0>::value;
 
 		//constructors
 		constexpr polygon_t() noexcept = default;
 
-		//copy constructors
-		constexpr polygon_t(const polygon_t&) = default; //default for copying same size polygons
-		//dynamic polygon can accept any static polygon size
-		template<std::size_t N2, std::enable_if_t<N == 0 && N2 != N, int> = 0>
+		//construct dynamic polygon from any static polygon
+		template<std::size_t N2>
 		constexpr polygon_t(const polygon_t<T, N2>& rhs)
 			: position{ rhs.position },
 			vertex{ std::begin(rhs.vertex), std::end(rhs.vertex) }
-		{}
+		{
+			static_assert(N == 0, "can only convert static polygons to a dynamic polygon");
+		}
 
 		vector_t<T> position;
 		std::conditional_t<N == 0, 
-			std::vertex<vector_t<T>>,
+			std::vector<vector_t<T>>,
 			std::array<vector_t<T>, N>> vertex;
 	};
 
@@ -43,15 +43,15 @@ namespace hades
 	using polygon_float = polygon_t<float>;
 
 	template<typename T>
-	using polygon_tri_t = polygon_t<T, 3>;
-	using polygon_tri_float = polygon_tri_t<float>;
-	
+	using polygon_tri_t = typename polygon_t<T, 3>;
+	using polygon_tri_float = typename polygon_tri_t<float>;
+
 	template<typename T>
 	using polygon_quad_t = polygon_t<T, 4>;
 	using polygon_quad_float = polygon_quad_t<float>;
 
 	static_assert(std::is_nothrow_constructible_v<polygon_int>);
-	static_assert(std::is_trivial<polygon_tri_t<int32>>);
+	static_assert(std::is_trivial_v<polygon_tri_t<int32>>);
 
 	template<typename T>
 	struct is_polygon_t : std::false_type {};

@@ -37,12 +37,6 @@
 //on_destroy can be used to clean up background state
 // typically unused
 
-// fwds
-namespace hades
-{
-	struct terrain_map;
-}
-
 namespace hades
 {
 	void register_game_system_resources(data::data_manager&);
@@ -289,211 +283,16 @@ namespace hades
 		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
-	
-	//extra types that cannot be defined in
-	//game_types.hpp due to circular includes
-
-	//world unit type
-	//used for position ranges and sizes
-	//game_unit is used to measure distance in the game world
-	// game units are world pixels expressed in floats
-	using world_unit_t = resources::curve_types::float_t;
-	using world_vector_t = resources::curve_types::vec2_float;
-	using world_rect_t = rect_t<world_unit_t>;
-
-	//TODO: move to game_system_interface
-	//functions for game state access
-
 	//funcs to call before a system gets control, and to clean up after
 	void set_game_data(system_job_data*) noexcept;
-
-	//game contains general functions available to game systems
-	namespace game
-	{
-		using namespace resources::curve_types;
-
-		template<typename T>
-		using curve_keyframe = keyframe<T>;
-
-		const std::vector<object_ref> &get_objects() noexcept;
-
-		//the time of the previous update
-		time_point get_last_time() noexcept;
-		//the time between this update and the previous one
-		time_duration get_delta_time() noexcept;
-		//the current time
-		//we need to calculate the state at this time
-		//using values from last_time
-		time_point get_time() noexcept;
-
-		//system data is a data store persisted between frames
-		// it is per-level and is never saved
-		template<typename T>
-		T &get_system_data();
-		template<typename T>
-		void set_system_data(T&& value);
-		void destroy_system_data();
-	}
-
-	//game::mission contains functions for accessing mission state
-	namespace game::mission
-	{
-		//world data
-
-		//object data
-
-		//common curves
-
-		//curves access
-
-		//get_curve_x
-		//set_curve_x
-
-		//NOTE: get/set_value simplyfy access to linear, const and step curves
-		//		pulse curves, or any work with keyframes requires accessing the actual curve
- 		//get_value
-		//set_value
-		//get_level_index(level_id)
-	}
-
-	//game::level for accessing and mutating the current level state
-	//	the current level is the one containing game::get_object()
-	//	you can change to a different level with the change_level function
-
-	namespace game::level
-	{
-		//void return_level() //restores the origional level
-		//void switch_level(level_id)
-
-		//==level local values==
-		// these are not sent to clients or saved
-		// used for level local system data that is needed
-		// by multiple systems
-		// eg. collision trees
-		template<typename T>
-		T &get_level_local_ref(unique_id);
-
-		//==world data==
-		world_rect_t get_world_bounds();
-		//get terrain data
-		//get tile info?(tags)
-
-		//==object data==
-		//NOTE: for the following functions(get/set curves/values)
-		// if the object_ref is not provided, it is set to game::get_object()
-		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
-		// and game::get_time() for set_* functions
-		
-		object_ref get_object_from_name(std::string_view, time_point);
-
-		template<typename T>
-		const curve<T> &get_curve(curve_index_t);
-
-		//gets the keyframe on or befre the time point
-		//use set_value to write a keyframe
-		template<typename T>
-		const curve_keyframe<T>& get_keyframe_ref(curve_index_t, time_point);
-		
-		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t, time_point);
-		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t);
-		
-		//returns a reference to the value stored in a curve at a specific time
-		// it is invalid to get a reference to a linear curve
-		template<typename T>
-		const T& get_ref(curve_index_t, time_point);
-		template<typename T>
-		const T& get_ref(curve_index_t);
-		
-		template<typename T>
-		T get_value(curve_index_t, time_point);
-		template<typename T>
-		T get_value(curve_index_t);
-		
-		template<typename T>
-		void set_curve(curve_index_t, curve<T>);
-		
-		//seting value will remove all keyframes after time_point
-		template<typename T>
-		void set_value(curve_index_t, time_point, T&&);
-		
-		//object creation and destruction
-		//an object is always created at game::get_time() time.
-		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
-		object_ref create_object(object_instance);
-
-		//system config
-		void attach_system(object_ref, unique_id, time_point);
-		void sleep_system(object_ref, unique_id, time_point from, time_point until);
-		void detach_system(object_ref, unique_id, time_point);
-
-		//removes all systems from object
-		void destroy_object(object_ref, time_point);
-
-		//helper functions for accessing common curves
-		//position
-		world_vector_t get_position(object_ref, time_point);
-		world_vector_t get_position(object_ref);
-		void set_position(object_ref, world_unit_t x, world_unit_t y, time_point);
-		
-		//size
-		world_vector_t get_size(object_ref, time_point);
-		world_vector_t get_size(object_ref);
-		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point);
-	}
-
 	void set_render_data(render_job_data*) noexcept;
 
-	//render access functions allow a const view of the game state
-	namespace render
+	namespace detail
 	{
-		using namespace resources::curve_types;
-		const std::vector<object_ref> &get_objects();
-		render_interface *get_render_output();
-		time_point get_time();
-
-		template<typename T>
-		T &get_system_data();
-		template<typename T>
-		void set_system_data(T value);
-		void destroy_system_data();
-
-		//TODO: drawing functions
-
-		//create/destroy sprite
-		//set_sprite
-	}
-
-	namespace render::mission
-	{
-		/*template<typename T>
-		T get_curve(entity_id, variable_id);
-		
-		template<typename T>
-		void set_curve(entity_id, variable_id, T&& value);*/
-	}
-
-	namespace render::level
-	{
-		//get curve from this level
-		template<typename T>
-		const curve<T>& get_curve(curve_index_t);
-		template<typename T>
-		const T& get_ref(curve_index_t, time_point);
-		template<typename T>
-		const T get_value(curve_index_t, time_point);
-
-		world_rect_t get_world_bounds();
-		const terrain_map& get_world_terrain() noexcept;
-		//get level data
-
-		//common curves
-		world_vector_t get_position(object_ref, time_point);
-		world_vector_t get_position(object_ref);
-
-		world_vector_t get_size(object_ref, time_point);
-		world_vector_t get_size(object_ref);
+		system_job_data* get_game_data_ptr() noexcept;
+		game_interface* get_game_level_ptr() noexcept;
+		system_behaviours<game_system>* get_game_systems_ptr() noexcept;
+		render_job_data* get_render_data_ptr() noexcept;
 	}
 }
 

@@ -13,6 +13,7 @@ set(HADES_CORE_SRC
 	export_curves.cpp
 	files.cpp
 	font.cpp
+	game_api.cpp
 	game_instance.cpp
 	game_system.cpp
 	grid.cpp
@@ -55,6 +56,7 @@ set(HADES_CORE_SRC
 	../include/hades/export_curves.hpp
 	../include/hades/files.hpp
 	../include/hades/font.hpp
+	../include/hades/game_api.hpp
 	../include/hades/game_instance.hpp
 	../include/hades/game_system.hpp
 	../include/hades/grid.hpp
@@ -89,6 +91,7 @@ set(HADES_CORE_SRC
 	../include/hades/tiled_sprite.hpp
 	../include/hades/tile_map.hpp
 	../include/hades/vertex_buffer.hpp
+	../include/hades/detail/game_api.inl
 	../include/hades/detail/game_system.inl
 	../include/hades/detail/gui.inl
 	../include/hades/detail/level_curve_data.inl

@@ -18,6 +18,7 @@
 //keyframes can be overridden as the simulation catches up to them for accuracy
 
 //TODO: rewrite this whole class so the logic makes more sense
+//TODO: move impl to inl file
 
 namespace hades {
 	template<typename T>

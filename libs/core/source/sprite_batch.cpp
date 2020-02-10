@@ -70,7 +70,7 @@ namespace hades
 
 	sprite_id sprite_batch::create_sprite()
 	{
-		auto id = increment(_id_count) ;
+		const auto id = increment(_id_count) ;
 		assert(id != bad_sprite_id);
 
 		_add_sprite({ id });

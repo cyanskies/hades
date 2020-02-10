@@ -13,6 +13,7 @@
 #include "hades/level_curve_data.hpp"
 #include "hades/level_scripts.hpp"
 #include "hades/game_system.hpp"
+#include "hades/game_types.hpp"
 #include "hades/terrain.hpp"
 #include "hades/time.hpp"
 #include "hades/types.hpp"

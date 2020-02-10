@@ -123,6 +123,8 @@ namespace hades
 		const auto next = update_level(_prev_frame, _current_frame, dt,
 			*_interface, _systems, make_render_job_data);
 
+		i.prepare(); //copy sprites into vertex buffer
+
 		_prev_frame = _current_frame;
 		_current_frame = next;
 

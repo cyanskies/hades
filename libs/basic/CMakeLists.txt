@@ -18,6 +18,7 @@ set(HADES_BASIC_SRC
 	include/hades/console_variables.hpp
 	include/hades/curve_extra.hpp
 	include/hades/data.hpp
+	include/hades/entity_id.hpp
 	include/hades/exceptions.hpp
 	include/hades/game_loop.hpp
 	include/hades/game_types.hpp

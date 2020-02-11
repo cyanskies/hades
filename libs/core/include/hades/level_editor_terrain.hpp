@@ -28,7 +28,7 @@ namespace hades
 
 		void make_brush_preview(time_duration, mouse_pos) override;
 
-		tag_list get_tags_at_location(rect_float) const override;
+		tag_list get_terrain_tags_at_location(rect_float) const override;
 
 		void on_click(mouse_pos) override;
 		void on_drag(mouse_pos) override;

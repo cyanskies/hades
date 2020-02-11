@@ -192,7 +192,7 @@ namespace hades
 			//set vertex position and tex coordinates
 			const auto vertex_tile = make_quad_animation(quad_rect, text_rect);
 
-			std::copy(std::begin(vertex_tile), std::end(vertex_tile), std::back_inserter(v_array));
+			v_array.insert(std::end(v_array), std::begin(vertex_tile), std::end(vertex_tile));
 		}
 
 		finalise_layer(texture_layers, current_tex, v_array, usage);
@@ -443,7 +443,7 @@ namespace hades
 
 		const auto quad = make_quad_animation(quad_rect, tex_rect);
 
-		std::copy(std::begin(quad), std::end(quad), std::back_inserter(l.vertex));
+		l.vertex.insert(std::end(l.vertex), std::begin(quad), std::end(quad));
 		l.buffer.set_verts(l.vertex);
 	}
 }

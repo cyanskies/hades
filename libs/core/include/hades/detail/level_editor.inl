@@ -58,17 +58,41 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline tag_list basic_level_editor<Components...>::_component_get_tags_at_location(rect_float area) const
+	inline tag_list basic_level_editor<Components...>::_component_get_object_tags_at_location(rect_float area) const
 	{
 		auto func = [](auto &&c, rect_float rect)->tag_list {
-			return c.get_tags_at_location(rect);
+			return c.get_object_tags_at_location(rect);
 		};
 
-		auto results = for_each_tuple_r(_editor_components, func, area);
+		const auto results = for_each_tuple_r(_editor_components, func, area);
 
-		tag_list output{};
-		for (auto &r : results)
-			std::move(std::begin(r), std::end(r), std::back_inserter(output));
+		auto size = std::size_t{};
+		for (const auto& r : results)
+			size += std::size(r);
+
+		auto output = tag_list{};
+		for (const auto& r : results)
+			output.insert(std::end(output), std::begin(r), std::end(r));
+
+		return output;
+	}
+
+	template<typename ...Components>
+	inline tag_list basic_level_editor<Components...>::_component_get_terrain_tags_at_location(rect_float area) const
+	{
+		auto func = [](auto&& c, rect_float rect)->tag_list {
+			return c.get_terrain_tags_at_location(rect);
+		};
+
+		const auto results = for_each_tuple_r(_editor_components, func, area);
+
+		auto size = std::size_t{};
+		for (const auto& r : results)
+			size += std::size(r);
+
+		auto output = tag_list{};
+		for (const auto& r : results)
+			output.insert(std::end(output), std::begin(r), std::end(r));
 
 		return output;
 	}
@@ -139,13 +163,18 @@ namespace hades
 				_set_active_brush(index);
 			};
 
-			auto get_tags_at = [this](rect_float area)->tag_list {
-				return _component_get_tags_at_location(area);
+			auto get_object_tags_at = [this](rect_float area)->tag_list {
+				return _component_get_object_tags_at_location(area);
+			};
+
+			auto get_terrain_tags_at = [this](rect_float area)->tag_list {
+				return _component_get_terrain_tags_at_location(area);
 			};
 
 			c.install_callbacks(
 				activate_brush,
-				get_tags_at
+				get_terrain_tags_at,
+				get_object_tags_at
 			);
 		});
 	}

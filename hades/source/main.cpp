@@ -13,22 +13,19 @@ int hades_main(int argc, char* argv[])
 	//new commands start with a '-'.
 	constexpr char COMMAND_DELIMITER = '-';
 
-	std::vector<std::string_view> cmdline;
-	cmdline.reserve(argc);
-
 	//convert cmdline to string_view
-	std::copy(argv, argv + argc, std::back_inserter(cmdline));
+	const auto cmdline = std::vector<std::string_view>{ argv, argv + argc };
 
 	hades::command_list commands;
 	int index = -1;
 
-	for (auto &s : cmdline)
+	for (const auto s : cmdline)
 	{
 		if (s[0] == COMMAND_DELIMITER)
 		{
-			s = s.substr(1, s.size());
+			const auto s2 = s.substr(1, s.size());
 			hades::command com;
-			com.request = s;
+			com.request = s2;
 			commands.push_back(com);
 			index++;
 		}

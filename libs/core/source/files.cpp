@@ -292,7 +292,7 @@ namespace hades::files
 			auto end = std::next(beg, integer_cast<diff_t>(str.gcount()));
 
 			if constexpr(std::is_same_v<buffer::value_type, typename ReturnType::value_type>)
-				std::copy(beg, end, std::back_inserter(out));
+				out.insert(std::end(out), beg, end);
 			else
 			{
 				std::transform(beg, end, std::back_inserter(out), [](const std::byte b) {

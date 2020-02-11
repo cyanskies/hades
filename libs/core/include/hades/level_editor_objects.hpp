@@ -140,7 +140,7 @@ namespace hades
 		std::array<curve_info, 2> _curve_properties;
 	};
 
-	class level_editor_objects final : public level_editor_component
+	class level_editor_objects_impl : public level_editor_component
 	{
 	public:
 		struct editor_object_instance final : object_instance
@@ -153,7 +153,7 @@ namespace hades
 
 		using object_collision_tree = quad_tree<entity_id, rect_float>;
 
-		level_editor_objects();
+		level_editor_objects_impl();
 
 		void level_load(const level&) override;
 		level level_save(level l) const override;
@@ -163,7 +163,7 @@ namespace hades
 		void make_brush_preview(time_duration, mouse_pos) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
-		tag_list get_tags_at_location(rect_float) const override;
+		tag_list get_object_tags_at_location(rect_float) const override;
 
 		void on_click(mouse_pos) override;
 		void on_drag_start(mouse_pos) override;
@@ -171,6 +171,16 @@ namespace hades
 		void on_drag_end(mouse_pos) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
+
+	protected:
+		using obj_ui = object_editor_ui<editor_object_instance,
+			std::function<void(editor_object_instance&)>,
+			std::function<bool(const rect_float & r, const object_instance & o)>>;
+
+		//NOTE: for custom world snapping(eg. unit grid placement),
+		//		default does collision layer avoidance
+		// TODO: valid terrain selection?
+		//virtual std::optional<world_vector_t> closest_valid_position(world_vector_t pos, entity_id, const obj_ui::object_data&);
 
 	private:
 		enum class brush_type {
@@ -202,16 +212,19 @@ namespace hades
 		object_collision_tree _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
 		std::unordered_map<unique_id, object_collision_tree> _collision_quads;
-		//object instances
-		using obj_ui = object_editor_ui<editor_object_instance, 
-			std::function<void(editor_object_instance&)>,
-			std::function<bool(const rect_float & r, const object_instance & o)>>;
 
+		//object instances
 		obj_ui::object_data _objects;
 		obj_ui _obj_ui;
 
 		//grid info for snapping
 		grid_vars _grid = get_console_grid_vars();
+	};
+
+	class level_editor_objects final : public level_editor_objects_impl
+	{
+	public:
+		using level_editor_objects_impl::level_editor_objects_impl;
 	};
 }
 

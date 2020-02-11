@@ -96,7 +96,7 @@ namespace hades
 					size.y *= y_part;
 
 				const auto quad = make_quad_animation({ position, size }, { {anim_x, anim_y}, size });
-				std::copy(std::begin(quad), std::end(quad), std::back_inserter(vertex));
+				vertex.insert(std::end(vertex), std::begin(quad), std::end(quad));
 			}
 		}
 

@@ -499,7 +499,7 @@ namespace hades
 		for (const auto *t : corners)
 		{
 			assert(t);
-			std::copy(std::begin(t->tags), std::end(t->tags), std::back_inserter(out));
+			out.insert(std::end(out), std::begin(t->tags), std::end(t->tags));
 		}
 
 		return out;

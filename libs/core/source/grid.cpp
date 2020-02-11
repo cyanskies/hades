@@ -32,7 +32,7 @@ namespace hades
 			auto quad = make_quad({ row_left, y },
 				{ p.grid_size.x, p.line_thickness }, p.line_colour);
 			
-			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
+			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
 		}
 
 		//make coloumns
@@ -44,7 +44,7 @@ namespace hades
 			auto quad = make_quad({ x, coloumn_top },
 				{ p.line_thickness, p.grid_size.y }, p.line_colour);
 
-			std::move(std::begin(quad), std::end(quad), std::back_inserter(verts));
+			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
 		}
 		
 		assert(verts.size() % 3 == 0);

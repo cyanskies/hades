@@ -53,9 +53,7 @@ namespace hades
 			//get the rest of the data
 			s.entity = c.first.first;
 			auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
-			s.frames.clear();
-
-			std::copy(lower, std::end(c.second), std::back_inserter(s.frames));
+			s.frames = { lower, std::end(c.second) };
 
 			if(!std::empty(s.frames))
 				++index;

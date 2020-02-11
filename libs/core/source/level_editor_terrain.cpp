@@ -380,7 +380,7 @@ namespace hades
 		//TODO: draw some kind of indicator for erasing using place tile
 	}
 
-	tag_list level_editor_terrain::get_tags_at_location(rect_float location) const
+	tag_list level_editor_terrain::get_terrain_tags_at_location(rect_float location) const
 	{
 		//TODO: maybe move this to utility?
 		constexpr auto snap_to_floor = [](float val, int mul)->float {
@@ -402,7 +402,7 @@ namespace hades
 		for (const auto p : positions)
 		{
 			const auto tags = hades::get_tags_at(_map.get_map(), p);
-			std::copy(std::begin(tags), std::end(tags), std::back_inserter(out));
+			out.insert(std::end(out), std::begin(tags), std::end(tags));
 		}
 
 		return out;

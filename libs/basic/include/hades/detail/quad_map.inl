@@ -84,8 +84,7 @@ namespace hades
 			for (auto n : nodes)
 			{
 				auto collisions = n->find_collisions(rect);
-				std::move(std::begin(collisions), std::end(collisions), std::back_inserter(out));
-				//out.insert(out.end(), collisions.begin(), collisions.end());
+				out.insert(std::end(out), std::begin(collisions), std::end(collisions));
 			}
 
 			return out;
@@ -196,7 +195,7 @@ namespace hades
 		{
 			const auto top = stack.top();
 			stack.pop();
-			std::copy(std::begin(top->_data), std::end(top->_data), std::back_inserter(out));
+			out.insert(std::end(out), std::begin(top->_data), std::end(top->_data));
 			for (const auto& c : top->_children)
 				stack.push(&c);
 		}

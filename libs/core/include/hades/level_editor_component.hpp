@@ -75,11 +75,12 @@ namespace hades
 		using activate_brush_f = std::function<void(void)>;
 		using get_tags_at_f = std::function<tag_list(rect_float)>;
 
-		template<typename ActivateBrush, typename GetTagsAt>
-		void install_callbacks(ActivateBrush ab, GetTagsAt get_tags)
+		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt>
+		void install_callbacks(ActivateBrush ab, GetTerrainTagsAt get_terrain_tags, GetObjTagsAt get_obj_tags)
 		{
 			_activate_brush = ab;
-			_get_tags_at = get_tags;
+			_get_terrain_tags_at = get_terrain_tags;
+			_get_object_tags_at = get_obj_tags;
 		}
 
 		void activate_brush() noexcept
@@ -87,9 +88,28 @@ namespace hades
 			std::invoke(_activate_brush);
 		}
 
+		//searches all components
+		tag_list get_terrain_tags_at(rect_float r)
+		{
+			return std::invoke(_get_terrain_tags_at, r);
+		}
+		
+		//searches all components
+		tag_list get_object_tags_at(rect_float r)
+		{
+			return std::invoke(_get_object_tags_at, r);
+		}
+
+		//searches all components
 		tag_list get_tags_at(rect_float r)
 		{
-			return std::invoke(_get_tags_at, r);
+			auto a = get_terrain_tags_at(r);
+			const auto o = get_object_tags_at(r);
+
+			a.reserve(std::size(a) + std::size(o));
+			a.insert(std::end(a), std::begin(o), std::end(o));
+
+			return {};
 		}
 
 		//compoenents can throw new_level_editor_error
@@ -108,7 +128,9 @@ namespace hades
 		virtual void make_brush_preview(time_duration, mouse_pos) {}
 
 		//return any relevent tags for that location
-		virtual tag_list get_tags_at_location(rect_float) const { return {}; }
+
+		virtual tag_list get_terrain_tags_at_location(rect_float) const { return {}; }
+		virtual tag_list get_object_tags_at_location(rect_float) const { return {}; }
 
 		virtual void on_click(mouse_pos) {};
 		
@@ -122,7 +144,8 @@ namespace hades
 
 	private:
 		activate_brush_f _activate_brush;
-		get_tags_at_f _get_tags_at;
+		get_tags_at_f _get_terrain_tags_at;
+		get_tags_at_f _get_object_tags_at;
 	};
 }
 

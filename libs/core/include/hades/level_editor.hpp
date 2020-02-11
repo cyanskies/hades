@@ -145,7 +145,8 @@ namespace hades
 		void _component_on_resize(vector_int, vector_int) override;
 		//returns the sum of tags reported by components for that location
 		//may contain duplicates
-		tag_list _component_get_tags_at_location(rect_float) const;
+		tag_list _component_get_object_tags_at_location(rect_float) const;
+		tag_list _component_get_terrain_tags_at_location(rect_float) const;
 		void _component_on_click(brush_index_t, vector_float) override;
 		void _component_on_drag_start(brush_index_t, vector_float) override;
 		void _component_on_drag(brush_index_t, vector_float) override;

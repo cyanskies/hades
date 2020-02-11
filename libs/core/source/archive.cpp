@@ -831,8 +831,7 @@ namespace hades::zip
 				cont = false;
 			else if (ret != Z_OK)
 				throw archive_error{ "failed to inflate" };
-			out.reserve(out.size() + buf.size());
-			std::copy(buf.data(), reinterpret_cast<std::byte*>(infstream.next_out), std::back_inserter(out));
+			out.insert(std::end(out), buf.data(), reinterpret_cast<std::byte*>(infstream.next_out));
 
 			if (infstream.avail_out != 0)
 				cont = false;

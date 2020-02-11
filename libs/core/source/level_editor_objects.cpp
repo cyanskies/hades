@@ -64,7 +64,7 @@ namespace hades
 
 	}
 
-	level_editor_objects::level_editor_objects()
+	level_editor_objects_impl::level_editor_objects_impl()
 		: _obj_ui{ &_objects, [this](editor_object_instance& o) {
 				return _update_changed_obj(o);
 			},
@@ -92,7 +92,7 @@ namespace hades
 			return size;
 	}
 
-	static void update_object_sprite(level_editor_objects::editor_object_instance &o, sprite_batch &s)
+	static void update_object_sprite(level_editor_objects_impl::editor_object_instance &o, sprite_batch &s)
 	{
 		if (o.sprite_id == sprite_utility::bad_sprite_id)
 			o.sprite_id = s.create_sprite();
@@ -108,7 +108,7 @@ namespace hades
 
 	static constexpr auto quad_bucket_limit = 5;
 
-	void level_editor_objects::level_load(const level &l)
+	void level_editor_objects_impl::level_load(const level &l)
 	{
 		const auto& o = l.objects;
 		_objects.next_id = o.next_id;
@@ -164,12 +164,11 @@ namespace hades
 		_held_preview = sf::Sprite{};
 	}
 
-	level level_editor_objects::level_save(level l) const
+	level level_editor_objects_impl::level_save(level l) const
 	{
 		auto& o = l.objects;
 		o.next_id = _objects.next_id ;
-		o.objects.reserve(std::size(_objects.objects));
-		std::copy(std::begin(_objects.objects), std::end(_objects.objects), std::back_inserter(o.objects));
+		o.objects.insert(std::end(o.objects), std::begin(_objects.objects), std::end(_objects.objects));
 		return l;
 	}
 
@@ -223,7 +222,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::gui_update(gui &g, editor_windows&)
+	void level_editor_objects_impl::gui_update(gui &g, editor_windows&)
 	{
 		using namespace std::string_view_literals;
 		//toolbar buttons
@@ -385,7 +384,7 @@ namespace hades
 		selection_rect = std::move(selector);
 	}
 
-	void level_editor_objects::make_brush_preview(time_duration, mouse_pos pos)
+	void level_editor_objects_impl::make_brush_preview(time_duration, mouse_pos pos)
 	{
 		switch (_brush_type)
 		{
@@ -405,7 +404,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	void level_editor_objects_impl::draw_brush_preview(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		//NOTE: always draw, we're only called when we are the active brush
 		// if one of the brush types doesn't use _held_preview, then we'll need to draw conditionally
@@ -414,7 +413,7 @@ namespace hades
 		}, _held_preview);
 	}
 
-	tag_list level_editor_objects::get_tags_at_location(rect_float area) const
+	tag_list level_editor_objects_impl::get_object_tags_at_location(rect_float area) const
 	{
 		auto tags = tag_list{};
 
@@ -427,17 +426,15 @@ namespace hades
 			if (intersects(rect, area))
 			{
 				const auto obj_tags = get_tags(o);
-				tags.reserve(tags.size() + obj_tags.size());
-				std::copy(std::begin(obj_tags), std::end(obj_tags),
-					std::back_inserter(tags));
+				tags.insert(std::end(tags), std::begin(obj_tags), std::end(obj_tags));
 			}
 		}
 
 		return tags;
 	}
 
-	static entity_id object_at(level_editor_objects::mouse_pos pos, 
-		const level_editor_objects::object_collision_tree &quads)
+	static entity_id object_at(level_editor_objects_impl::mouse_pos pos, 
+		const level_editor_objects_impl::object_collision_tree &quads)
 	{
 		const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
 		const auto rects = quads.find_collisions(target);
@@ -451,7 +448,7 @@ namespace hades
 		return bad_entity;
 	}
 
-	void level_editor_objects::on_click(mouse_pos pos)
+	void level_editor_objects_impl::on_click(mouse_pos pos)
 	{
 		assert(_brush_type != brush_type::object_drag);
 
@@ -481,7 +478,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::on_drag_start(mouse_pos pos)
+	void level_editor_objects_impl::on_drag_start(mouse_pos pos)
 	{
 		if (!within_level(pos, vector_float{}, _level_limit))
 			return;
@@ -505,7 +502,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::on_drag(mouse_pos pos)
+	void level_editor_objects_impl::on_drag(mouse_pos pos)
 	{
 		if (!_show_objects)
 			return;
@@ -522,7 +519,7 @@ namespace hades
 		//TODO: if object selector_selection rect stretch the rect
 	}
 
-	void level_editor_objects::on_drag_end(mouse_pos pos)
+	void level_editor_objects_impl::on_drag_end(mouse_pos pos)
 	{
 		if (_brush_type == brush_type::object_drag)
 		{
@@ -544,7 +541,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
+	void level_editor_objects_impl::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		if (_show_objects)
 		{
@@ -552,7 +549,7 @@ namespace hades
 		}
 	}
 	
-	bool level_editor_objects::_object_valid_location(const rect_float& r, const object_instance& o) const
+	bool level_editor_objects_impl::_object_valid_location(const rect_float& r, const object_instance& o) const
 	{
 		const auto id = o.id;
 
@@ -586,7 +583,7 @@ namespace hades
 		return !object_collision;
 	}
 
-	void level_editor_objects::_remove_object(entity_id id)
+	void level_editor_objects_impl::_remove_object(entity_id id)
 	{
 		//we assume the the object isn't duplicated in the object list
 		const auto obj = std::find_if(std::begin(_objects.objects), std::end(_objects.objects), [id](auto &&o) {
@@ -605,7 +602,7 @@ namespace hades
 		_obj_ui.erase(id);
 	}
 
-	bool level_editor_objects::_try_place_object(vector_float pos, editor_object_instance o)
+	bool level_editor_objects_impl::_try_place_object(vector_float pos, editor_object_instance o)
 	{
 		const auto size = get_size(o);
 
@@ -644,14 +641,14 @@ namespace hades
 		return false;
 	}
 
-	void level_editor_objects::_update_changed_obj(editor_object_instance& o)
+	void level_editor_objects_impl::_update_changed_obj(editor_object_instance& o)
 	{
 		update_object_sprite(o, _sprites);
 		_update_quad_data(o);
 		return;
 	}
 
-	void level_editor_objects::_update_quad_data(const object_instance &o)
+	void level_editor_objects_impl::_update_quad_data(const object_instance &o)
 	{
 		//update selection quad
 		const auto position = get_position(o);
@@ -686,7 +683,7 @@ namespace hades
 		}
 	}
 
-	level_editor_objects::editor_object_instance::editor_object_instance(const object_instance &o)
+	level_editor_objects_impl::editor_object_instance::editor_object_instance(const object_instance &o)
 		: object_instance{o}
 	{}
 }

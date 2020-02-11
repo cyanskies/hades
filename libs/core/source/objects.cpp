@@ -372,8 +372,7 @@ namespace hades
 		{
 			const auto cur = objects.top();
 			objects.pop();
-
-			std::copy(std::begin(cur->curves), std::end(cur->curves), std::back_inserter(out));
+			out.insert(std::end(out), std::begin(cur->curves), std::end(cur->curves));
 
 			if (!std::empty(cur->base))
 			{
@@ -401,7 +400,8 @@ namespace hades
 		if (o.obj_type)
 		{
 			auto inherited_curves = get_all_curves_iterative(o.obj_type);
-			std::move(std::begin(inherited_curves), std::end(inherited_curves), std::back_inserter(output));
+			output.insert(std::end(output), std::make_move_iterator(std::begin(inherited_curves)),
+				std::make_move_iterator(std::end(inherited_curves)));
 		}
 
 		return unique_curves(std::move(output));
@@ -420,13 +420,10 @@ namespace hades
 		for (const auto b : o.base)
 		{
 			const auto base_out = get_systems(*b);
-			out.reserve(std::size(out) + std::size(base_out));
-			std::copy(std::begin(base_out), std::end(base_out), std::back_inserter(out));
+			out.insert(std::end(out), std::begin(base_out), std::end(base_out));
 		}
 
-		out.reserve(std::size(out) + std::size(o.systems));
-		std::copy(std::begin(o.systems), std::end(o.systems), std::back_inserter(out));
-
+		out.insert(std::end(out), std::begin(o.systems), std::end(o.systems));
 		return out;
 	}
 
@@ -436,13 +433,11 @@ namespace hades
 
 		for (const auto b : o.base)
 		{
-			const auto base_out = get_render_systems(*b);
-			out.reserve(std::size(out) + std::size(base_out));
-			std::copy(std::begin(base_out), std::end(base_out), std::back_inserter(out));
+			const auto base_out = get_render_systems(*b); 
+			out.insert(std::end(out), std::begin(base_out), std::end(base_out));
 		}
 
-		out.reserve(std::size(out) + std::size(o.render_systems));
-		std::copy(std::begin(o.render_systems), std::end(o.render_systems), std::back_inserter(out));
+		out.insert(std::end(out), std::begin(o.render_systems), std::end(o.render_systems));
 
 		return out;
 	}

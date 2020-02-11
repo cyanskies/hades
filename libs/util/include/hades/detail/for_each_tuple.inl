@@ -90,8 +90,7 @@ namespace hades::detail
 		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
 		{
 			auto new_result = for_each_worker_r<Count + 1>(t, f, args...);
-			std::copy(std::begin(new_result), std::end(new_result),
-				std::back_inserter(result_collection));
+			result_collection.insert(std::end(result_collection), std::begin(new_result), std::end(new_result));
 		}
 
 		return result_collection;

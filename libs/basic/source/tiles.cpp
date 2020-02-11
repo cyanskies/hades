@@ -387,8 +387,7 @@ namespace hades
 		const auto map_node = p.get_child(map_str);
 		const auto tiles = map_node->to_sequence<tile_count_t>();
 		
-		map.tiles.reserve(tiles.size());
-		std::copy(std::begin(tiles), std::end(tiles), std::back_inserter(map.tiles));
+		map.tiles.insert(std::end(map.tiles), std::begin(tiles), std::end(tiles));
 
 		//width
 		const auto width = p.get_child(width_str);
@@ -485,8 +484,7 @@ namespace hades
 				//write the new tile ids into an array
 				std::iota(std::begin(new_entries), std::end(new_entries), start);
 				//move the entries into the swap array
-				std::move(std::begin(new_entries), std::end(new_entries),
-					std::back_inserter(tile_swap));
+				tile_swap.insert(std::end(tile_swap), std::begin(new_entries), std::end(new_entries));
 
 				//array should now contain [old_id] = new_id
 				start += tileset->tiles.size();
@@ -771,9 +769,7 @@ namespace hades
 		
 		m.width = size.x;
 		const auto &new_tiles = resized_map.data();
-
-		m.tiles.clear();
-		std::copy(std::begin(new_tiles), std::end(new_tiles), std::back_inserter(m.tiles));
+		m.tiles = new_tiles;
 	}
 
 	void resize_map(tile_map &t, vector_int size, vector_int offset)

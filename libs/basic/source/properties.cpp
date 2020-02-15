@@ -18,7 +18,7 @@ namespace hades
 					return p;
 			}
 
-			return make_property<V>(default_value);
+			return detail::make_property<V>(default_value);
 		}
 
 		constexpr auto provider_missing_error = "Property provider unavailable, use overloads with fall back values";

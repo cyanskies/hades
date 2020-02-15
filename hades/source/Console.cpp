@@ -320,7 +320,7 @@ namespace hades
 		TextBuffer.emplace_back(std::move(message));
 
 		#ifndef NDEBUG
-			std::cerr << message.text() << std::endl;
+			std::cerr << message.text() << "\n";
 		#endif
 	}
 
@@ -398,12 +398,23 @@ namespace hades
 		static_assert(valid_console_type<T>::value, "Attempting to create an illegal property type");
 
 		if (exists(identifier))
+		{
+			try
+			{
+				const auto prop = getValue<T>(identifier);
+				if (prop->load_default() == value) //if we're creating again with the same settings; its fine
+					return;
+			}
+			catch (const console::property_wrong_type&)
+			{ /* error is covered by the exception thrown below */ }
+
 			throw console::property_name_already_used{ "Cannot create property; name: " +
 			to_string(identifier) + ", has already been used" };
+		}
 
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
-		auto var = console::make_property<T>(value);
+		auto var = console::detail::make_property<T>(value);
 
 		_consoleVariables.emplace( to_string(identifier), std::move(var) );
 	}

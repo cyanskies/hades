@@ -78,10 +78,13 @@ namespace hades
 		template<typename T>
 		using property = std::shared_ptr<basic_property<T>>;
 	
-		template<typename T>
-		property<T> make_property(T value)
+		namespace detail
 		{
-			return std::make_shared< basic_property<T> >(value);
+			template<typename T>
+			property<T> make_property(T value)
+			{
+				return std::make_shared< basic_property<T> >(value);
+			}
 		}
 
 		//TODO: use float32

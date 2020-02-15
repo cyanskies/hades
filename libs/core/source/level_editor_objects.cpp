@@ -472,6 +472,9 @@ namespace hades
 		}
 		else if (_brush_type == brush_type::object_place)
 		{
+			if (!is_within(pos, rect_float{ {0.f, 0.f}, _level_limit }))
+				return;
+
 			const auto snapped_pos = snap_to_grid(pos, _grid);
 
 			_try_place_object(snapped_pos, *_held_object);

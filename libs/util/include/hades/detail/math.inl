@@ -21,7 +21,7 @@ namespace hades
 	template<typename T>
 	bool is_within(T value, T min, T max)
 	{
-		return value >= std::min(min, max) && value <= std::max(min, max);
+		return value >= std::min(min, max) && value < std::max(min, max);
 	}
 
 	template<typename T>

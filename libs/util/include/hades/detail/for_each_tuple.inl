@@ -7,7 +7,7 @@
 namespace hades::detail
 {
 	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	constexpr bool nothrow_invokable_v()
+	constexpr bool nothrow_invokable_v() noexcept
 	{
 		using T = std::tuple_element_t<Count, Tuple>;
 
@@ -18,19 +18,8 @@ namespace hades::detail
 	}
 
 	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
-	constexpr bool for_each_noexcept()
-	{
-		constexpr auto r = nothrow_invokable_v<Count, Func, Tuple, Args...>();
-
-		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
-			return r && for_each_noexcept<Count + 1, Func, Tuple>();
-		else
-			return r;
-	}
-
-	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
 	inline void for_each_worker(Tuple &t, Func f, Args... args)
-		noexcept(for_each_noexcept<std::size_t{ 0u }, Tuple, Func, Args...>())
+		noexcept(nothrow_invokable_v<Count, Func, Tuple, Args...>())
 	{
 		using T = std::tuple_element_t<Count, Tuple>;
 
@@ -44,7 +33,7 @@ namespace hades::detail
 	}
 
 	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	constexpr bool nothrow_invokable_r_v()
+	constexpr bool nothrow_invokable_r_v() noexcept
 	{
 		using T = std::tuple_element_t<Count, Tuple>;
 
@@ -61,18 +50,8 @@ namespace hades::detail
 	}
 
 	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
-	constexpr bool for_each_r_noexcept()
-	{
-		constexpr auto r = nothrow_invokable_r_v<Count, Func, Tuple, Args...>();
-		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
-			return r && for_each_r_noexcept<Count + 1, Func, Tuple>();
-		else
-			return r;
-	}
-
-	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
     inline decltype(auto) for_each_worker_r(Tuple &t, Func f, Args... args)
-		noexcept(for_each_r_noexcept < std::size_t{ 0u }, Tuple, Func, Args...>())
+		noexcept(nothrow_invokable_r_v<Count, Func, Tuple, Args...>())
 	{
 		using T = std::tuple_element_t<Count, Tuple>;
 		using ResultType = std::invoke_result_t<Func, T, Args...>;
@@ -96,21 +75,9 @@ namespace hades::detail
 		return result_collection;
 	}
 
-	//for index tuple is only noexcept if every function call would be noexcept
-	//NOTE: should only need to check the selected index
-	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	constexpr bool for_index_noexcept()
-	{
-		constexpr auto r = std::is_nothrow_invocable_v<Func, std::tuple_element_t<Count, Tuple>, Args...>;
-		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
-			return r && for_index_noexcept<Count + 1, Func, Tuple, Args...>();
-		else
-			return r;
-	}
-
 	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
 	inline void for_index_worker(Tuple &t, std::size_t i, Func f, Args... args) 
-		noexcept(for_index_noexcept<std::size_t{ 0u }, Func, Tuple, Args...>())
+		noexcept(std::is_nothrow_invocable_v<Func, std::tuple_element_t<Count, Tuple>, Args...>)
 	{
 		if (Count == i)
 			std::invoke(f, std::get<Count>(t));

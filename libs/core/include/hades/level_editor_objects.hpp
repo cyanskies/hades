@@ -152,35 +152,41 @@ namespace hades
 		};
 
 		using object_collision_tree = quad_tree<entity_id, rect_float>;
+		using collision_layer_map = std::unordered_map<unique_id, object_collision_tree>;
 
 		level_editor_objects_impl();
 
-		void level_load(const level&) override;
-		level level_save(level l) const override;
+		void level_load(const level&) override final;
+		level level_save(level l) const override final;
 		//void level_resize(vector_int, vector_int) override; //TODO:
 
-		void gui_update(gui&, editor_windows&) override;
-		void make_brush_preview(time_duration, mouse_pos) override;
-		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
+		void gui_update(gui&, editor_windows&) override final;
+		void make_brush_preview(time_duration, mouse_pos) override final;
+		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override final;
 
-		tag_list get_object_tags_at_location(rect_float) const override;
+		tag_list get_object_tags_at_location(rect_float) const override final;
 
-		void on_click(mouse_pos) override;
-		void on_drag_start(mouse_pos) override;
-		void on_drag(mouse_pos) override;
-		void on_drag_end(mouse_pos) override;
+		void on_click(mouse_pos) override final;
+		void on_drag_start(mouse_pos) override final;
+		void on_drag(mouse_pos) override final;
+		void on_drag_end(mouse_pos) override final;
 
-		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
+		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override final;
 
 	protected:
-		using obj_ui = object_editor_ui<editor_object_instance,
-			std::function<void(editor_object_instance&)>,
-			std::function<bool(const rect_float & r, const object_instance & o)>>;
+		const std::vector<editor_object_instance>& get_objects() const noexcept;
+		const object_collision_tree& get_quadmap() const noexcept;
+		const collision_layer_map& get_collision_layers() const noexcept;
+		world_vector_t get_level_size() const noexcept;
 
-		//NOTE: for custom world snapping(eg. unit grid placement),
+		// behaviour override functions
+		// inherit from this class and override these to change editor behaviour
+
+		//NOTE: for custom world snapping(eg. snap to terrain grid),
 		//		default does collision layer avoidance
-		// TODO: valid terrain selection?
-		//virtual std::optional<world_vector_t> closest_valid_position(world_vector_t pos, entity_id, const obj_ui::object_data&);
+		//		it returns pos if it is clear of other objects
+		//		and a default constructed std::optional otherwise
+		virtual std::optional<world_vector_t> closest_valid_position(world_rect_t pos, const object_instance&) const;
 
 	private:
 		enum class brush_type {
@@ -211,9 +217,12 @@ namespace hades
 		vector_float _level_limit;
 		object_collision_tree _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
-		std::unordered_map<unique_id, object_collision_tree> _collision_quads;
+		collision_layer_map _collision_quads;
 
 		//object instances
+		using obj_ui = object_editor_ui<editor_object_instance,
+			std::function<void(editor_object_instance&)>,
+			std::function<bool(const rect_float & r, const object_instance & o)>>;
 		obj_ui::object_data _objects;
 		obj_ui _obj_ui;
 

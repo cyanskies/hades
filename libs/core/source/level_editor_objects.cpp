@@ -548,19 +548,44 @@ namespace hades
 			t.draw(_sprites, s);
 		}
 	}
+
+	const std::vector<level_editor_objects_impl::editor_object_instance>& level_editor_objects_impl::get_objects() const noexcept
+	{
+		return _objects.objects;
+	}
+
+	const level_editor_objects_impl::object_collision_tree& level_editor_objects_impl::get_quadmap() const noexcept
+	{
+		return _quad_selection;
+	}
+
+	const level_editor_objects_impl::collision_layer_map& level_editor_objects_impl::get_collision_layers() const noexcept
+	{
+		return _collision_quads;
+	}
+
+	world_vector_t level_editor_objects_impl::get_level_size() const noexcept
+	{
+		return _level_limit;
+	}
+
+	std::optional<world_vector_t> level_editor_objects_impl::closest_valid_position(world_rect_t rect, const object_instance& o) const
+	{
+		if (_object_valid_location(rect, o))
+			return position(rect);
+
+		return std::nullopt;
+	}
 	
 	bool level_editor_objects_impl::_object_valid_location(const rect_float& r, const object_instance& o) const
 	{
 		const auto id = o.id;
 
 		const auto collision_groups = get_collision_groups(o);
-		const auto& current_groups = _collision_quads;
+		const auto& current_groups = get_collision_layers();
 
-		if (!within_level(position(r), size(r), _level_limit))
+		if (!within_level(position(r), size(r), get_level_size()))
 			return false;
-
-		if (_allow_intersect)
-			return true;
 
 		//for each group that this object is a member of
 		//check each neaby rect for a collision
@@ -611,14 +636,18 @@ namespace hades
 		if(new_entity)
 			o.id = _objects.next_id;
 		
-		const auto valid_location = _object_valid_location({ pos, size }, o);
+		const auto valid_location = closest_valid_position({ pos, size }, o);
 
 		if (valid_location || _allow_intersect)
 		{
 			if(new_entity)
 				increment(_objects.next_id);
 
-			set_position(o, pos);
+			if(valid_location)
+				set_position(o, valid_location.value());
+			else
+				set_position(o, pos);
+
 			_update_quad_data(o);
 			update_object_sprite(o, _sprites);
 

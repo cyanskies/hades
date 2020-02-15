@@ -54,6 +54,9 @@ namespace hades::detail
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
 			cvars::default_value::editor_scroll_rate);
 
+		_force_whole_tiles = console::get_bool(cvars::editor_level_force_whole_tiles,
+			cvars::default_value::editor_level_force_whole_tiles);
+
 		//set world camera to 0, 0
 		_world_view.setCenter({});
 
@@ -352,9 +355,31 @@ namespace hades::detail
 				if (_gui.button("Cancel"))
 					_window_flags.new_level = false;
 
-				_gui.text("Level Size: "sv);
-				_gui.input("Width"sv, _new_level_options.width);
-				_gui.input("Height"sv, _new_level_options.height);
+				auto width = _new_level_options.width;
+				auto height = _new_level_options.height;
+
+				if (*_force_whole_tiles)
+				{
+					width = _new_level_options.width / _tile_settings->tile_size;
+					height = _new_level_options.height / _tile_settings->tile_size;
+					_gui.text("Level Size(tiles): "sv);
+				}
+				else
+					_gui.text("Level Size(pixels): "sv);
+
+				_gui.input("Width"sv, width);
+				_gui.input("Height"sv, height);
+
+				if (*_force_whole_tiles)
+				{
+					_new_level_options.width = width * _tile_settings->tile_size;
+					_new_level_options.height = height * _tile_settings->tile_size;
+				}
+				else
+				{
+					_new_level_options.width = width;
+					_new_level_options.height = height;
+				}
 			}
 			_gui.window_end();
 		}
@@ -380,18 +405,50 @@ namespace hades::detail
 					_window_flags.resize_level = false;
 				}
 
-				_gui.text("current size: " + to_string(_level_x) + ", " + to_string(_level_y));
+				_gui.text("current size(pixels): " + to_string(_level_x) + ", " + to_string(_level_y));
 
 				bool changed = false;
 				auto new_size = std::array{ _resize_options.size.x, _resize_options.size.y };
+
+				if (*_force_whole_tiles)
+				{
+					auto s = _resize_options.size / integer_cast<int32>(_tile_settings->tile_size);
+					new_size = std::array{ s.x, s.y };
+				}
+
 				if (_gui.input("new size", new_size))
 					changed = true;
-				_resize_options.size = { new_size[0], new_size[1] };
+
+				if (*_force_whole_tiles)
+				{
+					_resize_options.size = { 
+						new_size[0] * _tile_settings->tile_size,
+						new_size[1] * _tile_settings->tile_size 
+					};
+				}
+				else
+					_resize_options.size = { new_size[0], new_size[1] };
 
 				auto new_offset = std::array{ _resize_options.offset.x, _resize_options.offset.y };
+
+				if (*_force_whole_tiles)
+				{
+					auto o = _resize_options.offset / integer_cast<int32>(_tile_settings->tile_size);
+					new_offset = std::array{ o.x, o.y };
+				}
+
 				if (_gui.input("current map offset", new_offset))
 					changed = true;
-				_resize_options.offset = { new_offset[0], new_offset[1] };
+
+				if (*_force_whole_tiles)
+				{
+					_resize_options.offset = { 
+						new_offset[0] * _tile_settings->tile_size,
+						new_offset[1] * _tile_settings->tile_size
+					};
+				}
+				else
+					_resize_options.offset = { new_offset[0], new_offset[1] };
 
 				if (changed)
 				{
@@ -399,6 +456,14 @@ namespace hades::detail
 					_resize_options.bottom_right = _resize_options.size - 
 						(_resize_options.offset + vector_int{_level_x, _level_y});
 					changed = false;
+				}
+
+				auto tl = _resize_options.top_left;
+				auto br = _resize_options.bottom_right;
+				if (*_force_whole_tiles)
+				{
+					tl = _resize_options.top_left / integer_cast<int32>(_tile_settings->tile_size);
+					br = _resize_options.bottom_right / integer_cast<int32>(_tile_settings->tile_size);
 				}
 
 				if (_gui.input("expand left by", _resize_options.top_left.x))
@@ -409,6 +474,12 @@ namespace hades::detail
 					changed = true;
 				if(_gui.input("expand right by", _resize_options.bottom_right.x))
 					changed = true;
+
+				if (*_force_whole_tiles) 
+				{
+					tl *= _tile_settings->tile_size;
+					br *= _tile_settings->tile_size;
+				}
 
 				if (changed)
 				{
@@ -499,6 +570,7 @@ void hades::create_editor_console_variables()
 	console::create_property(cvars::editor_zoom_max, cvars::default_value::editor_zoom_max);
 	console::create_property(cvars::editor_zoom_default, cvars::default_value::editor_zoom_default);
 
+	console::create_property(cvars::editor_level_force_whole_tiles, cvars::default_value::editor_level_force_whole_tiles);
 	console::create_property(cvars::editor_level_default_size, cvars::default_value::editor_level_default_size);
 }
 

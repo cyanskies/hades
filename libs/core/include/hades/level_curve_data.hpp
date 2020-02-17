@@ -24,9 +24,11 @@ namespace std {
 	public:
 		size_t operator()(const hades::curve_index_t& c) const
 		{
+			// NOTE: algorithm sourced from boost::hash_combine_impl:310
+			// https://github.com/boostorg/container_hash/blob/develop/include/boost/container_hash/hash.hpp
 			size_t h1 = std::hash<hades::entity_id::value_type>{}(hades::to_value(c.first));
 			size_t h2 = std::hash<hades::variable_id::type>{}(c.second.get());
-			return h1 ^ (h2 << 1);
+			return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
 		}
 	};
 }

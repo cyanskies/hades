@@ -54,7 +54,6 @@ namespace hades
 		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
 
 		//map info
-		//terrain()
 		virtual const terrain_map& get_world_terrain() const noexcept = 0;
 		virtual world_rect_t get_world_bounds() const noexcept = 0;
 

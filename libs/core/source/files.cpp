@@ -335,14 +335,18 @@ namespace hades::files
 		const std::filesystem::path& file_name)
 	{
 		auto stream = try_stream(first_path, second_path, file_name);
-		return from_stream<buffer>(stream);
+		if(stream.is_open())
+			return from_stream<buffer>(stream);
+		return {};
 	}
 
 	static string try_read(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
 		const std::filesystem::path& file_name)
 	{
 		auto str = try_stream(first_path, second_path, file_name);
-		return from_stream<string>(str);
+		if(str.is_open())
+			return from_stream<string>(str);
+		return {};
 	}
 
 	ifstream stream_file(const std::filesystem::path& p)

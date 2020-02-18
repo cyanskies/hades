@@ -45,7 +45,7 @@ namespace hades
 			return get_changes(exp, _last_update_time);
 		}
 
-		const common_interface* get_interface() const noexcept override
+		common_interface* get_interface() noexcept override
 		{
 			return _game.get_interface();
 		}

@@ -94,7 +94,7 @@ namespace hades
 		return _current_time;
 	}
 
-	const game_interface* game_instance::get_interface() const noexcept
+	game_interface* game_instance::get_interface() noexcept
 	{
 		return &_game;
 	}

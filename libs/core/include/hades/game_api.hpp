@@ -257,6 +257,14 @@ namespace hades
 
 	namespace render::level
 	{
+		//==level local values==
+		// these are not synced to servers or saved
+		// used for level local system data that is needed
+		// by multiple systems (usually for performance)
+		// eg. collision trees
+		template<typename T>
+		T& get_level_local_ref(unique_id);
+
 		//get curve from this level
 		template<typename T>
 		const curve<T>& get_curve(curve_index_t);

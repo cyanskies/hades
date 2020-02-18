@@ -13,7 +13,7 @@ namespace hades
 	class render_instance
 	{
 	public:
-		explicit render_instance(const common_interface*);
+		explicit render_instance(common_interface*);
 
 		//TODO: should this sync the time between server client?
 		// YES, since our curve data is all still in server time
@@ -23,7 +23,7 @@ namespace hades
 		time_point _current_frame;
 		time_point _prev_frame{};
 
-		const common_interface* _interface = nullptr;
+		common_interface* _interface = nullptr;
 		system_behaviours<render_system> _systems;
 		std::unordered_set<entity_id> _activated_ents;
 		//render_implementation _game;

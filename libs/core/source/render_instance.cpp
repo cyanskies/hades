@@ -41,7 +41,7 @@ namespace hades
 		}
 	}
 
-	static void activate_ents(const common_interface* i,
+	static void activate_ents(const client_interface* i,
 		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
 		time_point time)
 	{
@@ -70,7 +70,7 @@ namespace hades
 		return;
 	}
 
-	static void deactivate_ents(const common_interface* i,
+	static void deactivate_ents(const client_interface* i,
 		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
 		time_point time)
 	{
@@ -97,7 +97,7 @@ namespace hades
 		return;
 	}
 
-	render_instance::render_instance(const common_interface* i) : _interface{i}
+	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
 		if(i)
 			activate_ents(i, _systems, _activated_ents, _current_frame);
@@ -115,7 +115,7 @@ namespace hades
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
 
-		auto make_render_job_data = [m, &i](unique_id sys, std::vector<entity_id> e, const common_interface* g, system_behaviours<render_system> *s, time_point prev,
+		auto make_render_job_data = [m, &i](unique_id sys, std::vector<entity_id> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
 			time_duration dt, system_data_t* d)->render_job_data {
 				return render_job_data{sys, std::move(e), g, s, prev + dt, &i, d };
 		};

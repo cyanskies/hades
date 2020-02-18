@@ -10,16 +10,26 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
-		curve<T> &get_game_curve_ref(game_interface* l, curve_index_t i)
+		T& get_level_local_ref_imp(unique_id id, common_interface* ptr)
+		{
+			static_assert(std::is_default_constructible_v<T>);
+			auto& any = ptr->get_level_local_ref(id);
+			if (!any.has_value())
+				any.emplace<T>();
+
+			return *std::any_cast<T>(&any);
+		}
+
+		template<typename T>
+		curve<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
 		{
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
-
 			return curve_map.find(i)->second;
 		}
 
 		template<typename T>
-		const game::curve_keyframe<T> &get_game_curve_frame_ref(const game_interface* l, curve_index_t i, time_point t)
+		const game::curve_keyframe<T> &get_game_curve_frame_ref(const common_interface* l, curve_index_t i, time_point t)
 		{
 			const auto& curves = l->get_curves();
 			const auto& curve_map = hades::get_curve_list<T>(curves);
@@ -28,23 +38,17 @@ namespace hades
 		}
 
 		template<typename T>
-		void set_game_curve(game_interface *l, curve_index_t i, curve<T> c)
+		void set_game_curve(common_interface*l, curve_index_t i, curve<T> c)
 		{
-			assert(l);
-
 			auto& curves = l->get_curves();
 			auto& target_curve_list = hades::get_curve_list<T>(curves);
-
 			target_curve_list.insert_or_assign(i, std::move(c));
-
 			return;
 		}
 
 		template<typename T>
-		void set_game_value(game_interface *l, curve_index_t i, time_point t, T&& v)
+		void set_game_value(common_interface*l, curve_index_t i, time_point t, T&& v)
 		{
-			assert(l);
-
 			auto& curves = l->get_curves();
 			auto& target_curve_type = hades::get_curve_list<T>(curves);
 			auto iter = target_curve_type.find(i);
@@ -61,16 +65,6 @@ namespace hades
 			auto &c = iter->second;
 			c.set(t, std::forward<T>(v));
 			return;
-		}
-
-		template<typename T>
-		const curve<T>& get_render_curve(const common_interface *l, curve_index_t i)
-		{
-			assert(l);
-
-			auto& curves = l->get_curves();
-			auto& curve_map = hades::get_curve_list<T>(curves);
-			return curve_map.find(i)->second;
 		}
 	}
 
@@ -99,13 +93,8 @@ namespace hades
 		template<typename T>
 		T& get_level_local_ref(unique_id id)
 		{
-			static_assert(std::is_default_constructible_v<T>);
 			auto ptr = detail::get_game_level_ptr();
-			auto &any = ptr->get_level_local_ref(id);
-			if (!any.has_value())
-				any.emplace<T>();
-
-			return *std::any_cast<T>(&any);
+			return detail::get_level_local_ref_imp(id, ptr);
 		}
 
 		template<typename T>
@@ -226,12 +215,17 @@ namespace hades
 	namespace render::level
 	{
 		template<typename T>
+		T& get_level_local_ref(unique_id id)
+		{
+			auto ptr = detail::get_render_data_ptr();
+			return detail::get_level_local_ref_imp(id, ptr);
+		}
+
+		template<typename T>
 		const curve<T>& get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_render_data_ptr();
-			assert(ptr);
-
-			return detail::get_render_curve<T>(ptr->level_data, i);
+			return detail::get_game_curve_ref<T>(ptr->level_data, i);
 		}
 
 		template<typename T>

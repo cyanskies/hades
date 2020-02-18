@@ -48,12 +48,12 @@ namespace hades
 			assert(!v.valueless_by_exception());
 			const auto index = curve_index_t{ id, c->id };
 
-			std::visit([&](auto&& v)->void {
+			std::visit([&, cur = c](auto&& v)->void {
 				using T = std::decay_t<decltype(v)>;				
 				auto &curve_map = get_curve_list<T>(curves);
 				if (curve_map.find(index) == std::end(curve_map))
 				{
-					auto new_curve = curve<T>{ c->c_type };
+					auto new_curve = curve<T>{ cur->c_type };
 					new_curve.set(t, std::move_if_noexcept(v));
 					curve_map.emplace(index, std::move(new_curve));
 				}
@@ -175,8 +175,4 @@ namespace hades
 	{
 		return std::exchange(_input_queue, {});
 	}
-
-	render_implementation::render_implementation()
-		: common_implementation_base{ level_save{} }
-	{}
 }

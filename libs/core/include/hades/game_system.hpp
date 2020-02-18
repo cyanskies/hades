@@ -213,7 +213,7 @@ namespace hades
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
-		const common_interface *level_data = nullptr;
+		common_interface *level_data = nullptr; //TODO: client_interface to lock down access
 		//mission data interface
 		// contains players, 
 		// and... just the players

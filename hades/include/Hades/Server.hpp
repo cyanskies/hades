@@ -45,7 +45,7 @@ namespace hades
 		//sends player input
 		virtual void send_request(std::vector<server_action>) = 0;
 
-		virtual const common_interface* get_interface() const noexcept = 0;
+		virtual common_interface* get_interface() noexcept = 0;
 
 		//current level time
 		//virtual time_point get_level_time() = 0;

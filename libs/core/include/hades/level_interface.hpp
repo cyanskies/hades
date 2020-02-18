@@ -41,14 +41,13 @@ namespace hades
 	
 	//TODO: these should be either an interface or final
 
-	//defines a subset of interface available to render instances
-	class common_interface
+	class client_interface
 	{
 	public:
-		virtual ~common_interface() = default;
+		virtual ~client_interface() = default;
 
-		virtual curve_data &get_curves() noexcept = 0;
-		virtual const curve_data &get_curves() const noexcept = 0;
+		// constant curve access
+		virtual const curve_data& get_curves() const noexcept = 0;
 
 		//gets an entity id from a unique name
 		virtual entity_id get_entity_id(std::string_view, time_point t) const = 0;
@@ -57,12 +56,28 @@ namespace hades
 		virtual const terrain_map& get_world_terrain() const noexcept = 0;
 		virtual world_rect_t get_world_bounds() const noexcept = 0;
 
+		// non-persistant level local storage
+		// data stored here is not recorded in saves
+		// and should not be assumed to be available
 		virtual std::any& get_level_local_ref(unique_id) = 0;
 		virtual void set_level_local_value(unique_id, std::any) = 0;
+	private:
+		//TODO, impl level_local_ref/value here
+	};
+
+	//defines a subset of interface available to render instances
+	class common_interface : public client_interface
+	{
+	public:
+		// adds mutable curve access, so the interface can be used by
+		// server side functions as well
+		virtual curve_data &get_curves() noexcept = 0;
 	};
 
 	//TODO: implement common_interface for remote hosts,
 	// just needs to accept and store data
+	// this is the client side curve storage
+	// merge the server game implementation into a single class
 
 	class game_interface : public common_interface
 	{
@@ -151,13 +166,6 @@ namespace hades
 		std::vector<action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };
 		//ai_input
-	};
-
-	//TODO: deprecate, render_instance replaces this entirely
-	class render_implementation final : public common_implementation_base
-	{
-	public:
-		render_implementation();
 	};
 
 	template<typename Interface, typename SystemType, typename MakeGameStructFn>

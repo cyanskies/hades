@@ -35,7 +35,7 @@ namespace hades
 
 		time_point get_time(time_point mission_offset = time_point{}) const noexcept;
 
-		const game_interface* get_interface() const noexcept;
+		game_interface* get_interface() noexcept;
 
 	private:
 		//the games starting time, is always 0

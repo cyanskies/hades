@@ -1,7 +1,8 @@
 #include "simple_instance_state.hpp"
 
 #include "hades/console_variables.hpp"
-#include "Hades/game_system.hpp"
+#include "hades/game_api.hpp"
+#include "hades/game_system.hpp"
 #include "hades/files.hpp"
 #include "hades/level.hpp"
 #include "hades/Main.hpp"
@@ -12,7 +13,7 @@ using namespace std::string_view_literals;
 
 void simple_on_connect()
 {
-	const auto entity =hades::render::get_objects();
+	const auto entity = hades::render::get_objects();
 }
 
 void simple_on_tick()

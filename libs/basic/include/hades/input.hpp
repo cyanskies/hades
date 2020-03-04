@@ -7,6 +7,7 @@
 #include <tuple>
 #include <vector>
 
+#include "hades/time.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -21,6 +22,10 @@ namespace hades
 	//this is held by the app object and kept up to date by it.
 	//the input state is either collectable by the current state via a function
 	// or is passed into the state with it's tick function
+
+	//TODO: redo input logic, current system doesn't handle muiltible keys bound to the same action gracefully
+	// also doesn't have the best reliability in regards to keys being left active and so on.
+	// store activity state with keys first, then record activation based on this
 
 	struct action
 	{
@@ -63,6 +68,51 @@ namespace std {
 
 namespace hades
 {
+	namespace detail
+	{
+		struct action_extra
+		{
+			time_point last_active = {};
+		};
+
+		struct action_double
+		{
+			bool double_tapped = false;
+		};
+
+		struct action_held
+		{
+			bool held = false;
+		};
+
+		struct action_empty {};
+	}
+
+	//can be used to track individual presses.
+	// double taps
+	// and holding the button down.
+	template<bool DoubleTap = true, bool Holdable = true>
+	struct action_state : public std::conditional_t<DoubleTap || Holdable, detail::action_extra, detail::action_empty>,
+		public std::conditional_t<DoubleTap, detail::action_double, detail::action_empty>,
+		public std::conditional_t<Holdable, detail::action_held, detail::action_empty>
+	{
+		bool pressed = false;
+	};
+
+	//functions for testing the state
+	template<bool DoubleTap, bool Holdable>
+	constexpr void update_action_state(const action& a, const time_point& time, action_state<DoubleTap, Holdable>& state) noexcept;
+	template<bool DoubleTap, bool Holdable>
+	constexpr bool action_pressed(const action_state<DoubleTap, Holdable>& state) noexcept; // returns true if the button was just pressed
+	template<bool DoubleTap, bool Holdable>
+	constexpr bool action_down(const action_state<DoubleTap, Holdable>& state) noexcept; // returns true as long as the button is down; pressed || held
+	template<bool DoubleTap, bool Holdable>
+	constexpr bool action_double_tap(const action_state<DoubleTap, Holdable>& state) noexcept; // returns true if the button has been double tapped
+	template<bool DoubleTap, bool Holdable>
+	constexpr bool action_held(const action_state<DoubleTap, Holdable>& state) noexcept; // returns true if the button has been held down
+	template<bool DoubleTap, bool Holdable>
+	constexpr time_point action_hold_start_time(const action_state<DoubleTap, Holdable>& state) noexcept;
+
 	struct input_interpreter
 	{
 		using interpreter_id = unique_id;

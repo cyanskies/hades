@@ -38,7 +38,7 @@ namespace hades
 			return false;
 		};
 
-		//TODO: encode modifier key state in thte x,y params
+		//TODO: encode modifier key state in the x,y params
 		auto event_check = [](bool handled, const sf::Event &e) {
 			action a{};
 

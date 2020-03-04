@@ -293,6 +293,7 @@ namespace hades
 		game_interface* get_game_level_ptr() noexcept;
 		system_behaviours<game_system>* get_game_systems_ptr() noexcept;
 		render_job_data* get_render_data_ptr() noexcept;
+		common_interface* get_render_level_ptr() noexcept;
 	}
 }
 

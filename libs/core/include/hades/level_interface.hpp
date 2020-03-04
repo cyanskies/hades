@@ -116,7 +116,7 @@ namespace hades
 		world_rect_t get_world_bounds() const noexcept override final;
 
 		std::any& get_level_local_ref(unique_id) override final;
-		void set_level_local_value(unique_id u, std::any a) override final
+		void set_level_local_value(unique_id u, std::any a) override final //TODO: maybe remove
 		{
 			_level_local.insert_or_assign(u, std::move(a));
 			return;

@@ -217,8 +217,8 @@ namespace hades
 		template<typename T>
 		T& get_level_local_ref(unique_id id)
 		{
-			auto ptr = detail::get_render_data_ptr();
-			return detail::get_level_local_ref_imp(id, ptr);
+			auto ptr = detail::get_render_level_ptr();
+			return detail::get_level_local_ref_imp<T>(id, ptr);
 		}
 
 		template<typename T>

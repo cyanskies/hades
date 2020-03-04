@@ -215,5 +215,10 @@ namespace hades
 		{
 			return render_data_ptr;
 		}
+
+		common_interface* get_render_level_ptr() noexcept
+		{
+			return render_data_ptr->level_data;
+		}
 	}
 }

@@ -26,12 +26,14 @@ namespace hades
 
 	namespace mouse
 	{
-		//TODO: make general version of this for actions in input.hpp
-		template<bool EnableDrag = true, bool EnableDoubleClick = true>
-		struct mouse_button_state
+		namespace detail
 		{
-			struct disabled
-			{};
+			struct empty {};
+
+			struct click_pos
+			{
+				vector_int click_pos;
+			};
 
 			struct double_click_data
 			{
@@ -45,14 +47,16 @@ namespace hades
 				bool dragging = false;
 				bool drag_end = false;
 			};
+		}
 
+		template<bool EnableDrag = true, bool EnableDoubleClick = true>
+		struct mouse_button_state :
+			public std::conditional_t<EnableDrag || EnableDoubleClick, detail::click_pos, detail::empty>,
+			public std::conditional_t<EnableDoubleClick, detail::double_click_data, detail::empty>,
+			public std::conditional_t<EnableDrag, detail::drag_data, detail::empty>
+		{
 			bool is_down = false;
 			bool clicked = false;
-
-			//NOTE: click pos is in screen coords
-			std::conditional_t<EnableDrag || EnableDoubleClick, vector_int, disabled> click_pos;
-			std::conditional_t<EnableDoubleClick, double_click_data, disabled> double_clicked;
-			std::conditional_t<EnableDrag, drag_data, disabled> drag;
 		};
 
 		bool inside_target(const sf::RenderTarget&, vector_int window_position);
@@ -63,18 +67,24 @@ namespace hades
 		//call update_button_state each update frame to keep a mouse_button_state current for each button you care about
 		//use the is_* functions to check whether to trigger a mouse event
 		template<bool Drag, bool DoubleClick>
-		void update_button_state(const action &mouse_button, const action &mouse_position, const time_point &time, mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr void update_button_state(const action &mouse_button, const action &mouse_position, const time_point &time, mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		
+		//if true, then the position of the click is the same as the mouse position given to update_button_state
 		template<bool Drag, bool DoubleClick>
-		bool is_click(const mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr bool is_click(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
+		//if true, the location of the click is stored into mouse_state.click_pos
 		template<bool Drag, bool DoubleClick>
-		bool is_double_click(const mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr bool is_double_click(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
-		bool is_drag_start(const mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr vector_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
-		bool is_dragging(const mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr bool is_drag_start(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
-		bool is_drag_end(const mouse_button_state<Drag, DoubleClick> &mouse_state);
+		constexpr bool is_dragging(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
+		template<bool Drag, bool DoubleClick>
+		constexpr bool is_drag_end(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
+		template<bool Drag, bool DoubleClick>
+		constexpr vector_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
 	}
 
 	//optional function for registering common input methods

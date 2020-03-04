@@ -179,7 +179,7 @@ namespace hades
 	}
 
 	//render access functions allow a const view of the game state
-	namespace render
+	namespace render //TODO: client = render?
 	{
 		using namespace resources::curve_types;
 		const std::vector<object_ref> &get_objects() noexcept;

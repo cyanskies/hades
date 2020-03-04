@@ -106,6 +106,9 @@ namespace hades {
 	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
 	constexpr std::underlying_type_t<Enum> enum_type(Enum e) noexcept;
 
+	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
+	constexpr Enum next(Enum e) noexcept;
+
 	template<typename Func>
 	struct finally_t
 	{

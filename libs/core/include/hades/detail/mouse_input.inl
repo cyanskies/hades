@@ -5,7 +5,7 @@ namespace hades::mouse
 	constexpr auto drag_distance = 6;
 
 	template<bool Drag, bool DoubleClick>
-	inline void update_button_state(const action &m, const action &mpos, const time_point &t, mouse_button_state<Drag, DoubleClick> &s)
+	constexpr inline void update_button_state(const action &m, const action &mpos, const time_point &t, mouse_button_state<Drag, DoubleClick> &s) noexcept
 	{
 		//check each combination of inputs
 		//mouse is down / not down
@@ -22,21 +22,20 @@ namespace hades::mouse
 			// affect the behaviour of click
 			if constexpr (DoubleClick)
 			{
-				assert(t > s.double_clicked.click_time);
-				const time_duration click_duration = t - s.double_clicked.click_time;
+				assert(t > s.click_time);
+				const time_duration click_duration = t - s.click_time;
 				const auto distance = vector::distance({ mpos.x_axis, mpos.y_axis }, s.click_pos);
 
 				//mouse has been clicked previously
 				if (click_duration < double_click_time &&
 					distance < double_click_distance)
 				{
-					s.double_clicked.double_clicked = true;
-					s.double_clicked.click_time = time_point{};
-					s.clicked = false;
+					s.double_clicked = true;
+					s.click_time = {};
 				}
 				else
 				{
-					s.double_clicked.click_time = t;
+					s.click_time = t;
 					s.clicked = true;
 				}
 			}
@@ -55,7 +54,7 @@ namespace hades::mouse
 			//has moved enough to trigger a drag event
 			s.clicked = false;
 			if constexpr (DoubleClick)
-				s.double_clicked.double_clicked = false;
+				s.double_clicked = false;
 
 			if constexpr(Drag)
 			{
@@ -63,15 +62,15 @@ namespace hades::mouse
 				//start a drag event or convert a drag starting into
 				// a dragging event
 				if (distance > drag_distance &&
-					s.drag.drag_start)
+					s.drag_start)
 				{
-					s.drag.drag_start = false;
-					s.drag.dragging = true;
+					s.drag_start = false;
+					s.dragging = true;
 				}
 				if (distance > drag_distance &&
-					!s.drag.dragging)
+					!s.dragging)
 				{
-					s.drag.drag_start = true;
+					s.drag_start = true;
 				}
 			}
 		}
@@ -84,14 +83,14 @@ namespace hades::mouse
 			s.clicked = false;
 
 			if constexpr(DoubleClick)
-				s.double_clicked.double_clicked = false;
+				s.double_clicked = false;
 
 			if constexpr (Drag)
 			{
-				if (s.drag.dragging || s.drag.drag_start)
+				if (s.dragging || s.drag_start)
 				{
-					s.drag.drag_start = s.drag.dragging = false;
-					s.drag.drag_end = true;
+					s.drag_start = s.dragging = false;
+					s.drag_end = true;
 				}
 			}
 		}
@@ -102,15 +101,7 @@ namespace hades::mouse
 			// as no mouse button events should be active after being up for more than 1 frame
 			//TODO: only drag_end should possibly still be set by this point, 
 			//maybe do some tests and remove all but drag_end from the bellow code
-			s.clicked = false;
-			if constexpr(DoubleClick)
-				s.double_clicked.double_clicked = false;
-			if constexpr (Drag)
-			{
-				s.drag.drag_start = false;
-				s.drag.dragging = false;
-				s.drag.drag_end = false;
-			}
+			s = {};
 		}
 
 		//update is_down for next frame
@@ -118,60 +109,88 @@ namespace hades::mouse
 	}
 
 	template<bool Drag, bool DoubleClick>
-	inline bool is_click(const mouse_button_state<Drag, DoubleClick> &s)
+	constexpr inline bool is_click(const mouse_button_state<Drag, DoubleClick> &s) noexcept
 	{
 		return s.clicked;
 	}
 
 	template<bool Drag, bool DoubleClick>
-	inline bool is_double_click(const mouse_button_state<Drag, DoubleClick>&)
+	constexpr inline bool is_double_click(const mouse_button_state<Drag, DoubleClick>&) noexcept
 	{
 		static_assert(DoubleClick, "Double click is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool Drag>
-	inline bool is_double_click(const mouse_button_state<Drag, true> &s)
+	constexpr inline bool is_double_click(const mouse_button_state<Drag, true> &s) noexcept
 	{
-		return s.double_clicked.double_clicked;
+		return s.double_clicked;
 	}
 
 	template<bool Drag, bool DoubleClick>
-	inline bool is_drag_start(const mouse_button_state<Drag, DoubleClick>&)
+	constexpr vector_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
+	{
+		static_assert(DoubleClick, "Double click is disabled for this mouse state");
+		return false;
+	}
+
+	template<bool Drag>
+	constexpr vector_int double_click_pos(const mouse_button_state<Drag, true>& s) noexcept
+	{
+		assert(s.double_clicked);
+		return s.click_pos;
+	}
+
+	template<bool Drag, bool DoubleClick>
+	constexpr inline bool is_drag_start(const mouse_button_state<Drag, DoubleClick>&) noexcept
 	{
 		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool Drag, bool DoubleClick>
-	inline bool is_dragging(const mouse_button_state<Drag, DoubleClick>&)
+	constexpr inline bool is_dragging(const mouse_button_state<Drag, DoubleClick>&) noexcept
 	{
 		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool Drag, bool DoubleClick>
-	inline bool is_drag_end(const mouse_button_state<Drag, DoubleClick>&)
+	constexpr inline bool is_drag_end(const mouse_button_state<Drag, DoubleClick>&) noexcept
 	{
 		static_assert(Drag, "Dragging is disabled for this mouse state");
 		return false;
 	}
 
 	template<bool DoubleClick>
-	inline bool is_drag_start(const mouse_button_state<true, DoubleClick> &s)
+	constexpr inline bool is_drag_start(const mouse_button_state<true, DoubleClick> &s) noexcept
 	{
-		return s.drag.drag_start;
+		return s.drag_start;
 	}
 
 	template<bool DoubleClick>
-	inline bool is_dragging(const mouse_button_state<true, DoubleClick> &s)
+	constexpr inline bool is_dragging(const mouse_button_state<true, DoubleClick> &s) noexcept
 	{
-		return s.drag.dragging;
+		return s.dragging;
 	}
 
 	template<bool DoubleClick>
-	inline bool is_drag_end(const mouse_button_state<true, DoubleClick> &s)
+	constexpr inline bool is_drag_end(const mouse_button_state<true, DoubleClick> &s) noexcept
 	{
-		return s.drag.drag_end;
+		return s.drag_end;
+	}
+
+	template<bool Drag, bool DoubleClick>
+	constexpr vector_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
+	{
+		static_assert(Drag, "Dragging is disabled for this mouse state");
+		return false;
+	}
+
+	template<bool DoubleClick>
+	constexpr vector_int drag_start_pos(const mouse_button_state<true, DoubleClick>& s) noexcept
+	{
+		assert(s.drag_start || s.dragging || s.drag_end);
+		return s.click_pos;
 	}
 }

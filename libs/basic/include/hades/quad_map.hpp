@@ -30,6 +30,7 @@ namespace hades
 		template<typename T, typename U>
 		friend constexpr bool operator==(const quad_tree<T, U>&, const quad_tree<T, U>&);
 
+		//returns all rects that intersect 'rect'
 		std::vector<value_type> find_collisions(const rect_type &rect) const;
 
 		void insert(const rect_type&, const key_type&);

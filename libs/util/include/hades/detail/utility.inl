@@ -264,6 +264,12 @@ namespace hades
 		return static_cast<std::underlying_type_t<Enum>>(e);
 	}
 
+	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int>>
+	constexpr Enum next(Enum e) noexcept
+	{
+		return Enum{ enum_type(e) + 1 };
+	}
+
 	inline bool random()
 	{
 		return random(0, 1) != 0;

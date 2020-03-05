@@ -24,13 +24,14 @@ namespace hades
 	template<sf::Keyboard::Key k>
 	interpreter_funcs keyboard()
 	{
-		/*auto realtime =  [] {
-			action a{};
-			a.active = sf::Keyboard::isKeyPressed(k);
-			return a;
-		};*/
+		auto realtime = [](action prev)->action {
+			const auto pressed = sf::Keyboard::isKeyPressed(k);
+			if (prev.active == pressed)
+				return prev;
+			return pressed;
+		};
 
-		auto is_match = [](const sf::Event &e) {
+		auto is_match = [](const sf::Event &e)->bool {
 			if (e.type == sf::Event::KeyPressed ||
 				e.type == sf::Event::KeyReleased)
 				return e.key.code == k;
@@ -38,17 +39,17 @@ namespace hades
 			return false;
 		};
 
-		//TODO: encode modifier key state in the x,y params
-		auto event_check = [](bool handled, const sf::Event &e) {
-			action a{};
+		auto event_check = [](bool handled, const sf::Event &e, action prev)->action {
+			if (handled)
+				return false;
+			
+			if (e.type == sf::Event::KeyPressed)
+				return true; //TODO: encode modifier key state in the x,y params
 
-			if (!handled && e.type == sf::Event::KeyPressed && e.key.code == k)
-				a.active = true;
-
-			return a;
+			return false; // KeyReleased
 		};
 
-		return { is_match, event_check, nullptr };
+		return { is_match, event_check, realtime };
 	}
 
 	bool in_window(sf::Vector2i pos, const sf::Window &window)
@@ -63,7 +64,7 @@ namespace hades
 			return e.type == sf::Event::MouseMoved;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
 			action a;
 
 			if (!handled)
@@ -81,7 +82,7 @@ namespace hades
 			return a;
 		};
 
-		auto realtime_check = [&window]() {
+		auto realtime_check = [&window](action prev) {
 			action a;
 
 			auto mpos = sf::Mouse::getPosition(window);
@@ -113,7 +114,7 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
 			action a;
 
 			if (!handled && e.type == sf::Event::MouseButtonPressed)
@@ -141,7 +142,7 @@ namespace hades
 			return a;
 		};
 
-		auto realtime_check = [&window]() {
+		auto realtime_check = [&window](action prev) {
 			action a;
 
 			const auto m_pos = sf::Mouse::getPosition(window);
@@ -169,7 +170,7 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
 			action a;
 
 			if (!handled && e.type == sf::Event::MouseWheelScrolled)
@@ -293,10 +294,10 @@ namespace hades
 		interpreter_map.insert({ "f10", keyboard<sf::Keyboard::F10>() });
 		interpreter_map.insert({ "f11", keyboard<sf::Keyboard::F11>() });
 		interpreter_map.insert({ "f12", keyboard<sf::Keyboard::F12>() });
-		//???
-		interpreter_map.insert({ "f13", keyboard<sf::Keyboard::F13>() });
-		interpreter_map.insert({ "f14", keyboard<sf::Keyboard::F14>() });
-		interpreter_map.insert({ "f15", keyboard<sf::Keyboard::F15>() });
+		////???
+		//interpreter_map.insert({ "f13", keyboard<sf::Keyboard::F13>() });
+		//interpreter_map.insert({ "f14", keyboard<sf::Keyboard::F14>() });
+		//interpreter_map.insert({ "f15", keyboard<sf::Keyboard::F15>() });
 		//pause
 		interpreter_map.insert({ "pause", keyboard<sf::Keyboard::Pause>() });
 		//======mouse buttons=======

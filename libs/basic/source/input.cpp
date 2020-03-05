@@ -11,19 +11,18 @@ namespace hades
 	void action::merge(const action &other)
 	{
 		if (!active && other.active)
-		{
 			*this = other;
-		}
-		else if (active && other.active)
-		{
-			x_axis = std::max(x_axis, other.x_axis);
-			y_axis = std::max(y_axis, other.y_axis);
+		//else if (active && other.active)
+		//{
+		//	// this is appropriate for non-joystick input?
+		//	x_axis = std::max(x_axis, other.x_axis);
+		//	y_axis = std::max(y_axis, other.y_axis);
 
-			////TODO: should we do this?
-			// No, we shouldn't, it bugs the mouse input
-			//x_axis = std::clamp<decltype(x_axis)>(x_axis, 0, 100);
-			//y_axis = std::clamp<decltype(y_axis)>(y_axis, 0, 100);
-		}
+		//	////TODO: should we do this?
+		//	// No, we shouldn't, it bugs the mouse input
+		//	//x_axis = std::clamp<decltype(x_axis)>(x_axis, 0, 100);
+		//	//y_axis = std::clamp<decltype(y_axis)>(y_axis, 0, 100);
+		//}
 	}
 
 	input_interpreter::input_interpreter(function func) : input_check(func)
@@ -54,7 +53,7 @@ namespace hades
 		input_interpreter in{ f };
 		in.id = id;
 
-		_interpreters.insert(in);
+		_interpreters.insert({ in, {} });
 	}
 
 	bool input_system::bind(input_system::action_id action, std::string_view interpretor)
@@ -97,34 +96,35 @@ namespace hades
 
 	void input_system::generate_state()
 	{
-		input_system::action_set actionset;
-
-		auto iter = std::begin(_action_input);
-		const auto range_end = std::end(_action_input);
-
-		while (iter != range_end)
-		{
-			auto[begin, end] = _action_input.equal_range(iter->first);
-
-			action a{};
-			while (begin != end)
-			{
-				const auto interpreter = _interpreters.find({ (begin++)->second });
-				a.merge(interpreter->input_check());
-			}
-
-			a.id = iter->first;
-			actionset.emplace(a);
-
-			iter = end;
-		}
-
-		actionset.swap(_previous_state);
+		for (auto& [i, a] : _interpreters)
+			a = std::invoke(i.input_check, a);
 	}
 
 	typename input_system::action_set input_system::input_state() const
 	{
-		return _previous_state;
+		auto out = action_set{};
+		auto iter = std::begin(_action_input);
+		const auto end = std::end(_action_input);
+
+		const auto get_action = [&](input_interpreter::interpreter_id i)->action {
+			return _interpreters.find({ i })->second;
+		};
+
+		while (iter != end)
+		{
+			auto [begin, rng_end] = _action_input.equal_range(iter->first);
+
+			//get the action generated but each input
+			auto a = get_action(begin->second);
+			while (++begin != rng_end)
+				a.merge(get_action(begin->second));
+
+			a.id = iter->first;
+			out.emplace(a);
+			iter = rng_end;
+		}
+
+		return out;
 	}
 
 	void input_system::_add_interpreter_name(std::string_view name, input_interpreter::interpreter_id id)

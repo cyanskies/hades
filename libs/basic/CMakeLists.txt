@@ -13,6 +13,7 @@ set(HADES_BASIC_SRC
 	source/tiles.cpp
 	source/timers.cpp
 	source/writer.cpp
+	include/hades/action_input.hpp
 	include/hades/collision.hpp
 	include/hades/colour.hpp
 	include/hades/console_variables.hpp
@@ -34,6 +35,7 @@ set(HADES_BASIC_SRC
 	include/hades/tiles.hpp
 	include/hades/timers.hpp
 	include/hades/writer.hpp
+	include/hades/detail/action_input.inl
 	include/hades/detail/collision.inl
 	include/hades/detail/curve_extra.inl
 	include/hades/detail/data.inl

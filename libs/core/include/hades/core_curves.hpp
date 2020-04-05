@@ -26,6 +26,7 @@ namespace hades
 	unique_id get_alive_curve_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;
+	unique_id get_tags_curve_id() noexcept;
 
 	unique_id get_object_type_curve_id() noexcept;
 }

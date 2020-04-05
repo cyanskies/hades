@@ -2,6 +2,7 @@
 #define HADES_GAME_API_HPP
 
 #include "hades/curve_extra.hpp"
+#include "hades/curve_types.hpp"
 #include "hades/game_types.hpp"
 #include "hades/render_interface.hpp"
 #include "hades/time.hpp"
@@ -45,7 +46,7 @@ namespace hades
 	//game contains general functions available to game systems
 	namespace game
 	{
-		using namespace resources::curve_types;
+		using namespace curve_types;
 
 		template<typename T>
 		using curve_keyframe = keyframe<T>;
@@ -109,8 +110,9 @@ namespace hades
 		T &get_level_local_ref(unique_id);
 
 		//==world data==
+		//world bounds in pixels
 		world_rect_t get_world_bounds();
-		//get terrain data
+		const terrain_map& get_world_terrain() noexcept;
 		//get tile info?(tags)
 
 		//==object data==
@@ -170,18 +172,21 @@ namespace hades
 		//position
 		world_vector_t get_position(object_ref, time_point);
 		world_vector_t get_position(object_ref);
-		void set_position(object_ref, world_unit_t x, world_unit_t y, time_point);
+		void set_position(object_ref, world_vector_t, time_point);
+		void set_position(object_ref, world_vector_t);
 		
 		//size
 		world_vector_t get_size(object_ref, time_point);
 		world_vector_t get_size(object_ref);
 		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point);
+		void set_size(object_ref, world_vector_t, time_point);
+		void set_size(object_ref, world_vector_t);
 	}
 
 	//render access functions allow a const view of the game state
 	namespace render //TODO: client = render?
 	{
-		using namespace resources::curve_types;
+		using namespace curve_types;
 		const std::vector<object_ref> &get_objects() noexcept;
 		render_interface *get_render_output() noexcept;
 		time_point get_time() noexcept;
@@ -277,9 +282,9 @@ namespace hades
 		template<typename T>
 		const T get_value(curve_index_t);
 
+		//world info
 		world_rect_t get_world_bounds();
 		const terrain_map& get_world_terrain() noexcept;
-		//get level data
 
 		//common curves
 		world_vector_t get_position(object_ref, time_point);
@@ -287,6 +292,31 @@ namespace hades
 
 		world_vector_t get_size(object_ref, time_point);
 		world_vector_t get_size(object_ref);
+
+		//returns true if the object has the tags from the 'has' list
+		// and doesn't have the tags from 'not'
+		bool tags(object_ref, const tag_list& has, const tag_list& not);
+
+		//tag info
+		inline bool has_tag(object_ref o, unique u)
+		{
+			return has_tag(o, { u });
+		}
+
+		inline bool has_tag(object_ref o, const tag_list& u)
+		{
+			return tags(o, u, {});
+		}
+
+		inline bool not_tag(object_ref o, unique u)
+		{
+			return not_tag(o, { u });
+		}
+
+		inline bool not_tag(object_ref o, const tag_list& u)
+		{
+			return tags(o, {}, u);
+		}
 	}
 }
 

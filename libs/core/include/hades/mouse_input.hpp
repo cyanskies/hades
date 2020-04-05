@@ -21,6 +21,7 @@ namespace hades
 
 		extern input_id mouse_position;
 		extern input_id mouse_left;
+		extern input_id mouse_right;
 		extern input_id mouse_wheel;
 	}
 
@@ -28,7 +29,10 @@ namespace hades
 	{
 		namespace detail
 		{
+			// Any way to avoid this
 			struct empty {};
+			struct empty2 {};
+			struct empty3 {};
 
 			struct click_pos
 			{
@@ -52,8 +56,8 @@ namespace hades
 		template<bool EnableDrag = true, bool EnableDoubleClick = true>
 		struct mouse_button_state :
 			public std::conditional_t<EnableDrag || EnableDoubleClick, detail::click_pos, detail::empty>,
-			public std::conditional_t<EnableDoubleClick, detail::double_click_data, detail::empty>,
-			public std::conditional_t<EnableDrag, detail::drag_data, detail::empty>
+			public std::conditional_t<EnableDoubleClick, detail::double_click_data, detail::empty2>,
+			public std::conditional_t<EnableDrag, detail::drag_data, detail::empty3>
 		{
 			bool is_down = false;
 			bool clicked = false;
@@ -91,6 +95,7 @@ namespace hades
 	//such as mouse position and buttons:
 	// mouse - mouse position
 	// mouseleft - mouse button 1
+	// mouseright - mouse button 2
 	// mousewheel - mouse wheel axis
 	void register_mouse_input(input_system &bind);
 }

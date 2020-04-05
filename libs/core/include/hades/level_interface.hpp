@@ -149,8 +149,8 @@ namespace hades
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _systems; }
 
-		void update_input_queue(std::vector<server_action> input, time_point);
-		std::vector<server_action> get_and_clear_input_queue() noexcept;
+		void update_input_queue(std::vector<action> input, time_point);
+		std::vector<action> get_and_clear_input_queue() noexcept;
 
 		resources::player_input::player_input_fn get_player_input_function() noexcept
 		{ 
@@ -161,8 +161,8 @@ namespace hades
 
 	private:
 		system_behaviours<game_system> _systems;
-		std::vector<server_action> _input_queue;
-		using action_history = std::pair<std::vector<server_action>, time_point>;
+		std::vector<action> _input_queue;
+		using action_history = std::pair<std::vector<action>, time_point>;
 		std::vector<action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };
 		//ai_input

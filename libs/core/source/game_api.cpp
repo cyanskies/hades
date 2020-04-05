@@ -53,7 +53,7 @@ namespace hades
 		{
 			//TODO: handle time better
 			auto ptr = detail::get_game_data_ptr();
-			assert(ptr);
+			assert(ptr && ptr->level_data);
 			assert(obj.id == bad_entity);
 			return ptr->level_data->create_entity(std::move(obj), get_time());
 		}
@@ -95,6 +95,12 @@ namespace hades
 			return ptr->level_data->get_world_bounds();
 		}
 
+		const terrain_map& get_world_terrain() noexcept
+		{
+			const auto game_data_ptr = detail::get_game_data_ptr();
+			return game_data_ptr->level_data->get_world_terrain();
+		}
+
 		world_vector_t get_position(object_ref o, time_point t)
 		{
 			//TODO: is it ok to cache the curve ptrs
@@ -107,16 +113,16 @@ namespace hades
 			return get_position(o, game::get_last_time());
 		}
 
-		void set_position(object_ref o, world_unit_t x, world_unit_t y, time_point t)
+		void set_position(object_ref o, world_vector_t v, time_point t)
 		{
 			static const auto curves = get_position_curve_id();
-			set_value<world_vector_t>({ o, curves }, t, { x, y });
+			set_value({ o, curves }, t, v);
 			return;
 		}
 
-		void set_position(object_ref o, world_unit_t x, world_unit_t y)
+		void set_position(object_ref o, world_vector_t v)
 		{
-			set_position(o, x, y, get_time());
+			set_position(o, v, get_time());
 			return;
 		}
 
@@ -136,6 +142,36 @@ namespace hades
 			static const auto curves = get_size_curve_id();
 			set_value<world_vector_t>({ o, curves }, { w, h });
 			return;
+		}
+
+		void set_size(object_ref o, world_vector_t v, time_point t)
+		{
+			const auto size = get_size_curve_id();
+			set_value({ o, size }, t, v);
+			return;
+		}
+
+		void set_size(object_ref o, world_vector_t v)
+		{
+			set_size(o, v, get_time());
+			return;
+		}
+
+		bool tags(object_ref o, tag_list has, tag_list not)
+		{
+			const auto& tags = get_value<tag_list>({ o, get_tags_curve_id() });
+			bool has1 = false, has2 = false;
+
+			for (const auto& t : tags)
+			{
+				const auto eq = [t](tag_t t2) noexcept {return t == t2; };
+				if (std::any_of(begin(has), end(has), eq))
+					has1 = true;
+				if (std::any_of(begin(not), end(not), eq))
+					has2 = true;
+			}
+
+			return has1 && !has2;
 		}
 	}
 
@@ -192,7 +228,7 @@ namespace hades
 		bool exists(id_t id) noexcept
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
+			assert(render_data_ptr && render_data_ptr->render_output);
 			return render_data_ptr->render_output->sprite_exists(id);
 		}
 
@@ -251,7 +287,7 @@ namespace hades
 		bool exists(id_t id) noexcept
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
+			assert(render_data_ptr && render_data_ptr->render_output);
 			return render_data_ptr->render_output->drawable_exists(id);
 		}
 		

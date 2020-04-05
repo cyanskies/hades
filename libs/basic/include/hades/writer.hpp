@@ -19,6 +19,8 @@ namespace hades::data
 	class writer
 	{
 	public:
+		virtual ~writer() noexcept = default;
+
 		virtual void start_sequence() = 0;
 		virtual void start_sequence(std::string_view) = 0;
 		virtual void end_sequence() = 0;

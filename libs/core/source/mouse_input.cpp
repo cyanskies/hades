@@ -15,6 +15,7 @@ namespace hades
 	{
 		input_id mouse_position = input_id::zero;
 		input_id mouse_left = input_id::zero;
+		input_id mouse_right = input_id::zero;
 		input_id mouse_wheel = input_id::zero;
 	}
 
@@ -55,16 +56,19 @@ namespace hades
 		using namespace std::string_view_literals;
 		constexpr auto m = "mouse"sv;
 		constexpr auto m1 = "mouseleft"sv;
+		constexpr auto m2 = "mouseright"sv;
 		constexpr auto mwheel = "mousewheel"sv;
 
 		//collect unique names for actions
 		input::mouse_position = data::make_uid(m);
 		input::mouse_left = data::make_uid(m1);
+		input::mouse_right = data::make_uid(m2);
 		input::mouse_wheel = data::make_uid(mwheel);
 
 		//bind them
 		bind.create(input::mouse_position, false, m);
 		bind.create(input::mouse_left, false, m1);
+		bind.create(input::mouse_right, false, m2);
 		bind.create(input::mouse_wheel, false, mwheel);
 	}
 }

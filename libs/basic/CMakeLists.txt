@@ -18,6 +18,7 @@ set(HADES_BASIC_SRC
 	include/hades/colour.hpp
 	include/hades/console_variables.hpp
 	include/hades/curve_extra.hpp
+	include/hades/curve_types.hpp
 	include/hades/data.hpp
 	include/hades/entity_id.hpp
 	include/hades/exceptions.hpp
@@ -38,6 +39,7 @@ set(HADES_BASIC_SRC
 	include/hades/detail/action_input.inl
 	include/hades/detail/collision.inl
 	include/hades/detail/curve_extra.inl
+	include/hades/detail/curve_types.inl
 	include/hades/detail/data.inl
 	include/hades/detail/game_loop.inl
 	include/hades/detail/input.inl

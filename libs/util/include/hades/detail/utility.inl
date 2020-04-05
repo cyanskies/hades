@@ -242,8 +242,6 @@ namespace hades
 	template<typename Index2D, typename T>
 	Index2D to_2d_index(T i, T w)
 	{
-		static_assert(std::is_constructible_v<Index2D, T, T>);
-
 		assert(w != 0);
 
 		return Index2D{

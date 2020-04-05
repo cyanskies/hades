@@ -3,8 +3,10 @@
 
 #include <unordered_map>
 
-#include "hades/curve_extra.hpp"
+#include "hades/curve.hpp"
+#include "hades/curve_types.hpp"
 #include "hades/types.hpp"
+#include "hades/uniqueid.hpp"
 
 namespace hades
 {
@@ -40,29 +42,29 @@ namespace hades
 		template<class T>
 		using curve_map = std::unordered_map< curve_index_t, curve<T> >;
 
-		curve_map<resources::curve_types::int_t> int_curves;
-		curve_map<resources::curve_types::float_t> float_curves;
-		curve_map<resources::curve_types::vec2_float> vec2_float_curves;
+		curve_map<curve_types::int_t> int_curves;
+		curve_map<curve_types::float_t> float_curves;
+		curve_map<curve_types::vec2_float> vec2_float_curves;
 		//no linear curves here
-		curve_map<resources::curve_types::bool_t> bool_curves;
-		curve_map<resources::curve_types::string> string_curves;
-		curve_map<resources::curve_types::object_ref> object_ref_curves;
-		curve_map<resources::curve_types::unique> unique_curves;
+		curve_map<curve_types::bool_t> bool_curves;
+		curve_map<curve_types::string> string_curves;
+		curve_map<curve_types::object_ref> object_ref_curves;
+		curve_map<curve_types::unique> unique_curves;
 
 		//no linear curves here either
-		curve_map<resources::curve_types::collection_int> int_vector_curves;
-		curve_map<resources::curve_types::collection_float> float_vector_curves;
-		curve_map<resources::curve_types::collection_object_ref> object_ref_vector_curves;
-		curve_map<resources::curve_types::collection_unique> unique_vector_curves;
+		curve_map<curve_types::collection_int> int_vector_curves;
+		curve_map<curve_types::collection_float> float_vector_curves;
+		curve_map<curve_types::collection_object_ref> object_ref_vector_curves;
+		curve_map<curve_types::collection_unique> unique_vector_curves;
 	};
 
 	template<typename T>
 	inline curve_data::curve_map<std::decay_t<T>>& get_curve_list(curve_data& data) 
-		noexcept(resources::curve_types::is_curve_type_v<std::decay_t<T>>);
+		noexcept(curve_types::is_curve_type_v<std::decay_t<T>>);
 
 	template<typename T>
 	inline const curve_data::curve_map<std::decay_t<T>>& get_curve_list(const curve_data& data)
-		noexcept(resources::curve_types::is_curve_type_v<std::decay_t<T>>);
+		noexcept(curve_types::is_curve_type_v<std::decay_t<T>>);
 }
 
 #include "hades/detail/level_curve_data.inl"

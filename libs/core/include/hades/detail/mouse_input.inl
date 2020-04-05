@@ -7,6 +7,7 @@ namespace hades::mouse
 	template<bool Drag, bool DoubleClick>
 	constexpr inline void update_button_state(const action &m, const action &mpos, const time_point &t, mouse_button_state<Drag, DoubleClick> &s) noexcept
 	{
+		std::ignore = t; // if doubleclick = false; dont warn about the unused 't' var
 		//check each combination of inputs
 		//mouse is down / not down
 		//mouse was down / wans't down last frame

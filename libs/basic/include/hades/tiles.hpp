@@ -97,6 +97,7 @@ namespace hades::resources
 	//exceptions: all three throw resource_error
 	// either as resource_null or resource_wrong_type
 	const tile_settings *get_tile_settings();
+	tile_size_t get_tile_size();
 	tile get_error_tile();
 	tile get_empty_tile();
 
@@ -154,11 +155,22 @@ namespace hades
 		tile_count_t width{};
 	};
 
+	//x/y coords of a tile, negative tile positions aren't supported
 	using tile_position = vector_int;
 
+	//TODO: make many of these noexcept and constexpr
+
+	using tile_index_t = tile_position::value_type;
+	tile_position from_tile_index(tile_index_t, const tile_map&) noexcept;
+	tile_index_t to_tile_index(tile_position, const tile_map&) noexcept;
+
 	//tile to pixel consersions
-	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size);
+	//convert pixel mesurement to tile measurement
+	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size); 
+	//convert pixel position to tilemap position
 	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size);
+	tile_position to_tiles(vector_float real_pixels, resources::tile_size_t tile_size);
+	//reverse of the two above functions
 	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size);
 	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size);
 

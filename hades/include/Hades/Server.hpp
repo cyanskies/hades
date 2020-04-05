@@ -6,7 +6,6 @@
 #include "hades/mission.hpp"
 #include "hades/level.hpp"
 #include "hades/level_curve_data.hpp"
-#include "hades/server_actions.hpp"
 #include "hades/time.hpp"
 
 //TODO: move to hades-core
@@ -36,6 +35,8 @@ namespace hades
 	class server_level
 	{
 	public:
+		virtual ~server_level() noexcept = default;
+
 		//gets updated curves
 		//recommended to keep the exported_curves object between frames
 		//get all changes since time_point
@@ -43,7 +44,7 @@ namespace hades
 		//get all changes since last call to get_changes
 		virtual void get_changes(exported_curves&) const = 0;
 		//sends player input
-		virtual void send_request(std::vector<server_action>) = 0;
+		virtual void send_request(std::vector<action>) = 0;
 
 		virtual common_interface* get_interface() noexcept = 0;
 
@@ -60,6 +61,8 @@ namespace hades
 	class server_hub
 	{
 	public:
+		virtual ~server_hub() noexcept = default;
+
 		//advance server by duration
 		virtual void update(time_duration) = 0; //noop on remote server
 		//virtual void send_request(unique_id lvl, action a) = 0;

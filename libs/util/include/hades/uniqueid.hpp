@@ -15,39 +15,50 @@ namespace hades
 	public:
 		using type = id_type;
 
-		unique_id_t() noexcept : _value(_count++) 
+		struct zero_id_t {};
+		static constexpr zero_id_t zero_id{};
+
+		struct next_id_t {};
+		static constexpr next_id_t new_id{};
+
+		constexpr unique_id_t(zero_id_t) noexcept : _value{ std::numeric_limits<type>::min() }
+		{}
+
+		constexpr unique_id_t(next_id_t = new_id) noexcept : _value(++_count) 
 		{
 			assert(_count != std::numeric_limits<type>::max());
 		}
 
-		unique_id_t(const unique_id_t&) noexcept = default;
-		unique_id_t(unique_id_t&&) noexcept = default;
-		unique_id_t &operator=(const unique_id_t&) noexcept = default;
+		/*
+		constexpr unique_id_t(const unique_id_t&) noexcept = default;
+		constexpr unique_id_t(unique_id_t&&) noexcept = default;
+		constexpr unique_id_t &operator=(const unique_id_t&) noexcept = default;
+		*/
 
-		bool operator==(const unique_id_t &rhs) const noexcept
+		constexpr bool operator==(const unique_id_t &rhs) const noexcept
 		{
 			return _value == rhs._value;
 		}
 
-		bool operator!=(const unique_id_t &rhs) const noexcept
+		constexpr bool operator!=(const unique_id_t &rhs) const noexcept
 		{
 			return !(_value == rhs._value);
 		}
 
-		type get() const noexcept { return _value; }
+		constexpr type get() const noexcept { return _value; }
 
 		template<typename T>
-		friend bool operator<(const unique_id_t<T>&, const unique_id_t<T>&) noexcept;
+		friend constexpr bool operator<(const unique_id_t<T>&, const unique_id_t<T>&) noexcept;
 
 		operator bool() const noexcept
 		{
 			return *this != zero;
 		}
 
-		static const unique_id_t<id_type> zero;
+		static unique_id_t<id_type> zero;
 	private:
 		//initialise the static counter with the types smallest value
-		inline static std::atomic<type> _count{};
+		static inline std::atomic<type> _count;
 		type _value;
 	};
 
@@ -55,16 +66,22 @@ namespace hades
 	std::atomic<id_type> unique_id_t<id_type>::_count = std::numeric_limits<id_type>::min();
 
 	template<typename id_type>
-	const unique_id_t<id_type> unique_id_t<id_type>::zero;
+	unique_id_t<id_type> unique_id_t<id_type>::zero = { zero_id };
 
 	template<typename T>
-	bool operator<(const unique_id_t<T>& lhs, const unique_id_t<T>& rhs) noexcept
+	constexpr bool operator<(const unique_id_t<T>& lhs, const unique_id_t<T>& rhs) noexcept
 	{
 		return lhs._value < rhs._value;
 	}
 
 	//process wide unique id
 	using unique_id = unique_id_t<hades::types::uint64>;
+	static_assert(sizeof(unique_id) == sizeof(unique_id::type));
+
+	constexpr unique_id make_id() noexcept
+	{
+		return unique_id{ unique_id::new_id };
+	}
 }
 
 namespace std {

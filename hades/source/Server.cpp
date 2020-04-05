@@ -28,7 +28,7 @@ namespace hades
 			_level_time += dt;
 		}
 
-		void send_request(std::vector<server_action> a) override
+		void send_request(std::vector<action> a) override
 		{
 			_game.add_input(std::move(a), _level_time);
 			return;

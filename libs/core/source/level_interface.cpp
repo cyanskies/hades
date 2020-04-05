@@ -164,14 +164,14 @@ namespace hades
 		}
 	}
 
-	void game_implementation::update_input_queue(std::vector<server_action> input, time_point t)
+	void game_implementation::update_input_queue(std::vector<action> input, time_point t)
 	{
 		_input_history.emplace_back(input, t); //DEBUG: player input log, in actions, rather than keys
 		_input_queue = std::move(input);
 		return;
 	}
 
-	std::vector<server_action> game_implementation::get_and_clear_input_queue() noexcept
+	std::vector<action> game_implementation::get_and_clear_input_queue() noexcept
 	{
 		return std::exchange(_input_queue, {});
 	}

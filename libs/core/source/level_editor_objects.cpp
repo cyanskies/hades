@@ -60,8 +60,7 @@ namespace hades
 
 		//create default settings object
 		object_settings_id = unique_id{};
-		d.find_or_create<resources::level_editor_object_settings>(object_settings_id, unique_id::zero);
-
+		std::ignore = d.find_or_create<resources::level_editor_object_settings>(object_settings_id, unique_id::zero);
 	}
 
 	level_editor_objects_impl::level_editor_objects_impl()

@@ -25,7 +25,7 @@ namespace hades
 			vector_int_t, vector_float_t, vector_unique_t>;
 	}
 
-	struct server_action
+	struct [[deprecated]] server_action
 	{
 		using value_type = detail::variant_t;
 

@@ -139,6 +139,11 @@ namespace hades
 		return siz_id;
 	}
 
+	unique_id get_tags_curve_id() noexcept
+	{
+		return tags_id;
+	}
+
 	unique_id get_object_type_curve_id() noexcept
 	{
 		return object_type_id;

@@ -338,39 +338,6 @@ namespace hades::resources
 
 namespace hades
 {
-	string to_string(resources::curve_variable_type t) noexcept
-	{
-		using namespace std::string_literals;
-		using resources::curve_variable_type;
-		switch (t)
-		{
-		case curve_variable_type::int_t:
-			return "int32"s;
-		case curve_variable_type::float_t:
-			return "float"s;
-		case curve_variable_type::vec2_float:
-			return "vec2_float"s;
-		case curve_variable_type::bool_t:
-			return "bool"s;
-		case curve_variable_type::string:
-			return "string"s;
-		case curve_variable_type::object_ref:
-			return "obj_ref"s;
-		case curve_variable_type::unique:
-			return "unique"s;
-		case curve_variable_type::collection_int:
-			return "collection_int32"s;
-		case curve_variable_type::collection_float:
-			return "collection_float"s;
-		case curve_variable_type::collection_object_ref:
-			return "collection_obj_ref"s;
-		case curve_variable_type::collection_unique:
-			return "collection_unique"s;
-		default:
-			return "error"s;
-		}
-	}
-
 	string to_string(curve_type c) noexcept
 	{
 		using namespace std::string_literals;

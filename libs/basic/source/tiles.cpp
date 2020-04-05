@@ -295,6 +295,13 @@ namespace hades::resources
 		return data::get<tile_settings>(id::tile_settings);
 	}
 
+	tile_size_t get_tile_size()
+	{
+		const auto settings = get_tile_settings();
+		assert(settings);
+		return settings->tile_size;
+	}
+
 	tile get_error_tile()
 	{
 		const auto s = get_tile_settings();
@@ -396,6 +403,16 @@ namespace hades
 		return map;
 	}
 
+	tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept
+	{
+		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(size(t.tiles)));
+	}
+
+	tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept
+	{
+		return to_1d_index(p, t.width);
+	}
+
 	template<typename T>
 	static tile_position get_size_impl(const T &t)
 	{
@@ -411,12 +428,19 @@ namespace hades
 
 	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size)
 	{
+		assert(tile_size != 0);
 		return pixels / tile_size;
 	}
 
 	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size)
 	{
+		assert(tile_size != 0);
 		return pixels / integer_cast<vector_int::value_type>(tile_size);
+	}
+
+	tile_position to_tiles(vector_float real_pixels, resources::tile_size_t tile_size)
+	{
+		return to_tiles(static_cast<vector_int>(real_pixels), tile_size);
 	}
 
 	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size)
@@ -699,8 +723,8 @@ namespace hades
 
 	resources::tile get_tile_at(const tile_map &t, tile_position p)
 	{
-		const auto index = to_1d_index(p, t.width);
-		assert(index < std::size(t.tiles));
+		const auto index = integer_cast<std::size_t>(to_tile_index(p, t));
+		assert(index < size(t.tiles));
 		return get_tile(t, t.tiles[index]);
 	}
 

@@ -65,6 +65,7 @@ namespace hades {
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
+		table() = default;
 		table(index_type position, index_type size, T value) : _data(size.x* size.y, value), _offset{ position }, _width{ size.x } {}
 		table(const table&) = default;
 		table(const virtual_table<T>&);
@@ -83,7 +84,12 @@ namespace hades {
 			_offset = p;
 		}
 
-		index_type size() const { return index_type{ _width, integer_cast<index_type::value_type>(_data.size()) / _width }; }
+		index_type size() const
+		{
+			using U = index_type::value_type;
+			const auto end = integer_cast<U>(std::size(_data));
+			return to_2d_index<index_type>(end, integer_cast<U>(_width)); 
+		}
 
 		std::vector<value_type> &data()
 		{
@@ -96,9 +102,9 @@ namespace hades {
 		}
 
 	private:
-		index_type _offset;
-		size_type _width{};
-		std::vector<value_type> _data;
+		index_type _offset = {0, 0};
+		size_type _width = 0;
+		std::vector<value_type> _data = {};
 	};
 
 	template<typename T>

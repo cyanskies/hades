@@ -27,6 +27,8 @@ namespace hades::data
 	class parser_node
 	{
 	public:
+		virtual ~parser_node() noexcept = default;
+
 		virtual string to_string() const = 0;
 
 		//returns nullptr on error

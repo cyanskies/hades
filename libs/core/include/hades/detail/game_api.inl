@@ -94,7 +94,7 @@ namespace hades
 		T& get_level_local_ref(unique_id id)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			return detail::get_level_local_ref_imp(id, ptr);
+			return detail::get_level_local_ref_imp<T>(id, ptr);
 		}
 
 		template<typename T>
@@ -127,14 +127,14 @@ namespace hades
 		template<typename T>
 		const T& get_ref(curve_index_t i, time_point t)
 		{
-			const auto &curve = get_curve(i);
+			const auto &curve = get_curve<T>(i);
 			return curve.get_ref(t);
 		}
 
 		template<typename T>
 		const T& get_ref(curve_index_t i)
 		{
-			return get_ref<T>(c, get_last_time());
+			return get_ref<T>(i, get_last_time());
 		}
 
 		template<typename T>

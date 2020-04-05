@@ -24,13 +24,18 @@ namespace hades
 
 	struct action
 	{
-		action() = default;
-		action(unique_id uid) : id(uid)
+		constexpr action() noexcept = default;
+		constexpr action(unique_id uid) noexcept : id{ uid }
 		{}
-		action(bool active) : active(active)
+		constexpr action(unique_id uid, int32 x) noexcept : id{ uid }, x_axis{ x }
+		{}
+		constexpr action(bool active) noexcept : active(active)
+		{}
+		constexpr action(unique_id i, int32 x, int32 y, int32 u, int32 v) noexcept :
+			id{ i }, x_axis{ x }, y_axis{ y }, u_axis{ u }, v_axis{v}
 		{}
 
-		void merge(const action &other);
+		void merge(const action &other) noexcept;
 
 		unique_id id = unique_id::zero;
 		types::int32 x_axis = 0, y_axis = 0, //joystick movement if joystick; //mouse position if mouse // 0 otherwise
@@ -38,12 +43,12 @@ namespace hades
 		bool active = false; //always true for mouseposition and axis
 	};
 
-	inline bool operator<(const action &lhs, const action &rhs)
+	inline constexpr  bool operator<(const action &lhs, const action &rhs)
 	{
 		return lhs.id < rhs.id;
 	}
 
-	inline bool operator==(const action &lhs, const action &rhs)
+	inline constexpr bool operator==(const action &lhs, const action &rhs)
 	{
 		return lhs.id == rhs.id;
 	}
@@ -53,21 +58,21 @@ namespace hades
 		using interpreter_id = unique_id;
 		using function = std::function<action(action)>;
 
-		input_interpreter() = default;
-		input_interpreter(function func);
-		input_interpreter(interpreter_id);
+		input_interpreter() noexcept = default;
+		input_interpreter(function func) noexcept : input_check(func) {}
+		input_interpreter(interpreter_id id) noexcept : id{ id } {}
 
 		interpreter_id id = interpreter_id::zero;
 		//a function that generates an action by reading the current state of the input device
 		function input_check;
 	};
 
-	inline bool operator<(const input_interpreter& lhs, const input_interpreter& rhs)
+	inline constexpr bool operator<(const input_interpreter& lhs, const input_interpreter& rhs)
 	{
 		return lhs.id < rhs.id;
 	}
 
-	inline bool operator==(const input_interpreter& lhs, const input_interpreter& rhs)
+	inline constexpr bool operator==(const input_interpreter& lhs, const input_interpreter& rhs)
 	{
 		return lhs.id == rhs.id;
 	}
@@ -78,8 +83,8 @@ namespace hades
 		using event = Event;
 		using interpreter_id = input_interpreter::interpreter_id;
 
-		input_event_interpreter() = default;
-		input_event_interpreter(interpreter_id id) : id(id) {}
+		constexpr input_event_interpreter() = default;
+		constexpr input_event_interpreter(interpreter_id id) : id(id) {}
 
 		interpreter_id id = interpreter_id::zero;
 		using event_function = std::function<action(bool, const event&, action)>;
@@ -89,13 +94,13 @@ namespace hades
 	};
 
 	template<typename Event>
-	inline bool operator<(const input_event_interpreter<Event>& lhs, const input_event_interpreter<Event>& rhs)
+	inline constexpr bool operator<(const input_event_interpreter<Event>& lhs, const input_event_interpreter<Event>& rhs)
 	{
 		return lhs.id < rhs.id;
 	}
 
 	template<typename Event>
-	inline bool operator==(const input_event_interpreter<Event>& lhs, const input_event_interpreter<Event>& rhs)
+	inline constexpr bool operator==(const input_event_interpreter<Event>& lhs, const input_event_interpreter<Event>& rhs)
 	{
 		return lhs.id == rhs.id;
 	}

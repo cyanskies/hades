@@ -902,4 +902,10 @@ namespace hades
 
 		return out;
 	}
+
+	std::vector<tile_position> make_position_9patch(tile_position middle)
+	{
+		const auto top_left = middle - tile_position{1, 1};
+		return make_position_square(top_left, 3);
+	}
 }

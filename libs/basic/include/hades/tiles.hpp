@@ -243,6 +243,7 @@ namespace hades
 	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
 
 	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius);
+	std::vector<tile_position> make_position_9patch(tile_position middle);
 }
 
 #endif // !HADES_TILES_HPP

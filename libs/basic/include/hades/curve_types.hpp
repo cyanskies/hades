@@ -32,7 +32,8 @@ namespace hades::curve_types
 	using collection_object_ref = std::vector<object_ref>;
 	using collection_unique = std::vector<unique>;
 
-	constexpr object_ref bad_object_ref = bad_entity;
+	constexpr auto bad_object_ref = bad_entity;
+	constexpr auto bad_unique = unique_zero;
 
 	template <typename T>
 	struct is_vector_type : std::false_type {};

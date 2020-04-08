@@ -1,6 +1,8 @@
 #ifndef HADES_GAME_API_HPP
 #define HADES_GAME_API_HPP
 
+#include <optional>
+
 #include "hades/curve_extra.hpp"
 #include "hades/curve_types.hpp"
 #include "hades/game_types.hpp"
@@ -50,18 +52,21 @@ namespace hades
 
 		template<typename T>
 		using curve_keyframe = keyframe<T>;
+		template<typename T>
+		using optional_keyframe = std::optional<curve_keyframe<T>>;
 
 		const std::vector<object_ref> &get_objects() noexcept;
 
 		//the time of the previous update
 		time_point get_last_time() noexcept;
-		//the time between this update and the previous one
+		//the time between this 'last_time' and 'time'
 		time_duration get_delta_time() noexcept;
 		//the current time
 		//we need to calculate the state at this time
 		//using values from last_time
 		time_point get_time() noexcept;
 
+		unique_id current_system() noexcept;
 		//system data is a data store persisted between frames
 		// it is per-level and is never saved
 		template<typename T>
@@ -123,19 +128,38 @@ namespace hades
 		
 		object_ref get_object_from_name(std::string_view, time_point);
 
+		//=== Curves ===
+		//get access to curve object
 		template<typename T>
 		const curve<T> &get_curve(curve_index_t);
 
+		//=== Keyframes ===
 		//gets the keyframe on or befre the time point
 		//use set_value to write a keyframe
 		template<typename T>
-		const curve_keyframe<T>& get_keyframe_ref(curve_index_t, time_point);
-		
+		const curve_keyframe<T> *get_keyframe_ref(curve_index_t, time_point); // returns non-owning ptr
 		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t, time_point);
+		optional_keyframe<T> get_keyframe(curve_index_t, time_point);
 		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t);
-		
+		optional_keyframe<T> get_keyframe(curve_index_t);
+		//get the keyframe after the time point
+		template<typename T>
+		const curve_keyframe<T> *get_keyframe_after_ref(curve_index_t, time_point); // returns non-owning ptr
+		template<typename T>
+		optional_keyframe<T> get_keyframe_after(curve_index_t, time_point);
+		template<typename T>
+		optional_keyframe<T> get_keyframe_after(curve_index_t);
+		//get keyframes either side of the time_point
+		// if their is a timeframe exactly at that time_point
+		// then returns that frame and the one after
+		template<typename T>
+		std::pair<const curve_keyframe<T>*, const curve_keyframe<T>*> get_keyframe_pair_ref(curve_index_t, time_point);
+		template<typename T>
+		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t, time_point);
+		template<typename T>
+		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t);
+
+		//=== Refs ===
 		//returns a reference to the value stored in a curve at a specific time
 		// it is invalid to get a reference to a linear curve
 		template<typename T>
@@ -143,18 +167,20 @@ namespace hades
 		template<typename T>
 		const T& get_ref(curve_index_t);
 		
+		//=== Values ===
 		template<typename T>
 		T get_value(curve_index_t, time_point);
 		template<typename T>
 		T get_value(curve_index_t);
 		
+		//=== Set ==
 		template<typename T>
 		void set_curve(curve_index_t, curve<T>);
-		
 		//seting value will remove all keyframes after time_point
 		template<typename T>
 		void set_value(curve_index_t, time_point, T&&);
 		
+		//=== Object Controls ===
 		//object creation and destruction
 		//an object is always created at game::get_time() time.
 		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
@@ -168,19 +194,24 @@ namespace hades
 		//removes all systems from object
 		void destroy_object(object_ref, time_point);
 
-		//helper functions for accessing common curves
+		//=== Common Curves ===
 		//position
 		world_vector_t get_position(object_ref, time_point);
 		world_vector_t get_position(object_ref);
 		void set_position(object_ref, world_vector_t, time_point);
 		void set_position(object_ref, world_vector_t);
-		
 		//size
 		world_vector_t get_size(object_ref, time_point);
 		world_vector_t get_size(object_ref);
-		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point);
+		[[deprecated]]
+		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point); // TODO: remove me
 		void set_size(object_ref, world_vector_t, time_point);
 		void set_size(object_ref, world_vector_t);
+		//tags
+		bool tags(object_ref, tag_list has, tag_list not);
+		//void tags_add(object_ref, tag_list);
+		//void tags_remove(object_ref, tag_list);
+
 	}
 
 	//render access functions allow a const view of the game state

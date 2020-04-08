@@ -14,7 +14,8 @@
 //Data provides thread safe access to the hades data manager.
 namespace hades
 {
-	const auto empty_id = unique_id::zero;
+	[[deprecated]]
+	constexpr auto empty_id = unique_zero;
 
 	namespace data
 	{

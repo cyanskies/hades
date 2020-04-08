@@ -3,7 +3,7 @@
 namespace hades::detail
 {
 	template<typename T>
-	inline curve_data::curve_map<T>& get_curve_list(curve_data& data)
+	inline curve_data::curve_map<T>& get_curve_list(curve_data&)
 	{
 		assert(false);
 		throw std::logic_error{ "invalid type" };

@@ -245,8 +245,8 @@ namespace hades
 		assert(w != 0);
 
 		return Index2D{
-			i % w,
-			i / w
+			i / w,
+			i % w
 		};
 	}
 

@@ -71,6 +71,7 @@ namespace hades
 	public:
 		// adds mutable curve access, so the interface can be used by
 		// server side functions as well
+		virtual const curve_data& get_curves() const noexcept = 0;
 		virtual curve_data &get_curves() noexcept = 0;
 	};
 

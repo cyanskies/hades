@@ -2,8 +2,6 @@
 
 #include <array>
 
-#include "yaml-cpp/yaml.h"
-
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Texture.hpp"
 

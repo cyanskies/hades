@@ -81,18 +81,18 @@ namespace hades::resources
 			using namespace data::parse_tools;
 
 			//icon shown when selecting objects to place in the editor
-			const auto editor_icon_id = get_scalar(*o, "editor-icon"sv, unique_id::zero);
+			const auto editor_icon_id = get_unique(*o, "editor-icon"sv, unique_id::zero);
 			if(editor_icon_id != unique_id::zero)
 				obj->editor_icon = d.find_or_create<const animation>(editor_icon_id, mod);
 
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = data::get_uid(obj->editor_anims);
-			const auto animation_ids = get_sequence(*o, "editor-anim"sv, current_ids);
+			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
 			obj->editor_anims = d.find_or_create<const animation>(animation_ids, mod);
 
 			//base objects
 			const auto current_base_ids = data::get_uid(obj->base);
-			const auto base_ids = get_sequence(*o, "base"sv, current_base_ids);
+			const auto base_ids = get_unique_sequence(*o, "base"sv, current_base_ids);
 			obj->base = d.find_or_create<const object>(base_ids, mod);
 
 			//curves
@@ -197,7 +197,8 @@ namespace hades
 	//TODO: rename with correct naming scheme
 	static curve_obj TryGetCurve(const resources::object *o, const hades::resources::curve *c)
 	{
-		assert(o && c);
+		assert(o);
+		assert(c);
 
 		using curve_t = hades::resources::curve;
 		const curve_t *curve_ptr = nullptr;

@@ -163,6 +163,9 @@ namespace hades
 		template <typename T>
 		constexpr vector_t<T> reflect(vector_t<T> vector, vector_t<T> normal) noexcept;
 	}
+
+	template<typename T>
+	string vector_to_string(vector_t<T>);
 }
 
 #include "hades/detail/vector_math.inl"

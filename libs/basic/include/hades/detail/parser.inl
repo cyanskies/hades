@@ -130,6 +130,12 @@ namespace hades::data
 		inline T get_scalar(const parser_node &node, std::string_view property_name, T default_value,
 			ConversionFunc convert)
 		{
+			// NOTE: default to_string<unique_id> calls get_uid() const, which
+			// wont define a id if it didn't already exist, this always leads
+			// to bugs in parsing code
+			static_assert(!(std::is_same_v<T, unique_id> && std::is_same_v<ConversionFunc, nullptr_t>),
+				"call get_unique instead");
+
 			const auto property_node = node.get_child(property_name);
 			if (property_node)
 				return property_node->to_scalar<T>(convert);
@@ -141,6 +147,10 @@ namespace hades::data
 		inline std::vector<T> get_sequence(const parser_node &node, std::string_view property_name, 
 			const std::vector<T> &default_value, ConversionFunc convert)
 		{
+			//NOTE: see get_scalar above
+			static_assert(!(std::is_same_v<T, unique_id> && std::is_same_v<ConversionFunc, nullptr_t>),
+				"call get_unique_sequence instead");
+
 			const auto property_node = node.get_child(property_name);
 			if (property_node)
 				return property_node->to_sequence<T>(convert);

@@ -33,6 +33,12 @@ namespace hades
 			return game_data_ptr->prev_time + game_data_ptr->dt;
 		}
 
+		unique_id current_system() noexcept
+		{
+			const auto ptr = detail::get_game_data_ptr();
+			return ptr->system;
+		}
+
 		void destroy_system_data()
 		{
 			auto game_data_ptr = detail::get_game_data_ptr();
@@ -60,7 +66,7 @@ namespace hades
 
 		void attach_system(object_ref e, unique_id s, time_point t)
 		{
-			auto game_current_level_system_ptr = detail::get_game_level_ptr();
+			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
 			game_current_level_system_ptr->attach_system(e, s, t);
 			return;
 		}

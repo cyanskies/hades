@@ -18,7 +18,7 @@ namespace hades
 
 			Type* r = nullptr;
 
-			if (target == empty_id)
+			if (target == unique_zero)
 			{
 				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
 				return r;

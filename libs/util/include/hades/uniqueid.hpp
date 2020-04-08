@@ -78,6 +78,8 @@ namespace hades
 	using unique_id = unique_id_t<hades::types::uint64>;
 	static_assert(sizeof(unique_id) == sizeof(unique_id::type));
 
+	constexpr auto unique_zero = unique_id{ unique_id::zero_id };
+
 	constexpr unique_id make_id() noexcept
 	{
 		return unique_id{ unique_id::new_id };

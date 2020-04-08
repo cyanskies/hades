@@ -5,12 +5,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "yaml-cpp/yaml.h"
+//#include "yaml-cpp/yaml.h"
 
-#include "Hades/Data.hpp"
-#include "Hades/parser.hpp"
-#include "Hades/resource_base.hpp"
-#include "Hades/Types.hpp"
+#include "hades/data.hpp"
+#include "hades/parser.hpp"
+#include "hades/resource_base.hpp"
+#include "hades/types.hpp"
 //Data manager is a resource management class.
 //The class is not thread safe
 

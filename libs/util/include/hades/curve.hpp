@@ -56,11 +56,15 @@ namespace hades {
 
 		basic_curve() = default;
 		explicit basic_curve(curve_type type) : _type{type}
-		{}
+		{
+			assert(type != curve_type::error);
+		}
 
 		basic_curve(curve_type type, Data value) : _type{type}, 
 			_data{ {Time{}, std::move(value)} }
-		{}
+		{
+			assert(type != curve_type::error); 
+		}
 
 		static constexpr auto is_curve_nothrow_move_assignable_v = std::conjunction<
             std::is_nothrow_swappable<DataType>,
@@ -109,6 +113,8 @@ namespace hades {
 		//different path if data is linear
 		Data get(Time at) const
 		{
+			assert(_type != curve_type::error);
+
 			if (_type == curve_type::linear)
 			{
 				if (_data.empty())
@@ -187,21 +193,28 @@ namespace hades {
 		}
 
 		//These are the only valid ways to get data from a Pulse
-		//returns the closest frame before at
-		const frame_t &getPrevious(Time at) const
+		std::pair<const frame_t*, const frame_t*> get_range(Time at) const
 		{
-			//TODO: FIXME: if the curve has no keyframes then d.first might be std::end
-			//std::optional?
-			auto d = _getRange(at);
-			return *d.first;
+			const auto range = _getRange(at);
+			const auto end = std::end(_data);
+			return {
+				range.first == end ? nullptr : &*range.first,
+				range.second == end ? nullptr : &*range.second
+			};
+		}
+
+		//returns the closest frame before at
+		const frame_t *getPrevious(Time at) const
+		{
+			const auto range = _getRange(at);
+			return range.first == end(_data) ? nullptr : &*range.first;
 		}
 
 		//returns the closest frame after at
-		const frame_t &getNext(Time at) const
+		const frame_t *getNext(Time at) const
 		{
-			auto d = _getRange(at);
-			//FIXME: TODO: d.second might be std::end	
-			return *d.second;
+			const auto range = _getRange(at);
+			return range.second == end(_data) ? nullptr : &*range.second;
 		}
 
 		//returns all keyframes between the specified times
@@ -337,7 +350,7 @@ namespace hades {
 			return;
 		}
 
-		//returns the keyframes either side of 'at'
+		// returns the frame at or below 'at' and the one that comes after it.
 		IterPair _getRange(Time at) const
 		{
 			if (std::empty(_data))

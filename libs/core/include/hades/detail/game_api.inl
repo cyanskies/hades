@@ -25,16 +25,40 @@ namespace hades
 		{
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
-			return curve_map.find(i)->second;
+			auto iter = curve_map.find(i);
+			if (iter == end(curve_map))
+				throw curve_not_found{"unable to find the requested curve on this object: " + to_string(i.second)};
+			return iter->second;
 		}
 
 		template<typename T>
-		const game::curve_keyframe<T> &get_game_curve_frame_ref(const common_interface* l, curve_index_t i, time_point t)
+		const hades::game::curve_keyframe<T> *get_game_curve_frame_ref(const common_interface* l, curve_index_t i, time_point t)
 		{
 			const auto& curves = l->get_curves();
 			const auto& curve_map = hades::get_curve_list<T>(curves);
-			const auto& curve = curve_map.find(i)->second;
-			return curve.getPrevious(t);
+			const auto curve_iter = curve_map.find(i);
+			assert(curve_iter != end(curve_map));
+			return curve_iter->second.getPrevious(t);
+		}
+
+		template<typename T>
+		const hades::game::curve_keyframe<T>* get_game_curve_frame_after_ref(const common_interface* l, curve_index_t i, time_point t)
+		{
+			const auto& curves = l->get_curves();
+			const auto& curve_map = hades::get_curve_list<T>(curves);
+			const auto curve_iter = curve_map.find(i);
+			assert(curve_iter != end(curve_map));
+			return curve_iter->second.getNext(t);
+		}
+
+		template<typename T>
+		std::pair<const hades::game::curve_keyframe<T>*, const hades::game::curve_keyframe<T>*> get_game_curve_frame_pair_ref(const common_interface* l, curve_index_t i, time_point t)
+		{
+			const auto& curves = l->get_curves();
+			const auto& curve_map = hades::get_curve_list<T>(curves);
+			const auto curve_iter = curve_map.find(i);
+			assert(curve_iter != end(curve_map));
+			return curve_iter->second.get_range(t);
 		}
 
 		template<typename T>
@@ -105,23 +129,68 @@ namespace hades
 		}
 
 		template<typename T>
-		const curve_keyframe<T>& get_keyframe_ref(curve_index_t i, time_point t)
+		const curve_keyframe<T>* get_keyframe_ref(curve_index_t i, time_point t)
 		{
 			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_frame_ref<T>(ptr->level_data, i, t);
 		}
 
 		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t index, time_point t)
+		optional_keyframe<T> get_keyframe(curve_index_t i, time_point t)
 		{
-			const auto ptr = detail::get_game_data_ptr();
-			return detail::get_game_curve_frame_ref<T>(ptr->level_data, index, t);
+			return get_keyframe_ref<T>(i, t);
 		}
 
 		template<typename T>
-		curve_keyframe<T> get_keyframe(curve_index_t index)
+		optional_keyframe<T> get_keyframe(curve_index_t index)
 		{
 			return get_keyframe<T>(index, get_last_time());
+		}
+
+		template<typename T>
+		const curve_keyframe<T>* get_keyframe_after_ref(curve_index_t i, time_point t)
+		{
+			const auto ptr = detail::get_game_data_ptr();
+			return detail::get_game_curve_frame_after_ref<T>(ptr->level_data, i, t);
+		}
+
+		template<typename T>
+		optional_keyframe<T> get_keyframe_after(curve_index_t i, time_point t)
+		{
+			return get_keyframe_after_ref<T>(i, t);
+		}
+
+		template<typename T>
+		optional_keyframe<T> get_keyframe_after(curve_index_t i)
+		{
+			return get_keyframe_after_ref<T>(i, get_last_time());
+		}
+
+		template<typename T>
+		std::pair<const curve_keyframe<T>*, const curve_keyframe<T>*> get_keyframe_pair_ref(curve_index_t i, time_point t)
+		{
+			const auto ptr = detail::get_game_level_ptr();
+			return detail::get_game_curve_frame_pair_ref<T>(ptr, i, t);
+		}
+
+		template<typename T>
+		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t i, time_point t)
+		{
+			const auto p = get_keyframe_pair_ref<T>(i, t);
+
+			optional_keyframe<T> first{}, second{};
+			if (p.first)
+				first.emplace(*p.first);
+			if (p.second)
+				second.emplace(*p.second);
+
+			return { first, second };
+		}
+
+		template<typename T>
+		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t i)
+		{
+			return get_keyframe_pair<T>(i, get_last_time());
 		}
 
 		template<typename T>

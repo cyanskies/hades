@@ -320,7 +320,7 @@ namespace hades
 		TextBuffer.emplace_back(std::move(message));
 
 		#ifndef NDEBUG
-			std::cerr << message.text() << "\n";
+			std::cout << message.text() << "\n";
 		#endif
 	}
 

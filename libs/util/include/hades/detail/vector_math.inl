@@ -141,6 +141,13 @@ namespace hades
 		return { vector::angle(v), vector::magnitude(v) };
 	}
 
+	template<typename T>
+	string vector_to_string(vector_t<T> v)
+	{
+		using namespace std::string_literals;
+		return "["s + to_string(v.x) + ", "s + to_string(v.y) + "]"s;
+	}
+
 	namespace vector
 	{
 		template<typename T>

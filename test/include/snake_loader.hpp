@@ -17,6 +17,6 @@ struct snake_rules : public hades::resources::resource_type<snake_game_t>
 extern snake_rules *snake_game_rules;
 
 //parser responsible for reading the rules from the mod file
-void parseSnakeRules(hades::unique_id, YAML::Node&, hades::data::data_manager*);
+void parseSnakeRules(hades::unique_id, /*YAML::Node&,*/ hades::data::data_manager*);
 
 #endif //TEST_SNAKE_LOADER_HPP

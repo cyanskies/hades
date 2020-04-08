@@ -63,21 +63,26 @@ namespace hades
 		}
 
 		//add object type as a curve
-		assert(o.obj_type);
 		const auto obj_type_c = get_object_type_curve();
 		assert(obj_type_c);
 
 		using ObjType = resources::curve_types::unique;
 		auto obj_type = curve<ObjType>{ obj_type_c->c_type };
-		obj_type.set(t, o.obj_type->id);
+		if (o.obj_type)
+			obj_type.set(t, o.obj_type->id);
+		else
+			obj_type.set(t, unique_zero);
 
 		auto &obj_type_curves = get_curve_list<ObjType>(curves);
 		obj_type_curves.emplace(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
 
 		//attach systems
-		const auto systems = get_systems(*o.obj_type);
-		for (const auto s : systems)
-			attach_system(id, s->id, t);
+		if (o.obj_type)
+		{
+			const auto systems = get_systems(*o.obj_type);
+			for (const auto s : systems)
+				attach_system(id, s->id, t);
+		}
 
 		return id;
 	}
@@ -146,7 +151,7 @@ namespace hades
 		// to curve<vector<pair<entity_id, timePoint>>>
 		for (std::size_t i = 0; i < sv.objects.systems.size(); ++i)
 		{
-			auto attached = name_list{};
+			auto attached = name_list{ curve_type::step };
 			for (const auto& a : sv.objects.systems_attached[i])
 			{
 				auto ents = std::vector<attached_ent>{};

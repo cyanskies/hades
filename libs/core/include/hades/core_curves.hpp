@@ -23,6 +23,8 @@ namespace hades
 	const resources::curve* get_tags_curve();
 	const resources::curve* get_object_type_curve();
 
+	constexpr auto bad_object_type = unique_zero;
+
 	unique_id get_alive_curve_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;

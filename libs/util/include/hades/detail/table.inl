@@ -50,12 +50,14 @@ namespace hades
 	template<typename Value>
 	typename table<Value>::value_type& table<Value>::operator[](size_type index)
 	{
+		assert(index >= 0 && integer_cast<std::size_t>(index) < std::size(_data));
 		return _data[index];
 	}
 
 	template<typename Value>
 	typename const table<Value>::value_type& table<Value>::operator[](size_type index) const
 	{
+		assert(index >= 0 && integer_cast<std::size_t>(index) < std::size(_data));
 		return _data[index];
 	}
 

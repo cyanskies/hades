@@ -405,7 +405,7 @@ namespace hades
 
 	tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept
 	{
-		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(size(t.tiles)));
+		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(t.width));
 	}
 
 	tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept

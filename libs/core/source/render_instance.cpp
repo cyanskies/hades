@@ -63,7 +63,8 @@ namespace hades
 			//TODO: can we use the time from the curve,
 			//		might be possible after syncing the 
 			//		server and client time
-			setup_systems_for_new_object(key.first, o, time, systems);
+			if(o != unique_zero)
+				setup_systems_for_new_object(key.first, o, time, systems);
 
 			activated.emplace(key.first);
 		}

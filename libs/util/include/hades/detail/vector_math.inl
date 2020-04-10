@@ -9,12 +9,12 @@
 
 namespace hades::detail
 {
-	//TODO: compilers have flags fot fast vd precise floating point math
+	//TODO: compilers have flags for fast amd precise floating point math
 	//		we should toggle those and use std::sqrt rather than this tricky shit
 	//NOTE: Fast Inverse Square Root
 	// from: https://en.wikipedia.org/wiki/Fast_inverse_square_root
 	template<typename Float32>
-	Float32 frsqrt32(Float32 f) noexcept
+	constexpr Float32 frsqrt32(Float32 f) noexcept
 	{
 		static_assert(std::is_trivially_copyable_v<Float32>);
 		static_assert(sizeof(Float32) == 4);
@@ -35,7 +35,7 @@ namespace hades::detail
 	}
 
 	template<typename Float64>
-	Float64 frsqrt64(Float64 f) noexcept
+	constexpr Float64 frsqrt64(Float64 f) noexcept
 	{
 		static_assert(std::is_trivially_copyable_v<Float64>);
 		static_assert(sizeof(Float64) == 8);
@@ -61,7 +61,7 @@ namespace hades
 	template<typename Float,
 		typename std::enable_if_t<std::is_floating_point_v<Float>&&
 		std::numeric_limits<Float>::is_iec559, int>>
-	Float frsqrt(Float f) noexcept
+	constexpr Float frsqrt(Float f) noexcept
 	{
 		static_assert(sizeof(Float) == 4 ||
 			sizeof(Float) == 8);
@@ -168,9 +168,27 @@ namespace hades
 		}
 
 		template<typename T>
-		T angle(vector_t<T> v) noexcept
+		constexpr T angle(vector_t<T> v) noexcept
 		{
-			return std::atan2(v.y, v.x);
+			auto ret = T{};
+			//NOTE: y is inverted because opengl
+			if constexpr (std::is_floating_point_v<T>)
+			{
+				constexpr auto pi = T{ 3.1415926535897 }; //C++20 brings math constants finally ::rollseyes::
+				ret = std::atan2(v.y * -1.f, v.x) * 180 / pi;
+			}
+			else
+			{
+				constexpr auto pi = float{ 3.1415926535897 };
+				ret = static_cast<T>(std::atan2(static_cast<float>(v.y) * -1.f, static_cast<float>(v.x)) * 180 / pi);
+			}
+
+			//atan2 reurns in the range {180, -180}
+			// convert to {0, 360}
+			if (ret < 0)
+				ret += 360;
+
+			return ret;
 		}
 
 		template<typename T>
@@ -192,14 +210,14 @@ namespace hades
 		}
 
 		template<typename T>
-		vector_t<T> unit(vector_t<T> v) noexcept
+		constexpr vector_t<T> unit(vector_t<T> v) noexcept
 		{
 			const auto inverse_root = frsqrt(static_cast<float>(magnitude_squared(v)));
 			return v * inverse_root;
 		}
 
 		template<typename T>
-		T distance(vector_t<T> a, vector_t<T> b) noexcept
+		constexpr T distance(vector_t<T> a, vector_t<T> b) noexcept
 		{
 			const auto ab = a - b;
 			return magnitude(ab);
@@ -212,7 +230,7 @@ namespace hades
 		}
 
 		template<typename T>
-		vector_t<T> abs(vector_t<T> v) noexcept
+		constexpr vector_t<T> abs(vector_t<T> v) noexcept
 		{
 			return { std::abs(v.x), std::abs(v.y) };
 		}

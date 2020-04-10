@@ -17,7 +17,7 @@ namespace hades
 	template<typename Float,
 		typename std::enable_if_t<std::is_floating_point_v<Float> &&
 		std::numeric_limits<Float>::is_iec559, int> = 0>
-	Float frsqrt(Float) noexcept;
+	constexpr Float frsqrt(Float) noexcept;
 
 	template<typename T>
 	struct vector_t
@@ -119,7 +119,7 @@ namespace hades
 
 		//returns the angle of the vector
 		template<typename T>
-		T angle(vector_t<T>) noexcept;
+		[[nodiscard]] constexpr T angle(vector_t<T>) noexcept;
 
 		template<typename T>
 		constexpr T x_comp(pol_vector_t<T>) noexcept;
@@ -132,16 +132,16 @@ namespace hades
 		vector_t<T> resize(vector_t<T>, T length) noexcept;
 
 		template<typename T>
-		vector_t<T> unit(vector_t<T>) noexcept;
+		constexpr vector_t<T> unit(vector_t<T>) noexcept;
 
 		template<typename T>
-		T distance(vector_t<T>, vector_t<T>) noexcept;
+		constexpr T distance(vector_t<T>, vector_t<T>) noexcept;
 
 		template<typename T>
 		constexpr vector_t<T> reverse(vector_t<T>) noexcept;
 
 		template<typename T>
-		vector_t<T> abs(vector_t<T>) noexcept;
+		constexpr vector_t<T> abs(vector_t<T>) noexcept;
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>

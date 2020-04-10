@@ -1,6 +1,8 @@
 #ifndef HADES_TILES_HPP
 #define HADES_TILES_HPP
 
+#include <array>
+
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
 #include "hades/math.hpp"
@@ -239,11 +241,9 @@ namespace hades
 	//TODO: move to general game logic
 	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size);
 	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size);
-
 	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
-
 	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius);
-	std::vector<tile_position> make_position_9patch(tile_position middle);
+	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
 }
 
 #endif // !HADES_TILES_HPP

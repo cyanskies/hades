@@ -903,9 +903,19 @@ namespace hades
 		return out;
 	}
 
-	std::vector<tile_position> make_position_9patch(tile_position middle)
+	std::array<tile_position, 9> make_position_9patch(tile_position m) noexcept
 	{
-		const auto top_left = middle - tile_position{1, 1};
-		return make_position_square(top_left, 3);
+		using p = tile_position;
+		return std::array{
+			m + p{-1, -1},
+			m + p{0, -1},
+			m + p{1, -1},
+			m + p{-1, 0},
+			m,
+			m + p{1, 0},
+			m + p{-1, 1},
+			m + p{0, 1},
+			m + p{1, 1}
+		};
 	}
 }

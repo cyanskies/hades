@@ -57,7 +57,8 @@ namespace hades
 
 		const std::vector<object_ref> &get_objects() noexcept;
 
-		//the time of the previous update
+		//the time of the previous dt
+		// equals get_time - dt
 		time_point get_last_time() noexcept;
 		//the time between this 'last_time' and 'time'
 		time_duration get_delta_time() noexcept;

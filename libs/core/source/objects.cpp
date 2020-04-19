@@ -302,6 +302,7 @@ namespace hades
 		{
 			if (std::get<const hades::resources::curve*>(curve)->id == c.id)
 			{
+				assert(resources::is_curve_valid(c, v));
 				std::get<curve_value>(curve) = std::move(v);
 				return;
 			}

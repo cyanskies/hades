@@ -59,8 +59,22 @@ namespace hades
 		return pos;
 	}
 
+	static bool empty_obj(const resources::object* o)
+	{
+		return empty(o->base) &&
+			empty(o->curves) &&
+			empty(o->editor_anims) &&
+			(o->editor_icon == nullptr) &&
+			empty(o->render_systems) &&
+			empty(o->systems);
+	}
+
 	static void add_object_to_save(curve_data &c, entity_id id, const resources::object *o)
 	{
+		assert(o);
+		if (empty_obj(o))
+			LOGWARNING("object type: " + to_string(o->id) + ", has no systems, curves, or base objects.");
+
 		for (const auto b : o->base)
 			add_object_to_save(c, id, b);
 

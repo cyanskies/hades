@@ -18,6 +18,7 @@ set(HADES_UTIL_SRC
 	include/hades/utility.hpp
 	include/hades/value_guard.hpp
 	include/hades/vector_math.hpp
+	include/hades/zip.hpp
 	include/hades/detail/any_map.inl
 	include/hades/detail/for_each_tuple.inl
 	include/hades/detail/line_math.inl
@@ -27,6 +28,7 @@ set(HADES_UTIL_SRC
 	include/hades/detail/table.inl
 	include/hades/detail/utility.inl
 	include/hades/detail/vector_math.inl
+	include/hades/detail/zip.inl
 )
 
 hades_make_library(hades-util include "${HADES_UTIL_SRC}")

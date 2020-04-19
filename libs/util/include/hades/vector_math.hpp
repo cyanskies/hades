@@ -31,11 +31,25 @@ namespace hades
 			return *this;
 		}
 
+		constexpr vector_t& operator-=(const vector_t& rhs) noexcept
+		{
+			x -= rhs.x;
+			y -= rhs.y;
+			return *this;
+		}
+
 		//scalar multiplication
 		constexpr vector_t& operator*=(const T rhs) noexcept
 		{
 			x *= rhs;
 			y *= rhs;
+			return *this;
+		}
+
+		constexpr vector_t& operator/=(const T rhs) noexcept
+		{
+			x /= rhs;
+			y /= rhs;
 			return *this;
 		}
 

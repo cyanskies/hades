@@ -1,8 +1,6 @@
 #version 3.10 needed for CXX_STANDARD settings
 cmake_minimum_required(VERSION 3.10)
 
-#TODO: support LTCG whole program optimisation
-
 function(hades_make_common ARG_NAME)
 	# Specify default build type if none provided (before project() command)
 	if(NOT CMAKE_BUILD_TYPE)
@@ -33,16 +31,26 @@ endfunction(hades_make_common)
 function(hades_make_compile_settings ARG_NAME)
   # Add compiler flags for extra warnings
   target_compile_options(${ARG_NAME} PRIVATE
-							 #optimisations
+                             # general settings
+                             $<$<CONFIG:Debug>:
+                                # MP for mutli threading
+                                $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/MP" >
+                                $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                   >
+                             >
+
+							 # release mode optimisations
 							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
 								# '/GS-' for no extra buffer overflow checks
+                                # GL for link time code gen
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/O2" >
+                                  "/GS-" "/O2" "/GL" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >
 
-							 #warnings
+							 # warnings
                              $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
                              $<$<CXX_COMPILER_ID:MSVC>:

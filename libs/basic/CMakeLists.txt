@@ -48,4 +48,4 @@ set(HADES_BASIC_SRC
 	include/hades/detail/writer.inl
 )
 
-hades_make_library(hades-basic include "${HADES_BASIC_SRC}" hades-util PRIVATE yaml-cpp)
+hades_make_library(hades-basic include "${HADES_BASIC_SRC}" hades-util)

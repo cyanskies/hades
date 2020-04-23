@@ -4,6 +4,7 @@
 #include "hades/core_curves.hpp"
 #include "hades/game_system.hpp"
 #include "hades/objects.hpp"
+#include "hades/players.hpp"
 
 namespace hades
 {
@@ -31,6 +32,23 @@ namespace hades
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->prev_time + game_data_ptr->dt;
+		}
+
+		const std::vector<player_data>& get_players() noexcept
+		{
+			const auto ptr = detail::get_game_data_ptr();
+			assert(ptr && ptr->players);
+			return *ptr->players;
+		}
+
+		object_ref get_player(unique u) noexcept
+		{
+			for (const auto [id, ref] : get_players())
+			{
+				if (id == u)
+					return ref;
+			}
+			return bad_object_ref;
 		}
 
 		unique_id current_system() noexcept
@@ -146,7 +164,7 @@ namespace hades
 		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
 		{
 			static const auto curves = get_size_curve_id();
-			set_value<world_vector_t>({ o, curves }, { w, h });
+			set_value<world_vector_t>({ o, curves }, t, { w, h });
 			return;
 		}
 

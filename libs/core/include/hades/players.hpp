@@ -18,11 +18,8 @@ namespace hades
 
 	struct player_data
 	{
-		std::size_t index = bad_player_index;
-		unique_id name; // the name for this player slot(eg. enemies, player, neutrals)
-		string display_name; // the visible title for this player slot(eg. garm brood)
-
-		resources::curve_types::object_ref player_object;
+		unique_id name = unique_zero; // the name for this player slot(eg. enemies, player, neutrals)
+		resources::curve_types::object_ref player_object = resources::curve_types::bad_object_ref;
 	};
 
 	//player object for the game instance

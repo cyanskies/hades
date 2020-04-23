@@ -14,6 +14,8 @@ namespace hades
 		using std::logic_error::logic_error;
 	};
 
+	struct player_data;
+
 	//represents the logic side of an individual level or game
 	//TODO:
 	// support saving
@@ -23,7 +25,7 @@ namespace hades
 		game_instance(const level_save&);
 
 		//triggers all systems with the specified time change
-		void tick(time_duration dt);
+		void tick(time_duration dt, const std::vector<player_data>*);
 
 		void add_input(std::vector<action> input, time_point t);
 

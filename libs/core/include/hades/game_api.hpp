@@ -67,6 +67,9 @@ namespace hades
 		//using values from last_time
 		time_point get_time() noexcept;
 
+		const std::vector<player_data>& get_players() noexcept;
+		object_ref get_player(unique) noexcept;
+
 		unique_id current_system() noexcept;
 		//system data is a data store persisted between frames
 		// it is per-level and is never saved

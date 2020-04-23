@@ -3,6 +3,7 @@
 #include "hades/game_system.hpp"
 #include "hades/game_instance.hpp"
 #include "hades/level.hpp"
+#include "hades/players.hpp"
 
 namespace hades
 {
@@ -22,9 +23,9 @@ namespace hades
 		local_server_level(const level_save& sv, local_server_hub *server) : _game(sv), _server(server)
 		{}
 
-		void tick(time_duration dt)
+		void tick(time_duration dt, const std::vector<player_data>* p)
 		{
-			_game.tick(dt);
+			_game.tick(dt, p);
 			_level_time += dt;
 		}
 
@@ -68,7 +69,11 @@ namespace hades
 		local_server_hub(mission_save lvl)
 			: _mission{ std::move(lvl) }
 		{
-			//init the _mission_instance
+			//copy the player table
+			for (auto p : lvl.source.players)
+				_players.emplace_back(player_data{ p.id, p.object });
+
+			//TODO: init the _mission_instance
 
 			for (auto& l : _mission.level_saves)
 				_levels.emplace_back(level{ l.name, local_server_level{ l.save, this } });
@@ -78,12 +83,12 @@ namespace hades
 		{
 			_server_time += dt;
 			//tick the mission contruct
-			_mission_instance->tick(dt);
+			_mission_instance->tick(dt, &_players);
 
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
 			for(auto &l : _levels)
-				l.instance.tick(dt);
+				l.instance.tick(dt, &_players);
 		}
 
 		time_point get_time() const noexcept override
@@ -165,6 +170,8 @@ namespace hades
 
 		std::optional<game_instance> _mission_instance;
 		//players
+		//TODO: wrap player_data and add network info etc.
+		std::vector<player_data> _players;
 
 		//levels
 		struct level
@@ -177,7 +184,7 @@ namespace hades
 		std::deque<level> _levels;
 	};
 
-	//has to handle networking and resulving unique_id differences between hosts
+	//has to handle networking and resolving unique_id differences between hosts
 	//remote server hub
 
 	std::unique_ptr<server_hub> create_server(mission_save lvl)

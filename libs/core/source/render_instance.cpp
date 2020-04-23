@@ -105,6 +105,8 @@ namespace hades
 		return;
 	}
 
+	struct player_data;
+
 	void render_instance::make_frame_at(time_point t, const common_interface *m, render_interface &i)
 	{
 		assert(_interface);
@@ -117,12 +119,12 @@ namespace hades
 		const auto dt = time_duration{ t - _current_frame };
 
 		auto make_render_job_data = [m, &i](unique_id sys, std::vector<entity_id> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
-			time_duration dt, system_data_t* d)->render_job_data {
+			time_duration dt, const std::vector<player_data>*, system_data_t* d)->render_job_data {
 				return render_job_data{sys, std::move(e), g, s, prev + dt, &i, d };
 		};
 
 		const auto next = update_level(_prev_frame, _current_frame, dt,
-			*_interface, _systems, make_render_job_data);
+			*_interface, _systems, nullptr, make_render_job_data);
 
 		i.prepare(); //copy sprites into vertex buffer
 

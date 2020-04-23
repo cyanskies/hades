@@ -127,8 +127,7 @@ namespace hades
 		curve_data _curves;
 		name_curve_t _entity_names{ curve_type::step };
 
-		curve<input_system::action_set> _input{ curve_type::step };
-		entity_id::value_type _next = to_value(next(bad_entity));
+		entity_id _next = next(bad_entity);
 
 		//level info
 		terrain_map _terrain;
@@ -169,9 +168,11 @@ namespace hades
 		//ai_input
 	};
 
+	struct player_data;
+
 	template<typename Interface, typename SystemType, typename MakeGameStructFn>
 	time_point update_level(time_point, time_point, time_duration,
-		Interface&, system_behaviours<SystemType>&, MakeGameStructFn);
+		Interface&, system_behaviours<SystemType>&, const std::vector<player_data>*, MakeGameStructFn);
 }
 
 #include "hades/detail/level_interface.inl"

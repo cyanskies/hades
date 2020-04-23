@@ -1,5 +1,3 @@
-# Directory hades/source
-
 # C++ source files
 set(HADES_CORE_SRC
 	animation.cpp

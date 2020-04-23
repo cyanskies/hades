@@ -29,7 +29,7 @@ set_target_properties(${HADES_LIB} PROPERTIES RELEASE_POSTFIX -s)
 target_include_directories(${HADES_LIB} PUBLIC ../include)
 
 #lin libraries
-target_link_libraries(${HADES_LIB} PUBLIC hades-core yaml-cpp)
+target_link_libraries(${HADES_LIB} PUBLIC hades-core yaml-cpp minizip)
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${HADES_LIB}

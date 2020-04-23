@@ -1,34 +1,117 @@
-# Directory hades
+include(../../cmake.txt)
 
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+set(HADES_CORE_SRC
+	source/animation.cpp
+	source/archive.cpp
+	source/background.cpp
+	source/camera.cpp
+	source/console_functions.cpp
+	source/core_curves.cpp
+	source/core_resources.cpp
+	source/draw_clamp.cpp
+	source/export_curves.cpp
+	source/files.cpp
+	source/font.cpp
+	source/game_api.cpp
+	source/game_instance.cpp
+	source/game_system.cpp
+	source/grid.cpp
+	source/gui.cpp
+	source/level.cpp
+	source/level_editor.cpp
+	source/level_editor_grid.cpp
+	source/level_editor_level_properties.cpp
+	source/level_editor_objects.cpp
+	source/level_editor_regions.cpp
+	source/level_editor_terrain.cpp
+	source/level_editor_tiles.cpp
+	source/level_interface.cpp
+	source/level_scripts.cpp
+	source/mission.cpp
+	source/mission_editor.cpp
+	source/mouse_input.cpp
+	source/objects.cpp
+	source/render_instance.cpp
+	source/render_interface.cpp
+	source/sf_input.cpp
+	source/sf_streams.cpp
+	source/sprite_batch.cpp
+	source/standard_paths.cpp
+	source/state.cpp
+	source/terrain_map.cpp
+	source/texture.cpp
+	source/tiled_sprite.cpp
+	source/tile_map.cpp
+	source/vertex_buffer.cpp
+	include/hades/animation.hpp
+	include/hades/archive.hpp
+	include/hades/background.hpp
+	include/hades/camera.hpp
+	include/hades/console_functions.hpp
+	include/hades/core_curves.hpp
+	include/hades/core_resources.hpp
+	include/hades/drawable.hpp
+	include/hades/draw_clamp.hpp
+	include/hades/export_curves.hpp
+	include/hades/files.hpp
+	include/hades/font.hpp
+	include/hades/game_api.hpp
+	include/hades/game_instance.hpp
+	include/hades/game_system.hpp
+	include/hades/grid.hpp
+	include/hades/gui.hpp
+	include/hades/level.hpp
+	include/hades/level_curve_data.hpp
+	include/hades/level_editor.hpp
+	include/hades/level_editor_component.hpp
+	include/hades/level_editor_grid.hpp
+	include/hades/level_editor_level_properties.hpp
+	include/hades/level_editor_objects.hpp
+	include/hades/level_editor_regions.hpp
+	include/hades/level_editor_terrain.hpp
+	include/hades/level_editor_tiles.hpp
+	include/hades/level_interface.hpp
+	include/hades/level_scripts.hpp
+	include/hades/mission.hpp
+	include/hades/mission_editor.hpp
+	include/hades/mouse_input.hpp
+	include/hades/objects.hpp
+	include/hades/players.hpp
+	include/hades/render_instance.hpp
+	include/hades/render_interface.hpp
+	include/hades/sf_input.hpp
+	include/hades/sf_streams.hpp
+	include/hades/sf_time.hpp
+	include/hades/sprite_batch.hpp
+	include/hades/standard_paths.hpp
+	include/hades/state.hpp
+	include/hades/terrain_map.hpp
+	include/hades/texture.hpp
+	include/hades/tiled_sprite.hpp
+	include/hades/tile_map.hpp
+	include/hades/vertex_buffer.hpp
+	include/hades/detail/game_api.inl
+	include/hades/detail/game_system.inl
+	include/hades/detail/gui.inl
+	include/hades/detail/level_curve_data.inl
+	include/hades/detail/level_editor.inl
+	include/hades/detail/level_editor_grid.inl
+	include/hades/detail/level_interface.inl
+	include/hades/detail/level_editor_objects.inl
+	include/hades/detail/mouse_input.inl
+	include/hades/detail/state.inl
+)
 
-# Specify default build type if none provided (before project() command)
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
-endif()
+set(HADES_CORE_LIBS 
+	hades-util 
+	hades-basic
+	sfml-audio	
+	sfml-graphics
+	sfml-main	
+	sfml-network 
+	sfml-system 
+	sfml-window
+	imgui	
+	PRIVATE	minizip)
 
-# For generators with multiple configurations (like VS), only allow Debug and Release
-if(CMAKE_CONFIGURATION_TYPES)
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Limited configurations" FORCE)
-	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
-endif()
-
-project(hades-core)
-
-# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Global preprocessor options
-#this is to ignore the thousands of warnings that
-#yaml generates through iterator usage
-add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
-
-# C++ source code
-add_subdirectory(source)
-
-# Install include directory and license files
-install(DIRECTORY include
-		DESTINATION .)
+hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")

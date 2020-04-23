@@ -29,8 +29,8 @@ constexpr auto archive_ext = ".zip";
 namespace hades::zip
 {
 	//open a close unzip archives
-	unarchive open_archive(const std::filesystem::path&);
-	void close_archive(unarchive f);
+	static unarchive open_archive(const std::filesystem::path&);
+	static void close_archive(unarchive f);
 
 	static bool file_exists(unarchive, const fs::path&);
 
@@ -449,7 +449,7 @@ namespace hades::zip
 		return;
 	}
 
-	unarchive open_archive(const fs::path& path)
+	static unarchive open_archive(const fs::path& path)
 	{
 		if (!fs::exists(path))
 			throw files::file_not_found{ "archive not found: " + path.generic_string() };

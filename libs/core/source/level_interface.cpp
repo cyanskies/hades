@@ -10,7 +10,7 @@ namespace hades
 {
 	common_implementation_base::common_implementation_base(const level_save& sv) 
 		: _entity_names{ sv.objects.names }, 
-		_next{ static_cast<entity_id::value_type>(sv.objects.next_id) }, _curves{ sv.objects.curves },
+		_next{ sv.objects.next_id }, _curves{ sv.objects.curves },
 		_size{ static_cast<world_unit_t>(sv.source.map_x), static_cast<world_unit_t>(sv.source.map_y) }
 	{
 		if (!std::empty(sv.source.tile_map_layer.tiles))
@@ -28,7 +28,7 @@ namespace hades
 
 	entity_id common_implementation_base::create_entity()
 	{
-		return entity_id{ ++_next };
+		return increment(_next);
 	}
 
 	entity_id common_implementation_base::create_entity(const object_instance &o,
@@ -98,7 +98,7 @@ namespace hades
 
 	void common_implementation_base::name_entity(entity_id entity, std::string_view name, time_point time)
 	{
-		assert(entity < entity_id{ _next + 1 });
+		assert(entity < next(_next));
 
 		auto name_map = _entity_names.get(time);
 		name_map[to_string(name)] = entity;

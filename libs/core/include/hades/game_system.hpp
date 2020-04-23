@@ -106,6 +106,7 @@ namespace hades
 	//fwd
 	class game_interface;
 	struct game_system;
+	struct player_data;
 
 	struct system_job_data
 	{
@@ -116,12 +117,10 @@ namespace hades
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
 		game_interface *level_data = nullptr;
-		//TODO: map of uniqiue id to other game interface ads
 		//mission data interface
-		// contains players, 
-		// and... just the players
 		game_interface *mission_data = nullptr;
 
+		const std::vector<player_data>* players = nullptr;
 		system_behaviours<game_system>* systems = nullptr;
 
 		//the previous time, and the time to advance by(t + dt)

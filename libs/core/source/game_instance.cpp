@@ -12,14 +12,16 @@ namespace hades
 	game_instance::game_instance(const level_save& sv) : _game(sv)
 	{}
 
-	void game_instance::tick(time_duration dt)
+	struct player_data;
+
+	void game_instance::tick(time_duration dt, const std::vector<player_data>* players)
 	{
 		auto make_game_struct = [](unique_id sys, std::vector<entity_id> e, game_interface* g, 
-			system_behaviours<game_system> *s, time_point t, time_duration dt, system_data_t* d)->system_job_data {
-			return system_job_data{ sys, std::move(e), g, nullptr, s, t, dt, d };
+			system_behaviours<game_system> *s, time_point t, time_duration dt, const std::vector<player_data>* p, system_data_t* d)->system_job_data {
+			return system_job_data{ sys, std::move(e), g, nullptr, p, s, t, dt, d };
 		};
 	
-		const auto next = update_level(_prev_time, _current_time, dt, _game, _game.get_systems(), make_game_struct);
+		const auto next = update_level(_prev_time, _current_time, dt, _game, _game.get_systems(), players, make_game_struct);
 		_prev_time = _current_time;
 		_current_time = next;
 		return;
@@ -88,7 +90,7 @@ namespace hades
 		return;
 	}
 
-	time_point game_instance::get_time(time_point mission_offset) const noexcept
+	time_point game_instance::get_time(time_point /*mission_offset*/) const noexcept
 	{
 		//TODO: levels should compensate with their sleep time.
 		return _current_time;

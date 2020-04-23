@@ -20,11 +20,11 @@ namespace hades
 
 	template<typename Interface, typename SystemType, typename MakeGameStructFn>
 	time_point update_level(time_point before_prev, time_point prev_time, time_duration dt,
-		Interface& interface, system_behaviours<SystemType> &sys, MakeGameStructFn make_game_struct)
+		Interface& interface, system_behaviours<SystemType> &sys,const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
 	{
 		using job_data_type = typename SystemType::job_data_t;
 		static_assert(std::is_invocable_r_v<job_data_type, MakeGameStructFn, unique_id,
-			std::vector<entity_id>, Interface*, system_behaviours<SystemType>*, time_point, time_duration, system_data_t*>,
+			std::vector<entity_id>, Interface*, system_behaviours<SystemType>*, time_point, time_duration, const std::vector<player_data>*, system_data_t*>,
 			"make_game_struct must return the correct job_data_type");
 
 		const auto current_time = prev_time + dt;
@@ -59,7 +59,7 @@ namespace hades
 						return std::get<entity_id>(entity);
 				});
 
-				auto game_data = std::invoke(make_game_struct, s->id, std::move(ents), &interface, &sys, prev_time, dt, &sys.get_system_data(s->id));
+				auto game_data = std::invoke(make_game_struct, s->id, std::move(ents), &interface, &sys, prev_time, dt, players, &sys.get_system_data(s->id));
 				detail::set_data(&game_data);
 				std::invoke(s->on_create);
 			}
@@ -107,7 +107,7 @@ namespace hades
 			if (!std::empty(u.added_ents) && u.system->on_connect)
 			{
 				auto& sys_data = sys.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.added_ents), &interface, &sys, prev_time, dt, &sys_data);
+				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.added_ents), &interface, &sys, prev_time, dt, players, &sys_data);
 				detail::set_data(&game_data);
 				std::invoke(u.system->on_connect);
 			}
@@ -124,7 +124,7 @@ namespace hades
 				auto input_q = interface.get_and_clear_input_queue();
 				//player input function, no system data available
 				using ent_list = resources::curve_types::collection_object_ref;
-				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys, prev_time, dt, nullptr);
+				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys, prev_time, dt, players, nullptr);
 				detail::set_data(&game_data);
 				std::invoke(player_input_fn, std::move(input_q));
 			}
@@ -139,7 +139,7 @@ namespace hades
 			if (!std::empty(u.removed_ents) && u.system->on_disconnect)
 			{
 				auto& sys_data = sys.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.removed_ents), &interface, &sys, prev_time, dt, &sys_data);
+				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.removed_ents), &interface, &sys, prev_time, dt, players, &sys_data);
 				detail::set_data(&game_data);
 				std::invoke(u.system->on_disconnect);
 			}
@@ -151,7 +151,7 @@ namespace hades
 			if (!std::empty(u.attached_ents) && u.system->tick)
 			{
 				auto& sys_data = sys.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.attached_ents), &interface, &sys, prev_time, dt, &sys_data);
+				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.attached_ents), &interface, &sys, prev_time, dt, players, &sys_data);
 				detail::set_data(&game_data);
 				std::invoke(u.system->tick);
 			}

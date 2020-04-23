@@ -200,13 +200,13 @@ namespace hades
 		const auto size = std::size(_verts);
 		
 		if (const auto old_size = _buffer.getVertexCount(),
-			size = std::size(_verts);
+			vert_size = std::size(_verts);
 			old_size == 0)
 		{
 			//how many quads the buffer should be able to hold
 			constexpr auto starting_quad_capacity = std::size_t{ 6 };
 			constexpr auto starting_size = starting_quad_capacity * quad_vert_count;
-			_buffer.create(std::max(starting_size, size));
+			_buffer.create(std::max(starting_size, vert_size));
 		}
 		else if (size > old_size)
 		{

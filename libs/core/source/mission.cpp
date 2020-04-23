@@ -81,16 +81,16 @@ namespace hades
 
 	mission deserialise_mission(std::string_view s)
 	{
-		const auto p = data::make_parser(s);
+		const auto parser = data::make_parser(s);
 		auto m = mission{};
 
 		namespace pt = data::parse_tools;
 
-		m.name = pt::get_scalar(*p, name_str, m.name);
-		m.description = pt::get_scalar(*p, desc_str, m.description);
+		m.name = pt::get_scalar(*parser, name_str, m.name);
+		m.description = pt::get_scalar(*parser, desc_str, m.description);
 
 		//players
-		const auto players = p->get_child(players_str);
+		const auto players = parser->get_child(players_str);
 		if (players)
 		{
 			const auto ps = players->get_children();
@@ -104,9 +104,9 @@ namespace hades
 			}
 		}
 
-		m.objects = deserialise_object_data(*p);
+		m.objects = deserialise_object_data(*parser);
 
-		const auto inline_levels = p->get_child(levels_str);
+		const auto inline_levels = parser->get_child(levels_str);
 		if (inline_levels)
 		{
 			const auto ls = inline_levels->get_children();

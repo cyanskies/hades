@@ -173,9 +173,9 @@ namespace hades::detail::obj_ui
 		if (edit != *iter)
 		{
 			auto container = value;
-			auto iter = std::begin(container);
-			std::advance(iter, selected);
-			*iter = edit;
+			auto target = std::begin(container);
+			std::advance(target, selected);
+			*target = edit;
 			set_curve(o, c, container);
 		}
 	}
@@ -654,7 +654,8 @@ namespace hades
 
 		//properties
 		//immutable object id
-		g.input_text("id"sv, to_string(o->id), gui::input_text_flags::readonly);
+		auto id_str = to_string(o->id);
+		g.input_text("id"sv, id_str, gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
 		g.text("curves:");
 		const bool global_curves = !std::empty(resources::get_all_curves());

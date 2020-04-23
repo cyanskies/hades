@@ -33,7 +33,7 @@ namespace hades
 	class immutable_tile_map : public sf::Drawable
 	{
 	public:
-		immutable_tile_map() = default;
+		immutable_tile_map() noexcept = default;
 		immutable_tile_map(const immutable_tile_map&) = default;
 		immutable_tile_map(const tile_map&);
 
@@ -56,7 +56,7 @@ namespace hades
 		void create(const tile_map&, sf::VertexBuffer::Usage);
 
 		std::vector<texture_layer> texture_layers;
-		rect_float local_bounds;
+		rect_float local_bounds{};
 	};
 
 	//an expanded upon immutable_tile_map, that allows changing the map on the fly

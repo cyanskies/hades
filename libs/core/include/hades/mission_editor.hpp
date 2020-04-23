@@ -138,7 +138,7 @@ namespace hades
 		save_load_dialog_t _load_window;
 		gui _gui;
 		time_point _editor_time;
-		vector_int _window_size;
+		vector_int _window_size{};
 		sf::View _gui_view;
 		sf::RectangleShape _backdrop;
 

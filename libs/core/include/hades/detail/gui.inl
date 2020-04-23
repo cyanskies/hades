@@ -37,7 +37,6 @@ namespace hades
 
 		//convert the current item into an int to pass into IMGUI
 		auto current_as_int = integer_cast<int>(current_item);
-		assert(current_as_int == current_item);
 
 		//NOTE: container is not modified, but ListBox() only accepts non-const
 		auto &cont = const_cast<Container&>(container);

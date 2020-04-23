@@ -78,8 +78,8 @@ namespace hades::resources
 					continue;
 				}
 
-				const auto x = frame_info[0]->to_scalar<texture::size_type>();
-				const auto y = frame_info[1]->to_scalar<texture::size_type>();
+				const auto x = frame_info[0]->to_scalar<texture_size_t>();
+				const auto y = frame_info[1]->to_scalar<texture_size_t>();
 
 				auto frame = animation_frame{ x, y };
 

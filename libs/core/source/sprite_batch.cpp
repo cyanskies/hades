@@ -134,8 +134,8 @@ namespace hades
 		{
 			if (_ids[i].id == id)
 			{
-				const auto last = std::size(_ids) - 1;
-				std::swap(_ids[i], _ids[last]);
+				const auto back = std::size(_ids) - 1;
+				std::swap(_ids[i], _ids[back]);
 				_ids.pop_back();
 				break;
 			}

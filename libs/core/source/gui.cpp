@@ -398,7 +398,7 @@ namespace hades
 		_active_assert();
 		const auto[x, y] = animation::get_frame(a, time);
 
-		assert(a.tex);
+		assert(a.tex != nullptr);
 
 		return image(*a.tex,
 			rect_float{ x, y, static_cast<float>(a.width), static_cast<float>(a.height) },
@@ -735,16 +735,14 @@ namespace hades
 	void gui::columns_begin(std::size_t count, bool border)
 	{
 		_active_assert();
-		const auto int_count = static_cast<int>(count);
-		assert(count == int_count);
+		const auto int_count = integer_cast<int>(count);
 		ImGui::Columns(int_count, nullptr, border);
 	}
 
 	void gui::columns_begin(std::string_view id, std::size_t count, bool border)
 	{
 		_active_assert();
-		const auto int_count = static_cast<int>(count);
-		assert(count = int_count);
+		const auto int_count = integer_cast<int>(count);
 		ImGui::Columns(int_count, to_string(id).data(), border);
 	}
 
@@ -827,6 +825,7 @@ namespace hades
 					if (cmd.TextureId)
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
+						assert(texture);
 						texture_size = { static_cast<float>(texture->width), static_cast<float>(texture->height) };
 					}
 
@@ -904,15 +903,13 @@ namespace hades
 
 	gui::font *gui::_create_font(const resources::font *f)
 	{
-		auto &io = ImGui::GetIO();
 		auto &f_atlas = *_font_atlas;
 		ImFontConfig cfg;
 		cfg.FontDataOwnedByAtlas = false;
 		//const cast, because f_atlas demands control of the ptr
 		//though it won't actually do anything, since FontDataOwned is set to false
 		const auto size = f->source_buffer.size();
-		const auto int_size = static_cast<int>(size);
-		assert(size == int_size);
+		const auto int_size = integer_cast<int>(size);
 		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), int_size, 13.f, &cfg);
 		_generate_atlas();
 
@@ -934,7 +931,6 @@ namespace hades
 		t->smooth = false;
 
 		//get the data and set the correct ids
-		auto &io = ImGui::GetIO();
 		auto &f_atlas = *_font_atlas;
 		int width = 0, height = 0;
 		unsigned char *texture_data = nullptr;
@@ -947,8 +943,8 @@ namespace hades
 		//apply correct settings
 		t->value.setRepeated(false);
 		t->value.setSmooth(false);
-		t->width = width;
-		t->height = height;
+		t->width = integer_cast<texture_size_t>(width);
+		t->height = integer_cast<texture_size_t>(height);
 		t->loaded = true;
 	}
 

@@ -50,13 +50,13 @@ namespace hades
 		return _gui.handle_event(e);
 	}
 
-	void mission_editor_t::update(time_duration dt, const sf::RenderTarget& t, input_system::action_set a)
+	void mission_editor_t::update(time_duration dt, const sf::RenderTarget&, input_system::action_set a)
 	{
 		_editor_time += dt;
 		_update_gui(dt);
 	}
 
-	void mission_editor_t::draw(sf::RenderTarget &t, time_duration dt)
+	void mission_editor_t::draw(sf::RenderTarget &t, time_duration)
 	{
 		t.setView(_gui_view);
 		t.draw(_backdrop);
@@ -594,7 +594,7 @@ namespace hades
 		_gui.frame_end();
 	}
 
-	void mission_editor_t::_save(path p)
+	void mission_editor_t::_save(path sv_path)
 	{
 		auto m = mission{};
 		m.description = _mission_desc;
@@ -618,8 +618,8 @@ namespace hades
 		}
 
 		const auto s = serialise(m);
-		files::write_file(p, s);
-		_mission_src = std::move(p);
+		files::write_file(sv_path, s);
+		_mission_src = std::move(sv_path);
 	}
 
 	void mission_editor_t::_load(path p)

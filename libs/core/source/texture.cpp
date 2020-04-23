@@ -26,12 +26,12 @@ namespace hades
 		sf::Color::Cyan
 	};
 
-	sf::Texture generate_checkerboard_texture(resources::texture::size_type width, resources::texture::size_type height, resources::texture::size_type checker_scale,
+	static sf::Texture generate_checkerboard_texture(texture_size_t width, texture_size_t height, texture_size_t checker_scale,
 		sf::Color c1, sf::Color c2)
 	{
 		std::vector<sf::Uint32> pixels(width * height);
 
-		resources::texture::size_type counter = 0;
+		auto counter = texture_size_t{};
 		sf::Color c = c1;
 
 		for (auto &p : pixels)
@@ -58,7 +58,7 @@ namespace hades
 	}
 
 	//generates a group of
-	sf::Texture generate_default_texture(resources::texture::size_type width = 32u, resources::texture::size_type height = 32u)
+	static sf::Texture generate_default_texture(texture_size_t width = 32u, texture_size_t height = 32u)
 	{
 		static std::size_t counter = 0;
 
@@ -159,9 +159,9 @@ namespace hades
 			//if width or height are 0 then use them to store the textures size
 			if (tex.width == 0 || tex.height == 0)
 			{
-				const auto size = tex.value.getSize();
-				tex.width = size.x;
-				tex.height = size.y;
+				const auto tex_size = tex.value.getSize();
+				tex.width = integer_cast<texture_size_t>(tex_size.x);
+				tex.height = integer_cast<texture_size_t>(tex_size.y);
 			}
 
 			tex.loaded = true;
@@ -171,17 +171,17 @@ namespace hades
 	namespace resources
 	{
 		texture::texture() : resource_type<sf::Texture>(load_texture) {}
-		texture::size_type get_max_texture_size()
+		texture_size_t get_max_texture_size()
 		{
 			return std::min(
-				std::numeric_limits<texture::size_type>::max(),
+				std::numeric_limits<texture_size_t>::max(),
 				get_hardware_max_texture_size()
 			);
 		}
 
-		texture::size_type get_hardware_max_texture_size()
+		texture_size_t get_hardware_max_texture_size()
 		{
-			return sf::Texture::getMaximumSize();
+			return integer_cast<texture_size_t>(sf::Texture::getMaximumSize());
 		}
 	}
 }

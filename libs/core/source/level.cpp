@@ -163,10 +163,10 @@ namespace hades
 
 		const auto regions = region_node->get_children();
 
-		for (const auto &r : regions)
+		for (const auto &region : regions)
 		{
-			assert(r);
-			const auto v = r->get_children();
+			assert(region);
+			const auto v = region->get_children();
 			assert(v.size() == 9);
 
 			const auto name = v[0]->to_string();

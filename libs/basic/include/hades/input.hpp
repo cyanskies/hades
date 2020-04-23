@@ -88,9 +88,9 @@ namespace hades
 
 		interpreter_id id = interpreter_id::zero;
 		using event_function = std::function<action(bool, const event&, action)>;
-		event_function event_check;
+		event_function event_check{};
 		using event_match_function = bool(*)(const event&);
-		event_match_function is_match;
+		event_match_function is_match{};
 	};
 
 	template<typename Event>

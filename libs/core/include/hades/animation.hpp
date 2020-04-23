@@ -18,7 +18,7 @@ namespace hades::resources
 	struct animation_frame
 	{
 		//the rectangle for this frame and the duration relative to the rest of the frames in this animation
-		texture::size_type x = 0, y = 0;
+		texture_size_t x = 0, y = 0;
 		float duration = 1.f;
 	};
 

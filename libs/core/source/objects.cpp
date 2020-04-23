@@ -17,7 +17,7 @@ namespace hades::resources
 {
 	std::vector<const object*> all_objects{};
 
-	static std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n, unique_id mod)
+	static std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n)
 	{
 		//TODO: this is probably wrong
 		// n == curve name and n.children are entries?
@@ -103,7 +103,7 @@ namespace hades::resources
 				{
 					try
 					{
-						const auto [curve, value] = get_curve_info(*c, mod);
+						const auto [curve, value] = get_curve_info(*c);
 
 						//curve_info returns nullptr if 
 						//c has no children
@@ -665,25 +665,25 @@ namespace hades
 		//objects:
 		w.start_map(obj_str);
 
-		for (const auto& o : o.objects)
+		for (const auto& ob : o.objects)
 		{
 			//id:
-			w.start_map(o.id);
+			w.start_map(ob.id);
 
 			//object-type:
-			if (o.obj_type)
-				w.write(obj_type, o.obj_type->id);
+			if (ob.obj_type)
+				w.write(obj_type, ob.obj_type->id);
 
 			//name:
-			if (!o.name_id.empty())
-				w.write(obj_name, o.name_id);
+			if (!ob.name_id.empty())
+				w.write(obj_name, ob.name_id);
 
-			if (!o.curves.empty())
+			if (!ob.curves.empty())
 			{
 				//curves:
 				w.start_map(obj_curves);
 
-				for (const auto& c : o.curves)
+				for (const auto& c : ob.curves)
 					write_curve(w, c);
 
 				//end curves:

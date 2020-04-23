@@ -307,12 +307,12 @@ namespace hades
 			{
 				//TODO: is this a safe conversion?
 				//we must loose fractional component
-				vector_int p{
+				vector_int pos{
 					static_cast<vector_int::value_type>(l.vertex[i].position.x),
 					static_cast<vector_int::value_type>(l.vertex[i].position.y)
 				};
 
-				if (p == pixel_pos)
+				if (pos == pixel_pos)
 				{
 					current_layer = &l;
 					break;

@@ -39,7 +39,7 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [](bool handled, const sf::Event &e, action prev)->action {
+		auto event_check = [](bool handled, const sf::Event &e, action)->action {
 			if (handled)
 				return false;
 			
@@ -64,7 +64,7 @@ namespace hades
 			return e.type == sf::Event::MouseMoved;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action) {
 			action a;
 
 			if (!handled)
@@ -82,7 +82,7 @@ namespace hades
 			return a;
 		};
 
-		auto realtime_check = [&window](action prev) {
+		auto realtime_check = [&window](action) {
 			action a;
 
 			auto mpos = sf::Mouse::getPosition(window);
@@ -114,7 +114,7 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action) {
 			action a;
 
 			if (!handled && e.type == sf::Event::MouseButtonPressed)
@@ -142,7 +142,7 @@ namespace hades
 			return a;
 		};
 
-		auto realtime_check = [&window](action prev) {
+		auto realtime_check = [&window](action) {
 			action a;
 
 			const auto m_pos = sf::Mouse::getPosition(window);
@@ -170,7 +170,7 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action prev) {
+		auto event_check = [&window](bool handled, const sf::Event &e, action) {
 			action a;
 
 			if (!handled && e.type == sf::Event::MouseWheelScrolled)

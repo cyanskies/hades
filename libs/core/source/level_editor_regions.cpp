@@ -15,9 +15,7 @@ namespace hades
 	level_editor_regions::level_editor_regions()
 		: _font{ data::get<resources::font>(resources::default_font_id())},
 		_region_min_size{ console::get_float(cvars::region_min_size) }
-	{
-	
-	}
+	{}
 
 	void level_editor_regions::level_load(const level &l)
 	{
@@ -298,14 +296,6 @@ namespace hades
 			const auto index = std::distance(begin, target);
 			_on_selected(index);
 		}
-	}
-
-	static void update_region(level_editor_regions::region &r, rect_float area)
-	{
-		r.shape.setPosition(area.x, area.y);
-		r.shape.setSize({ area.width, area.height });
-
-		r.name.setPosition(area.x, area.y);
 	}
 
 	void level_editor_regions::on_drag_start(mouse_pos m)

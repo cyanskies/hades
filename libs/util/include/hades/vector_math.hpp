@@ -85,7 +85,7 @@ namespace hades
 	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	inline bool float_near_equal(Vector<Float> a, Vector<Float> b, int32 units_after_decimal = 2) noexcept
 	{
-		return float_near_equal(a.x, b.x) && float_near_equal(a.y, b.y);
+		return float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
 	}
 
 	template<typename T>

@@ -37,7 +37,7 @@ namespace hades
 		const std::vector<player_data>& get_players() noexcept
 		{
 			const auto ptr = detail::get_game_data_ptr();
-			assert(ptr && ptr->players);
+			assert(ptr != nullptr); assert(ptr->players);
 			return *ptr->players;
 		}
 

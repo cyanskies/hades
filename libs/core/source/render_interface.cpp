@@ -172,7 +172,7 @@ namespace hades
 		const auto obj = find_object(id, _object_layers);
 
 		_destroy_id(id);
-		_remove_from_layer(id, obj.layer_index, obj.drawable_index);
+		_remove_from_layer(obj.layer_index, obj.drawable_index);
 		return;
 	}
 
@@ -346,8 +346,7 @@ namespace hades
 		return;
 	}
 
-	void render_interface::_remove_from_layer(drawable_id id,
-		std::vector<object_layer>::size_type layer_index,
+	void render_interface::_remove_from_layer(std::vector<object_layer>::size_type layer_index,
 		std::vector<drawable_object>::size_type index) noexcept
 	{
 		//remove the object
@@ -381,7 +380,7 @@ namespace hades
 		assert(object.object);
 		auto obj = drawable_object{ std::move(*object.object) };
 
-		_remove_from_layer(id, object.layer_index, object.drawable_index);
+		_remove_from_layer(object.layer_index, object.drawable_index);
 		_add_to_layer(std::move(obj), l);
 
 		return;

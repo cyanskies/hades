@@ -96,8 +96,7 @@ namespace hades
 		drawable_id _make_new_id();
 		void _destroy_id(drawable_id);
 		void _add_to_layer(drawable_object, sprite_layer);
-		void _remove_from_layer(drawable_id,
-			std::vector<object_layer>::size_type layer_index,
+		void _remove_from_layer(std::vector<object_layer>::size_type layer_index,
 			std::vector<drawable_object>::size_type obj_index) noexcept;
 		drawable_id _create_drawable_any(std::any drawable, get_drawable, sprite_layer);
 		void _update_drawable_any(drawable_id, std::any drawable, get_drawable, sprite_layer);

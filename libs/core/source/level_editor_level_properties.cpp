@@ -257,7 +257,7 @@ namespace hades
 		return l;
 	}
 
-	void level_editor_level_props::level_resize(vector_int s, vector_int o)
+	void level_editor_level_props::level_resize(vector_int s, vector_int)
 	{
 		_background.set_size({ static_cast<float>(s.x), static_cast<float>(s.y) });
 		return;

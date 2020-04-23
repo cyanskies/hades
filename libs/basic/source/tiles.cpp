@@ -302,7 +302,7 @@ namespace hades::resources
 		return settings->tile_size;
 	}
 
-	tile get_error_tile()
+	const tile& get_error_tile()
 	{
 		const auto s = get_tile_settings();
 		assert(s->error_tileset);
@@ -312,7 +312,7 @@ namespace hades::resources
 		return random_element(begin, end);
 	}
 
-	tile get_empty_tile()
+	const tile& get_empty_tile()
 	{
 		const auto s = get_tile_settings();
 		assert(s->empty_tileset);

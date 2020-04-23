@@ -100,8 +100,8 @@ namespace hades::resources
 	// either as resource_null or resource_wrong_type
 	const tile_settings *get_tile_settings();
 	tile_size_t get_tile_size();
-	tile get_error_tile();
-	tile get_empty_tile();
+	const tile& get_error_tile();
+	const tile& get_empty_tile();
 
 	unique_id get_tile_settings_id() noexcept;
 }

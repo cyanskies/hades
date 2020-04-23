@@ -21,13 +21,12 @@ namespace hades
 		{
 			texture();
 
-			using size_type = texture_size_t;
-			size_type width = 0, height = 0;
+			texture_size_t width = 0, height = 0;
 			bool smooth = false, repeat = false, mips = false;
 		};
 
-		texture::size_type get_max_texture_size();
-		texture::size_type get_hardware_max_texture_size();
+		texture_size_t get_max_texture_size();
+		texture_size_t get_hardware_max_texture_size();
 	}
 }
 

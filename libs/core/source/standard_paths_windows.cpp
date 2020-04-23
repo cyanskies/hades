@@ -21,8 +21,8 @@ hades::types::string utf16_to_utf8(std::wstring input)
 	std::vector<char> buffer(buffer_size);
 	//write output into buffer
 
-	assert(buffer_size == buffer.size());
-	const auto size = buffer.size();
+	assert(buffer_size == hades::integer_cast<int>(size(buffer)));
+	const auto size = std::size(buffer);
 	const auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), hades::integer_cast<int>(size), NULL, NULL);
 	assert(written_amount == buffer_size);
 

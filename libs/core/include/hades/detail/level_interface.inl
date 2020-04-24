@@ -72,13 +72,15 @@ namespace hades
 		};
 
 		//collect entity lists upfront, so that they don't change mid update
-		std::vector<update_data> data;
+		auto data = std::vector<update_data>{};
 		
 		{
 			auto &systems = sys_behaviours.get_systems();
+			data.reserve(size(systems));
+
 			for (auto& s : systems)
 			{
-				update_data d{ s.system };
+				auto d = update_data{ s.system };
 				if (s.system->on_connect)
 					d.added_ents = sys_behaviours.get_new_entities(s);
 
@@ -115,7 +117,7 @@ namespace hades
 
 		//input functions
 		//NOTE: input is only triggered on the server
-		//TODO: player functions per player slot,
+		//TODO: input queue per player slot,
 		if constexpr (std::is_same_v<std::decay_t<Interface>, game_implementation>)
 		{
 			const auto player_input_fn = interface.get_player_input_function();
@@ -126,11 +128,8 @@ namespace hades
 				using ent_list = resources::curve_types::collection_object_ref;
 				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys_behaviours, prev_time, dt, players, nullptr);
 				detail::set_data(&game_data);
-				std::invoke(player_input_fn, std::move(input_q));
+				std::invoke(player_input_fn, *players, std::move(input_q));
 			}
-
-
-			//TODO: ai input functions
 		}
 
 		//call on_disconnect for removed entities

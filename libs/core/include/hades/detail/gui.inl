@@ -200,11 +200,11 @@ namespace hades
 
 		constexpr auto data_type = [] {
 			if constexpr (std::is_same_v<T, int>)
-				return ImGuiDataType_S32;
+				return ImGuiDataType_::ImGuiDataType_S32;
 			else if constexpr (std::is_same_v<T, float>)
-				return ImGuiDataType_Float;
+				return ImGuiDataType_::ImGuiDataType_Float;
 			else if constexpr (std::is_same_v<T, double>)
-				return ImGuiDataType_Double;
+				return ImGuiDataType_::ImGuiDataType_Double;
 		}();
 
 		constexpr auto fmt_str = [] {

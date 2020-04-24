@@ -46,8 +46,8 @@ namespace hades {
 		always_table(index_type position, index_type size, T value)
 			: virtual_table{ position, size }, _always_value{ std::forward<T>(value) }
 		{}
-
-		T operator[](size_type) const override
+		
+		value_type operator[](size_type) const noexcept override
 		{
 			return _always_value;
 		}

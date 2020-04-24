@@ -153,9 +153,8 @@ namespace hades
 			auto &selected = window.selected_layer;
 			auto &layers = uncommitted.layers;
 
-			assert(static_cast<std::size_t>(selected) <= std::size(layers));
-			assert(selected >= 0);
-
+			assert(selected <= size(layers));
+			
 			//layer editor
 			if (g.button("move up"sv))
 			{

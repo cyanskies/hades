@@ -364,7 +364,7 @@ namespace hades {
 			if (next == std::begin(_data))
 				return { next, next };
 
-			return IterPair{ std::prev(next), next };
+			return IterPair{ prev(next), next };
 		}
 
 		DataType _data;

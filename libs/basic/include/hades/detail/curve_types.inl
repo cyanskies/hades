@@ -27,6 +27,8 @@ inline hades::string hades::to_string(hades::curve_variable_type t) noexcept
 		return "collection_obj_ref"s;
 	case curve_variable_type::collection_unique:
 		return "collection_unique"s;
+	case curve_variable_type::error:
+		[[fallthrough]];
 	default:
 		return "error"s;
 	}

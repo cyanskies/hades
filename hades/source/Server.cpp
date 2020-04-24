@@ -81,7 +81,6 @@ namespace hades
 
 		void update(time_duration dt) override
 		{
-			_server_time += dt;
 			//tick the mission contruct
 			_mission_instance->tick(dt, &_players);
 
@@ -98,7 +97,7 @@ namespace hades
 
 		void get_updates(exported_curves& exp, time_point dt) const override
 		{
-			_last_local_update_request = _server_time;
+			_last_local_update_request = _mission_instance->get_time();
 			return;
 			//return _level.get_changes(exp, dt);
 		}
@@ -159,11 +158,6 @@ namespace hades
 
 	private:
 		mutable time_point _last_local_update_request;
-		[[deprecated("get the time from the mission_instance")]]
-		time_point _server_time;
-		[[deprecated("get the time from the mission_instance")]]
-		time_point _start_time;
-
 		//save file for the current game
 		//also stores the state for unloaded levels
 		mission_save _mission;

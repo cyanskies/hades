@@ -279,6 +279,7 @@ namespace hades::zip
 		return;
 	}
 
+	// in file mode
 	constexpr auto if_mode = std::ios_base::binary;
 
 	izfstream::izfstream(const std::filesystem::path& p)
@@ -470,13 +471,6 @@ namespace hades::zip
 		return;
 	}
 
-	//no sensitivity on windows
-	constexpr int case_sensitivity_auto = 0,
-		//case sensitivity everywhere
-		case_sensitivity_sensitive = 1,
-		//no sensitivity on any platform
-		case_sensitivity_none = 2;
-
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path)
 	{
 		const auto a = open_archive(archive);
@@ -484,6 +478,10 @@ namespace hades::zip
 		close_archive(a);
 		return ret;
 	}
+
+	constexpr int case_sensitivity_auto = 0,//no sensitivity on windows
+		case_sensitivity_sensitive = 1,		//case sensitivity everywhere
+		case_sensitivity_none = 2; 			//no sensitivity on any platform
 
 	static bool file_exists(unarchive a, const std::filesystem::path& path)
 	{
@@ -515,7 +513,7 @@ namespace hades::zip
 
 		const auto separator_count = count_separators(dir_path);
 
-		//while theirs more files
+		//while there's more files
 		while (unzGoToNextFile(zip) != UNZ_END_OF_LIST_OF_FILE)
 		{
 			unz_file_info info;

@@ -67,10 +67,6 @@ namespace hades::resources
 	[[nodiscard]] curve_default_value reset_default_value(const curve& c)
 	{
 		using resources::curve_variable_type;
-		//TODO: move into the switch
-		if (c.data_type == curve_variable_type::error)
-			throw invalid_curve{to_string(c.id) + " is an invalid curve type, it may not have been registered"};
-
 		using namespace resources::curve_types;
 
 		curve_default_value default_value{};
@@ -110,6 +106,10 @@ namespace hades::resources
 		case curve_variable_type::collection_unique:
 			default_value.emplace<collection_unique>();
 			break;
+		case curve_variable_type::error:
+			[[fallthrough]];
+		default:
+			throw invalid_curve{ to_string(c.id) + " is an invalid curve type, it may not have been registered" };
 		}
 
 		return default_value;
@@ -351,6 +351,8 @@ namespace hades
 			return "step"s;
 		case curve_type::pulse:
 			return "pulse"s;
+		case curve_type::error:
+			[[fallthrough]];
 		default:
 			return "error"s;
 		}

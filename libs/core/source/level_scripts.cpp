@@ -7,7 +7,7 @@
 using namespace std::string_view_literals;
 constexpr auto player_script_name = "player-input-scripts"sv;
 
-static std::vector<hades::unique_id> player_input_resources;
+static std::vector<hades::unique_id> player_input_resources{};
 
 static void parse_player_script(hades::unique_id, const hades::data::parser_node&, hades::data::data_manager&)
 {
@@ -22,7 +22,7 @@ namespace hades::resources
 		const auto id = d.get_uid(n);
 		auto p_i = d.find_or_create<player_input>(id, unique_id::zero);
 		assert(p_i);
-		p_i->function = f;
+		p_i->function = std::move(f);
 		p_i->loaded = true;
 		player_input_resources.emplace_back(id);
 		return;

@@ -42,7 +42,7 @@ namespace hades
 			direction held_edge{};
 			string name;
 			array_t selection_lines;
-			vector_float drag_offset;
+			vector_float drag_offset{};
 		};
 
 		level_editor_regions();

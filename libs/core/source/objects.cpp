@@ -65,6 +65,8 @@ namespace hades::resources
 
 		using namespace std::string_view_literals;
 		constexpr auto resource_type = "objects"sv;
+		const auto& tags = *get_tags_curve();
+
 
 		for (const auto &o : node.get_children())
 		{
@@ -103,21 +105,12 @@ namespace hades::resources
 				{
 					try
 					{
-						const auto [curve, value] = get_curve_info(*c);
+						auto [curve, value] = get_curve_info(*c);
 
 						//curve_info returns nullptr if 
 						//c has no children
 						if (curve)
-						{
-							const auto prev = std::find(std::begin(obj->curves), std::end(obj->curves), object::curve_obj{ curve, value });
-
-							//if the curve is already in the list, then just replace it's value
-							//otherwise add it
-							if (prev == std::end(obj->curves))
-								obj->curves.emplace_back(curve, value);
-							else
-								*prev = { curve,value };
-						}
+							set_curve(*obj, *curve, std::move(value));
 						//TODO: else: error
 					}
 					catch (const invalid_curve& c)
@@ -136,9 +129,21 @@ namespace hades::resources
 				}
 			}
 
+			//tags
+			auto current_tags = [obj, tags]()->curve_types::collection_unique {
+				if (!has_curve(*obj, tags))
+					return tag_list{};
+
+				auto current_tags = get_curve(*obj, tags);
+				assert(is_curve_valid(tags, current_tags));
+				return std::get<curve_types::collection_unique>(std::move(current_tags));
+			}();
+			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(current_tags));
+			set_curve(*obj, tags, std::move(new_tags));
+
 			//game systems
-			const auto current_system_ids = data::get_uid(obj->systems);
-			const auto system_ids = merge_unique_sequence(*o, "systems"sv, current_system_ids);
+			auto current_system_ids = data::get_uid(obj->systems);
+			const auto system_ids = merge_unique_sequence(*o, "systems"sv, std::move(current_system_ids));
 			obj->systems = d.find_or_create<const system>(system_ids, mod);
 
 			//render systems
@@ -159,7 +164,7 @@ namespace hades::resources
 		if (o.editor_icon && !o.editor_icon->loaded)
 			d.get<animation>(o.editor_icon->id);
 
-		for (auto a : o.editor_anims)
+		for (const auto a : o.editor_anims)
 		{
 			if (!a->loaded)
 				d.get<animation>(a->id);
@@ -315,6 +320,18 @@ namespace hades
 	{
 		const auto c = data::get<resources::curve>(i);
 		set_curve(o, *c, v);
+	}
+
+	void set_curve(resources::object& o, const hades::resources::curve& c, curve_value v)
+	{
+		const auto prev = std::find(begin(o.curves), end(o.curves), resources::object::curve_obj{ &c, v });
+
+		//if the curve is already in the list, then just replace it's value
+		//otherwise add it
+		if (prev == end(o.curves))
+			o.curves.emplace_back(&c, std::move(v));
+		else
+			*prev = { &c, std::move(v) };
 	}
 
 	static curve_list unique_curves(curve_list list)

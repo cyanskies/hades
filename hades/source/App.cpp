@@ -138,7 +138,7 @@ namespace hades
 				return false;
 			}
 
-			data.load_game("./" + to_string(command.front()));
+			data.load_game(to_string(command.front()));
 
 			return true;
 		};

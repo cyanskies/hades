@@ -19,10 +19,12 @@
 namespace hades::cvars
 {
 	constexpr auto editor_mission_ext = "editor_mission_ext";
+	constexpr auto editor_lock_player_object_type = "editor_lock_player_object_type";
 
 	namespace default_value
 	{
 		constexpr auto editor_mission_ext = ".m";
+		constexpr auto editor_lock_player_object_type = false;
 	}
 }
 
@@ -50,12 +52,16 @@ namespace hades
 		void draw(sf::RenderTarget&, time_duration) override;
 		void reinit() override;
 		void resume() override;
+
+		using get_players_return_type = detail::level_editor_impl::get_players_return_type;
+		get_players_return_type get_players() const;
 		
 	protected:
 		// create the editor state for a level
 		virtual void make_editor_state(level_info &l) = 0;
 		// generate the starting state for a new mission
 		virtual mission new_mission();
+		virtual unique_id default_new_player_object() const noexcept; // TODO: make this into a console property?
 
 	private:
 		struct players_window_state_t
@@ -91,12 +97,14 @@ namespace hades
 				none,
 				name_used,
 				name_missing,
+				null_entity,
+				entity_wrong_type
 			};
 
 			bool open = false;
 			string name; //the internal slot name
-			string display_name;
 			bool create_ent = true;
+			string player_ent;
 			error_type error = error_type::none;
 		};
 
@@ -110,7 +118,6 @@ namespace hades
 		{
 			unique_id id = unique_id::zero; // the internal slot name
 			entity_id p_entity = bad_entity;
-			string name; //non-unique display name
 		};
 
 		void _gui_menu_bar();
@@ -127,6 +134,9 @@ namespace hades
 		console::property_str _mission_ext = 
 			console::get_string(cvars::editor_mission_ext,
 				cvars::default_value::editor_mission_ext);
+		console::property_bool _player_lock_object_type =
+			console::get_bool(cvars::editor_lock_player_object_type,
+				cvars::default_value::editor_lock_player_object_type);
 
 		// ==gui vars==
 		bool _obj_w = true;
@@ -148,7 +158,6 @@ namespace hades
 		string _mission_desc;
 
 		// players
-		const resources::curve* _player_slot_curve = nullptr;
 		std::vector<player> _players;
 
 		//levels

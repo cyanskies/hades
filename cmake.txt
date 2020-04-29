@@ -44,8 +44,9 @@ function(hades_make_compile_settings ARG_NAME)
 							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
 								# '/GS-' for no extra buffer overflow checks
                                 # GL for link time code gen
+				# fp for floating point speed, in exchange for less accuracy
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/O2" "/GL" >
+                                  "/GS-" "/O2" "/GL" "/fp:fast" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >

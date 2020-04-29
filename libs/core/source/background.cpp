@@ -22,7 +22,7 @@ namespace hades::resources
 		}
 	}
 
-	background::background() : resource_type(load_background)
+	background::background() : resource_type{ load_background }
 	{}
 
 	static void parse_background(unique_id m, const data::parser_node &n, data::data_manager &d)
@@ -193,7 +193,7 @@ namespace hades
 			add(l);
 	}
 
-	void background::set_colour(colour c)
+	void background::set_colour(colour c) noexcept
 	{
 		_backdrop.setFillColor({ c.r, c.g, c.b, c.a });
 	}
@@ -232,7 +232,7 @@ namespace hades
 			set_animation(l, t, _size);
 	}
 
-	static void set_view(background::background_layer &b, rect_float v, vector_float s)
+	static void set_view(background::background_layer &b, rect_float v, vector_float s) noexcept
 	{
 		const auto view_pos = position(v);
 		const auto view_size = size(v);
@@ -254,7 +254,7 @@ namespace hades
 		b.sprite.setPosition({ parallax_pos.x, parallax_pos.y });
 	}
 
-	void background::update(rect_float v)
+	void background::update(rect_float v) noexcept
 	{
 		for (auto &l : _layers)
 			set_view(l, v, _size);

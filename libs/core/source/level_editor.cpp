@@ -9,7 +9,7 @@
 #include "hades/level_editor_objects.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
-//#include "..\include\hades\mission_editor.hpp"
+#include "hades/mission_editor.hpp"
 
 namespace hades::detail
 {
@@ -172,6 +172,11 @@ namespace hades::detail
 
 		rt.setView(_gui_view);
 		rt.draw(_gui);
+	}
+
+	level_editor_impl::get_players_return_type level_editor_impl::get_players() const
+	{
+		return _mission_editor->get_players();
 	}
 
 	void level_editor_impl::_set_active_brush(std::size_t index) noexcept

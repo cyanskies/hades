@@ -27,7 +27,7 @@ namespace hades
 		void set_animation(const resources::animation*, time_point, dont_regen_t);
 
 		void set_size(vector_float);
-		void set_size(vector_float, dont_regen_t);
+		void set_size(vector_float, dont_regen_t) noexcept;
 
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
@@ -39,7 +39,7 @@ namespace hades
 		const resources::animation* _animation{ nullptr };
 		vertex_buffer _vert_buffer{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Dynamic };
 		vector_float _frame{ -1.f,-1.f };
-		vector_float _size;
+		vector_float _size{};
 	};
 }
 

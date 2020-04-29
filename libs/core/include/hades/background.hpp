@@ -54,9 +54,7 @@ namespace hades
 		background(const background&) = default;
 		background &operator=(const background&) = default;
 
-		~background() noexcept = default;
-
-		void set_colour(colour);
+		void set_colour(colour) noexcept;
 		void set_size(vector_float);
 		void add(layer);
 		void clear() noexcept;
@@ -64,14 +62,14 @@ namespace hades
 		//must be called at least once to generate the mesh
 		void update(time_point = time_point{});
 		//should be called once per frame
-		void update(rect_float view);
+		void update(rect_float view) noexcept;
 		void update(time_point, rect_float);
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
 	private:
 		sf::RectangleShape _backdrop;
 		std::vector<background_layer> _layers;
-		vector_float _size;
+		vector_float _size{};
 	};
 }
 

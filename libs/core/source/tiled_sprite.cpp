@@ -40,14 +40,14 @@ namespace hades
 		_generate_buffer();
 	}
 
-	void tiled_sprite::set_size(vector_float s, dont_regen_t)
+	void tiled_sprite::set_size(vector_float s, dont_regen_t) noexcept
 	{
 		_size = s;
 	}
 
 	void tiled_sprite::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
-		assert(_animation);
+		assert(_animation && _animation->tex);
 		s.texture = &_animation->tex->value;
 		s.transform *= getTransform();
 
@@ -70,9 +70,6 @@ namespace hades
 
 		const auto vertex_x = static_cast<uint32>(x_wholef);
 		const auto vertex_y = static_cast<uint32>(y_wholef);
-
-		/*const auto vertex_x = static_cast<std::size_t>(std::ceil(x_count));
-		const auto vertex_y = static_cast<std::size_t>(std::ceil(y_count));*/
 
 		const vector_float anim_size{ static_cast<float>(_animation->width),
 									  static_cast<float>(_animation->height) };

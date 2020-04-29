@@ -17,7 +17,7 @@ namespace hades
 	//NOTE: the get_* functions throw data::resource_null or data::resource_wrong_type
 	const resources::curve* get_name_curve();
 	const resources::curve* get_position_curve();
-	const resources::curve* get_player_slot_curve();
+	const resources::curve* get_player_owner_curve();
 	const resources::curve* get_size_curve();
 	const resources::curve* get_collision_group_curve();
 	const resources::curve* get_tags_curve();
@@ -26,6 +26,7 @@ namespace hades
 	constexpr auto bad_object_type = unique_zero;
 
 	unique_id get_alive_curve_id() noexcept;
+	unique_id get_player_owner_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;
 	unique_id get_tags_curve_id() noexcept;

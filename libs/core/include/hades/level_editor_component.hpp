@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <tuple>
+#include <vector>
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
@@ -74,18 +75,27 @@ namespace hades
 		//generic callbacks, these are always available
 		using activate_brush_f = std::function<void(void)>;
 		using get_tags_at_f = std::function<tag_list(rect_float)>;
+		using get_players_return_type = std::vector<std::pair<unique_id, const object_instance*>>;
+		using get_players_f = std::function<get_players_return_type(void)>;
 
-		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt>
-		void install_callbacks(ActivateBrush ab, GetTerrainTagsAt get_terrain_tags, GetObjTagsAt get_obj_tags)
+		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers>
+		void install_callbacks(ActivateBrush ab, GetTerrainTagsAt get_terrain_tags,
+			GetObjTagsAt get_obj_tags, GetPlayers get_players)
 		{
 			_activate_brush = ab;
 			_get_terrain_tags_at = get_terrain_tags;
 			_get_object_tags_at = get_obj_tags;
+			_get_players = get_players;
 		}
 
 		void activate_brush() noexcept
 		{
 			std::invoke(_activate_brush);
+		}
+
+		get_players_return_type get_players() const
+		{
+			return std::invoke(_get_players);
 		}
 
 		//searches all components
@@ -146,6 +156,7 @@ namespace hades
 		activate_brush_f _activate_brush;
 		get_tags_at_f _get_terrain_tags_at;
 		get_tags_at_f _get_object_tags_at;
+		get_players_f _get_players;
 	};
 }
 

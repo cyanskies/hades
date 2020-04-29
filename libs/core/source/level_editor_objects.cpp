@@ -91,6 +91,8 @@ namespace hades
 			return size;
 	}
 
+	//TODO: allow this to be overridden
+	//		call create_update_object_sprite with these params
 	static void update_object_sprite(level_editor_objects_impl::editor_object_instance &o, sprite_batch &s)
 	{
 		if (o.sprite_id == sprite_utility::bad_sprite_id)
@@ -260,12 +262,29 @@ namespace hades
 			g.checkbox("show objects"sv, _show_objects);
 			g.checkbox("allow_intersection"sv, _allow_intersect);
 
-			/*constexpr auto all_str = "all"sv;
-			constexpr auto all_index = 0u;*/
+			const auto player_preview = _object_owner == unique_zero ? "none" 
+				: data::get_as_string(_object_owner);
+
+			if (g.combo_begin("player", player_preview))
+			{
+				const auto players = get_players();
+				for (auto [p, o] : players)
+				{
+					if (g.selectable(data::get_as_string(p), _object_owner == p))
+					{
+						_object_owner = p;
+						if(_held_object.has_value())
+							set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
+					}
+				}
+				g.combo_end();
+			}
+
 			auto on_click_object = [this](const resources::object *o) {
 				activate_brush();
 				_brush_type = brush_type::object_place;
 				_held_object = make_instance(o);
+				set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
 
 				if (_grid.enabled && _grid.snap
 					&& _grid.auto_mode->load())

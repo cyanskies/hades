@@ -84,6 +84,7 @@ namespace hades
 
 		void set_selected(entity_id) noexcept;
 		ObjectType* get_obj(entity_id) noexcept;
+		const ObjectType* get_obj(entity_id) const noexcept;
 		entity_id add();
 		entity_id add(ObjectType);
 		void erase(entity_id);
@@ -114,7 +115,7 @@ namespace hades
 
 		void _add_remove_curve_window(gui&);
 		void _erase(std::size_t);
-		std::size_t _get_obj(entity_id) noexcept;
+		std::size_t _get_obj(entity_id) const noexcept;
 		ObjectType* _get_obj(std::size_t) noexcept;
 		void _reset_add_remove_curve_window() noexcept;
 		template<typename MakeRect>
@@ -124,8 +125,8 @@ namespace hades
 		void _set_selected(std::size_t);
 
 		//callbacks
-		OnChange _on_change;
-		IsValidPos _is_valid_pos;
+		OnChange _on_change{};
+		IsValidPos _is_valid_pos{};
 
 		//shared state
 		object_data *_data = nullptr;
@@ -187,6 +188,7 @@ namespace hades
 		//		it returns pos if it is clear of other objects
 		//		and a default constructed std::optional otherwise
 		virtual std::optional<world_vector_t> closest_valid_position(world_rect_t pos, const object_instance&) const;
+		//virtual create_update_object_sprite(editor_object_instance&, sprite_batch&);
 
 	private:
 		enum class brush_type {
@@ -210,6 +212,8 @@ namespace hades
 		brush_type _brush_type{ brush_type::object_selector };
 		const resources::level_editor_object_settings* _settings = nullptr;
 		std::optional<editor_object_instance> _held_object;
+		unique_id _object_owner = unique_zero;
+
 		//objects for drawing
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 		sprite_batch _sprites;

@@ -284,6 +284,7 @@ namespace hades
 
 		//combobox
 		bool combo_begin(std::string_view label, std::string_view preview_value, combo_flags = combo_flags::none);
+		//list selectables inbetween combo calls
 		// only call combo_end if combo_begin returns true
 		void combo_end();
 		

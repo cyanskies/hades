@@ -156,10 +156,8 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_handle_component_setup()
 	{
-		//_editor_components = component_tuple{};
-
 		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
-			auto activate_brush = [this, index] {
+			auto activate_brush = [this, index] () noexcept {
 				_set_active_brush(index);
 			};
 
@@ -171,10 +169,15 @@ namespace hades
 				return _component_get_terrain_tags_at_location(area);
 			};
 
+			auto get_players_fn = [this]() {
+				return get_players();
+			};
+
 			c.install_callbacks(
 				activate_brush,
 				get_terrain_tags_at,
-				get_object_tags_at
+				get_object_tags_at,
+				get_players_fn
 			);
 		});
 	}

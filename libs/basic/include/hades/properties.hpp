@@ -131,7 +131,7 @@ namespace hades
 			if (property_provider)
                 property_provider->create(s, std::forward<T>(v));
 			else
-				throw provider_unavailable{ "property provideder not available" };
+				throw provider_unavailable{ "property provider not available" };
 		}
 
 		// Property global functions are required to work even when the property provider is absent

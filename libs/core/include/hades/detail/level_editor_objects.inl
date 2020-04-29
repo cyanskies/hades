@@ -454,6 +454,15 @@ namespace hades
 	{
 		const auto index = _get_obj(id);
 		if (index < std::size(_data->objects))
+			return _get_obj(index);
+		return nullptr;
+	}
+
+	template<typename ObjectType, typename OnChange, typename IsValidPos>
+	inline const ObjectType* object_editor_ui<ObjectType, OnChange, IsValidPos>::get_obj(entity_id id) const noexcept
+	{
+		const auto index = _get_obj(id);
+		if (index < std::size(_data->objects))
 			return &_data->objects[index];
 		return nullptr;
 	}
@@ -616,7 +625,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline std::size_t object_editor_ui<ObjectType, OnChange, IsValidPos>::_get_obj(entity_id id) noexcept
+	inline std::size_t object_editor_ui<ObjectType, OnChange, IsValidPos>::_get_obj(entity_id id) const noexcept
 	{
 		const auto size = std::size(_data->objects);
 		for (auto i = std::size_t{}; i < size; ++i)

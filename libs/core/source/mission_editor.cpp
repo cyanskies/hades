@@ -1,7 +1,5 @@
 #include "hades/mission_editor.hpp"
 
-#include <filesystem>
-
 #include "hades/level_editor.hpp"
 #include "hades/objects.hpp"
 
@@ -10,6 +8,7 @@ namespace hades
 	void create_mission_editor_console_variables()
 	{
 		console::create_property(cvars::editor_mission_ext, cvars::default_value::editor_mission_ext);
+		console::create_property(cvars::editor_lock_player_object_type, cvars::default_value::editor_lock_player_object_type);
 
 		create_level_editor_console_vars();
 		return;
@@ -24,9 +23,6 @@ namespace hades
 
 	void mission_editor_t::init()
 	{
-		_player_slot_curve = get_player_slot_curve();
-
-
 		if (_mission_src == path{})
 		{
 			const auto mis = new_mission();
@@ -87,6 +83,15 @@ namespace hades
 	{
 	}
 
+	mission_editor_t::get_players_return_type mission_editor_t::get_players() const
+	{
+		auto out = detail::level_editor_impl::get_players_return_type{};
+		out.reserve(size(_players));
+		for (const auto [name, obj_id] : _players)
+			out.emplace_back(name, _obj_ui.get_obj(obj_id));
+		return out;
+	}
+
 	mission mission_editor_t::new_mission()
 	{
 		//create an empty mission
@@ -97,6 +102,11 @@ namespace hades
 		//no starting ents or levels
 
 		return mis;
+	}
+
+	unique_id mission_editor_t::default_new_player_object() const noexcept
+	{
+		return unique_zero;
 	}
 
 	void mission_editor_t::_gui_menu_bar()
@@ -140,7 +150,14 @@ namespace hades
 	void mission_editor_t::_gui_players_window()
 	{
 		if (_gui.button("add..."))
+		{
 			_player_dialog.open = true;
+			const auto obj = default_new_player_object();
+			if (obj == unique_zero)
+				_player_dialog.player_ent = {};
+			else
+				_player_dialog.player_ent = data::get_as_string(obj);
+		}
 
 		if (!std::empty(_players))
 		{
@@ -229,23 +246,54 @@ namespace hades
 
 						auto& p = _players.emplace_back();
 						p.id = id;
-						p.name = _player_dialog.display_name;
-
+						
 						if (_player_dialog.create_ent)
 						{
-							auto o = object_instance{};
-							set_curve(o, *_player_slot_curve, id);
-							p.p_entity = _obj_ui.add(std::move(o));
+							const auto object_id = data::get_uid(_player_dialog.player_ent);
+
+							try
+							{
+								const auto obj = data::get<resources::object>(object_id);
+								auto o = make_instance(obj);
+								p.p_entity = _obj_ui.add(std::move(o));
+							}
+							catch (const data::resource_null&)
+							{
+								_gui.open_modal(modal_name);
+								_player_dialog.error = player_dialog_t::error_type::null_entity;
+								return;
+							}
+							catch (const data::resource_wrong_type&)
+							{
+								_gui.open_modal(modal_name);
+								_player_dialog.error = player_dialog_t::error_type::entity_wrong_type;
+								return;
+							}
 						}
 
 						_player_dialog = player_dialog_t{};
+
 						return;
 					}();
 				}
 
 				_gui.input("name", _player_dialog.name);
-				_gui.input("display name", _player_dialog.display_name);
-				_gui.checkbox("create entity", _player_dialog.create_ent);
+
+				constexpr auto create_chkbox = "create entity";
+				constexpr auto player_input = "player object";
+				if (_player_lock_object_type->load())
+				{
+					auto always_true = true;
+					const auto player_ent = default_new_player_object();
+					auto player_str = data::get_as_string(player_ent);
+					_gui.checkbox(create_chkbox, always_true);
+					_gui.input(player_input, player_str, gui::input_text_flags::readonly);
+				}
+				else
+				{
+					_gui.checkbox(create_chkbox, _player_dialog.create_ent);
+					_gui.input(player_input, _player_dialog.player_ent);
+				}
 
 				//error dialog
 				if (_gui.modal_begin(modal_name))
@@ -259,6 +307,12 @@ namespace hades
 						break;
 					case player_dialog_t::error_type::name_used:
 						_gui.text("a player already has this name");
+						break;
+					case player_dialog_t::error_type::entity_wrong_type:
+						_gui.text(_player_dialog.player_ent + " is not an object type");
+						break;
+					case player_dialog_t::error_type::null_entity:
+						_gui.text(_player_dialog.player_ent + " is not a resource name");
 						break;
 					default:
 						_gui.text("unknown error");
@@ -278,16 +332,15 @@ namespace hades
 
 		if (_player_window_state.edit_open)
 		{
+			//TODO: add object resource template to player edit
 			if (_gui.window_begin("edit", _player_window_state.edit_open))
 			{
 				if (_gui.button("done"))
 					_player_window_state.edit_open = false;
 				auto& p = _players[_player_window_state.selected];
-				_gui.input_text("display name", p.name);
 				if (p.p_entity == bad_entity && _gui.button("make entity"))
 				{
 					auto o = object_instance{};
-					set_curve(o, *_player_slot_curve, p.id);
 					p.p_entity = _obj_ui.add(std::move(o));
 				}
 			}
@@ -612,7 +665,6 @@ namespace hades
 		{
 			mission::player player;
 			player.id = p.id;
-			player.name = p.name;
 			player.object = p.p_entity;
 			m.players.emplace_back(std::move(player));
 		}

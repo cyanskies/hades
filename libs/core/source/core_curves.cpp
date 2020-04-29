@@ -3,14 +3,14 @@
 
 namespace hades
 {
-	static auto alive_id = unique_id::zero;
-	static auto name_id = unique_id::zero;
-	static auto pos_id = unique_id::zero;
-	static auto siz_id = unique_id::zero;
-	static auto player_slot_id = unique_id::zero;
-	static auto collision_groups_id = unique_id::zero;
-	static auto tags_id = unique_id::zero;
-	static auto object_type_id = unique_id::zero;
+	static auto alive_id = unique_zero;
+	static auto name_id = unique_zero;
+	static auto pos_id = unique_zero;
+	static auto siz_id = unique_zero;
+	static auto player_owner_id = unique_zero;
+	static auto collision_groups_id = unique_zero;
+	static auto tags_id = unique_zero;
+	static auto object_type_id = unique_zero;
 
 	static void setup_position_curve(data::data_manager& d, unique_id id)
 	{
@@ -67,14 +67,14 @@ namespace hades
 		object_type_id = d.get_uid("object-type"sv);
 		resources::make_curve(d, object_type_id, curve_type::const_c,
 			resources::curve_variable_type::unique,
-			resources::curve_types::unique::zero,
+			resources::curve_types::bad_unique,
 			true, //sync to client
 			false); // save to file
 
-		player_slot_id = d.get_uid("player-slot"sv);
-		resources::make_curve(d, player_slot_id, curve_type::step,
+		player_owner_id = d.get_uid("player-owner"sv);
+		resources::make_curve(d, player_owner_id, curve_type::step,
 			resources::curve_variable_type::unique,
-			resources::curve_types::unique{},
+			resources::curve_types::bad_unique,
 			true,
 			true);
 
@@ -88,7 +88,6 @@ namespace hades
 		return data::get<resources::curve>(i);
 	}
 
-	//TODO: should these all get the values as static?
 	const resources::curve* get_name_curve()
 	{
 		return get_curve(name_id);
@@ -99,9 +98,9 @@ namespace hades
 		return get_curve(pos_id);
 	}
 
-	const resources::curve* get_player_slot_curve()
+	const resources::curve* get_player_owner_curve()
 	{
-		return get_curve(player_slot_id);
+		return get_curve(player_owner_id);
 	}
 	
 	const resources::curve* get_size_curve()
@@ -130,6 +129,11 @@ namespace hades
 	}
 
 	unique_id get_position_curve_id() noexcept
+	{
+		return pos_id;
+	}
+
+	unique_id get_player_owner_id() noexcept
 	{
 		return pos_id;
 	}

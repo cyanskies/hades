@@ -392,9 +392,7 @@ namespace hades
 
 		//map content
 		const auto map_node = p.get_child(map_str);
-		const auto tiles = map_node->to_sequence<tile_count_t>();
-		
-		map.tiles.insert(std::end(map.tiles), std::begin(tiles), std::end(tiles));
+		map.tiles = map_node->to_sequence<tile_count_t>();
 
 		//width
 		const auto width = p.get_child(width_str);

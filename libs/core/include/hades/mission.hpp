@@ -19,8 +19,7 @@ namespace hades
 		//players
 		struct player
 		{
-			string name;
-			unique_id id = unique_id::zero;
+			unique_id id = unique_zero;
 			entity_id object = bad_entity;
 		};
 		std::vector<player> players;

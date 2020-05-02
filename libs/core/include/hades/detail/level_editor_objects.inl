@@ -99,12 +99,15 @@ namespace hades::detail::obj_ui
 			auto arr = std::array{ value.x, value.y };
 			if (g.input(name, arr))
 				set_curve(o, c, { arr[0], arr[1] });
+
+			g.tooltip(name);
 		}
 		else
 		{
 			auto edit_value = value;
 			if (g.input(name, edit_value))
 				set_curve(o, c, edit_value);
+			g.tooltip(name);
 		}
 	}
 
@@ -125,6 +128,7 @@ namespace hades::detail::obj_ui
 		constexpr auto fal = "false"sv;
 		if (g.combo_begin(name, value ? tru : fal))
 		{
+			g.tooltip(name);
 			if (g.selectable(tru, value))
 				set_curve(o, c, true);
 			if (g.selectable(fal, !value))
@@ -140,6 +144,7 @@ namespace hades::detail::obj_ui
 		auto edit = value;
 		if (g.input_text(name, edit))
 			set_curve(o, c, edit);
+		g.tooltip(name);
 	}
 
 	template<>
@@ -148,6 +153,7 @@ namespace hades::detail::obj_ui
 		auto u_string = data::get_as_string(value);
 		if (g.input_text(name, u_string))
 			set_curve(o, c, data::make_uid(u_string));
+		g.tooltip(name);
 	}
 
 	template<>
@@ -156,6 +162,7 @@ namespace hades::detail::obj_ui
 		auto editval = std::array{ value.x, value.y };
 		if (g.input(name, editval))
 			set_curve(o, c, vector_float{ editval[0], editval[1] });
+		g.tooltip(name);
 	}
 
 	//TODO: clean these three specialisations up to get rid of repeated code
@@ -338,6 +345,7 @@ namespace hades::detail::obj_ui
 		if (!resources::is_curve_valid(*curve, value))
 			return;
 
+		g.push_id(curve);
 		std::visit([&g, &o, &curve, &target](auto&& value) {
 			using Type = std::decay_t<decltype(value)>;
 
@@ -350,6 +358,8 @@ namespace hades::detail::obj_ui
 			}
 
 			}, value);
+		g.pop_id(); // curve address
+		return;
 	}
 
 	static inline string get_name(const object_instance &o)

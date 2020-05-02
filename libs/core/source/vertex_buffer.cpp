@@ -184,12 +184,10 @@ namespace hades
 	void quad_buffer::pop_back() noexcept
 	{
 		//remove the last 6 vertexes'
-		_verts.pop_back();
-		_verts.pop_back();
-		_verts.pop_back();
-		_verts.pop_back();
-		_verts.pop_back();
-		_verts.pop_back();
+		auto target = end(_verts);
+		std::advance(target, -6);
+		_verts.erase(target, end(_verts));
+		return;
 	}
 	
 	void quad_buffer::apply()
@@ -210,8 +208,8 @@ namespace hades
 		}
 		else if (size > old_size)
 		{
-			constexpr auto growth_rate = 1.5f;
-			const auto next_size = static_cast<std::size_t>(old_size * growth_rate);
+			constexpr auto growth_rate = 2;
+			const auto next_size = old_size * growth_rate;
 			const auto remain = next_size % quad_vert_count;
 			
 			_buffer.create(next_size + remain);
@@ -240,13 +238,7 @@ namespace hades
 		if (buffer_available())
 			t.draw(_buffer, std::size_t{}, std::size(_verts), s);
 		else
-		{
-			//NOTE: transforms from s won't apply when drawing with _buffer
-			//		for consistant results, we'll erase them from draws with
-			//		_verts as well
-			s.transform = sf::Transform{};
 			t.draw(_verts.data(), std::size(_verts), _prim_type, s);
-		}
 		return;
 	}
 }

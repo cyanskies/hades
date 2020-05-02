@@ -139,7 +139,7 @@ namespace hades
 			return less(lhs.texture, rhs.texture);
 		});
 
-		//whole map is tranparent
+		//whole map is transparent
 		//exit early
 		if (map.empty())
 			return;
@@ -149,13 +149,13 @@ namespace hades
 		v_array.reserve(map.size() * std::tuple_size_v<poly_quad>);
 
 		auto finalise_layer = [](std::vector<texture_layer> &layers,
-			const resources::texture *t, const std::vector<sf::Vertex> &v,
+			const resources::texture *t, std::vector<sf::Vertex> v,
 			sf::VertexBuffer::Usage u)
 		{
 			auto &l = layers.emplace_back(
 				texture_layer{
 					t,
-					v,
+					std::move(v),
 					vertex_buffer{sf::PrimitiveType::Triangles, u}
 				}
 			);
@@ -168,7 +168,7 @@ namespace hades
 			//change array once we've added every tile with this texture
 			if (t.texture != current_tex)
 			{
-				finalise_layer(texture_layers, current_tex, v_array, usage);
+				finalise_layer(texture_layers, current_tex, std::move(v_array), usage);
 
 				current_tex = t.texture;
 				v_array.clear();

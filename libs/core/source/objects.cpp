@@ -67,7 +67,6 @@ namespace hades::resources
 		constexpr auto resource_type = "objects"sv;
 		const auto& tags = *get_tags_curve();
 
-
 		for (const auto &o : node.get_children())
 		{
 			const auto name = o->to_string();

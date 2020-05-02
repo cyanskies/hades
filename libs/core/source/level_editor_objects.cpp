@@ -225,6 +225,7 @@ namespace hades
 
 	void level_editor_objects_impl::gui_update(gui &g, editor_windows&)
 	{
+		using namespace std::string_literals;
 		using namespace std::string_view_literals;
 		//toolbar buttons
 		g.main_toolbar_begin();
@@ -237,7 +238,7 @@ namespace hades
 			_obj_ui.set_selected(bad_entity);
 		}
 
-		if (g.toolbar_button("remove") 
+		if (g.toolbar_button("remove"sv) 
 			&& _brush_type == brush_type::object_selector
 			&& _held_object)
 		{
@@ -262,10 +263,10 @@ namespace hades
 			g.checkbox("show objects"sv, _show_objects);
 			g.checkbox("allow_intersection"sv, _allow_intersect);
 
-			const auto player_preview = _object_owner == unique_zero ? "none" 
+			const auto player_preview = _object_owner == unique_zero ? "none"s 
 				: data::get_as_string(_object_owner);
 
-			if (g.combo_begin("player", player_preview))
+			if (g.combo_begin("player"sv, player_preview))
 			{
 				const auto players = get_players();
 				for (auto [p, o] : players)
@@ -277,6 +278,10 @@ namespace hades
 							set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
 					}
 				}
+
+				if (g.selectable("none"sv, _object_owner == unique_zero))
+					_object_owner = unique_zero;
+
 				g.combo_end();
 			}
 
@@ -323,13 +328,9 @@ namespace hades
 		_sprites.apply();
 	}
 
-	static bool within_level(vector_float pos, vector_float size, vector_float level_size) noexcept
+	constexpr bool within_level(vector_float pos, vector_float size, vector_float level_size) noexcept
 	{
-		if (const auto br_corner = pos + size; pos.x < 0.f || pos.y < 0.f
-			|| br_corner.x > level_size.x || br_corner.y > level_size.y)
-			return false;
-		else
-			return true;
+		return is_within(rect_float{ pos, size }, { {0.f, 0.f}, level_size });
 	}
 
 	//TODO: remove some params, pass in the snapped position in pos, if needed

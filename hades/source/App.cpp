@@ -431,7 +431,7 @@ namespace hades
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_sfVSync);
 
-				//TODO: reinit active state
+				_states.getActiveState()->reinit();
 
 				return true;
 			};

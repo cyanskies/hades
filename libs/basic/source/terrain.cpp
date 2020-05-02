@@ -287,7 +287,7 @@ namespace hades
 		constexpr auto terrain_vertex_str = "terrain_vertex"sv;
 		constexpr auto terrain_layers_str = "terrain_layers"sv;
 		
-		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_id::zero);
+		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
 		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_count_t>{});
 
 		auto layers = std::vector<raw_map>{};

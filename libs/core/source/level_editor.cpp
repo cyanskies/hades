@@ -103,7 +103,6 @@ namespace hades::detail
 		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_width, _window_height);
 		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
 		_gui.set_display_size({ _window_width, _window_height });
-
 		_background.setSize({ _window_width, _window_height });
 		const auto background_colour = sf::Color{200u, 200u, 200u, 255u};
 		_background.setFillColor(background_colour);

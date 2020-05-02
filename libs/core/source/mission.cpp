@@ -47,7 +47,6 @@ namespace hades
 			for (const auto& p : m.players)
 			{
 				w->start_map(p.id);
-				w->write(player_name_str, p.name);
 				w->write(player_object_str, p.object);
 				w->end_map();
 			}
@@ -98,7 +97,6 @@ namespace hades
 			{
 				mission::player player;
 				player.id = p->to_scalar<unique_id>();
-				player.name = pt::get_scalar(*p, player_name_str, player.name);
 				player.object = pt::get_scalar(*p, player_object_str, player.object);
 				m.players.emplace_back(std::move(player));
 			}

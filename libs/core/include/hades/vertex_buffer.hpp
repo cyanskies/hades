@@ -65,7 +65,6 @@ namespace hades
 		// good for static data
 		void shrink_to_fit();
 
-		//NOTE: transforms are ignored for quad_buffers
 		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
 
 	private:

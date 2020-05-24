@@ -149,8 +149,9 @@ namespace hades
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _systems; }
 
-		void update_input_queue(std::vector<action> input, time_point);
-		std::vector<action> get_and_clear_input_queue() noexcept;
+		void update_input_queue(unique_id, std::vector<action> input, time_point);
+		using input_queue_t = std::map<unique_id, std::vector<action>>;
+		input_queue_t get_and_clear_input_queue() noexcept;
 
 		resources::player_input::player_input_fn get_player_input_function() noexcept
 		{ 
@@ -161,9 +162,10 @@ namespace hades
 
 	private:
 		system_behaviours<game_system> _systems;
-		std::vector<action> _input_queue;
-		using action_history = std::pair<std::vector<action>, time_point>;
-		std::vector<action_history> _input_history;
+		input_queue_t _input_queue;
+		using action_history = curve<std::vector<action>>;
+		//TODO: do we even use the history??? (debug data only i guess)
+		std::map<unique_id, action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };
 		//ai_input
 	};

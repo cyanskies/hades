@@ -2,6 +2,7 @@
 
 #include "hades/properties.hpp"
 #include "hades/console_variables.hpp"
+#include "hades/players.hpp"
 
 namespace hades
 {
@@ -127,8 +128,19 @@ namespace hades
 				//player input function, no system data available
 				using ent_list = resources::curve_types::collection_object_ref;
 				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys_behaviours, prev_time, dt, players, nullptr);
-				detail::set_data(&game_data);
-				std::invoke(player_input_fn, *players, std::move(input_q));
+				for (auto p : *players)
+				{
+					using state = player_data::state;
+					if (p.player_state == state::empty)
+						continue;
+
+					auto iter = input_q.find(p.name);
+					if (iter != end(input_q))
+					{
+						detail::set_data(&game_data);
+						std::invoke(player_input_fn, p, std::move(iter->second));
+					}
+				}
 			}
 		}
 

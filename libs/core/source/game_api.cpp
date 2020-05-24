@@ -43,10 +43,10 @@ namespace hades
 
 		object_ref get_player(unique u) noexcept
 		{
-			for (const auto [id, ref] : get_players())
+			for (const auto p : get_players())
 			{
-				if (id == u)
-					return ref;
+				if (p.name == u)
+					return p.player_object;
 			}
 			return bad_object_ref;
 		}
@@ -196,6 +196,12 @@ namespace hades
 			}
 
 			return has1 && !has2;
+		}
+
+		bool is_alive(object_ref o)
+		{
+			const auto alive = get_alive_curve_id();
+			return get_value<bool>({ o, alive });
 		}
 	}
 

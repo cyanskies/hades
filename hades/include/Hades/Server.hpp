@@ -44,7 +44,7 @@ namespace hades
 		//get all changes since last call to get_changes
 		virtual void get_changes(exported_curves&) const = 0;
 		//sends player input
-		virtual void send_request(std::vector<action>) = 0;
+		virtual void send_request(unique_id, std::vector<action>) = 0;
 
 		virtual common_interface* get_interface() noexcept = 0;
 
@@ -91,9 +91,29 @@ namespace hades
 
 	using server_ptr = std::unique_ptr<server_hub>;
 
+	//server exceptions
+	//generic server error
+	struct server_error : runtime_error
+	{
+		using runtime_error::runtime_error;
+	};
+
+	//mission save structure is invalid(including mission source if so)
+	struct bad_mission_save : server_error
+	{
+		using server_error::server_error;
+	};
+
+	//level save structure is invalid. including source if so
+	struct bad_level_save : server_error
+	{
+		using server_error::server_error;
+	};
+
 	//starting point
+	//these can throw exceptions relating to invalid saves and play slots
 	server_ptr create_server(mission_save); //auto player assignment
-	server_ptr create_server(mission_save, int32 player_slot); //join as player x // obs for slot -1 or already taken 
+	server_ptr create_server(mission_save, unique_id player_slot); //join as player x // obs for slot -1 or already taken 
 	server_ptr create_server(mission_save, std::string_view name_slot); //join as player in named slot
 	//server_ptr connect_to_server(/*ip address*/); //auto player assignment
 }

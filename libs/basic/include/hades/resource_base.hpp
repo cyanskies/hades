@@ -91,7 +91,7 @@ namespace hades
 			void load(data::data_manager &d) override 
 			{
 				if (_resource_loader)
-					_resource_loader(*this, d);
+					std::invoke(_resource_loader, *this, d);
 			}
 
 			//TODO: deprecate this

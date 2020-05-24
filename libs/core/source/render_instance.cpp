@@ -41,12 +41,10 @@ namespace hades
 		}
 	}
 
-	static void activate_ents(const client_interface* i,
+	static void activate_ents(const curve_data& curves,
 		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
 		time_point time)
 	{
-		assert(i);
-		const auto &curves = i->get_curves();
 		const auto obj_type_var = get_object_type_curve_id();
 		//unique curves contain the object types for entities
 		for (const auto& [key, val] : curves.unique_curves)
@@ -71,12 +69,10 @@ namespace hades
 		return;
 	}
 
-	static void deactivate_ents(const client_interface* i,
+	static void deactivate_ents(const curve_data& curves,
 		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
 		time_point time)
 	{
-		assert(i);
-		const auto &curves = i->get_curves();
 		const auto alive_id = get_alive_curve_id();
 		for (const auto& [key, val] : curves.bool_curves)
 		{
@@ -101,7 +97,7 @@ namespace hades
 	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
 		if(i)
-			activate_ents(i, _systems, _activated_ents, _current_frame);
+			activate_ents(i->get_curves(), _systems, _activated_ents, _current_frame);
 		return;
 	}
 
@@ -112,8 +108,8 @@ namespace hades
 		assert(_interface);
 
 		//check for new entities and setup systems
-		activate_ents(_interface, _systems, _activated_ents, _current_frame);
-		deactivate_ents(_interface, _systems, _activated_ents, _current_frame);
+		activate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
+		deactivate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
 
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };

@@ -112,6 +112,30 @@ namespace hades
 		}
 	}
 
+	namespace game::mission
+	{
+		template<typename T>
+		const curve<T>& get_curve(curve_index_t)
+		{
+			const auto ptr = detail::get_game_data_ptr();
+			return detail::get_game_curve_ref(ptr->mission_data, i);
+		}
+
+		template<typename T>
+		T get_value(curve_index_t i, time_point t)
+		{
+			const auto ptr = detail::get_game_data_ptr();
+			const auto& c = get_curve<T>(i);
+			return c.get(t);
+		}
+
+		template<typename T>
+		T get_value(curve_index_t i)
+		{
+			return get_value<T>(i, get_last_time());
+		}
+	}
+
 	namespace game::level
 	{
 		template<typename T>
@@ -124,8 +148,8 @@ namespace hades
 		template<typename T>
 		const curve<T> &get_curve(curve_index_t i)
 		{
-			const auto ptr = detail::get_game_data_ptr();
-			return detail::get_game_curve_ref<T>(ptr->level_data, i);
+			const auto ptr = detail::get_game_level_ptr();
+			return detail::get_game_curve_ref<T>(ptr, i);
 		}
 
 		template<typename T>

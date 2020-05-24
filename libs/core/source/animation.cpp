@@ -10,11 +10,11 @@
 
 namespace hades::resources
 {
-	void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d);
+	static void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d);
 
-	animation::animation() : resource_type<std::vector<animation_frame>>(load_animation) {}
+	animation::animation() noexcept : resource_type<std::vector<animation_frame>>(load_animation) {}
 
-	void parse_animation(unique_id mod, const data::parser_node &n, data::data_manager &d)
+	static void parse_animation(unique_id mod, const data::parser_node &n, data::data_manager &d)
 	{
 		//animations:
 		//	example-animation:
@@ -100,9 +100,9 @@ namespace hades::resources
 		}//for animations
 	}//parse animations
 
-	void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d)
+	static void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d)
 	{
-		auto &a = static_cast<animation&>(r);
+		auto &a = dynamic_cast<animation&>(r);
 		if (!a.tex->loaded)
 			//data->get will lazy load texture
 			d.get<texture>(a.tex->id);
@@ -111,7 +111,7 @@ namespace hades::resources
 
 namespace hades::animation
 {
-	animation_frame get_frame(const resources::animation &animation, float progress)
+	static animation_frame get_frame(const resources::animation &animation, float progress)
 	{
 		//NOTE: based on the FrameAnimation algorithm from Thor C++
 		//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp

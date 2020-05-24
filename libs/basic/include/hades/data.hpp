@@ -44,6 +44,7 @@ namespace hades
 			//returns a resource if it exists, or creates it if it doesn't
 			//this should be used when writing parsers
 			//allows creating a ptr to a resource that hasn't actually been defined yet
+			// returns nullptr on error
 			template<class T>
 			[[nodiscard]] T* find_or_create(unique_id target, unique_id mod);
 
@@ -139,6 +140,7 @@ namespace hades
 		//===Exclusive Functions: this will block all threads===
 		//NOTE: Can throw hades::data::resource_null
 		//		or hades::data::resource_wrong_type
+		//	always returns a valid ptr
 		template<class T>
 		const T* get(unique_id id);
 

@@ -24,7 +24,7 @@ namespace hades::resources
 	struct player_input : resource_type<player_input_t>
 	{
 		//TODO: this will have to become a std::function when we support input scripts
-		using player_input_fn = void(*)(const std::vector<player_data>&, std::vector<action>); // TODO: pass player id here for multi player games
+		using player_input_fn = void(*)(player_data, std::vector<action>); // TODO: pass player id here for multi player games
 
 		// either a ptr to the actual function
 		// or a lambda that calls an actual script

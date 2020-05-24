@@ -29,9 +29,10 @@ namespace hades
 			_level_time += dt;
 		}
 
-		void send_request(std::vector<action> a) override
+		void send_request(unique_id id, std::vector<action> a) override
 		{
-			_game.add_input(std::move(a), _level_time);
+			// TODO: verify that the id represents this client
+			_game.add_input(id, std::move(a), _level_time);
 			return;
 		}
 
@@ -55,7 +56,6 @@ namespace hades
 		game_instance _game;
 		
 		local_server_hub *_server; 
-		//entities
 
 		time_point _level_time;
 		time_point _instance_time;
@@ -66,14 +66,29 @@ namespace hades
 	class local_server_hub final : public server_hub
 	{
 	public:
-		local_server_hub(mission_save lvl)
+		local_server_hub(mission_save lvl, unique_id slot = unique_zero)
 			: _mission{ std::move(lvl) }
 		{
+			assert(slot != unique_zero);
+			if (slot == unique_zero) //TODO: needed for lobbies and so on.
+				throw server_error{ "auto slots not supported" };
+
 			//copy the player table
 			for (auto p : lvl.source.players)
+			{
 				_players.emplace_back(player_data{ p.id, p.object });
+				if (p.id == slot)
+				{
+					_local_player = p.id;
+					_players.back().player_state = player_data::state::local;
+				}
+			}
+
+			if (!_local_player == unique_zero) // failed to find the desired player
+				throw server_error{ "no player slot" };
 
 			//TODO: init the _mission_instance
+			//	on_load and so on.
 
 			for (auto& l : _mission.level_saves)
 				_levels.emplace_back(level{ l.name, local_server_level{ l.save, this } });
@@ -115,6 +130,8 @@ namespace hades
 
 		server_level* connect_to_level(unique_id id) override
 		{
+			//check that the player is correctly joined before allowing
+
 			//level is running
 			for (auto& l : _levels)
 			{
@@ -166,6 +183,7 @@ namespace hades
 		//players
 		//TODO: wrap player_data and add network info etc.
 		std::vector<player_data> _players;
+		unique_id _local_player = unique_zero;
 
 		//levels
 		struct level
@@ -183,6 +201,18 @@ namespace hades
 
 	std::unique_ptr<server_hub> create_server(mission_save lvl)
 	{
-		return std::make_unique<local_server_hub>(lvl);
+		return std::make_unique<local_server_hub>(std::move(lvl));
 	}
+
+	server_ptr create_server(mission_save s, unique_id player_slot)
+	{
+		return std::make_unique<local_server_hub>(std::move(s), player_slot);
+	}
+
+	server_ptr create_server(mission_save s, std::string_view name_slot)
+	{
+		const auto name = data::get_uid(name_slot);
+		return create_server(std::move(s), name);
+	}
+
 }

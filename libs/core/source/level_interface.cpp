@@ -157,7 +157,7 @@ namespace hades
 				auto ents = std::vector<attached_ent>{};
 				ents.reserve(std::size(a.second));
 				// NOTE: the time_point is for sleeping updates,
-				// a default constructed one if always correct,
+				// a default constructed one is always correct,
 				// when loading a save
 				for (auto e : a.second)
 					ents.emplace_back(e, time_point{});
@@ -169,14 +169,19 @@ namespace hades
 		}
 	}
 
-	void game_implementation::update_input_queue(std::vector<action> input, time_point t)
+	void game_implementation::update_input_queue(unique_id p, std::vector<action> input, time_point t)
 	{
-		_input_history.emplace_back(input, t); //DEBUG: player input log, in actions, rather than keys
-		_input_queue = std::move(input);
+		_input_history[p].insert(t, std::move(input)); //DEBUG: player input log, in actions, rather than keys
+		auto& q = _input_queue[p];
+		if (empty(q))
+			q = std::move(input);
+		else // dont erase unused input
+			q.insert((end(q)), begin(input), end(input));
+
 		return;
 	}
 
-	std::vector<action> game_implementation::get_and_clear_input_queue() noexcept
+	game_implementation::input_queue_t game_implementation::get_and_clear_input_queue() noexcept
 	{
 		return std::exchange(_input_queue, {});
 	}

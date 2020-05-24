@@ -27,9 +27,9 @@ namespace hades
 		return;
 	}
 
-	void game_instance::add_input(std::vector<action> input, time_point t)
+	void game_instance::add_input(unique_id p, std::vector<action> input, time_point t)
 	{
-		_game.update_input_queue(std::move(input), t);
+		_game.update_input_queue(p, std::move(input), t);
 	}
 
 	template<typename T>

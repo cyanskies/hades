@@ -25,7 +25,7 @@ namespace hades::resources
 	//TODO: add field for fragment shaders
 	struct animation : public resource_type<std::vector<animation_frame>>
 	{
-		animation();
+		animation() noexcept;
 
 		const texture* tex = nullptr;
 		time_duration duration = time_duration::zero();

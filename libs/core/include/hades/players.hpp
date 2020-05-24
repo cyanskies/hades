@@ -18,14 +18,20 @@ namespace hades
 
 	struct player_data
 	{
+		enum class state : int8
+		{
+			begin,
+			empty = begin, // can be joined
+			local, // same process player
+			remote, // remote device player
+			closed, // empty, cannot be joined
+			end
+		};
+
 		unique_id name = unique_zero; // the name for this player slot(eg. enemies, player, neutrals)
 		resources::curve_types::object_ref player_object = resources::curve_types::bad_object_ref;
+		state player_state = state::end;
 	};
-
-	//player object for the game instance
-	//needs the player id and an any_map
-
-	//observers have no any_map and cannot sent input
 }
 
 #endif //!HADES_PLAYERS_HPP

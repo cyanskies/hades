@@ -90,9 +90,14 @@ namespace hades
 		//common curves
 
 		//curves access
+		template<typename T>
+		const curve<T>& get_curve(curve_index_t);
 
-		//get_curve_x
-		//set_curve_x
+		//curve values
+		template<typename T>
+		T get_value(curve_index_t, time_point);
+		template<typename T>
+		T get_value(curve_index_t);
 
 		//NOTE: get/set_value simplyfy access to linear, const and step curves
 		//		pulse curves, or any work with keyframes requires accessing the actual curve
@@ -126,7 +131,6 @@ namespace hades
 
 		//==object data==
 		//NOTE: for the following functions(get/set curves/values)
-		// if the object_ref is not provided, it is set to game::get_object()
 		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
 		// and game::get_time() for set_* functions
 		
@@ -196,6 +200,7 @@ namespace hades
 		void detach_system(object_ref, unique_id, time_point);
 
 		//removes all systems from object
+		// sets alive to false
 		void destroy_object(object_ref, time_point);
 
 		//=== Common Curves ===
@@ -215,7 +220,7 @@ namespace hades
 		bool tags(object_ref, tag_list has, tag_list not);
 		//void tags_add(object_ref, tag_list);
 		//void tags_remove(object_ref, tag_list);
-
+		bool is_alive(object_ref);
 	}
 
 	//render access functions allow a const view of the game state

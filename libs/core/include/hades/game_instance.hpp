@@ -16,9 +16,7 @@ namespace hades
 
 	struct player_data;
 
-	//represents the logic side of an individual level or game
-	//TODO:
-	// support saving
+	//wraps the logic of a level with timekeeping
 	class game_instance
 	{
 	public:
@@ -27,16 +25,14 @@ namespace hades
 		//triggers all systems with the specified time change
 		void tick(time_duration dt, const std::vector<player_data>*);
 
-		void add_input(std::vector<action> input, time_point t);
+		void add_input(unique_id, std::vector<action> input, time_point t);
 
 		//exports all the newest keyframes so that they can be transmitted across the network
 		//also sends entity name mappings
 		//  t: send all keyframes after this point
 		//		default is max time
 		void get_changes(exported_curves&, time_point t) const;
-
 		time_point get_time(time_point mission_offset = time_point{}) const noexcept;
-
 		game_interface* get_interface() noexcept;
 
 	private:
@@ -48,8 +44,6 @@ namespace hades
 		time_point _current_time{};
 
 		game_implementation _game;
-		//each tick will generate events that are handled at the end of that tick
-		//events created by other events will be handled at the end of the next tick
 	};
 }
 

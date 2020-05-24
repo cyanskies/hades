@@ -15,7 +15,7 @@ namespace hades
 	{
 		const auto x = b.x - a.x;
 		const auto y = b.y - a.y;
-		return vector::magnitude({ x, y });
+		return vector::magnitude(vector_t<T>{ x, y });
 	}
 
 	template<typename T>

@@ -383,8 +383,22 @@ namespace hades {
 		return !(rhs == lhs);
 	}
 
+	template<typename T>
+	struct game_property_t
+	{
+		constexpr game_property_t() noexcept(noexcept(T{})) = default;
+		constexpr game_property_t(time_point t, T v) noexcept(noexcept(T{ v })) : changed{ t }, value{ v }
+		{}
+		constexpr game_property_t(time_point t, T v, time_point e) noexcept(noexcept(T{ v })) : changed{ t }, value{ v }, expires{ e }
+		{}
+
+		time_point changed;
+		time_point expires;
+		T value;
+	};
+
 	template<class T>
-	using curve = basic_curve<T>;
+	using game_property = game_property_t<T>;
 }
 
 #endif //HADES_UTIL_CURVES_HPP

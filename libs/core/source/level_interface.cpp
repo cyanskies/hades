@@ -53,8 +53,7 @@ namespace hades
 				auto &curve_map = get_curve_list<T>(curves);
 				if (curve_map.find(index) == std::end(curve_map))
 				{
-					auto new_curve = curve<T>{ cur->c_type };
-					new_curve.set(t, std::move_if_noexcept(v));
+					auto new_curve = game_property<T>{ t, std::move(v) };
 					curve_map.emplace(index, std::move(new_curve));
 				}
 
@@ -67,12 +66,7 @@ namespace hades
 		assert(obj_type_c);
 
 		using ObjType = resources::curve_types::unique;
-		auto obj_type = curve<ObjType>{ obj_type_c->c_type };
-		if (o.obj_type)
-			obj_type.set(t, o.obj_type->id);
-		else
-			obj_type.set(t, unique_zero);
-
+		auto obj_type = game_property<ObjType>{ t, o.obj_type ? o.obj_type->id : unique_zero };
 		auto &obj_type_curves = get_curve_list<ObjType>(curves);
 		obj_type_curves.emplace(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
 
@@ -87,22 +81,18 @@ namespace hades
 		return id;
 	}
 
-	entity_id common_implementation_base::get_entity_id(std::string_view name, time_point t) const
+	entity_id common_implementation_base::get_entity_id(std::string_view name, time_point) const
 	{
-		const auto name_map = _entity_names.get(t);
-		if (const auto ent_name = name_map.find(to_string(name)); ent_name != std::end(name_map))
+		if (const auto ent_name = _entity_names.find(to_string(name)); ent_name != std::end(_entity_names))
 			return ent_name->second;
 
 		return bad_entity;
 	}
 
-	void common_implementation_base::name_entity(entity_id entity, std::string_view name, time_point time)
+	void common_implementation_base::name_entity(entity_id entity, std::string_view name, time_point)
 	{
 		assert(entity < next(_next));
-
-		auto name_map = _entity_names.get(time);
-		name_map[to_string(name)] = entity;
-		_entity_names.insert(time, name_map);
+		_entity_names[to_string(name)] = entity;
 		return;
 	}
 
@@ -151,27 +141,19 @@ namespace hades
 		// to curve<vector<pair<entity_id, timePoint>>>
 		for (std::size_t i = 0; i < sv.objects.systems.size(); ++i)
 		{
-			auto attached = name_list{ curve_type::step };
+			auto attached = name_list{};
+			attached.reserve(size(sv.objects.systems_attached[i]));
 			for (const auto& a : sv.objects.systems_attached[i])
-			{
-				auto ents = std::vector<attached_ent>{};
-				ents.reserve(std::size(a.second));
-				// NOTE: the time_point is for sleeping updates,
-				// a default constructed one is always correct,
-				// when loading a save
-				for (auto e : a.second)
-					ents.emplace_back(e, time_point{});
-
-				attached.set(a.first, std::move(ents));
-			}
+				attached.emplace_back(a, time_point{});
 
 			_systems.set_attached(sv.objects.systems[i]->id, std::move(attached));
 		}
 	}
 
-	void game_implementation::update_input_queue(unique_id p, std::vector<action> input, time_point t)
+	void game_implementation::update_input_queue(unique_id p, std::vector<action> input, time_point)
 	{
-		_input_history[p].insert(t, std::move(input)); //DEBUG: player input log, in actions, rather than keys
+		//TODO: FIXME
+		//_input_history[p].insert(t, std::move(input)); //DEBUG: player input log, in actions, rather than keys
 		auto& q = _input_queue[p];
 		if (empty(q))
 			q = std::move(input);

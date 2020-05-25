@@ -13,20 +13,15 @@ namespace hades
 	template<typename T>
 	static void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
 	{
-		if (c.find({ id, curve->id }) != std::end(c))
-			c.erase({ id, curve->id });
-
-		hades::curve<T> curve_instance{ curve->c_type };
-
 		assert(std::holds_alternative<T>(value));
-
 		assert(resources::is_set(value));
 		assert(resources::is_curve_valid(*curve, value));
 
 		const auto &val = std::get<T>(value);
-		curve_instance.insert(zero_time, val);
+		auto curve_instance = game_property<T>{ zero_time, val };
 
-		c.emplace(curve_index_t{ id, curve->id }, std::move(curve_instance));
+		c.insert_or_assign(curve_index_t{ id, curve->id }, std::move(curve_instance));
+		return;
 	}
 
 	static void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
@@ -53,7 +48,7 @@ namespace hades
 		if (sys_iter == std::end(system_list))
 		{
 			pos = std::distance(std::begin(system_list), system_list.emplace(sys_iter, s));
-			attach_list.emplace_back(curve_type::step);
+			attach_list.emplace_back();
 		}
 
 		return pos;
@@ -93,16 +88,10 @@ namespace hades
 		for (const auto s : o->systems)
 		{
 			const auto sys_index = get_system_index(system_list, attach_list, s);
-
-			auto &attch = attach_list[sys_index];
-
-			auto ent_list = attch.empty() ? resources::curve_types::collection_object_ref{} : attch.get(zero_time);
+			auto& ent_list = attach_list[sys_index];
 
 			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
-			{
 				ent_list.push_back(id);
-				attch.set(zero_time, ent_list);
-			}
 		}
 	}
 
@@ -289,11 +278,7 @@ namespace hades
 
 			//record entity name if present
 			if (!o.name_id.empty())
-			{
-				auto names = ents.names.empty() ? std::map<string, entity_id>{} : ents.names.get(zero_time);
-				names.emplace(o.name_id, o.id);
-				ents.names.set(zero_time, names);
-			}
+				ents.names.emplace(o.name_id, o.id);
 
 			//add curves from parents
 			if (o.obj_type)

@@ -55,14 +55,11 @@ namespace hades
 			if (activated.find(key.first) != std::end(activated))
 				continue;
 
-			assert(!val.empty());
-			const auto [t, o] = *val.begin();
-
 			//TODO: can we use the time from the curve,
 			//		might be possible after syncing the 
 			//		server and client time
-			if(o != unique_zero)
-				setup_systems_for_new_object(key.first, o, time, systems);
+			if(val.value != unique_zero)
+				setup_systems_for_new_object(key.first, val.value, time, systems);
 
 			activated.emplace(key.first);
 		}
@@ -83,7 +80,7 @@ namespace hades
 			if (activated_iter == std::end(activated))
 				continue;
 
-			const auto alive = val.get(time);
+			const auto alive = val.value;
 
 			if (!alive)
 			{

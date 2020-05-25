@@ -34,36 +34,37 @@ namespace hades
 
 	template<typename T>
 	static void get_exported_set(std::vector<exported_curves::export_set<T>>& output, std::size_t &size, time_point t,
-		const curve_data::curve_map<T> &data)
+		const curve_data::curve_map<T> &)
 	{
-		auto index = std::size_t{};
-		for (const auto &c : data)
-		{
-			if (index == std::size(output))
-				output.emplace_back();
-
-			auto& s = output[index];
-
-			s.variable = c.first.second;
-			//TODO: cache this somewhere so wi don't hit a mutex every loop
-			//auto curve = data::get<resources::curve>(s.variable);
-			//assert(curve);
-			////skip if this curve shouldn't sync to the client
-			//if (!curve->sync)
-			//	continue;
-
-			//get the rest of the data
-			s.entity = c.first.first;
-			auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
-			s.frames = { lower, std::end(c.second) };
-
-			if(!std::empty(s.frames))
-				++index;
-		}
-
-		size = index;
-
 		return;
+		//auto index = std::size_t{};
+		//for (const auto &c : data)
+		//{
+		//	if (index == std::size(output))
+		//		output.emplace_back();
+
+		//	auto& s = output[index];
+
+		//	s.variable = c.first.second;
+		//	//TODO: cache this somewhere so wi don't hit a mutex every loop
+		//	//auto curve = data::get<resources::curve>(s.variable);
+		//	//assert(curve);
+		//	////skip if this curve shouldn't sync to the client
+		//	//if (!curve->sync)
+		//	//	continue;
+
+		//	//get the rest of the data
+		//	s.entity = c.first.first;
+		//	auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
+		//	s.frames = { lower, std::end(c.second) };
+
+		//	if(!std::empty(s.frames))
+		//		++index;
+		//}
+
+		//size = index;
+
+		//return;
 	}
 
 	void game_instance::get_changes(exported_curves &output, time_point t) const

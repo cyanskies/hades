@@ -16,7 +16,7 @@ namespace hades
 	using variable_id = unique_id;
 	const variable_id bad_variable = variable_id::zero;
 
-	using name_curve_t = curve<std::map<types::string, entity_id>>;
+	using name_curve_t = std::map<types::string, entity_id>;
 	using curve_index_t = std::pair<entity_id, variable_id>;
 }
 
@@ -40,7 +40,7 @@ namespace hades
 	struct curve_data
 	{
 		template<class T>
-		using curve_map = std::unordered_map< curve_index_t, curve<T> >;
+		using curve_map = std::unordered_map< curve_index_t, game_property<T> >;
 
 		curve_map<curve_types::int_t> int_curves;
 		curve_map<curve_types::float_t> float_curves;

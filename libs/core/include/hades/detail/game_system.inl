@@ -109,10 +109,7 @@ namespace hades
 		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
 
-		if (system.attached_entities.empty())
-			system.attached_entities.set(time_point{ nanoseconds{-1} }, {});
-
-		auto ent_list = system.attached_entities.get(t);
+		auto& ent_list = system.attached_entities;
 		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
 			return ent.first == entity;
 		});
@@ -126,7 +123,6 @@ namespace hades
 		}
 
 		ent_list.emplace_back(entity, time_point{});
-		system.attached_entities.insert(t, std::move(ent_list));
 		system.new_ents.emplace_back(entity);
 		return;
 	}
@@ -134,19 +130,17 @@ namespace hades
 	namespace detail
 	{
 		template<typename SystemType>
-		inline static void detach_system_impl(entity_id e, SystemType& sys, time_point t)
+		inline static void detach_system_impl(entity_id e, SystemType& sys, time_point)
 		{
 			//removed from the active list
-			auto ents = sys.attached_entities.get(t);
-			const auto remove_iter = std::remove_if(std::begin(ents), std::end(ents), [e](const attached_ent& ent) {
+			const auto remove_iter = std::remove_if(std::begin(sys.attached_entities), std::end(sys.attached_entities), [e](const attached_ent& ent) {
 				return e == ent.first;
 			});
 
 			//if remove_iter == std::end(ents) then the entity wasn't attached in the first place
-			if (remove_iter != std::end(ents))
+			if (remove_iter != std::end(sys.attached_entities))
 			{
-				ents.erase(remove_iter, std::end(ents));
-				sys.attached_entities.set(t, std::move(ents));
+				sys.attached_entities.erase(remove_iter, std::end(sys.attached_entities));
 				//add to the removed list, for next frame to proccess
 				sys.removed_ents.emplace_back(e);
 			}
@@ -171,16 +165,14 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::sleep_entity(entity_id e, unique_id s, time_point a, time_point b)
+	inline void system_behaviours<SystemType>::sleep_entity(entity_id e, unique_id s, time_point, time_point b)
 	{
 		auto& sys = detail::find_system(s, _systems, _new_systems);
-		auto ents = sys.attached_entities.get(a);
-		for (auto& [entity, time] : ents)
+		for (auto& [entity, time] : sys.attached_entities)
 		{
 			if (e == entity)
 			{
 				time = b;
-				sys.attached_entities.set(a, std::move(ents));
 				return;
 			}
 		}

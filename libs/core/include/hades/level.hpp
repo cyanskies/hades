@@ -81,12 +81,12 @@ namespace hades
 	{
 		curve_data curves;
 		entity_id next_id = bad_entity;
-		name_curve_t names{ curve_type::step, name_curve_t::value_type{} };
+		name_curve_t names;
 
 		//list of systems
 		using system_list = std::vector<const resources::system*>;
 		system_list systems;
-		using system_attachment_list = std::vector<curve<resources::curve_types::collection_object_ref>>;
+		using system_attachment_list = std::vector<resources::curve_types::collection_object_ref>;
 		system_attachment_list systems_attached;
 
 		//list of client systems?

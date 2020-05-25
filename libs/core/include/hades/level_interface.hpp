@@ -125,7 +125,7 @@ namespace hades
 
 	private:
 		curve_data _curves;
-		name_curve_t _entity_names{ curve_type::step };
+		name_curve_t _entity_names;
 
 		entity_id _next = next(bad_entity);
 
@@ -163,7 +163,7 @@ namespace hades
 	private:
 		system_behaviours<game_system> _systems;
 		input_queue_t _input_queue;
-		using action_history = curve<std::vector<action>>;
+		using action_history = game_property<std::vector<action>>;
 		//TODO: do we even use the history??? (debug data only i guess)
 		std::map<unique_id, action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };

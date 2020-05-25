@@ -49,7 +49,7 @@ namespace hades
 
 	using system_data_t = std::any;
 	using attached_ent = std::pair<entity_id, time_point>;
-	using name_list = curve<std::vector<attached_ent>>;
+	using name_list = std::vector<attached_ent>;
 
 	template<typename SystemType>
 	class system_behaviours
@@ -187,7 +187,7 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
-		name_list attached_entities{ curve_type::step };
+		name_list attached_entities;
 
 		std::vector<entity_id> new_ents;
 		std::vector<entity_id> removed_ents;
@@ -268,7 +268,7 @@ namespace hades
 
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system *system = nullptr;
-		name_list attached_entities{ curve_type::step };
+		name_list attached_entities;
 		std::vector<entity_id> new_ents;
 		std::vector<entity_id> removed_ents;
 	};

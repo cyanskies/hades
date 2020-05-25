@@ -53,7 +53,7 @@ namespace hades
 				//this will be entities that were already in the level file
 				//or save file before this time point
 				auto ents = std::vector<entity_id>{};
-				const auto current_ents = sys_behaviours.get_entities(*system).get(prev_time);
+				const auto current_ents = sys_behaviours.get_entities(*system);
 				ents.reserve(std::size(current_ents));
 				std::transform(std::begin(current_ents), std::end(current_ents), std::back_inserter(ents),
 					[](auto &&entity) {
@@ -88,7 +88,7 @@ namespace hades
 				if (s.system->tick)
 				{
 					//only update entities that have passed their wake up time
-					const auto &ents = sys_behaviours.get_entities(s).get(prev_time);
+					const auto &ents = sys_behaviours.get_entities(s);
 					d.attached_ents.reserve(std::size(ents));
 					for (const auto& e : ents)
 					{

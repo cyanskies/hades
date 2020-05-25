@@ -91,7 +91,7 @@ namespace hades
 
 		//curves access
 		template<typename T>
-		const curve<T>& get_curve(curve_index_t);
+		const game_property<T>& get_curve(curve_index_t);
 
 		//curve values
 		template<typename T>
@@ -136,36 +136,10 @@ namespace hades
 		
 		object_ref get_object_from_name(std::string_view, time_point);
 
-		//=== Curves ===
+		//=== properties ===
 		//get access to curve object
 		template<typename T>
-		const curve<T> &get_curve(curve_index_t);
-
-		//=== Keyframes ===
-		//gets the keyframe on or befre the time point
-		//use set_value to write a keyframe
-		template<typename T>
-		const curve_keyframe<T> *get_keyframe_ref(curve_index_t, time_point); // returns non-owning ptr
-		template<typename T>
-		optional_keyframe<T> get_keyframe(curve_index_t, time_point);
-		template<typename T>
-		optional_keyframe<T> get_keyframe(curve_index_t);
-		//get the keyframe after the time point
-		template<typename T>
-		const curve_keyframe<T> *get_keyframe_after_ref(curve_index_t, time_point); // returns non-owning ptr
-		template<typename T>
-		optional_keyframe<T> get_keyframe_after(curve_index_t, time_point);
-		template<typename T>
-		optional_keyframe<T> get_keyframe_after(curve_index_t);
-		//get keyframes either side of the time_point
-		// if their is a timeframe exactly at that time_point
-		// then returns that frame and the one after
-		template<typename T>
-		std::pair<const curve_keyframe<T>*, const curve_keyframe<T>*> get_keyframe_pair_ref(curve_index_t, time_point);
-		template<typename T>
-		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t, time_point);
-		template<typename T>
-		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t);
+		const game_property<T> &get_curve(curve_index_t);
 
 		//=== Refs ===
 		//returns a reference to the value stored in a curve at a specific time
@@ -182,9 +156,6 @@ namespace hades
 		T get_value(curve_index_t);
 		
 		//=== Set ==
-		template<typename T>
-		void set_curve(curve_index_t, curve<T>);
-		//seting value will remove all keyframes after time_point
 		template<typename T>
 		void set_value(curve_index_t, time_point, T&&);
 		
@@ -312,7 +283,7 @@ namespace hades
 
 		//get curve from this level
 		template<typename T>
-		const curve<T>& get_curve(curve_index_t);
+		const game_property<T>& get_curve(curve_index_t);
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
 		template<typename T>

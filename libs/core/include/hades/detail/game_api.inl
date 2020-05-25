@@ -21,7 +21,7 @@ namespace hades
 		}
 
 		template<typename T>
-		curve<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
+		game_property<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
 		{
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
@@ -32,37 +32,7 @@ namespace hades
 		}
 
 		template<typename T>
-		const hades::game::curve_keyframe<T> *get_game_curve_frame_ref(const common_interface* l, curve_index_t i, time_point t)
-		{
-			const auto& curves = l->get_curves();
-			const auto& curve_map = hades::get_curve_list<T>(curves);
-			const auto curve_iter = curve_map.find(i);
-			assert(curve_iter != end(curve_map));
-			return curve_iter->second.getPrevious(t);
-		}
-
-		template<typename T>
-		const hades::game::curve_keyframe<T>* get_game_curve_frame_after_ref(const common_interface* l, curve_index_t i, time_point t)
-		{
-			const auto& curves = l->get_curves();
-			const auto& curve_map = hades::get_curve_list<T>(curves);
-			const auto curve_iter = curve_map.find(i);
-			assert(curve_iter != end(curve_map));
-			return curve_iter->second.getNext(t);
-		}
-
-		template<typename T>
-		std::pair<const hades::game::curve_keyframe<T>*, const hades::game::curve_keyframe<T>*> get_game_curve_frame_pair_ref(const common_interface* l, curve_index_t i, time_point t)
-		{
-			const auto& curves = l->get_curves();
-			const auto& curve_map = hades::get_curve_list<T>(curves);
-			const auto curve_iter = curve_map.find(i);
-			assert(curve_iter != end(curve_map));
-			return curve_iter->second.get_range(t);
-		}
-
-		template<typename T>
-		void set_game_curve(common_interface*l, curve_index_t i, curve<T> c)
+		void set_game_curve(common_interface*l, curve_index_t i, game_property<T> c)
 		{
 			auto& curves = l->get_curves();
 			auto& target_curve_list = hades::get_curve_list<T>(curves);
@@ -87,7 +57,7 @@ namespace hades
 			}
 
 			auto &c = iter->second;
-			c.set(t, std::forward<T>(v));
+			c = { t, std::forward<T>(v) };
 			return;
 		}
 	}
@@ -115,7 +85,7 @@ namespace hades
 	namespace game::mission
 	{
 		template<typename T>
-		const curve<T>& get_curve(curve_index_t)
+		const game_property<T>& get_curve(curve_index_t)
 		{
 			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_ref(ptr->mission_data, i);
@@ -146,82 +116,17 @@ namespace hades
 		}
 
 		template<typename T>
-		const curve<T> &get_curve(curve_index_t i)
+		const game_property<T> &get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_game_level_ptr();
 			return detail::get_game_curve_ref<T>(ptr, i);
 		}
 
 		template<typename T>
-		const curve_keyframe<T>* get_keyframe_ref(curve_index_t i, time_point t)
-		{
-			const auto ptr = detail::get_game_data_ptr();
-			return detail::get_game_curve_frame_ref<T>(ptr->level_data, i, t);
-		}
-
-		template<typename T>
-		optional_keyframe<T> get_keyframe(curve_index_t i, time_point t)
-		{
-			return get_keyframe_ref<T>(i, t);
-		}
-
-		template<typename T>
-		optional_keyframe<T> get_keyframe(curve_index_t index)
-		{
-			return get_keyframe<T>(index, get_last_time());
-		}
-
-		template<typename T>
-		const curve_keyframe<T>* get_keyframe_after_ref(curve_index_t i, time_point t)
-		{
-			const auto ptr = detail::get_game_data_ptr();
-			return detail::get_game_curve_frame_after_ref<T>(ptr->level_data, i, t);
-		}
-
-		template<typename T>
-		optional_keyframe<T> get_keyframe_after(curve_index_t i, time_point t)
-		{
-			return get_keyframe_after_ref<T>(i, t);
-		}
-
-		template<typename T>
-		optional_keyframe<T> get_keyframe_after(curve_index_t i)
-		{
-			return get_keyframe_after_ref<T>(i, get_last_time());
-		}
-
-		template<typename T>
-		std::pair<const curve_keyframe<T>*, const curve_keyframe<T>*> get_keyframe_pair_ref(curve_index_t i, time_point t)
-		{
-			const auto ptr = detail::get_game_level_ptr();
-			return detail::get_game_curve_frame_pair_ref<T>(ptr, i, t);
-		}
-
-		template<typename T>
-		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t i, time_point t)
-		{
-			const auto p = get_keyframe_pair_ref<T>(i, t);
-
-			optional_keyframe<T> first{}, second{};
-			if (p.first)
-				first.emplace(*p.first);
-			if (p.second)
-				second.emplace(*p.second);
-
-			return { first, second };
-		}
-
-		template<typename T>
-		std::pair<optional_keyframe<T>, optional_keyframe<T>> get_keyframe_pair(curve_index_t i)
-		{
-			return get_keyframe_pair<T>(i, get_last_time());
-		}
-
-		template<typename T>
 		const T& get_ref(curve_index_t i, time_point t)
 		{
 			const auto &curve = get_curve<T>(i);
-			return curve.get_ref(t);
+			return curve.value;
 		}
 
 		template<typename T>
@@ -231,23 +136,16 @@ namespace hades
 		}
 
 		template<typename T>
-		T get_value(curve_index_t i, time_point t)
+		T get_value(curve_index_t i, time_point)
 		{
 			const auto& curve = get_curve<T>(i);
-			return curve.get(t);
+			return curve.value;
 		}
 
 		template<typename T>
 		T get_value(curve_index_t i)
 		{
 			return get_value<T>(i, get_last_time());
-		}
-
-		template<typename T>
-		void set_curve(curve_index_t i, curve<T> c)
-		{
-			auto ptr = detail::get_game_data_ptr();
-			return detail::set_game_curve(ptr->level_data, i, std::move(c));
 		}
 
 		template<typename T>
@@ -315,7 +213,7 @@ namespace hades
 		}
 
 		template<typename T>
-		const curve<T>& get_curve(curve_index_t i)
+		const game_property<T>& get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_render_data_ptr();
 			return detail::get_game_curve_ref<T>(ptr->level_data, i);
@@ -325,7 +223,7 @@ namespace hades
 		const T& get_ref(curve_index_t, time_point)
 		{
 			const auto &curve = get_curve<T>(i);
-			return curve.get_ref(t);
+			return curve.value;
 		}
 
 		template<typename T>
@@ -335,10 +233,10 @@ namespace hades
 		}
 
 		template<typename T>
-		const T get_value(curve_index_t i, time_point t)
+		const T get_value(curve_index_t i, time_point)
 		{
 			const auto &curve = get_curve<T>(i);
-			return curve.get(t);
+			return curve.value;
 		}
 
 		template<typename T>

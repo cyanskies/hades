@@ -51,12 +51,7 @@ namespace hades
 			std::visit([&, cur = c](auto&& v)->void {
 				using T = std::decay_t<decltype(v)>;				
 				auto &curve_map = get_curve_list<T>(curves);
-				if (curve_map.find(index) == std::end(curve_map))
-				{
-					auto new_curve = game_property<T>{ t, std::move(v) };
-					curve_map.emplace(index, std::move(new_curve));
-				}
-
+				curve_map.insert_or_assign(index, game_property<T>{ t, std::move(v) });
 				return;
 				}, v);
 		}

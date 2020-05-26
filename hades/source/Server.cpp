@@ -74,7 +74,7 @@ namespace hades
 				throw server_error{ "auto slots not supported" };
 
 			//copy the player table
-			for (auto p : lvl.source.players)
+			for (auto p : _mission.source.players)
 			{
 				_players.emplace_back(player_data{ p.id, p.object });
 				if (p.id == slot)
@@ -84,7 +84,7 @@ namespace hades
 				}
 			}
 
-			if (!_local_player == unique_zero) // failed to find the desired player
+			if (_local_player == unique_zero) // failed to find the desired player
 				throw server_error{ "no player slot" };
 
 			//TODO: init the _mission_instance

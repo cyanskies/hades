@@ -386,15 +386,71 @@ namespace hades {
 	template<typename T>
 	struct game_property_t
 	{
-		constexpr game_property_t() noexcept(noexcept(T{})) = default;
-		constexpr game_property_t(time_point t, T v) noexcept(noexcept(T{ v })) : changed{ t }, value{ v }
-		{}
-		constexpr game_property_t(time_point t, T v, time_point e) noexcept(noexcept(T{ v })) : changed{ t }, value{ v }, expires{ e }
-		{}
+		using value_type = T;
 
-		time_point changed;
-		time_point expires;
-		T value;
+		constexpr game_property_t() noexcept(noexcept(T{})) = default;
+		constexpr game_property_t(time_point t, T v) noexcept(noexcept(T{ v })) 
+			: first_time{ t }, second_time{ t }, first{ v }, second{ v } {}
+
+		constexpr void set(time_point t, T v) noexcept(std::is_nothrow_move_assignable_v<T>)
+		{
+			if (t <= second_time)
+			{
+				if (t <= first_time)
+				{
+					first = std::move(v);
+					first_time = t;
+					return;
+				}
+
+				second = std::move(v);
+				second_time = t;
+				return;
+			}
+
+			std::swap(first, second);
+			std::swap(first_time, second_time);
+			second_time = t;
+			second = std::move(v);
+			return;
+		}
+
+		template<typename U = T, std::enable_if_t<lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
+		constexpr T get(time_point t) const noexcept(std::is_nothrow_copy_constructible_v<T>)
+		{
+			if (first_time == second_time)
+				return first;
+
+			assert(first_time < second_time);
+
+			if (t > second_time)
+				return second;
+			else if (t < first_time)
+				return first;
+
+			const auto total_duration =
+				time_cast<seconds_float>(second_time - first_time);
+			const auto dur = time_cast<seconds_float>(t - first_time);
+			return lerp(first, second, dur.count() / total_duration.count());
+		}
+
+		template<typename U = T, std::enable_if_t<!lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
+		constexpr const T& get(time_point t) const noexcept
+		{
+			if (first_time == second_time)
+				return first;
+
+			assert(first_time < second_time);
+
+			if (t < second_time)
+				return first;
+
+			return second;
+		}
+
+		T first, second;
+		time_point first_time;
+		time_point second_time;
 	};
 
 	template<class T>

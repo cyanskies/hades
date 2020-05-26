@@ -759,7 +759,7 @@ namespace hades
 
 			for (const auto& c : curves)
 			{
-				const auto curve_id = c->to_scalar<unique_id>();
+				const auto curve_id = c->to_scalar<unique_id>(data::make_uid);
 				//TODO: log error?
 					//TODO: same
 				if (curve_id == unique_id::zero)

@@ -10,20 +10,6 @@ namespace hades
 {
 	constexpr auto zero_time = time_point{};
 
-	template<typename T>
-	static void add_curve(curve_data::curve_map<T> &c, entity_id id, const resources::curve *curve, const resources::curve_default_value &value)
-	{
-		assert(std::holds_alternative<T>(value));
-		assert(resources::is_set(value));
-		assert(resources::is_curve_valid(*curve, value));
-
-		const auto &val = std::get<T>(value);
-		auto curve_instance = game_property<T>{ zero_time, val };
-
-		c.insert_or_assign(curve_index_t{ id, curve->id }, std::move(curve_instance));
-		return;
-	}
-
 	static void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
 	{
 		using namespace resources;
@@ -36,7 +22,9 @@ namespace hades
 
 		std::visit([&](auto &&v) {
 			using T = std::decay_t<decltype(v)>;
-			add_curve(get_curve_list<T>(c), id, curve, value);
+			auto& curves = get_curve_list<T>(c);
+			curves.insert_or_assign(curve_index_t{ id, curve->id }, game_property<T>{ zero_time, std::move(v) });
+			return;
 		}, value);
 	}
 

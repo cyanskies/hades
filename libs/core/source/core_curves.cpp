@@ -135,7 +135,7 @@ namespace hades
 
 	unique_id get_player_owner_id() noexcept
 	{
-		return pos_id;
+		return player_owner_id;
 	}
 
 	unique_id get_size_curve_id() noexcept

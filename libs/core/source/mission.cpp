@@ -2,6 +2,7 @@
 
 #include <string_view>
 
+#include "hades/data.hpp"
 #include "hades/level.hpp"
 #include "hades/parser.hpp"
 #include "hades/writer.hpp"
@@ -96,7 +97,7 @@ namespace hades
 			for (const auto& p : ps)
 			{
 				mission::player player;
-				player.id = p->to_scalar<unique_id>();
+				player.id = p->to_scalar<unique_id>(data::make_uid);
 				player.object = pt::get_scalar(*p, player_object_str, player.object);
 				m.players.emplace_back(std::move(player));
 			}

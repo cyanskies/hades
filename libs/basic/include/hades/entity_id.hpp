@@ -8,7 +8,7 @@ namespace hades
 {
 	//entity identification type
 	struct entity_id_t {};
-	using entity_id = strong_typedef<entity_id_t, int32>;
+	using entity_id = strong_typedef<entity_id_t, uint16>;
 
 	//constant value for a bad entity id
 	constexpr auto bad_entity = entity_id{ std::numeric_limits<entity_id::value_type>::min() };

@@ -21,7 +21,6 @@ namespace hades
 			entity_id entity = bad_entity;
 			variable_id variable = variable_id::zero;
 			//the client will use the variableid to ditermine curveType
-			std::vector<keyframe<T>> frames{};
 		};
 
 		std::vector<std::pair<entity_id, types::string>> entity_names;

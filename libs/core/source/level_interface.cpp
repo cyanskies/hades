@@ -51,7 +51,7 @@ namespace hades
 			std::visit([&, cur = c](auto&& v)->void {
 				using T = std::decay_t<decltype(v)>;				
 				auto &curve_map = get_curve_list<T>(curves);
-				curve_map.insert_or_assign(index, game_property<T>{ t, std::move(v) });
+				curve_map.insert_or_assign(index, game_property_curve<T>{ t, std::move(v) });
 				return;
 				}, v);
 		}
@@ -61,7 +61,7 @@ namespace hades
 		assert(obj_type_c);
 
 		using ObjType = resources::curve_types::unique;
-		auto obj_type = game_property<ObjType>{ t, o.obj_type ? o.obj_type->id : unique_zero };
+		auto obj_type = game_property_curve<ObjType>{ t, o.obj_type ? o.obj_type->id : unique_zero };
 		auto &obj_type_curves = get_curve_list<ObjType>(curves);
 		obj_type_curves.emplace(curve_index_t{ id, obj_type_c->id }, std::move(obj_type));
 

@@ -40,7 +40,7 @@ namespace hades
 	struct curve_data
 	{
 		template<class T>
-		using curve_map = std::unordered_map< curve_index_t, game_property<T> >;
+		using curve_map = std::unordered_map< curve_index_t, game_property_curve<T> >;
 
 		curve_map<curve_types::int_t> int_curves;
 		curve_map<curve_types::float_t> float_curves;

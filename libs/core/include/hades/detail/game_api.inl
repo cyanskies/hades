@@ -21,7 +21,7 @@ namespace hades
 		}
 
 		template<typename T>
-		game_property<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
+		game_property_curve<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
 		{
 			auto& curves = l->get_curves();
 			auto& curve_map = hades::get_curve_list<T>(curves);
@@ -32,7 +32,7 @@ namespace hades
 		}
 
 		template<typename T>
-		void set_game_curve(common_interface*l, curve_index_t i, game_property<T> c)
+		void set_game_curve(common_interface*l, curve_index_t i, game_property_curve<T> c)
 		{
 			auto& curves = l->get_curves();
 			auto& target_curve_list = hades::get_curve_list<T>(curves);
@@ -85,7 +85,7 @@ namespace hades
 	namespace game::mission
 	{
 		template<typename T>
-		const game_property<T>& get_curve(curve_index_t)
+		const game_property_curve<T>& get_curve(curve_index_t)
 		{
 			const auto ptr = detail::get_game_data_ptr();
 			return detail::get_game_curve_ref(ptr->mission_data, i);
@@ -116,7 +116,7 @@ namespace hades
 		}
 
 		template<typename T>
-		const game_property<T> &get_curve(curve_index_t i)
+		const game_property_curve<T> &get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_game_level_ptr();
 			return detail::get_game_curve_ref<T>(ptr, i);
@@ -213,7 +213,7 @@ namespace hades
 		}
 
 		template<typename T>
-		const game_property<T>& get_curve(curve_index_t i)
+		const game_property_curve<T>& get_curve(curve_index_t i)
 		{
 			const auto ptr = detail::get_render_data_ptr();
 			return detail::get_game_curve_ref<T>(ptr->level_data, i);

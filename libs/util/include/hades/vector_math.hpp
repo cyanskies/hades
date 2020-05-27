@@ -88,6 +88,30 @@ namespace hades
 		return float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
 	}
 
+	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_nearest_t = round_nearest_tag) noexcept
+	{
+		return float_near_equal(a.x, b.x) && float_near_equal(a.y, b.y);
+	}
+
+	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_down_t) noexcept
+	{
+		return float_near_equal(a.x, b.x, round_down_tag) && float_near_equal(a.y, b.y, round_down_tag);
+	}
+
+	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_up_t) noexcept
+	{
+		return float_near_equal(a.x, b.x, round_up_tag) && float_near_equal(a.y, b.y, round_up_tag);
+	}
+
+	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_towards_zero_t) noexcept
+	{
+		return float_near_equal(a.x, b.x, round_towards_zero_tag) && float_near_equal(a.y, b.y, round_towards_zero_tag);
+	}
+
 	template<typename T>
 	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
 

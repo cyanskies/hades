@@ -17,22 +17,6 @@ namespace hades
 
 namespace hades::resources
 {
-	//curve_type_from_string
-	curve_type read_curve_type(std::string_view s) noexcept
-	{
-		using namespace std::string_view_literals;
-		if (s == "const"sv)
-			return curve_type::const_c;
-		else if (s == "step"sv)
-			return curve_type::step;
-		else if (s == "linear"sv)
-			return curve_type::linear;
-		else if (s == "pulse"sv)
-			return curve_type::pulse;
-		else
-			return curve_type::error;
-	}
-
 	//curve_variable_type_from_string
 	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
@@ -165,7 +149,6 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-			new_curve->c_type = get_scalar(*c, "type"sv, new_curve->c_type, read_curve_type);
 			new_curve->data_type = get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
 			new_curve->sync = get_scalar(*c, "sync"sv, new_curve->sync);
 			new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
@@ -189,9 +172,6 @@ namespace hades::resources
 
 	bool is_curve_valid(const resources::curve &c, const curve_default_value &v) noexcept
 	{
-        if (c.c_type == curve_type::error)
-			return false;
-
 		using resources::curve_variable_type;
 		if (c.data_type == curve_variable_type::error)
 			return false;
@@ -338,26 +318,6 @@ namespace hades::resources
 
 namespace hades
 {
-	string to_string(curve_type c) noexcept
-	{
-		using namespace std::string_literals;
-		switch (c)
-		{
-		case curve_type::const_c:
-			return "const"s;
-		case curve_type::linear:
-			return "linear"s;
-		case curve_type::step:
-			return "step"s;
-		case curve_type::pulse:
-			return "pulse"s;
-		case curve_type::error:
-			[[fallthrough]];
-		default:
-			return "error"s;
-		}
-	}
-
 	static types::string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;

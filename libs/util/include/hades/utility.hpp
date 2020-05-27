@@ -37,6 +37,28 @@ namespace hades {
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;
 
+	namespace detail
+	{
+		struct round_nearest_t {};
+		struct round_down_t {}; 
+		struct round_up_t {};
+		struct round_towards_zero_t {};
+	}
+
+	constexpr detail::round_nearest_t round_nearest_tag;
+	constexpr detail::round_down_t round_down_tag;
+	constexpr detail::round_up_t round_up_tag;
+	constexpr detail::round_towards_zero_t round_towards_zero_tag;
+
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_rounded_equal(Float a, Float b, detail::round_nearest_t = round_nearest_tag) noexcept;
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_rounded_equal(Float a, Float b, detail::round_down_t) noexcept;
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_rounded_equal(Float a, Float b, detail::round_up_t) noexcept;
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline bool float_rounded_equal(Float a, Float b, detail::round_towards_zero_t) noexcept;
+
 	class overflow_error : public std::overflow_error
 	{
 	public: 

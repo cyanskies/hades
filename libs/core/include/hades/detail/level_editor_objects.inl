@@ -114,10 +114,11 @@ namespace hades::detail::obj_ui
 	template<>
 	inline void make_property_edit<entity_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const entity_id& value)
 	{
-		auto value2 = static_cast<entity_id::value_type>(value);
-		make_property_edit(g, o, name, c, value2);
-		const auto ent_value = entity_id{ value2 };
-		//FIXME: call set_curve
+		auto value2 = integer_cast<int>(static_cast<entity_id::value_type>(value));
+		if (g.input(name, value2))
+			set_curve(o, c, entity_id{ integer_cast<entity_id::value_type>(value2) });
+		g.tooltip(name);
+		return;
 	}
 
 	template<>
@@ -222,12 +223,14 @@ namespace hades::detail::obj_ui
 		auto iter = std::begin(value);
 		std::advance(iter, selected);
 
-		auto edit = static_cast
-			<resources::curve_types::object_ref::value_type>(*iter);
+		auto edit = integer_cast<int>(static_cast
+			<resources::curve_types::object_ref::value_type>(*iter));
 
 		g.input("edit"sv, edit);
 
-		const auto new_val = resources::curve_types::object_ref{ edit };
+		const auto new_val = resources::curve_types::object_ref{ 
+			integer_cast<resources::curve_types::object_ref::value_type>(edit)
+		};
 
 		if (new_val != *iter)
 		{
@@ -543,7 +546,6 @@ namespace hades
 				if(g.button("cancel"))
 					open = false;
 
-				g.text("curve type: " + to_string(c->c_type));
 				g.text("data type: " + to_string(c->data_type));
 				g.text("default value: " + to_string(*c));
 
@@ -574,7 +576,6 @@ namespace hades
 				if (g.button("cancel"))
 					open = false;
 
-				g.text("curve type: " + to_string(c->c_type));
 				g.text("data type: " + to_string(c->data_type));
 				const auto& value = std::get<resources::curve_default_value>(curve);
 				if(resources::is_set(value))

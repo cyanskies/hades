@@ -32,6 +32,30 @@ namespace hades
 			|| std::abs(a - b) < std::numeric_limits<Float>::min();
 	}
 
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	bool float_rounded_equal(Float a, Float b, detail::round_nearest_t) noexcept
+	{
+		return std::round(a) == std::round(b);
+	}
+
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	bool float_rounded_equal(Float a, Float b, detail::round_down_t) noexcept
+	{
+		return std::floor(a) == std::floor(b);
+	}
+
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	bool float_rounded_equal(Float a, Float b, detail::round_up_t) noexcept
+	{
+		return std::ceil(a) == std::ceil(b);
+	}
+
+	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	bool float_rounded_equal(Float a, Float b, detail::round_towards_zero_t) noexcept
+	{
+		return std::trunc(a) == std::trunc(b);
+	}
+
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_cast(T value)
 	{

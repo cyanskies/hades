@@ -51,11 +51,9 @@ namespace hades::resources
 
 	struct curve : public resource_type<curve_t>
 	{
-        curve_type c_type = curve_type::error;
 		curve_variable_type data_type = curve_variable_type::error;
 		bool sync = false, //sync shares the value with clients
-			save = false, //save records the value in save files
-			trim = false; //[depricated(should just be !save)]old data in the curve can be removed to save space
+			save = false; //save records the value in save files
 		curve_default_value default_value{};
 	};
 
@@ -73,16 +71,15 @@ namespace hades::resources
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
 
 	template<typename T>
-	const curve* make_curve(data::data_manager&, unique_id name, curve_type, curve_variable_type, T default_value, bool sync, bool save);
+	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, T default_value, bool sync, bool save);
 	template<typename T>
-	const curve* make_curve(data::data_manager&, std::string_view name, curve_type, curve_variable_type, T default_value, bool sync, bool save);
+	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, T default_value, bool sync, bool save);
 
 	const std::vector<const curve*> &get_all_curves();
 }
 
 namespace hades
 {
-	string to_string(curve_type) noexcept;
 	string to_string(const resources::curve &c);
 	string to_string(std::tuple<const resources::curve&, const resources::curve_default_value&> curve);
 

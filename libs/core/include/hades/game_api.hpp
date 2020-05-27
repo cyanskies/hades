@@ -49,12 +49,6 @@ namespace hades
 	namespace game
 	{
 		using namespace curve_types;
-
-		template<typename T>
-		using curve_keyframe = keyframe<T>;
-		template<typename T>
-		using optional_keyframe = std::optional<curve_keyframe<T>>;
-
 		const std::vector<object_ref> &get_objects() noexcept;
 
 		//the time of the previous dt
@@ -91,7 +85,7 @@ namespace hades
 
 		//curves access
 		template<typename T>
-		const game_property<T>& get_curve(curve_index_t);
+		const game_property_curve<T>& get_curve(curve_index_t);
 
 		//curve values
 		template<typename T>
@@ -139,7 +133,7 @@ namespace hades
 		//=== properties ===
 		//get access to curve object
 		template<typename T>
-		const game_property<T> &get_curve(curve_index_t);
+		const game_property_curve<T> &get_curve(curve_index_t);
 
 		//=== Refs ===
 		//returns a reference to the value stored in a curve at a specific time
@@ -283,7 +277,7 @@ namespace hades
 
 		//get curve from this level
 		template<typename T>
-		const game_property<T>& get_curve(curve_index_t);
+		const game_property_curve<T>& get_curve(curve_index_t);
 		template<typename T>
 		const T& get_ref(curve_index_t, time_point);
 		template<typename T>

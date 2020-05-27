@@ -23,7 +23,7 @@ namespace hades
 		std::visit([&](auto &&v) {
 			using T = std::decay_t<decltype(v)>;
 			auto& curves = get_curve_list<T>(c);
-			curves.insert_or_assign(curve_index_t{ id, curve->id }, game_property<T>{ zero_time, std::move(v) });
+			curves.insert_or_assign(curve_index_t{ id, curve->id }, game_property_curve<T>{ zero_time, std::move(v) });
 			return;
 		}, value);
 	}

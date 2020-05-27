@@ -14,7 +14,7 @@ namespace hades
 
 	static void setup_position_curve(data::data_manager& d, unique_id id)
 	{
-		resources::make_curve(d, id, curve_type::linear,
+		resources::make_curve(d, id,
 			resources::curve_variable_type::vec2_float,
 			resources::curve_types::vec2_float{ 0.f, 0.f },
 			true, true);
@@ -31,12 +31,12 @@ namespace hades
 		//TODO: use make_curve to produce these, so that they are properly registered
 
 		alive_id = d.get_uid("alive"sv);
-		resources::make_curve(d, alive_id, curve_type::step, 
+		resources::make_curve(d, alive_id, 
 			resources::curve_variable_type::bool_t, true, true, true);
 
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
-		resources::make_curve(d, name_id, curve_type::step, resources::curve_variable_type::string, string{}, true, true);
+		resources::make_curve(d, name_id, resources::curve_variable_type::string, string{}, true, true);
 
 		// the position curves store the objects 2d position
 		pos_id = d.get_uid("position"sv);
@@ -49,7 +49,7 @@ namespace hades
 		// or to check what terrain an object can move on
 		//TODO: should a sperate collision-terrain list be used for terrain collision?
 		collision_groups_id = d.get_uid("collision-groups"sv);
-		resources::make_curve(d, collision_groups_id, curve_type::step,
+		resources::make_curve(d, collision_groups_id,
 			resources::curve_variable_type::collection_unique,
 			resources::curve_types::collection_unique{},
 			false, //sync to client
@@ -57,7 +57,7 @@ namespace hades
 
 		// tags for this object
 		tags_id = d.get_uid("tags"sv);
-		resources::make_curve(d, tags_id, curve_type::step,
+		resources::make_curve(d, tags_id,
 			resources::curve_variable_type::collection_unique,
 			resources::curve_types::collection_unique{},
 			true, // sync to client
@@ -65,14 +65,14 @@ namespace hades
 
 		// object type is the unique_id of the objects type
 		object_type_id = d.get_uid("object-type"sv);
-		resources::make_curve(d, object_type_id, curve_type::const_c,
+		resources::make_curve(d, object_type_id,
 			resources::curve_variable_type::unique,
 			resources::curve_types::bad_unique,
 			true, //sync to client
 			false); // save to file
 
 		player_owner_id = d.get_uid("player-owner"sv);
-		resources::make_curve(d, player_owner_id, curve_type::step,
+		resources::make_curve(d, player_owner_id,
 			resources::curve_variable_type::unique,
 			resources::curve_types::bad_unique,
 			true,

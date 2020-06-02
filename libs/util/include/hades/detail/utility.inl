@@ -209,14 +209,14 @@ namespace hades
 		template<typename T, typename std::enable_if_t<std::is_integral_v<T>, int> = 0>
 		T random(T min, T max)
 		{
-			std::uniform_int_distribution<T> random(min, max);
+			std::uniform_int_distribution<T> random{ min, max };
 			return random(random_generator);
 		}
 
 		template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
 		T random(T min, T max)
 		{
-			std::uniform_real_distribution<T> random(min, max);
+			std::uniform_real_distribution<T> random{ min, max };
 			return random(random_generator);
 		}
 	}

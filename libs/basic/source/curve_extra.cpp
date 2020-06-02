@@ -31,18 +31,18 @@ namespace hades::resources
 			return curve_variable_type::bool_t;
 		else if (s == "string"sv)
 			return curve_variable_type::string;
-		else if (s == "obj_ref"sv)
+		else if (s == "obj_ref"sv || s == "obj-ref"sv)
 			return curve_variable_type::object_ref;
 		else if (s == "unique"sv)
 			return curve_variable_type::unique;
 		//TODO: rename to collection_*
-		else if (s == "int_vector"sv || s == "int32_vector"sv)
+		else if (s == "int_vector"sv || s == "int32_vector"sv || s == "int-collection"sv)
 			return curve_variable_type::collection_int;
-		else if (s == "float_vector"sv)
+		else if (s == "float_vector"sv || s == "float-collection"sv)
 			return curve_variable_type::collection_float;
-		else if (s == "obj_ref_vector"sv)
+		else if (s == "obj_ref_vector"sv || s == "obj-ref-collection"sv)
 			return curve_variable_type::collection_object_ref;
-		else if (s == "unique_vector"sv)
+		else if (s == "unique_vector"sv || s == "unique-collection"sv)
 			return curve_variable_type::collection_unique;
 		else
 			return curve_variable_type::error;

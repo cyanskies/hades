@@ -87,7 +87,6 @@ namespace hades {
 	template<typename T>
 	constexpr auto sign_swap_clamp_cast(T value) noexcept;
 
-	//TODO: size cast, for safe casting between different sized integers
 	template<typename T, typename U>
 	constexpr T size_cast(U);
 
@@ -139,6 +138,7 @@ namespace hades {
 			std::invoke(f);
 		}
 
+	private:
 		Func f;
 	};
 

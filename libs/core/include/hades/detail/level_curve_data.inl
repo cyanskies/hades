@@ -52,6 +52,12 @@ namespace hades::detail
 	}
 
 	template<>
+	inline curve_data::curve_map<curve_types::colour>& get_curve_list(curve_data& data) noexcept
+	{
+		return data.colour_curves;
+	}
+
+	template<>
 	inline curve_data::curve_map<curve_types::collection_int>& get_curve_list(curve_data& data) noexcept
 	{
 		return data.int_vector_curves;

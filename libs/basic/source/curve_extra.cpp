@@ -21,28 +21,29 @@ namespace hades::resources
 	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
 		using namespace std::string_view_literals;
-		if (s == "int"sv || s == "int32"sv)
+		if (s == "int32"sv)
 			return curve_variable_type::int_t;
 		else if (s == "float"sv)
 			return curve_variable_type::float_t;
-		else if (s == "vec2_float"sv)
+		else if (s == "vec2-float"sv)
 			return curve_variable_type::vec2_float;
 		else if (s == "bool"sv)
 			return curve_variable_type::bool_t;
 		else if (s == "string"sv)
 			return curve_variable_type::string;
-		else if (s == "obj_ref"sv || s == "obj-ref"sv)
+		else if (s == "obj-ref"sv)
 			return curve_variable_type::object_ref;
 		else if (s == "unique"sv)
 			return curve_variable_type::unique;
-		//TODO: rename to collection_*
-		else if (s == "int_vector"sv || s == "int32_vector"sv || s == "int-collection"sv)
+		else if (s == "colour"sv)
+			return curve_variable_type::colour;
+		else if (s == "collection-int32"sv)
 			return curve_variable_type::collection_int;
-		else if (s == "float_vector"sv || s == "float-collection"sv)
+		else if (s == "collection-float"sv)
 			return curve_variable_type::collection_float;
-		else if (s == "obj_ref_vector"sv || s == "obj-ref-collection"sv)
+		else if (s == "collection-obj-ref"sv)
 			return curve_variable_type::collection_object_ref;
-		else if (s == "unique_vector"sv || s == "unique-collection"sv)
+		else if (s == "collection-unique"sv)
 			return curve_variable_type::collection_unique;
 		else
 			return curve_variable_type::error;
@@ -73,10 +74,14 @@ namespace hades::resources
 			default_value.emplace<resources::curve_types::string>();
 			break;
 		case curve_variable_type::object_ref:
-			default_value.emplace<object_ref>();
+			default_value.emplace<object_ref>(bad_object_ref);
 			break;
 		case curve_variable_type::unique:
-			default_value.emplace<unique>();
+			default_value.emplace<unique>(unique_zero);
+			break;
+		case curve_variable_type::colour:
+			// TODO: pick a good default colour?
+			default_value.emplace<colour>();
 			break;
 		case curve_variable_type::collection_int:
 			default_value.emplace<collection_int>();

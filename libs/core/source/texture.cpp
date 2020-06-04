@@ -16,7 +16,7 @@ namespace hades
 		d.register_resource_type("textures"sv, parse_texture);
 	}
 
-	const auto colours = std::array{
+	const auto sf_colours = std::array{
 		sf::Color::Magenta,
 		sf::Color::White,
 		sf::Color::Red,
@@ -62,7 +62,7 @@ namespace hades
 	{
 		static std::size_t counter = 0;
 
-		auto t = generate_checkerboard_texture(width, height, 16, colours[counter++ % colours.size()], sf::Color::Black);
+		auto t = generate_checkerboard_texture(width, height, 16, sf_colours[counter++ % sf_colours.size()], sf::Color::Black);
 		t.setRepeated(true);
 
 		return t;

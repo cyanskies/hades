@@ -1,6 +1,7 @@
 #ifndef HADES_CURVE_TYPES_HPP
 #define HADES_CURVE_TYPES_HPP
 
+#include "hades/colour.hpp"
 #include "hades/entity_id.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
@@ -10,7 +11,7 @@ namespace hades
 {
 	enum class curve_variable_type {
 		error, int_t, float_t, vec2_float, bool_t,
-		string, object_ref, unique, collection_int, collection_float,
+		string, object_ref, unique, colour, collection_int, collection_float,
 		collection_object_ref, collection_unique
 	};
 
@@ -27,6 +28,7 @@ namespace hades::curve_types
 	using string = types::string;
 	using object_ref = entity_id;
 	using unique = unique_id;
+	using colour = hades::colour;
 	using collection_int = std::vector<int_t>;
 	using collection_float = std::vector<float_t>;
 	using collection_object_ref = std::vector<object_ref>;
@@ -75,6 +77,8 @@ namespace hades::curve_types
 	template<>
 	struct is_curve_type<unique> : public std::true_type {};
 	template<>
+	struct is_curve_type<colour> : public std::true_type {};
+	template<>
 	struct is_curve_type<collection_int> : public std::true_type {};
 	template<>
 	struct is_curve_type<collection_float> : public std::true_type {};
@@ -85,6 +89,9 @@ namespace hades::curve_types
 
 	template<typename T>
 	constexpr auto is_curve_type_v = is_curve_type<T>::value;
+
+	template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
+	constexpr curve_variable_type type_to_curve_type() noexcept;
 
 	template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
 	string curve_type_to_string() noexcept;

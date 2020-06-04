@@ -1,5 +1,6 @@
 #include "hades/level_editor_objects.hpp"
 
+#include "hades/colour.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/exceptions.hpp"
@@ -117,6 +118,29 @@ namespace hades::detail::obj_ui
 		auto value2 = integer_cast<int>(static_cast<entity_id::value_type>(value));
 		if (g.input(name, value2))
 			set_curve(o, c, entity_id{ integer_cast<entity_id::value_type>(value2) });
+		g.tooltip(name);
+		return;
+	}
+
+	template<>
+	inline void make_property_edit<colour>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const colour& value)
+	{
+		auto arr = std::array{
+			integer_cast<int>(value[0]),
+			integer_cast<int>(value[1]),
+			integer_cast<int>(value[2]),
+			integer_cast<int>(value[3])
+		};
+
+		if (g.input(name, arr))
+		{
+			set_curve(o, c, colour{ integer_cast<uint8>(arr[0]),
+				integer_cast<uint8>(arr[1]),
+				integer_cast<uint8>(arr[2]),
+				integer_cast<uint8>(arr[3]) 
+				}
+			);
+		}
 		g.tooltip(name);
 		return;
 	}

@@ -40,6 +40,7 @@ namespace hades::resources
 		curve_types::string, 
 		curve_types::object_ref,
 		curve_types::unique, 
+		curve_types::colour,
 		curve_types::collection_int,
 		curve_types::collection_float,
 		curve_types::collection_object_ref,

@@ -42,7 +42,7 @@ namespace hades
 		template<class T>
 		using curve_map = std::unordered_map< curve_index_t, game_property_curve<T> >;
 
-		curve_map<curve_types::int_t> int_curves;
+		curve_map<curve_types::int_t> int_curves; // this isn't lerpable
 		curve_map<curve_types::float_t> float_curves;
 		curve_map<curve_types::vec2_float> vec2_float_curves;
 		//no linear curves here
@@ -50,6 +50,7 @@ namespace hades
 		curve_map<curve_types::string> string_curves;
 		curve_map<curve_types::object_ref> object_ref_curves;
 		curve_map<curve_types::unique> unique_curves;
+		curve_map<curve_types::colour> colour_curves; //TODO: allow colours to lerp
 
 		//no linear curves here either
 		curve_map<curve_types::collection_int> int_vector_curves;

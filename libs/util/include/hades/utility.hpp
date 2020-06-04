@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_UTILITY_HPP
 #define HADES_UTIL_UTILITY_HPP
 
+#include <array>
 #include <random>
 #include <stdexcept>
 #include <utility>
@@ -201,7 +202,7 @@ namespace hades {
 
 	template<>
 	std::string_view from_string<std::string_view>(std::string_view str);
-
+	
 	template<typename T, typename FromString, typename = std::enable_if_t<std::is_invocable_r_v<T, FromString, std::string_view>>>
 	T vector_from_string(std::string_view str, FromString);
 

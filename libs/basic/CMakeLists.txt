@@ -1,6 +1,7 @@
 include(../../cmake.txt)
 
 set(HADES_BASIC_SRC
+	source/colour.cpp
 	source/console_variables.cpp
 	source/curve_extra.cpp
 	source/data.cpp

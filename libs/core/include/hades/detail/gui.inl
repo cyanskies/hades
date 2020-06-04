@@ -108,6 +108,7 @@ namespace hades
 		template<typename T>
 		inline input_imp_return<T> input_imp(gui &g, std::string_view label, T &v, gui::input_text_flags f)
 		{
+			static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
 			constexpr auto step = static_cast<T>(1);
 			return g.input_scalar(label, v, step, step, f);
 		}

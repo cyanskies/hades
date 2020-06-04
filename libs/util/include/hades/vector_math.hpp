@@ -53,10 +53,18 @@ namespace hades
 			return *this;
 		}
 
-		constexpr T& operator[](std::size_t i) noexcept
+		T& operator[](std::size_t i) noexcept
 		{
-			assert(i < 2);
-			return (&x)[i];
+			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
+			assert(i < size(arr));
+			return std::invoke(arr[i], this);
+		}
+
+		const T& operator[](std::size_t i) const noexcept
+		{
+			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
+			assert(i < size(arr));
+			return std::invoke(arr[i], this);
 		}
 
 		template<typename U>
@@ -91,25 +99,25 @@ namespace hades
 	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_nearest_t = round_nearest_tag) noexcept
 	{
-		return float_near_equal(a.x, b.x) && float_near_equal(a.y, b.y);
+		return float_rounded_equal(a.x, b.x) && float_rounded_equal(a.y, b.y);
 	}
 
 	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_down_t) noexcept
 	{
-		return float_near_equal(a.x, b.x, round_down_tag) && float_near_equal(a.y, b.y, round_down_tag);
+		return float_rounded_equal(a.x, b.x, round_down_tag) && float_rounded_equal(a.y, b.y, round_down_tag);
 	}
 
 	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_up_t) noexcept
 	{
-		return float_near_equal(a.x, b.x, round_up_tag) && float_near_equal(a.y, b.y, round_up_tag);
+		return float_rounded_equal(a.x, b.x, round_up_tag) && float_rounded_equal(a.y, b.y, round_up_tag);
 	}
 
 	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_towards_zero_t) noexcept
 	{
-		return float_near_equal(a.x, b.x, round_towards_zero_tag) && float_near_equal(a.y, b.y, round_towards_zero_tag);
+		return float_rounded_equal(a.x, b.x, round_towards_zero_tag) && float_rounded_equal(a.y, b.y, round_towards_zero_tag);
 	}
 
 	template<typename T>

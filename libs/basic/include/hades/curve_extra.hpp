@@ -44,7 +44,9 @@ namespace hades::resources
 		curve_types::collection_int,
 		curve_types::collection_float,
 		curve_types::collection_object_ref,
-		curve_types::collection_unique>;
+		curve_types::collection_unique,
+		curve_types::collection_colour
+	>;
 
 	static_assert(std::is_move_constructible_v<curve_default_value>);
 

@@ -39,6 +39,11 @@ namespace hades
 		return std::tie(l[0], l[1], l[2], l[3]) == std::tie(r[0], r[1], r[2], r[3]);
 	}
 
+	constexpr bool operator!=(colour l, colour r) noexcept
+	{
+		return !(l == r);
+	}
+
 	constexpr bool operator<(colour l, colour r) noexcept
 	{
 		return std::tie(l[0], l[1], l[2], l[3]) < std::tie(r[0], r[1], r[2], r[3]);

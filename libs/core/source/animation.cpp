@@ -23,9 +23,9 @@ namespace hades::resources
 		//		width: +int
 		//      height: +int
 		//		frames:
-		//			- [x, y, d] // xpos ypos, relative duration
-		//			- [x, y, d]
-		//			the third parameter is optional
+		//			- [x, y, flipx, flipy, d] // xpos ypos, relative duration
+		//			- [x, y, flipx, flipy, d]
+		//			the third parameter onward is optional
 
 		using namespace std::string_view_literals;
 		constexpr auto resource_type = "animation"sv;
@@ -34,9 +34,10 @@ namespace hades::resources
 
 		for (const auto &a : animations)
 		{
-			const auto name = a->to_scalar<unique_id>([&d](std::string_view s) {return d.get_uid(s); });
+			const auto name = a->to_string();
+			const auto id = d.get_uid(name);
 
-			auto anim = d.find_or_create<animation>(name, mod);
+			auto anim = d.find_or_create<animation>(id, mod);
 
 			using namespace data::parse_tools;
 			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string);
@@ -57,34 +58,46 @@ namespace hades::resources
 
 			const auto frames = frames_node->get_children();
 
-			anim->value.clear();
-
 			auto total_duration = 0.f;
 			auto frame_list = std::vector<animation_frame>{};
 			frame_list.reserve(frames.size());
 
-			for (const auto &f : frames)
+			for (const auto& f : frames)
 			{
 				const auto frame_info = f->get_children();
 				if (frame_info.empty())
 					continue;
 
-				if (frame_info.size() < 2 ||
-					frame_info.size() > 3)
+				const auto frame_size = size(frame_info);
+
+				if (frame_size < 2)
 				{
-					const auto message = "Animation frame malformed, in mod: " + 
-						to_string(mod)+ ", for animation: " + to_string(name);
+					const auto message = "Animation frame requires at least x and y components, in mod: " +
+						to_string(mod) + ", for animation: " + name;
 					LOGWARNING(message);
 					continue;
 				}
+ 
+				auto frame = animation_frame{ 
+					frame_info[0]->to_scalar<texture_size_t>(), 
+					frame_info[1]->to_scalar<texture_size_t>()
+				};
 
-				const auto x = frame_info[0]->to_scalar<texture_size_t>();
-				const auto y = frame_info[1]->to_scalar<texture_size_t>();
+				if (frame_size > 2)
+					frame.flip_x = frame_info[2]->to_scalar<bool>();
+					
+				if (frame_size > 3)
+					frame.flip_y = frame_info[3]->to_scalar<bool>();				
 
-				auto frame = animation_frame{ x, y };
+				if(frame_size > 4)
+					frame.duration = frame_info[4]->to_scalar<float>();
 
-				if(frame_info.size() == 3)
-					frame.duration = frame_info[2]->to_scalar<float>();
+				if (frame_size > 5)
+				{
+					const auto message = "animation frame contains more that the expected data, ignoring excess, frame[x, y, flip_x, flip_y, rel_duration], in mod: " +
+						to_string(mod) + ", for animation: " + name;
+					LOGWARNING(message);
+				}
 
 				total_duration += frame.duration;
 
@@ -111,7 +124,7 @@ namespace hades::resources
 
 namespace hades::animation
 {
-	static animation_frame get_frame(const resources::animation &animation, float progress)
+	static animation_frame_data get_frame(const resources::animation &animation, float progress)
 	{
 		//NOTE: based on the FrameAnimation algorithm from Thor C++
 		//https://github.com/Bromeon/Thor/blob/master/include/Thor/Animations/FrameAnimation.hpp
@@ -135,15 +148,21 @@ namespace hades::animation
 
 			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
 			if (prog <= 0.f)
-				return std::make_tuple(static_cast<float>(frame.x), static_cast<float>(frame.y));
+			{
+				const auto frame_x = frame.flip_x ? frame.x + animation.width : frame.x;
+				const auto frame_y = frame.flip_y ? frame.y + animation.height : frame.y;
+				const auto width = frame.flip_x ? -animation.width : animation.width;
+				const auto height = frame.flip_y ? -animation.height : animation.height;
+				return { frame_x, frame_y, width, height };
+			}
 		}
 
 		LOGWARNING("Unable to find correct frame for animation " + to_string(animation.id) +
 			"animation progress was: " + to_string(progress));
-		return { 0.f, 0.f };
+		return {};
 	}
 
-	animation_frame get_frame(const resources::animation &animation, time_point t)
+	animation_frame_data get_frame(const resources::animation &animation, time_point t)
 	{
 		const auto ratio = normalise_time(t, animation.duration);
 		return get_frame(animation, ratio);
@@ -151,9 +170,9 @@ namespace hades::animation
 
 	void apply(const resources::animation &animation, float progress, sf::Sprite &target)
 	{
-		const auto [x, y] = get_frame(animation, progress);
+		const auto [x, y, w, h] = get_frame(animation, progress);
 		target.setTexture(animation.tex->value);
-		target.setTextureRect({ static_cast<int>(x), static_cast<int>(y) , animation.width, animation.height });
+		target.setTextureRect({ x, y , w, h });
 	}
 
 	void apply(const resources::animation &animation, time_point progress, sf::Sprite &target)
@@ -181,15 +200,15 @@ namespace hades
 		};
 	}
 
-	poly_quad make_quad_animation(vector_float p, const resources::animation &a, const animation::animation_frame &f) noexcept
+	poly_quad make_quad_animation(vector_float p, const resources::animation &a, const animation::animation_frame_data &f) noexcept
 	{
-		return make_quad_animation(p, {static_cast<float>(a.width), static_cast<float>(a.height)}, a, f);
+		return make_quad_animation(p, {static_cast<float>(a.width), static_cast<float>(a.height)}, f);
 	}
 
-	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation& a, const animation::animation_frame& f) noexcept
+	poly_quad make_quad_animation(vector_float pos, vector_float size, const animation::animation_frame_data& f) noexcept
 	{
-		return make_quad_animation({ pos, size }, { std::get<0>(f), std::get<1>(f),
-			static_cast<float>(a.width), static_cast<float>(a.height) });
+		return make_quad_animation({ pos, size }, { static_cast<float>(f.x), static_cast<float>(f.y),
+			static_cast<float>(f.w), static_cast<float>(f.h) });
 	}
 
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept

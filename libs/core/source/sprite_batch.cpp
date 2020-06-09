@@ -270,13 +270,8 @@ namespace hades
 		for (auto i = std::size_t{}; i < std::size(_sprites); ++i)
 		{
 			if (_sprites[i].settings.layer == l)
-			{
 				draw(t, i, s);
-				return;
-			}
 		}
-
-		throw sprite_batch_error{ "tried to draw a layer that could not be found" };
 	}
 
 	void sprite_batch::draw(sf::RenderTarget& target, index_t layer_index, sf::RenderStates s) const
@@ -359,7 +354,7 @@ namespace hades
 		if (s.animation)
 		{
 			const auto frame = animation::get_frame(*s.animation, s.animation_progress);
-			_vertex[index].buffer.append(make_quad_animation(s.position, s.size, *s.animation, frame));
+			_vertex[index].buffer.append(make_quad_animation(s.position, s.size, frame));
 		}
 		else
 			_vertex[index].buffer.append(make_quad_colour({ s.position, s.size }, colours::white));

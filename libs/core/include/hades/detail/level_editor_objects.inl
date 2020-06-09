@@ -92,6 +92,21 @@ namespace hades::detail::obj_ui
 		return;
 	}
 
+	//TODO: rename these overloads to make the usage more obvious
+	// make_prop_edit is for main call
+	// make_pro_edit2 is for implementing the actual property row
+	template<typename T>
+	std::optional<T> make_property_edit2(gui& g, std::string_view name, const T& value)
+	{
+		auto ret = std::optional<T>{};
+		auto edit_value = value;
+		if (g.input(name, edit_value))
+			ret = edit_value;
+		g.tooltip(name);
+
+		return ret;
+	}
+
 	template<typename T>
 	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value)
 	{
@@ -99,32 +114,33 @@ namespace hades::detail::obj_ui
 		{
 			auto arr = std::array{ value.x, value.y };
 			if (g.input(name, arr))
-				set_curve(o, c, { arr[0], arr[1] });
+				set_curve(o, c, T{ arr[0], arr[1] });
 
 			g.tooltip(name);
 		}
 		else
 		{
-			auto edit_value = value;
-			if (g.input(name, edit_value))
-				set_curve(o, c, edit_value);
-			g.tooltip(name);
+			auto new_value = make_property_edit2(g, name, value);
+			if(new_value)
+				set_curve(o, c, std::move(*new_value));
 		}
 	}
 
 	template<>
-	inline void make_property_edit<entity_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const entity_id& value)
+	inline std::optional<entity_id> make_property_edit2<entity_id>(gui& g, std::string_view name, const entity_id& value)
 	{
-		auto value2 = integer_cast<int>(static_cast<entity_id::value_type>(value));
+		auto ret = std::optional<entity_id>{};
+		auto value2 = integer_cast<int>(to_value(value));
 		if (g.input(name, value2))
-			set_curve(o, c, entity_id{ integer_cast<entity_id::value_type>(value2) });
+			ret = entity_id{ integer_cast<entity_id::value_type>(value2) };
 		g.tooltip(name);
-		return;
+		return ret;
 	}
 
 	template<>
-	inline void make_property_edit<colour>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const colour& value)
+	inline std::optional<colour> make_property_edit2<colour>(gui& g, std::string_view name, const colour& value)
 	{
+		auto ret = std::optional<colour>{};
 		auto arr = std::array{
 			integer_cast<int>(value[0]),
 			integer_cast<int>(value[1]),
@@ -134,63 +150,62 @@ namespace hades::detail::obj_ui
 
 		if (g.input(name, arr))
 		{
-			set_curve(o, c, colour{ integer_cast<uint8>(arr[0]),
-				integer_cast<uint8>(arr[1]),
-				integer_cast<uint8>(arr[2]),
-				integer_cast<uint8>(arr[3]) 
-				}
-			);
+			ret = colour{
+				integer_clamp_cast<uint8>(arr[0]),
+				integer_clamp_cast<uint8>(arr[1]),
+				integer_clamp_cast<uint8>(arr[2]),
+				integer_clamp_cast<uint8>(arr[3])
+			};
 		}
+
 		g.tooltip(name);
-		return;
+		return ret;
 	}
 
 	template<>
-	inline void make_property_edit<bool>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const bool& value)
+	inline std::optional<bool> make_property_edit2<bool>(gui& g, std::string_view name, const bool& value)
 	{
 		using namespace std::string_view_literals;
 		constexpr auto tru = "true"sv;
 		constexpr auto fal = "false"sv;
+
+		auto ret = std::optional<bool>{};
 		if (g.combo_begin(name, value ? tru : fal))
 		{
 			g.tooltip(name);
 			if (g.selectable(tru, value))
-				set_curve(o, c, true);
+				ret = true;
 			if (g.selectable(fal, !value))
-				set_curve(o, c, false);
+				ret = false;
 
 			g.combo_end();
 		}
+
+		return ret;
 	}
 
 	template<>
-	inline void make_property_edit<string>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const string& value)
+	inline std::optional<string> make_property_edit2<string>(gui& g, std::string_view name, const string& value)
 	{
+		auto ret = std::optional<string>{};
 		auto edit = value;
 		if (g.input_text(name, edit))
-			set_curve(o, c, edit);
+			ret = std::move(edit);
 		g.tooltip(name);
+		return ret;
 	}
 
 	template<>
-	inline void make_property_edit<unique_id>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const unique_id& value)
+	inline std::optional<unique_id> make_property_edit2<unique_id>(gui& g, std::string_view name, const unique_id& value)
 	{
+		auto ret = std::optional<unique_id>{};
 		auto u_string = data::get_as_string(value);
 		if (g.input_text(name, u_string))
-			set_curve(o, c, data::make_uid(u_string));
+			ret = data::make_uid(u_string);
 		g.tooltip(name);
+		return ret;
 	}
 
-	template<>
-	inline void make_property_edit<vector_float>(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const vector_float& value)
-	{
-		auto editval = std::array{ value.x, value.y };
-		if (g.input(name, editval))
-			set_curve(o, c, vector_float{ editval[0], editval[1] });
-		g.tooltip(name);
-	}
-
-	//TODO: clean these three specialisations up to get rid of repeated code
 	template<typename T>
 	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value)
 	{
@@ -198,75 +213,16 @@ namespace hades::detail::obj_ui
 		auto iter = std::cbegin(value);
 		std::advance(iter, selected);
 
-		auto edit = *iter;
-
-		g.input("edit"sv, edit);
-
-		if (edit != *iter)
+		auto result = make_property_edit2<T::value_type>(g, "edit"sv, *iter);
+		if (result)
 		{
 			auto container = value;
 			auto target = std::begin(container);
 			std::advance(target, selected);
-			*target = edit;
-			set_curve(o, c, container);
+			*target = std::move(*result);
+			set_curve(o, c, std::move(container));
 		}
 	}
-
-	template<>
-	inline void make_vector_edit_field<resources::curve_types::collection_unique>
-		(gui& g, object_instance& o, const resources::curve& c, int32 selected,
-			const resources::curve_types::collection_unique& value)
-	{
-		using namespace std::string_view_literals;
-		auto iter = std::cbegin(value);
-		std::advance(iter, selected);
-
-		auto edit = data::get_as_string(*iter);
-
-		g.input("edit"sv, edit);
-
-		auto id = data::make_uid(edit);
-
-		if (id != *iter)
-		{
-			auto container = value;
-			auto container_iter = std::begin(container);
-			std::advance(container_iter, selected);
-			*container_iter = id;
-			set_curve(o, c, container);
-		}
-	}
-
-	template<>
-	inline void make_vector_edit_field
-		<resources::curve_types::collection_object_ref>(gui& g, object_instance& o,
-			const resources::curve& c, int32 selected,
-			const resources::curve_types::collection_object_ref& value)
-	{
-		using namespace std::string_view_literals;
-		auto iter = std::begin(value);
-		std::advance(iter, selected);
-
-		auto edit = integer_cast<int>(static_cast
-			<resources::curve_types::object_ref::value_type>(*iter));
-
-		g.input("edit"sv, edit);
-
-		const auto new_val = resources::curve_types::object_ref{ 
-			integer_cast<resources::curve_types::object_ref::value_type>(edit)
-		};
-
-		if (new_val != *iter)
-		{
-			auto container = value;
-			auto container_iter = std::begin(container);
-			std::advance(container_iter, selected);
-			*container_iter = new_val;
-
-			set_curve(o, c, container);
-		}
-	}
-
 
 	template<typename T, typename U, typename V, typename Obj>
 	void make_vector_property_edit(gui& g, Obj& o, std::string_view name,

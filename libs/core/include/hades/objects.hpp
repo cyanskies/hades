@@ -95,7 +95,6 @@ namespace hades
 	std::vector<const resources::system*> get_systems(const resources::object& o);
 	std::vector<const resources::render_system*> get_render_systems(const resources::object& o);
 
-	[[deprecated]] curve_value valid_vector_curve(hades::resources::curve_default_value v);
 	const hades::resources::animation *get_editor_icon(const resources::object &o);
 	const hades::resources::animation *get_random_animation(const object_instance &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);

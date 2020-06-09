@@ -250,7 +250,7 @@ namespace hades
 					&& o_iter->l < i)
 					++o_iter;
 
-				if (o_iter != o_end)
+				if (o_iter != o_end && o_iter->l == i)
 				{
 					for (const auto& obj : _object_layers[o_iter->i].objects)
 						t.draw(std::invoke(obj.get, obj.storage), s);
@@ -260,8 +260,11 @@ namespace hades
 					&& s_iter->l < i)
 					++s_iter;
 
-				if (s_iter != s_end)
+				while (s_iter != s_end && s_iter->l == i)
+				{
 					_sprite_batch.draw(t, s_iter->i, s);
+					++s_iter;
+				}
 			}
 
 			return;

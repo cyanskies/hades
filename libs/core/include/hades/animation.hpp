@@ -19,6 +19,7 @@ namespace hades::resources
 	{
 		//the rectangle for this frame and the duration relative to the rest of the frames in this animation
 		texture_size_t x = 0, y = 0;
+		bool flip_x = false, flip_y = false;
 		float duration = 1.f;
 	};
 
@@ -36,10 +37,22 @@ namespace hades::resources
 
 namespace hades::animation
 {
-	using animation_frame = std::tuple<float, float>; /*x and y*/
+	struct animation_frame_data {
+		int32 x, y, w, h;
+	};
+
+	constexpr bool operator==(animation_frame_data l, animation_frame_data r) noexcept
+	{
+		return std::tie(l.x, l.y, l.w, l.h) == std::tie(r.x, r.y, r.w, r.h);
+	}
+
+	constexpr bool operator!=(animation_frame_data l, animation_frame_data r) noexcept
+	{
+		return !(l == r);
+	}
 
 	//returns the first frame of the animation, or the animation for the requested time, with wrapping
-	animation_frame get_frame(const resources::animation &animation, time_point time_played);
+	animation_frame_data get_frame(const resources::animation &animation, time_point time_played);
 
 	//applys an animation to a sprite, progress is a float in the range (0, 1), indicating how far into the animation the sprite should be set to.
 	void apply(const resources::animation &animation, float progress, sf::Sprite &target);
@@ -51,8 +64,8 @@ namespace hades
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
 	poly_quad make_quad_colour(rect_float quad, colour) noexcept;
-	poly_quad make_quad_animation(vector_float pos, const resources::animation&, const animation::animation_frame&) noexcept;
-	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation&, const animation::animation_frame&) noexcept;
+	poly_quad make_quad_animation(vector_float pos, const resources::animation&, const animation::animation_frame_data&) noexcept;
+	poly_quad make_quad_animation(vector_float pos, vector_float size, const animation::animation_frame_data&) noexcept;
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;
 
 	//functions for updating vertex data

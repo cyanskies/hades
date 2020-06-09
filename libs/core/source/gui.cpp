@@ -396,12 +396,11 @@ namespace hades
 	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
-		const auto[x, y] = animation::get_frame(a, time);
+		const auto[x, y, w, h] = animation::get_frame(a, time);
 
-		assert(a.tex != nullptr);
-
+		assert(a.tex);
 		return image(*a.tex,
-			rect_float{ x, y, static_cast<float>(a.width), static_cast<float>(a.height) },
+			rect_float{ static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h) },
 			size, 
 			tint_colour,
 			border_colour
@@ -432,7 +431,7 @@ namespace hades
 	bool gui::image_button(const resources::animation &a, const vector &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
 	{
 		_active_assert();
-		const auto[x, y] = animation::get_frame(a, time);
+		const auto[x, y, w, h] = animation::get_frame(a, time);
 
 		assert(a.tex);
 
@@ -441,7 +440,7 @@ namespace hades
 		push_id(&a);
 		auto result = image_button(
 			*a.tex,
-			rect_float{ x, y, static_cast<float>(a.width), static_cast<float>(a.height) },
+			rect_float{ static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h) },
 			size,
 			background_colour,
 			tint_colour
@@ -851,7 +850,7 @@ namespace hades
 						static_cast<int32>(cmd.ClipRect.z - cmd.ClipRect.x),
 						static_cast<int32>(cmd.ClipRect.w - cmd.ClipRect.y) };
 
-					//TODO: should probably be draw_clamp_region; though people are unlikely to move the gui view around
+					//FIXME: should probably be draw_clamp_region; though people are unlikely to move the gui view around
 					target.draw(draw_clamp_window{ verts, clip_region }, state);
 				}
 
@@ -925,6 +924,9 @@ namespace hades
 		static unique_id font_texture_id{};
 
 		auto t = d->find_or_create<resources::texture>(font_texture_id, unique_id::zero);
+
+		if (t->loaded)
+			return;
 
 		t->mips = false;
 		t->repeat = false;

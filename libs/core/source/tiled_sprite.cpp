@@ -29,8 +29,8 @@ namespace hades
 	{
 		assert(a);
 		_animation = a;
-
-		std::tie(_frame.x, _frame.y) = animation::get_frame(*a, t); 
+		_frame = animation::get_frame(*a, t);
+		return;
 	}
 
 	void tiled_sprite::set_size(vector_float s)
@@ -74,7 +74,8 @@ namespace hades
 		const vector_float anim_size{ static_cast<float>(_animation->width),
 									  static_cast<float>(_animation->height) };
 
-		const auto[anim_x, anim_y] = _frame;
+		const auto tex_pos = vector_float{ static_cast<float>(_frame.x), static_cast<float>(_frame.y) };
+		const auto tex_size = vector_float{ static_cast<float>(_frame.w), static_cast<float>(_frame.h) };
 
 		std::vector<sf::Vertex> vertex{};
 		vertex.reserve(vertex_x * vertex_y);
@@ -84,7 +85,7 @@ namespace hades
 			for (auto x = 0u; x <= vertex_x; ++x)
 			{
 				const vector_float position{ x * anim_size.x, y * anim_size.y };
-				auto size = anim_size;
+				auto size = tex_size;
 				//for the final column the size may be truncated
 				if (x == vertex_x)
 					size.x *= x_part;
@@ -92,7 +93,7 @@ namespace hades
 				if (y == vertex_y)
 					size.y *= y_part;
 
-				const auto quad = make_quad_animation({ position, size }, { {anim_x, anim_y}, size });
+				const auto quad = make_quad_animation({ position, size }, { tex_pos, size });
 				vertex.insert(std::end(vertex), std::begin(quad), std::end(quad));
 			}
 		}

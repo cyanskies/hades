@@ -38,7 +38,7 @@ namespace hades
 
 		const resources::animation* _animation{ nullptr };
 		vertex_buffer _vert_buffer{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Dynamic };
-		vector_float _frame{ -1.f,-1.f };
+		animation::animation_frame_data _frame;
 		vector_float _size{};
 	};
 }

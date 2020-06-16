@@ -45,6 +45,24 @@ namespace hades
 
 namespace hades
 {
+	//for clients to read info from server interfaces
+	namespace game::api
+	{
+		template<typename T>
+		T get_value(common_interface* l, curve_index_t i, time_point t)
+		{
+			const auto c = detail::get_game_curve_ref<T>(l, i);
+			return c.get(t);
+		}
+
+		template<typename T>
+		T& get_ref(common_interface* l, curve_index_t i, time_point t)
+		{
+			const auto c = detail::get_game_curve_ref<T>(l, i);
+			return c.get_ref(t);
+		}
+	}
+
 	//game contains general functions available to game systems
 	namespace game
 	{

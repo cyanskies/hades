@@ -89,6 +89,13 @@ namespace hades {
 			return second;
 		}
 
+		template<typename U = T, std::enable_if_t<!lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
+		constexpr const T& get_ref(time_point t) const noexcept
+		{
+			//get ref is only available if get() would resolve as a ref
+			return get(t);
+		}
+
 		T first, second;
 		time_point first_time;
 		time_point second_time;

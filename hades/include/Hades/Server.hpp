@@ -82,6 +82,12 @@ namespace hades
 		//returns the total mission time of the server
 		virtual time_point get_time() const noexcept = 0;
 
+		//returns the mission interface
+		virtual common_interface* get_interface() noexcept = 0;
+		//get the object ref for this player in the mission interface
+		// returns bad_entity on failure
+		virtual entity_id get_player_obj(unique_id) noexcept = 0;
+
 		//get source_file level1.mission or whatever
 		virtual mission get_mission() = 0;
 

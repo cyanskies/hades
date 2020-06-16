@@ -126,7 +126,7 @@ namespace hades
 		const T& get_ref(curve_index_t i, time_point t)
 		{
 			const auto &curve = get_curve<T>(i);
-			return curve.get(t);
+			return curve.get_ref(t);
 		}
 
 		template<typename T>
@@ -220,10 +220,10 @@ namespace hades
 		}
 
 		template<typename T>
-		const T& get_ref(curve_index_t, time_point)
+		const T& get_ref(curve_index_t i, time_point t)
 		{
 			const auto &curve = get_curve<T>(i);
-			return curve.value;
+			return curve.get_ref(t);
 		}
 
 		template<typename T>

@@ -123,6 +123,23 @@ namespace hades
 			return get_updates(exp, dt);
 		}
 
+		common_interface* get_interface() noexcept override
+		{
+			assert(_mission_instance);
+			return _mission_instance->get_interface();
+		}
+
+		entity_id get_player_obj(unique_id i) noexcept override
+		{
+			for (const auto& p : _players)
+			{
+				if (p.name == i)
+					return p.player_object;
+			}
+
+			return bad_entity;
+		}
+
 		mission get_mission() override
 		{
 			return _mission.source;

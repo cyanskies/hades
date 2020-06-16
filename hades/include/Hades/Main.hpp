@@ -9,6 +9,8 @@
 #include "hades/system.hpp"
 #include "hades/types.hpp"
 
+
+//TODO: pass default name, and callbacks for create_resources and app_begin
 //handles application startup and command line parameters
 int hades_main(int argc, char* argv[]);
 

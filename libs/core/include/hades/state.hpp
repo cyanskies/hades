@@ -41,7 +41,7 @@ namespace hades
 		//functions for states to overide to define behaviour
 		//main state loop
 		virtual void init() { reinit(); } //start all the state logic, this is for setting up game state
-		virtual bool handle_event(const event&) { return false;  } //handle any events you want, unhandled events go through the input system
+		virtual bool handle_event(const event&) { return false;  } //return true if you handle the event, unhandled events go through the input system
 		//tick game state with variable rate
 		//advance the game simulation by deltaTime ms
 		virtual void update(time_duration, const sf::RenderTarget&, input_system::action_set) {}

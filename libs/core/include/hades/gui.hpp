@@ -80,6 +80,8 @@ namespace hades
 		void set_display_size(vector_t<float> size);
 		
 		//input must be inserted before frame_begin
+		// returns true if the gui used the event
+		//TODO: hades::event
 		bool handle_event(const sf::Event &e);
 		void update(time_duration dt);
 
@@ -117,13 +119,13 @@ namespace hades
 		};
 
 		//windows and child windows
-		//_begin must always be matched by a _end
+		//end must be called even if begin returns false
 		bool window_begin(std::string_view name, bool &closed, window_flags = window_flags::none);
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
 		using vector = vector_t<float>;
-		//_begin must always be matched by a _end
+		//end must be called even if begin returns false
 		bool child_window_begin(std::string_view name, vector size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
 		void child_window_end();
 

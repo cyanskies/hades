@@ -25,7 +25,7 @@ namespace hades
 	{
 		using job_data_type = typename SystemType::job_data_t;
 		static_assert(std::is_invocable_r_v<job_data_type, MakeGameStructFn, unique_id,
-			std::vector<entity_id>, Interface*, system_behaviours<SystemType>*, time_point, time_duration, const std::vector<player_data>*, system_data_t*>,
+			std::vector<object_ref>, Interface*, system_behaviours<SystemType>*, time_point, time_duration, const std::vector<player_data>*, system_data_t*>,
 			"make_game_struct must return the correct job_data_type");
 
 		const auto current_time = prev_time + dt;
@@ -52,12 +52,12 @@ namespace hades
 				//pass entities that are already attached to this system
 				//this will be entities that were already in the level file
 				//or save file before this time point
-				auto ents = std::vector<entity_id>{};
+				auto ents = std::vector<object_ref>{};
 				const auto current_ents = sys_behaviours.get_entities(*system);
 				ents.reserve(std::size(current_ents));
 				std::transform(std::begin(current_ents), std::end(current_ents), std::back_inserter(ents),
 					[](auto &&entity) {
-						return std::get<entity_id>(entity);
+						return std::get<object_ref>(entity);
 				});
 
 				auto game_data = std::invoke(make_game_struct, s->id, std::move(ents), &interface, &sys_behaviours, prev_time, dt, players, &sys_behaviours.get_system_data(s->id));
@@ -119,7 +119,7 @@ namespace hades
 		//input functions
 		//NOTE: input is only triggered on the server
 		//TODO: input queue per player slot,
-		if constexpr (std::is_same_v<std::decay_t<Interface>, game_implementation>)
+		if constexpr (std::is_same_v<std::decay_t<Interface>, game_interface>)
 		{
 			const auto player_input_fn = interface.get_player_input_function();
 			if (player_input_fn)

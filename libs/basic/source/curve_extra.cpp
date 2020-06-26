@@ -74,7 +74,7 @@ namespace hades::resources
 			default_value.emplace<resources::curve_types::string>();
 			break;
 		case curve_variable_type::object_ref:
-			default_value.emplace<object_ref>(bad_object_ref);
+			default_value.emplace<object_ref>();
 			break;
 		case curve_variable_type::unique:
 			default_value.emplace<unique>(unique_zero);

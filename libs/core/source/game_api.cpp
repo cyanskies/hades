@@ -67,28 +67,21 @@ namespace hades
 
 	namespace game::level
 	{
-		object_ref get_object_from_name(std::string_view n, time_point t)
+		object_ref get_object_from_name(std::string_view n)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			return ptr->get_entity_id(n, t);
+			return ptr->get_object_ref(n);
 		}
 
-		object_ref create_object(object_instance obj)
+		object_ref create_object(const object_instance& obj)
 		{
-			//TODO: handle time better
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr && ptr->level_data);
 			assert(obj.id == bad_entity);
-			return ptr->level_data->create_entity(std::move(obj), get_time());
+			return ptr->level_data->create_object(std::move(obj));
 		}
 
-		void attach_system(object_ref e, unique_id s, time_point t)
-		{
-			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
-			game_current_level_system_ptr->attach_system(e, s, t);
-			return;
-		}
-
+		//TODO: do we need 'from', do we need 'untill' or just 'for'
 		void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
 		{
 			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
@@ -96,20 +89,9 @@ namespace hades
 			return;
 		}
 
-		void detach_system(object_ref e, unique_id s, time_point t)
+		void destroy_object(object_ref e)
 		{
-			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
-			game_current_level_system_ptr->detach_system(e, s, t);
-			return;
-		}
-
-		void destroy_object(object_ref e, time_point t)
-		{
-			auto game_current_level_ptr = detail::get_game_level_ptr();
-			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
-			const auto alive_id = get_alive_curve_id();
-			detail::set_game_value(game_current_level_ptr, { e, alive_id }, t, false);
-			game_current_level_system_ptr->detach_all(e, t);
+			
 			return;
 		}
 
@@ -129,7 +111,7 @@ namespace hades
 		{
 			//TODO: is it ok to cache the curve ptrs
 			static const auto curves = get_position_curve_id();
-			return get_value<world_vector_t>(curve_index_t{ o, curves }, t);
+			return {};//get_value<world_vector_t>(curve_index_t{ o, curves }, t);
 		}
 
 		world_vector_t get_position(object_ref o)
@@ -140,7 +122,7 @@ namespace hades
 		void set_position(object_ref o, world_vector_t v, time_point t)
 		{
 			static const auto curves = get_position_curve_id();
-			set_value({ o, curves }, t, v);
+			//set_value({ o, curves }, t, v);
 			return;
 		}
 
@@ -153,7 +135,7 @@ namespace hades
 		world_vector_t get_size(object_ref o, time_point t)
 		{
 			static const auto curve = get_size_curve_id();
-			return get_value<world_vector_t>({ o, curve }, t);
+			return {};//get_value<world_vector_t>({ o, curve }, t);
 		}
 
 		world_vector_t get_size(object_ref o)
@@ -164,14 +146,14 @@ namespace hades
 		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
 		{
 			static const auto curves = get_size_curve_id();
-			set_value<world_vector_t>({ o, curves }, t, { w, h });
+			//set_value<world_vector_t>({ o, curves }, t, { w, h });
 			return;
 		}
 
 		void set_size(object_ref o, world_vector_t v, time_point t)
 		{
 			const auto size = get_size_curve_id();
-			set_value({ o, size }, t, v);
+			//set_value({ o, size }, t, v);
 			return;
 		}
 
@@ -183,7 +165,8 @@ namespace hades
 
 		bool tags(object_ref o, tag_list has, tag_list not)
 		{
-			const auto& tags = get_value<tag_list>({ o, get_tags_curve_id() });
+			return false;
+			/*const auto& tags = get_value<tag_list>({ o, get_tags_curve_id() });
 			bool has1 = false, has2 = false;
 
 			for (const auto& t : tags)
@@ -195,13 +178,13 @@ namespace hades
 					has2 = true;
 			}
 
-			return has1 && !has2;
+			return has1 && !has2;*/
 		}
 
 		bool is_alive(object_ref o)
 		{
 			const auto alive = get_alive_curve_id();
-			return get_value<bool>({ o, alive });
+			return true;// get_value<bool>({ o, alive });
 		}
 	}
 
@@ -353,7 +336,7 @@ namespace hades
 		world_vector_t get_position(object_ref o, time_point t)
 		{
 			const auto pos_id = get_position_curve_id();
-			return get_value<world_vector_t>({ o, pos_id }, t);
+			return {};// get_value<world_vector_t>({ o, pos_id }, t);
 		}
 
 		world_vector_t get_position(object_ref o)
@@ -362,7 +345,7 @@ namespace hades
 		world_vector_t get_size(object_ref o, time_point t)
 		{
 			const auto size_id = get_size_curve_id();
-			return get_value<world_vector_t>({ o, size_id }, t);
+			return {};// get_value<world_vector_t>({ o, size_id }, t);
 		}
 
 		world_vector_t get_size(object_ref o)

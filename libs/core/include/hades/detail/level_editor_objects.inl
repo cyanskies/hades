@@ -127,12 +127,12 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<entity_id> make_property_edit2<entity_id>(gui& g, std::string_view name, const entity_id& value)
+	inline std::optional<object_ref> make_property_edit2<object_ref>(gui& g, std::string_view name, const object_ref& value)
 	{
-		auto ret = std::optional<entity_id>{};
-		auto value2 = integer_cast<int>(to_value(value));
+		auto ret = std::optional<object_ref>{};
+		auto value2 = integer_cast<int>(to_value(value.id));
 		if (g.input(name, value2))
-			ret = entity_id{ integer_cast<entity_id::value_type>(value2) };
+			ret = object_ref{ entity_id{integer_cast<entity_id::value_type>(value2)} };
 		g.tooltip(name);
 		return ret;
 	}

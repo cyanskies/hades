@@ -19,8 +19,8 @@ namespace hades
 
 			const auto systems = get_render_systems(*o);
 
-			for (const auto s : systems)
-				sys.attach_system(e, s->id, t);
+			/*for (const auto s : systems)
+				sys.attach_system(e, s->id, t);*/
 			return;
 		}
 		catch (const data::resource_null &e)
@@ -41,61 +41,61 @@ namespace hades
 		}
 	}
 
-	static void activate_ents(const curve_data& curves,
-		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
-		time_point time)
-	{
-		const auto obj_type_var = get_object_type_curve_id();
-		//unique curves contain the object types for entities
-		for (const auto& [key, val] : curves.unique_curves)
-		{
-			if (key.second != obj_type_var)
-				continue;
+	//static void activate_ents(const curve_data& curves,
+	//	system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
+	//	time_point time)
+	//{
+	//	const auto obj_type_var = get_object_type_curve_id();
+	//	//unique curves contain the object types for entities
+	//	for (const auto& [key, val] : curves.unique_curves)
+	//	{
+	//		if (key.second != obj_type_var)
+	//			continue;
 
-			if (activated.find(key.first) != std::end(activated))
-				continue;
+	//		if (activated.find(key.first) != std::end(activated))
+	//			continue;
 
-			//TODO: can we use the time from the curve,
-			//		might be possible after syncing the 
-			//		server and client time
-			const auto value = val.get(time);
-			if(value != unique_zero)
-				setup_systems_for_new_object(key.first, value, time, systems);
+	//		//TODO: can we use the time from the curve,
+	//		//		might be possible after syncing the 
+	//		//		server and client time
+	//		const auto value = val.get(time);
+	//		if(value != unique_zero)
+	//			setup_systems_for_new_object(key.first, value, time, systems);
 
-			activated.emplace(key.first);
-		}
-		return;
-	}
+	//		activated.emplace(key.first);
+	//	}
+	//	return;
+	//}
 
-	static void deactivate_ents(const curve_data& curves,
-		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
-		time_point time)
-	{
-		const auto alive_id = get_alive_curve_id();
-		for (const auto& [key, val] : curves.bool_curves)
-		{
-			if (key.second != alive_id)
-				continue;
+	//static void deactivate_ents(const curve_data& curves,
+	//	system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
+	//	time_point time)
+	//{
+	//	const auto alive_id = get_alive_curve_id();
+	//	for (const auto& [key, val] : curves.bool_curves)
+	//	{
+	//		if (key.second != alive_id)
+	//			continue;
 
-			const auto activated_iter = activated.find(key.first);
-			if (activated_iter == std::end(activated))
-				continue;
+	//		const auto activated_iter = activated.find(key.first);
+	//		if (activated_iter == std::end(activated))
+	//			continue;
 
-			const auto alive = val.get(time);
+	//		const auto alive = val.get(time);
 
-			if (!alive)
-			{
-				activated.erase(activated_iter);
-				systems.detach_all(key.first, time);
-			}
-		}
-		return;
-	}
+	//		if (!alive)
+	//		{
+	//			activated.erase(activated_iter);
+	//			systems.detach_all(key.first, time);
+	//		}
+	//	}
+	//	return;
+	//}
 
 	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
-		if(i)
-			activate_ents(i->get_curves(), _systems, _activated_ents, _current_frame);
+		//if(i)
+			//activate_ents(i->get_curves(), _systems, _activated_ents, _current_frame);
 		return;
 	}
 
@@ -106,13 +106,13 @@ namespace hades
 		assert(_interface);
 
 		//check for new entities and setup systems
-		activate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
-		deactivate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
+		//activate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
+		//deactivate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
 
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
 
-		auto make_render_job_data = [m, &i](unique_id sys, std::vector<entity_id> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
+		auto make_render_job_data = [m, &i](unique_id sys, std::vector<object_ref> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
 			time_duration dt, const std::vector<player_data>*, system_data_t* d)->render_job_data {
 				return render_job_data{sys, std::move(e), g, s, prev + dt, &i, d };
 		};

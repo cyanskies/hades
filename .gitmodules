@@ -10,3 +10,6 @@
 [submodule "deps/imgui"]
 	path = deps/imgui
 	url = https://github.com/cyanskies/imgui
+[submodule "deps/plf_colony"]
+	path = deps/plf_colony
+	url = https://github.com/cyanskies/plf_colony

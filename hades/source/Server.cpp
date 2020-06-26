@@ -25,35 +25,40 @@ namespace hades
 
 		void tick(time_duration dt, const std::vector<player_data>* p)
 		{
-			_game.tick(dt, p);
+			auto make_game_struct = [](unique_id sys, std::vector<object_ref> e, game_interface* g,
+				system_behaviours<game_system>* s, time_point t, time_duration dt, const std::vector<player_data>* p, system_data_t* d)->system_job_data {
+					return system_job_data{ sys, std::move(e), g, nullptr, p, s, t, dt, d };
+			};
+
+			const auto next = update_level(_level_time, _level_time + dt, dt, _game, _game.get_systems(), p, make_game_struct);
 			_level_time += dt;
 		}
 
 		void send_request(unique_id id, std::vector<action> a) override
 		{
 			// TODO: verify that the id represents this client
-			_game.add_input(id, std::move(a), _level_time);
+			_game.update_input_queue(id, std::move(a), _level_time);
 			return;
 		}
 
+		//TODO: exported curves is dead
 		void get_changes(exported_curves &exp, time_point dt) const override
 		{
-			_last_update_time = _level_time;
-			return _game.get_changes(exp, dt);
+			return;
 		}
 
 		void get_changes(exported_curves& exp) const override
 		{
-			return get_changes(exp, _last_update_time);
+			return;
 		}
 
 		common_interface* get_interface() noexcept override
 		{
-			return _game.get_interface();
+			return &_game;
 		}
 
 	private:
-		game_instance _game;
+		game_implementation _game;
 		
 		local_server_hub *_server; 
 
@@ -97,7 +102,7 @@ namespace hades
 		void update(time_duration dt) override
 		{
 			//tick the mission contruct
-			_mission_instance->tick(dt, &_players);
+			//_mission_instance->tick(dt, &_players);
 
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
@@ -107,12 +112,12 @@ namespace hades
 
 		time_point get_time() const noexcept override
 		{
-			return _mission_instance->get_time(_mission_instance->get_time());
+			return _mission_time;
 		}
 
 		void get_updates(exported_curves& exp, time_point dt) const override
 		{
-			_last_local_update_request = _mission_instance->get_time();
+			//_last_local_update_request = _mission_instance->get_time();
 			return;
 			//return _level.get_changes(exp, dt);
 		}
@@ -126,10 +131,10 @@ namespace hades
 		common_interface* get_interface() noexcept override
 		{
 			assert(_mission_instance);
-			return _mission_instance->get_interface();
+			return &*_mission_instance;
 		}
 
-		entity_id get_player_obj(unique_id i) noexcept override
+		object_ref get_player_obj(unique_id i) noexcept override
 		{
 			for (const auto& p : _players)
 			{
@@ -137,7 +142,7 @@ namespace hades
 					return p.player_object;
 			}
 
-			return bad_entity;
+			return {};
 		}
 
 		mission get_mission() override
@@ -196,7 +201,8 @@ namespace hades
 		//also stores the state for unloaded levels
 		mission_save _mission;
 
-		std::optional<game_instance> _mission_instance;
+		std::optional<game_implementation> _mission_instance;
+		time_point _mission_time;
 		//players
 		//TODO: wrap player_data and add network info etc.
 		std::vector<player_data> _players;

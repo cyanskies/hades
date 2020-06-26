@@ -1,6 +1,8 @@
 #ifndef HADES_CURVE_TYPES_HPP
 #define HADES_CURVE_TYPES_HPP
 
+//TODO: rename to game data types
+
 #include <tuple>
 
 #include "hades/colour.hpp"
@@ -18,6 +20,31 @@ namespace hades
 	};
 
 	string to_string(curve_variable_type) noexcept;
+
+	struct game_obj;
+	// held by objects to refer to one another
+	struct object_ref
+	{
+		entity_id id = bad_entity;
+		game_obj* ptr = nullptr;
+	};
+
+	constexpr bool operator==(const object_ref& l, const object_ref& r) noexcept
+	{
+		return l.id == r.id;
+	}
+
+	template<>
+	inline object_ref from_string<object_ref>(std::string_view s)
+	{
+		return { from_string<entity_id>(s) };
+	}
+
+	template<>
+	inline string to_string<object_ref>(object_ref o)
+	{
+		return to_string(o.id);
+	}
 }
 
 namespace hades::curve_types
@@ -28,7 +55,7 @@ namespace hades::curve_types
 	//TODO: double_t
 	using bool_t = bool;
 	using string = types::string;
-	using object_ref = entity_id;
+	using object_ref = hades::object_ref;
 	using unique = unique_id;
 	using colour = hades::colour;
 	using collection_int = std::vector<int_t>;
@@ -53,7 +80,7 @@ namespace hades::curve_types
 		collection_colour
 	>;
 
-	constexpr auto bad_object_ref = bad_entity;
+	constexpr auto bad_object_ref = object_ref{};
 	constexpr auto bad_unique = unique_zero;
 
 	template <typename T>

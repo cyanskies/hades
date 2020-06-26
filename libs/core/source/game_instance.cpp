@@ -16,7 +16,7 @@ namespace hades
 
 	void game_instance::tick(time_duration dt, const std::vector<player_data>* players)
 	{
-		auto make_game_struct = [](unique_id sys, std::vector<entity_id> e, game_interface* g, 
+		auto make_game_struct = [](unique_id sys, std::vector<object_ref> e, game_interface* g, 
 			system_behaviours<game_system> *s, time_point t, time_duration dt, const std::vector<player_data>* p, system_data_t* d)->system_job_data {
 			return system_job_data{ sys, std::move(e), g, nullptr, p, s, t, dt, d };
 		};
@@ -32,62 +32,62 @@ namespace hades
 		_game.update_input_queue(p, std::move(input), t);
 	}
 
-	template<typename T>
-	static void get_exported_set(std::vector<exported_curves::export_set<T>>& output, std::size_t &size, time_point t,
-		const curve_data::curve_map<T> &)
-	{
-		return;
-		//auto index = std::size_t{};
-		//for (const auto &c : data)
-		//{
-		//	if (index == std::size(output))
-		//		output.emplace_back();
+	//template<typename T>
+	//static void get_exported_set(std::vector<exported_curves::export_set<T>>& output, std::size_t &size, time_point t,
+	//	const curve_data::curve_map<T> &)
+	//{
+	//	return;
+	//	//auto index = std::size_t{};
+	//	//for (const auto &c : data)
+	//	//{
+	//	//	if (index == std::size(output))
+	//	//		output.emplace_back();
 
-		//	auto& s = output[index];
+	//	//	auto& s = output[index];
 
-		//	s.variable = c.first.second;
-		//	//TODO: cache this somewhere so wi don't hit a mutex every loop
-		//	//auto curve = data::get<resources::curve>(s.variable);
-		//	//assert(curve);
-		//	////skip if this curve shouldn't sync to the client
-		//	//if (!curve->sync)
-		//	//	continue;
+	//	//	s.variable = c.first.second;
+	//	//	//TODO: cache this somewhere so wi don't hit a mutex every loop
+	//	//	//auto curve = data::get<resources::curve>(s.variable);
+	//	//	//assert(curve);
+	//	//	////skip if this curve shouldn't sync to the client
+	//	//	//if (!curve->sync)
+	//	//	//	continue;
 
-		//	//get the rest of the data
-		//	s.entity = c.first.first;
-		//	auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
-		//	s.frames = { lower, std::end(c.second) };
+	//	//	//get the rest of the data
+	//	//	s.entity = c.first.first;
+	//	//	auto lower = std::lower_bound(c.second.begin(), c.second.end(), keyframe<T>{t, T{}}, keyframe_less<T>);
+	//	//	s.frames = { lower, std::end(c.second) };
 
-		//	if(!std::empty(s.frames))
-		//		++index;
-		//}
+	//	//	if(!std::empty(s.frames))
+	//	//		++index;
+	//	//}
 
-		//size = index;
+	//	//size = index;
 
-		//return;
-	}
+	//	//return;
+	//}
 
 	void game_instance::get_changes(exported_curves &output, time_point t) const
 	{
-		//return all frames between t and time.max	
-		const auto &curves = _game.get_curves();
+		////return all frames between t and time.max	
+		//const auto &curves = _game.get_curves();
 
-		using namespace resources::curve_types;
-		//load all the frames from the specified time into the exported data
-		//TODO: half of the curve types are missing
-		get_exported_set<int_t>(output.int_curves, output.sizes[0], t, curves.int_curves);
-		get_exported_set<float_t>(output.float_curves, output.sizes[1], t, curves.float_curves);
-		get_exported_set<vec2_float>(output.vec2_float_curves, output.sizes[2], t, curves.vec2_float_curves);
-		get_exported_set<bool_t>(output.bool_curves, output.sizes[3], t, curves.bool_curves);
-		get_exported_set<string>(output.string_curves, output.sizes[4], t, curves.string_curves);
-		get_exported_set<object_ref>(output.object_ref_curves, output.sizes[5], t, curves.object_ref_curves);
-		get_exported_set<unique>(output.unique_curves, output.sizes[6], t, curves.unique_curves);
+		//using namespace resources::curve_types;
+		////load all the frames from the specified time into the exported data
+		////TODO: half of the curve types are missing
+		//get_exported_set<int_t>(output.int_curves, output.sizes[0], t, curves.int_curves);
+		//get_exported_set<float_t>(output.float_curves, output.sizes[1], t, curves.float_curves);
+		//get_exported_set<vec2_float>(output.vec2_float_curves, output.sizes[2], t, curves.vec2_float_curves);
+		//get_exported_set<bool_t>(output.bool_curves, output.sizes[3], t, curves.bool_curves);
+		//get_exported_set<string>(output.string_curves, output.sizes[4], t, curves.string_curves);
+		//get_exported_set<object_ref>(output.object_ref_curves, output.sizes[5], t, curves.object_ref_curves);
+		//get_exported_set<unique>(output.unique_curves, output.sizes[6], t, curves.unique_curves);
 
-		get_exported_set<resources::curve_types::collection_int>(output.int_vector_curves, output.sizes[7], t, curves.int_vector_curves);
+		//get_exported_set<resources::curve_types::collection_int>(output.int_vector_curves, output.sizes[7], t, curves.int_vector_curves);
 
-		//add in entityNames
-		//output.entity_names = _newEntityNames;
-		
+		////add in entityNames
+		////output.entity_names = _newEntityNames;
+		//
 		return;
 	}
 

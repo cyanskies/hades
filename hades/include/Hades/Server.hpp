@@ -5,7 +5,6 @@
 #include "hades/input.hpp"
 #include "hades/mission.hpp"
 #include "hades/level.hpp"
-#include "hades/level_curve_data.hpp"
 #include "hades/time.hpp"
 
 //TODO: move to hades-core
@@ -86,7 +85,7 @@ namespace hades
 		virtual common_interface* get_interface() noexcept = 0;
 		//get the object ref for this player in the mission interface
 		// returns bad_entity on failure
-		virtual entity_id get_player_obj(unique_id) noexcept = 0;
+		virtual object_ref get_player_obj(unique_id) noexcept = 0;
 
 		//get source_file level1.mission or whatever
 		virtual mission get_mission() = 0;

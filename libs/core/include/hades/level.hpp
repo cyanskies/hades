@@ -1,7 +1,7 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-#include "hades/level_curve_data.hpp"
+#include "hades/game_state.hpp"
 #include "hades/math.hpp"
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
@@ -77,24 +77,6 @@ namespace hades
 		std::vector<raw_map> terrain_layers;
 	};
 	
-	struct object_save
-	{
-		curve_data curves;
-		entity_id next_id = bad_entity;
-		name_curve_t names;
-
-		//list of systems
-		using system_list = std::vector<const resources::system*>;
-		system_list systems;
-		using system_attachment_list = std::vector<resources::curve_types::collection_object_ref>;
-		system_attachment_list systems_attached;
-
-		//list of client systems?
-		//nah, we get all that from the object base type,
-		//they shouldn't be changing at runtime anyway
-		// ^^ TODO: potential optimisation for the render instance?
-	};
-
 	struct level_save
 	{
 		//source level
@@ -104,10 +86,10 @@ namespace hades
 		time_duration sleep_time{};
 		time_point level_time; // the last tick time before being saved
 		//entity data
-		object_save objects;
+		object_data objects;
 
-		using system_list = object_save::system_list;
-		using system_attachment_list = object_save::system_attachment_list;
+		//using system_list = object_save::system_list;
+		//using system_attachment_list = object_save::system_attachment_list;
 
 		//TODO: input curve
 	};
@@ -118,7 +100,6 @@ namespace hades
 	level deserialise_level(data::parser_node&);
 
 	level_save make_save_from_level(level l);
-	object_save make_save_from_object_data(const object_data&);
 }
 
 #endif //HADES_LEVEL_HPP

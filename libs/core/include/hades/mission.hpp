@@ -2,7 +2,6 @@
 #define HADES_MISSION_HPP
 
 #include "hades/level.hpp"
-#include "hades/level_curve_data.hpp"
 #include "hades/objects.hpp"
 #include "hades/time.hpp"
 
@@ -22,6 +21,7 @@ namespace hades
 			unique_id id = unique_zero;
 			entity_id object = bad_entity;
 		};
+
 		std::vector<player> players;
 
 		//game objects
@@ -55,7 +55,7 @@ namespace hades
 		mission source;
 
 		//entity data
-		object_save objects;
+		object_data objects;
 
 		//level saves
 		struct level_save_element

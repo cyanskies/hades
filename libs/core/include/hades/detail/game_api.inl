@@ -19,47 +19,6 @@ namespace hades
 
 			return *std::any_cast<T>(&any);
 		}
-
-		template<typename T>
-		game_property_curve<T> &get_game_curve_ref(common_interface* l, curve_index_t i)
-		{
-			auto& curves = l->get_curves();
-			auto& curve_map = hades::get_curve_list<T>(curves);
-			auto iter = curve_map.find(i);
-			if (iter == end(curve_map))
-				throw curve_not_found{"unable to find the requested curve on this object: " + to_string(i.second)};
-			return iter->second;
-		}
-
-		template<typename T>
-		void set_game_curve(common_interface*l, curve_index_t i, game_property_curve<T> c)
-		{
-			auto& curves = l->get_curves();
-			auto& target_curve_list = hades::get_curve_list<T>(curves);
-			target_curve_list.insert_or_assign(i, std::move(c));
-			return;
-		}
-
-		template<typename T>
-		void set_game_value(common_interface*l, curve_index_t i, time_point t, T&& v)
-		{
-			auto& curves = l->get_curves();
-			auto& target_curve_type = hades::get_curve_list<T>(curves);
-			auto iter = target_curve_type.find(i);
-
-			if (iter == std::end(target_curve_type))
-			{
-				//curve doesn't exist
-				const auto obj_id = to_string(to_value(i.first));
-				const auto curve = to_string(i.second);
-				LOGERROR("Tried to set missing curve, curve was: " + curve + ", object was: " + obj_id);
-				return;
-			}
-
-			auto &c = iter->second;
-			c.set(t, std::forward<T>(v));
-			return;
-		}
 	}
 
 	namespace game
@@ -116,49 +75,24 @@ namespace hades
 		}
 
 		template<typename T>
-		const game_property_curve<T> &get_curve(curve_index_t i)
+		T get_property_value(object_ref o, variable_id v)
 		{
-			const auto ptr = detail::get_game_level_ptr();
-			return detail::get_game_curve_ref<T>(ptr, i);
+			static_assert(curve_types::is_curve_type_v<T>);
+			const auto g_ptr = detail::get_game_level_ptr();
+			const auto o_ptr = state_api::get_object(o, g_ptr->get_extras());
+			assert(o_ptr);
 		}
 
 		template<typename T>
-		const T& get_ref(curve_index_t i, time_point t)
+		T& get_property_ref(object_ref o, variable_id v)
 		{
-			const auto &curve = get_curve<T>(i);
-			return curve.get_ref(t);
-		}
+			static_assert(curve_types::is_curve_type_v<T>);
 
-		template<typename T>
-		const T& get_ref(curve_index_t i)
-		{
-			return get_ref<T>(i, get_last_time());
 		}
-
+		
 		template<typename T>
-		T get_value(curve_index_t i, time_point t)
+		void set_property_value(object_ref, variable_id, T&&)
 		{
-			const auto& curve = get_curve<T>(i);
-			return curve.get(t);
-		}
-
-		template<typename T>
-		T get_value(curve_index_t i)
-		{
-			return get_value<T>(i, get_last_time());
-		}
-
-		template<typename T>
-		void set_value(curve_index_t i, time_point t, T&& v)
-		{
-			auto ptr = detail::get_game_data_ptr();
-			return detail::set_game_value(ptr->level_data, i, t, std::forward<T>(v));
-		}
-
-		template<typename T>
-		void set_value(curve_index_t i, T&& t)
-		{
-			return set_value(i, get_time(), std::forward<T>(t));
 		}
 	}
 
@@ -210,39 +144,6 @@ namespace hades
 		{
 			auto ptr = detail::get_render_level_ptr();
 			return detail::get_level_local_ref_imp<T>(id, ptr);
-		}
-
-		template<typename T>
-		const game_property_curve<T>& get_curve(curve_index_t i)
-		{
-			const auto ptr = detail::get_render_data_ptr();
-			return detail::get_game_curve_ref<T>(ptr->level_data, i);
-		}
-
-		template<typename T>
-		const T& get_ref(curve_index_t i, time_point t)
-		{
-			const auto &curve = get_curve<T>(i);
-			return curve.get_ref(t);
-		}
-
-		template<typename T>
-		const T& get_ref(curve_index_t i)
-		{
-			return get_ref(i, get_time());
-		}
-
-		template<typename T>
-		const T get_value(curve_index_t i, time_point t)
-		{
-			const auto &curve = get_curve<T>(i);
-			return curve.get(t);
-		}
-
-		template<typename T>
-		const T get_value(curve_index_t i)
-		{
-			return get_value<T>(i, get_time());
 		}
 	}
 }

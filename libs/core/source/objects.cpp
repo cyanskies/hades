@@ -408,18 +408,22 @@ namespace hades
 
 	curve_list get_all_curves(const object_instance &o)
 	{
-		auto output = curve_list{};
+		auto output = get_all_curves_iterative(o.obj_type);
 
+		const auto begin = std::begin(output);
+		const auto end = std::end(output);
 		//curves from the instance
-		for (auto c : o.curves)
-			output.emplace_back(std::move(c));
-
-		//get curves from the prototype
-		if (o.obj_type)
+		for (auto& [c, v] : o.curves)
 		{
-			auto inherited_curves = get_all_curves_iterative(o.obj_type);
-			output.insert(std::end(output), std::make_move_iterator(std::begin(inherited_curves)),
-				std::make_move_iterator(std::end(inherited_curves)));
+			auto iter = std::find_if(begin, end,
+				[c = c](auto&& elm) { return c->id == std::get<const resources::curve*>(elm)->id; });
+			if (iter != end)
+				std::get<resources::curve_default_value>(*iter) = std::move(v);
+			else
+			{
+				//TODO: real error
+				throw hades::runtime_error{ "object instance has a curve it isn't meant to have" };
+			}
 		}
 
 		return unique_curves(std::move(output));

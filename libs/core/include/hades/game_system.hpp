@@ -9,7 +9,6 @@
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
-#include "hades/level_curve_data.hpp"
 #include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/time.hpp"
@@ -48,7 +47,7 @@ namespace hades
 	};
 
 	using system_data_t = std::any;
-	using attached_ent = std::pair<entity_id, time_point>;
+	using attached_ent = std::pair<object_ref, time_point>;
 	using name_list = std::vector<attached_ent>;
 
 	template<typename SystemType>
@@ -83,19 +82,19 @@ namespace hades
 
 		//get entites that have been added to the system
 		//since the last frame
-		std::vector<entity_id> get_new_entities(SystemType&);
+		std::vector<object_ref> get_new_entities(SystemType&);
 		//get all entities currently attached to the system
 		const name_list& get_entities(SystemType&) const;
 		//get entities that were removed from the system last frame
-		std::vector<entity_id> get_removed_entities(SystemType&);
+		std::vector<object_ref> get_removed_entities(SystemType&);
 
-		void attach_system(entity_id, unique_id, time_point t);
-		void detach_system(entity_id, unique_id, time_point t);
+		void attach_system(object_ref, unique_id);
+		void detach_system(object_ref, unique_id);
 		//remove this entity from all systems
-		void detach_all(entity_id, time_point t);
+		void detach_all(object_ref);
 
 		//this entity won't trigger on_tick events untill the provided time point
-		void sleep_entity(entity_id, unique_id, time_point from, time_point until);
+		void sleep_entity(object_ref, unique_id, time_point from, time_point until);
 
 	private:
 		std::vector<SystemType> _systems;
@@ -112,7 +111,7 @@ namespace hades
 	{
 		unique_id system = unique_id::zero;
 		//entity to run on
-		std::vector<entity_id> entity;
+		std::vector<object_ref> entity;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -189,8 +188,8 @@ namespace hades
 		//list of entities attached to this system, over time
 		name_list attached_entities;
 
-		std::vector<entity_id> new_ents;
-		std::vector<entity_id> removed_ents;
+		std::vector<object_ref> new_ents;
+		std::vector<object_ref> removed_ents;
 	};
 
 	//program provided systems should be attatched to the renderer or 
@@ -208,7 +207,7 @@ namespace hades
 		//the system currently running
 		unique_id system = unique_id::zero;
 		//entity to run on
-		std::vector<entity_id> entity;
+		std::vector<object_ref> entity;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
@@ -269,8 +268,8 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system *system = nullptr;
 		name_list attached_entities;
-		std::vector<entity_id> new_ents;
-		std::vector<entity_id> removed_ents;
+		std::vector<object_ref> new_ents;
+		std::vector<object_ref> removed_ents;
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>

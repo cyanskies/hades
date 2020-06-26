@@ -14,6 +14,7 @@ set(HADES_CORE_SRC
 	source/font.cpp
 	source/game_api.cpp
 	source/game_instance.cpp
+	source/game_state.cpp
 	source/game_system.cpp
 	source/grid.cpp
 	source/gui.cpp
@@ -57,11 +58,11 @@ set(HADES_CORE_SRC
 	include/hades/font.hpp
 	include/hades/game_api.hpp
 	include/hades/game_instance.hpp
+	include/hades/game_state.hpp
 	include/hades/game_system.hpp
 	include/hades/grid.hpp
 	include/hades/gui.hpp
 	include/hades/level.hpp
-	include/hades/level_curve_data.hpp
 	include/hades/level_editor.hpp
 	include/hades/level_editor_component.hpp
 	include/hades/level_editor_grid.hpp
@@ -91,9 +92,9 @@ set(HADES_CORE_SRC
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
 	include/hades/detail/game_api.inl
+	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
 	include/hades/detail/gui.inl
-	include/hades/detail/level_curve_data.inl
 	include/hades/detail/level_editor.inl
 	include/hades/detail/level_editor_grid.inl
 	include/hades/detail/level_interface.inl
@@ -111,7 +112,8 @@ set(HADES_CORE_LIBS
 	#sfml-network 
 	sfml-system 
 	sfml-window
-	imgui	
+	imgui
+	plf-colony
 	PRIVATE	minizip)
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")

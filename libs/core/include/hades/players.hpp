@@ -29,7 +29,7 @@ namespace hades
 		};
 
 		unique_id name = unique_zero; // the name for this player slot(eg. enemies, player, neutrals)
-		resources::curve_types::object_ref player_object = resources::curve_types::bad_object_ref;
+		resources::curve_types::object_ref player_object = curve_types::bad_object_ref;
 		state player_state = state::end;
 	};
 }

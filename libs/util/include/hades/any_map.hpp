@@ -3,31 +3,26 @@
 
 #include <any>
 #include <exception>
-#include <map>
-#include <memory>
 #include <stdexcept>
 #include <unordered_map>
 #include <variant>
 
-#include "Hades/Types.hpp"
+#include "hades/types.hpp"
 
 namespace hades 
 {
-	namespace type_erasure
+	class any_map_key_null : public std::runtime_error
 	{
-		class key_null : public std::runtime_error
-		{
-		public:
-			using std::runtime_error::runtime_error;
-		};
+	public:
+		using std::runtime_error::runtime_error;
+	};
 
-		//the requested resource isn't of the type it is claimed to be
-		class value_wrong_type : public std::runtime_error
-		{
-		public:
-			using std::runtime_error::runtime_error;
-		};
-	}
+	//the requested resource isn't of the type it is claimed to be
+	class any_map_value_wrong_type : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
 
 	//a map whose value can be any type
 	template<class Key>
@@ -41,15 +36,19 @@ namespace hades
 
 		template<class T>
 		T get(Key key) const;
+		template<class T>
+		const T& get_ref(Key key) const;
+		template<class T>
+		const T* try_get(Key key) const noexcept;
 
 		void erase(Key key);
-		bool contains(Key key) const;
+		bool contains(Key key) const noexcept;
 
 		template<class T>
 		bool is(Key key) const;
 
 	private:
-		using data_map = std::map<key_type, std::any>;
+		using data_map = std::unordered_map<key_type, std::any>;
 		data_map _bag;
 	};
 
@@ -60,7 +59,7 @@ namespace hades
 	public:
 		using key_type = Key; 
 		using value_type = std::variant<Types...>;
-		using data_map = std::map<key_type, value_type>;
+		using data_map = std::unordered_map<key_type, value_type>;
 
 		template<class T>
 		void set(Key key, T value);

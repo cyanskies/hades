@@ -17,7 +17,7 @@ namespace hades
 	struct player_data;
 
 	//wraps the logic of a level with timekeeping
-	class game_instance
+	class [[deprecated]] game_instance
 	{
 	public:
 		game_instance(const level_save&);

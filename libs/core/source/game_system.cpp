@@ -35,8 +35,8 @@ namespace hades
 		static entity_info get_entity_info(resources::curve_types::object_ref e, time_point t)
 		{
 			using namespace resources::curve_types;
-
-			const auto obj_type = get_object_type_curve_id();
+			return {};
+			/*const auto obj_type = get_object_type_curve_id();
 			const auto obj_id = render::level::get_value<unique>({ e, obj_type }, t);
 			const auto object = data::get<resources::object>(obj_id);
 			const auto anims = get_editor_animations(*object);
@@ -46,7 +46,7 @@ namespace hades
 
 			auto entity = get_some_entity_info(e, t);
 			entity.anim = random_element(std::begin(anims), std::end(anims));
-			return entity;
+			return entity;*/
 		}
 
 		static sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e) noexcept
@@ -98,7 +98,7 @@ namespace hades
 					render::get_time(), render_interface::sprite_layer{},
 					ent.position, ent.size);
 
-				dat.emplace_back(entity, sprite_id);
+				dat.emplace_back(entity.id, sprite_id);
 			}
 
 			return;
@@ -114,7 +114,7 @@ namespace hades
 
 			for (const auto entity : ents)
 			{
-				if (const auto sprite = find(dat, entity); sprite != sprite_utility::bad_sprite_id)
+				if (const auto sprite = find(dat, entity.id); sprite != sprite_utility::bad_sprite_id)
 				{
 					const auto ent = get_some_entity_info(entity, time);
 					const auto& s_id = sprite;
@@ -133,10 +133,10 @@ namespace hades
 			auto &dat = render::get_system_data<sprite_id_t>();
 			for (const auto entity : ents)
 			{
-				if (const auto s_id = find(dat, entity); s_id != sprite_utility::bad_sprite_id)
+				if (const auto s_id = find(dat, entity.id); s_id != sprite_utility::bad_sprite_id)
 					render_output->destroy_sprite(s_id);
 
-				erase(dat, entity);
+				erase(dat, entity.id);
 			}
 
 			return;

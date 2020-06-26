@@ -45,22 +45,16 @@ namespace hades
 
 namespace hades
 {
+	struct curve_index_t 
+	{
+		object_ref o;
+		variable_id curve;
+	};
+
 	//for clients to read info from server interfaces
 	namespace game::api
 	{
-		template<typename T>
-		T get_value(common_interface* l, curve_index_t i, time_point t)
-		{
-			const auto c = detail::get_game_curve_ref<T>(l, i);
-			return c.get(t);
-		}
-
-		template<typename T>
-		T& get_ref(common_interface* l, curve_index_t i, time_point t)
-		{
-			const auto c = detail::get_game_curve_ref<T>(l, i);
-			return c.get_ref(t);
-		}
+		game_obj* get_object(game_interface*, object_ref);
 	}
 
 	//game contains general functions available to game systems
@@ -90,6 +84,10 @@ namespace hades
 		template<typename T>
 		void set_system_data(T value);
 		void destroy_system_data();
+	}
+
+	namespace game::object
+	{
 	}
 
 	//game::mission contains functions for accessing mission state
@@ -149,42 +147,20 @@ namespace hades
 		object_ref get_object_from_name(std::string_view, time_point);
 
 		//=== properties ===
-		//get access to curve object
+		//get access object properties
 		template<typename T>
-		const game_property_curve<T> &get_curve(curve_index_t);
+		T get_property_value(object_ref, variable_id);
+		template<typename T>
+		T& get_property_ref(object_ref, variable_id);
+		template<typename T>
+		void set_property_value(object_ref, variable_id, T&&);
 
-		//=== Refs ===
-		//returns a reference to the value stored in a curve at a specific time
-		// it is invalid to get a reference to a linear curve
-		template<typename T>
-		const T& get_ref(curve_index_t, time_point);
-		template<typename T>
-		const T& get_ref(curve_index_t);
-		
-		//=== Values ===
-		template<typename T>
-		T get_value(curve_index_t, time_point);
-		template<typename T>
-		T get_value(curve_index_t);
-		
-		//=== Set ==
-		template<typename T>
-		void set_value(curve_index_t, time_point, T&&);
-		
 		//=== Object Controls ===
 		//object creation and destruction
 		//an object is always created at game::get_time() time.
 		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
-		object_ref create_object(object_instance);
-
-		//system config
-		void attach_system(object_ref, unique_id, time_point);
-		void sleep_system(object_ref, unique_id, time_point from, time_point until);
-		void detach_system(object_ref, unique_id, time_point);
-
-		//removes all systems from object
-		// sets alive to false
-		void destroy_object(object_ref, time_point);
+		object_ref create_object(const object_instance&);
+		void destroy_object(object_ref);
 
 		//=== Common Curves ===
 		//position
@@ -292,18 +268,6 @@ namespace hades
 		// eg. collision trees
 		template<typename T>
 		T& get_level_local_ref(unique_id);
-
-		//get curve from this level
-		template<typename T>
-		const game_property_curve<T>& get_curve(curve_index_t);
-		template<typename T>
-		const T& get_ref(curve_index_t, time_point);
-		template<typename T>
-		const T& get_ref(curve_index_t);
-		template<typename T>
-		const T get_value(curve_index_t, time_point);
-		template<typename T>
-		const T get_value(curve_index_t);
 
 		//world info
 		world_rect_t get_world_bounds();

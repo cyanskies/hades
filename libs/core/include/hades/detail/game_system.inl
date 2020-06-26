@@ -82,9 +82,9 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline std::vector<entity_id> system_behaviours<SystemType>::get_new_entities(SystemType &sys)
+	inline std::vector<object_ref> system_behaviours<SystemType>::get_new_entities(SystemType &sys)
 	{
-		auto new_ents = std::vector<entity_id>{};
+		auto new_ents = std::vector<object_ref>{};
 		std::swap(sys.new_ents, new_ents);
 		return new_ents;
 	}
@@ -96,15 +96,15 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline std::vector<entity_id> system_behaviours<SystemType>::get_removed_entities(SystemType &sys)
+	inline std::vector<object_ref> system_behaviours<SystemType>::get_removed_entities(SystemType &sys)
 	{
-		auto ret = std::vector<entity_id>{};
+		auto ret = std::vector<object_ref>{};
 		std::swap(sys.removed_ents, ret);
 		return ret;
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::attach_system(entity_id entity, unique_id sys, time_point t)
+	inline void system_behaviours<SystemType>::attach_system(object_ref entity, unique_id sys)
 	{
 		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
@@ -117,9 +117,8 @@ namespace hades
 		if (found != ent_list.end())
 		{
 			const auto message = "The requested entityid is already attached to this system. EntityId: "
-				+ to_string(entity) + ", System: " + to_string(sys) + ", at time: " +
-				to_string(std::chrono::duration_cast<seconds_float>(t.time_since_epoch()).count()) + "s";
-			throw system_already_attached{ message };
+				+ to_string(entity) + ", System: " + to_string(sys);
+			throw system_error{ message };// system_already_attached{ message };
 		}
 
 		ent_list.emplace_back(entity, time_point{});
@@ -130,7 +129,7 @@ namespace hades
 	namespace detail
 	{
 		template<typename SystemType>
-		inline static void detach_system_impl(entity_id e, SystemType& sys, time_point)
+		inline static void detach_system_impl(object_ref e, SystemType& sys)
 		{
 			//removed from the active list
 			const auto remove_iter = std::remove_if(std::begin(sys.attached_entities), std::end(sys.attached_entities), [e](const attached_ent& ent) {
@@ -149,23 +148,24 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::detach_system(entity_id entity, unique_id sys, time_point t)
+	inline void system_behaviours<SystemType>::detach_system(object_ref entity, unique_id sys)
 	{
+		//TODO: deprecate
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
-		detail::detach_system_impl(entity, system, t);
+		//detail::detach_system_impl(entity, system);
 		return;
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::detach_all(entity_id e, time_point t)
+	inline void system_behaviours<SystemType>::detach_all(object_ref e)
 	{
 		for (auto& system : _systems)
-			detail::detach_system_impl(e, system, t);
+			detail::detach_system_impl(e, system);
 		return;
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::sleep_entity(entity_id e, unique_id s, time_point, time_point b)
+	inline void system_behaviours<SystemType>::sleep_entity(object_ref e, unique_id s, time_point, time_point b)
 	{
 		auto& sys = detail::find_system(s, _systems, _new_systems);
 		for (auto& [entity, time] : sys.attached_entities)

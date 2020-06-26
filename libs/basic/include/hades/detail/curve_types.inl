@@ -1,5 +1,6 @@
+#include "hades/curve_types.hpp"
+
 #include <type_traits>
-#include "..\curve_types.hpp"
 
 inline hades::string hades::to_string(hades::curve_variable_type t) noexcept
 {

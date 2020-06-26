@@ -128,7 +128,8 @@ namespace hades
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
 		const auto dist2 = vector::magnitude_squared<T>(vector_t<T>{ lhs.x, lhs.y } - vector_t<T>{ rhs.x, rhs.y });
-		return dist2 < std::pow(lhs.r + rhs.r, 2);
+		const auto d = lhs.r + lhs.r;
+		return dist2 < d * d;
 	}
 
 	template<typename U, typename V>
@@ -251,7 +252,8 @@ namespace hades
 		const vector_t<T> obj_pos{ object.x, object.y };
 		const vector_t<T> oth_pos{ other.x, other.y };
 		const auto obj_to_oth = oth_pos - obj_pos;
-		const auto rad2 = std::pow(object.r + other.r, 2);
+		const auto d = object.r + other.r;
+		const auto rad2 = d * d;
 
 		//early exit if collision is impossible.
 		if (vector::magnitude_squared(move) <
@@ -265,7 +267,7 @@ namespace hades
 			return move;
 
 		const auto obj_to_oth_len2 = vector::magnitude_squared(obj_to_oth);
-		const auto f = obj_to_oth_len2 - std::pow(dot, 2);
+		const auto f = obj_to_oth_len2 - (dot * dot);
 
 		if (f >= rad2)
 			return move;

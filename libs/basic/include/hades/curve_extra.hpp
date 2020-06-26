@@ -31,22 +31,19 @@ namespace hades::resources
 	using curve_variable_type = hades::curve_variable_type;
 	namespace curve_types = hades::curve_types;
 
-	using curve_default_value = std::variant<
-		std::monostate,
-		curve_types::int_t, 
-		curve_types::float_t,
-		curve_types::vec2_float,
-		curve_types::bool_t, 
-		curve_types::string, 
-		curve_types::object_ref,
-		curve_types::unique, 
-		curve_types::colour,
-		curve_types::collection_int,
-		curve_types::collection_float,
-		curve_types::collection_object_ref,
-		curve_types::collection_unique,
-		curve_types::collection_colour
-	>;
+	namespace detail
+	{
+		template<typename T> struct curve_default_value_type;
+		template<typename... Ts>
+		struct curve_default_value_type<std::tuple<Ts...>>
+		{
+			using type = std::variant<std::monostate, Ts...>;
+		};
+		template<typename T>
+		using curve_default_value_t = typename curve_default_value_type<T>::type;
+	}
+
+	using curve_default_value = detail::curve_default_value_t<curve_types::type_pack>;
 
 	static_assert(std::is_move_constructible_v<curve_default_value>);
 

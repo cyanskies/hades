@@ -3,6 +3,7 @@
 #include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
+#include "hades/game_state.hpp"
 #include "hades/parser.hpp"
 #include "hades/writer.hpp"
 
@@ -10,37 +11,57 @@ namespace hades
 {
 	constexpr auto zero_time = time_point{};
 
-	static void add_curve_from_object(curve_data &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
+	namespace
+	{
+		struct add_curve_visitor
+		{
+			game_state::state_data_type& c;
+			entity_id id;
+			const resources::curve* curve;
+
+			template<typename Ty>
+			void operator()(Ty& v)
+			{
+				using T = std::decay_t<decltype(v)>;
+				using ColonyType = game_state::data_colony<T>;
+				auto& colony = std::get<ColonyType>(c);
+				colony.insert(state_field<T>{ id, curve->id, std::move(v) });
+				return;
+			}
+
+			template<> // calling this should be impossible
+			void operator()<std::monostate> (std::monostate&) { return; }
+		};
+	}
+
+	static void add_curve_from_object(game_state::state_data_type &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
 	{
 		using namespace resources;
 
 		if (std::holds_alternative<std::monostate>(value))
 			value = reset_default_value(*curve);
 
+		// TODO: FIXME:
+		//	replace with better exception type
 		if (!resources::is_curve_valid(*curve, value))
 			throw std::runtime_error("unexpected curve type");
 
-		std::visit([&](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-			auto& curves = get_curve_list<T>(c);
-			curves.insert_or_assign(curve_index_t{ id, curve->id }, game_property_curve<T>{ zero_time, std::move(v) });
-			return;
-		}, value);
+		std::visit(add_curve_visitor{ c, id, curve }, value);
 	}
 
-	static std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
-	{
-		//search list
-		const auto sys_iter = std::find(std::begin(system_list), std::end(system_list), s);
-		auto pos = std::distance(std::begin(system_list), sys_iter);
-		if (sys_iter == std::end(system_list))
-		{
-			pos = std::distance(std::begin(system_list), system_list.emplace(sys_iter, s));
-			attach_list.emplace_back();
-		}
+	//static std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
+	//{
+	//	//search list
+	//	const auto sys_iter = std::find(std::begin(system_list), std::end(system_list), s);
+	//	auto pos = std::distance(std::begin(system_list), sys_iter);
+	//	if (sys_iter == std::end(system_list))
+	//	{
+	//		pos = std::distance(std::begin(system_list), system_list.emplace(sys_iter, s));
+	//		attach_list.emplace_back();
+	//	}
 
-		return pos;
-	}
+	//	return pos;
+	//}
 
 	static bool empty_obj(const resources::object* o)
 	{
@@ -52,7 +73,7 @@ namespace hades
 			empty(o->systems);
 	}
 
-	static void add_object_to_save(curve_data &c, entity_id id, const resources::object *o)
+	static void add_object_to_save(game_state::state_data_type &c, entity_id id, const resources::object *o)
 	{
 		assert(o);
 		if (empty_obj(o))
@@ -65,23 +86,23 @@ namespace hades
 			add_curve_from_object(c, id, curve, value);
 	}
 
-	static void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
-	{
-		assert(system_list.size() == attach_list.size());
+	//static void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
+	//{
+	//	assert(system_list.size() == attach_list.size());
 
-		//add systems from ancestors
-		for (const auto b : o->base)
-			add_object_to_systems(system_list, attach_list, id, b);
+	//	//add systems from ancestors
+	//	for (const auto b : o->base)
+	//		add_object_to_systems(system_list, attach_list, id, b);
 
-		for (const auto s : o->systems)
-		{
-			const auto sys_index = get_system_index(system_list, attach_list, s);
-			auto& ent_list = attach_list[sys_index];
+	//	for (const auto s : o->systems)
+	//	{
+	//		const auto sys_index = get_system_index(system_list, attach_list, s);
+	//		auto& ent_list = attach_list[sys_index];
 
-			if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
-				ent_list.push_back(id);
-		}
-	}
+	//		if (std::find(std::begin(ent_list), std::end(ent_list), id) == std::end(ent_list))
+	//			ent_list.push_back(id);
+	//	}
+	//}
 
 	using namespace std::string_view_literals;
 	static constexpr auto level_width_str = "width"sv;
@@ -251,40 +272,8 @@ namespace hades
 	level_save make_save_from_level(level l)
 	{
 		level_save sv;
-		sv.objects = make_save_from_object_data(l.objects);
+		sv.objects = l.objects;
 		sv.source = std::move(l);
 		return sv;
-	}
-
-	object_save make_save_from_object_data(const object_data& obj)
-	{
-		auto ents = object_save{};
-
-		for (const auto& o : obj.objects)
-		{
-			assert(o.id != bad_entity);
-
-			//record entity name if present
-			if (!o.name_id.empty())
-				ents.names.emplace(o.name_id, o.id);
-
-			//add curves from parents
-			if (o.obj_type)
-			{
-				add_object_to_save(ents.curves, o.id, o.obj_type);
-				//add the object type as a curve
-				add_curve_from_object(ents.curves, o.id, get_object_type_curve(), o.obj_type->id);
-			}
-
-			//add curves from object info
-			for (const auto [curve, value] : o.curves)
-				add_curve_from_object(ents.curves, o.id, curve, value);
-
-			//add object to systems
-			add_object_to_systems(ents.systems, ents.systems_attached, o.id, o.obj_type);
-		}
-
-		ents.next_id = obj.next_id;
-		return ents;
 	}
 }

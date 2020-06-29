@@ -2,119 +2,67 @@
 
 #include <tuple>
 
-//recursive worker templates for 
-//the for each
 namespace hades::detail
 {
-	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	constexpr bool nothrow_invokable_v() noexcept
+	template<typename Func, typename T, typename ...Args>
+	constexpr bool for_each_index_impl_noexcept() noexcept
 	{
-		using T = std::tuple_element_t<Count, Tuple>;
-
 		if constexpr (std::is_invocable_v<Func, T, std::size_t, Args...>)
 			return std::is_nothrow_invocable_v<Func, T, std::size_t, Args...>;
 		else
 			return std::is_nothrow_invocable_v<Func, T, Args...>;
 	}
 
-	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
-	inline void for_each_worker(Tuple &t, Func f, Args... args)
-		noexcept(nothrow_invokable_v<Count, Func, Tuple, Args...>())
+	template<std::size_t Index, typename Func, typename T, typename ...Args>
+	inline constexpr auto for_each_index_impl(Func f, T& t, Args... args) noexcept(for_each_index_impl_noexcept<Func, T, Args...>())
 	{
-		using T = std::tuple_element_t<Count, Tuple>;
-
 		if constexpr (std::is_invocable_v<Func, T, std::size_t, Args...>)
-			std::invoke(f, std::get<Count>(t), Count, args...);
+			return std::invoke(f, t, Index, args...);
 		else
-			std::invoke(f, std::get<Count>(t), args...);
-
-		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
-			for_each_worker<Count + 1>(t, f, args...);
+			return std::invoke(f, t, args...);
 	}
 
-	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	constexpr bool nothrow_invokable_r_v() noexcept
+	template<typename Tuple, typename Func, typename... Args, std::size_t... Index>
+	constexpr bool for_each_impl_noexcept(std::index_sequence<Index...>) noexcept
 	{
-		using T = std::tuple_element_t<Count, Tuple>;
-
-		if constexpr (std::is_invocable_v<Func, T, std::size_t, Args...>)
-		{
-			using Result = std::invoke_result_t<Func, T, std::size_t, Args...>;
-			return std::is_nothrow_invocable_r_v<Result, Func, T, std::size_t, Args...>;
-		}
-		else
-		{
-			using Result = std::invoke_result_t<Func, T, Args...>;
-			return std::is_nothrow_invocable_v<Result, Func, T, Args...>;
-		}
+		return (std::is_nothrow_invocable_v<Func, std::tuple_element_t<Index, Tuple>, Args...> && ...);
 	}
 
-	template<std::size_t Count, typename Tuple, typename Func, typename ...Args>
-    inline decltype(auto) for_each_worker_r(Tuple &t, Func f, Args... args)
-		noexcept(nothrow_invokable_r_v<Count, Func, Tuple, Args...>())
+	template<typename Tuple, typename Func, std::size_t... Index, typename ...Args>
+	inline constexpr void for_each_impl(Tuple& t, Func f, std::index_sequence<Index...> i, Args... args) 
+		noexcept(for_each_impl_noexcept<Tuple, Func, Args...>(i))
 	{
-		using T = std::tuple_element_t<Count, Tuple>;
-		using ResultType = std::invoke_result_t<Func, T, Args...>;
-
-		ResultType result{};
-
-		if constexpr (std::is_invocable_v<Func, T, std::size_t, Args...>)
-			result = std::invoke(f, std::get<Count>(t), Count, args...);
-		else
-			result = std::invoke(f, std::get<Count>(t), args...);
-
-		std::vector<ResultType> result_collection{};
-		result_collection.push_back(result);
-
-		if constexpr (Count + 1 < std::tuple_size_v<Tuple>)
-		{
-			auto new_result = for_each_worker_r<Count + 1>(t, f, args...);
-			result_collection.insert(std::end(result_collection), std::begin(new_result), std::end(new_result));
-		}
-
-		return result_collection;
+		(for_each_index_impl<Index>(f, std::get<Index>(t), args...), ...);
+		return;
 	}
 
-	template<std::size_t Count, typename Func, typename Tuple, typename ...Args>
-	inline void for_index_worker(Tuple &t, std::size_t i, Func f, Args... args) 
-		noexcept(std::is_nothrow_invocable_v<Func, std::tuple_element_t<Count, Tuple>, Args...>)
+	template<typename... Ts, typename Func, std::size_t... Index, typename ...Args>
+	inline decltype(auto) for_each_r_impl(std::tuple<Ts...>& t, Func f, std::index_sequence<Index...> i, Args... args)
+		noexcept(for_each_impl_noexcept<std::tuple<Ts...>, Func, Args...>(i))
 	{
-		if (Count == i)
-			std::invoke(f, std::get<Count>(t));
-		else if constexpr(Count + 1 < std::tuple_size_v<Tuple>)
-			for_index_worker<Count + 1>(t, i, f, args...);
-	}
-}
-
-namespace hades
-{
-	//TODO: rewrite these to not be recursive
-
-	template<typename Tuple, typename Func, typename ...Args>
-	void for_each_tuple(Tuple &t, Func f, Args... args) 
-		noexcept(noexcept(detail::for_each_worker<std::size_t{ 0u }>(t, f, args...)))
-	{
-		assert(std::tuple_size_v<Tuple> > 0);
-		detail::for_each_worker < std::size_t{ 0 } > (t, f, args...);
+		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
 	}
 
-	template<typename Tuple, typename Func, typename ...Args>
-    decltype(auto) for_each_tuple_r(Tuple &t, Func f, Args ...args)
-		noexcept(noexcept(detail::for_each_worker_r < std::size_t{ 0u }>(t, f, args...)))
+	template<typename... Ts, typename Func, std::size_t... Index, typename ...Args>
+	inline decltype(auto) for_each_r_impl(const std::tuple<Ts...>& t, Func f, std::index_sequence<Index...> i, Args... args)
+		noexcept(for_each_impl_noexcept<std::tuple<Ts...>, Func, Args...>(i))
 	{
-		assert(std::tuple_size_v<Tuple> > 0);
-		auto result = detail::for_each_worker_r < std::size_t{ 0u } > (t, f, args...);
-
-		std::reverse(std::begin(result), std::end(result));
-		return result;
+		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
 	}
 
-	template<typename Func, typename Tuple, typename ...Args>
-	void for_index_tuple(Tuple &t, std::size_t i, Func f, Args... args) 
-		noexcept(noexcept(detail::for_index_worker < std::size_t{ 0u }>(t, i ,f, args...)))
+	template<std::size_t Index, typename Func, typename T, typename ...Args>
+	inline constexpr void for_index_impl2(T& t, std::size_t i, Func f, Args... args)
+		noexcept(std::is_nothrow_invocable_v<Func, T, Args...>)
 	{
-		assert(i < std::tuple_size_v<Tuple>);
+		if (Index == i)
+			std::invoke(f, t, args...);
+		return;
+	}
 
-		detail::for_index_worker<std::size_t{0u}>(t, i, f, args...);
+	template<typename Func, typename Tuple, std::size_t... Index, typename... Args>
+	inline constexpr void for_index_impl(Tuple &t, std::size_t i, std::index_sequence<Index...>, Func f, Args... args)
+	{
+		(for_index_impl2<Index>(std::get<Index>(t), i, f, args...), ...);
+		return;
 	}
 }

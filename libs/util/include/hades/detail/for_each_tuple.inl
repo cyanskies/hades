@@ -36,16 +36,16 @@ namespace hades::detail
 		return;
 	}
 
-	template<typename... Ts, typename Func, std::size_t... Index, typename ...Args>
-	inline decltype(auto) for_each_r_impl(std::tuple<Ts...>& t, Func f, std::index_sequence<Index...> i, Args... args)
-		noexcept(for_each_impl_noexcept<std::tuple<Ts...>, Func, Args...>(i))
+	template<typename Tuple, typename Func, std::size_t... Index, typename ...Args>
+	inline decltype(auto) for_each_r_impl(Tuple& t, Func f, std::index_sequence<Index...> i, Args... args)
+		noexcept(for_each_impl_noexcept<Tuple, Func, Args...>(i))
 	{
 		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
 	}
 
-	template<typename... Ts, typename Func, std::size_t... Index, typename ...Args>
-	inline decltype(auto) for_each_r_impl(const std::tuple<Ts...>& t, Func f, std::index_sequence<Index...> i, Args... args)
-		noexcept(for_each_impl_noexcept<std::tuple<Ts...>, Func, Args...>(i))
+	template<typename Tuple, typename Func, std::size_t... Index, typename ...Args>
+	inline decltype(auto) for_each_r_impl(const Tuple& t, Func f, std::index_sequence<Index...> i, Args... args)
+		noexcept(for_each_impl_noexcept<Tuple, Func, Args...>(i))
 	{
 		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
 	}

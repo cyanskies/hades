@@ -92,7 +92,7 @@ set(HADES_CORE_SRC
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
 	include/hades/detail/game_api.inl
-	include/hades/detail/game_state.inl
+	#include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
 	include/hades/detail/gui.inl
 	include/hades/detail/level_editor.inl

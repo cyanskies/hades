@@ -22,7 +22,7 @@ namespace hades
 		class logger
 		{
 		public:
-			enum class log_verbosity { normal, error, warning };
+			enum class log_verbosity { log, normal = log, error, warning };
 
 			virtual ~logger() noexcept = default;
 			
@@ -90,21 +90,21 @@ namespace hades
 			__FILE__,									\
 			hades::time(),								\
 			Verbosity_									\
-	));													\
+	))													\
 
 //Standard information log, for requst responses 
 //or inforamtional messages
 #define LOG(Message_)									\
 	HADESLOG(Message_,									\
 		hades::console::logger::log_verbosity::normal	\
-	);
+	)
 
 //Error log, indicates that a requested
 //action failed to complete
 #define LOGERROR(Message_)								\
 	HADESLOG(Message_,									\
 		hades::console::logger::log_verbosity::error	\
-	);
+	)
 
 //Warning log, for incorrect behaviour, any error which
 //recovers becomes a warning, represents correctness and
@@ -112,6 +112,6 @@ namespace hades
 #define LOGWARNING(Message_)							\
 	HADESLOG(Message_,									\
 		hades::console::logger::log_verbosity::warning	\
-	);
+	)
 
 #endif //HADES_LOGGING_HPP

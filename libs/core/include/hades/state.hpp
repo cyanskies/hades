@@ -57,10 +57,21 @@ namespace hades
 		virtual void resume() {} //restart any custom timers, this state is active again and being drawn, recieving input
 	
 	protected:
-		using push_func = std::function<void(std::unique_ptr<state>)>;
-		push_func push_state, push_state_under;
+		void push_state(std::unique_ptr<state> s)
+		{
+			std::invoke(_push_state, std::move(s));
+			return;
+		}
+
+		void push_state_under(std::unique_ptr<state> s)
+		{
+			std::invoke(_push_state_under, std::move(s));
+			return;
+		}
 
 	private:
+		using push_func = std::function<void(std::unique_ptr<state>)>;
+		push_func _push_state, _push_state_under;
 		std::atomic_bool _alive = true, _init = false, _paused = false;
 	};
 }//hades

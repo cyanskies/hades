@@ -1,11 +1,14 @@
 #include "Hades/StateManager.hpp"
 
-//#include <functional>
-
-#include "Hades/Properties.hpp"
+#include "hades/properties.hpp"
+#include "hades/state.hpp"
 
 namespace hades
 {
+	StateManager::StateManager() noexcept {}
+
+	StateManager::~StateManager() noexcept {}
+
 	state *StateManager::getActiveState()
 	{
 		if(_states.empty())
@@ -55,19 +58,17 @@ namespace hades
 	state *StateManager::getValidState(StateManager::state_iter state)
 	{
 		//if the state is dead, clean it up and loop though to the next state
-		if(!(*state)->is_alive())
+		if (!(*state)->is_alive())
 		{
 			pop();
 			return getActiveState();
 		}
 
 		//if this state isn't initialised, then init
-		if(!(*state)->is_init())
+		if (!(*state)->is_init())
 		{
 			(*state)->init();
 			(*state)->init_done();
-			//make sure the gui has the correct view size
-			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);
 		}
 
 		//if this state is paused, resume
@@ -75,8 +76,6 @@ namespace hades
 		{
 			(*state)->grab_focus();
 			(*state)->reinit();
-			//make sure the gui has the correct view size
-			auto w = console::get_int("vid_width", 800), h = console::get_int("vid_height", 600);
 		}
 
 		//return this state.

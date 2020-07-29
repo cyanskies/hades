@@ -1,9 +1,9 @@
-#ifndef HADES_TIME_HPP
-#define HADES_TIME_HPP
+#ifndef HADES_SF_TIME_HPP
+#define HADES_SF_TIME_HPP
 
 #include "SFML/System/Time.hpp"
 
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 
 //provides conversions from sfml time objects to standard times
 
@@ -23,6 +23,7 @@ namespace hades
 	template<typename Rep, typename Period>
 	inline sf::Time to_sfml_time(basic_duration<Rep, Period> t)
 	{
+		//NOTE: micros is the most accurate mesurement sfml supports
 		const auto micro_duration = std::chrono::duration_cast<microseconds>(t);
 		const int64 micros = micro_duration.count();
 		return sf::microseconds(micros);
@@ -37,4 +38,4 @@ namespace hades
 	}
 }
 
-#endif // !HADES_TIME_HPP
+#endif // !HADES_SF_TIME_HPP

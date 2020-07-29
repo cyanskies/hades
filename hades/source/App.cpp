@@ -17,6 +17,7 @@
 #include "hades/parser.hpp"
 #include "hades/properties.hpp"
 #include "hades/simple_resources.hpp"
+#include "hades/state.hpp"
 #include "hades/timers.hpp"
 #include "hades/writer.hpp"
 #include "hades/yaml_parser.hpp"

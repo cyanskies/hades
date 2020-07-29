@@ -4,7 +4,7 @@
 
 #include "Hades/App.hpp"
 #include "hades/background.hpp"
-#include "Hades/mission_editor.hpp"
+#include "hades/mission_editor.hpp"
 #include "hades/mouse_input.hpp"
 #include "Hades/Server.hpp"
 

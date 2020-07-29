@@ -8,7 +8,7 @@
 
 #include "hades/utility.hpp"
 
-//TODO: strong_typedef can accept a struct type with defines and constexpr values
+//TODO: strong_typedef_traits<Tag> that strong_typedef can use for defines and constexpr values
 // in order to toggle capabilities
 
 namespace hades

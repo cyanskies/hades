@@ -4,8 +4,6 @@
 #include <memory>
 #include <vector>
 
-#include "hades/state.hpp"
-
 namespace sf
 {
 	class RenderTarget;
@@ -13,9 +11,16 @@ namespace sf
 
 namespace hades
 {
+	class state;
+
 	class StateManager
 	{
 	public:
+		// NOTE: defined in cpp file to allow unique_ptr to del 'state' type
+		//			without including state.hpp
+		StateManager() noexcept;
+		~StateManager() noexcept; 
+
 		state *getActiveState();
 
 		//Remove state from the top of the stack
@@ -28,6 +33,7 @@ namespace hades
 
 		//deactivates the statemanager, this will drop all states, and drop utility handles to the console and resource manager
 		void drop();
+
 	private:
 		using state_vector = std::vector<std::unique_ptr<state>>;
 		using state_iter = state_vector::reverse_iterator;

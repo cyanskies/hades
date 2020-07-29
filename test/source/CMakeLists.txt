@@ -8,8 +8,6 @@ set(HADES_EXAMPLE_SRC
 	input_names.cpp
 	main.cpp
 	simple_instance_state.cpp
-	Snake.cpp
-	snake_loader.cpp
 )
 
 # Library to build

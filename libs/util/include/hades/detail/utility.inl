@@ -206,14 +206,14 @@ namespace hades
 
 	namespace detail
 	{
-		template<typename T, typename std::enable_if_t<std::is_integral_v<T>, int> = 0>
+		template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 		T random(T min, T max)
 		{
 			std::uniform_int_distribution<T> random{ min, max };
 			return random(random_generator);
 		}
 
-		template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+		template<typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
 		T random(T min, T max)
 		{
 			std::uniform_real_distribution<T> random{ min, max };
@@ -372,13 +372,6 @@ namespace hades
 			*(result++) = output;
 		}
 	}
-
-	template<typename T>
-	string to_string(T value)
-	{
-		using std::to_string;
-		return to_string(value);
-	}
 	
 	template<class First, class Last>
 	types::string to_string(First begin, Last end, std::string_view delim)
@@ -468,6 +461,7 @@ namespace hades
 
 			//convert each one into T
 			std::vector<value_type> out;
+			out.reserve(size(elements));
 			for (const auto &e : elements)
 			{
 				if constexpr (custom_from_string)
@@ -483,9 +477,11 @@ namespace hades
 		}
 	}
 
-	template<typename T, typename FromString, typename>
+	template<typename T, typename FromString>
 	T vector_from_string(std::string_view str, FromString func)
 	{
+		static_assert(std::is_invocable_r_v<T, FromString, std::string_view>,
+			"vector_from_string(str, from_string): from_string must accept a std::string_view");
 		return detail::vector_from_string_impl(str, func);
 	}
 

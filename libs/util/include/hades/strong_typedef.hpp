@@ -31,14 +31,6 @@ namespace hades
 			: _value{ std::move_if_noexcept(v) }
 		{}
 
-		~strong_typedef() noexcept = default;
-
-		constexpr strong_typedef(const strong_typedef&) noexcept = default;
-		constexpr strong_typedef(strong_typedef&&) noexcept = default;
-
-		constexpr strong_typedef &operator=(const strong_typedef&) noexcept = default;
-		constexpr strong_typedef &operator=(strong_typedef&&) noexcept = default;
-
 		explicit constexpr operator value_type() const noexcept
 		{
 			return _value;

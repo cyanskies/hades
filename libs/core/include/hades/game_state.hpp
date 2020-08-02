@@ -14,7 +14,7 @@ namespace hades
 	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using variable_id = unique_id;
-	const variable_id bad_variable = variable_id::zero;
+	constexpr auto bad_variable = variable_id{ variable_id::zero_id };
 
 	template<typename DataType>
 	struct state_field
@@ -90,7 +90,7 @@ namespace hades
 
 	//the whole game state, this is everything that gets saved
 	// the only data not held here, is from the level file(terrain data)
-	// and 
+	// and calculated state in extra_state
 	struct game_state
 	{
 		template<typename T>

@@ -82,9 +82,13 @@ namespace hades {
 	template<typename T>
 	constexpr std::make_signed_t<T> signed_clamp_cast(T value) noexcept;
 
+	// casts T to its signed or unsigned type
+	// throws overflow_error if the stored value becomes unrepresentable
 	template<typename T>
 	constexpr auto sign_swap_cast(T value);
 
+	// casts T to its signed or unsigned type
+	// clamps value to representable range
 	template<typename T>
 	constexpr auto sign_swap_clamp_cast(T value) noexcept;
 
@@ -100,6 +104,7 @@ namespace hades {
 	constexpr T integer_cast(U);
 
 	//converts one integer type to another
+	// clamps stored value to representable range
 	template<typename T, typename U>
 	constexpr T integer_clamp_cast(U) noexcept;
 
@@ -165,6 +170,8 @@ namespace hades {
 	template<typename Container, typename Iter, typename Less, typename Equal>
 	Iter remove_duplicates(Container &cont, Iter first, Iter last, Less less, Equal equal);
 
+	//TODO: split all of these into a string header
+
 	//pass a back_inserter to result
 	template<typename Out>
 	void split(const std::string &s, char delim, Out result);
@@ -174,8 +181,12 @@ namespace hades {
 
 	std::string_view trim(std::string_view);
 
-	template<typename T>
-	string to_string(T value);
+	// catch overloads that can be satisfied by std::to_string
+	template<typename T,
+		std::enable_if_t<
+		std::is_void_v<std::void_t<decltype(std::to_string(std::declval<T>))>>
+		, int> = 0>
+	string to_string(T value) { return std::to_string(value); }
 
 	string to_string(const char* value);
 	string to_string(types::string value);
@@ -203,7 +214,7 @@ namespace hades {
 	template<>
 	std::string_view from_string<std::string_view>(std::string_view str);
 	
-	template<typename T, typename FromString, typename = std::enable_if_t<std::is_invocable_r_v<T, FromString, std::string_view>>>
+	template<typename T, typename FromString>
 	T vector_from_string(std::string_view str, FromString);
 
 	template<typename T>

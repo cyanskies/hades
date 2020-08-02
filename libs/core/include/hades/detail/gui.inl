@@ -74,7 +74,8 @@ namespace hades
 	{
 		using T = typename Container::value_type;
 		using hades::to_string;
-		return listbox(label, current_item, container, to_string<T>,
+		return listbox(label, current_item, container,
+			[](T value) { return to_string(value); },
 			height_in_items);
 	}
 

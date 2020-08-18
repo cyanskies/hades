@@ -50,6 +50,11 @@ namespace hades
 		using entity_var_type_t = typename entity_var_type<T>::type;
 	}
 
+	namespace resources
+	{
+		struct object;
+	}
+
 	//authoratative game object
 	struct game_obj
 	{
@@ -103,11 +108,12 @@ namespace hades
 
 	// non-saved state, this is generated during runtime from the actual game state.
 	// this doesn't need to be sent to clients, they load or generate their own extras
+	template<typename GameSystem>
 	struct extra_state
 	{
 		plf::colony<game_obj> objects;
 		//system behaviours, including system local data
-		system_behaviours<game_system> systems;
+		system_behaviours<GameSystem> systems;
 		//level local data, available in all systems
 		any_map<unique_id> level_locals;
 	};
@@ -115,14 +121,21 @@ namespace hades
 	//functions for modifying game state
 	namespace state_api
 	{
-		object_ref make_object(const object_instance&, game_state&, extra_state&);
+		template<typename GameSystem>
+		object_ref make_object(const object_instance&, game_state&, extra_state<GameSystem>&);
 		//returns true if the object was named, false if the name is already taken
 		bool name_object(string, object_ref, game_state&);
-		object_ref get_object_ref(std::string_view, game_state&, extra_state&) noexcept;
-		game_obj* get_object(object_ref, extra_state&) noexcept;
+		template<typename GameSystem>
+		object_ref get_object_ref(std::string_view, game_state&, extra_state<GameSystem>&) noexcept;
+		template<typename GameSystem>
+		game_obj* get_object(object_ref&, extra_state<GameSystem>&) noexcept;
+		template<typename T>
+		const T& get_object_property_ref(const game_obj&, variable_id) noexcept;
 		template<typename T>
 		T& get_object_property_ref(game_obj&, variable_id) noexcept;
 	}
 }
+
+#include "hades/detail/game_state.inl"
 
 #endif //!HADES_GAME_STATE_HPP

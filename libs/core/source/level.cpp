@@ -272,7 +272,7 @@ namespace hades
 	level_save make_save_from_level(level l)
 	{
 		level_save sv;
-		sv.objects = l.objects;
+		sv.objects = std::move(l.objects);
 		sv.source = std::move(l);
 		return sv;
 	}

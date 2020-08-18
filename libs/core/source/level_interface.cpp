@@ -10,7 +10,14 @@ namespace hades
 {
 	object_ref game_implementation::create_object(const object_instance &o)
 	{
-		return state_api::make_object(o, _state, _extras);
+		auto obj = state_api::make_object(o, _state, _extras);
+		_new_objects.emplace_back(*obj.ptr);
+		return obj;
+	}
+
+	std::vector<game_obj> game_implementation::get_new_objects() noexcept
+	{
+		return std::exchange(_new_objects, {});
 	}
 
 	void game_implementation::name_object(std::string_view s, object_ref o)
@@ -28,16 +35,16 @@ namespace hades
 		return data::get<resources::player_input>(sv.source.player_input_script);
 	}
 
-	static std::tuple<game_state, extra_state> fill_state(const level_save &sv)
+	static std::tuple<game_state, extra_state<game_system>> fill_state(const level_save &sv)
 	{
 		auto s = game_state{};
-		auto e = extra_state{};
+		auto e = extra_state<game_system>{};
 		s.next_id = sv.objects.next_id;
 
 		for (const auto o : sv.objects.objects)
 			state_api::make_object(o, s, e);
 
-		return { s, e };
+		return { std::move(s), std::move(e) };
 	}
 
 	game_implementation::game_implementation(const level_save& sv)
@@ -45,6 +52,9 @@ namespace hades
 		_size{ static_cast<world_unit_t>(sv.source.map_x), static_cast<world_unit_t>(sv.source.map_y) }
 	{
 		std::tie(_state, _extras) = fill_state(sv);
+
+		_new_objects.reserve(size(_extras.objects));
+		std::copy(begin(_extras.objects), end(_extras.objects), back_inserter(_new_objects));
 
 		if (!std::empty(sv.source.tile_map_layer.tiles))
 		{

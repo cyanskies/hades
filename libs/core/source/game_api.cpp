@@ -78,7 +78,7 @@ namespace hades
 			auto ptr = detail::get_game_data_ptr();
 			assert(ptr && ptr->level_data);
 			assert(obj.id == bad_entity);
-			return ptr->level_data->create_object(std::move(obj));
+			return ptr->level_data->create_object(obj);
 		}
 
 		//TODO: do we need 'from', do we need 'untill' or just 'for'
@@ -333,22 +333,16 @@ namespace hades
 			return render_data_ptr->level_data->get_world_terrain();
 		}
 
-		world_vector_t get_position(object_ref o, time_point t)
+		world_vector_t get_position(object_ref o)
 		{
 			const auto pos_id = get_position_curve_id();
-			return {};// get_value<world_vector_t>({ o, pos_id }, t);
-		}
-
-		world_vector_t get_position(object_ref o)
-		{ return get_position(o, get_time()); }
-
-		world_vector_t get_size(object_ref o, time_point t)
-		{
-			const auto size_id = get_size_curve_id();
-			return {};// get_value<world_vector_t>({ o, size_id }, t);
+			return  get_property_ref<world_vector_t>(o, pos_id);
 		}
 
 		world_vector_t get_size(object_ref o)
-		{ return get_size(o, get_time()); }
+		{
+			const auto size_id = get_size_curve_id();
+			return  get_property_ref<world_vector_t>(o, size_id);
+		}
 	}
 }

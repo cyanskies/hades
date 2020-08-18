@@ -38,6 +38,7 @@ namespace hades
 
 	struct level_save;
 
+	//used by render and game
 	class common_interface
 	{
 	public:
@@ -45,19 +46,21 @@ namespace hades
 
 		virtual const terrain_map& get_world_terrain() const noexcept = 0;
 		virtual world_rect_t get_world_bounds() const noexcept = 0;
+
+		virtual game_state& get_state() noexcept = 0;
+		virtual std::vector<game_obj> get_new_objects() noexcept = 0;
 	};
 
+	//use by game
 	class game_interface : public common_interface
 	{
 	public:
 		virtual object_ref create_object(const object_instance&) = 0;
 		virtual object_ref get_object_ref(std::string_view) noexcept = 0;
+		virtual extra_state<game_system>& get_extras() noexcept = 0;
 	};
 
-	//TODO: bring server functions out of the interface class
-	//into the game_level func
-	//
-	// contains functions for the game to use
+	//game server imp
 	class game_implementation : public game_interface
 	{
 	public:
@@ -66,14 +69,16 @@ namespace hades
 		object_ref create_object(const object_instance&) override;
 		object_ref create_object(const resources::object&);
 
+		std::vector<game_obj> get_new_objects() noexcept override;
+
 		void name_object(std::string_view, object_ref);
 
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _extras.systems; }
 
 		object_ref get_object_ref(std::string_view) noexcept override;
-		game_state& get_state() noexcept { return _state; }
-		extra_state& get_extras() noexcept { return _extras; }
+		game_state& get_state() noexcept override { return _state; }
+		extra_state<game_system>& get_extras() noexcept override { return _extras; }
 		const terrain_map& get_world_terrain() const noexcept override { return _terrain; }
 		world_rect_t get_world_bounds() const noexcept override {
 			return { {0.f, 0.f}, _size };
@@ -92,7 +97,10 @@ namespace hades
 
 	private:
 		game_state _state;
-		extra_state _extras;
+		extra_state<game_system> _extras;
+		// NOTE: for local clients to access
+		// should be removed for dedicated server
+		std::vector<game_obj> _new_objects;
 
 		//level info
 		terrain_map _terrain;
@@ -104,13 +112,6 @@ namespace hades
 		//TODO: do we even use the history??? (debug data only i guess)
 		std::map<unique_id, action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };
-	};
-
-	// a level area
-	class game_level
-	{
-	public:
-	private:
 	};
 
 	struct player_data;

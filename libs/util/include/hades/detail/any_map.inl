@@ -8,18 +8,43 @@ namespace hades
 {
 	template<class Key>
 	template<class T>
-	void any_map<Key>::set(Key key, T value)
+	T& any_map<Key>::set(Key key, T value)
 	{
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
-			_bag.emplace(key, std::make_any(std::move(value)));
-		else
 		{
-			auto t = iter->type();
-			if (t == typeid(T))
-				*iter = std::make_any(std::move(value));
-			else
-				throw any_map_value_wrong_type("Passed wrong type for this key to any_map, expected: " + t.name());
+			auto& elm = _bag.emplace(key, std::make_any<T>(std::move(value))).first->second;
+			return std::any_cast<T&>(elm);
+		}
+
+		T* elm = std::any_cast<T>(&iter->second);
+		if (elm == nullptr)
+		{
+			using namespace std::string_literals;
+			throw any_map_value_wrong_type("Passed wrong type for this key to any_map, provided: "s
+				+ typeid(T).name() + ", expected: "s + iter->second.type().name());
+		}
+
+		*elm = std::move(value);
+		return *elm;
+	}
+
+	namespace detail
+	{
+		template<typename T, typename Key, typename Map>
+		inline T& any_get_impl(Key key, Map map)
+		{
+			using namespace std::string_literals;
+			const auto iter = map.find(key);
+			if (iter == map.end())
+				throw any_map_key_null("Tried to retrieve unassigned key.");
+
+			auto ret = std::any_cast<std::decay_t<T>>(&iter->second);
+			if (ret)
+				return *ret;
+
+			throw any_map_value_wrong_type("Tried to retrieve value from any_map using wrong type. requested: "s
+				+ typeid(T).name() + ", stored type was: "s + iter->second.type().name());
 		}
 	}
 
@@ -27,32 +52,24 @@ namespace hades
 	template<class T>
 	T any_map<Key>::get(Key key) const
 	{
-		return get_ref(key);
+		return detail::any_get_impl<const T>(key, _bag);
 	}
 
 	template<class Key>
 	template<class T>
-	inline const T& any_map<Key>::get_ref(Key key) const
+	inline T& any_map<Key>::get_ref(Key key)
 	{
-		const auto iter = _bag.find(key);
-		if (iter == _bag.end())
-			throw any_map_key_null("Tried to retrieve unassigned key.");
-		else if (iter->type() == typeid(T))
-			return std::any_cast<const T>(*iter);
-		else
-			throw any_map_value_wrong_type("Tried to retrieve value from any_map using wrong type. requested: "
-				+ typeid(T).name() + ", stored type was: " + iter->type().name());
+		return detail::any_get_impl<T>(key, _bag);
 	}
 
 	template<class Key>
 	template<class T>
-	inline const T* any_map<Key>::try_get(Key key) const noexcept
+	inline T* any_map<Key>::try_get(Key key) noexcept
 	{
 		const auto iter = _bag.find(key);
-		if (iter != end(_bag) && iter->type() == typeid(T))
-			return std::any_cast<const T*>(*iter);
+		if (iter == end(_bag)) return nullptr;
 
-		return nullptr;
+		return std::any_cast<T>(&iter->second);
 	}
 
 	template<class Key>
@@ -85,17 +102,17 @@ namespace hades
 
 	template<typename Key, typename ...Types>
 	template<typename T>
-	void var_map<Key, Types...>::set(Key k, T v)
+	T& var_map<Key, Types...>::set(Key k, T v)
 	{
-		static_assert(std::holds_alternative<T>(_bag), "var bag doesn't contain the requested type");
-		_bag.insert({ k, value_type{ v } });
+		assert(std::holds_alternative<T>(_bag));
+		return *_bag.insert({ k, value_type{ v } });
 	}
 
 	template<typename Key, typename ...Types>
 	template<typename T>
 	T var_map<Key, Types...>::get(Key k) const
 	{
-		static_assert(std::holds_alternative<T>(_bag), "var bag doesn't contain the requested type");
+		assert(std::holds_alternative<T>(_bag));
 		return std::get<T>(*_bag.find(k));
 	}
 

@@ -67,36 +67,65 @@ namespace hades
 	//	return;
 	//}
 
-	//static void deactivate_ents(const curve_data& curves,
-	//	system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
-	//	time_point time)
-	//{
-	//	const auto alive_id = get_alive_curve_id();
-	//	for (const auto& [key, val] : curves.bool_curves)
-	//	{
-	//		if (key.second != alive_id)
-	//			continue;
+	/*static void deactivate_ents(const curve_data& curves,
+		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
+		time_point time)
+	{
+		const auto alive_id = get_alive_curve_id();
+		for (const auto& [key, val] : curves.bool_curves)
+		{
+			if (key.second != alive_id)
+				continue;
 
-	//		const auto activated_iter = activated.find(key.first);
-	//		if (activated_iter == std::end(activated))
-	//			continue;
+			const auto activated_iter = activated.find(key.first);
+			if (activated_iter == std::end(activated))
+				continue;
 
-	//		const auto alive = val.get(time);
+			const auto alive = val.get(time);
 
-	//		if (!alive)
-	//		{
-	//			activated.erase(activated_iter);
-	//			systems.detach_all(key.first, time);
-	//		}
-	//	}
-	//	return;
-	//}
+			if (!alive)
+			{
+				activated.erase(activated_iter);
+				systems.detach_all(key.first, time);
+			}
+		}
+		return;
+	}*/
 
 	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
-		//if(i)
-			//activate_ents(i->get_curves(), _systems, _activated_ents, _current_frame);
+		assert(i);
+
+		auto s = i->get_state();
+
 		return;
+	}
+
+
+	void render_instance::create_new_objects(std::vector<game_obj> objects)
+	{
+		//update extra with new object information
+		auto& obj_list = _extra.objects;
+
+		std::vector<plf::colony<game_obj>::iterator> new_objects;
+		new_objects.reserve(size(objects));
+		for (auto& o : objects)
+			new_objects.emplace_back(obj_list.insert(std::move(o)));
+
+		objects.clear();
+
+		for (auto& o : new_objects)
+		{
+			const auto id = o->id;
+			const auto systems = get_render_systems(*o->object_type);
+			for (const auto s : systems)
+				_extra.systems.attach_system(object_ref{ o->id, &*o }, s->id);
+		}
+	}
+
+	extra_state<render_system>& render_instance::get_extras() noexcept
+	{
+		return _extra;
 	}
 
 	struct player_data;
@@ -112,13 +141,14 @@ namespace hades
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
 
-		auto make_render_job_data = [m, &i](unique_id sys, std::vector<object_ref> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
+		auto extra_ptr = &_extra;
+		auto make_render_job_data = [m, extra_ptr, &i](unique_id sys, std::vector<object_ref> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
 			time_duration dt, const std::vector<player_data>*, system_data_t* d)->render_job_data {
-				return render_job_data{sys, std::move(e), g, s, prev + dt, &i, d };
+				return render_job_data{sys, std::move(e), g, extra_ptr, s, prev + dt, &i, d };
 		};
 
 		const auto next = update_level(_prev_frame, _current_frame, dt,
-			*_interface, _systems, nullptr, make_render_job_data);
+			*_interface, _extra.systems, nullptr, make_render_job_data);
 
 		i.prepare(); //copy sprites into vertex buffer
 

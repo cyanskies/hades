@@ -15,6 +15,10 @@ namespace hades
 	public:
 		explicit render_instance(common_interface*);
 
+		void create_new_objects(std::vector<game_obj>);
+		// TODO: dead object update
+
+		extra_state<render_system>& get_extras() noexcept;
 		//TODO: should this sync the time between server client?
 		// YES, since our curve data is all still in server time
 		void make_frame_at(time_point t, const common_interface *mission, render_interface &output);
@@ -24,7 +28,7 @@ namespace hades
 		time_point _prev_frame{};
 
 		common_interface* _interface = nullptr;
-		system_behaviours<render_system> _systems;
+		extra_state<render_system> _extra;
 		std::unordered_set<entity_id> _activated_ents;
 		//render_implementation _game;
 	};

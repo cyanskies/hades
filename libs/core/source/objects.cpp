@@ -418,12 +418,12 @@ namespace hades
 			auto iter = std::find_if(begin, end,
 				[c = c](auto&& elm) { return c->id == std::get<const resources::curve*>(elm)->id; });
 			if (iter != end)
-				std::get<resources::curve_default_value>(*iter) = std::move(v);
-			else
-			{
-				//TODO: real error
-				throw hades::runtime_error{ "object instance has a curve it isn't meant to have" };
-			}
+				std::get<resources::curve_default_value>(*iter) = v;
+			//else // ignore vagrant curves in saved files or object blueprints
+			//{
+			//	//TODO: real error
+			//	throw hades::runtime_error{ "object instance has a curve it isn't meant to have" };
+			//}
 		}
 
 		return unique_curves(std::move(output));

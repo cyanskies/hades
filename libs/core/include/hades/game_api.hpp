@@ -51,12 +51,6 @@ namespace hades
 		variable_id curve;
 	};
 
-	//for clients to read info from server interfaces
-	namespace game::api
-	{
-		game_obj* get_object(game_interface*, object_ref);
-	}
-
 	//game contains general functions available to game systems
 	namespace game
 	{
@@ -273,11 +267,15 @@ namespace hades
 		world_rect_t get_world_bounds();
 		const terrain_map& get_world_terrain() noexcept;
 
-		//common curves
-		world_vector_t get_position(object_ref, time_point);
-		world_vector_t get_position(object_ref);
+		//=== properties ===
+		//get access object properties
+		template<typename T>
+		T get_property_value(object_ref, variable_id);
+		template<typename T>
+		T& get_property_ref(object_ref, variable_id);
 
-		world_vector_t get_size(object_ref, time_point);
+		//common curves// common properties
+		world_vector_t get_position(object_ref);
 		world_vector_t get_size(object_ref);
 
 		//returns true if the object has the tags from the 'has' list

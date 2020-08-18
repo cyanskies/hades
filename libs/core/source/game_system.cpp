@@ -24,29 +24,28 @@ namespace hades
 			const resources::animation* anim = nullptr;
 		};
 
-		static entity_info get_some_entity_info(resources::curve_types::object_ref e, time_point t)
+		static entity_info get_some_entity_info(resources::curve_types::object_ref e)
 		{
 			return entity_info{
-				render::level::get_position(e, t),
-				render::level::get_size(e, t)
+				render::level::get_position(e),
+				render::level::get_size(e)
 			};
 		}
 
-		static entity_info get_entity_info(resources::curve_types::object_ref e, time_point t)
+		static entity_info get_entity_info(resources::curve_types::object_ref e)
 		{
 			using namespace resources::curve_types;
-			return {};
-			/*const auto obj_type = get_object_type_curve_id();
-			const auto obj_id = render::level::get_value<unique>({ e, obj_type }, t);
+			const auto obj_type = get_object_type_curve_id();
+			const auto obj_id = render::level::get_property_value<unique>(e, obj_type);
 			const auto object = data::get<resources::object>(obj_id);
 			const auto anims = get_editor_animations(*object);
 
 			if (std::empty(anims))
 				return {};
 
-			auto entity = get_some_entity_info(e, t);
+			auto entity = get_some_entity_info(e);
 			entity.anim = random_element(std::begin(anims), std::end(anims));
-			return entity;*/
+			return entity;
 		}
 
 		static sprite_utility::sprite_id find(const sprite_id_t& v, entity_id e) noexcept
@@ -89,7 +88,7 @@ namespace hades
 			const auto time = render::get_time();
 			for (const auto entity : ents)
 			{
-				const auto ent = get_entity_info(entity, time);
+				const auto ent = get_entity_info(entity);
 
 				if (ent.anim == nullptr)
 					return;
@@ -116,7 +115,7 @@ namespace hades
 			{
 				if (const auto sprite = find(dat, entity.id); sprite != sprite_utility::bad_sprite_id)
 				{
-					const auto ent = get_some_entity_info(entity, time);
+					const auto ent = get_some_entity_info(entity);
 					const auto& s_id = sprite;
 					render_output->set_sprite(s_id, render::get_time(),
 						ent.position, ent.size);
@@ -219,6 +218,11 @@ namespace hades
 		common_interface* get_render_level_ptr() noexcept
 		{
 			return render_data_ptr->level_data;
+		}
+
+		extra_state<render_system>* get_render_extra_ptr() noexcept
+		{
+			return render_data_ptr->extra;
 		}
 	}
 }

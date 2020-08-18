@@ -9,15 +9,14 @@ namespace hades
 {
 	namespace detail
 	{
-		template<typename T>
-		T& get_level_local_ref_imp(unique_id id, common_interface* ptr)
+		template<typename T, typename GameSystem>
+		T& get_level_local_ref_imp(unique_id id, extra_state<GameSystem>& extras)
 		{
-			static_assert(std::is_default_constructible_v<T>);
-			auto& any = ptr->get_level_local_ref(id);
-			if (!any.has_value())
-				any.emplace<T>();
+			auto val = extras.level_locals.try_get<T>(id);
+			if (val) return *val;
 
-			return *std::any_cast<T>(&any);
+			static_assert(std::is_default_constructible_v<T>);
+			return extras.level_locals.set<T>(id, {});
 		}
 	}
 
@@ -71,28 +70,31 @@ namespace hades
 		T& get_level_local_ref(unique_id id)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			return detail::get_level_local_ref_imp<T>(id, ptr);
+			return detail::get_level_local_ref_imp<T>(id, ptr->get_extras());
 		}
 
 		template<typename T>
 		T get_property_value(object_ref o, variable_id v)
 		{
-			static_assert(curve_types::is_curve_type_v<T>);
-			const auto g_ptr = detail::get_game_level_ptr();
-			const auto o_ptr = state_api::get_object(o, g_ptr->get_extras());
-			assert(o_ptr);
+			return get_property_ref<T>(o, v);
 		}
 
 		template<typename T>
 		T& get_property_ref(object_ref o, variable_id v)
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
-
+			const auto g_ptr = detail::get_game_level_ptr();
+			const auto o_ptr = state_api::get_object(o, g_ptr->get_extras());
+			assert(o_ptr);
+			// TODO: maybe handle null o_ptr due to stale ref
+			return state_api::get_object_property_ref<T>(*o_ptr, v);
 		}
 		
 		template<typename T>
-		void set_property_value(object_ref, variable_id, T&&)
+		void set_property_value(object_ref o, variable_id v, T&& value)
 		{
+			auto& prop = get_property_ref<std::decay_t<T>>(o, v);
+			prop = std::forward<T>(value);
 		}
 	}
 
@@ -142,8 +144,23 @@ namespace hades
 		template<typename T>
 		T& get_level_local_ref(unique_id id)
 		{
-			auto ptr = detail::get_render_level_ptr();
-			return detail::get_level_local_ref_imp<T>(id, ptr);
+			return detail::get_level_local_ref_imp<T>(id, *detail::get_render_extra_ptr());
+		}
+
+		template<typename T>
+		T get_property_value(object_ref o, variable_id v)
+		{
+			return get_property_ref<T>(o, v);
+		}
+
+		template<typename T>
+		T& get_property_ref(object_ref o, variable_id v)
+		{
+			static_assert(curve_types::is_curve_type_v<T>);
+			const auto o_ptr = state_api::get_object(o, *detail::get_render_extra_ptr());
+			assert(o_ptr);
+			// TODO: maybe handle null o_ptr due to stale ref
+			return state_api::get_object_property_ref<T>(*o_ptr, v);
 		}
 	}
 }

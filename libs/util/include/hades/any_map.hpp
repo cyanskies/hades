@@ -32,14 +32,14 @@ namespace hades
 		using key_type = Key;
 		
 		template<class T>
-		void set(Key key, T value);
+		T& set(Key key, T value);
 
 		template<class T>
 		T get(Key key) const;
 		template<class T>
-		const T& get_ref(Key key) const;
+		T& get_ref(Key key);
 		template<class T>
-		const T* try_get(Key key) const noexcept;
+		T* try_get(Key key) noexcept;
 
 		void erase(Key key);
 		bool contains(Key key) const noexcept;
@@ -62,7 +62,7 @@ namespace hades
 		using data_map = std::unordered_map<key_type, value_type>;
 
 		template<class T>
-		void set(Key key, T value);
+		T& set(Key key, T value);
 
 		template<class T>
 		T get(Key key) const;

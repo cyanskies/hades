@@ -17,12 +17,18 @@ namespace hades
 	// use by:
 	// struct type_t {};
 	// using type = strong_typedef<type_t, value_type>;
-	template<typename Tag, typename T, bool ArithmeticOperators = false>
+	template<typename Tag>
+	struct strong_typedef_traits
+	{
+		static constexpr auto arithmetic_operators = false;
+	};
+
+	template<typename Tag, typename T>
 	struct strong_typedef
 	{
 		using tag_type = Tag;
 		using value_type = T;
-		static constexpr bool arithmatic_flag = ArithmeticOperators && std::is_arithmetic_v<T>;
+		static constexpr bool arithmetic_flag = strong_typedef_traits<Tag>::arithmetic_operators && std::is_arithmetic_v<T>;
 
 		//TODO: enable_if is_default_constructable
 		constexpr strong_typedef() noexcept = default;
@@ -48,26 +54,26 @@ namespace hades
 			return swap(static_cast<V&>(l), static_cast<V&>(r));
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef operator+() const noexcept
 		{
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef operator-() const noexcept(noexcept(-_value))
 		{
 			return -_value;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator++() noexcept(noexcept(++_value))
 		{
 			++_value;
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef operator++(int)
 			noexcept(noexcept(operator++()) && std::is_nothrow_constructible_v<T, T>)
 		{
@@ -76,14 +82,14 @@ namespace hades
 			return tmp;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator--() noexcept(noexcept(--_value))
 		{
 			--_value;
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef operator--(int)
 			noexcept(noexcept(operator--()) && std::is_nothrow_copy_constructible_v<T, T>)
 		{
@@ -92,7 +98,7 @@ namespace hades
 			return tmp;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator+=(const strong_typedef &rhs)
 			noexcept(noexcept(_value += rhs._value))
 		{
@@ -100,7 +106,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator-=(const strong_typedef &rhs)
 			noexcept(noexcept(_value -= rhs._value))
 		{
@@ -108,7 +114,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator*=(const strong_typedef &rhs)
 			noexcept(noexcept(_value *= rhs._value))
 		{
@@ -116,7 +122,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator/=(const strong_typedef &rhs)
 			noexcept(noexcept(_value /= rhs._value))
 		{
@@ -124,7 +130,7 @@ namespace hades
 			return *this;
 		}
 
-		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U, ArithmeticOperators>::arithmatic_flag, int> = 0>
+		template<typename U = T, std::enable_if_t<strong_typedef<Tag, U>::arithmetic_flag, int> = 0>
 		constexpr strong_typedef &operator%=(const strong_typedef &rhs)
 			noexcept(noexcept(_value %= rhs._value))
 		{
@@ -139,8 +145,8 @@ namespace hades
 	template<typename T>
 	struct is_strong_typedef : std::false_type {};
 
-	template<typename Tag, typename T, bool ArithmeticOp>
-	struct is_strong_typedef<strong_typedef<Tag, T, ArithmeticOp>> : std::true_type {};
+	template<typename Tag, typename T>
+	struct is_strong_typedef<strong_typedef<Tag, T>> : std::true_type {};
 
 	template<typename T>
 	constexpr auto is_strong_typedef_v = is_strong_typedef<T>::value;
@@ -148,97 +154,97 @@ namespace hades
 	template<typename T, typename = std::enable_if_t<is_strong_typedef_v<T>>>
 	constexpr auto strong_typedef_operators_enabled_v = T::arithmetic_flag;
 
-	template<typename Tag, typename T, bool B>
-	inline constexpr bool operator==(const strong_typedef<Tag, T, B> &l, const strong_typedef<Tag, T, B> &r) noexcept
+	template<typename Tag, typename T>
+	inline constexpr bool operator==(const strong_typedef<Tag, T> &l, const strong_typedef<Tag, T> &r) noexcept
 	{
 		return static_cast<T>(l) == static_cast<T>(r);
 	}
 
-	template<typename Tag, typename T, bool B>
-	inline constexpr bool operator!=(const strong_typedef<Tag, T, B> &l, const strong_typedef<Tag, T, B> &r) noexcept
+	template<typename Tag, typename T>
+	inline constexpr bool operator!=(const strong_typedef<Tag, T> &l, const strong_typedef<Tag, T> &r) noexcept
 	{
 		return !(l == r);
 	}
 
-	template<typename Tag, typename T, bool B>
-	constexpr bool operator<(const strong_typedef<Tag, T, B> &l, const strong_typedef<Tag, T, B> &r) noexcept
+	template<typename Tag, typename T>
+	constexpr bool operator<(const strong_typedef<Tag, T> &l, const strong_typedef<Tag, T> &r) noexcept
 	{
 		return static_cast<T>(l) < static_cast<T>(r);
 	}
 
-	template<typename Tag, typename T, bool B,
-		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T, B>>>>
-	constexpr strong_typedef<Tag, T> operator+(strong_typedef<Tag, T, B> lhs, const strong_typedef<Tag, T, B> &rhs)
+	template<typename Tag, typename T,
+		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	constexpr strong_typedef<Tag, T> operator+(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
 		noexcept(noexcept(lhs += rhs))
 	{
 		lhs += rhs;
 		return lhs;
 	}
 
-	template<typename Tag, typename T, bool B,
-		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T, B>>>>
-	constexpr strong_typedef<Tag, T> operator-(strong_typedef<Tag, T, B> lhs, const strong_typedef<Tag, T, B> &rhs)
+	template<typename Tag, typename T,
+		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	constexpr strong_typedef<Tag, T> operator-(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
 		noexcept(noexcept(lhs -= rhs))
 	{
 		lhs -= rhs;
 		return lhs;
 	}
 
-	template<typename Tag, typename T, bool B, 
-		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T, B>>>>
-	constexpr strong_typedef<Tag, T> operator*(strong_typedef<Tag, T, B> lhs, const strong_typedef<Tag, T, B> &rhs)
+	template<typename Tag, typename T,
+		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	constexpr strong_typedef<Tag, T> operator*(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
 		noexcept(noexcept(lhs *= rhs))
 	{
 		lhs *= rhs;
 		return lhs;
 	}
 
-	template<typename Tag, typename T, bool B,
-		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T, B>>>>
-	constexpr strong_typedef<Tag, T> operator/(strong_typedef<Tag, T, B> lhs, const strong_typedef<Tag, T, B> &rhs)
+	template<typename Tag, typename T,
+		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	constexpr strong_typedef<Tag, T> operator/(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
 		noexcept(noexcept(lhs /= rhs))
 	{
 		lhs /= rhs;
 		return lhs;
 	}
 
-	template<typename Tag, typename T, bool B,
-		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T, B>>>>
-	constexpr strong_typedef<Tag, T> operator%(strong_typedef<Tag, T, B> lhs, const strong_typedef<Tag, T, B> &rhs)
+	template<typename Tag, typename T,
+		typename = std::enable_if_t<strong_typedef_operators_enabled_v<strong_typedef<Tag, T>>>>
+	constexpr strong_typedef<Tag, T> operator%(strong_typedef<Tag, T> lhs, const strong_typedef<Tag, T> &rhs)
 		noexcept(noexcept(lhs %= rhs))
 	{
 		lhs %= rhs;
 		return lhs;
 	}
 
-	template<typename Tag, typename T, bool B>
-	constexpr strong_typedef<Tag, T, B> increment(strong_typedef<Tag, T, B>& v) noexcept(noexcept(++static_cast<T&>(v)))
+	template<typename Tag, typename T>
+	constexpr strong_typedef<Tag, T> increment(strong_typedef<Tag, T>& v) noexcept(noexcept(++static_cast<T&>(v)))
 	{
-		return strong_typedef<Tag, T, B>{++static_cast<T&>(v)};
+		return strong_typedef<Tag, T>{++static_cast<T&>(v)};
 	}
 
-	template<typename Tag, typename T, bool B>
-	constexpr strong_typedef<Tag, T, B> post_increment(strong_typedef<Tag, T, B>& v) noexcept(noexcept(increment(v)))
+	template<typename Tag, typename T>
+	constexpr strong_typedef<Tag, T> post_increment(strong_typedef<Tag, T>& v) noexcept(noexcept(increment(v)))
 	{
 		const auto prev = v;
 		increment(v);
 		return prev;
 	}
 
-	template<typename Tag, typename T, bool B>
-	constexpr strong_typedef<Tag, T, B> next(strong_typedef<Tag, T, B> v) noexcept(noexcept(increment(v)))
+	template<typename Tag, typename T>
+	constexpr strong_typedef<Tag, T> next(strong_typedef<Tag, T> v) noexcept(noexcept(increment(v)))
 	{
 		return increment(v);
 	}
 
-	template<typename Tag, typename T, bool B>
-	T to_value(strong_typedef<Tag, T, B> e)
+	template<typename Tag, typename T>
+	T to_value(strong_typedef<Tag, T> e)
 	{
 		return static_cast<T>(e);
 	}
 
-	template<typename Tag, typename T, bool B>
-	string to_string(strong_typedef<Tag, T, B> e)
+	template<typename Tag, typename T>
+	string to_string(strong_typedef<Tag, T> e)
 	{
 		return to_string(static_cast<T&>(e));
 	}
@@ -260,11 +266,11 @@ namespace hades
 
 namespace std
 {
-	template <typename Tag, typename T, bool Arith>
-	struct hash<hades::strong_typedef<Tag, T, Arith>>
+	template <typename Tag, typename T>
+	struct hash<hades::strong_typedef<Tag, T>>
 	{
 		static_assert(hades::is_strong_typedef_hashable<T>::value, "The type of this strong_typedef doesn't support hashing");
-		using U = hades::strong_typedef<Tag, T, Arith>;
+		using U = hades::strong_typedef<Tag, T>;
 
 		size_t operator()(const U& key) const noexcept
 		{

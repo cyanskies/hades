@@ -25,13 +25,24 @@ namespace hades
 	// held by objects to refer to one another
 	struct object_ref
 	{
+		using id_type = entity_id;
 		entity_id id = bad_entity;
 		game_obj* ptr = nullptr;
 	};
 
+	constexpr bool operator<(const object_ref& l, const object_ref& r) noexcept
+	{
+		return l.id < r.id;
+	}
+
 	constexpr bool operator==(const object_ref& l, const object_ref& r) noexcept
 	{
 		return l.id == r.id;
+	}
+
+	constexpr bool operator!=(const object_ref& l, const object_ref& r) noexcept
+	{
+		return l.id != r.id;
 	}
 
 	template<>

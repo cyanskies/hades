@@ -316,12 +316,12 @@ namespace hades
 
 	void Console::echo(Console_String message)
 	{
-		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
-		TextBuffer.emplace_back(std::move(message));
-
-		#ifndef NDEBUG
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+		#ifndef NDEBUG // post to console window as well in debug mode
 			std::cout << message.text() << "\n";
 		#endif
+		TextBuffer.emplace_back(std::move(message));
+		return;
 	}
 
 	bool Console::exists(const std::string_view &command) const

@@ -119,7 +119,7 @@ namespace hades
 		//input functions
 		//NOTE: input is only triggered on the server
 		//TODO: input queue per player slot,
-		if constexpr (std::is_same_v<std::decay_t<Interface>, game_interface>)
+		if constexpr (std::is_same_v<std::decay_t<Interface>, game_implementation>)
 		{
 			const auto player_input_fn = interface.get_player_input_function();
 			if (player_input_fn)

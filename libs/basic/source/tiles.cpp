@@ -401,14 +401,24 @@ namespace hades
 		return map;
 	}
 
+	tile_position from_tile_index(tile_index_t i, tile_count_t w) noexcept
+	{
+		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(w));
+	}
+
+	tile_index_t to_tile_index(tile_position p, tile_count_t w) noexcept
+	{
+		return to_1d_index(p, w);
+	}
+
 	tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept
 	{
-		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(t.width));
+		return from_tile_index(i, t.width);
 	}
 
 	tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept
 	{
-		return to_1d_index(p, t.width);
+		return to_tile_index(p, t.width);
 	}
 
 	template<typename T>

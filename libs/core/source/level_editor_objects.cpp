@@ -672,6 +672,7 @@ namespace hades
 
 			_update_quad_data(o);
 			update_object_sprite(o, _sprites);
+			on_object_place(o);
 
 			const auto end = std::end(_objects.objects);
 

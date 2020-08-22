@@ -107,59 +107,29 @@ namespace hades
 			return game_data_ptr->level_data->get_world_terrain();
 		}
 
-		world_vector_t get_position(object_ref o, time_point t)
+		world_vector_t& get_position(object_ref o)
 		{
-			//TODO: is it ok to cache the curve ptrs
-			static const auto curves = get_position_curve_id();
-			return {};//get_value<world_vector_t>(curve_index_t{ o, curves }, t);
-		}
-
-		world_vector_t get_position(object_ref o)
-		{
-			return get_position(o, game::get_last_time());
-		}
-
-		void set_position(object_ref o, world_vector_t v, time_point t)
-		{
-			static const auto curves = get_position_curve_id();
-			//set_value({ o, curves }, t, v);
-			return;
+			const auto pos_id = get_position_curve_id();
+			return get_property_ref<world_vector_t>(o, pos_id);
 		}
 
 		void set_position(object_ref o, world_vector_t v)
 		{
-			set_position(o, v, get_time());
+			const auto pos_id = get_position_curve_id();
+			set_property_value(o, pos_id, v);
 			return;
 		}
 
-		world_vector_t get_size(object_ref o, time_point t)
-		{
-			static const auto curve = get_size_curve_id();
-			return {};//get_value<world_vector_t>({ o, curve }, t);
-		}
-
-		world_vector_t get_size(object_ref o)
-		{
-			return get_size(o, get_last_time());
-		}
-
-		void set_size(object_ref o, world_unit_t w, world_unit_t h, time_point t)
-		{
-			static const auto curves = get_size_curve_id();
-			//set_value<world_vector_t>({ o, curves }, t, { w, h });
-			return;
-		}
-
-		void set_size(object_ref o, world_vector_t v, time_point t)
+		world_vector_t& get_size(object_ref o)
 		{
 			const auto size = get_size_curve_id();
-			//set_value({ o, size }, t, v);
-			return;
+			return get_property_ref<world_vector_t>(o, size);
 		}
 
 		void set_size(object_ref o, world_vector_t v)
 		{
-			set_size(o, v, get_time());
+			const auto size = get_size_curve_id();
+			set_property_value(o, size, v);
 			return;
 		}
 

@@ -32,14 +32,14 @@ namespace hades
 	namespace detail
 	{
 		template<typename T, typename Key, typename Map>
-		inline T& any_get_impl(Key key, Map map)
+		inline T& any_get_impl(Key key, Map& map)
 		{
 			using namespace std::string_literals;
 			const auto iter = map.find(key);
 			if (iter == map.end())
 				throw any_map_key_null("Tried to retrieve unassigned key.");
 
-			auto ret = std::any_cast<std::decay_t<T>>(&iter->second);
+			auto ret = std::any_cast<T>(&iter->second);
 			if (ret)
 				return *ret;
 

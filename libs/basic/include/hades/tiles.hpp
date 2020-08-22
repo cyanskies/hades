@@ -163,6 +163,8 @@ namespace hades
 	//TODO: make many of these noexcept and constexpr
 
 	using tile_index_t = tile_position::value_type;
+	tile_position from_tile_index(tile_index_t, tile_count_t map_width) noexcept;
+	tile_index_t to_tile_index(tile_position, tile_count_t map_width) noexcept;
 	tile_position from_tile_index(tile_index_t, const tile_map&) noexcept;
 	tile_index_t to_tile_index(tile_position, const tile_map&) noexcept;
 

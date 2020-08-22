@@ -318,7 +318,7 @@ namespace hades
 	void set_curve(object_instance& o, const unique_id i, curve_value v)
 	{
 		const auto c = data::get<resources::curve>(i);
-		set_curve(o, *c, v);
+		set_curve(o, *c, std::move(v));
 	}
 
 	void set_curve(resources::object& o, const hades::resources::curve& c, curve_value v)
@@ -331,6 +331,12 @@ namespace hades
 			o.curves.emplace_back(&c, std::move(v));
 		else
 			*prev = { &c, std::move(v) };
+	}
+
+	void set_curve(resources::object& o, const unique_id i, curve_value v)
+	{
+		const auto c = data::get<resources::curve>(i);
+		set_curve(o, *c, std::move(v));
 	}
 
 	static curve_list unique_curves(curve_list list)

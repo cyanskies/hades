@@ -92,6 +92,7 @@ namespace hades
 		return out;
 	}
 
+	//TODO: why is this part of the class?
 	mission mission_editor_t::new_mission()
 	{
 		//create an empty mission
@@ -169,8 +170,8 @@ namespace hades
 			{
 				auto iter = std::next(std::begin(_players), _player_window_state.selected);
 
-				if(iter->p_entity != bad_entity)
-					_obj_ui.erase(iter->p_entity);
+				if(iter->object != bad_entity)
+					_obj_ui.erase(iter->object);
 
 				iter = _players.erase(iter);
 
@@ -197,12 +198,12 @@ namespace hades
 				++_player_window_state.selected;
 			}
 
-			if (!std::empty(_players) && _players[_player_window_state.selected].p_entity != bad_entity)
+			if (!std::empty(_players) && _players[_player_window_state.selected].object != bad_entity)
 			{
 				_gui.layout_horizontal();
 				if (_gui.button("select object"))
 				{
-					_obj_ui.set_selected(_players[_player_window_state.selected].p_entity);
+					_obj_ui.set_selected(_players[_player_window_state.selected].object);
 				}
 			}
 		}
@@ -255,7 +256,7 @@ namespace hades
 							{
 								const auto obj = data::get<resources::object>(object_id);
 								auto o = make_instance(obj);
-								p.p_entity = _obj_ui.add(std::move(o));
+								p.object = _obj_ui.add(std::move(o));
 							}
 							catch (const data::resource_null&)
 							{
@@ -338,10 +339,10 @@ namespace hades
 				if (_gui.button("done"))
 					_player_window_state.edit_open = false;
 				auto& p = _players[_player_window_state.selected];
-				if (p.p_entity == bad_entity && _gui.button("make entity"))
+				if (p.object == bad_entity && _gui.button("make entity"))
 				{
 					auto o = object_instance{};
-					p.p_entity = _obj_ui.add(std::move(o));
+					p.object = _obj_ui.add(std::move(o));
 				}
 			}
 			_gui.window_end();
@@ -665,7 +666,7 @@ namespace hades
 		{
 			mission::player player;
 			player.id = p.id;
-			player.object = p.p_entity;
+			player.object = p.object;
 			m.players.emplace_back(std::move(player));
 		}
 
@@ -677,22 +678,27 @@ namespace hades
 	void mission_editor_t::_load(path p)
 	{
 		const auto f = files::read_file(p);
+		if (empty(f))
+			return;//TODO: unable to find or read file
+
 		auto m = deserialise_mission(f);
-		_mission_name = m.name;
-		_mission_desc = m.description;
+		_mission_name = std::move(m.name);
+		_mission_desc = std::move(m.description);
+
+		_players = std::move(m.players);
 
 		for (auto& l : m.external_levels)
 		{
 			auto lev = level_info{};
-			lev.name = l.name;
-			lev.path = l.path;
+			lev.name = std::move(l.name);
+			lev.path = std::move(l.path);
 			_levels.emplace_back(std::move(lev));
 		}
 
 		for (auto& l : m.inline_levels)
 		{
 			auto lev = level_info{};
-			lev.name = l.name;
+			lev.name = std::move(l.name);
 			lev.level = std::move(l.level);
 			_levels.emplace_back(std::move(lev));
 		}

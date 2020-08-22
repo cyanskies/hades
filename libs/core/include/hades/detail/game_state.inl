@@ -38,10 +38,8 @@ namespace hades::state_api
 		// give this instance a new unique id if  it doesn't have one
 		const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
 
-		auto obj = e.objects.emplace(game_obj{ id });
+		auto obj = e.objects.emplace(game_obj{ id, o.obj_type });
 		assert(obj != end(e.objects));
-
-		obj->object_type = o.obj_type;
 
 		for (auto& [c, v] : get_all_curves(o))
 		{

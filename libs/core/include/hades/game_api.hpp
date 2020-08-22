@@ -158,16 +158,10 @@ namespace hades
 
 		//=== Common Curves ===
 		//position
-		world_vector_t get_position(object_ref, time_point);
-		world_vector_t get_position(object_ref);
-		void set_position(object_ref, world_vector_t, time_point);
+		world_vector_t& get_position(object_ref);
 		void set_position(object_ref, world_vector_t);
 		//size
-		world_vector_t get_size(object_ref, time_point);
-		world_vector_t get_size(object_ref);
-		[[deprecated]]
-		void set_size(object_ref, world_unit_t w, world_unit_t h, time_point); // TODO: remove me
-		void set_size(object_ref, world_vector_t, time_point);
+		world_vector_t& get_size(object_ref);
 		void set_size(object_ref, world_vector_t);
 		//tags
 		bool tags(object_ref, tag_list has, tag_list not);

@@ -274,7 +274,7 @@ namespace hades::files
 	{
 		str.seekg({}, std::ios_base::end);
 		const auto size = integer_cast<std::size_t>(static_cast<std::streamoff>(str.tellg()));
-		str.seekg({}, std::ios::beg);
+		str.seekg({}, std::ios_base::beg);
 
 		auto out = ReturnType{};
 		out.reserve(size);

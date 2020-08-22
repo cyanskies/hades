@@ -38,8 +38,10 @@ namespace hades
 		//external-levels:
 
 		auto w = data::make_writer();
-		w->write(name_str, m.name);
-		w->write(desc_str, m.description);
+		if(!empty(m.name))
+			w->write(name_str, m.name);
+		if(!empty(m.description))
+			w->write(desc_str, m.description);
 
 		//players
 		if (!std::empty(m.players))

@@ -114,11 +114,7 @@ namespace hades
 			string path;
 		};
 
-		struct player
-		{
-			unique_id id = unique_id::zero; // the internal slot name
-			entity_id p_entity = bad_entity;
-		};
+		using player = mission::player;
 
 		void _gui_menu_bar();
 		void _gui_players_window();

@@ -16,44 +16,27 @@ namespace hades
 		d.register_resource_type("textures"sv, parse_texture);
 	}
 
-	const auto sf_colours = std::array{
-		sf::Color::Magenta,
-		sf::Color::White,
-		sf::Color::Red,
-		sf::Color::Green,
-		sf::Color::Blue,
-		sf::Color::Yellow,
-		sf::Color::Cyan
-	};
-
 	static sf::Texture generate_checkerboard_texture(texture_size_t width, texture_size_t height, texture_size_t checker_scale,
-		sf::Color c1, sf::Color c2)
+		colour c1, colour c2)
 	{
-		std::vector<sf::Uint32> pixels(width * height);
+		//FIXME: textures generated here seem to have unintended transparency
+		std::vector<uint32> pixels(width * height, c2.to_integer());
 
-		auto counter = texture_size_t{};
-		sf::Color c = c1;
-
-		for (auto &p : pixels)
+		for (auto i = std::size_t{}; i < size(pixels); ++i)
 		{
-			p = c.toInteger();
-			if (counter++ % checker_scale == 0)
-			{
-				if (c == c1)
-					c = c2;
-				else
-					c = c1;
-			}
+			auto coord = to_2d_index(i, integer_cast<std::size_t>(width));
+			coord.first *= width / height;
+			const auto cx = coord.first / checker_scale;
+			const auto cy = coord.second / checker_scale;
+
+			if ((cx + cy) % 2 == 0)
+				pixels[i] = c1.to_integer();
 		}
 
 		sf::Uint8* p = reinterpret_cast<sf::Uint8*>(pixels.data());
-
-		sf::Image i;
-		i.create(width, height, p);
-
 		sf::Texture t;
-		t.loadFromImage(i);
-
+		t.create(width, height);
+		t.update(p);
 		return t;
 	}
 
@@ -61,10 +44,8 @@ namespace hades
 	static sf::Texture generate_default_texture(texture_size_t width = 32u, texture_size_t height = 32u)
 	{
 		static std::size_t counter = 0;
-
-		auto t = generate_checkerboard_texture(width, height, 16, sf_colours[counter++ % sf_colours.size()], sf::Color::Black);
-		t.setRepeated(true);
-
+		constexpr auto size = std::size(colours::array);
+		auto t = generate_checkerboard_texture(width, height, std::min(width / 8, height / 8), colours::array[counter++ % size], colours::black);
 		return t;
 	}
 
@@ -104,12 +85,6 @@ namespace hades
 			//if either size parameters are 0, then don't warn for size mismatch
 			if (tex->width == 0 || tex->height == 0)
 				tex->width = tex->height = 0;
-
-			//TODO: don't do this until someone tries to load the resource and fails
-			if (tex->width == 0)
-				tex->value = generate_default_texture();
-			else
-				tex->value = generate_default_texture(tex->width, tex->height);
 		}
 	}
 
@@ -131,16 +106,21 @@ namespace hades
 				//TODO: if !is_open generate err texture
 
 				tex.value.loadFromStream(fstream);
-				tex.value.setSmooth(tex.smooth);
-				tex.value.setRepeated(tex.repeat);
-
-				if (tex.mips && !tex.value.generateMipmap())
-					LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
 			}
 			catch (const files::file_error &e)
 			{
 				LOGERROR("Failed to load texture: "s + mod->source + "/"s + tex.source + ". "s + e.what());
+				if (tex.width != 0 && tex.height != 0)
+					tex.value = generate_default_texture(tex.width, tex.height);
+				else
+					tex.value = generate_default_texture();
 			}
+
+			tex.value.setSmooth(tex.smooth);
+			tex.value.setRepeated(tex.repeat);
+
+			if (tex.mips && !tex.value.generateMipmap())
+				LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
 
 			//if the width or height are 0, then don't warn about size mismatch
 			//otherwise log unexpected size
@@ -153,7 +133,8 @@ namespace hades
 				//NOTE: if the texture is the wrong size
 				// then enable repeating, to avoid leaving
 				// gaps in the world(between tiles and other such stuff).
-				tex.value.setRepeated(true);
+				if(size.x < tex.width || size.y < tex.height)
+					tex.value.setRepeated(true);
 			}
 
 			//if width or height are 0 then use them to store the textures size

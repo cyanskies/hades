@@ -30,6 +30,11 @@ namespace hades
 			return std::invoke(arr[i], this);
 		}
 
+		constexpr uint32 to_integer() const noexcept
+		{
+			return r << 24 | g << 16 | b << 8 | a;
+		}
+
 		value_type r{},
 			g{},
 			b{},

@@ -2,9 +2,27 @@
 
 #include <array>
 
+#include "SFML/Graphics/Texture.hpp"
+
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
 #include "hades/sf_streams.hpp"
+
+namespace hades
+{
+	void load_texture(resources::resource_type<sf::Texture>&, data::data_manager&);
+}
+
+namespace hades::resources
+{
+	struct texture : public resource_type<sf::Texture>
+	{
+		texture() : resource_type(load_texture) {}
+
+		texture_size_t width = 0, height = 0;
+		bool smooth = false, repeat = false, mips = false;
+	};
+}
 
 namespace hades
 {
@@ -16,27 +34,31 @@ namespace hades
 		d.register_resource_type("textures"sv, parse_texture);
 	}
 
-	static sf::Texture generate_checkerboard_texture(texture_size_t width, texture_size_t height, texture_size_t checker_scale,
-		colour c1, colour c2)
+	static sf::Texture generate_checkerboard_texture(texture_size_t width, texture_size_t height,
+		texture_size_t checker_scale, colour c1, colour c2)
 	{
-		//FIXME: textures generated here seem to have unintended transparency
-		std::vector<uint32> pixels(width * height, c2.to_integer());
+		auto pixels = std::vector<sf::Uint8>{};
+		const auto size = width * height;
+		pixels.reserve(size);
 
-		for (auto i = std::size_t{}; i < size(pixels); ++i)
+		for (auto i = std::size_t{}; i < size; ++i)
 		{
 			auto coord = to_2d_index(i, integer_cast<std::size_t>(width));
 			coord.first *= width / height;
 			const auto cx = coord.first / checker_scale;
 			const auto cy = coord.second / checker_scale;
 
-			if ((cx + cy) % 2 == 0)
-				pixels[i] = c1.to_integer();
+			const auto is_colour = (cx + cy) % 2 == 0;
+			const auto& c = is_colour ? c1 : c2;
+			pixels.emplace_back(c.r);
+			pixels.emplace_back(c.g);
+			pixels.emplace_back(c.b);
+			pixels.emplace_back(c.a);
 		}
 
-		sf::Uint8* p = reinterpret_cast<sf::Uint8*>(pixels.data());
 		sf::Texture t;
 		t.create(width, height);
-		t.update(p);
+		t.update(pixels.data());
 		return t;
 	}
 
@@ -45,8 +67,8 @@ namespace hades
 	{
 		static std::size_t counter = 0;
 		constexpr auto size = std::size(colours::array);
-		auto t = generate_checkerboard_texture(width, height, std::min(width / 8, height / 8), colours::array[counter++ % size], colours::black);
-		return t;
+		return generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
+			colours::array[counter++ % size], colours::black);
 	}
 
 	void parse_texture(unique_id mod, const data::parser_node& node, data::data_manager &d)
@@ -151,7 +173,91 @@ namespace hades
 
 	namespace resources
 	{
-		texture::texture() : resource_type<sf::Texture>(load_texture) {}
+		namespace texture_functions
+		{
+			texture* find_create_texture(data::data_manager& d, const unique_id id , const unique_id mod)
+			{
+				return d.find_or_create<texture>(id, mod);
+			}
+
+			const texture* get_resource(const unique_id id)
+			{
+				return data::get<texture>(id);
+			}
+
+			const texture* get_resource(data::data_manager& d, unique_id i)
+			{
+				return d.get<texture>(i);
+			}
+
+			unique_id get_id(const texture* t) noexcept
+			{
+				assert(t);
+				return t->id;
+			}
+
+			bool get_is_loaded(const texture* t) noexcept
+			{
+				assert(t);
+				return t->loaded;
+			}
+
+			bool get_smooth(const texture* t) noexcept
+			{
+				assert(t);
+				return t->smooth;
+			}
+
+			bool get_repeat(const texture* t) noexcept
+			{
+				assert(t);
+				return t->repeat;
+			}
+
+			bool get_mips(const texture* t) noexcept
+			{
+				assert(t);
+				return t->mips;
+			}
+
+
+			const sf::Texture& get_sf_texture(const texture* t) noexcept
+			{
+				assert(t);
+				return t->value;
+			}
+
+			sf::Texture& get_sf_texture(texture* t) noexcept
+			{
+				assert(t);
+				return t->value;
+			}
+
+			vector_t<texture_size_t> get_size(const texture* t) noexcept
+			{
+				assert(t);
+				return { t->width, t->height };
+			}
+
+			void set_settings(texture* t, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool loaded) noexcept
+			{
+				assert(t);
+				t->width = size.x;
+				t->height = size.y;
+				t->smooth = smooth;
+				t->repeat = repeat;
+				t->mips = mips;
+
+				t->value.setSmooth(smooth);
+				t->value.setRepeated(repeat);
+				if (mips)
+					t->value.generateMipmap();
+
+				t->loaded = loaded;
+				return;
+			}
+		}
+	
 		texture_size_t get_max_texture_size()
 		{
 			return std::min(

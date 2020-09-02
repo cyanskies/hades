@@ -252,6 +252,7 @@ namespace hades::resources
 		{
 			if (t.texture)
 			{
+				//NOTE: textures are always inherited from resource_base
 				const auto res = reinterpret_cast<const resource_base*>(t.texture);
 				auto texture = d.get_resource(res->id);
 				if(!texture->loaded)

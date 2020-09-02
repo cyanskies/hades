@@ -3,6 +3,7 @@
 #include <array>
 
 #include "SFML/Graphics/RenderTarget.hpp"
+#include "SFML/Graphics/Texture.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/animation.hpp"
@@ -14,12 +15,14 @@
 
 namespace hades
 {
+	namespace tex_funcs = resources::texture_functions;
+
 	void register_tile_map_resources(data::data_manager &d)
 	{
 		//register dependent resources
 		register_texture_resource(d);
 		register_tiles_resources(d, [](data::data_manager &d, unique_id id, unique_id mod) {
-			return d.find_or_create<resources::texture>(id, mod);
+			return tex_funcs::find_create_texture(d, id, mod);
 		});
 
 		//add texture to error tile
@@ -31,15 +34,14 @@ namespace hades
 		assert(settings->error_tileset);
 		assert(!settings->error_tileset->tiles.empty());
 		const auto &error_tile = settings->error_tileset->tiles[0];
-		auto error_tex = d.find_or_create<resources::texture>(error_tile.texture->id, unique_id::zero);
-		error_tex->height = error_tex->width = settings->tile_size;
-		error_tex->repeat = true;
+		auto error_tex = tex_funcs::find_create_texture(d, tex_funcs::get_id(error_tile.texture), unique_id::zero);
 		sf::Image img{};
 		img.create(1u, 1u, sf::Color::Magenta);
-		error_tex->value.loadFromImage(img);
-		error_tex->value.setRepeated(true);
-		error_tex->value.setSmooth(false);
-		error_tex->loaded = true;
+		auto& tex = tex_funcs::get_sf_texture(error_tex);
+		tex.loadFromImage(img);
+		tex_funcs::set_settings(error_tex, { settings->tile_size, settings->tile_size }, 
+			false, true, false, true);
+		return;
 	}
 
 	//=========================================//
@@ -68,7 +70,7 @@ namespace hades
 	{
 		for (const auto &s : texture_layers)
 		{
-			states.texture = &s.texture->value;
+			states.texture = &tex_funcs::get_sf_texture(s.texture);
 			target.draw(s.buffer, states);
 		}
 	}

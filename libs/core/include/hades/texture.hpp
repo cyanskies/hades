@@ -1,11 +1,21 @@
 #ifndef HADES_TEXTURE_HPP
 #define HADES_TEXTURE_HPP
 
-#include "SFML/Graphics/Texture.hpp"
+//#include "SFML/Graphics/Texture.hpp"
 
-#include "hades/data.hpp"
+//#include "hades/data.hpp"
 #include "hades/game_types.hpp"
-#include "hades/resource_base.hpp"
+//#include "hades/resource_base.hpp"
+
+namespace sf
+{
+	class Texture;
+}
+
+namespace hades::data
+{
+	class data_manager;
+}
 
 namespace hades
 {
@@ -17,17 +27,27 @@ namespace hades
 
 	namespace resources
 	{
-		struct texture : public resource_type<sf::Texture>
+		struct texture;
+		namespace texture_functions
 		{
-			texture();
+			texture* find_create_texture(data::data_manager&, unique_id, unique_id);
+			const texture* get_resource(unique_id);
+			const texture* get_resource(data::data_manager&, unique_id);
+			unique_id get_id(const texture*) noexcept;
+			bool get_is_loaded(const texture*) noexcept;
+			bool get_smooth(const texture*) noexcept;
+			bool get_repeat(const texture*) noexcept;
+			bool get_mips(const texture*) noexcept;
+			const sf::Texture& get_sf_texture(const texture*) noexcept;
+			sf::Texture& get_sf_texture(texture*) noexcept;
+			vector_t<texture_size_t> get_size(const texture*) noexcept;
 
-			texture_size_t width = 0, height = 0;
-			bool smooth = false, repeat = false, mips = false;
-		};
+			void set_settings(texture*, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool set_loaded) noexcept;
+		}
 
 		texture_size_t get_max_texture_size();
 		texture_size_t get_hardware_max_texture_size();
 	}
 }
 
-#endif !//HADES_TEXTURE_HPP
+#endif //!HADES_TEXTURE_HPP

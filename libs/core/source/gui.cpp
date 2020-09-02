@@ -382,8 +382,8 @@ namespace hades
 			width = text_coords.width,
 			height = text_coords.height;
 
-		const auto tex_width = t.width;
-		const auto tex_height = t.height;
+		namespace tex = resources::texture_functions;
+		const auto [tex_width, tex_height] = tex::get_size(&t);
 
 		ImGui::Image(const_cast<resources::texture*>(&t), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
@@ -416,8 +416,8 @@ namespace hades
 			width = text_coords.width,
 			height = text_coords.height;
 
-		const auto tex_width = texture.width;
-		const auto tex_height = texture.height;
+		namespace tex = resources::texture_functions;
+		const auto [tex_width, tex_height] = tex::get_size(&texture);
 
 		return ImGui::ImageButton(const_cast<resources::texture*>(&texture), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
@@ -777,7 +777,8 @@ namespace hades
 		return { v.x, v.y };
 	}
 
-	static sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f })
+	//NOTE: could be constexpr if only for sfml
+	static sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f }) noexcept
 	{
 		const auto col = ImColor{ vert.col }.Value;
 
@@ -796,6 +797,7 @@ namespace hades
 	// this is done through the draw_clamp_window helper
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	{
+		namespace tex = resources::texture_functions;
 		_active_assert();
 
 		ImGui::Render();
@@ -825,7 +827,8 @@ namespace hades
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						texture_size = { static_cast<float>(texture->width), static_cast<float>(texture->height) };
+						const auto size = static_cast<vector_float>(tex::get_size(texture));
+						texture_size = { size.x, size.y };
 					}
 
 					//get the verts from the draw list that are associated with
@@ -842,7 +845,7 @@ namespace hades
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						state.texture = &texture->value;
+						state.texture = &tex::get_sf_texture(texture);
 					}
 
 					const auto clip_region = rect_int{ static_cast<int32>(cmd.ClipRect.x),
@@ -917,37 +920,36 @@ namespace hades
 
 	void gui::_generate_atlas()
 	{
+		namespace tex = resources::texture_functions;
 		//get texture
 		auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
 		std::ignore = lock;
 
 		static unique_id font_texture_id{};
 
-		auto t = d->find_or_create<resources::texture>(font_texture_id, unique_id::zero);
+		auto t = tex::find_create_texture(*d, font_texture_id, unique_id::zero);
 
-		if (t->loaded)
+		if (tex::get_is_loaded(t))
 			return;
 
-		t->mips = false;
-		t->repeat = false;
-		t->smooth = false;
-
 		//get the data and set the correct ids
-		auto &f_atlas = *_font_atlas;
+		auto& f_atlas = *_font_atlas;
 		int width = 0, height = 0;
-		unsigned char *texture_data = nullptr;
+		unsigned char* texture_data = nullptr;
 		f_atlas.GetTexDataAsRGBA32(&texture_data, &width, &height);
 		f_atlas.SetTexID(t);
 
 		//make the texture
-		t->value.create(width, height);
-		t->value.update(texture_data);
+		auto& texture = tex::get_sf_texture(t);
+		texture.create(width, height);
+		texture.update(texture_data);
 		//apply correct settings
-		t->value.setRepeated(false);
-		t->value.setSmooth(false);
-		t->width = integer_cast<texture_size_t>(width);
-		t->height = integer_cast<texture_size_t>(height);
-		t->loaded = true;
+		tex::set_settings(t,
+			{ integer_cast<texture_size_t>(width), integer_cast<texture_size_t>(height) },
+			false, //smooth
+			false, //repeat 
+			false, //mips
+			true); //set loaded
 	}
 
 	//gui::static objects

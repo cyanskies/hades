@@ -26,13 +26,14 @@ void ConsoleTestState::init()
 	//assign the needed textures
 	auto missing_id = hades::data::get_uid("example"), ball_id = hades::data::get_uid("ball");
 
-	missing = hades::data::get<hades::resources::texture>(missing_id);
-	ball = hades::data::get<hades::resources::texture>(ball_id);
+	namespace tex = hades::resources::texture_functions;
+	missing = tex::get_resource(missing_id);
+	ball = tex::get_resource(ball_id);
 
 	assert(missing && ball);
 
-	missing_sprite.setTexture(missing->value);
-	ball_sprite.setTexture(ball->value);
+	missing_sprite.setTexture(tex::get_sf_texture(missing));
+	ball_sprite.setTexture(tex::get_sf_texture(ball));
 
 	missing_sprite.setPosition(20.f, 30.f);
 

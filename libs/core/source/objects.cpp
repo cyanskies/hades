@@ -173,7 +173,6 @@ namespace hades::resources
 		r.loaded = true;
 	}
 
-	//TODO: define load object, needs to laod all resources that the object uses
 	object::object() : resource_type<object_t>(load_objects)
 	{}
 }

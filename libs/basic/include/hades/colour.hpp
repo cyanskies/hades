@@ -30,15 +30,10 @@ namespace hades
 			return std::invoke(arr[i], this);
 		}
 
-		constexpr uint32 to_integer() const noexcept
-		{
-			return r << 24 | g << 16 | b << 8 | a;
-		}
-
-		value_type r{},
-			g{},
-			b{},
-			a{std::numeric_limits<value_type>::max()};
+		value_type r = 0;
+		value_type g = 0;
+		value_type b = 0;
+		value_type a = 255;
 	};
 
 	constexpr bool operator==(colour l, colour r) noexcept
@@ -58,8 +53,7 @@ namespace hades
 
 	template<>
 	colour from_string<colour>(std::string_view);
-	template<>
-	string to_string<colour>(colour);
+	string to_string(colour);
 
 	namespace colours
 	{

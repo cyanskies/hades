@@ -48,7 +48,7 @@ namespace hades
 	void tiled_sprite::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
 		assert(_animation && _animation->tex);
-		s.texture = &_animation->tex->value;
+		s.texture = &resources::texture_functions::get_sf_texture(_animation->tex);
 		s.transform *= getTransform();
 
 		t.draw(_vert_buffer, s);

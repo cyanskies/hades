@@ -279,7 +279,7 @@ namespace hades
 		assert(layer_index < std::size(_sprites));
 
 		if(_sprites[layer_index].settings.texture)
-			s.texture = &_sprites[layer_index].settings.texture->value;
+			s.texture = &resources::texture_functions::get_sf_texture(_sprites[layer_index].settings.texture);
 		target.draw(_vertex[layer_index].buffer, s);
 		return;
 	}

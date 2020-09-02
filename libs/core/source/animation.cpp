@@ -41,12 +41,12 @@ namespace hades::resources
 
 			using namespace data::parse_tools;
 			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string);
-	
-			const auto tex_id = anim->tex ? anim->tex->id : unique_id::zero;
+			namespace tex_funcs = texture_functions;
+			const auto tex_id = anim->tex ? tex_funcs::get_id(anim->tex) : unique_id::zero;
 			const auto new_tex_id = get_unique(*a, "texture"sv, tex_id);
 
 			if (new_tex_id != unique_id::zero)
-				anim->tex = d.find_or_create<texture>(new_tex_id, mod);
+				anim->tex = tex_funcs::find_create_texture(d, new_tex_id, mod);
 
 			anim->width = get_scalar(*a, "width"sv, anim->width);
 			anim->height = get_scalar(*a, "height"sv, anim->height);
@@ -116,9 +116,12 @@ namespace hades::resources
 	static void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d)
 	{
 		auto &a = dynamic_cast<animation&>(r);
-		if (!a.tex->loaded)
+		if (!texture_functions::get_is_loaded(a.tex))
+		{
+			const auto id = texture_functions::get_id(a.tex);
 			//data->get will lazy load texture
-			d.get<texture>(a.tex->id);
+			texture_functions::get_resource(d, id);
+		}
 	}
 }
 
@@ -136,9 +139,13 @@ namespace hades::animation
 		}
 
 		//force lazy load if the texture hasn't been loaded yet.
-		if (!animation.tex->loaded)
-			hades::data::get<hades::resources::texture>(animation.tex->id);
-
+		if (!resources::texture_functions::get_is_loaded(animation.tex))
+		{
+			const auto id = resources::texture_functions::get_id(animation.tex);
+			//data->get will lazy load texture
+			resources::texture_functions::get_resource(id);
+		}
+		
 		auto prog = std::clamp(progress, 0.f, 1.f);
 
 		//calculate the progress to find the correct rect for this time
@@ -171,7 +178,7 @@ namespace hades::animation
 	void apply(const resources::animation &animation, float progress, sf::Sprite &target)
 	{
 		const auto [x, y, w, h] = get_frame(animation, progress);
-		target.setTexture(animation.tex->value);
+		target.setTexture(resources::texture_functions::get_sf_texture(animation.tex));
 		target.setTextureRect({ x, y , w, h });
 	}
 

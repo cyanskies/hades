@@ -8,7 +8,7 @@ namespace hades
 	{
 		register_texture_resource(d);
 		register_terrain_resources(d, [](data::data_manager &d, unique_id id, unique_id mod) {
-			return d.find_or_create<resources::texture>(id, mod);
+			return resources::texture_functions::find_create_texture(d, id, mod);
 		});
 	}
 

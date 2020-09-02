@@ -15,8 +15,7 @@ namespace hades
 			return { v[0], v[1], v[2] };
 	}
 
-	template<>
-	string to_string<colour>(colour c)
+	string to_string(colour c)
 	{
 		return "[r:" + to_string(c.r) +
 			", g:" + to_string(c.g) +

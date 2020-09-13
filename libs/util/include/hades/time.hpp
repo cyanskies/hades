@@ -5,6 +5,9 @@
 #include <string_view>
 #include <type_traits>
 
+#include "hades/utility.hpp" // for from_string
+							// TODO: pull string stuff out of utility
+
 namespace hades
 {
 	//high res clock is allowed to be wall time, if it is wall time, we just have to use steady clock instead

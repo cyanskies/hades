@@ -113,7 +113,7 @@ namespace hades::state_api
 	namespace detail
 	{
 		template<typename T, typename GameObj>
-		T& get_object_property_ref(GameObj& g, const variable_id v) noexcept
+		T& get_object_property_ref(GameObj& g, const variable_id v)
 		{
 			auto& var_list = std::get<GameObj::var_list<std::decay_t<T>>>(g.object_variables);
 			auto var_iter = std::find_if(begin(var_list), end(var_list),
@@ -121,20 +121,21 @@ namespace hades::state_api
 				return v == elm.id;
 				});
 
-			assert(var_iter != end(var_list)); //TODO: exception
+			if (var_iter == end(var_list))
+				throw object_property_not_found{"object property not found: " + to_string(v)};
 
 			return var_iter->var->data;
 		}
 	}
 
 	template<typename T>
-	const T& get_object_property_ref(const game_obj& o, variable_id v) noexcept
+	const T& get_object_property_ref(const game_obj& o, variable_id v)
 	{
 		return detail::get_object_property_ref<const T>(o, v);
 	}
 
 	template<typename T>
-	T& get_object_property_ref(game_obj& o, variable_id v) noexcept
+	T& get_object_property_ref(game_obj& o, variable_id v)
 	{
 		return detail::get_object_property_ref<T>(o, v);
 	}

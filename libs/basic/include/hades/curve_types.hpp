@@ -14,7 +14,7 @@
 namespace hades
 {
 	enum class curve_variable_type {
-		error, int_t, float_t, vec2_float, bool_t,
+		error, int_t, int64_t, float_t, vec2_float, bool_t,
 		string, object_ref, unique, colour, collection_int, collection_float,
 		collection_object_ref, collection_unique, collection_colour
 	};
@@ -61,6 +61,7 @@ namespace hades
 namespace hades::curve_types
 {
 	using int_t = int32;
+	using int64_t = int64;
 	using float_t = float;
 	using vec2_float = vector_float;
 	//TODO: double_t
@@ -77,6 +78,7 @@ namespace hades::curve_types
 
 	using type_pack = std::tuple<
 		int_t,
+		int64_t,
 		float_t,
 		vec2_float,
 		bool_t,
@@ -123,6 +125,8 @@ namespace hades::curve_types
 
 	template<>
 	struct is_curve_type<int_t> : public std::true_type {};
+	template<>
+	struct is_curve_type<int64_t> : public std::true_type {};
 	template<>
 	struct is_curve_type<float_t> : public std::true_type {};
 	template<>

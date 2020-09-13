@@ -17,7 +17,7 @@ namespace hades::resources
 {
 	struct texture : public resource_type<sf::Texture>
 	{
-		texture() : resource_type(load_texture) {}
+		texture() : resource_type{ load_texture } {}
 
 		texture_size_t width = 0, height = 0;
 		bool smooth = false, repeat = false, mips = false;
@@ -38,7 +38,7 @@ namespace hades
 		texture_size_t checker_scale, colour c1, colour c2)
 	{
 		auto pixels = std::vector<sf::Uint8>{};
-		const auto size = width * height;
+		const std::size_t size = width * height;
 		pixels.reserve(size);
 
 		for (auto i = std::size_t{}; i < size; ++i)
@@ -68,7 +68,7 @@ namespace hades
 		static std::size_t counter = 0;
 		constexpr auto size = std::size(colours::array);
 		return generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
-			colours::array[counter++ % size], colours::black);
+			colours::array[counter++ % size], colours::black); // TODO: new colour array for bad colours
 	}
 
 	void parse_texture(unique_id mod, const data::parser_node& node, data::data_manager &d)

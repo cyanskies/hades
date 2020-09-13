@@ -25,10 +25,10 @@ namespace hades {
 	}
 
 	template<>
-	bool from_string<bool>(std::string_view str)
+	bool from_string<bool>(std::string_view str) noexcept
 	{
 		using namespace std::string_view_literals;
-		static const auto true_str = { "true"sv, "TRUE"sv, "1"sv };
+		constexpr auto true_str = std::array{ "true"sv, "TRUE"sv, "1"sv };
 		return std::any_of(std::begin(true_str), std::end(true_str), [str](auto &&s) { return str == s; });
 	}
 

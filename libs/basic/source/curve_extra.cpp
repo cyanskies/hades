@@ -23,6 +23,8 @@ namespace hades::resources
 		using namespace std::string_view_literals;
 		if (s == "int32"sv)
 			return curve_variable_type::int_t;
+		else if (s == "int64"sv)
+			return curve_variable_type::int64_t;
 		else if (s == "float"sv)
 			return curve_variable_type::float_t;
 		else if (s == "vec2-float"sv)
@@ -61,6 +63,9 @@ namespace hades::resources
 		case curve_variable_type::int_t:
 			default_value.emplace<int_t>();
 			break;
+		case curve_variable_type::int64_t:
+			default_value.emplace<int64_t>();
+			break;
 		case curve_variable_type::float_t:
 			default_value.emplace<float_t>();
 			break;
@@ -80,7 +85,7 @@ namespace hades::resources
 			default_value.emplace<unique>(unique_zero);
 			break;
 		case curve_variable_type::colour:
-			// TODO: pick a good default colour?
+			// TODO: pick a good default colour?(default constructor will pick black)
 			default_value.emplace<colour>();
 			break;
 		case curve_variable_type::collection_int:
@@ -186,6 +191,8 @@ namespace hades::resources
 		{
 		case curve_variable_type::int_t:
 			return std::holds_alternative<int_t>(v);
+		case curve_variable_type::int64_t:
+			return std::holds_alternative<int64_t>(v);
 		case curve_variable_type::float_t:
 			return std::holds_alternative<float_t>(v);
 		case curve_variable_type::vec2_float:
@@ -239,7 +246,7 @@ namespace hades::resources
 		return out;
 	}
 
-	resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
+	static resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
 	{
 		if (!resources::is_curve_valid(c))
 			throw invalid_curve{ "Tried to call curve_from_string to set an invalid curve" };

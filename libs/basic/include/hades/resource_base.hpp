@@ -1,7 +1,7 @@
 #ifndef HADES_RESOURCE_BASE_HPP
 #define HADES_RESOURCE_BASE_HPP
 
-#include <functional>
+#include <vector>
 
 #include "hades/exceptions.hpp"
 #include "hades/types.hpp"
@@ -76,17 +76,12 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			using loader_func = std::function<void(resource_type<T>&, data::data_manager&)>;
-			//TODO: depricate this
-			using old_loader_func = std::function<void(resource_base*, data::data_manager*)>;
-			using loaderFunc = old_loader_func;
-
+			using loader_func = void(*)(resource_type<T>&, data::data_manager&);
+			
 			resource_type() = default;
-			resource_type(loader_func loader) : _resource_loader(loader) {}
-			resource_type(old_loader_func loader) : _resource_loader([loader](resource_type<T> &r, data::data_manager &d) { return  loader(&r, &d); })
-			{}
-
-			virtual ~resource_type() {}
+			resource_type(loader_func loader) : _resource_loader{ loader } {}
+			
+			virtual ~resource_type() noexcept = default;
 
 			void load(data::data_manager &d) override 
 			{
@@ -98,7 +93,7 @@ namespace hades
 			//the actual resource
 			T value;
 		private:
-			loader_func _resource_loader;
+			loader_func _resource_loader = nullptr;
 		};
 
 		struct mod_t {};

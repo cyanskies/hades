@@ -121,6 +121,18 @@ namespace hades
 	//functions for modifying game state
 	namespace state_api
 	{
+		class game_state_error : public runtime_error
+		{
+		public:
+			using runtime_error::runtime_error;
+		};
+
+		class object_property_not_found : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
+		};
+
 		template<typename GameSystem>
 		object_ref make_object(const object_instance&, game_state&, extra_state<GameSystem>&);
 		//returns true if the object was named, false if the name is already taken
@@ -129,10 +141,12 @@ namespace hades
 		object_ref get_object_ref(std::string_view, game_state&, extra_state<GameSystem>&) noexcept;
 		template<typename GameSystem>
 		game_obj* get_object(object_ref&, extra_state<GameSystem>&) noexcept;
+		// NOTE: get_object_property_ref throws object_property_not_found if 
+		//		 the requested variable is not stored in the object
 		template<typename T>
-		const T& get_object_property_ref(const game_obj&, variable_id) noexcept;
+		const T& get_object_property_ref(const game_obj&, variable_id);
 		template<typename T>
-		T& get_object_property_ref(game_obj&, variable_id) noexcept;
+		T& get_object_property_ref(game_obj&, variable_id);
 	}
 }
 

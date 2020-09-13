@@ -13,7 +13,6 @@ set(HADES_CORE_SRC
 	source/files.cpp
 	source/font.cpp
 	source/game_api.cpp
-	source/game_instance.cpp
 	source/game_state.cpp
 	source/game_system.cpp
 	source/grid.cpp
@@ -57,7 +56,6 @@ set(HADES_CORE_SRC
 	include/hades/files.hpp
 	include/hades/font.hpp
 	include/hades/game_api.hpp
-	include/hades/game_instance.hpp
 	include/hades/game_state.hpp
 	include/hades/game_system.hpp
 	include/hades/grid.hpp

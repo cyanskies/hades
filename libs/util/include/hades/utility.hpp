@@ -206,7 +206,7 @@ namespace hades {
 	T from_string(std::string_view str);
 
 	template<>
-	bool from_string<bool>(std::string_view str);
+	bool from_string<bool>(std::string_view str) noexcept;
 
 	template<>
 	string from_string<string>(std::string_view str);

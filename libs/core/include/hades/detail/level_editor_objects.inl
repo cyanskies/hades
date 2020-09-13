@@ -127,6 +127,17 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
+	inline std::optional<int64> make_property_edit2<int64>(gui& g, std::string_view name, const int64& value)
+	{
+		auto ret = std::optional<int64>{};
+		auto value2 = integer_cast<int>(value);
+		if (g.input(name, value2))
+			ret = value2;
+		g.tooltip(name);
+		return ret;
+	}
+
+	template<>
 	inline std::optional<object_ref> make_property_edit2<object_ref>(gui& g, std::string_view name, const object_ref& value)
 	{
 		auto ret = std::optional<object_ref>{};

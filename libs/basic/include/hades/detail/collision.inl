@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "hades/exceptions.hpp"
 #include "hades/line_math.hpp"
 #include "hades/math.hpp"
 #include "hades/types.hpp"

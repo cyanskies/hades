@@ -238,7 +238,7 @@ namespace hades
 		template<typename T>
 		constexpr vector_t<T> perpendicular(vector_t<T> v) noexcept
 		{
-			return { -v.y, x };
+			return { -v.y, v.x };
 		}
 
 		template<typename T>

@@ -93,7 +93,7 @@ namespace hades
 		auto index = start;
 		while (index < end)
 		{
-			auto count = table_t::size_type{};
+			auto count = typename table_t::size_type{};
 			while (count < length)
 			{
 				const auto i = index;

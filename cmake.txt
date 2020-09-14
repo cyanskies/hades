@@ -34,19 +34,23 @@ function(hades_make_compile_settings ARG_NAME)
                              # general settings
                              $<$<CONFIG:Debug>:
                                 # MP for mutli threading
+								# permissive- for standards conformance
                                 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" >
+                                  "/MP" "/permissive-" >
                                 $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                    >
                              >
 
 							 # release mode optimisations
 							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
-								# '/GS-' for no extra buffer overflow checks
+								# MP for mutli threading
+								# permissive- for standards conformance
+                                # '/GS-' for no extra buffer overflow checks
                                 # GL for link time code gen
-				# fp for floating point speed, in exchange for less accuracy
+								# fp for floating point speed, in exchange for less accuracy
+								# Oi for compiler intrinsics
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/O2" "/GL" "/fp:fast" >
+                                  "/MP" "/permissive-" "/GS-" "/Oi" "/O2" "/GL" "/fp:fast" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >

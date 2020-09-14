@@ -133,7 +133,7 @@ namespace hades
 			return;
 		}
 
-		bool tags(object_ref o, tag_list has, tag_list not)
+		bool tags(object_ref o, tag_list has, tag_list not_wanted)
 		{
 			return false;
 			/*const auto& tags = get_value<tag_list>({ o, get_tags_curve_id() });
@@ -144,7 +144,7 @@ namespace hades
 				const auto eq = [t](tag_t t2) noexcept {return t == t2; };
 				if (std::any_of(begin(has), end(has), eq))
 					has1 = true;
-				if (std::any_of(begin(not), end(not), eq))
+				if (std::any_of(begin(not_wanted), end(not_wanted), eq))
 					has2 = true;
 			}
 

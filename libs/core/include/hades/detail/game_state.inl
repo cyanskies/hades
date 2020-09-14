@@ -115,9 +115,11 @@ namespace hades::state_api
 		template<typename T, typename GameObj>
 		T& get_object_property_ref(GameObj& g, const variable_id v)
 		{
-			auto& var_list = std::get<GameObj::var_list<std::decay_t<T>>>(g.object_variables);
+			using list_type = typename GameObj::template var_list<std::decay_t<T>>;
+			using entry_type = typename GameObj::template var_entry<std::decay_t<T>>;
+			auto& var_list = std::get<list_type>(g.object_variables);
 			auto var_iter = std::find_if(begin(var_list), end(var_list),
-				[v](GameObj::var_entry<std::decay_t<T>>& elm) {
+				[v](const entry_type& elm) {
 				return v == elm.id;
 				});
 

@@ -166,7 +166,7 @@ namespace hades
 			static_assert(a.size() == 4);
 			assert(c >= rect_corners::first);
 			assert(c < rect_corners::last);
-			const auto index = static_cast<std::decay_t<decltype(a)>::size_type>(c);
+			const auto index = static_cast<typename std::decay_t<decltype(a)>::size_type>(c);
 			return a[index];
 		}
 	}

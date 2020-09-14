@@ -43,8 +43,8 @@ namespace hades
 	using polygon_float = polygon_t<float>;
 
 	template<typename T>
-	using polygon_tri_t = typename polygon_t<T, 3>;
-	using polygon_tri_float = typename polygon_tri_t<float>;
+	using polygon_tri_t = polygon_t<T, 3>;
+	using polygon_tri_float = polygon_tri_t<float>;
 
 	template<typename T>
 	using polygon_quad_t = polygon_t<T, 4>;

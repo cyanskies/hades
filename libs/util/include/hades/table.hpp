@@ -26,8 +26,8 @@ namespace hades {
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
-		virtual_table(index_type o, index_type s) : _offset(o), _size(s) {}
-		virtual ~virtual_table() {}
+		virtual_table(index_type o, index_type s) : _offset{ o }, _size{ s } {}
+		virtual ~virtual_table() noexcept = default;
 
 		virtual value_type operator[](index_type);
 		virtual value_type operator[](size_type) const = 0;
@@ -40,14 +40,14 @@ namespace hades {
 	};
 
 	template<typename T>
-	class always_table : public virtual_table<T>
+	class always_table final : public virtual_table<T>
 	{
 	public:
-		always_table(index_type position, index_type size, T value)
-			: virtual_table{ position, size }, _always_value{ std::forward<T>(value) }
+		always_table(virtual_table<T>::index_type position, virtual_table<T>::index_type size, T value)
+			: virtual_table<T>{ position, size }, _always_value{ std::move(value) }
 		{}
 		
-		value_type operator[](size_type) const noexcept override
+		virtual_table<T>::value_type operator[](const virtual_table<T>::size_type) const noexcept override
 		{
 			return _always_value;
 		}

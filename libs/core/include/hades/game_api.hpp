@@ -164,7 +164,7 @@ namespace hades
 		world_vector_t& get_size(object_ref);
 		void set_size(object_ref, world_vector_t);
 		//tags
-		bool tags(object_ref, tag_list has, tag_list not);
+		bool tags(object_ref, tag_list wanted, tag_list dont_want);
 		//void tags_add(object_ref, tag_list);
 		//void tags_remove(object_ref, tag_list);
 		bool is_alive(object_ref);
@@ -274,7 +274,7 @@ namespace hades
 
 		//returns true if the object has the tags from the 'has' list
 		// and doesn't have the tags from 'not'
-		bool tags(object_ref, const tag_list& has, const tag_list& not);
+		bool tags(object_ref, const tag_list& wanted, const tag_list& not_wanted);
 
 		//tag info
 		inline bool has_tag(object_ref o, unique u)

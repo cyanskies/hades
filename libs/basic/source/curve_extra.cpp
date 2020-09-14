@@ -230,7 +230,8 @@ namespace hades::resources
 			if(siz == 0u)
 			{
 				//TODO: warn, bad
-				return { T::value_type{}, T::value_type{} };
+				using Ty = typename T::value_type;
+				return { Ty{}, Ty{} };
 			}
 
 			//size must be > 2

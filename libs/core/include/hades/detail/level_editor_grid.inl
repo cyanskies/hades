@@ -1,5 +1,7 @@
 #include "hades/level_editor_grid.hpp"
 
+#include "hades/mouse_input.hpp"
+
 namespace hades
 {
 	template<typename T>

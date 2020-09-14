@@ -167,7 +167,7 @@ namespace hades
 	template<typename Func>
 	void sprite_batch::_apply_changes(sprite_id id, Func f)
 	{
-		static_assert(std::is_nothrow_invocable_r_v<sprite, Func, sprite>,
+		static_assert(std::is_nothrow_invocable_r_v<sprite_utility::sprite, Func, sprite_utility::sprite>,
 			"Func must accept a sprite and return a sprite as noexcept");
 
 		const auto index = _find_sprite(id);
@@ -191,7 +191,7 @@ namespace hades
 		s = std::invoke(f, s);
 		s_batch.sprites[s_index] = s;
 
-		const auto new_settings = sprite_settings{ s.layer,
+		const auto new_settings = sprite_utility::sprite_settings{ s.layer,
 			s.animation ? s.animation->tex : nullptr };
 		if (new_settings == s_batch.settings)
 		{

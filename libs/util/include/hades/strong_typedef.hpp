@@ -275,7 +275,7 @@ namespace std
 		size_t operator()(const U& key) const noexcept
 		{
 			const auto h = std::hash<U::value_type>{};
-			return h(static_cast<U::value_type>(key));
+			return h(static_cast<typename U::value_type>(key));
 		}
 	};
 }

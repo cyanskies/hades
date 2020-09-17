@@ -35,8 +35,10 @@ function(hades_make_compile_settings ARG_NAME)
                              $<$<CONFIG:Debug>:
                                 # MP for mutli threading
 								# permissive- for standards conformance
+								# fp for floating point speed, in exchange for less accuracy
+								# EHsc for standard compliant exception specification
                                 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" >
+                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" >
                                 $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                    >
                              >
@@ -49,8 +51,9 @@ function(hades_make_compile_settings ARG_NAME)
                                 # GL for link time code gen
 								# fp for floating point speed, in exchange for less accuracy
 								# Oi for compiler intrinsics
+								# EHsc for standard compliant exception specification
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/GS-" "/Oi" "/O2" "/GL" "/fp:fast" >
+                                  "/MP" "/permissive-" "/GS-" "/Oi" "/O2" "/GL" "/fp:fast" "/EHsc" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >

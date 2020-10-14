@@ -123,6 +123,29 @@ namespace hades
 	tag_list get_tags(const object_instance &o);
 	tag_list get_tags(const resources::object &o);
 
+	// check_tags accepts a tag list and a array of tags to check,
+	// it returns an array indicating whether the tags in the check_list were found.
+	template<std::size_t N>
+	constexpr std::array<bool, N> check_tags(const tag_list& list, const std::array<tag_list::value_type, N>& check_list) noexcept
+	{
+		auto ret = std::array<bool, N>{};
+		ret.fill(false);
+
+		for (const auto elm : list)
+		{
+			for (auto i = std::size_t{}; i < N; ++i)
+			{
+				if (elm == check_list[i])
+				{
+					ret[i] = true;
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
+
 	//container for saved object data
 	struct object_data
 	{

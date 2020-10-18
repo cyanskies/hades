@@ -5,13 +5,12 @@
 #include <string_view>
 #include <type_traits>
 
-#include "hades/utility.hpp" // for from_string
+//#include "hades/utility.hpp" // for from_string
 							// TODO: pull string stuff out of utility
 
 namespace hades
 {
-	//high res clock is allowed to be wall time, if it is wall time, we just have to use steady clock instead
-	using time_clock = std::conditional_t<std::chrono::high_resolution_clock::is_steady, std::chrono::high_resolution_clock, std::chrono::steady_clock>;
+	using time_clock = std::chrono::steady_clock;
 	using time_point = time_clock::time_point;
 
 	using wall_clock = std::chrono::system_clock;

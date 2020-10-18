@@ -130,14 +130,28 @@ namespace hades::resources
 
 			//tags
 			auto current_tags = [obj, tags]()->curve_types::collection_unique {
-				if (!has_curve(*obj, tags))
-					return tag_list{};
+				auto tags_list = tag_list{};
+				for (const auto o : obj->base)
+				{
+					for (const auto& [c, v] : o->curves)
+					{
+						if (c->id == tags.id)
+						{
+							if (!std::holds_alternative<tag_list>(v))
+								break;
 
-				auto current_tags = get_curve(*obj, tags);
-				assert(is_curve_valid(tags, current_tags));
-				return std::get<curve_types::collection_unique>(std::move(current_tags));
+							const auto& t = std::get<tag_list>(v);
+							tags_list.reserve(size(tags_list) + size(t));
+							std::copy(begin(t), end(t), back_inserter(tags_list));
+							break;
+						}
+					}
+				}
+
+				return tags_list;
 			}();
 			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(current_tags));
+			remove_duplicates(new_tags);
 			set_curve(*obj, tags, std::move(new_tags));
 
 			//game systems
@@ -494,6 +508,9 @@ namespace hades
 		const auto index = random(std::size_t{ 0 }, anims.size() - 1);
 
 		return anims[index];
+		// C26816: The pointer points to memory allocated on the stack
+		// NOTE: it doesn't, it points to a animation resource allocated on the heap
+		//	it's lifetime is managed by the data_manager
 	}
 
 	resources::object::animation_list get_editor_animations(const resources::object &o)

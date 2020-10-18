@@ -125,7 +125,9 @@ namespace hades
 		// by multiple systems
 		// eg. collision trees
 		template<typename T>
-		T &get_level_local_ref(unique_id);
+		T& get_level_local_ref(unique_id);
+		template<typename T>
+		void set_level_local_value(unique_id, T value);
 
 		//==world data==
 		//world bounds in pixels
@@ -256,6 +258,8 @@ namespace hades
 		// eg. collision trees
 		template<typename T>
 		T& get_level_local_ref(unique_id);
+		template<typename T>
+		void set_level_local_value(unique_id, T value); // NOTE: should we return T& from this?
 
 		//world info
 		world_rect_t get_world_bounds();

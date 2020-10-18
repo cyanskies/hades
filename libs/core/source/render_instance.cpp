@@ -96,31 +96,9 @@ namespace hades
 	{
 		assert(i);
 
-		auto s = i->get_state();
+		//auto s = i->get_state();
 
 		return;
-	}
-
-
-	void render_instance::create_new_objects(std::vector<game_obj> objects)
-	{
-		//update extra with new object information
-		auto& obj_list = _extra.objects;
-
-		std::vector<plf::colony<game_obj>::iterator> new_objects;
-		new_objects.reserve(size(objects));
-		for (auto& o : objects)
-			new_objects.emplace_back(obj_list.insert(std::move(o)));
-
-		objects.clear();
-
-		for (auto& o : new_objects)
-		{
-			const auto id = o->id;
-			const auto systems = get_render_systems(*o->object_type);
-			for (const auto s : systems)
-				_extra.systems.attach_system(object_ref{ o->id, &*o }, s->id);
-		}
 	}
 
 	extra_state<render_system>& render_instance::get_extras() noexcept
@@ -134,9 +112,7 @@ namespace hades
 	{
 		assert(_interface);
 
-		//check for new entities and setup systems
-		//activate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
-		//deactivate_ents(_interface->get_curves(), _systems, _activated_ents, _current_frame);
+		_create_new_objects(_interface->get_new_objects());
 
 		//assert(m);
 		const auto dt = time_duration{ t - _current_frame };
@@ -156,5 +132,24 @@ namespace hades
 		_current_frame = next;
 
 		assert(_current_frame == t);
+	}
+
+	void render_instance::_create_new_objects(std::vector<game_obj> objects)
+	{
+		//update extra with new object information
+		auto& obj_list = _extra.objects;
+
+		std::vector<plf::colony<game_obj>::iterator> new_objects;
+		new_objects.reserve(size(objects));
+		for (auto& o : objects)
+			new_objects.emplace_back(obj_list.insert(std::move(o)));
+
+		for (auto& o : new_objects)
+		{
+			const auto id = o->id;
+			const auto systems = get_render_systems(*o->object_type);
+			for (const auto s : systems)
+				_extra.systems.attach_system(object_ref{ o->id, &*o }, s->id);
+		}
 	}
 }

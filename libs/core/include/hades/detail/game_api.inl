@@ -18,6 +18,13 @@ namespace hades
 			static_assert(std::is_default_constructible_v<T>);
 			return extras.level_locals.set<T>(id, {});
 		}
+
+		template<typename T, typename GameSystem>
+		void set_level_local_value_imp(unique_id id, T value, extra_state<GameSystem>& extras)
+		{
+			extras.level_locals.set(id, std::move(value));
+			return;
+		}
 	}
 
 	namespace game
@@ -51,6 +58,13 @@ namespace hades
 		{
 			auto ptr = detail::get_game_level_ptr();
 			return detail::get_level_local_ref_imp<T>(id, ptr->get_extras());
+		}
+
+		template<typename T>
+		void set_level_local_value(unique_id id, T value)
+		{
+			detail::set_level_local_value_imp<T>(id, std::move(value));
+			return;
 		}
 
 		template<typename T>
@@ -125,6 +139,12 @@ namespace hades
 		T& get_level_local_ref(unique_id id)
 		{
 			return detail::get_level_local_ref_imp<T>(id, *detail::get_render_extra_ptr());
+		}
+
+		template<typename T>
+		void set_level_local_value(unique_id id, T value)
+		{
+			return detail::set_level_local_value_imp(id, std::move(value), *detail::get_render_extra_ptr());
 		}
 
 		template<typename T>

@@ -156,6 +156,7 @@ namespace hades
 		//an object is always created at game::get_time() time.
 		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
 		object_ref create_object(const object_instance&);
+		object_ref clone_object(object_ref);
 		void destroy_object(object_ref);
 
 		//=== Common Curves ===
@@ -165,11 +166,9 @@ namespace hades
 		//size
 		world_vector_t& get_size(object_ref);
 		void set_size(object_ref, world_vector_t);
-		//tags
-		bool tags(object_ref, tag_list wanted, tag_list dont_want);
-		//void tags_add(object_ref, tag_list);
-		//void tags_remove(object_ref, tag_list);
-		bool is_alive(object_ref);
+		tag_list& get_tags(object_ref);
+		//NOTE: this isn't a curve anymore
+		bool is_alive(object_ref&) noexcept;
 	}
 
 	//render access functions allow a const view of the game state

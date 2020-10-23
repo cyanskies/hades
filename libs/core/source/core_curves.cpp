@@ -3,7 +3,6 @@
 
 namespace hades
 {
-	static auto alive_id = unique_zero;
 	static auto name_id = unique_zero;
 	static auto pos_id = unique_zero;
 	static auto siz_id = unique_zero;
@@ -27,12 +26,6 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		using resources::curve;
-
-		//TODO: use make_curve to produce these, so that they are properly registered
-
-		alive_id = d.get_uid("alive"sv);
-		resources::make_curve(d, alive_id, 
-			resources::curve_variable_type::bool_t, true, true, true);
 
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
@@ -123,16 +116,11 @@ namespace hades
 		return get_curve(object_type_id);
 	}
 
-	unique_id get_alive_curve_id() noexcept
-	{
-		return alive_id;
-	}
-
 	unique_id get_position_curve_id() noexcept
 	{
 		return pos_id;
 	}
-
+	
 	unique_id get_player_owner_id() noexcept
 	{
 		return player_owner_id;

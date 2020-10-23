@@ -15,6 +15,15 @@ namespace hades
 		return obj;
 	}
 
+	object_ref game_implementation::clone_object(object_ref o)
+	{
+		const auto obj_ptr = state_api::get_object(o, _extras);
+		assert(obj_ptr);
+		auto obj = state_api::clone_object(*obj_ptr, _state, _extras);
+		_new_objects.emplace_back(*obj.ptr);
+		return obj;
+	}
+
 	std::vector<game_obj> game_implementation::get_new_objects() noexcept
 	{
 		return std::exchange(_new_objects, {});

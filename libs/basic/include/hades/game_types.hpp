@@ -1,6 +1,7 @@
 #ifndef HADES_GAME_TYPES_HPP
 #define HADES_GAME_TYPES_HPP
 
+#include <array>
 #include <string_view>
 #include <vector>
 
@@ -28,7 +29,28 @@ namespace hades
 	using tag_t = unique_id;
 	using tag_list = std::vector<tag_t>;
 
-	//uses the unique_id overloads of to_str and from_str
+	// check_tags accepts a tag list and a array of tags to check,
+	// it returns an array indicating whether the tags in the check_list were found.
+	template<std::size_t N>
+	constexpr std::array<bool, N> check_tags(const tag_list& list, const std::array<tag_list::value_type, N>& check_list) noexcept
+	{
+		auto ret = std::array<bool, N>{};
+		ret.fill(false);
+
+		for (const auto elm : list)
+		{
+			for (auto i = std::size_t{}; i < N; ++i)
+			{
+				if (elm == check_list[i])
+				{
+					ret[i] = true;
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
 
 	//engines support types
 

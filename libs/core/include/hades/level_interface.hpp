@@ -56,6 +56,8 @@ namespace hades
 	{
 	public:
 		virtual object_ref create_object(const object_instance&) = 0;
+		virtual object_ref clone_object(object_ref) = 0;
+		// TODO: destroy object
 		virtual object_ref get_object_ref(std::string_view) noexcept = 0;
 		virtual extra_state<game_system>& get_extras() noexcept = 0;
 	};
@@ -68,6 +70,7 @@ namespace hades
 
 		object_ref create_object(const object_instance&) override;
 		object_ref create_object(const resources::object&);
+		object_ref clone_object(object_ref) override;
 
 		std::vector<game_obj> get_new_objects() noexcept override;
 

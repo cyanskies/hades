@@ -1,9 +1,25 @@
 #include "hades/game_state.hpp"
 
+#include "hades/for_each_tuple.hpp"
+
 namespace hades::state_api
 {
-	namespace
+	namespace detail
 	{
+		template<typename T>
+		static inline void create_object_property(game_obj& object, unique_id curve_id, game_state& state, T value)
+		{
+			//add the curve and value into the game_state database
+			//then record a ptr to the data in the game object
+			auto& colony = std::get<game_state::data_colony<T>>(state.state_data);
+			auto data = state_field<T>{ object.id, curve_id, std::move(value) };
+			auto iter = colony.emplace(std::move(data));
+			assert(iter != end(colony));
+			auto& vars = std::get<game_obj::var_list<T>>(object.object_variables);
+			vars.emplace_back(game_obj::var_entry<T>{curve_id, &* iter});
+			return;
+		}
+
 		struct make_object_visitor
 		{
 			const resources::curve* c;
@@ -16,12 +32,7 @@ namespace hades::state_api
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				auto& colony = std::get<game_state::data_colony<T>>(s.state_data);
-				auto data = state_field<T>{ obj.id, c->id, std::move(v) };
-				auto iter = colony.emplace(std::move(data));
-				assert(iter != end(colony));
-				auto& vars = std::get<game_obj::var_list<T>>(obj.object_variables);
-				vars.emplace_back(game_obj::var_entry<T>{c->id, &* iter});
+				create_object_property(obj, c->id, s, std::move(v));
 				return;
 			}
 
@@ -46,7 +57,7 @@ namespace hades::state_api
 			assert(c);
 			assert(!v.valueless_by_exception());
 			assert(resources::is_set(v));
-			std::visit(make_object_visitor{ c, s, *obj }, v);
+			std::visit(detail::make_object_visitor{ c, s, *obj }, v);
 		}
 
 		if (!empty(o.name_id))
@@ -56,6 +67,34 @@ namespace hades::state_api
 			e.systems.attach_system({ id, &*obj }, sys->id);
 
 		return { id, &*obj };
+	}
+
+	template<typename GameSystem>
+	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra)
+	{
+		const auto id = increment(state.next_id);
+		auto new_obj = extra.objects.emplace(game_obj{ id, obj.object_type });
+		assert(new_obj != end(extra.objects));
+
+		//copy all object properties
+		for_each_tuple(obj.object_variables, [&state, &obj = *new_obj](auto&& var_list) {
+				// var list should be a vector<game_obj::var_entry<T>>
+				for (const auto& entry : var_list)
+				{
+					assert(entry.var);
+					using T = std::decay_t<decltype(entry.var->data)>;
+					detail::create_object_property(obj, entry.id, state, entry.var->data);
+				}
+				return;
+			});
+
+		const auto ref = object_ref{ id, &*new_obj };
+
+		//attach all systems
+		for (const auto sys : get_systems(*obj.object_type))
+			extra.systems.attach_system(ref, sys->id);
+
+		return ref;
 	}
 
 	template<typename GameSystem>

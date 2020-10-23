@@ -75,23 +75,29 @@ namespace hades
 
 		object_ref create_object(const object_instance& obj)
 		{
-			auto ptr = detail::get_game_data_ptr();
-			assert(ptr && ptr->level_data);
+			auto ptr = detail::get_game_level_ptr();
+			assert(ptr);
 			assert(obj.id == bad_entity);
-			return ptr->level_data->create_object(obj);
+			return ptr->create_object(obj);
+		}
+
+		object_ref clone_object(object_ref o)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			return ptr->clone_object(o);
 		}
 
 		//TODO: do we need 'from', do we need 'untill' or just 'for'
-		void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
+		/*void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
 		{
 			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
 			game_current_level_system_ptr->sleep_entity(e, s, from, until);
 			return;
-		}
+		}*/
 
 		void destroy_object(object_ref e)
 		{
-			
+			//TODO: implement
 			return;
 		}
 
@@ -133,28 +139,18 @@ namespace hades
 			return;
 		}
 
-		bool tags(object_ref o, tag_list has, tag_list not_wanted)
+		tag_list& get_tags(object_ref o)
 		{
-			return false;
-			/*const auto& tags = get_value<tag_list>({ o, get_tags_curve_id() });
-			bool has1 = false, has2 = false;
-
-			for (const auto& t : tags)
-			{
-				const auto eq = [t](tag_t t2) noexcept {return t == t2; };
-				if (std::any_of(begin(has), end(has), eq))
-					has1 = true;
-				if (std::any_of(begin(not_wanted), end(not_wanted), eq))
-					has2 = true;
-			}
-
-			return has1 && !has2;*/
+			const auto tag_id = get_tags_curve_id();
+			return get_property_ref<tag_list>(o, tag_id);
 		}
 
-		bool is_alive(object_ref o)
+		bool is_alive(object_ref& o) noexcept
 		{
-			const auto alive = get_alive_curve_id();
-			return true;// get_value<bool>({ o, alive });
+			auto ptr = detail::get_game_level_ptr();
+			assert(ptr);
+			// NOTE: get_object returns nullptr for stale object refs
+			return state_api::get_object(o, ptr->get_extras()) != nullptr;
 		}
 	}
 

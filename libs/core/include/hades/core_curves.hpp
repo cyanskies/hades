@@ -25,7 +25,6 @@ namespace hades
 
 	constexpr auto bad_object_type = unique_zero;
 
-	unique_id get_alive_curve_id() noexcept;
 	unique_id get_player_owner_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;

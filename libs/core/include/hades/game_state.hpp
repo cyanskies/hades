@@ -135,6 +135,9 @@ namespace hades
 
 		template<typename GameSystem>
 		object_ref make_object(const object_instance&, game_state&, extra_state<GameSystem>&);
+		// NOTE: the new object will not have the name of the cloned object
+		template<typename GameSystem> 
+		object_ref clone_object(const game_obj&, game_state&, extra_state<GameSystem>&);
 		//returns true if the object was named, false if the name is already taken
 		bool name_object(string, object_ref, game_state&);
 		template<typename GameSystem>

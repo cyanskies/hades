@@ -83,6 +83,7 @@ namespace hades::state_api
 				{
 					assert(entry.var);
 					using T = std::decay_t<decltype(entry.var->data)>;
+					static_assert(std::is_same_v<std::decay_t<decltype(var_list)>, std::vector<game_obj::var_entry<T>>>);
 					detail::create_object_property(obj, entry.id, state, entry.var->data);
 				}
 				return;

@@ -25,11 +25,11 @@ namespace hades
 	struct action
 	{
 		constexpr action() noexcept = default;
-		constexpr action(unique_id uid) noexcept : id{ uid }
+		explicit constexpr action(unique_id uid) noexcept : id{ uid }
 		{}
 		constexpr action(unique_id uid, int32 x) noexcept : id{ uid }, x_axis{ x }
 		{}
-		constexpr action(bool active) noexcept : active(active)
+		explicit constexpr action(bool active) noexcept : active(active)
 		{}
 		constexpr action(unique_id i, int32 x, int32 y, int32 u, int32 v) noexcept :
 			id{ i }, x_axis{ x }, y_axis{ y }, u_axis{ u }, v_axis{v}

@@ -29,8 +29,19 @@ namespace hades
 					return system_job_data{ sys, std::move(e), g, nullptr, p, s, t, dt, d };
 			};
 
+			const auto destroyed_objects = _game.get_destroyed_objects();
+			// allow the destroyed objects from last frame to have disconnect called on them
+			// before we erase them; while leaving an empty list of destroyed objects for this frame to fill
 			const auto next = update_level(_level_time, _level_time + dt, dt, _game, _game.get_systems(), p, make_game_struct);
 			_level_time += dt;
+
+			auto& state = _game.get_state();
+			auto& extra = _game.get_extras();
+			for (const auto o : destroyed_objects)
+			{
+				assert(o);
+				state_api::erase_object(*o, state, extra);
+			}
 		}
 
 		void send_request(unique_id id, std::vector<action> a) override

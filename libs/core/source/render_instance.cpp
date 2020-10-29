@@ -139,7 +139,7 @@ namespace hades
 		//update extra with new object information
 		auto& obj_list = _extra.objects;
 
-		std::vector<plf::colony<game_obj>::iterator> new_objects;
+		std::vector<game_obj*> new_objects;
 		new_objects.reserve(size(objects));
 		for (auto& o : objects)
 			new_objects.emplace_back(obj_list.insert(std::move(o)));

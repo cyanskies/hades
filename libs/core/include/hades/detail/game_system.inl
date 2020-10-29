@@ -131,18 +131,19 @@ namespace hades
 		template<typename SystemType>
 		inline static void detach_system_impl(object_ref e, SystemType& sys)
 		{
+			
 			//removed from the active list
-			const auto remove_iter = std::remove_if(std::begin(sys.attached_entities), std::end(sys.attached_entities), [e](const attached_ent& ent) {
+			const auto remove_iter = std::find_if(std::begin(sys.attached_entities), std::end(sys.attached_entities), [e](const attached_ent& ent) {
 				return e == ent.first;
 			});
 
-			//if remove_iter == std::end(ents) then the entity wasn't attached in the first place
-			if (remove_iter != std::end(sys.attached_entities))
-			{
-				sys.attached_entities.erase(remove_iter, std::end(sys.attached_entities));
-				//add to the removed list, for next frame to proccess
-				sys.removed_ents.emplace_back(e);
-			}
+			if(remove_iter == end(sys.attached_entities))
+				return;
+			
+			sys.removed_ents.emplace_back(e);
+			*remove_iter = *rbegin(sys.attached_entities);
+			sys.attached_entities.pop_back();
+
 			return;
 		}
 	}

@@ -89,7 +89,7 @@ namespace hades
 		std::vector<object_ref> get_removed_entities(SystemType&);
 
 		void attach_system(object_ref, unique_id);
-		void detach_system(object_ref, unique_id);
+		[[deprecated]] void detach_system(object_ref, unique_id);
 		//remove this entity from all systems
 		void detach_all(object_ref);
 

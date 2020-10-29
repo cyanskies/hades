@@ -97,7 +97,8 @@ namespace hades
 
 		void destroy_object(object_ref e)
 		{
-			//TODO: implement
+			auto ptr = detail::get_game_level_ptr();
+			ptr->destroy_object(e);
 			return;
 		}
 

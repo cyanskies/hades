@@ -49,6 +49,7 @@ namespace hades
 
 		virtual game_state& get_state() noexcept = 0;
 		virtual std::vector<game_obj> get_new_objects() noexcept = 0;
+		virtual std::vector<entity_id> get_removed_objects() noexcept = 0;
 	};
 
 	//use by game
@@ -57,7 +58,8 @@ namespace hades
 	public:
 		virtual object_ref create_object(const object_instance&) = 0;
 		virtual object_ref clone_object(object_ref) = 0;
-		// TODO: destroy object
+		virtual void destroy_object(object_ref) = 0;
+
 		virtual object_ref get_object_ref(std::string_view) noexcept = 0;
 		virtual extra_state<game_system>& get_extras() noexcept = 0;
 	};
@@ -71,8 +73,12 @@ namespace hades
 		object_ref create_object(const object_instance&) override;
 		object_ref create_object(const resources::object&);
 		object_ref clone_object(object_ref) override;
+		void destroy_object(object_ref) override;
+
+		std::vector<game_obj*> get_destroyed_objects() noexcept;
 
 		std::vector<game_obj> get_new_objects() noexcept override;
+		std::vector<entity_id> get_removed_objects() noexcept override;
 
 		void name_object(std::string_view, object_ref);
 
@@ -104,6 +110,8 @@ namespace hades
 		// NOTE: for local clients to access
 		// should be removed for dedicated server
 		std::vector<game_obj> _new_objects;
+		std::vector<game_obj*> _destroy_objects;
+		std::vector<entity_id> _removed_objects;
 
 		//level info
 		terrain_map _terrain;

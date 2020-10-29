@@ -29,6 +29,7 @@ namespace hades
 		template<typename T>
 		struct var_entry
 		{
+			using value_type = T;
 			variable_id id = bad_variable;
 			state_field<T>* var = nullptr;
 		};
@@ -91,6 +92,108 @@ namespace hades
 
 		template<typename T>
 		using state_data_type_t = typename state_data_type<T>::type;
+
+		//we don't shrink the memory space
+		// we need old ptrs to remain valid, but be detectable as stale
+		// after being replaced
+		class game_object_collection
+		{
+		public:
+			static constexpr auto empty = false;
+			static constexpr auto not_empty = true;
+
+			class iterator
+			{
+			public:
+				using v_bool_iter = std::vector<bool>::iterator;
+				using v_obj_iter = std::deque<game_obj>::iterator;
+				using iterator_category = v_obj_iter::iterator_category;
+				using value_type = game_obj;
+				using difference_type = v_obj_iter::difference_type;
+				using pointer = v_obj_iter::pointer;
+				using reference = v_obj_iter::reference;
+
+				iterator(v_bool_iter a, v_bool_iter a_end, v_obj_iter b) noexcept :
+					_empty_iter{ a }, _empty_end{ a_end }, _obj_iter{ b }
+				{
+					while (_empty_iter != _empty_end  && *_empty_iter == empty)
+					{
+						++_empty_iter; ++_obj_iter;
+					}
+				}
+
+				bool operator!=(const iterator& rhs) const noexcept
+				{
+					return _empty_iter != rhs._empty_iter;
+				}
+
+				game_obj& operator*() const
+				{
+					return *_obj_iter;
+				}
+
+				game_obj* operator->() const
+				{
+					return &*_obj_iter;
+				}
+
+				iterator& operator++()
+				{
+					++_empty_iter;
+					++_obj_iter;
+					while (_empty_iter != _empty_end && *_empty_iter == empty)
+					{
+						++_empty_iter; ++_obj_iter;
+					}
+					return *this;
+				}
+
+				iterator operator++(int)
+				{
+					const auto old = *this;
+					operator++();
+					return old;
+				}
+
+			private:
+				v_bool_iter _empty_iter;
+				v_bool_iter _empty_end;
+				v_obj_iter _obj_iter;
+			};
+
+			// returns a new game_obj in an indeterminate state
+			game_obj* insert();
+			// moves the passed game_obj into storage, then returns a ptr to it
+			game_obj* insert(game_obj); 
+			// marks the object as erased; ptrs to it will still be valid
+			// use the difference between the object id and the ref id to
+			// detect stale ptrs
+			void erase(game_obj*) noexcept;
+			// finds the non-erased object with that id, or returns nullptr
+			game_obj* find(entity_id) noexcept;
+
+			std::size_t size() const noexcept
+			{
+				return _size;
+			}
+
+			iterator begin() noexcept
+			{
+				return { std::begin(_emptys), std::end(_emptys), std::begin(_data) };
+			}
+
+			iterator end() noexcept
+			{
+				return { std::end(_emptys), std::end(_emptys), std::end(_data) };
+			}
+
+		private:
+			std::size_t _size{};
+			std::vector<bool> _emptys;
+			std::deque<game_obj> _data;
+		};
+
+		static_assert(std::is_move_constructible_v<game_object_collection>);
 	}
 
 	//the whole game state, this is everything that gets saved
@@ -111,7 +214,7 @@ namespace hades
 	template<typename GameSystem>
 	struct extra_state
 	{
-		plf::colony<game_obj> objects;
+		detail::game_object_collection objects; 
 		//system behaviours, including system local data
 		system_behaviours<GameSystem> systems;
 		//level local data, available in all systems
@@ -138,6 +241,12 @@ namespace hades
 		// NOTE: the new object will not have the name of the cloned object
 		template<typename GameSystem> 
 		object_ref clone_object(const game_obj&, game_state&, extra_state<GameSystem>&);
+		// disconnects objects from their systems(also queues them to have on_disconnect called)
+		template<typename GameSystem>
+		void detach_object_systems(object_ref, extra_state<GameSystem>&);
+		// deletes the object data and invalidates the game_obj, best to do this one frame after detaching them.
+		template<typename GameSystem>
+		void erase_object(game_obj&, game_state&, extra_state<GameSystem>&);
 		//returns true if the object was named, false if the name is already taken
 		bool name_object(string, object_ref, game_state&);
 		template<typename GameSystem>

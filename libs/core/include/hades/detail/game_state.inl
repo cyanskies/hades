@@ -49,8 +49,8 @@ namespace hades::state_api
 		// give this instance a new unique id if  it doesn't have one
 		const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
 
-		auto obj = e.objects.emplace(game_obj{ id, o.obj_type });
-		assert(obj != end(e.objects));
+		// insert always returns a valid ptr
+		auto obj = e.objects.insert(game_obj{ id, o.obj_type });
 
 		for (auto& [c, v] : get_all_curves(o))
 		{
@@ -61,20 +61,19 @@ namespace hades::state_api
 		}
 
 		if (!empty(o.name_id))
-			name_object(o.name_id, { id, &*obj }, s);
+			name_object(o.name_id, { id, obj }, s);
 
 		for (const auto sys : get_systems(*obj->object_type))
-			e.systems.attach_system({ id, &*obj }, sys->id);
+			e.systems.attach_system({ id, obj }, sys->id);
 
-		return { id, &*obj };
+		return { id, obj };
 	}
 
 	template<typename GameSystem>
 	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra)
 	{
 		const auto id = increment(state.next_id);
-		auto new_obj = extra.objects.emplace(game_obj{ id, obj.object_type });
-		assert(new_obj != end(extra.objects));
+		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
 
 		//copy all object properties
 		for_each_tuple(obj.object_variables, [&state, &obj = *new_obj](auto&& var_list) {
@@ -99,12 +98,52 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
+	void detach_object_systems(object_ref o, extra_state<GameSystem>& e)
+	{
+		e.systems.detach_all(o);
+		return;
+	}
+
+	template<typename GameSystem>
+	void erase_object(game_obj& o, game_state& s, extra_state<GameSystem>& e)
+	{
+		//erase all data
+		for_each_tuple(o.object_variables, [&o, &s](auto&& vars){
+			// vars == vector<var_entry> -> value_type == var_entry, T == var_entry::value_type
+			// T == curve_type::T
+			using T = typename std::decay_t<decltype(vars)>::value_type::value_type;
+			if (empty(vars))
+				return;
+			const auto vars_size = size(vars);
+
+			auto& list = std::get<game_state::data_colony<T>>(s.state_data);
+			auto found = std::size_t{};
+			auto iter = begin(list);
+			while (iter != end(list) && found < vars_size)
+			{
+				if (iter->object == o.id)
+				{
+					iter = list.erase(iter);
+					++found;
+				}
+				else
+					++iter;
+			}
+			vars.clear();
+		});
+
+		o.id = bad_entity;
+		e.objects.erase(&o);
+		return;
+	}
+
+	template<typename GameSystem>
 	object_ref get_object_ref(std::string_view s, game_state& g, extra_state<GameSystem>& e) noexcept
 	{
-		const auto obj = g.names.find(string(s));
+		const auto obj = g.names.find(to_string(s));
 		if (obj == end(g.names))
 		{
-			LOGWARNING("tried to find named object that doesn't exist, name was: " + string{ s });
+			LOGWARNING("tried to find named object that doesn't exist, name was: " + to_string(s));
 			return object_ref{};
 		}
 
@@ -126,12 +165,10 @@ namespace hades::state_api
 	{
 		if (o.ptr == nullptr)
 		{
-			auto obj_ptr = std::find_if(begin(e.objects), end(e.objects), [id = o.id](auto&& o) {
-				return id == o.id;
-			});
+			auto obj_ptr = e.objects.find(o.id);
 
 			//entity is gone, goodbye
-			if (obj_ptr == end(e.objects))
+			if (obj_ptr == nullptr)
 			{
 				LOGWARNING("stale object ref, the object is no longer with us");
 				return nullptr;
@@ -143,8 +180,8 @@ namespace hades::state_api
 
 		if (o.id != o.ptr->id)
 		{
+			o.ptr = nullptr;
 			LOGWARNING("stale object ref, the ptr has been resused for a new object");
-			return nullptr;
 		}
 
 		return o.ptr;

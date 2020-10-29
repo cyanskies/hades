@@ -24,9 +24,26 @@ namespace hades
 		return obj;
 	}
 
+	void game_implementation::destroy_object(object_ref o)
+	{
+		auto obj = state_api::get_object(o, _extras);
+		_destroy_objects.emplace_back(obj);
+		_removed_objects.emplace_back(o.id);
+	}
+
+	std::vector<game_obj*> game_implementation::get_destroyed_objects() noexcept
+	{
+		return std::exchange(_destroy_objects, {});
+	}
+
 	std::vector<game_obj> game_implementation::get_new_objects() noexcept
 	{
 		return std::exchange(_new_objects, {});
+	}
+
+	std::vector<entity_id> game_implementation::get_removed_objects() noexcept
+	{
+		return std::exchange(_removed_objects, {});
 	}
 
 	void game_implementation::name_object(std::string_view s, object_ref o)
@@ -62,9 +79,10 @@ namespace hades
 	{
 		std::tie(_state, _extras) = fill_state(sv);
 
-		_new_objects.reserve(size(_extras.objects));
-		std::copy(begin(_extras.objects), end(_extras.objects), back_inserter(_new_objects));
-
+		_new_objects.reserve(_extras.objects.size());
+		for (auto& o : _extras.objects)
+			_new_objects.emplace_back(o);
+		
 		if (!std::empty(sv.source.tile_map_layer.tiles))
 		{
 			const auto raw_map = raw_terrain_map{

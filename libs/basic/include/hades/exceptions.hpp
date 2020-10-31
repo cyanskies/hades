@@ -16,6 +16,12 @@ namespace hades
 		using std::runtime_error::runtime_error;
 	};
 
+	class out_of_range_error : public runtime_error
+	{
+	public:
+		using runtime_error::runtime_error;
+	};
+
 	//thrown when an argument is out of range, null or otherwise refused by the function
 	//NOTE: these are programmer errors, and shouldn't be handled by normal program execution
 	class invalid_argument : public std::invalid_argument

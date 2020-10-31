@@ -1,7 +1,9 @@
 #ifndef HADES_LEVEL_EDITOR_OBJECTS_HPP
 #define HADES_LEVEL_EDITOR_OBJECTS_HPP
 
+#include <any>
 #include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 
@@ -89,6 +91,15 @@ namespace hades
 		entity_id add(ObjectType);
 		void erase(entity_id);
 
+		struct curve_edit_cache
+		{
+			string edit_buffer;
+			int32 edit_generation = 0;
+			std::any extra_data;
+		};
+
+		using cache_map = std::unordered_map<string, curve_edit_cache>;
+
 	private:
 		struct curve_info
 		{
@@ -138,6 +149,7 @@ namespace hades
 		add_remove_curve_window _add_remove_window_state;
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;
+		cache_map _edit_cache;
 		std::array<curve_info, 2> _curve_properties;
 	};
 

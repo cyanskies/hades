@@ -6,6 +6,9 @@ namespace hades {
 		const auto start = in.find_first_not_of(' ');
 		const auto end = in.find_last_not_of(' ');
 
+		if (in.empty())
+			return {};
+
 		return in.substr(start, end - start + 1);
 	}
 

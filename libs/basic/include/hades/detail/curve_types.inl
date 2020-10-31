@@ -23,6 +23,8 @@ inline hades::string hades::to_string(hades::curve_variable_type t) noexcept
 		return "unique"s;
 	case curve_variable_type::colour:
 		return "colour"s;
+	case curve_variable_type::time_d:
+		return "time-d"s;
 	case curve_variable_type::collection_int:
 		return "collection-int32"s;
 	case curve_variable_type::collection_float:
@@ -59,6 +61,8 @@ namespace hades::curve_types
 			return curve_variable_type::unique;
 		else if constexpr (std::is_same_v<T, colour>)
 			return curve_variable_type::colour;
+		else if constexpr (std::is_same_v<T, time_d>)
+			return curve_variable_type::time_d;
 		else if constexpr (std::is_same_v<T, collection_int>)
 			return curve_variable_type::collection_int;
 		else if constexpr (std::is_same_v<T, collection_float>)

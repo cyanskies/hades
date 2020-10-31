@@ -94,9 +94,13 @@ namespace hades::detail::obj_ui
 
 	//TODO: rename these overloads to make the usage more obvious
 	// make_prop_edit is for main call
-	// make_pro_edit2 is for implementing the actual property row
+	// make_prop_edit2 is for implementing the actual property row
 	template<typename T>
-	std::optional<T> make_property_edit2(gui& g, std::string_view name, const T& value)
+	struct has_custom_edit_func : std::false_type {};
+
+	template<typename ObjEditor, typename T>
+	std::optional<T> make_property_edit_basic(gui& g, std::string_view name, const T& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<T>{};
 		auto edit_value = value;
@@ -107,27 +111,12 @@ namespace hades::detail::obj_ui
 		return ret;
 	}
 
-	template<typename T>
-	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value)
-	{
-		if constexpr(resources::curve_types::is_vector_type_v<T>)
-		{
-			auto arr = std::array{ value.x, value.y };
-			if (g.input(name, arr))
-				set_curve(o, c, T{ arr[0], arr[1] });
-
-			g.tooltip(name);
-		}
-		else
-		{
-			auto new_value = make_property_edit2(g, name, value);
-			if(new_value)
-				set_curve(o, c, std::move(*new_value));
-		}
-	}
-
 	template<>
-	inline std::optional<int64> make_property_edit2<int64>(gui& g, std::string_view name, const int64& value)
+	struct has_custom_edit_func<int64> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<int64> make_property_edit_custom(gui& g, std::string_view name, const int64& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<int64>{};
 		auto value2 = integer_cast<int>(value);
@@ -138,7 +127,11 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<object_ref> make_property_edit2<object_ref>(gui& g, std::string_view name, const object_ref& value)
+	struct has_custom_edit_func<object_ref> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<object_ref> make_property_edit_custom(gui& g, std::string_view name, const object_ref& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<object_ref>{};
 		auto value2 = integer_cast<int>(to_value(value.id));
@@ -149,7 +142,11 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<colour> make_property_edit2<colour>(gui& g, std::string_view name, const colour& value)
+	struct has_custom_edit_func<colour> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<colour> make_property_edit_custom(gui& g, std::string_view name, const colour& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<colour>{};
 		auto arr = std::array{
@@ -174,7 +171,11 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<bool> make_property_edit2<bool>(gui& g, std::string_view name, const bool& value)
+	struct has_custom_edit_func<bool> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<bool> make_property_edit_custom(gui& g, std::string_view name, const bool& value,
+		typename ObjEditor::cache_map&)
 	{
 		using namespace std::string_view_literals;
 		constexpr auto tru = "true"sv;
@@ -196,7 +197,11 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<string> make_property_edit2<string>(gui& g, std::string_view name, const string& value)
+	struct has_custom_edit_func<string> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<string> make_property_edit_custom(gui& g, std::string_view name, const string& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<string>{};
 		auto edit = value;
@@ -207,7 +212,11 @@ namespace hades::detail::obj_ui
 	}
 
 	template<>
-	inline std::optional<unique_id> make_property_edit2<unique_id>(gui& g, std::string_view name, const unique_id& value)
+	struct has_custom_edit_func<unique_id> : std::true_type {};
+
+	template<typename ObjEditor>
+	inline std::optional<unique_id> make_property_edit_custom(gui& g, std::string_view name, const unique_id& value,
+		typename ObjEditor::cache_map&)
 	{
 		auto ret = std::optional<unique_id>{};
 		auto u_string = data::get_as_string(value);
@@ -217,32 +226,158 @@ namespace hades::detail::obj_ui
 		return ret;
 	}
 
-	//template<>
-	//inline std::optional<time_duration> make_property_edit2<time_duration>(gui& g, std::string_view name, const time_duration& value)
-	//{
-	//	auto ret = std::optional<time_duration>{};
-	//	auto edit = to_string(value);
-	//	//this crashes because strings of duration can sngange in size by
-	//	// more than the user input, due o adding or removing tags
+	template<>
+	struct has_custom_edit_func<time_duration> : std::true_type {};
 
-	//	// fixinf this would require a proper string cache and value map for each row
-	//	// rather than editing the values directly as currently
-	//	if (g.input_text(name, edit))
-	//	{
-	//		ret = duration_from_string(edit);
-	//	}
-	//	g.tooltip(name);
-	//	return ret;
-	//}
+	/*struct curve_edit_cache
+	{
+		string edit_buffer;
+		int32 edit_generation = 0;
+		std::any extra_data;
+	};*/
 
-	template<typename T>
-	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value)
+	template<typename ObjEditor>
+	inline std::optional<time_duration> make_property_edit_custom(gui& g, std::string_view name, const time_duration& value,
+		typename ObjEditor::cache_map& cache)
+	{
+		using namespace std::string_view_literals;
+
+		auto& cache_entry = cache[to_string(name)];
+		if (cache_entry.edit_generation == 0)
+		{
+			std::tie(cache_entry.edit_buffer, cache_entry.extra_data) = duration_to_string(value);
+			++cache_entry.edit_generation;
+		}
+
+		auto ratio_ptr = std::any_cast<duration_ratio>(&cache_entry.extra_data);
+		assert(ratio_ptr);
+		auto& ratio = *ratio_ptr;
+
+		const auto preview = [ratio]() noexcept {
+			if (ratio == duration_ratio::seconds)
+				return "seconds"sv;
+			if (ratio == duration_ratio::millis)
+				return "milliseconds"sv;
+			if (ratio == duration_ratio::micros)
+				return "microseconds"sv;
+			return "nanoseconds"sv;
+		}();
+
+		if (g.combo_begin("##duration_ratio"sv, preview))
+		{
+			if (g.selectable("seconds"sv, ratio == duration_ratio::seconds))
+			{
+				++cache_entry.edit_generation;
+				const auto secs = time_cast<seconds>(value);
+				cache_entry.edit_buffer = to_string(secs.count());
+				ratio = duration_ratio::seconds;
+			}
+
+			if (g.selectable("milliseconds"sv, ratio == duration_ratio::millis))
+			{
+				++cache_entry.edit_generation;
+				const auto millis = time_cast<milliseconds>(value);
+				cache_entry.edit_buffer = to_string(millis.count());
+				ratio = duration_ratio::millis;
+			}
+
+			if (g.selectable("microseconds"sv, ratio == duration_ratio::micros))
+			{
+				++cache_entry.edit_generation;
+				const auto micros = time_cast<microseconds>(value);
+				cache_entry.edit_buffer = to_string(micros.count());
+				ratio = duration_ratio::micros;
+			}
+
+			if (g.selectable("nanoseconds"sv, ratio == duration_ratio::nanos))
+			{
+				++cache_entry.edit_generation;
+				const auto nanos = time_cast<nanoseconds>(value);
+				cache_entry.edit_buffer = to_string(nanos.count());
+				ratio = duration_ratio::nanos;
+			}
+
+			g.combo_end();
+		}
+
+		auto out = std::optional<time_duration>{};
+		
+		g.push_id(cache_entry.edit_generation);
+		if (g.input_text(name, cache_entry.edit_buffer, gui::input_text_flags::chars_decimal))
+		{
+			switch (ratio)
+			{
+			case duration_ratio::seconds:
+			{
+				const auto secs = seconds{ from_string<int64>(cache_entry.edit_buffer) };
+				out = time_cast<time_duration>(secs);
+			}break;
+			case duration_ratio::millis:
+			{
+				const auto millis = milliseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				out = time_cast<time_duration>(millis);
+			}break;
+			case duration_ratio::micros:
+			{
+				const auto micros = microseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				out = time_cast<time_duration>(micros);
+			}break;
+			case duration_ratio::nanos:
+			{
+				const auto nanos = nanoseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				out = time_cast<time_duration>(nanos); 
+			}break;
+			default:
+				throw out_of_range_error{"out of range"};
+			}
+		}
+
+		g.tooltip(name);
+		g.pop_id();
+		return out;
+	}
+
+	template<typename ObjEditor, typename T>
+	inline std::optional<T> make_property_edit_impl(gui& g, std::string_view name, const T& value,
+		typename ObjEditor::cache_map& cache)
+	{
+
+		if constexpr (has_custom_edit_func<T>::value)
+			return make_property_edit_custom<ObjEditor>(g, name, value, cache);
+		else
+			return make_property_edit_basic<ObjEditor>(g, name, value, cache);
+	}
+
+	template<typename ObjEditor, typename T>
+	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value,
+		typename ObjEditor::cache_map& cache)
+	{
+		if constexpr (resources::curve_types::is_vector_type_v<T>)
+		{
+			auto arr = std::array{ value.x, value.y };
+			if (g.input(name, arr))
+				set_curve(o, c, T{ arr[0], arr[1] });
+
+			g.tooltip(name);
+		}
+		else
+		{
+			auto new_value = make_property_edit_impl<ObjEditor>(g, name, value, cache);
+			if (new_value)
+				set_curve(o, c, std::move(*new_value));
+		}
+	}
+
+	template<typename ObjEditor, typename T>
+	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value,
+		typename ObjEditor::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
 		auto iter = std::cbegin(value);
 		std::advance(iter, selected);
 
-		auto result = make_property_edit2<T::value_type>(g, "edit"sv, *iter);
+		const typename T::value_type& value_ref = *iter;
+		auto result = make_property_edit_impl<ObjEditor>(g, "edit"sv, value_ref, cache);
 		if (result)
 		{
 			auto container = value;
@@ -255,7 +390,8 @@ namespace hades::detail::obj_ui
 
 	template<typename T, typename U, typename V, typename Obj>
 	void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
-		const resources::curve* c, const T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target)
+		const resources::curve* c, const T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target,
+		typename object_editor_ui<Obj, U, V>::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
 
@@ -282,7 +418,7 @@ namespace hades::detail::obj_ui
 
 				assert(target.selected >= 0);
 				if (static_cast<std::size_t>(target.selected) < std::size(value))
-					make_vector_edit_field(g, o, *c, integer_cast<int32>(target.selected), value);
+					make_vector_edit_field<object_editor_ui<Obj, U, V>>(g, o, *c, integer_cast<int32>(target.selected), value, cache);
 				else
 				{
 					string empty{};
@@ -350,7 +486,8 @@ namespace hades::detail::obj_ui
 
 	template< typename T, typename U, typename Obj>
 	inline void make_property_row(gui& g, Obj& o,
-		const resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target)
+		const resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
+		typename object_editor_ui<Obj, T, U>::cache_map& cache)
 	{
 		const auto [curve, value] = c;
 
@@ -358,15 +495,15 @@ namespace hades::detail::obj_ui
 			return;
 
 		g.push_id(curve);
-		std::visit([&g, &o, &curve, &target](auto&& value) {
+		std::visit([&g, &o, &curve, &target, &cache](auto&& value) {
 			using Type = std::decay_t<decltype(value)>;
 
 			if constexpr (!std::is_same_v<std::monostate, Type>)
 			{
 				if constexpr (resources::curve_types::is_collection_type_v<Type>)
-					make_vector_property_edit<Type, T, U>(g, o, data::get_as_string(curve->id), curve, value, target);
+					make_vector_property_edit<Type, T, U>(g, o, data::get_as_string(curve->id), curve, value, target, cache);
 				else
-					make_property_edit(g, o, data::get_as_string(curve->id), *curve, value);
+					make_property_edit<object_editor_ui<Obj, T, U>>(g, o, data::get_as_string(curve->id), *curve, value, cache);
 			}
 
 			}, value);
@@ -680,6 +817,7 @@ namespace hades
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
 		g.text("Selected: "s + name);
+		g.push_id(integer_cast<int32>(to_value(_selected)));
 
 		//properties
 		//immutable object id
@@ -756,11 +894,13 @@ namespace hades
 				if (std::none_of(std::begin(_curve_properties),
 					std::end(_curve_properties), [&c](auto&& curve)
 					{ return std::get<curve_type>(c) == curve.curve; }))
-					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit);
+					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
 			}
 			else
-				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit);
+				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
 		}
+
+		g.pop_id(); // entity_id
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
@@ -790,5 +930,6 @@ namespace hades
 		};
 
 		_entity_name_id_uncommited = o.name_id;
+		_edit_cache = {}; // reset the edit cache
 	}
 }

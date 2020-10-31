@@ -19,37 +19,57 @@ namespace hades
 		return normal / duration_point;
 	}
 
-	string to_string(time_duration d)
+	constexpr auto nanos_in_second = std::nano::den;
+	constexpr auto nanos_in_milli = std::nano::den / std::milli::den;
+	constexpr auto nanos_in_micro = std::nano::den / std::micro::den;
+
+	std::pair<string, duration_ratio> duration_to_string(time_duration d)
 	{
 		using namespace std::string_literals;
 		const auto count = d.count();
-
-		constexpr auto nanos_in_second = std::nano::den;
-		constexpr auto nanos_in_milli = std::nano::den / std::milli::den;
-		constexpr auto nanos_in_micro = std::nano::den / std::micro::den;
 
 		if (count % nanos_in_second == 0)
 		{
 			const auto seconds_duration = time_cast<seconds>(d);
 			const auto seconds_count = seconds_duration.count();
-			return to_string(seconds_count) + "s"s;
+			return { to_string(seconds_count), duration_ratio::seconds };
 		}
 
 		if (count % nanos_in_milli == 0)
 		{
 			const auto milli_duration = time_cast<milliseconds>(d);
 			const auto milli_count = milli_duration.count();
-			return to_string(milli_count) + "ms"s;
+			return { to_string(milli_count), duration_ratio::millis };
 		}
 
 		if (count % nanos_in_micro == 0)
 		{
 			const auto micro_duration = time_cast<microseconds>(d);
 			const auto micro_count = micro_duration.count();
-			return to_string(micro_count) + "us"s;
+			return { to_string(micro_count), duration_ratio::micros };
 		}
 
-		return to_string(count) + "ns"s;
+		return { to_string(count), duration_ratio::nanos };
+	}
+
+	string to_string(time_duration d)
+	{
+		using namespace std::string_literals;
+		const auto [count_str, ratio] = duration_to_string(d);
+
+		switch (ratio)
+		{
+		case duration_ratio::seconds:
+			return count_str + "s"s;
+		case duration_ratio::millis:
+			return count_str + "ms"s;
+		case duration_ratio::micros:
+			return count_str + "us"s;
+		case duration_ratio::nanos:
+			[[fallthrough]];
+		default:
+			return count_str + "ns"s;
+		}
 	}
 
 	time_duration duration_from_string(std::string_view s) noexcept

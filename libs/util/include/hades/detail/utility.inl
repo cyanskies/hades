@@ -413,6 +413,10 @@ namespace hades
 	{
 		//remove spaces
 		const auto s = trim(str);
+
+		if (s.empty())
+			return {};
+
 		auto value = T{};
 		const auto result = std::from_chars(s.data(), s.data() + s.size(), value);
 

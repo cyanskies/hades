@@ -14,11 +14,11 @@ namespace hades
 		return {};
 	}
 
-	/*template<>
+	template<>
 	curve_types::time_d from_string<curve_types::time_d>(std::string_view s) noexcept
 	{
 		return duration_from_string(s);
-	}*/
+	}
 }
 
 namespace hades::resources
@@ -45,6 +45,8 @@ namespace hades::resources
 			return curve_variable_type::unique;
 		else if (s == "colour"sv)
 			return curve_variable_type::colour;
+		else if (s == "time-d"sv)
+			return curve_variable_type::time_d;
 		else if (s == "collection-int32"sv)
 			return curve_variable_type::collection_int;
 		else if (s == "collection-float"sv)
@@ -94,9 +96,9 @@ namespace hades::resources
 			// TODO: pick a good default colour?(default constructor will pick black)
 			default_value.emplace<colour>();
 			break;
-		/*case curve_variable_type::time_d:
+		case curve_variable_type::time_d:
 			default_value.emplace<time_d>();
-			break;*/
+			break;
 		case curve_variable_type::collection_int:
 			default_value.emplace<collection_int>();
 			break;
@@ -216,8 +218,8 @@ namespace hades::resources
 			return std::holds_alternative<unique>(v);
 		case curve_variable_type::colour:
 			return std::holds_alternative<colour>(v);
-		/*case curve_variable_type::time_d:
-			return std::holds_alternative<time_d>(v);*/
+		case curve_variable_type::time_d:
+			return std::holds_alternative<time_d>(v);
 		case curve_variable_type::collection_int:
 			return std::holds_alternative<collection_int>(v);
 		case curve_variable_type::collection_float:
@@ -390,4 +392,3 @@ namespace hades
 		d.register_resource_type("curves", resources::parse_curves);
 	}
 }
-

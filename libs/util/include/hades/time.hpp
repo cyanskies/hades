@@ -44,7 +44,17 @@ namespace hades
 	}
 
 	float normalise_time(time_point, time_duration) noexcept;
+
+	enum class duration_ratio {
+		seconds,
+		millis,
+		micros,
+		nanos
+	};
+
+	std::pair<string, duration_ratio> duration_to_string(time_duration);
 	string to_string(time_duration);
 	time_duration duration_from_string(std::string_view) noexcept;
 }
+
 #endif // !HADES_UTIL_TIME_HPP

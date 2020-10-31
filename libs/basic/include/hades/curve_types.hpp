@@ -7,6 +7,7 @@
 
 #include "hades/colour.hpp"
 #include "hades/entity_id.hpp"
+//#include "hades/time.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/vector_math.hpp"
@@ -15,7 +16,7 @@ namespace hades
 {
 	enum class curve_variable_type {
 		error, int_t, int64_t, float_t, vec2_float, bool_t,
-		string, object_ref, unique, colour, collection_int, collection_float,
+		string, object_ref, unique, colour, /*time_d,*/ collection_int, collection_float,
 		collection_object_ref, collection_unique, collection_colour
 	};
 
@@ -70,6 +71,8 @@ namespace hades::curve_types
 	using object_ref = hades::object_ref;
 	using unique = unique_id;
 	using colour = hades::colour;
+	// time in nanoseconds
+	//using time_d = hades::time_duration;
 	using collection_int = std::vector<int_t>;
 	using collection_float = std::vector<float_t>;
 	using collection_object_ref = std::vector<object_ref>;
@@ -86,6 +89,7 @@ namespace hades::curve_types
 		object_ref,
 		unique,
 		colour,
+		//time_d,
 		collection_int,
 		collection_float,
 		collection_object_ref,
@@ -141,6 +145,8 @@ namespace hades::curve_types
 	struct is_curve_type<unique> : public std::true_type {};
 	template<>
 	struct is_curve_type<colour> : public std::true_type {};
+	/*template<>
+	struct is_curve_type<time_d> : public std::true_type {};*/
 	template<>
 	struct is_curve_type<collection_int> : public std::true_type {};
 	template<>

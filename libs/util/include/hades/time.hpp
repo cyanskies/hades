@@ -7,6 +7,7 @@
 
 //#include "hades/utility.hpp" // for from_string
 							// TODO: pull string stuff out of utility
+#include "hades/types.hpp"
 
 namespace hades
 {
@@ -43,9 +44,7 @@ namespace hades
 	}
 
 	float normalise_time(time_point, time_duration) noexcept;
-
-	//TODO: to_string(time_point), to_string(duration)
-
+	string to_string(time_duration);
 	time_duration duration_from_string(std::string_view) noexcept;
 }
 #endif // !HADES_UTIL_TIME_HPP

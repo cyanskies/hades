@@ -217,6 +217,24 @@ namespace hades::detail::obj_ui
 		return ret;
 	}
 
+	//template<>
+	//inline std::optional<time_duration> make_property_edit2<time_duration>(gui& g, std::string_view name, const time_duration& value)
+	//{
+	//	auto ret = std::optional<time_duration>{};
+	//	auto edit = to_string(value);
+	//	//this crashes because strings of duration can sngange in size by
+	//	// more than the user input, due o adding or removing tags
+
+	//	// fixinf this would require a proper string cache and value map for each row
+	//	// rather than editing the values directly as currently
+	//	if (g.input_text(name, edit))
+	//	{
+	//		ret = duration_from_string(edit);
+	//	}
+	//	g.tooltip(name);
+	//	return ret;
+	//}
+
 	template<typename T>
 	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value)
 	{

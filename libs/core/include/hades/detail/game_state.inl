@@ -178,6 +178,13 @@ namespace hades::state_api
 			return o.ptr;
 		}
 
+		if (o.ptr->id == bad_entity)
+		{
+			o.ptr = nullptr;
+			LOGWARNING("dead object");
+			return nullptr;
+		}
+
 		if (o.id != o.ptr->id)
 		{
 			o.ptr = nullptr;
@@ -187,23 +194,48 @@ namespace hades::state_api
 		return o.ptr;
 	}
 
+	template<typename GameSystem>
+	game_obj* get_object_ptr(object_ref& e, extra_state<GameSystem>& o) noexcept
+	{
+		const auto good_obj = e.ptr && e.ptr->id == e.id;
+		if (good_obj)
+			return e.ptr;
+
+		auto obj_ptr = e.objects.find(o.id);
+		if (obj_ptr == nullptr)
+			return nullptr;
+
+		e.ptr = obj_ptr;
+		return obj_ptr;
+	}
+
 	namespace detail
 	{
 		template<typename T, typename GameObj>
-		T& get_object_property_ref(GameObj& g, const variable_id v)
+		T* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
 		{
 			using list_type = typename GameObj::template var_list<std::decay_t<T>>;
 			using entry_type = typename GameObj::template var_entry<std::decay_t<T>>;
 			auto& var_list = std::get<list_type>(g.object_variables);
 			auto var_iter = std::find_if(begin(var_list), end(var_list),
 				[v](const entry_type& elm) {
-				return v == elm.id;
+					return v == elm.id;
 				});
 
 			if (var_iter == end(var_list))
-				throw object_property_not_found{"object property not found: " + to_string(v)};
+				return nullptr;
 
-			return var_iter->var->data;
+			return &var_iter->var->data;
+		}
+
+		template<typename T, typename GameObj>
+		T& get_object_property_ref(GameObj& g, const variable_id v)
+		{
+			auto out_ptr = get_object_property_ptr<T>(g, v);
+			if (!out_ptr)
+				throw object_property_not_found{ "object missing expected property " + to_string(v) };
+
+			return *out_ptr;
 		}
 	}
 
@@ -217,5 +249,11 @@ namespace hades::state_api
 	T& get_object_property_ref(game_obj& o, variable_id v)
 	{
 		return detail::get_object_property_ref<T>(o, v);
+	}
+
+	template<typename T>
+	T* get_object_property_ptr(game_obj& o, variable_id v) noexcept
+	{
+		return detail::get_object_property_ptr<T>(o, v);
 	}
 }

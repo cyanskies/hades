@@ -160,6 +160,7 @@ namespace hades
 		void destroy_object(object_ref);
 
 		//=== Common Curves ===
+		time_d get_object_creation_time(object_ref);
 		//position
 		world_vector_t& get_position(object_ref);
 		void set_position(object_ref, world_vector_t);
@@ -237,6 +238,20 @@ namespace hades
 		void update(id_t, DrawableObject&&, layer_t);
 
 		void destroy(id_t);
+	}
+
+	namespace render::audio
+	{
+		//samples(short audios)
+
+		// plays a sample once globally
+		void play(/*sample id*/);
+		// as above
+		// sample ends early if the entity is destroyed
+		void play(/*entity_id*/ /*sample id*/ /*loop*/);
+		void stop(/*entity_id*/ /*sample id*/);
+
+		//jukebox(long audio)
 	}
 
 	namespace render::mission

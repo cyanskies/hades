@@ -75,11 +75,8 @@ namespace hades
 
 		types::string get_as_string(unique_id id)
 		{
-			const data_manager* data = nullptr;
-			shared_lock_t lock;
-
-			std::tie(data, lock) = detail::get_data_manager_ptr_shared();
-
+			auto [data, lock] = detail::get_data_manager_ptr_shared();
+			std::ignore = lock;
 			return data->get_as_string(id);
 		}
 

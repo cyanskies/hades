@@ -27,6 +27,7 @@ namespace hades
 	void game_implementation::destroy_object(object_ref o)
 	{
 		auto obj = state_api::get_object(o, _extras);
+		state_api::detach_object_systems(o, _extras);
 		_destroy_objects.emplace_back(obj);
 		_removed_objects.emplace_back(o.id);
 	}

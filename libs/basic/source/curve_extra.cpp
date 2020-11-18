@@ -29,8 +29,8 @@ namespace hades::resources
 		using namespace std::string_view_literals;
 		if (s == "int32"sv)
 			return curve_variable_type::int_t;
-		else if (s == "int64"sv)
-			return curve_variable_type::int64_t;
+		/*else if (s == "int64"sv)
+			return curve_variable_type::int64_t;*/
 		else if (s == "float"sv)
 			return curve_variable_type::float_t;
 		else if (s == "vec2-float"sv)
@@ -71,9 +71,9 @@ namespace hades::resources
 		case curve_variable_type::int_t:
 			default_value.emplace<int_t>();
 			break;
-		case curve_variable_type::int64_t:
+		/*case curve_variable_type::int64_t:
 			default_value.emplace<int64_t>();
-			break;
+			break;*/
 		case curve_variable_type::float_t:
 			default_value.emplace<float_t>();
 			break;
@@ -202,8 +202,8 @@ namespace hades::resources
 		{
 		case curve_variable_type::int_t:
 			return std::holds_alternative<int_t>(v);
-		case curve_variable_type::int64_t:
-			return std::holds_alternative<int64_t>(v);
+		/*case curve_variable_type::int64_t:
+			return std::holds_alternative<int64_t>(v);*/
 		case curve_variable_type::float_t:
 			return std::holds_alternative<float_t>(v);
 		case curve_variable_type::vec2_float:

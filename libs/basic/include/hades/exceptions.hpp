@@ -4,6 +4,7 @@
 #include <exception>
 #include <stdexcept>
 
+// TODO: move to util, so that util can use these too
 //defines commonly used exceptions
 
 namespace hades

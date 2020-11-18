@@ -76,9 +76,16 @@ namespace hades
 		object_ref create_object(const object_instance& obj)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			assert(ptr);
 			assert(obj.id == bad_entity);
-			return ptr->create_object(obj);
+			auto new_obj = ptr->create_object(obj);
+
+			//check for object-time
+			const auto object_time_id = get_object_creation_time_id();
+			auto time = state_api::get_object_property_ptr<curve_types::time_d>(*new_obj.ptr, object_time_id);
+			if (time)
+				*time = game::get_time().time_since_epoch();
+
+			return new_obj;
 		}
 
 		object_ref clone_object(object_ref o)
@@ -112,6 +119,12 @@ namespace hades
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->level_data->get_world_terrain();
+		}
+
+		time_d get_object_creation_time(object_ref o)
+		{
+			const auto time_id = get_object_creation_time_id();
+			return get_property_value<time_d>(o, time_id);
 		}
 
 		world_vector_t& get_position(object_ref o)
@@ -151,7 +164,7 @@ namespace hades
 			auto ptr = detail::get_game_level_ptr();
 			assert(ptr);
 			// NOTE: get_object returns nullptr for stale object refs
-			return state_api::get_object(o, ptr->get_extras()) != nullptr;
+			return state_api::get_object_quiet(o, ptr->get_extras()) != nullptr;
 		}
 	}
 
@@ -303,13 +316,13 @@ namespace hades
 		world_vector_t get_position(object_ref o)
 		{
 			const auto pos_id = get_position_curve_id();
-			return  get_property_ref<world_vector_t>(o, pos_id);
+			return get_property_ref<world_vector_t>(o, pos_id);
 		}
 
 		world_vector_t get_size(object_ref o)
 		{
 			const auto size_id = get_size_curve_id();
-			return  get_property_ref<world_vector_t>(o, size_id);
+			return get_property_ref<world_vector_t>(o, size_id);
 		}
 	}
 }

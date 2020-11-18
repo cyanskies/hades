@@ -10,6 +10,7 @@ namespace hades
 	static auto collision_groups_id = unique_zero;
 	static auto tags_id = unique_zero;
 	static auto object_type_id = unique_zero;
+	static auto object_time_id = unique_zero;
 
 	static void setup_position_curve(data::data_manager& d, unique_id id)
 	{
@@ -57,12 +58,21 @@ namespace hades
 			false); // save to file
 
 		// object type is the unique_id of the objects type
+		// redundant
 		object_type_id = d.get_uid("object-type"sv);
 		resources::make_curve(d, object_type_id,
 			resources::curve_variable_type::unique,
 			resources::curve_types::bad_unique,
 			true, //sync to client
 			false); // save to file
+
+		// object type is the unique_id of the objects type
+		object_time_id = d.get_uid("object-time"sv);
+		resources::make_curve(d, object_time_id,
+			resources::curve_variable_type::time_d,
+			resources::curve_types::time_d{},
+			true, //sync to client
+			true); // save to file
 
 		player_owner_id = d.get_uid("player-owner"sv);
 		resources::make_curve(d, player_owner_id,
@@ -134,6 +144,11 @@ namespace hades
 	unique_id get_tags_curve_id() noexcept
 	{
 		return tags_id;
+	}
+
+	unique_id get_object_creation_time_id() noexcept
+	{
+		return object_time_id;
 	}
 
 	unique_id get_object_type_curve_id() noexcept

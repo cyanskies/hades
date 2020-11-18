@@ -8,7 +8,7 @@ namespace hades::detail
 		const auto siz = size(e);
 		for (auto i = std::size_t{}; i < siz; ++i)
 		{
-			if (e[i] == game_object_collection::empty)
+			if (e[i] == game_object_collection::empty_flag)
 				return i;
 		}
 		return bad_size;
@@ -21,11 +21,11 @@ namespace hades::detail
 		if (empty_index > std::size(_emptys))
 		{
 			// this is why we're not noexcept
-			_emptys.emplace_back(not_empty);
+			_emptys.emplace_back(not_empty_flag);
 			return &_data.emplace_back(game_obj{});
 		}
 
-		_emptys[empty_index] = not_empty;
+		_emptys[empty_index] = not_empty_flag;
 		return &_data[empty_index];
 	}
 
@@ -43,7 +43,7 @@ namespace hades::detail
 		{
 			if (&_data[i] == o)
 			{
-				_emptys[i] = empty;
+				_emptys[i] = empty_flag;
 				--_size;
 				return;
 			}
@@ -60,7 +60,7 @@ namespace hades::detail
 			auto ptr = &_data[i];
 			if (ptr->id == e)
 			{
-				if (_emptys[i] == empty)
+				if (_emptys[i] == empty_flag)
 					return nullptr;
 				else
 					return ptr;

@@ -34,10 +34,8 @@ namespace hades
 
 		static entity_info get_entity_info(resources::curve_types::object_ref e)
 		{
-			using namespace resources::curve_types;
-			const auto obj_type = get_object_type_curve_id();
-			const auto obj_id = render::level::get_property_value<unique>(e, obj_type);
-			const auto object = data::get<resources::object>(obj_id);
+			assert(e.ptr && e.ptr->object_type);
+			const auto object = e.ptr->object_type;
 			const auto anims = get_editor_animations(*object);
 
 			if (std::empty(anims))

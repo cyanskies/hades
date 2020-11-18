@@ -99,8 +99,8 @@ namespace hades
 		class game_object_collection
 		{
 		public:
-			static constexpr auto empty = false;
-			static constexpr auto not_empty = true;
+			static constexpr auto empty_flag = false;
+			static constexpr auto not_empty_flag = true;
 
 			class iterator
 			{
@@ -116,7 +116,7 @@ namespace hades
 				iterator(v_bool_iter a, v_bool_iter a_end, v_obj_iter b) noexcept :
 					_empty_iter{ a }, _empty_end{ a_end }, _obj_iter{ b }
 				{
-					while (_empty_iter != _empty_end  && *_empty_iter == empty)
+					while (_empty_iter != _empty_end  && *_empty_iter == empty_flag)
 					{
 						++_empty_iter; ++_obj_iter;
 					}
@@ -141,7 +141,7 @@ namespace hades
 				{
 					++_empty_iter;
 					++_obj_iter;
-					while (_empty_iter != _empty_end && *_empty_iter == empty)
+					while (_empty_iter != _empty_end && *_empty_iter == empty_flag)
 					{
 						++_empty_iter; ++_obj_iter;
 					}
@@ -230,6 +230,12 @@ namespace hades
 			using runtime_error::runtime_error;
 		};
 
+		class object_stale_error : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
+		};
+
 		class object_property_not_found : public game_state_error
 		{
 		public:
@@ -251,14 +257,22 @@ namespace hades
 		bool name_object(string, object_ref, game_state&);
 		template<typename GameSystem>
 		object_ref get_object_ref(std::string_view, game_state&, extra_state<GameSystem>&) noexcept;
+		// can throw object_stale_error
+		// TODO: return game_obj&, throw stale_error
 		template<typename GameSystem>
 		game_obj* get_object(object_ref&, extra_state<GameSystem>&) noexcept;
+		// same as get_object except no LOGging
+		template<typename GameSystem>
+		game_obj* get_object_ptr(object_ref&, extra_state<GameSystem>&) noexcept;
+
 		// NOTE: get_object_property_ref throws object_property_not_found if 
 		//		 the requested variable is not stored in the object
 		template<typename T>
 		const T& get_object_property_ref(const game_obj&, variable_id);
 		template<typename T>
 		T& get_object_property_ref(game_obj&, variable_id);
+		template<typename T>
+		T* get_object_property_ptr(game_obj&, variable_id) noexcept;
 	}
 }
 

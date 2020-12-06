@@ -8,25 +8,25 @@
 
 namespace hades 
 {
-	object_ref game_implementation::create_object(const object_instance &o)
+	object_ref game_implementation::create_object(const object_instance &o, time_point t)
 	{
-		auto obj = state_api::make_object(o, _state, _extras);
+		auto obj = state_api::make_object(o, _state, _extras, t);
 		_new_objects.emplace_back(*obj.ptr);
 		return obj;
 	}
 
-	object_ref game_implementation::clone_object(object_ref o)
+	object_ref game_implementation::clone_object(object_ref o, time_point t)
 	{
-		const auto obj_ptr = state_api::get_object(o, _extras);
-		assert(obj_ptr);
-		auto obj = state_api::clone_object(*obj_ptr, _state, _extras);
+		const auto& current_obj = state_api::get_object(o, _extras);
+		auto obj = state_api::clone_object(current_obj, _state, _extras, t);
 		_new_objects.emplace_back(*obj.ptr);
 		return obj;
 	}
 
 	void game_implementation::destroy_object(object_ref o)
 	{
-		auto obj = state_api::get_object(o, _extras);
+		auto obj = state_api::get_object_ptr(o, _extras);
+		assert(obj);
 		state_api::detach_object_systems(o, _extras);
 		_destroy_objects.emplace_back(obj);
 		_removed_objects.emplace_back(o.id);
@@ -69,7 +69,7 @@ namespace hades
 		s.next_id = sv.objects.next_id;
 
 		for (const auto o : sv.objects.objects)
-			state_api::make_object(o, s, e);
+			state_api::loading::restore_object(o, s, e);
 
 		return { std::move(s), std::move(e) };
 	}

@@ -39,38 +39,62 @@ namespace hades::state_api
 			template<> // uncalled function to keep std::variant happy
 			constexpr void operator()<std::monostate>(std::monostate&) { assert(false); return; }
 		};
-	}
 
-	template<typename GameSystem>
-	inline object_ref make_object(const object_instance& o, game_state& s, extra_state<GameSystem>& e)
-	{
-		assert(o.obj_type);
-
-		// give this instance a new unique id if  it doesn't have one
-		const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
-
-		// insert always returns a valid ptr
-		auto obj = e.objects.insert(game_obj{ id, o.obj_type });
-
-		for (auto& [c, v] : get_all_curves(o))
+		template<typename GameSystem>
+		inline object_ref make_object_impl(const object_instance& o, game_state& s, extra_state<GameSystem>& e)
 		{
-			assert(c);
-			assert(!v.valueless_by_exception());
-			assert(resources::is_set(v));
-			std::visit(detail::make_object_visitor{ c, s, *obj }, v);
+			// give this instance a new unique id if  it doesn't have one
+			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
+
+			// insert always returns a valid ptr
+			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
+
+			for (auto& [c, v] : get_all_curves(o))
+			{
+				assert(c);
+				assert(!v.valueless_by_exception());
+				assert(resources::is_set(v));
+				std::visit(detail::make_object_visitor{ c, s, *obj }, v);
+			}
+
+			if (!empty(o.name_id))
+				name_object(o.name_id, { id, obj }, s);
+
+			return { id, obj };
 		}
+	}
 
-		if (!empty(o.name_id))
-			name_object(o.name_id, { id, obj }, s);
+	namespace loading
+	{
+		template<typename GameSystem>
+		object_ref restore_object(const object_instance& o, game_state& s, extra_state<GameSystem>& e)
+		{
+			assert(o.obj_type);
+			assert(o.id != bad_entity);
 
-		for (const auto sys : get_systems(*obj->object_type))
-			e.systems.attach_system({ id, obj }, sys->id);
+			auto obj = detail::make_object_impl(o, s, e);
+			s.object_creation_time[o.id] = o.creation_time;
 
-		return { id, obj };
+			for (const auto sys : get_systems(*o.obj_type))
+				e.systems.attach_system_from_load(obj, sys->id);
+
+			return obj;
+		}
 	}
 
 	template<typename GameSystem>
-	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra)
+	inline object_ref make_object(const object_instance& o, game_state& s, extra_state<GameSystem>& e, time_point t)
+	{
+		auto obj = detail::make_object_impl(o, s, e);
+		s.object_creation_time[obj.id] = t;
+		for (const auto sys : get_systems(*o.obj_type))
+			e.systems.attach_system(obj, sys->id);
+
+		return obj;
+	}
+
+	template<typename GameSystem>
+	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra, time_point t)
 	{
 		const auto id = increment(state.next_id);
 		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
@@ -89,6 +113,8 @@ namespace hades::state_api
 			});
 
 		const auto ref = object_ref{ id, &*new_obj };
+
+		state.object_creation_time[id] = t;
 
 		//attach all systems
 		for (const auto sys : get_systems(*obj.object_type))
@@ -149,7 +175,7 @@ namespace hades::state_api
 
 		assert(obj->second.id != bad_entity);
 
-		auto ptr = get_object(obj->second, e);
+		auto ptr = get_object_ptr(obj->second, e);
 		if (ptr == nullptr)
 		{
 			g.names.erase(obj);
@@ -161,7 +187,7 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	game_obj* get_object(object_ref& o, extra_state<GameSystem>& e) noexcept
+	game_obj& get_object(object_ref& o, extra_state<GameSystem>& e)
 	{
 		if (o.ptr == nullptr)
 		{
@@ -169,43 +195,39 @@ namespace hades::state_api
 
 			//entity is gone, goodbye
 			if (obj_ptr == nullptr)
-			{
-				LOGWARNING("stale object ref, the object is no longer with us");
-				return nullptr;
-			}
+				throw object_stale_error{ "stale object ref, the object is no longer with us" };
 
 			o.ptr = &*obj_ptr;
-			return o.ptr;
+			return *o.ptr;
 		}
 
 		if (o.ptr->id == bad_entity)
 		{
 			o.ptr = nullptr;
-			LOGWARNING("dead object");
-			return nullptr;
+			throw object_stale_error{ "dead object" };
 		}
 
 		if (o.id != o.ptr->id)
 		{
 			o.ptr = nullptr;
-			LOGWARNING("stale object ref, the ptr has been resused for a new object");
+			throw object_stale_error{ "stale object ref, the ptr has been resused for a new object" };
 		}
 
-		return o.ptr;
+		return *o.ptr;
 	}
 
 	template<typename GameSystem>
-	game_obj* get_object_ptr(object_ref& e, extra_state<GameSystem>& o) noexcept
+	game_obj* get_object_ptr(object_ref& o, extra_state<GameSystem>& e) noexcept
 	{
-		const auto good_obj = e.ptr && e.ptr->id == e.id;
+		const auto good_obj = o.ptr && o.ptr->id == o.id;
 		if (good_obj)
-			return e.ptr;
+			return o.ptr;
 
 		auto obj_ptr = e.objects.find(o.id);
 		if (obj_ptr == nullptr)
 			return nullptr;
 
-		e.ptr = obj_ptr;
+		o.ptr = obj_ptr;
 		return obj_ptr;
 	}
 

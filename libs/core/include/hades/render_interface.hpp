@@ -68,6 +68,7 @@ namespace hades
 			sprite_layer, vector_float position, vector_float size);
 		void set_sprite(sprite_id, time_point, vector_float position, vector_float size);
 		void set_animation(sprite_id, const resources::animation *, time_point);
+		void set_animation(sprite_id, time_point);
 		void set_layer(sprite_id, sprite_layer);
 		void set_position(sprite_id, vector_float position);
 		void set_size(sprite_id, vector_float size);

@@ -16,6 +16,18 @@ namespace hades
 
 	class local_server_hub;
 
+	static system_job_data make_game_struct(system_job_data d, game_interface* g, game_interface* m,
+		time_duration dt, const std::vector<player_data>* p) noexcept
+	{
+		d.level_data = g;
+		d.mission_data = m;
+		d.dt = dt;
+		d.players = p;
+		return d;
+	};
+
+	const std::vector<player_data>* get_players_helper(local_server_hub& s);
+
 	class local_server_level final : public server_level
 	{
 	public:
@@ -24,23 +36,14 @@ namespace hades
 
 		void tick(time_duration dt, const std::vector<player_data>* p)
 		{
-			auto make_game_struct = [](unique_id sys, std::vector<object_ref> e, game_interface* g,
-				system_behaviours<game_system>* s, time_point t, time_duration dt, const std::vector<player_data>* p, system_data_t* d)->system_job_data {
-					return system_job_data{ sys, std::move(e), g, nullptr, p, s, t, dt, d };
-			};
+			auto data = system_job_data{ _level_time, &_game.get_extras(), &_game.get_systems() };
+			game_implementation* mission = nullptr;
+			_level_time = update_level(std::move(data), dt, _game, mission, p, make_game_struct);
 
-			const auto destroyed_objects = _game.get_destroyed_objects();
-			// allow the destroyed objects from last frame to have disconnect called on them
-			// before we erase them; while leaving an empty list of destroyed objects for this frame to fill
-			const auto next = update_level(_level_time, _level_time + dt, dt, _game, _game.get_systems(), p, make_game_struct);
-			_level_time += dt;
-
-			auto& state = _game.get_state();
-			auto& extra = _game.get_extras();
-			for (const auto o : destroyed_objects)
+			for (const auto o : _game.get_destroyed_objects())
 			{
 				assert(o);
-				state_api::erase_object(*o, state, extra);
+				state_api::erase_object(*o, _game.get_state(), _game.get_extras());
 			}
 		}
 
@@ -113,7 +116,7 @@ namespace hades
 		{
 			//tick the mission contruct
 			//_mission_instance->tick(dt, &_players);
-
+			_mission_time += dt;
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
 			for(auto &l : _levels)
@@ -153,6 +156,11 @@ namespace hades
 			}
 
 			return {};
+		}
+
+		const std::vector<player_data>* get_players()
+		{
+			return &_players;
 		}
 
 		mission get_mission() override
@@ -228,6 +236,12 @@ namespace hades
 		//NOTE: deque, need constant addresses
 		std::deque<level> _levels;
 	};
+
+
+	const std::vector<player_data>* get_players_helper(local_server_hub& s)
+	{
+		return s.get_players();
+	}
 
 	//has to handle networking and resolving unique_id differences between hosts
 	//remote server hub

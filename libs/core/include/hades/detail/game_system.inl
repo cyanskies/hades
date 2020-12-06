@@ -84,9 +84,13 @@ namespace hades
 	template<typename SystemType>
 	inline std::vector<object_ref> system_behaviours<SystemType>::get_new_entities(SystemType &sys)
 	{
-		auto new_ents = std::vector<object_ref>{};
-		std::swap(sys.new_ents, new_ents);
-		return new_ents;
+		return std::exchange(sys.new_ents, {});
+	}
+
+	template<typename SystemType>
+	inline std::vector<object_ref> system_behaviours<SystemType>::get_created_entities(SystemType& sys)
+	{
+		return std::exchange(sys.created_ents, {});
 	}
 
 	template<typename SystemType>
@@ -114,6 +118,7 @@ namespace hades
 			return ent.first == entity;
 		});
 
+		// TODO: use try emplace
 		if (found != ent_list.end())
 		{
 			const auto message = "The requested entityid is already attached to this system. EntityId: "
@@ -123,6 +128,32 @@ namespace hades
 
 		ent_list.emplace_back(entity, time_point{});
 		system.new_ents.emplace_back(entity);
+		_dirty_systems = true;
+		return;
+	}
+
+	template<typename SystemType>
+	inline void system_behaviours<SystemType>::attach_system_from_load(object_ref entity, unique_id sys)
+	{
+		//systems cannot be created or destroyed while we are editing the entity list
+		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
+
+		auto& ent_list = system.attached_entities;
+		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
+			return ent.first == entity;
+			});
+
+		// TODO: use try emplace
+		if (found != ent_list.end())
+		{
+			const auto message = "The requested entityid is already attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + to_string(sys);
+			throw system_error{ message };// system_already_attached{ message };
+		}
+
+		ent_list.emplace_back(entity, time_point{});
+		system.created_ents.emplace_back(entity);
+		_dirty_systems = true;
 		return;
 	}
 
@@ -162,6 +193,8 @@ namespace hades
 	{
 		for (auto& system : _systems)
 			detail::detach_system_impl(e, system);
+
+		_dirty_systems = true;
 		return;
 	}
 

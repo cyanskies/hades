@@ -78,10 +78,8 @@ namespace hades
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
 			const auto g_ptr = detail::get_game_level_ptr();
-			const auto o_ptr = state_api::get_object(o, g_ptr->get_extras());
-			assert(o_ptr);
-			// TODO: maybe handle null o_ptr due to stale ref
-			return state_api::get_object_property_ref<T>(*o_ptr, v);
+			auto& obj = state_api::get_object(o, g_ptr->get_extras());
+			return state_api::get_object_property_ref<T>(obj, v);
 		}
 		
 		template<typename T>
@@ -157,10 +155,8 @@ namespace hades
 		T& get_property_ref(object_ref o, variable_id v)
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
-			const auto o_ptr = state_api::get_object(o, *detail::get_render_extra_ptr());
-			assert(o_ptr);
-			// TODO: maybe handle null o_ptr due to stale ref
-			return state_api::get_object_property_ref<T>(*o_ptr, v);
+			auto& obj = state_api::get_object(o, *detail::get_render_extra_ptr());
+			return state_api::get_object_property_ref<T>(obj, v);
 		}
 	}
 }

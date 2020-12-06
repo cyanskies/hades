@@ -139,6 +139,8 @@ namespace hades::animation
 		}
 
 		//force lazy load if the texture hasn't been loaded yet.
+		// TODO: is this ever reached
+		assert(resources::texture_functions::get_is_loaded(animation.tex));
 		if (!resources::texture_functions::get_is_loaded(animation.tex))
 		{
 			const auto id = resources::texture_functions::get_id(animation.tex);

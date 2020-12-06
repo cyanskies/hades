@@ -47,6 +47,7 @@ namespace hades
 		virtual const terrain_map& get_world_terrain() const noexcept = 0;
 		virtual world_rect_t get_world_bounds() const noexcept = 0;
 
+		virtual const game_state& get_state() const noexcept = 0;
 		virtual game_state& get_state() noexcept = 0;
 		virtual std::vector<game_obj> get_new_objects() noexcept = 0;
 		virtual std::vector<entity_id> get_removed_objects() noexcept = 0;
@@ -56,8 +57,8 @@ namespace hades
 	class game_interface : public common_interface
 	{
 	public:
-		virtual object_ref create_object(const object_instance&) = 0;
-		virtual object_ref clone_object(object_ref) = 0;
+		virtual object_ref create_object(const object_instance&, time_point) = 0;
+		virtual object_ref clone_object(object_ref, time_point) = 0;
 		virtual void destroy_object(object_ref) = 0;
 
 		virtual object_ref get_object_ref(std::string_view) noexcept = 0;
@@ -70,9 +71,9 @@ namespace hades
 	public:
 		explicit game_implementation(const level_save&);
 
-		object_ref create_object(const object_instance&) override;
-		object_ref create_object(const resources::object&);
-		object_ref clone_object(object_ref) override;
+		object_ref create_object(const object_instance&, time_point) override;
+		//object_ref create_object(const resources::object&, time_point);
+		object_ref clone_object(object_ref, time_point) override;
 		void destroy_object(object_ref) override;
 
 		std::vector<game_obj*> get_destroyed_objects() noexcept;
@@ -86,6 +87,7 @@ namespace hades
 		{ return _extras.systems; }
 
 		object_ref get_object_ref(std::string_view) noexcept override;
+		const game_state& get_state() const noexcept override { return _state; }
 		game_state& get_state() noexcept override { return _state; }
 		extra_state<game_system>& get_extras() noexcept override { return _extras; }
 		const terrain_map& get_world_terrain() const noexcept override { return _terrain; }
@@ -127,9 +129,15 @@ namespace hades
 
 	struct player_data;
 
-	template<typename Interface, typename SystemType, typename MakeGameStructFn>
-	time_point update_level(time_point, time_point, time_duration,
-		Interface&, system_behaviours<SystemType>&, const std::vector<player_data>*, MakeGameStructFn);
+	// always call this at least once after loading a save file,
+	// before update_level
+	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
+	void create_systems(JobDataType, time_duration,
+		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn);
+
+	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
+	time_point update_level(JobDataType, time_duration,
+		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn);
 }
 
 #include "hades/detail/level_interface.inl"

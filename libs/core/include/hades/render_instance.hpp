@@ -24,8 +24,7 @@ namespace hades
 		void _create_new_objects(std::vector<game_obj>);
 		// TODO: dead object update
 
-		time_point _current_frame;
-		time_point _prev_frame{};
+		time_point _prev_frame;
 
 		common_interface* _interface = nullptr;
 		extra_state<render_system> _extra;

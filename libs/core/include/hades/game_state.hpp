@@ -207,6 +207,7 @@ namespace hades
 		state_data_type state_data;
 		entity_id next_id = next(bad_entity);
 		object_name_map names;
+		std::unordered_map<entity_id, time_point> object_creation_time;
 	};
 
 	// non-saved state, this is generated during runtime from the actual game state.
@@ -242,11 +243,25 @@ namespace hades
 			using game_state_error::game_state_error;
 		};
 
+		namespace loading
+		{
+			//restores an object from a save file, this can only be called before the game loop starts(during a load)
+			//if an object is restored during a game then the object will not have the correct on_create/on_connect function called
+			template<typename GameSystem>
+			object_ref restore_object(const object_instance&, game_state&, extra_state<GameSystem>&);
+		}
+
+		namespace saving
+		{
+			//object_instance extract object
+		}
+
 		template<typename GameSystem>
-		object_ref make_object(const object_instance&, game_state&, extra_state<GameSystem>&);
+		object_ref make_object(const object_instance&, game_state&, extra_state<GameSystem>&, time_point);
 		// NOTE: the new object will not have the name of the cloned object
 		template<typename GameSystem> 
-		object_ref clone_object(const game_obj&, game_state&, extra_state<GameSystem>&);
+		object_ref clone_object(const game_obj&, game_state&, extra_state<GameSystem>&, time_point);
+		time_point get_object_creation_time(const game_obj&, const game_state&);
 		// disconnects objects from their systems(also queues them to have on_disconnect called)
 		template<typename GameSystem>
 		void detach_object_systems(object_ref, extra_state<GameSystem>&);
@@ -260,7 +275,7 @@ namespace hades
 		// can throw object_stale_error
 		// TODO: return game_obj&, throw stale_error
 		template<typename GameSystem>
-		game_obj* get_object(object_ref&, extra_state<GameSystem>&) noexcept;
+		game_obj& get_object(object_ref&, extra_state<GameSystem>&);
 		// same as get_object except no LOGging
 		template<typename GameSystem>
 		game_obj* get_object_ptr(object_ref&, extra_state<GameSystem>&) noexcept;

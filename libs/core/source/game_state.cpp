@@ -72,6 +72,11 @@ namespace hades::detail
 
 namespace hades::state_api
 {
+	time_point get_object_creation_time(const game_obj& o, const game_state& s)
+	{
+		return s.object_creation_time.at(o.id);
+	}
+
 	bool name_object(string s, object_ref o, game_state& g)
 	{
 		const auto [iter, success] = g.names.try_emplace(std::move(s), o);

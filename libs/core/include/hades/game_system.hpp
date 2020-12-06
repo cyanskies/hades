@@ -74,21 +74,27 @@ namespace hades
 			return _system_data[key];
 		}
 
+		[[deprecated]]
 		void set_attached(unique_id, name_list);
 
 		// call if time scrubbing, will set the new and removed ents
 		// correctly
+		[[deprecated]]
 		void set_current_time(time_point);
 
 		//get entites that have been added to the system
 		//since the last frame
 		std::vector<object_ref> get_new_entities(SystemType&);
+		// entities that have already been attached in a previous session
+		// but are being reinitialised in on_create
+		std::vector<object_ref> get_created_entities(SystemType&);
 		//get all entities currently attached to the system
 		const name_list& get_entities(SystemType&) const;
 		//get entities that were removed from the system last frame
 		std::vector<object_ref> get_removed_entities(SystemType&);
 
 		void attach_system(object_ref, unique_id);
+		void attach_system_from_load(object_ref, unique_id);
 		[[deprecated]] void detach_system(object_ref, unique_id);
 		//remove this entity from all systems
 		void detach_all(object_ref);
@@ -96,10 +102,16 @@ namespace hades
 		//this entity won't trigger on_tick events untill the provided time point
 		void sleep_entity(object_ref, unique_id, time_point from, time_point until);
 
+		bool needs_update() noexcept
+		{
+			return std::exchange(_dirty_systems, false);
+		}
+
 	private:
 		std::vector<SystemType> _systems;
 		std::vector<const system_resource*> _new_systems;
 		std::unordered_map<unique_id, system_data_t> _system_data;
+		bool _dirty_systems = false;
 	};
 
 	//fwd
@@ -107,28 +119,33 @@ namespace hades
 	struct game_system;
 	struct player_data;
 
-	struct system_job_data
+	template<typename T>
+	struct extra_state;
+
+	template<typename SystemType>
+	struct common_job_data
 	{
-		unique_id system = unique_id::zero;
-		//entity to run on
+		using system_type = SystemType;
+
+		time_point current_time;
+		extra_state<SystemType>* extra = nullptr;
+		system_behaviours<SystemType>* systems = nullptr;
+		// the following member may change between invocation
 		std::vector<object_ref> entity;
+		unique_id system = unique_zero;
+		system_data_t* system_data = nullptr;
+	};
+
+	struct system_job_data : common_job_data<game_system>
+	{
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
 		game_interface *level_data = nullptr;
 		//mission data interface
 		game_interface *mission_data = nullptr;
-
 		const std::vector<player_data>* players = nullptr;
-		system_behaviours<game_system>* systems = nullptr;
-
-		//the previous time, and the time to advance by(t + dt)
-		time_point prev_time;
 		time_duration dt;
-		// current_time = prev_time + dt
-
-		//system data
-		system_data_t *system_data = nullptr;
 	};
 
 	namespace resources
@@ -146,7 +163,7 @@ namespace hades
 				on_connect,			//called when attached to an entity
 				on_disconnect,     //called when detatched from ent
 				tick,				//called every tick
-				on_destroy;			//called on system destruction
+				on_destroy;			//called on system destruction//decprecate
 			//	on_event?
 
 			//std::any system_info; //stores the system object or script reference.
@@ -189,6 +206,7 @@ namespace hades
 		name_list attached_entities;
 
 		std::vector<object_ref> new_ents;
+		std::vector<object_ref> created_ents;
 		std::vector<object_ref> removed_ents;
 	};
 
@@ -201,32 +219,10 @@ namespace hades
 	class render_interface;
 	struct render_system;
 	class common_interface;
-	template<typename T>
-	struct extra_state;
-
-	struct render_job_data
+	
+	struct render_job_data : common_job_data<render_system>
 	{
-		//the system currently running
-		unique_id system = unique_id::zero;
-		//entity to run on
-		std::vector<object_ref> entity;
-		//level data interface:
-		// contains units, particles, buildings, terrain
-		// per level quests and objectives
-		common_interface *level_data = nullptr; //TODO: client_interface to lock down access
-		extra_state<render_system>* extra = nullptr;
-		//mission data interface
-		// contains players, 
-		// and... just the players
-		//game_interface *mission_data = nullptr;
-
-		//for sleeping system updates
-		system_behaviours<render_system>* systems = nullptr;
-
-		//the current time
-		time_point current_time;
-		// dt?
-		//render output interface
+		const common_interface *level_data = nullptr; //TODO: client_interface to lock down access
 		render_interface *render_output = nullptr;
 		//system data
 		system_data_t *system_data = nullptr;
@@ -241,11 +237,11 @@ namespace hades
 		{
 			using system_func = std::function<void()>;
 
-			system_func on_create,
+			system_func on_create, // on_create doesn't support entity lists
 				on_connect,
 				on_disconnect,
 				tick,
-				on_destroy;
+				on_destroy; // deprecate
 
 			//std::any system_info;
 		};
@@ -272,6 +268,7 @@ namespace hades
 		const resources::render_system *system = nullptr;
 		name_list attached_entities;
 		std::vector<object_ref> new_ents;
+		std::vector<object_ref> created_ents;
 		std::vector<object_ref> removed_ents;
 	};
 
@@ -296,7 +293,7 @@ namespace hades
 		game_interface* get_game_level_ptr() noexcept;
 		system_behaviours<game_system>* get_game_systems_ptr() noexcept;
 		render_job_data* get_render_data_ptr() noexcept;
-		common_interface* get_render_level_ptr() noexcept;
+		const common_interface* get_render_level_ptr() noexcept;
 		extra_state<render_system>* get_render_extra_ptr() noexcept;
 	}
 }

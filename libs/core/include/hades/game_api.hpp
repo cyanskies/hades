@@ -160,7 +160,7 @@ namespace hades
 		void destroy_object(object_ref);
 
 		//=== Common Curves ===
-		time_d get_object_creation_time(object_ref);
+		time_point get_object_creation_time(object_ref);
 		//position
 		world_vector_t& get_position(object_ref);
 		void set_position(object_ref, world_vector_t);
@@ -176,7 +176,7 @@ namespace hades
 	namespace render //TODO: client = render?
 	{
 		using namespace curve_types;
-		const std::vector<object_ref> &get_objects() noexcept;
+		std::vector<object_ref> &get_objects() noexcept;
 		render_interface *get_render_output() noexcept;
 		time_point get_time() noexcept;
 
@@ -208,6 +208,8 @@ namespace hades
 			layer_t, vector_float position, vector_float size);
 		//update the commonly changing data
 		void set(id_t, time_point, vector_float position, vector_float size);
+		void set_animation(id_t, const resources::animation*, time_point);
+		void set_animation(id_t, time_point);
 		//update specific data
 		/*void set_animation(id_t, const resources::animation*, time_point);
 		void set_layer(id_t, layer_t position);
@@ -290,30 +292,8 @@ namespace hades
 		world_vector_t get_position(object_ref);
 		world_vector_t get_size(object_ref);
 
-		//returns true if the object has the tags from the 'has' list
-		// and doesn't have the tags from 'not'
-		bool tags(object_ref, const tag_list& wanted, const tag_list& not_wanted);
-
-		//tag info
-		inline bool has_tag(object_ref o, unique u)
-		{
-			return has_tag(o, { u });
-		}
-
-		inline bool has_tag(object_ref o, const tag_list& u)
-		{
-			return tags(o, u, {});
-		}
-
-		inline bool not_tag(object_ref o, unique u)
-		{
-			return not_tag(o, { u });
-		}
-
-		inline bool not_tag(object_ref o, const tag_list& u)
-		{
-			return tags(o, {}, u);
-		}
+		time_point get_object_creation_time(object_ref);
+		const resources::object* get_object_type(object_ref) noexcept;
 	}
 }
 

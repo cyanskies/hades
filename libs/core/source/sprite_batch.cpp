@@ -155,6 +155,16 @@ namespace hades
 		return;
 	}
 
+	void sprite_batch::set_animation(sprite_id id, time_point t)
+	{
+		_apply_changes(id, [t](sprite s) noexcept {
+			s.animation_progress = t;
+			return s;
+			});
+
+		return;
+	}
+
 	void sprite_batch::set_position_animation(sprite_id id, vector_float pos, const resources::animation* a, time_point t)
 	{
 		_apply_changes(id, [pos, a, t](sprite s) noexcept {
@@ -344,6 +354,11 @@ namespace hades
 		//no batch matches the desired settings
 		if (index == std::size(_sprites))
 		{
+			if (s.animation && !s.animation->loaded)
+			{
+				data::get<resources::animation>(s.animation->id); // force lazy load
+			}
+
 			_sprites.emplace_back(sprite_utility::batch{ settings, std::vector<sprite_utility::sprite>{} });
 			_vertex.emplace_back();
 		}

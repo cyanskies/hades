@@ -35,7 +35,7 @@ namespace hades
 		static entity_info get_entity_info(resources::curve_types::object_ref e)
 		{
 			assert(e.ptr && e.ptr->object_type);
-			const auto object = e.ptr->object_type;
+			const auto object = render::level::get_object_type(e);
 			const auto anims = get_editor_animations(*object);
 
 			if (std::empty(anims))
@@ -91,7 +91,7 @@ namespace hades
 				if (ent.anim == nullptr)
 					return;
 
-				const auto sprite_id = render::get_render_output()->create_sprite(ent.anim,
+				const auto sprite_id = render::sprite::create(ent.anim,
 					render::get_time(), render_interface::sprite_layer{},
 					ent.position, ent.size);
 
@@ -213,7 +213,7 @@ namespace hades
 			return render_data_ptr;
 		}
 
-		common_interface* get_render_level_ptr() noexcept
+		const common_interface* get_render_level_ptr() noexcept
 		{
 			return render_data_ptr->level_data;
 		}

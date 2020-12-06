@@ -124,9 +124,6 @@ namespace hades
 			try
 			{
 				auto fstream = sf_resource_stream{ mod->source, tex.source };
-
-				//TODO: if !is_open generate err texture
-
 				tex.value.loadFromStream(fstream);
 			}
 			catch (const files::file_error &e)

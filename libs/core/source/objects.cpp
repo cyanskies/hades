@@ -687,7 +687,9 @@ namespace hades
 		obj_curves = "curves"sv,
 		obj_type = "type"sv,
 		obj_next = "next_id"sv,
-		obj_name = "name"sv;
+		obj_name = "name"sv,
+		obj_time = "create-time"sv;
+
 
 	void serialise(const object_data& o, data::writer& w)
 	{
@@ -696,6 +698,7 @@ namespace hades
 		//	objects:
 		//		entity_id:
 		//			obj-type:
+		//			create-time:
 		//			name:
 		//			curves:
 		//				id: [curve] //see write_curve()
@@ -715,6 +718,8 @@ namespace hades
 			//object-type:
 			if (ob.obj_type)
 				w.write(obj_type, ob.obj_type->id);
+
+			w.write(obj_time, ob.creation_time.time_since_epoch());
 
 			//name:
 			if (!ob.name_id.empty())
@@ -747,6 +752,7 @@ namespace hades
 		//	objects:
 		//		id:
 		//		object-type:
+		//		create-time:
 		//		name[opt]:
 		//		curves:
 		//			curve_id: [curve] //see read_curve()
@@ -778,7 +784,8 @@ namespace hades
 					return data::get<resources::object>(object_type_id);
 			}();
 
-			auto obj = object_instance{ object_type, id, name };
+			const auto time = get_scalar(*o, obj_time, time_duration{}, duration_from_string);
+			auto obj = object_instance{ object_type, id, name, time_point{time} };
 
 			const auto curves_node = o->get_child(obj_curves);
 			const auto curves = curves_node->get_children();

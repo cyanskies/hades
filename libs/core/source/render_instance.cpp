@@ -7,97 +7,18 @@
 
 namespace hades 
 {
-	static void setup_systems_for_new_object(entity_id e, unique_id obj_type,
-		time_point t, system_behaviours<render_system>& sys)
+	static auto make_render_job_data_func(render_interface* i) noexcept
 	{
-		using namespace std::string_literals;
-
-		//TODO: implement to_string for timer types
-		try
-		{
-			const auto o = data::get<resources::object>(obj_type);
-
-			const auto systems = get_render_systems(*o);
-
-			/*for (const auto s : systems)
-				sys.attach_system(e, s->id, t);*/
-			return;
-		}
-		catch (const data::resource_null &e)
-		{
-			const auto msg = "Cannot create client instance of entity, object-type("s
-				+ to_string(obj_type) + ") is not associated with a resource."s 
-				+ " Gametime: "s + /*to_string(t) +*/ ". "s + e.what();
-			LOGERROR(msg);
-			return;
-		}
-		catch (const data::resource_wrong_type &e)
-		{
-			const auto msg = "Cannot create client instance of entity, object-type("s
-				+ to_string(obj_type) + ") is not an object resource"s
-				+ " Gametime: "s + /*to_string(t) +*/ ". "s + e.what();
-			LOGERROR(msg);
-			return;
-		}
+		return [i](render_job_data d, const common_interface* g, const common_interface* m, time_duration, const std::vector<player_data>*)noexcept->render_job_data {
+			d.level_data = g;
+			d.render_output = i;
+			return d;
+		};
 	}
-
-	//static void activate_ents(const curve_data& curves,
-	//	system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
-	//	time_point time)
-	//{
-	//	const auto obj_type_var = get_object_type_curve_id();
-	//	//unique curves contain the object types for entities
-	//	for (const auto& [key, val] : curves.unique_curves)
-	//	{
-	//		if (key.second != obj_type_var)
-	//			continue;
-
-	//		if (activated.find(key.first) != std::end(activated))
-	//			continue;
-
-	//		//TODO: can we use the time from the curve,
-	//		//		might be possible after syncing the 
-	//		//		server and client time
-	//		const auto value = val.get(time);
-	//		if(value != unique_zero)
-	//			setup_systems_for_new_object(key.first, value, time, systems);
-
-	//		activated.emplace(key.first);
-	//	}
-	//	return;
-	//}
-
-	/*static void deactivate_ents(const curve_data& curves,
-		system_behaviours<render_system>& systems, std::unordered_set<entity_id>& activated,
-		time_point time)
-	{
-		const auto alive_id = get_alive_curve_id();
-		for (const auto& [key, val] : curves.bool_curves)
-		{
-			if (key.second != alive_id)
-				continue;
-
-			const auto activated_iter = activated.find(key.first);
-			if (activated_iter == std::end(activated))
-				continue;
-
-			const auto alive = val.get(time);
-
-			if (!alive)
-			{
-				activated.erase(activated_iter);
-				systems.detach_all(key.first, time);
-			}
-		}
-		return;
-	}*/
 
 	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
 		assert(i);
-
-		//auto s = i->get_state();
-
 		return;
 	}
 
@@ -106,32 +27,21 @@ namespace hades
 		return _extra;
 	}
 
-	struct player_data;
-
 	void render_instance::make_frame_at(time_point t, const common_interface *m, render_interface &i)
 	{
 		assert(_interface);
 
 		_create_new_objects(_interface->get_new_objects());
 
-		//assert(m);
-		const auto dt = time_duration{ t - _current_frame };
-
-		auto extra_ptr = &_extra;
-		auto make_render_job_data = [m, extra_ptr, &i](unique_id sys, std::vector<object_ref> e, common_interface* g, system_behaviours<render_system> *s, time_point prev,
-			time_duration dt, const std::vector<player_data>*, system_data_t* d)->render_job_data {
-				return render_job_data{sys, std::move(e), g, extra_ptr, s, prev + dt, &i, d };
-		};
-
-		const auto next = update_level(_prev_frame, _current_frame, dt,
-			*_interface, _extra.systems, nullptr, make_render_job_data);
+		const auto dt = time_duration{ t - _prev_frame };
+		auto make_render_job_data = make_render_job_data_func(&i);
+		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };
+		const auto next = update_level<const common_interface>(constant_job_data, dt,
+			*_interface, m, nullptr, make_render_job_data);
 
 		i.prepare(); //copy sprites into vertex buffer
 
-		_prev_frame = _current_frame;
-		_current_frame = next;
-
-		assert(_current_frame == t);
+		_prev_frame = t;
 	}
 
 	void render_instance::_create_new_objects(std::vector<game_obj> objects)

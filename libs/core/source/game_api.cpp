@@ -19,7 +19,7 @@ namespace hades
 		time_point get_last_time() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
-			return game_data_ptr->prev_time;
+			return game_data_ptr->current_time;
 		}
 
 		time_duration get_delta_time() noexcept
@@ -31,7 +31,7 @@ namespace hades
 		time_point get_time() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
-			return game_data_ptr->prev_time + game_data_ptr->dt;
+			return game_data_ptr->current_time + game_data_ptr->dt;
 		}
 
 		const std::vector<player_data>& get_players() noexcept
@@ -43,7 +43,7 @@ namespace hades
 
 		object_ref get_player(unique u) noexcept
 		{
-			for (const auto p : get_players())
+			for (const auto& p : get_players())
 			{
 				if (p.name == u)
 					return p.player_object;
@@ -77,13 +77,7 @@ namespace hades
 		{
 			auto ptr = detail::get_game_level_ptr();
 			assert(obj.id == bad_entity);
-			auto new_obj = ptr->create_object(obj);
-
-			//check for object-time
-			const auto object_time_id = get_object_creation_time_id();
-			auto time = state_api::get_object_property_ptr<curve_types::time_d>(*new_obj.ptr, object_time_id);
-			if (time)
-				*time = game::get_time().time_since_epoch();
+			auto new_obj = ptr->create_object(obj, get_time());
 
 			return new_obj;
 		}
@@ -91,7 +85,7 @@ namespace hades
 		object_ref clone_object(object_ref o)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			return ptr->clone_object(o);
+			return ptr->clone_object(o, get_time());
 		}
 
 		//TODO: do we need 'from', do we need 'untill' or just 'for'
@@ -121,10 +115,13 @@ namespace hades
 			return game_data_ptr->level_data->get_world_terrain();
 		}
 
-		time_d get_object_creation_time(object_ref o)
+		time_point get_object_creation_time(object_ref o)
 		{
-			const auto time_id = get_object_creation_time_id();
-			return get_property_value<time_d>(o, time_id);
+			const auto game_data_ptr = detail::get_game_level_ptr();
+			auto& extra = game_data_ptr->get_extras();
+			const auto& state = game_data_ptr->get_state();
+			const auto& obj = state_api::get_object(o, extra);
+			return state_api::get_object_creation_time(obj, state);
 		}
 
 		world_vector_t& get_position(object_ref o)
@@ -164,13 +161,13 @@ namespace hades
 			auto ptr = detail::get_game_level_ptr();
 			assert(ptr);
 			// NOTE: get_object returns nullptr for stale object refs
-			return state_api::get_object_quiet(o, ptr->get_extras()) != nullptr;
+			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
 		}
 	}
 
 	namespace render
 	{
-		const std::vector<object_ref> &get_objects() noexcept
+		std::vector<object_ref> &get_objects() noexcept
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			return render_data_ptr->entity;
@@ -237,6 +234,20 @@ namespace hades
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_sprite(id, t, p, s);
+		}
+
+		void set_animation(id_t id, const resources::animation* a, time_point t)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			render_data_ptr->render_output->set_animation(id, a, t);
+		}
+
+		void set_animation(id_t id, time_point t)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			render_data_ptr->render_output->set_animation(id, t);
 		}
 
 		/*void set_animation(id_t id, const resources::animation* a, time_point t)
@@ -323,6 +334,20 @@ namespace hades
 		{
 			const auto size_id = get_size_curve_id();
 			return get_property_ref<world_vector_t>(o, size_id);
+		}
+
+		time_point get_object_creation_time(object_ref o)
+		{
+			const auto obj = state_api::get_object_ptr(o, *detail::get_render_extra_ptr());
+			return state_api::get_object_creation_time(*obj, detail::get_render_level_ptr()->get_state());
+		}
+
+		const resources::object* get_object_type(object_ref o) noexcept
+		{
+			const auto obj = state_api::get_object_ptr(o, *detail::get_render_extra_ptr());
+			if (obj)
+				return obj->object_type;
+			return nullptr;
 		}
 	}
 }

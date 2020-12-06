@@ -19,17 +19,94 @@ namespace hades
 		}
 	}
 
-	template<typename Interface, typename SystemType, typename MakeGameStructFn>
-	time_point update_level(time_point /*before_prev*/, time_point prev_time, time_duration dt,
-		Interface& interface, system_behaviours<SystemType> &sys_behaviours,const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+	template<typename Func, typename JobDataType, typename Interface>
+	constexpr auto make_game_struct_is_invokable = std::is_nothrow_invocable_r_v<JobDataType,
+		Func, JobDataType, Interface*, Interface*, time_duration, const std::vector<player_data>*>;
+
+	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
+	void update_systems_first_frame(JobDataType jdata, time_duration dt,
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
 	{
-		using job_data_type = typename SystemType::job_data_t;
-		static_assert(std::is_invocable_r_v<job_data_type, MakeGameStructFn, unique_id,
-			std::vector<object_ref>, Interface*, system_behaviours<SystemType>*, time_point, time_duration, const std::vector<player_data>*, system_data_t*>,
+
+		using SystemType = typename JobDataType::system_type;
+		auto& sys_behaviours = *jdata.systems;
+
+		struct on_connect_data
+		{
+			SystemType* system;
+			std::vector<object_ref> ents;
+		};
+
+		auto on_connect_data_vec = std::vector<on_connect_data>{};
+
+		const auto new_systems = sys_behaviours.get_new_systems();
+		auto& systems = sys_behaviours.get_systems();
+		for (const auto s : new_systems)
+		{
+			SystemType* system = nullptr;
+			for (auto& sys : systems)
+			{
+				if (sys.system == s)
+				{
+					system = &sys;
+					break;
+				}
+			}
+			assert(system);
+
+			//pass entities that are already attached to this system
+			//this will be entities that were already in the level file
+			//or save file before this time point
+			auto current_ents = sys_behaviours.get_created_entities(*system);
+
+			on_connect_data_vec.emplace_back(on_connect_data{ system, std::move(current_ents) });
+
+			if (!s->on_create)
+				continue;
+
+			auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
+			game_data.entity = std::move(current_ents);
+			game_data.system = s->id;
+			game_data.system_data = &sys_behaviours.get_system_data(s->id);
+
+
+			detail::set_data(&game_data);
+			std::invoke(s->on_create);
+		} // for (new_systems) on_create
+
+		for (auto& sys : on_connect_data_vec)
+		{
+			auto system = sys.system->system;
+
+			if (!system->on_connect)
+				continue;
+
+			auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
+			game_data.entity = std::move(sys.ents);
+			game_data.system = system->id;
+			game_data.system_data = &sys_behaviours.get_system_data(game_data.system);
+
+			detail::set_data(&game_data);
+			std::invoke(system->on_connect);
+		}
+
+		return;
+	}
+
+
+	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
+	void update_systems(JobDataType jdata, time_duration dt,
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+	{
+		using job_data_type = JobDataType;
+		static_assert(make_game_struct_is_invokable<MakeGameStructFn, JobDataType, Interface>,
 			"make_game_struct must return the correct job_data_type");
 
-		const auto current_time = prev_time + dt;
-		
+		using SystemType = typename JobDataType::system_type;
+
+		auto& sys_behaviours = *jdata.systems;
+
+		while (sys_behaviours.needs_update())
 		{
 			const auto new_systems = sys_behaviours.get_new_systems();
 			auto& systems = sys_behaviours.get_systems();
@@ -39,7 +116,7 @@ namespace hades
 					continue;
 
 				SystemType* system = nullptr;
-				for (auto &sys : systems)
+				for (auto& sys : systems)
 				{
 					if (sys.system == s)
 					{
@@ -52,69 +129,82 @@ namespace hades
 				//pass entities that are already attached to this system
 				//this will be entities that were already in the level file
 				//or save file before this time point
-				auto ents = std::vector<object_ref>{};
-				const auto current_ents = sys_behaviours.get_entities(*system);
-				ents.reserve(std::size(current_ents));
-				std::transform(std::begin(current_ents), std::end(current_ents), std::back_inserter(ents),
-					[](auto &&entity) {
-						return std::get<object_ref>(entity);
-				});
+				auto current_ents = sys_behaviours.get_created_entities(*system);
 
-				auto game_data = std::invoke(make_game_struct, s->id, std::move(ents), &interface, &sys_behaviours, prev_time, dt, players, &sys_behaviours.get_system_data(s->id));
+				auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
+				game_data.entity = std::move(current_ents);
+				game_data.system = s->id;
+				game_data.system_data = &sys_behaviours.get_system_data(s->id);
+
+
 				detail::set_data(&game_data);
 				std::invoke(s->on_create);
-			}
-		}
+			} // for (new_systems) on_create
 
-		struct update_data
-		{
-			const SystemType::system_t* system = nullptr;
-			resources::curve_types::collection_object_ref added_ents, attached_ents, removed_ents;
-		};
-
-		//collect entity lists upfront, so that they don't change mid update
-		auto data = std::vector<update_data>{};
-		
-		{
-			auto &systems = sys_behaviours.get_systems();
-			data.reserve(size(systems));
-
+			// on connect
 			for (auto& s : systems)
 			{
-				auto d = update_data{ s.system };
-				if (s.system->on_connect)
-					d.added_ents = sys_behaviours.get_new_entities(s);
+				auto ents = sys_behaviours.get_new_entities(s);
 
-				if (s.system->tick)
+				if (s.system->on_connect && !std::empty(ents))
 				{
-					//only update entities that have passed their wake up time
-					const auto &ents = sys_behaviours.get_entities(s);
-					d.attached_ents.reserve(std::size(ents));
-					for (const auto& e : ents)
-					{
-						if (e.second <= current_time)
-							d.attached_ents.emplace_back(e.first);
-					}
+					auto& sys_data = sys_behaviours.get_system_data(s.system->id);
+					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
+					game_data.entity = std::move(ents);
+					game_data.system = s.system->id;
+					game_data.system_data = &sys_data;
+
+					detail::set_data(&game_data);
+					std::invoke(s.system->on_connect);
 				}
+			}//on connect
 
-				if (s.system->on_disconnect)
-					d.removed_ents = sys_behaviours.get_removed_entities(s);
-
-				data.emplace_back(std::move(d));
-			}
-		}
-
-		//call on_connect for new entities
-		for (auto& u : data)
-		{
-			if (!std::empty(u.added_ents) && u.system->on_connect)
+			// on disconnect
+			for (auto& s : systems)
 			{
-				auto& sys_data = sys_behaviours.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.added_ents), &interface, &sys_behaviours, prev_time, dt, players, &sys_data);
-				detail::set_data(&game_data);
-				std::invoke(u.system->on_connect);
-			}
+				auto ents = sys_behaviours.get_removed_entities(s);
+
+				if (s.system->on_disconnect && !std::empty(ents))
+				{
+					auto& sys_data = sys_behaviours.get_system_data(s.system->id);
+					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
+					game_data.entity = std::move(ents);
+					game_data.system = s.system->id;
+					game_data.system_data = &sys_data;
+
+					detail::set_data(&game_data);
+					std::invoke(s.system->on_disconnect);
+				}
+			}//on disconnect
+		}//while(needs update)
+		return;
+	}
+
+	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
+	time_point update_level(JobDataType job_data, time_duration dt,
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+	{
+		using job_data_type = JobDataType;
+		static_assert(make_game_struct_is_invokable<MakeGameStructFn, JobDataType, Interface>,
+			"make_game_struct must return the correct job_data_type");
+
+		if constexpr (std::is_same_v<JobDataType, system_job_data>)
+		{
+			if (job_data.current_time == time_point{})
+				update_systems_first_frame(job_data, dt, interface, mission, players, make_game_struct);
 		}
+
+		using SystemType = typename JobDataType::system_type;
+
+		const auto current_time = job_data.current_time + dt;
+		
+		// when a level is first loaded on_create needs to be called for all systems
+		// otherwise, on_connect/on_create should be called at the end of the tick
+		// on which they were queued
+
+		// if the systems data is dirty then call on_create
+		//and on_connect as needed
+		update_systems(job_data, dt, interface, mission, players, make_game_struct);
 
 		//input functions
 		//NOTE: input is only triggered on the server
@@ -127,7 +217,7 @@ namespace hades
 				auto input_q = interface.get_and_clear_input_queue();
 				//player input function, no system data available
 				using ent_list = resources::curve_types::collection_object_ref;
-				auto game_data = std::invoke(make_game_struct, unique_id::zero, ent_list{}, &interface, &sys_behaviours, prev_time, dt, players, nullptr);
+				auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
 				for (auto p : *players)
 				{
 					using state = player_data::state;
@@ -141,33 +231,47 @@ namespace hades
 						std::invoke(player_input_fn, p, std::move(iter->second));
 					}
 				}
+
+				// player func may have created/destroyed ents
+				update_systems(job_data, dt, interface, mission, players, make_game_struct);
 			}
 		}
 
-		//call on_disconnect for removed entities
-		for (auto& u : data)
-		{
-			if (!std::empty(u.removed_ents) && u.system->on_disconnect)
-			{
-				auto& sys_data = sys_behaviours.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.removed_ents), &interface, &sys_behaviours, prev_time, dt, players, &sys_data);
-				detail::set_data(&game_data);
-				std::invoke(u.system->on_disconnect);
-			}
-		}
+		auto& sys_behaviours = *job_data.systems;
+		auto& systems = sys_behaviours.get_systems();
 
 		//call on_tick for systems
-		for (const auto& u : data)
+		for (auto& s : systems)
 		{
-			if (!std::empty(u.attached_ents) && u.system->tick)
+			if (!s.system->tick)
+				continue;
+
+			const auto& current_ents = sys_behaviours.get_entities(s);
+			auto ents = std::vector<object_ref>{};
+			ents.reserve(size(current_ents));
+			//only update entities that have passed their wake up time
+			for (const auto& e : current_ents)
 			{
-				auto& sys_data = sys_behaviours.get_system_data(u.system->id);
-				auto game_data = std::invoke(make_game_struct, u.system->id, std::move(u.attached_ents), &interface, &sys_behaviours, prev_time, dt, players, &sys_data);
-				detail::set_data(&game_data);
-				std::invoke(u.system->tick);
+				if (e.second <= current_time)
+					ents.emplace_back(e.first);
+			}
+
+			if (!std::empty(ents))
+			{
+				auto& sys_data = sys_behaviours.get_system_data(s.system->id);
+					auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
+					game_data.entity = std::move(ents);
+					game_data.system = s.system->id;
+					game_data.system_data = &sys_data;
+
+					detail::set_data(&game_data);
+					std::invoke(s.system->tick);
 			}
 		}
 
+		//update systems again, to ensure that everything has been properly called,
+		//before a possible save
+		update_systems(job_data, dt, interface, mission, players, make_game_struct);
 		return current_time;
 	}
 }

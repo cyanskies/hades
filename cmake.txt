@@ -32,37 +32,37 @@ function(hades_make_compile_settings ARG_NAME)
   # Add compiler flags for extra warnings
   target_compile_options(${ARG_NAME} PRIVATE
                              # general settings
+							 
+                             # MP for mutli threading
+							 # permissive- for standards conformance
+						 	 # fp for floating point speed, in exchange for less accuracy
+						     # EHsc for standard compliant exception specification
+							 # W4 for high warning level
+							 $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" >
+
+							 #debug settings
                              $<$<CONFIG:Debug>:
-                                # MP for mutli threading
-								# permissive- for standards conformance
-								# fp for floating point speed, in exchange for less accuracy
-								# EHsc for standard compliant exception specification
                                 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" >
+                                   >
                                 $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                    >
                              >
 
 							 # release mode optimisations
 							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
-								# MP for mutli threading
-								# permissive- for standards conformance
-                                # '/GS-' for no extra buffer overflow checks
+								# '/GS-' for no extra buffer overflow checks
                                 # GL for link time code gen
-								# fp for floating point speed, in exchange for less accuracy
 								# Oi for compiler intrinsics
-								# EHsc for standard compliant exception specification
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/GS-" "/Oi" "/O2" "/GL" "/fp:fast" "/EHsc" >
+                                  "/GS-" "/Oi" "/O2" "/GL" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >
 
 							 # warnings
                              $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
-                             $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/W4" >)
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >)
 endfunction(hades_make_compile_settings)
 
 function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list

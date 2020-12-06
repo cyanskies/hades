@@ -64,6 +64,7 @@ namespace hades
 		//NOTE: name_id is used to address objects using a name rather than id
 		// for the objects display name, shown to users, look up the name curve
 		string name_id;
+		time_point creation_time;
 		resources::object::curve_list curves;
 	};
 

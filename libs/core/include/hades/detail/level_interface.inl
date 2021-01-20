@@ -25,7 +25,7 @@ namespace hades
 
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	void update_systems_first_frame(JobDataType jdata, time_duration dt,
-		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn&& make_game_struct)
 	{
 
 		using SystemType = typename JobDataType::system_type;
@@ -96,7 +96,7 @@ namespace hades
 
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	void update_systems(JobDataType jdata, time_duration dt,
-		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn&& make_game_struct)
 	{
 		using job_data_type = JobDataType;
 		static_assert(make_game_struct_is_invokable<MakeGameStructFn, JobDataType, Interface>,
@@ -182,7 +182,7 @@ namespace hades
 
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	time_point update_level(JobDataType job_data, time_duration dt,
-		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn make_game_struct)
+		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn&& make_game_struct)
 	{
 		using job_data_type = JobDataType;
 		static_assert(make_game_struct_is_invokable<MakeGameStructFn, JobDataType, Interface>,

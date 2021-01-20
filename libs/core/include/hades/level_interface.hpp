@@ -133,11 +133,11 @@ namespace hades
 	// before update_level
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	void create_systems(JobDataType, time_duration,
-		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn);
+		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn&&);
 
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	time_point update_level(JobDataType, time_duration,
-		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn);
+		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn&&);
 }
 
 #include "hades/detail/level_interface.inl"

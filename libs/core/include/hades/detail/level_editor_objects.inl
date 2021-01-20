@@ -759,7 +759,7 @@ namespace hades
 	template<typename MakeRect>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_positional_property_field(
 		gui& g, std::string_view label,	ObjectType& o, curve_info& c,
-		MakeRect make_rect)
+		MakeRect&& make_rect)
 	{
 		static_assert(std::is_invocable_r_v<rect_float, MakeRect, const ObjectType&, const curve_info&>,
 			"MakeRect must have the following definition: (const object_instance&, const curve_info&)->rect_float");
@@ -770,7 +770,7 @@ namespace hades
 		{
 			c.value = vector_float{ value[0], value[1] };
 			
-			const auto rect = std::invoke(make_rect, o, c);
+			const auto rect = std::invoke(std::forward<MakeRect>(make_rect), o, c);
 			const auto safe_pos = std::invoke(_is_valid_pos, rect, o);
 
 			if (safe_pos)

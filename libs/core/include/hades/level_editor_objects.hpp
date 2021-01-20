@@ -131,7 +131,7 @@ namespace hades
 		void _reset_add_remove_curve_window() noexcept;
 		template<typename MakeRect>
 		void _positional_property_field(gui&, std::string_view, ObjectType&, 
-			curve_info&, MakeRect);
+			curve_info&, MakeRect&&);
 		void _property_editor(gui&);
 		void _set_selected(std::size_t);
 

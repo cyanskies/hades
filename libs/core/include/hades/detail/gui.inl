@@ -173,23 +173,12 @@ namespace hades
 		_active_assert();
 
 		static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
-
-		constexpr auto func = [&] {
-			if constexpr (std::is_same_v<T, int>)
-				return [&](auto &v, auto &step, auto &step_fast) {
-				return ImGui::InputInt(to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
-			};
-			else if constexpr (std::is_same_v<T, float>)
-				return [&](auto &v, auto &step, auto &step_fast) {
-				return ImGui::InputFloat(to_string(label).data(), &v, step, step_fast, "%.3f", static_cast<ImGuiInputTextFlags>(f));
-			};
-			else if constexpr (std::is_same_v<T, double>)
-				return [&](auto &v, auto &step, auto &step_fast) {
-				return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));
-			};
-		}();
-
-		return std::invoke(func, v, step, step_fast);
+		if constexpr (std::is_same_v<T, int>)
+			return ImGui::InputInt(to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
+		else if constexpr (std::is_same_v<T, float>)
+			return ImGui::InputFloat(to_string(label).data(), &v, step, step_fast, "%.3f", static_cast<ImGuiInputTextFlags>(f));
+		else if constexpr (std::is_same_v<T, double>)
+			return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename T, std::size_t Size>
@@ -200,29 +189,27 @@ namespace hades
 		static_assert(detail::valid_input_scalar_v<T>,
 			"gui::input_scalar_array only accepts std::array<int>, std::array<float> and std::array<double>");
 
-		constexpr auto data_type = [] {
+		constexpr auto data_type = [] () noexcept {
 			if constexpr (std::is_same_v<T, int>)
 				return ImGuiDataType_::ImGuiDataType_S32;
 			else if constexpr (std::is_same_v<T, float>)
 				return ImGuiDataType_::ImGuiDataType_Float;
 			else if constexpr (std::is_same_v<T, double>)
 				return ImGuiDataType_::ImGuiDataType_Double;
-		}();
+		} ();
 
-		constexpr auto fmt_str = [] {
+		constexpr auto fmt_str = [] () noexcept {
 			if constexpr (std::is_same_v<T, int>)
 				return "%d";
 			else if constexpr (std::is_same_v<T, float>)
 				return "%.3f";
 			else if constexpr (std::is_same_v<T, double>)
 				return "%.6f";
-		}();
+		} ();
 
-		const auto components = v.size();
-		const auto int_components = integer_cast<int>(components);
-		assert(signed_cast(components) == int_components);
-
-		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(), int_components, NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		static_assert(Size < std::numeric_limits<int>::max());
+		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(),
+			static_cast<int>(Size), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename InputIt, typename MakeButton>

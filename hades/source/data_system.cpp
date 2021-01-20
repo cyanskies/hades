@@ -52,11 +52,11 @@ namespace hades::data
 		return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
 	}
 
-	template<typename FindMod, typename DepCheckFunc, typename ParseYamlFunc>
+	template<typename GetId, typename FindMod, typename DepCheckFunc, typename ParseYamlFunc>
 	static void parse_mod(std::string_view source, const data::parser_node& modRoot,
-		FindMod&& find_mod, DepCheckFunc&& dependencycheck, ParseYamlFunc&& parse_yaml)
+		GetId&& get_id, FindMod&& find_mod, DepCheckFunc&& dependencycheck, ParseYamlFunc&& parse_yaml)
 	{
-		auto modKey = get_uid(source);
+		auto modKey = std::invoke(std::forward<GetId>(get_id), source);
 
 		//mod:
 		//    name:
@@ -110,15 +110,16 @@ namespace hades::data
 		//parse game.yaml
 		const auto root = data::make_parser(modyaml);
 
+		const auto get_id = [this](std::string_view s) { return get_uid(s); };
 		const auto find_mod = [this](unique_id m) { return find_or_create<resources::mod>(m, unique_zero); };
 		const auto parse_yaml = [this](unique_id m, const data::parser_node& n) { return parseYaml(m, n); };
 
 		if (autoLoad)
 			//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
-			parse_mod(mod, *root, find_mod, [this](std::string_view s) {this->add_mod(s, true); return true; }, parse_yaml);
+			parse_mod(mod, *root, get_id, find_mod, [this](std::string_view s) {this->add_mod(s, true); return true; }, parse_yaml);
 		else
 			//otherwise bind to loaded, returns false if dependent mod is not loaded
-			parse_mod(mod, *root, find_mod, [this](std::string_view s) { return loaded(s); }, parse_yaml);
+			parse_mod(mod, *root, get_id, find_mod, [this](std::string_view s) { return loaded(s); }, parse_yaml);
 
 		//record the list of loaded games/mods
 		if (name == "game.yaml")

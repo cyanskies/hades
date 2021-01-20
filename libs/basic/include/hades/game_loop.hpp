@@ -40,7 +40,7 @@ namespace hades
 	// dt is how much time passage each call to OnDraw represents, calculated by 1 second / desired_ticks_per_second
 	// PerformanceStatistics is optional, will allow access to metrics related to the timings
 	template<typename OnTick, typename OnDraw, typename PerformanceStatistics>
-	void game_loop(game_loop_timing&, time_duration dt, OnTick, OnDraw, PerformanceStatistics& = no_stats);
+	void game_loop(game_loop_timing&, time_duration dt, OnTick&&, OnDraw&&, PerformanceStatistics& = no_stats);
 }
 
 #include "hades/detail/game_loop.inl"

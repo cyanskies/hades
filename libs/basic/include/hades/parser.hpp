@@ -39,7 +39,7 @@ namespace hades::data
 		virtual std::vector<std::unique_ptr<parser_node>> get_children() const = 0;
 
 		template<typename T, typename Converter>
-		T to_scalar(Converter conv) const;
+		T to_scalar(Converter&& conv) const;
 
 		template<typename T>
 		T to_scalar() const

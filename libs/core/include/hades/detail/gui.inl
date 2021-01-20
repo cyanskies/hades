@@ -226,7 +226,7 @@ namespace hades
 	}
 
 	template<typename InputIt, typename MakeButton>
-	void gui_make_horizontal_wrap_buttons(gui &g, float right_max, InputIt first, InputIt last, MakeButton make_button)
+	void gui_make_horizontal_wrap_buttons(gui &g, float right_max, InputIt first, InputIt last, MakeButton&& make_button)
 	{
 		using T = typename std::iterator_traits<InputIt>::value_type;
 		using TRef = typename std::iterator_traits<InputIt>::reference;

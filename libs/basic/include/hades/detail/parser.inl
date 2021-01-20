@@ -8,10 +8,10 @@ namespace hades::data
 	namespace detail
 	{
 		template<typename T, typename Converter>
-		T convert(std::string_view str, Converter conv)
+		T convert(std::string_view str, Converter &&conv)
 		{
 			if constexpr (std::is_invocable_r_v<T, Converter, std::string_view>)
-				return std::invoke(conv, str);
+				return std::invoke(std::forward<Converter>(conv), str);
 			else
 			{
 				std::ignore = conv;
@@ -21,9 +21,9 @@ namespace hades::data
 	}
 
 	template<typename T, typename Converter>
-	T parser_node::to_scalar(Converter conv) const
+	T parser_node::to_scalar(Converter&& conv) const
 	{
-		return detail::convert<T>(to_string(), conv);
+		return detail::convert<T>(to_string(), std::forward<Converter>(conv));
 	}
 
 	template<typename T, typename Converter>

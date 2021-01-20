@@ -27,7 +27,7 @@ namespace hades
 	}
 
 	template<typename Func>
-	void apply_to_terrain(resources::terrain &t, Func func)
+	static void apply_to_terrain(resources::terrain &t, Func&& func)
 	{
 		//tileset tiles
 		std::invoke(func, t.tiles);

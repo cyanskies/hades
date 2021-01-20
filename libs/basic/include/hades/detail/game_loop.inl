@@ -12,7 +12,7 @@ namespace hades
 	};
 
 	template<typename OnTick, typename OnDraw, typename PerformanceStatistics>
-	void game_loop(game_loop_timing &times, time_duration dt, OnTick tick, OnDraw draw, PerformanceStatistics &stats)
+	void game_loop(game_loop_timing &times, time_duration dt, OnTick &&tick, OnDraw &&draw, PerformanceStatistics &stats)
 	{
 		static_assert(std::is_invocable_v<OnDraw, time_duration>,
 			"OnDraw must accept a time_duration parameter, this represents the time between the last call to OnDraw and this call");
@@ -61,7 +61,7 @@ namespace hades
 		}
 		
 		const auto draw_dt = time_clock::now() - times.previous_draw_time;
-		std::invoke(draw, draw_dt);
+		std::invoke(std::forward<OnDraw>(draw), draw_dt);
 
 		times.previous_draw_time = time_clock::now();
 		

@@ -26,7 +26,8 @@ namespace hades
 	void game_implementation::destroy_object(object_ref o)
 	{
 		auto obj = state_api::get_object_ptr(o, _extras);
-		assert(obj);
+		if (!obj) return;
+
 		state_api::detach_object_systems(o, _extras);
 		_destroy_objects.emplace_back(obj);
 		_removed_objects.emplace_back(o.id);
@@ -68,7 +69,7 @@ namespace hades
 		auto e = extra_state<game_system>{};
 		s.next_id = sv.objects.next_id;
 
-		for (const auto o : sv.objects.objects)
+		for (const auto &o : sv.objects.objects)
 			state_api::loading::restore_object(o, s, e);
 
 		return { std::move(s), std::move(e) };

@@ -69,8 +69,7 @@ namespace hades::data
 
 	private:
 		void parseYaml(unique_id, const data::parser_node&);
-		void parseMod(std::string_view name, const data::parser_node& modRoot, std::function<bool(std::string_view)> dependency);
-
+		
 		//==parsing and loading data==
 		std::unordered_map<types::string, resources::parser_func> _resourceParsers;
 		//==stored resource data==

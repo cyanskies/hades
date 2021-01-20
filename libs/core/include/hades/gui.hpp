@@ -532,7 +532,7 @@ namespace hades
 
 	//NOTE: right_max is absolute, not relative to the current elements x position
 	template<typename InputIt, typename MakeButton>
-	void gui_make_horizontal_wrap_buttons(gui&, float right_max, InputIt first, InputIt last, MakeButton);
+	void gui_make_horizontal_wrap_buttons(gui&, float right_max, InputIt first, InputIt last, MakeButton&&);
 }
 
 #include "hades/detail/gui.inl"

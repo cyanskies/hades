@@ -168,6 +168,19 @@ namespace hades
 		world_vector_t& get_size(object_ref);
 		void set_size(object_ref, world_vector_t);
 		tag_list& get_tags(object_ref);
+
+		template<std::size_t Size>
+		std::array<bool, Size> check_tags(object_ref& o, std::array<unique_id, Size> t)
+		{
+			const auto& tags = hades::game::level::get_tags(o);
+			return hades::check_tags(tags, t);
+		}
+
+		inline bool check_tag(object_ref& o, unique_id t)
+		{
+			return check_tags(o, std::array{ t })[0];
+		}
+
 		//NOTE: this isn't a curve anymore
 		bool is_alive(object_ref&) noexcept;
 	}

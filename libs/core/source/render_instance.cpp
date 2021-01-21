@@ -32,6 +32,10 @@ namespace hades
 		assert(_interface);
 
 		_create_new_objects(_interface->get_new_objects());
+		
+		//detach dead entities
+		for (const auto o : _interface->get_removed_objects())
+			_extra.systems.detach_all({ o });
 
 		const auto dt = time_duration{ t - _prev_frame };
 		auto make_render_job_data = make_render_job_data_func(&i);

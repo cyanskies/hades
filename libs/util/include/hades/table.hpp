@@ -131,7 +131,7 @@ namespace hades {
 	//of first table that it overlaps
 	//return value is the size of the first table
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
-	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor);
+	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor&&);
 
 
 	//operators

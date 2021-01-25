@@ -432,7 +432,7 @@ namespace hades
 	namespace detail
 	{
 		template<typename T, typename FromString>
-		T vector_from_string_impl(std::string_view str, FromString from_string_func)
+		T vector_from_string_impl(std::string_view str, FromString&& from_string_func)
 		{
 			//either : T
 			// or	 : T, T, T, T, T
@@ -482,11 +482,11 @@ namespace hades
 	}
 
 	template<typename T, typename FromString>
-	T vector_from_string(std::string_view str, FromString func)
+	T vector_from_string(std::string_view str, FromString&& func)
 	{
-		static_assert(std::is_invocable_r_v<T, FromString, std::string_view>,
+		static_assert(std::is_invocable_r_v<typename T::value_type, FromString, std::string_view>,
 			"vector_from_string(str, from_string): from_string must accept a std::string_view");
-		return detail::vector_from_string_impl(str, func);
+		return detail::vector_from_string_impl<T>(str, std::forward<FromString>(func));
 	}
 
 	template<typename T>

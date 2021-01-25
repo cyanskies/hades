@@ -29,6 +29,7 @@ namespace hades
 
 	namespace game
 	{
+		namespace detail = hades::detail;
 		template<typename T>
 		T& get_system_data()
 		{
@@ -92,6 +93,7 @@ namespace hades
 
 	namespace render
 	{
+		namespace detail = hades::detail;
 		template<typename T>
 		T &get_system_data() noexcept
 		{

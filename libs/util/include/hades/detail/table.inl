@@ -62,7 +62,7 @@ namespace hades
 	}
 
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
-	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor f)
+	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor&& f)
 	{
 		static_assert(std::is_invocable_v<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>);
 		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>, TableFirst::value_type>);

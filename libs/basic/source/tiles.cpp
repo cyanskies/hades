@@ -777,7 +777,7 @@ namespace hades
 
 	void resize_map_relative(tile_map &t, vector_int top_left, vector_int bottom_right)
 	{
-		const auto empty_tile = resources::get_empty_tile();
+		const auto& empty_tile = resources::get_empty_tile();
 		resize_map_relative(t, top_left, bottom_right, empty_tile);
 	}
 
@@ -807,7 +807,7 @@ namespace hades
 
 	void resize_map(tile_map &t, vector_int size, vector_int offset)
 	{
-		const auto empty_tile = resources::get_empty_tile();
+		const auto& empty_tile = resources::get_empty_tile();
 		resize_map(t, size, offset, empty_tile);
 	}
 

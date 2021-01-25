@@ -55,6 +55,10 @@ namespace hades::resources
 			return curve_variable_type::collection_object_ref;
 		else if (s == "collection-unique"sv)
 			return curve_variable_type::collection_unique;
+		else if (s == "collection-colour"sv)
+			return curve_variable_type::collection_colour;
+		else if (s == "collection-time"sv)
+			return curve_variable_type::collection_time_d;
 		else
 			return curve_variable_type::error;
 	}
@@ -110,6 +114,12 @@ namespace hades::resources
 			break;
 		case curve_variable_type::collection_unique:
 			default_value.emplace<collection_unique>();
+			break;
+		case curve_variable_type::collection_colour:
+			default_value.emplace<collection_colour>();
+			break;
+		case curve_variable_type::collection_time_d:
+			default_value.emplace<collection_time_d>();
 			break;
 		case curve_variable_type::error:
 			[[fallthrough]];
@@ -228,6 +238,10 @@ namespace hades::resources
 			return std::holds_alternative<collection_object_ref>(v);
 		case curve_variable_type::collection_unique:
 			return std::holds_alternative<collection_unique>(v);
+		case curve_variable_type::collection_colour:
+			return std::holds_alternative<collection_colour>(v);
+		case curve_variable_type::collection_time_d:
+			return std::holds_alternative<collection_time_d>(v);
 		default:
 			return false;
 		}
@@ -258,28 +272,6 @@ namespace hades::resources
 		out.x = elms[0];
 		if (siz != 1)
 			out.y = elms[1];
-
-		return out;
-	}
-
-	static resources::curve_default_value curve_from_string(const resources::curve &c, std::string_view str)
-	{
-		if (!resources::is_curve_valid(c))
-			throw invalid_curve{ "Tried to call curve_from_string to set an invalid curve" };
-
-		auto out = c.default_value;
-
-		std::visit([str](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-
-			using namespace resources::curve_types;
-			if constexpr (is_collection_type_v<T>)
-				v = vector_from_string<T>(str);
-			else if constexpr (is_vector_type_v<T>)
-				v = vector_t_from_string<T>(str);
-			else
-				v = from_string<T>(str);
-		}, out);
 
 		return out;
 	}

@@ -40,6 +40,9 @@ namespace hades
 			game_implementation* mission = nullptr;
 			_level_time = update_level(std::move(data), dt, _game, mission, p, make_game_struct);
 
+			//TODO: perhaps only clean this up when requested
+			// when running a listen server, this could mean the client won't have
+			// any state to read while running disconnect on these objects
 			for (const auto o : _game.get_destroyed_objects())
 			{
 				assert(o);
@@ -92,7 +95,7 @@ namespace hades
 				throw server_error{ "auto slots not supported" };
 
 			//copy the player table
-			for (auto p : _mission.source.players)
+			for (const auto& p : _mission.source.players)
 			{
 				_players.emplace_back(player_data{ p.id, p.object });
 				if (p.id == slot)

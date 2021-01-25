@@ -17,7 +17,7 @@ namespace hades
 	enum class curve_variable_type {
 		error, int_t, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
 		string, object_ref, unique, colour, time_d, collection_int, collection_float,
-		collection_object_ref, collection_unique, collection_colour
+		collection_object_ref, collection_unique, collection_colour, collection_time_d
 	};
 
 	string to_string(curve_variable_type) noexcept;
@@ -77,6 +77,7 @@ namespace hades::curve_types
 	using collection_object_ref = std::vector<object_ref>;
 	using collection_unique = std::vector<unique>;
 	using collection_colour = std::vector<colour>;
+	using collection_time_d = std::vector<time_d>;
 
 	using type_pack = std::tuple<
 		int_t,
@@ -93,40 +94,16 @@ namespace hades::curve_types
 		collection_float,
 		collection_object_ref,
 		collection_unique,
-		collection_colour
+		collection_colour,
+		collection_time_d
 	>;
 
 	constexpr auto bad_object_ref = object_ref{};
 	constexpr auto bad_unique = unique_zero;
 
-	template <typename T>
-	struct is_vector_type : std::false_type {};
-	template <>
-	struct is_vector_type<vec2_float> : public std::true_type {};
-
-	template <typename T>
-	constexpr auto is_vector_type_v = is_vector_type<T>::value;
-
-	template <typename T>
-	struct is_collection_type : public std::false_type {};
-	template <>
-	struct is_collection_type<collection_int> : public std::true_type {};
-	template <>
-	struct is_collection_type<collection_float> : public std::true_type {};
-	template <>
-	struct is_collection_type<collection_object_ref> : public std::true_type {};
-	template <>
-	struct is_collection_type<collection_unique> : public std::true_type {};
-	template <>
-	struct is_collection_type<collection_colour> : public std::true_type {};
-
-	template<typename T>
-	constexpr auto is_collection_type_v = is_collection_type<T>::value;
-
 	// is_curve_type::value is true for any type in the type_pack
 	template<typename T, typename = void>
 	struct is_curve_type : std::false_type {};
-
 	template<typename T>
 	struct is_curve_type<T,
 		std::void_t<decltype(std::get<T>(std::declval<type_pack>()))>
@@ -134,6 +111,29 @@ namespace hades::curve_types
 
 	template<typename T>
 	constexpr auto is_curve_type_v = is_curve_type<T>::value;
+
+	// test if a type is a mathematical vector {x, y}
+	template <typename T>
+	struct is_vector_type : std::false_type {};
+	template <typename T>
+	struct is_vector_type<vector_t<T>> : is_curve_type<vector_t<T>> {};
+	template <typename T>
+	constexpr auto is_vector_type_v = is_vector_type<T>::value;
+
+	namespace detail
+	{
+		template<typename T>
+		struct is_std_vector : std::false_type {};
+		template<typename T>
+		struct is_std_vector<std::vector<T>> : std::true_type {};
+	}
+
+	// test if a type is a collection, std::vector<T>
+	template <typename T>
+	struct is_collection_type :
+		std::bool_constant<is_curve_type_v<T> && detail::is_std_vector<T>::value> {};
+	template<typename T>
+	constexpr auto is_collection_type_v = is_collection_type<T>::value;
 
 	template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
 	constexpr curve_variable_type type_to_curve_type() noexcept;

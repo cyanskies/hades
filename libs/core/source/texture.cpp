@@ -166,6 +166,11 @@ namespace hades
 
 			tex.loaded = true;
 		}
+		else if(tex.id != unique_zero)
+		{
+			//source missing
+			LOGERROR("texture resource is missing source: " + d.get_as_string(tex.id));
+		}
 	}
 
 	namespace resources

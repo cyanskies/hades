@@ -46,9 +46,9 @@ namespace hades
 			SystemType* system = nullptr;
 			for (auto& sys : systems)
 			{
-				if (sys.system == s)
+				if (sys->system == s)
 				{
-					system = &sys;
+					system = sys;
 					break;
 				}
 			}
@@ -109,18 +109,18 @@ namespace hades
 		while (sys_behaviours.needs_update())
 		{
 			const auto new_systems = sys_behaviours.get_new_systems();
-			auto& systems = sys_behaviours.get_systems();
+			const auto systems = sys_behaviours.get_systems();
 			for (const auto s : new_systems)
 			{
 				if (!s->on_create)
 					continue;
 
 				SystemType* system = nullptr;
-				for (auto& sys : systems)
+				for (auto sys : systems)
 				{
-					if (sys.system == s)
+					if (sys->system == s)
 					{
-						system = &sys;
+						system = sys;
 						break;
 					}
 				}
@@ -144,36 +144,36 @@ namespace hades
 			// on connect
 			for (auto& s : systems)
 			{
-				auto ents = sys_behaviours.get_new_entities(s);
+				auto ents = sys_behaviours.get_new_entities(*s);
 
-				if (s.system->on_connect && !std::empty(ents))
+				if (s->system->on_connect && !std::empty(ents))
 				{
-					auto& sys_data = sys_behaviours.get_system_data(s.system->id);
+					auto& sys_data = sys_behaviours.get_system_data(s->system->id);
 					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
 					game_data.entity = std::move(ents);
-					game_data.system = s.system->id;
+					game_data.system = s->system->id;
 					game_data.system_data = &sys_data;
 
 					detail::set_data(&game_data);
-					std::invoke(s.system->on_connect);
+					std::invoke(s->system->on_connect);
 				}
 			}//on connect
 
 			// on disconnect
-			for (auto& s : systems)
+			for (auto s : systems)
 			{
-				auto ents = sys_behaviours.get_removed_entities(s);
+				auto ents = sys_behaviours.get_removed_entities(*s);
 
-				if (s.system->on_disconnect && !std::empty(ents))
+				if (s->system->on_disconnect && !std::empty(ents))
 				{
-					auto& sys_data = sys_behaviours.get_system_data(s.system->id);
+					auto& sys_data = sys_behaviours.get_system_data(s->system->id);
 					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
 					game_data.entity = std::move(ents);
-					game_data.system = s.system->id;
+					game_data.system = s->system->id;
 					game_data.system_data = &sys_data;
 
 					detail::set_data(&game_data);
-					std::invoke(s.system->on_disconnect);
+					std::invoke(s->system->on_disconnect);
 				}
 			}//on disconnect
 		}//while(needs update)
@@ -238,15 +238,15 @@ namespace hades
 		}
 
 		auto& sys_behaviours = *job_data.systems;
-		auto& systems = sys_behaviours.get_systems();
+		const auto systems = sys_behaviours.get_systems();
 
 		//call on_tick for systems
-		for (auto& s : systems)
+		for (auto s : systems)
 		{
-			if (!s.system->tick)
+			if (!s->system->tick)
 				continue;
 
-			const auto& current_ents = sys_behaviours.get_entities(s);
+			const auto& current_ents = sys_behaviours.get_entities(*s);
 			auto ents = std::vector<object_ref>{};
 			ents.reserve(size(current_ents));
 			//only update entities that have passed their wake up time
@@ -258,14 +258,14 @@ namespace hades
 
 			if (!std::empty(ents))
 			{
-				auto& sys_data = sys_behaviours.get_system_data(s.system->id);
-					auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
-					game_data.entity = std::move(ents);
-					game_data.system = s.system->id;
-					game_data.system_data = &sys_data;
+				auto& sys_data = sys_behaviours.get_system_data(s->system->id);
+				auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
+				game_data.entity = std::move(ents);
+				game_data.system = s->system->id;
+				game_data.system_data = &sys_data;
 
-					detail::set_data(&game_data);
-					std::invoke(s.system->tick);
+				detail::set_data(&game_data);
+				std::invoke(s->system->tick);
 			}
 		}
 

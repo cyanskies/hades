@@ -166,7 +166,7 @@ namespace hades
 		void set_position(object_ref, world_vector_t);
 		//size
 		world_vector_t& get_size(object_ref);
-		void set_size(object_ref, world_vector_t);
+		//void set_size(object_ref, world_vector_t);
 		tag_list& get_tags(object_ref);
 
 		template<std::size_t Size>
@@ -211,6 +211,8 @@ namespace hades
 		id_t create();
 		id_t create(const resources::animation*, time_point,
 			layer_t, vector_float position, vector_float size);
+		id_t create(const resources::animation*, float progress, layer_t,
+			vector_float position, vector_float size);
 
 		void destroy(id_t);
 
@@ -219,14 +221,15 @@ namespace hades
 		//replace all the sprite data for id
 		void set(id_t, const resources::animation*, time_point,
 			layer_t, vector_float position, vector_float size);
+		void set(id_t, const resources::animation*, float progress,
+			layer_t, vector_float position, vector_float size);
 		//update the commonly changing data
 		void set(id_t, time_point, vector_float position, vector_float size);
+		void set(id_t, float progress, vector_float position, vector_float size);
 		void set_animation(id_t, const resources::animation*, time_point);
+		void set_animation(id_t, const resources::animation*, float progress);
 		void set_animation(id_t, time_point);
-		//update specific data
-		/*void set_animation(id_t, const resources::animation*, time_point);
-		void set_layer(id_t, layer_t position);
-		void set_size(id_t, vector_float size);*/
+		void set_animation(id_t, float progress);
 	}
 
 	namespace render::drawable

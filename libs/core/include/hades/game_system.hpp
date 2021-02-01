@@ -57,9 +57,15 @@ namespace hades
 		using system_type = SystemType;
 		using system_resource = typename SystemType::system_t;
 
-		std::vector<SystemType>& get_systems() noexcept
+		std::vector<SystemType*> get_systems() noexcept
 		{
-			return _systems;
+			auto out = std::vector<SystemType*>{};
+			out.reserve(size(_systems));
+			std::transform(begin(_systems), end(_systems), std::back_inserter(out), [](auto& sys) {
+				return &sys;
+				});
+
+			return out;
 		}
 
 		std::vector<const system_resource*> get_new_systems() noexcept
@@ -108,7 +114,7 @@ namespace hades
 		}
 
 	private:
-		std::vector<SystemType> _systems;
+		std::deque<SystemType> _systems;
 		std::vector<const system_resource*> _new_systems;
 		std::unordered_map<unique_id, system_data_t> _system_data;
 		bool _dirty_systems = false;
@@ -173,10 +179,10 @@ namespace hades
 	}
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	void make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
+	const resources::system* make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	void make_system(std::string_view name, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
+	const resources::system* make_system(std::string_view name, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 	{
 		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
@@ -273,12 +279,12 @@ namespace hades
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	void make_render_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
+	const resources::render_system* make_render_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
 	
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	void make_render_system(std::string_view id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
+	const resources::render_system* make_render_system(std::string_view id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
 	{
-		make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
+		return make_render_system(d.get_uid(id), on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 
 	//funcs to call before a system gets control, and to clean up after

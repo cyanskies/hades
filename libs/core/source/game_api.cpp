@@ -208,6 +208,18 @@ namespace hades
 			return render_data_ptr->render_output->create_sprite(a, t, l, position, size);
 		}
 
+		static time_point prog_time(float p, const resources::animation* a)
+		{
+			return time_point{ time_cast<nanoseconds>(a->duration * p) };
+		}
+
+		id_t create(const resources::animation* a, float progress, layer_t l, vector_float position, vector_float size)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			return render_data_ptr->render_output->create_sprite(a, prog_time(progress, a), l, position, size);
+		}
+
 		void destroy(id_t id)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
@@ -229,12 +241,26 @@ namespace hades
 			render_data_ptr->render_output->set_sprite(id, a, t, l, p, s);
 		}
 
+		void set(id_t id, const resources::animation* a, float prog, layer_t l, vector_float p, vector_float s)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			render_data_ptr->render_output->set_sprite(id, a, prog_time(prog, a), l, p, s);
+		}
+
 		void set(id_t id, time_point t, vector_float p, vector_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_sprite(id, t, p, s);
 		}
+
+		/*void set(id_t id, float t, vector_float p, vector_float s)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			render_data_ptr->render_output->set_sprite(id, prog_time(t, a), p, s);
+		}*/
 
 		void set_animation(id_t id, const resources::animation* a, time_point t)
 		{
@@ -243,33 +269,19 @@ namespace hades
 			render_data_ptr->render_output->set_animation(id, a, t);
 		}
 
+		void set_animation(id_t id, const resources::animation* a, float t)
+		{
+			auto render_data_ptr = detail::get_render_data_ptr();
+			assert(render_data_ptr->render_output);
+			render_data_ptr->render_output->set_animation(id, a, prog_time(t, a));
+		}
+
 		void set_animation(id_t id, time_point t)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_animation(id, t);
 		}
-
-		/*void set_animation(id_t id, const resources::animation* a, time_point t)
-		{
-			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_animation(id, a, t);
-		}
-
-		void set_layer(id_t id, layer_t l)
-		{
-			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_layer(id, l);
-		}
-
-		void set_size(id_t id, vector_float s)
-		{
-			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_size(id, s);
-		}*/
 	}
 
 	namespace render::drawable

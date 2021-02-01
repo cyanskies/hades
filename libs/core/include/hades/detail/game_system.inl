@@ -10,7 +10,7 @@ namespace hades
 	{
 		template<typename SystemResource, typename System>
 		static inline System& install_system(unique_id sys,
-			std::vector<System>& systems, std::vector<const SystemResource*>& sys_r)
+			std::deque<System>& systems, std::vector<const SystemResource*>& sys_r)
 		{
 			//never install a system more than once.
 			assert(std::none_of(std::begin(systems), std::end(systems),
@@ -25,7 +25,7 @@ namespace hades
 		}
 
 		template<typename SystemResource, typename System>
-		static inline System& find_system(unique_id id, std::vector<System>& systems,
+		static inline System& find_system(unique_id id, std::deque<System>& systems,
 			std::vector<const SystemResource*>& sys_r)
 		{
 			for (auto& s : systems)
@@ -102,9 +102,7 @@ namespace hades
 	template<typename SystemType>
 	inline std::vector<object_ref> system_behaviours<SystemType>::get_removed_entities(SystemType &sys)
 	{
-		auto ret = std::vector<object_ref>{};
-		std::swap(sys.removed_ents, ret);
-		return ret;
+		return std::exchange(sys.removed_ents, {});
 	}
 
 	template<typename SystemType>
@@ -220,11 +218,11 @@ namespace hades
 		template<typename System, typename JobData, typename CreateFunc,
 			typename ConnectFunc, typename DisconnectFunc, typename TickFunc,
 			typename DestroyFunc>
-		inline void make_system(unique_id id, CreateFunc on_create,
+		inline const std::decay_t<System>* make_system(unique_id id, CreateFunc on_create,
 			ConnectFunc on_connect, DisconnectFunc on_disconnect,
 			TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 		{
-			auto sys = data.find_or_create<System>(id, unique_id::zero);
+			auto sys = data.find_or_create<std::decay_t<System>>(id, unique_id::zero);
 
 			if (!sys)
 				throw system_error("unable to create requested system");
@@ -234,20 +232,22 @@ namespace hades
 			sys->on_disconnect = on_disconnect;
 			sys->tick = on_tick;
 			sys->on_destroy = on_destroy;
-			return;
+			return sys;
 		}
 	}
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	inline void make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
+	inline const resources::system* make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 	{
-		detail::make_system<resources::system, system_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
+		return detail::make_system<resources::system, system_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
-	inline void make_render_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
+	inline const resources::render_system* make_render_system(unique_id id,
+		CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect,
+		TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
 	{
 		//TODO: pass const render_job_data instead
-		detail::make_system<resources::render_system, render_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
+		return detail::make_system<resources::render_system, render_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 }

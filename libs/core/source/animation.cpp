@@ -22,6 +22,7 @@ namespace hades::resources
 		//		texture: example-texture
 		//		width: +int
 		//      height: +int
+		//		loop: bool
 		//		frames:
 		//			- [x, y, flipx, flipy, d] // xpos ypos, relative duration
 		//			- [x, y, flipx, flipy, d]
@@ -148,27 +149,27 @@ namespace hades::animation
 			resources::texture_functions::get_resource(id);
 		}
 		
-		auto prog = std::clamp(progress, 0.f, 1.f);
+		constexpr auto make_frame = [](const resources::animation& animation, const resources::animation_frame &frame) noexcept {
+			const auto frame_x = frame.flip_x ? frame.x + animation.width : frame.x;
+			const auto frame_y = frame.flip_y ? frame.y + animation.height : frame.y;
+			const auto width = frame.flip_x ? -animation.width : animation.width;
+			const auto height = frame.flip_y ? -animation.height : animation.height;
+			return animation_frame_data{ frame_x, frame_y, width, height };
+		};
 
 		//calculate the progress to find the correct rect for this time
 		for (auto &frame : animation.value)
 		{
-			prog -= frame.duration;
+			progress -= frame.duration;
 
 			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
-			if (prog <= 0.f)
-			{
-				const auto frame_x = frame.flip_x ? frame.x + animation.width : frame.x;
-				const auto frame_y = frame.flip_y ? frame.y + animation.height : frame.y;
-				const auto width = frame.flip_x ? -animation.width : animation.width;
-				const auto height = frame.flip_y ? -animation.height : animation.height;
-				return { frame_x, frame_y, width, height };
-			}
+			if (progress <= 0.f)
+				return std::invoke(make_frame, animation, frame);
 		}
 
 		LOGWARNING("Unable to find correct frame for animation " + to_string(animation.id) +
 			"animation progress was: " + to_string(progress));
-		return {};
+		return std::invoke(make_frame, animation, *animation.value.rbegin());
 	}
 
 	animation_frame_data get_frame(const resources::animation &animation, time_point t)

@@ -65,10 +65,17 @@ namespace hades
 	//generates a group of
 	static sf::Texture generate_default_texture(texture_size_t width = 32u, texture_size_t height = 32u)
 	{
+		if (width == 0)
+			width = 32u;
+		if (height == 0)
+			height = 32u;
+
 		static std::size_t counter = 0;
 		constexpr auto size = std::size(colours::array);
-		return generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
+		auto tex = generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
 			colours::array[counter++ % size], colours::black); // TODO: new colour array for bad colours
+		tex.setRepeated(true);
+		return tex;
 	}
 
 	void parse_texture(unique_id mod, const data::parser_node& node, data::data_manager &d)
@@ -129,17 +136,8 @@ namespace hades
 			catch (const files::file_error &e)
 			{
 				LOGERROR("Failed to load texture: "s + mod->source + "/"s + tex.source + ". "s + e.what());
-				if (tex.width != 0 && tex.height != 0)
-					tex.value = generate_default_texture(tex.width, tex.height);
-				else
-					tex.value = generate_default_texture();
+				tex.value = generate_default_texture(tex.width, tex.height);
 			}
-
-			tex.value.setSmooth(tex.smooth);
-			tex.value.setRepeated(tex.repeat);
-
-			if (tex.mips && !tex.value.generateMipmap())
-				LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
 
 			//if the width or height are 0, then don't warn about size mismatch
 			//otherwise log unexpected size
@@ -163,14 +161,21 @@ namespace hades
 				tex.width = integer_cast<texture_size_t>(tex_size.x);
 				tex.height = integer_cast<texture_size_t>(tex_size.y);
 			}
-
-			tex.loaded = true;
 		}
-		else if(tex.id != unique_zero)
+		else
 		{
-			//source missing
-			LOGERROR("texture resource is missing source: " + d.get_as_string(tex.id));
+			tex.value = generate_default_texture(tex.width, tex.height);
 		}
+
+		tex.value.setSmooth(tex.smooth);
+		if(!tex.value.isRepeated()) // don't disable repeat if it has been set(probably from generate_default_tex)
+			tex.value.setRepeated(tex.repeat);
+
+		if (tex.mips && !tex.value.generateMipmap())
+			LOGWARNING("Failed to generate MipMap for texture: "s + d.get_as_string(tex.id));
+
+		tex.loaded = true;
+		return;
 	}
 
 	namespace resources

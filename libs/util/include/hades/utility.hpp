@@ -183,17 +183,20 @@ namespace hades {
 
 	// catch overloads that can be satisfied by std::to_string
 	template<typename T,
-		std::enable_if_t<
+		std::enable_if_t< !is_string_v<T> &&
 		std::is_void_v<std::void_t<decltype(std::to_string(std::declval<T>))>>
 		, int> = 0>
 	string to_string(T value) { return std::to_string(value); }
 
-	string to_string(const char* value);
-	string to_string(types::string value);
-	string to_string(std::string_view value);
+	// convert string types to hades::string
+	template<typename T, std::enable_if_t<is_string_v<T>, int> = 0>
+	string to_string(T&& value) noexcept
+	{
+		return string{ std::forward<T>(value) };
+	}
 
 	template<class First, class Last>
-	types::string to_string(First begin, Last end);
+	string to_string(First begin, Last end);
 
 	//thrown by all the from_string functions
 	class bad_conversion : public std::runtime_error
@@ -212,8 +215,9 @@ namespace hades {
 	string from_string<string>(std::string_view str);
 
 	template<>
-	std::string_view from_string<std::string_view>(std::string_view str);
-	
+	inline std::string_view from_string<std::string_view>(std::string_view str) noexcept
+	{ return str; }
+
 	template<typename T, typename FromString>
 	T vector_from_string(std::string_view str, FromString);
 

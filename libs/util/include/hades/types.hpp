@@ -40,11 +40,7 @@ namespace hades {
 	using namespace types;
 
 	// identify string types, these can all be converted to hades::string
-	template<typename T> struct is_string : std::false_type{};
-	template<> struct is_string<string> : std::true_type {};
-	template<> struct is_string<const char*> : std::true_type {};
-	template<> struct is_string<std::string_view> : std::true_type {};
-
+	template<typename T> struct is_string : std::is_convertible<T, std::string_view>{};
 	template<typename T>
 	constexpr bool is_string_v = is_string<T>::value;
 

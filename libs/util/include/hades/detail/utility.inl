@@ -402,7 +402,7 @@ namespace hades
 	}
 
 	template<class First, class Last>
-	types::string to_string(First begin, Last end)
+	string to_string(First begin, Last end)
 	{
 		using namespace std::string_view_literals;
 		return to_string(begin, end, ", "sv, bracket_wrap);

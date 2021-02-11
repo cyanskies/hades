@@ -219,9 +219,9 @@ namespace hades
 
 		using curve_t = hades::resources::curve;
 		const curve_t *curve_ptr = nullptr;
-		for (auto cur : o->curves)
+		for (const auto& cur : o->curves)
 		{
-			auto curve = std::get<const curve_t*>(cur);
+			const auto curve = std::get<const curve_t*>(cur);
 			if (curve == c)
 			{
 				curve_ptr = curve;
@@ -275,10 +275,10 @@ namespace hades
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
 	{
 		//check the objects curve list
-		for (const auto cur : o.curves)
+		for (const auto& cur : o.curves)
 		{
 			const auto curve = std::get<const hades::resources::curve*>(cur);
-			const auto v = std::get<hades::resources::curve_default_value>(cur);
+			const auto& v = std::get<hades::resources::curve_default_value>(cur);
 			assert(curve);
 			//if we have the right id and this
 			if (curve->id == c.id && hades::resources::is_set(v))

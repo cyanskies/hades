@@ -807,7 +807,7 @@ namespace hades
 		const auto first = draw_data->CmdLists;
 		const auto last = draw_data->CmdLists + draw_data->CmdListsCount;
 
-		const auto view = target.getView();
+		const auto& view = target.getView();
 		const auto view_height = view.getSize().y;
 
 		//for each entry in the draw list
@@ -815,7 +815,7 @@ namespace hades
 			const auto *index_first = draw_list->IdxBuffer.Data;
 
 			//for each command
-			for (const auto cmd : draw_list->CmdBuffer)
+			for (const auto& cmd : draw_list->CmdBuffer)
 			{
 				if (cmd.UserCallback)
 					std::invoke(cmd.UserCallback, draw_list, &cmd);

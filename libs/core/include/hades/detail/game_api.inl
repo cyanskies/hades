@@ -64,7 +64,8 @@ namespace hades
 		template<typename T>
 		void set_level_local_value(unique_id id, T value)
 		{
-			detail::set_level_local_value_imp<T>(id, std::move(value));
+			auto ptr = detail::get_game_level_ptr();
+			detail::set_level_local_value_imp<T>(id, std::move(value), ptr->get_extras());
 			return;
 		}
 

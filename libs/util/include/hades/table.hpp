@@ -2,6 +2,7 @@
 #define HADES_UTIL_TABLE_HPP
 
 #include <functional>
+#include <type_traits>
 #include <vector>
 
 #include "hades/utility.hpp"
@@ -26,7 +27,8 @@ namespace hades {
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
-		virtual_table(index_type o, index_type s) : _offset{ o }, _size{ s } {}
+		constexpr virtual_table(index_type o, index_type s) noexcept(std::is_nothrow_constructible_v<index_type, index_type>)
+			: _offset{ o }, _size{ s } {}
 		virtual ~virtual_table() noexcept = default;
 
 		virtual value_type operator[](index_type);
@@ -43,11 +45,19 @@ namespace hades {
 	class always_table final : public virtual_table<T>
 	{
 	public:
-		always_table(virtual_table<T>::index_type position, virtual_table<T>::index_type size, T value)
-			: virtual_table<T>{ position, size }, _always_value{ std::move(value) }
+		using value_type = T;
+		using base_type = virtual_table<typename value_type>;
+		using index_type = typename virtual_table<typename value_type>::index_type;
+		using size_type = typename virtual_table<typename value_type>::size_type;
+
+		template<typename U, std::enable_if_t<std::is_same_v<std::decay_t<U>, T>, int> = 0>
+		constexpr always_table(index_type position, index_type size, U&& value)
+			noexcept(std::is_nothrow_constructible_v<base_type, index_type, index_type>
+				&& std::is_nothrow_constructible_v<T, decltype(std::forward<U>(value))>)
+			: base_type{ position, size }, _always_value{ std::forward<U>(value) }
 		{}
-		
-		virtual_table<T>::value_type operator[](const virtual_table<T>::size_type) const noexcept override
+
+		value_type operator[](const size_type) const noexcept override
 		{
 			return _always_value;
 		}
@@ -66,7 +76,7 @@ namespace hades {
 		using size_type = table_index_t::value_type;
 
 		table() = default;
-		table(index_type position, index_type size, T value) : _data(size.x* size.y, value), _offset{ position }, _width{ size.x } {}
+		table(index_type position, index_type size, T value) : _data(size.x * size.y, value), _offset{ position }, _width{ size.x } {}
 		table(const table&) = default;
 		table(const virtual_table<T>&);
 		table(table&&) = default;
@@ -88,7 +98,7 @@ namespace hades {
 		{
 			using U = index_type::value_type;
 			const auto end = integer_cast<U>(std::size(_data));
-			return to_2d_index<index_type>(end, integer_cast<U>(_width)); 
+			return index_type{ _width, end / _width };
 		}
 
 		std::vector<value_type> &data()

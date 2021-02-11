@@ -117,12 +117,12 @@ namespace hades::detail
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 
 		//new level options
-		new_level_opt _new_level_options;
-		console::property_bool _force_whole_tiles;
+		new_level_opt _new_level_options = {};
+		console::property_int _force_whole_tiles;
 		const resources::tile_settings* _tile_settings =
 			data::try_get<resources::tile_settings>(resources::get_tile_settings_id()).result;
 
-		resize_opt _resize_options;
+		resize_opt _resize_options = {};
 		string _load_level_mod;
 		string _load_level_path;
 		string _next_save_path = "new_level.lvl";
@@ -198,6 +198,10 @@ namespace hades::cvars
 	constexpr auto editor_zoom_max = "editor_zoom_max"; // zoom min, is 0
 	constexpr auto editor_zoom_default = "editor_zoom_default";
 
+	//force_whole_tiles
+	// 0 off
+	// 1 on
+	// n acts as if tiles size were multiplied by 'n'
 	constexpr auto editor_level_force_whole_tiles = "editor_level_force_whole_tiles";
 	constexpr auto editor_level_default_size = "editor_level_default_size";
 }
@@ -215,7 +219,7 @@ namespace hades::cvars::default_value
 	constexpr auto editor_zoom_max = 4;
 	constexpr auto editor_zoom_default = 2;
 
-	constexpr auto editor_level_force_whole_tiles = false;
+	constexpr auto editor_level_force_whole_tiles = 0;
 	constexpr auto editor_level_default_size = 512;
 }
 

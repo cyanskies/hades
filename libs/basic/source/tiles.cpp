@@ -781,10 +781,10 @@ namespace hades
 		resize_map_relative(t, top_left, bottom_right, empty_tile);
 	}
 
-	void resize_map(tile_map &m, vector_int size, vector_int offset, const resources::tile &t)
+	void resize_map(tile_map &m, const vector_int size, const vector_int offset, const resources::tile &t)
 	{
 		const auto tile = make_tile_id(m, t);
-		const auto new_map = always_table{ vector_int{}, vector_int{ size.x, size.y }, tile };
+		const auto new_map = always_table<tile_count_t>( vector_int{}, vector_int{ size.x, size.y }, tile );
 
 		auto current_map = table<tile_count_t>{ offset,
 			get_size(m), tile_count_t{} };
@@ -818,7 +818,6 @@ namespace hades
 			return;
 
 		//ignore placements outside of the map
-		
 		const auto index = to_1d_index(p, m.width);
 		if (unsigned_cast(p.x) >= m.width ||
 			index >= m.tiles.size())

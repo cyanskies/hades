@@ -529,12 +529,12 @@ namespace hades
 
 	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
 	{
-		const auto old_size = get_size(m) + tile_position{1, 1};
+		const auto old_size = get_size(m) + tile_position{ 1, 1 };
 		//resize tile layer
 		resize_map(m.tile_layer, s, o);
 
 		//update terrain vertex
-		const auto new_terrain = always_table{ {}, s + vector_int{1, 1}, t };
+		const auto new_terrain = always_table<const resources::terrain*>{ {}, s + vector_int{1, 1}, t };
 		auto current_terrain = table<const resources::terrain*>{ o, old_size, nullptr };
 		auto& current_terrain_data = current_terrain.data();
 		assert(std::size(m.terrain_vertex) == std::size(current_terrain_data));
@@ -739,34 +739,34 @@ namespace hades::resources
 	{
 		if constexpr (std::is_const_v<U>)
 		{
-			if (type == none)
+			if (type == transition_tile_type::none)
 				return get_empty_terrain()->tiles;
 		}
 		else
-			assert(type != none);
+			assert(type != transition_tile_type::none);
 
 		//we store the 'all' tiles in the 'none' index
 		//since it is unused
-		if (type == all)
-			type = none;
-		assert(type < std::size(t.terrain_transition_tiles));
-		return t.terrain_transition_tiles[type];
+		if (type == transition_tile_type::all)
+			type = transition_tile_type::none;
+		assert(enum_type(type) < std::size(t.terrain_transition_tiles));
+		return t.terrain_transition_tiles[enum_type(type)];
 	}
 
 	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, const hades::resources::texture *tex,
 		const std::vector<transition_tile_type> &tiles, const tile_count_t tiles_per_row, const tile_size_t tile_size)
 	{
 		auto count = tile_size_t{};
-		for (auto &t : tiles)
+		for (const auto t : tiles)
 		{
-			assert(t <= transition_end);
+			assert(t <= transition_tile_type::transition_end);
 
 			const auto tile_x = (count % tiles_per_row) * tile_size + start_pos.x;
 			const auto tile_y = (count / tiles_per_row) * tile_size + start_pos.y;
 
 			++count;
 
-			if (t == none)
+			if (t == transition_tile_type::none)
 			{
 				LOGWARNING("skipping terrain tile, layouts cannot contain the 'none' transition");
 				continue;
@@ -785,12 +785,11 @@ namespace hades::resources
 		//layouts
 		//This is the layout used by warcraft 3 tilesets, a common layout
 		// on tileset websites
-		constexpr auto war3_layout = std::array{ all, bottom_right, bottom_left, bottom_left_right,
-				top_right, top_right_bottom_right, top_right_bottom_left, top_right_bottom_left_right,
-				top_left, top_left_bottom_right, top_left_bottom_left, top_left_bottom_left_right,
-				top_left_right, top_left_right_bottom_right, top_left_right_bottom_left, all };
-
-		std::vector<transition_tile_type> out;
+		using t = transition_tile_type;
+		constexpr auto war3_layout = std::array{ t::all, t::bottom_right, t::bottom_left, t::bottom_left_right,
+				t::top_right, t::top_right_bottom_right, t::top_right_bottom_left, t::top_right_bottom_left_right,
+				t::top_left, t::top_left_bottom_right, t::top_left_bottom_left, t::top_left_bottom_left_right,
+				t::top_left_right, t::top_left_right_bottom_right, t::top_left_right_bottom_left, t::all };
 
 		//default to the war 3 layout
 		if (s.empty())
@@ -846,7 +845,8 @@ namespace hades::resources
 				return { std::begin(war3_layout), std::end(war3_layout) };
 		}
 
-		out.reserve(s.size());
+		std::vector<transition_tile_type> out;
+		out.reserve(size(s));
 
 		for (const auto &str : s)
 		{
@@ -855,10 +855,13 @@ namespace hades::resources
 				if (transition_names[i] == str ||
 					short_names[i] == str)
 				{
-					out.emplace_back(static_cast<transition_tile_type>(i));
+					out.emplace_back(transition_tile_type{ i });
 					break;
 				}
 			}
+
+			//TODO: accept numbers?
+			//		warn for missing str?
 		}
 
 		return out;

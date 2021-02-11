@@ -162,6 +162,7 @@ namespace hades
 
 	//TODO: make many of these noexcept and constexpr
 
+	// index type is storable in the curve system
 	using tile_index_t = tile_position::value_type;
 	tile_position from_tile_index(tile_index_t, tile_count_t map_width) noexcept;
 	tile_index_t to_tile_index(tile_position, tile_count_t map_width) noexcept;

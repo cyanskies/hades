@@ -54,7 +54,7 @@ namespace hades::detail
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
 			cvars::default_value::editor_scroll_rate);
 
-		_force_whole_tiles = console::get_bool(cvars::editor_level_force_whole_tiles,
+		_force_whole_tiles = console::get_int(cvars::editor_level_force_whole_tiles,
 			cvars::default_value::editor_level_force_whole_tiles);
 
 		//set world camera to 0, 0
@@ -74,7 +74,7 @@ namespace hades::detail
 
 	static void clamp_camera(sf::View &camera, vector_float min, vector_float max)
 	{
-		const auto pos = camera.getCenter();
+		const auto& pos = camera.getCenter();
 
 		const auto new_x = std::clamp(pos.x, min.x, max.x);
 		const auto new_y = std::clamp(pos.y, min.y, max.y);
@@ -202,7 +202,7 @@ namespace hades::detail
 
 	void level_editor_impl::_save()
 	{
-		const auto path = _save_path;
+		const auto& path = _save_path;
 		level new_level{};
 		new_level.map_x = _level_x;
 		new_level.map_y = _level_y;
@@ -231,6 +231,7 @@ namespace hades::detail
 		_gui.frame_begin();
 
 		using namespace std::string_view_literals;
+		using namespace std::string_literals;
 
 		constexpr auto error_str = "error"sv;
 
@@ -262,7 +263,7 @@ namespace hades::detail
 			if(_gui.menu_item(_mission_mode() ? "replace from file..."sv : "load..."sv))
 				_window_flags.load_level = true;
 
-			if (_gui.menu_item("resize..."))
+			if (_gui.menu_item("resize..."sv))
 			{
 				_resize_options.size = { _level_x, _level_y };
 				_resize_options.offset = {};
@@ -277,7 +278,7 @@ namespace hades::detail
 				_window_flags.save_level = true;
 			if (_mission_mode())
 			{
-				if (_gui.menu_item("return to mission editor"))
+				if (_gui.menu_item("return to mission editor"sv))
 				{
 					_save();
 					state::kill();
@@ -285,7 +286,7 @@ namespace hades::detail
 			}
 			else
 			{
-				if (_gui.menu_item("exit editor"))
+				if (_gui.menu_item("exit editor"sv))
 					state::kill();
 			}
 			
@@ -356,17 +357,25 @@ namespace hades::detail
 				}
 
 				_gui.layout_horizontal();
-				if (_gui.button("Cancel"))
+				if (_gui.button("Cancel"sv))
 					_window_flags.new_level = false;
 
 				auto width = _new_level_options.width;
 				auto height = _new_level_options.height;
 
-				if (*_force_whole_tiles)
+				const auto force = _force_whole_tiles->load();
+
+				if (force == 1)
 				{
 					width = _new_level_options.width / _tile_settings->tile_size;
 					height = _new_level_options.height / _tile_settings->tile_size;
 					_gui.text("Level Size(tiles): "sv);
+				}
+				else if (force > 1)
+				{
+					width = _new_level_options.width / (_tile_settings->tile_size * force);
+					height = _new_level_options.height / (_tile_settings->tile_size * force);
+					_gui.text("Level Size(tiles * "s + to_string(force) + "): "s);
 				}
 				else
 					_gui.text("Level Size(pixels): "sv);
@@ -374,10 +383,10 @@ namespace hades::detail
 				_gui.input("Width"sv, width);
 				_gui.input("Height"sv, height);
 
-				if (*_force_whole_tiles)
+				if (force > 0)
 				{
-					_new_level_options.width = width * _tile_settings->tile_size;
-					_new_level_options.height = height * _tile_settings->tile_size;
+					_new_level_options.width = width * _tile_settings->tile_size * force;
+					_new_level_options.height = height * _tile_settings->tile_size * force;
 				}
 				else
 				{
@@ -414,20 +423,22 @@ namespace hades::detail
 				bool changed = false;
 				auto new_size = std::array{ _resize_options.size.x, _resize_options.size.y };
 
-				if (*_force_whole_tiles)
+				const auto force = _force_whole_tiles->load();
+
+				if (force > 0)
 				{
-					auto s = _resize_options.size / integer_cast<int32>(_tile_settings->tile_size);
+					const auto s = _resize_options.size / (integer_cast<int32>(_tile_settings->tile_size) * force);
 					new_size = std::array{ s.x, s.y };
 				}
 
-				if (_gui.input("new size", new_size))
+				if (_gui.input("new size"sv, new_size))
 					changed = true;
 
-				if (*_force_whole_tiles)
+				if (force > 0)
 				{
 					_resize_options.size = { 
-						new_size[0] * _tile_settings->tile_size,
-						new_size[1] * _tile_settings->tile_size 
+						new_size[0] * _tile_settings->tile_size * force,
+						new_size[1] * _tile_settings->tile_size * force 
 					};
 				}
 				else
@@ -435,20 +446,20 @@ namespace hades::detail
 
 				auto new_offset = std::array{ _resize_options.offset.x, _resize_options.offset.y };
 
-				if (*_force_whole_tiles)
+				if (force > 0)
 				{
-					auto o = _resize_options.offset / integer_cast<int32>(_tile_settings->tile_size);
+					const auto o = _resize_options.offset / (integer_cast<int32>(_tile_settings->tile_size) * force);
 					new_offset = std::array{ o.x, o.y };
 				}
 
-				if (_gui.input("current map offset", new_offset))
+				if (_gui.input("current map offset"sv, new_offset))
 					changed = true;
 
-				if (*_force_whole_tiles)
+				if (force > 0 )
 				{
 					_resize_options.offset = { 
-						new_offset[0] * _tile_settings->tile_size,
-						new_offset[1] * _tile_settings->tile_size
+						new_offset[0] * _tile_settings->tile_size * force,
+						new_offset[1] * _tile_settings->tile_size * force
 					};
 				}
 				else
@@ -464,25 +475,25 @@ namespace hades::detail
 
 				auto tl = _resize_options.top_left;
 				auto br = _resize_options.bottom_right;
-				if (*_force_whole_tiles)
+				if (force > 0)
 				{
-					tl = _resize_options.top_left / integer_cast<int32>(_tile_settings->tile_size);
-					br = _resize_options.bottom_right / integer_cast<int32>(_tile_settings->tile_size);
+					tl = _resize_options.top_left / (integer_cast<int32>(_tile_settings->tile_size) * force);
+					br = _resize_options.bottom_right / (integer_cast<int32>(_tile_settings->tile_size) * force);
 				}
 
-				if (_gui.input("expand left by", _resize_options.top_left.x))
+				if (_gui.input("expand left by"sv, tl.x))
 					changed = true;
-				if(_gui.input("expand top by", _resize_options.top_left.y))
+				if(_gui.input("expand top by"sv, tl.y))
 					changed = true;
-				if(_gui.input("expand bottom by", _resize_options.bottom_right.y))
+				if(_gui.input("expand bottom by"sv, br.y))
 					changed = true;
-				if(_gui.input("expand right by", _resize_options.bottom_right.x))
+				if(_gui.input("expand right by"sv, br.x))
 					changed = true;
 
-				if (*_force_whole_tiles) 
+				if (force > 0) 
 				{
-					tl *= _tile_settings->tile_size;
-					br *= _tile_settings->tile_size;
+					_resize_options.top_left = tl * integer_cast<int32>(_tile_settings->tile_size) * force;
+					_resize_options.bottom_right = br * integer_cast<int32>(_tile_settings->tile_size) * force;
 				}
 
 				if (changed)
@@ -503,7 +514,7 @@ namespace hades::detail
 				{
 					_window_flags.load_level = false;
 					
-					const auto file = [this] {
+					const auto file = [this]()->string {
 						if (_load_level_mod.empty())
 							return files::read_file(_load_level_path);
 						else
@@ -540,13 +551,13 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::save_level, _window_flags.save_level))
 			{
-				if (_gui.button("Save"))
+				if (_gui.button("Save"sv))
 				{
 					_window_flags.save_level = false;
 					_save();
 				}
 
-				_gui.input_text("path", _next_save_path);
+				_gui.input_text("path"sv, _next_save_path);
 			}
 			_gui.window_end();
 		}

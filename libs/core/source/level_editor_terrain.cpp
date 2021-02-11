@@ -117,7 +117,7 @@ namespace hades
 
 	void level_editor_terrain::level_resize(vector_int s, vector_int o)
 	{
-		auto map = _map.get_map();
+		terrain_map map = _map.get_map(); // make copy of map
 		const auto new_size_tiles = to_tiles(s, _tile_size);
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
@@ -232,7 +232,7 @@ namespace hades
 					};
 
 					assert(!std::empty(terrain->tiles));
-					const auto t = terrain->tiles.front();
+					const auto& t = terrain->tiles.front();
 
 					const auto x = static_cast<float>(t.left),
 						y = static_cast<float>(t.top);
@@ -306,7 +306,7 @@ namespace hades
 
 						//TODO: FIXME: hide empty tilesets from combobox rather than crash here
 						assert(!std::empty(terrain->tiles));
-						const auto t = terrain->tiles.front();
+						const auto& t = terrain->tiles.front();
 
 						const auto x = static_cast<float>(t.left),
 							y = static_cast<float>(t.top);
@@ -399,7 +399,7 @@ namespace hades
 		const auto positions = make_position_rect({ loc.x, loc.y }, { loc.width, loc.height });
 
 		auto out = tag_list{};
-		for (const auto p : positions)
+		for (const tile_position p : positions)
 		{
 			const auto tags = hades::get_tags_at(_map.get_map(), p);
 			out.insert(std::end(out), std::begin(tags), std::end(tags));

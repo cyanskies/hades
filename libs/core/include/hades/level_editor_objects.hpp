@@ -201,6 +201,7 @@ namespace hades
 		//		and a default constructed std::optional otherwise
 		virtual std::optional<world_vector_t> closest_valid_position(world_rect_t pos, const object_instance&) const;
 		virtual void on_object_place(object_instance&) {};
+		virtual void set_grid_settings_for_object_type(grid_vars&, object_instance&);
 		//virtual create_update_object_sprite(editor_object_instance&, sprite_batch&);
 
 	private:

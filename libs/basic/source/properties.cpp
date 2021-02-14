@@ -20,7 +20,7 @@ namespace hades
 						return p;
 				}
 
-				return detail::make_property<V>(default_value);
+				return detail::make_property<V>(default_value, false);
 			}
 		}
 

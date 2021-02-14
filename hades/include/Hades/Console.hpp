@@ -37,7 +37,6 @@ namespace hades
 	// ---Main Console---
 	// ==================
 	using Console_String = console::string;
-	class VerbPred;
 	using ConsoleStringBuffer = console::output_buffer;
 	template<class T>
 	using ConsoleVariable = console::property<T>;
@@ -53,10 +52,12 @@ namespace hades
 		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
 		void erase_function(std::string_view identifier) override;
 
-		virtual void create(std::string_view, int32) override;
-		virtual void create(std::string_view, float) override;
-		virtual void create(std::string_view, bool) override;
-		virtual void create(std::string_view, std::string_view) override;
+		virtual void create(std::string_view, int32, bool) override;
+		virtual void create(std::string_view, float, bool) override;
+		virtual void create(std::string_view, bool, bool) override;
+		virtual void create(std::string_view, std::string_view, bool) override;
+
+		virtual void lock_property(std::string_view) override;
 
 		template<class T>
 		void setValue(std::string_view identifier, const T &value);
@@ -107,7 +108,7 @@ namespace hades
 
 	private:
 		template<class T>
-		void _create_property(std::string_view identifier, T value);
+		void _create_property(std::string_view identifier, T value, bool lock);
 
 		template<class T>
 		void _set_property(std::string_view identifier, T value);
@@ -123,19 +124,6 @@ namespace hades
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;
 		std::size_t recentOutputPos = 0u;
-	};
-
-	// ==================
-	// -----Predicate----
-	// ==================
-
-	class VerbPred
-	{
-	private:
-		Console::Console_String_Verbosity CurrentVerb;
-	public:
-		void SetVerb(const Console::Console_String_Verbosity &verb) { CurrentVerb = verb; }
-		bool operator()(const Console_String &string) const { return string.verbosity() > CurrentVerb; }
 	};
 }//hades
 

@@ -16,29 +16,41 @@ namespace hades
 {
 	namespace console
 	{
+		class property_error : public runtime_error
+		{
+		public:
+			using runtime_error::runtime_error;
+		};
+
 		//logic error, requesting the wrong type represents a code bug
-		class property_wrong_type : public std::logic_error
+		class property_wrong_type : public property_error
 		{
 		public:
-			using std::logic_error::logic_error;
+			using property_error::property_error;
 		};
 
-		class property_name_already_used : public std::logic_error
+		class property_name_already_used : public property_error
 		{
 		public:
-			using std::logic_error::logic_error;
+			using property_error::property_error;
 		};
 
-		class property_missing : public std::logic_error
+		class property_missing : public property_error
 		{
 		public:
-			using std::logic_error::logic_error;
+			using property_error::property_error;
+		};
+
+		class property_locked : public property_error
+		{
+		public:
+			using property_error::property_error;
 		};
 
 		template<typename T>
 		struct basic_property
 		{
-			basic_property(T val) : _value{val}, _default{val}
+			explicit basic_property(T val, bool locked = false) : _value{val}, _default{val}, _locked{locked}
 			{}
 
 			basic_property &operator=(T val)
@@ -54,12 +66,22 @@ namespace hades
 
 			using value_type = T;
 
+			void lock(bool l) noexcept
+			{
+				_locked = l;
+			}
+
+			bool locked() noexcept
+			{
+				return _locked;
+			}
+
 			T load()
 			{
 				return _value.load(std::memory_order_relaxed);
 			}
 
-			T load_default()
+			T load_default() noexcept(std::is_nothrow_copy_constructible_v<T>)
 			{
 				return _default;
 			}
@@ -73,6 +95,7 @@ namespace hades
 			std::conditional_t<std::is_trivially_copyable_v<T>,
 				std::atomic<T>, value_guard<T>> _value;
 			T _default;
+			bool _locked = false;
 		};
 
 		template<typename T>
@@ -81,9 +104,9 @@ namespace hades
 		namespace detail
 		{
 			template<typename T>
-			property<T> make_property(T value)
+			property<T> make_property(T value, bool locked)
 			{
-				return std::make_shared< basic_property<T> >(value);
+				return std::make_shared< basic_property<T> >(value, locked);
 			}
 		}
 
@@ -98,10 +121,12 @@ namespace hades
 			virtual ~properties() noexcept = default;
 
 			//creates the property and sets it's default value
-			virtual void create(std::string_view, int32 default_val) = 0;
-			virtual void create(std::string_view, float default_val) = 0;
-			virtual void create(std::string_view, bool default_val) = 0;
-			virtual void create(std::string_view, std::string_view default_val) = 0;
+			virtual void create(std::string_view, int32 default_val, bool locked = false) = 0;
+			virtual void create(std::string_view, float default_val, bool locked = false) = 0;
+			virtual void create(std::string_view, bool default_val, bool locked = false) = 0;
+			virtual void create(std::string_view, std::string_view default_val, bool locked = false) = 0;
+
+			virtual void lock_property(std::string_view) = 0;
 
 			//assigns the value to the id
 			//throws property_wrong_type if the type doesn't match the property name
@@ -126,10 +151,10 @@ namespace hades
 
 		// The following functions will throw if the provider isn't available
 		template<typename T>
-		void create_property(std::string_view s, T v)
+		void create_property(std::string_view s, T v, bool locked = false)
 		{
 			if (property_provider)
-                property_provider->create(s, std::forward<T>(v));
+                property_provider->create(s, std::forward<T>(v), locked);
 			else
 				throw provider_unavailable{ "property provider not available" };
 		}
@@ -144,6 +169,8 @@ namespace hades
 			if (property_provider)
 				property_provider->set(name, value);
 		}
+
+		void lock_property(std::string_view);
 
 		//returns the stored value or 'default' if the value doesn't exist(or no property provider registered)
 		//if the requested type doesn't match the type stored then throws console::property_wrong_type

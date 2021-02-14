@@ -16,18 +16,17 @@ namespace hades
 		console::property_bool auto_mode;
 		console::property_bool enabled;
 		console::property_bool snap;
-		console::property_float size;
+		console::property_int step_min;
 		console::property_int step;
 		console::property_int step_max;
 	};
 
 	grid_vars get_console_grid_vars();
 
-	float calculate_grid_size(float cell_size, int step) noexcept;
+	float calculate_grid_size(int32 step) noexcept;
 	float calculate_grid_size(const grid_vars&);
-	int32 calculate_grid_step_for_size(float cell_size, float target_size) noexcept;
-	int32 calculate_grid_step_for_size(const grid_vars&, float target_size);
-
+	int32 calculate_grid_step_for_size( float target_size) noexcept;
+	
 	template<typename T>
 	vector_t<T> snap_to_grid(vector_t<T> p, const grid_vars&);
 
@@ -55,8 +54,8 @@ namespace hades::cvars
 	constexpr auto editor_grid_auto = "editor_grid_auto"sv;
 	// toggle whether tools should snap to the nearest grid slot
 	constexpr auto editor_grid_snap = "editor_grid_snap"sv;
-	// the distance between lines at grid step 0
-	constexpr auto editor_grid_size = "editor_grid_size"sv;
+	// each step is 2^step pixels large
+	constexpr auto editor_grid_step_min = "editor_grid_step_min"sv;
 	// the maximum step level
 	constexpr auto editor_grid_step_max = "editor_grid_step_max"sv;
 	// the current step level, 
@@ -69,9 +68,9 @@ namespace hades::cvars::default_value
 	constexpr auto editor_grid = true;
 	constexpr auto editor_grid_auto = true;
 	constexpr auto editor_grid_snap = true;
-	constexpr auto editor_grid_size = 4.f;
+	constexpr auto editor_grid_step_min = 2;
 	constexpr auto editor_grid_step_max = 5;
-	constexpr auto editor_grid_step = 1;
+	constexpr auto editor_grid_step = 2;
 }
 
 #include "hades/detail/level_editor_grid.inl"

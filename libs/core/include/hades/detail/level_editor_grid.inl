@@ -7,9 +7,9 @@ namespace hades
 	template<typename T>
 	vector_t<T> snap_to_grid(vector_t<T> p, const grid_vars&g)
 	{
-		if (g.enabled->load() && g.snap->load())
+		if (g.snap->load())
 		{
-			const auto cell_size = calculate_grid_size(*g.size, *g.step);
+			const auto cell_size = calculate_grid_size(*g.step);
 
 			const auto snap_float_p = mouse::snap_to_grid(static_cast<vector_float>(p), cell_size);
 

@@ -4,6 +4,7 @@
 #include "hades/background.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/gui.hpp"
+#include "hades/level_editor.hpp"
 #include "hades/level_editor_grid.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/parser.hpp"
@@ -86,7 +87,15 @@ namespace hades
 	{
 		const auto size = get_size(o);
 		if (size.x == 0.f || size.y == 0.f)
-			return vector_float{ 8.f, 8.f };
+		{
+			const auto tile_scale = console::get_int(cvars::editor_level_force_whole_tiles,
+				cvars::default_value::editor_level_force_whole_tiles);
+			if (tile_scale == 0)
+				return { 8.f, 8.f };
+
+			const auto cell_size = static_cast<float>(resources::get_tile_size() * tile_scale->load());
+			return { cell_size, cell_size };
+		}
 		else
 			return size;
 	}
@@ -269,7 +278,7 @@ namespace hades
 			if (g.combo_begin("player"sv, player_preview))
 			{
 				const auto players = get_players();
-				for (auto [p, o] : players)
+				for (auto& [p, o] : players)
 				{
 					if (g.selectable(data::get_as_string(p), _object_owner == p))
 					{
@@ -291,13 +300,9 @@ namespace hades
 				_held_object = make_instance(o);
 				set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
 
-				if (_grid.enabled && _grid.snap
-					&& _grid.auto_mode->load())
+				if (_grid.auto_mode)
 				{
-					const auto grid_size = _grid.size->load();
-					const auto obj_size = get_safe_size(*_held_object);
-					const auto step = calculate_grid_step_for_size(grid_size, std::max(obj_size.x, obj_size.y));
-					_grid.step->store(std::clamp(step, 0, _grid.step_max->load()));
+					set_grid_settings_for_object_type(_grid, *_held_object);
 				}
 			};
 
@@ -381,7 +386,7 @@ namespace hades
 			}
 
 			sprite.setPosition({ obj_pos.x, obj_pos.y });
-			auto col = sprite.getColor();
+			sf::Color col = sprite.getColor();
 
 			col.a -= col.a / 8;
 			sprite.setColor(col);
@@ -412,7 +417,7 @@ namespace hades
 		case brush_type::object_drag:
 		{
 			assert(_held_object);
-			const auto cell_size = calculate_grid_size(*_grid.size, *_grid.step);
+			const auto cell_size = calculate_grid_size(*_grid.step);
 			_held_preview = make_held_preview(pos, _level_limit, *_held_object, *_settings, _grid.enabled->load() && _grid.snap->load(), cell_size);
 		}break;
 		case brush_type::object_selector:
@@ -533,6 +538,10 @@ namespace hades
 		{
 			assert(_held_object);
 
+			const auto obj_size = get_size(*_held_object);
+			pos.x = std::clamp(pos.x, 0.f, _level_limit.x - obj_size.x);
+			pos.y = std::clamp(pos.y, 0.f, _level_limit.y - obj_size.x);
+
 			const auto snapped_pos = snap_to_grid(pos, _grid);
 
 			_try_place_object(snapped_pos, *_held_object);
@@ -597,6 +606,14 @@ namespace hades
 			return position(rect);
 
 		return std::nullopt;
+	}
+
+
+	void level_editor_objects_impl::set_grid_settings_for_object_type(grid_vars& g, object_instance&)
+	{
+		const auto obj_size = get_safe_size(*_held_object);
+		const auto step = calculate_grid_step_for_size(std::max(obj_size.x, obj_size.y));
+		g.step->store(std::clamp(step, 0, g.step_max->load()));
 	}
 	
 	bool level_editor_objects_impl::_object_valid_location(const rect_float& r, const object_instance& o) const
@@ -723,7 +740,7 @@ namespace hades
 
 		//reinsert into the correct trees
 		//making new trees if needed
-		for (auto col_group_id : collision_groups)
+		for (const curve_types::unique col_group_id : collision_groups)
 		{
 			//emplace creates the entry if needed, otherwise returns
 			//the existing one, we don't care which

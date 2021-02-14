@@ -199,6 +199,8 @@ namespace hades::cvars
 	constexpr auto editor_zoom_default = "editor_zoom_default";
 
 	//force_whole_tiles
+	// controls the limits for map creation and resize
+	// forces the new size to be a multiple of tile_size, or tile_size * n
 	// 0 off
 	// 1 on
 	// n acts as if tiles size were multiplied by 'n'

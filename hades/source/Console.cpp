@@ -53,13 +53,9 @@ namespace hades
 
 					LOG(to_string(identifier) + " " + to_string(value));
 				}
-				catch (std::invalid_argument&)
+				catch (console::property_error& e)
 				{
-					LOGERROR("Unsupported type for variable: " + to_string(identifier));
-				}
-				catch (std::out_of_range&)
-				{
-					LOGERROR("Value is out of range for variable: " + to_string(identifier));
+					LOGERROR(e.what());
 				}
 			}
 		}
@@ -183,24 +179,36 @@ namespace hades
 		_consoleFunctions.erase(to_string(identifier));
 	}
 
-	void Console::create(std::string_view s, int32 v)
+	void Console::create(std::string_view s, int32 v, bool l)
 	{
-		_create_property(s, v);
+		_create_property(s, v, l);
 	}
 
-	void Console::create(std::string_view s, float v)
+	void Console::create(std::string_view s, float v, bool l)
 	{
-		_create_property(s, v);
+		_create_property(s, v, l);
 	}
 
-	void Console::create(std::string_view s, bool v)
+	void Console::create(std::string_view s, bool v, bool l)
 	{
-		_create_property(s, v);
+		_create_property(s, v, l);
 	}
 	
-	void Console::create(std::string_view s, std::string_view v)
+	void Console::create(std::string_view s, std::string_view v, bool l)
 	{
-		_create_property(s, to_string(v));
+		_create_property(s, to_string(v), l);
+	}
+
+	void Console::lock_property(std::string_view s)
+	{
+		detail::Property out;
+		const auto lock = std::scoped_lock{ _consoleVariableMutex };
+		if (GetValue(s, out))
+		{
+			std::visit([](auto& p) {
+				p->lock(true);
+				}, out);
+		}
 	}
 
 	void Console::set(std::string_view name, types::int32 val)
@@ -369,11 +377,10 @@ namespace hades
 		ConsoleStringBuffer out(iter, TextBuffer.end());
 
 		recentOutputPos = TextBuffer.size();
+		out.remove_if([maxVerbosity](auto& s) {
+			return s.verbosity() > maxVerbosity;
+			});
 
-		VerbPred predicate;
-		predicate.SetVerb(maxVerbosity);
-
-		out.remove_if(predicate);
 		return out;
 	}
 
@@ -384,15 +391,15 @@ namespace hades
 
 		recentOutputPos = TextBuffer.size();
 
-		VerbPred predicate;
-		predicate.SetVerb(maxVerbosity);
+		out.remove_if([maxVerbosity](auto& s) {
+			return s.verbosity() > maxVerbosity;
+			});
 
-		out.remove_if(predicate);
 		return out;
 	}
 
 	template<class T>
-	void Console::_create_property(std::string_view identifier, T value)
+	void Console::_create_property(std::string_view identifier, T value, bool l)
 	{
 		//we can only store integral types in std::atomic
 		static_assert(valid_console_type<T>::value, "Attempting to create an illegal property type");
@@ -414,7 +421,7 @@ namespace hades
 
 		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 
-		auto var = console::detail::make_property<T>(value);
+		auto var = console::detail::make_property<T>(value, l);
 
 		_consoleVariables.emplace( to_string(identifier), std::move(var) );
 	}
@@ -430,7 +437,7 @@ namespace hades
 			to_string(identifier) + ", it doesn't exist" };
 
 		if (exists(identifier, function))
-			throw invalid_argument{ "Property set: " +
+			throw console::property_error{ "Cannot set property: " +
 			to_string(identifier) + ", this name is used for a function" };
 
 		detail::Property out;
@@ -439,7 +446,7 @@ namespace hades
 		const auto get = GetValue(identifier, out);
 
 		if (!get)
-			throw std::runtime_error{ "Failed to find property value" };
+			throw console::property_error{ "Failed to find property value" };
 
 		using ValueType = std::decay_t<decltype(value)>;
 
@@ -447,9 +454,14 @@ namespace hades
 			using U = std::decay_t<decltype(arg)>;
 			using W = std::decay_t<U::element_type::value_type>;
 			if constexpr (std::is_same_v<ValueType, W>)
+			{
+				if (arg->locked())
+					throw console::property_locked{ "Unable to set locked property, name: " + to_string(identifier) };
+
 				*arg = value;
+			}
 			else
-				throw console::property_wrong_type("name: " + to_string(identifier) + ", value: " + to_string(value));
+				throw console::property_wrong_type("Unable to set property, was the wrong type. name: " + to_string(identifier) + ", value: " + to_string(value));
 		}, out);
 	}
 }//hades

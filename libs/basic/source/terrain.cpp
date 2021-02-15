@@ -456,7 +456,7 @@ namespace hades
 		return within_map(s, p);
 	}
 
-	const resources::terrain *get_corner(const tile_corners &t, rect_corners c)
+	const resources::terrain *get_corner(const tile_corners &t, rect_corners c) noexcept
 	{
 		static_assert(std::is_same_v<std::size_t, std::underlying_type_t<rect_corners>>);
 		return t[static_cast<std::size_t>(c)];
@@ -1041,7 +1041,7 @@ namespace hades::resources
 
 	tile get_random_tile(const terrain &t, transition_tile_type type)
 	{
-		const auto vec = get_transitions(t, type);
+		const auto& vec = get_transitions(t, type);
 		return random_element(std::begin(vec), std::end(vec));
 	}
 }

@@ -165,7 +165,7 @@ namespace hades
 
 	//index tile_corners using rect_corners from math.hpp
 	using tile_corners = std::array<const resources::terrain*, 4u>;
-	const resources::terrain *get_corner(const tile_corners&, rect_corners);
+	const resources::terrain *get_corner(const tile_corners&, rect_corners) noexcept;
 
 	//pass a array indicating which corners have terrain in them
 	//the array should be indexed according to rect_corners in math.hpp

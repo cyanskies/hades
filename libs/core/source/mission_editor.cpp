@@ -687,6 +687,7 @@ namespace hades
 
 		_players = std::move(m.players);
 
+		_levels.clear();
 		for (auto& l : m.external_levels)
 		{
 			auto lev = level_info{};

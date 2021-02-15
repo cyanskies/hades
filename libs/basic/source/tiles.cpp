@@ -52,15 +52,12 @@ namespace hades
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
 		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero);
 		const resources::tile error_tile{ texture, 0u, 0u, error_tset };
-		error_tset->tiles.emplace_back(error_tile);
+		error_tset->tiles = { error_tile };
 
 		id::empty_tileset = hades::data::make_uid(air_tileset_name);
 		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero);
-		if (std::empty(empty_tset->tiles))
-		{
-			const resources::tile empty_tile{ nullptr, 0u, 0u, empty_tset };
-			empty_tset->tiles.emplace_back(empty_tile);
-		}
+		const resources::tile empty_tile{ nullptr, 0u, 0u, empty_tset };
+		empty_tset->tiles = { empty_tile };
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::make_uid(tile_settings_name);

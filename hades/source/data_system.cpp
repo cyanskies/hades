@@ -297,13 +297,9 @@ namespace hades::data
 				const auto get_mod = [this](unique_id mod) {return get<resources::mod>(mod); };
 				const auto yaml_parser = [this](unique_id mod, const data::parser_node& root) { parseYaml(mod, root); };
 
-				const auto value = header->get_child();
-				if (value)
-				{
-					const auto includes = header->to_sequence<string>();
-					for (const auto& s : includes)
-						parseInclude(mod, s, get_mod, yaml_parser);
-				}
+				const auto includes = header->to_sequence<string>();
+				for (const auto& s : includes)
+					parseInclude(mod, s, get_mod, yaml_parser);
 			}
 
 			//if this resource name has a parser then load it

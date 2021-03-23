@@ -1,9 +1,11 @@
 include(../../cmake.txt)
 
 set(HADES_UTIL_SRC
+	source/async.cpp
 	source/time.cpp
 	source/utility.cpp
 	include/hades/any_map.hpp
+	include/hades/async.hpp
 	include/hades/curve.hpp
 	include/hades/for_each_tuple.hpp
 	include/hades/line_math.hpp

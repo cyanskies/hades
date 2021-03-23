@@ -219,10 +219,27 @@ namespace hades {
 	{ return str; }
 
 	template<typename T, typename FromString>
-	T vector_from_string(std::string_view str, FromString);
+	T vector_from_string(std::string_view str, FromString&&);
 
 	template<typename T>
 	T vector_from_string(std::string_view str);
+
+	// TODO: vv move this to some function related header vv
+
+	// defines func as an alias for target_function
+	// allows for using the std::function-like syntax
+	// when needing to specify args and return value
+	// Usage: constexpr auto &func = func_ref(target_function);
+	// eg. manually specify the return and arguments
+	// constexpr auto& n = func_ref<string(int)>(to_string);
+	// eg. auto deduce function type
+	// constexpr auto& g = func_ref(vector_from_string<std::vector<int>>);
+	// TODO: cpp20 consteval
+	template<typename Func, std::enable_if_t<std::is_function_v<Func>, int> = 0>
+	constexpr const Func &func_ref(const Func &func)
+	{
+		return func;
+	}
 }
 
 #include "hades/detail/utility.inl"

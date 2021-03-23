@@ -137,30 +137,29 @@ namespace hades
 	}
 
 	template<typename InputIt>
-	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, terrain_count_t w, InputIt first, InputIt last)
+	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, tile_count_t w, InputIt first, InputIt last)
 	{
 		//NOTE: w2 and h are 0 based, and one less than vertex width and height
 		//this is good, it means they are equal to the tile width/height
 		assert(!std::empty(v));
-		const auto[w2, h] = to_2d_index(std::size(v) - 1, w);
-		assert(w == w2 + 1);
+		const auto vertex_h = size(v) / (w + 1);
+		const auto h = vertex_h - 1;
 
 		auto out = tile_map{};
-		out.width = w2;
+		out.width = w;
 		out.tilesets = std::vector<const resources::tileset*>{
 			resources::get_empty_terrain(),
 			*first
 		};
 
-		const auto size = w2 * h;
+		const auto size = w * h;
 
 		for (auto i = std::size_t{}; i < size; ++i)
 		{
-			const auto [x, y] = to_2d_index(i, w2);
+			const auto [x, y] = to_2d_index(i, w);
+			assert(x < w);
 
-			assert(x < w2);
-
-			const auto corners = get_terrain_at_tile(v, w, { integer_cast<int32>(x), integer_cast<int32>(y) });
+			const auto corners = get_terrain_at_tile(v, w + 1, { integer_cast<int32>(x), integer_cast<int32>(y) });
 			const auto type = get_transition_type(corners, first, last);
 			const auto tile = resources::get_random_tile(**first, type);
 			out.tiles.emplace_back(get_tile_id(out, tile));
@@ -169,12 +168,12 @@ namespace hades
 		return out;
 	}
 
-	static std::vector<tile_map> generate_terrain_layers(const resources::terrainset *t, const std::vector<const resources::terrain*> &v, terrain_count_t width)
+	static std::vector<tile_map> generate_terrain_layers(const resources::terrainset *t, const std::vector<const resources::terrain*> &v, tile_count_t width)
 	{
 		auto out = std::vector<tile_map>{};
 
-		const auto end = std::cend(t->terrains);
-		for (auto iter = std::cbegin(t->terrains); iter != end; ++iter)
+		const auto end = std::crend(t->terrains);
+		for (auto iter = std::crbegin(t->terrains); iter != end; ++iter)
 			out.emplace_back(generate_layer(v, width, iter, end));
 
 		std::reverse(std::begin(out), std::end(out));
@@ -329,26 +328,38 @@ namespace hades
 		}
 
 		// if the terrain layers are empty then generate them
-		
+		m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, integer_cast<tile_count_t>(size.x));
+
 		if (std::empty(r.terrain_layers))
 		{
 			if (m.terrainset == resources::get_empty_terrainset())
 				m.terrain_layers.emplace_back(m.tile_layer);
-			else
-			{
-				m.terrain_layers = generate_terrain_layers(m.terrainset,
-					m.terrain_vertex, integer_cast<terrain_count_t>(size.x) + 1);
-			}
 		}
 		else
 		{
-			std::transform(std::begin(r.terrain_layers), std::end(r.terrain_layers),
-				std::back_inserter(m.terrain_layers), to_tile_map);
-		}
+			for (auto& l : m.terrain_layers)
+			{
+				const auto terrain = std::find_if(begin(l.tilesets), end(l.tilesets), [empty](auto& t) {
+					return t != empty;
+				});
+				assert(terrain != end(l.tilesets));
 
-		//if we dont have the correct number of terrain_layers
-		if (std::size(m.terrainset->terrains) != std::size(m.terrain_layers))
-			throw terrain_error{ "terrain map missing some terrain layers, or has too many" };
+				const auto raw_layer = std::find_if(begin(r.terrain_layers), end(r.terrain_layers), [t = (*terrain)->id](auto& l){
+					return std::any_of(begin(l.tilesets), end(l.tilesets), [t](auto& tileset) {
+						return std::get<unique_id>(tileset) == t;
+					});
+				});
+
+				if (raw_layer == end(r.terrain_layers))
+				{
+					//missing layer
+					//a new layer will have already been generated
+					continue;
+				}
+
+				l = to_tile_map(*raw_layer);
+			}
+		}
 
 		assert(is_valid(to_raw_terrain_map(m)));
 

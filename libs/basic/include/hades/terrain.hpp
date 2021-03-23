@@ -92,10 +92,18 @@ namespace hades::resources
 
 namespace hades
 {
-	class terrain_error : public std::runtime_error
+	class terrain_error : public runtime_error
 	{
 	public:
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
+	};
+
+	//thrown if the map cannot be converted or loaded
+	//the map will need terrain layers to be added or removed
+	class terrain_layers_error : public terrain_error
+	{
+	public:
+		using terrain_error::terrain_error;
 	};
 
 	using terrain_count_t = tile_count_t;
@@ -136,7 +144,7 @@ namespace hades
 	};
 
 	//converts a raw map into a tile map
-	// exceptions: tileset_not_found, terrain_error
+	// exceptions: tileset_not_found, terrain_error, terrain_layers_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
 	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
 	raw_terrain_map to_raw_terrain_map(const terrain_map&);

@@ -6,8 +6,7 @@
 
 #include "SFML/Graphics/RenderWindow.hpp"
 
-//#include "SFGUI/SFGUI.hpp"
-
+#include "hades/async.hpp"
 #include "Hades/Console.hpp"
 #include "Hades/data_system.hpp"
 #include "Hades/Debug.hpp"
@@ -81,6 +80,7 @@ namespace hades
 		Console _console;							///< The appcations debug console.
 		hades::data::data_system _dataMan;			///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
+		thread_pool _thread_pool;					///< App provided shared thread pool
 		
 		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
 		sf::RenderWindow _window;					///< SFML window object. 

@@ -91,16 +91,14 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
-		const auto map = to_terrain_map(map_raw);
-		
+		auto map = to_terrain_map(map_raw);
 		//TODO: if size != to level xy, then resize the map
-
-		const auto empty_map = make_map(size, map.terrainset, _empty_terrain);
-
-		_map.create(map);
-		_clear_preview.create(empty_map);
+		auto empty_map = make_map(size, map.terrainset, _empty_terrain);
 
 		_current.terrain_set = map.terrainset;
+		_map.create(std::move(map));
+		_clear_preview.create(std::move(empty_map));
+		return;
 	}
 
 	level level_editor_terrain::level_save(level l) const

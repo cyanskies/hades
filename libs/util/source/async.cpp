@@ -94,6 +94,27 @@ namespace hades
 
 		return;
 	}
+
+	void thread_pool::help()
+	{
+		auto work = std::function<void()>{};
+		{
+			const auto index = random(std::size_t{}, std::size(_queues) - 1);
+			auto& other_queue = _queues[index];
+
+			const auto lock = std::scoped_lock{ other_queue.mut };
+
+			//bail if our target has nothing to steal
+			if (empty(other_queue.work))
+				return;
+
+			work = std::move(other_queue.work.front());
+			other_queue.work.pop_front();
+			std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
+		}
+		std::invoke(work);
+		return;
+	}
 }
 
 namespace hades::detail

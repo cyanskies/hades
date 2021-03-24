@@ -6,6 +6,7 @@
 #include <deque>
 #include <functional>
 #include <future>
+#include <memory>
 #include <optional>
 #include <type_traits>
 
@@ -13,44 +14,111 @@
 
 namespace hades
 {
+	class thread_pool;
+
+	namespace detail
+	{
+		template<typename T>
+		struct future_data_store
+		{
+			std::optional<T> value;
+		};
+
+		template<>
+		struct future_data_store<void>
+		{};
+
+		template<typename T>
+		struct future_shared_state : future_data_store<T>
+		{
+			//TODO: cpp20 atomic_flag supports wait/notify
+			//std::mutex mutex;
+			//std::condition_variable cv;
+			std::exception_ptr e_ptr;
+			thread_pool* pool = nullptr;
+			std::atomic_bool complete = false;
+		};
+	}
+
+	template<typename T>
+	class future
+	{
+	public:
+		using state_ptr = std::shared_ptr<detail::future_shared_state<T>>;
+		future(state_ptr s) : _shared_state{ std::move(s) } {}
+		T get()
+		{
+			while (std::atomic_load_explicit(&(_shared_state->complete),
+				std::memory_order_acquire) == false)
+			{
+				_shared_state->pool->help();
+			}
+
+			if (_shared_state->e_ptr)
+				std::rethrow_exception(_shared_state->e_ptr);
+
+			if constexpr (!std::is_same_v<T, void>)
+				return std::move(&(_shared_state->value));
+			return;
+		}
+
+	private:
+		state_ptr _shared_state;
+	};
+
 	class thread_pool
 	{
 	public:
 		explicit thread_pool(std::size_t thread_count = std::thread::hardware_concurrency());
 		~thread_pool() noexcept; 
 
+		//try and complete one of the queued tasks for the pool
+		void help();
+
 		template<typename Func, typename ...Args> 
 		[[nodiscard]]
 		auto async(Func&& f, Args&& ...args)
 		{
+			using R = std::invoke_result_t<Func, Args...>;
+			auto shared = std::make_shared<detail::future_shared_state<R>>();
+			shared->pool = this;
+			auto weak = std::weak_ptr{ shared };
+
 			//wrap function args and call in a lambda
-			auto func = [func = std::forward<Func>(f), args = std::forward_as_tuple(std::forward<Args>(args)...)]() mutable {
-				return std::apply(func, std::move(args));
-			};
+			auto work = [weak, func = std::forward<Func>(f), args = std::forward_as_tuple(std::forward<Args>(args)...)]() mutable noexcept {
+				auto shared = weak.lock();
+				//the future has already been abandoned
+				if (!shared)
+					return;
 
-			//wrap the no param function in a packaged task
-			auto task = std::packaged_task{ std::move(func) };
-			auto future = task.get_future();
+				try
+				{
+					if constexpr(std::is_same_v<R, void>)
+						std::apply(func, std::move(args));
+					else
+						shared->value = std::apply(func, std::move(args));
+				}
+				catch (...)
+				{
+					shared->e_ptr = std::current_exception();
+				}
 
-			//wrap the task in a no return lambda
-			auto work = false_copyable{ std::move(task) };// [func = std::move(task)] () mutable noexcept -> void {
-				/*if (func.valid())
-					func();
+				std::atomic_store_explicit(&(shared->complete), true, std::memory_order_release);
 				return;
-			};*/
+			};
 
 			//stick it in a random queue
 			const auto index = random(std::size_t{}, std::size(_queues) - 1);
 			{
 				const auto lock = std::scoped_lock{ _queues[index].mut };
-				_queues[index].work.emplace_back(std::move(work));
-				std::atomic_fetch_add(&_work_count, std::size_t{ 1 });
+				_queues[index].work.emplace_back(false_copyable{ std::move(work) });
+				std::atomic_fetch_add_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
 			}
 			
 			//release a thread
 			const auto lock = std::scoped_lock{ _condition_mutex };
 			_cv.notify_one();
-			return future;
+			return future{ std::move(shared) };
 		}
 
 	private:
@@ -64,8 +132,7 @@ namespace hades
 			false_copyable(const false_copyable&) { throw std::logic_error{ "thread_pool: tried to copy non-copyable function" }; }
 			false_copyable(false_copyable&&) noexcept = default;
 			void operator()() {
-				if(value->valid())
-					value->operator()();
+				value->operator()();
 				return;
 			}
 			std::optional<Task> value;
@@ -76,6 +143,8 @@ namespace hades
 			std::mutex mut;
 			std::deque<std::function<void()>> work;
 		};
+
+		void _help(std::size_t);
 
 		std::mutex _condition_mutex;
 		std::condition_variable _cv;
@@ -106,9 +175,16 @@ namespace hades
 		if(pool)
 			return pool->async(std::forward<Func>(f), std::forward<Args>(args)...);
 
-		// if there's no shared pool then just use std async
-		// will probably end up as a deferred call
-		return std::async(std::forward<Func>(f), std::forward<Args>(args)...);
+		// fall back to syncronous
+		using R = std::invoke_result_t<Func, Args...>;
+		auto shared = std::make_shared<detail::future_shared_state<R>>();
+		if constexpr (std::is_same_v<R, void>)
+			std::invoke(std::forward<Func>(f), std::forward<Args>(args)...);
+		else
+			shared->value = std::invoke(std::forward<Func>(f), std::forward<Args>(args)...);
+
+		std::atomic_store_explicit(&shared->complete, true, std::memory_order_relaxed);
+		return future{ std::move(shared) };
 	}
 }
 

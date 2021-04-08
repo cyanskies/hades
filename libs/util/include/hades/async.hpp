@@ -31,9 +31,6 @@ namespace hades
 		template<typename T>
 		struct future_shared_state : future_data_store<T>
 		{
-			//TODO: cpp20 atomic_flag supports wait/notify
-			//std::mutex mutex;
-			//std::condition_variable cv;
 			std::exception_ptr e_ptr;
 			thread_pool* pool = nullptr;
 			std::atomic_bool complete = false;
@@ -73,7 +70,27 @@ namespace hades
 		~thread_pool() noexcept; 
 
 		//try and complete one of the queued tasks for the pool
-		void help();
+		//can return spuriously without doing any work
+		void help()
+		{
+			auto work = std::function<void()>{};
+			{
+				const auto index = random(std::size_t{}, std::size(_queues) - 1);
+				auto& other_queue = _queues[index];
+
+				const auto lock = std::scoped_lock{ other_queue.mut };
+
+				//bail if our target has nothing to steal
+				if (empty(other_queue.work))
+					return;
+
+				work = std::move(other_queue.work.front());
+				other_queue.work.pop_front();
+				std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
+			}
+			std::invoke(work);
+			return;
+		}
 
 		template<typename Func, typename ...Args> 
 		[[nodiscard]]
@@ -143,8 +160,6 @@ namespace hades
 			std::mutex mut;
 			std::deque<std::function<void()>> work;
 		};
-
-		void _help(std::size_t);
 
 		std::mutex _condition_mutex;
 		std::condition_variable _cv;

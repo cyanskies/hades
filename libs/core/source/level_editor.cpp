@@ -202,7 +202,6 @@ namespace hades::detail
 
 	void level_editor_impl::_save()
 	{
-		const auto& path = _save_path;
 		level new_level{};
 		new_level.map_x = _level_x;
 		new_level.map_y = _level_y;

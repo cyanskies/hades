@@ -12,7 +12,7 @@ namespace hades::detail
 	template<typename T>
 	constexpr auto is_iterator_v = is_iterator<T>::value;
 
-	// is containter type trait
+	// is container type trait
 	template <typename T, typename = void>
 	struct is_container : std::false_type {};
 	template <typename T>

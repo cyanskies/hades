@@ -62,7 +62,7 @@ namespace hades
 		//record the console as the engine command line
 		console::system_object = &_console;
 		//record the thread pool as the proccess shared pool
-		//detail::set_shared_thread_pool(&_thread_pool);
+		detail::set_shared_thread_pool(&_thread_pool);
 
 		debug::overlay_manager = &_overlayMan;
 

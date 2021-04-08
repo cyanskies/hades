@@ -9,7 +9,6 @@ set(HADES_SRC
 	data_system.cpp
 	fps_display.cpp
 	main.cpp
-	mission_old.cpp
 	RenderInstance.cpp
 	Server.cpp
 	simple_resources.cpp

@@ -4,12 +4,11 @@
 
 namespace hades
 {
-	thread_pool::thread_pool(std::size_t thread_count)
+	thread_pool::thread_pool(const std::size_t count)
 	{
-		thread_count = std::max(thread_count, std::size_t{ 1 });
+		const auto thread_count = std::max(count, std::size_t{ 1 });
 
-		// noexcept: if this throws the std::thread will call terminate anyway
-		auto worker_function = [this](const std::size_t thread_id) noexcept {
+		auto worker_function = [this](const std::size_t thread_id) {
 			// keep looping until the pool shuts down
 			while (std::atomic_load_explicit(&_stop_flag, std::memory_order_relaxed) == false)
 			{
@@ -92,27 +91,6 @@ namespace hades
 			thread.join();
 		}
 
-		return;
-	}
-
-	void thread_pool::help()
-	{
-		auto work = std::function<void()>{};
-		{
-			const auto index = random(std::size_t{}, std::size(_queues) - 1);
-			auto& other_queue = _queues[index];
-
-			const auto lock = std::scoped_lock{ other_queue.mut };
-
-			//bail if our target has nothing to steal
-			if (empty(other_queue.work))
-				return;
-
-			work = std::move(other_queue.work.front());
-			other_queue.work.pop_front();
-			std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
-		}
-		std::invoke(work);
 		return;
 	}
 }

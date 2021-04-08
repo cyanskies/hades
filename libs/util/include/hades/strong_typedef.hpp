@@ -30,9 +30,7 @@ namespace hades
 		using value_type = T;
 		static constexpr bool arithmetic_flag = strong_typedef_traits<Tag>::arithmetic_operators && std::is_arithmetic_v<T>;
 
-		//TODO: enable_if is_default_constructable
-		constexpr strong_typedef() noexcept = default;
-		//TODO: enable_if is_move_constructable or is_copy_constructable
+		constexpr strong_typedef() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
 		explicit constexpr strong_typedef(value_type v) noexcept(std::is_nothrow_move_constructible_v<T>) 
 			: _value{ std::move_if_noexcept(v) }
 		{}

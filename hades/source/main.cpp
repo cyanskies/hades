@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -10,6 +11,7 @@
 
 int hades_main(int argc, char* argv[])
 {
+	std::ios_base::sync_with_stdio(false);
 	//new commands start with a '-'.
 	constexpr char COMMAND_DELIMITER = '-';
 

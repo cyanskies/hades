@@ -11,43 +11,70 @@ namespace hades
 {
 	constexpr auto zero_time = time_point{};
 
-	namespace
-	{
-		struct add_curve_visitor
-		{
-			game_state::state_data_type& c;
-			entity_id id;
-			const resources::curve* curve;
+	//namespace
+	//{
+	//	struct add_curve_visitor
+	//	{
+	//		game_state::state_data_type& c;
+	//		entity_id id;
+	//		const resources::curve* curve;
 
-			template<typename Ty>
-			void operator()(Ty& v)
-			{
-				using T = std::decay_t<decltype(v)>;
-				using ColonyType = game_state::data_colony<T>;
-				auto& colony = std::get<ColonyType>(c);
-				colony.insert(state_field<T>{ id, curve->id, std::move(v) });
-				return;
-			}
+	//		template<template<typename> typename CurveType, typename Ty>
+	//		void add_curve(Ty& v)
+	//		{
+	//			using T = std::decay_t<Ty>;
+	//			if constexpr (!curve_types::is_linear_interpable_v<T>)
+	//			{
+	//				//type shouldn't be interpolated
+	//				assert(false); //TODO: error handling
+	//			}
 
-			template<> // calling this should be impossible
-			void operator()<std::monostate> (std::monostate&) { return; }
-		};
-	}
+	//			using data_struct = detail::data_struct<T>;
+	//			using data_colony = detail::data_colony<CurveType, T>;
+	//			using data_type = game_state::data_type<CurveType, T>;
+	//			auto& structure = std::get<data_struct>(c);
+	//			auto& colony = std::get<data_colony>(structure.curves);
+	//			colony.insert(data_type{ id, curve->id, std::move(v) });
+	//			return;
+	//		}
 
-	static void add_curve_from_object(game_state::state_data_type &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
-	{
-		using namespace resources;
+	//		template<typename Ty>
+	//		void operator()(Ty& v)
+	//		{
+	//			using T = std::decay_t<Ty>;
+	//			const auto k = curve->keyframe_style;
+	//			switch (k)
+	//			{
+	//			case keyframe_style::const_t:
+	//				return add_curve<const_curve>(v);
+	//			case keyframe_style::linear:
+	//				return add_curve<linear_curve>(v);
+	//			case keyframe_style::pulse:
+	//				return add_curve<pulse_curve>(v);
+	//			case keyframe_style::step:
+	//				return add_curve<step_curve>(v);
+	//			}
+	//		}
 
-		if (std::holds_alternative<std::monostate>(value))
-			value = reset_default_value(*curve);
+	//		template<> // calling this should be impossible
+	//		void operator()<std::monostate> (std::monostate&) { return; }
+	//	};
+	//}
 
-		// TODO: FIXME:
-		//	replace with better exception type
-		if (!resources::is_curve_valid(*curve, value))
-			throw std::runtime_error("unexpected curve type");
+	//static void add_curve_from_object(game_state::state_data_type &c, entity_id id, const resources::curve *curve, resources::curve_default_value value)
+	//{
+	//	using namespace resources;
 
-		std::visit(add_curve_visitor{ c, id, curve }, value);
-	}
+	//	if (std::holds_alternative<std::monostate>(value))
+	//		value = reset_default_value(*curve);
+
+	//	// TODO: FIXME:
+	//	//	replace with better exception type
+	//	if (!resources::is_curve_valid(*curve, value))
+	//		throw std::runtime_error("unexpected curve type");
+
+	//	std::visit(add_curve_visitor{ c, id, curve }, value);
+	//}
 
 	//static std::size_t get_system_index(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, const resources::system *s)
 	//{
@@ -63,7 +90,7 @@ namespace hades
 	//	return pos;
 	//}
 
-	static bool empty_obj(const resources::object* o)
+	/*static bool empty_obj(const resources::object* o)
 	{
 		return empty(o->base) &&
 			empty(o->curves) &&
@@ -84,7 +111,7 @@ namespace hades
 
 		for (const auto[curve, value] : o->curves)
 			add_curve_from_object(c, id, curve, value);
-	}
+	}*/
 
 	//static void add_object_to_systems(level_save::system_list &system_list, level_save::system_attachment_list &attach_list, entity_id id, const resources::object *o)
 	//{
@@ -272,7 +299,13 @@ namespace hades
 	level_save make_save_from_level(level l)
 	{
 		level_save sv;
-		sv.objects = l.objects; // copy
+
+		//convert objects to save format
+		sv.objects.next_id = l.objects.next_id;
+		sv.objects.objects.reserve(std::size(l.objects.objects));
+		for (auto& obj : l.objects.objects)
+			sv.objects.objects.push_back(make_save_instance(std::move(obj)));
+
 		sv.source = std::move(l);
 		return sv;
 	}

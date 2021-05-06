@@ -252,6 +252,31 @@ namespace hades
 		return object_instance{ o };
 	}
 
+	object_save_instance make_save_instance(object_instance obj_instance)
+	{
+		auto obj = object_save_instance{};
+		if (obj_instance.obj_type)
+			obj.obj_type = obj_instance.obj_type;
+		obj.id = obj_instance.id;
+		obj.name_id = std::move(obj_instance.name_id);
+
+		for (auto& [curve, val] : get_all_curves(obj_instance))
+		{
+			// only add curves that need to be saved
+			if (!curve->save)
+				continue;
+
+			auto c = object_save_instance::saved_curve{};
+			c.curve = curve;
+			auto k = object_save_instance::saved_curve::saved_keyframe{};
+			k.value = std::move(val);
+			c.keyframes.push_back(std::move(k));
+			obj.curves.push_back(std::move(c));
+		}
+
+		return obj;
+	}
+
 	bool has_curve(const object_instance & o, const resources::curve & c)
 	{
 		//check object curve list

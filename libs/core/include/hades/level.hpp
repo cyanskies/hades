@@ -86,7 +86,7 @@ namespace hades
 		[[deprecated]] time_duration sleep_time{};
 		time_point level_time; // the last tick time before being saved
 		//entity data
-		object_data objects;
+		object_save_data objects;
 
 		//using system_list = object_save::system_list;
 		//using system_attachment_list = object_save::system_attachment_list;

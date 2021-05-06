@@ -143,12 +143,12 @@ namespace hades
 			return get_property_ref<world_vector_t>(o, size);
 		}
 
-		void set_size(object_ref o, world_vector_t v)
+		/*void set_size(object_ref o,const_curve<world_vector_t> v)
 		{
 			const auto size = get_size_curve_id();
 			set_property_value(o, size, v);
 			return;
-		}
+		}*/
 
 		tag_list& get_tags(object_ref o)
 		{

@@ -26,6 +26,7 @@ namespace hades
 
 	namespace detail
 	{
+		// a fancy ref to the variable entry
 		template<typename T>
 		struct var_entry
 		{
@@ -36,7 +37,9 @@ namespace hades
 
 		template<typename T>
 		constexpr bool operator==(const var_entry<T>& l, const var_entry<T>& r) noexcept
-		{ return l.id == r.ld; }
+		{
+			return l.id == r.ld;
+		}		
 
 		template<typename T>
 		struct entity_var_type;
@@ -44,7 +47,23 @@ namespace hades
 		template<typename... Ts>
 		struct entity_var_type<std::tuple<Ts...>>
 		{
-			using type = std::tuple<std::vector<var_entry<Ts>>...>;
+			//expands a type out for a vector of that type in each style of curve
+			template<typename T>
+			using tuple_curve_vector_t = std::conditional_t<curve_types::is_linear_interpable_v<T>,
+				std::tuple<
+				std::vector<var_entry<linear_curve<T>>>,
+				std::vector<var_entry<step_curve<T>>>,
+				std::vector<var_entry<pulse_curve<T>>>,
+				std::vector<var_entry<const_curve<T>>>
+				>,
+				std::tuple <
+				std::vector<var_entry<step_curve<T>>>,
+				std::vector<var_entry<pulse_curve<T>>>,
+				std::vector<var_entry<const_curve<T>>>
+				>
+			>;
+
+			using type = decltype(std::tuple_cat(std::declval<tuple_curve_vector_t<Ts>>()...));
 		};
 
 		template<typename T>
@@ -62,10 +81,10 @@ namespace hades
 		entity_id id = bad_entity;
 		const resources::object* object_type = nullptr; //tells what variables a entity has, and which systems control it.
 
-		template<typename T>
-		using var_entry = detail::var_entry<T>;
-		template<typename T>
-		using var_list = std::vector<var_entry<T>>;
+		template<template<typename> typename CurveType, typename T>
+		using var_entry = detail::var_entry<CurveType<T>>;
+		template<template<typename> typename CurveType, typename T>
+		using var_list = std::vector<var_entry<CurveType, T>>;
 
 		using entity_variable_lists_t = detail::entity_var_type_t<curve_types::type_pack>;
 		entity_variable_lists_t object_variables;
@@ -79,15 +98,27 @@ namespace hades
 	using object_name_map = std::unordered_map<string, object_ref>;
 
 	namespace detail
-	{
-		template<typename DataType>
-		using data_colony = plf::colony<state_field<DataType>>;
-
+	{		
 		template<typename T> struct state_data_type;
 		template<typename... Ts>
 		struct state_data_type<std::tuple<Ts...>>
 		{
-			using type = std::tuple<data_colony<Ts>...>;
+			template<typename T>
+			using tuple_curve_colony_t = std::conditional_t<curve_types::is_linear_interpable_v<T>,
+				std::tuple<
+				plf::colony<state_field<linear_curve<T>>>,
+				plf::colony<state_field<step_curve<T>>>,
+				plf::colony<state_field<pulse_curve<T>>>,
+				plf::colony<state_field<const_curve<T>>>
+				>,
+				std::tuple <
+				plf::colony<state_field<step_curve<T>>>,
+				plf::colony<state_field<pulse_curve<T>>>,
+				plf::colony<state_field<const_curve<T>>>
+				>
+			>;
+
+			using type = decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
 		};
 
 		template<typename T>
@@ -201,13 +232,20 @@ namespace hades
 	// and calculated state in extra_state
 	struct game_state
 	{
-		template<typename T>
-		using data_colony = detail::data_colony<T>;
+		//data_type = state_field<CurveType<T>>
+		template<template<typename> typename CurveType, typename T>
+		using data_type = state_field<CurveType<T>>;
+		template<template<typename> typename CurveType, typename T>
+		using data_colony = plf::colony<state_field<CurveType<T>>>;
+
 		using state_data_type = detail::state_data_type_t<curve_types::type_pack>;
 		state_data_type state_data;
 		entity_id next_id = next(bad_entity);
 		object_name_map names;
+		time_point game_time = time_point::min();
 		std::unordered_map<entity_id, time_point> object_creation_time;
+		std::unordered_map<entity_id, time_point> object_destruction_time;
+		//TODO: pull stale objects out of the main game data, so that they can be written to disk or something
 	};
 
 	// non-saved state, this is generated during runtime from the actual game state.
@@ -248,7 +286,7 @@ namespace hades
 			//restores an object from a save file, this can only be called before the game loop starts(during a load)
 			//if an object is restored during a game then the object will not have the correct on_create/on_connect function called
 			template<typename GameSystem>
-			object_ref restore_object(const object_instance&, game_state&, extra_state<GameSystem>&);
+			object_ref restore_object(const object_save_instance&, game_state&, extra_state<GameSystem>&);
 		}
 
 		namespace saving
@@ -264,7 +302,7 @@ namespace hades
 		time_point get_object_creation_time(const game_obj&, const game_state&);
 		// disconnects objects from their systems(also queues them to have on_disconnect called)
 		template<typename GameSystem>
-		void detach_object_systems(object_ref, extra_state<GameSystem>&);
+		void destroy_object(object_ref, extra_state<GameSystem>&);
 		// deletes the object data and invalidates the game_obj, best to do this one frame after detaching them.
 		template<typename GameSystem>
 		void erase_object(game_obj&, game_state&, extra_state<GameSystem>&);
@@ -282,12 +320,12 @@ namespace hades
 
 		// NOTE: get_object_property_ref throws object_property_not_found if 
 		//		 the requested variable is not stored in the object
-		template<typename T>
-		const T& get_object_property_ref(const game_obj&, variable_id);
-		template<typename T>
-		T& get_object_property_ref(game_obj&, variable_id);
-		template<typename T>
-		T* get_object_property_ptr(game_obj&, variable_id) noexcept;
+		template<template<typename> typename CurveType, typename T>
+		const CurveType<T>& get_object_property_ref(const game_obj&, variable_id);
+		template<template<typename> typename CurveType, typename T>
+		CurveType<T>& get_object_property_ref(game_obj&, variable_id);
+		template<template<typename> typename CurveType, typename T>
+		CurveType<T>* get_object_property_ptr(game_obj&, variable_id) noexcept;
 	}
 }
 

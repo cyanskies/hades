@@ -52,8 +52,10 @@ namespace hades::resources
 	struct curve : public resource_type<curve_t>
 	{
 		curve_variable_type data_type = curve_variable_type::error;
+		keyframe_style keyframe_style = keyframe_style::const_t;
 		bool sync = false, //sync shares the value with clients
 			save = false; //save records the value in save files
+		// TODO: is non-saved curves ever a good idea???
 		curve_default_value default_value{};
 	};
 
@@ -70,9 +72,9 @@ namespace hades::resources
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
 
 	template<typename T>
-	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, T default_value, bool sync, bool save);
+	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, keyframe_style, T default_value, bool sync, bool save);
 	template<typename T>
-	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, T default_value, bool sync, bool save);
+	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, keyframe_style, T default_value, bool sync, bool save);
 
 	const std::vector<const curve*> &get_all_curves();
 }

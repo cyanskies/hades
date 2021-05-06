@@ -6,17 +6,34 @@ namespace hades::state_api
 {
 	namespace detail
 	{
-		template<typename T>
-		static inline void create_object_property(game_obj& object, unique_id curve_id, game_state& state, T value)
+		template<template<typename> typename CurveType, typename T>
+		static inline void create_object_property(game_obj& object, unique_id curve_id,
+			game_state& state, const std::vector<object_save_instance::saved_curve::saved_keyframe>& value)
 		{
 			//add the curve and value into the game_state database
 			//then record a ptr to the data in the game object
-			auto& colony = std::get<game_state::data_colony<T>>(state.state_data);
-			auto data = state_field<T>{ object.id, curve_id, std::move(value) };
+			auto& colony = std::get<game_state::data_colony<CurveType, T>>(state.state_data);
+			auto curve = CurveType<T>{};
+
+			if constexpr (std::is_same_v<CurveType<T>, const_curve<T>>)
+			{
+				assert(!std::empty(value));
+				curve.set(std::move(std::get<T>(value[0].value)));
+			}
+			else
+			{
+				for (const auto& [time, frame_value] : value)
+					curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
+			}
+
+			auto data = state_field<CurveType<T>>{ object.id, curve_id, curve };
 			auto iter = colony.emplace(std::move(data));
 			assert(iter != end(colony));
-			auto& vars = std::get<game_obj::var_list<T>>(object.object_variables);
-			vars.emplace_back(game_obj::var_entry<T>{curve_id, &* iter});
+
+			using list_type = typename game_obj::var_list<CurveType, T>;
+			using entry_type = typename game_obj::var_entry<CurveType, T>;
+			auto& var_list = std::get<list_type>(object.object_variables);
+			var_list.push_back(entry_type{ curve_id, &*iter });
 			return;
 		}
 
@@ -25,19 +42,49 @@ namespace hades::state_api
 			const resources::curve* c;
 			game_state& s;
 			game_obj& obj;
+			const std::vector<object_save_instance::saved_curve::saved_keyframe>& keyframes;
 
-			template<typename Ty>
+			template<typename Ty, std::enable_if_t<curve_types::is_linear_interpable_v<std::decay_t<Ty>>, int> = 0>
 			void operator()(Ty& v)
 			{
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				create_object_property(obj, c->id, s, std::move(v));
-				return;
+				switch (c->keyframe_style)
+				{
+				case keyframe_style::const_t:
+					return create_object_property<const_curve, T>(obj, c->id, s, keyframes);
+				case keyframe_style::linear:
+					return create_object_property<linear_curve, T>(obj, c->id, s, keyframes);
+				case keyframe_style::pulse:
+					return create_object_property<pulse_curve, T>(obj, c->id, s, keyframes);
+				case keyframe_style::step:
+					return create_object_property<step_curve, T>(obj, c->id, s, keyframes);
+				}
 			}
 
-			template<> // uncalled function to keep std::variant happy
-			constexpr void operator()<std::monostate>(std::monostate&) { assert(false); return; }
+			template<typename Ty, std::enable_if_t<!curve_types::is_linear_interpable_v<std::decay_t<Ty>>
+				&& !std::is_same_v<std::decay_t<Ty>, std::monostate>, int> = 0>
+			void operator()(Ty& v)
+			{
+				//add the curve and value into the game_state database
+				//then record a ptr to the data in the game object
+				using T = std::decay_t<decltype(v)>;
+				switch (c->keyframe_style)
+				{
+				case keyframe_style::const_t:
+					return create_object_property<const_curve, T>(obj, c->id, s, keyframes);
+				case keyframe_style::linear:
+					throw hades::logic_error{ "linear curve on wrong type" };
+				case keyframe_style::pulse:
+					return create_object_property<pulse_curve, T>(obj, c->id, s, keyframes);
+				case keyframe_style::step:
+					return create_object_property<step_curve, T>(obj, c->id, s, keyframes);
+				}
+			}
+
+			template<typename Ty, std::enable_if_t<std::is_same_v<std::decay_t<Ty>, std::monostate>, int> = 0> // uncalled function to keep std::variant happy
+			void operator()(Ty&) { assert(false); throw logic_error{ "monostate in game_state.inl" }; return; }
 		};
 
 		template<typename GameSystem>
@@ -48,13 +95,63 @@ namespace hades::state_api
 
 			// insert always returns a valid ptr
 			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
+			assert(obj);
 
 			for (auto& [c, v] : get_all_curves(o))
 			{
 				assert(c);
+				assert(c);
 				assert(!v.valueless_by_exception());
 				assert(resources::is_set(v));
-				std::visit(detail::make_object_visitor{ c, s, *obj }, v);
+				std::visit(detail::make_object_visitor{ c, s,
+					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{time_point::min(), v} } }, v);
+			}
+
+			if (!empty(o.name_id))
+				name_object(o.name_id, { id, obj }, s);
+
+			return { id, obj };
+		}
+
+		template<typename GameSystem>
+		inline object_ref make_object_impl(const object_save_instance& o, game_state& s, extra_state<GameSystem>& e)
+		{
+			// give this instance a new unique id if  it doesn't have one
+			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
+
+			// insert always returns a valid ptr
+			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
+			assert(obj);
+
+			//add the saved curves
+			for (auto& [c, v] : o.curves)
+			{
+				assert(c);
+				assert(!std::empty(v));
+
+				std::visit(detail::make_object_visitor{ c, s, *obj, v }, v[0].value);
+			}
+
+			//add the object curves that weren't saved
+			//list of curve ids
+			auto ids = std::vector<unique_id>{};
+			ids.reserve(size(o.curves));
+			std::transform(begin(o.curves), end(o.curves), back_inserter(ids), [](auto&& saved_curve) {
+				return saved_curve.curve->id;
+			});
+
+			std::sort(begin(ids), end(ids));
+
+			auto base_curves = get_all_curves(*o.obj_type);
+			for (auto& [c, v] : base_curves)
+			{
+				//if the id is in the saved list, then don't restore it
+				if (std::binary_search(begin(ids), end(ids), c->id))
+					continue;
+
+				auto keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
+				keyframes.push_back({ time_point::min(), std::move(v) });
+				std::visit(detail::make_object_visitor{c, s, *obj, keyframes}, keyframes[0].value);
 			}
 
 			if (!empty(o.name_id))
@@ -67,13 +164,14 @@ namespace hades::state_api
 	namespace loading
 	{
 		template<typename GameSystem>
-		object_ref restore_object(const object_instance& o, game_state& s, extra_state<GameSystem>& e)
+		object_ref restore_object(const object_save_instance& o, game_state& s, extra_state<GameSystem>& e)
 		{
 			assert(o.obj_type);
 			assert(o.id != bad_entity);
 
 			auto obj = detail::make_object_impl(o, s, e);
 			s.object_creation_time[o.id] = o.creation_time;
+			s.object_destruction_time[o.id] = o.destruction_time;
 
 			for (const auto sys : get_systems(*o.obj_type))
 				e.systems.attach_system_from_load(obj, sys->id);
@@ -93,6 +191,35 @@ namespace hades::state_api
 		return obj;
 	}
 
+	namespace detail
+	{
+		struct copy_object_property_functor
+		{
+			time_point time;
+			game_state& state;
+			game_obj& obj;
+
+			template<template<typename> typename CurveType, typename T>
+			void operator()(const game_obj::var_list<CurveType, T>& prop_list)
+			{
+				auto saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
+				for (const auto& entry : prop_list)
+				{
+					assert(entry.var);
+					auto& data = entry.var->data;
+					//only copy the variable state at the current time, no need to clone history
+					if constexpr(std::is_same_v<const_curve<T>, CurveType<T>>)
+						saved_keyframes.push_back({ time_point::min(), data.get() });
+					else
+						saved_keyframes.push_back({ time, data.get(time) });
+					detail::create_object_property<CurveType, T>(obj, entry.id, state, std::move(saved_keyframes));
+					saved_keyframes.clear();
+				}
+				return;
+			}
+		};
+	}
+
 	template<typename GameSystem>
 	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra, time_point t)
 	{
@@ -100,17 +227,7 @@ namespace hades::state_api
 		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
 
 		//copy all object properties
-		for_each_tuple(obj.object_variables, [&state, &obj = *new_obj](auto&& var_list) {
-				// var list should be a vector<game_obj::var_entry<T>>
-				for (const auto& entry : var_list)
-				{
-					assert(entry.var);
-					using T = std::decay_t<decltype(entry.var->data)>;
-					static_assert(std::is_same_v<std::decay_t<decltype(var_list)>, std::vector<game_obj::var_entry<T>>>);
-					detail::create_object_property(obj, entry.id, state, entry.var->data);
-				}
-				return;
-			});
+		for_each_tuple(obj.object_variables, detail::copy_object_property_functor{ t, state, *new_obj });
 
 		const auto ref = object_ref{ id, &*new_obj };
 
@@ -124,39 +241,59 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	void detach_object_systems(object_ref o, extra_state<GameSystem>& e)
+	void destroy_object(object_ref o, extra_state<GameSystem>& e)
 	{
 		e.systems.detach_all(o);
 		return;
+	}
+
+	namespace detail
+	{
+		class erase_object_visitor 
+		{
+		public:
+			game_obj& o;
+			game_state& s;
+
+			template<template<typename> typename CurveType, typename T>
+			void operator()(std::vector<game_obj::var_entry<CurveType, T>>& vect)
+			{
+				// vect == vector<var_entry<CurveType<T>>
+				// T == CurveType::value_type
+				//using var_vector_t = std::decay_t<decltype(vect)>; // std::vector<var_entry<...>>
+				//using var_entry_t = typename var_vector_t::value_type; // var_entry<CurveType<T>>
+				//using curve_t = typename var_entry_t::value_type; // CurveType<T>
+				//using T = typename curve_t::value_type;
+
+				if (empty(vect))
+					return;
+
+				const auto vars_size = size(vect);
+
+				//TODO: search the colony for the target vars more efficiently
+				auto& list = std::get<game_state::data_colony<CurveType, T>>(s.state_data);
+				auto found = std::size_t{};
+				auto iter = begin(list);
+				while (iter != end(list) && found < vars_size)
+				{
+					if (iter->object == o.id)
+					{
+						iter = list.erase(iter);
+						++found;
+					}
+					else
+						++iter;
+				}
+				vect.clear();
+			}
+		};
 	}
 
 	template<typename GameSystem>
 	void erase_object(game_obj& o, game_state& s, extra_state<GameSystem>& e)
 	{
 		//erase all data
-		for_each_tuple(o.object_variables, [&o, &s](auto&& vars){
-			// vars == vector<var_entry> -> value_type == var_entry, T == var_entry::value_type
-			// T == curve_type::T
-			using T = typename std::decay_t<decltype(vars)>::value_type::value_type;
-			if (empty(vars))
-				return;
-			const auto vars_size = size(vars);
-
-			auto& list = std::get<game_state::data_colony<T>>(s.state_data);
-			auto found = std::size_t{};
-			auto iter = begin(list);
-			while (iter != end(list) && found < vars_size)
-			{
-				if (iter->object == o.id)
-				{
-					iter = list.erase(iter);
-					++found;
-				}
-				else
-					++iter;
-			}
-			vars.clear();
-		});
+		for_each_tuple(o.object_variables, detail::erase_object_visitor{ o, s });
 
 		o.id = bad_entity;
 		e.objects.erase(&o);
@@ -233,11 +370,14 @@ namespace hades::state_api
 
 	namespace detail
 	{
-		template<typename T, typename GameObj>
-		T* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
+		template<template<typename> typename CurveType, typename T, typename GameObj>
+		CurveType<T>* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
 		{
-			using list_type = typename GameObj::template var_list<std::decay_t<T>>;
-			using entry_type = typename GameObj::template var_entry<std::decay_t<T>>;
+			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
+				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
+
+			using list_type = typename GameObj::template var_list<CurveType, T>;
+			using entry_type = typename GameObj::template var_entry<CurveType, T>;
 			auto& var_list = std::get<list_type>(g.object_variables);
 			auto var_iter = std::find_if(begin(var_list), end(var_list),
 				[v](const entry_type& elm) {
@@ -250,10 +390,10 @@ namespace hades::state_api
 			return &var_iter->var->data;
 		}
 
-		template<typename T, typename GameObj>
-		T& get_object_property_ref(GameObj& g, const variable_id v)
+		template<template<typename> typename CurveType, typename T, typename GameObj>
+		CurveType<T>& get_object_property_ref(GameObj& g, const variable_id v)
 		{
-			auto out_ptr = get_object_property_ptr<T>(g, v);
+			auto out_ptr = get_object_property_ptr<CurveType, T>(g, v);
 			if (!out_ptr)
 				throw object_property_not_found{ "object missing expected property " + to_string(v) };
 
@@ -261,20 +401,20 @@ namespace hades::state_api
 		}
 	}
 
-	template<typename T>
-	const T& get_object_property_ref(const game_obj& o, variable_id v)
+	template<template<typename> typename CurveType, typename T>
+	const CurveType<T>& get_object_property_ref(const game_obj& o, variable_id v)
 	{
-		return detail::get_object_property_ref<const T>(o, v);
+		return detail::get_object_property_ref<const CurveType, T>(o, v);
 	}
 
-	template<typename T>
-	T& get_object_property_ref(game_obj& o, variable_id v)
+	template<template<typename> typename CurveType, typename T>
+	CurveType<T>& get_object_property_ref(game_obj& o, variable_id v)
 	{
-		return detail::get_object_property_ref<T>(o, v);
+		return detail::get_object_property_ref<CurveType, T>(o, v);
 	}
 
-	template<typename T>
-	T* get_object_property_ptr(game_obj& o, variable_id v) noexcept
+	template<template<typename> typename CurveType, typename T>
+	CurveType<T>* get_object_property_ptr(game_obj& o, variable_id v) noexcept
 	{
 		return detail::get_object_property_ptr<T>(o, v);
 	}

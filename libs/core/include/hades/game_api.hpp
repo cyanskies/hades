@@ -149,7 +149,7 @@ namespace hades
 		template<typename T>
 		T& get_property_ref(object_ref, variable_id);
 		template<typename T>
-		void set_property_value(object_ref, variable_id, T&&);
+		void set_property_value(object_ref, variable_id, T);
 
 		//=== Object Controls ===
 		//object creation and destruction
@@ -163,7 +163,7 @@ namespace hades
 		time_point get_object_creation_time(object_ref);
 		//position
 		world_vector_t& get_position(object_ref);
-		void set_position(object_ref, world_vector_t);
+		void set_position(object_ref, const_curve<world_vector_t>);
 		//size
 		world_vector_t& get_size(object_ref);
 		//void set_size(object_ref, world_vector_t);
@@ -302,7 +302,7 @@ namespace hades
 		template<typename T>
 		T get_property_value(object_ref, variable_id);
 		template<typename T>
-		T& get_property_ref(object_ref, variable_id);
+		const T& get_property_ref(object_ref, variable_id);
 
 		//common curves// common properties
 		world_vector_t get_position(object_ref);

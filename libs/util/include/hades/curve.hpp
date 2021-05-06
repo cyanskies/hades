@@ -13,11 +13,87 @@
 #include "hades/utility.hpp"
 
 //curves allow values to interpolated by comparing keyframes
+// curve types
+//	linear: data between keyframes is exactly the difference between them
+//	step: data between keyframes is identical to the previous keyframe
+//	pulse: keyframes only exist on the extact time slice they were written to
+//	const: normal data
 
-namespace hades {
-	enum class curve_type : uint8 {
-		linear, //data between keyframes is exactly the difference between them
-		step, // data between keyframes is identical to the previous keyframe
+
+namespace hades 
+{
+	enum class keyframe_style : uint8 {
+		linear,
+		step,
+		pulse,
+		const_t
+	};
+
+	template<typename T>
+	class basic_curve
+	{
+	public:
+		void reserve(std::size_t s)
+		{
+			_data.reserve(s);
+		}
+
+	protected:
+		std::vector<T> _data;
+	};
+
+	template<typename T>
+	class linear_curve
+	{
+	public:
+		using value_type = T;
+
+		void add_keyframe(time_point, T) {}
+		T get(time_point) { return T{}; }
+	};
+
+	template<typename T>
+	class step_curve
+	{
+	public:
+		using value_type = T;
+
+		void add_keyframe(time_point, T) {}
+		T get(time_point) { return T{}; }
+	};
+
+	template<typename T>
+	class pulse_curve
+	{
+	public:
+		using value_type = T;
+		void add_keyframe(time_point, T) {}
+		T get(time_point) { return T{}; }
+	};
+
+	template<typename T>
+	class const_curve
+	{
+	public:
+		using value_type = T;
+
+		T& get() noexcept
+		{
+			return data;
+		}
+
+		const T& get() const noexcept
+		{
+			return data;
+		}
+
+		void set(T t) noexcept
+		{
+			data = std::move(t);
+			return;
+		}
+	private:
+		T data;
 	};
 
 	template<typename T>
@@ -100,6 +176,8 @@ namespace hades {
 		time_point first_time;
 		time_point second_time;
 	};
+
+	
 
 	template<class T>
 	using game_property_curve = game_property_t<T>;

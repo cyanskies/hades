@@ -57,6 +57,7 @@ namespace hades
 	void register_objects(hades::data::data_manager&);
 
 	//represents an instance of an object in a level file
+	//also used to prefab objects before creating them
 	struct object_instance
 	{
 		const resources::object *obj_type = nullptr;
@@ -68,6 +69,30 @@ namespace hades
 		resources::object::curve_list curves;
 	};
 
+	// instance of an object in a save file
+	struct object_save_instance
+	{
+		const resources::object* obj_type = nullptr;
+		entity_id id = bad_entity;
+		string name_id = {};
+		time_point creation_time = time_point::min();
+		time_point destruction_time = time_point::max();
+
+		struct saved_curve
+		{
+			struct saved_keyframe
+			{
+				time_point time = time_point::min();
+				resources::curve_default_value value{};
+			};
+
+			const resources::curve* curve = nullptr;
+			std::vector<saved_keyframe> keyframes;
+		};
+
+		std::vector<saved_curve> curves;
+	};
+
 	class curve_not_found : public std::runtime_error
 	{
 	public:
@@ -75,6 +100,7 @@ namespace hades
 	};
 
 	object_instance make_instance(const resources::object*);
+	object_save_instance make_save_instance(object_instance obj_instance);
 
 	//functions for getting info from objects
 	//checks base classes if the requested info isn't available in the current class
@@ -130,6 +156,12 @@ namespace hades
 		std::vector<object_instance> objects;
 		//the id of the next entity to be placed, or spawned in-game
 		entity_id next_id = next(bad_entity);
+	};
+
+	struct object_save_data
+	{
+		std::vector<object_save_instance> objects;
+		entity_id next_id = bad_entity;
 	};
 
 	void serialise(const object_data&, data::writer&);

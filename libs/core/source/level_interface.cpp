@@ -28,7 +28,7 @@ namespace hades
 		auto obj = state_api::get_object_ptr(o, _extras);
 		if (!obj) return;
 
-		state_api::detach_object_systems(o, _extras);
+		state_api::destroy_object(o, _extras);
 		_destroy_objects.emplace_back(obj);
 		_removed_objects.emplace_back(o.id);
 	}

@@ -7,6 +7,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "hades/string.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -177,7 +178,7 @@ namespace hades
 		//bindable list(lists which actions can be rebound by console or settings interface)
 		std::map<unique_id, bool> _bindable;
 		//key is usually a single character, so normal string comparison is preffered
-		using interpreter_name_map = std::map<types::string, input_interpreter::interpreter_id>;
+		using interpreter_name_map = std::map<string, input_interpreter::interpreter_id>;
 		interpreter_name_map _interpreter_names;
 	};
 

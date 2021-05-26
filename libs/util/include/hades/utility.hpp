@@ -8,6 +8,8 @@
 
 #include "hades/types.hpp"
 
+// TODO: break this header up into smaller groups
+
 namespace hades {
 	namespace
 	{
@@ -169,60 +171,6 @@ namespace hades {
 
 	template<typename Container, typename Iter, typename Less, typename Equal>
 	Iter remove_duplicates(Container &cont, Iter first, Iter last, Less less, Equal equal);
-
-	//TODO: split all of these into a string header
-
-	//pass a back_inserter to result
-	template<typename Out>
-	void split(const std::string &s, char delim, Out result);
-
-	template <typename Out>
-	void split(std::string_view sv, char delim, Out result);
-
-	std::string_view trim(std::string_view);
-
-	// catch overloads that can be satisfied by std::to_string
-	template<typename T,
-		std::enable_if_t< !is_string_v<T> &&
-		std::is_void_v<std::void_t<decltype(std::to_string(std::declval<T>))>>
-		, int> = 0>
-	string to_string(T value) { return std::to_string(value); }
-
-	// convert string types to hades::string
-	template<typename T, std::enable_if_t<is_string_v<T>, int> = 0>
-	string to_string(T&& value) noexcept
-	{
-		return string{ std::forward<T>(value) };
-	}
-
-	template<class First, class Last>
-	string to_string(First begin, Last end);
-
-	//thrown by all the from_string functions
-	class bad_conversion : public std::runtime_error
-	{
-	public:
-		using std::runtime_error::runtime_error;
-	};
-
-	template<typename T>
-	T from_string(std::string_view str);
-
-	template<>
-	bool from_string<bool>(std::string_view str) noexcept;
-
-	template<>
-	string from_string<string>(std::string_view str);
-
-	template<>
-	inline std::string_view from_string<std::string_view>(std::string_view str) noexcept
-	{ return str; }
-
-	template<typename T, typename FromString>
-	T vector_from_string(std::string_view str, FromString&&);
-
-	template<typename T>
-	T vector_from_string(std::string_view str);
 
 	// TODO: vv move this to some function related header vv
 

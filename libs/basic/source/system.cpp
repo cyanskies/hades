@@ -39,7 +39,7 @@ namespace hades
 		return lhs.request == lhs.request && lhs.arguments == rhs.arguments;
 	}
 
-	types::string to_string(const command& c)
+	string to_string(const command& c)
 	{
 		using namespace std::string_literals;
 		using namespace std::string_view_literals;
@@ -60,7 +60,7 @@ namespace hades
 			return lhs.request == rhs.request && lhs.arguments == rhs.arguments;
 		}
 
-		types::string to_string(const previous_command &command)
+		hades::string to_string(const previous_command &command)
 		{
 			using namespace std::string_view_literals;
 			return hades::to_string(command.request) + " " + 

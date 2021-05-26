@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "hades/string.hpp"
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
 

@@ -1,18 +1,18 @@
 #ifndef HADES_WRITER_HPP
 #define HADES_WRITER_HPP
 
-#include <string>
 #include <string_view>
 
-#include "hades/utility.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/string.hpp"
 
 namespace hades::data
 {
 	//TODO: inherit from hades error
-	class write_error : public std::runtime_error
+	class write_error : public runtime_error
 	{
 	public:
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
 	};
 
 	//data writer interface

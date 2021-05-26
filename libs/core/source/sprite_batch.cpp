@@ -5,6 +5,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "hades/animation.hpp"
+#include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/texture.hpp"
 #include "hades/types.hpp"

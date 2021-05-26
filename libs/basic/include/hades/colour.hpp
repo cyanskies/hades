@@ -5,8 +5,8 @@
 #include <cassert>
 #include <limits>
 
+#include "hades/string.hpp"
 #include "hades/types.hpp"
-#include "hades/utility.hpp"
 
 //https://www.color-hex.com/ has shade tables for hex colours
 

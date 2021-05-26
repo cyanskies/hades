@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "hades/exceptions.hpp"
-#include "hades/types.hpp"
+#include "hades/string.hpp"
 #include "hades/uniqueid.hpp"
 
 namespace hades::data

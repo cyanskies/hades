@@ -20,7 +20,7 @@ namespace hades
 
 			if (target == unique_zero)
 			{
-				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + types::string(typeid(T).name()));
+				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + string(typeid(T).name()));
 				return r;
 			}
 
@@ -42,7 +42,7 @@ namespace hades
 				{
 					//name is already used for something else, this cannnot be loaded
 					auto modname = get_as_string(mod);
-					LOGERROR(types::string(e.what()) + "In mod: " + modname + ", name has already been used for a different resource type.");
+					LOGERROR(string{ e.what() } + "In mod: " + modname + ", name has already been used for a different resource type.");
 				}
 			}
 

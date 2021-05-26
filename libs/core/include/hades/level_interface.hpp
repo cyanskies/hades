@@ -123,9 +123,9 @@ namespace hades
 
 		//player input
 		input_queue_t _input_queue;
-		using action_history = game_property_curve<std::vector<action>>;
+		//using action_history = step_curve<std::vector<action>>;
 		//TODO: do we even use the history??? (debug data only i guess)
-		std::map<unique_id, action_history> _input_history;
+		//std::map<unique_id, action_history> _input_history;
 		const resources::player_input* _player_input{ nullptr };
 	};
 

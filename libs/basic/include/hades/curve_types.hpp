@@ -1,16 +1,20 @@
 #ifndef HADES_CURVE_TYPES_HPP
 #define HADES_CURVE_TYPES_HPP
 
-//TODO: rename to game data types
-
 #include <tuple>
 
 #include "hades/colour.hpp"
 #include "hades/entity_id.hpp"
+#include "hades/string.hpp"
 #include "hades/time.hpp"
 #include "hades/types.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/vector_math.hpp"
+
+namespace hades
+{
+	struct game_obj; //fwd
+} 
 
 namespace hades
 {
@@ -22,7 +26,6 @@ namespace hades
 
 	string to_string(curve_variable_type) noexcept;
 
-	struct game_obj;
 	// held by objects to refer to one another
 	struct object_ref
 	{
@@ -52,8 +55,7 @@ namespace hades
 		return { from_string<entity_id>(s) };
 	}
 
-	template<>
-	inline string to_string<object_ref>(object_ref o)
+	inline string to_string(object_ref o)
 	{
 		return to_string(o.id);
 	}
@@ -67,7 +69,7 @@ namespace hades::curve_types
 	using vec2_float = vector_float;
 	//TODO: double_t
 	using bool_t = bool;
-	using string = types::string;
+	using string = hades::string;
 	using object_ref = hades::object_ref;
 	using unique = unique_id;
 	using colour = hades::colour;

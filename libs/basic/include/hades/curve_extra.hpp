@@ -8,21 +8,23 @@
 #include "hades/curve.hpp"
 #include "hades/curve_types.hpp"
 #include "hades/data.hpp"
-#include "hades/entity_id.hpp"
-#include "hades/types.hpp"
-#include "hades/uniqueid.hpp"
-#include "hades/vector_math.hpp"
-
+#include "hades/exceptions.hpp"
 //extra functions and struct for loading curves as a resource
+
+//forwards
+namespace hades::data
+{
+	class parser_node;
+}
 
 namespace hades
 {
 	void register_curve_resource(data::data_manager&);
 
-	class invalid_curve : public std::runtime_error
+	class invalid_curve : public runtime_error
 	{
 	public:
-		using std::runtime_error::runtime_error;
+		using runtime_error::runtime_error;
 	};
 }
 

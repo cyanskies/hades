@@ -3,13 +3,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <deque>
-#include <map>
-#include <stdexcept>
-#include <tuple>
+#include <vector>
 
 #include "hades/time.hpp"
-#include "hades/types.hpp"
 #include "hades/utility.hpp"
 
 //curves allow values to interpolated by comparing keyframes
@@ -20,55 +16,172 @@
 //	const: normal data
 
 
-namespace hades 
+namespace hades
 {
-	enum class keyframe_style : uint8 {
+	struct curve_error : std::runtime_error
+	{
+		using std::runtime_error::runtime_error;
+	};
+
+	//thrown when attempting to retrieve data
+	//from an empty curve
+	struct curve_no_keyframes : curve_error
+	{
+		using curve_error::curve_error;
+	};
+
+	enum class keyframe_style : uint8
+	{
 		linear,
 		step,
 		pulse,
 		const_t
 	};
 
+	// basic_curve
+	// implements shared behaviour for some of the curve types
 	template<typename T>
 	class basic_curve
 	{
 	public:
-		void reserve(std::size_t s)
+		void reserve(const std::size_t s)
 		{
 			_data.reserve(s);
 		}
 
+		constexpr bool empty() const noexcept
+		{
+			return std::empty(_data);
+		}
+
+		void add_keyframe(time_point t, T val)
+		{
+			if (empty()) // curves should always at least have a starting value
+			{
+				_data.push_back({ t, std::move(val) });
+				return;
+			}
+
+			const auto near = _get_near(t);
+			if (near.second == _end())
+				_data.push_back({ t, std::move(val) });
+			else if (near.second->time == t)
+				near.second.value = std::move(val);
+
+			_data.insert(near.first, { t, std::move(val) });
+			return;
+		}
+
+		//removes all keyframes after time_point
+		void replace_keyframes(time_point t, T val)
+		{
+			if (empty())
+			{
+				_data.push_back({ t, std::move(val) });
+				return;
+			}
+
+			const auto end = std::end(_data);
+			const auto iter = std::lower_bound(begin(_data), end);
+			if (iter != end)
+				_data.erase(iter, end);
+			_data.push_back({ t, std::move(val) });
+			return;
+		}
+
 	protected:
-		std::vector<T> _data;
+		struct keyframe
+		{
+			time_point time;
+			T value;
+
+			constexpr bool operator<(const time_point& other) const noexcept
+			{
+				return time < other;
+			}
+		};
+
+		using data_t = std::vector<keyframe>;
+		using get_near_return = std::pair<typename data_t::const_iterator, typename data_t::const_iterator>;
+		get_near_return _get_near(time_point t) const noexcept
+		{
+			const auto beg = std::begin(_data);
+			const auto end = std::end(_data);
+			assert(beg != end);
+
+			//return time equal or greater than t
+			const auto iter = std::lower_bound(beg, end, t);
+			if (iter == beg)
+				return { iter, end };
+
+			//if iter == end, this is still correct
+			//since we know iter != begin
+			const auto pre = std::prev(iter);
+			return get_near_return{ pre, iter };
+		}
+
+		typename data_t::const_iterator _end() const noexcept
+		{
+			return end(_data);
+		}
+
+		std::vector<keyframe> _data;
 	};
 
 	template<typename T>
-	class linear_curve
+	class linear_curve : public basic_curve<T>
 	{
 	public:
 		using value_type = T;
 
 		void add_keyframe(time_point, T) {}
-		T get(time_point) { return T{}; }
+
+		// throws curve_no_keyframes
+		T get(time_point t) const
+		{
+			using basic = basic_curve<T>;
+			const auto frames = basic::_get_near(t);
+			if (frames.second == basic::_end())
+				return frames.first->value;
+
+			const auto start_time = frames.first->time;
+			assert(t >= start_time);
+			const auto end_time = frames.second->time - start_time;
+			const auto current_time = t - start_time;
+
+			const auto lerp_progress =
+				static_cast<float>(current_time.count()) /
+				static_cast<float>(end_time.count());
+
+			return lerp(frames.first->value, frames.second->value, lerp_progress);
+		}
 	};
 
 	template<typename T>
-	class step_curve
+	class step_curve : public basic_curve<T>
 	{
 	public:
 		using value_type = T;
 
 		void add_keyframe(time_point, T) {}
-		T get(time_point) { return T{}; }
+		const T& get(time_point t) const
+		{
+			using basic = basic_curve<T>;
+			assert(!basic_curve<T>::empty());
+			const auto n = basic::_get_near(t);
+			if (n.second == basic::_end())
+				return n.first->value;
+			return n.second->value;
+		}
 	};
 
 	template<typename T>
-	class pulse_curve
+	class pulse_curve : public basic_curve<T>
 	{
 	public:
 		using value_type = T;
 		void add_keyframe(time_point, T) {}
-		T get(time_point) { return T{}; }
+		T get(time_point) const { return T{}; }
 	};
 
 	template<typename T>
@@ -92,95 +205,11 @@ namespace hades
 			data = std::move(t);
 			return;
 		}
+
 	private:
 		T data;
 	};
-
-	template<typename T>
-	struct game_property_t
-	{
-		using value_type = T;
-
-		constexpr game_property_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
-		constexpr game_property_t(time_point t, T v) noexcept(std::is_nothrow_copy_constructible_v<T>) 
-			: first_time{ t }, second_time{ t }, first{ v }, second{ v } {}
-
-		constexpr void set(time_point t, T v) noexcept(std::is_nothrow_move_assignable_v<T>)
-		{
-			if (t <= second_time)
-			{
-				if (t <= first_time)
-				{
-					first = std::move(v);
-					first_time = t;
-					return;
-				}
-
-				second = std::move(v);
-				second_time = t;
-				return;
-			}
-
-			std::swap(first, second);
-			std::swap(first_time, second_time);
-			second_time = t;
-			second = std::move(v);
-			return;
-		}
-
-		template<typename U = T, std::enable_if_t<lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
-		constexpr T get(time_point t) const noexcept(std::is_nothrow_copy_constructible_v<T>)
-		{
-			// for lerpable types(usually floats or vectors of floats), values with be lerpped to the time point
-			// this is the linear curve
-
-			if (first_time == second_time)
-				return first;
-
-			assert(first_time < second_time);
-
-			if (t > second_time)
-				return second;
-			else if (t < first_time)
-				return first;
-
-			const auto total_duration =
-				time_cast<seconds_float>(second_time - first_time);
-			const auto dur = time_cast<seconds_float>(t - first_time);
-			return lerp(first, second, dur.count() / total_duration.count());
-		}
-
-		template<typename U = T, std::enable_if_t<!lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
-		constexpr const T& get(time_point t) const noexcept
-		{
-			// for non-lerpable types, values with use the step type
-			if (first_time == second_time)
-				return first;
-
-			assert(first_time < second_time);
-
-			if (t < second_time)
-				return first;
-
-			return second;
-		}
-
-		template<typename U = T, std::enable_if_t<!lerpable_v<U> && std::is_same_v<U, T>, int> = 0>
-		constexpr const T& get_ref(time_point t) const noexcept
-		{
-			//get ref is only available if get() would resolve as a ref
-			return get(t);
-		}
-
-		T first, second;
-		time_point first_time;
-		time_point second_time;
-	};
-
-	
-
-	template<class T>
-	using game_property_curve = game_property_t<T>;
 }
 
-#endif //HADES_UTIL_CURVES_HPP
+
+#endif //!HADES_UTIL_CURVES_HPP

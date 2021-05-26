@@ -1,6 +1,8 @@
 #include "hades/time.hpp"
 
-#include "hades/utility.hpp"
+#include <cmath>
+
+#include "hades/string.hpp"
 
 namespace hades
 {

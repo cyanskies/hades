@@ -7,9 +7,8 @@
 #include <tuple>
 
 #include "hades/resource_base.hpp"
-#include "hades/types.hpp"
+#include "hades/string.hpp"
 #include "hades/uniqueid.hpp"
-#include "hades/utility.hpp"
 
 //Data provides thread safe access to the hades data manager.
 namespace hades
@@ -108,7 +107,7 @@ namespace hades
 			template<class First, class Last>
 			void refresh(First first, Last last);
 
-			virtual types::string get_as_string(unique_id id) const = 0;
+			virtual string get_as_string(unique_id id) const = 0;
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
 
@@ -130,7 +129,7 @@ namespace hades
 		//this will return false even if a name has been associated with the id
 		//this will only test that a resource structure has been created.
 		bool exists(unique_id id);
-		types::string get_as_string(unique_id id);
+		string get_as_string(unique_id id);
 		//returns UniqueId::zero if the name cannot be assiciated with an id
 		unique_id get_uid(std::string_view name);
 

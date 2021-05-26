@@ -199,22 +199,50 @@ namespace hades::state_api
 			game_state& state;
 			game_obj& obj;
 
+			using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
+
 			template<template<typename> typename CurveType, typename T>
 			void operator()(const game_obj::var_list<CurveType, T>& prop_list)
 			{
-				auto saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
 				for (const auto& entry : prop_list)
 				{
 					assert(entry.var);
+					assert(entry.id == entry.var->id);
 					auto& data = entry.var->data;
-					//only copy the variable state at the current time, no need to clone history
-					if constexpr(std::is_same_v<const_curve<T>, CurveType<T>>)
-						saved_keyframes.push_back({ time_point::min(), data.get() });
-					else
-						saved_keyframes.push_back({ time, data.get(time) });
-					detail::create_object_property<CurveType, T>(obj, entry.id, state, std::move(saved_keyframes));
-					saved_keyframes.clear();
+					copy_curve(entry.id, data);
 				}
+				return;
+			}
+
+
+			//copy_curve
+			// copies the param at the current time point to the object
+			template<typename T>
+			void copy_curve(unique_id id, const const_curve<T>& c)
+			{
+				auto frames = saved_keyframes{};
+				frames.push_back({ time_point::min(), c.get() });
+				detail::create_object_property<const_curve, T>(obj, id, state, std::move(frames));
+				return;
+			}
+
+			//func for linear and step curves
+			template<template<typename> typename CurveType, typename T,
+				std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>> 
+				|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
+			void copy_curve(unique_id id, const CurveType<T>& c)
+			{
+				auto frames = saved_keyframes{};
+				frames.push_back({ time, c.get(time) });
+				detail::create_object_property<CurveType, T>(obj, id, state, std::move(frames));
+				return;
+			}
+
+			template<typename T>
+			void copy_curve(unique_id, const pulse_curve<T>&)
+			{
+				//how to handle pulse curves
+				// 
 				return;
 			}
 		};

@@ -8,8 +8,15 @@
 
 #include "hades/colour.hpp"
 #include "hades/rectangle_math.hpp"
+#include "hades/resource_base.hpp"
 #include "hades/texture.hpp"
 #include "hades/timers.hpp"
+
+//forwards
+namespace hades::data
+{
+	class data_manager;
+}
 
 namespace hades::resources
 {

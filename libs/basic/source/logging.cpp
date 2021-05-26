@@ -50,7 +50,7 @@ namespace hades
 		}
 	}
 
-	types::string time()
+	string time()
 	{
 		const auto t = wall_clock::now();
 		const auto ct = wall_clock::to_time_t(t);
@@ -61,8 +61,7 @@ namespace hades
 			localtime_s(&time, &ct);
 		#else
 			//updated c version unavailable, have to suffer with the C99 version
-			auto time_ptr = localtime(&ct);
-			time = *time_ptr;
+			time = *localtime(&ct);
 		#endif
 		//use stream to collect formatted time
 		std::stringstream ss;

@@ -1,5 +1,9 @@
 #include "hades/colour.hpp"
 
+#include <string_view>
+
+#include "hades/string.hpp"
+
 namespace hades
 {
 	template<>

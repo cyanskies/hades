@@ -399,7 +399,7 @@ namespace hades
 			const auto last = std::size(_levels) - 1u;
 			if (s.rename)
 			{
-				if (s.selected == s.rename_index)
+				if (s.selected == integer_cast<std::size_t>(s.rename_index))
 					s.add_level_open = false;
 				else if (signed_cast(s.selected) < s.rename_index)
 					--s.rename_index;
@@ -492,7 +492,7 @@ namespace hades
 					for (auto i = std::size_t{}; i < end; ++i)
 					{
 						//ignore our own name
-						if (i != index && l[i].name == id)
+						if (i != integer_cast<std::size_t>(index) && l[i].name == id)
 							return true;
 					}
 				}

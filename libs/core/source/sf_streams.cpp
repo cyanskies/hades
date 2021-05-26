@@ -1,6 +1,7 @@
 #include "hades/sf_streams.hpp"
 
 #include "hades/logging.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {

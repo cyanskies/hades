@@ -58,7 +58,7 @@ namespace hades
 		static unique_id_t<id_type> zero;
 	private:
 		//initialise the static counter with the types smallest value
-		static inline std::atomic<type> _count;
+		static std::atomic<type> _count;
 		type _value;
 	};
 

@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hades/utility.hpp"
+#include "hades/string.hpp"
 
 //TODO: strong_typedef_traits<Tag> that strong_typedef can use for defines and constexpr values
 // in order to toggle capabilities
@@ -272,7 +272,7 @@ namespace std
 
 		size_t operator()(const U& key) const noexcept
 		{
-			const auto h = std::hash<U::value_type>{};
+			const auto h = std::hash<typename U::value_type>{};
 			return h(static_cast<typename U::value_type>(key));
 		}
 	};

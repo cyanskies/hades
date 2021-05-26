@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 
-#include "hades/types.hpp"
+#include "hades/string.hpp"
 
 // system provides support for running command line's into the engines console
 // also supports registering global functions for more complicated commands.
@@ -27,7 +27,7 @@ namespace hades
 
 	bool operator==(const command& lhs, const command &rhs);
 
-	types::string to_string(const command&);
+	string to_string(const command&);
 
 	typedef std::vector<command> command_list;
 
@@ -38,13 +38,13 @@ namespace hades
 			previous_command() = default;
 			previous_command(command com);
 			
-			types::string request;
-			using argument_list = std::vector<types::string>;
+			string request;
+			using argument_list = std::vector<string>;
 			argument_list arguments;
 		};
 
 		bool operator==(const previous_command& lhs, const previous_command &rhs);
-		types::string to_string(const previous_command &command);
+		hades::string to_string(const previous_command &command);
 
 		using command_history_list = std::vector<previous_command>;
 

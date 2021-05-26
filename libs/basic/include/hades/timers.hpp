@@ -1,17 +1,14 @@
 #ifndef HADES_TIMERMANAGER_HPP
 #define HADES_TIMERMANAGER_HPP
 
-#include <chrono>
 #include <functional>
 #include <map>
 #include <mutex>
 #include <set>
-#include <string>
 #include <unordered_map>
 
 #include "hades/time.hpp"
 #include "hades/types.hpp"
-#include "hades/utility.hpp"
 
 namespace hades
 {

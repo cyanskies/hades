@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "hades/exceptions.hpp"
-#include "hades/types.hpp"
+#include "hades/string.hpp"
 #include "hades/uniqueid.hpp"
 
 //resource primatives
@@ -62,7 +62,7 @@ namespace hades
 			//TODO: depricate this
 			//the file this resource should be loaded from
 			//the path of the mod for resources that are parsed and not loaded
-			types::string source;
+			string source;
 			bool loaded = false;
 
 		protected:
@@ -106,7 +106,7 @@ namespace hades
 				//names: unique id's provided by this mod
 				names;
 
-			types::string name;
+			string name;
 			//value is unused
 			//mod_t value
 		};

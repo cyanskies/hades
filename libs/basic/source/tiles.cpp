@@ -7,6 +7,7 @@
 #include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/table.hpp"
+#include "hades/writer.hpp"
 
 namespace hades
 {
@@ -406,7 +407,7 @@ namespace hades
 
 	tile_index_t to_tile_index(tile_position p, tile_count_t w) noexcept
 	{
-		return to_1d_index(p, w);
+		return integer_cast<tile_index_t>(to_1d_index(p, w));
 	}
 
 	tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept

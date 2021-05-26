@@ -7,8 +7,6 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
-#include <string>
-#include <string_view>
 #include <vector>
 
 #include "zlib.h"
@@ -16,7 +14,7 @@
 #include "SFML/System/InputStream.hpp"
 
 #include "hades/exceptions.hpp"
-#include "hades/types.hpp"
+#include "hades/string.hpp"
 
 namespace hades
 {

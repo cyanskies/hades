@@ -1,9 +1,5 @@
 #include "hades/timers.hpp"
 
-#include <algorithm>
-#include <cassert>
-#include <set>
-
 namespace hades
 {
 	constexpr types::int32 timer_system::invalid_timer = 0;

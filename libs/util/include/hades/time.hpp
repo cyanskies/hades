@@ -2,12 +2,10 @@
 #define HADES_UTIL_TIME_HPP
 
 #include <chrono>
-#include <string_view>
+#include <string>
 #include <type_traits>
 
-//#include "hades/utility.hpp" // for from_string
-							// TODO: pull string stuff out of utility
-#include "hades/types.hpp"
+//#include "hades/string.hpp"
 
 namespace hades
 {
@@ -52,8 +50,10 @@ namespace hades
 		nanos
 	};
 
-	std::pair<string, duration_ratio> duration_to_string(time_duration);
-	string to_string(time_duration);
+	// NOTE: using std::string here, since pulling in string.hpp causes weird issues
+	//	The time.cpp impl for these uses hades::string as expected
+	std::pair<std::string, duration_ratio> duration_to_string(time_duration);
+	std::string to_string(time_duration);
 	time_duration duration_from_string(std::string_view) noexcept;
 }
 

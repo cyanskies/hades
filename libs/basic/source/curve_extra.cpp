@@ -1,8 +1,5 @@
 #include "hades/curve_extra.hpp"
 
-#include <string_view>
-#include <type_traits>
-
 #include "hades/parser.hpp"
 
 namespace hades
@@ -338,14 +335,14 @@ namespace hades::resources
 
 namespace hades
 {
-	static types::string to_string(std::monostate value) noexcept
+	static string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;
 		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised");
 		return {};
 	}
 
-	types::string to_string(const resources::curve &v)
+	string to_string(const resources::curve &v)
 	{
 		return curve_to_string(v, v.default_value);
 	}
@@ -362,13 +359,16 @@ namespace hades
 		return "[" + to_string(v.x) + ", " + to_string(v.y) + "]";
 	}
 
-	types::string curve_to_string(const resources::curve &c, const resources::curve_default_value &v)
+	string curve_to_string(const resources::curve &c, const resources::curve_default_value &v)
 	{
 		if (!resources::is_curve_valid(c) ||
 			!resources::is_set(v))
 			throw invalid_curve{ "Tried to call to_string on an invalid curve" };
 
-		return std::visit([](auto&& t)->types::string {
+		auto ref = object_ref{};
+		auto str = to_string(ref);
+
+		return std::visit([](auto&& t)->string {
 			using T = std::decay_t<decltype(t)>;
 			if constexpr (resources::curve_types::is_collection_type_v<T>)
 				return to_string(std::begin(t), std::end(t));

@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "hades/exceptions.hpp"
+#include "hades/string.hpp"
 #include "hades/types.hpp"
 #include "hades/value_guard.hpp"
 
@@ -110,11 +111,11 @@ namespace hades
 			}
 		}
 
-		//TODO: use float32
 		using property_int = property<int32>;
 		using property_float = property<float>;
 		using property_bool = property<bool>;
-		using property_str = property<types::string>;
+		// NOTE: string is console::string without explicit namespace
+		using property_str = property<hades::string>; 
 
 		class properties {
 		public:

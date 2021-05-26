@@ -3,8 +3,7 @@
 
 #include <list>
 
-#include "hades/types.hpp"
-#include "hades/utility.hpp"
+#include "hades/string.hpp"
 
 //Interface and functions for global logging.
 //a logger should impliment the interface and then a ptr assigned to hades::log to direct all logging to that logger
@@ -46,16 +45,16 @@ namespace hades
 				_time{ std::move(time) }
 			{}
 
-			const types::string text() const { return _message; }
+			const hades::string text() const { return _message; }
 			const logger::log_verbosity verbosity() const { return _verb; }
 
-			operator types::string() const { return "[" + _time + "]: " + _file + _function + to_string(_line) + "\n" + _message; }
+			operator hades::string() const { return "[" + _time + "]: " + _file + _function + to_string(_line) + "\n" + _message; }
 
 		private:
-			types::string _message;
+			hades::string _message;
 			logger::log_verbosity _verb;
 			int _line = -1;
-			types::string _function, _file, _time;
+			hades::string _function, _file, _time;
 		};
 
 		//TODO: set log ptr function, so log is hidden from users
@@ -67,7 +66,7 @@ namespace hades
 		console::output_buffer output(console::logger::log_verbosity max_verbosity = console::logger::log_verbosity::normal);
 	}
 
-	types::string time();
+	string time();
 
 	/* Need a standard way to get line number and filename without macros
 	Waiting for std::source_location

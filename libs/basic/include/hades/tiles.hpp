@@ -3,16 +3,19 @@
 
 #include <array>
 
-#include "hades/exceptions.hpp"
 #include "hades/game_types.hpp"
-#include "hades/math.hpp"
-#include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
-#include "hades/vector_math.hpp"
-#include "hades/writer.hpp"
 
 // system for working with logical tiles
 // editing a tilemap, and getting tag_lists from the map
+
+// forward decs
+namespace hades::data
+{
+	class data_manager;
+	class writer;
+	class parser_node;
+}
 
 namespace hades::resources
 {

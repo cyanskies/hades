@@ -12,6 +12,10 @@
 
 #include "hades/utility.hpp" // for hades::random
 
+// NOTE: current implementation suffers with async functions starting their own async funcs
+//	this results in eating up stack for each additional layer. Something to keep in mind.
+//	ei. Dont use asyn recursively.
+
 namespace hades
 {
 	class thread_pool;

@@ -94,8 +94,8 @@ namespace hades
 		//common curves
 
 		//curves access
-		template<typename T>
-		const game_property_curve<T>& get_curve(curve_index_t);
+		//template<typename T>
+		//const game_property_curve<T>& get_curve(curve_index_t);
 
 		//curve values
 		template<typename T>

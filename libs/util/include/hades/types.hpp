@@ -1,10 +1,10 @@
 #ifndef HADES_UTIL_TYPES_HPP
 #define HADES_UTIL_TYPES_HPP
 
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <string>
+#include <limits>
+#include <tuple>
 #include <type_traits>
 
 namespace hades {
@@ -26,8 +26,6 @@ namespace hades {
 		constexpr auto infinity = std::numeric_limits<Float>::infinity();
 
 		//defined names for common types
-		using string = std::string;
-
 		template<typename ...Types> struct always_false : public std::false_type {};
 
 		template<typename ...Ts>
@@ -39,10 +37,12 @@ namespace hades {
 
 	using namespace types;
 
-	// identify string types, these can all be converted to hades::string
-	template<typename T> struct is_string : std::is_convertible<T, std::string_view>{};
-	template<typename T>
-	constexpr bool is_string_v = is_string<T>::value;
+	//engines support types
+
+	//limit is 65535, well in excess of current hardware capabilities
+	//  max texture size for older hardware is 512
+	//  max size for modern hardware is 8192 or higher
+	using texture_size_t = uint16;
 
 	//identify tuple-like types
 	//these should support tuple_size, tuple_element and get<>

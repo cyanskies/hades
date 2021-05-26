@@ -18,6 +18,7 @@
 #include "hades/logging.hpp"
 #include "hades/properties.hpp"
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 //TODO: revert to std::filesystem once support comes in both MSVC and GCC
 namespace fs = std::filesystem;

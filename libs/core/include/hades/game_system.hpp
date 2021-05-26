@@ -2,6 +2,7 @@
 #define HADES_GAME_SYSTEM_HPP
 
 #include <any>
+#include <deque>
 #include <functional>
 #include <vector>
 

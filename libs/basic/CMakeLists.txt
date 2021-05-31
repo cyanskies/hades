@@ -4,6 +4,7 @@ set(HADES_BASIC_SRC
 	source/colour.cpp
 	source/console_variables.cpp
 	source/curve_extra.cpp
+	source/curve_types.cpp
 	source/data.cpp
 	source/input.cpp
 	source/logging.cpp

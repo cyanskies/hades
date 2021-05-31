@@ -64,8 +64,7 @@ namespace hades
 	string from_string<string>(std::string_view str);
 
 	template<>
-	inline std::string_view from_string<std::string_view>(std::string_view str) noexcept
-	{ return str; }
+	std::string_view from_string<std::string_view>(std::string_view str) noexcept;
 
 	template<typename T, typename FromString>
 	T vector_from_string(std::string_view str, FromString&&);

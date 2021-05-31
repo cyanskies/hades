@@ -5,8 +5,6 @@
 #include <string>
 #include <type_traits>
 
-//#include "hades/string.hpp"
-
 namespace hades
 {
 	using time_clock = std::chrono::steady_clock;
@@ -51,9 +49,11 @@ namespace hades
 	};
 
 	// NOTE: using std::string here, since pulling in string.hpp causes weird issues
-	//	The time.cpp impl for these uses hades::string as expected
-	std::pair<std::string, duration_ratio> duration_to_string(time_duration);
-	std::string to_string(time_duration);
+	// 	if string.hpp is included before to_string(time_duration) is declared, 
+	//  everything in curve_extra.cpp explodes 	 
+	using string = std::string;
+	std::pair<string, duration_ratio> duration_to_string(time_duration);
+	string to_string(time_duration);
 	time_duration duration_from_string(std::string_view) noexcept;
 }
 

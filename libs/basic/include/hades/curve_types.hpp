@@ -2,6 +2,7 @@
 #define HADES_CURVE_TYPES_HPP
 
 #include <tuple>
+#include <type_traits>
 
 #include "hades/colour.hpp"
 #include "hades/entity_id.hpp"
@@ -50,10 +51,7 @@ namespace hades
 	}
 
 	template<>
-	inline object_ref from_string<object_ref>(std::string_view s)
-	{
-		return { from_string<entity_id>(s) };
-	}
+	object_ref from_string<object_ref>(std::string_view);
 
 	inline string to_string(object_ref o)
 	{

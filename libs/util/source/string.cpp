@@ -18,4 +18,10 @@ namespace hades
 	{
 		return to_string(str);
 	}
+
+	template<>
+	std::string_view from_string<std::string_view>(std::string_view str) noexcept
+	{
+		return str;
+	}
 }

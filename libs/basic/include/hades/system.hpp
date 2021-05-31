@@ -38,8 +38,8 @@ namespace hades
 			previous_command() = default;
 			previous_command(command com);
 			
-			string request;
-			using argument_list = std::vector<string>;
+			hades::string request;
+			using argument_list = std::vector<hades::string>;
 			argument_list arguments;
 		};
 

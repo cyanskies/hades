@@ -10,7 +10,7 @@ namespace hades
 {
 	namespace game
 	{
-		const std::vector<object_ref> &get_objects() noexcept
+		std::vector<object_ref> &get_objects() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->entity;
@@ -67,42 +67,6 @@ namespace hades
 
 	namespace game::level
 	{
-		object_ref get_object_from_name(std::string_view n)
-		{
-			auto ptr = detail::get_game_level_ptr();
-			return ptr->get_object_ref(n);
-		}
-
-		object_ref create_object(const object_instance& obj)
-		{
-			auto ptr = detail::get_game_level_ptr();
-			assert(obj.id == bad_entity);
-			auto new_obj = ptr->create_object(obj, get_time());
-
-			return new_obj;
-		}
-
-		object_ref clone_object(object_ref o)
-		{
-			auto ptr = detail::get_game_level_ptr();
-			return ptr->clone_object(o, get_time());
-		}
-
-		//TODO: do we need 'from', do we need 'untill' or just 'for'
-		/*void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
-		{
-			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
-			game_current_level_system_ptr->sleep_entity(e, s, from, until);
-			return;
-		}*/
-
-		void destroy_object(object_ref e)
-		{
-			auto ptr = detail::get_game_level_ptr();
-			ptr->destroy_object(e);
-			return;
-		}
-
 		world_rect_t get_world_bounds()
 		{
 			const auto ptr = detail::get_game_data_ptr();
@@ -115,7 +79,81 @@ namespace hades
 			return game_data_ptr->level_data->get_world_terrain();
 		}
 
-		time_point get_object_creation_time(object_ref o)
+		//world_vector_t& get_position(object_ref o)
+		//{
+		//	const auto pos_id = get_position_curve_id();
+		//	return get_property_ref<world_vector_t>(o, pos_id);
+		//}
+
+		//void set_position(object_ref o, world_vector_t v)
+		//{
+		//	const auto pos_id = get_position_curve_id();
+		//	set_property_value(o, pos_id, v);
+		//	return;
+		//}
+
+		//world_vector_t& get_size(object_ref o)
+		//{
+		//	const auto size = get_size_curve_id();
+		//	return get_property_ref<world_vector_t>(o, size);
+		//}
+
+		///*void set_size(object_ref o,const_curve<world_vector_t> v)
+		//{
+		//	const auto size = get_size_curve_id();
+		//	set_property_value(o, size, v);
+		//	return;
+		//}*/
+
+		bool is_alive(object_ref& o) noexcept
+		{
+			auto ptr = detail::get_game_level_ptr();
+			assert(ptr);
+			// NOTE: get_object returns nullptr for stale object refs
+			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
+		}
+	}
+
+	namespace game::level::object
+	{
+		object_ref get_from_name(std::string_view n, time_point t)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			return ptr->get_object_ref(n, t);
+		}
+
+		object_ref create(const object_instance& obj)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			assert(obj.id == bad_entity);
+			auto new_obj = ptr->create_object(obj, get_time());
+
+			return new_obj;
+		}
+
+		object_ref clone(object_ref o)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			return ptr->clone_object(o, get_time());
+		}
+
+		//TODO: do we need 'from', do we need 'untill' or just 'for'
+		// from is now, for is how long to sleep for
+		/*void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
+		{
+			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
+			game_current_level_system_ptr->sleep_entity(e, s, from, until);
+			return;
+		}*/
+
+		void destroy(object_ref e)
+		{
+			auto ptr = detail::get_game_level_ptr();
+			ptr->destroy_object(e);
+			return;
+		}
+
+		time_point get_creation_time(object_ref o)
 		{
 			const auto game_data_ptr = detail::get_game_level_ptr();
 			auto& extra = game_data_ptr->get_extras();
@@ -124,44 +162,10 @@ namespace hades
 			return state_api::get_object_creation_time(obj, state);
 		}
 
-		world_vector_t& get_position(object_ref o)
-		{
-			const auto pos_id = get_position_curve_id();
-			return get_property_ref<world_vector_t>(o, pos_id);
-		}
-
-		void set_position(object_ref o, world_vector_t v)
-		{
-			const auto pos_id = get_position_curve_id();
-			set_property_value(o, pos_id, v);
-			return;
-		}
-
-		world_vector_t& get_size(object_ref o)
-		{
-			const auto size = get_size_curve_id();
-			return get_property_ref<world_vector_t>(o, size);
-		}
-
-		/*void set_size(object_ref o,const_curve<world_vector_t> v)
-		{
-			const auto size = get_size_curve_id();
-			set_property_value(o, size, v);
-			return;
-		}*/
-
-		tag_list& get_tags(object_ref o)
+		const tag_list& get_tags(object_ref o)
 		{
 			const auto tag_id = get_tags_curve_id();
-			return get_property_ref<tag_list>(o, tag_id);
-		}
-
-		bool is_alive(object_ref& o) noexcept
-		{
-			auto ptr = detail::get_game_level_ptr();
-			assert(ptr);
-			// NOTE: get_object returns nullptr for stale object refs
-			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
+			return get_property_ref<const_curve, tag_list>(o, tag_id).get();
 		}
 	}
 
@@ -336,23 +340,7 @@ namespace hades
 			return render_data_ptr->level_data->get_world_terrain();
 		}
 
-		world_vector_t get_position(object_ref o)
-		{
-			const auto pos_id = get_position_curve_id();
-			return get_property_ref<world_vector_t>(o, pos_id);
-		}
-
-		world_vector_t get_size(object_ref o)
-		{
-			const auto size_id = get_size_curve_id();
-			return get_property_ref<world_vector_t>(o, size_id);
-		}
-
-		time_point get_object_creation_time(object_ref o)
-		{
-			const auto obj = state_api::get_object_ptr(o, *detail::get_render_extra_ptr());
-			return state_api::get_object_creation_time(*obj, detail::get_render_level_ptr()->get_state());
-		}
+		
 
 		const resources::object* get_object_type(object_ref o) noexcept
 		{
@@ -361,5 +349,27 @@ namespace hades
 				return obj->object_type;
 			return nullptr;
 		}
+	}
+
+	namespace render::level::object
+	{
+		time_point get_creation_time(object_ref o)
+		{
+			const auto obj = state_api::get_object_ptr(o, *detail::get_render_extra_ptr());
+			return state_api::get_object_creation_time(*obj, detail::get_render_level_ptr()->get_state());
+		}
+
+		const hades::linear_curve<vec2_float>& get_position(const object_ref o)
+		{
+			const auto id = hades::get_position_curve_id();
+			return get_property_ref<hades::linear_curve, vec2_float>(o, id);
+		}
+
+		const hades::linear_curve<vec2_float>& get_size(const object_ref o)
+		{
+			const auto id = hades::get_size_curve_id();
+			return get_property_ref<hades::linear_curve, vec2_float>(o, id);
+		}
+
 	}
 }

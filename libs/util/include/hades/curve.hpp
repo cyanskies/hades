@@ -15,6 +15,26 @@
 //	pulse: keyframes only exist on the extact time slice they were written to
 //	const: normal data
 
+namespace hades::detail
+{
+	template<typename Vector>
+	auto curve_get_near_impl(Vector& v,  time_point t) noexcept
+	{
+		const auto beg = std::begin(v);
+		const auto end = std::end(v);
+		assert(beg != end);
+
+		//return time equal or greater than t
+		const auto iter = std::lower_bound(beg, end, t);
+		if (iter == beg)
+			return std::make_pair(iter, end);
+
+		//if iter == end, this is still correct
+		//since we know iter != begin
+		const auto pre = std::prev(iter);
+		return std::make_pair(pre, iter);
+	}
+}
 
 namespace hades
 {
@@ -66,7 +86,7 @@ namespace hades
 			if (near.second == _end())
 				_data.push_back({ t, std::move(val) });
 			else if (near.second->time == t)
-				near.second.value = std::move(val);
+				near.second->value = std::move(val);
 
 			_data.insert(near.first, { t, std::move(val) });
 			return;
@@ -102,22 +122,16 @@ namespace hades
 		};
 
 		using data_t = std::vector<keyframe>;
-		using get_near_return = std::pair<typename data_t::const_iterator, typename data_t::const_iterator>;
-		get_near_return _get_near(time_point t) const noexcept
+		using get_near_return = std::pair<typename data_t::iterator, typename data_t::iterator>;
+		get_near_return _get_near(time_point t) noexcept
 		{
-			const auto beg = std::begin(_data);
-			const auto end = std::end(_data);
-			assert(beg != end);
+			return detail::curve_get_near_impl(_data, t);
+		}
 
-			//return time equal or greater than t
-			const auto iter = std::lower_bound(beg, end, t);
-			if (iter == beg)
-				return { iter, end };
-
-			//if iter == end, this is still correct
-			//since we know iter != begin
-			const auto pre = std::prev(iter);
-			return get_near_return{ pre, iter };
+		using get_near_return_const = std::pair<typename data_t::const_iterator, typename data_t::const_iterator>;
+		get_near_return_const _get_near(time_point t) const noexcept
+		{
+			return detail::curve_get_near_impl(_data, t);
 		}
 
 		typename data_t::const_iterator _end() const noexcept
@@ -134,10 +148,8 @@ namespace hades
 	public:
 		using value_type = T;
 
-		void add_keyframe(time_point, T) {}
-
 		// throws curve_no_keyframes
-		T get(time_point t) const
+		T get(time_point t) const noexcept
 		{
 			using basic = basic_curve<T>;
 			const auto frames = basic::_get_near(t);
@@ -163,8 +175,7 @@ namespace hades
 	public:
 		using value_type = T;
 
-		void add_keyframe(time_point, T) {}
-		const T& get(time_point t) const
+		const T& get(time_point t) const noexcept
 		{
 			using basic = basic_curve<T>;
 			assert(!basic_curve<T>::empty());
@@ -180,10 +191,29 @@ namespace hades
 	{
 	public:
 		using value_type = T;
-		void add_keyframe(time_point, T) {}
-		T get(time_point) const { return T{}; }
+		struct pulse_keyframe 
+		{
+			T value;
+			hades::time_point time;
+		};
+
+		static inline const auto bad_keyframe = 
+			pulse_keyframe{ {}, hades::time_point::max() };
+
+		// first is equal to or before t,
+		// second is after t or bad_keyframe if
+		// no later frames exist
+		std::pair<pulse_keyframe, pulse_keyframe> get(time_point t) const noexcept
+		{
+			auto iters = basic_curve<T>::_get_near(t);
+			return { { iters.first->value, iters.first->time },
+				(iters.second == basic_curve<T>::_end()) ? bad_keyframe :
+				pulse_keyframe{ iters.second->value, iters.second->time }
+			};
+		}
 	};
 
+	//TODO: tempted to rename this to static_curve
 	template<typename T>
 	class const_curve
 	{

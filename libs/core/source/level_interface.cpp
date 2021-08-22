@@ -10,7 +10,7 @@ namespace hades
 {
 	object_ref game_implementation::create_object(const object_instance &o, time_point t)
 	{
-		auto obj = state_api::make_object(o, _state, _extras, t);
+		auto obj = state_api::make_object(o, t, _state, _extras);
 		_new_objects.emplace_back(*obj.ptr);
 		return obj;
 	}
@@ -18,13 +18,14 @@ namespace hades
 	object_ref game_implementation::clone_object(object_ref o, time_point t)
 	{
 		const auto& current_obj = state_api::get_object(o, _extras);
-		auto obj = state_api::clone_object(current_obj, _state, _extras, t);
+		auto obj = state_api::clone_object(current_obj, t, _state, _extras);
 		_new_objects.emplace_back(*obj.ptr);
 		return obj;
 	}
 
 	void game_implementation::destroy_object(object_ref o)
 	{
+		//TODO: must account for current time
 		auto obj = state_api::get_object_ptr(o, _extras);
 		if (!obj) return;
 
@@ -48,9 +49,9 @@ namespace hades
 		return std::exchange(_removed_objects, {});
 	}
 
-	void game_implementation::name_object(std::string_view s, object_ref o)
+	void game_implementation::name_object(std::string_view s, object_ref o, time_point t)
 	{
-		state_api::name_object(string{ s }, o, _state);
+		state_api::name_object(string{ s }, o, t, _state);
 		return;
 	}
 
@@ -98,9 +99,9 @@ namespace hades
 		}
 	}
 
-	object_ref game_implementation::get_object_ref(std::string_view s) noexcept
+	object_ref game_implementation::get_object_ref(std::string_view s, time_point t) noexcept
 	{
-		return state_api::get_object_ref(s, _state, _extras);
+		return state_api::get_object_ref(s, t, _state, _extras);
 	}
 
 	void game_implementation::update_input_queue(unique_id p, std::vector<action> input, time_point)

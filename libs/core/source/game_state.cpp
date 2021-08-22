@@ -52,21 +52,33 @@ namespace hades::detail
 		return;
 	}
 
-	game_obj* game_object_collection::find(entity_id e) noexcept
+	template<typename EmptyList, typename DataDeque>
+	auto game_obj_find_impl(const entity_id e, EmptyList emptys, DataDeque data) 
+		-> std::conditional_t<std::is_const_v<EmptyList>, const game_obj*, game_obj*>
 	{
-		const auto siz = std::size(_emptys);
+		const auto siz = std::size(emptys);
 		for (auto i = std::size_t{}; i < siz; ++i)
 		{
-			auto ptr = &_data[i];
+			auto ptr = &data[i];
 			if (ptr->id == e)
 			{
-				if (_emptys[i] == empty_flag)
+				if (emptys[i] == game_object_collection::empty_flag)
 					return nullptr;
 				else
 					return ptr;
 			}
 		}
 		return nullptr;
+	}
+
+	const game_obj* game_object_collection::find(const entity_id e) const noexcept
+	{
+		return game_obj_find_impl(e, _emptys, _data);
+	}
+
+	game_obj* game_object_collection::find(const entity_id e) noexcept
+	{
+		return game_obj_find_impl(e, _emptys, _data);
 	}
 }
 
@@ -77,9 +89,10 @@ namespace hades::state_api
 		return s.object_creation_time.at(o.id);
 	}
 
-	bool name_object(string s, object_ref o, game_state& g)
+	void name_object(string s, object_ref o, time_point t, game_state& g)
 	{
-		const auto [iter, success] = g.names.try_emplace(std::move(s), o);
-		return success;
+		auto& name = g.names[std::move(s)];
+		name.add_keyframe(t, o);
+		return;
 	}
 }

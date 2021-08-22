@@ -55,7 +55,7 @@ namespace hades
 	namespace game
 	{
 		using namespace curve_types;
-		const std::vector<object_ref> &get_objects() noexcept;
+		std::vector<object_ref> &get_objects() noexcept;
 
 		//the time of the previous dt
 		// equals get_time - dt
@@ -78,10 +78,6 @@ namespace hades
 		template<typename T>
 		void set_system_data(T value);
 		void destroy_system_data();
-	}
-
-	namespace game::object
-	{
 	}
 
 	//game::mission contains functions for accessing mission state
@@ -140,39 +136,37 @@ namespace hades
 		// if the time_point is not provided, it is set to game::get_last_time() for get_* functions
 		// and game::get_time() for set_* functions
 		
-		object_ref get_object_from_name(std::string_view, time_point);
+		namespace object
+		{
+			//find from name
+			object_ref get_from_name(std::string_view, time_point);
 
-		//=== properties ===
-		//get access object properties
-		template<typename T>
-		T get_property_value(object_ref, variable_id);
-		template<typename T>
-		T& get_property_ref(object_ref, variable_id);
-		template<typename T>
-		void set_property_value(object_ref, variable_id, T);
+			//property access
+			//TODO: rename to curve_ref
+			template<template<typename> typename CurveType, typename T>
+			CurveType<T>& get_property_ref(object_ref, variable_id);
 
-		//=== Object Controls ===
-		//object creation and destruction
-		//an object is always created at game::get_time() time.
-		//TODO: resolve these immidiatly, both creation/destruction and //attach/detach
-		object_ref create_object(const object_instance&);
-		object_ref clone_object(object_ref);
-		void destroy_object(object_ref);
+			//creation and destruction
+			object_ref create(const object_instance&);
+			object_ref clone(object_ref);
+			void destroy(object_ref);
+
+			time_point get_creation_time(object_ref);
+			const tag_list& get_tags(object_ref);
+		}
 
 		//=== Common Curves ===
-		time_point get_object_creation_time(object_ref);
 		//position
-		world_vector_t& get_position(object_ref);
+		//world_vector_t& get_position(object_ref);
 		void set_position(object_ref, const_curve<world_vector_t>);
 		//size
-		world_vector_t& get_size(object_ref);
+		//world_vector_t& get_size(object_ref);
 		//void set_size(object_ref, world_vector_t);
-		tag_list& get_tags(object_ref);
 
 		template<std::size_t Size>
 		std::array<bool, Size> check_tags(object_ref& o, std::array<unique_id, Size> t)
 		{
-			const auto& tags = hades::game::level::get_tags(o);
+			const auto& tags = hades::game::level::object::get_tags(o);
 			return hades::check_tags(tags, t);
 		}
 
@@ -297,19 +291,16 @@ namespace hades
 		world_rect_t get_world_bounds();
 		const terrain_map& get_world_terrain() noexcept;
 
-		//=== properties ===
-		//get access object properties
-		template<typename T>
-		T get_property_value(object_ref, variable_id);
-		template<typename T>
-		const T& get_property_ref(object_ref, variable_id);
-
-		//common curves// common properties
-		world_vector_t get_position(object_ref);
-		world_vector_t get_size(object_ref);
-
-		time_point get_object_creation_time(object_ref);
 		const resources::object* get_object_type(object_ref) noexcept;
+		namespace object
+		{
+			time_point get_creation_time(object_ref);
+			template<template<typename> typename CurveType, typename T>
+			const CurveType<T>& get_property_ref(object_ref, variable_id);
+
+			const hades::linear_curve<vec2_float>& get_position(object_ref);
+			const hades::linear_curve<vec2_float>& get_size(object_ref);
+		}
 	}
 }
 

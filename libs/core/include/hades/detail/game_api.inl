@@ -68,28 +68,17 @@ namespace hades
 			detail::set_level_local_value_imp<T>(id, std::move(value), ptr->get_extras());
 			return;
 		}
+	}
 
-		template<typename T>
-		T get_property_value(object_ref o, variable_id v)
-		{
-			return get_property_ref<T>(o, v);
-		}
-
-		template<typename T>
-		T& get_property_ref(object_ref o, variable_id v)
+	namespace game::level::object
+	{
+		template<template<typename> typename CurveType, typename T>
+		CurveType<T>& get_property_ref(object_ref o, variable_id v)
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
 			const auto g_ptr = detail::get_game_level_ptr();
 			auto& obj = state_api::get_object(o, g_ptr->get_extras());
-			return state_api::get_object_property_ref<const_curve, T>(obj, v).get();
-		}
-		
-		template<typename T>
-		void set_property_value(object_ref o, variable_id v, T value)
-		{
-			static_assert(curve_types::is_curve_type_v<T>);
-			auto& prop = get_property_ref<std::decay_t<T>>(o, v);
-			prop = std::move(value);
+			return state_api::get_object_property_ref<CurveType, T>(obj, v);
 		}
 	}
 
@@ -149,18 +138,15 @@ namespace hades
 			return detail::set_level_local_value_imp(id, std::move(value), *detail::get_render_extra_ptr());
 		}
 
-		template<typename T>
-		T get_property_value(object_ref o, variable_id v)
+		namespace object
 		{
-			return get_property_ref<T>(o, v);
-		}
-
-		template<typename T>
-		const T& get_property_ref(object_ref o, variable_id v)
-		{
-			static_assert(curve_types::is_curve_type_v<T>);
-			auto& obj = state_api::get_object(o, *detail::get_render_extra_ptr());
-			return state_api::get_object_property_ref<const_curve, T>(obj, v).get();
+			template<template<typename> typename CurveType, typename T>
+			const CurveType<T>& get_property_ref(object_ref o, variable_id v)
+			{
+				static_assert(curve_types::is_curve_type_v<T>);
+				auto& obj = state_api::get_object(o, *detail::get_render_extra_ptr());
+				return state_api::get_object_property_ref<CurveType, T>(obj, v);
+			}
 		}
 	}
 }

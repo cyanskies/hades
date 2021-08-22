@@ -93,7 +93,9 @@ namespace hades
 		return;
 	}
 
-
+	// this is called before and after level update. this ensures that after a game tick, all objects have
+	// had their appropriate on_connect/disconnect functions called
+	// we dont need to worry about them when loading a save game
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	void update_systems(JobDataType jdata, time_duration dt,
 		Interface& interface, Interface* mission, const std::vector<player_data>* players, MakeGameStructFn&& make_game_struct)
@@ -135,7 +137,6 @@ namespace hades
 				game_data.entity = std::move(current_ents);
 				game_data.system = s->id;
 				game_data.system_data = &sys_behaviours.get_system_data(s->id);
-
 
 				detail::set_data(&game_data);
 				std::invoke(s->on_create);
@@ -228,7 +229,7 @@ namespace hades
 					if (iter != end(input_q))
 					{
 						detail::set_data(&game_data);
-						std::invoke(player_input_fn, p, std::move(iter->second));
+						std::invoke(player_input_fn, p, std::move(iter->second), current_time);
 					}
 				}
 
@@ -249,11 +250,12 @@ namespace hades
 			const auto& current_ents = sys_behaviours.get_entities(*s);
 			auto ents = std::vector<object_ref>{};
 			ents.reserve(size(current_ents));
+			
 			//only update entities that have passed their wake up time
 			for (const auto& e : current_ents)
 			{
 				if (e.second <= current_time)
-					ents.emplace_back(e.first);
+					ents.push_back(e.first);
 			}
 
 			if (!std::empty(ents))

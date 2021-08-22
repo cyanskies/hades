@@ -8,6 +8,7 @@
 namespace hades
 {
 	//simple renderer, just displays the editor animation at the objects location
+	//TODO: move this to somewhere else
 	namespace simple_renderer
 	{
 		using namespace std::string_view_literals;
@@ -19,16 +20,16 @@ namespace hades
 
 		struct entity_info
 		{
-			vector_float position;
-			vector_float size;
+			const linear_curve<vector_float>& position;
+			const linear_curve<vector_float>& size;
 			const resources::animation* anim = nullptr;
 		};
 
 		static entity_info get_some_entity_info(resources::curve_types::object_ref e)
 		{
 			return entity_info{
-				render::level::get_position(e),
-				render::level::get_size(e)
+				render::level::object::get_position(e),
+				render::level::object::get_size(e)
 			};
 		}
 
@@ -37,12 +38,11 @@ namespace hades
 			assert(e.ptr && e.ptr->object_type);
 			const auto object = render::level::get_object_type(e);
 			const auto anims = get_editor_animations(*object);
-
-			if (std::empty(anims))
-				return {};
-
 			auto entity = get_some_entity_info(e);
-			entity.anim = random_element(std::begin(anims), std::end(anims));
+
+			if (!std::empty(anims))
+				entity.anim = random_element(std::begin(anims), std::end(anims));
+
 			return entity;
 		}
 
@@ -92,8 +92,8 @@ namespace hades
 					return;
 
 				const auto sprite_id = render::sprite::create(ent.anim,
-					render::get_time(), render_interface::sprite_layer{},
-					ent.position, ent.size);
+					time, render_interface::sprite_layer{},
+					ent.position.get(time), ent.size.get(time));
 
 				dat.emplace_back(entity.id, sprite_id);
 			}
@@ -115,8 +115,8 @@ namespace hades
 				{
 					const auto ent = get_some_entity_info(entity);
 					const auto& s_id = sprite;
-					render_output->set_sprite(s_id, render::get_time(),
-						ent.position, ent.size);
+					render_output->set_sprite(s_id, time,
+						ent.position.get(time), ent.size.get(time));
 				}
 			}
 			return;

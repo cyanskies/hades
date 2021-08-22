@@ -14,7 +14,7 @@ namespace hades
 	{
 		resources::make_curve(d, id,
 			resources::curve_variable_type::vec2_float,
-			keyframe_style::const_t,
+			keyframe_style::linear,
 			resources::curve_types::vec2_float{ 0.f, 0.f },
 			true, true);
 		return;

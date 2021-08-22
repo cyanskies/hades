@@ -26,7 +26,7 @@ namespace hades::state_api
 					curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
 			}
 
-			auto data = state_field<CurveType<T>>{ object.id, curve_id, curve };
+			auto data = state_field<CurveType<T>>{ object.id, curve_id, std::move(curve) };
 			auto iter = colony.emplace(std::move(data));
 			assert(iter != end(colony));
 
@@ -88,7 +88,7 @@ namespace hades::state_api
 		};
 
 		template<typename GameSystem>
-		inline object_ref make_object_impl(const object_instance& o, game_state& s, extra_state<GameSystem>& e)
+		inline object_ref make_object_impl(const object_instance& o, time_point t, game_state& s, extra_state<GameSystem>& e)
 		{
 			// give this instance a new unique id if  it doesn't have one
 			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
@@ -104,17 +104,17 @@ namespace hades::state_api
 				assert(!v.valueless_by_exception());
 				assert(resources::is_set(v));
 				std::visit(detail::make_object_visitor{ c, s,
-					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{time_point::min(), v} } }, v);
+					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, v} } }, v);
 			}
 
 			if (!empty(o.name_id))
-				name_object(o.name_id, { id, obj }, s);
+				name_object(o.name_id, { id, obj }, t, s);
 
 			return { id, obj };
 		}
 
 		template<typename GameSystem>
-		inline object_ref make_object_impl(const object_save_instance& o, game_state& s, extra_state<GameSystem>& e)
+		inline object_ref make_object_impl(const object_save_instance& o, time_point t, game_state& s, extra_state<GameSystem>& e)
 		{
 			// give this instance a new unique id if  it doesn't have one
 			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
@@ -155,7 +155,7 @@ namespace hades::state_api
 			}
 
 			if (!empty(o.name_id))
-				name_object(o.name_id, { id, obj }, s);
+				name_object(o.name_id, { id, obj }, t, s);
 
 			return { id, obj };
 		}
@@ -168,8 +168,8 @@ namespace hades::state_api
 		{
 			assert(o.obj_type);
 			assert(o.id != bad_entity);
-
-			auto obj = detail::make_object_impl(o, s, e);
+			
+			auto obj = detail::make_object_impl(o, o.creation_time, s, e);
 			s.object_creation_time[o.id] = o.creation_time;
 			s.object_destruction_time[o.id] = o.destruction_time;
 
@@ -181,9 +181,9 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	inline object_ref make_object(const object_instance& o, game_state& s, extra_state<GameSystem>& e, time_point t)
+	inline object_ref make_object(const object_instance& o, const time_point t, game_state& s, extra_state<GameSystem>& e)
 	{
-		auto obj = detail::make_object_impl(o, s, e);
+		auto obj = detail::make_object_impl(o, t, s, e);
 		s.object_creation_time[obj.id] = t;
 		for (const auto sys : get_systems(*o.obj_type))
 			e.systems.attach_system(obj, sys->id);
@@ -249,7 +249,7 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	inline object_ref clone_object(const game_obj& obj, game_state& state, extra_state<GameSystem>& extra, time_point t)
+	inline object_ref clone_object(const game_obj& obj, const time_point t, game_state& state, extra_state<GameSystem>& extra)
 	{
 		const auto id = increment(state.next_id);
 		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
@@ -329,26 +329,30 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	object_ref get_object_ref(std::string_view s, game_state& g, extra_state<GameSystem>& e) noexcept
+	object_ref get_object_ref(std::string_view s, time_point t, game_state& g, extra_state<GameSystem>& e) noexcept
 	{
-		const auto obj = g.names.find(to_string(s));
+		//find and entry for this name
+		auto obj = g.names.find(to_string(s));
 		if (obj == end(g.names))
 		{
 			LOGWARNING("tried to find named object that doesn't exist, name was: " + to_string(s));
 			return object_ref{};
 		}
 
-		assert(obj->second.id != bad_entity);
+		//check what object is tied to the name at time_point
+		auto ob_ref = obj->second.get(t);
+		if (ob_ref == object_ref{})
+			return object_ref{};
 
-		auto ptr = get_object_ptr(obj->second, e);
+		auto ptr = get_object_ptr(ob_ref, e);
 		if (ptr == nullptr)
 		{
-			g.names.erase(obj);
+			obj->second.add_keyframe(t, object_ref{});
 			return object_ref{};
 		}
 
-		obj->second.ptr = ptr;
-		return obj->second;
+		ob_ref.ptr = ptr;
+		return ob_ref;
 	}
 
 	template<typename GameSystem>
@@ -394,6 +398,16 @@ namespace hades::state_api
 
 		o.ptr = obj_ptr;
 		return obj_ptr;
+	}
+
+	template<typename GameSystem>
+	const game_obj* get_object_ptr(const object_ref& o, const extra_state<GameSystem>& e) noexcept
+	{
+		const auto good_obj = o.ptr && o.ptr->id == o.id;
+		if (good_obj)
+			return o.ptr;
+
+		return e.objects.find(o.id);
 	}
 
 	namespace detail

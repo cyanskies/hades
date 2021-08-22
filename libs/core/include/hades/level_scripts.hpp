@@ -3,6 +3,7 @@
 
 #include "hades/input.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/time.hpp"
 #include "hades/uniqueid.hpp"
 
 namespace hades
@@ -24,7 +25,7 @@ namespace hades::resources
 	struct player_input : resource_type<player_input_t>
 	{
 		//TODO: this will have to become a std::function when we support input scripts
-		using player_input_fn = void(*)(player_data, std::vector<action>); // TODO: pass player id here for multi player games
+		using player_input_fn = void(*)(player_data, std::vector<action>, time_point); // TODO: pass player id here for multi player games TODO: TODO: needs input time
 
 		// either a ptr to the actual function
 		// or a lambda that calls an actual script

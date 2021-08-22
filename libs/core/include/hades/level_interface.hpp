@@ -61,7 +61,7 @@ namespace hades
 		virtual object_ref clone_object(object_ref, time_point) = 0;
 		virtual void destroy_object(object_ref) = 0;
 
-		virtual object_ref get_object_ref(std::string_view) noexcept = 0;
+		virtual object_ref get_object_ref(std::string_view, time_point) noexcept = 0;
 		virtual extra_state<game_system>& get_extras() noexcept = 0;
 	};
 
@@ -83,12 +83,12 @@ namespace hades
 		//maybe unused
 		std::vector<entity_id> get_removed_objects() noexcept override;
 
-		void name_object(std::string_view, object_ref);
+		void name_object(std::string_view, object_ref, time_point);
 
 		system_behaviours<game_system>& get_systems() noexcept
 		{ return _extras.systems; }
 
-		object_ref get_object_ref(std::string_view) noexcept override;
+		object_ref get_object_ref(std::string_view, time_point) noexcept override;
 		const game_state& get_state() const noexcept override { return _state; }
 		game_state& get_state() noexcept override { return _state; }
 		extra_state<game_system>& get_extras() noexcept override { return _extras; }
@@ -137,6 +137,7 @@ namespace hades
 	void create_systems(JobDataType, time_duration,
 		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn&&);
 
+	// advances the game time by time_duration
 	template<typename Interface, typename JobDataType, typename MakeGameStructFn>
 	time_point update_level(JobDataType, time_duration,
 		Interface&, Interface* mission, const std::vector<player_data>*, MakeGameStructFn&&);

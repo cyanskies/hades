@@ -85,10 +85,16 @@ namespace hades
 		_active_assert();
 		auto &io = ImGui::GetIO();
 		switch (e.type) {
+		case sf::Event::GainedFocus:
+			io.AddFocusEvent(true);
+			return false;
+		case sf::Event::LostFocus:
+			io.AddFocusEvent(false);
+			return false;
 		case sf::Event::MouseMoved:
 			io.MousePos = { static_cast<float>(e.mouseMove.x), 
 							static_cast<float>(e.mouseMove.y) };
-			return false;
+			return false; // TODO: maybe return io.WantCaptureMouse;
 		case sf::Event::MouseButtonPressed:
 			io.MouseDown[e.mouseButton.button] = true;
 			return io.WantCaptureMouse;
@@ -108,7 +114,15 @@ namespace hades
 			return io.WantCaptureKeyboard;
 		case sf::Event::TextEntered:
 			if (e.text.unicode > 0 && e.text.unicode < 0x10000) {
-				io.AddInputCharacter(static_cast<ImWchar>(e.text.unicode));
+				const auto str = sf::String{ e.text.unicode };
+				const auto utf8 = str.toUtf8();
+				auto std_str = string{};
+				std::transform(begin(utf8), end(utf8), std::back_inserter(std_str), [](sf::Uint8 u8)noexcept->char{
+					auto output = char{};
+					std::memcpy(&output, &u8, sizeof(char));
+					return output;
+				});
+				io.AddInputCharactersUTF8(std_str.data());
 			}
 			return io.WantTextInput;
 		default:
@@ -163,7 +177,7 @@ namespace hades
 		ImGui::End();
 	}
 
-	bool gui::child_window_begin(std::string_view name, vector size, bool border, window_flags flags)
+	bool gui::child_window_begin(std::string_view name, vector2 size, bool border, window_flags flags)
 	{
 		_active_assert();
 		return ImGui::BeginChild(to_string(name).data(), { size.x, size.y }, border, static_cast<ImGuiWindowFlags>(flags));
@@ -175,27 +189,27 @@ namespace hades
 		ImGui::EndChild();
 	}
 
-	gui::vector gui::window_position() const
+	gui::vector2 gui::window_position() const
 	{
 		_active_assert();
 		const auto pos = ImGui::GetWindowPos();
 		return { pos.x, pos.y };
 	}
 
-	gui::vector gui::window_size() const
+	gui::vector2 gui::window_size() const
 	{
 		_active_assert();
 		const auto size = ImGui::GetWindowSize();
 		return { size.x, size.y };
 	}
 
-	void gui::next_window_position(vector p)
+	void gui::next_window_position(vector2 p)
 	{
 		_active_assert();
 		ImGui::SetNextWindowPos({ p.x, p.y });
 	}
 
-	void gui::next_window_size(vector s)
+	void gui::next_window_size(vector2 s)
 	{
 		_active_assert();
 		ImGui::SetNextWindowSize({ s.x, s.y });
@@ -335,13 +349,6 @@ namespace hades
 		pop_colour();	
 	}
 
-	void gui::text_bullet(std::string_view s)
-	{
-		_active_assert();
-		bullet();
-		text(s);
-	}
-
 	void gui::text_wrapped(std::string_view s)
 	{
 		_active_assert();
@@ -349,7 +356,14 @@ namespace hades
 		return;
 	}
 
-	bool gui::button(std::string_view label, const vector &size)
+	void gui::text_bullet(std::string_view s)
+	{
+		_active_assert();
+		bullet();
+		text(s);
+	}
+
+	bool gui::button(std::string_view label, const vector2 &size)
 	{
 		_active_assert();
 		return ImGui::Button(to_string(label).data(), { size.x, size.y });
@@ -361,7 +375,7 @@ namespace hades
 		return ImGui::SmallButton(to_string(label).data());
 	}
 
-	bool gui::invisible_button(std::string_view label, const vector & size)
+	bool gui::invisible_button(std::string_view label, const vector2 & size)
 	{
 		_active_assert();
 		return ImGui::InvisibleButton(to_string(label).data(), { size.x, size.y });
@@ -373,7 +387,7 @@ namespace hades
 		return ImGui::ArrowButton(to_string(label).data(), static_cast<ImGuiDir>(d));
 	}
 
-	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector &size, const sf::Color &tint_colour, const sf::Color &border_colour)
+	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
 
@@ -393,7 +407,7 @@ namespace hades
 			to_imvec4(border_colour));
 	}
 
-	void gui::image(const resources::animation &a, const vector &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
+	void gui::image(const resources::animation &a, const vector2 &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
 		const auto[x, y, w, h] = animation::get_frame(a, time);
@@ -407,7 +421,7 @@ namespace hades
 		);
 	}
 
-	bool gui::image_button(const resources::texture &texture, const rect_float &text_coords, const vector &size, const sf::Color &background_colour, const sf::Color &tint_colour)
+	bool gui::image_button(const resources::texture &texture, const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour, const sf::Color &tint_colour)
 	{
 		_active_assert();
 
@@ -428,7 +442,7 @@ namespace hades
 			to_imvec4(tint_colour));
 	}
 
-	bool gui::image_button(const resources::animation &a, const vector &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
+	bool gui::image_button(const resources::animation &a, const vector2 &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
 	{
 		_active_assert();
 		const auto[x, y, w, h] = animation::get_frame(a, time);
@@ -462,13 +476,13 @@ namespace hades
 		return ImGui::RadioButton(to_string(label).data(), active);
 	}
 
-	void gui::progress_bar(float progress, const vector &size)
+	void gui::progress_bar(float progress, const vector2 &size)
 	{
 		_active_assert();
 		ImGui::ProgressBar(progress, { size.x, size.y });
 	}
 
-	void gui::progress_bar(float progress, std::string_view overlay_text, const vector & size)
+	void gui::progress_bar(float progress, std::string_view overlay_text, const vector2 & size)
 	{
 		_active_assert();
 		ImGui::ProgressBar(progress, { size.x, size.y }, to_string(overlay_text).data());
@@ -480,13 +494,13 @@ namespace hades
 		ImGui::Bullet();
 	}
 
-	bool gui::selectable(std::string_view label, bool selected, selectable_flag flag, const vector & size)
+	bool gui::selectable(std::string_view label, bool selected, selectable_flag flag, const vector2 & size)
 	{
 		_active_assert();
 		return ImGui::Selectable(to_string(label).data(), selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
 	}
 
-	bool gui::selectable_easy(std::string_view label, bool &selected, selectable_flag flag, const vector & size)
+	bool gui::selectable_easy(std::string_view label, bool &selected, selectable_flag flag, const vector2 & size)
 	{
 		_active_assert();
 		return ImGui::Selectable(to_string(label).data(), &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
@@ -510,7 +524,7 @@ namespace hades
 		return ImGui::InputText(to_string(label).data(), &buffer, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector &size, input_text_flags f)
+	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size, input_text_flags f)
 	{
 		_active_assert();
 		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
@@ -622,8 +636,8 @@ namespace hades
 		return false;
 	}
 
-	constexpr auto toolbar_button_size = gui::vector{ 25.f, 25.f };
-	constexpr auto toolbar_layout_size = gui::vector{ 0.f, -1.f };
+	constexpr auto toolbar_button_size = gui::vector2{ 25.f, 25.f };
+	constexpr auto toolbar_layout_size = gui::vector2{ 0.f, -1.f };
 
 	bool gui::main_toolbar_begin()
 	{
@@ -698,6 +712,12 @@ namespace hades
 		ImGui::OpenPopup(to_string(s).data());
 	}
 
+	void gui::popup_begin(std::string_view s)
+	{
+		_active_assert();
+		ImGui::BeginPopup(to_string(s).data());
+	}
+
 	void gui::popup_end()
 	{
 		_active_assert();
@@ -763,14 +783,14 @@ namespace hades
 		return ImGui::IsItemHovered(static_cast<ImGuiHoveredFlags>(f));
 	}
 
-	gui::vector gui::get_item_rect_max()
+	gui::vector2 gui::get_item_rect_max()
 	{
 		_active_assert();
 		const auto v = ImGui::GetItemRectMax();
 		return { v.x, v.y };
 	}
 
-	gui::vector gui::calculate_text_size(std::string_view s, bool include_text_after_double_hash, float wrap_width)
+	gui::vector2 gui::calculate_text_size(std::string_view s, bool include_text_after_double_hash, float wrap_width)
 	{
 		_active_assert();
 		const auto v = ImGui::CalcTextSize(s.data(), s.data() + s.size(), !include_text_after_double_hash, wrap_width);
@@ -843,7 +863,7 @@ namespace hades
 					//draw with texture
 					if (cmd.TextureId)
 					{
-						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
+						const auto texture = static_cast<const resources::texture*>(cmd.GetTexID());
 						assert(texture);
 						state.texture = &tex::get_sf_texture(texture);
 					}

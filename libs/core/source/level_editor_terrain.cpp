@@ -178,9 +178,9 @@ namespace hades
 				};
 
 				auto make_button = [this, on_click](gui &g, const resources::tile &t) {
-					constexpr auto button_size = gui::vector{
-						25,
-						25
+					constexpr auto button_size = gui::vector2{
+						25.f,
+						25.f
 					};
 
 					const auto x = static_cast<float>(t.left),
@@ -224,9 +224,9 @@ namespace hades
 				};
 
 				auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
-					constexpr auto button_size = gui::vector{
-						25,
-						25
+					constexpr auto button_size = gui::vector2{
+						25.f,
+						25.f
 					};
 
 					assert(!std::empty(terrain->tiles));
@@ -297,9 +297,9 @@ namespace hades
 					};
 
 					auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
-						constexpr auto button_size = gui::vector{
-							25,
-							25
+						constexpr auto button_size = gui::vector2{
+							25.f,
+							25.f
 						};
 
 						//TODO: FIXME: hide empty tilesets from combobox rather than crash here

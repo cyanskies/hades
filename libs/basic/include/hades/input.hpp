@@ -30,6 +30,9 @@ namespace hades
 		{}
 		constexpr action(unique_id uid, int32 x) noexcept : id{ uid }, x_axis{ x }
 		{}
+		constexpr action(unique_id uid, int32 x, int32 y) noexcept : id{ uid }, x_axis{ x }, y_axis{ y }
+		{}
+
 		explicit constexpr action(bool active) noexcept : active(active)
 		{}
 		constexpr action(unique_id i, int32 x, int32 y, int32 u, int32 v) noexcept :

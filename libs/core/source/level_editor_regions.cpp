@@ -365,7 +365,7 @@ namespace hades
 
 				//offset between the mouse
 				//and the origion of the region{0, 0}
-				_edit.drag_offset = { m.x - region_pos.x, m.y - region_pos.y };
+				_edit.drag_offset = { pos.x - region_pos.x, pos.y - region_pos.y };
 
 				_edit.selected = target;
 				_brush = brush_type::region_move;

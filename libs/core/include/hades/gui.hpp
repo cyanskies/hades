@@ -99,8 +99,8 @@ namespace hades
 			no_scroll_with_mouse = ImGuiWindowFlags_::ImGuiWindowFlags_NoScrollWithMouse,
 			no_collapse = ImGuiWindowFlags_::ImGuiWindowFlags_NoCollapse,
 			always_auto_resize = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize,
+			no_background = ImGuiWindowFlags_::ImGuiWindowFlags_NoBackground,
 			no_saved_settings = ImGuiWindowFlags_::ImGuiWindowFlags_NoSavedSettings,
-			no_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
 			menubar = ImGuiWindowFlags_::ImGuiWindowFlags_MenuBar,
 			horizontal_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_HorizontalScrollbar,
 			no_focus_on_appearing = ImGuiWindowFlags_::ImGuiWindowFlags_NoFocusOnAppearing,
@@ -110,7 +110,10 @@ namespace hades
 			always_use_window_padding = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysUseWindowPadding,
 			no_nav_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavInputs,
 			no_nav_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus,
+			unsaved_document = ImGuiWindowFlags_::ImGuiWindowFlags_UnsavedDocument,
 			no_nav = ImGuiWindowFlags_::ImGuiWindowFlags_NoNav,
+			no_decoration = ImGuiWindowFlags_::ImGuiWindowFlags_NoDecoration,
+			no_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
 			panel =	no_collapse |
 					no_move |
 					no_titlebar |
@@ -124,16 +127,22 @@ namespace hades
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
-		using vector = vector_t<float>;
+		using vector2 = vector_t<float>;
 		//end must be called even if begin returns false
-		bool child_window_begin(std::string_view name, vector size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
+		bool child_window_begin(std::string_view name, vector2 size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
 		void child_window_end();
 
 		//window utilities
-		vector window_position() const;
-		vector window_size() const;
-		void next_window_position(vector);
-		void next_window_size(vector);
+		//TODO: some funcs are missing
+		vector2 window_position() const;
+		vector2 window_size() const;
+
+		//window manipulation
+		//TODO: some funcs are missing
+		void next_window_position(vector2);
+		void next_window_size(vector2);
+
+		// TODO: window scrolling
 
 		enum class colour_target : ImGuiCol 
 		{
@@ -183,21 +192,26 @@ namespace hades
 		};
 
 		//shared parameters
+		// TODO: missing funcs
 		void push_font(const resources::font*);
 		void pop_font();
 		void push_colour(colour_target element, const sf::Color&);
 		void pop_colour();
 
 		//current window parameters
+		// TODO: missing funcs
 		void push_item_width(float width);
 		void pop_item_width();
 
+		// TODO: style read (or not)
+
 		//layouts
+		// TODO: missing funcs
 		void separator_horizontal();
 		template<std::size_t Count = 1u>
 		void indent();
-		void layout_horizontal(float pos = 0.f, float width = -1.f);
-		void layout_vertical(); //undoes layout_horizontal
+		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline
+		void layout_vertical(); //undoes layout_horizontal; newline
 		void vertical_spacing();
 		void group_begin();
 		void group_end();
@@ -215,8 +229,9 @@ namespace hades
 		void text(std::string_view);
 		void text_coloured(std::string_view, const sf::Color&);
 		void text_disabled(std::string_view);
-		void text_bullet(std::string_view);
 		void text_wrapped(std::string_view);
+		// text_label
+		void text_bullet(std::string_view);
 		
 		enum class direction : ImGuiDir 
 		{
@@ -228,49 +243,37 @@ namespace hades
 		};
 
 		//widgets
-		bool button(std::string_view label, const vector &size = {0.f, 0.f});
+		bool button(std::string_view label, const vector2 &size = {0.f, 0.f});
 		bool small_button(std::string_view label);
-		bool invisible_button(std::string_view label, const vector &size = { 0.f, 0.f });
+		bool invisible_button(std::string_view label, const vector2 &size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
-		void image(const resources::texture&, const rect_float &text_coords, const vector &size, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
-		void image(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
-		bool image_button(const resources::texture&, const rect_float &text_coords, const vector &size, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
-		bool image_button(const resources::animation&, const vector &size, time_point time = time_point{}, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
+		void image(const resources::texture&, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2 &size, time_point time = time_point{}, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
+		bool image_button(const resources::texture&, const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
+		bool image_button(const resources::animation&, const vector2 &size, time_point time = time_point{}, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
 		bool checkbox(std::string_view label, bool &checked); //returns true on checked changed
+		//checkbox_flags
 		bool radio_button(std::string_view label, bool active);
 		template<typename T>
 		bool radio_button(std::string_view label, T &active_selection, T this_button);
-		void progress_bar(float progress, const vector &size = { -1.f, 0.f });
-		void progress_bar(float progress, std::string_view overlay_text, const vector &size = { -1.f, 0.f });
+		void progress_bar(float progress, const vector2 &size = { -1.f, 0.f });
+		void progress_bar(float progress, std::string_view overlay_text, const vector2 &size = { -1.f, 0.f });
 		void bullet();
 
 		enum class selectable_flag : ImGuiSelectableFlags
 		{
 			none = ImGuiSelectableFlags_::ImGuiSelectableFlags_None,
 			dont_close_popups = ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups,
-			span_all_columns = ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns,
+			span_all_columns = ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns, //TODO: tables
 			allow_double_click = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowDoubleClick,
-			disabled = ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled
+			disabled = ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled,
+			allow_item_overlap = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowItemOverlap
 		};
 
 		//selectables
 		//used as elements in comboboxes, etc
-		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector &size = { 0.f, 0.f });
-		bool selectable_easy(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector &size = {0.f, 0.f});
-
-		//listboxes
-		//return true if selected item changes
-		template<typename Container>
-		detail::listbox_with_string<Container> listbox(std::string_view label,
-			std::size_t &current_item, const Container&, int height_in_items = -1);
-
-		template<typename Container>
-		detail::listbox_no_string<Container> listbox(std::string_view label,
-			std::size_t &current_item, const Container&, int height_in_items = -1);
-
-		template<typename Container, typename ToString>
-		bool listbox(std::string_view label, std::size_t &current_item,
-			const Container&, ToString to_string_func, int height_in_items = -1);
+		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector2 &size = { 0.f, 0.f });
+		bool selectable_easy(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector2 &size = {0.f, 0.f});
 
 		enum class combo_flags : ImGuiComboFlags
 		{
@@ -289,6 +292,21 @@ namespace hades
 		//list selectables inbetween combo calls
 		// only call combo_end if combo_begin returns true
 		void combo_end();
+
+		//listboxes
+		//return true if selected item changes
+		//TODO: use newer listbox api
+		template<typename Container>
+		detail::listbox_with_string<Container> listbox(std::string_view label,
+			std::size_t &current_item, const Container&, int height_in_items = -1);
+
+		template<typename Container>
+		detail::listbox_no_string<Container> listbox(std::string_view label,
+			std::size_t &current_item, const Container&, int height_in_items = -1);
+
+		template<typename Container, typename ToString>
+		bool listbox(std::string_view label, std::size_t &current_item,
+			const Container&, ToString to_string_func, int height_in_items = -1);
 		
 		//TODO: drags
 
@@ -303,14 +321,20 @@ namespace hades
 			chars_no_blank = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank,
 			auto_select_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll,
 			enter_returns_true = ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue,
+			callback_completion = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCompletion,
+			callback_history = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackHistory,
+			callback_always = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackAlways,
+			callback_char_filter = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCharFilter,
 			allow_tab_input = ImGuiInputTextFlags_::ImGuiInputTextFlags_AllowTabInput,
 			ctrl_enter_for_newline = ImGuiInputTextFlags_::ImGuiInputTextFlags_CtrlEnterForNewLine,
 			no_horizontal_scroll = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoHorizontalScroll,
-			always_insert_mode = ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysInsertMode,
+			always_overwrite = ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysOverwrite,
 			readonly = ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly,
 			password = ImGuiInputTextFlags_::ImGuiInputTextFlags_Password,
 			no_undo_redo = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo,
-			chars_scientific = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific
+			chars_scientific = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific,
+			callback_resize = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackResize,
+			callback_edit = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackEdit
 		};
 
 		//inputs
@@ -321,8 +345,8 @@ namespace hades
 		bool input_text(std::string_view label, std::array<char, Size> &buffer, input_text_flags = input_text_flags::none);
 		bool input_text(std::string_view label, std::string &buffer, input_text_flags = input_text_flags::none);
 		template<std::size_t Size>
-		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
-		bool input_text_multiline(std::string_view label, std::string &buffer, const vector &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
+		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector2 &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
+		bool input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
 		template<typename T>
 		bool input_scalar(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		template<typename T, std::size_t Size>
@@ -349,13 +373,15 @@ namespace hades
 			alpha_preview = ImGuiColorEditFlags_AlphaPreview,
 			alpha_preview_half = ImGuiColorEditFlags_AlphaPreviewHalf,
 			format_hdr = ImGuiColorEditFlags_HDR,
-			format_rgb = ImGuiColorEditFlags_RGB,
-			format_hsv = ImGuiColorEditFlags_HSV,
-			format_hex = ImGuiColorEditFlags_HEX,
+			format_rgb = ImGuiColorEditFlags_DisplayRGB,
+			format_hsv = ImGuiColorEditFlags_DisplayHSV,
+			format_hex = ImGuiColorEditFlags_DisplayHex,
 			format_uint8 = ImGuiColorEditFlags_Uint8,
 			format_float = ImGuiColorEditFlags_Float,
 			hue_bar = ImGuiColorEditFlags_PickerHueBar,
 			hue_wheel = ImGuiColorEditFlags_PickerHueWheel
+			//TODO: input rgb
+			//TODO: input hsv
 		};
 
 		//3/4, 3 = rgb, 4 = rbga
@@ -365,6 +391,7 @@ namespace hades
 		bool colour_picker3(std::string_view label, std::array<uint8, 3> &colour, colour_edit_flags = colour_edit_flags::none);
 		bool colour_picker4(std::string_view label, std::array<uint8, 4> &colour, colour_edit_flags = colour_edit_flags::none);
 
+		//TODO: update
 		enum class tree_node_flags : ImGuiTreeNodeFlags
 		{
 			none = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_None,
@@ -385,8 +412,9 @@ namespace hades
 		//TODO: Tree
 		bool collapsing_header(std::string_view, tree_node_flags = tree_node_flags::none);
 		bool collapsing_header(std::string_view, bool &open, tree_node_flags = tree_node_flags::none);
+		//set_next_item_open
 
-		//TODO: list box
+		//TODO: list box(see above)
 
 		//TODO: other widgets
 
@@ -413,6 +441,7 @@ namespace hades
 		void toolbar_separator();
 
 		//tooltips
+		//begin/end tooltip
 		void tooltip(std::string_view); //shows a tooltip if the previous item was hovered
 		void show_tooltip(std::string_view); //always shows a tooltip
 
@@ -422,10 +451,15 @@ namespace hades
 		//they are otherwise normal windows, though they will close on any input
 		//not directed at them
 		void open_popup(std::string_view);
-		///void popip_begin()
+		//TODO: open_popup on stored id rather than string
+		void popup_begin(std::string_view);
 		//only call if popup_begin returned true
 		void popup_end();
 		void close_current_popup();
+
+		//TODO: popup context memnus
+		//		popup void?
+		//		popup window
 
 		//modal dialogs(block input behind them)
 		//same as popups above, but input not directed at them is just ignored
@@ -435,11 +469,19 @@ namespace hades
 		void modal_end();
 		void close_current_modal();
 
-		//columns
+		//TODO: Tables [BETA] when they leave beta
+		// 
+		//columns, soon to be deprecated
 		void columns_begin(std::size_t count = 1u, bool border = true);
 		void columns_begin(std::string_view id, std::size_t count = 1u, bool border = true);
 		void columns_next();
 		void columns_end();
+
+		//TODO: tabbars
+
+		// Drag Drop
+
+		// TODO: Disabled [BETA]
 
 		enum class hovered_flags : ImGuiHoveredFlags
 		{
@@ -448,7 +490,7 @@ namespace hades
 			root_window = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootWindow,
 			any_window = ImGuiHoveredFlags_::ImGuiHoveredFlags_AnyWindow,
 			allow_when_blocked_by_popup = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByPopup,
-			allow_when_blocked_by_model = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByActiveItem,
+			allow_when_blocked_by_active_item = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByActiveItem,
 			allow_when_overlapped = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlapped,
 			allow_when_disabled = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled,
 			rect_only = ImGuiHoveredFlags_::ImGuiHoveredFlags_RectOnly,
@@ -458,10 +500,12 @@ namespace hades
 		//item utils
 		bool is_item_hovered(hovered_flags); //returns true if mouse is over object
 		bool is_item_focused(); //returns true if item has keyboard or gamepad focus
-		vector get_item_rect_max();
+		vector2 get_item_rect_max();
 
 		//utils
-		vector calculate_text_size(std::string_view, bool include_text_after_double_hash = true, float wrap_width = -1.0f);
+		vector2 calculate_text_size(std::string_view, bool include_text_after_double_hash = true, float wrap_width = -1.0f);
+
+		//mouse utils(cursor and so on)
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 

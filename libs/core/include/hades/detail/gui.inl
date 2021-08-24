@@ -161,7 +161,7 @@ namespace hades
 	}
 
 	template<std::size_t Size>
-	inline bool gui::input_text_multiline(std::string_view label, std::array<char, Size>& buffer, const vector &size, input_text_flags f)
+	inline bool gui::input_text_multiline(std::string_view label, std::array<char, Size>& buffer, const vector2 &size, input_text_flags f)
 	{
 		_active_assert();
 		return ImGui::InputTextMultiline(to_string(label).data(), buffer.data(), buffer.size(), {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));

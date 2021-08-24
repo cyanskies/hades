@@ -8,6 +8,7 @@
 #include "hades/mouse_input.hpp"
 #include "Hades/Server.hpp"
 
+#include "gui_state.hpp"
 #include "simple_instance_state.hpp"
 
 int main(int argc, char **argv)
@@ -31,6 +32,6 @@ void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::com
 	hades::register_mouse_input(bind);
 	
 	using test_state = simple_instance_state;
-	auto state_ptr = std::make_unique<hades::mission_editor>();
+	auto state_ptr = std::make_unique<gui_state>();
 	state.push(std::move(state_ptr));
 }

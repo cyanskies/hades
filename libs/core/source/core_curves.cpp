@@ -62,7 +62,7 @@ namespace hades
 		player_owner_id = d.get_uid("player-owner"sv);
 		resources::make_curve(d, player_owner_id,
 			resources::curve_variable_type::unique,
-			keyframe_style::const_t,
+			keyframe_style::step,
 			resources::curve_types::bad_unique,
 			true,
 			true);

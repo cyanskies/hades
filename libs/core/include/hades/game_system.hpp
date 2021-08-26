@@ -48,8 +48,9 @@ namespace hades
 	};
 
 	using system_data_t = std::any;
+	// attached ent, a pair of object-ref and the time after which they are allowed to update
 	using attached_ent = std::pair<object_ref, time_point>;
-	using name_list = std::vector<attached_ent>;
+	using name_list = std::vector<attached_ent>; // TODO: rename
 
 	template<typename SystemType>
 	class system_behaviours
@@ -107,7 +108,7 @@ namespace hades
 		void detach_all(object_ref);
 
 		//this entity won't trigger on_tick events untill the provided time point
-		void sleep_entity(object_ref, unique_id, time_point from, time_point until);
+		void sleep_entity(object_ref, unique_id, time_point);
 
 		bool needs_update() noexcept
 		{

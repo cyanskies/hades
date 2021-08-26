@@ -73,7 +73,7 @@ namespace hades
 	namespace game::level::object
 	{
 		template<template<typename> typename CurveType, typename T>
-		CurveType<T>& get_property_ref(object_ref o, variable_id v)
+		CurveType<T>& get_property_ref(object_ref& o, variable_id v)
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
 			const auto g_ptr = detail::get_game_level_ptr();

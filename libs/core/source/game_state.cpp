@@ -53,7 +53,7 @@ namespace hades::detail
 	}
 
 	template<typename EmptyList, typename DataDeque>
-	auto game_obj_find_impl(const entity_id e, EmptyList emptys, DataDeque data) 
+	auto game_obj_find_impl(const entity_id e, EmptyList& emptys, DataDeque& data) 
 		-> std::conditional_t<std::is_const_v<EmptyList>, const game_obj*, game_obj*>
 	{
 		const auto siz = std::size(emptys);

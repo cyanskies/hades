@@ -144,12 +144,21 @@ namespace hades
 			//property access
 			//TODO: rename to curve_ref
 			template<template<typename> typename CurveType, typename T>
-			CurveType<T>& get_property_ref(object_ref, variable_id);
+			CurveType<T>& get_property_ref(object_ref&, variable_id);
+			template<template<typename> typename CurveType, typename T>
+			CurveType<T>& get_property_ref(const object_ref& o, variable_id v)
+			{
+				auto obj = o;
+				return get_property_ref<CurveType, T>(obj, v);
+			}
 
 			//creation and destruction
 			object_ref create(const object_instance&);
 			object_ref clone(object_ref);
 			void destroy(object_ref);
+
+			//pauses this system update calls for this object until the provided time
+			void sleep_system(object_ref, time_point);
 
 			time_point get_creation_time(object_ref);
 			const tag_list& get_tags(object_ref);

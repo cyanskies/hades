@@ -137,19 +137,18 @@ namespace hades
 			return ptr->clone_object(o, get_time());
 		}
 
-		//TODO: do we need 'from', do we need 'untill' or just 'for'
-		// from is now, for is how long to sleep for
-		/*void sleep_system(object_ref e, unique_id s, time_point from, time_point until)
-		{
-			auto game_current_level_system_ptr = detail::get_game_systems_ptr();
-			game_current_level_system_ptr->sleep_entity(e, s, from, until);
-			return;
-		}*/
-
 		void destroy(object_ref e)
 		{
 			auto ptr = detail::get_game_level_ptr();
 			ptr->destroy_object(e);
+			return;
+		}
+
+		void sleep_system(object_ref o, time_point t)
+		{
+			auto game_ptr = detail::get_game_data_ptr();
+			auto sys_ptr = detail::get_game_systems_ptr();
+			sys_ptr->sleep_entity(o, game_ptr->system, t);
 			return;
 		}
 

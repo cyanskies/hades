@@ -360,13 +360,12 @@ namespace hades::state_api
 	{
 		if (o.ptr == nullptr)
 		{
-			auto obj_ptr = e.objects.find(o.id);
+			o.ptr = e.objects.find(o.id);
 
 			//entity is gone, goodbye
-			if (obj_ptr == nullptr)
+			if (o.ptr == nullptr)
 				throw object_stale_error{ "stale object ref, the object is no longer with us" };
 
-			o.ptr = &*obj_ptr;
 			return *o.ptr;
 		}
 

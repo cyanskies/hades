@@ -197,7 +197,7 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline void system_behaviours<SystemType>::sleep_entity(object_ref e, unique_id s, time_point, time_point b)
+	inline void system_behaviours<SystemType>::sleep_entity(object_ref e, unique_id s, time_point b)
 	{
 		auto& sys = detail::find_system(s, _systems, _new_systems);
 		for (auto& [entity, time] : sys.attached_entities)

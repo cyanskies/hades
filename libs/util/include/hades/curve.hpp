@@ -83,12 +83,11 @@ namespace hades
 			}
 
 			const auto near = _get_near(t);
-			if (near.second == _end())
-				_data.push_back({ t, std::move(val) });
-			else if (near.second->time == t)
+			if (near.second != _end() && near.second->time == t)
 				near.second->value = std::move(val);
+			else
+				_data.insert(near.second, { t, std::move(val) });
 
-			_data.insert(near.first, { t, std::move(val) });
 			return;
 		}
 
@@ -191,12 +190,18 @@ namespace hades
 	{
 	public:
 		using value_type = T;
-		struct pulse_keyframe 
+		struct pulse_keyframe
 		{
 			T value;
 			hades::time_point time;
+
+			bool operator!=(const pulse_keyframe& rhs) const noexcept
+			{
+				return std::tie(time, value) != std::tie(rhs.time, rhs.value);
+			}
 		};
 
+		//NOTE: this cannot be constexpr untill vector supports constexpr
 		static inline const auto bad_keyframe = 
 			pulse_keyframe{ {}, hades::time_point::max() };
 
@@ -212,6 +217,9 @@ namespace hades
 			};
 		}
 	};
+
+	template<typename T>
+	using pulse_keyframe = typename pulse_curve<T>::pulse_keyframe;
 
 	//TODO: tempted to rename this to static_curve
 	template<typename T>

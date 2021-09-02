@@ -64,7 +64,7 @@ namespace hades::curve_types
 	using int_t = int32;
 	//using int64_t = int64;
 	using float_t = float;
-	using vec2_float = vector_float;
+	using vec2_float = vector_float; //vector2f
 	//TODO: double_t
 	using bool_t = bool;
 	using string = hades::string;

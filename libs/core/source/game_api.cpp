@@ -166,6 +166,12 @@ namespace hades
 			const auto tag_id = get_tags_curve_id();
 			return get_property_ref<const_curve, tag_list>(o, tag_id).get();
 		}
+
+		linear_curve<vec2_float>& get_position(object_ref o)
+		{
+			const auto pos_id = get_position_curve_id();
+			return get_property_ref<linear_curve, vec2_float>(o, pos_id);
+		}
 	}
 
 	namespace render

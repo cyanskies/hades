@@ -162,12 +162,12 @@ namespace hades
 
 			time_point get_creation_time(object_ref);
 			const tag_list& get_tags(object_ref);
+
+			// common curves
+			linear_curve<vec2_float>& get_position(object_ref);
 		}
 
 		//=== Common Curves ===
-		//position
-		//world_vector_t& get_position(object_ref);
-		void set_position(object_ref, const_curve<world_vector_t>);
 		//size
 		//world_vector_t& get_size(object_ref);
 		//void set_size(object_ref, world_vector_t);

@@ -11,6 +11,7 @@
 
 namespace hades
 {
+	// TODO: rename vector2
 	template<typename T>
 	struct vector_t
 	{
@@ -143,7 +144,7 @@ namespace hades
 	template<typename T>
 	vector_t<T> to_vector(pol_vector_t<T> v);
 
-	template<typename T>
+	template<typename T> // TODO: rename to_pol_vector2
 	pol_vector_t<T> to_rad_vector(vector_t<T>);
 
 	namespace vector

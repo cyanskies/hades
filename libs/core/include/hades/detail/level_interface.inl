@@ -40,7 +40,7 @@ namespace hades
 		auto on_connect_data_vec = std::vector<on_connect_data>{};
 
 		const auto new_systems = sys_behaviours.get_new_systems();
-		auto& systems = sys_behaviours.get_systems();
+		const auto systems = sys_behaviours.get_systems();
 		for (const auto s : new_systems)
 		{
 			SystemType* system = nullptr;
@@ -68,7 +68,6 @@ namespace hades
 			game_data.entity = std::move(current_ents);
 			game_data.system = s->id;
 			game_data.system_data = &sys_behaviours.get_system_data(s->id);
-
 
 			detail::set_data(&game_data);
 			std::invoke(s->on_create);

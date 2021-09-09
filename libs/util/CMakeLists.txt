@@ -4,6 +4,7 @@ set(HADES_UTIL_SRC
 	source/async.cpp
 	source/string.cpp
 	source/time.cpp
+	source/utility.cpp
 	include/hades/any_map.hpp
 	include/hades/async.hpp
 	include/hades/curve.hpp

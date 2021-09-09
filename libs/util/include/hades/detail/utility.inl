@@ -1,6 +1,7 @@
 #include "hades/utility.hpp"
 
 #include <functional>
+#include <random>
 
 namespace hades
 {
@@ -203,18 +204,26 @@ namespace hades
 
 	namespace detail
 	{
+		struct random_data
+		{
+			std::random_device rd{};
+			std::default_random_engine random_generator{ rd() };
+		};
+
+		extern random_data random_runtime_data;
+
 		template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 		T random(T min, T max)
 		{
 			std::uniform_int_distribution<T> random{ min, max };
-			return random(random_generator);
+			return random(random_runtime_data.random_generator);
 		}
 
 		template<typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
 		T random(T min, T max)
 		{
 			std::uniform_real_distribution<T> random{ min, max };
-			return random(random_generator);
+			return random(random_runtime_data.random_generator);
 		}
 	}
 
@@ -236,7 +245,7 @@ namespace hades
 			return *first;
 
 		const auto dist = std::distance(first, last) - 1;
-		const auto target = random(decltype(dist){}, dist);
+		const auto target = detail::random(decltype(dist){}, dist);
 
 		std::advance(first, target);
 		return *first;

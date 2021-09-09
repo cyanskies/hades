@@ -2,7 +2,6 @@
 #define HADES_UTIL_UTILITY_HPP
 
 #include <array>
-#include <random>
 #include <stdexcept>
 #include <utility>
 
@@ -11,12 +10,6 @@
 // TODO: break this header up into smaller groups
 
 namespace hades {
-	namespace
-	{
-		std::random_device rd{};
-		std::default_random_engine random_generator{ rd() };
-	}
-
 	template<typename T>
 	struct lerpable : public std::bool_constant< std::is_floating_point_v<T>> {};
 

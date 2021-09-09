@@ -5,8 +5,6 @@
 
 #include "SFML/Window/Event.hpp"
 
-#include "zlib.h" //for zlib version
-
 #include "Hades/ConsoleView.hpp"
 #include "hades/core_resources.hpp"
 #include "hades/data.hpp"
@@ -127,7 +125,7 @@ namespace hades
 		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
 		//LOG("SFGUI " + std::to_string(SFGUI_MAJOR_VERSION) + "." + std::to_string(SFGUI_MINOR_VERSION) + "." + std::to_string(SFGUI_REVISION_VERSION));
-		LOG("zlib " + types::string(ZLIB_VERSION));
+		LOG("zlib " + to_string(zip::zlib_version()));
 		//yaml-cpp doesn't currently have a version macro
 		LOG("yaml-cpp " + to_string(HADES_YAML_VERSION)); //TODO: base this off the version compiled
 		

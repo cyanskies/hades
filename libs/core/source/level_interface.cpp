@@ -23,13 +23,12 @@ namespace hades
 		return obj;
 	}
 
-	void game_implementation::destroy_object(object_ref o)
+	void game_implementation::destroy_object(object_ref o, time_point t)
 	{
-		//TODO: must account for current time
 		auto obj = state_api::get_object_ptr(o, _extras);
 		if (!obj) return;
 
-		state_api::destroy_object(o, _extras);
+		state_api::destroy_object(o, t, _state, _extras);
 		_destroy_objects.emplace_back(obj);
 		_removed_objects.emplace_back(o.id);
 	}

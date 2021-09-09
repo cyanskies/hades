@@ -59,7 +59,7 @@ namespace hades
 	public:
 		virtual object_ref create_object(const object_instance&, time_point) = 0;
 		virtual object_ref clone_object(object_ref, time_point) = 0;
-		virtual void destroy_object(object_ref) = 0;
+		virtual void destroy_object(object_ref, time_point) = 0;
 
 		virtual object_ref get_object_ref(std::string_view, time_point) noexcept = 0;
 		virtual extra_state<game_system>& get_extras() noexcept = 0;
@@ -74,7 +74,7 @@ namespace hades
 		object_ref create_object(const object_instance&, time_point) override;
 		//object_ref create_object(const resources::object&, time_point);
 		object_ref clone_object(object_ref, time_point) override;
-		void destroy_object(object_ref) override;
+		void destroy_object(object_ref, time_point) override;
 
 		std::vector<game_obj*> get_destroyed_objects() noexcept;
 

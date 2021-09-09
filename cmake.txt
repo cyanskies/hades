@@ -31,15 +31,20 @@ endfunction(hades_make_common)
 function(hades_make_compile_settings ARG_NAME)
   # Add compiler flags for extra warnings
   target_compile_options(${ARG_NAME} PRIVATE
-                             # general settings
+                             # general settings applied for all build types
 							 
                              # MP for mutli threading
 							 # permissive- for standards conformance
 						 	 # fp for floating point speed, in exchange for less accuracy
 						     # EHsc for standard compliant exception specification
 							 # W4 for high warning level
+							 # analyze for static code analysis
 							 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" >
+                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" "/analyze" >
+
+							 # general settings for gcc/clang
+                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
 
 							 #debug settings
                              $<$<CONFIG:Debug>:
@@ -54,15 +59,12 @@ function(hades_make_compile_settings ARG_NAME)
 								# '/GS-' for no extra buffer overflow checks
                                 # GL for link time code gen
 								# Oi for compiler intrinsics
+								# INCREMENTAL disabled for smaller executable size
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/Oi" "/O2" "/GL" >
+                                  "/GS-" "/Oi" "/O2" "/GL" "/INCREMENTAL:NO" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
-							 >
-
-							 # warnings
-                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >)
+							 >)
 endfunction(hades_make_compile_settings)
 
 function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list

@@ -79,32 +79,6 @@ namespace hades
 			return game_data_ptr->level_data->get_world_terrain();
 		}
 
-		//world_vector_t& get_position(object_ref o)
-		//{
-		//	const auto pos_id = get_position_curve_id();
-		//	return get_property_ref<world_vector_t>(o, pos_id);
-		//}
-
-		//void set_position(object_ref o, world_vector_t v)
-		//{
-		//	const auto pos_id = get_position_curve_id();
-		//	set_property_value(o, pos_id, v);
-		//	return;
-		//}
-
-		//world_vector_t& get_size(object_ref o)
-		//{
-		//	const auto size = get_size_curve_id();
-		//	return get_property_ref<world_vector_t>(o, size);
-		//}
-
-		///*void set_size(object_ref o,const_curve<world_vector_t> v)
-		//{
-		//	const auto size = get_size_curve_id();
-		//	set_property_value(o, size, v);
-		//	return;
-		//}*/
-
 		bool is_alive(object_ref& o) noexcept
 		{
 			auto ptr = detail::get_game_level_ptr();
@@ -140,7 +114,7 @@ namespace hades
 		void destroy(object_ref e)
 		{
 			auto ptr = detail::get_game_level_ptr();
-			ptr->destroy_object(e);
+			ptr->destroy_object(e, get_time());
 			return;
 		}
 

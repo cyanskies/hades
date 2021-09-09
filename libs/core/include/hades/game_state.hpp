@@ -303,7 +303,7 @@ namespace hades
 		time_point get_object_creation_time(const game_obj&, const game_state&);
 		// disconnects objects from their systems(also queues them to have on_disconnect called)
 		template<typename GameSystem>
-		void destroy_object(object_ref, extra_state<GameSystem>&);
+		void destroy_object(object_ref, time_point, game_state&, extra_state<GameSystem>&);
 		// deletes the object data and invalidates the game_obj, best to do this one frame after detaching them.
 		template<typename GameSystem>
 		void erase_object(game_obj&, game_state&, extra_state<GameSystem>&);

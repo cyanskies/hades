@@ -1,37 +1,45 @@
-# Directory hades
+include(../cmake.txt)
 
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+set(HADES_SRC
+	include/hades/App.hpp
+	include/hades/Console.hpp
+	include/hades/ConsoleView.hpp
+	include/hades/data_system.hpp
+	include/hades/Debug.hpp
+	include/hades/Events.hpp
+	include/hades/fps_display.hpp
+	include/hades/Hades.hpp
+	include/hades/LimitedDraw.hpp
+	include/hades/Main.hpp
+	include/hades/RenderInstance.hpp
+	include/hades/Server.hpp
+	include/hades/simple_resources.hpp
+	include/hades/StateManager.hpp
+	include/hades/yaml_parser.hpp
+	include/hades/yaml_writer.hpp
+	include/hades/detail/Console.inl
+	include/hades/resource/fonts.hpp
+	source/App.cpp
+	source/Debug.cpp
+	source/Console.cpp
+	source/ConsoleView.cpp
+	source/data_system.cpp
+	source/fps_display.cpp
+	source/main.cpp
+	source/RenderInstance.cpp
+	#source/ScriptManager.cpp
+	source/Server.cpp
+	source/simple_resources.cpp
+	source/StateManager.cpp
+	source/yaml_parser.cpp
+	source/yaml_writer.cpp
+)
 
-# Specify default build type if none provided (before project() command)
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
-endif()
+set(HADES_LIBS 
+	hades-util
+	hades-basic
+	hades-core
+	PRIVATE yaml-cpp
+)
 
-# For generators with multiple configurations (like VS), only allow Debug and Release
-if(CMAKE_CONFIGURATION_TYPES)
-	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Limited configurations" FORCE)
-	mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
-endif()
-
-project(hades)
-
-# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-#make visual studio debug the desired project by default
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT hades)
-
-# Global preprocessor options
-#this is to ignore the thousands of warnings that
-#yaml generates through iterator usage
-add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
-
-# C++ source code
-add_subdirectory(source)
-
-# Install include directory and license files
-install(DIRECTORY include
-		DESTINATION .)
+hades_make_library(hades include "${HADES_SRC}" "${HADES_LIBS}")

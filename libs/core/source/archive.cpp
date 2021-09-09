@@ -9,6 +9,7 @@
 #include <limits>
 #include <string>
 
+#include "zlib.h"
 #include "zip.h"
 #include "unzip.h"
 
@@ -20,7 +21,6 @@
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
 
-//TODO: revert to std::filesystem once support comes in both MSVC and GCC
 namespace fs = std::filesystem;
 
 //this is the default archive extension
@@ -29,6 +29,25 @@ constexpr auto archive_ext = ".zip";
 
 namespace hades::zip
 {
+	struct z_stream
+	{
+		::z_stream stream;
+	};
+
+	static void delete_z_stream(z_stream* p) noexcept
+	{
+		delete p;
+		return;
+	}
+
+#undef zlib_version
+
+	std::string_view zlib_version() noexcept
+	{
+		constexpr auto version = std::string_view{ ZLIB_VERSION };
+		return version;
+	}
+
 	//open a close unzip archives
 	static unarchive open_archive(const std::filesystem::path&);
 	static void close_archive(unarchive f);
@@ -251,7 +270,7 @@ namespace hades::zip
 		return;
 	}
 
-	static bool zlib_inflate_begin(z_stream& stream) noexcept
+	static bool zlib_inflate_begin(::z_stream& stream) noexcept
 	{
 		stream.zalloc = Z_NULL;
 		stream.zfree = Z_NULL;
@@ -262,7 +281,7 @@ namespace hades::zip
 	}
 
 	//tests if the stream is good for izfstream
-	static void start_z_stream(izfstream::stream_t& s, z_stream& z)
+	static void start_z_stream(izfstream::stream_t& s, ::z_stream& z)
 	{
 		zip_header h;
 		using char_t = izfstream::stream_t::char_type;
@@ -284,29 +303,29 @@ namespace hades::zip
 	constexpr auto if_mode = std::ios_base::binary;
 
 	izfstream::izfstream(const std::filesystem::path& p)
-		: _stream{ p, if_mode }
+		: _stream{ p, if_mode }, _zip_stream{ new z_stream, delete_z_stream }
 	{
 		if (!std::filesystem::exists(p))
 			throw files::file_not_found{ "cannot find file: " + p.generic_string() };
 		if (!_stream.is_open())
 			throw files::file_error{ "cannot open file: " + p.generic_string() };
-		start_z_stream(_stream, _zip_stream);
+		start_z_stream(_stream, _zip_stream->stream);
 		return;
 	}
 
 	izfstream::izfstream(stream_t s)
-		: _stream{ std::move(s) }
+		: _stream{ std::move(s) }, _zip_stream{ new z_stream, delete_z_stream }
 	{
 		if (!_stream.is_open())
 			throw files::file_not_open{ "stream passed to izfstream(stream_t) is not open" };
-		start_z_stream(_stream, _zip_stream);
+		start_z_stream(_stream, _zip_stream->stream);
 		return;
 	}
 
 	izfstream::~izfstream() noexcept
 	{
 		if (is_open())
-			inflateEnd(&_zip_stream);
+			inflateEnd(&_zip_stream->stream);
 		return;
 	}
 
@@ -318,15 +337,15 @@ namespace hades::zip
 		_stream.open(p, if_mode);
 		if (!_stream.is_open())
 			throw files::file_error{ "cannot open file: " + p.generic_string() };
-		start_z_stream(_stream, _zip_stream);
+		start_z_stream(_stream, _zip_stream->stream);
 		return;
 	}
 
 	void izfstream::close() noexcept
 	{
 		assert(is_open());
-		inflateEnd(&_zip_stream);
-		_zip_stream = z_stream{};
+		inflateEnd(&_zip_stream->stream);
+		*_zip_stream = z_stream{};
 		_stream.close();
 		_buffer.clear();
 		_buffer_pos = std::size_t{};
@@ -348,18 +367,18 @@ namespace hades::zip
 
 		//uint as defined by zlib
 		using z_uint = uInt;
-		_zip_stream.avail_in = integer_cast<z_uint>(_buffer_end - _buffer_pos);
-		_zip_stream.next_in = reinterpret_cast<Bytef*>(std::data(_buffer) + _buffer_pos);
-		_zip_stream.avail_out = integer_cast<z_uint>(count);
-		_zip_stream.next_out = reinterpret_cast<Bytef*>(buffer);
+		_zip_stream->stream.avail_in = integer_cast<z_uint>(_buffer_end - _buffer_pos);
+		_zip_stream->stream.next_in = reinterpret_cast<Bytef*>(std::data(_buffer) + _buffer_pos);
+		_zip_stream->stream.avail_out = integer_cast<z_uint>(count);
+		_zip_stream->stream.next_out = reinterpret_cast<Bytef*>(buffer);
 
-		const auto ret = ::inflate(&_zip_stream, Z_NO_FLUSH);
+		const auto ret = ::inflate(&_zip_stream->stream, Z_NO_FLUSH);
 		if (ret == Z_STREAM_END)
 			_eof = true;
 		else if (ret != Z_OK)
 			throw archive_error("izfstream failed to inflate during read");
 
-		if (_zip_stream.avail_in == 0)
+		if (_zip_stream->stream.avail_in == 0)
 		{
 			_buffer.clear();
 			_buffer_pos = std::size_t{};
@@ -367,7 +386,7 @@ namespace hades::zip
 		}
 
 		_last_read = integer_cast<std::streamsize>(count) -
-			integer_cast<std::streamsize>(_zip_stream.avail_out);
+			integer_cast<std::streamsize>(_zip_stream->stream.avail_out);
 
 		// i don't know why this is part of the std streams api
 		return *this;
@@ -375,7 +394,7 @@ namespace hades::zip
 
 	izfstream::pos_type izfstream::tellg()
 	{
-		return static_cast<pos_type>(_zip_stream.total_out);
+		return static_cast<pos_type>(_zip_stream->stream.total_out);
 	}
 
 	void izfstream::seekg(pos_type p)
@@ -395,7 +414,7 @@ namespace hades::zip
 		if (d == std::ios_base::beg)
 		{
 			_stream.seekg(izfstream::stream_t::off_type{}, std::ios_base::beg);
-			::inflateReset(&_zip_stream);
+			::inflateReset(&_zip_stream->stream);
 			_buffer.clear();
 			_buffer_pos = std::size_t{};
 			_buffer_end = std::size_t{};
@@ -756,7 +775,7 @@ namespace hades::zip
 		if (!*hades::console::get_bool(cvars::file_deflate, true))
 			return stream;
 
-		z_stream deflate_stream;
+		::z_stream deflate_stream;
 		deflate_stream.zalloc = Z_NULL;
 		deflate_stream.zfree = Z_NULL;
 		deflate_stream.opaque = Z_NULL;
@@ -796,7 +815,7 @@ namespace hades::zip
 
 	buffer inflate(buffer stream)
 	{
-		z_stream infstream;
+		::z_stream infstream;
 		infstream.zalloc = Z_NULL;
 		infstream.zfree = Z_NULL;
 		infstream.opaque = Z_NULL;

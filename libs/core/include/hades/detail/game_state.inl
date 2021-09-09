@@ -176,6 +176,8 @@ namespace hades::state_api
 			for (const auto sys : get_systems(*o.obj_type))
 				e.systems.attach_system_from_load(obj, sys->id);
 
+			// TODO: name?
+
 			return obj;
 		}
 	}
@@ -269,9 +271,10 @@ namespace hades::state_api
 	}
 
 	template<typename GameSystem>
-	void destroy_object(object_ref o, extra_state<GameSystem>& e)
+	void destroy_object(object_ref o, time_point t, game_state& s, extra_state<GameSystem>& e)
 	{
 		e.systems.detach_all(o);
+		s.object_destruction_time.insert({ o.id, t });
 		return;
 	}
 
@@ -392,8 +395,6 @@ namespace hades::state_api
 			return o.ptr;
 
 		auto obj_ptr = e.objects.find(o.id);
-		if (obj_ptr == nullptr)
-			return nullptr;
 
 		o.ptr = obj_ptr;
 		return obj_ptr;

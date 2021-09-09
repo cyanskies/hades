@@ -46,6 +46,10 @@ namespace hades
 			for (const auto o : _game.get_destroyed_objects())
 			{
 				assert(o);
+				//TODO: extract objects for being saved in the replay
+				//TODO: a way to pick and choose which kinds of object to save like this
+				//		
+
 				state_api::erase_object(*o, _game.get_state(), _game.get_extras());
 			}
 		}

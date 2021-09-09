@@ -9,8 +9,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "zlib.h"
-
 #include "SFML/System/InputStream.hpp"
 
 #include "hades/exceptions.hpp"
@@ -48,6 +46,7 @@ namespace hades::files
 namespace hades::zip
 {
 	using unarchive = void*;
+	struct z_stream;
 
 	class archive_error : public files::file_error
 	{
@@ -67,6 +66,8 @@ namespace hades::zip
 	public:
 		using archive_error::archive_error;
 	};
+
+	std::string_view zlib_version() noexcept;
 
 	//in archive file stream
 	class iafstream
@@ -171,7 +172,7 @@ namespace hades::zip
 		std::size_t _buffer_pos = std::size_t{};
 		std::size_t _buffer_end = std::size_t{};
 		std::streamsize _last_read = std::streamsize{};
-		::z_stream _zip_stream;
+		std::unique_ptr<z_stream, void(*)(z_stream*)noexcept> _zip_stream;
 		std::ifstream _stream;
 	};
 

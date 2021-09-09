@@ -163,6 +163,9 @@ namespace hades
 			time_point get_creation_time(object_ref);
 			const tag_list& get_tags(object_ref);
 
+			//NOTE: this isn't a curve anymore
+			bool is_alive(object_ref&) noexcept;
+
 			// common curves
 			linear_curve<vec2_float>& get_position(object_ref);
 		}
@@ -183,9 +186,6 @@ namespace hades
 		{
 			return check_tags(o, std::array{ t })[0];
 		}
-
-		//NOTE: this isn't a curve anymore
-		bool is_alive(object_ref&) noexcept;
 	}
 
 	//render access functions allow a const view of the game state

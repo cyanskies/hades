@@ -150,7 +150,7 @@ namespace hades::state_api
 					continue;
 
 				auto keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
-				keyframes.push_back({ time_point::min(), std::move(v) });
+				keyframes.push_back({ time_point{}, std::move(v) });
 				std::visit(detail::make_object_visitor{c, s, *obj, keyframes}, keyframes[0].value);
 			}
 
@@ -241,10 +241,16 @@ namespace hades::state_api
 			}
 
 			template<typename T>
-			void copy_curve(unique_id, const pulse_curve<T>&)
+			void copy_curve(unique_id id, const pulse_curve<T>& c)
 			{
-				//how to handle pulse curves
-				// 
+				const auto pulses = c.get(time);
+				auto frames = saved_keyframes{};
+				frames.reserve(2u);
+				frames.push_back({ pulses.first.time, pulses.first.value });
+				if (pulses.second != pulse_curve<T>::bad_keyframe)
+					frames.push_back({ pulses.second.time, pulses.second.value });
+
+				detail::create_object_property<pulse_curve, T>(obj, id, state, std::move(frames));
 				return;
 			}
 		};

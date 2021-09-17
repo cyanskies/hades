@@ -26,6 +26,7 @@ namespace hades::resources
 		//		frames:
 		//			- [x, y, flipx, flipy, d] // xpos ypos, relative duration
 		//			- [x, y, flipx, flipy, d]
+		// // proposed	- [x, y, scalex, scaley, offx, offy, d]
 		//			the third parameter onward is optional
 
 		using namespace std::string_view_literals;
@@ -181,6 +182,7 @@ namespace hades::animation
 	void apply(const resources::animation &animation, float progress, sf::Sprite &target)
 	{
 		const auto [x, y, w, h] = get_frame(animation, progress);
+		//TODO: offsets origin
 		target.setTexture(resources::texture_functions::get_sf_texture(animation.tex));
 		target.setTextureRect({ x, y , w, h });
 	}
@@ -217,6 +219,7 @@ namespace hades
 
 	poly_quad make_quad_animation(vector_float pos, vector_float size, const animation::animation_frame_data& f) noexcept
 	{
+		// TODO: offset and scale the quad according to the anim data
 		return make_quad_animation({ pos, size }, { static_cast<float>(f.x), static_cast<float>(f.y),
 			static_cast<float>(f.w), static_cast<float>(f.h) });
 	}

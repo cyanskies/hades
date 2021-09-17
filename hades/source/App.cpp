@@ -86,7 +86,7 @@ namespace hades
 
 	bool LoadCommand(command_list &commands, std::string_view command, console::function_no_argument job)
 	{
-		return LoadCommand(commands, command, [&job](auto &&args)
+		return LoadCommand(commands, command, [&job](auto&&)
 		{
 			return job();
 		});
@@ -243,11 +243,8 @@ namespace hades
 
 		assert(tick_rate && "failed to get tick rate value from console");
 
-		//auto t = time_duration{}; // < total accumulated time of application
 		auto current_time = time_clock::now();
 		auto accumulator = time_duration{};
-
-		int32 frame_ticks = 1;
 		auto prev_tick_times = std::vector<time_duration>{};
 
 		game_loop_timing gl_times;

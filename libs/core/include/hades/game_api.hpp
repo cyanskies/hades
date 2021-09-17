@@ -164,25 +164,21 @@ namespace hades
 			const tag_list& get_tags(object_ref);
 
 			//NOTE: this isn't a curve anymore
-			bool is_alive(object_ref&) noexcept;
+			bool is_alive(object_ref) noexcept;
 
 			// common curves
 			linear_curve<vec2_float>& get_position(object_ref);
+			vec2_float get_size(object_ref);
 		}
 
-		//=== Common Curves ===
-		//size
-		//world_vector_t& get_size(object_ref);
-		//void set_size(object_ref, world_vector_t);
-
 		template<std::size_t Size>
-		std::array<bool, Size> check_tags(object_ref& o, std::array<unique_id, Size> t)
+		std::array<bool, Size> check_tags(object_ref o, std::array<unique_id, Size> t)
 		{
 			const auto& tags = hades::game::level::object::get_tags(o);
 			return hades::check_tags(tags, t);
 		}
 
-		inline bool check_tag(object_ref& o, unique_id t)
+		inline bool check_tag(object_ref o, unique_id t)
 		{
 			return check_tags(o, std::array{ t })[0];
 		}
@@ -308,7 +304,7 @@ namespace hades
 			const CurveType<T>& get_property_ref(object_ref, variable_id);
 
 			const hades::linear_curve<vec2_float>& get_position(object_ref);
-			const hades::linear_curve<vec2_float>& get_size(object_ref);
+			vec2_float get_size(object_ref);
 		}
 	}
 }

@@ -74,21 +74,21 @@ namespace hades
 			return std::empty(_data);
 		}
 
-		void add_keyframe(time_point t, T val)
+		T& add_keyframe(time_point t, T val)
 		{
 			if (empty()) // curves should always at least have a starting value
 			{
-				_data.push_back({ t, std::move(val) });
-				return;
+				return _data.emplace_back( keyframe{ t, std::move(val) }).value;
 			}
 
 			const auto near = _get_near(t);
 			if (near.second != _end() && near.second->time == t)
+			{
 				near.second->value = std::move(val);
+				return near.second->value;
+			}
 			else
-				_data.insert(near.second, { t, std::move(val) });
-
-			return;
+				return _data.insert(near.second, { t, std::move(val) })->value;
 		}
 
 		//removes all keyframes after time_point
@@ -198,6 +198,11 @@ namespace hades
 			bool operator!=(const pulse_keyframe& rhs) const noexcept
 			{
 				return std::tie(time, value) != std::tie(rhs.time, rhs.value);
+			}
+
+			bool operator==(const pulse_keyframe& rhs) const noexcept
+			{
+				return std::tie(time, value) == std::tie(rhs.time, rhs.value);
 			}
 		};
 

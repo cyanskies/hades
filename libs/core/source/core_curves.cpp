@@ -37,7 +37,11 @@ namespace hades
 		setup_position_curve(d, pos_id);
 		// size curves store the objects 2d size
 		siz_id = d.get_uid("size"sv);
-		setup_position_curve(d, siz_id);
+		resources::make_curve(d, siz_id,
+			resources::curve_variable_type::vec2_float,
+			keyframe_style::const_t,
+			resources::curve_types::vec2_float{ 0.f, 0.f },
+			true, false);
 		
 		// collision groups are used to check whether two objects collide
 		// or to check what terrain an object can move on

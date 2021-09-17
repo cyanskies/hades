@@ -24,9 +24,13 @@ namespace hades::resources
 
 	struct animation_frame
 	{
+		using texture_diff_t = std::make_signed_t<texture_size_t>;
 		//the rectangle for this frame and the duration relative to the rest of the frames in this animation
 		texture_size_t x = 0, y = 0;
-		bool flip_x = false, flip_y = false;
+		bool flip_x = false, flip_y = false; // TODO: turn these into stretch values [-x, +x], use negative values to flip
+		//texture_diff_t scale_x = 1, scale_y = 1; // perhaps float is more appropriate
+		// TODO: add origin offset
+		//texture_diff_t off_x = 0, off_y = 0;
 		float duration = 1.f;
 	};
 

@@ -112,17 +112,17 @@ namespace hades::resources
 							set_curve(*obj, *curve, std::move(value));
 						//TODO: else: error
 					}
-					catch (const invalid_curve& c)
+					catch (const invalid_curve& err)
 					{
 						//get curve info will throw this if the curve type is unregistered
 						// or its values are invalid
 						using namespace std::string_literals;
-						const auto msg = "Unable to add curve to object type: " + name + ", reason was: "s + c.what();
+						const auto msg = "Unable to add curve to object type: " + name + ", reason was: "s + err.what();
 						LOGERROR(msg);
 					}
-					catch (const bad_conversion& c)
+					catch (const bad_conversion& err)
 					{
-						const auto msg = "Unable to add curve to object type: " + name + ", bad type conversion: " + c.what();
+						const auto msg = "Unable to add curve to object type: " + name + ", bad type conversion: " + err.what();
 						LOGERROR(msg);
 					}
 				}

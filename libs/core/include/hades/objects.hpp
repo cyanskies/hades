@@ -75,14 +75,14 @@ namespace hades
 		const resources::object* obj_type = nullptr;
 		entity_id id = bad_entity;
 		string name_id = {};
-		time_point creation_time = time_point::min();
+		time_point creation_time{};
 		time_point destruction_time = time_point::max();
 
 		struct saved_curve
 		{
 			struct saved_keyframe
 			{
-				time_point time = time_point::min();
+				time_point time{};
 				resources::curve_default_value value{};
 			};
 

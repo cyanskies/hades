@@ -154,16 +154,6 @@ namespace hades
 		_textView = setTextView(_previousOutput.back(), size, static_cast<float>(offset), _editLine.getSize().y);
 	}
 
-	static float GetTextHeight(const std::vector<sf::Text> &text)
-	{
-		float height = 0.f;
-
-		for (auto &t : text)
-			height += t.getGlobalBounds().height;
-
-		return height;
-	}
-
 	void ConsoleView::_addText(const console::string &s)
 	{
 		float height = 0.f;

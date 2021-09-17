@@ -78,14 +78,6 @@ namespace hades
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->level_data->get_world_terrain();
 		}
-
-		bool is_alive(object_ref& o) noexcept
-		{
-			auto ptr = detail::get_game_level_ptr();
-			assert(ptr);
-			// NOTE: get_object returns nullptr for stale object refs
-			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
-		}
 	}
 
 	namespace game::level::object
@@ -141,10 +133,24 @@ namespace hades
 			return get_property_ref<const_curve, tag_list>(o, tag_id).get();
 		}
 
+		bool is_alive(object_ref o) noexcept
+		{
+			auto ptr = detail::get_game_level_ptr();
+			assert(ptr);
+			// NOTE: get_object returns nullptr for stale object refs
+			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
+		}
+
 		linear_curve<vec2_float>& get_position(object_ref o)
 		{
 			const auto pos_id = get_position_curve_id();
 			return get_property_ref<linear_curve, vec2_float>(o, pos_id);
+		}
+
+		vec2_float get_size(const object_ref o)
+		{
+			const auto id = hades::get_size_curve_id();
+			return get_property_ref<hades::const_curve, vec2_float>(o, id).get();
 		}
 	}
 
@@ -344,11 +350,10 @@ namespace hades
 			return get_property_ref<hades::linear_curve, vec2_float>(o, id);
 		}
 
-		const hades::linear_curve<vec2_float>& get_size(const object_ref o)
+		vec2_float get_size(const object_ref o)
 		{
 			const auto id = hades::get_size_curve_id();
-			return get_property_ref<hades::linear_curve, vec2_float>(o, id);
+			return get_property_ref<hades::const_curve, vec2_float>(o, id).get();
 		}
-
 	}
 }

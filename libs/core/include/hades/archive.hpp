@@ -134,8 +134,8 @@ namespace hades::zip
 		izfstream& operator=(const izfstream&) = delete;
 
 		//std::ifstream is not noexcept movable(MSVC, maybe everywhere)
-		izfstream(izfstream&&) = default;
-		izfstream& operator=(izfstream&&) = default;
+		izfstream(izfstream&&) noexcept = default;
+		izfstream& operator=(izfstream&&) noexcept = default;
 
 		~izfstream() noexcept;
 

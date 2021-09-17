@@ -130,22 +130,21 @@ namespace hades::data
 
 	bool data_system::loaded(std::string_view mod)
 	{
+		const auto iter = _ids.find(to_string(mod));
 		//name hasn't even been used yet
-		if (_names.find(types::string{ mod }) == _names.end())
+		if (iter == end(_ids))
 			return false;
 
 		try
 		{
-			auto r = get<resources::mod>(get_uid(mod));
+			const auto mod = get<resources::mod>(iter->second, no_load);
+			return mod->loaded;
 		}
 		//name has been used, but not for a mod
 		catch (data::resource_wrong_type&)
 		{
 			return false;
 		}
-
-		//name is used and is a mod
-		return true;
 	}
 
 	void data_system::reparse()

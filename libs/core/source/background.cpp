@@ -16,9 +16,9 @@ namespace hades::resources
 		for (auto &l : b.layers)
 		{
 			assert(l.animation);
-			if (!l.animation->loaded)
+			if (!animation_functions::is_loaded(*l.animation))
 				//lazy load the animation
-				d.get<animation>(l.animation->id);
+				animation_functions::get_resource(d, animation_functions::get_id(*l.animation));
 		}
 	}
 
@@ -49,15 +49,21 @@ namespace hades::resources
 			const auto colour = b->get_child("colour"sv);
 			if (colour)
 			{
-				const auto bits = colour->to_sequence<uint8>();
-				if (bits.size() > 0)
-					back->colour.r = bits[0];
-				if (bits.size() > 1)
-					back->colour.g = bits[1];
-				if (bits.size() > 2)
-					back->colour.b = bits[2];
-				if (bits.size() > 3)
-					back->colour.a = bits[3];
+				const auto bytes = colour->to_sequence<uint8>();
+				switch (size(bytes))
+				{
+				case 4:
+					back->colour.a = bytes[3];
+					[[fallthrough]];
+				case 3:
+					back->colour.b = bytes[2];
+					[[fallthrough]];
+				case 2:
+					back->colour.g = bytes[1];
+					[[fallthrough]];
+				case 1:
+					back->colour.r = bytes[0];
+				}
 			}
 
 			const auto layers = b->get_child("layers"sv);
@@ -92,6 +98,8 @@ namespace hades::resources
 					continue;
 				}
 
+				//TODO: do this parse backwards so we can use the same switch pattern as above
+
 				//get anim[required]
 				const auto anim = l[0]->to_scalar<unique_id>();
 				if (anim == unique_id::zero)
@@ -103,7 +111,7 @@ namespace hades::resources
 					continue;
 				}
 
-				const auto *animation = d.find_or_create<resources::animation>(anim, m);
+				const auto* animation = animation_functions::find_or_create(d, anim, m);
 				assert(animation);
 
 				layer->animation = animation;
@@ -173,12 +181,12 @@ namespace hades
 		d.register_resource_type("backgrounds"sv, resources::parse_background);
 	}
 
-	static constexpr vector_float absolute_offset(vector_float o, vector_int a) noexcept
+	static constexpr vector_float absolute_offset(vector_float o, vector_float a) noexcept
 	{
 		//TODO: handle offset > animation size
 		return vector_float{
-			o.x <= 0.f ? o.x : -(static_cast<float>(a.x) - o.x),
-			o.y <= 0.f ? o.y : -(static_cast<float>(a.y) - o.y)
+			o.x <= 0.f ? o.x : -(a.x - o.x),
+			o.y <= 0.f ? o.y : -(a.y - o.y)
 		} * -1.f;
 	}
 
@@ -186,7 +194,6 @@ namespace hades
 		: _size(size)
 	{
 		set_size(size);
-
 		set_colour(c);
 
 		for (const auto &l : layers)
@@ -206,7 +213,7 @@ namespace hades
 
 	void background::add(layer l)
 	{
-		auto anim = data::get<resources::animation>(l.animation);
+		const auto anim = resources::animation_functions::get_resource(l.animation);
 		assert(anim);
 		_layers.emplace_back(background_layer{ anim, l.offset, l.parallax });
 	}
@@ -219,7 +226,6 @@ namespace hades
 	static void set_animation(background::background_layer &b, time_point t, vector_float s)
 	{
 		b.sprite.set_animation(b.animation, t, tiled_sprite::dont_regen);
-		const auto offset = absolute_offset(b.offset, { b.animation->width, b.animation->height });
 		b.sprite.set_size({
 			b.parallax.x > 0 ? std::max(s.x * b.parallax.x, s.x) : s.x,
 			b.parallax.y > 0 ? std::max(s.x * b.parallax.y, s.y) : s.x, 
@@ -242,8 +248,8 @@ namespace hades
 			std::clamp(view_pos.y, 0.f, s.y)
 		};
 
-		const auto offset = absolute_offset(b.offset, { b.animation->width, b.animation->height });
-
+		const auto frame = b.sprite.get_current_frame();
+		const auto offset = absolute_offset(b.offset, { frame.w, frame.h });
 		const auto offset_pos = clamped_pos - offset;
 
 		const auto parallax_pos = vector_float{

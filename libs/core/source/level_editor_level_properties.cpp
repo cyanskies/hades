@@ -92,7 +92,7 @@ namespace hades
 			g.tooltip("this is not a registered id"sv);
 		else
 		{
-			const auto[anim, error] = data::try_get<resources::animation>(id);
+			const auto[anim, error] = resources::animation_functions::try_get(id);
 			if (!anim)
 			{
 				using ec = data::data_manager::get_error;
@@ -349,7 +349,7 @@ namespace hades
 				assert(l.animation);
 
 				const auto layer = background_settings::background_layer{
-					l.animation->id,
+					resources::animation_functions::get_id(*l.animation),
 					l.offset,
 					l.parallax
 				};

@@ -348,17 +348,16 @@ namespace hades
 
 	void sprite_batch::_add_sprite(sprite s)
 	{
+		namespace anims = resources::animation_functions;
 		const auto settings = sprite_settings{ s.layer,
-			s.animation ? s.animation->tex : nullptr };
+			s.animation ? anims::get_texture(*s.animation) : nullptr };
 		const index_t index = find_batch(settings, _sprites);
 
 		//no batch matches the desired settings
 		if (index == std::size(_sprites))
 		{
-			if (s.animation && !s.animation->loaded)
-			{
-				data::get<resources::animation>(s.animation->id); // force lazy load
-			}
+			if (s.animation && !anims::is_loaded(*s.animation))
+				anims::get_resource(anims::get_id(*s.animation)); // force lazy load
 
 			_sprites.emplace_back(sprite_utility::batch{ settings, std::vector<sprite_utility::sprite>{} });
 			_vertex.emplace_back();

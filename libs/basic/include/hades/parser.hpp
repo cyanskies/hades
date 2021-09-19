@@ -38,6 +38,8 @@ namespace hades::data
 		//returns empty vector on error
 		virtual std::vector<std::unique_ptr<parser_node>> get_children() const = 0;
 
+		virtual bool is_map() const noexcept = 0;
+
 		template<typename T, typename Converter>
 		T to_scalar(Converter&& conv) const;
 

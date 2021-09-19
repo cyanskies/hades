@@ -371,19 +371,6 @@ namespace hades
 			const auto anim = anims[0];
 			auto sprite = sf::Sprite{};
 			animation::apply(*anim, time_point{}, sprite);
-			const auto anim_size = vector_int{ anim->width, anim->height };
-			const auto round_size = vector_int{
-				static_cast<int32>(size.x), 
-				static_cast<int32>(size.y)
-			};
-
-			if (anim_size != round_size)
-			{
-				const auto scale = sf::Vector2f{ size.x / static_cast<float>(anim_size.x),
-												 size.y / static_cast<float>(anim_size.y) };
-
-				sprite.setScale(scale);
-			}
 
 			sprite.setPosition({ obj_pos.x, obj_pos.y });
 			sf::Color col = sprite.getColor();

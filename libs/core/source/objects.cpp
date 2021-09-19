@@ -84,12 +84,12 @@ namespace hades::resources
 			//icon shown when selecting objects to place in the editor
 			const auto editor_icon_id = get_unique(*o, "editor-icon"sv, unique_id::zero);
 			if(editor_icon_id != unique_id::zero)
-				obj->editor_icon = d.find_or_create<const animation>(editor_icon_id, mod);
+				obj->editor_icon = animation_functions::find_or_create(d, editor_icon_id, mod);
 
 			//sprites used to represent to object in the editors map view
-			const auto current_ids = data::get_uid(obj->editor_anims);
+			const auto current_ids = animation_functions::get_id(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
-			obj->editor_anims = d.find_or_create<const animation>(animation_ids, mod);
+			obj->editor_anims = animation_functions::find_or_create(d, animation_ids, mod);
 
 			//base objects
 			const auto current_base_ids = data::get_uid(obj->base);
@@ -173,14 +173,16 @@ namespace hades::resources
 		assert(dynamic_cast<object*>(&r));
 		const auto &o = static_cast<object&>(r);
 
+		namespace animf = animation_functions;
+
 		//load all the referenced resources
-		if (o.editor_icon && !o.editor_icon->loaded)
-			d.get<animation>(o.editor_icon->id);
+		if (o.editor_icon && !animf::is_loaded(*o.editor_icon))
+			animf::get_resource(d, animf::get_id(*o.editor_icon));
 
 		for (const auto a : o.editor_anims)
 		{
-			if (!a->loaded)
-				d.get<animation>(a->id);
+			if (!animf::is_loaded(*a))
+				animf::get_resource(d, animf::get_id(*a));
 		}
 
 		//all of the other resources used by objects are parse-only and don't require loading

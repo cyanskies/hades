@@ -12,7 +12,7 @@ namespace hades::data
 	class yaml_parser_node : public parser_node
 	{
 	public:
-		enum class yaml_type {MAP, SEQUENCE, SCALAR};
+		enum class yaml_type : uint8 {MAP, SEQUENCE, SCALAR};
 
 		explicit yaml_parser_node(YAML::Node node) 
 			: _nodes(std::move(node), YAML::Node{}) 
@@ -79,12 +79,20 @@ namespace hades::data
 					result.emplace_back(std::make_unique<yaml_parser_node>(node));
 				else
 				{
-					for (const auto &n : node)
+					result.reserve(std::size(node));
+					using std::begin;
+					using std::end;
+					if (node.IsMap())
 					{
-						if (node.IsMap())
-							result.emplace_back(std::make_unique<yaml_parser_node>(n.first, n.second));
-						else
-							result.emplace_back(std::make_unique<yaml_parser_node>(n));
+						std::transform(begin(node), end(node), back_inserter(result), [](const auto& n) {
+							return std::make_unique<yaml_parser_node>(n.first, n.second);
+						});
+					}
+					else
+					{
+						std::transform(begin(node), end(node), back_inserter(result), [](const auto& n) {
+							return std::make_unique<yaml_parser_node>(n);
+						});
 					}
 				}
 			}
@@ -94,6 +102,11 @@ namespace hades::data
 			}
 
 			return result;
+		}
+
+		bool is_map() const noexcept
+		{
+			return _type == yaml_type::MAP;
 		}
 
 	private:

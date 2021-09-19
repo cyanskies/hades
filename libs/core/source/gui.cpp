@@ -410,11 +410,11 @@ namespace hades
 	void gui::image(const resources::animation &a, const vector2 &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{
 		_active_assert();
-		const auto[x, y, w, h] = animation::get_frame(a, time);
-
-		assert(a.tex);
-		return image(*a.tex,
-			rect_float{ static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h) },
+		const auto& f = animation::get_frame(a, time);
+		const auto texture = resources::animation_functions::get_texture(a);
+		assert(texture);
+		return image(*texture,
+			rect_float{ f.x, f.y, f.w, f.h },
 			size, 
 			tint_colour,
 			border_colour
@@ -445,16 +445,16 @@ namespace hades
 	bool gui::image_button(const resources::animation &a, const vector2 &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
 	{
 		_active_assert();
-		const auto[x, y, w, h] = animation::get_frame(a, time);
-
-		assert(a.tex);
+		const auto& f = animation::get_frame(a, time);
+		const auto texture = resources::animation_functions::get_texture(a);
+		assert(texture);
 
 		//push the animation address, so that animations with the same texture
 		// dont have the same id
 		push_id(&a);
-		auto result = image_button(
-			*a.tex,
-			rect_float{ static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h) },
+		const auto result = image_button(
+			*texture,
+			rect_float{ f.x, f.y, f.w, f.h },
 			size,
 			background_colour,
 			tint_colour
@@ -539,14 +539,14 @@ namespace hades
 	bool gui::colour_picker3(std::string_view label, std::array<uint8, 3>& colour, colour_edit_flags f)
 	{
 		std::array<float, 3> float_col{ 0.f };
-		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
+		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)noexcept ->float {
 			return col / 255.f;
 		});
 
 		const auto r = ImGui::ColorPicker3(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
-			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->uint8 {
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col) noexcept ->uint8 {
 				return static_cast<uint8>(col * 255);
 			});
 		}
@@ -557,14 +557,14 @@ namespace hades
 	bool gui::colour_picker4(std::string_view label, std::array<uint8, 4>& colour, colour_edit_flags f)
 	{
 		std::array<float, 4> float_col{ 0.f };
-		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)->float {
+		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)noexcept->float {
 			return col / 255.f;
 		});
 
 		const auto r = ImGui::ColorPicker4(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
-			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)->uint8 {
+			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)noexcept->uint8 {
 				return static_cast<uint8>(col * 255);
 			});
 		}

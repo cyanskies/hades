@@ -199,7 +199,7 @@ namespace hades
 
 		static time_point prog_time(float p, const resources::animation* a)
 		{
-			return time_point{ time_cast<nanoseconds>(a->duration * p) };
+			return time_point{ time_cast<nanoseconds>(resources::animation_functions::get_duration(*a) * p) };
 		}
 
 		id_t create(const resources::animation* a, float progress, layer_t l, vector_float position, vector_float size)

@@ -39,6 +39,7 @@ namespace hades
 			return *this;
 		}
 
+		//scalar division
 		constexpr vector_t& operator/=(const T rhs) noexcept
 		{
 			x /= rhs;

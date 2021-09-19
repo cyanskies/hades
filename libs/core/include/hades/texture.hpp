@@ -1,11 +1,7 @@
 #ifndef HADES_TEXTURE_HPP
 #define HADES_TEXTURE_HPP
 
-//#include "SFML/Graphics/Texture.hpp"
-
-//#include "hades/data.hpp"
 #include "hades/game_types.hpp"
-//#include "hades/resource_base.hpp"
 
 namespace sf
 {

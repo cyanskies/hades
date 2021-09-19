@@ -193,9 +193,9 @@ namespace hades
 	static void record_tick_stats(const std::vector<time_duration>& times,
 		console::property_float avg, console::property_float max, console::property_float min) noexcept
 	{
-		auto max_t = time_duration{};
+		auto max_t = time_duration::zero();
 		auto min_t = time_duration{ seconds{500} };
-		auto accumulator = time_duration{};
+		auto accumulator = time_duration::zero();
 
 		for(const auto &t : times)
 		{
@@ -243,10 +243,6 @@ namespace hades
 
 		assert(tick_rate && "failed to get tick rate value from console");
 
-		auto current_time = time_clock::now();
-		auto accumulator = time_duration{};
-		auto prev_tick_times = std::vector<time_duration>{};
-
 		game_loop_timing gl_times;
 		performance_statistics game_loop_metrics;
 
@@ -256,7 +252,7 @@ namespace hades
 			if(!activeState)
 				break;
 
-			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
+			const auto dt = time_cast<time_duration>(seconds_float{ 1.f } / tick_rate->load());
 
 			auto on_tick = [this, dt, state = activeState]() {
 				const auto events = handleEvents(state);

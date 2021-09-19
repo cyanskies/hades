@@ -12,7 +12,7 @@ namespace hades
 	struct performance_statistics
 	{
 		//the number of nanoseconds needed to generate the previous frame
-		time_duration previous_frame_time{};
+		time_duration previous_frame_time = time_duration::zero();
 		//the start time of the update step
 		time_point update_start{};
 		//the duration of each call of OnTick
@@ -22,11 +22,11 @@ namespace hades
 		//used internally
 		time_point tick_start{};
 		//the time it took to perform all calls of OnTick
-		time_duration update_duration{};
+		time_duration update_duration = time_duration::zero();
 		//used internally
 		time_point draw_start{};
 		//the time it took to draw
-		time_duration draw_duration{};
+		time_duration draw_duration = time_duration::zero();
 	};
 
 	struct no_stats_t {};

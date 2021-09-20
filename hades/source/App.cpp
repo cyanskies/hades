@@ -252,7 +252,7 @@ namespace hades
 			if(!activeState)
 				break;
 
-			const auto dt = time_cast<time_duration>(seconds_float{ 1.f } / tick_rate->load());
+			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
 			auto on_tick = [this, dt, state = activeState]() {
 				const auto events = handleEvents(state);

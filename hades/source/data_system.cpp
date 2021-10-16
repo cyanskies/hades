@@ -137,8 +137,8 @@ namespace hades::data
 
 		try
 		{
-			const auto mod = get<resources::mod>(iter->second, no_load);
-			return mod->loaded;
+			const auto m = get<resources::mod>(iter->second, no_load);
+			return m->loaded;
 		}
 		//name has been used, but not for a mod
 		catch (data::resource_wrong_type&)

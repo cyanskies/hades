@@ -59,7 +59,7 @@ namespace hades
 			//    id: value
 			//    id2: value2
 
-			const auto resource_type = "strings";
+			//const auto resource_type = "strings";
 			
 			const auto strings = n.get_children();
 

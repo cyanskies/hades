@@ -130,7 +130,7 @@ namespace hades
 
 	void ConsoleView::_reinit(sf::Vector2f size)
 	{
-		_backdrop.setFillColor(sf::Color(0, 0, 0, *_fade));
+		_backdrop.setFillColor(sf::Color(0, 0, 0, integer_clamp_cast<uint8>(_fade->load())));
 		_backdrop.setSize(sf::Vector2f(size.x, size.y));
 		_editLine.setSize(sf::Vector2f(size.x, 5.f));
 
@@ -154,7 +154,7 @@ namespace hades
 		_textView = setTextView(_previousOutput.back(), size, static_cast<float>(offset), _editLine.getSize().y);
 	}
 
-	void ConsoleView::_addText(const console::string &s)
+	void ConsoleView::_addText(const console::string &string)
 	{
 		float height = 0.f;
 
@@ -163,12 +163,12 @@ namespace hades
 			_previousOutput.back().getGlobalBounds().height;
 
 		std::vector<types::string> words;
-		split(s.text(), ' ', std::back_inserter(words));
+		split(string.text(), ' ', std::back_inserter(words));
 
 		sf::Color col = sf::Color::White;
-		if (s.verbosity() == console::logger::log_verbosity::warning)
+		if (string.verbosity() == console::logger::log_verbosity::warning)
 			col = sf::Color::Yellow;
-		else if (s.verbosity() == console::logger::log_verbosity::error)
+		else if (string.verbosity() == console::logger::log_verbosity::error)
 			col = sf::Color::Red;
 
 		const auto char_size = ValidCharSize(_charSize);
@@ -187,8 +187,7 @@ namespace hades
 			const auto str = s + ' ';
 			const auto current_line = output.back().getString();
 			const sf::Text test_text{ current_line + str, _font->value, char_size };
-			const auto bounds = test_text.getGlobalBounds();
-			if (bounds.width > max_width)
+			if (test_text.getGlobalBounds().width > max_width)
 			{
 				const auto bounds = output.back().getGlobalBounds();
 				output.push_back({ '\t' + s + ' ', _font->value, char_size });

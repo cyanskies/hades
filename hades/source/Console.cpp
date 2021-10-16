@@ -286,7 +286,7 @@ namespace hades
 			return true;
 		}
 
-		console::function function;
+		console::function func;
 		bool isFunction = false;
 
 		{
@@ -295,7 +295,7 @@ namespace hades
 
 			if (funcIter != _consoleFunctions.end())
 			{
-				function = funcIter->second;
+				func = funcIter->second;
 				isFunction = true;
 			}		
 		}
@@ -303,7 +303,7 @@ namespace hades
 		if (isFunction)
 		{
 			LOG(to_string(command));
-			return function(command.arguments);
+			return func(command.arguments);
 		}
 		else
 			SetVariable(command.request, to_string(std::begin(command.arguments), std::end(command.arguments), " "sv));

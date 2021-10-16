@@ -141,7 +141,7 @@ namespace hades
 		namespace object
 		{
 			template<template<typename> typename CurveType, typename T>
-			const CurveType<T>& get_property_ref(object_ref o, variable_id v)
+			const CurveType<T>& get_property_ref(object_ref& o, variable_id v)
 			{
 				static_assert(curve_types::is_curve_type_v<T>);
 				auto& obj = state_api::get_object(o, *detail::get_render_extra_ptr());

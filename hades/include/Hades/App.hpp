@@ -26,6 +26,8 @@ namespace hades
 	class App
 	{
 	public: 
+		// TODO: perform init step in constructor and deinit in destructor
+
 		////////////////////////////////////////////////////////////
 		/// \brief Creates and starts most of the apps subsystems and config files.
 		///
@@ -64,7 +66,7 @@ namespace hades
 		///  has already been handled elsewhere
 		///
 		////////////////////////////////////////////////////////////
-		std::vector<input_event_system::checked_event> handleEvents(state *activeState);
+		void handleEvents(state *activeState);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Registers the engine provided console commands.
@@ -75,8 +77,8 @@ namespace hades
 		////////////////////////////////////////////////////////////
 		/// Member Data
 		////////////////////////////////////////////////////////////
-
 		input_event_system _input;					///< Used by the console to provide bindable input.
+		std::vector<input_event_system::checked_event> _event_buffer; ///< Buffer for per-tick event storage
 		Console _console;							///< The appcations debug console.
 		hades::data::data_system _dataMan;			///< The applications resource loader
 		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.

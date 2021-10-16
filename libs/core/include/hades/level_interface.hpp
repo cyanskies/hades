@@ -21,7 +21,7 @@ namespace hades
 {
 	constexpr auto world_entity_name = "world";
 
-	class system_already_attached : public runtime_error
+	/*class system_already_attached : public runtime_error
 	{
 		using runtime_error::runtime_error;
 	};
@@ -29,7 +29,7 @@ namespace hades
 	class system_not_attached : public runtime_error
 	{
 		using runtime_error::runtime_error;
-	};
+	};*/
 
 	class curve_not_registered : public runtime_error
 	{
@@ -113,6 +113,7 @@ namespace hades
 		extra_state<game_system> _extras;
 		// NOTE: for local clients to access
 		// should be removed for dedicated server
+		// should be stored at the server_level?
 		std::vector<game_obj> _new_objects;
 		std::vector<game_obj*> _destroy_objects;
 		std::vector<entity_id> _removed_objects;

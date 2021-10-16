@@ -1,7 +1,7 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-#include "hades/game_state.hpp"
+//#include "hades/game_state.hpp"
 #include "hades/math.hpp"
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"
@@ -22,7 +22,9 @@ namespace hades
 	constexpr auto level_ext = "lvl";
 	constexpr auto level_save_ext = "sav";
 
+	// TODO: move to game types?
 	using level_size_t = hades::types::int32;
+	using rect_level = hades::rect_t<level_size_t>;
 
 	struct level
 	{

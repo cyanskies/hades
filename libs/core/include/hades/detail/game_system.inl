@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "hades/data.hpp"
+#include "hades/logging.hpp"
 
 namespace hades
 {
@@ -82,13 +83,22 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline std::vector<object_ref> system_behaviours<SystemType>::get_new_entities(SystemType &sys)
+	inline name_list system_behaviours<SystemType>::get_new_entities(SystemType &sys)
 	{
-		return std::exchange(sys.new_ents, {});
+		// preserve the capacity of sys.new_ents
+		// out will only allocate as much as it needs
+		auto out = sys.new_ents;
+
+		//add the new ents to attached ents
+		sys.attached_entities.insert(end(sys.attached_entities),
+			begin(sys.new_ents), end(sys.new_ents));
+
+		sys.new_ents.clear();
+		return out;
 	}
 
 	template<typename SystemType>
-	inline std::vector<object_ref> system_behaviours<SystemType>::get_created_entities(SystemType& sys)
+	inline name_list system_behaviours<SystemType>::get_created_entities(SystemType& sys)
 	{
 		return std::exchange(sys.created_ents, {});
 	}
@@ -100,9 +110,29 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline std::vector<object_ref> system_behaviours<SystemType>::get_removed_entities(SystemType &sys)
+	inline name_list system_behaviours<SystemType>::get_removed_entities(SystemType &sys)
 	{
-		return std::exchange(sys.removed_ents, {});
+		const auto iter = std::partition(begin(sys.attached_entities),
+			end(sys.attached_entities), [&s = sys.removed_ents](auto& o) {
+			return end(s) == std::find(begin(s), end(s), o);
+		});
+		sys.removed_ents.clear();
+
+		// get the removed group, so we can call disconnect on them
+		auto out = name_list{ iter, end(sys.attached_entities) };
+		sys.attached_entities.erase(iter, end(sys.attached_entities));
+		
+		return out;
+	}
+
+	namespace detail
+	{
+		inline bool assert_system_already_attached(object_ref o, name_list& s) noexcept
+		{
+			return std::find_if(s.begin(), s.end(), [o](auto&& ent) {
+				return ent.object == o;
+			}) != s.end();
+		}
 	}
 
 	template<typename SystemType>
@@ -112,20 +142,10 @@ namespace hades
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
 
 		auto& ent_list = system.attached_entities;
-		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
-			return ent.first == entity;
-		});
+		//not being already_attached implies a bug in the game api
+		assert(!detail::assert_system_already_attached(entity, ent_list));
 
-		// TODO: use try emplace
-		if (found != ent_list.end())
-		{
-			const auto message = "The requested entityid is already attached to this system. EntityId: "
-				+ to_string(entity) + ", System: " + to_string(sys);
-			throw system_error{ message };// system_already_attached{ message };
-		}
-
-		ent_list.emplace_back(entity, time_point{});
-		system.new_ents.emplace_back(entity);
+		system.new_ents.emplace_back(typename name_list::value_type{ entity, time_point::min() });
 		_dirty_systems = true;
 		return;
 	}
@@ -135,22 +155,27 @@ namespace hades
 	{
 		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
-
 		auto& ent_list = system.attached_entities;
-		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
-			return ent.first == entity;
-			});
 
-		// TODO: use try emplace
-		if (found != ent_list.end())
+		//check that we arent double attaching
 		{
-			const auto message = "The requested entityid is already attached to this system. EntityId: "
-				+ to_string(entity) + ", System: " + to_string(sys);
-			throw system_error{ message };// system_already_attached{ message };
+			//TOD: this is possible due to errors in save files, i think, need to double check
+			// and make into assert if its only a dev bug
+			auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
+				return ent.object == entity;
+				});
+
+			if (found != ent_list.end())
+			{
+				const auto message = "The requested entityid is already attached to this system. EntityId: "
+					+ to_string(entity) + ", System: " + to_string(sys);
+				LOGERROR(message);
+				throw system_error{ message };
+			}
 		}
 
-		ent_list.emplace_back(entity, time_point{});
-		system.created_ents.emplace_back(entity);
+		ent_list.emplace_back(typename name_list::value_type{ entity, time_point::min() });
+		system.created_ents.emplace_back(typename name_list::value_type{ entity, time_point::min() });
 		_dirty_systems = true;
 		return;
 	}
@@ -159,20 +184,8 @@ namespace hades
 	{
 		template<typename SystemType>
 		inline static void detach_system_impl(object_ref e, SystemType& sys)
-		{
-			
-			//removed from the active list
-			const auto remove_iter = std::find_if(std::begin(sys.attached_entities), std::end(sys.attached_entities), [e](const attached_ent& ent) {
-				return e == ent.first;
-			});
-
-			if(remove_iter == end(sys.attached_entities))
-				return;
-			
-			sys.removed_ents.emplace_back(e);
-			*remove_iter = *rbegin(sys.attached_entities);
-			sys.attached_entities.pop_back();
-
+		{			
+			sys.removed_ents.emplace_back(typename name_list::value_type{ e, time_point::min() });
 			return;
 		}
 	}
@@ -189,6 +202,9 @@ namespace hades
 	template<typename SystemType>
 	inline void system_behaviours<SystemType>::detach_all(object_ref e)
 	{
+		//we add this obj to the removal list for all systems
+		// we check if they were actually attached when
+		// we grab the removal list
 		for (auto& system : _systems)
 			detail::detach_system_impl(e, system);
 
@@ -200,6 +216,7 @@ namespace hades
 	inline void system_behaviours<SystemType>::sleep_entity(object_ref e, unique_id s, time_point b)
 	{
 		auto& sys = detail::find_system(s, _systems, _new_systems);
+		// TODO: this might be a perf issue
 		for (auto& [entity, time] : sys.attached_entities)
 		{
 			if (e == entity)

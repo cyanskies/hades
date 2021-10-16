@@ -23,9 +23,10 @@ namespace hades
 		using value_type = quad_data<key_type, rect_type>;
 		using node_type = quad_node<key_type, rect_type>;
 
+		//TODO: bucket cap to 0, test in high level functions for invalid object
 		quad_tree() : _rootNode(rect_type{}, 1) {}
 		quad_tree(const rect_type &area, types::int32 bucket_cap);
-		quad_tree(types::int32 bucket_cap);
+		explicit quad_tree(types::int32 bucket_cap); // remove this, whats the point, tree is unusable without a predefined area
 
 		template<typename T, typename U>
 		friend constexpr bool operator==(const quad_tree<T, U>&, const quad_tree<T, U>&);

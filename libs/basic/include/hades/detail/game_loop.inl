@@ -12,24 +12,24 @@ namespace hades
 	};
 
 	template<typename OnTick, typename OnDraw, typename PerformanceStatistics>
-	void game_loop(game_loop_timing &times, time_duration dt, OnTick &&tick, OnDraw &&draw, PerformanceStatistics &stats)
+	void game_loop(game_loop_timing &times, const time_duration dt, OnTick &&tick, OnDraw &&draw, PerformanceStatistics &stats)
 	{
 		static_assert(std::is_invocable_v<OnDraw, time_duration>,
 			"OnDraw must accept a time_duration parameter, this represents the time between the last call to OnDraw and this call");
 		constexpr auto use_stats = std::is_same_v<PerformanceStatistics, performance_statistics>;
 
 		const auto new_time = time_clock::now();
-		auto frame_time = new_time - times.previous_frame_time;
+		const auto frame_time = new_time - times.previous_frame_time;
 
 		//store framerate
 		if constexpr (use_stats)
 			stats.previous_frame_time = frame_time;
 
 		constexpr auto max_accumulator_overflow = time_cast<time_duration>(seconds_float{ 0.25f });
-		if (frame_time > max_accumulator_overflow)
-			frame_time = max_accumulator_overflow;
+		const auto capped_frame_time = frame_time > max_accumulator_overflow ?
+			max_accumulator_overflow : frame_time;
 
-		times.accumulator += frame_time;
+		times.accumulator += capped_frame_time;
 
 		if constexpr (use_stats)
 		{

@@ -6,10 +6,7 @@ set(HADES_SRC
 	include/hades/ConsoleView.hpp
 	include/hades/data_system.hpp
 	include/hades/Debug.hpp
-	include/hades/Events.hpp
 	include/hades/fps_display.hpp
-	include/hades/Hades.hpp
-	include/hades/LimitedDraw.hpp
 	include/hades/Main.hpp
 	include/hades/RenderInstance.hpp
 	include/hades/Server.hpp

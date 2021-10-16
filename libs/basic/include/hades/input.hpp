@@ -174,7 +174,6 @@ namespace hades
 
 		using interpreter_set = std::unordered_map<input_interpreter, action>;
 		interpreter_set _interpreters;
-
 		void _add_interpreter_name(std::string_view name, input_interpreter::interpreter_id id);
 
 	private:		
@@ -192,9 +191,15 @@ namespace hades
 	{
 	public:
 		using event = Event;
-		using checked_event = std::tuple<bool, event>;
+		//using checked_event = std::tuple<bool, event>;
 		using event_interpreter = input_event_interpreter<event>;
 		using event_interpreter_set = std::unordered_map<event_interpreter, action>;
+
+		struct checked_event
+		{
+			bool handled;
+			event event;
+		};
 
 		//adds a new input interpretor
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e);

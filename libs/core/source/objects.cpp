@@ -150,6 +150,7 @@ namespace hades::resources
 
 				return tags_list;
 			}();
+
 			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(current_tags));
 			remove_duplicates(new_tags);
 			set_curve(*obj, tags, std::move(new_tags));
@@ -492,6 +493,7 @@ namespace hades
 		}
 
 		out.insert(std::end(out), std::begin(o.systems), std::end(o.systems));
+		remove_duplicates(out);
 		return out;
 	}
 
@@ -506,7 +508,7 @@ namespace hades
 		}
 
 		out.insert(std::end(out), std::begin(o.render_systems), std::end(o.render_systems));
-
+		remove_duplicates(out);
 		return out;
 	}
 

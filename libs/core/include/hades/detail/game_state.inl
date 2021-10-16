@@ -311,7 +311,8 @@ namespace hades::state_api
 				auto& list = std::get<game_state::data_colony<CurveType, T>>(s.state_data);
 				auto found = std::size_t{};
 				auto iter = begin(list);
-				while (iter != end(list) && found < vars_size)
+				const auto end = std::end(list);
+				while (iter != end && found < vars_size)
 				{
 					if (iter->object == o.id)
 					{

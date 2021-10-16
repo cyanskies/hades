@@ -34,7 +34,8 @@ namespace hades
 		_create_new_objects(_interface->get_new_objects());
 		
 		//detach dead entities
-		for (const auto o : _interface->get_removed_objects())
+		const auto dead_ents = _interface->get_removed_objects();
+		for (const auto o : dead_ents)
 			_extra.systems.detach_all({ o });
 
 		const auto dt = time_duration{ t - _prev_frame };
@@ -42,6 +43,15 @@ namespace hades
 		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };
 		const auto next = update_level<const common_interface>(constant_job_data, dt,
 			*_interface, m, nullptr, make_render_job_data);
+
+		//erase dead ents
+		for (auto o : dead_ents)
+		{
+			auto ref = object_ref{ o };
+			auto obj = hades::state_api::get_object_ptr(ref, _extra);
+			if(obj)
+				hades::state_api::erase_object(*obj, _interface->get_state(), _extra);
+		}
 
 		i.prepare(); //copy sprites into vertex buffer
 

@@ -69,7 +69,6 @@ namespace hades
 			constexpr auto server_threadcount = 0; // deprecated
 
 			constexpr auto client_tickrate = 30;
-			constexpr auto client_tick_time = 30;
 			constexpr auto client_avg_tick_time = 0.f;
 			constexpr auto client_max_tick_time = 0.f;
 			constexpr auto client_min_tick_time = 0.f;

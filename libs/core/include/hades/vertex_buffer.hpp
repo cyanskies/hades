@@ -34,7 +34,24 @@ namespace hades
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 
 	private:
-		std::variant<sf::VertexArray, sf::VertexBuffer> _verts;
+		struct vert_array
+		{
+			std::vector<sf::Vertex> vertex;
+			sf::PrimitiveType primative = sf::PrimitiveType::Points;
+
+			std::size_t getVertexCount() const noexcept
+			{
+				return size(vertex);
+			}
+
+			void setPrimitiveType(sf::PrimitiveType p) noexcept
+			{
+				primative = p;
+				return;
+			}
+		};
+
+		std::variant<vert_array, sf::VertexBuffer> _verts;
 	};
 
 	class quad_buffer : public sf::Drawable

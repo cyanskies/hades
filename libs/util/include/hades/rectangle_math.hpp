@@ -6,6 +6,7 @@
 
 #include "hades/types.hpp"
 #include "hades/math.hpp"
+#include "hades/vector_math.hpp"
 
 namespace hades
 {
@@ -16,10 +17,24 @@ namespace hades
 
 		constexpr rect_t() noexcept = default;
 		constexpr rect_t(T x, T y, T width, T height) noexcept;
-		constexpr rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept;
+		constexpr rect_t(const vector_t<T>& pos, const vector_t<T>& siz) noexcept;
 
 		template<typename U>
 		explicit constexpr operator rect_t<U>() const noexcept;
+
+		T& operator[](std::size_t i) noexcept
+		{
+			constexpr auto arr = std::array{ &rect_t::x, &rect_t::y, &rect_t::width, &rect_t::height };
+			assert(i < size(arr));
+			return std::invoke(arr[i], this);
+		}
+
+		const T& operator[](std::size_t i) const noexcept
+		{
+			constexpr auto arr = std::array{ &rect_t::x, &rect_t::y, &rect_t::width, &rect_t::height };
+			assert(i < size(arr));
+			return std::invoke(arr[i], this);
+		}
 
 		T x, y, width, height;
 	};
@@ -38,6 +53,7 @@ namespace hades
 	using rect_int = rect_t<int32>;
 	using rect_float = rect_t<float>;
 
+	//this is buggy for integer types
 	template<typename T>
 	struct rect_centre_t
 	{
@@ -46,7 +62,6 @@ namespace hades
 
 	static_assert(std::is_trivial_v<rect_centre_t<int32>>);
 
-	using rect_centre_int = rect_centre_t<int32>;
 	using rect_centre_float = rect_centre_t<float>;
 
 	template<typename T>

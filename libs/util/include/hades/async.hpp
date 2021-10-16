@@ -129,6 +129,7 @@ namespace hades
 			};
 
 			//stick it in a random queue
+			// TODO: use rotating index to place work
 			const auto index = random(std::size_t{}, std::size(_queues) - 1);
 			{
 				const auto lock = std::scoped_lock{ _queues[index].mut };
@@ -156,7 +157,7 @@ namespace hades
 				value->operator()();
 				return;
 			}
-			std::optional<Task> value;
+			std::optional<Task> value; // needed to generate correct copy constuctor
 		};
 
 		struct thread_work_queue
@@ -176,8 +177,8 @@ namespace hades
 		std::atomic_bool _stop_flag{ false };
 	};
 
-	static_assert(!(std::is_copy_constructible_v<thread_pool> || std::is_nothrow_move_constructible_v<thread_pool> ||
-		std::is_copy_assignable_v<thread_pool> || std::is_nothrow_move_assignable_v<thread_pool>));
+	static_assert(!(std::is_copy_constructible_v<thread_pool> || std::is_move_constructible_v<thread_pool> ||
+		std::is_copy_assignable_v<thread_pool> || std::is_move_assignable_v<thread_pool>));
 
 	namespace detail
 	{

@@ -258,23 +258,28 @@ namespace hades::data
 	template<typename GETMOD, typename YAMLPARSER>
 	static void parseInclude(unique_id mod, types::string file, GETMOD &&getMod, YAMLPARSER &&yamlParser)
 	{
-		auto include_yaml = string{};
-		auto mod_info = std::invoke(std::forward<GETMOD>(getMod), mod);
+		const auto mod_info = std::invoke(std::forward<GETMOD>(getMod), mod);
 		try
 		{
-			include_yaml = files::read_resource(mod_info, file);
+			const auto include_yaml = files::read_resource(mod_info, file);
+
+			if (ContainsTab(include_yaml))
+				LOGWARNING("Yaml file: " + mod_info->name + "/" + file + " contains tabs, expect errors.");
+
+			const auto parser = data::make_parser(include_yaml);
+			std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
 		}
-		catch (const files::file_error & f)
+		catch (const files::file_error& f)
 		{
 			LOGERROR(f.what());
 			return;
 		}
+		catch (const parser_exception& e)
+		{
+			const auto message = to_string(e.what()) + " while parsing: " + mod_info->name + "/" + file;
+			LOGERROR(message);
+		}
 
-		if (ContainsTab(include_yaml))
-			LOGWARNING("Yaml file: " + mod_info->name + "/" + file + " contains tabs, expect errors.");
-
-		const auto parser = data::make_parser(include_yaml);
-		std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
 		return;
 	}
 

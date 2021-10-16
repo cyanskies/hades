@@ -41,7 +41,7 @@ namespace hades::detail
 		const auto size = std::size(_emptys);
 		for (auto i = std::size_t{}; i < size; ++i)
 		{
-			if (&_data[i] == o)
+			if (_data[i].id == o->id)
 			{
 				_emptys[i] = empty_flag;
 				--_size;

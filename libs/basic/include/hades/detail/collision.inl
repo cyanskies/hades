@@ -84,8 +84,9 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, circle_t<T> object)
 	{
-		const auto distance = vector::distance(current, { object.x, object.y });
-		return distance < object.r;
+		const auto ab = current - vector_t<T>{ object.x, object.y };
+		const auto mag = vector::magnitude_squared(ab);
+		return mag < object.r * object.r;
 	}
 
 	//rect tests
@@ -129,7 +130,7 @@ namespace hades
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
 		const auto dist2 = vector::magnitude_squared<T>(vector_t<T>{ lhs.x, lhs.y } - vector_t<T>{ rhs.x, rhs.y });
-		const auto d = lhs.r + lhs.r;
+		const auto d = lhs.r + rhs.r;
 		return dist2 < d * d;
 	}
 

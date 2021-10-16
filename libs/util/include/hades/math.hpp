@@ -10,7 +10,7 @@ namespace hades
 	using point_t = vector_t<T>;
 
 	template<typename T>
-	T clamp(T value, T min, T max);
+	constexpr T clamp(T value, T min, T max) noexcept;
 
 	//returns the distance between two points
 	template<typename T>

@@ -47,12 +47,11 @@ namespace hades
 		{
 			for (const auto& e : events)
 			{
-				const auto& this_event = std::get<Event>(e);
+				const auto& this_event = e.event;
 				//check every event against this interpreter
 				if (std::invoke(interpreter.is_match, this_event))
-					a = std::invoke(interpreter.event_check, std::get<bool>(e), this_event, a);
+					a = std::invoke(interpreter.event_check, e.handled, this_event, a);
 			}
-
 			return a;
 		}
 	}

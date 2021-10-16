@@ -1,5 +1,6 @@
 #include "hades/utility.hpp"
 
+#include <cassert>
 #include <functional>
 #include <random>
 

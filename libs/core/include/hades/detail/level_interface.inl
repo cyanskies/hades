@@ -8,12 +8,12 @@ namespace hades
 {
 	namespace detail
 	{
-		static inline void set_data(system_job_data* d) noexcept
+		inline void set_data(system_job_data* d) noexcept
 		{
 			return set_game_data(d);
 		}
 
-		static inline void set_data(render_job_data* d) noexcept
+		inline void set_data(render_job_data* d) noexcept
 		{
 			return set_render_data(d);
 		}
@@ -34,7 +34,7 @@ namespace hades
 		struct on_connect_data
 		{
 			SystemType* system;
-			std::vector<object_ref> ents;
+			name_list ents;
 		};
 
 		auto on_connect_data_vec = std::vector<on_connect_data>{};
@@ -65,7 +65,7 @@ namespace hades
 				continue;
 
 			auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
-			game_data.entity = std::move(current_ents);
+			game_data.entity = activated_object_view{ current_ents, time_point::min() };
 			game_data.system = s->id;
 			game_data.system_data = &sys_behaviours.get_system_data(s->id);
 
@@ -81,7 +81,7 @@ namespace hades
 				continue;
 
 			auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
-			game_data.entity = std::move(sys.ents);
+			game_data.entity = activated_object_view{ sys.ents, time_point::min() };
 			game_data.system = system->id;
 			game_data.system_data = &sys_behaviours.get_system_data(game_data.system);
 
@@ -133,7 +133,7 @@ namespace hades
 				auto current_ents = sys_behaviours.get_created_entities(*system);
 
 				auto game_data = std::invoke(make_game_struct, jdata, &interface, mission, dt, players);
-				game_data.entity = std::move(current_ents);
+				game_data.entity = { current_ents, time_point::min() };
 				game_data.system = s->id;
 				game_data.system_data = &sys_behaviours.get_system_data(s->id);
 
@@ -150,7 +150,7 @@ namespace hades
 				{
 					auto& sys_data = sys_behaviours.get_system_data(s->system->id);
 					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
-					game_data.entity = std::move(ents);
+					game_data.entity = activated_object_view{ ents, time_point::min() };
 					game_data.system = s->system->id;
 					game_data.system_data = &sys_data;
 
@@ -168,7 +168,7 @@ namespace hades
 				{
 					auto& sys_data = sys_behaviours.get_system_data(s->system->id);
 					auto game_data = std::invoke(make_game_struct, jdata, &interface, nullptr, dt, players);
-					game_data.entity = std::move(ents);
+					game_data.entity = activated_object_view{ ents, time_point::min() };
 					game_data.system = s->system->id;
 					game_data.system_data = &sys_data;
 
@@ -241,33 +241,26 @@ namespace hades
 		const auto systems = sys_behaviours.get_systems();
 
 		//call on_tick for systems
-		for (auto s : systems)
+		for (auto* s : systems)
 		{
 			if (!s->system->tick)
 				continue;
 
+			// TODO: FIXME: this is a reference to the current connected entities list
+			// entities that are created or destroyed during this tick
+			// will be added, removed from this list, while we are
+			// still iterating over it. = bug
 			const auto& current_ents = sys_behaviours.get_entities(*s);
-			auto ents = std::vector<object_ref>{};
-			ents.reserve(size(current_ents));
-			
-			//only update entities that have passed their wake up time
-			for (const auto& e : current_ents)
-			{
-				if (e.second <= current_time)
-					ents.push_back(e.first);
-			}
+			//const auto current_ents = sys_behaviours.get_entities(*s);
 
-			if (!std::empty(ents))
-			{
-				auto& sys_data = sys_behaviours.get_system_data(s->system->id);
-				auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
-				game_data.entity = std::move(ents);
-				game_data.system = s->system->id;
-				game_data.system_data = &sys_data;
+			auto& sys_data = sys_behaviours.get_system_data(s->system->id);
+			auto game_data = std::invoke(make_game_struct, job_data, &interface, mission, dt, players);
+			game_data.entity = activated_object_view{ current_ents, current_time };
+			game_data.system = s->system->id;
+			game_data.system_data = &sys_data;
 
-				detail::set_data(&game_data);
-				std::invoke(s->system->tick);
-			}
+			detail::set_data(&game_data);
+			std::invoke(s->system->tick);
 		}
 
 		//update systems again, to ensure that everything has been properly called,

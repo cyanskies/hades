@@ -49,8 +49,118 @@ namespace hades
 
 	using system_data_t = std::any;
 	// attached ent, a pair of object-ref and the time after which they are allowed to update
-	using attached_ent = std::pair<object_ref, time_point>;
-	using name_list = std::vector<attached_ent>; // TODO: rename
+	struct object_time {
+		object_ref object;
+		time_point next_activation;
+	};
+
+	inline bool operator==(const object_time& l, const object_time& r) noexcept
+	{
+		return l.object == r.object;
+	}
+
+	inline bool operator!=(const object_time& l, const object_time& r) noexcept
+	{
+		return !(l == r);
+	}
+
+	//using attached_ent = std::pair<object_ref, time_point>;
+	using name_list = std::vector<object_time>; // TODO: rename
+
+	/// @brief A range over the above object_time storage
+	///			skips iterators to objects that haven't passed
+	///			their activation timer yet
+	class activated_object_view
+	{
+	public:
+		constexpr activated_object_view() noexcept = default;
+		activated_object_view(const name_list& n, time_point t) noexcept : _data{ &n },
+			_activation_time{ t } {}
+
+		template<typename T>
+		class skip_iterator
+		{
+		public:
+			skip_iterator(typename name_list::const_iterator i, const name_list& d, time_point t) noexcept :
+				_i{ i }, _t{ t }, _data{ &d }
+			{
+				const auto end = std::end(*_data);
+				while (_i != end && _i->next_activation > t) ++_i;
+				return;
+			}
+
+			T& operator*() const noexcept
+			{
+				return _i->object;
+			}
+
+			T* operator->() const noexcept
+			{
+				return &_i->object;
+			}
+
+			skip_iterator& operator++() noexcept
+			{
+				const auto end = std::end(*_data);
+				++_i;
+				while (_i != end && _i->next_activation > _t) ++_i;
+				return *this;
+			}
+
+			skip_iterator operator++(int) noexcept
+			{
+				const auto old = *this;
+				operator++();
+				return old;
+			}
+
+			bool operator==(const skip_iterator& other) const noexcept
+			{
+				return this->_i == other._i;
+			}
+
+			bool operator!=(const skip_iterator& other) const noexcept
+			{
+				return !(*this == other);
+			}
+
+		private:
+			name_list::const_iterator _i;
+			time_point _t;
+			const name_list* _data;
+		};
+
+		using iterator = skip_iterator<object_ref>;
+		using const_iterator = skip_iterator<const object_ref>;
+
+		iterator begin() noexcept
+		{
+			assert(_data);
+			return { _data->begin(), *_data, _activation_time };
+		}
+
+		iterator end() noexcept
+		{
+			assert(_data);
+			return { _data->end(), *_data, _activation_time };
+		}
+
+		const_iterator begin() const noexcept
+		{
+			assert(_data);
+			return { _data->begin(), *_data, _activation_time };
+		}
+
+		const_iterator end() const noexcept
+		{
+			assert(_data);
+			return { _data->end(), *_data, _activation_time };
+		}
+
+	private:
+		const name_list* _data = nullptr;
+		time_point _activation_time;
+	};
 
 	template<typename SystemType>
 	class system_behaviours
@@ -92,14 +202,14 @@ namespace hades
 
 		//get entites that have been added to the system
 		//since the last frame
-		std::vector<object_ref> get_new_entities(SystemType&);
+		name_list get_new_entities(SystemType&);
 		// entities that have already been attached in a previous session
 		// but are being reinitialised in on_create
-		std::vector<object_ref> get_created_entities(SystemType&);
+		name_list get_created_entities(SystemType&);
 		//get all entities currently attached to the system
 		const name_list& get_entities(SystemType&) const;
 		//get entities that were removed from the system last frame
-		std::vector<object_ref> get_removed_entities(SystemType&);
+		name_list get_removed_entities(SystemType&);
 
 		void attach_system(object_ref, unique_id);
 		void attach_system_from_load(object_ref, unique_id);
@@ -139,7 +249,7 @@ namespace hades
 		extra_state<SystemType>* extra = nullptr;
 		system_behaviours<SystemType>* systems = nullptr;
 		// the following member may change between invocation
-		std::vector<object_ref> entity;
+		activated_object_view entity;
 		unique_id system = unique_zero;
 		system_data_t* system_data = nullptr;
 	};
@@ -191,6 +301,8 @@ namespace hades
 
 	//the interface for game systems.
 	//systems work by creating jobs and passing along the data they will use.
+	// TODO: turn game and render _system into a template type
+	//		then redeclare these two names with a using statement
 	struct game_system
 	{
 		using system_t = resources::system;
@@ -212,10 +324,9 @@ namespace hades
 		const resources::system* system = nullptr;
 		//list of entities attached to this system, over time
 		name_list attached_entities;
-
-		std::vector<object_ref> new_ents;
-		std::vector<object_ref> created_ents;
-		std::vector<object_ref> removed_ents;
+		name_list new_ents;
+		name_list created_ents;
+		name_list removed_ents;
 	};
 
 	//program provided systems should be attatched to the renderer or 
@@ -232,8 +343,6 @@ namespace hades
 	{
 		const common_interface *level_data = nullptr; //TODO: client_interface to lock down access
 		render_interface *render_output = nullptr;
-		//system data
-		system_data_t *system_data = nullptr;
 	};
 
 	namespace resources
@@ -275,9 +384,9 @@ namespace hades
 		//this holds the systems, name and id, and the function that the system uses.
 		const resources::render_system *system = nullptr;
 		name_list attached_entities;
-		std::vector<object_ref> new_ents;
-		std::vector<object_ref> created_ents;
-		std::vector<object_ref> removed_ents;
+		name_list new_ents;
+		name_list created_ents;
+		name_list removed_ents;
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>

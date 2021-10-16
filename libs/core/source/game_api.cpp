@@ -10,7 +10,7 @@ namespace hades
 {
 	namespace game
 	{
-		std::vector<object_ref> &get_objects() noexcept
+		const activated_object_view &get_objects() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->entity;
@@ -156,7 +156,7 @@ namespace hades
 
 	namespace render
 	{
-		std::vector<object_ref> &get_objects() noexcept
+		const activated_object_view &get_objects() noexcept
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			return render_data_ptr->entity;

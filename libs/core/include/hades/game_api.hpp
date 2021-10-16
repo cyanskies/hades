@@ -55,10 +55,10 @@ namespace hades
 	namespace game
 	{
 		using namespace curve_types;
-		std::vector<object_ref> &get_objects() noexcept;
+		const activated_object_view &get_objects() noexcept;
 
 		//the time of the previous dt
-		// equals get_time - dt
+		// equals get_time - dt7
 		time_point get_last_time() noexcept;
 		//the time between this 'last_time' and 'time'
 		time_duration get_delta_time() noexcept;
@@ -188,7 +188,7 @@ namespace hades
 	namespace render //TODO: client = render?
 	{
 		using namespace curve_types;
-		std::vector<object_ref> &get_objects() noexcept;
+		const activated_object_view &get_objects() noexcept;
 		render_interface *get_render_output() noexcept;
 		time_point get_time() noexcept;
 
@@ -301,7 +301,13 @@ namespace hades
 		{
 			time_point get_creation_time(object_ref);
 			template<template<typename> typename CurveType, typename T>
-			const CurveType<T>& get_property_ref(object_ref, variable_id);
+			const CurveType<T>& get_property_ref(object_ref&, variable_id);
+			template<template<typename> typename CurveType, typename T>
+			const CurveType<T>& get_property_ref(const object_ref& o, variable_id v)
+			{
+				auto obj = o;
+				return get_property_ref<CurveType, T>(obj, v);
+			}
 
 			const hades::linear_curve<vec2_float>& get_position(object_ref);
 			vec2_float get_size(object_ref);

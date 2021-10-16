@@ -11,7 +11,7 @@ namespace hades
 		: x{ x }, y{ y }, width{ width }, height{ height } {}
 
 	template<typename T>
-	constexpr inline rect_t<T>::rect_t(const vector_t<T> &pos, const vector_t<T> &siz) noexcept
+	constexpr inline rect_t<T>::rect_t(const vector_t<T>& pos, const vector_t<T>& siz) noexcept
 		: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
 
 	template<typename T>

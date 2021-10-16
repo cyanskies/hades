@@ -194,7 +194,7 @@ namespace hades
 		console::property_float avg, console::property_float max, console::property_float min) noexcept
 	{
 		auto max_t = time_duration::zero();
-		auto min_t = time_duration{ seconds{500} };
+		auto min_t = time_duration{ seconds{ 500 } };
 		auto accumulator = time_duration::zero();
 
 		for(const auto &t : times)
@@ -255,8 +255,8 @@ namespace hades
 			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
 			auto on_tick = [this, dt, state = activeState]() {
-				const auto events = handleEvents(state);
-				_input.generate_state(events);
+				handleEvents(state);
+				_input.generate_state(_event_buffer);
 				state->update(dt, _window, _input.input_state());
 			};
 
@@ -282,6 +282,7 @@ namespace hades
 
 			game_loop(gl_times, dt, on_tick, on_draw, game_loop_metrics);
 
+			//TODO: dont use console vars to store this stuff? 
 			//tick stats
 			record_tick_stats(game_loop_metrics.tick_times, avg_tick_time, max_tick_time, min_tick_time);
 			
@@ -323,18 +324,18 @@ namespace hades
 		//how about auto unregister from destructor?
 	}
 
-	std::vector<input_event_system::checked_event> App::handleEvents(state *activeState)
+	void App::handleEvents(state *activeState)
 	{
-		std::vector<input_event_system::checked_event> events;
-
-		sf::Event e;
+		_event_buffer.clear();
+		using event = input_event_system::event;
+		auto e = event{};
 		while (_window.pollEvent(e))
 		{
 			bool handled = false;
 			//window events
-			if (e.type == sf::Event::Closed) // if the app is closed, then disappear without a fuss
+			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
 				_window.close();
-			else if (e.type == sf::Event::KeyPressed && // otherwise check for console summon
+			else if (e.type == event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
 			{
 				if (_consoleView)
@@ -353,7 +354,7 @@ namespace hades
 			}
 			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
 			{
-				if (e.type == sf::Event::KeyPressed)
+				if (e.type == event::KeyPressed)
 				{
 					if (e.key.code == sf::Keyboard::Up)
 						_consoleView->prev();
@@ -362,7 +363,7 @@ namespace hades
 					else if (e.key.code == sf::Keyboard::Return)
 						_consoleView->sendCommand();
 				}
-				else if (e.type == sf::Event::TextEntered)
+				else if (e.type == event::TextEntered)
 					_consoleView->enterText(e);
 			}
 			//input events
@@ -371,11 +372,11 @@ namespace hades
 				if (activeState->handle_event(e))
 					handled = true;
 
-				events.push_back(std::make_tuple(handled, e));
+				_event_buffer.emplace_back(input_event_system::checked_event{ handled, e });
 			}
 		}
 
-		return events;
+		return;
 	}
 
 	void App::registerConsoleCommands()

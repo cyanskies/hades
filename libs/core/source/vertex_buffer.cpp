@@ -4,7 +4,7 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 
-static bool buffer_available()
+static bool buffer_available() noexcept
 {
 	static const auto avail = sf::VertexBuffer::isAvailable();
 	return avail;
@@ -16,8 +16,6 @@ namespace hades
 	{
 		if (sf::VertexBuffer::isAvailable())
 			_verts.emplace<sf::VertexBuffer>();
-		else
-			_verts.emplace<sf::VertexArray>();
 	}
 
 	vertex_buffer::vertex_buffer(sf::PrimitiveType t)
@@ -25,15 +23,13 @@ namespace hades
 		if (sf::VertexBuffer::isAvailable())
 			_verts.emplace<sf::VertexBuffer>(t);
 		else
-			_verts.emplace<sf::VertexArray>(t);
+			_verts.emplace<vert_array>(vert_array{ {}, t });
 	}
 
 	vertex_buffer::vertex_buffer(sf::VertexBuffer::Usage u)
 	{
 		if (sf::VertexBuffer::isAvailable())
 			_verts.emplace<sf::VertexBuffer>(u);
-		else
-			_verts.emplace<sf::VertexArray>();
 	}
 
 	vertex_buffer::vertex_buffer(sf::PrimitiveType t, sf::VertexBuffer::Usage u)
@@ -41,7 +37,7 @@ namespace hades
 		if (sf::VertexBuffer::isAvailable())
 			_verts.emplace<sf::VertexBuffer>(t, u);
 		else
-			_verts.emplace<sf::VertexArray>(t);
+			_verts.emplace<vert_array>(vert_array{ {}, t });
 	}
 
 	void vertex_buffer::set_type(sf::PrimitiveType t)
@@ -83,14 +79,7 @@ namespace hades
 			}
 			else // VertexArray
 			{
-				if (count != vertex_count)
-					v.resize(vertex_count);
-
-				for (auto i = 0u; i < vertex_count; ++i)
-				{
-					assert(i < count);
-					v[i] = vertex[i];
-				}
+				v.vertex = vertex;
 			}
 		}, _verts);
 	}
@@ -98,7 +87,12 @@ namespace hades
 	void vertex_buffer::draw(sf::RenderTarget &t, sf::RenderStates s) const
 	{
 		std::visit([&t, &s](auto &&v) {
-			t.draw(v, s);
+			if constexpr (std::is_same_v<std::decay_t<decltype(v)>, sf::VertexBuffer>)
+			{
+				t.draw(v, s);
+			}
+			else
+				t.draw(v.vertex.data(), v.getVertexCount(), v.primative, s);
 		}, _verts);
 	}
 

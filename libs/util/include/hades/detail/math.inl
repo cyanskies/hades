@@ -5,7 +5,7 @@
 namespace hades
 {
 	template<typename T>
-	T clamp(T value, T min, T max)
+	constexpr T clamp(T value, T min, T max) noexcept
 	{
 		return std::clamp(value, std::min(min, max), std::max(min, max));
 	}

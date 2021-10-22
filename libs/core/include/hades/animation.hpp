@@ -57,7 +57,6 @@ namespace hades::resources
 		std::vector<unique_id> get_id(const std::vector<const animation*>&) noexcept;
 		const texture* get_texture(const animation&) noexcept;
 		time_duration get_duration(const animation&) noexcept;
-		vector_int get_size(const animation&) noexcept;
 		// const shader* get_shader(const animation&) noexcept;
 	}
 }

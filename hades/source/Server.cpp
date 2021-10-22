@@ -15,17 +15,6 @@ namespace hades
 	}
 
 	class local_server_hub;
-
-	static system_job_data make_game_struct(system_job_data d, game_interface* g, game_interface* m,
-		time_duration dt, const std::vector<player_data>* p) noexcept
-	{
-		d.level_data = g;
-		d.mission_data = m;
-		d.dt = dt;
-		d.players = p;
-		return d;
-	};
-
 	const std::vector<player_data>* get_players_helper(local_server_hub& s);
 
 	class local_server_level final : public server_level
@@ -36,9 +25,13 @@ namespace hades
 
 		void tick(time_duration dt, const std::vector<player_data>* p)
 		{
-			auto data = system_job_data{ _level_time, &_game.get_extras(), &_game.get_systems() };
+			auto data = system_job_data{ _level_time + dt, &_game.get_extras(), &_game.get_systems() };
+			data.dt = dt;
+			data.players = p;
 			game_implementation* mission = nullptr;
-			_level_time = update_level(std::move(data), dt, _game, mission, p, make_game_struct);
+			data.level_data = &_game;
+			data.mission_data = mission;
+			_level_time = update_level(std::move(data), _game);
 
 			//TODO: perhaps only clean this up when requested
 			// when running a listen server, this could mean the client won't have

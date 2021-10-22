@@ -356,7 +356,7 @@ namespace hades::animation
 
 	void apply(const resources::animation& animation, float progress, sf::Sprite& target)
 	{
-		const auto f = get_frame(animation, progress);
+		const auto& f = get_frame(animation, progress);
 		const auto tex_x = f.w < 0 ? f.x + abs(f.w) : f.x;
 		const auto tex_y = f.y < 0? f.y + abs(f.h) : f.y;
 		const auto tex_w = f.w;
@@ -409,8 +409,6 @@ namespace hades
 	{
 		const auto offset = vector_float{ f.off_x * f.scale_w, f.off_y * f.scale_h };
 		const auto scaled_size = vector_float{ size.x * f.scale_w, size.y * f.scale_h };
-		const auto w_flip = f.scale_w < 0.f;
-		const auto h_flip = f.scale_h < 0.f;
 
 		return make_quad_animation({ pos - offset, scaled_size }, {
 			f.w < 0 ? f.x + abs(f.w) : f.x, 

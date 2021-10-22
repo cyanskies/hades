@@ -7,15 +7,6 @@
 
 namespace hades 
 {
-	static auto make_render_job_data_func(render_interface* i) noexcept
-	{
-		return [i](render_job_data d, const common_interface* g, const common_interface* m, time_duration, const std::vector<player_data>*)noexcept->render_job_data {
-			d.level_data = g;
-			d.render_output = i;
-			return d;
-		};
-	}
-
 	render_instance::render_instance(common_interface* i) : _interface{i}
 	{
 		assert(i);
@@ -38,11 +29,12 @@ namespace hades
 		for (const auto o : dead_ents)
 			_extra.systems.detach_all({ o });
 
-		const auto dt = time_duration{ t - _prev_frame };
-		auto make_render_job_data = make_render_job_data_func(&i);
 		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };
-		const auto next = update_level<const common_interface>(constant_job_data, dt,
-			*_interface, m, nullptr, make_render_job_data);
+		constant_job_data.level_data = _interface;
+		constant_job_data.render_output = &i;
+		//constant_job_data.mission = nullptr;
+		const auto next = update_level<const common_interface>(constant_job_data,
+			*_interface);
 
 		//erase dead ents
 		for (auto o : dead_ents)

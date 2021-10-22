@@ -81,3 +81,16 @@ namespace hades::curve_types
 		return to_string(type_to_curve_type<T>());
 	}
 }
+
+namespace std {
+	template <>
+	struct hash<hades::object_ref>
+	{
+		size_t operator()(const hades::object_ref& key) const noexcept
+		{
+			using id_type = hades::object_ref::id_type;
+			const auto h = std::hash<id_type::value_type>{};
+			return h(static_cast<id_type::value_type>(key.id));
+		}
+	};
+}

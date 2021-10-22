@@ -368,7 +368,7 @@ namespace hades
 		_sprites[index].sprites.emplace_back(s);
 		if (s.animation)
 		{
-			const auto frame = animation::get_frame(*s.animation, s.animation_progress);
+			const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
 			_vertex[index].buffer.append(make_quad_animation(s.position, s.size, frame));
 		}
 		else

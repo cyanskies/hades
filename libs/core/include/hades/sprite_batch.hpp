@@ -199,7 +199,7 @@ namespace hades
 		{
 			if (s.animation)
 			{
-				const auto frame = animation::get_frame(*s.animation, s.animation_progress);
+				const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
 				_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, frame), s_index);
 			}
 			else

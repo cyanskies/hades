@@ -19,7 +19,7 @@ namespace hades
 		time_point get_last_time() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
-			return game_data_ptr->current_time;
+			return game_data_ptr->current_time - game_data_ptr->dt;
 		}
 
 		time_duration get_delta_time() noexcept
@@ -31,7 +31,7 @@ namespace hades
 		time_point get_time() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
-			return game_data_ptr->current_time + game_data_ptr->dt;
+			return game_data_ptr->current_time;
 		}
 
 		const std::vector<player_data>& get_players() noexcept

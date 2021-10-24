@@ -14,7 +14,7 @@
 #include "hades/level_editor_grid.hpp"
 #include "hades/objects.hpp"
 #include "hades/properties.hpp"
-#include "hades/quad_map.hpp"
+#include "hades/quad_map.hpp" // TODO: switch to collision grid
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 

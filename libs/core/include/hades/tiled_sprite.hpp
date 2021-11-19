@@ -23,9 +23,11 @@ namespace hades
 		struct dont_regen_t {};
 
 		//pass tiled_sprite::dont_regen to defer regenerating the vertex array
+		// throws: bad_alloc
 		void set_animation(const resources::animation*, time_point);
-		void set_animation(const resources::animation*, time_point, dont_regen_t);
+		void set_animation(const resources::animation*, time_point, dont_regen_t) noexcept;
 
+		// throws: bad_alloc
 		void set_size(vector_float);
 		void set_size(vector_float, dont_regen_t) noexcept;
 		resources::animation_frame get_current_frame() const noexcept;

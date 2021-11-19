@@ -205,7 +205,7 @@ namespace hades
 		_backdrop.setFillColor({ c.r, c.g, c.b, c.a });
 	}
 
-	void background::set_size(vector_float s)
+	void background::set_size(vector_float s) noexcept
 	{
 		_size = s;
 		_backdrop.setSize({ s.x, s.y });

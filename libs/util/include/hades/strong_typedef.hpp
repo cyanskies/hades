@@ -262,20 +262,17 @@ namespace hades
 	{};
 }
 
-namespace std
+template <typename Tag, typename T>
+struct std::hash<hades::strong_typedef<Tag, T>>
 {
-	template <typename Tag, typename T>
-	struct hash<hades::strong_typedef<Tag, T>>
-	{
-		static_assert(hades::is_strong_typedef_hashable<T>::value, "The type of this strong_typedef doesn't support hashing");
-		using U = hades::strong_typedef<Tag, T>;
+	static_assert(hades::is_strong_typedef_hashable<T>::value, "The type of this strong_typedef doesn't support hashing");
+	using U = hades::strong_typedef<Tag, T>;
 
-		size_t operator()(const U& key) const noexcept
-		{
-			const auto h = std::hash<typename U::value_type>{};
-			return h(static_cast<typename U::value_type>(key));
-		}
-	};
-}
+	size_t operator()(const U& key) const noexcept
+	{
+		const auto h = std::hash<typename U::value_type>{};
+		return h(static_cast<typename U::value_type>(key));
+	}
+};
 
 #endif //!HADES_UTIL_STRONG_TYPEDEF_HPP

@@ -110,37 +110,35 @@ namespace hades
 	}
 }
 
-namespace std {
-	template <>
-	struct hash<hades::action>
+template <>
+struct std::hash<hades::action>
+{
+	size_t operator()(const hades::action& key) const noexcept
 	{
-		size_t operator()(const hades::action& key) const
-		{
-			std::hash<hades::unique_id::type> h;
-			return h(key.id.get());
-		}
-	};
+		std::hash<hades::unique_id::type> h;
+		return h(key.id.get());
+	}
+};
 
-	template <>
-	struct hash<hades::input_interpreter>
+template <>
+struct std::hash<hades::input_interpreter>
+{
+	size_t operator()(const hades::input_interpreter& key) const noexcept
 	{
-		size_t operator()(const hades::input_interpreter& key) const
-		{
-			std::hash<hades::input_interpreter::interpreter_id::type> h;
-			return h(key.id.get());
-		}
-	};
+		std::hash<hades::input_interpreter::interpreter_id::type> h;
+		return h(key.id.get());
+	}
+};
 
-	template <typename Event>
-	struct hash<hades::input_event_interpreter<Event>>
+template <typename Event>
+struct std::hash<hades::input_event_interpreter<Event>>
+{
+	size_t operator()(const hades::input_event_interpreter<Event>& key) const noexcept
 	{
-		size_t operator()(const hades::input_event_interpreter<Event>& key) const
-		{
-			std::hash<hades::input_event_interpreter<Event>::interpreter_id::type> h;
-			return h(key.id.get());
-		}
-	};
-}
+		std::hash<hades::input_event_interpreter<Event>::interpreter_id::type> h;
+		return h(key.id.get());
+	}
+};
 
 namespace hades
 {

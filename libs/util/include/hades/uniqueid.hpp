@@ -29,12 +29,6 @@ namespace hades
 			assert(_count != std::numeric_limits<type>::max());
 		}
 
-		/*
-		constexpr unique_id_t(const unique_id_t&) noexcept = default;
-		constexpr unique_id_t(unique_id_t&&) noexcept = default;
-		constexpr unique_id_t &operator=(const unique_id_t&) noexcept = default;
-		*/
-
 		constexpr bool operator==(const unique_id_t &rhs) const noexcept
 		{
 			return _value == rhs._value;
@@ -46,9 +40,6 @@ namespace hades
 		}
 
 		constexpr type get() const noexcept { return _value; }
-
-		template<typename T>
-		friend constexpr bool operator<(const unique_id_t<T>&, const unique_id_t<T>&) noexcept;
 
 		operator bool() const noexcept
 		{
@@ -71,7 +62,7 @@ namespace hades
 	template<typename T>
 	constexpr bool operator<(const unique_id_t<T>& lhs, const unique_id_t<T>& rhs) noexcept
 	{
-		return lhs._value < rhs._value;
+		return lhs.get() < rhs.get();
 	}
 
 	//process wide unique id
@@ -85,16 +76,14 @@ namespace hades
 	}
 }
 
-namespace std {
-	template <typename T> 
-	struct hash<hades::unique_id_t<T>>
+template <typename T> 
+struct std::hash<hades::unique_id_t<T>>
+{
+	size_t operator()(const hades::unique_id_t<T>& key) const noexcept
 	{
-		size_t operator()(const hades::unique_id_t<T>& key) const noexcept
-		{
-			const auto h = std::hash<T>{};
-			return h(key.get());
-		}
-	};
-}
+		const auto h = std::hash<T>{};
+		return h(key.get());
+	}
+};
 
 #endif // hades_util_unique_id_hpp

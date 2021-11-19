@@ -55,7 +55,8 @@ namespace hades
 		background &operator=(const background&) = default;
 
 		void set_colour(colour) noexcept;
-		void set_size(vector_float);
+		void set_size(vector_float) noexcept;
+		// throws: data::resource_error if the animation cannot be found
 		void add(layer);
 		void clear() noexcept;
 
@@ -63,6 +64,7 @@ namespace hades
 		void update(time_point = time_point{});
 		//should be called once per frame
 		void update(rect_float view) noexcept;
+		// throws: bad_alloc
 		void update(time_point, rect_float);
 		void draw(sf::RenderTarget&, sf::RenderStates) const override;
 

@@ -26,7 +26,7 @@ namespace hades
 		}
 	}
 
-	void tiled_sprite::set_animation(const resources::animation *a, time_point t, dont_regen_t)
+	void tiled_sprite::set_animation(const resources::animation *a, time_point t, dont_regen_t) noexcept
 	{
 		assert(a);
 		_animation = a;

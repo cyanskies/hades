@@ -62,7 +62,7 @@ namespace hades
 		std::vector<region> regions;
 
 		//level scripts
-		//on_load
+		unique_id on_load = unique_zero;
 		//on_save
 		//on_tick
 

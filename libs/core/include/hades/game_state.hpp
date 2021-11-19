@@ -243,7 +243,6 @@ namespace hades
 		state_data_type state_data;
 		entity_id next_id = next(bad_entity);
 		object_name_map names;
-		time_point game_time = time_point::min();
 		std::unordered_map<entity_id, time_point> object_creation_time;
 		std::unordered_map<entity_id, time_point> object_destruction_time;
 		//TODO: pull stale objects out of the main game data, so that they can be written to disk or something
@@ -268,6 +267,12 @@ namespace hades
 		{
 		public:
 			using runtime_error::runtime_error;
+		};
+
+		class object_id_collision : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
 		};
 
 		class object_stale_error : public game_state_error

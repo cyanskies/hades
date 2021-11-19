@@ -29,7 +29,8 @@ namespace hades::state_api
 			auto data = state_field<CurveType<T>>{ object.id, curve_id, std::move(curve) };
 			auto iter = colony.emplace(std::move(data));
 			assert(iter != end(colony));
-
+			if (iter == end(colony))
+				throw game_state_error{ "tried to double create object property" };
 			using list_type = typename game_obj::var_list<CurveType, T>;
 			using entry_type = typename game_obj::var_entry<CurveType, T>;
 			auto& var_list = std::get<list_type>(object.object_variables);
@@ -168,16 +169,22 @@ namespace hades::state_api
 		{
 			assert(o.obj_type);
 			assert(o.id != bad_entity);
+			assert(o.id < s.next_id);
 			
-			auto obj = detail::make_object_impl(o, o.creation_time, s, e);
+			if (e.objects.find(o.id) != nullptr)
+				throw object_id_collision{ "tried to restore an object that has a matching id to a currently living object" };
+			const auto obj = detail::make_object_impl(o, o.creation_time, s, e);
 			s.object_creation_time[o.id] = o.creation_time;
 			s.object_destruction_time[o.id] = o.destruction_time;
 
 			for (const auto sys : get_systems(*o.obj_type))
 				e.systems.attach_system_from_load(obj, sys->id);
 
-			// TODO: name?
-
+			//add name to name map
+			auto id_curve = step_curve<object_ref>{};
+			id_curve.add_keyframe(o.creation_time, obj);
+			s.names.insert_or_assign(o.name_id, std::move(id_curve));
+			
 			return obj;
 		}
 	}
@@ -185,6 +192,8 @@ namespace hades::state_api
 	template<typename GameSystem>
 	inline object_ref make_object(const object_instance& o, const time_point t, game_state& s, extra_state<GameSystem>& e)
 	{
+		if (o.id != bad_entity)
+			throw game_state_error{ "tried to create object with preset id" };
 		auto obj = detail::make_object_impl(o, t, s, e);
 		s.object_creation_time[obj.id] = t;
 		for (const auto sys : get_systems(*o.obj_type))

@@ -19,6 +19,7 @@ namespace hades
 
 	static constexpr auto level_regions_str = "regions"sv;
 
+	static constexpr auto level_load_str = "on-load-script"sv;
 	static constexpr auto level_scripts_input = "player_input"sv;
 
 	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
@@ -108,6 +109,8 @@ namespace hades
 		serialise(l.objects, w);
 
 		//level scripts
+		if (l.on_load != unique_zero)
+			w.write(level_load_str, l.on_load);
 		if (l.player_input_script != unique_id::zero)
 			w.write(level_scripts_input, l.player_input_script);
 
@@ -163,6 +166,7 @@ namespace hades
 		read_regions_into_level(level_node, l);
 
 		//level scripts
+		l.on_load = data::parse_tools::get_unique(level_node, level_load_str, l.on_load);
 		l.player_input_script = data::parse_tools::get_unique(level_node, level_scripts_input, l.player_input_script);
 
 		const auto tiles = level_node.get_child(level_tiles_layer_str);

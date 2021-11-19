@@ -520,21 +520,29 @@ namespace hades
 				s.add_level_open = false;
 				if (s.rename && !std::empty(_levels))
 				{
+					//rename
 					auto& l =_levels[integer_cast<std::size_t>(s.rename_index)];
 					l.name = id;
 					if (s.add_level_external)
 					{
 						l.path = s.new_level_path;
-						l.level = {};
+						l.level = {}; //erase level if it was previously internal
 					}
 					else
 						l.path.reset();
 				}
 				else
 				{
+					//create
 					auto l = level_info{ id };
 					if (s.add_level_external)
 						l.path = s.new_level_path;
+					else
+					{
+						l.level = make_new_level();
+						_gui.activate_context();
+						l.level.name = s.new_level_name;
+					}
 					_levels.emplace_back(std::move(l));
 				}
 			}

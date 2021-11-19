@@ -15,12 +15,14 @@ namespace hades
 	}
 
 	class local_server_hub;
-	const std::vector<player_data>* get_players_helper(local_server_hub& s);
+	static game_interface* get_game_interface(local_server_hub&) noexcept;
+	static const std::vector<player_data>* get_players(local_server_hub&) noexcept;
 
 	class local_server_level final : public server_level
 	{
 	public:
-		local_server_level(const level_save& sv, local_server_hub *server) : _game(sv), _server(server)
+		local_server_level(const level_save& sv, local_server_hub *server)
+			: _game{ sv, get_game_interface(*server), get_players(*server) }, _server(server)
 		{}
 
 		void tick(time_duration dt, const std::vector<player_data>* p)
@@ -28,9 +30,8 @@ namespace hades
 			auto data = system_job_data{ _level_time + dt, &_game.get_extras(), &_game.get_systems() };
 			data.dt = dt;
 			data.players = p;
-			game_implementation* mission = nullptr;
 			data.level_data = &_game;
-			data.mission_data = mission;
+			data.mission_data = get_game_interface(*_server);
 			_level_time = update_level(std::move(data), _game);
 
 			//TODO: perhaps only clean this up when requested
@@ -55,12 +56,12 @@ namespace hades
 		}
 
 		//TODO: exported curves is dead
-		void get_changes(exported_curves &exp, time_point dt) const override
+		void get_changes(exported_curves &, time_point) const override
 		{
 			return;
 		}
 
-		void get_changes(exported_curves& exp) const override
+		void get_changes(exported_curves&) const override
 		{
 			return;
 		}
@@ -147,6 +148,12 @@ namespace hades
 			return &*_mission_instance;
 		}
 
+		game_interface* get_game_interface() noexcept
+		{
+			assert(_mission_instance);
+			return &*_mission_instance;
+		}
+
 		object_ref get_player_obj(unique_id i) noexcept override
 		{
 			for (const auto& p : _players)
@@ -158,7 +165,7 @@ namespace hades
 			return {};
 		}
 
-		const std::vector<player_data>* get_players()
+		const std::vector<player_data>* get_players() noexcept
 		{
 			return &_players;
 		}
@@ -201,7 +208,7 @@ namespace hades
 				if (l.name == id)
 				{
 					const auto save = make_save_from_level(l.level);
-					auto new_level = level{ id, {save, this} };
+					auto new_level = level{ id, { save, this } };
 					auto &out = _levels.emplace_back(std::move(new_level));
 					return &out.instance;
 				}
@@ -237,8 +244,12 @@ namespace hades
 		std::deque<level> _levels;
 	};
 
+	static game_interface* get_game_interface(local_server_hub& s) noexcept
+	{
+		return s.get_game_interface();
+	}
 
-	const std::vector<player_data>* get_players_helper(local_server_hub& s)
+	static const std::vector<player_data>* get_players(local_server_hub& s) noexcept
 	{
 		return s.get_players();
 	}

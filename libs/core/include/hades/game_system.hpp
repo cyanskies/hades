@@ -256,14 +256,17 @@ namespace hades
 
 	struct system_job_data : common_job_data<game_system>
 	{
+		using get_level_fn = game_interface*(*)(unique_id);
+
+		get_level_fn get_level = nullptr;
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
-		game_interface *level_data = nullptr;
+		game_interface *level_data = nullptr; // <- currently open level
 		//mission data interface
 		game_interface *mission_data = nullptr;
 		const std::vector<player_data>* players = nullptr;
-		time_duration dt;
+		time_duration dt = time_duration::zero();
 	};
 
 	namespace resources
@@ -409,6 +412,7 @@ namespace hades
 		system_job_data* get_game_data_ptr() noexcept;
 		game_interface* get_game_level_ptr() noexcept;
 		system_behaviours<game_system>* get_game_systems_ptr() noexcept;
+		void change_level(game_interface*) noexcept;
 		render_job_data* get_render_data_ptr() noexcept;
 		const common_interface* get_render_level_ptr() noexcept;
 		extra_state<render_system>* get_render_extra_ptr() noexcept;

@@ -8,6 +8,7 @@
 namespace hades
 {
 	void register_level_editor_terrain_resources(data::data_manager&);
+	void create_level_editor_terrain_variables();
 
 	class level_editor_terrain final : public level_editor_component
 	{
@@ -72,6 +73,16 @@ namespace hades
 		level_options _new_options;
 		mutable_terrain_map _map;
 	};
+}
+
+namespace hades::cvars
+{
+	constexpr auto editor_default_terrainset = "editor_default_terrinset";
+
+	namespace default_value
+	{
+		constexpr auto editor_default_terrainset = "";
+	}
 }
 
 #endif //!HADES_LEVEL_EDITOR_TERRAIN_HPP

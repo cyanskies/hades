@@ -3,8 +3,10 @@
 #include "hades/core_curves.hpp"
 #include "hades/data.hpp"
 #include "hades/level.hpp"
+#include "hades/level_scripts.hpp"
 #include "hades/game_system.hpp"
 #include "hades/objects.hpp"
+#include "hades/save_load_api.hpp"
 
 namespace hades 
 {
@@ -63,28 +65,12 @@ namespace hades
 		return data::get<resources::player_input>(sv.source.player_input_script);
 	}
 
-	static std::tuple<game_state, extra_state<game_system>> fill_state(const level_save &sv)
-	{
-		auto s = game_state{};
-		auto e = extra_state<game_system>{};
-		s.next_id = sv.objects.next_id;
-
-		for (const auto &o : sv.objects.objects)
-			state_api::loading::restore_object(o, s, e);
-
-		return { std::move(s), std::move(e) };
-	}
-
-	game_implementation::game_implementation(const level_save& sv)
+	game_implementation::game_implementation(const level_save& sv,
+		game_interface* mission, const std::vector<player_data>* players)
 		: _player_input{ get_if_player_input(sv) },
-		_size{ static_cast<world_unit_t>(sv.source.map_x), static_cast<world_unit_t>(sv.source.map_y) }
+		_size{ static_cast<world_unit_t>(sv.source.map_x),
+		static_cast<world_unit_t>(sv.source.map_y) }
 	{
-		std::tie(_state, _extras) = fill_state(sv);
-
-		_new_objects.reserve(_extras.objects.size());
-		for (auto& o : _extras.objects)
-			_new_objects.emplace_back(o);
-		
 		if (!std::empty(sv.source.tile_map_layer.tiles))
 		{
 			const auto raw_map = raw_terrain_map{
@@ -96,6 +82,38 @@ namespace hades
 
 			_terrain = to_terrain_map(raw_map);
 		}
+
+		_state.next_id = sv.objects.next_id;
+
+		const auto load_script_id = sv.source.on_load;
+		
+		{
+			auto game_data = system_job_data{};
+			game_data.current_time = sv.level_time;
+			game_data.extra = &_extras;
+			game_data.systems = &_extras.systems;
+			game_data.level_data = this;
+			game_data.mission_data = mission;
+			game_data.players = players;
+
+			detail::set_data(&game_data);
+
+			if (load_script_id)
+			{
+				const auto on_load = data::get<resources::load_script>(load_script_id);
+				std::invoke(on_load->function, sv);
+			}
+			else
+			{
+				game::level::load(sv);
+			}
+		}
+
+		_new_objects.reserve(_extras.objects.size());
+		for (auto& o : _extras.objects)
+			_new_objects.emplace_back(o);
+
+		return;
 	}
 
 	object_ref game_implementation::get_object_ref(std::string_view s, time_point t) noexcept

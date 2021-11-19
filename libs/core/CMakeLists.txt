@@ -33,6 +33,7 @@ set(HADES_CORE_SRC
 	source/objects.cpp
 	source/render_instance.cpp
 	source/render_interface.cpp
+	source/save_load_api.cpp
 	source/sf_input.cpp
 	source/sf_streams.cpp
 	source/sprite_batch.cpp
@@ -78,6 +79,7 @@ set(HADES_CORE_SRC
 	include/hades/players.hpp
 	include/hades/render_instance.hpp
 	include/hades/render_interface.hpp
+	include/hades/save_load_api.hpp
 	include/hades/sf_input.hpp
 	include/hades/sf_streams.hpp
 	include/hades/sf_time.hpp

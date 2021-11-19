@@ -69,7 +69,8 @@ namespace hades
 	class game_implementation : public game_interface
 	{
 	public:
-		explicit game_implementation(const level_save&);
+		game_implementation(const level_save&, game_interface* mission,
+			const std::vector<player_data>* players);
 
 		object_ref create_object(const object_instance&, time_point) override;
 		//object_ref create_object(const resources::object&, time_point);

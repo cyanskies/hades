@@ -9,9 +9,11 @@
 
 namespace hades
 {
+	void create_level_editor_properties_variables();
+
 	//provides an interface for editing level name, properties, background colour
-	//TODO: set player input script and ai input script here too
-	//TODO: level load save scripts
+	//TODO: set ai input script here too
+	//TODO: level save scripts
 	class level_editor_level_props final : public level_editor_component
 	{
 	public:
@@ -57,11 +59,25 @@ namespace hades
 		background_settings_window _background_window;
 		background _background;
 		bool _details_window = false;
-		string _level_name, _new_name;
-		string _level_desc, _new_desc;
-		unique_id _player_input = unique_id::zero;
-		unique_id _ai_input = unique_id::zero;
+		string _level_name, _new_name = to_string(editor::new_level_name);
+		string _level_desc, _new_desc = to_string(editor::new_level_description);
+		unique_id _load_script = unique_zero;
+		unique_id _player_input = unique_zero;
+		unique_id _ai_input = unique_zero;
 	};
+}
+
+namespace hades::cvars
+{
+	using namespace std::string_view_literals;
+	constexpr auto editor_player_script_default = "editor_player_script_default"sv;
+	constexpr auto editor_load_script_default = "editor_load_script_default"sv;
+
+	namespace default_value
+	{
+		constexpr auto editor_player_script_default = ""sv;
+		constexpr auto editor_load_script_default = ""sv;
+	}
 }
 
 #endif //!HADES_LEVEL_EDITOR_LEVEL_PROPERTIES_HPP

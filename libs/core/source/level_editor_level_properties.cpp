@@ -3,16 +3,21 @@
 #include "hades/animation.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_scripts.hpp"
+#include "hades/properties.hpp"
 
 namespace hades
 {
-	static void make_level_detail_window(gui &g, bool &open, string &name, string &description, unique_id &player_input, unique_id &ai_input)
+	void create_level_editor_properties_variables()
 	{
-		static const auto& player_input_list = resources::get_player_input_list();
-		//static const auto &ai_input = resources::get_ai_input_list();
+		using namespace console;
+		create_property(cvars::editor_player_script_default, cvars::default_value::editor_player_script_default);
+		create_property(cvars::editor_load_script_default, cvars::default_value::editor_load_script_default);
+	}
 
-		if (!open)
-			return;
+	static void make_level_detail_window(gui &g, bool &open, string &name, string &description,
+		unique_id &player_input, unique_id &ai_input, unique_id &on_load)
+	{
+		if (!open) return;
 
 		using namespace std::string_view_literals;
 		if (g.window_begin("level details"sv, open))
@@ -23,19 +28,22 @@ namespace hades
 			g.input_text("Name"sv, name, gui::input_text_flags::auto_select_all);
 			g.input_text_multiline("Description"sv, description, vector_float{}, gui::input_text_flags::no_horizontal_scroll);
 
-			const auto preview = [player_input]()->string {
-				if (player_input == unique_id::zero)
-					return "none";
+			auto preview = [](unique_id id)->std::string {
+				using namespace std::string_literals;
+				if (id == unique_id::zero)
+					return "none"s;
 				else
-					return data::get_as_string(player_input);
-			}();
+					return data::get_as_string(id);
+			};
 
-			if (g.combo_begin("player input", preview))
+			// TODO: generalise this combobox structure, it'll be used
+			//		for all the scripts in this window
+			if (g.combo_begin("player input"sv, preview(player_input)))
 			{
 				if (g.selectable("none"sv, unique_id::zero == player_input))
 					player_input = unique_id::zero;
 
-				for (const auto& id : player_input_list)
+				for (const auto& id : resources::get_player_input_list())
 				{
 					if (g.selectable(data::get_as_string(id), id == player_input))
 						player_input = id;
@@ -44,9 +52,23 @@ namespace hades
 				g.combo_end();
 			}
 
-			if (g.combo_begin("ai input", "none"))
+			if (g.combo_begin("ai input"sv, preview(ai_input)))
 			{
 				g.selectable("none"sv, true);
+				g.combo_end();
+			}
+
+			if (g.combo_begin("load script"sv, preview(on_load)))
+			{
+				if (g.selectable("none"sv, unique_id::zero == on_load))
+					on_load = unique_id::zero;
+
+				for (const auto& id : resources::get_level_load_script_list())
+				{
+					if (g.selectable(data::get_as_string(id), id == on_load))
+						on_load = id;
+				}
+
 				g.combo_end();
 			}
 		}
@@ -223,20 +245,44 @@ namespace hades
 		g.window_end();
 	}
 
+	struct default_scripts
+	{
+		unique_id player_input;
+		//unique_id ai_input;
+		unique_id on_load;
+	};
+
+	static default_scripts get_script_defaults()
+	{
+		using namespace console;
+		//input scripts
+		const auto player_input_prop = get_string(cvars::editor_player_script_default, cvars::default_value::editor_player_script_default);
+		auto out = default_scripts{};
+		out.player_input = hades::data::get_uid(player_input_prop->load());
+
+		// loading scripts
+		const auto load_prop = get_string(cvars::editor_load_script_default, cvars::default_value::editor_load_script_default);
+		out.on_load = hades::data::get_uid(load_prop->load());
+
+		return out;
+	}
+
 	level level_editor_level_props::level_new(level l) const
 	{
 		l.name = _new_name;
 		l.description = _new_desc;
+
+		const auto scripts = get_script_defaults();
+		l.player_input_script = scripts.player_input;
+		l.ai_input_script = unique_zero;
+		l.on_load = scripts.on_load;
 		return l;
 	}
 
 	void level_editor_level_props::level_load(const level &l)
 	{
-		_new_name = editor::new_level_name;
-		_new_desc = editor::new_level_description;
-
-		_level_name = l.name;
-		_level_desc = l.description;
+		_new_name = _level_name = l.name;
+		_new_desc = _level_desc = l.description;
 
 		_background.set_size({ static_cast<float>(l.map_x),
 							  static_cast<float>(l.map_y) });
@@ -245,6 +291,8 @@ namespace hades
 
 		_player_input = l.player_input_script;
 		_ai_input = l.ai_input_script;
+
+		_load_script = l.on_load;
 	}
 
 	level level_editor_level_props::level_save(level l) const
@@ -253,6 +301,7 @@ namespace hades
 		l.description = _level_desc;
 		l.player_input_script = _player_input;
 		l.ai_input_script = _ai_input;
+		l.on_load = _load_script;
 		return l;
 	}
 
@@ -330,7 +379,8 @@ namespace hades
 
 		g.main_menubar_end();
 
-		make_level_detail_window(g, _details_window, _level_name, _level_desc, _player_input, _ai_input);
+		make_level_detail_window(g, _details_window, _level_name, _level_desc,
+			_player_input, _ai_input, _load_script);
 		make_background_detail_window(g, _background_settings,
 			_background_uncommitted, _background_window, _background);
 

@@ -208,18 +208,27 @@ namespace hades
 			return game_current_level_system_ptr;
 		}
 
+		void change_level(game_interface* g) noexcept
+		{
+			assert(g);
+			game_current_level_ptr = g;
+		}
+
 		render_job_data* get_render_data_ptr() noexcept
 		{
+			assert(render_data_ptr);
 			return render_data_ptr;
 		}
 
 		const common_interface* get_render_level_ptr() noexcept
 		{
+			assert(render_data_ptr && render_data_ptr->level_data);
 			return render_data_ptr->level_data;
 		}
 
 		extra_state<render_system>* get_render_extra_ptr() noexcept
 		{
+			assert(render_data_ptr);
 			return render_data_ptr->extra;
 		}
 	}

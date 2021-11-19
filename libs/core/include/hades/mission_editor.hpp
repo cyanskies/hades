@@ -59,6 +59,7 @@ namespace hades
 	protected:
 		// create the editor state for a level
 		virtual void make_editor_state(level_info &l) = 0;
+		virtual level make_new_level() = 0;
 		// generate the starting state for a new mission
 		virtual mission new_mission();
 		virtual unique_id default_new_player_object() const noexcept; // TODO: make this into a console property?
@@ -168,7 +169,7 @@ namespace hades
 	//NOTE: LevelEditor must be a hades::state with a constructor that accepts
 	//		a const mission*, level* and unique_id of level name
 	template<typename LevelEditor>
-	class basic_mission_editor final : public mission_editor_t
+	class basic_mission_editor : public mission_editor_t
 	{
 	public:
 		using editor_type = LevelEditor;
@@ -181,6 +182,16 @@ namespace hades
 			static_assert(std::is_constructible_v<LevelEditor, const mission_editor_t*, level*>);
 			push_state(std::make_unique<LevelEditor>(this, &l.level));
 			return;
+		}
+
+		// NOTE: this will deactivate gui context
+		level make_new_level() override
+		{
+			static_assert(std::is_constructible_v<LevelEditor>);
+
+			auto editor = LevelEditor{};
+			editor.init();
+			return editor.get_level();
 		}
 	};
 

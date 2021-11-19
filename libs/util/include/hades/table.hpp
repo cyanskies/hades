@@ -18,37 +18,37 @@
 namespace hades {
 	using table_index_t = vector_int;
 
-	//a virtual table base class, for table data that can be generated on demand.
-	template<typename Value>
-	class virtual_table
+	template<typename T>
+	class basic_table 
 	{
 	public:
-		using value_type = Value;
+		using value_type = T;
 		using index_type = table_index_t;
 		using size_type = table_index_t::value_type;
 
-		constexpr virtual_table(index_type o, index_type s) noexcept(std::is_nothrow_constructible_v<index_type, index_type>)
+		constexpr basic_table() noexcept = default;
+		constexpr basic_table(index_type o, index_type s) noexcept(std::is_nothrow_constructible_v<index_type, index_type>)
 			: _offset{ o }, _size{ s } {}
-		virtual ~virtual_table() noexcept = default;
+		virtual ~basic_table() noexcept = default;
 
-		virtual value_type operator[](index_type);
-		virtual value_type operator[](size_type) const = 0;
-
-		index_type position() const { return _offset; }
-		index_type size() const { return _size; }
+		virtual value_type operator[](index_type) const = 0;
+		
+		index_type position() const noexcept { return _offset; }
+		void set_position(index_type p) noexcept
+		{ _offset = p; }
+		index_type size() const noexcept { return _size; }
 
 	private:
 		index_type _offset, _size;
 	};
 
 	template<typename T>
-	class always_table final : public virtual_table<T>
+	class always_table final : public basic_table<T>
 	{
 	public:
 		using value_type = T;
-		using base_type = virtual_table<typename value_type>;
-		using index_type = typename virtual_table<typename value_type>::index_type;
-		using size_type = typename virtual_table<typename value_type>::size_type;
+		using base_type = basic_table<typename value_type>;
+		using index_type = typename basic_table<typename value_type>::index_type;
 
 		template<typename U, std::enable_if_t<std::is_same_v<std::decay_t<U>, T>, int> = 0>
 		constexpr always_table(index_type position, index_type size, U&& value)
@@ -57,7 +57,7 @@ namespace hades {
 			: base_type{ position, size }, _always_value{ std::forward<U>(value) }
 		{}
 
-		value_type operator[](const size_type) const noexcept override
+		constexpr value_type operator[](const index_type) const noexcept override
 		{
 			return _always_value;
 		}
@@ -68,73 +68,43 @@ namespace hades {
 
 	//main table class, can be added together to compound tables
 	template<typename T>
-	class table
+	class table : public basic_table<T>
 	{
 	public:
-		using value_type = T;
-		using index_type = table_index_t;
-		using size_type = table_index_t::value_type;
+		using base_type = basic_table<T>;
+		using value_type = typename basic_table<T>::value_type;
+		using index_type = typename basic_table<T>::index_type;
+		using size_type = typename index_type::value_type;
 
-		table() = default;
-		table(index_type position, index_type size, T value) : _data(size.x * size.y, value), _offset{ position }, _width{ size.x } {}
+		table() noexcept = default;
+		table(index_type position, index_type size, T value) : base_type{position, size},
+			_data(size.x*size.y, value) {}
 		table(const table&) = default;
-		table(const virtual_table<T>&);
-		table(table&&) = default;
+		table(const basic_table<T>&);
+		table(table&&) noexcept = default;
 
 		table& operator=(const table&) = default;
-		table& operator=(table&&) = default;
+		table& operator=(table&&) noexcept = default;
+
 		value_type& operator[](index_type);
-		const value_type& operator[](index_type) const;
+		value_type operator[](index_type) const override;
+
 		value_type& operator[](size_type);
-		const value_type& operator[](size_type) const;
+		value_type operator[](size_type) const;
 
-		index_type position() const { return _offset; }
-		void set_position(index_type p)
-		{
-			_offset = p;
-		}
-
-		index_type size() const
-		{
-			using U = index_type::value_type;
-			const auto end = integer_cast<U>(std::size(_data));
-			return index_type{ _width, end / _width };
-		}
-
-		std::vector<value_type> &data()
+		std::vector<value_type> &data() noexcept
 		{
 			return _data;
 		}
 
-		const std::vector<value_type> &data() const
+		const std::vector<value_type> &data() const noexcept
 		{
 			return _data;
 		}
 
 	private:
-		index_type _offset = {0, 0};
-		size_type _width = 0;
-		std::vector<value_type> _data = {};
+		std::vector<value_type> _data;
 	};
-
-	template<typename T>
-	struct is_table : std::false_type
-	{};
-
-	template<typename T>
-	struct is_table<table<T>> : std::true_type
-	{};
-
-	template<typename T>
-	struct is_table<virtual_table<T>> : std::true_type
-	{};
-
-	template<typename T, template <typename> typename U>
-	struct is_table<U<T>> : std::bool_constant<std::is_base_of_v<virtual_table<T>, U<T>>>
-	{};
-
-	template<typename T>
-	constexpr auto is_table_v = is_table<T>::value;
 
 	//combines two tables using CombineFunctor
 	//presses any areas of the second table onto the areas
@@ -143,6 +113,25 @@ namespace hades {
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
 	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor&&);
 
+	template<typename T, typename BinaryOp = std::plus<T>>
+	class table_reduce_view : basic_table<T>
+	{
+	public:
+		using base_type = basic_table<T>;
+		using value_type = typename basic_table<T>::value_type;
+		using index_type = typename basic_table<T>::index_type;
+		using size_type = typename basic_table<T>::size_type;
+
+		table_reduce_view(index_type pos, index_type size, T def, 
+			std::initializer_list<const basic_table<T>&> list,
+			BinaryOp op = BinaryOp{});
+
+		value_type operator[](index_type) const override;
+	private:
+		std::vector<std::reference_wrapper<const basic_table<T>>> _tables;
+		BinaryOp _op;
+		T _default_val;
+	};
 
 	//operators
 	/*template<typename T>

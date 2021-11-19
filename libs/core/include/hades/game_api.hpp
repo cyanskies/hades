@@ -80,40 +80,14 @@ namespace hades
 		void destroy_system_data();
 	}
 
-	//game::mission contains functions for accessing mission state
-	namespace game::mission
-	{
-		//world data
-
-		//object data
-
-		//common curves
-
-		//curves access
-		//template<typename T>
-		//const game_property_curve<T>& get_curve(curve_index_t);
-
-		//curve values
-		template<typename T>
-		T get_value(curve_index_t, time_point);
-		template<typename T>
-		T get_value(curve_index_t);
-
-		//NOTE: get/set_value simplyfy access to linear, const and step curves
-		//		pulse curves, or any work with keyframes requires accessing the actual curve
- 		//get_value
-		//set_value
-		//get_level_index(level_id)
-	}
-
 	//game::level for accessing and mutating the current level state
 	//	the current level is the one containing game::get_object()
-	//	you can change to a different level with the change_level function
-
+	//	you can change to a different level with the switch_level function
 	namespace game::level
 	{
-		//void return_level() //restores the origional level
-		//void switch_level(level_id)
+		void restore_level() noexcept; //restores the origional level
+		void switch_level(unique_id); // switches to requested level
+		void switch_to_mission() noexcept; // switches to mission
 
 		//==level local values==
 		// these are not sent to clients or saved

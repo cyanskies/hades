@@ -1,24 +1,61 @@
 #include "hades/level_editor_terrain.hpp"
 
 #include "hades/gui.hpp"
+#include "hades/properties.hpp"
+#include "hades/terrain.hpp"
 
 namespace hades
 {
+	using namespace std::string_literals;
 	void register_level_editor_terrain_resources(data::data_manager &d)
 	{
 		register_terrain_map_resources(d);
 	}
 
+	void create_level_editor_terrain_variables()
+	{
+		console::create_property(cvars::editor_default_terrainset, cvars::default_value::editor_default_terrainset);
+		return;
+	}
+
 	level_editor_terrain::level_editor_terrain() :
 		_settings{resources::get_terrain_settings()}
-	{}
+	{
+		//default terrain set
+		const auto terrainset_name = console::get_string(cvars::editor_default_terrainset, cvars::default_value::editor_default_terrainset);
+		if (!empty(terrainset_name->load()))
+		{
+			const auto id = data::get_uid(terrainset_name->load());
+			try
+			{
+				_new_options.terrain_set = data::get<resources::terrainset>(id);
+			}
+			catch (const data::resource_error& e)
+			{
+				LOG("cannot load editor default terrainset: "s + to_string(e.what()));
+			}
+		}
+		
+		if (_new_options.terrain_set == nullptr)
+		{
+			if (!empty(_settings->terrainsets))
+				_new_options.terrain_set = _settings->terrainsets.front();
+		}
+
+		if (_new_options.terrain_set &&
+			_new_options.terrain == nullptr &&
+			!empty(_new_options.terrain_set->terrains))
+		{
+			_new_options.terrain = _new_options.terrain_set->terrains.back();
+		}
+	}
 
 	level level_editor_terrain::level_new(level l) const
 	{
 		if (!_new_options.terrain_set ||
 			!_new_options.terrain)
 		{
-			const auto msg = "must select a terrain set and a starting terrain";
+			const auto msg = "must select a terrain set and a starting terrain"s;
 			LOGERROR(msg);
 			throw new_level_editor_error{ msg };
 		}
@@ -26,8 +63,8 @@ namespace hades
 		if (l.map_x % _settings->tile_size != 0 ||
 			l.map_y % _settings->tile_size != 0)
 		{
-			const auto msg = "level size must be a multiple of tile size("
-				+ to_string(_settings->tile_size) +")";
+			const auto msg = "level size must be a multiple of tile size("s
+				+ to_string(_settings->tile_size) +")"s;
 
 			LOGERROR(msg);
 			throw new_level_editor_error{ msg };
@@ -366,6 +403,8 @@ namespace hades
 
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
+		// NOTE: preview is ugly when drawing a terrain that doesn't have transitions
+		//		this is common with the bottom layer terrain
 		_preview = _clear_preview;
 
 		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);

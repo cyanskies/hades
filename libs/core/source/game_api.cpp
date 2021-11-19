@@ -67,16 +67,37 @@ namespace hades
 
 	namespace game::level
 	{
+		void restore_level() noexcept
+		{
+			auto ptr = detail::get_game_data_ptr();
+			detail::change_level(ptr->level_data);
+			return;
+		}
+
+		void switch_level(unique_id id)
+		{
+			auto ptr = detail::get_game_data_ptr();
+			detail::change_level(std::invoke(ptr->get_level, id));
+			return;
+		}
+
+		void switch_to_mission() noexcept
+		{
+			auto ptr = detail::get_game_data_ptr();
+			detail::change_level(ptr->mission_data);
+			return;
+		}
+
 		world_rect_t get_world_bounds()
 		{
-			const auto ptr = detail::get_game_data_ptr();
-			return ptr->level_data->get_world_bounds();
+			const auto ptr = detail::get_game_level_ptr();
+			return ptr->get_world_bounds();
 		}
 
 		const terrain_map& get_world_terrain() noexcept
 		{
-			const auto game_data_ptr = detail::get_game_data_ptr();
-			return game_data_ptr->level_data->get_world_terrain();
+			const auto game_data_ptr = detail::get_game_level_ptr();
+			return game_data_ptr->get_world_terrain();
 		}
 	}
 
@@ -136,8 +157,7 @@ namespace hades
 		bool is_alive(object_ref o) noexcept
 		{
 			auto ptr = detail::get_game_level_ptr();
-			assert(ptr);
-			// NOTE: get_object returns nullptr for stale object refs
+			// NOTE: get_object_ptr returns nullptr for stale object refs
 			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
 		}
 

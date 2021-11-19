@@ -250,6 +250,16 @@ namespace hades
 	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
 	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius);
 	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
+
+	template<typename Func>
+	void for_each_position_rect(tile_position position,
+		tile_position size, Func f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		for (int32 y = 0; y < size.y; ++y)
+			for (int32 x = 0; x < size.x; ++x)
+				std::invoke(f, tile_position{ position.x + x, position.y + y });
+		return;
+	}
 }
 
 #endif // !HADES_TILES_HPP

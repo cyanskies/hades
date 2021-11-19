@@ -48,6 +48,8 @@ namespace hades::detail
 		bool handle_event(const event&) override;
 		void reinit() override;
 
+		level get_level() const;
+
 		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
 		void draw(sf::RenderTarget&, time_duration) override;
 
@@ -90,7 +92,7 @@ namespace hades::detail
 	private:
 		struct new_level_opt
 		{
-			int32 width{}, height{};
+			int32 width, height;
 		};
 
 		struct resize_opt

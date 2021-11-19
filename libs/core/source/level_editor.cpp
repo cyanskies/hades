@@ -13,32 +13,13 @@
 
 namespace hades::detail
 {
-	static void default_level(level& l)
-	{
-		const auto default_size = console::get_int(cvars::editor_level_default_size,
-			cvars::default_value::editor_level_default_size);
-
-		l.map_x = *default_size;
-		l.map_y = *default_size;
-		l.name = editor::new_level_name;
-		l.description = editor::new_level_description;
-	}
-
 	level_editor_impl::level_editor_impl()
 		: _level_ptr{std::make_unique<level>()}
-	{
-		_level = _level_ptr.get();
-
-		default_level(*_level);
-	}
+	{}
 
 	level_editor_impl::level_editor_impl(const mission_editor_t* m, level* l)
 		: _mission_editor{m}, _level{l}
-	{
-		if (_level->map_x == 0 ||
-			_level->map_y == 0)
-			default_level(*_level);
-	}
+	{}
 
 	void level_editor_impl::init()
 	{
@@ -57,13 +38,36 @@ namespace hades::detail
 		_force_whole_tiles = console::get_int(cvars::editor_level_force_whole_tiles,
 			cvars::default_value::editor_level_force_whole_tiles);
 
+		const auto default_size = console::get_int(cvars::editor_level_default_size,
+			cvars::default_value::editor_level_default_size);
+
+		const auto size = default_size->load();
+		_new_level_options.width = size;
+		_new_level_options.height = size;
+
 		//set world camera to 0, 0
 		_world_view.setCenter({});
 
 		_handle_component_setup();
+		if (_mission_mode())
+		{
+			if (_level->map_x == 0 ||
+				_level->map_y == 0)
+			{
+				_level->map_x = size;
+				_level->map_y = size;
+				*_level = _component_on_new(std::move(*_level));
+			}
+		}
+		else
+		{
+			_level = _level_ptr.get();
+			_level->map_x = size;
+			_level->map_y = size;
+			*_level = _component_on_new(std::move(*_level));
+		}
 
 		_load(_level);
-
 		reinit();
 	}
 
@@ -106,6 +110,11 @@ namespace hades::detail
 		_background.setSize({ _window_width, _window_height });
 		const auto background_colour = sf::Color{200u, 200u, 200u, 255u};
 		_background.setFillColor(background_colour);
+	}
+
+	level level_editor_impl::get_level() const
+	{
+		return *_level;
 	}
 
 	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &t, input_system::action_set actions)
@@ -599,5 +608,8 @@ void hades::create_level_editor_console_vars()
 {
 	create_editor_console_variables();
 	create_level_editor_grid_variables();
+	create_level_editor_properties_variables();
 	create_level_editor_regions_variables();
+	create_level_editor_terrain_variables();
+	return;
 }

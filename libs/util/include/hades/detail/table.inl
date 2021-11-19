@@ -17,48 +17,60 @@ namespace hades
 		{
 			return position.y * (size.x + position.x) + position.x;
 		}
-	}
 
-	template<typename Value>
-	inline typename virtual_table<Value>::value_type virtual_table<Value>::operator[](index_type i)
-	{
-		return operator[](to_1d_index(i, _size.x) - detail::offset(_offset, _size));
+		/// @brief generate a vector containing all the 2d index locations within the provided area
+		inline std::vector<table_index_t> all_indexes(table_index_t pos, table_index_t size)
+		{
+			auto positions = std::vector<table_index_t>{};
+			positions.reserve(size.x * size.y);
+			using index_t = typename table_index_t::value_type;
+			for (index_t y = 0; y < size.y; ++y)
+				for (index_t x = 0; x < size.x; ++x)
+					positions.emplace_back(table_index_t{ pos.x + x, pos.y + y });
+
+			return positions;
+		}
 	}
 
 	template<typename T>
-	inline table<T>::table(const virtual_table<T> &v) : table(v.position(), v.size(), T{})
+	inline table<T>::table(const basic_table<T> &v) : table(v.position(), v.size(), T{})
 	{
-		const auto end = std::size(_data);
-		for (auto i = std::size_t{}; i != end; ++i)
-			_data[i] = v[integer_cast<virtual_table<T>::size_type>(i)];
+		const auto pos = v.position();
+		const auto size = v.size();
+		
+		const auto indexes = detail::all_indexes(pos, size);
+		for (auto i : indexes)
+			operator[](i) = v[i];
+
+		return;
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type& table<Value>::operator[](index_type index)
+	typename table<Value>::value_type table<Value>::operator[](const index_type index) const
 	{
-		const auto size = to_2d_index<index_type>(std::size(_data), _width);
-		return _data[to_1d_index(index, size.x) - detail::offset(_offset, size)];
+		const auto size = base_type::size();
+		return _data[to_1d_index(index, size.x) - detail::offset(base_type::position(), size)];
 	}
 
 	template<typename Value>
-	typename const table<Value>::value_type& table<Value>::operator[](index_type index) const
+	typename table<Value>::value_type& table<Value>::operator[](const index_type index)
 	{
-		const auto size = to_2d_index<index_type>(std::size(_data), _width);
-		return _data[to_1d_index(index, size.x) - detail::offset(_offset, size)];
+		const auto size = base_type::size();
+		return _data[to_1d_index(index, size.x) - detail::offset(base_type::position(), size)];
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type& table<Value>::operator[](size_type index)
+	typename table<Value>::value_type table<Value>::operator[](const size_type index) const
 	{
-		assert(index >= 0 && integer_cast<std::size_t>(index) < std::size(_data));
-		return _data[index];
+		const auto size = base_type::size();
+		return _data[index - detail::offset(base_type::position(), size)];
 	}
 
 	template<typename Value>
-	typename const table<Value>::value_type& table<Value>::operator[](size_type index) const
+	typename table<Value>::value_type& table<Value>::operator[](const size_type index)
 	{
-		assert(index >= 0 && integer_cast<std::size_t>(index) < std::size(_data));
-		return _data[index];
+		const auto size = base_type::size();
+		return _data[index - detail::offset(base_type::position(), size)];
 	}
 
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
@@ -106,5 +118,28 @@ namespace hades
 		}
 
 		return tab;
+	}
+
+	template<typename T, typename BinaryOp>
+	inline hades::table_reduce_view<T, BinaryOp>::table_reduce_view(index_type pos,
+		index_type size, T def, std::initializer_list<const basic_table<T>&> list,
+		BinaryOp op) : base_type{ pos, size }, _tables{ list }, _default_val{ def },
+		_op{ std::move(op) }
+	{}
+
+	template<typename T, typename BinaryOp>
+	inline typename hades::table_reduce_view<T, BinaryOp>::value_type
+		hades::table_reduce_view<T, BinaryOp>::operator[](index_type index) const
+	{
+		auto out = _default_val;
+		for (const hades::basic_table<T>& t : _tables)
+		{
+			const auto pos = t.position();
+			const auto size = t.size();
+			const auto rect = hades::rect_t{ pos, size };
+			if (hades::is_within(index, rect))
+				out = std::invoke(_op, out, t[index]);
+		}
+		return out;
 	}
 }

@@ -55,7 +55,7 @@ namespace hades
 		mission source;
 
 		//entity data
-		object_data objects;
+		object_save_data objects;
 
 		//level saves
 		struct level_save_element

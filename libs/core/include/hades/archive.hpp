@@ -54,7 +54,7 @@ namespace hades::zip
 		using file_error::file_error;
 	};
 
-	//TODO: archive member not found
+	//TODO: rename archive member not found
 	class file_not_found : public archive_error
 	{
 	public:

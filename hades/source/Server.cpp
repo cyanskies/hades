@@ -108,6 +108,9 @@ namespace hades
 
 			//TODO: init the _mission_instance
 			//	on_load and so on.
+			auto mission_sv = level_save{};
+			mission_sv.objects = _mission.objects;
+			_mission_instance.emplace(mission_sv, nullptr, &_players);
 
 			for (auto& l : _mission.level_saves)
 				_levels.emplace_back(level{ l.name, local_server_level{ l.save, this } });

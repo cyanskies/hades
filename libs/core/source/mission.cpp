@@ -128,7 +128,13 @@ namespace hades
 	mission_save make_save_from_mission(mission l)
 	{
 		auto m = mission_save{};
-		m.objects = l.objects;
+
+		//convert objects to save format
+		m.objects.next_id = l.objects.next_id;
+		m.objects.objects.reserve(std::size(l.objects.objects));
+		for (auto& obj : l.objects.objects)
+			m.objects.objects.push_back(make_save_instance(std::move(obj)));
+
 		m.source = std::move(l);
 		//the server should convert leveld from source into saves as needed
 		//m.level_saves

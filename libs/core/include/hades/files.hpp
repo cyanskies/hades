@@ -60,7 +60,7 @@ namespace hades::files
 	//reads file at path as a string
 	//will attempt to load from user_custom_file_directory first
 	string read_file(const std::filesystem::path& file_path);
-	buffer raw_file(const std::filesystem::path& file_path);
+	buffer raw_file(const std::filesystem::path& file_path); // TODO: remove? including all its leaf functions
 	// as above, but checks the usersSaveDirectoryinstead
 	//reads save files and config files
 	string read_save(const std::filesystem::path& file_name);

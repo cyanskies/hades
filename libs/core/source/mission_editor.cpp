@@ -678,6 +678,9 @@ namespace hades
 			m.players.emplace_back(std::move(player));
 		}
 
+		m.objects.next_id = _objects.next_id;
+		m.objects.objects = _objects.objects;
+
 		const auto s = serialise(m);
 		files::write_file(sv_path, s);
 		_mission_src = std::move(sv_path);

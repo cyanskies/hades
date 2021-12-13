@@ -97,13 +97,15 @@ namespace hades
 		auto value = T{};
 		const auto result = std::from_chars(s.data(), s.data() + s.size(), value);
 
-		if (result.ec == std::errc::invalid_argument)
+		switch (result.ec)
+		{
+		case std::errc::invalid_argument: 
 			throw bad_conversion{ "from_string: string cannot be converted" };
-
-		if (result.ec == std::errc::result_out_of_range)
+		case std::errc::result_out_of_range:
 			throw bad_conversion{ "from_string: result out of range" };
-
-		return value;
+		default:
+			return value;
+		}
 	}
 
 	namespace detail

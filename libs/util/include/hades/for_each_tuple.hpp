@@ -11,6 +11,7 @@
 namespace hades
 {
 	// ty Raymond @ old new thing
+	// tuple_cat for constexpr type lists
 	template<typename... Tuples>
 	using tuple_type_cat_t = decltype(std::tuple_cat(Tuples...));
 

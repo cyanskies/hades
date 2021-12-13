@@ -232,7 +232,7 @@ namespace hades
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 		sprite_batch _sprites;
 		//level info
-		vector_float _level_limit;
+		vector_float _level_limit = {};
 		object_collision_tree _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
 		collision_layer_map _collision_quads;

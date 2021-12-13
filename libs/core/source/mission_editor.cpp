@@ -87,7 +87,7 @@ namespace hades
 	{
 		auto out = detail::level_editor_impl::get_players_return_type{};
 		out.reserve(size(_players));
-		for (const auto [name, obj_id] : _players)
+		for (const auto& [name, obj_id] : _players)
 			out.emplace_back(name, _obj_ui.get_obj(obj_id));
 		return out;
 	}

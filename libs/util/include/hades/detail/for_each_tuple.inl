@@ -43,13 +43,6 @@ namespace hades::detail
 		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
 	}
 
-	template<typename Tuple, typename Func, std::size_t... Index, typename ...Args>
-	inline decltype(auto) for_each_r_impl(const Tuple& t, Func f, std::index_sequence<Index...> i, Args... args)
-		noexcept(for_each_impl_noexcept<Tuple, Func, Args...>(i))
-	{
-		return std::array{ for_each_index_impl<Index>(f, std::get<Index>(t), args...)... };
-	}
-
 	template<std::size_t Index, typename Func, typename T, typename ...Args>
 	inline constexpr void for_index_impl2(T& t, std::size_t i, Func f, Args... args)
 		noexcept(std::is_nothrow_invocable_v<Func, T, Args...>)

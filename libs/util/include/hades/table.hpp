@@ -39,7 +39,7 @@ namespace hades {
 		index_type size() const noexcept { return _size; }
 
 	private:
-		index_type _offset, _size;
+		index_type _size, _offset = {};
 	};
 
 	template<typename T>

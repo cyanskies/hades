@@ -32,7 +32,7 @@ namespace hades
 		return { bounds.width, bounds.height };
 	}
 
-	void fps_overlay::draw(time_duration dt, sf::RenderTarget &t, sf::RenderStates s)
+	void fps_overlay::draw(time_duration, sf::RenderTarget &t, sf::RenderStates s)
 	{
 		auto str = string{};
 

@@ -327,7 +327,7 @@ namespace hades
 
 		// NOTE: get_object_property_ref throws object_property_not_found if 
 		//		 the requested variable is not stored in the object
-		// CurveType is one of linear, step, pulse, const
+		// CurveType is one of linear, step, pulse, const (see hades/curves.hpp)
 		template<template<typename> typename CurveType, typename T>
 		const CurveType<T>& get_object_property_ref(const game_obj&, variable_id);
 		template<template<typename> typename CurveType, typename T>

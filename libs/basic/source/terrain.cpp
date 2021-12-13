@@ -244,6 +244,11 @@ namespace hades
 		return true;
 	}
 
+	using namespace std::string_view_literals;
+	constexpr auto terrainset_str = "terrainset"sv;
+	constexpr auto terrain_vertex_str = "terrain-vertex"sv; // TODO: terrain-vertex
+	constexpr auto terrain_layers_str = "terrain-layers"sv;// TODO: terrain-layers
+
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
 	{
 		// we start in a terrain: node
@@ -253,16 +258,16 @@ namespace hades
 		// tile layers
 
 		using namespace std::string_view_literals;
-		w.write("terrainset"sv, m.terrainset);
+		w.write(terrainset_str, m.terrainset);
 
-		w.start_map("terrain_vertex"sv);
+		w.start_map(terrain_vertex_str); 
 		w.start_sequence();
 		for (const auto t : m.terrain_vertex)
 			w.write(t);
 		w.end_sequence();
 		w.end_map();
 
-		w.start_sequence("terrain_layers"sv);
+		w.start_sequence(terrain_layers_str); 
 		for (const auto &l : m.terrain_layers)
 		{
 			w.start_map();
@@ -281,11 +286,6 @@ namespace hades
 		//	terrain_vertex:
 		//	terrain_layers:
 
-		using namespace std::string_view_literals;
-		constexpr auto terrainset_str = "terrainset"sv;
-		constexpr auto terrain_vertex_str = "terrain_vertex"sv;
-		constexpr auto terrain_layers_str = "terrain_layers"sv;
-		
 		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
 		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_count_t>{});
 

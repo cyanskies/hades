@@ -20,9 +20,9 @@ namespace hades
 namespace hades
 {
 	enum class curve_variable_type {
-		error, int_t, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
+		begin, int_t = begin, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
 		string, object_ref, unique, colour, time_d, collection_int, collection_float,
-		collection_object_ref, collection_unique, collection_colour, collection_time_d
+		collection_object_ref, collection_unique, collection_colour, collection_time_d, error, end = error
 	};
 
 	string to_string(curve_variable_type) noexcept;
@@ -98,6 +98,9 @@ namespace hades::curve_types
 		collection_time_d
 	>;
 
+	static_assert(std::tuple_size_v<type_pack> == hades::enum_type(curve_variable_type::end),
+		"all curve variable types must be represented in the type_pack");
+
 	constexpr auto bad_object_ref = object_ref{};
 	constexpr auto bad_unique = unique_zero;
 
@@ -143,12 +146,6 @@ namespace hades::curve_types
 		std::is_same_v<T, vec2_float> ||
 		std::is_same_v<T, colour> ||
 		std::is_same_v<T, time_d>;
-
-	template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
-	constexpr curve_variable_type type_to_curve_type() noexcept;
-
-	template<typename T, std::enable_if_t<is_curve_type_v<T>, int> = 0>
-	string curve_type_to_string() noexcept;
 }
 
 #include "detail/curve_types.inl"

@@ -715,7 +715,7 @@ namespace hades
 	constexpr auto obj_str = "objects"sv,
 		obj_curves = "curves"sv,
 		obj_type = "type"sv,
-		obj_next = "next_id"sv,
+		obj_next = "next-id"sv,
 		obj_name = "name"sv,
 		obj_time = "create-time"sv;
 

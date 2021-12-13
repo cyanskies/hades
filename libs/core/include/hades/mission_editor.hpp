@@ -77,19 +77,20 @@ namespace hades
 			enum class errors {
 				name_empty,
 				name_taken,
-				path_not_found
+				path_not_found,
+				end
 			};
 
 			bool open = true;
 			bool add_level_open = false;
-			bool add_level_external; //indicates that the level is stored in a seperate file.
-			errors current_error;
-			bool rename;
+			bool add_level_external = {}; //indicates that the level is stored in a seperate file.
+			errors current_error = {};
+			bool rename = {};
 			string new_level_name;
 			string new_level_path;
 
-			int64 rename_index;
-			std::size_t selected{};
+			int64 rename_index = {};
+			std::size_t selected = {};
 		};
 
 		struct player_dialog_t

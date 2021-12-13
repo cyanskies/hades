@@ -20,7 +20,7 @@ namespace hades
 	static constexpr auto level_regions_str = "regions"sv;
 
 	static constexpr auto level_load_str = "on-load-script"sv;
-	static constexpr auto level_scripts_input = "player_input"sv;
+	static constexpr auto level_scripts_input = "player-input"sv;
 
 	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
 	static constexpr auto level_terrain_str = "terrain"sv;

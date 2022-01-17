@@ -13,8 +13,13 @@ namespace hades::game::level
 
 	void load(const object_save_data& s)
 	{
+		const auto current_time = game::get_last_time();
 		for (const auto& o : s.objects)
-			load(o);
+		{
+			// don't load objects that have been destroyed
+			if(o.destruction_time > current_time)
+				load(o);
+		}
 		return;
 	}
 

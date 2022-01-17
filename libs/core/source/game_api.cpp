@@ -170,7 +170,19 @@ namespace hades
 		vec2_float get_size(const object_ref o)
 		{
 			const auto id = hades::get_size_curve_id();
-			return get_property_ref<hades::const_curve, vec2_float>(o, id).get();
+			return get_property_ref<const_curve, vec2_float>(o, id).get();
+		}
+
+		step_curve<unique>& get_player_owner(object_ref o)
+		{
+			const auto id = hades::get_player_owner_id();
+			return get_property_ref<step_curve, unique>(o, id);
+		}
+
+		const tag_list& get_collision_group(object_ref o)
+		{
+			const auto id = hades::get_collision_group_curve_id();
+			return get_property_ref<const_curve, collection_unique>(o, id).get();
 		}
 	}
 

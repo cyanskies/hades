@@ -34,6 +34,7 @@ namespace hades
 		else
 		{
 			//load from path
+			_load(_mission_src);
 		}
 
 		reinit();
@@ -116,7 +117,7 @@ namespace hades
 		{
 			if (_gui.menu_item("new...", false))
 			{
-				;//TODO:
+				;//TODO: error model for unimp
 			}
 
 			if (_gui.menu_item("load..."))

@@ -316,9 +316,10 @@ namespace hades
 		template<typename GameSystem>
 		object_ref get_object_ref(std::string_view, time_point, game_state&, extra_state<GameSystem>&) noexcept;
 		// can throw object_stale_error
-		// TODO: return game_obj&, throw stale_error
 		template<typename GameSystem>
 		game_obj& get_object(object_ref&, extra_state<GameSystem>&);
+		//returns true if the object ref has gone stale
+		bool is_object_stale(object_ref&) noexcept;
 		// same as get_object except no LOGging
 		template<typename GameSystem>
 		game_obj* get_object_ptr(object_ref&, extra_state<GameSystem>&) noexcept;

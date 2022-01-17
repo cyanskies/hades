@@ -95,4 +95,13 @@ namespace hades::state_api
 		name.add_keyframe(t, o);
 		return;
 	}
+
+	bool is_object_stale(object_ref& o) noexcept
+	{
+		const auto stale = !(o.ptr && o.ptr->id != bad_entity
+			&& o.ptr->id == o.id);
+		if (stale)
+			o.ptr = nullptr;
+		return stale;
+	}
 }

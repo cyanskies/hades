@@ -143,6 +143,8 @@ namespace hades
 			// common curves
 			linear_curve<vec2_float>& get_position(object_ref);
 			vec2_float get_size(object_ref);
+			step_curve<unique>& get_player_owner(object_ref);
+			const tag_list& get_collision_group(object_ref);
 		}
 
 		template<std::size_t Size>

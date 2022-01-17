@@ -43,10 +43,9 @@ namespace hades
 			resources::curve_types::vec2_float{ 0.f, 0.f },
 			true, false);
 		
-		// collision groups are used to check whether two objects collide
-		// or to check what terrain an object can move on
+		// collision groups are used to check what terrain an object can move on
+		// also used by the editor to know where an object can be placed
 		//TODO: should a sperate collision-terrain list be used for terrain collision?
-		// TODO: depricate
 		collision_groups_id = d.get_uid("collision-groups"sv);
 		resources::make_curve(d, collision_groups_id,
 			resources::curve_variable_type::collection_unique,
@@ -125,6 +124,11 @@ namespace hades
 	unique_id get_size_curve_id() noexcept
 	{
 		return siz_id;
+	}
+
+	unique_id get_collision_group_curve_id() noexcept
+	{
+		return collision_groups_id;
 	}
 
 	unique_id get_tags_curve_id() noexcept

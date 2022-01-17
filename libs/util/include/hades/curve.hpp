@@ -252,6 +252,34 @@ namespace hades
 	private:
 		T data;
 	};
+
+	template<typename T>
+	struct is_linear_curve : std::false_type {};
+	template<typename T>
+	struct is_linear_curve<linear_curve<T>> : std::true_type {};
+	template<typename T>
+	constexpr auto is_linear_curve_v = is_linear_curve<T>::value;
+
+	template<typename T>
+	struct is_step_curve : std::false_type {};
+	template<typename T>
+	struct is_step_curve<step_curve<T>> : std::true_type {};
+	template<typename T>
+	constexpr auto is_step_curve_v = is_step_curve<T>::value;
+
+	template<typename T>
+	struct is_pulse_curve : std::false_type {};
+	template<typename T>
+	struct is_pulse_curve<pulse_curve<T>> : std::true_type {};
+	template<typename T>
+	constexpr auto is_pulse_curve_v = is_pulse_curve<T>::value;
+
+	template<typename T>
+	struct is_const_curve : std::false_type {};
+	template<typename T>
+	struct is_const_curve<const_curve<T>> : std::true_type {};
+	template<typename T>
+	constexpr auto is_const_curve_v = is_const_curve<T>::value;
 }
 
 

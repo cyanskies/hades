@@ -1,9 +1,12 @@
 #include "hades/string.hpp"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <sstream>
 #include <vector>
+
+#include "hades/types.hpp"
 
 namespace hades
 {
@@ -49,6 +52,34 @@ namespace hades
 		const auto end = in.find_last_not_of(' ');
 
 		return in.substr(start, end - start + 1);
+	}
+
+	template<typename T, std::enable_if_t<!is_string_v<T>, int>>
+	string to_string(T value)
+	{
+		if constexpr (std::is_same_v<T, bool>)
+			return std::to_string(value);
+		else
+		{
+			auto cstr = std::array<char, 30>{};
+			auto begin = cstr.data();
+			auto end = begin + size(cstr);
+			auto result = std::to_chars_result{};
+
+			if constexpr (std::is_integral_v<T>)
+				result = std::to_chars(begin, end, value);
+			else if constexpr (std::is_floating_point_v<T>)
+				result = std::to_chars(begin, end, value, std::chars_format::fixed, 2);
+			else
+				static_assert(always_false_v<T>, "hades::to_string: unsupported type");
+
+			if (result.ec == std::errc{})
+				return { begin, result.ptr };
+			else if (result.ec == std::errc::value_too_large && result.ptr == end)
+				return std::to_string(value);
+			else
+				return {};
+		}
 	}
 
 	template<class First, class Last>

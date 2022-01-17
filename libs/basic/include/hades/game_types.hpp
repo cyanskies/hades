@@ -2,6 +2,7 @@
 #define HADES_GAME_TYPES_HPP
 
 #include <array>
+#include <numeric>
 #include <vector>
 
 #include "hades/curve_types.hpp"
@@ -27,18 +28,27 @@ namespace hades
 	// check_tags accepts a tag list and a array of tags to check,
 	// it returns an array indicating whether the tags in the check_list were found.
 	template<std::size_t N>
-	constexpr std::array<bool, N> check_tags(const tag_list& list, const std::array<tag_list::value_type, N>& check_list) noexcept
+	constexpr std::array<bool, N> check_tags(const tag_list& list, std::array<tag_list::value_type, N> check_list) noexcept
 	{
 		auto ret = std::array<bool, N>{};
 		ret.fill(false);
 
+		auto index_map = std::array<std::size_t, N>{};
+		std::iota(begin(index_map), end(index_map), std::size_t{});
+
+		auto list_begin = std::size_t{};
+
 		for (const auto elm : list)
 		{
-			for (auto i = std::size_t{}; i < N; ++i)
+			const auto end_index = N - list_begin;
+			for (auto i = list_begin; i < end_index; ++i)
 			{
 				if (elm == check_list[i])
 				{
-					ret[i] = true;
+					std::swap(check_list[list_begin], check_list[i]);
+					ret[index_map[i]] = true;
+					std::swap(index_map[list_begin], index_map[i]);
+					++list_begin;
 					break;
 				}
 			}

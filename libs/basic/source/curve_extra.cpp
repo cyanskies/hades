@@ -2,12 +2,15 @@
 
 #include "hades/parser.hpp"
 
+using namespace std::string_literals;
+using namespace std::string_view_literals;
+
 namespace hades
 {
 	template<>
 	std::monostate from_string<std::monostate>(std::string_view)
 	{
-		LOGWARNING("Tried to call from_string<std::monostate>, a curve is being set without being properly initialised");
+		LOGWARNING("Tried to call from_string<std::monostate>, a curve is being set without being properly initialised"s);
 		return {};
 	}
 
@@ -23,7 +26,6 @@ namespace hades::resources
 	//curve_variable_type_from_string
 	curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
-		using namespace std::string_view_literals;
 		if (s == "int32"sv)
 			return curve_variable_type::int_t;
 		/*else if (s == "int64"sv)
@@ -121,7 +123,7 @@ namespace hades::resources
 		case curve_variable_type::error:
 			[[fallthrough]];
 		default:
-			throw invalid_curve{ to_string(c.id) + " is an invalid curve type, it may not have been registered" };
+			throw invalid_curve{ to_string(c.id) + " is an invalid curve type, it may not have been registered"s };
 		}
 
 		return default_value;
@@ -130,11 +132,10 @@ namespace hades::resources
 	curve_default_value get_default_value(const data::parser_node &n,
 		const curve &current_value, hades::unique_id mod)
 	{
-		using namespace std::string_view_literals;
 		constexpr auto property_name = "default_value"sv;
 
 		if (!is_curve_valid(current_value))
-			throw invalid_curve{ "Tried to call get_default_value on an invalid curve while parsing mod: " + to_string(mod) };
+			throw invalid_curve{ "Tried to call get_default_value on an invalid curve while parsing mod: "s + to_string(mod) };
 
 		const auto value_node = n.get_child(property_name);
 
@@ -163,7 +164,6 @@ namespace hades::resources
 
 		//first check that our node is valid
 		//no point looping though if their are not children
-		using namespace std::string_view_literals;
 		constexpr auto resource_type = "curve"sv;
 		const auto curves = n.get_children();
 
@@ -187,7 +187,7 @@ namespace hades::resources
 			new_curve->default_value = get_default_value(*c, *new_curve, mod);
 
 			if (!is_curve_valid(*new_curve))
-				throw invalid_curve{ "get_default_value returned an invalid curve" };
+				throw invalid_curve{ "get_default_value returned an invalid curve"s };
 
 			detail::add_to_curve_master_list(new_curve);
 		}
@@ -338,7 +338,7 @@ namespace hades
 	static string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;
-		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised");
+		LOGWARNING("Tried to call to_string<std::monostate>, a curve is being written without being properly initialised"s);
 		return {};
 	}
 
@@ -363,7 +363,7 @@ namespace hades
 	{
 		if (!resources::is_curve_valid(c) ||
 			!resources::is_set(v))
-			throw invalid_curve{ "Tried to call to_string on an invalid curve" };
+			throw invalid_curve{ "Tried to call to_string on an invalid curve"s };
 
 		auto ref = object_ref{};
 		auto str = to_string(ref);
@@ -381,6 +381,6 @@ namespace hades
 
 	void register_curve_resource(data::data_manager &d)
 	{
-		d.register_resource_type("curves", resources::parse_curves);
+		d.register_resource_type("curves"sv, resources::parse_curves);
 	}
 }

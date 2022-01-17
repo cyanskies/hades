@@ -11,7 +11,7 @@
 namespace hades
 {
 	// ty Raymond @ old new thing
-	// tuple_cat for constexpr type lists
+	// tuple_cat for uninstantiated type lists
 	template<typename... Tuples>
 	using tuple_type_cat_t = decltype(std::tuple_cat(Tuples...));
 
@@ -21,32 +21,32 @@ namespace hades
 	// function(elm, args...)
 	// function(elm, std::size_t, args...)
 	template<typename Tuple, typename Func, typename ...Args>
-	void for_each_tuple(Tuple& t, Func function, Args... args)
-		noexcept(noexcept(detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, args...)))
+	void for_each_tuple(Tuple& t, Func function, Args&& ...args)
+		noexcept(noexcept(detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...)))
 	{
-		detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, args...);
+		detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...);
 		return;
 	}
 
 	//Same as above, returns an array containing the return values of
 	//each function call, function must return the same type for all elements
 	template<typename Tuple, typename Func, typename ...Args>
-	decltype(auto) for_each_tuple_r(Tuple& t, Func f, Args ...args)
-		noexcept(noexcept(detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, args...)))
+	decltype(auto) for_each_tuple_r(Tuple& t, Func f, Args&& ...args)
+		noexcept(noexcept(detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...)))
 	{
-		return detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, args...);
+		return detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...);
 	}
 
 	//calls function on the tuple element at index
 	//index can be specified at runtime.
 	// function(elm, args...)
-	template<typename Func, typename Tuple, typename ...Args>
-	constexpr void for_index_tuple(Tuple& t, std::size_t index, Func function, Args... args)
-		noexcept(noexcept(detail::for_index_impl(t, index, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, function, args...)))
+	template<typename Tuple, typename Func, typename ...Args>
+	constexpr void for_index_tuple(Tuple& t, std::size_t index, Func&& function, Args&& ...args)
+		noexcept(noexcept(detail::for_index_impl<0, std::tuple_size_v<Tuple>>(t, index, std::forward<Func>(function), std::forward<Args>(args)...)))
 	{
 		constexpr auto s = std::tuple_size_v<Tuple>;
 		assert(index < s);
-		detail::for_index_impl(t, index, std::make_index_sequence<s>{}, function, args...);
+		detail::for_index_impl<0, s - 1>(t, index, std::forward<Func>(function), std::forward<Args>(args)...);
 		return;
 	}
 }

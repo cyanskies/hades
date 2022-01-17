@@ -71,6 +71,7 @@ namespace hades
 			size += std::size(r);
 
 		auto output = tag_list{};
+		output.reserve(size);
 		for (const auto& r : results)
 			output.insert(std::end(output), std::begin(r), std::end(r));
 

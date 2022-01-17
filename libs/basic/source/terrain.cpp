@@ -513,6 +513,9 @@ namespace hades
 			out.insert(std::end(out), std::begin(t->tags), std::end(t->tags));
 		}
 
+		const auto& tile_tags = get_tags_at(m.tile_layer, p);
+		out.insert(end(out), begin(tile_tags), end(tile_tags));
+
 		return out;
 	}
 

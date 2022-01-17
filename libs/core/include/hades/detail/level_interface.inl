@@ -19,73 +19,6 @@ namespace hades
 		}
 	}
 
-	template<typename JobDataType>
-	void update_systems_first_frame(JobDataType jdata)
-	{
-		using SystemType = typename JobDataType::system_type;
-		auto& sys_behaviours = *jdata.systems;
-
-		struct on_connect_data
-		{
-			SystemType* system;
-			name_list ents;
-		};
-
-		auto on_connect_data_vec = std::vector<on_connect_data>{};
-
-		const auto new_systems = sys_behaviours.get_new_systems();
-		const auto systems = sys_behaviours.get_systems();
-		for (const auto s : new_systems)
-		{
-			SystemType* system = nullptr;
-			for (auto& sys : systems)
-			{
-				if (sys->system == s)
-				{
-					system = sys;
-					break;
-				}
-			}
-			assert(system);
-
-			//pass entities that are already attached to this system
-			//this will be entities that were already in the level file
-			//or save file before this time point
-			auto current_ents = sys_behaviours.get_created_entities(*system);
-
-			on_connect_data_vec.emplace_back(on_connect_data{ system, std::move(current_ents) });
-
-			if (!s->on_create)
-				continue;
-
-			auto game_data = jdata;
-			game_data.entity = activated_object_view{ current_ents, time_point::min() };
-			game_data.system = s->id;
-			game_data.system_data = &sys_behaviours.get_system_data(s->id);
-
-			detail::set_data(&game_data);
-			std::invoke(s->on_create);
-		} // for (new_systems) on_create
-
-		for (auto& sys : on_connect_data_vec)
-		{
-			auto system = sys.system->system;
-
-			if (!system->on_connect)
-				continue;
-
-			auto game_data = jdata;
-			game_data.entity = activated_object_view{ sys.ents, time_point::min() };
-			game_data.system = system->id;
-			game_data.system_data = &sys_behaviours.get_system_data(game_data.system);
-
-			detail::set_data(&game_data);
-			std::invoke(system->on_connect);
-		}
-
-		return;
-	}
-
 	// this is called before and after level update. this ensures that after a game tick, all objects have
 	// had their appropriate on_connect/disconnect functions called
 	// we dont need to worry about them when loading a save game
@@ -172,13 +105,6 @@ namespace hades
 	template<typename Interface, typename JobDataType>
 	time_point update_level(JobDataType job_data, Interface& interface)
 	{
-		using job_data_type = JobDataType;
-		if constexpr (std::is_same_v<JobDataType, system_job_data>)
-		{
-			if (job_data.current_time == time_point{})
-				update_systems_first_frame(job_data);
-		}
-
 		using SystemType = typename JobDataType::system_type;
 
 		const auto& current_time = job_data.current_time;

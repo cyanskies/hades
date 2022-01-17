@@ -31,7 +31,7 @@ namespace hades
 	//true float values for common ratios * 100
 	constexpr int RATIO3_4 = 133, RATIO16_9 = 178, RATIO16_10 = 160;
 
-	void registerVidVariables(Console *console)
+	static void register_vid_default(Console *console)
 	{
 		auto vid_default = [console] ()->bool {
 			//window
@@ -45,10 +45,6 @@ namespace hades
 
 			return true;
 		};
-
-		
-		//set the default now
-		vid_default();
 
 		//add a command so that this function can be called again
 		console->add_function("vid_default", vid_default, true);
@@ -90,6 +86,7 @@ namespace hades
 		//load config files and overwrite any updated settings
 
 		registerConsoleCommands();
+		register_vid_default(&_console);
 	}
 
 	bool LoadCommand(command_list &commands, std::string_view command, console::function_no_argument job)
@@ -299,6 +296,10 @@ namespace hades
 				_gui->update(dt);
 				_gui->frame_begin();
 				_overlay_manager.update(*_gui);
+
+				if (_console_debug && _console_debug->wants_close())
+					_close_console();
+
 				if (_show_gui_demo)
 					_gui->show_demo_window();
 				_gui->frame_end();
@@ -350,7 +351,6 @@ namespace hades
 		console::log = nullptr;
 		console::property_provider = nullptr;
 		console::system_object = nullptr;
-		//TODO: what about data_manager
 	}
 
 	void App::handleEvents(state *activeState)
@@ -368,10 +368,7 @@ namespace hades
 				e.key.code == sf::Keyboard::Tilde)
 			{
 				if (_console_debug)
-				{
-					_console_debug = static_cast<debug::console_overlay*>
-						(debug::destroy_overlay(_console_debug));
-				}
+					_close_console();
 				else
 				{
 					_console_debug = static_cast<debug::console_overlay*>
@@ -389,21 +386,6 @@ namespace hades
 				_states.getActiveState()->reinit();
 				activeState->handle_event(e); // let the gamestate see the changed window size
 			}
-			//else if (_console_debug)	// if the console is active forward all input to it rather than the gamestate
-			//{
-			//	if (e.type == event::KeyPressed)
-			//	{
-			//		if (e.key.code == sf::Keyboard::Up)
-			//			_console_debug->prev();
-			//		else if (e.key.code == sf::Keyboard::Down)
-			//			_console_debug->next();
-			//		else if (e.key.code == sf::Keyboard::Return)
-			//			_console_debug->send_command();
-			//	}
-			//	else if (e.type == event::TextEntered)
-			//		_console_debug->enter_text(e);
-			//}
-			//input events
 			else
 			{
 				_gui->activate_context();
@@ -648,5 +630,13 @@ namespace hades
 
 			_console.add_function("imgui_demo"sv, imgui_demo, true);
 		}
+	}
+
+	void App::_close_console()
+	{
+		assert(_console_debug);
+		_console_debug = static_cast<debug::console_overlay*>
+			(_overlay_manager.destroy_overlay(_console_debug));
+		return;
 	}
 }//hades

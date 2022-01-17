@@ -1,6 +1,7 @@
 #ifndef HADES_CONSOLE_OVERLAY_HPP
 #define HADES_CONSOLE_OVERLAY_HPP
 
+#include <functional>
 #include <limits>
 
 #include "hades/debug.hpp"
@@ -17,6 +18,11 @@ namespace hades::debug
 
 		void update(gui&) override;
 		void send_command();
+
+		bool wants_close() const
+		{
+			return !_open;
+		}
 
 	private:
 		void _text_callback(hades::gui_input_text_callback&);
@@ -39,7 +45,10 @@ namespace hades::debug
 
 		//tab completion
 		std::vector<std::string_view> _completion_candidates;
-		std::size_t _completion_index;
+		std::size_t _completion_index = {};
+
+		//callback for closing the console
+		bool _open = true;
 	};
 }
 

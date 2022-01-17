@@ -34,7 +34,7 @@ namespace hades::debug
 		std::move(begin(new_output), end(new_output), back_inserter(_output));
 
 		const auto child_window_name = "##console_child"sv;
-		if (g.window_begin("Console##console_overlay"))
+		if (g.window_begin("Console##console_overlay", _open))
 		{
 			const auto appearing = g.is_window_appearing(); //store when we are first opening
 			if (g.child_window_begin(child_window_name, {0.f, -g.get_frame_height_with_spacing()},
@@ -137,13 +137,13 @@ namespace hades::debug
 
 				const auto text = std::string_view{ input.input_contents() };
 				names.erase(std::remove_if(begin(names), end(names), [text](auto name) {
-					if(std::search(begin(name), end(name), begin(text), end(text)) != end(name))
+					if(name.find(text) != std::string_view::npos)
 						return false;
 					return true;
 				}), end(names));
 
 				std::partition(begin(names), end(names), [text](auto name) {
-					return std::search(begin(name), end(name), begin(text), end(text)) == begin(name);
+					return name.find(text) == std::string_view::size_type{};
 				});
 
 				_completion_candidates = std::move(names);

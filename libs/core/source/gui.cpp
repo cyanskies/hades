@@ -32,6 +32,9 @@ namespace hades
 
 		auto &io = ImGui::GetIO();
 
+		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
+		io.BackendRendererName = "hades SFML";
+
 		// init keyboard mapping
 		io.KeyMap[ImGuiKey_Tab] = sf::Keyboard::Tab;
 		io.KeyMap[ImGuiKey_LeftArrow] = sf::Keyboard::Left;

@@ -33,18 +33,18 @@ namespace hades
 			}
 		}
 
-		console::output_buffer new_output(console::logger::log_verbosity max_verbosity)
+		console::output_buffer new_output()
 		{
 			if (log)
-				return log->get_new_output(max_verbosity);
+				return log->get_new_output();
 
 			return console::output_buffer();
 		}
 
-		console::output_buffer output(console::logger::log_verbosity max_verbosity)
+		console::output_buffer output()
 		{
 			if (log)
-				return log->get_output(max_verbosity);
+				return log->get_output();
 
 			return console::output_buffer();
 		}

@@ -43,8 +43,6 @@ local.properties
 
 # Build results
 
-[Dd]ebug/
-[Rr]elease/
 x64/
 build/
 [Bb]in/
@@ -234,10 +232,7 @@ test/CMakeFiles/
 test/source/CMakeFiles/
 *.opendb
 test/install_manifest.txt
-hades/.vs/hades/v15/Solution.VC.db-shm
-hades/.vs/hades/v15/Solution.VC.db-wal
-test/.vs/xing/v15/Solution.VC.db-shm
-test/.vs/xing/v15/Solution.VC.db-wal
+hades/.vs/*
 *.db-shm
 *.db-wal
 Makefile
@@ -248,5 +243,4 @@ install_manifest.txt
 .vs
 imgui.ini
 *.a
-
 yaml-cpp\.pc

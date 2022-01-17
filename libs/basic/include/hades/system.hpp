@@ -58,13 +58,15 @@ namespace hades
 
 			//registers a function with the provided name, if replace = true, then any function with the same name will be replaced with this one
 			// note: this should not overwrite properties with the same name
-			virtual bool add_function(std::string_view, function func, bool replace) = 0;
-			virtual bool add_function(std::string_view, function_no_argument func, bool replace) = 0;
+			virtual bool add_function(std::string_view, function func, bool replace, bool silent = false) = 0;
+			virtual bool add_function(std::string_view, function_no_argument func, bool replace, bool silent = false) = 0;
 			//removes a function with the provided name
 			virtual void erase_function(std::string_view) = 0;
 
 			//returns true if the command was successful
 			virtual bool run_command(const command&) = 0;
+
+			virtual std::vector<std::string_view> get_function_names() const = 0;
 
 			//returns the history of unique commands
 			//newest commands are at the back of the vector
@@ -75,8 +77,10 @@ namespace hades
 		//TODO: replace with set system_ptr
 		extern system *system_object;
 
-		bool add_function(std::string_view, function func, bool replace = false);
-		void erase_function(std::string_view);
+		bool add_function(std::string_view, function func, bool replace = false, bool silent = false);
+		bool add_function(std::string_view, function_no_argument, bool replace = false, bool silent = false);
+		void erase_function(std::string_view); 
+		std::vector<std::string_view> get_function_names();
 		bool run_command(const command&);
 		command_history_list command_history();
 	}

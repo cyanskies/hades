@@ -9,7 +9,7 @@
 
 namespace hades
 {
-	class fps_overlay final : public debug::Overlay
+	class fps_overlay final : public debug::text_overlay
 	{
 	public:
 		enum fps_mode //TODO: enum class
@@ -22,10 +22,7 @@ namespace hades
 		};
 
 		fps_overlay(fps_mode mode);
-
-		sf::Vector2f getSize() const override;
-
-		void draw(time_duration, sf::RenderTarget&, sf::RenderStates = {}) override;
+		string update() override;
 
 	private:
 		console::property_float _frame_time;
@@ -36,8 +33,6 @@ namespace hades
 		console::property_float _tick_total;
 		console::property_float _draw_time;
 
-		sf::Text _text;
-		const resources::font *_font;
 		fps_mode _mode{ off };
 	};
 

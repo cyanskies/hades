@@ -48,8 +48,8 @@ namespace hades
 		using Console_Function_No_Arg = console::function_no_argument;
 		using Console_String_Verbosity = console::logger::log_verbosity;
 	
-		bool add_function(std::string_view identifier, Console_Function func, bool replace) override;
-		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace) override;
+		bool add_function(std::string_view identifier, Console_Function func, bool replace, bool silent = false) override;
+		bool add_function(std::string_view identifier, Console_Function_No_Arg func, bool replace, bool silent = false) override;
 		void erase_function(std::string_view identifier) override;
 
 		virtual void create(std::string_view, int32, bool) override;
@@ -76,7 +76,8 @@ namespace hades
 		console::property_str getString(std::string_view) override;
 
 		bool run_command(const command &command) override;
-
+		std::vector<std::string_view> get_function_names() const override;
+		std::vector<std::string_view> get_property_names() const;
 		console::command_history_list command_history() const override;
 
 		void echo(std::string message, Console_String_Verbosity verbosity = logger::log_verbosity::normal);
@@ -94,10 +95,10 @@ namespace hades
 
 		void erase(const std::string &command);
 
-		ConsoleStringBuffer get_new_output(Console_String_Verbosity maxVerbosity = logger::log_verbosity::normal) override;
-		ConsoleStringBuffer get_output(Console_String_Verbosity maxVerbosity = logger::log_verbosity::normal) override;
+		ConsoleStringBuffer get_new_output() override;
+		ConsoleStringBuffer get_output() override;
 
-	protected:
+	private:
 		//returns false if var was not found; true if out contains the requested value
 		bool GetValue(std::string_view var, detail::Property &out) const;
 		//for unknown types stored as string, passed in by RunCommand
@@ -117,7 +118,13 @@ namespace hades
 		mutable std::mutex _consoleFunctionMutex;
 		mutable std::mutex _consoleBufferMutex;
 		mutable std::mutex _historyMutex;
-		using ConsoleFunctionMap = std::unordered_map<types::string, Console_Function>;
+
+		struct function_struct
+		{
+			Console_Function func;
+			bool silent;
+		};
+		using ConsoleFunctionMap = std::unordered_map<types::string, function_struct>;
 		ConsoleFunctionMap _consoleFunctions;
 		using ConsoleVariableMap = std::unordered_map<types::string, detail::Property>;
 		ConsoleVariableMap _consoleVariables;

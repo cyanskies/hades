@@ -63,24 +63,45 @@ namespace hades
 		hades::string to_string(const previous_command &command)
 		{
 			using namespace std::string_view_literals;
-			return hades::to_string(command.request) + " " + 
-				hades::to_string(std::begin(command.arguments), std::end(command.arguments), " "sv);
+			if (empty(command.arguments))
+				return hades::to_string(command.request);
+			else
+			{
+				return hades::to_string(command.request) + " " +
+					hades::to_string(std::begin(command.arguments), std::end(command.arguments), " "sv);
+			}
 		}
 
 		system* system_object = nullptr;
 
-		bool add_function(std::string_view identifier, function func, bool replace)
+		bool add_function(std::string_view identifier, function func, bool replace, bool silent)
 		{
 			if(system_object)
-				return system_object->add_function(identifier, func, replace);
+				return system_object->add_function(identifier, func, replace, silent);
 
 			return false;
 		};
+
+		bool add_function(std::string_view id, function_no_argument f, bool replace, bool silent)
+		{
+			if (system_object)
+				return system_object->add_function(id, f, replace, silent);
+
+			return false;
+		}
 
 		void erase_function(std::string_view identifier)
 		{
 			if (system_object)
 				system_object->erase_function(identifier);
+		}
+
+		std::vector<std::string_view> get_function_names()
+		{
+			if (system_object)
+				return system_object->get_function_names();
+
+			return {};
 		}
 
 		bool run_command(const command &command)

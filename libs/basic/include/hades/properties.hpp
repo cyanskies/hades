@@ -121,6 +121,8 @@ namespace hades
 		public:
 			virtual ~properties() noexcept = default;
 
+			virtual std::vector<std::string_view> get_property_names() const = 0;
+
 			//creates the property and sets it's default value
 			virtual void create(std::string_view, int32 default_val, bool locked = false) = 0;
 			virtual void create(std::string_view, float default_val, bool locked = false) = 0;
@@ -149,6 +151,8 @@ namespace hades
 
 		//TODO: replace with set property ptr
 		extern properties *property_provider;
+
+		std::vector<std::string_view> get_property_names();
 
 		// The following functions will throw if the provider isn't available
 		template<typename T>

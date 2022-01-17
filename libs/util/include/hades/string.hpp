@@ -34,8 +34,9 @@ namespace hades
 
 	constexpr std::string_view trim(std::string_view in) noexcept;
 
-	// catch overloads that can be satisfied by std::to_string
-	using std::to_string;
+	// catch overloads that can be satisfied by std::to_chars
+	template<typename T, std::enable_if_t<!is_string_v<T>, int> = 0>
+	string to_string(T value);
 
 	// convert string types to hades::string
 	template<typename T, std::enable_if_t<is_string_v<T>, int> = 0>

@@ -49,7 +49,7 @@ namespace hades
 			return action{ false }; // KeyReleased
 		};
 
-		return { is_match, event_check, realtime };
+		return { is_match, event_check, nullptr /*realtime*/};
 	}
 
 	bool in_window(sf::Vector2i pos, const sf::Window &window)
@@ -100,7 +100,7 @@ namespace hades
 			return a;
 		};
 
-		return { is_match, event_check, realtime_check };
+		return { is_match, event_check, nullptr /*realtime_check*/};
 	}
 
 	template<sf::Mouse::Button b>

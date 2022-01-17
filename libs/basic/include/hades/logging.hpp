@@ -1,7 +1,7 @@
 #ifndef HADES_LOGGING_HPP
 #define HADES_LOGGING_HPP
 
-#include <list>
+#include <vector>
 
 #include "hades/string.hpp"
 
@@ -15,37 +15,37 @@ namespace hades
 	{
 		class string;
 
-		using output_buffer = std::list<string>;
+		using output_buffer = std::vector<string>;
 		//logging interface
 		//this is implimented by hades::Console
 		class logger
 		{
 		public:
-			enum class log_verbosity { log, normal = log, error, warning };
+			enum class log_verbosity { log, normal = log, error, warning, debug };
 
 			virtual ~logger() noexcept = default;
 			
 			virtual void echo(string) = 0;
 
-			virtual output_buffer get_new_output(log_verbosity max_verbosity) = 0;
-			virtual output_buffer get_output(log_verbosity max_verbosity) = 0;
+			virtual output_buffer get_new_output() = 0;
+			virtual output_buffer get_output() = 0;
 		};
 
 		class string
 		{
 		public:
-			explicit string(std::string message, const logger::log_verbosity &verb = logger::log_verbosity::normal) noexcept
-				: _message{ std::move(message) }, _verb{ verb }
+			explicit string(std::string_view message, const logger::log_verbosity &verb = logger::log_verbosity::normal) noexcept
+				: _message{ message }, _verb{ verb }
 			{}
 
-			string(std::string message, int line, std::string function, std::string file, std::string time,
+			string(std::string_view message, int line, std::string function, std::string file, std::string time,
 				const logger::log_verbosity &verb = logger::log_verbosity::error) noexcept
-				: _message{ std::move(message) }, _verb{ verb }, _line{ line },
+				: _message{ message }, _verb{ verb }, _line{ line },
 				_function{ std::move(function) }, _file{ std::move(file) },
 				_time{ std::move(time) }
 			{}
 
-			const hades::string text() const { return _message; }
+			const hades::string& text() const { return _message; }
 			const logger::log_verbosity verbosity() const { return _verb; }
 
 			operator hades::string() const { return "[" + _time + "]: " + _file + _function + to_string(_line) + "\n" + _message; }
@@ -62,8 +62,8 @@ namespace hades
 
 		void echo(string);
 
-		console::output_buffer new_output(console::logger::log_verbosity max_verbosity = console::logger::log_verbosity::normal);
-		console::output_buffer output(console::logger::log_verbosity max_verbosity = console::logger::log_verbosity::normal);
+		console::output_buffer new_output();
+		console::output_buffer output();
 	}
 
 	string time();
@@ -111,6 +111,12 @@ namespace hades
 #define LOGWARNING(Message_)							\
 	HADESLOG(Message_,									\
 		hades::console::logger::log_verbosity::warning	\
+	)
+
+//Debug log, like the normal log, but with an annoying amount of detail
+#define LOGDEBUG(Message_)								\
+	HADESLOG(Message_,									\
+		hades::console::logger::log_verbosity::debug	\
 	)
 
 #endif //HADES_LOGGING_HPP

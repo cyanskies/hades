@@ -132,6 +132,7 @@ namespace hades
 
 	void gui::update(time_duration dt)
 	{
+		_active_assert();
 		//record the change in time
 		auto &io = ImGui::GetIO();
 		io.DeltaTime = seconds_float{ dt }.count();
@@ -189,6 +190,12 @@ namespace hades
 		ImGui::EndChild();
 	}
 
+	bool gui::is_window_appearing() const
+	{
+		_active_assert();
+		return ImGui::IsWindowAppearing();
+	}
+
 	gui::vector2 gui::window_position() const
 	{
 		_active_assert();
@@ -213,6 +220,57 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::SetNextWindowSize({ s.x, s.y });
+	}
+
+	float gui::get_scroll_x() const
+	{
+		_active_assert();
+		return ImGui::GetScrollX();
+	}
+
+	float gui::get_scroll_y() const
+	{
+		_active_assert();
+		return ImGui::GetScrollY();
+	}
+
+	void gui::set_scroll_x(float scroll_x)
+	{
+		_active_assert();
+		ImGui::SetScrollX(scroll_x);
+		return;
+	}
+
+	void gui::set_scroll_y(float scroll_y)
+	{
+		_active_assert();
+		ImGui::SetScrollY(scroll_y);
+	}
+
+	float gui::get_scroll_max_x() const
+	{
+		_active_assert();
+		return ImGui::GetScrollMaxX();
+	}
+
+	float gui::get_scroll_max_y() const
+	{
+		_active_assert();
+		return ImGui::GetScrollMaxY();
+	}
+
+	void gui::set_scroll_here_x(float f)
+	{
+		_active_assert();
+		ImGui::SetScrollHereX(f);
+		return;
+	}
+
+	void gui::set_scroll_here_y(float f)
+	{
+		_active_assert();
+		ImGui::SetScrollHereY(f);
+		return;
 	}
 
 	void gui::push_font(const resources::font *f)
@@ -257,6 +315,20 @@ namespace hades
 		ImGui::PopItemWidth();
 	}
 
+	void gui::push_text_wrap_pos(float f)
+	{
+		_active_assert();
+		ImGui::PushTextWrapPos(f);
+		return;
+	}
+
+	void gui::pop_text_wrap_pos()
+	{
+		_active_assert();
+		ImGui::PopTextWrapPos();
+		return;
+	}
+
 	void gui::separator_horizontal()
 	{
 		_active_assert();
@@ -297,6 +369,12 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::Dummy({ s.x, s.y });
+	}
+
+	float gui::get_frame_height_with_spacing() const noexcept
+	{
+		_active_assert();
+		return ImGui::GetFrameHeightWithSpacing();
 	}
 
 	void gui::push_id(std::string_view s)
@@ -516,12 +594,6 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::EndCombo();
-	}
-
-	bool gui::input_text(std::string_view label, std::string &buffer, input_text_flags f)
-	{
-		_active_assert();
-		return ImGui::InputText(to_string(label).data(), &buffer, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size, input_text_flags f)
@@ -777,6 +849,19 @@ namespace hades
 		ImGui::Columns();
 	}
 
+	void gui::set_keyboard_focus_here(int offset) noexcept
+	{
+		_active_assert();
+		ImGui::SetKeyboardFocusHere(offset);
+		return;
+	}
+
+	void gui::set_item_default_focus() noexcept
+	{
+		_active_assert();
+		ImGui::SetItemDefaultFocus();
+	}
+
 	bool gui::is_item_hovered(hovered_flags f)
 	{
 		_active_assert();
@@ -904,7 +989,7 @@ namespace hades
 	void gui::_toolbar_layout_next()
 	{
 		const auto &style = ImGui::GetStyle();
-		const auto frame_pad = style.FramePadding.x * 2;
+		//const auto frame_pad = style.FramePadding.x * 2;
 		const auto item_spacing = style.ItemSpacing.x;
 		
 		constexpr auto size = toolbar_button_size.x;
@@ -975,4 +1060,98 @@ namespace hades
 	//gui::static objects
 	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
 	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;
+
+	gui_input_text_callback::gui_input_text_callback(ImGuiInputTextCallbackData* data) noexcept
+		: _data{ data }
+	{}
+
+	gui::input_text_flags gui_input_text_callback::get_callback_trigger() const noexcept
+	{
+		return gui::input_text_flags{ _data->EventFlag };
+	}
+
+	gui::input_text_flags gui_input_text_callback::get_input_flags() const noexcept
+	{
+		return gui::input_text_flags{ _data->Flags };
+	}
+
+	ImWchar gui_input_text_callback::get_char_filter_input() const noexcept
+	{
+		return _data->EventChar;
+	}
+
+	void gui_input_text_callback::set_char_filter_replacement(ImWchar ch) noexcept
+	{
+		_data->EventChar = ch;
+		return;
+	}
+
+	gui_input_text_callback::input_key gui_input_text_callback::get_input_key() const noexcept
+	{
+		return input_key{ _data->EventKey };
+	}
+
+	std::string_view gui_input_text_callback::input_contents() const noexcept
+	{
+		return std::string_view{ _data->Buf,
+			integer_cast<std::string_view::size_type>(_data->BufTextLen) };
+	}
+
+	int gui_input_text_callback::cursor_pos() const noexcept
+	{
+		return _data->CursorPos;
+	}
+
+	void gui_input_text_callback::set_cursor_pos(int pos) noexcept
+	{
+		_data->CursorPos = pos;
+		return;
+	}
+
+	bool gui_input_text_callback::has_selection() const noexcept
+	{
+		return _data->HasSelection();
+	}
+
+	std::pair<int, int> gui_input_text_callback::selection_range() const noexcept
+	{
+		return { _data->SelectionStart, _data->SelectionEnd };
+	}
+
+	void gui_input_text_callback::set_selection_range(int start, int end) noexcept
+	{
+		_data->SelectionStart = start;
+		_data->SelectionEnd = end;
+		return;
+	}
+
+	void gui_input_text_callback::erase_chars(int pos, int count) noexcept
+	{
+		_data->DeleteChars(pos, count);
+		return;
+	}
+
+	void gui_input_text_callback::clear_chars() noexcept
+	{
+		_data->DeleteChars(0, _data->BufTextLen);
+		return;
+	}
+
+	void gui_input_text_callback::insert_chars(int pos, std::string_view text)
+	{
+		_data->InsertChars(pos, text.data(), text.data() + text.size());
+		return;
+	}
+
+	void gui_input_text_callback::select_all() noexcept
+	{
+		_data->SelectAll();
+		return;
+	}
+
+	void gui_input_text_callback::clear_selection() noexcept
+	{
+		_data->ClearSelection();
+		return;
+	}
 }

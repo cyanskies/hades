@@ -1,6 +1,7 @@
 #ifndef HADES_APP_HPP
 #define HADES_APP_HPP
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -9,16 +10,20 @@
 #include "hades/async.hpp"
 #include "Hades/Console.hpp"
 #include "Hades/data_system.hpp"
-#include "Hades/Debug.hpp"
+#include "hades/debug.hpp"
+#include "hades/gui.hpp"
 #include "hades/sf_input.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/StateManager.hpp"
 #include "hades/system.hpp"
 
+namespace hades::debug
+{
+	class console_overlay;
+}
+
 namespace hades
 {
-	class ConsoleView;
-
 	////////////////////////////////////////////////////////////
 	/// \brief Main application class.
 	///
@@ -77,18 +82,28 @@ namespace hades
 		////////////////////////////////////////////////////////////
 		/// Member Data
 		////////////////////////////////////////////////////////////
-		input_event_system _input;					///< Used by the console to provide bindable input.
+		input_event_system _input;							///< Used by the console to provide bindable input.
 		std::vector<input_event_system::checked_event> _event_buffer; ///< Buffer for per-tick event storage
-		Console _console;							///< The appcations debug console.
-		hades::data::data_system _dataMan;			///< The applications resource loader
-		StateManager _states;						///< The statemanager holds, ticks, and cleans up all of the game states.
-		thread_pool _thread_pool;					///< App provided shared thread pool
+		Console _console;									///< The appcations debug console.
+		hades::data::data_system _dataMan;					///< The applications resource loader
+		StateManager _states;								///< The statemanager holds, ticks, and cleans up all of the game states.
+		thread_pool _thread_pool;							///< App provided shared thread pool
 		
-		debug::OverlayManager _overlayMan;			///< The debug overlay manager.
-		sf::RenderWindow _window;					///< SFML window object. 
-		bool _sfVSync = false;						///< Flag for SFML sync
+		sf::View _overlay_view;								///< View for the debug overlays, matches screen resolution
+		debug::overlay_manager _overlay_manager;			///< Manager for debug gui overlays
+		std::optional<debug::text_overlay_manager> _text_overlay_manager;	///< Overlay manager for text based overlays.
+		debug::screen_overlay_manager _screen_overlay_manager; ///< Manager for full screen overlays 
+		std::optional<gui> _gui;							///< Gui for debug overlays to use
+		bool _show_gui_demo = false;
+		debug::console_overlay* _console_debug = nullptr;		///< The console interation devtool.
 
-		ConsoleView *_consoleView = nullptr;		///< The console interation devtool.
+		sf::RenderWindow _window;							///< SFML window object. 
+
+		struct framelimit_struct {
+			bool vsync = false;
+			int32 framelimit = 0;
+		};
+		framelimit_struct _framelimit;						///< Flag for SFML vsync
 	};
 
 	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);

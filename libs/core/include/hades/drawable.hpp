@@ -18,7 +18,7 @@ namespace hades
 		virtual ~drawable() noexcept = default;
 
 		//sfml draw, plus time since last call to draw
-		virtual void draw(time_duration, sf::RenderTarget&, sf::RenderStates = {}) = 0;
+		virtual void draw(time_duration dt, sf::RenderTarget&, sf::RenderStates = {}) = 0;
 	};
 }
 

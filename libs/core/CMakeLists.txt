@@ -8,6 +8,7 @@ set(HADES_CORE_SRC
 	source/console_functions.cpp
 	source/core_curves.cpp
 	source/core_resources.cpp
+	source/debug.cpp
 	source/draw_clamp.cpp
 	source/export_curves.cpp
 	source/files.cpp
@@ -44,6 +45,8 @@ set(HADES_CORE_SRC
 	source/tiled_sprite.cpp
 	source/tile_map.cpp
 	source/vertex_buffer.cpp
+	source/debug/console_overlay.cpp
+	source/debug/object_overlay.cpp
 	include/hades/animation.hpp
 	include/hades/archive.hpp
 	include/hades/background.hpp
@@ -51,6 +54,7 @@ set(HADES_CORE_SRC
 	include/hades/console_functions.hpp
 	include/hades/core_curves.hpp
 	include/hades/core_resources.hpp
+	include/hades/debug.hpp
 	include/hades/drawable.hpp
 	include/hades/draw_clamp.hpp
 	include/hades/export_curves.hpp
@@ -91,6 +95,8 @@ set(HADES_CORE_SRC
 	include/hades/tiled_sprite.hpp
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
+	include/hades/debug/console_overlay.hpp
+	include/hades/debug/object_overlay.hpp
 	include/hades/detail/game_api.inl
 	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
@@ -117,3 +123,11 @@ set(HADES_CORE_LIBS
 	PRIVATE	minizip)
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")
+
+source_group("Header files\\debug" REGULAR_EXPRESSION 
+	"include\/hades\/debug\/.+\.hpp"
+)
+
+source_group("Source files\\debug" REGULAR_EXPRESSION 
+	"include\/hades\/debug\/.+\.cpp"
+)

@@ -5,10 +5,10 @@
 
 #include "SFML/Window/Event.hpp"
 
-#include "Hades/ConsoleView.hpp"
+#include "hades/console_variables.hpp"
 #include "hades/core_resources.hpp"
 #include "hades/data.hpp"
-#include "Hades/Debug.hpp"
+#include "hades/debug.hpp"
 #include "Hades/fps_display.hpp"
 #include "hades/game_loop.hpp"
 #include "hades/logging.hpp"
@@ -21,7 +21,10 @@
 #include "hades/yaml_parser.hpp"
 #include "hades/yaml_writer.hpp"
 
-#include "hades/console_variables.hpp"
+#include "hades/debug/console_overlay.hpp"
+
+using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 namespace hades
 {
@@ -62,14 +65,19 @@ namespace hades
 		//record the thread pool as the proccess shared pool
 		detail::set_shared_thread_pool(&_thread_pool);
 
-		debug::overlay_manager = &_overlayMan;
-
 		//register sfml input names
 		register_sfml_input(_window, _input);
 
 		register_core_resources(_dataMan);
 		RegisterCommonResources(&_dataMan);
 		data::detail::set_data_manager_ptr(&_dataMan);
+
+		//debug overlays
+		_gui.emplace(); // default construct the gui object now that the data_manager is available
+		debug::set_overlay_manager(&_overlay_manager);
+		_text_overlay_manager.emplace();
+		debug::set_text_overlay_manager(&*_text_overlay_manager);
+		debug::set_screen_overlay_manager(&_screen_overlay_manager);
 
 		data::set_default_parser(data::make_yaml_parser);
 		data::set_default_writer(data::make_yaml_writer);
@@ -111,6 +119,15 @@ namespace hades
 		return ret;
 	}
 
+	static void update_overlay_size(sf::View& v, gui& g,
+		float w, float h) noexcept
+	{
+		v.setSize(w, h);
+		v.setCenter(w / 2.f, h / 2.f);
+		g.set_display_size({ w, h });
+		return;
+	}
+
 	void App::postInit(command_list commands)
 	{
 		constexpr auto hades_version_major = 0,
@@ -134,7 +151,7 @@ namespace hades
 		auto load_game = [&data](const argument_list &command) {
 			if (command.size() != 1)
 			{
-				LOGERROR("game command expects a single argument");
+				LOGERROR("game command expects a single argument"sv);
 				return false;
 			}
 
@@ -143,25 +160,25 @@ namespace hades
 			return true;
 		};
 
-		if (!LoadCommand(commands, "game", load_game))
+		if (!LoadCommand(commands, "game"sv, load_game))
 		{
 			//add default game if one isnt specified
 			command com;
-			com.request = "game";
+			com.request = "game"sv;
 			com.arguments.push_back(defaultGame());
 
 			commands.push_back(com);
-			LoadCommand(commands, "game", load_game);
+			LoadCommand(commands, "game"sv, load_game);
 		}
 
-		LoadCommand(commands, "mod", [&data](const argument_list &command) {
+		LoadCommand(commands, "mod"sv, [&data](const argument_list &command) {
 			if (command.size() != 1)
 			{
-				LOGERROR("game command expects a single argument");
+				LOGERROR("game command expects a single argument"sv);
 				return false;
 			}
 
-			data.add_mod("./" + to_string(command.front()));
+			data.add_mod("./"s + to_string(command.front()));
 			return true;
 		});
 
@@ -170,8 +187,8 @@ namespace hades
 		//if hades main handles any of the commands then they will be removed from 'commands'
 		hadesMain(_states, _input, commands);
 
-		//TODO: handle autoconsole files
-		//TODO: handle config settings files
+		//TODO: handle autoexec.console files
+		//TODO: handle config.conf settings files
 		//proccess config files
 		//load saved bindings and whatnot from config files
 
@@ -181,12 +198,19 @@ namespace hades
 			console::run_command(c);
 
 		//create  the normal window
-		if (!_console.run_command(command("vid_reinit")))
+		if (!_console.run_command(command("vid_reinit"sv)))
 		{
-			LOGERROR("Error setting video, falling back to default");
-			_console.run_command(command("vid_default"));
-			_console.run_command(command("vid_reinit"));
+			LOGERROR("Error setting video, falling back to default"sv);
+			_console.run_command(command("vid_default"sv));
+			_console.run_command(command("vid_reinit"sv));
 		}
+
+		//create the debug view and gui settings
+		const auto width = console::get_int(cvars::video_width, cvars::default_value::video_width);
+		const auto height = console::get_int(cvars::video_height, cvars::default_value::video_height);
+		const auto widthf = static_cast<float>(width->load());
+		const auto heightf = static_cast<float>(height->load());
+		update_overlay_size(_overlay_view, *_gui, widthf, heightf);
 	}
 
 	static void record_tick_stats(const std::vector<time_duration>& times,
@@ -268,12 +292,20 @@ namespace hades
 				//interpolate between frames
 				state->draw(_window, dt);
 
-				//update the console interface.
-				if (_consoleView)
-					_consoleView->update();
-
-				//draw overlays
-				_overlayMan.draw(dt, _window);
+				//draw debug overlays
+				_screen_overlay_manager.draw(dt, _window);
+				_window.setView(_overlay_view);
+				_gui->activate_context();
+				_gui->update(dt);
+				_gui->frame_begin();
+				_overlay_manager.update(*_gui);
+				if (_show_gui_demo)
+					_gui->show_demo_window();
+				_gui->frame_end();
+				
+				_gui->draw(_window);
+				_text_overlay_manager->update();
+				_text_overlay_manager->draw(dt, _window);
 
 				_window.display();
 				return;
@@ -318,9 +350,7 @@ namespace hades
 		console::log = nullptr;
 		console::property_provider = nullptr;
 		console::system_object = nullptr;
-		debug::overlay_manager = nullptr;
 		//TODO: what about data_manager
-		//how about auto unregister from destructor?
 	}
 
 	void App::handleEvents(state *activeState)
@@ -337,41 +367,53 @@ namespace hades
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
 			{
-				if (_consoleView)
-					_consoleView = static_cast<ConsoleView*>(debug::DestroyOverlay(_consoleView));
+				if (_console_debug)
+				{
+					_console_debug = static_cast<debug::console_overlay*>
+						(debug::destroy_overlay(_console_debug));
+				}
 				else
-					_consoleView = static_cast<ConsoleView*>(debug::CreateOverlay(std::make_unique<ConsoleView>()));
+				{
+					_console_debug = static_cast<debug::console_overlay*>
+						(debug::create_overlay(std::make_unique<debug::console_overlay>()));
+				}
 			}
-			else if (e.type == sf::Event::Resized)	// handle resize before _consoleView, so that opening the console
+			else if (e.type == sf::Event::Resized)	// handle resize before _console_debug, so that opening the console
 			{									// doesn't block resizing the window
 				_console.setValue<types::int32>(cvars::video_width, e.size.width);
 				_console.setValue<types::int32>(cvars::video_height, e.size.height);
+				const auto widthf = static_cast<float>(e.size.width);
+				const auto heightf = static_cast<float>(e.size.height);
+				update_overlay_size(_overlay_view, *_gui, widthf, heightf);
 
-				_overlayMan.setWindowSize({ e.size.width, e.size.height });
 				_states.getActiveState()->reinit();
-				activeState->handle_event(e);		// let the gamestate see the changed window size
+				activeState->handle_event(e); // let the gamestate see the changed window size
 			}
-			else if (_consoleView)	// if the console is active forward all input to it rather than the gamestate
-			{
-				if (e.type == event::KeyPressed)
-				{
-					if (e.key.code == sf::Keyboard::Up)
-						_consoleView->prev();
-					else if (e.key.code == sf::Keyboard::Down)
-						_consoleView->next();
-					else if (e.key.code == sf::Keyboard::Return)
-						_consoleView->sendCommand();
-				}
-				else if (e.type == event::TextEntered)
-					_consoleView->enterText(e);
-			}
+			//else if (_console_debug)	// if the console is active forward all input to it rather than the gamestate
+			//{
+			//	if (e.type == event::KeyPressed)
+			//	{
+			//		if (e.key.code == sf::Keyboard::Up)
+			//			_console_debug->prev();
+			//		else if (e.key.code == sf::Keyboard::Down)
+			//			_console_debug->next();
+			//		else if (e.key.code == sf::Keyboard::Return)
+			//			_console_debug->send_command();
+			//	}
+			//	else if (e.type == event::TextEntered)
+			//		_console_debug->enter_text(e);
+			//}
 			//input events
 			else
 			{
-				if (activeState->handle_event(e))
+				_gui->activate_context();
+				if (_gui->handle_event(e)) // check debug overlay ui
+					handled = true; 
+				else if (activeState->handle_event(e)) // check state raw event
 					handled = true;
 
-				_event_buffer.emplace_back(input_event_system::checked_event{ handled, e });
+				if(handled == false)
+					_event_buffer.emplace_back(input_event_system::checked_event{ handled, e });
 			}
 		}
 
@@ -387,8 +429,8 @@ namespace hades
 				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
-			_console.add_function("exit", exit, true);
-			_console.add_function("quit", exit, true);
+			_console.add_function("exit"sv, exit, true);
+			_console.add_function("quit"sv, exit, true);
 		}
 
 		//vid functions
@@ -405,7 +447,7 @@ namespace hades
 				// if we're in fullscreen mode, then the videomode must be 'valid'
 				if (fullscreen->load() && !mode.isValid())
 				{
-					LOGERROR("Attempted to set invalid video mode.");
+					LOGERROR("Attempted to set invalid video mode."sv);
 					return false;
 				}
 
@@ -419,80 +461,96 @@ namespace hades
 					window_type |= sf::Style::Resize;
 
 				_window.create(mode, "game", window_type);
-				_overlayMan.setWindowSize({ mode.width, mode.height });
-
+				
 				//restore vsync settings
 				_window.setFramerateLimit(0);
-				_window.setVerticalSyncEnabled(_sfVSync);
+				_window.setVerticalSyncEnabled(_framelimit.vsync);
 
 				_states.getActiveState()->reinit();
 
 				return true;
 			};
 
-			_console.add_function("vid_reinit", vid_reinit, true);
+			_console.add_function("vid_reinit"sv, vid_reinit, true);
 
 			auto vsync = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
-					throw invalid_argument("vsync function expects one argument");
-
-				_window.setFramerateLimit(0);
+				{
+					LOG("vid_vsync 0"sv);
+					return true;
+				}
 
 				try
 				{
-					_sfVSync = args.front() == "true" || std::stoi(to_string(args.front())) > 0;
+					_framelimit.vsync = args.front() == "true"sv || std::stoi(to_string(args.front())) > 0;
+					_window.setFramerateLimit(0);
+					LOG("vid_vsync " + to_string(args.front()));
 				}
 				catch (std::invalid_argument&)
 				{
-					_sfVSync = false;
+					LOGERROR("vid_vsync "s + to_string(args.front()));
+					LOGERROR("Unable to parse value: '"s + to_string(args.front()) + "'"s);
+					return false;
 				}
 				catch (std::out_of_range&)
 				{
-					_sfVSync = false;
+					LOGERROR("vid_vsync "s + to_string(args.front()));
+					LOGERROR("Invalid value: '"s + to_string(args.front()) + "'"s);
+					return false;
 				}
 
-				_window.setVerticalSyncEnabled(_sfVSync);
+				_window.setVerticalSyncEnabled(_framelimit.vsync);
 				return true;
 			};
 
-			_console.add_function("vid_vsync", vsync, true);
+			_console.add_function("vid_vsync"sv, vsync, true, true);
 
 			auto framelimit = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
-					throw invalid_argument("framelimit function expects one argument");
-
-				if (_sfVSync)
 				{
-					_sfVSync = false;
-					_window.setVerticalSyncEnabled(_sfVSync);
+					if (_framelimit.vsync)
+						LOG("vid_framelimit 0"sv);
+					else
+						LOG("vid_framelimit "s + to_string(_framelimit.framelimit));
+					return true;
+				}
+
+				if (_framelimit.vsync)
+				{
+					_framelimit.vsync = false;
+					_window.setVerticalSyncEnabled(_framelimit.vsync);
 				}
 
 				try
 				{
-					auto limit = std::stoi(to_string(args.front()));
+					const auto limit = std::stoi(to_string(args.front()));
 					_window.setFramerateLimit(limit);
 				}
 				catch (std::invalid_argument&)
 				{
-					LOGWARNING("Invalid value for vid_framelimit setting to 0");
+					LOGERROR("vid_framelimit "s + to_string(args.front()));
+					LOGERROR("Invalid value for vid_framelimit setting to 0"sv);
 					_window.setFramerateLimit(0);
+					return false;
 				}
 				catch (std::out_of_range&)
 				{
-					LOGWARNING("Invalid value for vid_framelimit setting to 0");
+					LOGERROR("vid_framelimit "s + to_string(args.front()));
+					LOGERROR("Invalid value for vid_framelimit setting to 0"sv);
 					_window.setFramerateLimit(0);
+					return false;
 				}
 
 				return true;
 			};
 
-			_console.add_function("vid_framelimit", framelimit, true);
+			_console.add_function("vid_framelimit"sv, framelimit, true, true);
 		}
 		//Filesystem functions
 		{
 			auto util_dir = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
-					throw invalid_argument("Dir function expects one argument");
+					throw invalid_argument("Dir function expects one argument"s);
 
 				const auto files = files::ListFilesInDirectory(to_string(args.front()));
 
@@ -507,9 +565,9 @@ namespace hades
 			auto compress_dir = [](const argument_list &args)->bool
 			{
 				if (args.size() != 1)
-					throw invalid_argument("Compress function expects one argument");
+					throw invalid_argument("Compress function expects one argument"s);
 
-				const auto path = args.front();
+				const auto& path = args.front();
 
 				//compress in a seperate thread to let the UI continue updating
 				std::thread t([path]() {
@@ -530,14 +588,14 @@ namespace hades
 				return true;
 			};
 
-			_console.add_function("compress", compress_dir, true);
+			_console.add_function("compress"sv, compress_dir, true);
 
 			auto uncompress_dir = [](const argument_list &args)->bool
 			{
 				if (args.size() != 1)
-					throw invalid_argument("Uncompress function expects one argument");
+					throw invalid_argument("Uncompress function expects one argument"s);
 
-				const auto path = args.front();
+				const auto& path = args.front();
 
 				//run uncompress func in a seperate thread to spare the UI
 				std::thread t([path]() {
@@ -558,7 +616,7 @@ namespace hades
 				return true;
 			};
 
-			_console.add_function("uncompress", uncompress_dir, true);
+			_console.add_function("uncompress"sv, uncompress_dir, true);
 		}
 
 		//debug funcs
@@ -567,7 +625,7 @@ namespace hades
 			auto stats = [](const argument_list &args) {
 				//TODO: why would this throw
 				if (args.size() != 1)
-					throw invalid_argument("fps function expects one argument");
+					throw invalid_argument("fps function expects one argument"s);
 
 				const auto param = args[0];
 				const auto int_param = from_string<int32>(param);
@@ -576,11 +634,19 @@ namespace hades
 				return true;
 			};
 
-			_console.add_function("stats", stats, true);
+			_console.add_function("stats"sv, stats, true);
 
+			//start the stats by default on debug builds
 			#ifndef NDEBUG
-			stats({ "1" });
+			stats({ "1"sv });
 			#endif
+
+			auto imgui_demo = [&g = _show_gui_demo]() {
+				g = !g;
+				return true;
+			};
+
+			_console.add_function("imgui_demo"sv, imgui_demo, true);
 		}
 	}
 }//hades

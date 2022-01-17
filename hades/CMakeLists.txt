@@ -3,9 +3,7 @@ include(../cmake.txt)
 set(HADES_SRC
 	include/hades/App.hpp
 	include/hades/Console.hpp
-	include/hades/ConsoleView.hpp
 	include/hades/data_system.hpp
-	include/hades/Debug.hpp
 	include/hades/fps_display.hpp
 	include/hades/Main.hpp
 	include/hades/RenderInstance.hpp
@@ -17,9 +15,7 @@ set(HADES_SRC
 	include/hades/detail/Console.inl
 	include/hades/resource/fonts.hpp
 	source/App.cpp
-	source/Debug.cpp
 	source/Console.cpp
-	source/ConsoleView.cpp
 	source/data_system.cpp
 	source/fps_display.cpp
 	source/main.cpp

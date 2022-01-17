@@ -62,6 +62,8 @@ namespace hades
 		constexpr auto valid_input_scalar_v = valid_input_scalar_t<T>::value;
 	}
 
+	class gui_input_text_callback;
+
 	class gui : public sf::Drawable
 	{
 	public:
@@ -134,6 +136,7 @@ namespace hades
 
 		//window utilities
 		//TODO: some funcs are missing
+		bool is_window_appearing() const;
 		vector2 window_position() const;
 		vector2 window_size() const;
 
@@ -143,6 +146,15 @@ namespace hades
 		void next_window_size(vector2);
 
 		// TODO: window scrolling
+		//		some funcs missing
+		float get_scroll_x() const;
+		float get_scroll_y() const;
+		void set_scroll_x(float scroll_x); 
+		void set_scroll_y(float scroll_y); 
+		float get_scroll_max_x() const;
+		float get_scroll_max_y() const;
+		void set_scroll_here_x(float);
+		void set_scroll_here_y(float);
 
 		enum class colour_target : ImGuiCol 
 		{
@@ -195,13 +207,15 @@ namespace hades
 		// TODO: missing funcs
 		void push_font(const resources::font*);
 		void pop_font();
-		void push_colour(colour_target element, const sf::Color&);
+		void push_colour(colour_target element, const sf::Color&); //TODO: hades::colour
 		void pop_colour();
 
 		//current window parameters
 		// TODO: missing funcs
 		void push_item_width(float width);
 		void pop_item_width();
+		void push_text_wrap_pos(float);
+		void pop_text_wrap_pos();
 
 		// TODO: style read (or not)
 
@@ -216,6 +230,7 @@ namespace hades
 		void group_begin();
 		void group_end();
 		void dummy(vector_float size = {});
+		float get_frame_height_with_spacing() const noexcept;
 
 		//ids
 		// push these onto the id stack to make later ids unique
@@ -339,14 +354,22 @@ namespace hades
 
 		//inputs
 		//returns true of the value of buffer changes
+		// input calls the correct function from below, but doesn't support some 
+		//	advanced options
 		template<typename T> // selects the correct function from those bellow
 		bool input(std::string_view label, T&, input_text_flags = input_text_flags::none);
-		template<std::size_t Size>
-		bool input_text(std::string_view label, std::array<char, Size> &buffer, input_text_flags = input_text_flags::none);
-		bool input_text(std::string_view label, std::string &buffer, input_text_flags = input_text_flags::none);
+
+		// text input
+		// static sized input
+		template<std::size_t Size, typename Callback = nullptr_t>
+		bool input_text(std::string_view label, std::array<char, Size>& buffer, input_text_flags = input_text_flags::none, Callback = {});
+		// dynamic sized input
+		template<typename Callback = nullptr_t>
+		bool input_text(std::string_view label, std::string& buffer, input_text_flags = input_text_flags::none, Callback = {});
 		template<std::size_t Size>
 		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector2 &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
 		bool input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
+		
 		template<typename T>
 		bool input_scalar(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		template<typename T, std::size_t Size>
@@ -483,6 +506,15 @@ namespace hades
 
 		// TODO: Disabled [BETA]
 
+		// Focus
+		// offset targets the item to be focused
+		//	-1: prev item	//other negative numbers are forbidden
+		//	0: next item
+		//	1+: item after next, etc
+		void set_keyboard_focus_here(int offset = 0) noexcept; 
+		// sets previous item to be the windows default focus
+		void set_item_default_focus() noexcept;
+
 		enum class hovered_flags : ImGuiHoveredFlags
 		{
 			none = ImGuiHoveredFlags_::ImGuiHoveredFlags_None,
@@ -507,7 +539,7 @@ namespace hades
 
 		//mouse utils(cursor and so on)
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates{}) const override;
 
 		static constexpr std::string_view version() noexcept;
 
@@ -548,6 +580,54 @@ namespace hades
 		static std::unordered_map<const resources::font*, ImFont*> _fonts;
 	};
 
+	class gui_input_text_callback
+	{
+	public:
+		explicit gui_input_text_callback(ImGuiInputTextCallbackData*) noexcept;
+		// the flag that triggered the callback
+		// one of:
+		//	callback_completion
+		//	callback_history
+		//	callback_always 
+		//	callback_char_filter
+		//	callback_resize 
+		//	callback_edit
+		gui::input_text_flags get_callback_trigger() const noexcept; 
+		gui::input_text_flags get_input_flags() const noexcept;
+		
+		//support for char filter flag
+		ImWchar get_char_filter_input() const noexcept;
+		// set to '0' to deny the input.
+		void set_char_filter_replacement(ImWchar) noexcept;
+
+		enum class input_key : ImGuiKey {
+			tab = ImGuiKey_Tab,
+			up = ImGuiKey_UpArrow,
+			down = ImGuiKey_DownArrow
+		};
+
+		// input key to trigger autocomplete/history flags
+		input_key get_input_key() const noexcept;
+		// current input buffer contents
+		std::string_view input_contents() const noexcept;
+		int cursor_pos() const noexcept;
+
+		void set_cursor_pos(int) noexcept;
+
+		bool has_selection() const noexcept;
+		std::pair<int, int> selection_range() const noexcept;
+		void set_selection_range(int, int) noexcept;
+		
+		void erase_chars(int pos, int count) noexcept;
+		void clear_chars() noexcept;
+		void insert_chars(int pos, std::string_view text);
+		void select_all() noexcept;
+		void clear_selection() noexcept;
+
+	private:
+		ImGuiInputTextCallbackData* _data;
+	};
+
 	namespace details
 	{
 		template<typename Enum>
@@ -565,6 +645,11 @@ namespace hades
 
 	//TODO: selrctable, combo, etc...
 	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs) noexcept
+	{
+		return details::enum_or(lhs, rhs);
+	}
+
+	constexpr inline gui::input_text_flags operator|(gui::input_text_flags lhs, gui::input_text_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
 	}

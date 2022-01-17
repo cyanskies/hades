@@ -49,8 +49,10 @@ namespace hades
 		constexpr auto file_deflate = "file_deflate"; //if true, saves and configs are compressed before being written to disk
 
 		//console vars
+		//TODO: both deprecated
 		constexpr auto console_charsize = "con_charsize"; //the character size to draw in the ingame console
 		constexpr auto console_fade = "con_fade"; //the transparency of the backdrop for the console overlay
+		constexpr auto console_level = "con_level"; //the logging level to display in the console
 
 		//vid vars
 		constexpr auto video_fullscreen = "vid_fullscreen"; // draw in fullscreen mode
@@ -82,6 +84,7 @@ namespace hades
 
 			constexpr auto console_charsize = 15;
 			constexpr auto console_fade = 180;
+			constexpr auto console_level = 2;
 
 			constexpr auto video_fullscreen = false;
 			constexpr auto video_resizable = false;

@@ -25,6 +25,13 @@ namespace hades
 
 		constexpr auto provider_missing_error = "Property provider unavailable, use overloads with fall back values";
 
+		std::vector<std::string_view> get_property_names()
+		{
+			if (property_provider)
+				return property_provider->get_property_names();
+			return {};
+		}
+
 		property_int get_int(std::string_view name)
 		{
 			if (!property_provider)

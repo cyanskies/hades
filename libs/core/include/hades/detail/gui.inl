@@ -1,7 +1,10 @@
 #include "hades/gui.hpp"
 
 #include <cstring>
+#include <functional>
 #include <type_traits>
+
+#include "misc/cpp/imgui_stdlib.h"
 
 namespace hades
 {
@@ -153,11 +156,46 @@ namespace hades
 		return detail::input_imp(*this, label, v, f);
 	}
 
-	template<std::size_t Size>
-	inline bool gui::input_text(std::string_view label, std::array<char, Size>& buffer, input_text_flags f)
+	template<std::size_t Size, typename Callback>
+	inline bool gui::input_text(std::string_view label, std::array<char, Size>& buffer, input_text_flags f, Callback cb)
 	{
 		_active_assert();
-		return ImGui::InputText(to_string(label).data(), buffer.data(), buffer.size(), static_cast<ImGuiInputTextFlags>(f));
+		if constexpr (std::is_null_pointer_v<Callback>)
+			return ImGui::InputText(to_string(label).data(), buffer.data(), buffer.size(), static_cast<ImGuiInputTextFlags>(f));
+		else
+		{
+			static_assert(std::is_invocable_v<Callback, gui_input_text_callback&>);
+			auto invoke_callback = [](ImGuiInputTextCallbackData* data) {
+				auto callback = static_cast<Callback*>(data->UserData);
+				auto input_data = gui_input_text_callback{ data };
+				std::invoke(*callback, input_data);
+				return 0;
+			};
+
+			return ImGui::InputText(to_string(label).data(), buffer.data(),
+				buffer.size(), static_cast<ImGuiInputTextFlags>(f), invoke_callback, &cb);
+		}
+	}
+
+	template<typename Callback>
+	bool gui::input_text(std::string_view label, std::string& buffer, input_text_flags f, Callback cb)
+	{
+		_active_assert();
+		if constexpr(std::is_null_pointer_v<Callback>)
+			return ImGui::InputText(to_string(label).data(), &buffer, static_cast<ImGuiInputTextFlags>(f));
+		else
+		{
+			static_assert(std::is_invocable_v<Callback, gui_input_text_callback&>);
+			auto invoke_callback = [](ImGuiInputTextCallbackData* data) {
+				auto callback = static_cast<Callback*>(data->UserData);
+				auto input_data = gui_input_text_callback{ data };
+				std::invoke(*callback, input_data);
+				return 0;
+			};
+			
+			return ImGui::InputText(to_string(label).data(), &buffer,
+				static_cast<ImGuiInputTextFlags>(f), invoke_callback, &cb);
+		}
 	}
 
 	template<std::size_t Size>

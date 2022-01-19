@@ -55,7 +55,8 @@ namespace hades
 		linear,
 		step,
 		pulse,
-		const_t
+		const_t,
+		end
 	};
 
 	// basic_curve

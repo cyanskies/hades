@@ -8,6 +8,8 @@
 #include "hades/game_system.hpp"
 #include "hades/uniqueid.hpp"
 
+#include "hades/for_each_tuple.hpp"
+
 namespace hades
 {
 	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where
@@ -21,53 +23,24 @@ namespace hades
 	{
 		entity_id object = bad_entity;
 		variable_id id = bad_variable;
-		DataType data;
+		DataType data; // DataType = CurveType<VariableType>
 	};
 
 	namespace detail
 	{
-		// a fancy ref to the variable entry
-		template<typename T>
 		struct var_entry
 		{
-			using value_type = T;
 			variable_id id = bad_variable;
-			state_field<T>* var = nullptr;
+			using state_field_ptr = void*;
+			state_field_ptr var = nullptr;
+			std::pair<keyframe_style, curve_variable_type> info;
 		};
 
-		template<typename T>
-		constexpr bool operator==(const var_entry<T>& l, const var_entry<T>& r) noexcept
+		/*template<typename T>
+		constexpr bool operator==(const var_entry& l, const var_entry& r) noexcept
 		{
 			return l.id == r.ld;
-		}		
-
-		template<typename T>
-		struct entity_var_type;
-
-		template<typename... Ts>
-		struct entity_var_type<std::tuple<Ts...>>
-		{
-			//expands a type out for a vector of that type in each style of curve
-			template<typename T>
-			using tuple_curve_vector_t = std::conditional_t<curve_types::is_linear_interpable_v<T>,
-				std::tuple<
-				std::vector<var_entry<linear_curve<T>>>,
-				std::vector<var_entry<step_curve<T>>>,
-				std::vector<var_entry<pulse_curve<T>>>,
-				std::vector<var_entry<const_curve<T>>>
-				>,
-				std::tuple <
-				std::vector<var_entry<step_curve<T>>>,
-				std::vector<var_entry<pulse_curve<T>>>,
-				std::vector<var_entry<const_curve<T>>>
-				>
-			>;
-
-			using type = decltype(std::tuple_cat(std::declval<tuple_curve_vector_t<Ts>>()...));
-		};
-
-		template<typename T>
-		using entity_var_type_t = typename entity_var_type<T>::type;
+		}*/		
 	}
 
 	namespace resources
@@ -75,19 +48,14 @@ namespace hades
 		struct object;
 	}
 
-	//authoratative game object
+	//authoritative game object
 	struct game_obj
 	{
 		entity_id id = bad_entity;
 		const resources::object* object_type = nullptr; //tells what variables a entity has, and which systems control it.
-
-		template<template<typename> typename CurveType, typename T>
-		using var_entry = detail::var_entry<CurveType<T>>;
-		template<template<typename> typename CurveType, typename T>
-		using var_list = std::vector<var_entry<CurveType, T>>;
-
-		using entity_variable_lists_t = detail::entity_var_type_t<curve_types::type_pack>;
-		entity_variable_lists_t object_variables;
+		using var_entry = detail::var_entry;
+		using entity_variable_list_t = std::vector<var_entry>;
+		entity_variable_list_t object_variables;
 	};
 
 	inline constexpr bool operator==(const game_obj& lhs, const game_obj &rhs) noexcept
@@ -118,7 +86,7 @@ namespace hades
 				>
 			>;
 
-			using type = decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
+			using type = typename tuple_type_cat_t<tuple_curve_colony_t<Ts>...>;// decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
 		};
 
 		template<typename T>
@@ -233,12 +201,12 @@ namespace hades
 	// and calculated state in extra_state
 	struct game_state
 	{
-		//data_type = state_field<CurveType<T>>
 		template<template<typename> typename CurveType, typename T>
 		using data_type = state_field<CurveType<T>>;
 		template<template<typename> typename CurveType, typename T>
 		using data_colony = plf::colony<state_field<CurveType<T>>>;
 
+		// NOTE: state_data_type is over 2kb
 		using state_data_type = detail::state_data_type_t<curve_types::type_pack>;
 		state_data_type state_data;
 		entity_id next_id = next(bad_entity);
@@ -287,6 +255,12 @@ namespace hades
 			using game_state_error::game_state_error;
 		};
 
+		class object_property_wrong_type : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
+		};
+
 		namespace loading
 		{
 			//restores an object from a save file, this can only be called before the game loop starts(during a load)
@@ -327,7 +301,9 @@ namespace hades
 		const game_obj* get_object_ptr(const object_ref&, const extra_state<GameSystem>&) noexcept;
 
 		// NOTE: get_object_property_ref throws object_property_not_found if 
-		//		 the requested variable is not stored in the object
+		//		 the requested variable is not stored in the object.
+		//		 and object_property_wrong_type if the type requested doesn't
+		//		 match the recorded type for that property
 		// CurveType is one of linear, step, pulse, const (see hades/curves.hpp)
 		template<template<typename> typename CurveType, typename T>
 		const CurveType<T>& get_object_property_ref(const game_obj&, variable_id);

@@ -8,7 +8,7 @@ namespace hades::state_api
 	{
 		template<template<typename> typename CurveType, typename T>
 		static inline void create_object_property(game_obj& object, unique_id curve_id,
-			game_state& state, const std::vector<object_save_instance::saved_curve::saved_keyframe>& value)
+			game_state& state, std::vector<object_save_instance::saved_curve::saved_keyframe> value)
 		{
 			//add the curve and value into the game_state database
 			//then record a ptr to the data in the game object
@@ -31,10 +31,12 @@ namespace hades::state_api
 			assert(iter != end(colony));
 			if (iter == end(colony))
 				throw game_state_error{ "tried to double create object property" };
-			using list_type = typename game_obj::var_list<CurveType, T>;
-			using entry_type = typename game_obj::var_entry<CurveType, T>;
-			auto& var_list = std::get<list_type>(object.object_variables);
-			var_list.push_back(entry_type{ curve_id, &*iter });
+			using entry_type = typename game_obj::var_entry;
+			object.object_variables.emplace_back(entry_type{
+				curve_id,
+				static_cast<void*>(&*iter),
+				get_curve_info<CurveType, T>()
+			});
 			return;
 		}
 
@@ -43,7 +45,7 @@ namespace hades::state_api
 			const resources::curve* c;
 			game_state& s;
 			game_obj& obj;
-			const std::vector<object_save_instance::saved_curve::saved_keyframe>& keyframes;
+			std::vector<object_save_instance::saved_curve::saved_keyframe> keyframes;
 
 			template<typename Ty, std::enable_if_t<curve_types::is_linear_interpable_v<std::decay_t<Ty>>, int> = 0>
 			void operator()(Ty& v)
@@ -54,13 +56,15 @@ namespace hades::state_api
 				switch (c->keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<const_curve, T>(obj, c->id, s, std::move(keyframes));
 				case keyframe_style::linear:
-					return create_object_property<linear_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<linear_curve, T>(obj, c->id, s, std::move(keyframes));
 				case keyframe_style::pulse:
-					return create_object_property<pulse_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<pulse_curve, T>(obj, c->id, s, std::move(keyframes));
 				case keyframe_style::step:
-					return create_object_property<step_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<step_curve, T>(obj, c->id, s, std::move(keyframes));
+				case keyframe_style::end:
+					throw hades::logic_error{ "invalid keyframe style" };
 				}
 			}
 
@@ -74,13 +78,15 @@ namespace hades::state_api
 				switch (c->keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<const_curve, T>(obj, c->id, s, std::move(keyframes));
 				case keyframe_style::linear:
 					throw hades::logic_error{ "linear curve on wrong type" };
 				case keyframe_style::pulse:
-					return create_object_property<pulse_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<pulse_curve, T>(obj, c->id, s, std::move(keyframes));
 				case keyframe_style::step:
-					return create_object_property<step_curve, T>(obj, c->id, s, keyframes);
+					return create_object_property<step_curve, T>(obj, c->id, s, std::move(keyframes));
+				case keyframe_style::end:
+					throw hades::logic_error{ "invalid keyframe style" };
 				}
 			}
 
@@ -98,7 +104,9 @@ namespace hades::state_api
 			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
 			assert(obj);
 
-			for (auto& [c, v] : get_all_curves(o))
+			auto curves = get_all_curves(o);
+
+			for (auto& [c, v] : curves)
 			{
 				assert(c);
 				assert(c);
@@ -204,62 +212,145 @@ namespace hades::state_api
 
 	namespace detail
 	{
-		struct copy_object_property_functor
+		using curve_info_t = std::pair<keyframe_style, curve_variable_type>;
+
+		template<template<typename> typename CurveType, typename T>
+		constexpr auto linear_compat = (std::is_same_v<CurveType<float>, linear_curve<float>>
+				&& curve_types::is_linear_interpable_v<T>)
+				|| !std::is_same_v<CurveType<float>, linear_curve<float>>;
+
+		template<template<typename> typename CurveType, typename T, typename Func,
+			typename std::enable_if_t<!linear_compat<CurveType, T>, int> = 0>
+		constexpr void do_call_with_curve_type(Func&) noexcept
 		{
-			time_point time;
-			game_state& state;
-			game_obj& obj;
+			assert(false);
+			return;
+		}
 
-			using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
+		template<template<typename> typename CurveType, typename T, typename Func,
+			typename std::enable_if_t<linear_compat<CurveType, T>, int> = 0>
+		void do_call_with_curve_type(Func& f)
+		{
+			f.operator()<CurveType, T>();
+			return;
+		}
 
-			template<template<typename> typename CurveType, typename T>
-			void operator()(const game_obj::var_list<CurveType, T>& prop_list)
+		template<template<typename> typename CurveType, typename Func>
+		void call_with_curve_type(curve_variable_type curve_info, Func& f)
+		{
+			using v = curve_variable_type;
+			using namespace curve_types;
+			switch (curve_info)
 			{
-				for (const auto& entry : prop_list)
-				{
-					assert(entry.var);
-					assert(entry.id == entry.var->id);
-					auto& data = entry.var->data;
-					copy_curve(entry.id, data);
-				}
+			case v::int_t:
+				return do_call_with_curve_type<CurveType, int_t>(f);
+			case v::float_t:
+				return do_call_with_curve_type<CurveType, float_t>(f);
+			case v::vec2_float:
+				return do_call_with_curve_type<CurveType, vec2_float>(f);
+			case v::bool_t:
+				return do_call_with_curve_type<CurveType, bool_t>(f);
+			case v::string:
+				return do_call_with_curve_type<CurveType, curve_types::string>(f);
+			case v::object_ref:
+				return do_call_with_curve_type<CurveType, curve_types::object_ref>(f);
+			case v::unique:
+				return do_call_with_curve_type<CurveType, unique>(f);
+			case v::colour:
+				return do_call_with_curve_type<CurveType, colour>(f);
+			case v::time_d:
+				return do_call_with_curve_type<CurveType, time_d>(f);
+			case v::collection_int:
+				return do_call_with_curve_type<CurveType, collection_int>(f);
+			case v::collection_float:
+				return do_call_with_curve_type<CurveType, collection_float>(f);
+			case v::collection_object_ref:
+				return do_call_with_curve_type<CurveType, collection_object_ref>(f);
+			case v::collection_unique:
+				return do_call_with_curve_type<CurveType, collection_unique>(f);			
+			case v::collection_colour:
+				return do_call_with_curve_type<CurveType, collection_colour>(f);
+			case v::collection_time_d:
+				return do_call_with_curve_type<CurveType, collection_time_d>(f);
+			case v::error:
+				;
+			}
+			throw logic_error{ "invalid curve variable type" };
+		}
+
+		template<typename Func>
+		void call_with_curve_info(curve_info_t curve_info, Func& f)
+		{
+			using k = keyframe_style;
+			switch (curve_info.first)
+			{
+			case k::const_t:
+				return call_with_curve_type<const_curve>(curve_info.second, f);
+			case k::linear:
+				return call_with_curve_type<linear_curve>(curve_info.second, f);
+			case k::pulse:
+				return call_with_curve_type<pulse_curve>(curve_info.second, f);
+			case k::step:
+				return call_with_curve_type<step_curve>(curve_info.second, f);
+			case k::end:
+				;
+			}
+			throw logic_error{ "invalid keyframe style" };
+		}
+
+		class object_copy_functor
+		{
+		public:
+			game_obj* obj;
+			game_state& state;
+			time_point t;
+			game_obj::var_entry::state_field_ptr var;
+
+			template<template <typename> typename CurveType, typename VarType>
+			void operator()()
+			{
+				auto state_var = static_cast<state_field<CurveType<VarType>>*>(var);
+				copy_curve(state_var->id, state_var->data);
 				return;
 			}
-
 
 			//copy_curve
 			// copies the param at the current time point to the object
 			template<typename T>
 			void copy_curve(unique_id id, const const_curve<T>& c)
 			{
+				using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
 				auto frames = saved_keyframes{};
 				frames.push_back({ time_point::min(), c.get() });
-				detail::create_object_property<const_curve, T>(obj, id, state, std::move(frames));
+				detail::create_object_property<const_curve, T>(*obj, id, state, std::move(frames));
 				return;
 			}
 
 			//func for linear and step curves
 			template<template<typename> typename CurveType, typename T,
-				std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>> 
+				std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>>
 				|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
-			void copy_curve(unique_id id, const CurveType<T>& c)
+				void copy_curve(unique_id id, const CurveType<T>& c)
 			{
+				using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
 				auto frames = saved_keyframes{};
-				frames.push_back({ time, c.get(time) });
-				detail::create_object_property<CurveType, T>(obj, id, state, std::move(frames));
+				frames.push_back({ t, c.get(t) });
+				detail::create_object_property<CurveType, T>(*obj, id, state, std::move(frames));
 				return;
 			}
 
 			template<typename T>
 			void copy_curve(unique_id id, const pulse_curve<T>& c)
 			{
-				const auto pulses = c.get(time);
+				using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
+				const auto pulses = c.get(t);
 				auto frames = saved_keyframes{};
 				frames.reserve(2u);
 				frames.push_back({ pulses.first.time, pulses.first.value });
 				if (pulses.second != pulse_curve<T>::bad_keyframe)
 					frames.push_back({ pulses.second.time, pulses.second.value });
 
-				detail::create_object_property<pulse_curve, T>(obj, id, state, std::move(frames));
+				detail::create_object_property<pulse_curve, T>(*obj, id, state, std::move(frames));
 				return;
 			}
 		};
@@ -272,12 +363,15 @@ namespace hades::state_api
 		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
 
 		//copy all object properties
-		for_each_tuple(obj.object_variables, detail::copy_object_property_functor{ t, state, *new_obj });
-
-		const auto ref = object_ref{ id, &*new_obj };
+		for (const auto& var_entry : obj.object_variables)
+		{
+			auto functor =
+				detail::object_copy_functor{ new_obj, state, t, var_entry.var };
+			detail::call_with_curve_info(var_entry.info, functor);
+		}
 
 		state.object_creation_time[id] = t;
-
+		const auto ref = object_ref{ id, new_obj };
 		//attach all systems
 		for (const auto sys : get_systems(*obj.object_type))
 			extra.systems.attach_system(ref, sys->id);
@@ -298,40 +392,20 @@ namespace hades::state_api
 		class erase_object_visitor 
 		{
 		public:
-			game_obj& o;
 			game_state& s;
+			void* var;
 
 			template<template<typename> typename CurveType, typename T>
-			void operator()(std::vector<game_obj::var_entry<CurveType, T>>& vect)
+			void operator()()
 			{
-				// vect == vector<var_entry<CurveType<T>>
-				// T == CurveType::value_type
-				//using var_vector_t = std::decay_t<decltype(vect)>; // std::vector<var_entry<...>>
-				//using var_entry_t = typename var_vector_t::value_type; // var_entry<CurveType<T>>
-				//using curve_t = typename var_entry_t::value_type; // CurveType<T>
-				//using T = typename curve_t::value_type;
-
-				if (empty(vect))
-					return;
-
-				const auto vars_size = size(vect);
+				const auto entry = static_cast<state_field<CurveType<T>>*>(var);
 
 				//TODO: search the colony for the target vars more efficiently
 				auto& list = std::get<game_state::data_colony<CurveType, T>>(s.state_data);
-				auto found = std::size_t{};
-				auto iter = begin(list);
-				const auto end = std::end(list);
-				while (iter != end && found < vars_size)
-				{
-					if (iter->object == o.id)
-					{
-						iter = list.erase(iter);
-						++found;
-					}
-					else
-						++iter;
-				}
-				vect.clear();
+				const auto iter = list.get_iterator(entry);
+				if (iter != end(list))
+					list.erase(iter);
+				return;
 			}
 		};
 	}
@@ -339,8 +413,13 @@ namespace hades::state_api
 	template<typename GameSystem>
 	void erase_object(game_obj& o, game_state& s, extra_state<GameSystem>& e)
 	{
-		//erase all data
-		for_each_tuple(o.object_variables, detail::erase_object_visitor{ o, s });
+		for (const auto& entry : o.object_variables)
+		{
+			auto info = entry.info;
+			auto visitor = detail::erase_object_visitor{ s, entry.var };
+			detail::call_with_curve_info(info, visitor);
+		}
+		o.object_variables.clear();
 
 		o.id = bad_entity;
 		e.objects.erase(&o);
@@ -429,33 +508,40 @@ namespace hades::state_api
 	namespace detail
 	{
 		template<template<typename> typename CurveType, typename T, typename GameObj>
-		CurveType<T>* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
+		inline CurveType<T>* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
 		{
 			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
 				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
 
-			using list_type = typename GameObj::template var_list<CurveType, T>;
-			using entry_type = typename GameObj::template var_entry<CurveType, T>;
-			auto& var_list = std::get<list_type>(g.object_variables);
-			auto var_iter = std::find_if(begin(var_list), end(var_list),
-				[v](const entry_type& elm) {
-					return v == elm.id;
-				});
+			for (auto& entry : g.object_variables)
+			{
+				if (entry.id == v &&
+					entry.info == get_curve_info<CurveType, T>())
+						return &(static_cast<state_field<CurveType<T>>*>(entry.var)->data);
+			}
 
-			if (var_iter == end(var_list))
-				return nullptr;
-
-			return &var_iter->var->data;
+			return nullptr;
 		}
 
 		template<template<typename> typename CurveType, typename T, typename GameObj>
-		CurveType<T>& get_object_property_ref(GameObj& g, const variable_id v)
+		inline CurveType<T>& get_object_property_ref(GameObj& g, const variable_id v)
 		{
-			auto out_ptr = get_object_property_ptr<CurveType, T>(g, v);
-			if (!out_ptr)
-				throw object_property_not_found{ "object missing expected property " + to_string(v) };
+			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
+				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
 
-			return *out_ptr;
+			for (auto& entry : g.object_variables)
+			{
+				if (entry.id == v)
+				{
+					if (entry.info == get_curve_info<CurveType, T>())
+						return static_cast<state_field<CurveType<T>>*>(entry.var)->data;
+					else
+						throw object_property_wrong_type{ "attempted to get property using the wrong type, requested: "
+						+ to_string(get_curve_info<CurveType, T>()) + "; stored:"
+						+ to_string(entry.info) };
+				}
+			}
+			throw object_property_not_found{ "object missing expected property " + to_string(v) };
 		}
 	}
 

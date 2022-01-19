@@ -60,47 +60,7 @@ namespace hades::debug
 
 		if (!state_api::is_object_stale(_object))
 		{
-			//load up all our data
-
-			// count the total number of curves
-			const auto elms = for_each_tuple_r(_object.ptr->object_variables, [](const auto& container) {
-				return size(container);
-				});
-			const auto count = std::reduce(begin(elms), end(elms));
-			auto curves = std::vector<curve_struct>{};
-			curves.reserve(count);
-
-			//generate print functions for each variable
-			for_each_tuple(_object.ptr->object_variables, [&curves](const auto& container) {
-				for (auto& elm : container)
-				{
-					assert(elm.var);
-					curves.push_back(curve_struct{
-							data::get_as_string(elm.id) + ": "s,
-							&elm.var->data,
-							print_curve<typename std::decay_t<decltype(elm)>::value_type>
-						});
-				}
-			});
-
-			//alphabetical sort
-			std::sort(begin(curves), end(curves), [](const auto& l, const auto& r) {
-				return l.name < r.name;
-			});
-
-			//store the sorted curves and print functions
-			_curves = std::move(curves);
-
-			//find the objects name if it has one
-			/*const auto iter = std::find_if(begin(_level->get_state().names),
-				end(_level->get_state().names), [id = _object.id](auto& pair){
-				return id == pair.second.get().id; // needs time
-			});*/
-
-			if (true)//iter == end(_level->get_state().names))
-				_name = "object: "s + to_string(_object.id);
-			/*else
-				_name = "object: "s + iter->first;*/
+			_object.ptr = nullptr;
 		}
 		else
 			_object.ptr = nullptr;

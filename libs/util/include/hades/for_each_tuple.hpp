@@ -13,7 +13,7 @@ namespace hades
 	// ty Raymond @ old new thing
 	// tuple_cat for uninstantiated type lists
 	template<typename... Tuples>
-	using tuple_type_cat_t = decltype(std::tuple_cat(Tuples...));
+	using tuple_type_cat_t = decltype(std::tuple_cat(std::declval<Tuples>()...));
 
 	//Calls function on each element of tuple with 
 	//that element and args... as functions argument

@@ -1,5 +1,7 @@
 #include "hades/curve_extra.hpp"
 
+#include "hades/for_each_tuple.hpp"
+
 namespace hades::resources
 {
 	namespace detail
@@ -30,5 +32,38 @@ namespace hades::resources
 	{
 		const auto id = d.get_uid(name);
 		return make_curve(d, id, v_type, k_style, std::move(default_value), sync, save);
+	}
+}
+
+namespace hades
+{
+	template<template<typename> typename CurveType, typename VariableType>
+	std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept
+	{
+		static_assert(is_const_curve_v<CurveType<VariableType>> ||
+			is_linear_curve_v<CurveType<VariableType>> ||
+			is_pulse_curve_v<CurveType<VariableType>> ||
+			is_step_curve_v<CurveType<VariableType>>,
+			"CurveType isn't one of the types provided in curves.hpp");
+		static_assert(curve_types::is_curve_type_v<VariableType>);
+
+		auto keyframe = keyframe_style::const_t;
+		if constexpr (is_linear_curve_v<CurveType<VariableType>>)
+			keyframe = keyframe_style::linear;
+		else if constexpr (is_pulse_curve_v<CurveType<VariableType>>)
+			keyframe = keyframe_style::pulse;
+		else if constexpr (is_step_curve_v<CurveType<VariableType>>)
+			keyframe = keyframe_style::step;
+
+		auto var = curve_variable_type::begin;
+		const auto tuple = curve_types::type_pack{};
+		for_each_tuple(tuple , [&var](const auto& type, const auto index) noexcept {
+			using T = std::decay_t<decltype(type)>;
+			if constexpr (std::is_same_v<T, VariableType>)
+				var = curve_variable_type{ static_cast<std::underlying_type_t<curve_variable_type>>(index) };
+			return;
+		});
+
+		return { keyframe, var };
 	}
 }

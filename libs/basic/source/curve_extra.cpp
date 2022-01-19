@@ -24,7 +24,7 @@ namespace hades
 namespace hades::resources
 {
 	//curve_variable_type_from_string
-	curve_variable_type read_variable_type(std::string_view s) noexcept
+	static curve_variable_type read_variable_type(std::string_view s) noexcept
 	{
 		if (s == "int32"sv)
 			return curve_variable_type::int_t;
@@ -145,7 +145,7 @@ namespace hades::resources
 		return curve_from_node(current_value, *value_node);
 	}
 
-	void parse_curves(unique_id mod, const data::parser_node& n, data::data_manager& d)
+	static void parse_curves(unique_id mod, const data::parser_node& n, data::data_manager& d)
 	{
 		//curves:
 		//		name:
@@ -239,9 +239,10 @@ namespace hades::resources
 			return std::holds_alternative<collection_colour>(v);
 		case curve_variable_type::collection_time_d:
 			return std::holds_alternative<collection_time_d>(v);
-		default:
+		case curve_variable_type::error:
 			return false;
 		}
+		return false;
 	}
 
 	template<typename T>
@@ -335,6 +336,29 @@ namespace hades::resources
 
 namespace hades
 {
+	static string to_string(keyframe_style k)
+	{
+		switch(k)
+		{
+		case keyframe_style::const_t:
+			return "const"s;
+		case keyframe_style::linear:
+			return "linear"s;
+		case keyframe_style::pulse:
+			return "pulse"s;
+		case keyframe_style::step:
+			return "step"s;
+		case keyframe_style::end:
+			;
+		}
+		return "error"s;
+	}
+
+	string to_string(const std::pair<keyframe_style, curve_variable_type> p)
+	{
+		return to_string(p.first) + "::" + to_string(p.second);
+	}
+
 	static string to_string(std::monostate value) noexcept
 	{
 		std::ignore = value;

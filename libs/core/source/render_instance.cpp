@@ -37,13 +37,9 @@ namespace hades
 			*_interface);
 
 		//erase dead ents
-		for (auto o : dead_ents)
-		{
-			auto ref = object_ref{ o };
-			auto obj = hades::state_api::get_object_ptr(ref, _extra);
-			if(obj)
-				hades::state_api::erase_object(*obj, _interface->get_state(), _extra);
-		}
+		// TODO: erase dead objects data(probably in remote_level)
+		//	doing it here resulted in double erase
+		//	maybr just check if they're still alive before erasing them
 
 		i.prepare(); //copy sprites into vertex buffer
 

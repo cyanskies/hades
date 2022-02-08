@@ -1,6 +1,9 @@
 #include "Hades/App.hpp"
 
 #include <cassert>
+#include <cerrno> // for assert floating point exceptions 
+#include <cfenv> // as above
+#include <cstring> // as above
 #include <string>
 
 #include "SFML/Window/Event.hpp"
@@ -243,6 +246,43 @@ namespace hades
 		return;
 	}
 
+	/// @brief in debug builds this function dumps fp exceptions to the console
+	void assert_floating_point_exceptions()
+	{
+		#ifndef NDEBUG
+			const auto message = "Floating point exception: "s;
+			const auto div_zero = "divide by zero"s;
+			const auto domain = "domain error"s;
+			#if math_errhandling & MATH_ERREXCEPT
+				const auto except = std::fetestexcept(FE_ALL_EXCEPT);
+				const auto rounding = "rounding required to store result"s;
+				const auto overflow = "result too large to represent"s;
+				const auto underflow = "result was subnormal causing loss of precision"s;
+				if (except & FE_DIVBYZERO)
+					LOGERROR(message + div_zero);
+				// This one is very noisy, but we intentionally sacrifice
+				// precision for speed so its not a big deal.
+				if (except & FE_INEXACT)
+					LOGDEBUG(message + rounding); 
+				if (except & FE_INVALID)
+					LOGERROR(message + domain);
+				if (except & FE_OVERFLOW)
+					LOGERROR(message + overflow);
+				if (except & FE_UNDERFLOW)
+					LOGERROR(message + underflow);
+				std::feclearexcept(FE_ALL_EXCEPT);
+			#elif math_errhandling & MATH_ERRNO
+				const auto except = errno;
+				if (except & ERANGE)
+					LOGERROR(message + div_zero);
+				else if (except & EDOM)
+					LOGERROR(message + domain);
+				errno = 0;// reset errno
+			#endif
+		#endif
+		return;
+	}
+
 	bool App::run()
 	{
 		//We copy the famous gaffer on games timestep here.
@@ -333,6 +373,9 @@ namespace hades
 			//drawing time
 			const auto float_draw_time = time_cast<milliseconds_float>(game_loop_metrics.draw_duration);
 			frame_draw_time->store(float_draw_time.count());
+
+			//check for floating point exceptions
+			assert_floating_point_exceptions();
 		}
 
 		return EXIT_SUCCESS;

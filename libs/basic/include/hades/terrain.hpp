@@ -21,9 +21,9 @@ namespace hades::resources
 	//named based on which tile corners hold a terrain
 	// other corners are empty
 	//the order is important for the algorithm to work
-	enum class transition_tile_type : std::size_t {
-		transition_begin,
-		none = transition_begin,
+	enum class transition_tile_type : uint8 {
+		none, 
+		transition_begin = none,
 		top_right,
 		bottom_right,
 		top_right_bottom_right,

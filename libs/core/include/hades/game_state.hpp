@@ -58,11 +58,6 @@ namespace hades
 		entity_variable_list_t object_variables;
 	};
 
-	inline constexpr bool operator==(const game_obj& lhs, const game_obj &rhs) noexcept
-	{
-		return lhs.id == rhs.id;
-	}
-
 	using object_name_map = std::unordered_map<string, step_curve<object_ref>>;
 
 	namespace detail

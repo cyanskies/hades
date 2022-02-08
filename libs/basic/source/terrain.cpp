@@ -864,7 +864,9 @@ namespace hades::resources
 
 		for (const auto &str : s)
 		{
-			for (auto i = std::size_t{}; i < std::size(transition_names); ++i)
+			assert(std::numeric_limits<uint8>::max() > std::size(transition_names));
+			assert(std::size(transition_names) == std::size(short_names));
+			for (auto i = uint8{}; i < std::size(transition_names); ++i)
 			{
 				if (transition_names[i] == str ||
 					short_names[i] == str)

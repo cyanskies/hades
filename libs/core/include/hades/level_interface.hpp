@@ -78,10 +78,7 @@ namespace hades
 		void destroy_object(object_ref, time_point) override;
 
 		std::vector<game_obj*> get_destroyed_objects() noexcept;
-
 		std::vector<game_obj> get_new_objects() noexcept override;
-
-		//maybe unused
 		std::vector<entity_id> get_removed_objects() noexcept override;
 
 		void name_object(std::string_view, object_ref, time_point);

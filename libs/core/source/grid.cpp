@@ -30,7 +30,7 @@ namespace hades
 		for (auto y = 0.f; y < p.grid_size.y; y += p.cell_size)
 		{
 			auto quad = make_quad({ row_left, y },
-				{ p.grid_size.x, p.line_thickness }, p.line_colour);
+				{ row_right, p.line_thickness }, p.line_colour);
 			
 			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
 		}
@@ -42,7 +42,7 @@ namespace hades
 		for (auto x = 0.f; x < p.grid_size.x; x += p.cell_size)
 		{
 			auto quad = make_quad({ x, coloumn_top },
-				{ p.line_thickness, p.grid_size.y }, p.line_colour);
+				{ p.line_thickness, coloumn_bottom }, p.line_colour);
 
 			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
 		}

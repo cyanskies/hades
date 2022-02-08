@@ -251,6 +251,7 @@ namespace hades
 	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius);
 	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
 
+	// Prefer this over the above functions, as it won't allocate
 	template<typename Func>
 	void for_each_position_rect(tile_position position,
 		tile_position size, Func f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)

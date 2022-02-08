@@ -913,15 +913,9 @@ namespace hades
 	{
 		using p = tile_position;
 		return std::array{
-			m + p{-1, -1},
-			m + p{0, -1},
-			m + p{1, -1},
-			m + p{-1, 0},
-			m,
-			m + p{1, 0},
-			m + p{-1, 1},
-			m + p{0, 1},
-			m + p{1, 1}
+			m + p{-1, -1},	m + p{0, -1},	m + p{1, -1},
+			m + p{-1, 0},	m,				m + p{1, 0}, 
+			m + p{-1, 1},	m + p{0, 1},	m + p{1, 1}
 		};
 	}
 }

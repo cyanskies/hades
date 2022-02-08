@@ -16,8 +16,6 @@
 
 namespace hades::data
 {
-	constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID";
-
 	//templatise on data file .ext and make_parser func
 	class data_system final : public data_manager
 	{

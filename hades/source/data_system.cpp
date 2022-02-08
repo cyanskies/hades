@@ -8,9 +8,14 @@
 #include "hades/utility.hpp"
 #include "hades/yaml_parser.hpp"
 
+using namespace std::string_literals;
+using namespace std::string_view_literals;
+
 namespace hades::data
 {
-	data_system::data_system() : _ids({ {no_id_string, unique_id::zero} })
+	constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID"sv;
+
+	data_system::data_system() : _ids({ {string{ no_id_string }, unique_id::zero} })
 	{}
 
 	//application registers the custom resource types
@@ -225,13 +230,13 @@ namespace hades::data
 	//convert string to uid
 	types::string data_system::get_as_string(unique_id uid) const
 	{
-		for (auto id : _ids)
+		for (const auto &id : _ids)
 		{
 			if (id.second == uid)
 				return id.first;
 		}
 
-		return no_id_string;
+		return string{ no_id_string };
 	}
 
 	unique_id data_system::get_uid(std::string_view name) const

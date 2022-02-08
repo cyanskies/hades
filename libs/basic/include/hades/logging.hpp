@@ -48,8 +48,7 @@ namespace hades
 			const hades::string& text() const { return _message; }
 			const logger::log_verbosity verbosity() const { return _verb; }
 
-			operator hades::string() const { return "[" + _time + "]: " + _file + _function + to_string(_line) + "\n" + _message; }
-
+			operator hades::string() const;
 		private:
 			hades::string _message;
 			logger::log_verbosity _verb;

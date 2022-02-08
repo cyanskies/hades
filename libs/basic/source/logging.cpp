@@ -16,8 +16,44 @@
 
 namespace hades
 {
-	namespace console
+	using namespace std::string_literals;
+
+	static string to_string(console::logger::log_verbosity v) noexcept
 	{
+		using verb = console::logger::log_verbosity;
+		switch (v)
+		{
+		case verb::log: return "log"s;
+		case verb::error: return "error"s;
+		case verb::warning: return "warning"s;
+		case verb::debug: return "debug"s;
+		}
+		return "unknown"s;
+	}
+
+	console::string::operator types::string() const
+	{
+		const auto brace = "["s;
+		const auto colon = ":"s;
+		const auto brace2 = "]"s;
+		const auto verb = to_string(_verb);
+		const auto line = to_string(_line);
+		const auto elems = std::array<const types::string&, 12u>{ brace, verb,
+			colon, _time, colon, _file, colon, _function, colon, line, brace2,
+			_message };
+
+		auto out = types::string{};
+		out.reserve(/*seperators*/6 + size(verb) + size(line)
+			+ size(_time) + size(_file) + size(_function) + size(_message));
+
+		for (const auto &s : elems)
+			out += s;
+
+		return out;
+	}
+
+	namespace console
+	{		
 		logger* log = nullptr;
 
 		void echo(string val)
@@ -38,7 +74,7 @@ namespace hades
 			if (log)
 				return log->get_new_output();
 
-			return console::output_buffer();
+			return console::output_buffer{};
 		}
 
 		console::output_buffer output()
@@ -46,7 +82,7 @@ namespace hades
 			if (log)
 				return log->get_output();
 
-			return console::output_buffer();
+			return console::output_buffer{};
 		}
 	}
 

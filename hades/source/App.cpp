@@ -247,7 +247,7 @@ namespace hades
 	}
 
 	/// @brief in debug builds this function dumps fp exceptions to the console
-	void assert_floating_point_exceptions()
+	static void assert_floating_point_exceptions()
 	{
 		#ifndef NDEBUG
 			const auto message = "Floating point exception: "s;

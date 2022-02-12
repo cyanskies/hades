@@ -184,6 +184,12 @@ namespace hades
 		_verts.erase(target, end(_verts));
 		return;
 	}
+
+	void quad_buffer::clear() noexcept
+	{
+		_verts.clear();
+		return;
+	}
 	
 	void quad_buffer::reserve(std::size_t size)
 	{

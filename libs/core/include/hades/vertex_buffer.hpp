@@ -76,6 +76,7 @@ namespace hades
 		void replace(const poly_quad&, std::size_t) noexcept;
 		void swap(std::size_t, std::size_t) noexcept;
 		void pop_back() noexcept;
+		void clear() noexcept;
 
 		//reserve space in the buffer
 		void reserve(std::size_t);

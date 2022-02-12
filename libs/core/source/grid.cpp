@@ -15,13 +15,13 @@ namespace hades
 		return make_quad_colour({ p.x, p.y, s.x, s.y }, c);
 	}
 
-	static std::vector<sf::Vertex> make_grid(const grid::grid_properties &p)
+	static void make_grid(const grid::grid_properties &p, quad_buffer& buffer)
 	{
 		const auto rows = static_cast<int32>(std::floor(p.grid_size.y / p.cell_size));
 		const auto cols = static_cast<int32>(std::floor(p.grid_size.x / p.cell_size));
 
-		std::vector<sf::Vertex> verts{};
-		verts.reserve(rows * cols);
+		buffer.clear();
+		buffer.reserve(rows * cols);
 
 		//make rows
 		constexpr auto row_left = 0.f;
@@ -29,10 +29,9 @@ namespace hades
 
 		for (auto y = 0.f; y < p.grid_size.y; y += p.cell_size)
 		{
-			auto quad = make_quad({ row_left, y },
-				{ row_right, p.line_thickness }, p.line_colour);
-			
-			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
+			buffer.append(make_quad(
+				{ row_left, y }, { row_right, p.line_thickness }, p.line_colour)
+			);
 		}
 
 		//make coloumns
@@ -41,48 +40,53 @@ namespace hades
 
 		for (auto x = 0.f; x < p.grid_size.x; x += p.cell_size)
 		{
-			auto quad = make_quad({ x, coloumn_top },
-				{ p.line_thickness, coloumn_bottom }, p.line_colour);
-
-			verts.insert(std::end(verts), std::begin(quad), std::end(quad));
+			buffer.append(make_quad(
+				{ x, coloumn_top }, { p.line_thickness, coloumn_bottom }, p.line_colour)
+			);
 		}
 		
-		assert(verts.size() % 3 == 0);
-		return verts;
+		buffer.apply();
+		return;
 	}
 
 	void grid::set_size(vector_float s)
 	{
 		_properties.grid_size = s;
-		_verticies.set_verts(make_grid(_properties));
+		make_grid(_properties, _quads);
+		return;
 	}
 
 	void grid::set_cell_size(float s)
 	{
 		_properties.cell_size = s;
-		_verticies.set_verts(make_grid(_properties));
+		make_grid(_properties, _quads);
+		return;
 	}
 
 	void grid::set_line_thickness(float t)
 	{
 		_properties.line_thickness = t;
-		_verticies.set_verts(make_grid(_properties));
+		make_grid(_properties, _quads);
+		return;
 	}
 
 	void grid::set_colour(colour c)
 	{
 		_properties.line_colour = c;
-		_verticies.set_verts(make_grid(_properties));
+		make_grid(_properties, _quads);
+		return;
 	}
 
 	void grid::set_all(grid_properties p)
 	{
-		_properties = std::move(p);
-		_verticies.set_verts(make_grid(_properties));
+		_properties = std::move(p); 
+		make_grid(_properties, _quads);
+		return;
 	}
 
 	void grid::draw(sf::RenderTarget &t, const sf::RenderStates s) const
 	{
-		t.draw(_verticies, s);
+		t.draw(_quads, s);
+		return;
 	}
 }

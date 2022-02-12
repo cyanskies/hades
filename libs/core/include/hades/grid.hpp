@@ -32,7 +32,7 @@ namespace hades
 
 	private:
 		grid_properties _properties;
-		vertex_buffer _verticies{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Static };
+		quad_buffer _quads{ sf::VertexBuffer::Usage::Static };
 	};
 }
 

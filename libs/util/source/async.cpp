@@ -5,15 +5,18 @@
 
 namespace hades
 {
+	thread_local static std::size_t worker_id = 0; // default == main thread
+
 	thread_pool::thread_pool(const std::size_t count)
 	{
 		const auto thread_count = std::max(count, std::size_t{ 1 });
 
 		auto worker_function = [this](const std::size_t thread_id) {
+			hades::worker_id = thread_id;
 			// keep looping until the pool shuts down
 			while (std::atomic_load_explicit(&_stop_flag, std::memory_order_relaxed) == false)
 			{
-				// if their is no work, then idle
+				// if there is no work, then idle
 				if (std::atomic_load_explicit(&_work_count, std::memory_order_relaxed) == std::size_t{})
 				{
 					auto lock = std::unique_lock{ _condition_mutex };
@@ -55,9 +58,9 @@ namespace hades
 						continue;
 
 					//take half of the queue
-					const auto steal_count = static_cast<std::size_t>(std::ceilf(count / 2.f));
+					const auto steal_count = (count + 1) / 2;
 					auto beg = begin(other_queue.work);
-					auto iter = next(beg, steal_count);
+					auto iter = next(beg, integer_cast<ptrdiff_t>(steal_count));
 					std::move(beg, iter, std::back_inserter(our_queue.work)); // TODO: possible throw?
 					other_queue.work.erase(beg, iter);
 
@@ -93,6 +96,11 @@ namespace hades
 		}
 
 		return;
+	}
+
+	std::size_t thread_pool::get_worker_thread_id() noexcept
+	{
+		return worker_id;
 	}
 }
 

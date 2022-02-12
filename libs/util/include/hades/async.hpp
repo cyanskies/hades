@@ -128,10 +128,8 @@ namespace hades
 				return;
 			};
 
-			//stick it in a random queue
-			// TODO: use rotating index to place work
-			const auto index = random(std::size_t{}, std::size(_queues) - 1);
 			{
+				const auto index = get_worker_thread_id();
 				const auto lock = std::scoped_lock{ _queues[index].mut };
 				_queues[index].work.emplace_back(false_copyable{ std::move(work) });
 				std::atomic_fetch_add_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
@@ -165,6 +163,8 @@ namespace hades
 			std::mutex mut;
 			std::deque<std::function<void()>> work;
 		};
+
+		static std::size_t get_worker_thread_id() noexcept;
 
 		std::mutex _condition_mutex;
 		std::condition_variable _cv;

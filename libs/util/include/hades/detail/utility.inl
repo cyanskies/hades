@@ -231,9 +231,7 @@ namespace hades
 	template<typename T>
 	T random(T min, T max)
 	{
-		if (min == max)
-			return min;
-		else if (min > max)
+		if (min > max)
 			return detail::random(max, min);
 
 		return detail::random(min, max);

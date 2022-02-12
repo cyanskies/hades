@@ -32,7 +32,8 @@ namespace hades {
 		virtual ~basic_table() noexcept = default;
 
 		virtual value_type operator[](index_type) const = 0;
-		
+		virtual value_type operator[](size_type) const = 0;
+
 		index_type position() const noexcept { return _offset; }
 		void set_position(index_type p) noexcept
 		{ _offset = p; }
@@ -49,6 +50,7 @@ namespace hades {
 		using value_type = T;
 		using base_type = basic_table<typename value_type>;
 		using index_type = typename basic_table<typename value_type>::index_type;
+		using size_type = typename basic_table<typename value_type>::size_type;
 
 		template<typename U, std::enable_if_t<std::is_same_v<std::decay_t<U>, T>, int> = 0>
 		constexpr always_table(index_type position, index_type size, U&& value)
@@ -58,6 +60,11 @@ namespace hades {
 		{}
 
 		constexpr value_type operator[](const index_type) const noexcept override
+		{
+			return _always_value;
+		}
+
+		constexpr value_type operator[](const size_type) const noexcept override
 		{
 			return _always_value;
 		}
@@ -90,7 +97,7 @@ namespace hades {
 		value_type operator[](index_type) const override;
 
 		value_type& operator[](size_type);
-		value_type operator[](size_type) const;
+		value_type operator[](size_type) const override;
 
 		std::vector<value_type> &data() noexcept
 		{
@@ -114,7 +121,7 @@ namespace hades {
 	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor&&);
 
 	template<typename T, typename BinaryOp = std::plus<T>>
-	class table_reduce_view : basic_table<T>
+	class table_reduce_view : public basic_table<T>
 	{
 	public:
 		using base_type = basic_table<T>;
@@ -122,15 +129,16 @@ namespace hades {
 		using index_type = typename basic_table<T>::index_type;
 		using size_type = typename basic_table<T>::size_type;
 
-		table_reduce_view(index_type pos, index_type size, T def, 
+		table_reduce_view(index_type pos, index_type size, value_type defaul,
 			std::initializer_list<const basic_table<T>&> list,
 			BinaryOp op = BinaryOp{});
 
 		value_type operator[](index_type) const override;
+		value_type operator[](size_type) const override;
 	private:
 		std::vector<std::reference_wrapper<const basic_table<T>>> _tables;
 		BinaryOp _op;
-		T _default_val;
+		value_type _default_val;
 	};
 
 	//operators

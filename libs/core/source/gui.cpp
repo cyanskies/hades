@@ -884,9 +884,8 @@ namespace hades
 		const auto v = ImGui::CalcTextSize(s.data(), s.data() + s.size(), !include_text_after_double_hash, wrap_width);
 		return { v.x, v.y };
 	}
-
-	//NOTE: could be constexpr if only for sfml
-	static sf::Vertex to_vertex(ImDrawVert vert, sf::Vector2f tex_size = { 1.f, 1.f }) noexcept
+ 
+	inline sf::Vertex to_vertex(ImDrawVert vert, vector_float tex_size = { 1.f, 1.f }) noexcept
 	{
 		const auto col = ImColor{ vert.col }.Value;
 
@@ -930,13 +929,12 @@ namespace hades
 				else
 				{
 					//get the info needed to denormalise the tex coords.
-					sf::Vector2f texture_size = { 1.f, 1.f };
+					vector_float texture_size = { 1.f, 1.f };
 					if (cmd.TextureId)
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						const auto size = static_cast<vector_float>(tex::get_size(texture));
-						texture_size = { size.x, size.y };
+						texture_size = static_cast<vector_float>(tex::get_size(texture));
 					}
 
 					//get the verts from the draw list that are associated with

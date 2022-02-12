@@ -26,13 +26,12 @@ namespace hades::state_api
 					curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
 			}
 
-			auto data = state_field<CurveType<T>>{ object.id, curve_id, std::move(curve) };
-			auto iter = colony.emplace(std::move(data));
-			assert(iter != end(colony));
-			if (iter == end(colony))
-				throw game_state_error{ "tried to double create object property" };
+			auto iter = colony.insert(state_field<CurveType<T>>{
+				object.id, curve_id, std::move(curve) 
+			});
+
 			using entry_type = typename game_obj::var_entry;
-			object.object_variables.emplace_back(entry_type{
+			object.object_variables.push_back(entry_type{
 				curve_id,
 				static_cast<void*>(&*iter),
 				get_curve_info<CurveType, T>()
@@ -109,12 +108,13 @@ namespace hades::state_api
 			for (auto& [c, v] : curves)
 			{
 				assert(c);
-				assert(c);
 				assert(!v.valueless_by_exception());
 				assert(resources::is_set(v));
 				std::visit(detail::make_object_visitor{ c, s,
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, v} } }, v);
 			}
+
+			assert(size(curves) == size(obj->object_variables));
 
 			if (!empty(o.name_id))
 				name_object(o.name_id, { id, obj }, t, s);
@@ -140,6 +140,8 @@ namespace hades::state_api
 
 				std::visit(detail::make_object_visitor{ c, s, *obj, v }, v[0].value);
 			}
+
+			assert(size(o.curves) == size(obj->object_variables));
 
 			//add the object curves that weren't saved
 			//list of curve ids
@@ -398,12 +400,17 @@ namespace hades::state_api
 			template<template<typename> typename CurveType, typename T>
 			void operator()()
 			{
+				using namespace std::string_literals;
 				const auto entry = static_cast<state_field<CurveType<T>>*>(var);
-
 				//TODO: search the colony for the target vars more efficiently
 				auto& list = std::get<game_state::data_colony<CurveType, T>>(s.state_data);
 				const auto iter = list.get_iterator(entry);
-				if (iter != end(list))
+				if (iter == end(list))
+				{
+					throw state_api::object_property_not_found{ "expected property not found while erasing object: "s
+						+ to_string(entry->object) + "; property: "s + to_string(entry->id)};
+				}
+				else
 					list.erase(iter);
 				return;
 			}
@@ -438,7 +445,7 @@ namespace hades::state_api
 		}
 
 		//check what object is tied to the name at time_point
-		auto ob_ref = obj->second.get(t);
+		object_ref ob_ref = obj->second.get(t);
 		if (ob_ref == object_ref{})
 			return object_ref{};
 
@@ -541,6 +548,7 @@ namespace hades::state_api
 						+ to_string(entry.info) };
 				}
 			}
+			assert(false);
 			throw object_property_not_found{ "object missing expected property " + to_string(v) };
 		}
 	}

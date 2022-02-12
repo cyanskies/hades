@@ -122,7 +122,7 @@ namespace hades
 
 	template<typename T, typename BinaryOp>
 	inline hades::table_reduce_view<T, BinaryOp>::table_reduce_view(index_type pos,
-		index_type size, T def, std::initializer_list<const basic_table<T>&> list,
+		index_type size, value_type def, std::initializer_list<const basic_table<T>&> list,
 		BinaryOp op) : base_type{ pos, size }, _tables{ list }, _default_val{ def },
 		_op{ std::move(op) }
 	{}
@@ -141,5 +141,12 @@ namespace hades
 				out = std::invoke(_op, out, t[index]);
 		}
 		return out;
+	}
+
+	template<typename T, typename BinaryOp>
+	inline typename hades::table_reduce_view<T, BinaryOp>::value_type
+		hades::table_reduce_view<T, BinaryOp>::operator[](size_type index) const
+	{
+		return operator[](to_2d_index<index_type>(index, this->size().x));
 	}
 }

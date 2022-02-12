@@ -84,6 +84,7 @@ set(HADES_CORE_SRC
 	include/hades/render_instance.hpp
 	include/hades/render_interface.hpp
 	include/hades/save_load_api.hpp
+	include/hades/sf_color.hpp
 	include/hades/sf_input.hpp
 	include/hades/sf_streams.hpp
 	include/hades/sf_time.hpp

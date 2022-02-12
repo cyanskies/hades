@@ -5,6 +5,7 @@
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
+#include "hades/sf_color.hpp"
 #include "hades/texture.hpp"
 #include "hades/timers.hpp"
 
@@ -386,7 +387,7 @@ namespace hades
 {
 	poly_quad make_quad_colour(rect_float quad, colour c) noexcept
 	{
-		const auto col = sf::Color{ c.r, c.g, c.b, c.a };
+		const auto col = to_sf_color(c);
 
 		return poly_quad{
 			//first triangle

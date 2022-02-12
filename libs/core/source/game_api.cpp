@@ -179,10 +179,10 @@ namespace hades
 			return get_property_ref<step_curve, unique>(o, id);
 		}
 
-		const tag_list& get_collision_group(object_ref o)
+		unique get_collision_group(object_ref o)
 		{
-			const auto id = hades::get_collision_group_curve_id();
-			return get_property_ref<const_curve, collection_unique>(o, id).get();
+			const auto id = hades::get_collision_layer_curve_id();
+			return get_property_ref<const_curve, unique>(o, id).get();
 		}
 	}
 

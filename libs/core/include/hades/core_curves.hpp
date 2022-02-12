@@ -19,7 +19,7 @@ namespace hades
 	const resources::curve* get_position_curve();
 	const resources::curve* get_player_owner_curve();
 	const resources::curve* get_size_curve();
-	const resources::curve* get_collision_group_curve();
+	const resources::curve* get_collision_layer_curve();
 	const resources::curve* get_tags_curve();
 
 	constexpr auto bad_object_type = unique_zero;
@@ -27,7 +27,8 @@ namespace hades
 	unique_id get_player_owner_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;
-	unique_id get_collision_group_curve_id() noexcept;
+	unique_id get_move_layer_id() noexcept;
+	unique_id get_collision_layer_curve_id() noexcept;
 	unique_id get_tags_curve_id() noexcept;
 }
 

@@ -7,6 +7,7 @@ namespace hades
 	static auto pos_id = unique_zero;
 	static auto siz_id = unique_zero;
 	static auto player_owner_id = unique_zero;
+	static auto terrain_layer_id = unique_zero;
 	static auto collision_groups_id = unique_zero;
 	static auto tags_id = unique_zero;
 
@@ -43,14 +44,22 @@ namespace hades
 			resources::curve_types::vec2_float{ 0.f, 0.f },
 			true, false);
 		
-		// collision groups are used to check what terrain an object can move on
-		// also used by the editor to know where an object can be placed
-		//TODO: should a sperate collision-terrain list be used for terrain collision?
-		collision_groups_id = d.get_uid("collision-groups"sv);
+		// terrain layer, object can only move on tiles that have this tag
+		collision_groups_id = d.get_uid("move-layer"sv);
 		resources::make_curve(d, collision_groups_id,
-			resources::curve_variable_type::collection_unique,
+			resources::curve_variable_type::unique,
 			keyframe_style::const_t,
-			resources::curve_types::collection_unique{},
+			resources::curve_types::bad_unique,
+			false, //sync to client
+			false); //save to file
+
+
+		// collision layer controls which objects you will collide with 
+		collision_groups_id = d.get_uid("collision-layer"sv);
+		resources::make_curve(d, collision_groups_id,
+			resources::curve_variable_type::unique,
+			keyframe_style::const_t,
+			resources::curve_types::bad_unique,
 			false, //sync to client
 			false); //save to file
 
@@ -101,7 +110,7 @@ namespace hades
 		return get_curve(siz_id);
 	}
 
-	const resources::curve * get_collision_group_curve()
+	const resources::curve * get_collision_layer_curve()
 	{
 		return get_curve(collision_groups_id);
 	}
@@ -126,7 +135,12 @@ namespace hades
 		return siz_id;
 	}
 
-	unique_id get_collision_group_curve_id() noexcept
+	unique_id get_move_layer_id() noexcept
+	{
+		return terrain_layer_id;
+	}
+
+	unique_id get_collision_layer_curve_id() noexcept
 	{
 		return collision_groups_id;
 	}

@@ -661,12 +661,12 @@ namespace hades
 
 	resources::curve_types::collection_unique get_collision_groups(const object_instance &o)
 	{
-		return get_vec_unique_impl(o, get_collision_group_curve);
+		return get_vec_unique_impl(o, get_collision_layer_curve);
 	}
 
 	resources::curve_types::collection_unique get_collision_groups(const resources::object &o)
 	{
-		return get_vec_unique_impl(o, get_collision_group_curve);
+		return get_vec_unique_impl(o, get_collision_layer_curve);
 	}
 
 	tag_list get_tags(const object_instance & o)

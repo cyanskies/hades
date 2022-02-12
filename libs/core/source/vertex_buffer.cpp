@@ -133,20 +133,20 @@ namespace hades
 
 	void quad_buffer::append(const poly_quad& q) 
 	{
-		for (const auto& v : q)
-			_verts.emplace_back(v);
+		_verts.insert(end(_verts), begin(q), end(q));
 		return;
 	}
 
-	poly_quad quad_buffer::get_quad(std::size_t offset) noexcept
+	poly_quad quad_buffer::get_quad(std::size_t offset) const noexcept
 	{
 		offset *= quad_vert_count;
 
 		auto out = poly_quad{};
 		assert(offset + std::size(out) <= std::size(_verts));
 
-		for (auto i = std::size_t{}; i < std::size(out); ++i)
-			out[i] = _verts[i];
+		auto data = &_verts[offset];
+		for (auto& v : out)
+			v = *data++;
 
 		return out;
 	}
@@ -156,9 +156,10 @@ namespace hades
 		offset *= quad_vert_count;
 		assert(offset + std::size(q) <= std::size(_verts));
 
-		for (auto i = std::size_t{}; i < std::size(q); ++i)
-			_verts[i + offset] = q[i];
-
+		auto data = &_verts[offset];
+		for (const auto &v : q)
+			*data++ = v;
+		
 		return;
 	}
 	
@@ -184,6 +185,21 @@ namespace hades
 		return;
 	}
 	
+	void quad_buffer::reserve(std::size_t size)
+	{
+		_verts.reserve(size * quad_vert_count);
+		if (buffer_available() && size > (_buffer.getVertexCount() / quad_vert_count))
+		{
+			// NOTE:
+			// create() returns false on failure, but this only occurs if
+			// size is negative, all other paths succeed
+			_buffer.create(size * quad_vert_count);
+			_buffer.update(_verts.data(), std::size(_verts), 0);
+		}
+
+		return;
+	}
+
 	void quad_buffer::apply()
 	{
 		if (!buffer_available())

@@ -12,6 +12,8 @@
 
 namespace hades
 {
+	// TODO: basic state
+	//	like state, but remove init and move implementation only funcs to base class
 	class state
 	{
 	public:

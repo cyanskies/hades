@@ -80,43 +80,27 @@ namespace hades
 
 		data::set_default_parser(data::make_yaml_parser);
 		data::set_default_writer(data::make_yaml_writer);
-		
+
 		resourceTypes(_dataMan);
 
 		//load defualt console settings
 		create_core_console_variables();
-		
+
 		//load config files and overwrite any updated settings
 
 		registerConsoleCommands();
 		register_vid_default(&_console);
 	}
 
-	bool LoadCommand(command_list &commands, std::string_view command, console::function_no_argument job)
+	bool LoadCommand(command_list& commands, std::string_view command, console::function_no_argument job)
 	{
-		return LoadCommand(commands, command, [&job](auto&&)
-		{
-			return job();
-		});
+		return handle_command(commands, command, std::move(job));
 	}
 
 	//calls job on any command that contains command
-	bool LoadCommand(command_list &commands, std::string_view command, console::function job)
+	bool LoadCommand(command_list& commands, std::string_view command, console::function job)
 	{
-		auto com_iter = commands.begin();
-		bool ret = false;
-		while (com_iter != std::end(commands))
-		{
-			if (com_iter->request == command)
-			{
-				ret = job(com_iter->arguments);
-				com_iter = commands.erase(com_iter);
-			}
-			else
-				++com_iter;
-		}
-
-		return ret;
+		return handle_command(commands, command, std::move(job));
 	}
 
 	static void update_overlay_size(sf::View& v, gui& g,
@@ -124,6 +108,7 @@ namespace hades
 	{
 		v.setSize(w, h);
 		v.setCenter(w / 2.f, h / 2.f);
+		g.activate_context();
 		g.set_display_size({ w, h });
 		return;
 	}
@@ -132,7 +117,7 @@ namespace hades
 	{
 		constexpr auto hades_version_major = 0,
 			hades_version_minor = 1,
-			hades_version_patch  = 0;
+			hades_version_patch = 0;
 
 		//create a hidden window early to let us start making textures without
 		//creating GL errors
@@ -144,11 +129,11 @@ namespace hades
 		//LOG("SFGUI " + std::to_string(SFGUI_MAJOR_VERSION) + "." + std::to_string(SFGUI_MINOR_VERSION) + "." + std::to_string(SFGUI_REVISION_VERSION));
 		LOG("zlib " + to_string(zip::zlib_version()));
 		LOG("yaml-cpp " + to_string(HADES_YAML_VERSION));
-		
+
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.
-		auto &data = _dataMan;
-		auto load_game = [&data](const argument_list &command) {
+		auto& data = _dataMan;
+		const auto load_game = [&data](const argument_list& command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument"sv);
@@ -160,18 +145,11 @@ namespace hades
 			return true;
 		};
 
-		if (!LoadCommand(commands, "game"sv, load_game))
-		{
-			//add default game if one isnt specified
-			command com;
-			com.request = "game"sv;
-			com.arguments.push_back(defaultGame());
+		// look for a game command, or load the default game
+		if (!handle_command(commands, "game"sv"", load_game))
+			std::invoke(load_game, argument_list{ defaultGame() });
 
-			commands.push_back(com);
-			LoadCommand(commands, "game"sv, load_game);
-		}
-
-		LoadCommand(commands, "mod"sv, [&data](const argument_list &command) {
+		handle_command(commands, "mod"sv, [&data](const argument_list &command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument"sv);
@@ -198,11 +176,11 @@ namespace hades
 			console::run_command(c);
 
 		//create  the normal window
-		if (!_console.run_command(command("vid_reinit"sv)))
+		if (!_console.run_command(command{ "vid_reinit"sv }))
 		{
 			LOGERROR("Error setting video, falling back to default"sv);
-			_console.run_command(command("vid_default"sv));
-			_console.run_command(command("vid_reinit"sv));
+			_console.run_command(command{ "vid_default"sv });
+			_console.run_command(command{ "vid_reinit"sv });
 		}
 
 		//create the debug view and gui settings
@@ -249,36 +227,32 @@ namespace hades
 	/// @brief in debug builds this function dumps fp exceptions to the console
 	static void assert_floating_point_exceptions()
 	{
-		#ifndef NDEBUG
-			const auto message = "Floating point exception: "s;
-			const auto div_zero = "divide by zero"s;
-			const auto domain = "domain error"s;
-			#if math_errhandling & MATH_ERREXCEPT
-				const auto except = std::fetestexcept(FE_ALL_EXCEPT);
-				const auto rounding = "rounding required to store result"s;
-				const auto overflow = "result too large to represent"s;
-				const auto underflow = "result was subnormal causing loss of precision"s;
-				if (except & FE_DIVBYZERO)
-					LOGERROR(message + div_zero);
-				// This one is very noisy, but we intentionally sacrifice
-				// precision for speed so its not a big deal.
-				if (except & FE_INEXACT)
-					LOGDEBUG(message + rounding); 
-				if (except & FE_INVALID)
-					LOGERROR(message + domain);
-				if (except & FE_OVERFLOW)
-					LOGERROR(message + overflow);
-				if (except & FE_UNDERFLOW)
-					LOGERROR(message + underflow);
-				std::feclearexcept(FE_ALL_EXCEPT);
-			#elif math_errhandling & MATH_ERRNO
-				const auto except = errno;
-				if (except & ERANGE)
-					LOGERROR(message + div_zero);
-				else if (except & EDOM)
-					LOGERROR(message + domain);
-				errno = 0;// reset errno
-			#endif
+		const auto message = "Floating point exception: "s;
+		const auto div_zero = "divide by zero"s;
+		const auto domain = "domain error"s;
+		#if math_errhandling & MATH_ERREXCEPT
+			const auto except = std::fetestexcept(FE_ALL_EXCEPT);
+			const auto rounding = "rounding required to store result"s;
+			const auto overflow = "result too large to represent"s;
+			const auto underflow = "result was subnormal causing loss of precision"s;
+			if (except & FE_DIVBYZERO)
+				LOGERROR(message + div_zero);
+			//if (except & FE_INEXACT) // rounding is pretty common, no need to log
+				//LOGDEBUG(message + rounding); 
+			if (except & FE_INVALID)
+				LOGERROR(message + domain);
+			if (except & FE_OVERFLOW)
+				LOGERROR(message + overflow);
+			if (except & FE_UNDERFLOW)
+				LOGERROR(message + underflow);
+			std::feclearexcept(FE_ALL_EXCEPT);
+		#elif math_errhandling & MATH_ERRNO
+			const auto except = errno;
+			if (except & ERANGE)
+				LOGERROR(message + div_zero);
+			else if (except & EDOM)
+				LOGERROR(message + domain);
+			errno = 0;// reset errno
 		#endif
 		return;
 	}
@@ -579,7 +553,7 @@ namespace hades
 
 				const auto files = files::ListFilesInDirectory(to_string(args.front()));
 
-				for (auto f : files)
+				for (const auto &f : files)
 					LOG(f);
 
 				return true;
@@ -652,7 +626,7 @@ namespace hades
 				if (args.size() != 1)
 					throw invalid_argument("fps function expects one argument"s);
 
-				const auto param = args[0];
+				const std::string_view param = args[0];
 				const auto int_param = from_string<int32>(param);
 				create_fps_overlay(int_param);
 

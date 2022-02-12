@@ -6,16 +6,16 @@
 
 namespace hades
 {
-	command::command(std::string_view sv)
+	command make_command(std::string_view sv)
 	{
+		auto com = command{};
 		if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
 		{
-			request = sv;
-			return;
+			return command{ sv };
 		}
 		else
 		{
-			request = sv.substr(0, pos);
+			com.request = sv.substr(0, pos);
 			sv = sv.substr(pos + 1, sv.size() - pos);
 		}
 
@@ -23,15 +23,17 @@ namespace hades
 		{
 			if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
 			{
-				arguments.push_back(sv);
-				return;
+				com.arguments.push_back(sv);
+				break;
 			}
 			else
 			{
-				arguments.push_back(sv.substr(0, pos));
+				com.arguments.push_back(sv.substr(0, pos));
 				sv = sv.substr(pos + 1, sv.size() - pos);
 			}
 		}
+
+		return com;
 	}
 
 	bool operator==(const command& lhs, const command &rhs)

@@ -222,6 +222,16 @@ namespace hades
 				pulse_keyframe{ iters.second->value, iters.second->time }
 			};
 		}
+
+		// TODO: implement
+		std::vector<pulse_keyframe> get_range(time_point min, time_point max) const
+		{
+			if (min > max) return get_range(max, min);
+
+			auto out = std::vector<pulse_keyframe>{};
+			//equal_range
+			//return out;
+		}
 	};
 
 	template<typename T>

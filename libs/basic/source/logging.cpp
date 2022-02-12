@@ -38,16 +38,15 @@ namespace hades
 		const auto brace2 = "]"s;
 		const auto verb = to_string(_verb);
 		const auto line = to_string(_line);
-		const auto elems = std::array<const types::string&, 12u>{ brace, verb,
-			colon, _time, colon, _file, colon, _function, colon, line, brace2,
-			_message };
+		const auto elems = std::array{ &brace, &verb, &colon, &_time, &colon,
+			&_file, &colon, &_function, &colon, &line, &brace2,	&_message };
 
 		auto out = types::string{};
 		out.reserve(/*seperators*/6 + size(verb) + size(line)
 			+ size(_time) + size(_file) + size(_function) + size(_message));
 
-		for (const auto &s : elems)
-			out += s;
+		for (const auto s : elems)
+			out += *s;
 
 		return out;
 	}

@@ -108,6 +108,7 @@ namespace hades
 		framelimit_struct _framelimit;						///< Flag for SFML vsync
 	};
 
+	// deprecated command line funcs, see handle_command in system.hpp
 	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);
 	bool LoadCommand(command_list&, std::string_view, console::function);
 };//hades

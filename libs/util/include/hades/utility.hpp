@@ -11,7 +11,7 @@
 
 namespace hades {
 	template<typename T>
-	struct lerpable : public std::bool_constant< std::is_floating_point_v<T>> {};
+	struct lerpable : public std::bool_constant<std::is_floating_point_v<T>> {};
 
 	template<typename T>
 	constexpr auto lerpable_v = lerpable<T>::value;
@@ -28,8 +28,6 @@ namespace hades {
 		throw std::logic_error{ "called lerp with a non-arithmetic type" };
 	}
 
-	//replace with logic similar to that displayed in the example
-	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;
 
@@ -39,6 +37,12 @@ namespace hades {
 		struct round_down_t {}; 
 		struct round_up_t {};
 		struct round_towards_zero_t {};
+
+		template<typename T>
+		constexpr auto is_round_tag_v = std::is_same_v<round_nearest_t, T> ||
+			std::is_same_v<round_down_t, T> ||
+			std::is_same_v<round_up_t, T> ||
+			std::is_same_v<round_towards_zero_t, T>;
 	}
 
 	constexpr detail::round_nearest_t round_nearest_tag;
@@ -61,11 +65,33 @@ namespace hades {
 		using std::overflow_error::overflow_error;
 	};
 
+	// convert floating point types to intergrals
+	// throws overflow error
+	template<typename Integral, typename Float, typename RoundingTag = detail::round_nearest_t, 
+		std::enable_if_t<std::is_integral_v<Integral> 
+		&& std::is_floating_point_v<Float> 
+		&& detail::is_round_tag_v<RoundingTag>, int> = 0>
+	constexpr Integral integral_cast(Float, RoundingTag = round_nearest_tag);
+	template<typename Integral, typename Float, typename RoundingTag = detail::round_nearest_t,
+		std::enable_if_t<std::is_integral_v<Integral>
+		&& std::is_floating_point_v<Float>
+		&& detail::is_round_tag_v<RoundingTag>, int> = 0>
+	constexpr Integral integral_clamp_cast(Float, RoundingTag = round_nearest_tag) noexcept;
+
+	// Convert between floating types, and convert integrals to float 
+	// throws overflow error
+	template<typename Float = float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
+		(std::is_floating_point_v<T> || std::is_integral_v<T>), int> = 0>
+	constexpr Float float_cast(T);
+	template<typename Float = float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
+		(std::is_floating_point_v<T> || std::is_integral_v<T>), int> = 0>
+	constexpr Float float_clamp_cast(T) noexcept;
+
 	//converts value to unsigned, throws overflow_error if out of range
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_cast(T value);
 
-	//converts value to unsigned clamps to representable value if out of range
+	//converts value to unsigned, clamps to representable value if out of range
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_clamp_cast(T value) noexcept;
 

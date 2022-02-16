@@ -55,6 +55,88 @@ namespace hades
 		return std::trunc(a) == std::trunc(b);
 	}
 
+	namespace detail
+	{
+		template<typename Integral, typename Float, typename T>
+		constexpr Integral integral_do_cast(Float f, T) noexcept
+		{
+			static_assert(is_round_tag_v<T>);
+			if constexpr(std::is_same_v<round_nearest_t, T>)
+				return static_cast<Integral>(std::round(f));
+			else if constexpr(std::is_same_v<round_down_t, T>)
+				return static_cast<Integral>(std::floor(f));
+			else if constexpr (std::is_same_v<round_up_t, T>)
+				return static_cast<Integral>(std::ceil(f));
+			else if constexpr (std::is_same_v<round_towards_zero_t, T>)
+				return static_cast<Integral>(f);
+		}
+	}
+
+	template<typename Integral, typename Float, typename RoundingTag, 
+		std::enable_if_t<std::is_integral_v<Integral>
+		&& std::is_floating_point_v<Float>
+		&& detail::is_round_tag_v<RoundingTag>, int>>
+	constexpr Integral integral_cast(Float f, RoundingTag t)
+	{
+		if (f > static_cast<Float>(std::numeric_limits<Integral>::max()))
+			throw overflow_error{ "overflow_error value is larger than target type can hold" };
+		else if constexpr (std::is_signed_v<Integral>)
+		{
+			if (f < static_cast<Float>(std::numeric_limits<Integral>::min()))
+				throw overflow_error{ "overflow_error value is smaller than target type can hold" };
+		}
+		return detail::integral_do_cast<Integral>(f, t);
+	}
+	template<typename Integral, typename Float, typename RoundingTag, 
+		std::enable_if_t<std::is_integral_v<Integral>
+		&& std::is_floating_point_v<Float>
+		&& detail::is_round_tag_v<RoundingTag>, int>>
+	constexpr Integral integral_clamp_cast(Float f, RoundingTag t) noexcept
+	{
+		if (f > static_cast<Float>(std::numeric_limits<Integral>::max()))
+			return std::numeric_limits<Integral>::max();
+		else if constexpr (std::is_signed_v<Integral>)
+		{
+			if (f < static_cast<Float>(std::numeric_limits<Integral>::min()))
+				return std::numeric_limits<Integral>::min();
+		}
+		return detail::integral_do_cast<Integral>(f, t);
+	}
+
+	template<typename Float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
+		(std::is_floating_point_v<T> || std::is_integral_v<T>), int>>
+	constexpr Float float_cast(T t)
+	{
+		// handle different float type sizes
+		if constexpr (std::is_floating_point_v<T> && sizeof(Float) < sizeof(T))
+		{
+			if(t > static_cast<T>(std::numeric_limits<Float>::max()))
+				throw overflow_error{ "overflow_error value is larger than target type can hold" };
+			else if (t < static_cast<T>(std::numeric_limits<Float>::lower()))
+				throw overflow_error{ "overflow_error value is smaller than target type can hold" };
+		}
+
+		// all intergrals fit in all floats
+		return static_cast<Float>(t);
+	}
+
+	template<typename Float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
+		(std::is_floating_point_v<T> || std::is_integral_v<T>), int>>
+	constexpr Float float_clamp_cast(T t) noexcept
+	{
+		// handle different float type sizes
+		if constexpr (std::is_floating_point_v<T> && sizeof(Float) < sizeof(T))
+		{
+			if (t > static_cast<T>(std::numeric_limits<Float>::max()))
+				return std::numeric_limits<Float>::max();
+			else if (t < static_cast<T>(std::numeric_limits<Float>::lower()))
+				return std::numeric_limits<Float>::min();
+		}
+
+		// all intergrals fit in all floats
+		return static_cast<Float>(t);
+	}
+
 	template<typename T>
 	constexpr std::make_unsigned_t<T> unsigned_cast(T value)
 	{

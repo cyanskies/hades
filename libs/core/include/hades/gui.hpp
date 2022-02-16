@@ -43,6 +43,19 @@ namespace hades
 			bool>;
 
 		template<typename T>
+		constexpr bool gui_supported_types =
+			std::is_same_v<T, int8> ||
+			std::is_same_v<T, uint8> ||
+			std::is_same_v<T, int16> ||
+			std::is_same_v<T, uint16> ||
+			std::is_same_v<T, int32> ||
+			std::is_same_v<T, uint32> ||
+			std::is_same_v<T, int64> ||
+			std::is_same_v<T, uint64> ||
+			std::is_same_v<T, float> ||
+			std::is_same_v<T, double>;
+
+		template<typename T>
 		struct valid_input_scalar_t : std::false_type
 		{};
 
@@ -72,19 +85,19 @@ namespace hades
 		gui(const gui&) = delete;
 		gui(gui&&) noexcept = default;
 
-		gui &operator=(const gui&) = delete;
-		gui &operator=(gui&&) noexcept = default;
+		gui& operator=(const gui&) = delete;
+		gui& operator=(gui&&) noexcept = default;
 
 		//should be called before using any gui function
 		void activate_context() noexcept;
 
 		//this must be called at least once to get valid output
 		void set_display_size(vector_t<float> size);
-		
+
 		//input must be inserted before frame_begin
 		// returns true if the gui used the event
 		//TODO: hades::event
-		bool handle_event(const sf::Event &e);
+		bool handle_event(const sf::Event& e);
 		void update(time_duration dt);
 
 		void frame_begin();
@@ -116,16 +129,16 @@ namespace hades
 			no_nav = ImGuiWindowFlags_::ImGuiWindowFlags_NoNav,
 			no_decoration = ImGuiWindowFlags_::ImGuiWindowFlags_NoDecoration,
 			no_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs,
-			panel =	no_collapse |
-					no_move |
-					no_titlebar |
-					no_resize |
-					no_saved_settings
+			panel = no_collapse |
+			no_move |
+			no_titlebar |
+			no_resize |
+			no_saved_settings
 		};
 
 		//windows and child windows
 		//end must be called even if begin returns false
-		bool window_begin(std::string_view name, bool &closed, window_flags = window_flags::none);
+		bool window_begin(std::string_view name, bool& closed, window_flags = window_flags::none);
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
@@ -149,14 +162,14 @@ namespace hades
 		//		some funcs missing
 		float get_scroll_x() const;
 		float get_scroll_y() const;
-		void set_scroll_x(float scroll_x); 
-		void set_scroll_y(float scroll_y); 
+		void set_scroll_x(float scroll_x);
+		void set_scroll_y(float scroll_y);
 		float get_scroll_max_x() const;
 		float get_scroll_max_y() const;
 		void set_scroll_here_x(float);
 		void set_scroll_here_y(float);
 
-		enum class colour_target : ImGuiCol 
+		enum class colour_target : ImGuiCol
 		{
 			text = ImGuiCol_::ImGuiCol_Text,
 			text_disabled = ImGuiCol_::ImGuiCol_TextDisabled,
@@ -165,7 +178,7 @@ namespace hades
 			popup_background = ImGuiCol_::ImGuiCol_PopupBg,
 			border = ImGuiCol_::ImGuiCol_Border,
 			border_shadow = ImGuiCol_::ImGuiCol_BorderShadow,
-			frame_background = ImGuiCol_::ImGuiCol_FrameBg,             
+			frame_background = ImGuiCol_::ImGuiCol_FrameBg,
 			frame_background_hover = ImGuiCol_::ImGuiCol_FrameBgHovered,
 			frame_background_active = ImGuiCol_::ImGuiCol_FrameBgActive,
 			title_background = ImGuiCol_::ImGuiCol_TitleBg,
@@ -235,7 +248,7 @@ namespace hades
 		//ids
 		// push these onto the id stack to make later ids unique
 		// ids are a hash of the entire stack
-		void push_id(std::string_view); 
+		void push_id(std::string_view);
 		void push_id(int32);
 		void push_id(const void*);
 		void pop_id();
@@ -247,8 +260,8 @@ namespace hades
 		void text_wrapped(std::string_view);
 		// text_label
 		void text_bullet(std::string_view);
-		
-		enum class direction : ImGuiDir 
+
+		enum class direction : ImGuiDir
 		{
 			none = ImGuiDir_::ImGuiDir_None,
 			left = ImGuiDir_::ImGuiDir_Left,
@@ -258,21 +271,21 @@ namespace hades
 		};
 
 		//widgets
-		bool button(std::string_view label, const vector2 &size = {0.f, 0.f});
+		bool button(std::string_view label, const vector2& size = { 0.f, 0.f });
 		bool small_button(std::string_view label);
-		bool invisible_button(std::string_view label, const vector2 &size = { 0.f, 0.f });
+		bool invisible_button(std::string_view label, const vector2& size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
-		void image(const resources::texture&, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
-		void image(const resources::animation&, const vector2 &size, time_point time = time_point{}, const sf::Color &tint_colour = sf::Color::White, const sf::Color &border_colour = sf::Color::Transparent);
-		bool image_button(const resources::texture&, const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
-		bool image_button(const resources::animation&, const vector2 &size, time_point time = time_point{}, const sf::Color &background_colour = sf::Color::Transparent, const sf::Color &tint_colour = sf::Color::White);
-		bool checkbox(std::string_view label, bool &checked); //returns true on checked changed
+		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		bool image_button(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
+		bool image_button(const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
+		bool checkbox(std::string_view label, bool& checked); //returns true on checked changed
 		//checkbox_flags
 		bool radio_button(std::string_view label, bool active);
 		template<typename T>
-		bool radio_button(std::string_view label, T &active_selection, T this_button);
-		void progress_bar(float progress, const vector2 &size = { -1.f, 0.f });
-		void progress_bar(float progress, std::string_view overlay_text, const vector2 &size = { -1.f, 0.f });
+		bool radio_button(std::string_view label, T& active_selection, T this_button);
+		void progress_bar(float progress, const vector2& size = { -1.f, 0.f });
+		void progress_bar(float progress, std::string_view overlay_text, const vector2& size = { -1.f, 0.f });
 		void bullet();
 
 		enum class selectable_flag : ImGuiSelectableFlags
@@ -287,8 +300,8 @@ namespace hades
 
 		//selectables
 		//used as elements in comboboxes, etc
-		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector2 &size = { 0.f, 0.f });
-		bool selectable_easy(std::string_view label, bool &selected, selectable_flag = selectable_flag::none, const vector2 &size = {0.f, 0.f});
+		bool selectable(std::string_view label, bool selected, selectable_flag = selectable_flag::none, const vector2& size = { 0.f, 0.f });
+		bool selectable_easy(std::string_view label, bool& selected, selectable_flag = selectable_flag::none, const vector2& size = { 0.f, 0.f });
 
 		enum class combo_flags : ImGuiComboFlags
 		{
@@ -313,19 +326,39 @@ namespace hades
 		//TODO: use newer listbox api
 		template<typename Container>
 		detail::listbox_with_string<Container> listbox(std::string_view label,
-			std::size_t &current_item, const Container&, int height_in_items = -1);
+			std::size_t& current_item, const Container&, int height_in_items = -1);
 
 		template<typename Container>
 		detail::listbox_no_string<Container> listbox(std::string_view label,
-			std::size_t &current_item, const Container&, int height_in_items = -1);
+			std::size_t& current_item, const Container&, int height_in_items = -1);
 
 		template<typename Container, typename ToString>
-		bool listbox(std::string_view label, std::size_t &current_item,
+		bool listbox(std::string_view label, std::size_t& current_item,
 			const Container&, ToString to_string_func, int height_in_items = -1);
-		
+
 		//TODO: drags
 
-		//TODO: sliders
+		enum class slider_flags : ImGuiSliderFlags
+		{
+			none = ImGuiSliderFlags_::ImGuiSliderFlags_None,
+			always_clamp = ImGuiSliderFlags_AlwaysClamp, // clamp typed input as well
+			logarithmic = ImGuiSliderFlags_Logarithmic,
+			no_rounding = ImGuiSliderFlags_NoRoundToFormat, // dont round value to match input display(float)
+			no_input = ImGuiSliderFlags_NoInput,       // disable typed input
+		};
+
+		// format can be used to decorate the value;
+		// format follows printf rules
+		bool slider_float(std::string_view label, float& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
+		template<std::size_t N, std::enable_if_t< N < 5, int> = 0>
+		bool slider_float(std::string_view label, std::array<float, N>& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
+		bool slider_int(std::string_view label, int& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
+		template<std::size_t N, std::enable_if_t< N < 5, int> = 0>
+		bool slider_int(std::string_view label, std::array<int, N>& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
+
+		template<typename T, typename U, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
+		bool slider_scalar(std::string_view label, T &v, U min, U max, std::string_view = {}, slider_flags = slider_flags::none);
+		//vslider = vertical sliders
 
 		enum class input_text_flags : ImGuiInputTextFlags
 		{
@@ -370,10 +403,11 @@ namespace hades
 		bool input_text_multiline(std::string_view label, std::array<char, Size> &buffer, const vector2 &size = { 0.f, 0.f }, input_text_flags = input_text_flags::none);
 		bool input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
 		
-		template<typename T>
+		// TODO: change step and step fast to U, as in slider_scalar above
+		template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
 		bool input_scalar(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
-		template<typename T, std::size_t Size>
-		bool input_scalar_array(std::string_view label, std::array<T, Size> &v, input_text_flags = input_text_flags::none);
+		template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
+		bool input_scalar(std::string_view label, std::array<T, N>& v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		
 		enum class colour_edit_flags : ImGuiColorEditFlags
 		{

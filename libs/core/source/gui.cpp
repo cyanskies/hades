@@ -599,6 +599,18 @@ namespace hades
 		ImGui::EndCombo();
 	}
 
+	bool gui::slider_float(std::string_view label, float& v, float min, float max, slider_flags flags, std::string_view format)
+	{
+		_active_assert();
+		return ImGui::SliderFloat(to_string(label).c_str(), &v, min, max, to_string(format).c_str(), enum_type(flags));
+	}
+
+	bool gui::slider_int(std::string_view label, int& v, int min, int max, slider_flags flags, std::string_view format)
+	{
+		_active_assert();
+		return ImGui::SliderInt(to_string(label).c_str(), &v, min, max, to_string(format).c_str(), enum_type(flags));
+	}
+
 	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size, input_text_flags f)
 	{
 		_active_assert();

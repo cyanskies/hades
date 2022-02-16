@@ -102,6 +102,87 @@ namespace hades
 
 	namespace detail
 	{
+		template<typename T, std::enable_if_t<gui_supported_types<T>, int> = 0>
+		constexpr ImGuiDataType get_imgui_data_type() noexcept
+		{
+			if constexpr (std::is_same_v<T, int8>)
+				return ImGuiDataType_S8;
+			else if constexpr (std::is_same_v<T, uint8>)
+				return ImGuiDataType_U8;
+			else if constexpr (std::is_same_v<T, int16>)
+				return ImGuiDataType_S16;
+			else if constexpr (std::is_same_v<T, uint16>)
+				return ImGuiDataType_U16;
+			else if constexpr (std::is_same_v<T, int32>)
+				return ImGuiDataType_S32;
+			else if constexpr (std::is_same_v<T, uint32>)
+				return ImGuiDataType_U32;
+			else if constexpr (std::is_same_v<T, int64>)
+				return ImGuiDataType_S64;
+			else if constexpr (std::is_same_v<T, uint64>)
+				return ImGuiDataType_U64;
+			else if constexpr (std::is_same_v<T, float>)
+				return ImGuiDataType_Float;
+			else if constexpr (std::is_same_v<T, double>)
+				return ImGuiDataType_Double;
+			else
+				return ImGuiDataType_COUNT;
+		}
+	}
+
+	template<std::size_t N, std::enable_if_t<N < 5, int>>
+	bool gui::slider_float(std::string_view label, std::array<float, N>& v, float min, float max, slider_flags flags, std::string_view format)
+	{
+		if constexpr (N == 0) return;
+		if constexpr (N == 1)
+			return slider_float(label, v[0], min, max, flags, format);
+
+		_active_assert();
+		constexpr auto slider_float_n = [] {
+			if constexpr (N == 2)
+				return ImGui::SliderFloat2;
+			else if constexpr (N == 3)
+				return ImGui::SliderFloat3;
+			else if constexpr (N == 4)
+				return ImGui::SliderFloat4;
+		}();
+		return std::invoke(slider_float_n, to_string(label).c_str(), v.data(), min, max, to_string(format).c_str(), enum_type(flags));
+	}
+
+	template<std::size_t N, std::enable_if_t< N < 5, int>>
+	bool gui::slider_int(std::string_view label, std::array<int, N>& v, int min, int max, slider_flags flags, std::string_view format)
+	{
+		if constexpr (N == 0) return;
+		if constexpr (N == 1)
+			return slider_int(label, v[0], min, max, flags, format);
+
+		_active_assert();
+		constexpr auto slider_int_n = [] {
+			if constexpr (N == 2)
+				return ImGui::SliderInt2;
+			else if constexpr (N == 3)
+				return ImGui::SliderInt3;
+			else if constexpr (N == 4)
+				return ImGui::SliderInt4;
+		}();
+		return std::invoke(slider_int_n, to_string(label).c_str(), v.data(), min, max, to_string(format).c_str(), enum_type(flags));
+	}
+
+	template<typename T, typename U, std::enable_if_t<detail::gui_supported_types<T>, int>>
+	bool gui::slider_scalar(std::string_view label, T &v, U min, U max, std::string_view fmt, slider_flags f)
+	{
+		static_assert(std::is_convertible_v<U, T>, "The types of min and max must be convertible to T");
+		_active_assert();
+
+		auto min_t = integer_cast<T>(min);
+		auto max_t = integer_cast<T>(max);
+
+		return ImGui::SliderScalar(to_string(label).c_str(), detail::get_imgui_data_type<T>(),
+			&v, &min_t, &max_t, !empty(fmt) ? to_string(fmt).c_str() : nullptr, enum_type(f));
+	}
+
+	namespace detail
+	{
 		template<typename T>
 		using input_imp_return = std::enable_if_t<!is_string_v<T>, bool>;
 
@@ -130,7 +211,7 @@ namespace hades
 			}
 			else
 			{
-				return g.input_text(to_string(label).data(), v, f);
+				return g.input(to_string(label).data(), v, f);
 			}
 		}
 
@@ -138,7 +219,9 @@ namespace hades
 		template<typename T, std::size_t Size>
 		inline bool input_imp(gui &g, std::string_view l, std::array<T, Size> &v, gui::input_text_flags f)
 		{
-			return g.input_scalar_array(l, v, f);
+			static_assert(detail::gui_supported_types<T>, "Detected gui::input() as an array input, but the array type isn't supported");
+			constexpr auto step = static_cast<T>(1);
+			return g.input_scalar(l, v, step, step, f);
 		}
 
 		//specialisation for static sized char array buffers
@@ -205,49 +288,67 @@ namespace hades
 		return ImGui::InputTextMultiline(to_string(label).data(), buffer.data(), buffer.size(), {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	template<typename T>
+	template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int>>
 	inline bool gui::input_scalar(std::string_view label, T &v, T step, T step_fast, input_text_flags f)
 	{
 		_active_assert();
 
-		static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
+		constexpr auto type = detail::get_imgui_data_type<T>();
+		const char* format = NULL;
+		if constexpr (type == ImGuiDataType_Float)
+			format = "%.3f";
+		else if constexpr (type == ImGuiDataType_Double)
+			format = "&.6f";
+
+		return ImGui::InputScalar(to_string(label).data(), type, &v, &step, &step_fast, format, static_cast<ImGuiInputTextFlags>(f));
+
+		/*static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
 		if constexpr (std::is_same_v<T, int>)
 			return ImGui::InputInt(to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
 		else if constexpr (std::is_same_v<T, float>)
 			return ImGui::InputFloat(to_string(label).data(), &v, step, step_fast, "%.3f", static_cast<ImGuiInputTextFlags>(f));
 		else if constexpr (std::is_same_v<T, double>)
-			return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));
+			return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));*/
 	}
 
-	template<typename T, std::size_t Size>
-	inline bool gui::input_scalar_array(std::string_view label, std::array<T, Size> &v, input_text_flags f)
+	template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int>>
+	bool gui::input_scalar(std::string_view label, std::array<T, N>& v, T step, T step_fast, input_text_flags f)
 	{
 		_active_assert();
 
-		static_assert(detail::valid_input_scalar_v<T>,
-			"gui::input_scalar_array only accepts std::array<int>, std::array<float> and std::array<double>");
+		constexpr auto type = detail::get_imgui_data_type<T>();
+		const char* format = NULL;
+		if constexpr (type == ImGuiDataType_Float)
+			format = "%.3f";
+		else if constexpr (type == ImGuiDataType_Double)
+			format = "%.6f";
 
-		constexpr auto data_type = [] () noexcept {
-			if constexpr (std::is_same_v<T, int>)
-				return ImGuiDataType_::ImGuiDataType_S32;
-			else if constexpr (std::is_same_v<T, float>)
-				return ImGuiDataType_::ImGuiDataType_Float;
-			else if constexpr (std::is_same_v<T, double>)
-				return ImGuiDataType_::ImGuiDataType_Double;
-		} ();
+		return ImGui::InputScalarN(to_string(label).data(), type, v.data(), integer_cast<int>(size(v)), &step, &step_fast, format, static_cast<ImGuiInputTextFlags>(f));
 
-		constexpr auto fmt_str = [] () noexcept {
-			if constexpr (std::is_same_v<T, int>)
-				return "%d";
-			else if constexpr (std::is_same_v<T, float>)
-				return "%.3f";
-			else if constexpr (std::is_same_v<T, double>)
-				return "%.6f";
-		} ();
+		//static_assert(detail::valid_input_scalar_v<T>,
+		//	"gui::input_scalar_array only accepts std::array<int>, std::array<float> and std::array<double>");
 
-		static_assert(Size < std::numeric_limits<int>::max());
-		return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(),
-			static_cast<int>(Size), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		//constexpr auto data_type = [] () noexcept {
+		//	if constexpr (std::is_same_v<T, int>)
+		//		return ImGuiDataType_::ImGuiDataType_S32;
+		//	else if constexpr (std::is_same_v<T, float>)
+		//		return ImGuiDataType_::ImGuiDataType_Float;
+		//	else if constexpr (std::is_same_v<T, double>)
+		//		return ImGuiDataType_::ImGuiDataType_Double;
+		//} ();
+
+		//constexpr auto fmt_str = [] () noexcept {
+		//	if constexpr (std::is_same_v<T, int>)
+		//		return "%d";
+		//	else if constexpr (std::is_same_v<T, float>)
+		//		return "%.3f";
+		//	else if constexpr (std::is_same_v<T, double>)
+		//		return "%.6f";
+		//} ();
+
+		//static_assert(Size < std::numeric_limits<int>::max());
+		//return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(),
+		//	static_cast<int>(Size), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename InputIt, typename MakeButton>

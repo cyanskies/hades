@@ -84,19 +84,30 @@ namespace hades {
 		using size_type = typename index_type::value_type;
 
 		table() noexcept = default;
-		table(index_type position, index_type size, T value) : base_type{position, size},
+		table(index_type position, index_type size, value_type value) : base_type{position, size},
 			_data(size.x*size.y, value) {}
 		table(const table&) = default;
-		table(const basic_table<T>&);
+		table(const basic_table<T>&, value_type value);
 		table(table&&) noexcept = default;
 
 		table& operator=(const table&) = default;
 		table& operator=(table&&) noexcept = default;
 
-		value_type& operator[](index_type);
+		void set(index_type i, value_type v);
+		void set(size_type s, value_type v);
+
+		// NOTE: workaround for vector<bool>:
+		//	vector<bool>[] doesn't return a T&
+		//	we have to disable this
+		template<typename U = T>
+		typename std::enable_if_t<!std::is_same_v<U, bool>,
+			U&> operator[](index_type);
 		value_type operator[](index_type) const override;
 
-		value_type& operator[](size_type);
+		// NOTE: workaround for vector<bool>: as above
+		template<typename U = T>
+		typename std::enable_if_t<!std::is_same_v<U, bool>,
+			U&> operator[](size_type);
 		value_type operator[](size_type) const override;
 
 		std::vector<value_type> &data() noexcept
@@ -110,6 +121,9 @@ namespace hades {
 		}
 
 	private:
+		std::size_t _index(index_type) const noexcept;
+		std::size_t _index(size_type) const noexcept;
+
 		std::vector<value_type> _data;
 	};
 

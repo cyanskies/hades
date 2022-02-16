@@ -112,7 +112,7 @@ namespace hades::debug
 
 	void console_overlay::send_command()
 	{
-		console::run_command(command{ _input });
+		console::run_command(make_command(_input));
 		_input.clear();
 		_history = console::command_history();
 		_history_index = size(_history);

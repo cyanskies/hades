@@ -623,8 +623,9 @@ namespace hades
 			//stats display
 			auto stats = [](const argument_list &args) {
 				//TODO: why would this throw
-				if (args.size() != 1)
-					throw invalid_argument("fps function expects one argument"s);
+				if (empty(args))
+					return false;
+					
 
 				const std::string_view param = args[0];
 				const auto int_param = from_string<int32>(param);

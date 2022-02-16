@@ -165,12 +165,15 @@ namespace hades
 	
 	void quad_buffer::swap(std::size_t offset1, std::size_t offset2) noexcept
 	{
+		if (offset1 == offset2)
+			return;
+
 		offset1 *= quad_vert_count;
 		offset2 *= quad_vert_count;
 		assert(offset1 + quad_vert_count <= std::size(_verts));
 		assert(offset2 + quad_vert_count <= std::size(_verts));
 
-		std::swap_ranges(&_verts[offset1], &_verts[offset1 + (quad_vert_count - 1u)],
+		std::swap_ranges(&_verts[offset1], &_verts[offset1 + (quad_vert_count)],
 			&_verts[offset2]);
 
 		return;
@@ -190,7 +193,12 @@ namespace hades
 		_verts.clear();
 		return;
 	}
-	
+
+	std::size_t quad_buffer::capacity() const noexcept
+	{
+		return _verts.capacity() / quad_vert_count;
+	}
+
 	void quad_buffer::reserve(std::size_t size)
 	{
 		_verts.reserve(size * quad_vert_count);

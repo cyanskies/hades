@@ -21,7 +21,7 @@ namespace hades
 		const auto cols = static_cast<int32>(std::floor(p.grid_size.x / p.cell_size));
 
 		buffer.clear();
-		buffer.reserve(rows * cols);
+		buffer.reserve(rows + cols);
 
 		//make rows
 		constexpr auto row_left = 0.f;

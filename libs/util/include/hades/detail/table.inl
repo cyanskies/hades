@@ -13,7 +13,7 @@ namespace hades
 	{
 		//returns the 1d position of this rect in the global space
 		template<typename Vector2>
-		static inline typename Vector2::value_type offset(Vector2 position, Vector2 size)
+		constexpr inline typename Vector2::value_type offset(Vector2 position, Vector2 size) noexcept
 		{
 			return position.y * (size.x + position.x) + position.x;
 		}
@@ -33,15 +33,29 @@ namespace hades
 	}
 
 	template<typename T>
-	inline table<T>::table(const basic_table<T> &v) : table(v.position(), v.size(), T{})
+	inline table<T>::table(const basic_table<T> &v, const value_type value) : table(v.position(), v.size(), value)
 	{
 		const auto pos = v.position();
 		const auto size = v.size();
 		
 		const auto indexes = detail::all_indexes(pos, size);
-		for (auto i : indexes)
-			operator[](i) = v[i];
+		for (const auto i : indexes)
+			set(i, v[i]);
 
+		return;
+	}
+
+	template<typename Value>
+	void table<Value>::set(index_type index, value_type v)
+	{
+		_data[_index(index)] = v;
+		return;
+	}
+
+	template<typename Value>
+	void table<Value>::set(size_type s, value_type v)
+	{
+		_data[_index(s)] = v;
 		return;
 	}
 
@@ -49,28 +63,43 @@ namespace hades
 	typename table<Value>::value_type table<Value>::operator[](const index_type index) const
 	{
 		const auto size = base_type::size();
-		return _data[to_1d_index(index, size.x) - detail::offset(base_type::position(), size)];
+		return _data[_index(index)];
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type& table<Value>::operator[](const index_type index)
+	template<typename U>
+	auto table<Value>::operator[](index_type index) -> 
+		typename std::enable_if_t<!std::is_same_v<U, bool>, U&>
 	{
-		const auto size = base_type::size();
-		return _data[to_1d_index(index, size.x) - detail::offset(base_type::position(), size)];
+		return _data[_index(index)];
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type table<Value>::operator[](const size_type index) const
+	typename table<Value>::value_type table<Value>::operator[](size_type index) const
 	{
-		const auto size = base_type::size();
-		return _data[index - detail::offset(base_type::position(), size)];
+		return _data[_index(index)];
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type& table<Value>::operator[](const size_type index)
+	template<typename U>
+	auto table<Value>::operator[](size_type index) ->
+		typename std::enable_if_t<!std::is_same_v<U, bool>, U&>
+	{
+		return _data[_index(index)];
+	}
+
+	template<typename T>
+	inline std::size_t table<T>::_index(index_type index) const noexcept
 	{
 		const auto size = base_type::size();
-		return _data[index - detail::offset(base_type::position(), size)];
+		return to_1d_index(index, size.x) - detail::offset(base_type::position(), size);
+	}
+
+	template<typename T>
+	inline std::size_t table<T>::_index(size_type index) const noexcept
+	{
+		const auto size = base_type::size();
+		return index - detail::offset(base_type::position(), size);
 	}
 
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
@@ -88,7 +117,7 @@ namespace hades
 		using table_t = table<typename TableFirst::value_type>;
 		auto area = rect_t<table_t::size_type>{};
 		if (!intersect_area({l_pos, l_siz}, {r_pos, r_siz}, area))
-			return table_t{ l };
+			return table_t{ l , typename TableFirst::value_type{} };
 
 		const auto stride = l_siz.x;
 		const auto r_stride = r_siz.x - area.width;
@@ -98,7 +127,7 @@ namespace hades
 		const auto jump = l_siz.x - (area.x + area.width) + area.x - l_offset;// distance between length and the next region
 		const auto end = area.height * stride + start; //index of last space
 
-		auto tab = table<typename TableFirst::value_type>{ l };
+		auto tab = table<typename TableFirst::value_type>{ l, typename TableFirst::value_type{} };
 		auto &t = tab.data();
 		const auto &tr = r.data();
 		auto r_index = std::size_t{};

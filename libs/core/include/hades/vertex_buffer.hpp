@@ -79,6 +79,7 @@ namespace hades
 		void clear() noexcept;
 
 		//reserve space in the buffer
+		std::size_t capacity() const noexcept;
 		void reserve(std::size_t);
 		void apply();
 		// shink the vector and buffer size, to only the memory needed

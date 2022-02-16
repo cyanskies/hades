@@ -13,21 +13,34 @@ namespace hades
 	template<typename U>
 	inline constexpr vector_t<T>::operator vector_t<U>() const noexcept
 	{
-		if constexpr (std::is_integral_v<T>&& std::is_integral_v<U>)
+		if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
 		{
 			return {
 				integer_cast<U>(x),
 				integer_cast<U>(y)
 			};
 		}
-		else
+		else if constexpr(std::is_integral_v<U>)
 		{
-			//probably one of them is a float
+			//convert float to integral
 			return {
-				static_cast<U>(x),
-				static_cast<U>(y)
+				integral_cast<U>(x),
+				integral_cast<U>(y)
 			};
 		}
+		else if constexpr (std::is_floating_point_v<U>)
+		{
+			//convert to float(this protects against out of range casts from double -> float)
+			return {
+				float_cast<U>(x),
+				float_cast<U>(y)
+			};
+		}
+		
+		/*return {
+				static_cast<U>(x),
+				static_cast<U>(y)
+		};*/
 	}
 
 	template<typename T>

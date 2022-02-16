@@ -65,6 +65,31 @@ function(hades_make_compile_settings ARG_NAME)
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
 							 >)
+	target_link_options(${ARG_NAME} PRIVATE
+                             # general settings applied for all build types
+							 
+                             # Large Address Aware: support more than 2GB memory on 32bit windows
+							 $<$<CXX_COMPILER_ID:MSVC>:
+                                  "/LARGEADDRESSAWARE" >
+
+							 # general settings for gcc/clang
+                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  >
+
+							 #debug settings
+                             $<$<CONFIG:Debug>:
+                                $<$<CXX_COMPILER_ID:MSVC>:
+                                   >
+                                $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                   >
+                             >
+							 # release mode link settings
+							 $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:
+								$<$<CXX_COMPILER_ID:MSVC>:
+                                   >
+								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                   >
+							 >)
 endfunction(hades_make_compile_settings)
 
 function(hades_make_library ARG_NAME ARG_INCLUDE ARG_FILES) #dependencies list

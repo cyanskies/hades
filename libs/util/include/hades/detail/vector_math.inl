@@ -67,8 +67,8 @@ namespace hades
 		return { lhs.x - rhs.x, lhs.y - rhs.y };
 	}
 
-	template<typename T>
-	constexpr vector_t<T> operator*(const vector_t<T> &lhs, T rhs) noexcept
+	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int>>
+	constexpr vector_t<T> operator*(const vector_t<T> &lhs, U rhs) noexcept
 	{
 		return { lhs.x * rhs, lhs.y * rhs };
 	}

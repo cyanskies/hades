@@ -18,25 +18,10 @@ namespace hades
 	template<typename U>
 	inline constexpr hades::rect_t<T>::operator rect_t<U>() const noexcept
 	{
-		if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
-		{
-			return {
-				integer_cast<U>(x),
-				integer_cast<U>(y),
-				integer_cast<U>(width),
-				integer_cast<U>(height)
-			};
-		}
-		else 
-		{
-			//probably one of them is a float
-			return {
-				static_cast<U>(x),
-				static_cast<U>(y),
-				static_cast<U>(width),
-				static_cast<U>(height)
-			};
-		}
+		// TODO: CPP17 aggregate constuction isn't constexpr
+		const auto pos = static_cast<hades::vector_t<U>>(hades::vector_t<T>{x, y});
+		const auto siz = static_cast<hades::vector_t<U>>(hades::vector_t<T>{width, height});
+		return { pos.x, pos.y, siz.x, siz.y };
 	}
 
 	template<typename T>

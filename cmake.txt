@@ -44,7 +44,7 @@ function(hades_make_compile_settings ARG_NAME)
 
 							 # general settings for gcc/clang
                              $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion" >
+                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion -fvisibility=hidden" >
 
 							 #debug settings
                              $<$<CONFIG:Debug>:

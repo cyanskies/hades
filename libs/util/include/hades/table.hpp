@@ -147,6 +147,8 @@ namespace hades {
 			std::initializer_list<const basic_table<T>&> list,
 			BinaryOp op = BinaryOp{});
 
+		void add_table(const basic_table<T>&);
+
 		value_type operator[](index_type) const override;
 		value_type operator[](size_type) const override;
 	private:

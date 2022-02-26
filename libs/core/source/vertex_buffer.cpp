@@ -207,8 +207,8 @@ namespace hades
 			// NOTE:
 			// create() returns false on failure, but this only occurs if
 			// size is negative, all other paths succeed
-			_buffer.create(size * quad_vert_count);
-			_buffer.update(_verts.data(), std::size(_verts), 0);
+			auto ret = _buffer.create(size * quad_vert_count); assert(ret);
+			ret = _buffer.update(_verts.data(), std::size(_verts), 0); assert(ret);
 		}
 
 		return;
@@ -221,14 +221,13 @@ namespace hades
 
 		const auto size = std::size(_verts);
 		
-		if (const auto old_size = _buffer.getVertexCount(),
-			vert_size = std::size(_verts);
+		if (const auto old_size = _buffer.getVertexCount();
 			old_size == 0)
 		{
 			//how many quads the buffer should be able to hold
 			constexpr auto starting_quad_capacity = std::size_t{ 6 };
 			constexpr auto starting_size = starting_quad_capacity * quad_vert_count;
-			_buffer.create(std::max(starting_size, vert_size));
+			const auto r = _buffer.create(std::max(starting_size, size)); assert(r);
 		}
 		else if (size > old_size)
 		{
@@ -236,10 +235,10 @@ namespace hades
 			const auto next_size = old_size * growth_rate;
 			const auto remain = next_size % quad_vert_count;
 			
-			_buffer.create(next_size + remain);
+			const auto r = _buffer.create(std::max(next_size + remain, size)); assert(r);
 		}
 
-		_buffer.update(_verts.data(), size, std::size_t{});
+		const auto r = _buffer.update(_verts.data(), size, std::size_t{}); assert(r);
 
 		return;
 	}

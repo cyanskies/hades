@@ -157,6 +157,14 @@ namespace hades
 	{}
 
 	template<typename T, typename BinaryOp>
+	inline void table_reduce_view<T, BinaryOp>::add_table(const basic_table<T>& t)
+	{
+		assert(is_within(rect_t{ t.position(), t.size }, rect_t{ basic_table::position(), basic_table::size() }));
+		_tables.emplace_back(t);
+		return;
+	}
+
+	template<typename T, typename BinaryOp>
 	inline typename hades::table_reduce_view<T, BinaryOp>::value_type
 		hades::table_reduce_view<T, BinaryOp>::operator[](index_type index) const
 	{
@@ -166,7 +174,7 @@ namespace hades
 			const auto pos = t.position();
 			const auto size = t.size();
 			const auto rect = hades::rect_t{ pos, size };
-			if (hades::is_within(index, rect))
+			if (is_within(index, rect))
 				out = std::invoke(_op, out, t[index]);
 		}
 		return out;

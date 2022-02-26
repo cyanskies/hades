@@ -14,7 +14,7 @@
 
 // NOTE: current implementation suffers with async functions starting their own async funcs
 //	this results in eating up stack for each additional layer. Something to keep in mind.
-//	ei. Dont use asyn recursively.
+//	ei. Dont use async recursively. Needs cpp20 to fix(corutines)
 
 namespace hades
 {
@@ -60,7 +60,8 @@ namespace hades
 
 			if constexpr (!std::is_same_v<T, void>)
 				return std::move(&(_shared_state->value));
-			return;
+			else
+				return;
 		}
 
 	private:
@@ -106,7 +107,7 @@ namespace hades
 			auto weak = std::weak_ptr{ shared };
 
 			//wrap function args and call in a lambda
-			auto work = [weak, func = std::forward<Func>(f), args = std::forward_as_tuple(std::forward<Args>(args)...)]() mutable noexcept {
+			auto work = [weak, func = std::decay_t<Func>{ std::forward<Func>(f) }, args = std::tuple<std::decay_t<Args>...>(std::move(args)...)]() mutable noexcept {
 				auto shared = weak.lock();
 				//the future has already been abandoned
 				if (!shared)
@@ -141,6 +142,29 @@ namespace hades
 			return future{ std::move(shared) };
 		}
 
+		template<typename Func, typename ...Args>
+		void detached_async(Func&& f, Args&& ...args) noexcept
+		{
+			static_assert(std::is_nothrow_invocable_v<Func, Args...>);
+			//wrap function args and call in a lambda
+			auto work = [func = std::decay_t<Func>{ std::forward<Func>(f) }, args = std::tuple<std::decay_t<Args>...>(std::move(args)...)]() mutable noexcept {
+				std::apply(func, std::move(args));
+				return;
+			};
+
+			{
+				const auto index = get_worker_thread_id();
+				const auto lock = std::scoped_lock{ _queues[index].mut };
+				_queues[index].work.emplace_back(false_copyable{ std::move(work) });
+				std::atomic_fetch_add_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
+			}
+
+			//release a thread
+			const auto lock = std::scoped_lock{ _condition_mutex };
+			_cv.notify_one();
+			return;
+		}
+
 	private:
 		//std::function cannot hold non-copyable
 		//wrap packaged task in this lying wrapper
@@ -148,7 +172,7 @@ namespace hades
 		struct false_copyable
 		{
 			false_copyable() = delete;
-			false_copyable(Task&& t) noexcept : value{ std::forward<Task>(t) } {}
+			false_copyable(Task t) noexcept : value{ std::move(t) } {}
 			false_copyable(const false_copyable&) { throw std::logic_error{ "thread_pool: tried to copy non-copyable function" }; }
 			false_copyable(false_copyable&&) noexcept = default;
 			void operator()() {
@@ -199,12 +223,27 @@ namespace hades
 		using R = std::invoke_result_t<Func, Args...>;
 		auto shared = std::make_shared<detail::future_shared_state<R>>();
 		if constexpr (std::is_same_v<R, void>)
-			std::invoke(std::forward<Func>(f), std::forward<Args>(args)...);
+			std::invoke(std::forward<Func>(f), std::move(args)...);
 		else
-			shared->value = std::invoke(std::forward<Func>(f), std::forward<Args>(args)...);
+			shared->value = std::invoke(std::forward<Func>(f), std::move(args)...);
 
 		std::atomic_store_explicit(&shared->complete, true, std::memory_order_relaxed);
 		return future{ std::move(shared) };
+	}
+
+	template<typename Func, typename ...Args>
+	void detached_async(Func&& f, Args&& ...args) noexcept
+	{
+		static_assert(std::is_nothrow_invocable_v<Func, Args...>);
+		auto* pool = detail::get_shared_thread_pool();
+		if (pool)
+		{
+			pool->detached_async(std::forward<Func>(f), std::forward<Args>(args)...);
+			return;
+		}
+
+		std::invoke(std::forward<Func>(f), std::move(args)...);
+		return;
 	}
 }
 

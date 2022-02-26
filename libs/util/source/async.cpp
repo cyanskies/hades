@@ -14,10 +14,10 @@ namespace hades
 		auto worker_function = [this](const std::size_t thread_id) {
 			hades::worker_id = thread_id;
 			// keep looping until the pool shuts down
-			while (std::atomic_load_explicit(&_stop_flag, std::memory_order_relaxed) == false)
+			while (std::atomic_load_explicit(&_stop_flag, std::memory_order_seq_cst) == false)
 			{
 				// if there is no work, then idle
-				if (std::atomic_load_explicit(&_work_count, std::memory_order_relaxed) == std::size_t{})
+				if (std::atomic_load_explicit(&_work_count, std::memory_order_acquire) == std::size_t{})
 				{
 					auto lock = std::unique_lock{ _condition_mutex };
 					_cv.wait(lock);
@@ -33,7 +33,7 @@ namespace hades
 					{
 						work = std::move(queue.work.front());
 						queue.work.pop_front();
-						std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
+						std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_release);
 					}
 				}
 
@@ -66,11 +66,11 @@ namespace hades
 
 					work = std::move(our_queue.work.front());
 					our_queue.work.pop_front();
-					std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_relaxed);
+					std::atomic_fetch_sub_explicit(&_work_count, std::size_t{ 1 }, std::memory_order_release);
 				}
 
 				//if we have a task, then do it
-				std::invoke(work);
+				std::invoke(std::move(work));
 			}
 
 			return;

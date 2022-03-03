@@ -85,12 +85,12 @@ namespace hades
 
 	static void add_tiles_to_tileset(std::vector<resources::tile> &tile_list,
 		const resources::texture *texture, texture_size_t left,
-		texture_size_t top, tile_count_t width,	tile_count_t count,
+		texture_size_t top, tile_index_t width,	tile_index_t count,
 		resources::tile_size_t tile_size)
 	{
 		using resources::tile_size_t;
 		texture_size_t x = 0, y = 0;
-		tile_count_t current_count{};
+		tile_index_t current_count{};
 		
 		while (current_count < count)
 		{
@@ -143,9 +143,9 @@ namespace hades
 			const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
 			const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
 
-			const auto width = get_scalar(*tile_group, "tiles-per-row"sv, tile_count_t{});
+			const auto width = get_scalar(*tile_group, "tiles-per-row"sv, tile_index_t{});
 
-			if (width == tile_count_t{})
+			if (width == tile_index_t{})
 			{
 				const auto name = d.get_as_string(tileset.id);
 				const auto m = "error parsing tileset: " + name + ", tiles-per-row is 0";
@@ -153,9 +153,9 @@ namespace hades
 				continue;
 			}
 
-			const auto tile_count = get_scalar(*tile_group, "tile-count"sv, tile_count_t{});
+			const auto tile_count = get_scalar(*tile_group, "tile-count"sv, tile_index_t{});
 
-			if (tile_count == tile_count_t{})
+			if (tile_count == tile_index_t{})
 			{
 				const auto name = d.get_as_string(tileset.id);
 				const auto m = "error parsing tileset: " + name + ", tile-count is 0";
@@ -221,7 +221,7 @@ namespace hades::resources
 		return air_tileset_name;
 	}
 
-	bool operator==(const tile &lhs, const tile &rhs)
+	bool operator==(const tile &lhs, const tile &rhs) noexcept
 	{
 		return lhs.left == rhs.left &&
 			lhs.texture == rhs.texture &&
@@ -229,12 +229,12 @@ namespace hades::resources
 			lhs.top == rhs.top;
 	}
 
-	bool operator!=(const tile &lhs, const tile &rhs)
+	bool operator!=(const tile &lhs, const tile &rhs) noexcept
 	{
 		return !(lhs == rhs);
 	}
 
-	bool operator<(const tile &lhs, const tile &rhs)
+	bool operator<(const tile &lhs, const tile &rhs) noexcept
 	{
 		return std::tie(lhs.texture, lhs.left, lhs.top, lhs.source)
 			< std::tie(rhs.texture, rhs.left, rhs.top, rhs.source);
@@ -383,7 +383,7 @@ namespace hades
 			const auto tileset_data = tileset->get_children();
 			assert(tileset_data.size() > 1);
 			const auto name = tileset_data[0]->to_string();
-			const auto count = tileset_data[1]->to_scalar<tile_count_t>();
+			const auto count = tileset_data[1]->to_scalar<tile_index_t>();
 			const auto id = data::get_uid(name);
 
 			map.tilesets.emplace_back(tileset_info{id, count});
@@ -391,21 +391,21 @@ namespace hades
 
 		//map content
 		const auto map_node = p.get_child(map_str);
-		map.tiles = map_node->to_sequence<tile_count_t>();
+		map.tiles = map_node->to_sequence<tile_id_t>();
 
 		//width
 		const auto width = p.get_child(width_str);
-		map.width = width->to_scalar<tile_count_t>();
+		map.width = width->to_scalar<tile_index_t>();
 
 		return map;
 	}
 
-	tile_position from_tile_index(tile_index_t i, tile_count_t w) noexcept
+	tile_position from_tile_index(tile_index_t i, tile_index_t w) noexcept
 	{
 		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(w));
 	}
 
-	tile_index_t to_tile_index(tile_position p, tile_count_t w) noexcept
+	tile_index_t to_tile_index(tile_position p, tile_index_t w) noexcept
 	{
 		return integer_cast<tile_index_t>(to_1d_index(p, w));
 	}
@@ -433,7 +433,7 @@ namespace hades
 		};
 	}
 
-	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size)
+	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept
 	{
 		assert(tile_size != 0);
 		return pixels / tile_size;
@@ -450,12 +450,12 @@ namespace hades
 		return to_tiles(static_cast<vector_int>(real_pixels), tile_size);
 	}
 
-	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size)
+	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept
 	{
 		return tiles * tile_size;
 	}
 
-	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size)
+	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept
 	{
 		return tiles * integer_cast<tile_position::value_type>(tile_size);
 	}
@@ -482,8 +482,8 @@ namespace hades
 			throw tile_error{ "raw_map is in an invalid state" };
 
 		//we'll store a replacement table in tile swap 
-		std::vector<tile_count_t> tile_swap;
-		tile_count_t start{};
+		std::vector<tile_id_t> tile_swap;
+		tile_index_t start{};
 		const auto end = std::end(r.tilesets);
 		for (auto iter = std::begin(r.tilesets); iter != end; ++iter)
 		{
@@ -499,9 +499,9 @@ namespace hades
 
 				//get the next starting id
 				const auto iter2 = std::next(iter);
-				const auto end_id = [iter2, end, starting_id = starting_id, tileset] {
+				const auto end_id = [iter2, end, starting_id = starting_id, tileset]()->tile_index_t {
 					if (iter2 != end)
-						return std::get<tile_count_t>(*iter2);
+						return std::get<tile_id_t>(*iter2);
 					else
 						return starting_id + tileset->tiles.size();
 				}();
@@ -509,7 +509,7 @@ namespace hades
 				//the difference between this starting id and the next, is the number
 				//of tiles that should be in this tileset
 				const auto amount = end_id - starting_id;
-				std::vector<tile_count_t> new_entries(std::size_t{ amount }, tile_count_t{});
+				std::vector<tile_id_t> new_entries(std::size_t{ amount }, tile_id_t{});
 				assert(new_entries.size() == amount); //vague initiliser list constructors :/
 
 				//write the new tile ids into an array
@@ -570,7 +570,7 @@ namespace hades
 		return m;
 	}
 
-	static bool is_in_tileset(const resources::tileset &tileset, const resources::tile &t)
+	static bool is_in_tileset(const resources::tileset &tileset, const resources::tile &t) noexcept
 	{
 		for (const auto &tile : tileset.tiles)
 			if (tile == t)
@@ -598,7 +598,7 @@ namespace hades
 		return nullptr;
 	}
 
-	resources::tile get_tile(const raw_map &r, tile_count_t t)
+	resources::tile get_tile(const raw_map &r, tile_id_t t)
 	{
 		try
 		{
@@ -609,7 +609,7 @@ namespace hades
 				if (t < start + tileset->tiles.size())
 				{
 					const auto index = t - start;
-					return tileset->tiles[index];
+					return tileset->tiles[integer_cast<std::size_t>(index)];
 				}
 			}
 		}
@@ -622,16 +622,16 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this raw_map" };
 	}
 
-	resources::tile get_tile(const tile_map &m, tile_count_t t)
+	resources::tile get_tile(const tile_map &m, tile_id_t t)
 	{
-		tile_count_t start{};
+		tile_index_t start{};
 
 		for (const auto &tileset : m.tilesets)
 		{
 			if (t < start + tileset->tiles.size())
 			{
 				const auto index = t - start;
-				return tileset->tiles[index];
+				return tileset->tiles[integer_cast<std::size_t>(index)];
 			}
 
 			start += tileset->tiles.size();
@@ -640,11 +640,11 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this tile_map" };
 	}
 
-	tile_count_t get_tile_id(const raw_map &r, const resources::tile &t)
+	tile_id_t get_tile_id(const raw_map &r, const resources::tile &t)
 	{
 		try
 		{
-			tile_count_t offset{};
+			std::size_t offset{};
 
 			for (const auto &tset : r.tilesets)
 			{
@@ -654,7 +654,7 @@ namespace hades
 				for (auto iter = begin; iter != end; ++iter)
 				{
 					if (*iter == t)
-						return offset + std::distance(begin, iter);
+						return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
 				}
 
 				offset += std::size(tileset->tiles);
@@ -669,9 +669,9 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this raw_map" };
 	}
 
-	tile_count_t get_tile_id(const tile_map &m, const resources::tile &t)
+	tile_id_t get_tile_id(const tile_map &m, const resources::tile &t)
 	{
-		tile_count_t offset{};
+		std::size_t offset{};
 
 		for (const auto *tileset : m.tilesets)
 		{
@@ -680,7 +680,7 @@ namespace hades
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-					return offset + std::distance(begin, iter);		
+					return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -689,9 +689,9 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this tile_map" };
 	}
 
-	tile_count_t make_tile_id(tile_map &m, const resources::tile &t)
+	tile_id_t make_tile_id(tile_map &m, const resources::tile &t)
 	{
-		tile_count_t offset{};
+		std::size_t offset{};
 
 		for (const auto *tileset : m.tilesets)
 		{
@@ -700,7 +700,7 @@ namespace hades
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-					return offset + std::distance(begin, iter);
+					return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -712,10 +712,11 @@ namespace hades
 			throw tileset_not_found{ "unable to find a tileset containing this tile" };
 
 		m.tilesets.emplace_back(tileset);
-		for (auto iter = std::begin(tileset->tiles); iter != std::end(tileset->tiles); ++iter)
+		const auto tileset_end = std::end(tileset->tiles);
+		for (auto iter = std::begin(tileset->tiles); iter != tileset_end; ++iter)
 		{
 			if (*iter == t)
-				return offset + std::distance(std::begin(tileset->tiles), iter);
+				return  integer_cast<tile_id_t>(offset + std::distance(std::begin(tileset->tiles), iter));
 		}
 
 		throw tile_error{ "unable to add tile id for this tile_map" };
@@ -752,7 +753,7 @@ namespace hades
 		const auto index = make_tile_id(m, t);
 
 		const auto length = integer_cast<std::size_t>(s.x * s.y);
-		m.tiles = std::vector<tile_count_t>(length, index);
+		m.tiles = std::vector<tile_id_t>(length, index);
 		assert(m.tiles.size() == length);
 		return m;
 	}
@@ -782,10 +783,10 @@ namespace hades
 	void resize_map(tile_map &m, const vector_int size, const vector_int offset, const resources::tile &t)
 	{
 		const auto tile = make_tile_id(m, t);
-		const auto new_map = always_table<tile_count_t>( vector_int{}, vector_int{ size.x, size.y }, tile );
+		const auto new_map = always_table<tile_id_t>( vector_int{}, vector_int{ size.x, size.y }, tile );
 
-		auto current_map = table<tile_count_t>{ offset,
-			get_size(m), tile_count_t{} };
+		auto current_map = table<tile_id_t>{ offset,
+			get_size(m), tile_id_t{} };
 
 		auto &current_tiles = current_map.data();
 		assert(current_tiles.size() == m.tiles.size());
@@ -809,16 +810,18 @@ namespace hades
 		resize_map(t, size, offset, empty_tile);
 	}
 
-	void place_tile(tile_map &m, tile_position p, tile_count_t t)
+	void place_tile(tile_map &m, tile_position p, tile_id_t t)
 	{
 		if (p.x < 0 ||
 			p.y < 0)
 			return;
 
+		//TODO: check that tile_id is within the maps id range(valid tile)
+
 		//ignore placements outside of the map
 		const auto index = to_1d_index(p, m.width);
-		if (unsigned_cast(p.x) >= m.width ||
-			index >= m.tiles.size())
+		if (p.x >= m.width ||
+			integer_cast<std::size_t>(index) >= m.tiles.size())
 			return;
 
 		m.tiles[index] = t;
@@ -830,7 +833,7 @@ namespace hades
 		place_tile(m, p, id);
 	}
 
-	void place_tile(tile_map &m, const std::vector<tile_position> &p, tile_count_t t)
+	void place_tile(tile_map &m, const std::vector<tile_position> &p, tile_id_t t)
 	{
 		for (const auto &pos : p)
 			place_tile(m, pos, t);
@@ -842,14 +845,14 @@ namespace hades
 		place_tile(m, p, id);
 	}
 
-	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size)
+	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size)
 	{
 		const auto int_size = integer_cast<int32>(size);
 
 		return make_position_rect(position, { int_size, int_size });
 	}
 
-	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size)
+	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size)
 	{
 		const auto int_half_size = integer_cast<int32>(half_size);
 		return make_position_square({ middle.x - int_half_size, middle.y - int_half_size }, int_half_size * 2);
@@ -870,7 +873,7 @@ namespace hades
 		return positions;
 	}
 
-	std::vector<tile_position> make_position_circle(tile_position p, tile_count_t radius)
+	std::vector<tile_position> make_position_circle(tile_position p, tile_index_t radius)
 	{
 		const auto rad = integer_cast<int32>(radius);
 

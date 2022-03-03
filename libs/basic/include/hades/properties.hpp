@@ -124,6 +124,7 @@ namespace hades
 			virtual std::vector<std::string_view> get_property_names() const = 0;
 
 			//creates the property and sets it's default value
+			// locked properties cannot be modified through the ingame console
 			virtual void create(std::string_view, int32 default_val, bool locked = false) = 0;
 			virtual void create(std::string_view, float default_val, bool locked = false) = 0;
 			virtual void create(std::string_view, bool default_val, bool locked = false) = 0;

@@ -85,13 +85,14 @@ namespace hades
 		d.register_resource_type("terrainsets"sv, resources::parse_terrainset);
 	}
 
-	static terrain_count_t get_terrain_index(const resources::terrainset *set, const resources::terrain *t)
+	static terrain_id_t get_terrain_id(const resources::terrainset *set, const resources::terrain *t)
 	{
 		assert(set && t);
 
-		for (auto i = terrain_count_t{}; i < set->terrains.size(); ++i)
+		const auto terrain_size = size(set->terrains);
+		for (auto i = std::size_t{}; i < terrain_size; ++i)
 			if (set->terrains[i] == t)
-				return i;
+				return integer_cast<terrain_id_t>(i);
 
 		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
 	}
@@ -102,7 +103,7 @@ namespace hades
 		return std::array{ empty, empty, empty, empty };
 	}
 
-	static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, terrain_count_t w, tile_position p)
+	static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, terrain_index_t w, tile_position p)
 	{
 		auto out = make_empty_corners();
 
@@ -137,12 +138,12 @@ namespace hades
 	}
 
 	template<typename InputIt>
-	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, tile_count_t w, InputIt first, InputIt last)
+	static tile_map generate_layer(const std::vector<const resources::terrain*> &v, tile_index_t w, InputIt first, InputIt last)
 	{
 		//NOTE: w2 and h are 0 based, and one less than vertex width and height
 		//this is good, it means they are equal to the tile width/height
 		assert(!std::empty(v));
-		const auto vertex_h = size(v) / (w + 1);
+		const auto vertex_h = integer_cast<tile_index_t>(size(v)) / (w + 1);
 		const auto h = vertex_h - 1;
 
 		auto out = tile_map{};
@@ -154,7 +155,7 @@ namespace hades
 
 		const auto size = w * h;
 
-		for (auto i = std::size_t{}; i < size; ++i)
+		for (auto i = tile_index_t{}; i < size; ++i)
 		{
 			const auto [x, y] = to_2d_index(i, w);
 			assert(x < w);
@@ -168,7 +169,7 @@ namespace hades
 		return out;
 	}
 
-	static std::vector<tile_map> generate_terrain_layers(const resources::terrainset *t, const std::vector<const resources::terrain*> &v, tile_count_t width)
+	static std::vector<tile_map> generate_terrain_layers(const resources::terrainset *t, const std::vector<const resources::terrain*> &v, tile_index_t width)
 	{
 		auto out = std::vector<tile_map>{};
 
@@ -278,7 +279,7 @@ namespace hades
 		w.end_sequence();
 	}
 
-	std::tuple<unique_id, std::vector<terrain_count_t>, std::vector<raw_map>>
+	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
 		read_raw_terrain_map(const data::parser_node &p)
 	{
 		//terrain:
@@ -287,7 +288,7 @@ namespace hades
 		//	terrain_layers:
 
 		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
-		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_count_t>{});
+		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_id_t>{});
 
 		auto layers = std::vector<raw_map>{};
 
@@ -318,8 +319,8 @@ namespace hades
 		else
 		{
 			std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
-				std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_count_t t) {
-				if (t == terrain_count_t{})
+				std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_id_t t) {
+				if (t == terrain_id_t{})
 					return empty;
 
 				assert(t <= std::size(terrains));
@@ -328,7 +329,7 @@ namespace hades
 		}
 
 		// if the terrain layers are empty then generate them
-		m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, integer_cast<tile_count_t>(size.x));
+		m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x);
 
 		if (std::empty(r.terrain_layers))
 		{
@@ -373,14 +374,14 @@ namespace hades
 		m.terrainset = t.terrainset->id;
 
 		//build a replacement lookup table
-		auto t_map = std::map<const resources::terrain*, terrain_count_t>{};
+		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
 
 		const auto empty = resources::get_empty_terrain();
 		//add the empty terrain with the index 0
-		t_map.emplace(empty, terrain_count_t{});
+		t_map.emplace(empty, terrain_id_t{});
 
 		//add the rest of the terrains, offset the index by 1
-		for (auto i = terrain_count_t{}; i < std::size(t.terrainset->terrains); ++i)
+		for (auto i = terrain_id_t{}; i < std::size(t.terrainset->terrains); ++i)
 			t_map.emplace(t.terrainset->terrains[i], i + 1u);
 
 		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
@@ -410,7 +411,7 @@ namespace hades
 		if (t != resources::get_empty_terrain())
 		{
 			//fill in the correct terrain layer
-			const auto index = get_terrain_index(terrainset, t);
+			const auto index = get_terrain_id(terrainset, t);
 
 			const auto end = std::size(terrainset->terrains);
 			for (auto i = std::size_t{}; i < end; ++i)
@@ -438,7 +439,7 @@ namespace hades
 		return map;
 	}
 
-	terrain_count_t get_width(const terrain_map &m)
+	terrain_index_t get_width(const terrain_map &m)
 	{
 		return m.tile_layer.width + 1;
 	}
@@ -448,7 +449,7 @@ namespace hades
 		return get_size(t.tile_layer);
 	}
 
-	bool within_map(terrain_vertex_position s, terrain_vertex_position p)
+	bool within_map(terrain_vertex_position s, terrain_vertex_position p) noexcept
 	{
 		if (p.x < 0 ||
 			p.y < 0 )
@@ -562,7 +563,7 @@ namespace hades
 
 		//regenerate terrain layers
 		m.terrain_layers = generate_terrain_layers(m.terrainset,
-			m.terrain_vertex, integer_cast<terrain_count_t>(s.x) + 1);
+			m.terrain_vertex, integer_cast<terrain_index_t>(s.x) + 1);
 
 		return;
 	}
@@ -768,7 +769,7 @@ namespace hades::resources
 	}
 
 	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, const hades::resources::texture *tex,
-		const std::vector<transition_tile_type> &tiles, const tile_count_t tiles_per_row, const tile_size_t tile_size)
+		const std::vector<transition_tile_type> &tiles, const tile_index_t tiles_per_row, const tile_size_t tile_size)
 	{
 		auto count = tile_size_t{};
 		for (const auto t : tiles)

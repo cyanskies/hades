@@ -303,7 +303,7 @@ namespace hades
 			std::default_random_engine random_generator{ rd() };
 		};
 
-		extern random_data random_runtime_data;
+		thread_local extern random_data random_runtime_data;
 
 		template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 		T random(T min, T max)

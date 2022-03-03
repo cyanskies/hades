@@ -14,6 +14,7 @@
 #include "hades/vertex_buffer.hpp"
 
 //adds support for drawing tile maps
+//TODO: split the draw into smaller buffers to better support giant maps
 
 namespace hades
 {
@@ -49,8 +50,9 @@ namespace hades
 		struct texture_layer
 		{
 			const resources::texture *texture = nullptr;
-			std::vector<sf::Vertex> vertex;
-			vertex_buffer buffer;
+			quad_buffer quads;
+			//std::vector<sf::Vertex> vertex; // TODO: use quad_buffer
+			//vertex_buffer buffer;
 		};
 
 		void create(const tile_map&, sf::VertexBuffer::Usage);
@@ -81,8 +83,8 @@ namespace hades
 
 	private:
 		void _update_tile(tile_position, const resources::tile&);
-		void _replace_tile(texture_layer&, tile_position, resources::tile_size_t, const resources::tile&);
-		void _remove_tile(texture_layer&, tile_position);
+		void _replace_tile(texture_layer&, std::size_t, tile_position, resources::tile_size_t, const resources::tile&);
+		void _remove_tile(texture_layer&, std::size_t);
 		void _remove_layer(const resources::texture*);
 		void _add_tile(texture_layer&, tile_position, resources::tile_size_t, const resources::tile&);
 

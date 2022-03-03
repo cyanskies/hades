@@ -106,15 +106,16 @@ namespace hades
 		using terrain_error::terrain_error;
 	};
 
-	using terrain_count_t = tile_count_t;
+	using terrain_index_t = tile_index_t;
+	using terrain_id_t = tile_id_t;
 
 	struct raw_terrain_map
 	{
 		unique_id terrainset;
-		//terrain vertex are indexed starting at 1
+		//terrain vertex are id starting at 1
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
-		std::vector<terrain_count_t> terrain_vertex;
+		std::vector<terrain_id_t> terrain_vertex;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
@@ -128,7 +129,7 @@ namespace hades
 	//NOTE: doesn't write the tile layer, this must be done seperately
 	//		with write_raw_map(m.tile_layer, ...);
 	void write_raw_terrain_map(const raw_terrain_map &m, data::writer &w);
-	std::tuple<unique_id, std::vector<terrain_count_t>, std::vector<raw_map>>
+	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
 		read_raw_terrain_map(const data::parser_node &p);
 
 	struct terrain_map
@@ -154,7 +155,7 @@ namespace hades
 
 	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*);
 
-	terrain_count_t get_width(const terrain_map&);
+	terrain_index_t get_width(const terrain_map&);
 	//returns the size of the map expressed in tiles
 	tile_position get_size(const terrain_map&);
 
@@ -168,7 +169,7 @@ namespace hades
 		return to_tile_index(p, t.tile_layer);
 	}
 
-	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position);
+	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position) noexcept;
 	bool within_map(const terrain_map&, terrain_vertex_position position);
 
 	//index tile_corners using rect_corners from math.hpp
@@ -192,7 +193,8 @@ namespace hades
 	//eg, to expand the map in all directions
 	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
 	// tiles that fall outside the new size are erased
-	// new areas will be set to tile&
+	// new areas will be set to terrain*
+	// TODO: replace vector_int with tile_position
 	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right,
 		const resources::terrain*);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
@@ -202,6 +204,7 @@ namespace hades
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
 	void resize_map(terrain_map&, vector_int size, vector_int offset);
 
+	// TODO: investigate where this is used, add for_each_adjacent_tile
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
 	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
 

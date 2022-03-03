@@ -107,15 +107,15 @@ namespace hades
 		//change the raw map so it can be validly converted into a terrain_map
 		//generate a empty tile layer of the correct size
 		if (std::empty(map_raw.tile_layer.tiles) ||
-			map_raw.tile_layer.width == tile_count_t{})
+			map_raw.tile_layer.width == tile_index_t{})
 		{
-			map_raw.tile_layer.width = integer_cast<tile_count_t>(size.x);
+			map_raw.tile_layer.width = integer_cast<tile_index_t>(size.x);
 			map_raw.tile_layer.tilesets.clear();
 			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_terrain()->id, 0u);
 
- 			map_raw.tile_layer.tiles = std::vector<tile_count_t>(
+ 			map_raw.tile_layer.tiles = std::vector<tile_id_t>(
 				static_cast<std::size_t>(size.x) * static_cast<std::size_t>(size.y),
-				tile_count_t{}
+				tile_id_t{}
 			);
 		}
 

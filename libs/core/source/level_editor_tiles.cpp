@@ -244,16 +244,10 @@ namespace hades
 	}
 
 	static void draw_on(level_editor_tiles::mouse_pos p, const resources::tile_size_t tile_size, const resources::tile &t,
-		level_editor_tiles::draw_shape shape, mutable_tile_map &m, tile_count_t size)
+		level_editor_tiles::draw_shape shape, mutable_tile_map &m, tile_index_t size)
 	{
-		const auto pos = mouse::snap_to_grid(p, static_cast<float>(tile_size));
-
-		const auto t_size = signed_cast(tile_size);
-
-		const auto pos_int = vector_int { 
-			static_cast<int>(pos.x) / t_size,
-			static_cast<int>(pos.y) / t_size,
-		};
+		const auto tile_size_f = float_cast(tile_size);
+		const auto pos_int = static_cast<tile_position>(mouse::snap_to_grid(p, tile_size_f) / tile_size_f);
 
 		const auto positions = [&] {
 			if (level_editor_tiles::draw_shape::square == shape)

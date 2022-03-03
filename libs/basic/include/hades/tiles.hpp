@@ -64,9 +64,9 @@ namespace hades::resources
 	//only bad tile should ever have a null source
 	constexpr auto bad_tile = tile{};
 
-	bool operator==(const tile &lhs, const tile &rhs);
-	bool operator!=(const tile &lhs, const tile &rhs);
-	bool operator<(const tile &lhs, const tile &rhs);
+	bool operator==(const tile &lhs, const tile &rhs) noexcept;
+	bool operator!=(const tile &lhs, const tile &rhs) noexcept;
+	bool operator<(const tile &lhs, const tile &rhs) noexcept;
 
 	//contains all the tiles defined by a particular tileset
 	//used to map the integers in maps to actual tiles
@@ -132,19 +132,26 @@ namespace hades
 		using tile_error::tile_error;
 	};
 
-	//stores a count of tiles, or a tiles index
-	using tile_count_t = std::vector<resources::tile>::size_type;
+	//x/y coords of a tile, negative tile positions aren't supported
+	using tile_position = vector_int;
+	// 1d tile positions
+	using tile_index_t = tile_position::value_type;
+	// unique id for each tile
+	// TODO: use this properly throughout tiles and terrain .hpp/.cpp
+	using tile_id_t = std::vector<resources::tile>::size_type;
 
 	//stores a tileset and the starting id for that tileset in a map
-	using tileset_info = std::tuple<unique_id, tile_count_t>;
+	using tileset_info = std::tuple<unique_id, tile_id_t>;
 
 	//this is a map that can be written to disk
 	struct raw_map
 	{
 		std::vector<tileset_info> tilesets;
 		//tiles are stored as ids based on the tileset size in tileset_info
-		std::vector<tile_count_t> tiles;
-		tile_count_t width{};
+		//this means that some tilesets may have tiles that cannot be in the map
+		// tilesets are effectivly trucated based on the last tile they have in the actual map
+		std::vector<tile_id_t> tiles;
+		tile_index_t width{};
 	};
 
 	//read and write raw maps
@@ -156,31 +163,27 @@ namespace hades
 	{
 		std::vector<const resources::tileset*> tilesets;
 		//tiles are stored as full ids according to each tileset
-		std::vector<tile_count_t> tiles;
-		tile_count_t width{};
+		std::vector<tile_id_t> tiles;
+		tile_index_t width{};
 	};
-
-	//x/y coords of a tile, negative tile positions aren't supported
-	using tile_position = vector_int;
 
 	//TODO: make many of these noexcept and constexpr
 
 	// index type is storable in the curve system
-	using tile_index_t = tile_position::value_type;
-	tile_position from_tile_index(tile_index_t, tile_count_t map_width) noexcept;
-	tile_index_t to_tile_index(tile_position, tile_count_t map_width) noexcept;
+	tile_position from_tile_index(tile_index_t, tile_index_t map_width) noexcept;
+	tile_index_t to_tile_index(tile_position, tile_index_t map_width) noexcept;
 	tile_position from_tile_index(tile_index_t, const tile_map&) noexcept;
 	tile_index_t to_tile_index(tile_position, const tile_map&) noexcept;
 
 	//tile to pixel consersions
 	//convert pixel mesurement to tile measurement
-	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size); 
+	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept; 
 	//convert pixel position to tilemap position
 	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size);
 	tile_position to_tiles(vector_float real_pixels, resources::tile_size_t tile_size);
 	//reverse of the two above functions
-	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size);
-	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size);
+	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept;
+	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept;
 
 	//throws tile_error, if the tile_map is malformed
 	//returns the size of the map expressed in tiles
@@ -198,20 +201,20 @@ namespace hades
 
 	//get tile from raw_map
 	// exceptions: tile_not_found, tileset_not_found
-	resources::tile get_tile(const raw_map&, tile_count_t);
+	resources::tile get_tile(const raw_map&, tile_id_t);
 	//get tile from tile map
 	// exceptions: tile_not_found
-	resources::tile get_tile(const tile_map&, tile_count_t);
+	resources::tile get_tile(const tile_map&, tile_id_t);
 
 	//gets the tile id in a format appropriate for storing in a raw map
 	// exceptions: tileset_not_found and tile_not_found
-	tile_count_t get_tile_id(const raw_map&, const resources::tile&);
+	tile_id_t get_tile_id(const raw_map&, const resources::tile&);
 	//gets the tile id in a format appropriate for storing in tile map
 	// exceptions: tile_not_found
-	tile_count_t get_tile_id(const tile_map&, const resources::tile&);
+	tile_id_t get_tile_id(const tile_map&, const resources::tile&);
 	//returns a tile id usable for that tile_map, adds the needed tileset to the map
 	// exceptions: tileset_not_found
-	tile_count_t make_tile_id(tile_map&, const resources::tile&);
+	tile_id_t make_tile_id(tile_map&, const resources::tile&);
 
 	const tag_list &get_tags(const resources::tile&);
 
@@ -237,18 +240,18 @@ namespace hades
 	void resize_map(tile_map&, vector_int size, vector_int offset);
 
 	//for editing a tile map
-	void place_tile(tile_map&, tile_position, tile_count_t);
+	void place_tile(tile_map&, tile_position, tile_id_t);
 	void place_tile(tile_map&, tile_position, const resources::tile&);
 	//positions outside the map will be ignored
-	void place_tile(tile_map&, const std::vector<tile_position>&, tile_count_t);
+	void place_tile(tile_map&, const std::vector<tile_position>&, tile_id_t);
 	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&);
 
 	//helpers to create a list of positions in a desired shape
 	//TODO: move to general game logic
-	std::vector<tile_position> make_position_square(tile_position position, tile_count_t size);
-	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_count_t half_size);
+	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size);
+	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size);
 	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
-	std::vector<tile_position> make_position_circle(tile_position middle, tile_count_t radius);
+	std::vector<tile_position> make_position_circle(tile_position middle, tile_index_t radius);
 	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
 
 	// Prefer this over the above functions, as it won't allocate
@@ -260,6 +263,13 @@ namespace hades
 			for (int32 x = 0; x < size.x; ++x)
 				std::invoke(f, tile_position{ position.x + x, position.y + y });
 		return;
+	}
+
+	template<typename Func>
+	void for_each_index_rect(tile_index_t pos, tile_position size, Func f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
+	{
+
 	}
 }
 

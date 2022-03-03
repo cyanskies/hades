@@ -238,7 +238,7 @@ namespace hades
 			const auto r = _buffer.create(std::max(next_size + remain, size)); assert(r);
 		}
 
-		const auto r = _buffer.update(_verts.data(), size, std::size_t{}); assert(r);
+		_buffer.update(_verts.data(), size, std::size_t{});
 
 		return;
 	}

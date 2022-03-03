@@ -2,5 +2,5 @@
 
 namespace hades::detail
 {
-	random_data random_runtime_data{};
+	thread_local random_data random_runtime_data{};
 }

@@ -103,12 +103,12 @@ namespace hades
 		template<typename T>
 		T magnitude(vector_t<T> v) noexcept
 		{
-			const auto mag = std::sqrt(magnitude_squared(v));
-			//if T is not a floating point type then sqrt will return double
-			if constexpr (std::is_same_v<decltype(mag), T>)
-				return mag;
+			const auto mag = std::hypot(v.x, v.y);
+			//hypot returns either float or double
+			if constexpr (std::is_integral_v<T>)
+				return integral_cast<T>(mag);
 			else
-				return static_cast<T>(mag);
+				return float_cast<T>(mag);
 		}
 
 		template<typename T>

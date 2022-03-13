@@ -54,6 +54,71 @@ namespace hades
 		return { to_string(count), duration_ratio::nanos };
 	}
 
+	string duration_to_string(time_duration d, duration_ratio r, int units_after_decimal)
+	{
+		const auto duration_f = time_cast<basic_duration<float, time_duration::period>>(d);
+		auto str = string{};
+		switch (r)
+		{
+		case duration_ratio::seconds:
+		{
+			const auto dir = time_cast<seconds_float>(duration_f);
+			// TODO: cpp20, we can remove the string trimming at the end of the function
+			// //		and them merge the unit postfix into this switch statement
+			// str = std::format("%.*f"s, units_after_decimal, dir.count());
+			str = to_string(dir.count());
+			break;
+		}
+		case duration_ratio::millis:
+		{
+			const auto dir = time_cast<milliseconds_float>(duration_f);
+			str = to_string(dir.count());
+			break;
+		}
+		case duration_ratio::micros:
+		{
+			const auto dir = time_cast<basic_duration<float, microseconds::period>>(duration_f);
+			str = to_string(dir.count());
+			break;
+		}
+		case duration_ratio::nanos:
+			[[fallthrough]];
+		default:
+		{
+			const auto dir = time_cast<basic_duration<float, nanoseconds::period>>(duration_f);
+			str = to_string(dir.count());
+		}
+		}
+
+		// trim down to correct accuracy
+		auto deci = std::find(begin(str), end(str), '.');
+		if (deci != end(str))
+		{
+			while (deci != end(str) && units_after_decimal-- > 0)
+			{
+				advance(deci, 1);
+			}
+
+			str.erase(next(deci), end(str));
+		}
+
+		using namespace std::string_literals;
+
+		switch (r)
+		{
+		case duration_ratio::seconds:
+			return str + "s"s;
+		case duration_ratio::millis:
+			return str + "ms"s;
+		case duration_ratio::micros:
+			return str + "us"s;
+		case duration_ratio::nanos:
+			[[fallthrough]];
+		default:
+			return str + "ns"s;
+		}
+	}
+
 	string to_string(time_duration d)
 	{
 		using namespace std::string_literals;

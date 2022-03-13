@@ -256,20 +256,32 @@ namespace hades
 
 	// Prefer this over the above functions, as it won't allocate
 	template<typename Func>
-	void for_each_position_rect(tile_position position,
-		tile_position size, Func f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_position_rect(const tile_position position,
+		const tile_position size, Func f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		for (int32 y = 0; y < size.y; ++y)
-			for (int32 x = 0; x < size.x; ++x)
+		using int_t = tile_position::value_type;
+		for (auto y = int_t{}; y < size.y; ++y)
+			for (auto x = int_t{}; x < size.x; ++x)
 				std::invoke(f, tile_position{ position.x + x, position.y + y });
 		return;
 	}
 
 	template<typename Func>
-	void for_each_index_rect(tile_index_t pos, tile_position size, Func f)
-		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
+	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect(const tile_index_t pos,
+		const tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func f)	noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
-
+		assert(size.x >= 0);
+		assert(size.y >= 0);
+		const auto pos_y = pos / map_width;
+		const auto pos_x = pos - pos_y * map_width;
+		for (auto y = tile_index_t{}; y < size.y && y * map_width < max_index; ++y)
+		{
+			for (auto x = tile_index_t{}; x < size.x && pos_x + x < map_width; ++x)
+			{
+				std::invoke(f, pos + x + y * map_width);
+			}
+		}
+		return;
 	}
 }
 

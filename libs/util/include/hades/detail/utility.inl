@@ -343,13 +343,13 @@ namespace hades
 	}
 
 	template<typename Index2D, typename T>
-	T to_1d_index(Index2D pos, T array_width)
+	constexpr T to_1d_index(Index2D pos, T array_width)
 	{
 		return to_1d_index({ integer_cast<T>(pos.x), integer_cast<T>(pos.y) }, array_width);
 	}
 	
 	template<typename T>
-	T to_1d_index(std::pair<T, T> index, T w)
+	constexpr T to_1d_index(std::pair<T, T> index, T w)
 	{
 		if constexpr (std::is_signed_v<T>)
 		{
@@ -361,7 +361,7 @@ namespace hades
 	}
 
 	template<typename Index2D, typename T>
-	Index2D to_2d_index(T i, T w)
+	constexpr Index2D to_2d_index(T i, T w)
 	{
 		assert(w != 0);
 
@@ -372,7 +372,7 @@ namespace hades
 	}
 
 	template<typename T>
-	std::pair<T, T> to_2d_index(T i, T w)
+	constexpr std::pair<T, T> to_2d_index(T i, T w)
 	{
 		return to_2d_index<std::pair<T, T>>(i, w);
 	}

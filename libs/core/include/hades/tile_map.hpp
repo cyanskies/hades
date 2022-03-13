@@ -51,8 +51,6 @@ namespace hades
 		{
 			const resources::texture *texture = nullptr;
 			quad_buffer quads;
-			//std::vector<sf::Vertex> vertex; // TODO: use quad_buffer
-			//vertex_buffer buffer;
 		};
 
 		void create(const tile_map&, sf::VertexBuffer::Usage);

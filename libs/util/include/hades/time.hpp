@@ -53,6 +53,7 @@ namespace hades
 	//  everything in curve_extra.cpp explodes 	 
 	using string = std::string;
 	std::pair<string, duration_ratio> duration_to_string(time_duration);
+	string duration_to_string(time_duration, duration_ratio, int units_after_decimal = 2);
 	string to_string(time_duration);
 	time_duration duration_from_string(std::string_view) noexcept;
 }

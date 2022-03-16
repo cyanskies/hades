@@ -57,6 +57,18 @@ namespace hades {
 
 	template<typename T>
 	constexpr auto is_tuple_v = is_tuple<T>::value;
+
+	// detect iterable
+	template<typename, typename = void, typename = void>
+	struct is_iterable : std::false_type { };
+	template<typename T>
+	struct is_iterable<T,
+		std::void_t<decltype(std::declval<T>().begin())>,
+		std::void_t<decltype(std::declval<T>().end())>>
+		: std::true_type { };
+
+	template<typename T>
+	constexpr auto is_iterable_v = is_iterable<T>::value;
 }
 
 #endif //HADES_UTIL_TYPES_HPP

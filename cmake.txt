@@ -58,7 +58,7 @@ function(hades_make_compile_settings ARG_NAME)
                                 # GL for link time code gen (causes internal compiler errors)
 								# Oi for compiler intrinsics
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/Oi" "/O2">
+                                  "/GS-" "/Oi" "/O2" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                   "-O3" >
                              >
@@ -94,7 +94,7 @@ function(hades_make_compile_settings ARG_NAME)
 							 # INCREMENTAL disabled for smaller executable size and compat with LTCG
 							 $<$<CONFIG:Release>:
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                   "/INCREMENTAL:NO">
+                                   "/INCREMENTAL:NO" >
 								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
                                    >
 							 >

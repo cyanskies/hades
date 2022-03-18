@@ -136,6 +136,7 @@ namespace hades
 	using tile_position = vector_int;
 	// 1d tile positions
 	using tile_index_t = tile_position::value_type;
+	constexpr auto bad_tile_index = tile_index_t{ -1 };
 	// unique id for each tile
 	// TODO: use this properly throughout tiles and terrain .hpp/.cpp
 	using tile_id_t = std::vector<resources::tile>::size_type;
@@ -274,11 +275,15 @@ namespace hades
 		assert(size.y >= 0);
 		const auto pos_y = pos / map_width;
 		const auto pos_x = pos - pos_y * map_width;
-		for (auto y = tile_index_t{}; y < size.y && y * map_width < max_index; ++y)
+		for (auto y = tile_index_t{}; y < size.y; ++y)
 		{
-			for (auto x = tile_index_t{}; x < size.x && pos_x + x < map_width; ++x)
+			for (auto x = tile_index_t{}; x < size.x; ++x)
 			{
-				std::invoke(f, pos + x + y * map_width);
+				if (y * map_width >= max_index ||
+					pos_x + x >= map_width)
+					std::invoke(f, bad_tile_index);
+				else
+					std::invoke(f, pos + x + y * map_width);
 			}
 		}
 		return;

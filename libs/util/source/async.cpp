@@ -1,6 +1,5 @@
 #include "hades/async.hpp"
 
-#include <cassert>
 #include <iterator>
 
 namespace hades

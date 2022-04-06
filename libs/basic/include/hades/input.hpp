@@ -162,7 +162,7 @@ namespace hades
 		//load bindings config
 		//save binding config, //this only works for bindable actions
 		void generate_state(); //runs all the action test functions, including custom ones
-		using action_set = std::set<action>;
+		using action_set = std::set<action>; // TODO: review usage of set
 		action_set input_state() const;
 
 	protected:

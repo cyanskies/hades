@@ -52,6 +52,7 @@ namespace hades
 		using timer_map = std::unordered_map<types::int32, time_event>;
 		timer_map _timers,
 			_add_list; // add list stores timers before they are merged into the full timer list
+		// TODO: review usage of set
 		std::set<types::int32> _remove_list; // stores the timers to be killed before they are pulled from the main list
 		types::int32 _timerCount;
 	};

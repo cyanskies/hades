@@ -15,7 +15,7 @@
 
 // generated zip iterators are never random access, and don't qualify for
 // use in sort and many other algorithms
-// the iterator category is the lowest common category of the provided integers
+// the iterator category is the lowest common category of the provided iterators
 // but is never greater than bidirectional iterator
 
 namespace hades

@@ -21,8 +21,6 @@
 //on_tick is called every game tick for any object attached to a system
 // on_tick is for general game logic
 // on_connect is always called for an object before on_tick
-// TODO: on_tick is always called for an object at least once? even if the object is destroyed by its on_connect handler?
-// TODO: can on_connect and on_tick occur on the same tick?
 
 //on_diconnect is called when an object is detached
 // it might spawn a death animation

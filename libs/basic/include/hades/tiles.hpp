@@ -137,6 +137,7 @@ namespace hades
 	// 1d tile positions
 	using tile_index_t = tile_position::value_type;
 	constexpr auto bad_tile_index = tile_index_t{ -1 };
+	constexpr auto bad_tile_position = tile_position{ -1, -1 };
 	// unique id for each tile
 	// TODO: use this properly throughout tiles and terrain .hpp/.cpp
 	using tile_id_t = std::vector<resources::tile>::size_type;
@@ -256,38 +257,25 @@ namespace hades
 	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
 
 	// Prefer this over the above functions, as it won't allocate
+	// safe versions wont check pass invalid tiles along to Func
+	// non-safe versions func needs to handle being passed bad_tile_poistion/bad_tile_index
 	template<typename Func>
 	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_position_rect(const tile_position position,
-		const tile_position size, Func f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
-	{
-		using int_t = tile_position::value_type;
-		for (auto y = int_t{}; y < size.y; ++y)
-			for (auto x = int_t{}; x < size.x; ++x)
-				std::invoke(f, tile_position{ position.x + x, position.y + y });
-		return;
-	}
+		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<typename Func>
+	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_safe_position_rect(const tile_position position,
+		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
 	template<typename Func>
 	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect(const tile_index_t pos,
-		const tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func f)	noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
-	{
-		assert(size.x >= 0);
-		assert(size.y >= 0);
-		const auto pos_y = pos / map_width;
-		const auto pos_x = pos - pos_y * map_width;
-		for (auto y = tile_index_t{}; y < size.y; ++y)
-		{
-			for (auto x = tile_index_t{}; x < size.x; ++x)
-			{
-				if (y * map_width >= max_index ||
-					pos_x + x >= map_width)
-					std::invoke(f, bad_tile_index);
-				else
-					std::invoke(f, pos + x + y * map_width);
-			}
-		}
-		return;
-	}
+		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+	template<typename Func>
+	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_safe_index_rect(const tile_index_t pos,
+		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
 }
+
+#include "hades/detail/tiles.inl"
 
 #endif // !HADES_TILES_HPP

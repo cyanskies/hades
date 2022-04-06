@@ -87,10 +87,10 @@ namespace hades::data
 		const auto dependencies = mod->get_child("depends");
 		if (dependencies)
 		{
-			auto deps = dependencies->to_sequence<string>();
-			for (auto& s : deps)
+			const auto deps = dependencies->to_sequence<string>();
+			for (const auto& s : deps)
 			{
-				if (!std::invoke(std::forward<DepCheckFunc>(dependencycheck), std::move(s))) {
+				if (!std::invoke(std::forward<DepCheckFunc>(dependencycheck), s)) {
 					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
 				}
 			}
@@ -156,20 +156,20 @@ namespace hades::data
 	{
 		//copy and clear the mod list, so that
 		// when add_mod readds them we don't double up
-		auto mods = _mods;
+		auto mods = std::vector<unique_id>{ std::move(_mods) };
+		_mods = {};
 
 		//reparse the game
-		auto game = get<resources::mod>(_game)->name;
+		const auto& game = get<resources::mod>(_game)->name;
 		add_mod(game, true, "game.yaml");
 
-		_mods.clear();
 		//go through the mod list and reload them in the
 		//same order as they were origionally loaded
 		//(this means we will parse the game and it's dependents again)
 		for (auto m : mods)
 		{
 			//for each mod reload it
-			auto name = get<resources::mod>(m)->name;
+			const auto& name = get<resources::mod>(m)->name;
 			add_mod(name);
 		}
 	}
@@ -178,29 +178,28 @@ namespace hades::data
 	{
 		//note: load queue can be full of duplicates,
 		//the load functions resolve them
-		for (auto id : _ids)
+		for (auto& id : _ids)
 			refresh(id.second);
 	}
 
 	void data_system::refresh(unique_id id)
 	{
 		if (exists(id))
-		{
-			//_resources stores unique_ptrs to resources
-			//so we void ptr cast to get it out of the type erased property bag
-			auto r = get_resource(id);
-
-			_loadQueue.push_back(r);
-		}
+			_loadQueue.push_back(get_resource(id));
 	}
 
 	void data_system::load()
 	{
-		const std::set<resources::resource_base*> queue{ _loadQueue.begin(), _loadQueue.end() };
-		_loadQueue.clear();
-
-		for (auto r : queue)
-			r->load(*this);
+		auto res = std::vector<resources::resource_base*>{ std::move(_loadQueue) };
+		_loadQueue = {};
+		
+		std::sort(begin(res), end(res));
+		const auto last = std::unique(begin(res), end(res));
+		std::for_each(begin(res), last, [this](auto resource) {
+			resource->load(*this);
+			return;
+			});
+		return;
 	}
 
 	void data_system::load(unique_id id)

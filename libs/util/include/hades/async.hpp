@@ -47,8 +47,17 @@ namespace hades
 	public:
 		using state_ptr = std::shared_ptr<detail::future_shared_state<T>>;
 		future(state_ptr s) : _shared_state{ std::move(s) } {}
+
+		bool ready() noexcept
+		{
+			assert(_shared_state);
+			return std::atomic_load_explicit(&(_shared_state->complete),
+				std::memory_order_acquire);
+		}
+
 		T get()
 		{
+			assert(_shared_state);
 			while (std::atomic_load_explicit(&(_shared_state->complete),
 				std::memory_order_acquire) == false)
 			{
@@ -59,7 +68,10 @@ namespace hades
 				std::rethrow_exception(_shared_state->e_ptr);
 
 			if constexpr (!std::is_same_v<T, void>)
-				return std::move(&(_shared_state->value));
+			{
+				assert(_shared_state->value.has_value());
+				return std::move(*(_shared_state->value));
+			}
 			else
 				return;
 		}
@@ -213,7 +225,7 @@ namespace hades
 	//queue a function instance into the shared thread pool
 	template<typename Func, typename ...Args>
 	[[nodiscard]]
-	auto async(Func&& f, Args&& ...args)
+	auto async(Func&& f, Args&& ...args) -> future<std::invoke_result_t<Func, Args...>>
 	{
 		auto* pool = detail::get_shared_thread_pool();
 		if(pool)

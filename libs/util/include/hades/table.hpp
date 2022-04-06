@@ -144,7 +144,6 @@ namespace hades {
 		using size_type = typename basic_table<T>::size_type;
 
 		table_reduce_view(index_type pos, index_type size, value_type defaul,
-			std::initializer_list<const basic_table<T>&> list,
 			BinaryOp op = BinaryOp{});
 
 		void add_table(const basic_table<T>&);

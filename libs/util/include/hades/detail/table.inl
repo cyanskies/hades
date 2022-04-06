@@ -151,15 +151,15 @@ namespace hades
 
 	template<typename T, typename BinaryOp>
 	inline hades::table_reduce_view<T, BinaryOp>::table_reduce_view(index_type pos,
-		index_type size, value_type def, std::initializer_list<const basic_table<T>&> list,
-		BinaryOp op) : base_type{ pos, size }, _tables{ list }, _default_val{ def },
+		index_type size, value_type def, BinaryOp op)
+		: base_type{ pos, size }, _default_val{ def },
 		_op{ std::move(op) }
 	{}
 
 	template<typename T, typename BinaryOp>
 	inline void table_reduce_view<T, BinaryOp>::add_table(const basic_table<T>& t)
 	{
-		assert(is_within(rect_t{ t.position(), t.size }, rect_t{ basic_table::position(), basic_table::size() }));
+		assert(is_within(rect_t{ t.position(), t.size() }, rect_t{ base_type::position(), base_type::size() }));
 		_tables.emplace_back(t);
 		return;
 	}

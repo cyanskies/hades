@@ -41,7 +41,7 @@ namespace hades
 			auto entity = get_some_entity_info(e);
 
 			if (!std::empty(anims))
-				entity.anim = random_element(std::begin(anims), std::end(anims));
+				entity.anim = *random_element(std::begin(anims), std::end(anims));
 
 			return entity;
 		}

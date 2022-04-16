@@ -1059,6 +1059,7 @@ namespace hades::resources
 	tile get_random_tile(const terrain &t, transition_tile_type type)
 	{
 		const auto& vec = get_transitions(t, type);
-		return random_element(std::begin(vec), std::end(vec));
+		assert(!empty(vec));
+		return *random_element(std::begin(vec), std::end(vec));
 	}
 }

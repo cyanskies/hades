@@ -308,7 +308,8 @@ namespace hades::resources
 		const auto tset = s->error_tileset;
 		const auto begin = std::begin(tset->tiles);
 		const auto end = std::end(tset->tiles);
-		return random_element(begin, end);
+		assert(begin != end);
+		return *random_element(begin, end);
 	}
 
 	const tile& get_empty_tile()

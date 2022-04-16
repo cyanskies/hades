@@ -300,6 +300,7 @@ namespace hades
 		struct random_data
 		{
 			std::random_device rd{};
+			// TODO: PCG random engine
 			std::default_random_engine random_generator{ rd() };
 		};
 
@@ -330,16 +331,16 @@ namespace hades
 	}
 
 	template<typename Iter>
-	typename std::iterator_traits<Iter>::reference random_element(Iter first, Iter last)
+	typename Iter random_element(Iter first, const Iter last)
 	{
 		if (first == last)
-			return *first;
+			return first;
 
 		const auto dist = std::distance(first, last) - 1;
 		const auto target = detail::random(decltype(dist){}, dist);
 
 		std::advance(first, target);
-		return *first;
+		return first;
 	}
 
 	template<typename Index2D, typename T>

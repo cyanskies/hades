@@ -129,14 +129,15 @@ namespace hades {
 	template<typename T, typename U>
 	constexpr T integer_clamp_cast(U) noexcept;
 
+	// TODO: move to random header, expose instatiable random_generator object
 	template<typename T>
 	T random(T min, T max);
 
 	inline bool random();
 
 	template<typename Iter>
-	typename std::iterator_traits<Iter>::reference
-		random_element(Iter first, Iter last);
+	typename Iter
+		random_element(Iter first, const Iter last);
 
 	template<typename Index2D, typename T>
 	constexpr T to_1d_index(Index2D pos, T array_width);

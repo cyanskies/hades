@@ -1,19 +1,21 @@
 #ifndef HADES_DEBUG_HPP
 #define HADES_DEBUG_HPP
 
-#include <list>
 #include <memory>
+#include <vector>
 
 #include "SFML/Graphics/Text.hpp"
 #include "SFML/System/Vector2.hpp"
 
 #include "hades/drawable.hpp"
-#include "hades/gui.hpp"
+#include "hades/font.hpp"
 #include "hades/properties.hpp"
 #include "hades/vector_math.hpp"
 
 namespace hades
 {
+	class gui; // defined in "hades/gui.hpp"
+
 	namespace debug
 	{
 		class basic_overlay
@@ -32,7 +34,7 @@ namespace hades
 
 			void update(gui&);
 		private:
-			std::list<std::unique_ptr<basic_overlay>> _overlays;
+			std::vector<std::unique_ptr<basic_overlay>> _overlays;
 		};
 
 		void set_overlay_manager(overlay_manager*) noexcept;
@@ -58,7 +60,7 @@ namespace hades
 			void update();
 			void draw(time_duration, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) final override;
 		private:
-			std::list<std::unique_ptr<text_overlay>> _overlays;
+			std::vector<std::unique_ptr<text_overlay>> _overlays;
 			const resources::font* _font = nullptr;
 			console::property<types::int32> _char_size;
 			string _overlay_output;
@@ -83,7 +85,7 @@ namespace hades
 
 			void draw(time_duration, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) final override;
 		private:
-			std::list<std::unique_ptr<screen_overlay>> _overlays;
+			std::vector<std::unique_ptr<screen_overlay>> _overlays;
 		};
 
 		void set_screen_overlay_manager(screen_overlay_manager*) noexcept;

@@ -7,9 +7,6 @@
 
 #include "hades/console_variables.hpp"
 #include "hades/data.hpp"
-#include "hades/font.hpp"
-
-//#include "hades/types.hpp"
 
 namespace hades::debug
 {

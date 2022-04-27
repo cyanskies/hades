@@ -5,6 +5,7 @@
 #include <limits>
 
 #include "hades/debug.hpp"
+#include "hades/gui.hpp"
 #include "hades/logging.hpp"
 #include "hades/system.hpp"
 #include "hades/types.hpp"

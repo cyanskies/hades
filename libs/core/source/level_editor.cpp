@@ -73,6 +73,7 @@ namespace hades::detail
 
 	bool level_editor_impl::handle_event(const event &e)
 	{
+		_gui.activate_context();
 		return _gui.handle_event(e);
 	}
 
@@ -176,6 +177,7 @@ namespace hades::detail
 		rt.draw(_background);
 
 		rt.setView(_world_view);
+		_gui.activate_context();
 		_draw_components(rt, dt, _active_brush);
 
 		rt.setView(_gui_view);

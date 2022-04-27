@@ -917,6 +917,7 @@ namespace hades
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	{
 		namespace tex = resources::texture_functions;
+		// TODO: to reduce errors, it might be best to simply activate our context
 		_active_assert();
 
 		ImGui::Render();

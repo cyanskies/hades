@@ -211,7 +211,7 @@ namespace hades
 			}
 			else
 			{
-				return g.input(to_string(label).data(), v, f);
+				return g.input_text(label, v, f);
 			}
 		}
 

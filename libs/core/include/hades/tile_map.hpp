@@ -72,7 +72,7 @@ namespace hades
 
 		void create(const tile_map&) override;
 		void update(const tile_map&);
-		
+
 		//replaces the tiles in the listed positions with tile&
 		//use the helpers in tiles.hpp to create position vectors in various shapes
 		void place_tile(const std::vector<tile_position>&, const resources::tile&);
@@ -80,12 +80,14 @@ namespace hades
 		tile_map get_map() const;
 
 	private:
+		void _apply();
 		void _update_tile(tile_position, const resources::tile&);
-		void _replace_tile(texture_layer&, std::size_t, tile_position, resources::tile_size_t, const resources::tile&);
-		void _remove_tile(texture_layer&, std::size_t);
-		void _remove_layer(const resources::texture*);
-		void _add_tile(texture_layer&, tile_position, resources::tile_size_t, const resources::tile&);
+		void _replace_tile(std::size_t layer, std::size_t, tile_position, resources::tile_size_t, const resources::tile&);
+		void _remove_tile(std::size_t layer, std::size_t);
+		void _remove_layer(std::size_t layer);
+		void _add_tile(std::size_t layer, tile_position, resources::tile_size_t, const resources::tile&);
 
+		std::vector<bool> _dirty_buffers;
 		tile_map _tiles;
 	};
 }

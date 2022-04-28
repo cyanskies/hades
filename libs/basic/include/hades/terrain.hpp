@@ -158,6 +158,8 @@ namespace hades
 	terrain_index_t get_width(const terrain_map&);
 	//returns the size of the map expressed in tiles
 	tile_position get_size(const terrain_map&);
+	// size of the map expressed in vertex
+	terrain_vertex_position get_vertex_size(const terrain_map&);
 
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{

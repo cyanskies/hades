@@ -177,8 +177,13 @@ namespace hades
 			quads.append(make_quad_animation(quad_rect, text_rect));
 		}
 
-		quads.apply();
 		texture_layers.emplace_back(texture_layer{ current_tex, std::move(quads) });
+
+		for (auto& tex_layer : texture_layers)
+		{
+			tex_layer.quads.shrink_to_fit();
+			tex_layer.quads.apply();
+		}
 	}
 
 	//=========================================//
@@ -197,10 +202,12 @@ namespace hades
 		//store the tiles and width
 		_tiles = map_data;
 		immutable_tile_map::create(map_data, vertex_usage);
+		_dirty_buffers = std::vector(size(texture_layers), false);
 	}
 
 	void mutable_tile_map::update(const tile_map &map)
 	{
+		// TODO: it may just be faster to call create and overwrite everything
 		if (map.tiles.size() != _tiles.tiles.size()
 			|| map.width != _tiles.width)
 			throw tile_map_error("immutable_tile_map::update must be called with a map of the same size and width");
@@ -217,6 +224,8 @@ namespace hades
 		}
 
 		_tiles = map;
+		_apply();
+		return;
 	}
 
 	void mutable_tile_map::place_tile(const std::vector<tile_position> &positions, const resources::tile &t)
@@ -238,6 +247,9 @@ namespace hades
 
 			_update_tile(p, t);
 		}
+
+		_apply();
+		return;
 	}
 
 	tile_map mutable_tile_map::get_map() const
@@ -245,111 +257,141 @@ namespace hades
 		return _tiles;
 	}
 
+	void mutable_tile_map::_apply()
+	{
+		// apply the quad buffers
+		const auto count = size(texture_layers);
+		assert(count == size(_dirty_buffers));
+
+		for (auto i = std::size_t{}; i < count; ++i)
+		{
+			if (_dirty_buffers[i])
+				texture_layers[i].quads.apply();
+		}
+
+		// clear all the dirty bits
+		std::fill_n(begin(_dirty_buffers), count, false);
+		return;
+	}
+
 	void mutable_tile_map::_update_tile(const tile_position p, const resources::tile &t)
 	{
-		//find the array to place it in
-		texture_layer *layer = nullptr;
+		constexpr auto bad_index = std::numeric_limits<std::size_t>::max();
+		auto layer_index = bad_index;
+		auto layer_count = size(texture_layers);
 
 		if (t.texture)
 		{
-			for (auto &a : texture_layers)
+			for (auto i = std::size_t{}; i < layer_count; ++i)
 			{
-				if (a.texture == t.texture)
+				if (texture_layers[i].texture == t.texture)
 				{
-					layer = &a;
+					layer_index = i;
 					break;
 				}
 			}
 
 			//create a new vertex array if needed
-			if (!layer)
+			if (layer_index == bad_index)
 			{
-				layer = &texture_layers.emplace_back(
+				layer_index = size(texture_layers);
+
+				texture_layers.emplace_back(
 					texture_layer{ t.texture, { vertex_usage } }
 				);
+				_dirty_buffers.emplace_back(true);
+
+				layer_count = layer_index + 1;
 			}
 		}
 
 		//find the location of the current tile
-		texture_layer *current_layer = nullptr;
+		auto current_layer = bad_index;
+		auto quad_index = bad_index;
 
 		const auto tile_size = resources::get_tile_size();
 		const auto pixel_pos = to_pixels(p, tile_size);
 		
-		for (auto &l : texture_layers)
+		for (auto i = std::size_t{}; i < layer_count; ++i)
 		{
+			auto& l = texture_layers[i];
 			const auto buffer_size = std::size(l.quads);
-			for (auto i = std::size_t{}; i < buffer_size; ++i)
+			for (auto j = std::size_t{}; j < buffer_size; ++j)
 			{
-				const auto vertex = l.quads.get_quad(i);
+				const sf::Vertex vertex = l.quads.get_quad(j)[0];
 				const auto pos = vector_int{
-					integral_cast<vector_int::value_type>(vertex[i].position.x),
-					integral_cast<vector_int::value_type>(vertex[i].position.y)
+					integral_cast<vector_int::value_type>(vertex.position.x),
+					integral_cast<vector_int::value_type>(vertex.position.y)
 				};
 
 				if (pos == pixel_pos)
 				{
-					//if the arrays are the same, then replace the quad
-					//otherwise remove the quad from the old array and insert into the new one
-					if (layer == current_layer)
-					{
-						if (layer) // IF !LAYER, then both layers are null, just skip
-							_replace_tile(*layer, i, pixel_pos, tile_size, t);
-					}
-					else if (current_layer)
-					{
-						_remove_tile(*current_layer, i);
-						if (layer)//only write into a new layer if we have one
-							_add_tile(*layer, pixel_pos, tile_size, t);
-						else
-						{
-							//remove layer if its empty
-							if (std::size(current_layer->quads) == 0)
-								_remove_layer(current_layer->texture);
-						}
-					}
-					else // tile isn't currently in an array, just add the tile
-					{
-						_add_tile(*layer, pixel_pos, tile_size, t);
-					}
-
-					return;
+					current_layer = i;
+					quad_index = j;
 				}
-			} // !for (auto i)
-		} // !for(auto &l)
-	}
+			}
+		}
+		
+		//if the arrays are the same, then replace the quad
+		//otherwise remove the quad from the old array and insert into the new one
+		if (layer_index == current_layer)
+		{
+			if (quad_index != bad_index) // IF !LAYER, then both layers are null, just skip
+				_replace_tile(layer_index, quad_index, pixel_pos, tile_size, t);
+		}
+		else if (current_layer != bad_index)
+		{
+			_remove_tile(current_layer, quad_index);
+			if (layer_index != bad_index) //only write into a new layer if we have one
+				_add_tile(layer_index, pixel_pos, tile_size, t);
+			else
+			{
+				// remove layer if its empty
+				if (std::size(texture_layers[current_layer].quads) == 0)
+					_remove_layer(current_layer);
+			}
+		}
+		else // tile isn't currently in an array, just add the tile
+		{
+			_add_tile(layer_index, pixel_pos, tile_size, t);
+		}
 
-	void mutable_tile_map::_remove_tile(texture_layer &l, const std::size_t pos)
-	{
-		l.quads.swap(pos, std::size(l.quads));
-		l.quads.pop_back();
 		return;
 	}
 
-	void mutable_tile_map::_remove_layer(const resources::texture *t)
+	void mutable_tile_map::_remove_tile(const std::size_t i, const std::size_t pos)
 	{
-		assert(t);
-		const auto iter = std::find_if(std::begin(texture_layers),
-			std::end(texture_layers), [t](auto &layer) {
-			return t == layer.texture;
-		});
-
-		texture_layers.erase(iter);
+		auto& l = texture_layers[i];
+		l.quads.swap(pos, std::size(l.quads) - 1);
+		l.quads.pop_back();
+		_dirty_buffers[i] = true;
+		return;
 	}
 
-	void mutable_tile_map::_replace_tile(texture_layer &l, const std::size_t i,
+	void mutable_tile_map::_remove_layer(const std::size_t layer)
+	{
+		const auto iter = std::next(begin(texture_layers), layer);
+		texture_layers.erase(iter);
+		const auto iter2 = std::next(begin(_dirty_buffers), layer);
+		_dirty_buffers.erase(iter2);
+		return;
+	}
+
+	void mutable_tile_map::_replace_tile(const std::size_t layer, const std::size_t i,
 		const tile_position pos, const resources::tile_size_t tile_size, const resources::tile &t)
 	{
-		_remove_tile(l, i);
-		_add_tile(l, pos, tile_size, t);
+		_remove_tile(layer, i);
+		_add_tile(layer, pos, tile_size, t);
 	}
 
-	void mutable_tile_map::_add_tile(texture_layer &l, const tile_position pos, 
+	void mutable_tile_map::_add_tile(const std::size_t i, const tile_position pixel_pos,
 		const resources::tile_size_t tile_size, const resources::tile &t)
 	{
+		auto& l = texture_layers[i];
+
 		const auto quad_rect = rect_float{
-			float_cast(pos.x * tile_size),
-			float_cast(pos.y * tile_size),
+			float_cast(pixel_pos.x),
+			float_cast(pixel_pos.y),
 			float_cast(tile_size),
 			float_cast(tile_size)
 		};
@@ -362,5 +404,7 @@ namespace hades
 		};
 
 		l.quads.append(make_quad_animation(quad_rect, tex_rect));
+		_dirty_buffers[i] = true;
+		return;
 	}
 }

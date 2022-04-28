@@ -449,6 +449,11 @@ namespace hades
 		return get_size(t.tile_layer);
 	}
 
+	tile_position get_vertex_size(const terrain_map& t)
+	{
+		return get_size(t.tile_layer) + tile_position{1, 1};
+	}
+
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p) noexcept
 	{
 		if (p.x < 0 ||
@@ -464,7 +469,7 @@ namespace hades
 
 	bool within_map(const terrain_map &m, terrain_vertex_position p)
 	{
-		const auto s = get_size(m);
+		const auto s = get_vertex_size(m);
 		return within_map(s, p);
 	}
 
@@ -544,7 +549,7 @@ namespace hades
 
 	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
 	{
-		const auto old_size = get_size(m) + tile_position{ 1, 1 };
+		const auto old_size = get_vertex_size(m);
 		//resize tile layer
 		resize_map(m.tile_layer, s, o);
 
@@ -677,7 +682,7 @@ namespace hades
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map &m, const std::vector<terrain_vertex_position> &positions, const resources::terrain *t)
 	{
-		const auto s = get_size(m);
+		const auto s = get_vertex_size(m);
 		for (const auto p : positions)
 			if (within_map(s, p))
 				place_terrain_internal(m, p, t);

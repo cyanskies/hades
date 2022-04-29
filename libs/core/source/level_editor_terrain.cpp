@@ -378,6 +378,7 @@ namespace hades
 		{
 			if (g.window_begin(editor::gui_names::resize_level))
 			{
+				// TODO:
 				g.text("terrain stuff");
 			}
 

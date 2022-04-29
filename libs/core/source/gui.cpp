@@ -17,8 +17,15 @@
 
 namespace hades
 {
-	gui::gui()
+	
+	static void setup_keys();
+
+	static std::once_flag setup_keys_flag;
+
+	gui::gui()	
 	{
+		std::call_once(setup_keys_flag, setup_keys);
+
 		if (!_font_atlas)
 			_font_atlas = std::make_unique<ImFontAtlas>();
 		assert(_font_atlas);
@@ -32,32 +39,13 @@ namespace hades
 
 		auto &io = ImGui::GetIO();
 
-		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
-		io.BackendRendererName = "hades SFML";
 
-		// init keyboard mapping
-		io.KeyMap[ImGuiKey_Tab] = sf::Keyboard::Tab;
-		io.KeyMap[ImGuiKey_LeftArrow] = sf::Keyboard::Left;
-		io.KeyMap[ImGuiKey_RightArrow] = sf::Keyboard::Right;
-		io.KeyMap[ImGuiKey_UpArrow] = sf::Keyboard::Up;
-		io.KeyMap[ImGuiKey_DownArrow] = sf::Keyboard::Down;
-		io.KeyMap[ImGuiKey_PageUp] = sf::Keyboard::PageUp;
-		io.KeyMap[ImGuiKey_PageDown] = sf::Keyboard::PageDown;
-		io.KeyMap[ImGuiKey_Home] = sf::Keyboard::Home;
-		io.KeyMap[ImGuiKey_End] = sf::Keyboard::End;
-		io.KeyMap[ImGuiKey_Insert] = sf::Keyboard::Insert;
-		//see sfml_imgui for android bindings
-		io.KeyMap[ImGuiKey_Delete] = sf::Keyboard::Delete;
-		io.KeyMap[ImGuiKey_Backspace] = sf::Keyboard::BackSpace;
-		io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Space;
-		io.KeyMap[ImGuiKey_Enter] = sf::Keyboard::Return;
-		io.KeyMap[ImGuiKey_Escape] = sf::Keyboard::Escape;
-		io.KeyMap[ImGuiKey_A] = sf::Keyboard::A;
-		io.KeyMap[ImGuiKey_C] = sf::Keyboard::C;
-		io.KeyMap[ImGuiKey_V] = sf::Keyboard::V;
-		io.KeyMap[ImGuiKey_X] = sf::Keyboard::X;
-		io.KeyMap[ImGuiKey_Y] = sf::Keyboard::Y;
-		io.KeyMap[ImGuiKey_Z] = sf::Keyboard::Z;
+		// TODO: ImGuiBackendFlags_HasMouseCursors
+		//			_SetCursorPos
+		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
+		io.BackendRendererName = "hades_SFML";
+		
+		// TODO: clipboard support
 
 		set_display_size({ 1.f, 1.f });
 
@@ -83,6 +71,44 @@ namespace hades
 		_main_toolbar_info.width = size.x;
 	}
 
+	static std::array<ImGuiKey, sf::Keyboard::KeyCount> sf_key_table;
+	static_assert(sf::Keyboard::KeyCount == 101);
+	static_assert(ImGuiKey_COUNT == 645);
+
+	static void setup_keys()
+	{
+		sf_key_table.fill(ImGuiKey_COUNT);
+
+		sf_key_table[sf::Keyboard::Tab] = ImGuiKey_Tab;
+		sf_key_table[sf::Keyboard::Left] = ImGuiKey_LeftArrow;
+		sf_key_table[sf::Keyboard::Right] = ImGuiKey_RightArrow;
+		sf_key_table[sf::Keyboard::Up] = ImGuiKey_UpArrow;
+		sf_key_table[sf::Keyboard::Down] = ImGuiKey_DownArrow;
+		sf_key_table[sf::Keyboard::PageUp] = ImGuiKey_PageUp;
+		sf_key_table[sf::Keyboard::PageDown] = ImGuiKey_PageDown;
+		sf_key_table[sf::Keyboard::Home] = ImGuiKey_Home;
+		sf_key_table[sf::Keyboard::End] = ImGuiKey_End;
+		sf_key_table[sf::Keyboard::Insert] = ImGuiKey_Insert;
+		//see sfml_imgui for android bindings
+		sf_key_table[sf::Keyboard::Delete] = ImGuiKey_Delete;
+		sf_key_table[sf::Keyboard::BackSpace] = ImGuiKey_Backspace;
+		sf_key_table[sf::Keyboard::Space] = ImGuiKey_Space;
+		sf_key_table[sf::Keyboard::Enter] = ImGuiKey_Enter;
+		sf_key_table[sf::Keyboard::Escape] = ImGuiKey_Escape;
+		sf_key_table[sf::Keyboard::A] = ImGuiKey_A;
+		sf_key_table[sf::Keyboard::C] = ImGuiKey_C;
+		sf_key_table[sf::Keyboard::V] = ImGuiKey_V;
+		sf_key_table[sf::Keyboard::X] = ImGuiKey_X;
+		sf_key_table[sf::Keyboard::Y] = ImGuiKey_Y;
+		sf_key_table[sf::Keyboard::Z] = ImGuiKey_Z;
+		return;
+	}
+
+	static ImGuiKey to_imgui_key(sf::Keyboard::Key k)
+	{
+		return sf_key_table[integer_cast<std::size_t>(enum_type(k))];
+	}
+
 	bool gui::handle_event(const sf::Event &e)
 	{
 		_active_assert();
@@ -95,26 +121,31 @@ namespace hades
 			io.AddFocusEvent(false);
 			return false;
 		case sf::Event::MouseMoved:
-			io.MousePos = { static_cast<float>(e.mouseMove.x), 
-							static_cast<float>(e.mouseMove.y) };
+			io.AddMousePosEvent(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
 			return false; // TODO: maybe return io.WantCaptureMouse;
 		case sf::Event::MouseButtonPressed:
-			io.MouseDown[e.mouseButton.button] = true;
-			return io.WantCaptureMouse;
+			[[fallthrough]];
 		case sf::Event::MouseButtonReleased:
-			io.MouseDown[e.mouseButton.button] = false;
+			io.AddMouseButtonEvent(e.mouseButton.button, e.type == sf::Event::MouseButtonPressed);
 			return io.WantCaptureMouse;
 		case sf::Event::MouseWheelMoved:
-			io.MouseWheel += static_cast<float>(e.mouseWheel.delta);
+			io.AddMouseWheelEvent(static_cast<float>(e.mouseWheel.delta), {});
 			return io.WantCaptureMouse;
 		case sf::Event::KeyPressed:
 			[[fallthrough]];
 		case sf::Event::KeyReleased:
-			io.KeysDown[e.key.code] = (e.type == sf::Event::KeyPressed);
-			io.KeyCtrl = e.key.control;
-			io.KeyShift = e.key.shift;
-			io.KeyAlt = e.key.alt;
+		{
+			const auto k = to_imgui_key(e.key.code);
+			if (k != ImGuiKey_COUNT)
+			{
+				io.AddKeyEvent(k, e.type == sf::Event::KeyPressed);
+				io.AddKeyEvent(ImGuiKey_ModCtrl, e.key.control);
+				io.AddKeyEvent(ImGuiKey_ModShift, e.key.shift);
+				io.AddKeyEvent(ImGuiKey_ModAlt, e.key.alt);
+				io.AddKeyEvent(ImGuiKey_ModSuper, e.key.system);
+			}
 			return io.WantCaptureKeyboard;
+		}
 		case sf::Event::TextEntered:
 			if (e.text.unicode > 0 && e.text.unicode < 0x10000) {
 				const auto str = sf::String{ e.text.unicode };
@@ -912,6 +943,25 @@ namespace hades
 			{vert.uv.x * tex_size.x, vert.uv.y * tex_size.y} };
 	}
 
+	namespace
+	{
+		class vector_drawable : public sf::Drawable
+		{
+		public:
+			vector_drawable(std::vector<sf::Vertex>& v, sf::PrimitiveType p) noexcept
+				: _vect{ v }, _prim{ p } {}
+
+			void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+			{
+				target.draw(_vect.data(), size(_vect), _prim, states);
+				return;
+			}
+		private:
+			const std::vector<sf::Vertex>& _vect;
+			const sf::PrimitiveType _prim;
+		};
+	}
+
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
 	// this is done through the draw_clamp_window helper
 	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
@@ -930,9 +980,11 @@ namespace hades
 		const auto& view = target.getView();
 		const auto view_height = view.getSize().y;
 
+		auto vertex_array = std::vector<sf::Vertex>{};
+
 		//for each entry in the draw list
-		std::for_each(first, last, [&target, states, view_height](ImDrawList *draw_list) {
-			const auto *index_first = draw_list->IdxBuffer.Data;
+		std::for_each(first, last, [&target, &vertex_array, draw_data, states, view_height](ImDrawList *draw_list) {
+			const auto index_first = draw_list->IdxBuffer.Data;
 
 			//for each command
 			for (const auto& cmd : draw_list->CmdBuffer)
@@ -952,33 +1004,41 @@ namespace hades
 
 					//get the verts from the draw list that are associated with
 					//this command
-					sf::VertexArray verts{ sf::Triangles, cmd.ElemCount };
-					const auto *i = index_first;
-					for (decltype(ImDrawCmd::ElemCount) j = 0; j < cmd.ElemCount; ++j)
-						verts[j] = to_vertex(draw_list->VtxBuffer[*(i++)], texture_size);
-					
+					vertex_array.clear();
+					vertex_array.reserve(cmd.ElemCount);
+					const auto index_begin = std::next(index_first, cmd.IdxOffset);
+					const auto index_end = std::next(index_begin, cmd.ElemCount);
+					std::transform(index_begin, index_end, back_inserter(vertex_array), 
+						[&](const auto index) {
+						return to_vertex(draw_list->VtxBuffer[index], texture_size);
+						}
+					);
+
 					auto state = states;
 
 					//draw with texture
 					if (cmd.TextureId)
 					{
-						const auto texture = static_cast<const resources::texture*>(cmd.GetTexID());
+						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
 						state.texture = &tex::get_sf_texture(texture);
 					}
 
-					const auto clip_region = rect_int{ static_cast<int32>(cmd.ClipRect.x),
-						static_cast<int32>(view_height - cmd.ClipRect.w),
-						static_cast<int32>(cmd.ClipRect.z - cmd.ClipRect.x),
-						static_cast<int32>(cmd.ClipRect.w - cmd.ClipRect.y) };
+					/*const auto clip_region = rect_float{ cmd.ClipRect.x,
+						view_height - cmd.ClipRect.w,
+						cmd.ClipRect.z - cmd.ClipRect.x,
+						cmd.ClipRect.w - cmd.ClipRect.y };
+						*/
 
-					//FIXME: should probably be draw_clamp_region; though people are unlikely to move the gui view around
-					target.draw(draw_clamp_window{ verts, clip_region }, state);
-				}
+					const auto x = cmd.ClipRect.x - draw_data->DisplayPos.x;
+					const auto y = cmd.ClipRect.y - draw_data->DisplayPos.y;
+					const auto clip_region = rect_float{ x, y,
+						cmd.ClipRect.z - x,
+						cmd.ClipRect.w - y };
 
-				//move the index ptr forward for the next command
-				index_first += cmd.ElemCount;
-			}
+					target.draw(draw_clamp_region{ vector_drawable{ vertex_array, sf::PrimitiveType::Triangles }, clip_region }, state);
+				} //! else no usr callback
+			} // !for each cmd
 		});
 	}
 

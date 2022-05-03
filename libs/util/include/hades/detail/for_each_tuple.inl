@@ -50,7 +50,8 @@ namespace hades::detail
 	template<typename Tuple, typename Func, typename... Args, std::size_t ...Index>
 	constexpr bool for_index_is_noexcept(std::index_sequence<Index...>)
 	{
-		return (std::is_nothrow_invocable_v<Func, std::tuple_element_t<Index, Tuple>, Tuple, Args...> && ...);
+		return ((!std::is_invocable_v<Func, std::tuple_element_t<Index, Tuple>, Tuple, Args...> ||
+			std::is_nothrow_invocable_v<Func, std::tuple_element_t<Index, Tuple>, Tuple, Args...>) && ...);
 	}
 
 	// only calls the function for the correct index

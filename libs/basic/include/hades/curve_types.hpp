@@ -98,6 +98,8 @@ namespace hades::curve_types
 		collection_time_d
 	>;
 
+	inline const auto type_pack_instance = type_pack{};
+
 	static_assert(std::tuple_size_v<type_pack> == hades::enum_type(curve_variable_type::end),
 		"all curve variable types must be represented in the type_pack");
 

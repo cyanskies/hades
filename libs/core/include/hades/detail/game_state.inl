@@ -240,44 +240,12 @@ namespace hades::state_api
 		template<template<typename> typename CurveType, typename Func>
 		void call_with_curve_type(curve_variable_type curve_info, Func& f)
 		{
-			using v = curve_variable_type;
-			using namespace curve_types;
-			switch (curve_info)
-			{
-			case v::int_t:
-				return do_call_with_curve_type<CurveType, int_t>(f);
-			case v::float_t:
-				return do_call_with_curve_type<CurveType, float_t>(f);
-			case v::vec2_float:
-				return do_call_with_curve_type<CurveType, vec2_float>(f);
-			case v::bool_t:
-				return do_call_with_curve_type<CurveType, bool_t>(f);
-			case v::string:
-				return do_call_with_curve_type<CurveType, curve_types::string>(f);
-			case v::object_ref:
-				return do_call_with_curve_type<CurveType, curve_types::object_ref>(f);
-			case v::unique:
-				return do_call_with_curve_type<CurveType, unique>(f);
-			case v::colour:
-				return do_call_with_curve_type<CurveType, colour>(f);
-			case v::time_d:
-				return do_call_with_curve_type<CurveType, time_d>(f);
-			case v::collection_int:
-				return do_call_with_curve_type<CurveType, collection_int>(f);
-			case v::collection_float:
-				return do_call_with_curve_type<CurveType, collection_float>(f);
-			case v::collection_object_ref:
-				return do_call_with_curve_type<CurveType, collection_object_ref>(f);
-			case v::collection_unique:
-				return do_call_with_curve_type<CurveType, collection_unique>(f);			
-			case v::collection_colour:
-				return do_call_with_curve_type<CurveType, collection_colour>(f);
-			case v::collection_time_d:
-				return do_call_with_curve_type<CurveType, collection_time_d>(f);
-			case v::error:
-				;
-			}
-			throw logic_error{ "invalid curve variable type" };
+			// NOTE: use for_index_tuple to get the type for this enum value
+			// only do this for the type pack, it's so large that writing out the switch is undesired
+			// this generates the same code as the switch would have
+			for_index_tuple(curve_types::type_pack_instance, integer_cast<std::size_t>(enum_type(curve_info)), [&f](const auto& type) {
+				return do_call_with_curve_type<CurveType, std::decay_t<decltype(type)>>(f);
+				});
 		}
 
 		template<typename Func>
@@ -316,7 +284,7 @@ namespace hades::state_api
 				return;
 			}
 
-			//copy_curve
+			// copy_curve
 			// copies the param at the current time point to the object
 			template<typename T>
 			void copy_curve(unique_id id, const const_curve<T>& c)
@@ -328,7 +296,7 @@ namespace hades::state_api
 				return;
 			}
 
-			//func for linear and step curves
+			// func for linear and step curves
 			template<template<typename> typename CurveType, typename T,
 				std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>>
 				|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
@@ -566,8 +534,14 @@ namespace hades::state_api
 	}
 
 	template<template<typename> typename CurveType, typename T>
+	const CurveType<T>* get_object_property_ptr(const game_obj& o, variable_id v) noexcept
+	{
+		return detail::get_object_property_ptr<const CurveType, T>(o, v);
+	}
+
+	template<template<typename> typename CurveType, typename T>
 	CurveType<T>* get_object_property_ptr(game_obj& o, variable_id v) noexcept
 	{
-		return detail::get_object_property_ptr<T>(o, v);
+		return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}
 }

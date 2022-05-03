@@ -282,6 +282,7 @@ namespace hades
 		template<typename GameSystem>
 		void erase_object(game_obj&, game_state&, extra_state<GameSystem>&);
 		void name_object(string, object_ref, time_point, game_state&);
+		string get_name(object_ref, time_point, const game_state&);
 		template<typename GameSystem>
 		object_ref get_object_ref(std::string_view, time_point, game_state&, extra_state<GameSystem>&) noexcept;
 		// can throw object_stale_error
@@ -304,6 +305,8 @@ namespace hades
 		const CurveType<T>& get_object_property_ref(const game_obj&, variable_id);
 		template<template<typename> typename CurveType, typename T>
 		CurveType<T>& get_object_property_ref(game_obj&, variable_id);
+		template<template<typename> typename CurveType, typename T>
+		const CurveType<T>* get_object_property_ptr(const game_obj&, variable_id) noexcept;
 		template<template<typename> typename CurveType, typename T>
 		CurveType<T>* get_object_property_ptr(game_obj&, variable_id) noexcept;
 	}

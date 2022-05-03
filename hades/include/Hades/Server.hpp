@@ -46,6 +46,8 @@ namespace hades
 		virtual void send_request(unique_id, std::vector<action>) = 0;
 
 		virtual common_interface* get_interface() noexcept = 0;
+		// returns nullptr if this the game_interface is not available
+		virtual game_interface* try_get_game_interface() noexcept = 0;
 
 		//current level time
 		//virtual time_point get_level_time() = 0;

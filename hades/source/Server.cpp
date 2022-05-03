@@ -71,6 +71,11 @@ namespace hades
 			return &_game;
 		}
 
+		game_interface* try_get_game_interface() noexcept override
+		{
+			return &_game;
+		}
+
 	private:
 		game_implementation _game;
 		

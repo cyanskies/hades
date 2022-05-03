@@ -96,6 +96,17 @@ namespace hades::state_api
 		return;
 	}
 
+	string get_name(const object_ref o, const time_point t, const game_state& s)
+	{
+		for (const auto &[name, objects] : s.names)
+		{
+			if (objects.get(t) == o)
+				return name;
+		}
+
+		return {};
+	}
+
 	bool is_object_stale(object_ref& o) noexcept
 	{
 		const auto stale = !(o.ptr && o.ptr->id != bad_entity

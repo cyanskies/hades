@@ -55,6 +55,7 @@ namespace hades
 
 			//registers a function with the provided name, if replace = true, then any function with the same name will be replaced with this one
 			// note: this should not overwrite properties with the same name
+			// if silent = true, then use of the function will not be added to the console log(but the functions output may still be logged)
 			virtual bool add_function(std::string_view, function func, bool replace, bool silent = false) = 0;
 			virtual bool add_function(std::string_view, function_no_argument func, bool replace, bool silent = false) = 0;
 			//removes a function with the provided name

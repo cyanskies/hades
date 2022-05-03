@@ -58,11 +58,7 @@ namespace hades::debug
 		if (state_api::is_object_stale(_object) && _game)
 			state_api::get_object_ptr(_object, g->get_extras());
 
-		if (!state_api::is_object_stale(_object))
-		{
-			_object.ptr = nullptr;
-		}
-		else
+		if (state_api::is_object_stale(_object))
 			_object.ptr = nullptr;
 	}
 

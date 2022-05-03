@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 
 #include "hades/colour.hpp"
 #include "hades/vector_math.hpp"
@@ -28,7 +29,7 @@ namespace hades
 		void set_colour(colour);
 		void set_all(grid_properties);
 
-		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
+		void draw(sf::RenderTarget&, const sf::RenderStates& = sf::RenderStates{}) const override;
 
 	private:
 		grid_properties _properties;

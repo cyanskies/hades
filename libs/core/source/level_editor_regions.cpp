@@ -29,14 +29,14 @@ namespace hades
 		for (const auto &r : l.regions)
 		{
 			auto shape = sf::RectangleShape{};
-			shape.setPosition(r.bounds.x, r.bounds.y);
+			shape.setPosition({ r.bounds.x, r.bounds.y });
 			shape.setSize({ r.bounds.width, r.bounds.height });
 			shape.setFillColor({ r.colour.r, r.colour.g, r.colour.b, r.colour.a });
 
 			auto text = sf::Text{};
 			text.setString(r.name);
 			text.setCharacterSize(char_size);
-			text.setPosition(r.bounds.x, r.bounds.y);
+			text.setPosition({ r.bounds.x, r.bounds.y });
 			text.setFont(_font->value);
 
 			_regions.emplace_back(region{ shape, text });
@@ -150,7 +150,7 @@ namespace hades
 					auto pos = std::array{ position.x, position.y };
 					if (g.input("position"sv, pos))
 					{
-						region.shape.setPosition(pos[0], pos[1]);
+						region.shape.setPosition({ pos[0], pos[1] });
 						_on_selected(_edit.selected);
 					}
 
@@ -220,57 +220,57 @@ namespace hades
 		const auto size_offset = length / 2.f;
 		
 		//top_middle
-		l.setPosition(area.x + half_width - size_offset, top_y);
+		l.setPosition({ area.x + half_width - size_offset, top_y });
 		rects[static_cast<T>(line_index::top_middle)] = l;
 
 		//bottom_middle
 		const auto bottom_y = area.y + area.height;
-		l.setPosition(area.x + half_width - size_offset, bottom_y);
+		l.setPosition({ area.x + half_width - size_offset, bottom_y });
 		rects[static_cast<T>(line_index::bottom_middle)] = l;
 
 		//top_left
 		const auto corner_hori_length = length + thickness;
 		l.setSize({ corner_hori_length, thickness });
-		l.setPosition(area.x - thickness, top_y);
+		l.setPosition({ area.x - thickness, top_y });
 		rects[static_cast<T>(line_index::top_left)] = l;
 
 		//bottom_left
-		l.setPosition(area.x - thickness, bottom_y);
+		l.setPosition({ area.x - thickness, bottom_y });
 		rects[static_cast<T>(line_index::bottom_left)] = l;
 
 		//top_right
-		l.setPosition(area.x + area.width - length, top_y);
+		l.setPosition({ area.x + area.width - length, top_y });
 		rects[static_cast<T>(line_index::top_right)] = l;
 
 		//bottom_right
-		l.setPosition(area.x + area.width - length, bottom_y);
+		l.setPosition({ area.x + area.width - length, bottom_y });
 		rects[static_cast<T>(line_index::bottom_right)] = l;
 
 		//right_top
 		const auto right_x = area.x + area.width;
 		l.setSize({ thickness, length });
-		l.setPosition(right_x, area.y);
+		l.setPosition({ right_x, area.y });
 		rects[static_cast<T>(line_index::right_top)] = l;
 
 		//right_middle
-		l.setPosition(right_x, area.y + half_height - size_offset);
+		l.setPosition({ right_x, area.y + half_height - size_offset });
 		rects[static_cast<T>(line_index::right_middle)] = l;
 
 		//left_middle
 		const auto left_x = area.x - thickness;
-		l.setPosition(left_x, area.y + half_height - size_offset);
+		l.setPosition({ left_x, area.y + half_height - size_offset });
 		rects[static_cast<T>(line_index::left_middle)] = l;
 
 		//right_bottom
-		l.setPosition(right_x, area.y + area.height - length);
+		l.setPosition({ right_x, area.y + area.height - length });
 		rects[static_cast<T>(line_index::right_bottom)] = l;
 
 		//left_top
-		l.setPosition(left_x, area.y);
+		l.setPosition({ left_x, area.y });
 		rects[static_cast<T>(line_index::left_top)] = l;
 
 		//left_bottom
-		l.setPosition(left_x, area.y + area.height - length);
+		l.setPosition({ left_x, area.y + area.height - length });
 		rects[static_cast<T>(line_index::left_bottom)] = l;
 	}
 
@@ -316,7 +316,7 @@ namespace hades
 			const auto r_size = _regions.size();
 			auto &r = _regions.emplace_back();
 
-			r.shape.setPosition(pos.x,pos.y);
+			r.shape.setPosition({ pos.x,pos.y });
 			const auto size = _region_min_size->load();
 			r.shape.setSize({ size, size });
 
@@ -327,7 +327,7 @@ namespace hades
 			r.name.setFont(_font->value);
 			r.name.setCharacterSize(char_size);
 			r.name.setString("Region"s + to_string(++_new_region_name_counter));
-			r.name.setPosition(pos.x, pos.y);
+			r.name.setPosition({ pos.x, pos.y });
 
 			_on_selected(r_size);
 
@@ -469,8 +469,8 @@ namespace hades
 			};
 
 			const auto final_bounds = clamp_rect(target_bounds, clamp_area);
-			_regions[_edit.selected].shape.setPosition(final_bounds.x, final_bounds.y);
-			_regions[_edit.selected].name.setPosition(final_bounds.x, final_bounds.y);
+			_regions[_edit.selected].shape.setPosition({ final_bounds.x, final_bounds.y });
+			_regions[_edit.selected].name.setPosition({ final_bounds.x, final_bounds.y });
 
 			_on_selected(_edit.selected);
 		}
@@ -558,9 +558,9 @@ namespace hades
 			width = x2 - x;
 			height = y2 - y;
 
-			r.setPosition(x, y);
+			r.setPosition({ x, y });
 			r.setSize({ width, height });
-			_regions[_edit.selected].name.setPosition(x, y);
+			_regions[_edit.selected].name.setPosition({ x, y });
 
 			_on_selected(_edit.selected);
 		}

@@ -91,7 +91,7 @@ namespace hades
 		sf_key_table[sf::Keyboard::Insert] = ImGuiKey_Insert;
 		//see sfml_imgui for android bindings
 		sf_key_table[sf::Keyboard::Delete] = ImGuiKey_Delete;
-		sf_key_table[sf::Keyboard::BackSpace] = ImGuiKey_Backspace;
+		sf_key_table[sf::Keyboard::Backspace] = ImGuiKey_Backspace;
 		sf_key_table[sf::Keyboard::Space] = ImGuiKey_Space;
 		sf_key_table[sf::Keyboard::Enter] = ImGuiKey_Enter;
 		sf_key_table[sf::Keyboard::Escape] = ImGuiKey_Escape;
@@ -128,8 +128,8 @@ namespace hades
 		case sf::Event::MouseButtonReleased:
 			io.AddMouseButtonEvent(e.mouseButton.button, e.type == sf::Event::MouseButtonPressed);
 			return io.WantCaptureMouse;
-		case sf::Event::MouseWheelMoved:
-			io.AddMouseWheelEvent(static_cast<float>(e.mouseWheel.delta), {});
+		case sf::Event::MouseWheelScrolled:
+			io.AddMouseWheelEvent(static_cast<float>(e.mouseWheelScroll.delta), {});
 			return io.WantCaptureMouse;
 		case sf::Event::KeyPressed:
 			[[fallthrough]];
@@ -951,7 +951,7 @@ namespace hades
 			vector_drawable(std::vector<sf::Vertex>& v, sf::PrimitiveType p) noexcept
 				: _vect{ v }, _prim{ p } {}
 
-			void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+			void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override
 			{
 				target.draw(_vect.data(), size(_vect), _prim, states);
 				return;
@@ -964,7 +964,7 @@ namespace hades
 
 	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
 	// this is done through the draw_clamp_window helper
-	void gui::draw(sf::RenderTarget & target, sf::RenderStates states) const
+	void gui::draw(sf::RenderTarget & target, const sf::RenderStates &states) const
 	{
 		namespace tex = resources::texture_functions;
 		// TODO: to reduce errors, it might be best to simply activate our context

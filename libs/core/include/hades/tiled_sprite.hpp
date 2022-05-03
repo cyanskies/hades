@@ -2,6 +2,7 @@
 #define HADES_TILED_SPRITE_HPP
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Transformable.hpp"
 
 #include "hades/timers.hpp"
@@ -32,7 +33,7 @@ namespace hades
 		void set_size(vector_float, dont_regen_t) noexcept;
 		resources::animation_frame get_current_frame() const noexcept;
 
-		void draw(sf::RenderTarget&, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
 
 		static constexpr dont_regen_t dont_regen{};
 

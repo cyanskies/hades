@@ -55,7 +55,7 @@ namespace hades
 	bool in_window(sf::Vector2i pos, const sf::Window &window)
 	{
 		auto size = window.getSize();
-		return sf::IntRect(0, 0, size.x, size.y).contains(pos);
+		return sf::IntRect{ {}, { integer_cast<int>(size.x), integer_cast<int>(size.y) } }.contains(pos);
 	}
 
 	interpreter_funcs mouse_pos(const sf::Window &window)
@@ -87,7 +87,7 @@ namespace hades
 
 			auto mpos = sf::Mouse::getPosition(window);
 			auto size = window.getSize();
-			a.active = sf::IntRect(0, 0, size.x, size.y).contains(mpos);
+			a.active = sf::IntRect{ {}, static_cast<sf::Vector2i>(size) }.contains(mpos);
 
 			const auto mouse_pos = vector::clamp(vector_t<int>{ mpos.x, mpos.y },
 				{ 0, 0 },

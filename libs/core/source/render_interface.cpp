@@ -195,7 +195,7 @@ namespace hades
 		_sprite_batch.apply();
 	}
 
-	void render_interface::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void render_interface::draw(sf::RenderTarget &t, const sf::RenderStates& state) const
 	{
 		//find the drawable* layers
 		auto layers = std::vector<sprite_utility::layer_t>{};
@@ -222,6 +222,8 @@ namespace hades
 
 		const auto s_size = std::size(sprite_layers),
 			o_size = std::size(layer_data);
+
+		auto s = state;
 
 		if (s_size == 0 && o_size == 0)
 			return; //nothing to draw

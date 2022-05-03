@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Texture.hpp"
 #include "SFML/Graphics/Vertex.hpp"
@@ -35,7 +36,7 @@ namespace hades
 		assert(!settings->error_tileset->tiles.empty());
 		const auto &error_tile = settings->error_tileset->tiles[0];
 		auto error_tex = tex_funcs::find_create_texture(d, tex_funcs::get_id(error_tile.texture), unique_id::zero);
-		sf::Image img{};
+		auto img = sf::Image{};
 		img.create(1u, 1u, sf::Color::Magenta);
 		auto& tex = tex_funcs::get_sf_texture(error_tex);
 		tex.loadFromImage(img);
@@ -58,8 +59,9 @@ namespace hades
 		create(map_data, sf::VertexBuffer::Usage::Static);
 	}
 
-	void immutable_tile_map::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	void immutable_tile_map::draw(sf::RenderTarget& target, const sf::RenderStates& s) const
 	{
+		auto states = s;
 		for (const auto &s : texture_layers)
 		{
 			states.texture = &tex_funcs::get_sf_texture(s.texture);

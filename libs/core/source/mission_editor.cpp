@@ -70,7 +70,7 @@ namespace hades
 		const auto fwidth = static_cast<float>(width->load());
 		const auto fheight = static_cast<float>(height->load());
 
-		_gui_view.reset({ 0.f, 0.f, fwidth, fheight });
+		_gui_view.reset({ {}, { fwidth, fheight } });
 		_gui.activate_context();
 		_gui.set_display_size({ fwidth, fheight });
 

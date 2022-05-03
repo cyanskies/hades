@@ -4,6 +4,7 @@
 #include <variant>
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/Graphics/VertexBuffer.hpp"
@@ -31,7 +32,7 @@ namespace hades
 		void set_usage(sf::VertexBuffer::Usage);
 		void set_verts(const std::vector<sf::Vertex>&);
 
-		void draw(sf::RenderTarget&, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
 
 	private:
 		struct vert_array
@@ -86,7 +87,7 @@ namespace hades
 		// good for static data
 		void shrink_to_fit();
 
-		void draw(sf::RenderTarget&, sf::RenderStates = sf::RenderStates{}) const override;
+		void draw(sf::RenderTarget&, const sf::RenderStates& = sf::RenderStates{}) const override;
 
 	private:
 		static constexpr auto _prim_type = sf::PrimitiveType::Triangles;

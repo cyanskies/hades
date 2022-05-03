@@ -7,6 +7,7 @@
 #include <string>
 
 #include "SFML/Window/Event.hpp"
+#include "SFML/Window/VideoMode.hpp"
 
 #include "hades/console_variables.hpp"
 #include "hades/core_resources.hpp"
@@ -107,7 +108,7 @@ namespace hades
 		float w, float h) noexcept
 	{
 		v.setSize(w, h);
-		v.setCenter(w / 2.f, h / 2.f);
+		v.setCenter({ w / 2.f, h / 2.f });
 		g.activate_context();
 		g.set_display_size({ w, h });
 		return;
@@ -122,7 +123,7 @@ namespace hades
 		//create a hidden window early to let us start making textures without
 		//creating GL errors
 		//this will be replaced with the proper window after the mods are loaded.
-		_window.create(sf::VideoMode(), "hades", sf::Style::None);
+		_window.create(sf::VideoMode{}, "hades", sf::Style::None);
 
 		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
@@ -441,7 +442,9 @@ namespace hades
 
 				const auto fullscreen = _console.getValue<bool>(cvars::video_fullscreen);
 
-				sf::VideoMode mode(width->load(), height->load(), depth->load());
+				const auto mode = sf::VideoMode{ integer_cast<unsigned int>(width->load()),
+					integer_cast<unsigned int>(height->load()),
+					integer_cast<unsigned int>(depth->load()) };
 
 				// if we're in fullscreen mode, then the videomode must be 'valid'
 				if (fullscreen->load() && !mode.isValid())

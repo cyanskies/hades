@@ -84,7 +84,7 @@ namespace hades
 		return;
 	}
 
-	void grid::draw(sf::RenderTarget &t, const sf::RenderStates s) const
+	void grid::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		t.draw(_quads, s);
 		return;

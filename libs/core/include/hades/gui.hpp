@@ -9,6 +9,7 @@
 
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Window/Event.hpp"
 
 #include "hades/rectangle_math.hpp"
@@ -573,7 +574,7 @@ namespace hades
 
 		//mouse utils(cursor and so on)
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates{}) const override;
+		void draw(sf::RenderTarget& target, const sf::RenderStates& states = sf::RenderStates{}) const override;
 
 		static constexpr std::string_view version() noexcept;
 

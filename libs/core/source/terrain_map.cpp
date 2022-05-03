@@ -27,7 +27,7 @@ namespace hades
 			_terrain_layers.emplace_back(l);
 	}
 
-	void immutable_terrain_map::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void immutable_terrain_map::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		for (auto iter = std::rbegin(_terrain_layers);
 			iter != std::rend(_terrain_layers); ++iter)
@@ -74,7 +74,7 @@ namespace hades
 			iter2->update(*iter);
 	}
 
-	void mutable_terrain_map::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void mutable_terrain_map::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		for (auto iter = std::rbegin(_terrain_layers);
 			iter != std::rend(_terrain_layers); ++iter)

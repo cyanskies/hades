@@ -103,7 +103,7 @@ namespace hades::detail
 		_new_level_options.height = _level->map_y;
 
 		_gui.activate_context();
-		_gui_view.reset({ 0.f, 0.f, _window_width, _window_height });
+		_gui_view.reset({ {}, { _window_width, _window_height } });
 
 		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_width, _window_height);
 		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });

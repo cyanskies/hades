@@ -1,6 +1,7 @@
 #ifndef HADES_SF_INPUT_HPP
 #define HADES_SF_INPUT_HPP
 
+#include "SFML/Window/Window.hpp"
 #include "SFML/Window/Event.hpp"
 
 #include "hades/input.hpp"

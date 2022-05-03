@@ -1,5 +1,6 @@
 #include "hades/draw_clamp.hpp"
 
+#include "SFML/System/Angle.hpp"
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
@@ -10,11 +11,11 @@
 
 namespace hades
 {
-	void draw_clamp_region::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void draw_clamp_region::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		const auto &view = t.getView();
 		//we can't clamp for rotated view
-		assert(view.getRotation() == 0.f);
+		assert(view.getRotation() == sf::degrees(0.f));
 
 		//move the region to account for the views position
 		const auto view_size = view.getSize();
@@ -42,7 +43,7 @@ namespace hades
 		glDisable(GL_SCISSOR_TEST);
 	}
 
-	void draw_clamp_window::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void draw_clamp_window::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		glEnable(GL_SCISSOR_TEST);
 		glScissor(static_cast<GLint>(_region.x),

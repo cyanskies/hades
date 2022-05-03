@@ -364,12 +364,13 @@ namespace hades::animation
 		const auto tex_h = f.h;
 
 		target.setTexture(resources::texture_functions::get_sf_texture(animation.tex));
-		target.setTextureRect({ 
-			static_cast<int>(tex_x),
-			static_cast<int>(tex_y),
-			static_cast<int>(tex_w),
-			static_cast<int>(tex_h)
-		});
+		target.setTextureRect({{
+				static_cast<int>(tex_x),
+				static_cast<int>(tex_y)
+			}, {
+				static_cast<int>(tex_w),
+				static_cast<int>(tex_h)
+			}});
 	
 		target.setOrigin({ f.off_x, f.off_y });
 		target.setScale({ f.scale_w, f.scale_h });

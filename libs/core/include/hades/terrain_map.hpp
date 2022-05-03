@@ -2,6 +2,7 @@
 #define HADES_TERRAIN_MAP_HPP
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 
 #include "hades/terrain.hpp"
 #include "hades/tile_map.hpp"
@@ -19,7 +20,7 @@ namespace hades
 
 		void create(const terrain_map&);
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
 
 		rect_float get_local_bounds() const noexcept;
 
@@ -38,7 +39,7 @@ namespace hades
 		void create(terrain_map);
 		void update(terrain_map);
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
 
 		rect_float get_local_bounds() const noexcept;
 

@@ -2,6 +2,7 @@
 #define HADES_BACKGROUND_HPP
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 
 #include "hades/colour.hpp"
@@ -66,7 +67,7 @@ namespace hades
 		void update(rect_float view) noexcept;
 		// throws: bad_alloc
 		void update(time_point, rect_float);
-		void draw(sf::RenderTarget&, sf::RenderStates) const override;
+		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
 
 	private:
 		sf::RectangleShape _backdrop;

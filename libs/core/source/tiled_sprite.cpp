@@ -51,11 +51,12 @@ namespace hades
 		return _frame;
 	}
 
-	void tiled_sprite::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void tiled_sprite::draw(sf::RenderTarget &t, const sf::RenderStates& state) const
 	{
 		assert(_animation);
 		const auto tex = resources::animation_functions::get_texture(*_animation);
 		assert(tex);
+		auto s = state;
 		s.texture = &resources::texture_functions::get_sf_texture(tex);
 		s.transform *= getTransform();
 

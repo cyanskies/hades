@@ -275,7 +275,7 @@ namespace hades
 		}
 	}
 
-	void background::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void background::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		t.draw(_backdrop, s);
 		for (const auto &l : _layers)

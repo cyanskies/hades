@@ -267,7 +267,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::draw(sf::RenderTarget& target, sf::RenderStates states) const
+	void sprite_batch::draw(sf::RenderTarget& target, const sf::RenderStates& states) const
 	{
 		const auto layer_data = get_layer_info_list();
 		for (const auto layer : layer_data)
@@ -276,7 +276,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::draw(sf::RenderTarget &t, sprite_utility::layer_t l, sf::RenderStates s) const
+	void sprite_batch::draw(sf::RenderTarget &t, sprite_utility::layer_t l, const sf::RenderStates& s) const
 	{
 		for (auto i = std::size_t{}; i < std::size(_sprites); ++i)
 		{

@@ -38,7 +38,7 @@ void gui_state::reinit()
 
 	_gui.set_display_size({ static_cast<float>(*x), static_cast<float>(*y) });
 
-	_view.reset({ 0.f, 0.f, static_cast<float>(*x), static_cast<float>(*y) });
+	_view.reset({ {}, {static_cast<float>(*x), static_cast<float>(*y)} });
 }
 
 void gui_state::pause()

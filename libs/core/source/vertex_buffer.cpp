@@ -84,7 +84,7 @@ namespace hades
 		}, _verts);
 	}
 
-	void vertex_buffer::draw(sf::RenderTarget &t, sf::RenderStates s) const
+	void vertex_buffer::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
 	{
 		std::visit([&t, &s](auto &&v) {
 			if constexpr (std::is_same_v<std::decay_t<decltype(v)>, sf::VertexBuffer>)
@@ -256,7 +256,7 @@ namespace hades
 		return;
 	}
 	
-	void quad_buffer::draw(sf::RenderTarget& t, sf::RenderStates s) const
+	void quad_buffer::draw(sf::RenderTarget& t, const sf::RenderStates& s) const
 	{
 		if (buffer_available())
 			t.draw(_buffer, std::size_t{}, std::size(_verts), s);

@@ -35,12 +35,12 @@ void ConsoleTestState::init()
 	missing_sprite.setTexture(tex::get_sf_texture(missing));
 	ball_sprite.setTexture(tex::get_sf_texture(ball));
 
-	missing_sprite.setPosition(20.f, 30.f);
+	missing_sprite.setPosition({ 20.f, 30.f });
 
-	ball_sprite.setPosition(330.f, 230.f);
+	ball_sprite.setPosition({330.f, 230.f});
 	ball_direction = -5.f;
 
-	rect.setPosition(20.f, 500.f);
+	rect.setPosition({ 20.f, 500.f });
 	rect.setFillColor(sf::Color::Blue);
 	rect.setSize({ 300.f, 90.f });
 }
@@ -57,7 +57,7 @@ void ConsoleTestState::update(hades::time_duration deltaTime, const sf::RenderTa
 	else if (ball_sprite.getPosition().x < 0)
 		ball_direction = 5.f;
 
-	ball_sprite.move(ball_direction, 0.f);
+	ball_sprite.move({ ball_direction, 0.f });
 }
 
 void ConsoleTestState::draw(sf::RenderTarget &target, hades::time_duration deltaTime)

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/exceptions.hpp"
@@ -42,7 +43,7 @@ namespace hades
 
 		virtual void create(const tile_map&);
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
 
 		rect_float get_local_bounds() const;
 

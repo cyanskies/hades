@@ -6,6 +6,7 @@
 #include <shared_mutex>
 
 #include "SFML/Graphics/Drawable.hpp"
+#include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/exceptions.hpp"
@@ -124,8 +125,8 @@ namespace hades
 
 		void apply();
 
-		void draw(sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates{}) const override;
-		void draw(sf::RenderTarget& target, sprite_utility::layer_t, sf::RenderStates states = sf::RenderStates{}) const;
+		void draw(sf::RenderTarget& target, const sf::RenderStates& states = sf::RenderStates{}) const override;
+		void draw(sf::RenderTarget& target, sprite_utility::layer_t, const sf::RenderStates& states = sf::RenderStates{}) const;
 
 		static_assert(!std::is_same_v<sprite_utility::layer_t, index_t>,
 			"if these are the same then we cannot use index_t in api due to ambiguity");

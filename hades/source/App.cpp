@@ -400,7 +400,7 @@ namespace hades
 				const auto widthf = static_cast<float>(e.size.width);
 				const auto heightf = static_cast<float>(e.size.height);
 				update_overlay_size(_overlay_view, *_gui, widthf, heightf);
-
+				
 				_states.getActiveState()->reinit();
 				activeState->handle_event(e); // let the gamestate see the changed window size
 			}
@@ -467,6 +467,10 @@ namespace hades
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);
+
+				const auto widthf = static_cast<float>(mode.width);
+				const auto heightf = static_cast<float>(mode.height);
+				update_overlay_size(_overlay_view, *_gui, widthf, heightf);
 
 				_states.getActiveState()->reinit();
 

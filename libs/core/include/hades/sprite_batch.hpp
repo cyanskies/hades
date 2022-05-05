@@ -132,6 +132,7 @@ namespace hades
 			"if these are the same then we cannot use index_t in api due to ambiguity");
 
 		//NOTE: this uses quad_buffer internally, so tranforms passed through states won't have any effect
+		//NOTE: not true ^
 		void draw(sf::RenderTarget& target, index_t layer_index, sf::RenderStates states = sf::RenderStates{}) const;
 
 	private:

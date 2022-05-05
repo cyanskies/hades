@@ -92,6 +92,7 @@ namespace hades
 		//NOTE: sprite_batch uses quad_buffer internally, for consistancy,
 		//		transforms passed through sf::RenderStates won't be applied
 		//		to anything drawn with the interface
+		//NOTE: TODO: fix this and in sprite batch, transform works fine with quad buffer
 		void draw(sf::RenderTarget&, const sf::RenderStates& = sf::RenderStates{}) const override;
 
 	private:
@@ -110,6 +111,7 @@ namespace hades
 		std::vector<object_layer> _object_layers;
 	};
 
+	// TODO: split into .inl file
 	namespace detail
 	{
 		template<typename T>

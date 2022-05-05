@@ -106,6 +106,9 @@ namespace hades
 
 	static ImGuiKey to_imgui_key(sf::Keyboard::Key k)
 	{
+		if (k == sf::Keyboard::Unknown)
+			return ImGuiKey_COUNT;
+
 		return sf_key_table[integer_cast<std::size_t>(enum_type(k))];
 	}
 

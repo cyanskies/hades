@@ -16,15 +16,15 @@ namespace fs = std::filesystem;
 
 namespace hades::files
 {
-	ifstream::ifstream(const std::filesystem::path& p)
+	ifstream::ifstream(const fs::path& p)
 	{
 		open(p);
 		return;
 	}
 
-	void ifstream::open(const std::filesystem::path& p)
+	void ifstream::open(const fs::path& p)
 	{
-		if (!std::filesystem::exists(p))
+		if (!fs::exists(p))
 			throw file_not_found{ "file not found: " + p.string() };
 		auto f = stream_t{ p, std::ios::in | std::ios::binary };
 		auto h = zip::zip_header{};
@@ -54,9 +54,6 @@ namespace hades::files
 			return stream.is_open();
 			}, _stream);
 	}
-
-	struct read_visitor
-	{};
 
 	ifstream& ifstream::read(char_t* ptr, std::size_t size)
 	{
@@ -113,13 +110,13 @@ namespace hades::files
 
 namespace hades
 {
-	irfstream::irfstream(const std::filesystem::path& mod, const std::filesystem::path& file)
+	irfstream::irfstream(const fs::path& mod, const fs::path& file)
 	{
 		open(mod, file);
 		return;
 	}
 
-	void irfstream::open(const std::filesystem::path& m, const std::filesystem::path& f)
+	void irfstream::open(const fs::path& m, const fs::path& f)
 	{
 		//check debug path
 		#ifndef NDEBUG
@@ -226,8 +223,8 @@ namespace hades
 		return integer_cast<std::size_t>(static_cast<std::streamoff>(size));
 	}
 
-	bool irfstream::_try_open_from_dir(const std::filesystem::path& dir,
-		const std::filesystem::path& mod, const std::filesystem::path& file)
+	bool irfstream::_try_open_from_dir(const fs::path& dir,
+		const fs::path& mod, const fs::path& file)
 	{
 		const auto f_path = dir / mod / file;
 		if (fs::exists(f_path))
@@ -241,7 +238,7 @@ namespace hades
 		return false;
 	}
 	
-	bool irfstream::_try_open_file(const std::filesystem::path& file)
+	bool irfstream::_try_open_file(const fs::path& file)
 	{
 		auto f = files::ifstream{ file };
 		const auto open = f.is_open();
@@ -250,8 +247,9 @@ namespace hades
 
 		return open;
 	}
-	bool irfstream::_try_open_archive(const std::filesystem::path& archive,
-		const std::filesystem::path& file)
+
+	bool irfstream::_try_open_archive(const fs::path& archive,
+		const fs::path& file)
 	{
 		auto a = zip::iafstream{ archive, file };
 		const auto open = a.is_file_open();
@@ -263,7 +261,7 @@ namespace hades
 
 namespace hades::files
 {
-	irfstream stream_resource(const resources::mod* m, const std::filesystem::path& path)
+	irfstream stream_resource(const resources::mod* m, const fs::path& path)
 	{
 		assert(m);
 		return irfstream{ { m->source }, path };
@@ -304,35 +302,35 @@ namespace hades::files
 		return out;
 	}
 
-	buffer raw_resource(const resources::mod* m, const std::filesystem::path& path)
+	buffer raw_resource(const resources::mod* m, const fs::path& path)
 	{
 		auto stream = stream_resource(m, path);
 		return from_stream<buffer>(stream);
 	}
 
-	string read_resource(const resources::mod* m, const std::filesystem::path& path)
+	string read_resource(const resources::mod* m, const fs::path& path)
 	{
 		auto str = stream_resource(m, path);
 		return from_stream<string>(str);
 	}
 
-	static ifstream try_stream(const std::filesystem::path& first,
-		const std::filesystem::path& second, const std::filesystem::path& path)
+	static ifstream try_stream(const fs::path& first,
+		const fs::path& second, const fs::path& path)
 	{
 		assert(path.is_relative());
 		auto a = first / path;
-		if (std::filesystem::exists(a))
+		if (fs::exists(a))
 			return ifstream{ std::move(a) };
 
 		auto b = second / path;
-		if (std::filesystem::exists(b))
+		if (fs::exists(b))
 			return ifstream{ std::move(b) };
 
 		return {};
 	}
 
-	static buffer try_raw(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
-		const std::filesystem::path& file_name)
+	static buffer try_raw(const fs::path& first_path, const fs::path& second_path,
+		const fs::path& file_name)
 	{
 		auto stream = try_stream(first_path, second_path, file_name);
 		if(stream.is_open())
@@ -340,8 +338,8 @@ namespace hades::files
 		return {};
 	}
 
-	static string try_read(const std::filesystem::path& first_path, const std::filesystem::path& second_path,
-		const std::filesystem::path& file_name)
+	static string try_read(const fs::path& first_path, const fs::path& second_path,
+		const fs::path& file_name)
 	{
 		auto str = try_stream(first_path, second_path, file_name);
 		if(str.is_open())
@@ -349,27 +347,27 @@ namespace hades::files
 		return {};
 	}
 
-	ifstream stream_file(const std::filesystem::path& p)
+	ifstream stream_file(const fs::path& p)
 	{
-		return try_stream(hades::user_custom_file_directory(), std::filesystem::current_path(), p);
+		return try_stream(hades::user_custom_file_directory(), fs::current_path(), p);
 	}
 
-	string read_file(const std::filesystem::path& file_path)
+	string read_file(const fs::path& file_path)
 	{
 		return try_read(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}
 
-	buffer raw_file(const std::filesystem::path& file_path)
+	buffer raw_file(const fs::path& file_path)
 	{
 		return try_raw(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}
 
-	string read_save(const std::filesystem::path& file_name)
+	string read_save(const fs::path& file_name)
 	{
 		return try_read(hades::user_save_directory(), standard_save_directory(), file_name);
 	}
 
-	string read_config(const std::filesystem::path& file_name)
+	string read_config(const fs::path& file_name)
 	{
 		return try_read(hades::user_config_directory(), standard_config_directory(), file_name);
 	}

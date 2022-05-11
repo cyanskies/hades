@@ -21,6 +21,7 @@ namespace hades
 		struct next_id_t {};
 		static constexpr next_id_t new_id{};
 
+		// TODO: make this the default constructor
 		constexpr unique_id_t(zero_id_t) noexcept : _value{ std::numeric_limits<type>::min() }
 		{}
 

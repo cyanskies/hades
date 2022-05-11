@@ -26,6 +26,7 @@ namespace hades
 	struct action
 	{
 		constexpr action() noexcept = default;
+		// TODO: turn these into make_action functions so action can become a trivial type
 		explicit constexpr action(unique_id uid) noexcept : id{ uid }
 		{}
 		constexpr action(unique_id uid, int32 x) noexcept : id{ uid }, x_axis{ x }

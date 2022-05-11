@@ -32,7 +32,7 @@ namespace hades
 			else
 				s.pressed = true;
 		}
-		if (a.active && s.pressed)
+		else if (a.active && s.pressed)
 		{
 			s.pressed = false;
 			if constexpr (Holdable)

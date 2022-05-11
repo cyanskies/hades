@@ -24,6 +24,8 @@ namespace hades
 		};
 
 		struct action_empty {};
+		struct action_empty2 {};
+		struct action_empty3 {};
 	}
 
 	//can be used to track individual presses.
@@ -31,8 +33,8 @@ namespace hades
 	// and holding the button down.
 	template<bool DoubleTap = true, bool Holdable = true>
 	struct action_state : public std::conditional_t<DoubleTap || Holdable, detail::action_extra, detail::action_empty>,
-		public std::conditional_t<DoubleTap, detail::action_double, detail::action_empty>,
-		public std::conditional_t<Holdable, detail::action_held, detail::action_empty>
+		public std::conditional_t<DoubleTap, detail::action_double, detail::action_empty2>,
+		public std::conditional_t<Holdable, detail::action_held, detail::action_empty3>
 	{
 		bool pressed = false;
 	};

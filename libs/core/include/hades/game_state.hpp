@@ -196,6 +196,13 @@ namespace hades
 	// and calculated state in extra_state
 	struct game_state
 	{
+		game_state() noexcept = default;
+		game_state(const game_state&) = delete;
+		game_state& operator=(const game_state&) = delete;
+
+		game_state(game_state&&) noexcept = default;
+		game_state& operator=(game_state&&) noexcept = default;
+
 		template<template<typename> typename CurveType, typename T>
 		using data_type = state_field<CurveType<T>>;
 		template<template<typename> typename CurveType, typename T>
@@ -216,6 +223,13 @@ namespace hades
 	template<typename GameSystem>
 	struct extra_state
 	{
+		extra_state() noexcept = default;
+		extra_state(const extra_state&) = delete;
+		extra_state& operator=(const extra_state&) = delete;
+
+		extra_state(extra_state&&) noexcept = default;
+		extra_state& operator=(extra_state&&) noexcept = default;
+
 		detail::game_object_collection objects; 
 		//system behaviours, including system local data
 		system_behaviours<GameSystem> systems;

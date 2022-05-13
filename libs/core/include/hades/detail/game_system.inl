@@ -22,7 +22,7 @@ namespace hades
 
 			const auto new_system = hades::data::get<SystemResource>(sys);
 			sys_r.emplace_back(new_system);
-			return systems.emplace_back(new_system);
+			return systems.emplace_back(System{ new_system });
 		}
 
 		template<typename SystemResource, typename System>

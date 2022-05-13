@@ -1,4 +1,4 @@
-#include "Hades/level_interface.hpp"
+#include "hades/level_interface.hpp"
 
 #include "hades/core_curves.hpp"
 #include "hades/data.hpp"
@@ -113,6 +113,30 @@ namespace hades
 		for (auto& o : _extras.objects)
 			_new_objects.emplace_back(o);
 
+		return;
+	}
+
+	game_implementation::~game_implementation()
+	{
+		auto data = system_job_data{ time_point{}, &_extras, &_extras.systems };
+		data.level_data = this;
+
+		auto& sys_behaviours = _extras.systems;
+		// call on_destroy for all systems
+		for (auto s : sys_behaviours.get_systems())
+		{
+			if (s->system->on_destroy)
+			{
+				auto& sys_data = sys_behaviours.get_system_data(s->system->id);
+				auto game_data = data;
+				game_data.entity = activated_object_view{ sys_behaviours.get_entities(*s), time_point::max() };
+				game_data.system = s->system->id;
+				game_data.system_data = &sys_data;
+
+				detail::set_data(&game_data);
+				std::invoke(s->system->on_destroy);
+			}
+		}
 		return;
 	}
 

@@ -72,8 +72,12 @@ namespace hades
 		game_implementation(const level_save&, game_interface* mission,
 			const std::vector<player_data>* players);
 
+		game_implementation(game_implementation&&) noexcept = default;
+		game_implementation& operator=(game_implementation&&) noexcept = default;
+
+		~game_implementation();
+
 		object_ref create_object(const object_instance&, time_point) override;
-		//object_ref create_object(const resources::object&, time_point);
 		object_ref clone_object(object_ref, time_point) override;
 		void destroy_object(object_ref, time_point) override;
 

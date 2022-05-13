@@ -63,6 +63,7 @@ set(HADES_CORE_SRC
 	include/hades/game_api.hpp
 	include/hades/game_state.hpp
 	include/hades/game_system.hpp
+	include/hades/game_system_resources.hpp
 	include/hades/grid.hpp
 	include/hades/gui.hpp
 	include/hades/level.hpp

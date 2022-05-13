@@ -7,8 +7,7 @@
 #include <vector>
 
 #include "hades/curve_extra.hpp"
-#include "hades/data.hpp"
-#include "hades/exceptions.hpp"
+#include "hades/game_system_resources.hpp"
 #include "hades/game_types.hpp"
 #include "hades/objects.hpp"
 #include "hades/resource_base.hpp"
@@ -39,33 +38,7 @@
 
 namespace hades
 {
-	void register_game_system_resources(data::data_manager&);
-
-	class system_error : public runtime_error
-	{
-	public:
-		using runtime_error::runtime_error;
-	};
-
 	using system_data_t = std::any;
-	// attached ent, a pair of object-ref and the time after which they are allowed to update
-	struct object_time {
-		object_ref object;
-		time_point next_activation;
-	};
-
-	inline bool operator==(const object_time& l, const object_time& r) noexcept
-	{
-		return l.object == r.object;
-	}
-
-	inline bool operator!=(const object_time& l, const object_time& r) noexcept
-	{
-		return !(l == r);
-	}
-
-	//using attached_ent = std::pair<object_ref, time_point>;
-	using name_list = std::vector<object_time>; // TODO: rename
 
 	/// @brief A range over the above object_time storage
 	///			skips iterators to objects that haven't passed
@@ -234,7 +207,7 @@ namespace hades
 
 	//fwd
 	class game_interface;
-	struct game_system;
+	using game_system = detail::basic_system<resources::system>;
 	struct player_data;
 
 	template<typename T>
@@ -269,30 +242,6 @@ namespace hades
 		time_duration dt = time_duration::zero();
 	};
 
-	namespace resources
-	{
-		struct system_t
-		{};
-
-		//a system stores a job function
-		struct system : public resource_type<system_t>
-		{
-			//TODO: dont accept job_data anymoe, same for render system
-			using system_func = std::function<void()>;
-
-			system_func on_create, //called on system creation
-				on_connect,			//called when attached to an entity
-				on_disconnect,     //called when detatched from ent
-				tick,				//called every tick
-				on_destroy;			//called on system destruction//decprecate
-			//	on_event?
-
-			//std::any system_info; //stores the system object or script reference.
-			//if loaded from a manifest then it should be loaded from scripts
-			//if it's provided by the application, then source is empty, and no laoder function is provided.
-		};
-	}
-
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
 	const resources::system* make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager&);
 
@@ -302,36 +251,6 @@ namespace hades
 		return make_system(data.get_uid(name), on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
-	//the interface for game systems.
-	//systems work by creating jobs and passing along the data they will use.
-	// TODO: turn game and render _system into a template type
-	//		then redeclare these two names with a using statement
-	struct game_system
-	{
-		using system_t = resources::system;
-		using job_data_t = system_job_data;
-
-		explicit game_system(const resources::system* s) : system(s)
-		{}
-
-		game_system(const resources::system* s, name_list nl) : system{ s }, attached_entities{ std::move(nl) }
-		{}
-
-		game_system(const game_system&) = default;
-		game_system(game_system&&) noexcept = default;
-
-		game_system &operator=(const game_system&) = default;
-		game_system &operator=(game_system&&) = default;
-
-		//this holds the systems, name and id, and the function that the system uses.
-		const resources::system* system = nullptr;
-		//list of entities attached to this system, over time
-		name_list attached_entities;
-		name_list new_ents;
-		name_list created_ents;
-		name_list removed_ents;
-	};
-
 	//program provided systems should be attatched to the renderer or 
 	//gameinstance depending on what kind of system they are
 
@@ -339,57 +258,13 @@ namespace hades
 	//the mod files that added them
 
 	class render_interface;
-	struct render_system;
+	using render_system = detail::basic_system<resources::render_system>;
 	class common_interface;
 	
 	struct render_job_data : common_job_data<render_system>
 	{
 		const common_interface *level_data = nullptr; //TODO: client_interface to lock down access
 		render_interface *render_output = nullptr;
-	};
-
-	namespace resources
-	{
-		struct render_system_t
-		{};
-
-		struct render_system : public resource_type<render_system_t>
-		{
-			using system_func = std::function<void()>;
-
-			system_func on_create, // on_create doesn't support entity lists
-				on_connect,
-				on_disconnect,
-				tick,
-				on_destroy; // deprecate
-
-			//std::any system_info;
-		};
-	}
-
-	struct render_system
-	{
-		using system_t = resources::render_system;
-		using job_data_t = render_job_data;
-
-		explicit render_system(const resources::render_system* s) : system(s)
-		{}
-
-		render_system(const resources::render_system* s, name_list nl) : system{ s }, attached_entities{ std::move(nl) }
-		{}
-
-		render_system(const render_system&) = default;
-		render_system(render_system&&) noexcept = default;
-
-		render_system& operator=(const render_system&) = default;
-		render_system& operator=(render_system&&) = default;
-
-		//this holds the systems, name and id, and the function that the system uses.
-		const resources::render_system *system = nullptr;
-		name_list attached_entities;
-		name_list new_ents;
-		name_list created_ents;
-		name_list removed_ents;
 	};
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>

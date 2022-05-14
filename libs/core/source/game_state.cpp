@@ -38,6 +38,7 @@ namespace hades::detail
 
 	void game_object_collection::erase(game_obj* o) noexcept
 	{
+		assert(o);
 		const auto size = std::size(_emptys);
 		for (auto i = std::size_t{}; i < size; ++i)
 		{

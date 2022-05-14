@@ -27,7 +27,16 @@ namespace hades
 		//detach dead entities
 		const auto dead_ents = _interface->get_removed_objects();
 		for (const auto o : dead_ents)
-			_extra.systems.detach_all({ o });
+		{
+			auto ref = object_ref{ o };
+			_extra.systems.detach_all(ref);
+			// we have to erase our game_obj at the same time the server does
+			// so that a local server wont end up with
+			// the render game_obj holding ptrs to the erased server data
+			auto obj = state_api::get_object_ptr(ref, _extra);
+			obj->id = bad_entity;
+			_extra.objects.erase(obj);
+		}
 
 		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };
 		constant_job_data.level_data = _interface;
@@ -40,6 +49,7 @@ namespace hades
 		// TODO: erase dead objects data(probably in remote_level)
 		//	doing it here resulted in double erase
 		//	maybr just check if they're still alive before erasing them
+	
 
 		i.prepare(); //copy sprites into vertex buffer
 

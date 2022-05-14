@@ -101,7 +101,7 @@ namespace hades
 	namespace vector
 	{
 		template<typename T>
-		T magnitude(vector_t<T> v) noexcept
+		T magnitude(vector_t<T> v)
 		{
 			const auto mag = std::hypot(v.x, v.y);
 			//hypot returns either float or double

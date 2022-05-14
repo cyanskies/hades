@@ -152,7 +152,7 @@ namespace hades
 	{
 		//returns the length of the vector
 		template<typename T>
-		T magnitude(vector_t<T>) noexcept;
+		T magnitude(vector_t<T>);
 
 		template<typename T>
 		constexpr T magnitude_squared(vector_t<T> v) noexcept;

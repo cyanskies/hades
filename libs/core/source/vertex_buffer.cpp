@@ -209,13 +209,19 @@ namespace hades
 	void quad_buffer::reserve(std::size_t size)
 	{
 		_verts.reserve(size * quad_vert_count);
-		if (buffer_available() && size > (_buffer.getVertexCount() / quad_vert_count))
+		if (size > (_buffer.getVertexCount() / quad_vert_count))
 		{
-			// NOTE:
-			// create() returns false on failure, but this only occurs if
-			// size is negative, all other paths succeed
-			auto ret = _buffer.create(size * quad_vert_count); assert(ret);
-			ret = _buffer.update(_verts.data(), std::size(_verts), 0); assert(ret);
+			auto sb = std::stringbuf{};
+			const auto prev = sf::err().rdbuf(&sb);
+			if (_buffer.create(size * quad_vert_count))
+			{
+				if (!_buffer.update(_verts.data(), std::size(_verts), 0))
+					LOGWARNING("Failed to update vertex buffer. "s + sb.str());
+			}
+			else
+				LOGERROR("Unable to create vertex buffer. "s + sb.str());
+
+			sf::err().set_rdbuf(prev);
 		}
 
 		return;
@@ -223,9 +229,6 @@ namespace hades
 
 	void quad_buffer::apply()
 	{
-		if (!buffer_available())
-			return;
-
 		const auto size = std::size(_verts);
 		
 		auto sb = std::stringbuf{};
@@ -264,20 +267,17 @@ namespace hades
 	{
 		_verts.shrink_to_fit();
 
-		if (buffer_available())
+		auto sb = std::stringbuf{};
+		const auto prev = sf::err().rdbuf(&sb);
+		if (_buffer.create(std::size(_verts)))
 		{
-			auto sb = std::stringbuf{};
-			const auto prev = sf::err().rdbuf(&sb);
-			if (_buffer.create(std::size(_verts)))
-			{
-				if (!_buffer.update(_verts.data()))
-					LOGWARNING("Failed to update vertex buffer. "s + sb.str());
-			}
-			else
-				LOGERROR("Failed to shrink vertex buffer "s + sb.str());
-
-			sf::err().set_rdbuf(prev);
+			if (!_buffer.update(_verts.data()))
+				LOGWARNING("Failed to update vertex buffer. "s + sb.str());
 		}
+		else
+			LOGERROR("Failed to shrink vertex buffer "s + sb.str());
+
+		sf::err().set_rdbuf(prev);
 
 		return;
 	}

@@ -1,7 +1,10 @@
 #include "hades/font.hpp"
 
+#include "SFML/System/Err.hpp"
+
 #include "hades/files.hpp"
 #include "hades/parser.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -23,7 +26,15 @@ namespace hades
 		{
 			//we store the font memory for the gui class to use
 			font.source_buffer = files::raw_resource(mod, font.source);
-			font.value.loadFromMemory(font.source_buffer.data(), font.source_buffer.size());
+			auto sb = std::stringbuf{};
+			const auto prev = sf::err().rdbuf(&sb);
+			const auto finally = make_finally([prev]() noexcept {
+				sf::err().set_rdbuf(prev);
+				return;
+				});
+
+			if (!font.value.loadFromMemory(font.source_buffer.data(), font.source_buffer.size()))
+				throw data::resource_error{ sb.str() };
 		}
 		catch (const files::file_error &e)
 		{

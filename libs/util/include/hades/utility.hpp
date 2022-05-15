@@ -166,7 +166,6 @@ namespace hades {
 			std::invoke(f);
 		}
 
-	private:
 		Func f;
 	};
 

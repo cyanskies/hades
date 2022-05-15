@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "SFML/System/Err.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
 #include "hades/logging.hpp"
@@ -57,8 +58,16 @@ namespace hades
 		}
 
 		sf::Texture t;
-		t.create(width, height);
-		t.update(pixels.data());
+		auto sb = std::stringbuf{};
+		const auto prev = sf::err().rdbuf(&sb);
+		if (!t.create(width, height))
+		{
+			LOGERROR("Unable to create error texture");
+			LOGERROR(sb.str());
+		}
+		else
+			t.update(pixels.data());
+		sf::err().set_rdbuf(prev);
 		return t;
 	}
 
@@ -131,7 +140,14 @@ namespace hades
 			try
 			{
 				auto fstream = sf_resource_stream{ mod->source, tex.source };
-				tex.value.loadFromStream(fstream);
+				auto sb = std::stringbuf{};
+				const auto prev = sf::err().rdbuf(&sb);
+				const auto f = make_finally([prev]() noexcept {
+					sf::err().set_rdbuf(prev);
+					return;
+					});
+				if (!tex.value.loadFromStream(fstream))
+					throw data::resource_error{ sb.str() };
 			}
 			catch (const files::file_error &e)
 			{
@@ -258,7 +274,16 @@ namespace hades
 				t->value.setSmooth(smooth);
 				t->value.setRepeated(repeat);
 				if (mips)
-					t->value.generateMipmap();
+				{
+					auto sb = std::stringbuf{};
+					const auto prev = sf::err().rdbuf(&sb);
+					if (!t->value.generateMipmap())
+					{
+						LOGERROR("Unable to generate mipmap for texture");
+						LOGERROR(sb.str());
+					}
+					sf::err().set_rdbuf(prev);
+				}
 
 				t->loaded = loaded;
 				return;

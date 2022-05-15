@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "SFML/System/Err.hpp"
 #include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Texture.hpp"
@@ -39,9 +40,19 @@ namespace hades
 		auto img = sf::Image{};
 		img.create(1u, 1u, sf::Color::Magenta);
 		auto& tex = tex_funcs::get_sf_texture(error_tex);
-		tex.loadFromImage(img);
-		tex_funcs::set_settings(error_tex, { settings->tile_size, settings->tile_size }, 
+		
+		auto sb = std::stringbuf{};
+		const auto prev = sf::err().rdbuf(&sb);
+		if(tex.loadFromImage(img))
+			tex_funcs::set_settings(error_tex, { settings->tile_size, settings->tile_size }, 
 			false, true, false, true);
+		else
+		{
+			LOGERROR("Failed to generate error tile texture");
+			LOGERROR(sb.str());
+		}
+		sf::err().set_rdbuf(prev);
+		
 		return;
 	}
 
@@ -62,10 +73,10 @@ namespace hades
 	void immutable_tile_map::draw(sf::RenderTarget& target, const sf::RenderStates& s) const
 	{
 		auto states = s;
-		for (const auto &s : texture_layers)
+		for (const auto &layer : texture_layers)
 		{
-			states.texture = &tex_funcs::get_sf_texture(s.texture);
-			target.draw(s.quads, states);
+			states.texture = &tex_funcs::get_sf_texture(layer.texture);
+			target.draw(layer.quads, states);
 		}
 	}
 

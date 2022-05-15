@@ -46,8 +46,7 @@ namespace hades
 		auto f = data->find_or_create<resources::font>(resources::default_font_id(), unique_id::zero);
 		assert(f);
 
-		f->value.loadFromMemory(default_font.data(), default_font.size());
-		f->loaded = true;
+		f->loaded = f->value.loadFromMemory(default_font.data(), default_font.size());
 	}
 
 	namespace resources

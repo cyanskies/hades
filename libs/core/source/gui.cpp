@@ -9,6 +9,8 @@
 #include "SFML/Graphics/Vertex.hpp"
 #include "SFML/Graphics/VertexArray.hpp"
 
+#include "SFML/System/Err.hpp"
+
 #include "hades/animation.hpp"
 #include "hades/data.hpp"
 #include "hades/draw_clamp.hpp"
@@ -1119,19 +1121,32 @@ namespace hades
 		int width = 0, height = 0;
 		unsigned char* texture_data = nullptr;
 		f_atlas.GetTexDataAsRGBA32(&texture_data, &width, &height);
-		f_atlas.SetTexID(t);
 
 		//make the texture
 		auto& texture = tex::get_sf_texture(t);
-		texture.create(width, height);
-		texture.update(texture_data);
-		//apply correct settings
-		tex::set_settings(t,
-			{ integer_cast<texture_size_t>(width), integer_cast<texture_size_t>(height) },
-			false, //smooth
-			false, //repeat 
-			false, //mips
-			true); //set loaded
+
+
+		auto sb = std::stringbuf{};
+		const auto prev = sf::err().rdbuf(&sb);
+		if (!texture.create(width, height))
+		{
+			LOGERROR("Unable to create gui texture atlas.");
+			LOGERROR(sb.str());
+		}
+		else
+		{
+			f_atlas.SetTexID(t);
+			texture.update(texture_data);
+			//apply correct settings
+			tex::set_settings(t,
+				{ integer_cast<texture_size_t>(width), integer_cast<texture_size_t>(height) },
+				false, //smooth
+				false, //repeat 
+				false, //mips
+				true); //set loaded
+		}
+
+		sf::err().set_rdbuf(prev);
 	}
 
 	//gui::static objects

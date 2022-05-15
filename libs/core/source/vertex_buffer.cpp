@@ -2,7 +2,10 @@
 
 #include <cassert>
 
+#include "SFML/System/Err.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
+
+using namespace std::string_literals;
 
 static bool buffer_available() noexcept
 {
@@ -64,18 +67,22 @@ namespace hades
 			const auto vertex_count = vertex.size();
 			if constexpr (std::is_same_v<T, sf::VertexBuffer>)
 			{
-				if (count <= vertex_count)
-				{
-					if (count == 0u)
-						v.create(vertex_count);
-
-					v.update(std::data(vertex), vertex_count, 0u);
-				}
+				auto success = true;
+				if (count <= vertex_count && count != 0)
+					success = v.update(std::data(vertex), vertex_count, 0u);
 				else
 				{
-					v.create(vertex_count);
-					v.update(vertex.data());
+					auto sb = std::stringbuf{};
+					const auto prev = sf::err().rdbuf(&sb);
+					if (v.create(vertex_count))
+						success = v.update(vertex.data());
+					else
+						LOGERROR("Unable to create vertex buffer. "s + sb.str());
+					sf::err().set_rdbuf(prev);
 				}
+
+				if (!success)
+					LOGWARNING("Failed to update vertex buffer.");
 			}
 			else // VertexArray
 			{
@@ -221,13 +228,16 @@ namespace hades
 
 		const auto size = std::size(_verts);
 		
+		auto sb = std::stringbuf{};
+		const auto prev = sf::err().rdbuf(&sb);
+		auto success = true;
 		if (const auto old_size = _buffer.getVertexCount();
 			old_size == 0)
 		{
 			//how many quads the buffer should be able to hold
 			constexpr auto starting_quad_capacity = std::size_t{ 6 };
 			constexpr auto starting_size = starting_quad_capacity * quad_vert_count;
-			const auto r = _buffer.create(std::max(starting_size, size)); assert(r);
+			success = _buffer.create(std::max(starting_size, size));
 		}
 		else if (size > old_size)
 		{
@@ -235,10 +245,17 @@ namespace hades
 			const auto next_size = old_size * growth_rate;
 			const auto remain = next_size % quad_vert_count;
 			
-			const auto r = _buffer.create(std::max(next_size + remain, size)); assert(r);
+			success = _buffer.create(std::max(next_size + remain, size));
 		}
 
-		_buffer.update(_verts.data(), size, std::size_t{});
+		if (!success)
+			LOGERROR("Failed to create vertex buffer. "s + sb.str());
+		sb.str({});
+
+		if (!_buffer.update(_verts.data(), size, std::size_t{}))
+			LOGWARNING("Failed to update vertex buffer. "s + sb.str());
+
+		sf::err().set_rdbuf(prev);
 
 		return;
 	}
@@ -249,8 +266,17 @@ namespace hades
 
 		if (buffer_available())
 		{
-			_buffer.create(std::size(_verts));
-			_buffer.update(_verts.data());
+			auto sb = std::stringbuf{};
+			const auto prev = sf::err().rdbuf(&sb);
+			if (_buffer.create(std::size(_verts)))
+			{
+				if (!_buffer.update(_verts.data()))
+					LOGWARNING("Failed to update vertex buffer. "s + sb.str());
+			}
+			else
+				LOGERROR("Failed to shrink vertex buffer "s + sb.str());
+
+			sf::err().set_rdbuf(prev);
 		}
 
 		return;

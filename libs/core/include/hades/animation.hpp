@@ -42,6 +42,7 @@ namespace hades::resources
 	}
 
 	struct animation;
+	struct animation_group;
 	struct texture;
 
 	namespace animation_functions
@@ -58,6 +59,18 @@ namespace hades::resources
 		const texture* get_texture(const animation&) noexcept;
 		time_duration get_duration(const animation&) noexcept;
 		// const shader* get_shader(const animation&) noexcept;
+	}
+
+	namespace animation_group_functions
+	{
+		using try_get_return = data::data_manager::try_get_return<const animation_group>;
+		const animation_group* get_resource(unique_id);
+		const animation_group* get_resource(data::data_manager&, unique_id);
+		try_get_return try_get(unique_id) noexcept;
+		const animation_group* find_or_create(data::data_manager&, unique_id, unique_id mod);
+		bool is_loaded(const animation_group&) noexcept;
+		unique_id get_id(const animation_group&) noexcept;
+		const animation* get_animation(const animation_group&, unique_id);
 	}
 }
 

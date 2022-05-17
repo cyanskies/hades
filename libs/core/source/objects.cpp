@@ -13,6 +13,9 @@
 #include "hades/game_system.hpp"
 #include "hades/utility.hpp"
 
+hades::unique_id editor_icon_id = hades::unique_zero;
+hades::unique_id editor_anim = hades::unique_zero;
+
 namespace hades::resources
 {
 	std::vector<const object*> all_objects{};
@@ -56,6 +59,7 @@ namespace hades::resources
 		//	thing:
 		//		editor-icon : icon_anim
 		//		editor-anim : scalar animationId OR sequence [animId1, animId2, ...]
+		//		animations: animation_group_id
 		//		base : object_base OR [obj1, obj2, ...]
 		//		curves:
 		//			-[curve id, default value]
@@ -82,14 +86,18 @@ namespace hades::resources
 			using namespace data::parse_tools;
 
 			//icon shown when selecting objects to place in the editor
-			const auto editor_icon_id = get_unique(*o, "editor-icon"sv, unique_id::zero);
-			if(editor_icon_id != unique_id::zero)
-				obj->editor_icon = animation_functions::find_or_create(d, editor_icon_id, mod);
+			const auto editor_icon = get_unique(*o, "editor-icon"sv, unique_id::zero);
+			if(editor_icon != unique_id::zero)
+				obj->editor_icon = animation_functions::find_or_create(d, editor_icon, mod);
 
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = animation_functions::get_id(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
 			obj->editor_anims = animation_functions::find_or_create(d, animation_ids, mod);
+
+			const auto anim_group_id = get_unique(*o, "animations"sv, unique_id::zero);
+			if (anim_group_id)
+				obj->animations = animation_group_functions::find_or_create(d, anim_group_id, mod);
 
 			//base objects
 			const auto current_base_ids = data::get_uid(obj->base);
@@ -175,6 +183,7 @@ namespace hades::resources
 		const auto &o = static_cast<object&>(r);
 
 		namespace animf = animation_functions;
+		namespace anim_groupf = animation_group_functions;
 
 		//load all the referenced resources
 		if (o.editor_icon && !animf::is_loaded(*o.editor_icon))
@@ -185,6 +194,9 @@ namespace hades::resources
 			if (!animf::is_loaded(*a))
 				animf::get_resource(d, animf::get_id(*a));
 		}
+
+		if (o.animations && !anim_groupf::is_loaded(*o.animations))
+			anim_groupf::get_resource(d, anim_groupf::get_id(*o.animations));
 
 		//all of the other resources used by objects are parse-only and don't require loading
 		r.loaded = true;
@@ -199,6 +211,9 @@ namespace hades
 	void register_objects(hades::data::data_manager &d)
 	{
 		using namespace std::string_view_literals;
+
+		editor_icon_id = d.get_uid("editor-icon"sv);
+
 		register_animation_resource(d);
 		register_curve_resource(d);
 		register_core_curves(d);
@@ -514,8 +529,15 @@ namespace hades
 
 	const hades::resources::animation *get_editor_icon(const resources::object &o)
 	{
+		namespace ag = resources::animation_group_functions;
+
+		// TODO: removed o.editor icon
 		if (o.editor_icon)
 			return o.editor_icon;
+		else if (const auto icon = 
+			resources::animation_group_functions::get_animation(*o.animations, editor_icon_id);
+			icon)
+			return icon;
 
 		for (auto b : o.base)
 		{
@@ -546,6 +568,13 @@ namespace hades
 	{
 		if (!o.editor_anims.empty())
 			return o.editor_anims;
+		else if (o.animations)
+		{
+			if(auto anim = 
+				resources::animation_group_functions::get_animation(*o.animations, editor_anim);
+				anim)
+				return { anim };
+		}
 
 		for (auto b : o.base)
 		{

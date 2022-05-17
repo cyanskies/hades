@@ -13,6 +13,7 @@
 namespace hades::resources
 {
 	struct animation;
+	struct animation_group;
 	struct curve;
 	struct render_system;
 	struct system;
@@ -25,11 +26,12 @@ namespace hades::resources
 		object();
 
 		//editor icon, used in the object picker
-		const hades::resources::animation *editor_icon = nullptr;
+		const hades::resources::animation *editor_icon = nullptr; //TODO: deprecate this(store an editor-icon in animations
+		const resources::animation_group* animations = nullptr;
 		//editor anim list
 		//used for placed objects
 		using animation_list = std::vector<const hades::resources::animation*>;
-		animation_list editor_anims;
+		animation_list editor_anims; // TODO: can we fit this in animations too somehow
 		//base objects, curves and systems are inherited from these
 		using base_list = std::vector<const object*>;
 		base_list base;

@@ -11,16 +11,26 @@
 
 namespace hades::resources
 {
-	static void load_animation(resource_type<std::vector<animation_frame>>& r, data::data_manager& d);
+	using anim_base = resource_type<std::vector<animation_frame>>;
+	static void load_animation(anim_base& r, data::data_manager& d);
 	//TODO: add field for fragment shaders
-	struct animation : public resource_type<std::vector<animation_frame>>
+	struct animation : public anim_base
 	{
-		animation() noexcept : resource_type<std::vector<animation_frame>>(load_animation)
+		animation() noexcept : anim_base(load_animation)
 		{}
 
 		const texture* tex = nullptr;
 		time_duration duration = time_duration::zero();
 		//const shader *anim_shader = nullptr;
+	};
+
+	using anim_group_base = resource_type<std::unordered_map<unique_id, const animation*>>;
+	static void load_anim_group(anim_group_base& res, data::data_manager& d);
+
+	struct animation_group : public anim_group_base
+	{
+		animation_group() noexcept : anim_group_base(load_anim_group)
+		{}
 	};
 }
 
@@ -80,6 +90,48 @@ namespace hades::resources::animation_functions
 	time_duration get_duration(const animation& a) noexcept
 	{
 		return a.duration;
+	}
+}
+
+namespace hades::resources::animation_group_functions
+{
+	const animation_group* get_resource(unique_id id)
+	{
+		return data::get<animation_group>(id);
+	}
+
+	const animation_group* get_resource(data::data_manager& d, unique_id i)
+	{
+		return d.get<animation_group>(i);
+	}
+
+	try_get_return try_get(unique_id i) noexcept
+	{
+		return data::try_get<animation_group>(i);
+	}
+
+	const animation_group* find_or_create(data::data_manager& d, unique_id i, unique_id mod)
+	{
+		return d.find_or_create<animation_group>(i, mod);
+	}
+
+	bool is_loaded(const animation_group& a) noexcept
+	{
+		return a.loaded;
+	}
+
+	unique_id get_id(const animation_group& a) noexcept
+	{
+		return a.id;
+	}
+
+	const animation* get_animation(const animation_group& a, unique_id i)
+	{
+		const auto iter = a.value.find(i);
+		if (iter == end(a.value))
+			return nullptr;
+
+		return iter->second;
 	}
 }
 
@@ -299,15 +351,63 @@ namespace hades::resources
 		}//for animations
 	}//parse animations
 
-	static void load_animation(resource_type<std::vector<animation_frame>> &r, data::data_manager &d)
+	static void parse_animation_group(unique_id mod, const data::parser_node& n, data::data_manager& d)
 	{
+		//animation-groups:
+		//	infantry_anims:
+		//		look-left: left-anim
+		//		look-right: right-anim
+		//			
+
+		using namespace std::string_literals;
+		using namespace std::string_view_literals;
+		
+		const auto animations = n.get_children();
+
+		for (const auto& a : animations)
+		{
+			const auto map = a->to_map<unique_id>(data::make_uid);
+			const auto group_name = a->to_string();
+			const auto group_id = d.get_uid(group_name);
+			auto group = d.find_or_create<animation_group>(group_id, mod);
+			for (const auto& [name, val] : map)
+			{
+				const auto id = d.get_uid(name);
+				try
+				{
+					const auto anim = animation_functions::find_or_create(d, val, mod);
+					if (anim)
+						group->value.insert_or_assign(id, anim);
+				}
+				catch (data::resource_error& r)
+				{
+					LOGERROR("Cannot add animation to group: "s + group_name + ", reason: "s + r.what());
+				}
+			}
+		}
+
+		return;
+	}
+
+	static void load_animation(anim_base&r, data::data_manager &d)
+	{
+		using namespace std::string_literals;
 		auto &a = dynamic_cast<animation&>(r);
-		if (!texture_functions::get_is_loaded(a.tex))
+		if (!a.tex)
+			LOGWARNING("Failed to load animation: " + d.get_as_string(r.id) + ", missing texture"s);
+		else if (!texture_functions::get_is_loaded(a.tex))
 		{
 			const auto id = texture_functions::get_id(a.tex);
 			//data->get will lazy load texture
 			texture_functions::get_resource(d, id);
 		}
+	}
+
+	static void load_anim_group(anim_group_base& r, data::data_manager& d)
+	{
+		for (const auto& anim : r.value)
+			animation_functions::get_resource(d, anim.second->id);
+		return;
 	}
 }
 
@@ -445,5 +545,6 @@ namespace hades
 		register_texture_resource(d);
 
 		d.register_resource_type("animations"sv, resources::parse_animation);
+		d.register_resource_type("animation-groups"sv, resources::parse_animation_group);
 	}
 }

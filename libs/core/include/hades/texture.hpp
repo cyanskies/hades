@@ -29,6 +29,7 @@ namespace hades
 			texture* find_create_texture(data::data_manager&, unique_id, unique_id);
 			const texture* get_resource(unique_id);
 			const texture* get_resource(data::data_manager&, unique_id);
+			// TODO: these should take const texture&
 			unique_id get_id(const texture*) noexcept;
 			bool get_is_loaded(const texture*) noexcept;
 			bool get_smooth(const texture*) noexcept;

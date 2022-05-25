@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-#include "Hades/archive.hpp"
+#include "hades/archive.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/resource_base.hpp"
 

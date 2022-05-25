@@ -3,7 +3,7 @@
 
 #include "SFML/Graphics/Text.hpp"
 
-#include "Hades/Debug.hpp"
+#include "hades/debug.hpp"
 #include "hades/font.hpp"
 #include "hades/properties.hpp"
 

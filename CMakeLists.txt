@@ -19,6 +19,7 @@ endif()
 
 add_subdirectory(deps)
 add_subdirectory(libs)
+add_subdirectory(app)
 add_subdirectory(hades)
 
 #if defined build example

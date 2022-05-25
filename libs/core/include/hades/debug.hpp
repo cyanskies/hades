@@ -18,6 +18,7 @@ namespace hades
 
 	namespace debug
 	{
+		// requires hades-gui
 		class basic_overlay
 		{
 		public:

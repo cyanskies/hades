@@ -5,8 +5,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-//#include "yaml-cpp/yaml.h"
-
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
 #include "hades/resource_base.hpp"

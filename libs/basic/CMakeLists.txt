@@ -10,6 +10,7 @@ set(HADES_BASIC_SRC
 	source/logging.cpp
 	source/parser.cpp
 	source/properties.cpp
+	source/standard_paths.cpp
 	source/system.cpp
 	source/terrain.cpp
 	source/tiles.cpp
@@ -30,6 +31,7 @@ set(HADES_BASIC_SRC
 	include/hades/logging.hpp
 	include/hades/parser.hpp
 	include/hades/properties.hpp
+	include/hades/standard_paths.hpp
 	include/hades/quad_map.hpp
 	include/hades/resource_base.hpp
 	include/hades/server_actions.hpp

@@ -9,8 +9,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "SFML/System/InputStream.hpp"
-
 #include "hades/exceptions.hpp"
 #include "hades/string.hpp"
 

@@ -6,7 +6,6 @@ set(HADES_SRC
 	include/hades/data_system.hpp
 	include/hades/fps_display.hpp
 	include/hades/Main.hpp
-	include/hades/RenderInstance.hpp
 	include/hades/Server.hpp
 	include/hades/simple_resources.hpp
 	include/hades/StateManager.hpp
@@ -19,8 +18,6 @@ set(HADES_SRC
 	source/data_system.cpp
 	source/fps_display.cpp
 	source/main.cpp
-	source/RenderInstance.cpp
-	#source/ScriptManager.cpp
 	source/Server.cpp
 	source/simple_resources.cpp
 	source/StateManager.cpp
@@ -32,6 +29,7 @@ set(HADES_LIBS
 	hades-util
 	hades-basic
 	hades-core
+	hades-app
 	PRIVATE yaml-cpp
 )
 

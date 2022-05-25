@@ -17,19 +17,10 @@ set(HADES_CORE_SRC
 	source/game_state.cpp
 	source/game_system.cpp
 	source/grid.cpp
-	source/gui.cpp
 	source/level.cpp
-	source/level_editor.cpp
-	source/level_editor_grid.cpp
-	source/level_editor_level_properties.cpp
-	source/level_editor_objects.cpp
-	source/level_editor_regions.cpp
-	source/level_editor_terrain.cpp
-	source/level_editor_tiles.cpp
 	source/level_interface.cpp
 	source/level_scripts.cpp
 	source/mission.cpp
-	source/mission_editor.cpp
 	source/mouse_input.cpp
 	source/objects.cpp
 	source/render_instance.cpp
@@ -38,14 +29,12 @@ set(HADES_CORE_SRC
 	source/sf_input.cpp
 	source/sf_streams.cpp
 	source/sprite_batch.cpp
-	source/standard_paths.cpp
 	source/state.cpp
 	source/terrain_map.cpp
 	source/texture.cpp
 	source/tiled_sprite.cpp
 	source/tile_map.cpp
 	source/vertex_buffer.cpp
-	source/debug/console_overlay.cpp
 	source/debug/object_overlay.cpp
 	include/hades/animation.hpp
 	include/hades/archive.hpp
@@ -65,20 +54,10 @@ set(HADES_CORE_SRC
 	include/hades/game_system.hpp
 	include/hades/game_system_resources.hpp
 	include/hades/grid.hpp
-	include/hades/gui.hpp
 	include/hades/level.hpp
-	include/hades/level_editor.hpp
-	include/hades/level_editor_component.hpp
-	include/hades/level_editor_grid.hpp
-	include/hades/level_editor_level_properties.hpp
-	include/hades/level_editor_objects.hpp
-	include/hades/level_editor_regions.hpp
-	include/hades/level_editor_terrain.hpp
-	include/hades/level_editor_tiles.hpp
 	include/hades/level_interface.hpp
 	include/hades/level_scripts.hpp
 	include/hades/mission.hpp
-	include/hades/mission_editor.hpp
 	include/hades/mouse_input.hpp
 	include/hades/objects.hpp
 	include/hades/players.hpp
@@ -90,23 +69,17 @@ set(HADES_CORE_SRC
 	include/hades/sf_streams.hpp
 	include/hades/sf_time.hpp
 	include/hades/sprite_batch.hpp
-	include/hades/standard_paths.hpp
 	include/hades/state.hpp
 	include/hades/terrain_map.hpp
 	include/hades/texture.hpp
 	include/hades/tiled_sprite.hpp
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
-	include/hades/debug/console_overlay.hpp
 	include/hades/debug/object_overlay.hpp
 	include/hades/detail/game_api.inl
 	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
-	include/hades/detail/gui.inl
-	include/hades/detail/level_editor.inl
-	include/hades/detail/level_editor_grid.inl
 	include/hades/detail/level_interface.inl
-	include/hades/detail/level_editor_objects.inl
 	include/hades/detail/mouse_input.inl
 	include/hades/detail/state.inl
 )
@@ -116,11 +89,10 @@ set(HADES_CORE_LIBS
 	hades-basic
 	#sfml-audio	
 	sfml-graphics
-	sfml-main	
+	#sfml-main	
 	#sfml-network 
-	sfml-system 
-	sfml-window
-	imgui
+	#sfml-system 
+	#sfml-window
 	plf-colony
 	PRIVATE	minizip)
 

@@ -19,7 +19,12 @@ set_target_properties(${EXAMPLE_EXE} PROPERTIES DEBUG_POSTFIX -d)
 
 target_include_directories(${EXAMPLE_EXE} PRIVATE ../include)
 
-target_link_libraries(${EXAMPLE_EXE} hades)
+set(HADES_EXAMPLE_LIBS
+	hades
+	hades-editor
+)
+
+target_link_libraries(${EXAMPLE_EXE} "${HADES_EXAMPLE_LIBS}")
 
 
 # Install (use "bin" folder for DLL, "lib" for SO files)

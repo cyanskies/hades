@@ -104,7 +104,7 @@ namespace hades
 	}
 
 	template<typename SystemType>
-	inline const name_list& system_behaviours<SystemType>::get_entities(SystemType& sys) const
+	inline name_list& system_behaviours<SystemType>::get_entities(SystemType& sys) const
 	{
 		return sys.attached_entities;
 	}

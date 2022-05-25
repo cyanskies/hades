@@ -188,7 +188,7 @@ namespace hades
 
 	namespace render
 	{
-		const activated_object_view &get_objects() noexcept
+		activated_object_view &get_objects() noexcept
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			return render_data_ptr->entity;
@@ -386,6 +386,12 @@ namespace hades
 		{
 			const auto id = hades::get_size_curve_id();
 			return get_property_ref<hades::const_curve, vec2_float>(o, id).get();
+		}
+
+		const resources::animation* get_animation(object_ref& o, unique_id id)
+		{
+			const auto& game_obj = state_api::get_object(o, *detail::get_render_extra_ptr());
+			return get_animation(*game_obj.object_type, id);
 		}
 	}
 }

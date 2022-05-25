@@ -26,7 +26,6 @@ namespace hades::resources
 		object();
 
 		//editor icon, used in the object picker
-		const hades::resources::animation *editor_icon = nullptr; //TODO: deprecate this(store an editor-icon in animations
 		const resources::animation_group* animations = nullptr;
 		//editor anim list
 		//used for placed objects
@@ -128,10 +127,11 @@ namespace hades
 	std::vector<const resources::system*> get_systems(const resources::object& o);
 	std::vector<const resources::render_system*> get_render_systems(const resources::object& o);
 
-	const hades::resources::animation *get_editor_icon(const resources::object &o);
-	const hades::resources::animation *get_random_animation(const object_instance &o);
+	const resources::animation *get_editor_icon(const resources::object &o);
+	const resources::animation *get_random_animation(const object_instance &o);
 	resources::object::animation_list get_editor_animations(const resources::object &o);
 	resources::object::animation_list get_editor_animations(const object_instance &o);
+	const resources::animation* get_animation(const resources::object& o, unique_id);
 
 	//helpers for common curves
 	//NOTE: can throw curve_error(if the curve resource doesn't exist

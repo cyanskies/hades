@@ -33,14 +33,8 @@ namespace hades
 			variable_id id = bad_variable;
 			using state_field_ptr = void*;
 			state_field_ptr var = nullptr;
-			std::pair<keyframe_style, curve_variable_type> info;
-		};
-
-		/*template<typename T>
-		constexpr bool operator==(const var_entry& l, const var_entry& r) noexcept
-		{
-			return l.id == r.ld;
-		}*/		
+			std::pair<keyframe_style, curve_variable_type> info; // curve_info_t
+		};	
 	}
 
 	namespace resources
@@ -74,7 +68,7 @@ namespace hades
 				plf::colony<state_field<pulse_curve<T>>>,
 				plf::colony<state_field<const_curve<T>>>
 				>,
-				std::tuple <
+				std::tuple<
 				plf::colony<state_field<step_curve<T>>>,
 				plf::colony<state_field<pulse_curve<T>>>,
 				plf::colony<state_field<const_curve<T>>>
@@ -192,7 +186,7 @@ namespace hades
 	}
 
 	//the whole game state, this is everything that gets saved
-	// the only data not held here, is from the level file(terrain data)
+	// the only data not held here, is from the level file(terrain data, regions, triggers)
 	// and calculated state in extra_state
 	struct game_state
 	{
@@ -208,7 +202,7 @@ namespace hades
 		template<template<typename> typename CurveType, typename T>
 		using data_colony = plf::colony<state_field<CurveType<T>>>;
 
-		// NOTE: state_data_type is over 2kb
+		// NOTE(24/05/2022): state_data_type is over 2kb
 		using state_data_type = detail::state_data_type_t<curve_types::type_pack>;
 		state_data_type state_data;
 		entity_id next_id = next(bad_entity);

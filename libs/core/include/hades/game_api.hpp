@@ -162,7 +162,7 @@ namespace hades
 	namespace render //TODO: client = render?
 	{
 		using namespace curve_types;
-		const activated_object_view &get_objects() noexcept;
+		activated_object_view &get_objects() noexcept;
 		render_interface *get_render_output() noexcept;
 		time_point get_time() noexcept;
 
@@ -285,6 +285,8 @@ namespace hades
 
 			const hades::linear_curve<vec2_float>& get_position(object_ref);
 			vec2_float get_size(object_ref);
+
+			const resources::animation* get_animation(object_ref&, unique_id);
 		}
 	}
 }

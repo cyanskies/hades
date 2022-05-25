@@ -47,14 +47,14 @@ namespace hades
 	{
 	public:
 		constexpr activated_object_view() noexcept = default;
-		activated_object_view(const name_list& n, time_point t) noexcept : _data{ &n },
+		activated_object_view(name_list& n, time_point t) noexcept : _data{ &n },
 			_activation_time{ t } {}
 
 		template<typename T>
 		class skip_iterator
 		{
 		public:
-			skip_iterator(typename name_list::const_iterator i, const name_list& d, time_point t) noexcept :
+			skip_iterator(typename name_list::iterator i, const name_list& d, time_point t) noexcept :
 				_i{ i }, _t{ t }, _data{ &d }
 			{
 				const auto end = std::end(*_data);
@@ -98,7 +98,7 @@ namespace hades
 			}
 
 		private:
-			name_list::const_iterator _i;
+			name_list::iterator _i;
 			time_point _t;
 			const name_list* _data;
 		};
@@ -131,7 +131,7 @@ namespace hades
 		}
 
 	private:
-		const name_list* _data = nullptr;
+		name_list* _data = nullptr;
 		time_point _activation_time;
 	};
 
@@ -180,7 +180,7 @@ namespace hades
 		// but are being reinitialised in on_create
 		name_list get_created_entities(SystemType&);
 		//get all entities currently attached to the system
-		const name_list& get_entities(SystemType&) const;
+		name_list& get_entities(SystemType&) const;
 		//get entities that were removed from the system last frame
 		name_list get_removed_entities(SystemType&);
 

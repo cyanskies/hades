@@ -157,7 +157,7 @@ namespace hades
 			if (!s->system->tick)
 				continue;
 
-			const auto& current_ents = sys_behaviours.get_entities(*s);
+			auto& current_ents = sys_behaviours.get_entities(*s);
 
 			auto& sys_data = sys_behaviours.get_system_data(s->system->id);
 			auto game_data = job_data;

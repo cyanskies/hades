@@ -34,8 +34,11 @@ namespace hades
 			// so that a local server wont end up with
 			// the render game_obj holding ptrs to the erased server data
 			auto obj = state_api::get_object_ptr(ref, _extra);
-			obj->id = bad_entity;
-			_extra.objects.erase(obj);
+			if (obj)
+			{
+				obj->id = bad_entity;
+				_extra.objects.erase(obj);
+			}
 		}
 
 		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };

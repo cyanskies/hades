@@ -85,11 +85,6 @@ namespace hades::resources
 
 			using namespace data::parse_tools;
 
-			//icon shown when selecting objects to place in the editor
-			const auto editor_icon = get_unique(*o, "editor-icon"sv, unique_id::zero);
-			if(editor_icon != unique_id::zero)
-				obj->editor_icon = animation_functions::find_or_create(d, editor_icon, mod);
-
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = animation_functions::get_id(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
@@ -184,10 +179,6 @@ namespace hades::resources
 
 		namespace animf = animation_functions;
 		namespace anim_groupf = animation_group_functions;
-
-		//load all the referenced resources
-		if (o.editor_icon && !animf::is_loaded(*o.editor_icon))
-			animf::get_resource(d, animf::get_id(*o.editor_icon));
 
 		for (const auto a : o.editor_anims)
 		{
@@ -531,10 +522,7 @@ namespace hades
 	{
 		namespace ag = resources::animation_group_functions;
 
-		// TODO: removed o.editor icon
-		if (o.editor_icon)
-			return o.editor_icon;
-		else if (const auto icon = 
+		if (const auto icon = 
 			resources::animation_group_functions::get_animation(*o.animations, editor_icon_id);
 			icon)
 			return icon;
@@ -591,6 +579,12 @@ namespace hades
 	{
 		assert(o.obj_type);
 		return get_editor_animations(*o.obj_type);
+	}
+
+	const resources::animation* get_animation(const resources::object& o, unique_id id)
+	{
+		assert(o.animations);
+		return resources::animation_group_functions::get_animation(*o.animations, id);
 	}
 
 	template<typename Object>

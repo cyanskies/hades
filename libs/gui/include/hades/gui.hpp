@@ -105,6 +105,7 @@ namespace hades
 		void frame_end();
 
 		void show_demo_window();
+		void show_vertex_test_window();
 
 		enum class window_flags : ImGuiWindowFlags {
 			none = ImGuiWindowFlags_::ImGuiWindowFlags_None,

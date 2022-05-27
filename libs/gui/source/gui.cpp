@@ -41,11 +41,12 @@ namespace hades
 
 		auto &io = ImGui::GetIO();
 
-
+		using flags = ImGuiBackendFlags_;
+		io.BackendFlags |= flags::ImGuiBackendFlags_RendererHasVtxOffset;
 		// TODO: ImGuiBackendFlags_HasMouseCursors
 		//			_SetCursorPos
 		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
-		io.BackendRendererName = "hades_SFML";
+		io.BackendRendererName = "hades";
 		
 		// TODO: clipboard support
 
@@ -197,6 +198,58 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::ShowDemoWindow();
+	}
+
+	void gui::show_vertex_test_window()
+	{
+		_active_assert();
+		if (!ImGui::Begin("Dear ImGui Backend Checker"))
+		{
+			ImGui::End();
+			return;
+		}
+
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::Text("Dear ImGui %s Backend Checker", ImGui::GetVersion());
+		ImGui::Text("io.BackendPlatformName: %s", io.BackendPlatformName ? io.BackendPlatformName : "NULL");
+		ImGui::Text("io.BackendRendererName: %s", io.BackendRendererName ? io.BackendRendererName : "NULL");
+		ImGui::Separator();
+
+		if (ImGui::TreeNode("0001: Renderer: Large Mesh Support"))
+		{
+			ImDrawList* draw_list = ImGui::GetWindowDrawList();
+			{
+				static int vtx_count = 60000;
+				ImGui::SliderInt("VtxCount##1", &vtx_count, 0, 100000);
+				ImVec2 p = ImGui::GetCursorScreenPos();
+				for (int n = 0; n < vtx_count / 4; n++)
+				{
+					float off_x = (float)(n % 100) * 3.0f;
+					float off_y = (float)(n % 100) * 1.0f;
+					ImU32 col = IM_COL32(((n * 17) & 255), ((n * 59) & 255), ((n * 83) & 255), 255);
+					draw_list->AddRectFilled(ImVec2(p.x + off_x, p.y + off_y), ImVec2(p.x + off_x + 50, p.y + off_y + 50), col);
+				}
+				ImGui::Dummy(ImVec2(300 + 50, 100 + 50));
+				ImGui::Text("VtxBuffer.Size = %d", draw_list->VtxBuffer.Size);
+			}
+			{
+				static int vtx_count = 60000;
+				ImGui::SliderInt("VtxCount##2", &vtx_count, 0, 100000);
+				ImVec2 p = ImGui::GetCursorScreenPos();
+				for (int n = 0; n < vtx_count / (10 * 4); n++)
+				{
+					float off_x = (float)(n % 100) * 3.0f;
+					float off_y = (float)(n % 100) * 1.0f;
+					ImU32 col = IM_COL32(((n * 17) & 255), ((n * 59) & 255), ((n * 83) & 255), 255);
+					draw_list->AddText(ImVec2(p.x + off_x, p.y + off_y), col, "ABCDEFGHIJ");
+				}
+				ImGui::Dummy(ImVec2(300 + 50, 100 + 20));
+				ImGui::Text("VtxBuffer.Size = %d", draw_list->VtxBuffer.Size);
+			}
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
 	}
 
 	bool gui::window_begin(std::string_view name, bool &closed, window_flags flags)
@@ -1011,11 +1064,12 @@ namespace hades
 					//this command
 					vertex_array.clear();
 					vertex_array.reserve(cmd.ElemCount);
+					const auto v_offset = cmd.VtxOffset;
 					const auto index_begin = std::next(index_first, cmd.IdxOffset);
 					const auto index_end = std::next(index_begin, cmd.ElemCount);
 					std::transform(index_begin, index_end, back_inserter(vertex_array), 
 						[&](const auto index) {
-						return to_vertex(draw_list->VtxBuffer[index], texture_size);
+						return to_vertex(draw_list->VtxBuffer[index + v_offset], texture_size);
 						}
 					);
 
@@ -1028,12 +1082,6 @@ namespace hades
 						assert(texture);
 						state.texture = &tex::get_sf_texture(texture);
 					}
-
-					/*const auto clip_region = rect_float{ cmd.ClipRect.x,
-						view_height - cmd.ClipRect.w,
-						cmd.ClipRect.z - cmd.ClipRect.x,
-						cmd.ClipRect.w - cmd.ClipRect.y };
-						*/
 
 					const auto x = cmd.ClipRect.x - draw_data->DisplayPos.x;
 					const auto y = cmd.ClipRect.y - draw_data->DisplayPos.y;

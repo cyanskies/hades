@@ -11,7 +11,7 @@
 namespace hades
 {
 	void register_terrain_resources(data::data_manager&);
-	void register_terrain_resources(data::data_manager&, detail::find_make_texture_f);
+	void register_terrain_resources(data::data_manager&, detail::get_texture_f);
 }
 
 namespace hades::resources
@@ -60,7 +60,7 @@ namespace hades::resources
 	{
 		terrainset();
 
-		std::vector<const terrain*> terrains;
+		std::vector<resource_link<terrain>> terrains;
 	};
 
 	struct terrain_settings_t final {};
@@ -69,10 +69,10 @@ namespace hades::resources
 	{
 		terrain_settings();
 
-		const terrain *empty_terrain = nullptr;
-		const terrainset* empty_terrainset = nullptr;
-		std::vector<const terrain*> terrains;
-		std::vector<const terrainset*> terrainsets;
+		resource_link<terrain> empty_terrain = nullptr;
+		resource_link<terrainset> empty_terrainset = nullptr;
+		std::vector<resource_link<terrain>> terrains;
+		std::vector<resource_link<terrainset>> terrainsets;
 	};
 
 	const terrain_settings *get_terrain_settings();

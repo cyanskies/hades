@@ -45,22 +45,58 @@ namespace hades
 
 		bool data_manager::exists(unique_id id) const
 		{
-			return _resources.find(id) != std::end(_resources);
+			const auto func = [id](auto&& res) noexcept {
+				return res->id == id;
+			};
+
+			return std::any_of(begin(_main.resources), end(_main.resources), func)
+				|| std::any_of(begin(_leaf.resources), end(_leaf.resources), func);
 		}
 
 		resources::resource_base *data_manager::get_resource(unique_id id)
 		{
-			auto res = _resources.find(id);
-			if (res == std::end(_resources))
+			auto r = try_get_resource(id);
+			if(!r)
 				throw resource_null("Failed to find resource for unique_id: " + get_as_string(id));
 
-			return res->second.get();
+			return r;
 		}
 
 		resources::resource_base *data_manager::try_get_resource(unique_id id) noexcept
 		{
-			auto res = _resources.find(id);
-			return res == std::end(_resources) ? nullptr : res->second.get();
+			const auto func = [id](auto&& res) noexcept {
+				return res->id == id;
+			};
+
+			const auto leaf_end = end(_leaf.resources);
+			const auto main_end = end(_main.resources);
+			auto res = std::find_if(begin(_leaf.resources), leaf_end, func);
+			if (res == leaf_end)
+			{
+				res = std::find_if(begin(_main.resources), main_end, func);
+
+				if (res == main_end)
+					return nullptr;
+			}
+
+			return res->get();
+		}
+
+		void data_manager::update_all_links()
+		{
+			for (auto& link : _resource_links)
+			{
+				try {
+					link->update_link();
+				}
+				catch (const resource_null& n)
+				{
+					using namespace std::string_literals;
+					LOGWARNING("A resource is storing a reference to a missing resource. "s + n.what());
+				}
+			}
+
+			return;
 		}
 
 		bool exists(unique_id id)

@@ -216,19 +216,19 @@ namespace hades
 			if (g.combo_begin("tilesets"sv, string))
 			{
 				const auto empty_tileset = _settings->empty_tileset;
-				if (g.selectable(data::get_as_string(empty_tileset->id), empty_tileset == _new_options.tileset))
-					_new_options.tileset = empty_tileset;
+				if (g.selectable(data::get_as_string(empty_tileset.id()), empty_tileset.get() == _new_options.tileset))
+					_new_options.tileset = empty_tileset.get();
 
 				for (const auto tileset : _settings->tilesets)
 				{
-					if (g.selectable(data::get_as_string(tileset->id), tileset == _new_options.tileset))
-						_new_options.tileset = tileset;
+					if (g.selectable(data::get_as_string(tileset->id), tileset.get() == _new_options.tileset))
+						_new_options.tileset = tileset.get();
 				}
 				
 				g.combo_end();
 			}
 
-			if (_new_options.tileset == _settings->empty_tileset)
+			if (_new_options.tileset == _settings->empty_tileset.get())
 				_new_options.tile = &resources::get_empty_tile();
 			else if (_new_options.tileset != nullptr)
 			{

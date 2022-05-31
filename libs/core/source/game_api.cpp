@@ -148,10 +148,12 @@ namespace hades
 			return state_api::get_object_creation_time(obj, state);
 		}
 
-		const tag_list& get_tags(object_ref o)
+		tag_list get_tags(object_ref o)
 		{
-			const auto tag_id = get_tags_curve_id();
-			return get_property_ref<const_curve, tag_list>(o, tag_id).get();
+			const auto game_data_ptr = detail::get_game_level_ptr();
+			auto& extra = game_data_ptr->get_extras();
+			const auto& obj = state_api::get_object(o, extra);
+			return hades::get_tags(*obj.object_type);
 		}
 
 		bool is_alive(object_ref o) noexcept

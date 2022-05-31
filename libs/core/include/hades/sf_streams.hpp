@@ -18,7 +18,7 @@ namespace hades
 			: _stream{ std::move(s) }
 		{
 			if (!_stream.is_open())
-				throw files::file_not_open{ "passed empty stream to sf_resource_stream" };
+				throw files::file_not_open{ "Passed empty stream to sf_resource_stream" };
 			return;
 		}
 

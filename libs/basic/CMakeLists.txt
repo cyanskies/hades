@@ -48,6 +48,7 @@ set(HADES_BASIC_SRC
 	include/hades/detail/game_loop.inl
 	include/hades/detail/input.inl
 	include/hades/detail/parser.inl
+	include/hades/detail/terrain.inl
 	include/hades/detail/tiles.inl
 	include/hades/detail/quad_map.inl
 	include/hades/detail/writer.inl

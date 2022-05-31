@@ -40,11 +40,11 @@ namespace hades::resources
 				auto &group = iter != std::end(settings->groups) ? *iter : settings->groups.emplace_back();
 
 				std::get<string>(group) = name;
-				auto &group_content = std::get<std::vector<const object*>>(group);
+				auto &group_content = std::get<std::vector<resource_link<object>>>(group);
 
 				group_content = g->merge_sequence(std::move(group_content), [&d, mod](const std::string_view str_id) {
 					const auto id = d.get_uid(str_id);
-					return d.find_or_create<object>(id, mod);
+					return d.make_resource_link<object>(id);
 				});
 			}
 		}//!object_groups
@@ -183,8 +183,8 @@ namespace hades
 	}
 
 	//TODO: replace calls to this with the helper in gui
-	template<typename Func>
-	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<const resources::object*> &objects, Func on_click)
+	template<typename Func, typename ObjectPtr>
+	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<ObjectPtr> &objects, Func on_click)
 	{
 		static_assert(std::is_invocable_v<Func, const resources::object*>);
 
@@ -216,7 +216,7 @@ namespace hades
 			else
 				name = data::get_as_string(o->id);
 
-			g.push_id(o);
+			g.push_id(&*o);
 			if (const auto ico = get_editor_icon(*o); ico)
 				clicked = g.image_button(*ico, button_size);	
 			else
@@ -226,7 +226,7 @@ namespace hades
 			g.tooltip(name);
 
 			if (clicked)
-				std::invoke(on_click, o);
+				std::invoke(on_click, &*o);
 
 			x2 = g.get_item_rect_max().x;
 		}
@@ -316,7 +316,7 @@ namespace hades
 				g.indent();
 
 				if (g.collapsing_header(std::get<string>(group)))
-					add_object_buttons(g, toolbox_width, std::get<std::vector<const resources::object*>>(group), on_click_object);
+					add_object_buttons(g, toolbox_width, std::get<std::vector<resources::resource_link<resources::object>>>(group), on_click_object);
 			}
 		}
 

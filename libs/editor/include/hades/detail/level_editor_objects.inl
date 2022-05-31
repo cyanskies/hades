@@ -563,7 +563,7 @@ namespace hades
 			else
 			{
 				const auto o_type = objs[_next_added_object_base - 1];
-				auto obj = ObjectType{ o_type };
+				auto obj = ObjectType{ o_type.get() };
 				add(std::move(obj));
 			}
 		}

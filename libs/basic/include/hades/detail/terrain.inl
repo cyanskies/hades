@@ -7,8 +7,8 @@ namespace hades
 	{
 		//transitions are selected between any terrain and the empty terrain
 		const auto has_terrain = [begin, end](const resources::terrain *t)->bool {
-			return std::any_of(begin, end, [t](const resources::terrain* t2) {
-				return t == t2;// return true if this terrain is in the beg/end range
+			return std::any_of(begin, end, [t](resources::resource_link<resources::terrain> t2) {
+				return t == t2.get();// return true if this terrain is in the beg/end range
 				});
 		};
 

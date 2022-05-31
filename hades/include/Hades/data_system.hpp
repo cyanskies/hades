@@ -9,12 +9,9 @@
 #include "hades/parser.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/types.hpp"
-//Data manager is a resource management class.
-//The class is not thread safe
 
 namespace hades::data
 {
-	//templatise on data file .ext and make_parser func
 	class data_system final : public data_manager
 	{
 	public:
@@ -67,14 +64,15 @@ namespace hades::data
 		void parseYaml(unique_id, const data::parser_node&);
 		
 		//==parsing and loading data==
-		std::unordered_map<types::string, resources::parser_func> _resourceParsers;
+		std::unordered_map<string, resources::parser_func> _resourceParsers;
 		//==stored resource data==
 		//list of used names
-		std::unordered_set<types::string> _names;
-		unique_id _game;
+		std::unordered_set<string> _names;
+		unique_id _game = unique_zero;
 		std::vector<unique_id> _mods;
+		unique_id _leaf_source = unique_zero; // temp loaded mod, this is the id of a mission file
 		//map of names to Uids
-		std::unordered_map<types::string, unique_id> _ids;
+		std::unordered_map<string, unique_id> _ids;
 		//list of unloaded resources
 		std::vector<resources::resource_base*> _loadQueue;
 	};

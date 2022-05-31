@@ -39,14 +39,14 @@ namespace hades
 		if (_new_options.terrain_set == nullptr)
 		{
 			if (!empty(_settings->terrainsets))
-				_new_options.terrain_set = _settings->terrainsets.front();
+				_new_options.terrain_set = _settings->terrainsets.front().get();
 		}
 
 		if (_new_options.terrain_set &&
 			_new_options.terrain == nullptr &&
 			!empty(_new_options.terrain_set->terrains))
 		{
-			_new_options.terrain = _new_options.terrain_set->terrains.back();
+			_new_options.terrain = _new_options.terrain_set->terrains.back().get();
 		}
 	}
 
@@ -260,7 +260,7 @@ namespace hades
 					_current.terrain = t;
 				};
 
-				auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
+				auto make_button = [this, on_click](gui &g, resources::resource_link<resources::terrain> terrain) {
 					constexpr auto button_size = gui::vector2{
 						25.f,
 						25.f
@@ -284,7 +284,7 @@ namespace hades
 					//need to push a prefix to avoid the id clashing from the same texture
 					g.push_id(terrain);
 					if (g.image_button(*t.texture, tex_coords, button_size))
-						std::invoke(on_click, terrain);
+						std::invoke(on_click, terrain.get());
 					g.pop_id();
 				};
 
@@ -320,8 +320,8 @@ namespace hades
 					for (const auto tset : _settings->terrainsets)
 					{
 						assert(tset);
-						if (g.selectable(data::get_as_string(tset->id), tset == _new_options.terrain_set))
-							_new_options.terrain_set = tset;
+						if (g.selectable(data::get_as_string(tset->id), tset.get() == _new_options.terrain_set))
+							_new_options.terrain_set = tset.get();
 					}
 
 					g.combo_end();
@@ -333,7 +333,7 @@ namespace hades
 						_new_options.terrain = t;
 					};
 
-					auto make_button = [this, on_click](gui &g, const resources::terrain *terrain) {
+					auto make_button = [this, on_click](gui &g, resources::resource_link<resources::terrain> terrain) {
 						constexpr auto button_size = gui::vector2{
 							25.f,
 							25.f
@@ -358,7 +358,7 @@ namespace hades
 						//need to push a prefix to avoid the id clashing from the same texture
 						g.push_id(terrain);
 						if (g.image_button(*t.texture, tex_coords, button_size))
-							std::invoke(on_click, terrain);
+							std::invoke(on_click, terrain.get());
 						g.pop_id();
 					};
 

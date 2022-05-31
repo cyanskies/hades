@@ -23,9 +23,7 @@ namespace hades
 	{
 		//register dependent resources
 		register_texture_resource(d);
-		register_tiles_resources(d, [](data::data_manager &d, unique_id id, unique_id mod) {
-			return tex_funcs::find_create_texture(d, id, mod);
-		});
+		register_tiles_resources(d, tex_funcs::get_resource);
 
 		//add texture to error tile
 		//const auto settings = resources::get_tile_settings();
@@ -36,7 +34,7 @@ namespace hades
 		assert(settings->error_tileset);
 		assert(!settings->error_tileset->tiles.empty());
 		const auto &error_tile = settings->error_tileset->tiles[0];
-		auto error_tex = tex_funcs::find_create_texture(d, tex_funcs::get_id(error_tile.texture), unique_id::zero);
+		auto error_tex = tex_funcs::find_create_texture(d, error_tile.texture.id(), unique_id::zero);
 		auto img = sf::Image{};
 		img.create(1u, 1u, sf::Color::Magenta);
 		auto& tex = tex_funcs::get_sf_texture(error_tex);
@@ -124,13 +122,13 @@ namespace hades
 
 			for (auto &c : tex_cache)
 			{
-				if (c == t.texture)
+				if (c == t.texture.get())
 					texture = c;
 			}
 
 			if (!texture)
 			{
-				texture = t.texture;
+				texture = t.texture.get();
 				tex_cache.push_back(texture);
 			}
 
@@ -297,7 +295,7 @@ namespace hades
 		{
 			for (auto i = std::size_t{}; i < layer_count; ++i)
 			{
-				if (texture_layers[i].texture == t.texture)
+				if (texture_layers[i].texture == t.texture.get())
 				{
 					layer_index = i;
 					break;
@@ -310,7 +308,7 @@ namespace hades
 				layer_index = size(texture_layers);
 
 				texture_layers.emplace_back(
-					texture_layer{ t.texture, { vertex_usage } }
+					texture_layer{ t.texture.get(), {vertex_usage}}
 				);
 				_dirty_buffers.emplace_back(true);
 

@@ -13,9 +13,6 @@
 //Data provides thread safe access to the hades data manager.
 namespace hades
 {
-	[[deprecated]]
-	constexpr auto empty_id = unique_zero;
-
 	namespace data
 	{
 		class data_manager;
@@ -25,6 +22,98 @@ namespace hades
 	namespace resources
 	{
 		using parser_func = std::function<void(unique_id mod, const data::parser_node&, data::data_manager&)>;
+
+		class resource_link_base
+		{
+		public:
+			constexpr explicit resource_link_base(unique_id id) noexcept : _id{ id } {}
+
+			virtual ~resource_link_base() noexcept = default;
+
+			virtual void update_link() = 0;
+			unique_id id() const noexcept
+			{
+				return _id;
+			};
+
+			virtual operator bool() const noexcept = 0;
+
+		private:
+			unique_id _id = unique_zero;
+		};
+
+		// resources use these to point to one another
+		// this lets the ptrs be updated from the data manager
+		template<typename T>
+		class resource_link_type : public resource_link_base
+		{
+		public:
+			using get_func = const T* (*)(unique_id);
+
+			constexpr explicit resource_link_type(unique_id id, get_func get) noexcept :
+				resource_link_base{ id }, _get{ get } {}
+
+			void update_link() override;
+
+			const T& operator*() const
+			{
+				return *_resource;
+			}
+
+			const T* operator->() const
+			{
+				return _resource;
+			}
+
+			operator bool() const noexcept override
+			{
+				return _resource;
+			}
+
+		private:
+			const T* _resource = nullptr;
+			get_func _get;
+
+		};
+
+		template<typename T>
+		class resource_link
+		{
+		public:
+			constexpr resource_link() noexcept = default;
+			constexpr resource_link(resource_link_type<T>* link) noexcept : _link{ link } {}
+
+			unique_id id() const noexcept
+			{
+				return (*_link).id();
+			}
+
+			const T* get() const noexcept
+			{
+				return &**_link;
+			}
+
+			const T& operator*() const
+			{
+				return **_link;
+			}
+
+			const resource_link_type<T>& operator->() const
+			{
+				return *_link;
+			}
+
+			operator bool() const noexcept
+			{
+				return _link && *_link;
+			}
+
+		private:
+			const resource_link_type<T>* _link = nullptr;
+		};
+
+		template<typename T>
+		std::vector<unique_id> get_ids(const std::vector<resource_link<T>>&);
 	}
 
 	namespace data
@@ -32,6 +121,9 @@ namespace hades
 		//tag type to request that a resource not be lazy loaded
 		struct no_load_t {};
 		constexpr no_load_t no_load{};
+
+		template<class T>
+		const T* get(unique_id id);
 
 		class data_manager
 		{
@@ -45,13 +137,18 @@ namespace hades
 			//allows creating a ptr to a resource that hasn't actually been defined yet
 			// returns nullptr on error
 			template<class T>
-			[[nodiscard]] T* find_or_create(unique_id target, unique_id mod);
+			[[nodiscard]] T* find_or_create(unique_id target, unique_id mod, std::string_view group = {});
 
 			template<typename T>
-			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id> &target, unique_id mod);
+			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id>& target, unique_id mod, std::string_view group = {});
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;
+
+			template<typename T>
+			resources::resource_link<T> make_resource_link(unique_id, typename resources::resource_link_type<T>::get_func = data::get<T>);
+			template<typename T>
+			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, typename resources::resource_link_type<T>::get_func = data::get<T>);
 
 			//returns the resource associated with the id
 			//returns the resource base class
@@ -99,7 +196,14 @@ namespace hades
 			//and assigns it to the name id
 			//throws resource_name_already_used if the id already refers to a resource
 			template<class T>
-			void set(unique_id id, std::unique_ptr<T> ptr);
+			void set(unique_id id, std::unique_ptr<T> ptr, std::string_view group = {});
+
+			void update_all_links();
+
+			inline void finalise_main_parse() noexcept
+			{
+				_main_loaded = true;
+			}
 
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;
@@ -111,8 +215,27 @@ namespace hades
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
 
+			using resource_group = std::pair<string, std::vector<const resources::resource_base*>>;
+
+		protected:
+			bool _main_loaded = false;
+
 		private:
-			std::map<unique_id, std::unique_ptr<resources::resource_base>> _resources;
+			struct resource_storage
+			{
+				std::vector<std::unique_ptr<resources::resource_base>> resources;
+				std::vector<resource_group> resources_by_type;
+			};
+
+			// set to true after the main mod has been parsed
+			// causes additional resources to be placed in the leaf
+			
+			resource_storage _main;
+			resource_storage _leaf;
+			std::vector<std::unique_ptr<resources::resource_link_base>> _resource_links;
+			//std::vector<mod> _mods;
+			//std::vector<std::unique_ptr<resources::resource_base>> _resources2;
+			//std::map<unique_id, std::unique_ptr<resources::resource_base>> _resources;
 		};
 
 		namespace detail
@@ -145,7 +268,6 @@ namespace hades
 
 		template<class T>
 		data_manager::try_get_return<const T> try_get(unique_id id);
-		//TODO: get_mutable, to allow for elements that edit an owned resource
 
 		//refresh requests
 

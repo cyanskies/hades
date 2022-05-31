@@ -319,6 +319,7 @@ namespace hades::resources
 		return value;
 	}
 
+	// TODO: remove this
 	static std::vector<const curve*> curve_master_list;
 
 	const std::vector<const curve*> &get_all_curves()

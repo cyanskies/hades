@@ -161,6 +161,8 @@ namespace hades
 			return true;
 		});
 
+		data.update_all_links();
+
 		_window.resetGLStates();
 
 		//if hades main handles any of the commands then they will be removed from 'commands'

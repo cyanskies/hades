@@ -19,7 +19,7 @@ namespace hades::resources
 	{
 		struct layer
 		{
-			const animation *animation = nullptr;
+			resource_link<animation> animation;
 			vector_float offset{ 0.f, 0.f };
 			vector_float parallax{ 0.f, 0.f };
 		};

@@ -7,10 +7,31 @@
 
 namespace hades
 {
+	namespace resources
+	{
+		template<typename T>
+		inline void resource_link_type<T>::update_link()
+		{
+			assert(id());
+			_resource = std::invoke(_get, id());// data::get<T>(id());
+			return;
+		}
+
+		template<typename T>
+		std::vector<unique_id> get_ids(const std::vector<resource_link<T>>& res)
+		{
+			auto out = std::vector<unique_id>{};
+			out.reserve(size(res));
+
+			std::transform(begin(res), end(res), back_inserter(out), std::mem_fn(&resource_link<T>::id));
+			return out;
+		}
+	}
+
 	namespace data
 	{
 		template<class T>
-		T* data_manager::find_or_create(unique_id target, unique_id mod)
+		T* data_manager::find_or_create(unique_id target, unique_id mod, std::string_view group)
 		{
 			using Type = std::remove_const_t<T>;
 
@@ -28,7 +49,7 @@ namespace hades
 			{
 				auto new_ptr = std::make_unique<Type>();
 				r = &*new_ptr;
-				set<Type>(target, std::move(new_ptr));
+				set<Type>(target, std::move(new_ptr), group);
 
 				r->id = target;
 			}
@@ -49,7 +70,7 @@ namespace hades
 			// NOTE: member variable ptr
 			// this is a work around for syntax error when T == resources::mod
 			// need to disambiguate r->mod when mod is also the name of T
-			// compiler mistakes mod for an illegal constructor call
+			// compiler(MSVC) mistakes mod for an illegal constructor call
 			auto member_ptr = &resources::resource_base::mod;
 			if (r)
 				r->*member_ptr = mod;
@@ -58,15 +79,51 @@ namespace hades
 		}
 
 		template<typename T>
-		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, unique_id mod)
+		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, unique_id mod, std::string_view group)
 		{
 			std::vector<T*> out;
 			out.reserve(target.size());
 
-			std::transform(std::begin(target), std::end(target), std::back_inserter(out), [mod, &out, this](const unique_id id) {
-				return find_or_create<T>(id, mod);
+			std::transform(std::begin(target), std::end(target), std::back_inserter(out), [&](const unique_id id) {
+				return find_or_create<T>(id, mod, group);
 			});
 
+			return out;
+		}
+
+		template<typename T>
+		resources::resource_link<T> data_manager::make_resource_link(unique_id id,
+			typename resources::resource_link_type<T>::get_func get)
+		{
+			using namespace std::string_literals;
+
+			for (const auto& link : _resource_links)
+			{
+				if (link->id() == id)
+				{
+					const auto link_ptr = dynamic_cast<resources::resource_link_type<T>*>(link.get());
+					if (link_ptr)
+						return { link_ptr };
+				}
+			}
+
+			auto link_type = std::make_unique<resources::resource_link_type<T>>(id, get);
+			const auto ret = resources::resource_link<T>{ link_type.get() };
+			_resource_links.emplace_back(std::move(link_type));
+			return ret;
+		}
+
+		template<typename T>
+		std::vector<resources::resource_link<T>> data_manager::make_resource_link(const std::vector<unique_id>& ids, typename resources::resource_link_type<T>::get_func getter)
+		{
+			auto out = std::vector<resources::resource_link<T>>{};
+			out.reserve(size(ids));
+
+			auto func = [this, getter](unique_id id) {
+				return make_resource_link<T>(id, getter);
+			};
+
+			std::transform(begin(ids), end(ids), back_inserter(out), func);
 			return out;
 		}
 
@@ -130,7 +187,7 @@ namespace hades
 		}
 
 		template<class T>
-		void data_manager::set(unique_id id, std::unique_ptr<T> ptr)
+		void data_manager::set(unique_id id, std::unique_ptr<T> ptr, std::string_view group)
 		{
 			//throw error if that id has already been used
 			if (exists(id))
@@ -141,7 +198,26 @@ namespace hades
 
 			//store the id used within the resource for ease of use
 			ptr->id = id;
-			_resources.insert({ id, std::move(ptr) });
+			resource_storage& res_store = [&]()->resource_storage& {
+				return _main_loaded ? _leaf : _main;
+			}();
+
+			// add to resource storage
+			const auto res_ptr = res_store.resources.emplace_back(std::move(ptr)).get();
+
+			// add to resource group
+			resource_group* res_group = nullptr;
+			for (auto& r : res_store.resources_by_type)
+			{
+				if (r.first == group)
+					res_group = &r;
+			}
+
+			if (!res_group)
+				res_group = &res_store.resources_by_type.emplace_back(group, std::vector<const resources::resource_base*>{});
+
+			res_group->second.emplace_back(res_ptr);
+			return;
 		}
 
 		template<class T>

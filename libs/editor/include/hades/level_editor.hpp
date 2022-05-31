@@ -4,8 +4,6 @@
 #include <string_view>
 #include <tuple>
 
-#include "SFML/Graphics/RectangleShape.hpp"
-
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"

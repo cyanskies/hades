@@ -49,7 +49,7 @@ namespace hades
 				try
 				{
 					std::visit([identifier, &value, this](auto &&arg) {
-						using T = std::decay_t<decltype(arg)>::element_type::value_type;
+						using T = typename std::decay_t<decltype(arg)>::element_type::value_type;
 						set(identifier, from_string<T>(value));
 					}, var);
 

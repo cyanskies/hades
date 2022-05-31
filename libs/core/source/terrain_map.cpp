@@ -7,9 +7,7 @@ namespace hades
 	void register_terrain_map_resources(data::data_manager &d)
 	{
 		register_texture_resource(d);
-		register_terrain_resources(d, [](data::data_manager &d, unique_id id, unique_id mod) {
-			return resources::texture_functions::find_create_texture(d, id, mod);
-		});
+		register_terrain_resources(d, resources::texture_functions::get_resource);
 	}
 
 	immutable_terrain_map::immutable_terrain_map(const terrain_map &t) :

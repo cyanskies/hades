@@ -3,8 +3,8 @@
 
 #include <array>
 
+#include "hades/data.hpp"
 #include "hades/game_types.hpp"
-#include "hades/resource_base.hpp"
 
 // system for working with logical tiles
 // editing a tilemap, and getting tag_lists from the map
@@ -12,7 +12,6 @@
 // forward decs
 namespace hades::data
 {
-	class data_manager;
 	class writer;
 	class parser_node;
 }
@@ -27,7 +26,7 @@ namespace hades::resources
 
 namespace hades::detail
 {
-	using find_make_texture_f = resources::texture* (*)(data::data_manager&, unique_id, unique_id);
+	using get_texture_f = const resources::texture* (*)(unique_id);
 }
 
 namespace hades
@@ -37,7 +36,7 @@ namespace hades
 	// without bringing in graphics resources and linkage
 	void register_tiles_resources(data::data_manager&);
 	//as above, but loads textures from the requested function
-	void register_tiles_resources(data::data_manager&, detail::find_make_texture_f);
+	void register_tiles_resources(data::data_manager&, detail::get_texture_f);
 }
 
 //resources for loading tiles and tilesets
@@ -51,16 +50,18 @@ namespace hades::resources
 	using tile_size_t = texture_size_t;
 
 	struct tileset;
-
 	struct tile
 	{
 		//texture and [left, top] are used for drawing
-		const resources::texture *texture = nullptr;
+		resource_link<texture> texture;
 		tile_size_t left{}, top{};
+		// NOTE: this is intentionally not a resource_link
+		//		since tiles themselves aren't a resource
+		//		and are always created after the tileset they're in
 		const tileset *source = nullptr;
 	};
 
-	//bad tile can be used as a sentinal
+	//bad tile can be used as a sentinel
 	//only bad tile should ever have a null source
 	constexpr auto bad_tile = tile{};
 
@@ -86,10 +87,10 @@ namespace hades::resources
 		tile_settings();
 		tile_settings(loader_func);
 
-		const tileset *error_tileset = nullptr;
-		const tileset *empty_tileset = nullptr;
+		resource_link<tileset> error_tileset;
+		resource_link<tileset> empty_tileset;
 
-		std::vector<const tileset*> tilesets; 
+		std::vector<resource_link<tileset>> tilesets;
 		tile_size_t tile_size{};
 	};
 

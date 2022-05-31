@@ -13,7 +13,7 @@ namespace hades
 {
 	namespace detail
 	{
-		static find_make_texture_f find_make_texture{};
+		static get_texture_f get_texture{};
 	}
 
 	//using namespace std::string_literals;
@@ -35,19 +35,19 @@ namespace hades
 
 	void register_tiles_resources(data::data_manager &d)
 	{
-		register_tiles_resources(d, [](data::data_manager&, unique_id, unique_id)->resources::texture*
-		{
-			return nullptr;
+		register_tiles_resources(d, 
+			[](unique_id)->const resources::texture* {
+				return nullptr;
 		});
 	}
 
-	void register_tiles_resources(data::data_manager &d, detail::find_make_texture_f fm_texture)
+	void register_tiles_resources(data::data_manager &d, detail::get_texture_f get_texture)
 	{
 		d.register_resource_type(tile_settings_name, parse_tile_settings);
 		d.register_resource_type(tilesets_name, parse_tilesets);
 
 		const auto error_texture = unique_id{};
-		auto texture = std::invoke(fm_texture, d, error_texture, unique_id::zero);
+		auto texture = d.make_resource_link<resources::texture>(error_texture, get_texture);
 
 		//create error tileset and add a default error tile
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
@@ -63,11 +63,11 @@ namespace hades
 		//create default tile settings obj
 		id::tile_settings = hades::data::make_uid(tile_settings_name);
 		auto settings = d.find_or_create<resources::tile_settings>(id::tile_settings, unique_id::zero);
-		settings->error_tileset = error_tset;
-		settings->empty_tileset = empty_tset;
+		settings->error_tileset = d.make_resource_link<resources::tileset>(id::error_tileset);
+		settings->empty_tileset = d.make_resource_link<resources::tileset>(id::empty_tileset);
 		settings->tile_size = 8;
 
-		detail::find_make_texture = fm_texture;
+		detail::get_texture = get_texture;
 	}
 
 	static void parse_tile_settings(unique_id mod, const data::parser_node &n, data::data_manager &d)
@@ -84,7 +84,7 @@ namespace hades
 	}
 
 	static void add_tiles_to_tileset(std::vector<resources::tile> &tile_list,
-		const resources::texture *texture, texture_size_t left,
+		resources::resource_link<resources::texture> texture, texture_size_t left,
 		texture_size_t top, tile_index_t width,	tile_index_t count,
 		resources::tile_size_t tile_size)
 	{
@@ -137,8 +137,7 @@ namespace hades
 				continue;
 			}
 
-			const resources::texture *tex =
-				std::invoke(hades::detail::find_make_texture, d, tex_id, mod);
+			const auto tex = d.make_resource_link<resources::texture>(tex_id, hades::detail::get_texture);
 
 			const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
 			const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
@@ -197,7 +196,7 @@ namespace hades
 
 			resources::detail::parse_tiles(mod, *tileset, tile_size, *tileset_n, d);
 
-			tile_settings->tilesets.emplace_back(tileset);
+			tile_settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id));
 		}
 
 		remove_duplicates(tile_settings->tilesets);
@@ -250,9 +249,7 @@ namespace hades::resources
 		{
 			if (t.texture)
 			{
-				//NOTE: textures are always inherited from resource_base
-				const auto res = reinterpret_cast<const resource_base*>(t.texture);
-				auto texture = d.get_resource(res->id);
+				auto texture = d.get_resource(t.texture.id());
 				if(!texture->loaded)
 					texture->load(d);
 			}
@@ -586,15 +583,15 @@ namespace hades
 		
 		for (const auto tileset : s->tilesets)
 			if (is_in_tileset(*tileset, t))
-				return tileset;
+				return tileset.get();
 
 		//check if in empty
 		if (is_in_tileset(*s->empty_tileset, t))
-			return s->empty_tileset;
+			return s->empty_tileset.get();
 
 		//check error
 		if (is_in_tileset(*s->error_tileset, t))
-			return s->error_tileset;
+			return s->error_tileset.get();
 
 		return nullptr;
 	}

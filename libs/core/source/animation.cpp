@@ -19,12 +19,12 @@ namespace hades::resources
 		animation() noexcept : anim_base(load_animation)
 		{}
 
-		const texture* tex = nullptr;
+		resource_link<texture> tex;
 		time_duration duration = time_duration::zero();
 		//const shader *anim_shader = nullptr;
 	};
 
-	using anim_group_base = resource_type<std::unordered_map<unique_id, const animation*>>;
+	using anim_group_base = resource_type<std::unordered_map<unique_id, resource_link<animation>>>;
 	static void load_anim_group(anim_group_base& res, data::data_manager& d);
 
 	struct animation_group : public anim_group_base
@@ -84,7 +84,7 @@ namespace hades::resources::animation_functions
 
 	const texture* get_texture(const animation& a) noexcept
 	{
-		return a.tex;
+		return a.tex.get();
 	}
 
 	time_duration get_duration(const animation& a) noexcept
@@ -131,7 +131,7 @@ namespace hades::resources::animation_group_functions
 		if (iter == end(a.value))
 			return nullptr;
 
-		return iter->second;
+		return iter->second.get();
 	}
 }
 
@@ -313,11 +313,11 @@ namespace hades::resources
 			using namespace data::parse_tools;
 			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string);
 			namespace tex_funcs = texture_functions;
-			const auto tex_id = anim->tex ? tex_funcs::get_id(anim->tex) : unique_id::zero;
+			const auto tex_id = anim->tex ? anim->tex.id() : unique_id::zero;
 			const auto new_tex_id = get_unique(*a, "texture"sv, tex_id);
 
 			if (new_tex_id != unique_id::zero)
-				anim->tex = tex_funcs::find_create_texture(d, new_tex_id, mod);
+				anim->tex = d.make_resource_link<resources::texture>(new_tex_id, texture_functions::get_resource);
 
 			const auto frames_node = a->get_child("frames"sv);
 
@@ -373,16 +373,7 @@ namespace hades::resources
 			for (const auto& [name, val] : map)
 			{
 				const auto id = d.get_uid(name);
-				try
-				{
-					const auto anim = animation_functions::find_or_create(d, val, mod);
-					if (anim)
-						group->value.insert_or_assign(id, anim);
-				}
-				catch (data::resource_error& r)
-				{
-					LOGERROR("Cannot add animation to group: "s + group_name + ", reason: "s + r.what());
-				}
+				group->value.insert_or_assign(id, d.make_resource_link<resources::animation>(val));
 			}
 		}
 
@@ -395,11 +386,10 @@ namespace hades::resources
 		auto &a = dynamic_cast<animation&>(r);
 		if (!a.tex)
 			LOGWARNING("Failed to load animation: " + d.get_as_string(r.id) + ", missing texture"s);
-		else if (!texture_functions::get_is_loaded(a.tex))
+		else if (!texture_functions::get_is_loaded(a.tex.get()))
 		{
-			const auto id = texture_functions::get_id(a.tex);
 			//data->get will lazy load texture
-			texture_functions::get_resource(d, id);
+			texture_functions::get_resource(d, a.tex.id());
 		}
 	}
 
@@ -426,12 +416,11 @@ namespace hades::animation
 
 		//force lazy load if the texture hasn't been loaded yet.
 		// TODO: is this ever reached
-		assert(resources::texture_functions::get_is_loaded(animation.tex));
-		if (!resources::texture_functions::get_is_loaded(animation.tex))
+		assert(resources::texture_functions::get_is_loaded(animation.tex.get()));
+		if (!resources::texture_functions::get_is_loaded(animation.tex.get()))
 		{
-			const auto id = resources::texture_functions::get_id(animation.tex);
 			//data->get will lazy load texture
-			resources::texture_functions::get_resource(id);
+			resources::texture_functions::get_resource(animation.tex.id());
 		}
 		
 		//calculate the progress to find the correct rect for this time
@@ -463,7 +452,7 @@ namespace hades::animation
 		const auto tex_w = f.w;
 		const auto tex_h = f.h;
 
-		target.setTexture(resources::texture_functions::get_sf_texture(animation.tex));
+		target.setTexture(resources::texture_functions::get_sf_texture(animation.tex.get()));
 		target.setTextureRect({{
 				static_cast<int>(tex_x),
 				static_cast<int>(tex_y)

@@ -133,7 +133,7 @@ namespace hades
 		if (_try_open_from_dir(standard_file_directory(), m, f))
 			return;
 
-		throw files::file_not_found{ "unable to find file: " + (m / f).generic_string() };
+		throw files::file_not_found{ "Unable to find file: " + (m / f).generic_string() };
 	}
 
 	void irfstream::close() noexcept

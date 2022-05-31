@@ -106,7 +106,7 @@ namespace hades
 	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor&& f)
 	{
 		static_assert(std::is_invocable_v<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>);
-		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>, TableFirst::value_type>);
+		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const typename TableFirst::value_type&, const typename TableSecond::value_type&>, typename TableFirst::value_type>);
 
 		const auto r_pos = r.position();
 		const auto r_siz = r.size();
@@ -115,7 +115,7 @@ namespace hades
 
 		//generate intersecting subrectangle
 		using table_t = table<typename TableFirst::value_type>;
-		auto area = rect_t<table_t::size_type>{};
+		auto area = rect_t<typename table_t::size_type>{};
 		if (!intersect_area({l_pos, l_siz}, {r_pos, r_siz}, area))
 			return table_t{ l , typename TableFirst::value_type{} };
 

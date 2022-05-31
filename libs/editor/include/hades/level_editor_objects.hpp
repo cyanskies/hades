@@ -24,7 +24,7 @@ namespace hades::resources
 
 	struct level_editor_object_settings : resource_type<level_editor_object_settings_t>
 	{
-		using object_group = std::tuple<string, std::vector<const object*>>;
+		using object_group = std::tuple<string, std::vector<resource_link<object>>>;
 		std::vector<object_group> groups;
 		sf::Color object_colour = sf::Color::Cyan;
 	};

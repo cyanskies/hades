@@ -77,11 +77,12 @@ namespace hades
 		struct resource_type : public resource_base
 		{
 			using loader_func = void(*)(resource_type<T>&, data::data_manager&);
-			
+			using update_links_func = void(*)(resource_type<T>&);
+			using unload_func = void(*)(resource_type<T>&); // reset all settings to default?
+			using writer_func = void(*)(resource_type<T>&);
+
 			resource_type() = default;
 			resource_type(loader_func loader) : _resource_loader{ loader } {}
-			
-			virtual ~resource_type() noexcept = default;
 
 			void load(data::data_manager &d) override 
 			{

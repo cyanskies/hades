@@ -9,6 +9,8 @@
 #include "hades/parser.hpp"
 #include "hades/sf_streams.hpp"
 
+hades::unique_id error_texture_id = hades::unique_zero;
+
 namespace hades
 {
 	void load_texture(resources::resource_type<sf::Texture>&, data::data_manager&);
@@ -32,6 +34,14 @@ namespace hades
 	void register_texture_resource(data::data_manager &d)
 	{
 		using namespace std::string_view_literals;
+
+		error_texture_id = d.get_uid("error-texture"sv);
+
+		auto tex = d.find_or_create<resources::texture>(error_texture_id, unique_zero, "textures"sv);
+		tex->width = 32;
+		tex->height = 32;
+		tex->repeat = true;
+
 		d.register_resource_type("textures"sv, parse_texture);
 	}
 
@@ -151,7 +161,7 @@ namespace hades
 			}
 			catch (const files::file_error &e)
 			{
-				LOGERROR("Failed to load texture: "s + mod->source + "/"s + tex.source + ". "s + e.what());
+				LOGERROR("Failed to load texture: "s + d.get_as_string(tex.id) + ". "s + e.what());
 				tex.value = generate_default_texture(tex.width, tex.height);
 			}
 
@@ -205,7 +215,16 @@ namespace hades
 
 			const texture* get_resource(const unique_id id)
 			{
-				return data::get<texture>(id);
+				try
+				{
+					return data::get<texture>(id);
+				}
+				catch (data::resource_null& e)
+				{
+					using namespace std::string_literals;
+					LOGERROR("Unable to get texture. "s + e.what());
+					return data::get<texture>(error_texture_id);
+				}
 			}
 
 			const texture* get_resource(data::data_manager& d, unique_id i)

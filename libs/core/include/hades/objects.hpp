@@ -26,30 +26,35 @@ namespace hades::resources
 		object();
 
 		//editor icon, used in the object picker
-		const resources::animation_group* animations = nullptr;
+		resource_link<resources::animation_group> animations;
 		//editor anim list
 		//used for placed objects
-		using animation_list = std::vector<const hades::resources::animation*>;
+		using animation_list = std::vector<resource_link<resources::animation>>;
 		animation_list editor_anims; // TODO: can we fit this in animations too somehow
 		//base objects, curves and systems are inherited from these
-		using base_list = std::vector<const object*>;
+		using base_list = std::vector<resource_link<object>>;
 		base_list base;
 		//list of curves
-		using curve_obj = std::tuple<const hades::resources::curve*, hades::resources::curve_default_value>;
+		// NOTE: curves need  to be defined before other resources can reference them
+		//		no benifit to using resource_link here
+		using curve_obj = std::tuple<const curve*, curve_default_value>;
 		using curve_list = std::vector<curve_obj>;
 		curve_list curves;
 
 		//server systems
-		using system_list = std::vector<const hades::resources::system*>;
+		using system_list = std::vector<resource_link<resources::system>>;
 		system_list systems;
 
 		//client systems
-		using render_system_list = std::vector<const hades::resources::render_system*>;
+		using render_system_list = std::vector<resource_link<resources::render_system>>;
 		render_system_list render_systems;
+
+		// tags
+		tag_list tags;
 	};
 
 	//TODO: hide behind func
-	extern std::vector<const object*> all_objects;
+	extern std::vector<resource_link<object>> all_objects;
 }
 
 namespace hades
@@ -118,7 +123,7 @@ namespace hades
 	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v);
 
 	void set_curve(object_instance& o, const unique_id i, curve_value v); 
-	void set_curve(resources::object& o, const hades::resources::curve& c, curve_value v);
+	void set_curve(resources::object& o, const resources::curve& c, curve_value v);
 	void set_curve(resources::object& o, const unique_id i, curve_value v);
 
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
@@ -129,8 +134,8 @@ namespace hades
 
 	const resources::animation *get_editor_icon(const resources::object &o);
 	const resources::animation *get_random_animation(const object_instance &o);
-	resources::object::animation_list get_editor_animations(const resources::object &o);
-	resources::object::animation_list get_editor_animations(const object_instance &o);
+	std::vector<const resources::animation*> get_editor_animations(const resources::object &o);
+	std::vector<const resources::animation*> get_editor_animations(const object_instance &o);
 	const resources::animation* get_animation(const resources::object& o, unique_id);
 
 	//helpers for common curves

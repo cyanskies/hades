@@ -18,7 +18,7 @@ namespace hades
 {
 	namespace detail
 	{
-		static find_make_texture_f find_make_texture{};
+		static get_texture_f get_texture{};
 	}
 
 	namespace id
@@ -39,40 +39,38 @@ namespace hades
 	void register_terrain_resources(data::data_manager &d)
 	{
 		register_terrain_resources(d,
-			[] (data::data_manager&, unique_id, unique_id)->resources::texture* {
-			return nullptr; 
+			[] (unique_id)->const resources::texture* {
+				return nullptr;
 		});
 	}
 
-	void register_terrain_resources(data::data_manager &d, detail::find_make_texture_f func)
+	void register_terrain_resources(data::data_manager &d, detail::get_texture_f func)
 	{
-		detail::find_make_texture = func;
+		detail::get_texture = func;
 
 		//create the terrain settings
 		//and empty terrain first,
 		//so that tiles can use them as tilesets without knowing
 		//that they're really terrains
 		id::terrain_settings = d.get_uid(resources::get_tile_settings_name());
-		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_id::zero);
+		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_zero);
 
 		const auto empty_tileset_id = d.get_uid(resources::get_empty_tileset_name());
-		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, unique_id::zero);
-
-		const auto empty_tile = resources::tile{ nullptr, 0u, 0u, empty };
+		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, unique_zero);
 
 		//fill all the terrain tile lists with a default constructed tile
-		apply_to_terrain(*empty, [&empty_tile](std::vector<resources::tile>&v) {
-			v.emplace_back(empty_tile);
+		apply_to_terrain(*empty, [empty](std::vector<resources::tile>&v) {
+			v.emplace_back(resources::tile{ {}, 0u, 0u, empty });
 		});
 
-		terrain_settings->empty_terrain = empty;
-		terrain_settings->empty_tileset = empty;
+		terrain_settings->empty_terrain = d.make_resource_link<resources::terrain>(empty_tileset_id);
+		terrain_settings->empty_tileset = d.make_resource_link<resources::tileset>(empty_tileset_id);
 
 		const auto empty_tset_id = d.get_uid(resources::get_empty_terrainset_name());
 		auto empty_tset = d.find_or_create<resources::terrainset>(empty_tset_id, unique_id::zero);
-		empty_tset->terrains.emplace_back(empty);
+		empty_tset->terrains.emplace_back(terrain_settings->empty_terrain);
 
-		terrain_settings->empty_terrainset = empty_tset;
+		terrain_settings->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id);
 
 		//register tile resources
 		register_tiles_resources(d, func);
@@ -91,7 +89,7 @@ namespace hades
 
 		const auto terrain_size = size(set->terrains);
 		for (auto i = std::size_t{}; i < terrain_size; ++i)
-			if (set->terrains[i] == t)
+			if (set->terrains[i].get() == t)
 				return integer_cast<terrain_id_t>(i);
 
 		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
@@ -150,7 +148,7 @@ namespace hades
 		out.width = w;
 		out.tilesets = std::vector<const resources::tileset*>{
 			resources::get_empty_terrain(),
-			*first
+			first->get()
 		};
 
 		const auto size = w * h;
@@ -324,7 +322,7 @@ namespace hades
 					return empty;
 
 				assert(t <= std::size(terrains));
-				return terrains[t - 1u];
+				return terrains[t - 1u].get();
 			});
 		}
 
@@ -382,7 +380,7 @@ namespace hades
 
 		//add the rest of the terrains, offset the index by 1
 		for (auto i = terrain_id_t{}; i < std::size(t.terrainset->terrains); ++i)
-			t_map.emplace(t.terrainset->terrains[i], i + 1u);
+			t_map.emplace(t.terrainset->terrains[i].get(), i + 1u);
 
 		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
 			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain *t) {
@@ -646,7 +644,7 @@ namespace hades
 				const auto corners = get_terrain_at_tile(m, p);
 
 				const auto equal_terrain = [t = *terrain_iter](auto &&other_t){
-					return t == other_t;
+					return t.get() == other_t;
 				};
 
 				//get the transition, only looking for terrains above the current one
@@ -704,8 +702,7 @@ namespace hades::resources
 			{
 				if (t.texture)
 				{
-					const auto res = reinterpret_cast<const resource_base*>(t.texture);
-					auto texture = d.get_resource(res->id);
+					auto texture = d.get_resource(t.texture.id());
 					if (!texture->loaded)
 						texture->load(d);
 				}
@@ -773,7 +770,7 @@ namespace hades::resources
 		return t.terrain_transition_tiles[enum_type(type)];
 	}
 
-	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, const hades::resources::texture *tex,
+	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, resources::resource_link<resources::texture> tex,
 		const std::vector<transition_tile_type> &tiles, const tile_index_t tiles_per_row, const tile_size_t tile_size)
 	{
 		auto count = tile_size_t{};
@@ -917,7 +914,7 @@ namespace hades::resources
 		const auto top = get_scalar<int32>(p, "top"sv, 0);
 
 		const auto texture_id = get_unique(p, "texture"sv, unique_id::zero);
-		const auto texture = std::invoke(hades::detail::find_make_texture, d, texture_id, m);
+		const auto texture = d.make_resource_link<resources::texture>(texture_id, hades::detail::get_texture);
 
 		//make transitions list match the length of tile_count
 		//looping if needed
@@ -987,8 +984,8 @@ namespace hades::resources
 					parse_terrain_group(m, *terrain, *group, d, tile_size);
 			}
 
-			settings->tilesets.emplace_back(terrain);
-			settings->terrains.emplace_back(terrain);
+			settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id));
+			settings->terrains.emplace_back(d.make_resource_link<resources::terrain>(id));
 		}
 
 		remove_duplicates(settings->terrains);
@@ -1013,12 +1010,12 @@ namespace hades::resources
 
 			auto unique_list = terrainset_n->merge_sequence(t->terrains, [mod, &d](std::string_view s) {
 				const auto i = d.get_uid(s);
-				return d.find_or_create<terrain>(i, mod);
+				return d.make_resource_link<terrain>(i);
 			});
 
 			std::swap(unique_list, t->terrains);
 
-			settings->terrainsets.emplace_back(t);
+			settings->terrainsets.emplace_back(d.make_resource_link<terrainset>(id));
 		}
 
 		remove_duplicates(settings->terrainsets);
@@ -1041,14 +1038,14 @@ namespace hades::resources
 	{
 		const auto settings = get_terrain_settings();
 		assert(settings->empty_terrain);
-		return settings->empty_terrain;
+		return settings->empty_terrain.get();
 	}
 
 	const terrainset* get_empty_terrainset()
 	{
 		const auto settings = get_terrain_settings();
 		assert(settings->empty_terrainset);
-		return settings->empty_terrainset;
+		return settings->empty_terrainset.get();
 	}
 
 	std::vector<tile>& get_transitions(terrain &t, transition_tile_type ty)

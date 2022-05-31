@@ -133,7 +133,7 @@ namespace hades
 			void sleep_system(object_ref, time_point);
 
 			time_point get_creation_time(object_ref);
-			const tag_list& get_tags(object_ref);
+			tag_list get_tags(object_ref);
 
 			//NOTE: this isn't a curve anymore
 			bool is_alive(object_ref) noexcept;

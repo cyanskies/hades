@@ -13,6 +13,7 @@ using namespace std::string_view_literals;
 namespace hades::data
 {
 	constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID"sv;
+	constexpr auto unnamed_id_string = "ERROR_UNNAMED_UNIQUE_ID"sv;
 
 	data_system::data_system() : _ids({ {string{ no_id_string }, unique_id::zero} })
 	{}
@@ -89,7 +90,7 @@ namespace hades::data
 			const auto deps = dependencies->to_sequence<string>();
 			for (const auto& s : deps)
 			{
-				if (!std::invoke(std::forward<DepCheckFunc>(dependencycheck), s)) {
+				if (!std::invoke(dependencycheck, s)) {
 					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
 				}
 			}
@@ -155,8 +156,12 @@ namespace hades::data
 	{
 		//copy and clear the mod list, so that
 		// when add_mod readds them we don't double up
-		auto mods = std::vector<unique_id>{ std::move(_mods) };
+		const auto mods = std::move(_mods);
 		_mods = {};
+
+		// unset main_loaded, so that the newly parsed data doesnt
+		// get put into the leaf
+		_main_loaded = false;
 
 		//reparse the game
 		const auto& game = get<resources::mod>(_game)->name;
@@ -165,7 +170,7 @@ namespace hades::data
 		//go through the mod list and reload them in the
 		//same order as they were origionally loaded
 		//(this means we will parse the game and it's dependents again)
-		for (auto m : mods)
+		for (const auto m : mods)
 		{
 			//for each mod reload it
 			const auto& name = get<resources::mod>(m)->name;
@@ -234,7 +239,10 @@ namespace hades::data
 				return id.first;
 		}
 
-		return string{ no_id_string };
+		if(uid == unique_zero)
+			return string{ no_id_string };
+
+		return string{ unnamed_id_string };
 	}
 
 	unique_id data_system::get_uid(std::string_view name) const

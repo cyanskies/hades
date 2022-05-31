@@ -111,10 +111,7 @@ namespace hades::resources
 					continue;
 				}
 
-				const auto* animation = animation_functions::find_or_create(d, anim, m);
-				assert(animation);
-
-				layer->animation = animation;
+				layer->animation = d.make_resource_link<animation>(anim, animation_functions::get_resource);
 
 				//get parallax
 				if (l.size() < 3)

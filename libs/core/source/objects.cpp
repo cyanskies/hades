@@ -18,7 +18,8 @@ hades::unique_id editor_anim = hades::unique_zero;
 
 namespace hades::resources
 {
-	std::vector<const object*> all_objects{};
+	// TODO: get rid off this, we cant have global refs like this anymore
+	std::vector<resource_link<object>> all_objects{};
 
 	static std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n)
 	{
@@ -57,7 +58,6 @@ namespace hades::resources
 	{
 		//objects:
 		//	thing:
-		//		editor-icon : icon_anim
 		//		editor-anim : scalar animationId OR sequence [animId1, animId2, ...]
 		//		animations: animation_group_id
 		//		base : object_base OR [obj1, obj2, ...]
@@ -69,8 +69,7 @@ namespace hades::resources
 
 		using namespace std::string_view_literals;
 		constexpr auto resource_type = "objects"sv;
-		const auto& tags = *get_tags_curve();
-
+	
 		for (const auto &o : node.get_children())
 		{
 			const auto name = o->to_string();
@@ -81,23 +80,23 @@ namespace hades::resources
 			if (!obj)
 				continue;
 
-			all_objects.push_back(obj);
+			all_objects.push_back(d.make_resource_link<resources::object>(id));
 
 			using namespace data::parse_tools;
 
 			//sprites used to represent to object in the editors map view
-			const auto current_ids = animation_functions::get_id(obj->editor_anims);
+			const auto current_ids = resources::get_ids(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
-			obj->editor_anims = animation_functions::find_or_create(d, animation_ids, mod);
+			obj->editor_anims = d.make_resource_link<animation>(animation_ids, animation_functions::get_resource);
 
 			const auto anim_group_id = get_unique(*o, "animations"sv, unique_id::zero);
 			if (anim_group_id)
-				obj->animations = animation_group_functions::find_or_create(d, anim_group_id, mod);
+				obj->animations = d.make_resource_link<animation_group>(anim_group_id, resources::animation_group_functions::get_resource);
 
 			//base objects
-			const auto current_base_ids = data::get_uid(obj->base);
+			const auto current_base_ids = resources::get_ids(obj->base);
 			const auto base_ids = get_unique_sequence(*o, "base"sv, current_base_ids);
-			obj->base = d.find_or_create<const object>(base_ids, mod);
+			obj->base = d.make_resource_link<object>(base_ids);
 
 			//curves
 			const auto curves_node = o->get_child("curves"sv);
@@ -107,6 +106,10 @@ namespace hades::resources
 				{
 					try
 					{
+						// TODO: we need a better way to parse curve values
+						//		curves wont play nice with the resource_link system or the data_leaf
+						//		we need a way to specify what type we're treating the curve as
+						//		at this point
 						auto [curve, value] = get_curve_info(*c);
 
 						//curve_info returns nullptr if 
@@ -131,42 +134,19 @@ namespace hades::resources
 				}
 			}
 
-			//tags
-			auto current_tags = [obj, tags]()->curve_types::collection_unique {
-				auto tags_list = tag_list{};
-				for (const auto o : obj->base)
-				{
-					for (const auto& [c, v] : o->curves)
-					{
-						if (c->id == tags.id)
-						{
-							if (!std::holds_alternative<tag_list>(v))
-								break;
-
-							const auto& t = std::get<tag_list>(v);
-							tags_list.reserve(size(tags_list) + size(t));
-							std::copy(begin(t), end(t), back_inserter(tags_list));
-							break;
-						}
-					}
-				}
-
-				return tags_list;
-			}();
-
-			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(current_tags));
+			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(obj->tags));
 			remove_duplicates(new_tags);
-			set_curve(*obj, tags, std::move(new_tags));
+			obj->tags = std::move(new_tags);
 
 			//game systems
-			auto current_system_ids = data::get_uid(obj->systems);
+			auto current_system_ids = get_ids(obj->systems);
 			const auto system_ids = merge_unique_sequence(*o, "systems"sv, std::move(current_system_ids));
-			obj->systems = d.find_or_create<const system>(system_ids, mod);
+			obj->systems = d.make_resource_link<system>(system_ids);
 
 			//render systems
-			const auto current_render_system_ids = data::get_uid(obj->render_systems);
-			const auto render_system_ids = merge_unique_sequence(*o, "client-systems"sv, current_system_ids);
-			obj->render_systems = d.find_or_create<const render_system>(render_system_ids, mod);
+			auto current_render_system_ids = get_ids(obj->render_systems);
+			const auto render_system_ids = merge_unique_sequence(*o, "client-systems"sv, std::move(current_render_system_ids));
+			obj->render_systems = d.make_resource_link<render_system>(render_system_ids);
 		}
 
 		remove_duplicates(all_objects);
@@ -227,23 +207,23 @@ namespace hades
 		assert(c);
 
 		using curve_t = hades::resources::curve;
-		const curve_t *curve_ptr = nullptr;
+		const curve_t* curve_ptr = nullptr;
 		for (const auto& cur : o->curves)
 		{
 			const auto curve = std::get<const curve_t*>(cur);
 			if (curve == c)
 			{
 				curve_ptr = curve;
-				auto v = std::get<hades::resources::curve_default_value>(cur);
+				const auto& v = std::get<hades::resources::curve_default_value>(cur);
 				if (hades::resources::is_set(v))
-					return cur;
+					return { curve, v };
 			}
 		}
 
-		for (auto obj : o->base)
+		for (const auto obj : o->base)
 		{
 			assert(obj);
-			auto ret = TryGetCurve(obj, c);
+			auto ret = TryGetCurve(obj.get(), c);
 			auto curve = std::get<const curve_t*>(ret);
 			if (curve)
 			{
@@ -359,7 +339,7 @@ namespace hades
 			}
 		}
 
-		o.curves.push_back({ &c, std::move(v) });
+		o.curves.push_back({ &c, std::move(v)});
 	}
 
 	void set_curve(object_instance& o, const unique_id i, curve_value v)
@@ -451,7 +431,7 @@ namespace hades
 				const auto end = std::rend(cur->base);
 				do
 				{
-					objects.emplace(*iter);
+					objects.emplace(iter->get());
 				} while (++iter != end);
 			}
 		}while (!std::empty(objects));
@@ -494,11 +474,13 @@ namespace hades
 
 		for (const auto b : o.base)
 		{
-			const auto base_out = get_systems(*b);
-			out.insert(std::end(out), std::begin(base_out), std::end(base_out));
+			const auto& base_out = get_systems(*b);
+			out.insert(end(out), begin(base_out), end(base_out));
 		}
 
-		out.insert(std::end(out), std::begin(o.systems), std::end(o.systems));
+		out.reserve(size(out) + size(o.systems));
+		std::transform(begin(o.systems), end(o.systems), back_inserter(out),
+			std::mem_fn(&resources::resource_link<resources::system>::get));
 		remove_duplicates(out);
 		return out;
 	}
@@ -513,7 +495,9 @@ namespace hades
 			out.insert(std::end(out), std::begin(base_out), std::end(base_out));
 		}
 
-		out.insert(std::end(out), std::begin(o.render_systems), std::end(o.render_systems));
+		out.reserve(size(out) + size(o.render_systems));
+		std::transform(begin(o.render_systems), end(o.render_systems), back_inserter(out),
+			std::mem_fn(&resources::resource_link< resources::render_system>::get));
 		remove_duplicates(out);
 		return out;
 	}
@@ -552,10 +536,18 @@ namespace hades
 		//	it's lifetime is managed by the data_manager
 	}
 
-	resources::object::animation_list get_editor_animations(const resources::object &o)
+	std::vector<const resources::animation*> get_editor_animations(const resources::object &o)
 	{
 		if (!o.editor_anims.empty())
-			return o.editor_anims;
+		{
+			auto out = std::vector<const resources::animation*>{};
+			out.reserve(size(o.editor_anims));
+
+			std::transform(begin(o.editor_anims), end(o.editor_anims), back_inserter(out),
+				std::mem_fn(&resources::resource_link<resources::animation>::get));
+
+			return out;
+		}
 		else if (o.animations)
 		{
 			if(auto anim = 
@@ -572,10 +564,10 @@ namespace hades
 				return anim;
 		}
 
-		return resources::object::animation_list{};
+		return std::vector<const resources::animation*>{};
 	}
 
-	resources::object::animation_list get_editor_animations(const object_instance & o)
+	std::vector<const resources::animation*> get_editor_animations(const object_instance & o)
 	{
 		assert(o.obj_type);
 		return get_editor_animations(*o.obj_type);
@@ -692,14 +684,26 @@ namespace hades
 		return get_vec_unique_impl(o, get_collision_layer_curve);
 	}
 
-	tag_list get_tags(const object_instance & o)
+	tag_list get_tags(const object_instance& o)
 	{
-		return get_vec_unique_impl(o, get_tags_curve);
+		return get_tags(*o.obj_type);
 	}
 
-	tag_list get_tags(const resources::object & o)
+	tag_list get_tags(const resources::object& o)
 	{
-		return get_vec_unique_impl(o, get_tags_curve);
+		auto tags = tag_list{};
+
+		for (auto base : o.base)
+		{
+			if (base)
+			{
+				auto base_tags = get_tags(*base);
+				tags.insert(end(tags), begin(base_tags), end(base_tags));
+			}
+		}
+
+		tags.insert(end(tags), begin(o.tags), end(o.tags));
+		return tags;
 	}
 
 	static void write_curve(data::writer& w, const curve_obj& c)

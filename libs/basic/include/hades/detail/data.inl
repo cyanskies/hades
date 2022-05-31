@@ -96,6 +96,12 @@ namespace hades
 			typename resources::resource_link_type<T>::get_func get)
 		{
 			using namespace std::string_literals;
+			if (!id)
+			{
+				LOGERROR("Tried to make link to zero id");
+				return {};
+			}
+
 
 			for (const auto& link : _resource_links)
 			{

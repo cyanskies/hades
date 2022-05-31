@@ -263,7 +263,14 @@ namespace hades::data
 		if (name.empty())
 			return unique_id::zero;
 
-		return _ids[types::string(name)];
+		auto str = to_string(name);
+		auto iter = _ids.find(str);
+		if (iter != end(_ids))
+			return iter->second;
+
+		const auto out = _ids.emplace(std::move(str), make_unique_id());
+		assert(out.second);
+		return out.first->second;
 	}
 
 	template<typename GETMOD, typename YAMLPARSER>

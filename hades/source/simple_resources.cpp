@@ -39,6 +39,8 @@ namespace hades
 	{
 		data->register_resource_type("strings", resources::parseString);
 
+		register_font_resource(*data);
+
 		//create default font
 		//we do it here because the resource isn't availble yet
 		//in hades-core

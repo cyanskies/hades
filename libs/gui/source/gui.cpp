@@ -1157,7 +1157,7 @@ namespace hades
 		auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
 		std::ignore = lock;
 
-		static unique_id font_texture_id{};
+		static unique_id font_texture_id = d->get_uid("gui-font-texture-atlas");
 
 		auto t = tex::find_create_texture(*d, font_texture_id, unique_id::zero);
 

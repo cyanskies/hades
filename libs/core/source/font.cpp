@@ -6,6 +6,8 @@
 #include "hades/parser.hpp"
 #include "hades/utility.hpp"
 
+static hades::unique_id default_font_id = hades::unique_zero;
+
 namespace hades
 {
 	void parse_font(unique_id, const data::parser_node&, data::data_manager&);
@@ -13,6 +15,7 @@ namespace hades
 	void register_font_resource(data::data_manager &d)
 	{
 		using namespace std::string_view_literals;
+		default_font_id = d.get_uid("default-font");
 		d.register_resource_type("fonts"sv, parse_font);
 	}
 
@@ -73,8 +76,7 @@ namespace hades::resources
 {
 	unique_id default_font_id()
 	{
-		static const auto id = unique_id{};
-		return id;
+		return ::default_font_id;
 	}
 
 	font::font() : resource_type<sf::Font>(load_font) {}

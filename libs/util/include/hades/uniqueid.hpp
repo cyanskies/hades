@@ -22,10 +22,10 @@ namespace hades
 		static constexpr next_id_t new_id{};
 
 		// TODO: make this the default constructor
-		constexpr unique_id_t(zero_id_t) noexcept : _value{ std::numeric_limits<type>::min() }
+		constexpr unique_id_t(zero_id_t = zero_id) noexcept : _value{ std::numeric_limits<type>::min() }
 		{}
 
-		constexpr unique_id_t(next_id_t = new_id) noexcept : _value(++_count) 
+		constexpr explicit unique_id_t(next_id_t) noexcept : _value(++_count) 
 		{
 			assert(_count != std::numeric_limits<type>::max());
 		}
@@ -58,7 +58,7 @@ namespace hades
 	std::atomic<id_type> unique_id_t<id_type>::_count = std::numeric_limits<id_type>::min();
 
 	template<typename id_type>
-	unique_id_t<id_type> unique_id_t<id_type>::zero = { zero_id };
+	unique_id_t<id_type> unique_id_t<id_type>::zero = unique_id_t<id_type>{ zero_id };
 
 	template<typename T>
 	constexpr bool operator<(const unique_id_t<T>& lhs, const unique_id_t<T>& rhs) noexcept

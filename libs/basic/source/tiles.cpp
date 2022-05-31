@@ -46,8 +46,8 @@ namespace hades
 		d.register_resource_type(tile_settings_name, parse_tile_settings);
 		d.register_resource_type(tilesets_name, parse_tilesets);
 
-		const auto error_texture = unique_id{};
-		auto texture = d.make_resource_link<resources::texture>(error_texture, get_texture);
+		const auto error_texture = d.get_uid("tile-error-texture"sv);
+		const auto texture = d.make_resource_link<resources::texture>(error_texture, get_texture);
 
 		//create error tileset and add a default error tile
 		id::error_tileset = hades::data::make_uid(error_tileset_name);

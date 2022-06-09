@@ -30,12 +30,44 @@ namespace hades
 
 	namespace data
 	{
+		namespace detail
+		{
+			template<typename T>
+			std::unique_ptr<resources::resource_base> clone(const resources::resource_base& rb)
+			{
+				const auto& t = static_cast<const T&>(rb);
+				return std::make_unique<T>(t);
+			}
+
+			template<typename T>
+			void reset(resources::resource_base& rb)
+			{
+				// reset everything except the resource_base
+				auto& t = static_cast<T&>(rb);
+				// slice to preserve r_base member variables
+				resources::resource_base r = t;
+				// reset t
+				t = T{};
+				// get reference to r_base so we can assign the stored member variables
+				auto& r_ref = static_cast<resources::resource_base&>(t);
+				r_ref = r;
+				return;
+			}
+		}
+
 		template<class T>
 		T* data_manager::find_or_create(unique_id target, unique_id mod, std::string_view group)
 		{
+			using namespace std::string_literals;
 			using Type = std::remove_const_t<T>;
 
-			static_assert(is_resource_v<Type>, "Data subsystem only works with hades resources");
+			static_assert(is_resource_v<Type>, "'Type' must publicly inherit from resources::resource_type");
+
+			// NOTE: member variable ptr
+			// this is a work around for syntax error when T == resources::mod
+			// need to disambiguate r->mod when mod is also the name of T
+			// compiler(MSVC) mistakes mod for an illegal constructor call
+			constexpr auto member_ptr = &resources::resource_base::mod;
 
 			Type* r = nullptr;
 
@@ -49,31 +81,34 @@ namespace hades
 			{
 				auto new_ptr = std::make_unique<Type>();
 				r = &*new_ptr;
-				set<Type>(target, std::move(new_ptr), group);
+				r->clone = detail::clone<Type>;
+				r->clear = detail::reset<Type>;
+				r->*member_ptr = mod;
 
-				r->id = target;
+				_set<Type>(target, std::move(new_ptr), group);
 			}
 			else
 			{
-				try
+				//get the one from the correct mod
+				auto [get_r, e]= try_get<Type>(target, no_load);
+
+				if (!get_r)
 				{
-					r = get<Type>(target, no_load);
+					if (e == get_error::resource_wrong_type)
+					{
+						//name is already used for something else, this cannnot be loaded
+						LOGERROR("Failed to create resource: "s + get_as_string(target) + " in mod : "s + get_as_string(mod) +
+							", name has already been used for a different resource type."s);
+					}
 				}
-				catch (data::resource_wrong_type &e)
+				else
 				{
-					//name is already used for something else, this cannnot be loaded
-					auto modname = get_as_string(mod);
-					LOGERROR(string{ e.what() } + "In mod: " + modname + ", name has already been used for a different resource type.");
+					auto new_r = std::invoke(get_r->clone, *get_r);
+					r = static_cast<Type*>(new_r.get());
+					r->*member_ptr = mod;
+					_set<Type>(target, std::move(new_r), group);
 				}
 			}
-
-			// NOTE: member variable ptr
-			// this is a work around for syntax error when T == resources::mod
-			// need to disambiguate r->mod when mod is also the name of T
-			// compiler(MSVC) mistakes mod for an illegal constructor call
-			auto member_ptr = &resources::resource_base::mod;
-			if (r)
-				r->*member_ptr = mod;
 
 			return r;
 		}
@@ -134,9 +169,9 @@ namespace hades
 		}
 
 		template<class T>
-		T *data_manager::get(unique_id id)
+		T *data_manager::get(unique_id id, unique_id mod)
 		{
-			auto res = get<T>(id, no_load);
+			auto res = get<T>(id, no_load, mod);
 
 			if (!res->loaded)
 				res->load(*this);
@@ -145,9 +180,9 @@ namespace hades
 		}
 
 		template<class T>
-		T *data_manager::get(unique_id id, const no_load_t)
+		T *data_manager::get(unique_id id, const no_load_t, unique_id mod)
 		{
-			auto res = get_resource(id);
+			auto res = get_resource(id, mod);
 
 			try
 			{
@@ -162,9 +197,9 @@ namespace hades
 		}
 
 		template<class T>
-        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id) noexcept
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, unique_id mod) noexcept
 		{
-			auto res = try_get<T>(id, no_load);
+			auto res = try_get<T>(id, no_load, mod);
 
 			if (res.result)
 			{
@@ -178,9 +213,9 @@ namespace hades
 		}
 
 		template<class T>
-        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t) noexcept
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t, unique_id mod) noexcept
 		{
-			auto res = try_get_resource(id);
+			auto res = try_get_resource(id, mod);
 			if (!res)
 				return { nullptr, get_error::no_resource_for_id };
 
@@ -193,34 +228,28 @@ namespace hades
 		}
 
 		template<class T>
-		void data_manager::set(unique_id id, std::unique_ptr<T> ptr, std::string_view group)
+		void data_manager::_set(unique_id id, std::unique_ptr<resources::resource_base> ptr, std::string_view group)
 		{
-			//throw error if that id has already been used
-			if (exists(id))
-			{
-				throw resource_name_already_used("Tried to set a new resource using the already reserved name: " + get_as_string(id)
-					+ ", resource type was: " + typeid(T).name());
-			}
+			using namespace std::string_literals;
 
 			//store the id used within the resource for ease of use
 			ptr->id = id;
-			resource_storage& res_store = [&]()->resource_storage& {
-				return _main_loaded ? _leaf : _main;
-			}();
+
+			auto& m = _get_mod(ptr->mod);
 
 			// add to resource storage
-			const auto res_ptr = res_store.resources.emplace_back(std::move(ptr)).get();
+			const auto res_ptr = m.resources.emplace_back(std::move(ptr)).get();
 
 			// add to resource group
 			resource_group* res_group = nullptr;
-			for (auto& r : res_store.resources_by_type)
+			for (auto& r : m.resources_by_type)
 			{
 				if (r.first == group)
 					res_group = &r;
 			}
 
 			if (!res_group)
-				res_group = &res_store.resources_by_type.emplace_back(group, std::vector<const resources::resource_base*>{});
+				res_group = &m.resources_by_type.emplace_back(group, std::vector<const resources::resource_base*>{});
 
 			res_group->second.emplace_back(res_ptr);
 			return;

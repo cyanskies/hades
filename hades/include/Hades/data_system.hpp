@@ -61,6 +61,7 @@ namespace hades::data
 		unique_id get_uid(std::string_view name) override;
 
 	private:
+		void _parse_mod(unique_id id, std::string_view source, const data::parser_node& modRoot, bool load_deps);
 		void parseYaml(unique_id, const data::parser_node&);
 		
 		//==parsing and loading data==

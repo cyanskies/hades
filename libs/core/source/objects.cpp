@@ -75,7 +75,7 @@ namespace hades::resources
 			const auto name = o->to_string();
 			const auto id = d.get_uid(name);
 
-			const auto obj = d.find_or_create<object>(id, mod);
+			const auto obj = d.find_or_create<object>(id, mod, resource_type);
 
 			if (!obj)
 				continue;

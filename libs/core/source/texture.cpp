@@ -8,6 +8,9 @@
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
 #include "hades/sf_streams.hpp"
+#include "hades/writer.hpp"
+
+using namespace std::string_view_literals;
 
 hades::unique_id error_texture_id = hades::unique_zero;
 
@@ -22,13 +25,35 @@ namespace hades::resources
 	{
 		texture() : resource_type{ load_texture } {}
 
+		void serialise(data::data_manager&, data::writer&) const override;
+
 		texture_size_t width = 0, height = 0;
 		bool smooth = false, repeat = false, mips = false;
 	};
+
+	void texture::serialise(data::data_manager& d, data::writer& w) const
+	{
+		// TODO: consider storing the width/height seperatly to the calculated width/height
+		//			that way we can serialise without losing the auto-size mechanic
+
+		//default texture
+		const auto def = texture{};
+
+		w.start_map(d.get_as_string(id));
+		if(width != def.width)		w.write("width"sv, width);
+		if(height != def.height)	w.write("height"sv, height);
+		if(source != def.source)	w.write("source"sv, source);
+		if(smooth != def.smooth)	w.write("smooth"sv, smooth);
+		if(repeat != def.repeat)	w.write("repeating"sv, repeat);
+		if(mips != def.mips)		w.write("mips"sv, mips);
+		w.end_map();
+	}
 }
 
 namespace hades
 {
+	constexpr auto textures_str = "textures"sv;
+
 	void parse_texture(unique_id mod, const data::parser_node& node, data::data_manager&);
 
 	void register_texture_resource(data::data_manager &d)
@@ -37,7 +62,7 @@ namespace hades
 
 		error_texture_id = d.get_uid("error-texture"sv);
 
-		auto tex = d.find_or_create<resources::texture>(error_texture_id, unique_zero, "textures"sv);
+		auto tex = d.find_or_create<resources::texture>(error_texture_id, unique_zero, textures_str);
 		tex->width = 32;
 		tex->height = 32;
 		tex->repeat = true;
@@ -118,7 +143,7 @@ namespace hades
 			const auto name = t->to_string();
 			const auto id = d.get_uid(name);
 
-			const auto tex = d.find_or_create<resources::texture>(id, mod);
+			const auto tex = d.find_or_create<resources::texture>(id, mod, textures_str);
 			if (!tex)
 				continue;
 
@@ -145,11 +170,11 @@ namespace hades
 		if (!tex.source.empty())
 		{
 			//the mod not being available should be 'impossible'
-			const auto mod = d.get<resources::mod>(tex.mod);
+			const auto& mod = d.get_mod(tex.mod);
 
 			try
 			{
-				auto fstream = sf_resource_stream{ mod->source, tex.source };
+				auto fstream = sf_resource_stream{ mod.source, tex.source };
 				auto sb = std::stringbuf{};
 				const auto prev = sf::err().rdbuf(&sb);
 				const auto f = make_finally([prev]() noexcept {
@@ -171,7 +196,7 @@ namespace hades
 			if (tex.width != 0 &&
 				(size.x != tex.width || size.y != tex.height))
 			{
-				LOGWARNING("Loaded texture: "s + mod->source + "/"s + tex.source + ". Texture size different from requested. Requested("s +
+				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source + ". Texture size different from requested. Requested("s +
 					to_string(tex.width) + ", "s + to_string(tex.height) + "), Found("s + to_string(size.x) + ", "s + to_string(size.y) + ")"s);
 				//NOTE: if the texture is the wrong size
 				// then enable repeating, to avoid leaving
@@ -210,7 +235,7 @@ namespace hades
 		{
 			texture* find_create_texture(data::data_manager& d, const unique_id id , const unique_id mod)
 			{
-				return d.find_or_create<texture>(id, mod);
+				return d.find_or_create<texture>(id, mod, textures_str);
 			}
 
 			const texture* get_resource(const unique_id id)
@@ -227,9 +252,9 @@ namespace hades
 				}
 			}
 
-			const texture* get_resource(data::data_manager& d, unique_id i)
+			texture* get_resource(data::data_manager& d, const unique_id i, const unique_id mod)
 			{
-				return d.get<texture>(i);
+				return d.get<texture>(i, mod);
 			}
 
 			unique_id get_id(const texture* t) noexcept
@@ -262,6 +287,11 @@ namespace hades
 				return t->mips;
 			}
 
+			string get_source(const texture* t)
+			{
+				assert(t);
+				return t->source;
+			}
 
 			const sf::Texture& get_sf_texture(const texture* t) noexcept
 			{
@@ -308,18 +338,10 @@ namespace hades
 				return;
 			}
 		}
-	
-		texture_size_t get_max_texture_size()
-		{
-			return std::min(
-				std::numeric_limits<texture_size_t>::max(),
-				get_hardware_max_texture_size()
-			);
-		}
 
 		texture_size_t get_hardware_max_texture_size()
 		{
-			return integer_cast<texture_size_t>(sf::Texture::getMaximumSize());
+			return integer_clamp_cast<texture_size_t>(sf::Texture::getMaximumSize());
 		}
 	}
 }

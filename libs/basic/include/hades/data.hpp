@@ -122,12 +122,23 @@ namespace hades
 		struct no_load_t {};
 		constexpr no_load_t no_load{};
 
+		struct mod
+		{
+			unique_id id;
+			std::vector<unique_id> dependencies;
+
+			string name;
+			string source; // path to source
+		};
+
 		template<class T>
 		const T* get(unique_id id);
 
 		class data_manager
 		{
 		public:
+			data_manager();
+
 			virtual ~data_manager() = default;
 
 			virtual void register_resource_type(std::string_view name, resources::parser_func parser) = 0;
@@ -153,19 +164,19 @@ namespace hades
 			//returns the resource associated with the id
 			//returns the resource base class
 			//throws resource_null if the id doesn't refer to a resource
-			resources::resource_base *get_resource(unique_id id);
+			resources::resource_base *get_resource(unique_id id, unique_id mod = unique_zero);
 			//as above, returns null if the id doesn't refer to a resource
-			resources::resource_base *try_get_resource(unique_id id) noexcept;
+			resources::resource_base *try_get_resource(unique_id id, unique_id mod = unique_zero) noexcept;
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			// throws resource_null or resource_wrong_type
 			template<class T>
-			T *get(unique_id id);
+			T *get(unique_id id, unique_id = unique_zero);
 
 			//gets a non-owning ptr to the resource represented by id
 			// throws resource_null or resource_wrong_type
 			template<class T>
-			T *get(unique_id id, const no_load_t);
+			T *get(unique_id id, const no_load_t, unique_id = unique_zero);
 
 			enum class get_error {
 				ok,
@@ -186,24 +197,26 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
-            try_get_return<T> try_get(unique_id id) noexcept;
+            try_get_return<T> try_get(unique_id id, unique_id = unique_zero) noexcept;
 
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>
-            try_get_return<T> try_get(unique_id id, const no_load_t) noexcept;
-
-			//creates a resource with the value of ptr
-			//and assigns it to the name id
-			//throws resource_name_already_used if the id already refers to a resource
-			template<class T>
-			void set(unique_id id, std::unique_ptr<T> ptr, std::string_view group = {});
+            try_get_return<T> try_get(unique_id id, const no_load_t, unique_id = unique_zero) noexcept;
 
 			void update_all_links();
 
-			inline void finalise_main_parse() noexcept
+			using resource_group = std::pair<string, std::vector<const resources::resource_base*>>;
+			struct resource_storage
 			{
-				_main_loaded = true;
-			}
+				mod mod_info;
+				std::vector<resource_group> resources_by_type;
+			};
+
+			void push_mod(mod);
+			void pop_mod();
+
+			const mod& get_mod(unique_id) const;
+			std::vector<resource_storage*> get_mod_stack();
 
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;
@@ -215,23 +228,25 @@ namespace hades
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
 
-			using resource_group = std::pair<string, std::vector<const resources::resource_base*>>;
-
-		protected:
-			bool _main_loaded = false;
-
 		private:
-			struct resource_storage
+			struct mod_storage : resource_storage
 			{
 				std::vector<std::unique_ptr<resources::resource_base>> resources;
-				std::vector<resource_group> resources_by_type;
 			};
 
+			mod_storage& _get_mod(unique_id);
+			//creates a resource with the value of ptr
+			//and assigns it to the name id
+			//throws resource_name_already_used if the id already refers to a resource
+			// TODO: this should become an internal func, use find_or_create instead
+			template<class T>
+			void _set(unique_id id, std::unique_ptr<resources::resource_base> ptr, std::string_view group);
+
+
+			std::vector<mod_storage> _mod_stack;
 			// set to true after the main mod has been parsed
 			// causes additional resources to be placed in the leaf
-			
-			resource_storage _main;
-			resource_storage _leaf;
+
 			std::vector<std::unique_ptr<resources::resource_link_base>> _resource_links;
 			//std::vector<mod> _mods;
 			//std::vector<std::unique_ptr<resources::resource_base>> _resources2;
@@ -255,6 +270,7 @@ namespace hades
 		string get_as_string(unique_id id);
 		//returns UniqueId::zero if the name cannot be assiciated with an id
 		unique_id get_uid(std::string_view name);
+		const mod& get_mod(unique_id id);
 
 		template<typename T>
 		std::vector<unique_id> get_uid(const std::vector<const T*>&);

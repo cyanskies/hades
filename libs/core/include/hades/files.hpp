@@ -9,7 +9,12 @@
 
 #include "hades/archive.hpp"
 #include "hades/exceptions.hpp"
-#include "hades/resource_base.hpp"
+//#include "hades/resource_base.hpp"
+
+namespace hades::data
+{
+	struct mod;
+}
 
 namespace hades::files
 {
@@ -120,9 +125,9 @@ namespace hades
 namespace hades::files
 {
 	//TODO: check error paths/ throw file not found?
-	irfstream stream_resource(const resources::mod*, const std::filesystem::path& path);
-	buffer raw_resource(const resources::mod*, const std::filesystem::path& path);
-	string read_resource(const resources::mod*, const std::filesystem::path& path);
+	irfstream stream_resource(const data::mod&, const std::filesystem::path& path);
+	buffer raw_resource(const data::mod&, const std::filesystem::path& path);
+	string read_resource(const data::mod&, const std::filesystem::path& path);
 
 	//writes file_contents to the file at path,
 	//will place UserCustomFileDirectory before path if portable flag isnt set

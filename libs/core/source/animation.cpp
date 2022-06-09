@@ -8,6 +8,20 @@
 #include "hades/sf_color.hpp"
 #include "hades/texture.hpp"
 #include "hades/timers.hpp"
+#include "hades/writer.hpp"
+
+using namespace std::string_view_literals;
+constexpr auto anim_str = "animations"sv;
+constexpr auto anim_group_str = "animation-groups"sv;
+
+constexpr auto dur_str = "duration"sv;
+constexpr auto tex_str = "texture"sv;
+constexpr auto frames_str = "frames"sv;
+
+constexpr auto pos_str = "pos"sv;
+constexpr auto size_str = "size"sv;
+constexpr auto scale_str = "scale"sv;
+constexpr auto offset_str = "offset"sv;
 
 namespace hades::resources
 {
@@ -18,6 +32,8 @@ namespace hades::resources
 	{
 		animation() noexcept : anim_base(load_animation)
 		{}
+
+		void serialise(data::data_manager&, data::writer&) const override;
 
 		resource_link<texture> tex;
 		time_duration duration = time_duration::zero();
@@ -32,6 +48,78 @@ namespace hades::resources
 		animation_group() noexcept : anim_group_base(load_anim_group)
 		{}
 	};
+
+	static void normalise_durations(std::vector<animation_frame>& frame_list)
+	{
+		const auto total_duration = std::transform_reduce(begin(frame_list),
+			end(frame_list), 0.f, std::plus<>(), std::mem_fn(&animation_frame::duration));
+		assert(total_duration != 0.f);
+		for (auto& f : frame_list)
+			f.normalised_duration = f.duration / total_duration;
+	}
+
+	void animation::serialise(data::data_manager& d, data::writer& w) const
+	{
+		const auto def_anim = animation{};
+		const auto def = animation_frame{};
+
+		w.start_map(d.get_as_string(id));
+		if (duration != def_anim.duration)
+			w.write(dur_str, duration);
+		if (tex)						
+			w.write(tex_str, d.get_as_string(tex.id()));
+
+		if (!empty(value))
+		{
+			w.start_sequence(frames_str);
+			{
+				for (const auto& f : value)
+				{
+					w.start_map();
+					if (f.x != def.x || f.y != def.y)
+					{
+						w.start_sequence(pos_str);
+						w.write(f.x);
+						w.write(f.y);
+						w.end_sequence();
+					}
+
+					if (f.w != def.w || f.h != def.h)
+					{
+						w.start_sequence(size_str);
+						w.write(f.w);
+						w.write(f.h);
+						w.end_sequence();
+					}
+
+					if (f.scale_w != def.scale_w || f.scale_h != def.scale_h)
+					{
+						w.start_sequence(scale_str);
+						w.write(f.scale_w);
+						w.write(f.scale_h);
+						w.end_sequence();
+					}
+
+					if (f.off_x != def.off_x || f.off_y != def.off_y)
+					{
+						w.start_sequence(offset_str);
+						w.write(f.off_x);
+						w.write(f.off_y);
+						w.end_sequence();
+					}
+
+					if (f.duration != def.duration)
+						w.write(dur_str, f.duration);
+					
+					w.end_map();
+				}
+			}
+			w.end_sequence();
+		}
+		w.end_map();
+
+		return;
+	}
 }
 
 namespace hades::resources::animation_functions
@@ -41,9 +129,9 @@ namespace hades::resources::animation_functions
 		return data::get<animation>(id);
 	}
 
-	const animation* get_resource(data::data_manager& d, unique_id id)
+	animation* get_resource(data::data_manager& d, unique_id id, unique_id mod)
 	{
-		return d.get<animation>(id);
+		return d.get<animation>(id, mod);
 	}
 
 	try_get_return try_get(unique_id id) noexcept
@@ -53,12 +141,12 @@ namespace hades::resources::animation_functions
 
 	const animation* find_or_create(data::data_manager& d, unique_id id, unique_id mod)
 	{
-		return d.find_or_create<animation>(id, mod);
+		return d.find_or_create<animation>(id, mod, anim_str);
 	}
 
 	std::vector<const animation*> find_or_create(data::data_manager& d, const std::vector<unique_id>& ids, unique_id mod)
 	{
-		return d.find_or_create<const animation>(ids, mod);
+		return d.find_or_create<const animation>(ids, mod, anim_str);
 	}
 
 	bool is_loaded(const animation& a) noexcept
@@ -91,6 +179,35 @@ namespace hades::resources::animation_functions
 	{
 		return a.duration;
 	}
+
+	const std::vector<animation_frame>& get_animation_frames(const animation& a) noexcept
+	{
+		return a.value;
+	}
+
+	void set_animation_frames(animation& a, std::vector<animation_frame> frames)
+	{
+		a.value = std::move(frames);
+		normalise_durations(a.value);
+		return;
+	}
+
+	void set_duration(animation& a, time_duration dur) noexcept
+	{
+		a.duration = dur;
+		return;
+	}
+
+	vector_float get_minimum_offset(const animation& a) noexcept
+	{
+		auto ret = vector_float{};
+		for (const auto& f : a.value)
+		{
+			ret.x = std::min(ret.x, f.off_x);
+			ret.y = std::min(ret.y, f.off_y);
+		}
+		return ret;
+	}
 }
 
 namespace hades::resources::animation_group_functions
@@ -112,7 +229,7 @@ namespace hades::resources::animation_group_functions
 
 	const animation_group* find_or_create(data::data_manager& d, unique_id i, unique_id mod)
 	{
-		return d.find_or_create<animation_group>(i, mod);
+		return d.find_or_create<animation_group>(i, mod, anim_group_str);
 	}
 
 	bool is_loaded(const animation_group& a) noexcept
@@ -308,7 +425,7 @@ namespace hades::resources
 			const auto name = a->to_string();
 			const auto id = d.get_uid(name);
 
-			auto anim = d.find_or_create<animation>(id, mod);
+			auto anim = d.find_or_create<animation>(id, mod, anim_str);
 
 			using namespace data::parse_tools;
 			anim->duration = get_scalar(*a, "duration"sv, anim->duration, duration_from_string);
@@ -326,7 +443,6 @@ namespace hades::resources
 
 			const auto frames = frames_node->get_children();
 
-			auto total_duration = 0.f;
 			auto frame_list = std::vector<animation_frame>{};
 			frame_list.reserve(frames.size());
 
@@ -338,14 +454,11 @@ namespace hades::resources
 				else
 					frame = parse_frame_seq(name, *f, mod);
 
-				total_duration += frame.duration;
 				frame_list.emplace_back(std::move(frame));
 			}//for frames
 
 			//normalise the frame durations
-			assert(total_duration != 0.f);
-			for (auto &f : frame_list)
-				f.duration /= total_duration;
+			normalise_durations(frame_list); // NOTE: this is broke
 
 			std::swap(anim->value, frame_list);
 		}//for animations
@@ -369,7 +482,7 @@ namespace hades::resources
 			const auto map = a->to_map<unique_id>(data::make_uid);
 			const auto group_name = a->to_string();
 			const auto group_id = d.get_uid(group_name);
-			auto group = d.find_or_create<animation_group>(group_id, mod);
+			auto group = d.find_or_create<animation_group>(group_id, mod, anim_group_str);
 			for (const auto& [name, val] : map)
 			{
 				const auto id = d.get_uid(name);
@@ -426,13 +539,14 @@ namespace hades::animation
 		//calculate the progress to find the correct rect for this time
 		for (const auto &frame : animation.value)
 		{
-			progress -= frame.duration;
+			progress -= frame.normalised_duration;
 
 			// Must be <= and not <, to handle case (progress == frame.duration == 1) correctly
 			if (progress <= 0.f)
 				return  frame;
 		}
 
+		assert(!empty(animation.value));
 		LOGWARNING("Unable to find correct frame for animation " + to_string(animation.id) +
 			"animation progress was: " + to_string(progress));
 		return animation.value.back();
@@ -533,7 +647,7 @@ namespace hades
 		//requires texture
 		register_texture_resource(d);
 
-		d.register_resource_type("animations"sv, resources::parse_animation);
-		d.register_resource_type("animation-groups"sv, resources::parse_animation_group);
+		d.register_resource_type(anim_str, resources::parse_animation);
+		d.register_resource_type(anim_group_str, resources::parse_animation_group);
 	}
 }

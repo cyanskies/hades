@@ -172,7 +172,7 @@ namespace hades::resources
 			const auto name = c->to_string();
 			const auto id = d.get_uid(name);
 
-			auto new_curve = d.find_or_create<curve>(id, mod);
+			auto new_curve = d.find_or_create<curve>(id, mod, "curves"sv);
 
 			const auto old_type = new_curve->data_type;
 

@@ -23,7 +23,7 @@ namespace hades
 	{
 		assert(dynamic_cast<resources::font*>(&f));
 		auto &font = static_cast<resources::font&>(f);
-		const auto mod = d.get<resources::mod>(font.mod);
+		const auto& mod = d.get_mod(font.mod);
 
 		try
 		{
@@ -41,9 +41,11 @@ namespace hades
 		}
 		catch (const files::file_error &e)
 		{
-			LOGERROR("Failed to load font: " + mod->source + "/" + font.source + ". " + e.what());
+			LOGERROR("Failed to load font: " + mod.source + "/" + font.source + ". " + e.what());
 		}
 	}
+
+	using namespace std::string_view_literals;
 
 	void parse_font(unique_id m, const data::parser_node &n, data::data_manager &d)
 	{
@@ -63,7 +65,7 @@ namespace hades
 			const auto source = value->to_string();
 
 			const auto id = d.get_uid(name);
-			auto font = d.find_or_create<resources::font>(id, m);
+			auto font = d.find_or_create<resources::font>(id, m, "fonts"sv);
 			if (!font)
 				continue;
 

@@ -51,18 +51,18 @@ namespace hades
 
 		//create error tileset and add a default error tile
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
-		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero);
+		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero, tilesets_name);
 		const resources::tile error_tile{ texture, 0u, 0u, error_tset };
 		error_tset->tiles = { error_tile };
 
 		id::empty_tileset = hades::data::make_uid(air_tileset_name);
-		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero);
+		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero, tilesets_name);
 		const resources::tile empty_tile{ nullptr, 0u, 0u, empty_tset };
 		empty_tset->tiles = { empty_tile };
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::make_uid(tile_settings_name);
-		auto settings = d.find_or_create<resources::tile_settings>(id::tile_settings, unique_id::zero);
+		auto settings = d.find_or_create<resources::tile_settings>(id::tile_settings, unique_id::zero, tile_settings_name);
 		settings->error_tileset = d.make_resource_link<resources::tileset>(id::error_tileset);
 		settings->empty_tileset = d.make_resource_link<resources::tileset>(id::empty_tileset);
 		settings->tile_size = 8;
@@ -77,7 +77,7 @@ namespace hades
 		//	error-tileset
 
 		const auto id = d.get_uid(tile_settings_name);
-		auto s = d.find_or_create<resources::tile_settings>(id, mod);
+		auto s = d.find_or_create<resources::tile_settings>(id, mod, tile_settings_name);
 		assert(s);
 
 		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
@@ -181,7 +181,7 @@ namespace hades
 		//				tile_count: <// total amount of tiles in tileset; default: tiles_per_row
 		//			}
 
-		auto tile_settings = d.find_or_create<resources::tile_settings>(id::tile_settings, mod);
+		auto tile_settings = d.find_or_create<resources::tile_settings>(id::tile_settings, mod, tile_settings_name);
 		assert(tile_settings);
 		const auto tileset_list = n.get_children();
 
@@ -192,7 +192,7 @@ namespace hades
 			const auto name = tileset_n->to_string();
 			const auto id = d.get_uid(name);
 
-			auto tileset = d.find_or_create<resources::tileset>(id, mod);
+			auto tileset = d.find_or_create<resources::tileset>(id, mod, tilesets_name);
 
 			resources::detail::parse_tiles(mod, *tileset, tile_size, *tileset_n, d);
 

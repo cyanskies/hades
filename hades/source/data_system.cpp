@@ -32,7 +32,7 @@ namespace hades::data
 
 		if (game_loaded)
 		{
-			LOG("Tried to load" + to_string(game) + ", Already loaded a game, skipping");
+			LOG("Failed to load " + to_string(game) + ", a game has already been loaded.");
 			return;//game already loaded ignore
 		}
 
@@ -41,11 +41,11 @@ namespace hades::data
 			add_mod(game, true, "game.yaml");
 			game_loaded = true;
 		}
-		catch (const files::file_error & f)
+		catch (const files::file_error& f)
 		{
 			LOGERROR(f.what());
 		}
-		catch (const parser_exception & e)
+		catch (const parser_exception& e)
 		{
 			const auto message = to_string(e.what()) + " while parsing: " + to_string(game) + "/game.yaml";
 			LOGERROR(message);
@@ -57,96 +57,42 @@ namespace hades::data
 		return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
 	}
 
-	template<typename GetId, typename FindMod, typename DepCheckFunc, typename ParseYamlFunc>
-	static void parse_mod(std::string_view source, const data::parser_node& modRoot,
-		GetId&& get_id, FindMod&& find_mod, DepCheckFunc&& dependencycheck, ParseYamlFunc&& parse_yaml)
-	{
-		auto modKey = std::invoke(std::forward<GetId>(get_id), source);
-
-		//mod:
-		//    name:
-		//    depends:
-		//        -other_mod
-
-		//read the mod header
-		const auto mod = modRoot.get_child("mod");
-		if (!mod)
-		{
-			//missing mod header
-			LOGERROR("mod header missing for mod: " + to_string(source));
-			return;
-		}
-
-		auto mod_data = std::invoke(std::forward<FindMod>(find_mod), modKey);
-		//parse the mod header;
-		mod_data->source = source;
-		mod_data->id = modKey;
-		mod_data->name = parse_tools::get_scalar<string>(*mod, "name", mod_data->name);
-
-		//check mod dependencies
-		const auto dependencies = mod->get_child("depends");
-		if (dependencies)
-		{
-			const auto deps = dependencies->to_sequence<string>();
-			for (const auto& s : deps)
-			{
-				if (!std::invoke(dependencycheck, s)) {
-					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
-				}
-			}
-		}
-
-		//for every other headers, check for a header parser
-		std::invoke(std::forward<ParseYamlFunc>(parse_yaml), modKey, modRoot);
-
-		LOG("Loaded mod: " + mod_data->name);
-		return;
-	}
-
 	//mod is the name of a folder or archive containing a mod.yaml file
 	void data_system::add_mod(std::string_view mod, bool autoLoad, std::string_view name)
 	{
-		auto m = resources::mod{};
+		auto m = data::mod{};
 		m.source = mod;
-		const auto modyaml = files::read_resource(&m, name);
+		const auto modyaml = files::read_resource(m, name);
 
 		if (ContainsTab(modyaml))
 			LOGWARNING("Yaml file: " + to_string(mod) + "/" + to_string(name) + " contains tabs, expect errors.");
 		//parse game.yaml
 		const auto root = data::make_parser(modyaml);
+		const auto mod_key = get_uid(mod);
 
-		const auto get_id = [this](std::string_view s) { return get_uid(s); };
-		const auto find_mod = [this](unique_id m) { return find_or_create<resources::mod>(m, unique_zero); };
-		const auto parse_yaml = [this](unique_id m, const data::parser_node& n) { return parseYaml(m, n); };
-
-		if (autoLoad)
-			//if auto load, then use the mod loader as the dependency check(will parse the dependent mod)
-			parse_mod(mod, *root, get_id, find_mod, [this](std::string_view s) {this->add_mod(s, true); return true; }, parse_yaml);
-		else
-			//otherwise bind to loaded, returns false if dependent mod is not loaded
-			parse_mod(mod, *root, get_id, find_mod, [this](std::string_view s) { return loaded(s); }, parse_yaml);
-
+		_parse_mod(mod_key, mod, *root, autoLoad);
+		
 		//record the list of loaded games/mods
 		if (name == "game.yaml")
-			_game = get_uid(mod);
+			_game = mod_key;
 		else
-			_mods.push_back(get_uid(mod));
+			_mods.push_back(mod_key);
 	}
 
 	bool data_system::loaded(std::string_view mod)
 	{
-		const auto iter = _ids.find(to_string(mod));
+		const auto iter = _ids.find(string{ mod });
 		//name hasn't even been used yet
 		if (iter == end(_ids))
 			return false;
 
 		try
 		{
-			const auto m = get<resources::mod>(iter->second, no_load);
-			return m->loaded;
+			get_mod(iter->second);
+			return true;
 		}
 		//name has been used, but not for a mod
-		catch (data::resource_wrong_type&)
+		catch (data::resource_error&)
 		{
 			return false;
 		}
@@ -161,10 +107,10 @@ namespace hades::data
 
 		// unset main_loaded, so that the newly parsed data doesnt
 		// get put into the leaf
-		_main_loaded = false;
+		//_main_loaded = false;
 
 		//reparse the game
-		const auto& game = get<resources::mod>(_game)->name;
+		const auto& game = get_mod(_game).source;
 		add_mod(game, true, "game.yaml");
 
 		//go through the mod list and reload them in the
@@ -173,7 +119,7 @@ namespace hades::data
 		for (const auto m : mods)
 		{
 			//for each mod reload it
-			const auto& name = get<resources::mod>(m)->name;
+			const auto& name = get_mod(m).source;
 			add_mod(name);
 		}
 	}
@@ -273,16 +219,15 @@ namespace hades::data
 		return out.first->second;
 	}
 
-	template<typename GETMOD, typename YAMLPARSER>
-	static void parseInclude(unique_id mod, types::string file, GETMOD &&getMod, YAMLPARSER &&yamlParser)
+	template<typename YAMLPARSER>
+	static void parseInclude(unique_id mod, types::string file, const data::mod& mod_info, YAMLPARSER &&yamlParser)
 	{
-		const auto mod_info = std::invoke(std::forward<GETMOD>(getMod), mod);
 		try
 		{
 			const auto include_yaml = files::read_resource(mod_info, file);
 
 			if (ContainsTab(include_yaml))
-				LOGWARNING("Yaml file: " + mod_info->name + "/" + file + " contains tabs, expect errors.");
+				LOGWARNING("Yaml file: " + mod_info.name + "/" + file + " contains tabs, expect errors.");
 
 			const auto parser = data::make_parser(include_yaml);
 			std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
@@ -294,10 +239,62 @@ namespace hades::data
 		}
 		catch (const parser_exception& e)
 		{
-			const auto message = to_string(e.what()) + " while parsing: " + mod_info->name + "/" + file;
+			const auto message = to_string(e.what()) + " while parsing: " + mod_info.name + "/" + file;
 			LOGERROR(message);
 		}
 
+		return;
+	}
+
+	void data_system::_parse_mod(unique_id modKey, std::string_view source, const data::parser_node& modRoot, bool load_deps)
+	{
+		//mod:
+		//    name:
+		//    depends:
+		//        -other_mod
+
+		//read the mod header
+		const auto mod = modRoot.get_child("mod");
+		if (!mod)
+		{
+			//missing mod header
+			LOGERROR("mod header missing for mod: " + to_string(source));
+			return;
+		}
+
+		auto mod_info = data::mod{};
+		mod_info.source = source;
+		mod_info.id = modKey;
+		
+		//parse the mod header;
+		const auto default_mod_name = "mod_name_missing"s;
+		mod_info.name = parse_tools::get_scalar<string>(*mod, "name", default_mod_name);
+
+		assert(mod_info.name != default_mod_name);
+
+		//check mod dependencies
+		const auto dependencies = mod->get_child("depends");
+		if (dependencies)
+		{
+			const auto deps = dependencies->to_sequence<string>();
+			for (const auto& s : deps)
+			{
+				if (load_deps)
+					add_mod(s, load_deps);
+				else if(!loaded(s)) {
+					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
+				}
+			}
+		}
+		
+		// copy name for later
+		const auto mod_name = mod_info.name;
+		push_mod(std::move(mod_info));
+
+		//for every other headers, check for a header parser
+		parseYaml(modKey, modRoot);
+		
+		LOG("Loaded mod: " + mod_name);
 		return;
 	}
 
@@ -316,12 +313,12 @@ namespace hades::data
 			//if type is include, then open the file and pass it to parseyaml
 			if (type == "include")
 			{
-				const auto get_mod = [this](unique_id mod) {return get<resources::mod>(mod); };
 				const auto yaml_parser = [this](unique_id mod, const data::parser_node& root) { parseYaml(mod, root); };
 
+				const auto& mod_res = get_mod(mod);
 				const auto includes = header->to_sequence<string>();
 				for (const auto& s : includes)
-					parseInclude(mod, s, get_mod, yaml_parser);
+					parseInclude(mod, s, mod_res, yaml_parser);
 			}
 
 			//if this resource name has a parser then load it

@@ -103,5 +103,5 @@ source_group("Header files\\debug" REGULAR_EXPRESSION
 )
 
 source_group("Source files\\debug" REGULAR_EXPRESSION 
-	"include\/hades\/debug\/.+\.cpp"
+	"source\/debug\/.+\.cpp"
 )

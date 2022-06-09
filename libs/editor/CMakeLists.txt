@@ -10,6 +10,7 @@ set(HADES_EDITOR_SRC
 	source/level_editor_tiles.cpp
 	source/mission_editor.cpp
 	source/mod_editor.cpp
+	source/debug/resource_inspector.cpp
 	include/hades/level_editor.hpp
 	include/hades/level_editor_component.hpp
 	include/hades/level_editor_grid.hpp
@@ -23,6 +24,7 @@ set(HADES_EDITOR_SRC
 	include/hades/detail/level_editor.inl
 	include/hades/detail/level_editor_grid.inl
 	include/hades/detail/level_editor_objects.inl
+	include/hades/debug/resource_inspector.hpp
 )
 
 set(HADES_EDITOR_LIBS 
@@ -33,3 +35,11 @@ set(HADES_EDITOR_LIBS
 )
 
 hades_make_library(hades-editor include "${HADES_EDITOR_SRC}" "${HADES_EDITOR_LIBS}")
+
+source_group("Header files\\debug" REGULAR_EXPRESSION 
+	"include\/hades\/debug\/.+\.hpp"
+)
+
+source_group("Source files\\debug" REGULAR_EXPRESSION 
+	"source\/debug\/.+\.cpp"
+)

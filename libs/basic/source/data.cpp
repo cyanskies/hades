@@ -4,6 +4,8 @@
 
 #include "hades/exceptions.hpp"
 
+using namespace std::string_literals;
+
 namespace hades
 {
 	namespace data
@@ -43,43 +45,53 @@ namespace hades
 			}
 		}
 
-		bool data_manager::exists(unique_id id) const
+		data_manager::data_manager()
 		{
-			const auto func = [id](auto&& res) noexcept {
-				return res->id == id;
-			};
-
-			return std::any_of(begin(_main.resources), end(_main.resources), func)
-				|| std::any_of(begin(_leaf.resources), end(_leaf.resources), func);
+			auto& m = _mod_stack.emplace_back();
+			m.mod_info.name = "built-in";
+			return;
 		}
 
-		resources::resource_base *data_manager::get_resource(unique_id id)
+		bool data_manager::exists(unique_id id) const
 		{
-			auto r = try_get_resource(id);
-			if(!r)
-				throw resource_null("Failed to find resource for unique_id: " + get_as_string(id));
+			return std::any_of(begin(_mod_stack), end(_mod_stack), [id](auto&& elm) {
+				return std::any_of(begin(elm.resources), end(elm.resources), [id](auto&& res) {
+					return res->id == id;
+					});
+				});
+		}
+
+		resources::resource_base *data_manager::get_resource(unique_id id, unique_id mod)
+		{
+			auto r = try_get_resource(id, mod);
+			if (!r)
+				throw resource_null("Failed to find resource for unique_id: "s + get_as_string(id) +
+					(mod ? ", from mod: "s + get_as_string(mod) : string{}));
 
 			return r;
 		}
 
-		resources::resource_base *data_manager::try_get_resource(unique_id id) noexcept
+		resources::resource_base *data_manager::try_get_resource(unique_id id, unique_id mod) noexcept
 		{
-			const auto func = [id](auto&& res) noexcept {
-				return res->id == id;
-			};
+			// find the resource in the highest mod on the stack
+			// starting at mod if specified
+			const auto end = rend(_mod_stack);
+			auto iter = mod ? std::find_if(rbegin(_mod_stack), end, [mod](auto&& elm) {
+				return mod == elm.mod_info.id;
+				}) : rbegin(_mod_stack);
 
-			const auto leaf_end = end(_leaf.resources);
-			const auto main_end = end(_main.resources);
-			auto res = std::find_if(begin(_leaf.resources), leaf_end, func);
-			if (res == leaf_end)
+			for (; iter != end; ++iter)
 			{
-				res = std::find_if(begin(_main.resources), main_end, func);
+				const auto res_end = std::end(iter->resources);
+				auto res = std::find_if(begin(iter->resources), res_end, [id](auto&& res) noexcept {
+					return res->id == id;
+				});
 
-				if (res == main_end)
-					return nullptr;
+				if (res != res_end)
+					return res->get();
 			}
 
-			return res->get();
+			return nullptr;
 		}
 
 		void data_manager::update_all_links()
@@ -97,6 +109,56 @@ namespace hades
 			}
 
 			return;
+		}
+
+		void data_manager::push_mod(mod m)
+		{
+			const auto end = std::end(_mod_stack);
+			auto iter = std::find_if(begin(_mod_stack), end, [id = m.id](auto&& elm) {
+				return id == elm.mod_info.id;
+			});
+
+			if (iter == end)
+			{
+				auto& elm = _mod_stack.emplace_back();
+				elm.mod_info = std::move(m);
+			}
+			else
+				iter->mod_info = std::move(m);
+		}
+
+		void data_manager::pop_mod()
+		{
+			assert(!empty(_mod_stack));
+			_mod_stack.pop_back();
+		}
+
+		const mod& data_manager::get_mod(const unique_id id) const
+		{
+			auto ptr = const_cast<data_manager*>(this);
+			return ptr->_get_mod(id).mod_info;
+		}
+
+		std::vector<data_manager::resource_storage*> data_manager::get_mod_stack()
+		{
+			auto out = std::vector<resource_storage*>{};
+			std::transform(begin(_mod_stack), end(_mod_stack), back_inserter(out), [](auto&& res) {
+				return &res;
+				});
+			return out;
+		}
+
+		data_manager::mod_storage& data_manager::_get_mod(const unique_id id)
+		{
+			const auto end = std::end(_mod_stack);
+			auto m = std::find_if(begin(_mod_stack), end, [id](auto&& elm) {
+				return elm.mod_info.id == id;
+				});
+
+			if (m == end)
+				throw resource_error{ "Missing mod in data manager: "s + get_as_string(id) };
+
+			return *m;
 		}
 
 		bool exists(unique_id id)
@@ -124,6 +186,14 @@ namespace hades
 			std::tie(data, lock) = detail::get_data_manager_ptr_shared();
 
 			return data->get_uid(name);
+		}
+
+		const mod& get_mod(unique_id id)
+		{
+			auto [data, lock] = detail::get_data_manager_ptr_shared();
+			std::ignore = lock;
+
+			return data->get_mod(id);
 		}
 
 		unique_id make_uid(std::string_view name)

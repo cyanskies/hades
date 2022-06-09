@@ -530,7 +530,7 @@ namespace hades::detail
 						else
 						{
 							const auto mod_id = data::get_uid(_load_level_mod);
-							const auto mod = data::get<resources::mod>(mod_id);
+							const auto& mod = data::get_mod(mod_id);
 							return files::read_resource(mod, _load_level_path);
 						}
 					}();

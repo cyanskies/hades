@@ -33,6 +33,8 @@ namespace hades::debug
 		_output.reserve(size(_output) + size(new_output));
 		std::move(begin(new_output), end(new_output), back_inserter(_output));
 
+		g.set_next_window_size({ 0.f, 0.f }, gui::set_condition_enum::first_use);
+
 		const auto child_window_name = "##console_child"sv;
 		if (g.window_begin("Console##console_overlay", _open))
 		{

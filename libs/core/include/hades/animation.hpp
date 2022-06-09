@@ -23,11 +23,13 @@ namespace hades::resources
 	//struct shader;
 	struct animation_frame
 	{
-		float x, y; // tex coords(px)
-		float w, h; // tex coords(px)
+		float x{}, y{}; // tex coords(px)
+		float w{}, h{}; // tex coords(px)
 		float scale_w = 1.f, scale_h = 1.f; // draw scaling (ratio), negative to flip
-		float off_x = 0.f, off_y = 0.f; // draw origin offset
+		float off_x = {}, off_y = {}; // draw origin offset
 		float duration = 1.f; // relative frame duration
+		// NOTE: this is a generated value, don't edit it manually
+		float normalised_duration = 0.f; //calculated normal duration
 	};
 
 	constexpr bool operator==(const animation_frame l, const animation_frame r) noexcept
@@ -49,7 +51,7 @@ namespace hades::resources
 	{
 		using try_get_return = data::data_manager::try_get_return<const animation>;
 		const animation* get_resource(unique_id);
-		const animation* get_resource(data::data_manager&, unique_id);
+		animation* get_resource(data::data_manager&, unique_id, unique_id = unique_zero);
 		try_get_return try_get(unique_id) noexcept;
 		const animation* find_or_create(data::data_manager&, unique_id, unique_id mod);
 		std::vector<const animation*> find_or_create(data::data_manager&, const std::vector<unique_id>&, unique_id mod);
@@ -58,6 +60,10 @@ namespace hades::resources
 		std::vector<unique_id> get_id(const std::vector<const animation*>&) noexcept;
 		const texture* get_texture(const animation&) noexcept;
 		time_duration get_duration(const animation&) noexcept;
+		const std::vector<animation_frame>& get_animation_frames(const animation&) noexcept;
+		void set_animation_frames(animation&, std::vector<animation_frame>);
+		void set_duration(animation&, time_duration) noexcept;
+		vector_float get_minimum_offset(const animation&) noexcept;
 		// const shader* get_shader(const animation&) noexcept;
 	}
 

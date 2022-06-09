@@ -1,6 +1,8 @@
 #include "hades/gui.hpp"
 
 #include "imgui.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "SFML/OpenGL.hpp"
@@ -135,7 +137,10 @@ namespace hades
 			io.AddMouseButtonEvent(e.mouseButton.button, e.type == sf::Event::MouseButtonPressed);
 			return io.WantCaptureMouse;
 		case sf::Event::MouseWheelScrolled:
-			io.AddMouseWheelEvent(static_cast<float>(e.mouseWheelScroll.delta), {});
+			if (e.mouseWheelScroll.wheel == 0)
+				io.AddMouseWheelEvent({}, static_cast<float>(e.mouseWheelScroll.delta));
+			else
+				io.AddMouseWheelEvent(static_cast<float>(e.mouseWheelScroll.delta), {});
 			return io.WantCaptureMouse;
 		case sf::Event::KeyPressed:
 			[[fallthrough]];
@@ -301,6 +306,13 @@ namespace hades
 		const auto size = ImGui::GetWindowSize();
 		return { size.x, size.y };
 	}
+
+	void gui::set_next_window_size(const vector2& size, set_condition_enum e)
+	{
+		_active_assert();
+		ImGui::SetNextWindowSize({ size.x, size.y }, enum_type(e));
+	}
+
 
 	void gui::next_window_position(vector2 p)
 	{
@@ -572,23 +584,60 @@ namespace hades
 		ImGui::Image(const_cast<resources::texture*>(&t), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
 			{ x / tex_width, y / tex_height }, // normalised coords
-			{ (x + width) / tex_width,  (y + height) / tex_width }, // absolute pos for bottom right corner, also normalised
+			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
 			to_imvec4(tint_colour),
 			to_imvec4(border_colour));
 	}
 
-	void gui::image(const resources::animation &a, const vector2 &size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
-	{
+	void gui::image(const resources::animation &a, vector2 size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
+	{		
 		_active_assert();
 		const auto& f = animation::get_frame(a, time);
 		const auto texture = resources::animation_functions::get_texture(a);
-		assert(texture);
-		return image(*texture,
-			rect_float{ f.x, f.y, f.w, f.h },
-			size, 
-			tint_colour,
-			border_colour
-		);
+
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return;
+
+		const auto flip_x = f.scale_w < 0;
+		const auto flip_y = f.scale_h < 0;
+
+		const auto min_off = resources::animation_functions::get_minimum_offset(a);
+		const auto im_min_off = ImVec2{ abs(min_off.x), abs(min_off.y) };
+		const auto im_off = ImVec2{ f.off_x, f.off_y };
+		const auto im_size = ImVec2{ (size.x + f.off_x) * abs(f.scale_w), (size.y + f.off_y) * abs(f.scale_h) };
+		ImRect bb(window->DC.CursorPos + im_min_off + im_off, window->DC.CursorPos + im_min_off + im_size);
+
+		const auto border_col = to_imvec4(border_colour);
+		if (border_col.w > 0.0f)
+			bb.Max += ImVec2(2, 2);
+		ImGui::ItemSize(bb);
+		if (!ImGui::ItemAdd(bb, 0))
+			return;
+		
+		const auto [tex_width, tex_height] = resources::texture_functions::get_size(texture);
+
+		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
+		auto uv1 = ImVec2{ (f.x + f.w) / tex_width, (f.y + f.h) / tex_height };
+
+		if (flip_x)
+			std::swap(uv0.x, uv1.x);
+		if (flip_y)
+			std::swap(uv0.y, uv1.y);
+
+		const auto tint_col = to_imvec4(tint_colour);
+		//ImGui only accepts these as non-const void*
+		const auto user_texture_id = const_cast<resources::texture*>(texture); 
+
+		if (border_col.w > 0.0f)
+		{
+			window->DrawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(border_col), 0.0f);
+			window->DrawList->AddImage(user_texture_id, bb.Min + ImVec2(1, 1), bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
+		}
+		else
+			window->DrawList->AddImage(user_texture_id, bb.Min, bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
+
+		return;
 	}
 
 	bool gui::image_button(const resources::texture &texture, const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour, const sf::Color &tint_colour)
@@ -748,6 +797,18 @@ namespace hades
 		return r;
 	}
 
+	bool gui::tree_node(std::string_view sv, tree_node_flags tn)
+	{
+		_active_assert();
+		return ImGui::TreeNodeEx(string{ sv }.data(), enum_type(tn));
+	}
+
+	void gui::tree_pop()
+	{
+		_active_assert();
+		ImGui::TreePop();
+	}
+
 	bool gui::collapsing_header(std::string_view s, tree_node_flags f)
 	{
 		_active_assert();
@@ -758,6 +819,12 @@ namespace hades
 	{
 		_active_assert();
 		return ImGui::CollapsingHeader(to_string(s).data(), &open, static_cast<ImGuiTreeNodeFlags>(f));
+	}
+
+	void gui::set_next_item_open(bool is_open, set_condition_enum e)
+	{
+		_active_assert();
+		ImGui::SetNextItemOpen(is_open, enum_type(e));
 	}
 
 	bool gui::main_menubar_begin()
@@ -927,6 +994,40 @@ namespace hades
 		close_current_popup();
 	}
 
+	bool gui::begin_table(std::string_view str_id, int column, table_flags flags,
+		const vector2& outer_size, float inner_width)
+	{
+		_active_assert();
+		return ImGui::BeginTable(to_string(str_id).data(), column, enum_type(flags),
+			{ outer_size.x, outer_size.y }, inner_width);
+	}
+
+	void gui::end_table()
+	{
+		_active_assert();
+		ImGui::EndTable();
+		return;
+	}
+
+	void gui::table_next_row(table_row_flags row_flags, float min_row_height)
+	{
+		_active_assert();
+		ImGui::TableNextRow(enum_type(row_flags), min_row_height);
+		return;
+	}
+
+	bool gui::table_next_column()
+	{
+		_active_assert();
+		return ImGui::TableNextColumn();
+	}
+
+	bool gui::table_set_column_index(int column_n)
+	{
+		_active_assert();
+		return ImGui::TableSetColumnIndex(column_n);
+	}
+
 	void gui::columns_begin(std::size_t count, bool border)
 	{
 		_active_assert();
@@ -953,6 +1054,20 @@ namespace hades
 		ImGui::Columns();
 	}
 
+	void gui::begin_disabled()
+	{
+		_active_assert();
+		ImGui::BeginDisabled();
+		return;
+	}
+
+	void gui::end_disabled()
+	{
+		_active_assert();
+		ImGui::EndDisabled();
+		return;
+	}
+
 	void gui::set_keyboard_focus_here(int offset) noexcept
 	{
 		_active_assert();
@@ -972,10 +1087,49 @@ namespace hades
 		return ImGui::IsItemHovered(static_cast<ImGuiHoveredFlags>(f));
 	}
 
+	bool gui::is_item_focused()
+	{
+		_active_assert();
+		return ImGui::IsItemFocused();
+	}
+
+	bool gui::is_item_clicked(mouse_button mb)
+	{
+		_active_assert();
+		return ImGui::IsItemClicked(enum_type(mb));
+	}
+
+	bool gui::is_item_edited()
+	{
+		_active_assert();
+		return ImGui::IsItemEdited();
+	}
+
+
+	bool gui::is_item_toggled_open()
+	{
+		_active_assert();
+		return ImGui::IsItemToggledOpen();
+	}
+
+	gui::vector2 gui::get_item_rect_min()
+	{
+		_active_assert();
+		const auto v = ImGui::GetItemRectMin();
+		return { v.x, v.y };
+	}
+
 	gui::vector2 gui::get_item_rect_max()
 	{
 		_active_assert();
 		const auto v = ImGui::GetItemRectMax();
+		return { v.x, v.y };
+	}
+
+	gui::vector2 gui::get_item_rect_size()
+	{
+		_active_assert();
+		const auto v = ImGui::GetItemRectSize();
 		return { v.x, v.y };
 	}
 

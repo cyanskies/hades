@@ -18,15 +18,17 @@
 #include "hades/texture.hpp"
 #include "hades/yaml_parser.hpp"
 
-using namespace hades;
+//using namespace hades;
 
 //posts a standard error message if the requested resource is of the wrong type
-void resource_error(types::string resource_type, types::string resource_name, unique_id mod)
-{
-	auto mod_ptr = data::get<resources::mod>(mod);
-	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: "
-		+ mod_ptr->name + ". Name has already been used for a different resource type.");
-}
+//void resource_error(types::string resource_type, types::string resource_name, unique_id mod)
+//{
+//	auto mod_ptr = data::get<resources::mod>(mod);
+//	LOGERROR("Name collision with identifier: " + resource_name + ", for " + resource_type + " while parsing mod: "
+//		+ mod_ptr->name + ". Name has already been used for a different resource type.");
+//}
+
+using namespace std::string_view_literals;
 
 namespace hades
 {
@@ -37,7 +39,7 @@ namespace hades
 
 	void RegisterCommonResources(hades::data::data_system *data)
 	{
-		data->register_resource_type("strings", resources::parseString);
+		data->register_resource_type("strings"sv, resources::parseString);
 
 		register_font_resource(*data);
 
@@ -45,7 +47,7 @@ namespace hades
 		//we do it here because the resource isn't availble yet
 		//in hades-core
 		//TODO: move to hades core
-		auto f = data->find_or_create<resources::font>(resources::default_font_id(), unique_id::zero);
+		auto f = data->find_or_create<resources::font>(resources::default_font_id(), unique_id::zero, "fonts"sv);
 		assert(f);
 
 		f->loaded = f->value.loadFromMemory(default_font.data(), default_font.size());
@@ -63,6 +65,7 @@ namespace hades
 			//const auto resource_type = "strings";
 			
 			const auto strings = n.get_children();
+			const auto& mod_info = d.get_mod(mod);
 
 			for (const auto &s : strings)
 			{
@@ -71,16 +74,14 @@ namespace hades
 				const auto name = s->to_string();
 				const auto id = d.get_uid(name);
 				
-				auto str = d.find_or_create<resources::string>(id, mod);
+				auto str = d.find_or_create<resources::string>(id, mod, "strings"sv);
 				if (!str)
 					continue;
-
-				const auto mod_info = d.get<resources::mod>(mod);
 
 				const auto value = s->get_child();
 				const auto string = value->to_string();
 
-				str->source = mod_info->source;
+				str->source = mod_info.source;
 				str->value = string;
 			}
 		}

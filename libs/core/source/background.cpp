@@ -6,6 +6,8 @@
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
 
+using namespace std::string_view_literals;
+
 namespace hades::resources
 {
 	static void load_background(resource_type<background_t> &r, data::data_manager &d)
@@ -40,7 +42,7 @@ namespace hades::resources
 			const auto name = b->to_string();
 			const auto id = d.get_uid(name);
 
-			auto back = d.find_or_create<background>(id, m);
+			auto back = d.find_or_create<background>(id, m, "backgrounds"sv);
 			if (!back)
 				continue;
 

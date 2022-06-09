@@ -155,6 +155,17 @@ namespace hades
 		vector2 window_position() const;
 		vector2 window_size() const;
 
+		// don't OR together like other flags
+		enum class set_condition_enum : ImGuiCond
+		{
+			always = ImGuiCond_::ImGuiCond_Always,
+			once = ImGuiCond_::ImGuiCond_Once, // Set the variable once per runtime session (only the first call will succeed)
+			first_use = ImGuiCond_::ImGuiCond_FirstUseEver, // only triggers if their is no data in .ini file
+			appearing = ImGuiCond_::ImGuiCond_Appearing // first recent use
+		};
+
+		void set_next_window_size(const vector2& size, set_condition_enum = set_condition_enum::always);
+
 		//window manipulation
 		//TODO: some funcs are missing
 		void next_window_position(vector2);
@@ -278,7 +289,7 @@ namespace hades
 		bool invisible_button(std::string_view label, const vector2& size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
-		void image(const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2 size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		bool image_button(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool image_button(const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool checkbox(std::string_view label, bool& checked); //returns true on checked changed
@@ -469,9 +480,12 @@ namespace hades
 		};
 
 		//TODO: Tree
+		bool tree_node(std::string_view, tree_node_flags = tree_node_flags::none);
+		void tree_pop(); //  call if tree_node returns true
 		bool collapsing_header(std::string_view, tree_node_flags = tree_node_flags::none);
-		bool collapsing_header(std::string_view, bool &open, tree_node_flags = tree_node_flags::none);
-		//set_next_item_open
+		bool collapsing_header(std::string_view, bool &open, tree_node_flags = tree_node_flags::none); 
+		// set whether the next tree_node or collapsing_header should be open
+		void set_next_item_open(bool is_open, set_condition_enum = set_condition_enum::always);
 
 		//TODO: list box(see above)
 
@@ -528,8 +542,66 @@ namespace hades
 		void modal_end();
 		void close_current_modal();
 
-		//TODO: Tables [BETA] when they leave beta
-		// 
+		enum class table_flags : ImGuiTableFlags
+		{
+			// Features
+			none = ImGuiTableFlags_None,
+			resizeable = ImGuiTableFlags_Resizable,   // Enable resizing columns.
+			reorderable = ImGuiTableFlags_Reorderable,   // Enable reordering columns in header row (need calling TableSetupColumn() + TableHeadersRow() to display headers)
+			hidable = ImGuiTableFlags_Hideable,   // Enable hiding/disabling columns in context menu.
+			sortable = ImGuiTableFlags_Sortable,   // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ImGuiTableFlags_SortTristate.
+			no_saved_settings = ImGuiTableFlags_NoSavedSettings,   // Disable persisting columns order, width and sort settings in the .ini file.
+			context_menu_in_body = ImGuiTableFlags_ContextMenuInBody,   // Right-click on columns body/contents will display table context menu. By default it is available in TableHeadersRow().
+			// Decorations
+			row_bg = ImGuiTableFlags_RowBg,   // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling TableSetBgColor with ImGuiTableBgFlags_RowBg0 on each row manually)
+			borders_inner_h = ImGuiTableFlags_BordersInnerH,   // Draw horizontal borders between rows.
+			borders_outer_h = ImGuiTableFlags_BordersOuterH,   // Draw horizontal borders at the top and bottom.
+			borders_inner_v = ImGuiTableFlags_BordersInnerV,   // Draw vertical borders between columns.
+			borders_outer_v = ImGuiTableFlags_BordersOuterV,  // Draw vertical borders on the left and right sides.
+			borders_h = ImGuiTableFlags_BordersH, // Draw horizontal borders.
+			borders_v = ImGuiTableFlags_BordersV, // Draw vertical borders.
+			borders_inner = ImGuiTableFlags_BordersInner, // Draw inner borders.
+			borders_outer = ImGuiTableFlags_BordersOuter, // Draw outer borders.
+			borders = ImGuiTableFlags_Borders,   // Draw all borders.
+			no_borders_in_body = ImGuiTableFlags_NoBordersInBody,  // [ALPHA] Disable vertical borders in columns Body (borders will always appears in Headers). -> May move to style
+			no_borders_in_body_until_resize = ImGuiTableFlags_NoBordersInBodyUntilResize,  // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appears in Headers). -> May move to style
+			// Sizing Policy (read above for defaults)
+			sizing_fixed_fit = ImGuiTableFlags_SizingFixedFit,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
+			sizing_fixed_same = ImGuiTableFlags_SizingFixedSame,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents width of all columns. Implicitly enable ImGuiTableFlags_NoKeepColumnsVisible.
+			sizing_stretch_prop = ImGuiTableFlags_SizingStretchProp,  // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
+			sizing_stretch_same = ImGuiTableFlags_SizingStretchSame,  // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
+			// Sizing Extra Options
+			no_host_extend_x = ImGuiTableFlags_NoHostExtendX,  // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are disabled and Stretch columns are not used.
+			no_host_extend_y = ImGuiTableFlags_NoHostExtendY,  // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available when ScrollX/ScrollY are disabled. Data below the limit will be clipped and not visible.
+			no_keep_columns_visible = ImGuiTableFlags_NoKeepColumnsVisible,  // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended if columns are resizable.
+			precise_width = ImGuiTableFlags_PreciseWidths,  // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 columns: Without this flag: 33,33,34. With this flag: 33,33,33). With larger number of columns, resizing will appear to be less smooth.
+			// Clipping
+			no_clip = ImGuiTableFlags_NoClip,  // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to overflow into other columns). Generally incompatible with TableSetupScrollFreeze().
+			// Padding
+			pad_outer_x = ImGuiTableFlags_PadOuterX,  // Default if BordersOuterV is on. Enable outer-most padding. Generally desirable if you have headers.
+			no_pad_outer_x = ImGuiTableFlags_NoPadOuterX,  // Default if BordersOuterV is off. Disable outer-most padding.
+			no_pad_inner_x = ImGuiTableFlags_NoPadInnerX,  // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if BordersOuterV is off).
+			// Scrolling
+			scroll_x = ImGuiTableFlags_ScrollX,  // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. Changes default sizing policy. Because this create a child window, ScrollY is currently generally recommended when using ScrollX.
+			scroll_y = ImGuiTableFlags_ScrollY,  // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
+			// Sorting
+			sort_multi = ImGuiTableFlags_SortMulti,  // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
+			sort_tristate = ImGuiTableFlags_SortTristate
+		};
+
+		enum class table_row_flags : ImGuiTableRowFlags
+		{
+			none = ImGuiTableRowFlags_None,
+			headers = ImGuiTableRowFlags_Headers    // Identify header row (set default background color + width of its contents accounted differently for auto column width)
+		};
+
+		// tables
+		bool begin_table(std::string_view id, int column, table_flags flags = table_flags::none, const vector2& outer_size = {}, float inner_width = {});
+		void end_table();                                         // only call EndTable() if BeginTable() returns true!
+		void table_next_row(table_row_flags row_flags = table_row_flags::none, float min_row_height = {}); // append into the first cell of a new row.
+		bool table_next_column();                                  // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
+		bool table_set_column_index(int column_n);
+
 		//columns, soon to be deprecated
 		void columns_begin(std::size_t count = 1u, bool border = true);
 		void columns_begin(std::string_view id, std::size_t count = 1u, bool border = true);
@@ -540,7 +612,11 @@ namespace hades
 
 		// Drag Drop
 
-		// TODO: Disabled [BETA]
+		// Disabled 
+		void begin_disabled();
+		void end_disabled();
+
+		// TODO: clip rect?
 
 		// Focus
 		// offset targets the item to be focused
@@ -565,10 +641,23 @@ namespace hades
 			root_and_child_windows = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootAndChildWindows
 		};
 
+		enum class mouse_button : ImGuiMouseButton
+		{
+			left = ImGuiMouseButton_::ImGuiMouseButton_Left,
+			right = ImGuiMouseButton_::ImGuiMouseButton_Right,
+			middle =ImGuiMouseButton_::ImGuiMouseButton_Middle,
+			count = ImGuiMouseButton_::ImGuiMouseButton_COUNT
+		};
+
 		//item utils
-		bool is_item_hovered(hovered_flags); //returns true if mouse is over object
-		bool is_item_focused(); //returns true if item has keyboard or gamepad focus
+		bool is_item_hovered(hovered_flags = hovered_flags::none); //returns true if mouse is over object
+		bool is_item_focused(); //returns true if item has keyboard or gamepad focusIsItemActive();                                                     // is the last item active? (e.g. button being held, text field being edited. This will continuously return true while holding mouse button on an item. Items that don't interact will always return false)
+		bool is_item_clicked(mouse_button = mouse_button::left);
+		bool is_item_edited();    
+		bool is_item_toggled_open();
+		vector2 get_item_rect_min();
 		vector2 get_item_rect_max();
+		vector2 get_item_rect_size();
 
 		//utils
 		vector2 calculate_text_size(std::string_view, bool include_text_after_double_hash = true, float wrap_width = -1.0f);

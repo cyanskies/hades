@@ -44,6 +44,12 @@ namespace hades
 		});
 	}
 
+	using namespace std::string_view_literals;
+
+	constexpr auto terrain_settings_str = "terrain-settings"sv;
+	constexpr auto terrainsets_str = "terrainsets"sv;
+	constexpr auto terrains_str = "terrains"sv;
+
 	void register_terrain_resources(data::data_manager &d, detail::get_texture_f func)
 	{
 		detail::get_texture = func;
@@ -53,10 +59,10 @@ namespace hades
 		//so that tiles can use them as tilesets without knowing
 		//that they're really terrains
 		id::terrain_settings = d.get_uid(resources::get_tile_settings_name());
-		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_zero);
+		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, unique_zero, terrain_settings_str);
 
 		const auto empty_tileset_id = d.get_uid(resources::get_empty_tileset_name());
-		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, unique_zero);
+		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, unique_zero, terrains_str);
 
 		//fill all the terrain tile lists with a default constructed tile
 		apply_to_terrain(*empty, [empty](std::vector<resources::tile>&v) {
@@ -67,7 +73,7 @@ namespace hades
 		terrain_settings->empty_tileset = d.make_resource_link<resources::tileset>(empty_tileset_id);
 
 		const auto empty_tset_id = d.get_uid(resources::get_empty_terrainset_name());
-		auto empty_tset = d.find_or_create<resources::terrainset>(empty_tset_id, unique_id::zero);
+		auto empty_tset = d.find_or_create<resources::terrainset>(empty_tset_id, unique_id::zero, terrainsets_str);
 		empty_tset->terrains.emplace_back(terrain_settings->empty_terrain);
 
 		terrain_settings->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id);
@@ -80,7 +86,7 @@ namespace hades
 		//register tile resources
 		d.register_resource_type(resources::get_tilesets_name(), resources::parse_terrain);
 		d.register_resource_type("terrain"sv, resources::parse_terrain);
-		d.register_resource_type("terrainsets"sv, resources::parse_terrainset);
+		d.register_resource_type(terrainsets_str, resources::parse_terrainset);
 	}
 
 	static terrain_id_t get_terrain_id(const resources::terrainset *set, const resources::terrain *t)
@@ -971,7 +977,7 @@ namespace hades::resources
 			const auto name = terrain_node->to_string();
 			const auto id = d.get_uid(name);
 
-			auto terrain = d.find_or_create<resources::terrain>(id, m);
+			auto terrain = d.find_or_create<resources::terrain>(id, m, terrains_str);
 			assert(terrain);
 			//parse_tiles will fill in the tags and tiles
 			resources::detail::parse_tiles(m, *terrain, tile_size, *terrain_node, d);
@@ -997,7 +1003,7 @@ namespace hades::resources
 		//terrainsets:
 		//	name: [terrains, terrains, terrains]
 
-		auto settings = d.find_or_create<terrain_settings>(resources::get_tile_settings_id(), mod);
+		auto settings = d.find_or_create<terrain_settings>(resources::get_tile_settings_id(), mod, terrain_settings_str);
 
 		const auto list = n.get_children();
 
@@ -1006,7 +1012,7 @@ namespace hades::resources
 			const auto name = terrainset_n->to_string();
 			const auto id = d.get_uid(name);
 
-			auto t = d.find_or_create<terrainset>(id, mod);
+			auto t = d.find_or_create<terrainset>(id, mod, terrainsets_str);
 
 			auto unique_list = terrainset_n->merge_sequence(t->terrains, [mod, &d](std::string_view s) {
 				const auto i = d.get_uid(s);

@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "hades/archive.hpp"
+#include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/standard_paths.hpp"
 #include "hades/utility.hpp"
@@ -261,10 +262,9 @@ namespace hades
 
 namespace hades::files
 {
-	irfstream stream_resource(const resources::mod* m, const fs::path& path)
+	irfstream stream_resource(const data::mod& m, const fs::path& path)
 	{
-		assert(m);
-		return irfstream{ { m->source }, path };
+		return irfstream{ { m.source }, path };
 	}
 
 	template<typename ReturnType, typename Stream>
@@ -302,13 +302,13 @@ namespace hades::files
 		return out;
 	}
 
-	buffer raw_resource(const resources::mod* m, const fs::path& path)
+	buffer raw_resource(const data::mod& m, const fs::path& path)
 	{
 		auto stream = stream_resource(m, path);
 		return from_stream<buffer>(stream);
 	}
 
-	string read_resource(const resources::mod* m, const fs::path& path)
+	string read_resource(const data::mod& m, const fs::path& path)
 	{
 		auto str = stream_resource(m, path);
 		return from_stream<string>(str);

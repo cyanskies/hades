@@ -29,10 +29,18 @@ namespace hades::data
 		{
 			std::size_t mod_index = std::numeric_limits<std::size_t>::max();
 
+			struct group_val
+			{
+				unique_id id;
+				string name;
+				unique_id mod_id;
+				string mod;
+			};
+
 			struct group
 			{
 				string name;
-				std::vector<unique_id> resources;
+				std::vector<group_val> resources;
 			};
 
 			std::vector<group> resource_groups;

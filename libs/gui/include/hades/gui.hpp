@@ -250,7 +250,7 @@ namespace hades
 		void separator_horizontal();
 		template<std::size_t Count = 1u>
 		void indent();
-		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline
+		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline TODO: make this sameline again
 		void layout_vertical(); //undoes layout_horizontal; newline
 		void vertical_spacing();
 		void group_begin();

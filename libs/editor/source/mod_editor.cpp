@@ -18,7 +18,7 @@ namespace hades
 		return _gui.handle_event(e);
 	}
 
-	void mod_editor_impl::update(time_duration dt, const sf::RenderTarget& t, input_system::action_set)
+	void mod_editor_impl::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
 	{
 		_gui.activate_context();
 		_gui.update(dt);

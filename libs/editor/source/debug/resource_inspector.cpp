@@ -380,19 +380,25 @@ namespace hades::data
 	{
 		auto ids = std::vector<unique_id>{};
 
-		for (auto& res : group.resources)
+		for (const auto& [id, name, mod_id, mod_name] : group.resources)
 		{
-			if (g.tree_node(d.get_as_string(res), gui::tree_node_flags::leaf))
-			{
-				if (g.is_item_clicked() && !g.is_item_toggled_open())
-				{
-					_tree_state.res_editor = make_resource_editor(group.name);
-					if(_tree_state.res_editor)
-						_tree_state.res_editor->set_target(d, res, mod);
-				}
+			const auto tree_open = g.tree_node(name, gui::tree_node_flags::leaf);
 
-				g.tree_pop();
+			if (g.is_item_clicked() && !g.is_item_toggled_open())
+			{
+				_tree_state.res_editor = make_resource_editor(group.name);
+				if (_tree_state.res_editor)
+					_tree_state.res_editor->set_target(d, id, mod);
 			}
+
+			if (mod !=  mod_id)
+			{
+				g.layout_horizontal();
+				g.text_disabled(mod_name);
+			}
+			
+			if (tree_open)
+				g.tree_pop();
 		}
 	}
 
@@ -408,29 +414,41 @@ namespace hades::data
 		const auto stack_end = mod_index >= size(dat) ?
 			end(dat) : next(begin(dat), mod_index + 1);
 		
+		
 		for (auto iter = begin(dat); iter != stack_end; ++iter)
 		{
 			const auto m = *iter;
 			for (const auto& type : m->resources_by_type)
 			{
 				resource_tree_state::group* group = nullptr;
-				auto group_iter = std::find_if(begin(g), end(g), [&](auto&& elm) {
+				auto group_iter = std::find_if(begin(g), end(g), [&](auto&& elm) noexcept {
 					return elm.name == type.first;
 				});
-
+				
 				if (group_iter == end(g))
 					group = &g.emplace_back(resource_tree_state::group{ type.first });
 				else
 					group = &*group_iter;
 
-				std::transform(begin(type.second), end(type.second), back_inserter(group->resources), [](auto&& elm) {
-					return elm->id;
+				using val_type = resource_tree_state::group_val;
+				std::transform(begin(type.second), end(type.second), back_inserter(group->resources), [&d, &mod = m->mod_info](auto&& elm)->val_type {
+					return { elm->id, d.get_as_string(elm->id), mod.id, mod.name };
 				});
 			}
 		}
 
+		const auto less = [](auto&& left, auto&& right) noexcept {
+			return left.id < right.id;
+		};
+
+		const auto equal = [](auto&& left, auto&& right) noexcept {
+			return left.id == right.id;
+		};
+
 		for (auto&& group : _tree_state.resource_groups)
-			remove_duplicates(group.resources);
+		{
+			remove_duplicates(group.resources, less, equal);
+		}
 
 		return;
 	}

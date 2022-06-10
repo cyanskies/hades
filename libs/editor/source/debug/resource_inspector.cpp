@@ -445,10 +445,14 @@ namespace hades::data
 			return left.id == right.id;
 		};
 
-		for (auto&& group : _tree_state.resource_groups)
+		for (auto&& group : g)
 		{
 			remove_duplicates(group.resources, less, equal);
 		}
+
+		std::sort(begin(g), end(g), [](auto&& left, auto&& right) {
+			return left.name < right.name;
+			});
 
 		return;
 	}

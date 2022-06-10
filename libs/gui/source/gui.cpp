@@ -599,8 +599,8 @@ namespace hades
 		if (window->SkipItems)
 			return;
 
-		const auto flip_x = f.scale_w < 0;
-		const auto flip_y = f.scale_h < 0;
+		const auto flip_x = f.scale_w < 0 || f.w < 0;
+		const auto flip_y = f.scale_h < 0 || f.h < 0;
 
 		const auto min_off = resources::animation_functions::get_minimum_offset(a);
 		const auto im_min_off = ImVec2{ abs(min_off.x), abs(min_off.y) };
@@ -618,7 +618,7 @@ namespace hades
 		const auto [tex_width, tex_height] = resources::texture_functions::get_size(texture);
 
 		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
-		auto uv1 = ImVec2{ (f.x + f.w) / tex_width, (f.y + f.h) / tex_height };
+		auto uv1 = ImVec2{ (f.x + abs(f.w)) / tex_width, (f.y + abs(f.h)) / tex_height };
 
 		if (flip_x)
 			std::swap(uv0.x, uv1.x);

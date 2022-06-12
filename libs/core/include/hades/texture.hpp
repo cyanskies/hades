@@ -38,7 +38,8 @@ namespace hades
 			string get_source(const texture*);
 			const sf::Texture& get_sf_texture(const texture*) noexcept;
 			sf::Texture& get_sf_texture(texture*) noexcept;
-			vector_t<texture_size_t> get_size(const texture*) noexcept;
+			vector_t<texture_size_t> get_requested_size(const texture&) noexcept;
+			vector_t<texture_size_t> get_size(const texture&) noexcept;
 
 			void set_settings(texture*, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool set_loaded) noexcept;
 		}

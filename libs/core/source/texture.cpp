@@ -28,6 +28,7 @@ namespace hades::resources
 		void serialise(data::data_manager&, data::writer&) const override;
 
 		texture_size_t width = 0, height = 0;
+		texture_size_t actual_width = 0, actual_height = 0;
 		bool smooth = false, repeat = false, mips = false;
 	};
 
@@ -188,16 +189,22 @@ namespace hades
 			{
 				LOGERROR("Failed to load texture: "s + d.get_as_string(tex.id) + ". "s + e.what());
 				tex.value = generate_default_texture(tex.width, tex.height);
+				const auto tex_size = tex.value.getSize();
+				tex.actual_width = integer_cast<texture_size_t>(tex_size.x);
+				tex.actual_height = integer_cast<texture_size_t>(tex_size.y);
 			}
 
 			//if the width or height are 0, then don't warn about size mismatch
 			//otherwise log unexpected size
 			const auto size = tex.value.getSize();
-			if (tex.width != 0 &&
-				(size.x != tex.width || size.y != tex.height))
+			const auto too_small = size.x != tex.width || size.y != tex.height;
+			if (tex.width != 0 && too_small ||
+				tex.height != 0 && too_small)
 			{
-				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source + ". Texture size different from requested. Requested("s +
-					to_string(tex.width) + ", "s + to_string(tex.height) + "), Found("s + to_string(size.x) + ", "s + to_string(size.y) + ")"s);
+				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source +
+					". Texture size smaller than requested in mod: "s + mod.name + ", Requested("s +
+					to_string(tex.width) + ", "s + to_string(tex.height) + "), Found("s 
+					+ to_string(size.x) + ", "s + to_string(size.y) + ")"s);
 				//NOTE: if the texture is the wrong size
 				// then enable repeating, to avoid leaving
 				// gaps in the world(between tiles and other such stuff).
@@ -205,13 +212,9 @@ namespace hades
 					tex.value.setRepeated(true);
 			}
 
-			//if width or height are 0 then use them to store the textures size
-			if (tex.width == 0 || tex.height == 0)
-			{
-				const auto tex_size = tex.value.getSize();
-				tex.width = integer_cast<texture_size_t>(tex_size.x);
-				tex.height = integer_cast<texture_size_t>(tex_size.y);
-			}
+			const auto tex_size = tex.value.getSize();
+			tex.actual_width = integer_cast<texture_size_t>(tex_size.x);
+			tex.actual_height = integer_cast<texture_size_t>(tex_size.y);
 		}
 		else
 		{
@@ -305,10 +308,16 @@ namespace hades
 				return t->value;
 			}
 
-			vector_t<texture_size_t> get_size(const texture* t) noexcept
+			vector_t<texture_size_t> get_requested_size(const texture& t) noexcept
 			{
-				assert(t);
-				return { t->width, t->height };
+				return { t.width, t.height };
+			}
+
+			vector_t<texture_size_t> get_size(const texture& t) noexcept
+			{
+				const auto width = t.width == 0 ? t.actual_width : t.width;
+				const auto height = t.height == 0 ? t.actual_height : t.height;
+				return { width, height };
 			}
 
 			void set_settings(texture* t, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool loaded) noexcept

@@ -579,7 +579,7 @@ namespace hades
 			height = text_coords.height;
 
 		namespace tex = resources::texture_functions;
-		const auto [tex_width, tex_height] = tex::get_size(&t);
+		const auto [tex_width, tex_height] = tex::get_size(t);
 
 		ImGui::Image(const_cast<resources::texture*>(&t), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
@@ -615,7 +615,7 @@ namespace hades
 		if (!ImGui::ItemAdd(bb, 0))
 			return;
 		
-		const auto [tex_width, tex_height] = resources::texture_functions::get_size(texture);
+		const auto [tex_width, tex_height] = resources::texture_functions::get_size(*texture);
 
 		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
 		auto uv1 = ImVec2{ (f.x + abs(f.w)) / tex_width, (f.y + abs(f.h)) / tex_height };
@@ -650,7 +650,7 @@ namespace hades
 			height = text_coords.height;
 
 		namespace tex = resources::texture_functions;
-		const auto [tex_width, tex_height] = tex::get_size(&texture);
+		const auto [tex_width, tex_height] = tex::get_size(texture);
 
 		return ImGui::ImageButton(const_cast<resources::texture*>(&texture), //ImGui only accepts these as non-const void* 
 			{ size.x, size.y },
@@ -1211,7 +1211,7 @@ namespace hades
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						texture_size = static_cast<vector_float>(tex::get_size(texture));
+						texture_size = static_cast<vector_float>(tex::get_size(*texture));
 					}
 
 					//get the verts from the draw list that are associated with

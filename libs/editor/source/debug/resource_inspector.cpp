@@ -271,16 +271,19 @@ namespace hades::data
 		void set_target(data_manager& d, unique_id i, unique_id mod) override
 		{
 			namespace tex = resources::texture_functions;
-			_texture_base = d.get_resource(i, mod); // TODO: pass mod here
+			_texture_base = d.get_resource(i, mod);
 			_texture = tex::get_resource(d, i);
 			_name = "Texture: "s + d.get_as_string(i) + "###texture-edit"s;
 			_smooth = tex::get_smooth(_texture);
 			_mips = tex::get_mips(_texture);
 			_repeat = tex::get_repeat(_texture);
 			_source = tex::get_source(_texture);
-			const auto size = tex::get_size(_texture);
+			const auto size = tex::get_size(*_texture);
 			_size[0] = size.x;
 			_size[1] = size.y;
+			const auto requested_size = tex::get_requested_size(*_texture);
+			_requested_size[0] = requested_size.x;
+			_requested_size[1] = requested_size.y;
 		}
 
 		void update(data::data_manager& d,gui& g) override
@@ -300,16 +303,21 @@ namespace hades::data
 				mod |= g.checkbox("Smooth"sv, _smooth)
 					| g.checkbox("Repeating"sv, _repeat)
 					| g.checkbox("Mip Maping"sv, _mips)
-					| g.input_scalar("Size"sv, _size);
+					| g.input_scalar("Requested size"sv, _requested_size);
 
 				g.begin_disabled();
+				g.input_scalar("Size"sv, _size);
 				g.input_text("Source"sv, _source);
 				g.end_disabled();
 
 				if (mod)
 				{
-					resources::texture_functions::set_settings(_texture, { _size[0], _size[1] },
-						_smooth, _repeat, _mips, true);
+					resources::texture_functions::set_settings(_texture, { _requested_size[0], _requested_size[1] },
+						_smooth, _repeat, _mips, false);
+					resources::texture_functions::get_resource(d, _texture_base->id, _texture_base->mod);
+					const auto size = resources::texture_functions::get_size(*_texture);
+					_size[0] = size.x;
+					_size[1] = size.y;
 					generate_yaml(d);
 				}
 
@@ -344,6 +352,7 @@ namespace hades::data
 		bool _mips;
 		bool _repeat;
 		float _scale = 1.f;
+		std::array<texture_size_t, 2> _requested_size;
 		std::array<texture_size_t, 2> _size;
 	};
 

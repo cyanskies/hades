@@ -1,8 +1,11 @@
 #include "hades/debug/resource_inspector.hpp"
 
+#include "SFML/Graphics/Image.hpp"
+
 #include "hades/animation.hpp"
 #include "hades/data.hpp"
 #include "hades/gui.hpp"
+#include "hades/sf_color.hpp"
 #include "hades/texture.hpp"
 #include "hades/utility.hpp"
 #include "hades/writer.hpp"
@@ -276,6 +279,11 @@ namespace hades::data
 			_name = "Texture: "s + d.get_as_string(i) + "###texture-edit"s;
 			_smooth = tex::get_smooth(_texture);
 			_mips = tex::get_mips(_texture);
+			const auto a = tex::get_alpha_colour(*_texture);
+			_alpha_set = a.has_value();
+			if (_alpha_set)
+				_alpha = { a->r, a->g, a->b };
+
 			_repeat = tex::get_repeat(_texture);
 			_source = tex::get_source(_texture);
 			const auto size = tex::get_size(*_texture);
@@ -305,6 +313,36 @@ namespace hades::data
 					| g.checkbox("Mip Maping"sv, _mips)
 					| g.input_scalar("Requested size"sv, _requested_size);
 
+				assert(_alpha_combo_index < size(colours::all_colour_names));
+				if (g.combo_begin("alpha colour"sv, colours::all_colour_names[_alpha_combo_index], gui::combo_flags::no_preview))
+				{
+					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
+					{
+						if (g.selectable(colours::all_colour_names[i], _alpha_combo_index == i))
+						{
+							_alpha_combo_index = i;
+							assert(_alpha_combo_index < size(colours::all_colours));
+							const auto& col = colours::all_colours[i];
+							_alpha = { col.r, col.g, col.b };
+							_alpha_set = true;
+							mod = true;
+						}
+					}
+					g.combo_end();
+				}
+
+				if (g.input_scalar("alpha rgb"sv, _alpha))
+				{
+					_alpha_set = true;
+					mod = true;
+				}
+
+				if (g.button("remove custom alpha"sv))
+				{
+					_alpha_set = false;
+					mod = true;
+				}
+
 				g.begin_disabled();
 				g.input_scalar("Size"sv, _size);
 				g.input_text("Source"sv, _source);
@@ -312,6 +350,11 @@ namespace hades::data
 
 				if (mod)
 				{
+					if (_alpha_set)
+						resources::texture_functions::set_alpha_colour(*_texture, { _alpha[0], _alpha[1], _alpha[2] });
+					else
+						resources::texture_functions::clear_alpha(*_texture);
+
 					resources::texture_functions::set_settings(_texture, { _requested_size[0], _requested_size[1] },
 						_smooth, _repeat, _mips, false);
 					resources::texture_functions::get_resource(d, _texture_base->id, _texture_base->mod);
@@ -333,7 +376,44 @@ namespace hades::data
 				if (g.child_window_begin("##tex-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
 				{
 					const auto float_size = gui::vector2{ float_cast(_size[0]), float_cast(_size[1]) };
+					ImVec2 pos = ImGui::GetCursorScreenPos();
 					g.image(*_texture, { {}, float_size }, float_size * _scale);
+
+					// pixel zoom tooltip
+					if (g.is_item_hovered())
+					{
+						const auto& io = ImGui::GetIO();
+
+						const auto& sf_tex = resources::texture_functions::get_sf_texture(_texture);
+						const auto img = sf_tex.copyToImage();
+						const auto img_size = img.getSize();
+
+						const auto region_pos = gui::vector2{ ((io.MousePos.x - pos.x) / _scale),
+											 ((io.MousePos.y - pos.y) / _scale) };
+						
+						const auto region_uint = vector_t<unsigned int>{
+							integral_cast<unsigned int>(region_pos.x, round_down_tag),
+							integral_cast<unsigned int>(region_pos.y, round_down_tag)
+						};
+						
+						const auto col = from_sf_color(img.getPixel(std::min(img_size.x - 1, region_uint.x),
+							std::min(img_size.y - 1, region_uint.y)));
+
+						g.tooltip_begin();
+
+						g.text("Texel coord: ["s + to_string(region_pos.x) + ", "s + to_string(region_pos.y) + "]"s);
+						const auto size1 = g.get_item_rect_size();
+						g.text("Colour: "s + to_string(col));
+						const auto size2 = g.get_item_rect_size();
+						const auto size = ImVec2{ std::max(size1.x, size2.x), size1.y + size2.y };
+
+						auto drawlist = ImGui::GetWindowDrawList();
+						const auto im_col = ImGui::GetColorU32(IM_COL32(col.r, col.g, col.b, col.a));
+						const auto rect_pos = ImGui::GetCursorScreenPos();
+						drawlist->AddRectFilled(rect_pos, { rect_pos.x + size.x, rect_pos.y + size.y }, im_col);
+						ImGui::Dummy(size);
+						g.tooltip_end();
+					}
 				}
 				g.child_window_end();
 			}
@@ -352,6 +432,10 @@ namespace hades::data
 		bool _mips;
 		bool _repeat;
 		float _scale = 1.f;
+
+		std::array<uint8, 3> _alpha;
+		bool _alpha_set = false;
+		std::size_t _alpha_combo_index = std::size_t{};
 		std::array<texture_size_t, 2> _requested_size;
 		std::array<texture_size_t, 2> _size;
 	};
@@ -422,7 +506,6 @@ namespace hades::data
 
 		const auto stack_end = mod_index >= size(dat) ?
 			end(dat) : next(begin(dat), mod_index + 1);
-		
 		
 		for (auto iter = begin(dat); iter != stack_end; ++iter)
 		{

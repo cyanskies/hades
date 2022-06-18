@@ -3,10 +3,12 @@
 #include <array>
 
 #include "SFML/System/Err.hpp"
+#include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
+#include "hades/sf_color.hpp"
 #include "hades/sf_streams.hpp"
 #include "hades/writer.hpp"
 
@@ -30,6 +32,7 @@ namespace hades::resources
 		texture_size_t width = 0, height = 0;
 		texture_size_t actual_width = 0, actual_height = 0;
 		bool smooth = false, repeat = false, mips = false;
+		std::optional<colour> alpha = {};
 	};
 
 	void texture::serialise(data::data_manager& d, data::writer& w) const
@@ -47,6 +50,15 @@ namespace hades::resources
 		if(smooth != def.smooth)	w.write("smooth"sv, smooth);
 		if(repeat != def.repeat)	w.write("repeating"sv, repeat);
 		if(mips != def.mips)		w.write("mips"sv, mips);
+		if (alpha)
+		{
+			w.write("alpha-mask"sv);
+			w.start_sequence();
+			w.write(alpha->r);
+			w.write(alpha->g);
+			w.write(alpha->b);
+			w.end_sequence();
+		}
 		w.end_map();
 	}
 }
@@ -63,7 +75,7 @@ namespace hades
 
 		error_texture_id = d.get_uid("error-texture"sv);
 
-		auto tex = d.find_or_create<resources::texture>(error_texture_id, unique_zero, textures_str);
+		auto tex = d.find_or_create<resources::texture>(error_texture_id, {}, textures_str);
 		tex->width = 32;
 		tex->height = 32;
 		tex->repeat = true;
@@ -116,9 +128,9 @@ namespace hades
 			height = 32u;
 
 		static std::size_t counter = 0;
-		constexpr auto size = std::size(colours::array);
+		constexpr auto size = std::size(colours::all_colours);
 		auto tex = generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
-			colours::array[counter++ % size], colours::black); // TODO: new colour array for bad colours
+			colours::all_colours[counter++ % size], colours::black); // TODO: new colour array for bad colours
 		tex.setRepeated(true);
 		return tex;
 	}
@@ -134,6 +146,8 @@ namespace hades
 		//        smooth: false
 		//        repeating: false
 		//        mips: false
+		//		  alpha-mask: [r, g, b] or accepted colour name eg. black (see colour.hpp)
+
 		using namespace std::string_view_literals;
 		constexpr auto resource_type = "textures"sv;
 
@@ -155,6 +169,30 @@ namespace hades
 			tex->repeat = get_scalar(*t, "repeating"sv, tex->repeat);
 			tex->mips	= get_scalar(*t, "mips"sv,		tex->mips);
 			tex->source = get_scalar(*t, "source"sv,	tex->source);
+
+			// get alpha from rgb or by colour name
+			const auto alpha = t->get_child("alpha-mask"sv);
+			if (alpha)
+			{
+				if (alpha->is_sequence())
+				{
+					const auto rgb = alpha->to_sequence<uint8>();
+					tex->alpha = colour{ rgb[0], rgb[1], rgb[2] };
+				}
+				else
+				{
+					const auto col_name = alpha->to_string();
+					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
+					{
+						if (colours::all_colour_names[i] == col_name)
+						{
+							assert(i < size(colours::all_colours));
+							tex->alpha = colours::all_colours[i];
+							break;
+						}
+					}
+				}
+			}
 
 			//if either size parameters are 0, then don't warn for size mismatch
 			if (tex->width == 0 || tex->height == 0)
@@ -192,6 +230,13 @@ namespace hades
 				const auto tex_size = tex.value.getSize();
 				tex.actual_width = integer_cast<texture_size_t>(tex_size.x);
 				tex.actual_height = integer_cast<texture_size_t>(tex_size.y);
+			}
+
+			if (tex.alpha)
+			{
+				auto img = tex.value.copyToImage();
+				img.createMaskFromColor(to_sf_color(*tex.alpha));
+				tex.value.update(img);
 			}
 
 			//if the width or height are 0, then don't warn about size mismatch
@@ -236,7 +281,7 @@ namespace hades
 	{
 		namespace texture_functions
 		{
-			texture* find_create_texture(data::data_manager& d, const unique_id id , const unique_id mod)
+			texture* find_create_texture(data::data_manager& d, const unique_id id , const std::optional<unique_id> mod)
 			{
 				return d.find_or_create<texture>(id, mod, textures_str);
 			}
@@ -255,7 +300,7 @@ namespace hades
 				}
 			}
 
-			texture* get_resource(data::data_manager& d, const unique_id i, const unique_id mod)
+			texture* get_resource(data::data_manager& d, const unique_id i, const std::optional<unique_id> mod)
 			{
 				return d.get<texture>(i, mod);
 			}
@@ -288,6 +333,25 @@ namespace hades
 			{
 				assert(t);
 				return t->mips;
+			}
+
+			std::optional<colour> get_alpha_colour(const texture& t) noexcept
+			{
+				return t.alpha;
+			}
+
+			void set_alpha_colour(texture& t, colour c) noexcept
+			{
+				t.alpha = c;
+				t.loaded = false;
+				return;
+			}
+
+			void clear_alpha(texture& t) noexcept
+			{
+				t.alpha.reset();
+				t.loaded = false;
+				return;
 			}
 
 			string get_source(const texture* t)

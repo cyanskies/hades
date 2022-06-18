@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <map>
+#include <optional>
 #include <shared_mutex>
 #include <tuple>
 
@@ -26,7 +27,7 @@ namespace hades
 		class resource_link_base
 		{
 		public:
-			constexpr explicit resource_link_base(unique_id id) noexcept : _id{ id } {}
+			explicit resource_link_base(unique_id id) noexcept : _id{ id } {}
 
 			virtual ~resource_link_base() noexcept = default;
 
@@ -36,10 +37,25 @@ namespace hades
 				return _id;
 			};
 
+			void add_reverse_link(const unique_id i)
+			{
+				if (std::none_of(begin(_reverse_links), end(_reverse_links), [i](auto&& other) {
+					return other == i;
+					}))
+					_reverse_links.emplace_back(i);
+				return;
+			}
+
+			const std::vector<unique_id> get_reverse_links() const noexcept
+			{
+				return _reverse_links;
+			}
+
 			virtual operator bool() const noexcept = 0;
 
 		private:
 			unique_id _id = unique_zero;
+			std::vector<unique_id> _reverse_links;
 		};
 
 		// resources use these to point to one another
@@ -73,7 +89,6 @@ namespace hades
 		private:
 			const T* _resource = nullptr;
 			get_func _get;
-
 		};
 
 		template<typename T>
@@ -148,35 +163,35 @@ namespace hades
 			//allows creating a ptr to a resource that hasn't actually been defined yet
 			// returns nullptr on error
 			template<class T>
-			[[nodiscard]] T* find_or_create(unique_id target, unique_id mod, std::string_view group = {});
+			[[nodiscard]] T* find_or_create(unique_id target, std::optional<unique_id> mod = {}, std::string_view group = {});
 
 			template<typename T>
-			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id>& target, unique_id mod, std::string_view group = {});
+			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id>& target, std::optional<unique_id> mod = {}, std::string_view group = {});
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;
 
 			template<typename T>
-			resources::resource_link<T> make_resource_link(unique_id, typename resources::resource_link_type<T>::get_func = data::get<T>);
+			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = data::get<T>);
 			template<typename T>
-			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, typename resources::resource_link_type<T>::get_func = data::get<T>);
+			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = data::get<T>);
 
 			//returns the resource associated with the id
 			//returns the resource base class
 			//throws resource_null if the id doesn't refer to a resource
-			resources::resource_base *get_resource(unique_id id, unique_id mod = unique_zero);
+			resources::resource_base* get_resource(unique_id id, std::optional<unique_id> mod = {});
 			//as above, returns null if the id doesn't refer to a resource
-			resources::resource_base *try_get_resource(unique_id id, unique_id mod = unique_zero) noexcept;
+			resources::resource_base* try_get_resource(unique_id id, std::optional<unique_id> mod = {}) noexcept;
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			// throws resource_null or resource_wrong_type
 			template<class T>
-			T *get(unique_id id, unique_id = unique_zero);
+			T* get(unique_id id, std::optional<unique_id> = {});
 
 			//gets a non-owning ptr to the resource represented by id
 			// throws resource_null or resource_wrong_type
 			template<class T>
-			T *get(unique_id id, const no_load_t, unique_id = unique_zero);
+			T* get(unique_id id, const no_load_t, std::optional<unique_id> = {});
 
 			enum class get_error {
 				ok,
@@ -197,11 +212,11 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			template<class T>
-            try_get_return<T> try_get(unique_id id, unique_id = unique_zero) noexcept;
+			try_get_return<T> try_get(unique_id id, std::optional<unique_id> = {}) noexcept;
 
 			//gets a non-owning ptr to the resource represented by id
 			template<class T>
-            try_get_return<T> try_get(unique_id id, const no_load_t, unique_id = unique_zero) noexcept;
+			try_get_return<T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
 
 			void update_all_links();
 

@@ -936,17 +936,26 @@ namespace hades
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 	}
 
+	void gui::tooltip_begin()
+	{
+		_active_assert();
+		ImGui::BeginTooltip();
+		return;
+	}
+
+	void gui::tooltip_end()
+	{
+		_active_assert();
+		ImGui::EndTooltip();
+		return;
+	}
+
 	void gui::tooltip(std::string_view s)
 	{
 		_active_assert();
-		if(is_item_hovered(hovered_flags::none))
-			show_tooltip(s);
-	}
-
-	void gui::show_tooltip(std::string_view s)
-	{
-		_active_assert();
-		ImGui::SetTooltip(to_string(s).data());
+		if(is_item_hovered())
+			ImGui::SetTooltip(to_string(s).data());
+		return;
 	}
 
 	void gui::open_popup(std::string_view s)
@@ -1313,7 +1322,7 @@ namespace hades
 
 		static unique_id font_texture_id = d->get_uid("gui-font-texture-atlas");
 
-		auto t = tex::find_create_texture(*d, font_texture_id, unique_id::zero);
+		auto t = tex::find_create_texture(*d, font_texture_id);
 
 		if (tex::get_is_loaded(t))
 			return;

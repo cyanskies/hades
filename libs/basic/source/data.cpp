@@ -48,6 +48,7 @@ namespace hades
 		data_manager::data_manager()
 		{
 			auto& m = _mod_stack.emplace_back();
+			m.mod_info.id = make_unique_id();
 			m.mod_info.name = "built-in";
 			return;
 		}
@@ -61,17 +62,17 @@ namespace hades
 				});
 		}
 
-		resources::resource_base *data_manager::get_resource(unique_id id, unique_id mod)
+		resources::resource_base *data_manager::get_resource(unique_id id, std::optional<unique_id> mod)
 		{
 			auto r = try_get_resource(id, mod);
 			if (!r)
-				throw resource_null("Failed to find resource for unique_id: "s + get_as_string(id) +
-					(mod ? ", from mod: "s + get_as_string(mod) : string{}));
+				throw resource_null{ "Failed to find resource for unique_id: "s + get_as_string(id) +
+					(mod ? ", from mod: "s + get_as_string(*mod) : string{}) + "."s };
 
 			return r;
 		}
 
-		resources::resource_base *data_manager::try_get_resource(unique_id id, unique_id mod) noexcept
+		resources::resource_base *data_manager::try_get_resource(unique_id id, std::optional<unique_id> mod) noexcept
 		{
 			// find the resource in the highest mod on the stack
 			// starting at mod if specified
@@ -104,7 +105,9 @@ namespace hades
 				catch (const resource_null& n)
 				{
 					using namespace std::string_literals;
-					LOGWARNING("A resource is storing a reference to a missing resource. "s + n.what());
+					const auto& ids = link->get_reverse_links();
+					const auto others = " Referenced from: "s + to_string(begin(ids), end(ids));
+					LOGWARNING("Missing resource. "s + n.what() + others);
 				}
 			}
 

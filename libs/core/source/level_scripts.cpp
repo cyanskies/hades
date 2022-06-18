@@ -21,7 +21,7 @@ namespace hades::resources
 	{
 		assert(f);
 		const auto id = d.get_uid(n);
-		auto p_i = d.find_or_create<player_input>(id, unique_id::zero, "level-scripts"sv);
+		auto p_i = d.find_or_create<player_input>(id, {}, "level-scripts"sv);
 		assert(p_i);
 		p_i->function = std::move(f);
 		p_i->loaded = true;
@@ -38,7 +38,7 @@ namespace hades::resources
 	{
 		assert(f);
 		const auto id = d.get_uid(n);
-		auto l_i = d.find_or_create<load_script>(id, unique_id::zero, "level-scripts"sv);
+		auto l_i = d.find_or_create<load_script>(id, {}, "level-scripts"sv);
 		assert(l_i);
 		l_i->function = std::move(f);
 		l_i->loaded = true;

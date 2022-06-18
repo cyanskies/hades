@@ -515,9 +515,11 @@ namespace hades
 
 		//tooltips
 		//begin/end tooltip
-		void tooltip(std::string_view); //shows a tooltip if the previous item was hovered
-		void show_tooltip(std::string_view); //always shows a tooltip
-
+		void tooltip_begin();
+		void tooltip_end();
+		//equivelent to checking is_item_hovered and calling begin/end tooltip with a text element
+		void tooltip(std::string_view); 
+	
 		//TODO: popups
 		//popup windows are defined by the popup_begin/popup_end functions
 		//they are flagged as open by calling open_popup elsewhere in the program

@@ -51,10 +51,10 @@ namespace hades::resources
 	{
 		using try_get_return = data::data_manager::try_get_return<const animation>;
 		const animation* get_resource(unique_id);
-		animation* get_resource(data::data_manager&, unique_id, unique_id = unique_zero);
+		animation* get_resource(data::data_manager&, unique_id, std::optional<unique_id> = {});
 		try_get_return try_get(unique_id) noexcept;
-		const animation* find_or_create(data::data_manager&, unique_id, unique_id mod);
-		std::vector<const animation*> find_or_create(data::data_manager&, const std::vector<unique_id>&, unique_id mod);
+		const animation* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
+		std::vector<const animation*> find_or_create(data::data_manager&, const std::vector<unique_id>&, std::optional<unique_id> mod = {});
 		bool is_loaded(const animation&) noexcept;
 		unique_id get_id(const animation&) noexcept;
 		std::vector<unique_id> get_id(const std::vector<const animation*>&) noexcept;
@@ -73,7 +73,7 @@ namespace hades::resources
 		const animation_group* get_resource(unique_id);
 		const animation_group* get_resource(data::data_manager&, unique_id);
 		try_get_return try_get(unique_id) noexcept;
-		const animation_group* find_or_create(data::data_manager&, unique_id, unique_id mod);
+		const animation_group* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod);
 		bool is_loaded(const animation_group&) noexcept;
 		unique_id get_id(const animation_group&) noexcept;
 		const animation* get_animation(const animation_group&, unique_id);

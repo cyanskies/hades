@@ -239,10 +239,15 @@ namespace hades
 			ConnectFunc on_connect, DisconnectFunc on_disconnect,
 			TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 		{
-			auto sys = data.find_or_create<std::decay_t<System>>(id, unique_id::zero);
+			using namespace std::string_literals;
+			auto system_type = "game-system"s;
+			if constexpr (std::is_same_v<System, resources::render_system>)
+				system_type = "render-system"s;
+
+			auto sys = data.find_or_create<std::decay_t<System>>(id, {}, system_type);
 
 			if (!sys)
-				throw system_error("unable to create requested system");
+				throw system_error{ "unable to create requested system"s };
 
 			sys->on_create = on_create;
 			sys->on_connect = on_connect;

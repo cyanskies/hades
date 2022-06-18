@@ -26,15 +26,19 @@ namespace hades
 		struct texture;
 		namespace texture_functions
 		{
-			texture* find_create_texture(data::data_manager&, unique_id, unique_id);
+			texture* find_create_texture(data::data_manager&, unique_id, std::optional<unique_id> = {});
 			const texture* get_resource(unique_id);
-			texture* get_resource(data::data_manager&, unique_id, unique_id = unique_zero);
+			texture* get_resource(data::data_manager&, unique_id, std::optional<unique_id> = {});
 			// TODO: these should take const texture&
 			unique_id get_id(const texture*) noexcept;
 			bool get_is_loaded(const texture*) noexcept;
 			bool get_smooth(const texture*) noexcept;
 			bool get_repeat(const texture*) noexcept;
 			bool get_mips(const texture*) noexcept;
+			std::optional<colour> get_alpha_colour(const texture&) noexcept;
+			// set_alpha_colour: reload the texture to see the effects of this.
+			void set_alpha_colour(texture&, colour) noexcept;
+			void clear_alpha(texture&) noexcept;
 			string get_source(const texture*);
 			const sf::Texture& get_sf_texture(const texture*) noexcept;
 			sf::Texture& get_sf_texture(texture*) noexcept;

@@ -47,7 +47,7 @@ namespace hades
 		//we do it here because the resource isn't availble yet
 		//in hades-core
 		//TODO: move to hades core
-		auto f = data->find_or_create<resources::font>(resources::default_font_id(), unique_id::zero, "fonts"sv);
+		auto f = data->find_or_create<resources::font>(resources::default_font_id(), {}, "fonts"sv);
 		assert(f);
 
 		f->loaded = f->value.loadFromMemory(default_font.data(), default_font.size());

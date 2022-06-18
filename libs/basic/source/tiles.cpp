@@ -46,25 +46,26 @@ namespace hades
 		d.register_resource_type(tile_settings_name, parse_tile_settings);
 		d.register_resource_type(tilesets_name, parse_tilesets);
 
+		id::error_tileset = hades::data::make_uid(error_tileset_name);
+
 		const auto error_texture = d.get_uid("tile-error-texture"sv);
-		const auto texture = d.make_resource_link<resources::texture>(error_texture, get_texture);
+		const auto texture = d.make_resource_link<resources::texture>(error_texture, id::error_tileset, get_texture);
 
 		//create error tileset and add a default error tile
-		id::error_tileset = hades::data::make_uid(error_tileset_name);
-		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, unique_id::zero, tilesets_name);
+		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, {}, tilesets_name);
 		const resources::tile error_tile{ texture, 0u, 0u, error_tset };
 		error_tset->tiles = { error_tile };
 
 		id::empty_tileset = hades::data::make_uid(air_tileset_name);
-		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, unique_id::zero, tilesets_name);
+		auto empty_tset = d.find_or_create<resources::tileset>(id::empty_tileset, {}, tilesets_name);
 		const resources::tile empty_tile{ nullptr, 0u, 0u, empty_tset };
 		empty_tset->tiles = { empty_tile };
 
 		//create default tile settings obj
 		id::tile_settings = hades::data::make_uid(tile_settings_name);
-		auto settings = d.find_or_create<resources::tile_settings>(id::tile_settings, unique_id::zero, tile_settings_name);
-		settings->error_tileset = d.make_resource_link<resources::tileset>(id::error_tileset);
-		settings->empty_tileset = d.make_resource_link<resources::tileset>(id::empty_tileset);
+		auto settings = d.find_or_create<resources::tile_settings>(id::tile_settings, {}, tile_settings_name);
+		settings->error_tileset = d.make_resource_link<resources::tileset>(id::error_tileset, id::tile_settings);
+		settings->empty_tileset = d.make_resource_link<resources::tileset>(id::empty_tileset, id::tile_settings);
 		settings->tile_size = 8;
 
 		detail::get_texture = get_texture;
@@ -137,7 +138,7 @@ namespace hades
 				continue;
 			}
 
-			const auto tex = d.make_resource_link<resources::texture>(tex_id, hades::detail::get_texture);
+			const auto tex = d.make_resource_link<resources::texture>(tex_id, tileset.id, hades::detail::get_texture);
 
 			const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
 			const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});
@@ -196,7 +197,7 @@ namespace hades
 
 			resources::detail::parse_tiles(mod, *tileset, tile_size, *tileset_n, d);
 
-			tile_settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id));
+			tile_settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id, id::tile_settings));
 		}
 
 		remove_duplicates(tile_settings->tilesets);

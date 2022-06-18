@@ -1,5 +1,6 @@
 #include "hades/time.hpp"
 
+#include <cassert>
 #include <cmath>
 
 #include "hades/string.hpp"
@@ -16,6 +17,7 @@ namespace hades
 		const auto total_time = static_cast<float>(t.time_since_epoch().count());
 		const auto duration_point = static_cast<float>(d.count());
 
+		assert(duration_point != 0.f);
 		const auto normal = std::fmod(total_time, duration_point);
 
 		return normal / duration_point;

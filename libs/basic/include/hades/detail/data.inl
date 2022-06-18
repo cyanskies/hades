@@ -4,6 +4,7 @@
 
 #include "hades/logging.hpp"
 #include "hades/resource_base.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -56,12 +57,12 @@ namespace hades
 		}
 
 		template<class T>
-		T* data_manager::find_or_create(unique_id target, unique_id mod, std::string_view group)
+		T* data_manager::find_or_create(const unique_id target, std::optional<unique_id> mod, std::string_view group)
 		{
 			using namespace std::string_literals;
 			using Type = std::remove_const_t<T>;
 
-			static_assert(is_resource_v<Type>, "'Type' must publicly inherit from resources::resource_type");
+			static_assert(is_resource_v<Type>, "'Type' must publicly inherit from resources::resource_type"s);
 
 			// NOTE: member variable ptr
 			// this is a work around for syntax error when T == resources::mod
@@ -73,9 +74,13 @@ namespace hades
 
 			if (target == unique_zero)
 			{
-				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: " + string(typeid(T).name()));
+				LOGERROR("Tried to create resource with hades::EmptyId, this id is reserved for unset Unique Id's, resource type was: "s + string(typeid(T).name()));
 				return r;
 			}
+
+			assert(!empty(_mod_stack));
+			if (!mod)
+				mod = _mod_stack.front().mod_info.id;
 
 			if (!exists(target))
 			{
@@ -83,7 +88,7 @@ namespace hades
 				r = &*new_ptr;
 				r->clone = detail::clone<Type>;
 				r->clear = detail::reset<Type>;
-				r->*member_ptr = mod;
+				r->*member_ptr = *mod;
 
 				_set<Type>(target, std::move(new_ptr), group);
 			}
@@ -97,7 +102,7 @@ namespace hades
 					if (e == get_error::resource_wrong_type)
 					{
 						//name is already used for something else, this cannnot be loaded
-						LOGERROR("Failed to create resource: "s + get_as_string(target) + " in mod : "s + get_as_string(mod) +
+						LOGERROR("Failed to create resource: "s + get_as_string(target) + " in mod : "s + get_as_string(*mod) +
 							", name has already been used for a different resource type."s);
 					}
 				}
@@ -105,7 +110,7 @@ namespace hades
 				{
 					auto new_r = std::invoke(get_r->clone, *get_r);
 					r = static_cast<Type*>(new_r.get());
-					r->*member_ptr = mod;
+					r->*member_ptr = *mod;
 					_set<Type>(target, std::move(new_r), group);
 				}
 			}
@@ -114,8 +119,12 @@ namespace hades
 		}
 
 		template<typename T>
-		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, unique_id mod, std::string_view group)
+		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, std::optional<unique_id> mod, std::string_view group)
 		{
+			assert(!empty(_mod_stack));
+			if (!mod)
+				mod = _mod_stack.front().mod_info.id;
+
 			std::vector<T*> out;
 			out.reserve(target.size());
 
@@ -127,7 +136,7 @@ namespace hades
 		}
 
 		template<typename T>
-		resources::resource_link<T> data_manager::make_resource_link(unique_id id,
+		resources::resource_link<T> data_manager::make_resource_link(unique_id id, unique_id from,
 			typename resources::resource_link_type<T>::get_func get)
 		{
 			using namespace std::string_literals;
@@ -137,31 +146,35 @@ namespace hades
 				return {};
 			}
 
-
 			for (const auto& link : _resource_links)
 			{
 				if (link->id() == id)
 				{
 					const auto link_ptr = dynamic_cast<resources::resource_link_type<T>*>(link.get());
 					if (link_ptr)
+					{
+						link->add_reverse_link(from);
 						return { link_ptr };
+					}
 				}
 			}
 
 			auto link_type = std::make_unique<resources::resource_link_type<T>>(id, get);
 			const auto ret = resources::resource_link<T>{ link_type.get() };
+			link_type->add_reverse_link(from);
 			_resource_links.emplace_back(std::move(link_type));
 			return ret;
 		}
 
 		template<typename T>
-		std::vector<resources::resource_link<T>> data_manager::make_resource_link(const std::vector<unique_id>& ids, typename resources::resource_link_type<T>::get_func getter)
+		std::vector<resources::resource_link<T>> data_manager::make_resource_link(const std::vector<unique_id>& ids,
+			const unique_id from, typename resources::resource_link_type<T>::get_func getter)
 		{
 			auto out = std::vector<resources::resource_link<T>>{};
 			out.reserve(size(ids));
 
-			auto func = [this, getter](unique_id id) {
-				return make_resource_link<T>(id, getter);
+			auto func = [this, from, getter](unique_id id) {
+				return make_resource_link<T>(id, from, getter);
 			};
 
 			std::transform(begin(ids), end(ids), back_inserter(out), func);
@@ -169,7 +182,7 @@ namespace hades
 		}
 
 		template<class T>
-		T *data_manager::get(unique_id id, unique_id mod)
+		T *data_manager::get(unique_id id, std::optional<unique_id> mod)
 		{
 			auto res = get<T>(id, no_load, mod);
 
@@ -180,7 +193,7 @@ namespace hades
 		}
 
 		template<class T>
-		T *data_manager::get(unique_id id, const no_load_t, unique_id mod)
+		T *data_manager::get(unique_id id, const no_load_t, std::optional<unique_id> mod)
 		{
 			auto res = get_resource(id, mod);
 
@@ -197,7 +210,7 @@ namespace hades
 		}
 
 		template<class T>
-        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, unique_id mod) noexcept
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, std::optional<unique_id> mod) noexcept
 		{
 			auto res = try_get<T>(id, no_load, mod);
 
@@ -213,7 +226,7 @@ namespace hades
 		}
 
 		template<class T>
-        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t, unique_id mod) noexcept
+        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) noexcept
 		{
 			auto res = try_get_resource(id, mod);
 			if (!res)

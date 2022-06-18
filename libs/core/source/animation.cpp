@@ -129,7 +129,7 @@ namespace hades::resources::animation_functions
 		return data::get<animation>(id);
 	}
 
-	animation* get_resource(data::data_manager& d, unique_id id, unique_id mod)
+	animation* get_resource(data::data_manager& d, unique_id id, std::optional<unique_id> mod)
 	{
 		return d.get<animation>(id, mod);
 	}
@@ -139,12 +139,12 @@ namespace hades::resources::animation_functions
 		return data::try_get<animation>(id);
 	}
 
-	const animation* find_or_create(data::data_manager& d, unique_id id, unique_id mod)
+	const animation* find_or_create(data::data_manager& d, unique_id id, std::optional<unique_id> mod)
 	{
 		return d.find_or_create<animation>(id, mod, anim_str);
 	}
 
-	std::vector<const animation*> find_or_create(data::data_manager& d, const std::vector<unique_id>& ids, unique_id mod)
+	std::vector<const animation*> find_or_create(data::data_manager& d, const std::vector<unique_id>& ids, std::optional<unique_id> mod)
 	{
 		return d.find_or_create<const animation>(ids, mod, anim_str);
 	}
@@ -227,7 +227,7 @@ namespace hades::resources::animation_group_functions
 		return data::try_get<animation_group>(i);
 	}
 
-	const animation_group* find_or_create(data::data_manager& d, unique_id i, unique_id mod)
+	const animation_group* find_or_create(data::data_manager& d, unique_id i, std::optional<unique_id> mod)
 	{
 		return d.find_or_create<animation_group>(i, mod, anim_group_str);
 	}
@@ -434,7 +434,7 @@ namespace hades::resources
 			const auto new_tex_id = get_unique(*a, "texture"sv, tex_id);
 
 			if (new_tex_id != unique_id::zero)
-				anim->tex = d.make_resource_link<resources::texture>(new_tex_id, texture_functions::get_resource);
+				anim->tex = d.make_resource_link<resources::texture>(new_tex_id, id, texture_functions::get_resource);
 
 			const auto frames_node = a->get_child("frames"sv);
 
@@ -486,7 +486,7 @@ namespace hades::resources
 			for (const auto& [name, val] : map)
 			{
 				const auto id = d.get_uid(name);
-				group->value.insert_or_assign(id, d.make_resource_link<resources::animation>(val));
+				group->value.insert_or_assign(id, d.make_resource_link<resources::animation>(val, group_id, resources::animation_functions::get_resource));
 			}
 		}
 

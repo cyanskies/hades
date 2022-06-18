@@ -42,6 +42,7 @@ namespace hades
 
 		vector_float snap_to_grid(vector_float coord, float cell_size)
 		{
+			assert(cell_size != 0.f);
 			const auto offset = vector_float{
 				std::abs(std::fmod(coord.x, cell_size)),
 				std::abs(std::fmod(coord.y, cell_size))

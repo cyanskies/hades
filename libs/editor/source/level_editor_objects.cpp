@@ -44,7 +44,7 @@ namespace hades::resources
 
 				group_content = g->merge_sequence(std::move(group_content), [&d, mod](const std::string_view str_id) {
 					const auto id = d.get_uid(str_id);
-					return d.make_resource_link<object>(id);
+					return d.make_resource_link<object>(id, object_settings_id);
 				});
 			}
 		}//!object_groups
@@ -61,7 +61,7 @@ namespace hades
 
 		//create default settings object
 		object_settings_id = d.get_uid("level-editor-object-settings");
-		std::ignore = d.find_or_create<resources::level_editor_object_settings>(object_settings_id, unique_id::zero);
+		std::ignore = d.find_or_create<resources::level_editor_object_settings>(object_settings_id, {}, "level-editor-object-settings"sv);
 	}
 
 	level_editor_objects_impl::level_editor_objects_impl()

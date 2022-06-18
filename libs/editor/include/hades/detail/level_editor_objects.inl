@@ -85,7 +85,7 @@ namespace hades::detail::obj_ui
 		if (name_reason == reason::already_taken)
 		{
 			if (const auto iter = name_map.find(text); iter->second != o.id)
-				g.show_tooltip("This name is already being used"sv);
+				g.tooltip("This name is already being used"sv);
 		}
 		/*else if (name_reason == reason::reserved_name)
 			g.show_tooltip("This name is reserved"sv);*/
@@ -861,7 +861,7 @@ namespace hades
 			const auto p = get_position(*o);
 			if (p != std::get<vector_float>(pos.value))
 			{
-				g.show_tooltip("The value of position would cause an collision");
+				g.tooltip("The value of position would cause an collision");
 				pos.value = p;
 			}
 
@@ -878,7 +878,7 @@ namespace hades
 				const auto s = get_size(*o);
 				if (s != std::get<vector_float>(siz.value))
 				{
-					g.show_tooltip("The value of size would cause an collision");
+					g.tooltip("The value of size would cause an collision");
 					siz.value = s;
 				}
 			}

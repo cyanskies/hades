@@ -104,9 +104,14 @@ namespace hades::data
 			return result;
 		}
 
-		bool is_map() const noexcept
+		bool is_map() const noexcept override
 		{
 			return _type == yaml_type::MAP;
+		}
+
+		bool is_sequence() const noexcept override
+		{
+			return _type == yaml_type::SEQUENCE;
 		}
 
 	private:

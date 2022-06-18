@@ -13,6 +13,9 @@
 #include "hades/game_system.hpp"
 #include "hades/utility.hpp"
 
+using namespace std::string_view_literals;
+using namespace std::string_literals;
+
 hades::unique_id editor_icon_id = hades::unique_zero;
 hades::unique_id editor_anim = hades::unique_zero;
 
@@ -50,7 +53,7 @@ namespace hades::resources
 		catch (const data::resource_null&)
 		{
 			const auto name = curve_info[0]->to_string();
-			throw invalid_curve{ "\'" + name + "\' has not been registered as a resource name" };
+			throw invalid_curve{ "\'"s + name + "\' has not been registered as a resource name"s };
 		}
 	}
 
@@ -67,9 +70,9 @@ namespace hades::resources
 		//		systems: system_id or [system_id, ...]
 		//		client-systems : system_id or [system_id, ...] // aka. render system
 
-		using namespace std::string_view_literals;
 		constexpr auto resource_type = "objects"sv;
-	
+		const auto all_objects_id = d.get_uid("all-objects-list"sv);
+
 		for (const auto &o : node.get_children())
 		{
 			const auto name = o->to_string();
@@ -80,23 +83,23 @@ namespace hades::resources
 			if (!obj)
 				continue;
 
-			all_objects.push_back(d.make_resource_link<resources::object>(id));
+			all_objects.push_back(d.make_resource_link<resources::object>(id, all_objects_id));
 
 			using namespace data::parse_tools;
 
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = resources::get_ids(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
-			obj->editor_anims = d.make_resource_link<animation>(animation_ids, animation_functions::get_resource);
+			obj->editor_anims = d.make_resource_link<animation>(animation_ids, id, animation_functions::get_resource);
 
 			const auto anim_group_id = get_unique(*o, "animations"sv, unique_id::zero);
 			if (anim_group_id)
-				obj->animations = d.make_resource_link<animation_group>(anim_group_id, resources::animation_group_functions::get_resource);
+				obj->animations = d.make_resource_link<animation_group>(anim_group_id, id, resources::animation_group_functions::get_resource);
 
 			//base objects
 			const auto current_base_ids = resources::get_ids(obj->base);
 			const auto base_ids = get_unique_sequence(*o, "base"sv, current_base_ids);
-			obj->base = d.make_resource_link<object>(base_ids);
+			obj->base = d.make_resource_link<object>(base_ids, id);
 
 			//curves
 			const auto curves_node = o->get_child("curves"sv);
@@ -122,13 +125,12 @@ namespace hades::resources
 					{
 						//get curve info will throw this if the curve type is unregistered
 						// or its values are invalid
-						using namespace std::string_literals;
-						const auto msg = "Unable to add curve to object type: " + name + ", reason was: "s + err.what();
+						const auto msg = "Unable to add curve to object type: "s + name + ", reason was: "s + err.what();
 						LOGERROR(msg);
 					}
 					catch (const bad_conversion& err)
 					{
-						const auto msg = "Unable to add curve to object type: " + name + ", bad type conversion: " + err.what();
+						const auto msg = "Unable to add curve to object type: "s + name + ", bad type conversion: "s + err.what();
 						LOGERROR(msg);
 					}
 				}
@@ -141,12 +143,12 @@ namespace hades::resources
 			//game systems
 			auto current_system_ids = get_ids(obj->systems);
 			const auto system_ids = merge_unique_sequence(*o, "systems"sv, std::move(current_system_ids));
-			obj->systems = d.make_resource_link<system>(system_ids);
+			obj->systems = d.make_resource_link<system>(system_ids, id);
 
 			//render systems
 			auto current_render_system_ids = get_ids(obj->render_systems);
 			const auto render_system_ids = merge_unique_sequence(*o, "client-systems"sv, std::move(current_render_system_ids));
-			obj->render_systems = d.make_resource_link<render_system>(render_system_ids);
+			obj->render_systems = d.make_resource_link<render_system>(render_system_ids, id);
 		}
 
 		remove_duplicates(all_objects);
@@ -181,8 +183,6 @@ namespace hades
 {
 	void register_objects(hades::data::data_manager &d)
 	{
-		using namespace std::string_view_literals;
-
 		editor_icon_id = d.get_uid("editor-icon"sv);
 
 		register_animation_resource(d);
@@ -317,8 +317,8 @@ namespace hades
 		auto out = TryGetCurve(&o, &c);
 		using curve_t = hades::resources::curve;
 		if (std::get<const curve_t*>(out) == nullptr)
-			throw curve_not_found{ "Requested curve not found on object type: " + hades::data::get_as_string(o.id)
-				+ ", curve was: " + hades::data::get_as_string(c.id) };
+			throw curve_not_found{ "Requested curve not found on object type: "s + hades::data::get_as_string(o.id)
+				+ ", curve was: "s + hades::data::get_as_string(c.id) };
 
 		if (auto v = std::get<hades::resources::curve_default_value>(out); hades::resources::is_set(v))
 			return v;
@@ -716,7 +716,7 @@ namespace hades
 			using T = std::decay_t<decltype(v)>;
 
 			if constexpr (std::is_same_v<T, std::monostate>)
-				throw logic_error{"monostate poisoning"};
+				throw logic_error{ "monostate poisoning"s };
 			else if constexpr (resources::curve_types::is_vector_type_v<T>)
 			{
 				w.start_sequence(name_str);
@@ -738,14 +738,12 @@ namespace hades
 		return;
 	}
 
-	using namespace std::string_view_literals;
 	constexpr auto obj_str = "objects"sv,
 		obj_curves = "curves"sv,
 		obj_type = "type"sv,
 		obj_next = "next-id"sv,
 		obj_name = "name"sv,
 		obj_time = "create-time"sv;
-
 
 	void serialise(const object_data& o, data::writer& w)
 	{

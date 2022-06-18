@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <limits>
+#include <string_view>
 
 #include "hades/string.hpp"
 #include "hades/types.hpp"
@@ -78,7 +79,10 @@ namespace hades
 		constexpr auto gold = colour{ 255, 215, 0 };
 		constexpr auto turquoise = colour{ 64, 224, 208 };
 
-		constexpr auto array = std::array{ off_lime, mute_cyan, red, lavender,
+		using namespace std::string_view_literals;
+		constexpr auto all_colour_names = std::array{ "off_lime"sv, "mute_cyan"sv, "red"sv, "lavender"sv,
+			"dark-blue"sv, "dark-cream"sv, "lawn-green"sv, "orange"sv, "gold"sv, "turquoise"sv };
+		constexpr auto all_colours = std::array{ off_lime, mute_cyan, red, lavender,
 			dark_blue, dark_cream, lawn_green, orange, gold, turquoise };
 	}
 }

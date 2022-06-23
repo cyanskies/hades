@@ -168,7 +168,7 @@ namespace hades::data
 							iter->scale_h = scale[1];
 						}
 
-						if (g.input_scalar("Relative Duration"sv, iter->duration))
+						if (g.input_scalar("Relative duration"sv, iter->duration))
 							mod = true;
 
 						if (!is_end)
@@ -203,7 +203,7 @@ namespace hades::data
 				if (!_play)
 					g.end_disabled();
 				
-				g.checkbox("Play Animation"sv, _play);
+				g.checkbox("Play animation"sv, _play);
 				if (_play)
 					g.begin_disabled();
 				g.slider_int("Frame"s, _current_frame, 0, size(_anim_frames) - 1, gui::slider_flags::no_input);
@@ -218,7 +218,7 @@ namespace hades::data
 						_time += io.DeltaTime * _play_speed;
 						const auto sec = seconds_float{ _time };
 						const auto time = time_point{ time_cast<time_duration>(sec) };
-						g.image(*_anim, float_size * _scale, time);
+						g.image(*_anim, float_size * _scale, time, sf::Color::White, sf::Color::White);
 
 						//select correct frame in ui
 						const auto& frame = animation::get_frame(*_anim, time);
@@ -237,11 +237,11 @@ namespace hades::data
 							0.f, std::plus<>(), std::mem_fn(&resources::animation_frame::normalised_duration));
 						_time *= time_cast<seconds_float>(_duration).count(); // -> to seconds first
 
-
-
-						const auto sec = seconds_float{ _time };
+						// Add epsilon to tie break frames. Otherwise we err towards frames towards the start of the animation
+						// when we have an even number of frames, this means half the frames are inaccessible.
+						const auto sec = seconds_float{ _time + std::numeric_limits<float>::epsilon() };
 						const auto time = time_cast<time_duration>(sec);// *_duration.count();
-						g.image(*_anim, float_size* _scale, time_point{ time });
+						g.image(*_anim, float_size* _scale, time_point{ time }, sf::Color::White, sf::Color::White);
 					}
 					
 				}
@@ -310,11 +310,13 @@ namespace hades::data
 				auto mod = false;
 				mod |= g.checkbox("Smooth"sv, _smooth)
 					| g.checkbox("Repeating"sv, _repeat)
-					| g.checkbox("Mip Maping"sv, _mips)
+					| g.checkbox("Mip mapping"sv, _mips)
 					| g.input_scalar("Requested size"sv, _requested_size);
 
+				g.separator_horizontal();
+
 				assert(_alpha_combo_index < size(colours::all_colour_names));
-				if (g.combo_begin("alpha colour"sv, colours::all_colour_names[_alpha_combo_index], gui::combo_flags::no_preview))
+				if (g.combo_begin("Alpha colour"sv, colours::all_colour_names[_alpha_combo_index], gui::combo_flags::no_preview))
 				{
 					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
 					{
@@ -331,20 +333,17 @@ namespace hades::data
 					g.combo_end();
 				}
 
-				if (g.input_scalar("alpha rgb"sv, _alpha))
+				if (g.input_scalar("Alpha rgb"sv, _alpha)
+					|| g.button("Remove custom alpha"sv))
 				{
 					_alpha_set = true;
 					mod = true;
 				}
 
-				if (g.button("remove custom alpha"sv))
-				{
-					_alpha_set = false;
-					mod = true;
-				}
+				g.separator_horizontal();
 
 				g.begin_disabled();
-				g.input_scalar("Size"sv, _size);
+				g.input_scalar("Raw size"sv, _size, {}, {});
 				g.input_text("Source"sv, _source);
 				g.end_disabled();
 

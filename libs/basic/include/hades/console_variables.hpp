@@ -31,7 +31,7 @@ namespace hades
 		constexpr auto render_drawtime = "r_drawtime"; //reports the time taken to generate and display the last frame in ms
 
 		//server vars
-		constexpr auto server_threadcount = "s_threads"; //number of threads to use in the game server
+		constexpr auto server_threadcount = "s_threads"; // [[deprecated]] number of threads to use in the game server
 														// -1 = auto, 0/1 = no threading, otherwise the number of threads to use
 		//client vars
 		constexpr auto client_tick_rate = "c_tickrate"; //number of ticks to calculate per second
@@ -50,12 +50,12 @@ namespace hades
 
 		//console vars
 		//TODO: both deprecated
-		constexpr auto console_charsize = "con_charsize"; //the character size to draw in the ingame console
-		constexpr auto console_fade = "con_fade"; //the transparency of the backdrop for the console overlay
+		constexpr auto console_charsize = "con_charsize"; // [[deprecated]] the character size to draw in the ingame console
+		constexpr auto console_fade = "con_fade"; // [[deprecated]] the transparency of the backdrop for the console overlay
 		constexpr auto console_level = "con_level"; //the logging level to display in the console
 
 		//vid vars
-		constexpr auto video_fullscreen = "vid_fullscreen"; // draw in fullscreen mode
+		constexpr auto video_fullscreen = "vid_fullscreen"; // draw in fullscreen mode(0 for window, 1 for fullscreen, 2 for borderless fullscreen window
 		constexpr auto video_resizable = "vid_resizable"; // allow window to be freely resized by the user
 		constexpr auto video_width = "vid_width"; // resolution width
 		constexpr auto video_height = "vid_height"; // resolution height
@@ -86,7 +86,7 @@ namespace hades
 			constexpr auto console_fade = 180;
 			constexpr auto console_level = 2;
 
-			constexpr auto video_fullscreen = false;
+			constexpr auto video_fullscreen = 0;
 			constexpr auto video_resizable = false;
             constexpr int32 video_width = 800;
             constexpr int32 video_height = 600;

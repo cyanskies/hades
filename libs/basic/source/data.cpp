@@ -139,7 +139,12 @@ namespace hades
 		const mod& data_manager::get_mod(const unique_id id) const
 		{
 			auto ptr = const_cast<data_manager*>(this);
-			return ptr->_get_mod(id).mod_info;
+			return ptr->get_mod(id);
+		}
+
+		mod& data_manager::get_mod(unique_id id)
+		{
+			return _get_mod(id).mod_info;
 		}
 
 		std::vector<data_manager::resource_storage*> data_manager::get_mod_stack()

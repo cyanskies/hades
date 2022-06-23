@@ -251,6 +251,7 @@ namespace hades
 		template<std::size_t Count = 1u>
 		void indent();
 		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline TODO: make this sameline again
+		void same_line(float pos = 0.f, float width = -1.f);
 		void layout_vertical(); //undoes layout_horizontal; newline
 		void vertical_spacing();
 		void group_begin();
@@ -418,9 +419,9 @@ namespace hades
 		
 		// TODO: change step and step fast to U, as in slider_scalar above
 		template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
-		bool input_scalar(std::string_view label, T &v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
+		bool input_scalar(std::string_view label, T &v, std::optional<T> step = static_cast<T>(1), std::optional<T> step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
-		bool input_scalar(std::string_view label, std::array<T, N>& v, T step = static_cast<T>(1), T step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
+		bool input_scalar(std::string_view label, std::array<T, N>& v, std::optional<T> step = static_cast<T>(1), std::optional<T> step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		
 		enum class colour_edit_flags : ImGuiColorEditFlags
 		{

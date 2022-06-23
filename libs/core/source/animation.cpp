@@ -78,7 +78,8 @@ namespace hades::resources
 					w.start_map();
 					if (f.x != def.x || f.y != def.y)
 					{
-						w.start_sequence(pos_str);
+						w.write(pos_str);
+						w.start_sequence();
 						w.write(f.x);
 						w.write(f.y);
 						w.end_sequence();
@@ -86,7 +87,8 @@ namespace hades::resources
 
 					if (f.w != def.w || f.h != def.h)
 					{
-						w.start_sequence(size_str);
+						w.write(size_str);
+						w.start_sequence();
 						w.write(f.w);
 						w.write(f.h);
 						w.end_sequence();
@@ -94,7 +96,8 @@ namespace hades::resources
 
 					if (f.scale_w != def.scale_w || f.scale_h != def.scale_h)
 					{
-						w.start_sequence(scale_str);
+						w.write(scale_str);
+						w.start_sequence();
 						w.write(f.scale_w);
 						w.write(f.scale_h);
 						w.end_sequence();
@@ -102,7 +105,8 @@ namespace hades::resources
 
 					if (f.off_x != def.off_x || f.off_y != def.off_y)
 					{
-						w.start_sequence(offset_str);
+						w.write(offset_str);
+						w.start_sequence();
 						w.write(f.off_x);
 						w.write(f.off_y);
 						w.end_sequence();
@@ -268,13 +272,12 @@ namespace hades::resources
 		using namespace std::string_view_literals;
 		const auto frame_info = f.get_children();
 		auto frame = animation_frame{};
-		auto found_pos = false;
 		auto found_size = false;
 		for (const auto& elm : frame_info)
 		{
 			const auto& key = elm->to_string();
-			const auto& child = elm->get_child();
-			if (!child)
+			const auto& children = elm->get_children();
+			if (empty(children))
 			{
 				LOGWARNING("animation: " + name + ", frame list missing data");
 				continue;
@@ -296,7 +299,15 @@ namespace hades::resources
 			}(key);
 
 			if (key_enum == anim_map::duration)
-				frame.duration = child->to_scalar<float>();
+			{
+				if (size(children) != 1)
+				{
+					LOGWARNING("animation: " + name + ", 'duration' is corrupt");
+					continue;
+				}
+
+				frame.duration = children[0]->to_scalar<float>();
+			}
 			else if (key_enum == anim_map::bad)
 			{
 				LOGWARNING("animation: " + name + ", frame list bad data");
@@ -304,7 +315,7 @@ namespace hades::resources
 			}
 			else
 			{
-				const auto& seq = child->to_sequence<float>();
+				const auto& seq = elm->to_sequence<float>();
 				if (size(seq) < 2)
 				{
 					LOGWARNING("animation: " + name + ", frame list bad data");
@@ -317,7 +328,6 @@ namespace hades::resources
 				{
 					frame.x = seq[0];
 					frame.y = seq[1];
-					found_pos = true;
 				}break;
 				case anim_map::size:
 				{
@@ -341,8 +351,8 @@ namespace hades::resources
 			}
 		} // !for
 
-		if (!(found_pos && found_size))
-			LOGWARNING("animation: " + name + ", frame list bad data");
+		if (!found_size)
+			LOGWARNING("animation: " + name + ", missing frame size");
 
 		return frame;
 	}
@@ -449,7 +459,7 @@ namespace hades::resources
 			for (const auto& f : frames)
 			{
 				auto frame = animation_frame{};
-				if (f->is_map())
+				if (!f->is_sequence())
 					frame = parse_frame(name, *f);
 				else
 					frame = parse_frame_seq(name, *f, mod);

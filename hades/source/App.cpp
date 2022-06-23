@@ -37,6 +37,7 @@ namespace hades
 
 	static void register_vid_default(Console *console)
 	{
+		// this should set the safe values
 		auto vid_default = [console] ()->bool {
 			//window
 			console->set(cvars::video_fullscreen, cvars::default_value::video_fullscreen);
@@ -50,7 +51,20 @@ namespace hades
 			return true;
 		};
 
+		// TODO: we should have a function that sets the game to fake fullscreen
+		// by default we want to use the desktop mode with fake fullscreen
+		const auto mode = sf::VideoMode::getDesktopMode();
+		//window
+		console->set(cvars::video_fullscreen, 0); // TODO: set this to fake fullscreen: 2
+		console->set(cvars::video_resizable, true);
+		////resolution
+		console->set(cvars::video_width, integer_clamp_cast<int32>(mode.width));
+		console->set(cvars::video_height, integer_clamp_cast<int32>(mode.height));
+		////depth
+		console->set(cvars::video_depth, integer_clamp_cast<int32>(mode.bitsPerPixel));
+
 		//add a command so that this function can be called again
+		// TODO: rename to vid_safe
 		console->add_function("vid_default", vid_default, true);
 	}
 
@@ -442,14 +456,14 @@ namespace hades
 					height = _console.getValue<types::int32>(cvars::video_height),
 					depth = _console.getValue<types::int32>(cvars::video_depth);
 
-				const auto fullscreen = _console.getValue<bool>(cvars::video_fullscreen);
+				const auto fullscreen = _console.getValue<int32>(cvars::video_fullscreen);
 
 				const auto mode = sf::VideoMode{ integer_cast<unsigned int>(width->load()),
 					integer_cast<unsigned int>(height->load()),
 					integer_cast<unsigned int>(depth->load()) };
 
 				// if we're in fullscreen mode, then the videomode must be 'valid'
-				if (fullscreen->load() && !mode.isValid())
+				if (fullscreen->load() == 1 && !mode.isValid())
 				{
 					LOGERROR("Attempted to set invalid video mode."sv);
 					return false;
@@ -459,13 +473,12 @@ namespace hades
 				
 				const auto resizable = _console.getBool(cvars::video_resizable);
 
-				if (fullscreen->load())
+				if (fullscreen->load() == 1)
 					window_type = sf::Style::Fullscreen;
 				else if (resizable->load())
 					window_type |= sf::Style::Resize;
 
 				_window.create(mode, "game", window_type);
-				
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);

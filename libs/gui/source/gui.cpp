@@ -445,6 +445,12 @@ namespace hades
 		ImGui::SameLine(pos, width);
 	}
 
+	void gui::same_line(float pos, float width)
+	{
+		_active_assert();
+		ImGui::SameLine(pos, width);
+	}
+
 	void gui::layout_vertical()
 	{
 		_active_assert();

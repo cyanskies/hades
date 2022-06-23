@@ -195,7 +195,7 @@ namespace hades
 		{
 			static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
 			constexpr auto step = static_cast<T>(1);
-			return g.input_scalar(label, v, step, step, f);
+			return g.input_scalar<T>(label, v, step, step, f);
 		}
 	
 		//string imp
@@ -221,7 +221,7 @@ namespace hades
 		{
 			static_assert(detail::gui_supported_types<T>, "Detected gui::input() as an array input, but the array type isn't supported");
 			constexpr auto step = static_cast<T>(1);
-			return g.input_scalar(l, v, step, step, f);
+			return g.input_scalar<T>(l, v, step, step, f);
 		}
 
 		//specialisation for static sized char array buffers
@@ -289,7 +289,7 @@ namespace hades
 	}
 
 	template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int>>
-	inline bool gui::input_scalar(std::string_view label, T &v, T step, T step_fast, input_text_flags f)
+	inline bool gui::input_scalar(std::string_view label, T &v, std::optional<T> step, std::optional<T> step_fast, input_text_flags f)
 	{
 		_active_assert();
 
@@ -300,19 +300,14 @@ namespace hades
 		else if constexpr (type == ImGuiDataType_Double)
 			format = "&.6f";
 
-		return ImGui::InputScalar(to_string(label).data(), type, &v, &step, &step_fast, format, static_cast<ImGuiInputTextFlags>(f));
+		const T* const step_ptr = step ? &*step : nullptr;
+		const T* const step_fast_ptr = step_fast ? &*step_fast : nullptr;
 
-		/*static_assert(detail::valid_input_scalar_v<T>, "gui::input_scalar only accepts int, float and double");
-		if constexpr (std::is_same_v<T, int>)
-			return ImGui::InputInt(to_string(label).data(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(f));
-		else if constexpr (std::is_same_v<T, float>)
-			return ImGui::InputFloat(to_string(label).data(), &v, step, step_fast, "%.3f", static_cast<ImGuiInputTextFlags>(f));
-		else if constexpr (std::is_same_v<T, double>)
-			return ImGui::InputDouble(to_string(label).data(), &v, step, step_fast, "%.6f", static_cast<ImGuiInputTextFlags>(f));*/
+		return ImGui::InputScalar(to_string(label).data(), type, &v, step_ptr, step_fast_ptr, format, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int>>
-	bool gui::input_scalar(std::string_view label, std::array<T, N>& v, T step, T step_fast, input_text_flags f)
+	bool gui::input_scalar(std::string_view label, std::array<T, N>& v, std::optional<T> step, std::optional<T> step_fast, input_text_flags f)
 	{
 		_active_assert();
 
@@ -323,32 +318,10 @@ namespace hades
 		else if constexpr (type == ImGuiDataType_Double)
 			format = "%.6f";
 
-		return ImGui::InputScalarN(to_string(label).data(), type, v.data(), integer_cast<int>(size(v)), &step, &step_fast, format, static_cast<ImGuiInputTextFlags>(f));
+		const T* const step_ptr = step ? &*step : nullptr;
+		const T* const step_fast_ptr = step_fast ? &*step_fast : nullptr;
 
-		//static_assert(detail::valid_input_scalar_v<T>,
-		//	"gui::input_scalar_array only accepts std::array<int>, std::array<float> and std::array<double>");
-
-		//constexpr auto data_type = [] () noexcept {
-		//	if constexpr (std::is_same_v<T, int>)
-		//		return ImGuiDataType_::ImGuiDataType_S32;
-		//	else if constexpr (std::is_same_v<T, float>)
-		//		return ImGuiDataType_::ImGuiDataType_Float;
-		//	else if constexpr (std::is_same_v<T, double>)
-		//		return ImGuiDataType_::ImGuiDataType_Double;
-		//} ();
-
-		//constexpr auto fmt_str = [] () noexcept {
-		//	if constexpr (std::is_same_v<T, int>)
-		//		return "%d";
-		//	else if constexpr (std::is_same_v<T, float>)
-		//		return "%.3f";
-		//	else if constexpr (std::is_same_v<T, double>)
-		//		return "%.6f";
-		//} ();
-
-		//static_assert(Size < std::numeric_limits<int>::max());
-		//return ImGui::InputScalarN(to_string(label).data(), data_type, v.data(),
-		//	static_cast<int>(Size), NULL, NULL, fmt_str, static_cast<ImGuiInputTextFlags>(f));
+		return ImGui::InputScalarN(to_string(label).data(), type, v.data(), integer_cast<int>(size(v)), step_ptr, step_fast_ptr, format, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	template<typename InputIt, typename MakeButton>

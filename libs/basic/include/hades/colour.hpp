@@ -81,9 +81,9 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		constexpr auto all_colour_names = std::array{ "off_lime"sv, "mute_cyan"sv, "red"sv, "lavender"sv,
-			"dark-blue"sv, "dark-cream"sv, "lawn-green"sv, "orange"sv, "gold"sv, "turquoise"sv };
+			"dark-blue"sv, "dark-cream"sv, "lawn-green"sv, "orange"sv, "gold"sv, "turquoise"sv, "black"sv, "white"sv };
 		constexpr auto all_colours = std::array{ off_lime, mute_cyan, red, lavender,
-			dark_blue, dark_cream, lawn_green, orange, gold, turquoise };
+			dark_blue, dark_cream, lawn_green, orange, gold, turquoise, black, white };
 	}
 }
 

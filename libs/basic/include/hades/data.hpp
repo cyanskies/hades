@@ -141,6 +141,7 @@ namespace hades
 		{
 			unique_id id;
 			std::vector<unique_id> dependencies;
+			std::vector<string> includes;
 
 			string name;
 			string source; // path to source
@@ -231,13 +232,13 @@ namespace hades
 			void pop_mod();
 
 			const mod& get_mod(unique_id) const;
+			mod& get_mod(unique_id);
+
 			std::vector<resource_storage*> get_mod_stack();
 
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;
 			virtual void refresh(unique_id) = 0;
-			template<class First, class Last>
-			void refresh(First first, Last last);
 
 			virtual string get_as_string(unique_id id) const = 0;
 			virtual unique_id get_uid(std::string_view name) const = 0;

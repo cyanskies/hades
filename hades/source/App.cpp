@@ -478,7 +478,8 @@ namespace hades
 				else if (resizable->load())
 					window_type |= sf::Style::Resize;
 
-				_window.create(mode, "game", window_type);
+				const auto name = to_string(defaultGame());
+				_window.create(mode, name, window_type);
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);

@@ -93,7 +93,6 @@ namespace hades
 		return out;
 	}
 
-	//TODO: why is this part of the class?
 	mission mission_editor_t::new_mission()
 	{
 		//create an empty mission

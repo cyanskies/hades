@@ -31,7 +31,7 @@ namespace hades
 		{
 		public:
 			basic_overlay* create_overlay(std::unique_ptr<basic_overlay>);
-			basic_overlay* destroy_overlay(basic_overlay*) noexcept;
+			nullptr_t destroy_overlay(basic_overlay*) noexcept;
 
 			void update(gui&);
 		private:
@@ -41,7 +41,7 @@ namespace hades
 		void set_overlay_manager(overlay_manager*) noexcept;
 
 		basic_overlay* create_overlay(std::unique_ptr<basic_overlay>);
-		basic_overlay* destroy_overlay(basic_overlay*) noexcept;
+		nullptr_t destroy_overlay(basic_overlay*) noexcept;
 
 		class text_overlay
 		{

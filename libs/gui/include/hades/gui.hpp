@@ -140,7 +140,7 @@ namespace hades
 
 		//windows and child windows
 		//end must be called even if begin returns false
-		bool window_begin(std::string_view name, bool& closed, window_flags = window_flags::none);
+		bool window_begin(std::string_view name, bool& open, window_flags = window_flags::none);
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 

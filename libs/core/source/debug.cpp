@@ -15,7 +15,7 @@ namespace hades::debug
 		return _overlays.emplace_back(std::move(ptr)).get();
 	}
 
-	basic_overlay* overlay_manager::destroy_overlay(basic_overlay* ptr) noexcept
+	nullptr_t overlay_manager::destroy_overlay(basic_overlay* ptr) noexcept
 	{
 		const auto iter = std::find_if(begin(_overlays), end(_overlays), [ptr](const auto& overlay) {
 			return overlay.get() == ptr;
@@ -51,7 +51,7 @@ namespace hades::debug
 		return overlay_manager_ptr->create_overlay(std::move(ptr));
 	}
 
-	basic_overlay* destroy_overlay(basic_overlay* ptr) noexcept
+	nullptr_t destroy_overlay(basic_overlay* ptr) noexcept
 	{
 		assert(overlay_manager_ptr);
 		return overlay_manager_ptr->destroy_overlay(ptr);

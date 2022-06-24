@@ -20,7 +20,7 @@ namespace hades
 	template<typename Event>
 	void input_event_system_t<Event>::add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e, input_interpreter::function f)
 	{
-		input_interpreter::interpreter_id id{};
+		input_interpreter::interpreter_id id = make_unique_id();
 		_add_interpreter_name(name, id);
 
 		event_interpreter en{};

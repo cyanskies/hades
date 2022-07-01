@@ -138,6 +138,20 @@ namespace hades::resources::animation_functions
 		return d.get<animation>(id, mod);
 	}
 
+	resource_link<animation> make_resource_link(data::data_manager& d, unique_id id, unique_id from)
+	{
+		return d.make_resource_link<animation>(id, from, [](unique_id target) {
+			return data::get<animation>(target, data::no_load);
+			});
+	}
+
+	std::vector<resource_link<animation>> make_resource_link(data::data_manager& d, const std::vector<unique_id>& ids, unique_id from)
+	{
+		return d.make_resource_link<animation>(ids, from, [](unique_id target) {
+			return data::get<animation>(target, data::no_load);
+			});
+	}
+
 	try_get_return try_get(unique_id id) noexcept
 	{
 		return data::try_get<animation>(id);
@@ -224,6 +238,13 @@ namespace hades::resources::animation_group_functions
 	const animation_group* get_resource(data::data_manager& d, unique_id i)
 	{
 		return d.get<animation_group>(i);
+	}
+
+	resource_link<animation_group> make_resource_link(data::data_manager& d, const unique_id id, const unique_id from)
+	{
+		return d.make_resource_link<animation_group>(id, from, [](const unique_id target) {
+			return data::get<animation_group>(target, data::no_load);
+			});
 	}
 
 	try_get_return try_get(unique_id i) noexcept
@@ -444,7 +465,7 @@ namespace hades::resources
 			const auto new_tex_id = get_unique(*a, "texture"sv, tex_id);
 
 			if (new_tex_id != unique_id::zero)
-				anim->tex = d.make_resource_link<resources::texture>(new_tex_id, id, texture_functions::get_resource);
+				anim->tex = texture_functions::make_resource_link(d, new_tex_id, id);
 
 			const auto frames_node = a->get_child("frames"sv);
 
@@ -496,7 +517,7 @@ namespace hades::resources
 			for (const auto& [name, val] : map)
 			{
 				const auto id = d.get_uid(name);
-				group->value.insert_or_assign(id, d.make_resource_link<resources::animation>(val, group_id, resources::animation_functions::get_resource));
+				group->value.insert_or_assign(id, animation_functions::make_resource_link(d, val, group_id));
 			}
 		}
 

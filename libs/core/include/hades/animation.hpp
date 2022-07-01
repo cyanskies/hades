@@ -7,16 +7,12 @@
 #include "SFML/Graphics/Vertex.hpp"
 
 #include "hades/colour.hpp"
-#include "hades/data.hpp" // TODO: create data_fwd header, we only include this for try_get_return and get_error
+// TODO: create data_fwd header, we only include this for try_get_return and get_error
+// NOTE: now we need it for resource link too
+#include "hades/data.hpp" 
 #include "hades/rectangle_math.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/time.hpp"
-
-//forwards
-namespace hades::data
-{
-	class data_manager;
-}
 
 namespace hades::resources
 {
@@ -52,6 +48,8 @@ namespace hades::resources
 		using try_get_return = data::data_manager::try_get_return<const animation>;
 		const animation* get_resource(unique_id);
 		animation* get_resource(data::data_manager&, unique_id, std::optional<unique_id> = {});
+		resource_link<animation> make_resource_link(data::data_manager&, unique_id, unique_id from);
+		std::vector<resource_link<animation>> make_resource_link(data::data_manager&, const std::vector<unique_id>&, unique_id from);
 		try_get_return try_get(unique_id) noexcept;
 		const animation* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
 		std::vector<const animation*> find_or_create(data::data_manager&, const std::vector<unique_id>&, std::optional<unique_id> mod = {});
@@ -72,6 +70,7 @@ namespace hades::resources
 		using try_get_return = data::data_manager::try_get_return<const animation_group>;
 		const animation_group* get_resource(unique_id);
 		const animation_group* get_resource(data::data_manager&, unique_id);
+		resource_link<animation_group> make_resource_link(data::data_manager&, unique_id, unique_id from);
 		try_get_return try_get(unique_id) noexcept;
 		const animation_group* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod);
 		bool is_loaded(const animation_group&) noexcept;

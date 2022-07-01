@@ -153,7 +153,7 @@ namespace hades
 			const auto game_data_ptr = detail::get_game_level_ptr();
 			auto& extra = game_data_ptr->get_extras();
 			const auto& obj = state_api::get_object(o, extra);
-			return hades::get_tags(*obj.object_type);
+			return resources::object_functions::get_tags(*obj.object_type);
 		}
 
 		bool is_alive(object_ref o) noexcept

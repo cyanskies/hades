@@ -80,6 +80,7 @@ namespace hades::resources
 
 			const auto obj = d.find_or_create<object>(id, mod, resource_type);
 
+			// TODO: log something here
 			if (!obj)
 				continue;
 
@@ -90,11 +91,11 @@ namespace hades::resources
 			//sprites used to represent to object in the editors map view
 			const auto current_ids = resources::get_ids(obj->editor_anims);
 			const auto animation_ids = get_unique_sequence(*o, "editor-anim"sv, current_ids);
-			obj->editor_anims = d.make_resource_link<animation>(animation_ids, id, animation_functions::get_resource);
+			obj->editor_anims = animation_functions::make_resource_link(d, animation_ids, id);
 
 			const auto anim_group_id = get_unique(*o, "animations"sv, unique_id::zero);
 			if (anim_group_id)
-				obj->animations = d.make_resource_link<animation_group>(anim_group_id, id, resources::animation_group_functions::get_resource);
+				obj->animations = animation_group_functions::make_resource_link(d, anim_group_id, id);
 
 			//base objects
 			const auto current_base_ids = resources::get_ids(obj->base);
@@ -135,9 +136,11 @@ namespace hades::resources
 					}
 				}
 			}
+			obj->curves.shrink_to_fit();
 
 			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(obj->tags));
 			remove_duplicates(new_tags);
+			new_tags.shrink_to_fit();
 			obj->tags = std::move(new_tags);
 
 			//game systems
@@ -154,15 +157,65 @@ namespace hades::resources
 		remove_duplicates(all_objects);
 	}
 
+	static std::vector<resources::resource_link<resources::system>> get_all_systems(const resources::object& o)
+	{
+		auto out = std::vector<resources::resource_link<resources::system>>{};
+
+		for (const auto& b : o.base)
+		{
+			assert(b && b->loaded);
+			out.insert(end(out), begin(b->all_systems), end(b->all_systems));
+		}
+
+		out.insert(end(out), begin(o.systems), end(o.systems));
+		return out;
+	}
+
+	static std::vector<resources::resource_link<resources::render_system>> get_all_render_systems(const resources::object& o)
+	{
+		auto out = std::vector<resources::resource_link<resources::render_system>>{};
+
+		for (const auto& b : o.base)
+		{
+			assert(b && b->loaded);
+			out.insert(end(out), begin(b->all_render_systems), end(b->all_render_systems));
+		}
+
+		out.insert(end(out), begin(o.render_systems), end(o.render_systems));
+		return out;
+	}
+
+	static tag_list get_all_tags(const resources::object& o)
+	{
+		auto tags = tag_list{};
+
+		for (auto& base : o.base)
+		{
+			assert(base && base->loaded);
+			tags.insert(end(tags), begin(base->all_tags), end(base->all_tags));
+		}
+
+		tags.insert(end(tags), begin(o.tags), end(o.tags));
+		return tags;
+	}
+
 	static void load_objects(resource_type<object_t> &r, data::data_manager &d)
 	{
 		assert(dynamic_cast<object*>(&r));
-		const auto &o = static_cast<object&>(r);
+		auto &o = static_cast<object&>(r);
+
+		const auto name = d.get_as_string(o.id);
+
+		for (auto& b : o.base)
+		{
+			if (!b->loaded)
+				d.get<object>(b->id, b->mod);
+		}
 
 		namespace animf = animation_functions;
 		namespace anim_groupf = animation_group_functions;
 
-		for (const auto a : o.editor_anims)
+		for (const auto& a : o.editor_anims)
 		{
 			if (!animf::is_loaded(*a))
 				animf::get_resource(d, animf::get_id(*a));
@@ -170,6 +223,21 @@ namespace hades::resources
 
 		if (o.animations && !anim_groupf::is_loaded(*o.animations))
 			anim_groupf::get_resource(d, anim_groupf::get_id(*o.animations));
+		
+		///collate the curves, tags and systems in all_* for fast lookup during gameplay
+		o.all_curves = hades::get_all_curves(o);
+	
+		o.all_systems = get_all_systems(o);
+		remove_duplicates(o.all_systems);
+		o.all_systems.shrink_to_fit();
+		
+		o.all_render_systems = get_all_render_systems(o);
+		remove_duplicates(o.all_render_systems);
+		o.all_render_systems.shrink_to_fit();
+		
+		o.all_tags = get_all_tags(o);
+		remove_duplicates(o.all_tags);
+		o.all_tags.shrink_to_fit();
 
 		//all of the other resources used by objects are parse-only and don't require loading
 		r.loaded = true;
@@ -177,6 +245,24 @@ namespace hades::resources
 
 	object::object() : resource_type<object_t>(load_objects)
 	{}
+}
+
+namespace hades::resources::object_functions
+{
+	const std::vector<resource_link<system>>& get_systems(const object& o)
+	{
+		return o.all_systems;
+	}
+
+	const std::vector<resource_link<render_system>>& get_render_systems(const object& o)
+	{
+		return o.all_render_systems;
+	}
+
+	const tag_list& get_tags(const object& o)
+	{
+		return o.all_tags;
+	}
 }
 
 namespace hades
@@ -468,40 +554,6 @@ namespace hades
 		return unique_curves(std::move(curves));
 	}
 
-	std::vector<const resources::system*> get_systems(const resources::object& o)
-	{
-		auto out = std::vector<const resources::system*>{};
-
-		for (const auto b : o.base)
-		{
-			const auto& base_out = get_systems(*b);
-			out.insert(end(out), begin(base_out), end(base_out));
-		}
-
-		out.reserve(size(out) + size(o.systems));
-		std::transform(begin(o.systems), end(o.systems), back_inserter(out),
-			std::mem_fn(&resources::resource_link<resources::system>::get));
-		remove_duplicates(out);
-		return out;
-	}
-
-	std::vector<const resources::render_system*> get_render_systems(const resources::object& o)
-	{
-		auto out = std::vector<const resources::render_system*>{};
-
-		for (const auto b : o.base)
-		{
-			const auto base_out = get_render_systems(*b); 
-			out.insert(std::end(out), std::begin(base_out), std::end(base_out));
-		}
-
-		out.reserve(size(out) + size(o.render_systems));
-		std::transform(begin(o.render_systems), end(o.render_systems), back_inserter(out),
-			std::mem_fn(&resources::resource_link< resources::render_system>::get));
-		remove_duplicates(out);
-		return out;
-	}
-
 	const hades::resources::animation *get_editor_icon(const resources::object &o)
 	{
 		namespace ag = resources::animation_group_functions;
@@ -682,28 +734,6 @@ namespace hades
 	resources::curve_types::collection_unique get_collision_groups(const resources::object &o)
 	{
 		return get_vec_unique_impl(o, get_collision_layer_curve);
-	}
-
-	tag_list get_tags(const object_instance& o)
-	{
-		return get_tags(*o.obj_type);
-	}
-
-	tag_list get_tags(const resources::object& o)
-	{
-		auto tags = tag_list{};
-
-		for (auto base : o.base)
-		{
-			if (base)
-			{
-				auto base_tags = get_tags(*base);
-				tags.insert(end(tags), begin(base_tags), end(base_tags));
-			}
-		}
-
-		tags.insert(end(tags), begin(o.tags), end(o.tags));
-		return tags;
 	}
 
 	static void write_curve(data::writer& w, const curve_obj& c)

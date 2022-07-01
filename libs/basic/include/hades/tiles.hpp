@@ -26,7 +26,7 @@ namespace hades::resources
 
 namespace hades::detail
 {
-	using get_texture_f = const resources::texture* (*)(unique_id);
+	using make_texture_link_f = resources::resource_link<resources::texture> (*)(data::data_manager&, unique_id, unique_id);
 }
 
 namespace hades
@@ -36,7 +36,7 @@ namespace hades
 	// without bringing in graphics resources and linkage
 	void register_tiles_resources(data::data_manager&);
 	//as above, but loads textures from the requested function
-	void register_tiles_resources(data::data_manager&, detail::get_texture_f);
+	void register_tiles_resources(data::data_manager&, detail::make_texture_link_f);
 }
 
 //resources for loading tiles and tilesets

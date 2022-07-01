@@ -64,6 +64,8 @@ namespace hades
 		class resource_link_type : public resource_link_base
 		{
 		public:
+			// get_func should be a function that gets the pointer to the resource without loading it
+			// eg. call get<> with the no_load tag
 			using get_func = const T* (*)(unique_id);
 
 			constexpr explicit resource_link_type(unique_id id, get_func get) noexcept :
@@ -123,9 +125,26 @@ namespace hades
 				return _link && *_link;
 			}
 
+			template<typename U>
+			friend bool operator<(const resource_link<U>& lhs, const resource_link<U>& rhs) noexcept;
+			template<typename U>
+			friend bool operator==(const resource_link<U>& lhs, const resource_link<U>& rhs) noexcept;
+
 		private:
 			const resource_link_type<T>* _link = nullptr;
 		};
+
+		template<typename T>
+		bool operator<(const resource_link<T>& lhs, const resource_link<T>& rhs) noexcept
+		{
+			return lhs._link < rhs._link;
+		}
+
+		template<typename T>
+		bool operator==(const resource_link<T>& lhs, const resource_link<T>& rhs) noexcept
+		{
+			return lhs._link == rhs._link;
+		}
 
 		template<typename T>
 		std::vector<unique_id> get_ids(const std::vector<resource_link<T>>&);
@@ -148,7 +167,16 @@ namespace hades
 		};
 
 		template<class T>
-		const T* get(unique_id id);
+		const T* get(unique_id id, const no_load_t);
+
+		namespace detail
+		{
+			template<class T>
+			const T* get_no_load(const unique_id id)
+			{
+				return get<T>(id, no_load);
+			}
+		}
 
 		class data_manager
 		{
@@ -173,7 +201,7 @@ namespace hades
 			bool exists(unique_id id) const;
 
 			template<typename T>
-			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = data::get<T>);
+			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
 			template<typename T>
 			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = data::get<T>);
 
@@ -254,19 +282,11 @@ namespace hades
 			//creates a resource with the value of ptr
 			//and assigns it to the name id
 			//throws resource_name_already_used if the id already refers to a resource
-			// TODO: this should become an internal func, use find_or_create instead
 			template<class T>
 			void _set(unique_id id, std::unique_ptr<resources::resource_base> ptr, std::string_view group);
 
-
 			std::vector<mod_storage> _mod_stack;
-			// set to true after the main mod has been parsed
-			// causes additional resources to be placed in the leaf
-
 			std::vector<std::unique_ptr<resources::resource_link_base>> _resource_links;
-			//std::vector<mod> _mods;
-			//std::vector<std::unique_ptr<resources::resource_base>> _resources2;
-			//std::map<unique_id, std::unique_ptr<resources::resource_base>> _resources;
 		};
 
 		namespace detail
@@ -280,16 +300,11 @@ namespace hades
 
 		//===Shared functions, these can be used without blocking other shared threads===
 		//returns true if there is a resource associated with this ID
-		//this will return false even if a name has been associated with the id
-		//this will only test that a resource structure has been created.
 		bool exists(unique_id id);
 		string get_as_string(unique_id id);
 		//returns UniqueId::zero if the name cannot be assiciated with an id
 		unique_id get_uid(std::string_view name);
 		const mod& get_mod(unique_id id);
-
-		template<typename T>
-		std::vector<unique_id> get_uid(const std::vector<const T*>&);
 
 		//===Exclusive Functions: this will block all threads===
 		//NOTE: Can throw hades::data::resource_null
@@ -297,6 +312,8 @@ namespace hades
 		//	always returns a valid ptr
 		template<class T>
 		const T* get(unique_id id);
+		template<class T>
+		const T* get(unique_id id, const no_load_t);
 
 		template<class T>
 		data_manager::try_get_return<const T> try_get(unique_id id);

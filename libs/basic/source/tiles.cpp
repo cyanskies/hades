@@ -13,7 +13,7 @@ namespace hades
 {
 	namespace detail
 	{
-		static get_texture_f get_texture{};
+		static make_texture_link_f make_texture_link{};
 	}
 
 	//using namespace std::string_literals;
@@ -36,12 +36,12 @@ namespace hades
 	void register_tiles_resources(data::data_manager &d)
 	{
 		register_tiles_resources(d, 
-			[](unique_id)->const resources::texture* {
-				return nullptr;
+			[](auto&, auto, auto)->resources::resource_link<resources::texture> {
+				return {};
 		});
 	}
 
-	void register_tiles_resources(data::data_manager &d, detail::get_texture_f get_texture)
+	void register_tiles_resources(data::data_manager &d, detail::make_texture_link_f get_texture)
 	{
 		d.register_resource_type(tile_settings_name, parse_tile_settings);
 		d.register_resource_type(tilesets_name, parse_tilesets);
@@ -49,7 +49,7 @@ namespace hades
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
 
 		const auto error_texture = d.get_uid("tile-error-texture"sv);
-		const auto texture = d.make_resource_link<resources::texture>(error_texture, id::error_tileset, get_texture);
+		const auto texture = std::invoke(get_texture, d, error_texture, id::error_tileset);
 
 		//create error tileset and add a default error tile
 		auto error_tset = d.find_or_create<resources::tileset>(id::error_tileset, {}, tilesets_name);
@@ -68,7 +68,7 @@ namespace hades
 		settings->empty_tileset = d.make_resource_link<resources::tileset>(id::empty_tileset, id::tile_settings);
 		settings->tile_size = 8;
 
-		detail::get_texture = get_texture;
+		detail::make_texture_link = get_texture;
 	}
 
 	static void parse_tile_settings(unique_id mod, const data::parser_node &n, data::data_manager &d)
@@ -138,7 +138,7 @@ namespace hades
 				continue;
 			}
 
-			const auto tex = d.make_resource_link<resources::texture>(tex_id, tileset.id, hades::detail::get_texture);
+			const auto tex = std::invoke(hades::detail::make_texture_link, d, tex_id, tileset.id);
 
 			const auto left = get_scalar(*tile_group, "left"sv, texture_size_t{});
 			const auto top = get_scalar(*tile_group, "top"sv, texture_size_t{});

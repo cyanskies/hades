@@ -9,6 +9,7 @@
 #include "hades/mouse_input.hpp"
 #include "hades/parser.hpp"
 
+namespace object_functions = hades::resources::object_functions;
 using namespace std::string_view_literals;
 constexpr auto level_editor_object_resource_name = "level-editor-object-settings"sv;
 static auto object_settings_id = hades::unique_id::zero;
@@ -436,7 +437,8 @@ namespace hades
 
 			if (intersects(rect, area))
 			{
-				const auto obj_tags = get_tags(o);
+				assert(o.obj_type);
+				const auto& obj_tags = object_functions::get_tags(*o.obj_type);
 				tags.insert(std::end(tags), std::begin(obj_tags), std::end(obj_tags));
 			}
 		}

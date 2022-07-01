@@ -11,7 +11,7 @@
 namespace hades
 {
 	void register_terrain_resources(data::data_manager&);
-	void register_terrain_resources(data::data_manager&, detail::get_texture_f);
+	void register_terrain_resources(data::data_manager&, detail::make_texture_link_f);
 }
 
 namespace hades::resources

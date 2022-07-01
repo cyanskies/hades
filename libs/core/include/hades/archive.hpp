@@ -128,12 +128,9 @@ namespace hades::zip
 		explicit izfstream(const std::filesystem::path&);
 		explicit izfstream(stream_t s); //stream will seek back to the begining
 
-		izfstream(const izfstream&) = delete;
-		izfstream& operator=(const izfstream&) = delete;
-
-		//std::ifstream is not noexcept movable(MSVC, maybe everywhere)
-		izfstream(izfstream&&) noexcept = default;
-		izfstream& operator=(izfstream&&) noexcept = default;
+		//std::ifstream is not required to be noexcept movable
+		izfstream(izfstream&&) noexcept(std::is_nothrow_move_constructible_v<std::ifstream>) = default;
+		izfstream& operator=(izfstream&&) noexcept(std::is_nothrow_move_assignable_v<std::ifstream>) = default;
 
 		~izfstream() noexcept;
 
@@ -173,6 +170,8 @@ namespace hades::zip
 		std::unique_ptr<z_stream, void(*)(z_stream*)noexcept> _zip_stream;
 		std::ifstream _stream;
 	};
+
+	static_assert(std::is_move_constructible_v<izfstream>);
 
 	//ditermines if a file within an archive exists
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path);

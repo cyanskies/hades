@@ -28,15 +28,18 @@ namespace hades::files
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
 
-		ifstream() = default;
-		explicit ifstream(const std::filesystem::path&);
+		ifstream() noexcept = default;
+		explicit ifstream(const std::filesystem::path& p)
+		{
+			open(p);
+			return;
+		}
 
-		ifstream(const ifstream&) = delete;
-		ifstream& operator=(const ifstream&) = delete;
-
-		//std::ifstream is not noexcept move
-		ifstream(ifstream&&) = default;
-		ifstream& operator=(ifstream&&) = default;
+		//std::ifstream is not guaranteed noexcept move
+		ifstream(ifstream&&) noexcept(std::is_nothrow_move_constructible_v<stream_t> 
+			&& std::is_nothrow_move_constructible_v<zip::izfstream>) = default;
+		ifstream& operator=(ifstream&&) noexcept(std::is_nothrow_move_assignable_v<stream_t>
+			&& std::is_nothrow_move_assignable_v<zip::izfstream>) = default;
 
 		void open(const std::filesystem::path&);
 		void close() noexcept;
@@ -54,6 +57,8 @@ namespace hades::files
 	private:
 		std::variant<stream_t, zip::izfstream> _stream{};
 	};
+
+	static_assert(std::is_move_constructible_v<ifstream>);
 
 	//TODO: check error paths/ throw file not found?
 	//open streams to files, saves and configs
@@ -90,17 +95,30 @@ namespace hades
 		using off_type = stream_t::off_type;
 
 		irfstream() = default;
-		irfstream(const std::filesystem::path& mod, const std::filesystem::path& file);
+		irfstream(const std::filesystem::path& mod, const std::filesystem::path& file)
+		{
+			open(mod, file);
+			return;
+		}
 
-		irfstream(const irfstream&) = delete;
-		irfstream& operator=(const irfstream&) = delete;
-
-		irfstream(irfstream&&) = default;
-		irfstream& operator=(irfstream&&) = default;
+		irfstream(irfstream&&) noexcept(std::is_nothrow_move_constructible_v<stream_t>
+			&& std::is_nothrow_move_constructible_v<zip::iafstream>) = default;
+		irfstream& operator=(irfstream&&) noexcept(std::is_nothrow_move_assignable_v<stream_t>
+			&& std::is_nothrow_move_assignable_v<zip::iafstream>) = default;
 
 		void open(const std::filesystem::path& mod, const std::filesystem::path& file);
 		void close() noexcept;
 		bool is_open() const noexcept;
+
+		std::filesystem::path mod_path() const
+		{
+			return _mod_path;
+		}
+
+		std::filesystem::path path() const
+		{
+			return _rel_path;
+		}
 
 		irfstream& read(char_t*, std::size_t);
 		std::streamsize gcount() const;
@@ -114,12 +132,17 @@ namespace hades
 		std::size_t size();
 
 	private:
-		bool _try_open_from_dir(const std::filesystem::path& dir, const std::filesystem::path& mod, const std::filesystem::path& file);
-		bool _try_open_file(const std::filesystem::path& file);
-		bool _try_open_archive(const std::filesystem::path& archive, const std::filesystem::path& file);
+		bool _try_open_from_dir(const std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path&);
+		bool _try_open_file(const std::filesystem::path&, const std::filesystem::path&);
+		bool _try_open_archive(std::filesystem::path, const std::filesystem::path&);
 
 		std::variant<files::ifstream, zip::iafstream> _stream{};
+		std::filesystem::path _mod_path;
+		std::filesystem::path _rel_path;
 	};
+
+	static_assert(std::is_move_constructible_v<irfstream>);
+
 }
 
 namespace hades::files

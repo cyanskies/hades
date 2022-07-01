@@ -23,7 +23,7 @@ namespace hades
 	{
 		//register dependent resources
 		register_texture_resource(d);
-		register_tiles_resources(d, tex_funcs::get_resource);
+		register_tiles_resources(d, tex_funcs::make_resource_link);
 
 		//add texture to error tile
 		//const auto settings = resources::get_tile_settings();

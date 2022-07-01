@@ -187,8 +187,9 @@ namespace hades::state_api
 			s.object_creation_time[o.id] = o.creation_time;
 			s.object_destruction_time[o.id] = o.destruction_time;
 
-			for (const auto sys : get_systems(*o.obj_type))
-				e.systems.attach_system_from_load(obj, sys->id);
+			// TODO: we have a ptr to the system in sys, pass that into the extra state
+			for (const auto& sys : resources::object_functions::get_systems(*o.obj_type))
+				e.systems.attach_system_from_load(obj, sys.id());
 
 			//add name to name map
 			auto id_curve = step_curve<object_ref>{};
@@ -206,8 +207,10 @@ namespace hades::state_api
 			throw game_state_error{ "tried to create object with preset id" };
 		auto obj = detail::make_object_impl(o, t, s, e);
 		s.object_creation_time[obj.id] = t;
-		for (const auto sys : get_systems(*o.obj_type))
-			e.systems.attach_system(obj, sys->id);
+
+		// TODO: we have a ptr to the system in sys, pass that into the extra state
+		for (const auto& sys : resources::object_functions::get_systems(*o.obj_type))
+			e.systems.attach_system(obj, sys.id());
 
 		return obj;
 	}
@@ -343,8 +346,9 @@ namespace hades::state_api
 		state.object_creation_time[id] = t;
 		const auto ref = object_ref{ id, new_obj };
 		//attach all systems
-		for (const auto sys : get_systems(*obj.object_type))
-			extra.systems.attach_system(ref, sys->id);
+		// TODO: we have a ptr to the system in sys, pass that into the extra state
+		for (const auto& sys : resources::object_functions::get_systems(*obj.object_type))
+			extra.systems.attach_system(ref, sys.id());
 
 		return ref;
 	}

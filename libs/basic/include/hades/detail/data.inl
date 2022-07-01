@@ -142,7 +142,7 @@ namespace hades
 			using namespace std::string_literals;
 			if (!id)
 			{
-				LOGERROR("Tried to make link to zero id");
+				LOGERROR("Tried to make link to zero id from: "s + get_as_string(from));
 				return {};
 			}
 
@@ -168,12 +168,12 @@ namespace hades
 
 		template<typename T>
 		std::vector<resources::resource_link<T>> data_manager::make_resource_link(const std::vector<unique_id>& ids,
-			const unique_id from, typename resources::resource_link_type<T>::get_func getter)
+			const unique_id from, const typename resources::resource_link_type<T>::get_func getter)
 		{
 			auto out = std::vector<resources::resource_link<T>>{};
 			out.reserve(size(ids));
 
-			auto func = [this, from, getter](unique_id id) {
+			const auto func = [this, from, getter](const unique_id id) {
 				return make_resource_link<T>(id, from, getter);
 			};
 
@@ -278,26 +278,19 @@ namespace hades
 		}
 
 		template<class T>
+		const T* get(const unique_id id, const no_load_t)
+		{
+			auto [data, lock] = detail::get_data_manager_exclusive_lock();
+			std::ignore = lock;
+			return data->get<T>(id, no_load);
+		}
+
+		template<class T>
 		data_manager::try_get_return<const T> try_get(unique_id id)
 		{
 			const auto &[data, lock] = detail::get_data_manager_exclusive_lock();
 			auto[anim, error] = data->try_get<T>(id);
 			return { anim, error };
 		}
-
-		template<typename T>
-		std::vector<unique_id> get_uid(const std::vector<const T*> &r_list)
-		{
-			static_assert(is_resource_v<T>, "data subsystem only works on hades resources");
-
-			std::vector<unique_id> out;
-			out.reserve(r_list.size());
-
-			for (const auto &r : r_list)
-				out.emplace_back(r->id);
-
-			return out;
-		}
-
 	}
 }

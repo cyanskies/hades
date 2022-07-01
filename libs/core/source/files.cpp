@@ -17,12 +17,6 @@ namespace fs = std::filesystem;
 
 namespace hades::files
 {
-	ifstream::ifstream(const fs::path& p)
-	{
-		open(p);
-		return;
-	}
-
 	void ifstream::open(const fs::path& p)
 	{
 		if (!fs::exists(p))
@@ -36,6 +30,7 @@ namespace hades::files
 			_stream.emplace<zip::izfstream>(std::move(f));
 		else
 			_stream = std::move(f);
+
 		return;
 	}
 
@@ -111,12 +106,6 @@ namespace hades::files
 
 namespace hades
 {
-	irfstream::irfstream(const fs::path& mod, const fs::path& file)
-	{
-		open(mod, file);
-		return;
-	}
-
 	void irfstream::open(const fs::path& m, const fs::path& f)
 	{
 		//check debug path
@@ -227,36 +216,43 @@ namespace hades
 	bool irfstream::_try_open_from_dir(const fs::path& dir,
 		const fs::path& mod, const fs::path& file)
 	{
-		const auto f_path = dir / mod / file;
-		if (fs::exists(f_path))
-			return _try_open_file(f_path);
+		auto m_path = dir / mod;
+		if (fs::exists(m_path / file))
+			return _try_open_file(m_path, file);
 
-		const auto archive_path = dir / mod;
-		if (fs::exists(archive_path) && !fs::is_directory(archive_path)
-			&& zip::file_exists(archive_path, file))
-			return _try_open_archive(archive_path, file);
+		if (fs::exists(m_path) && !fs::is_directory(m_path)
+			&& zip::file_exists(m_path, file))
+			return _try_open_archive(std::move(m_path), file);
 
 		return false;
 	}
 	
-	bool irfstream::_try_open_file(const fs::path& file)
+	bool irfstream::_try_open_file(const fs::path& mod_path, const fs::path& file)
 	{
-		auto f = files::ifstream{ file };
-		const auto open = f.is_open();
-		if (open)
+		auto f = files::ifstream{ mod_path / file };
+		if (f.is_open())
+		{
 			_stream = std::move(f);
+			_mod_path = mod_path;
+			_rel_path = file;
+			return true;
+		}
 
-		return open;
+		return false;
 	}
 
-	bool irfstream::_try_open_archive(const fs::path& archive,
+	bool irfstream::_try_open_archive(fs::path archive,
 		const fs::path& file)
 	{
 		auto a = zip::iafstream{ archive, file };
-		const auto open = a.is_file_open();
-		if(open)
+		if (a.is_file_open())
+		{
 			_stream = std::move(a);
-		return open;
+			_mod_path = std::move(archive);
+			_rel_path = file;
+			return true;
+		}
+		return false;
 	}
 }
 

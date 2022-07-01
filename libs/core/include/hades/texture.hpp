@@ -1,16 +1,12 @@
 #ifndef HADES_TEXTURE_HPP
 #define HADES_TEXTURE_HPP
 
+#include "hades/data.hpp"
 #include "hades/game_types.hpp"
 
 namespace sf
 {
 	class Texture;
-}
-
-namespace hades::data
-{
-	class data_manager;
 }
 
 namespace hades
@@ -29,6 +25,7 @@ namespace hades
 			texture* find_create_texture(data::data_manager&, unique_id, std::optional<unique_id> = {});
 			const texture* get_resource(unique_id);
 			texture* get_resource(data::data_manager&, unique_id, std::optional<unique_id> = {});
+			resource_link<texture> make_resource_link(data::data_manager&, unique_id, unique_id from);
 			// TODO: these should take const texture&
 			unique_id get_id(const texture*) noexcept;
 			bool get_is_loaded(const texture*) noexcept;

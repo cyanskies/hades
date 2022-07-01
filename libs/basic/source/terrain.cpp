@@ -18,7 +18,7 @@ namespace hades
 {
 	namespace detail
 	{
-		static get_texture_f get_texture{};
+		static make_texture_link_f make_texture_link{};
 	}
 
 	namespace id
@@ -39,9 +39,9 @@ namespace hades
 	void register_terrain_resources(data::data_manager &d)
 	{
 		register_terrain_resources(d,
-			[] (unique_id)->const resources::texture* {
-				return nullptr;
-		});
+			[](auto&, auto, auto)->resources::resource_link<resources::texture> {
+				return {};
+			});
 	}
 
 	using namespace std::string_view_literals;
@@ -50,9 +50,9 @@ namespace hades
 	constexpr auto terrainsets_str = "terrainsets"sv;
 	constexpr auto terrains_str = "terrains"sv;
 
-	void register_terrain_resources(data::data_manager &d, detail::get_texture_f func)
+	void register_terrain_resources(data::data_manager &d, detail::make_texture_link_f func)
 	{
-		detail::get_texture = func;
+		detail::make_texture_link = func;
 
 		//create the terrain settings
 		//and empty terrain first,
@@ -68,7 +68,7 @@ namespace hades
 		apply_to_terrain(*empty, [empty](std::vector<resources::tile>&v) {
 			v.emplace_back(resources::tile{ {}, 0u, 0u, empty });
 		});
-
+		
 		terrain_settings->empty_terrain = d.make_resource_link<resources::terrain>(empty_tileset_id, id::terrain_settings);
 		terrain_settings->empty_tileset = d.make_resource_link<resources::tileset>(empty_tileset_id, id::terrain_settings);
 
@@ -920,7 +920,9 @@ namespace hades::resources
 		const auto top = get_scalar<int32>(p, "top"sv, 0);
 
 		const auto texture_id = get_unique(p, "texture"sv, unique_id::zero);
-		const auto texture = d.make_resource_link<resources::texture>(texture_id, texture_id, hades::detail::get_texture);
+		// TODO: handle texture_id == zero
+		assert(texture_id);
+		const auto texture = std::invoke(hades::detail::make_texture_link, d, texture_id, t.id);
 
 		//make transitions list match the length of tile_count
 		//looping if needed

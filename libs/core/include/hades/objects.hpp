@@ -17,7 +17,7 @@ namespace hades::resources
 	struct curve;
 	struct render_system;
 	struct system;
-	
+
 	struct object_t
 	{};
 
@@ -27,10 +27,11 @@ namespace hades::resources
 
 		//editor icon, used in the object picker
 		resource_link<resources::animation_group> animations;
+		// [[deprecated("use animation groups instead")]]
 		//editor anim list
 		//used for placed objects
 		using animation_list = std::vector<resource_link<resources::animation>>;
-		animation_list editor_anims; // TODO: can we fit this in animations too somehow
+		animation_list editor_anims; // TODO: can we fit this in animation_group too somehow
 		//base objects, curves and systems are inherited from these
 		using base_list = std::vector<resource_link<object>>;
 		base_list base;
@@ -39,22 +40,34 @@ namespace hades::resources
 		//		no benifit to using resource_link here
 		using curve_obj = std::tuple<const curve*, curve_default_value>;
 		using curve_list = std::vector<curve_obj>;
-		curve_list curves;
+		curve_list curves,	// just the curves added by this object when parsed
+			all_curves; // all the curves on this object: calculated on load()
 
 		//server systems
 		using system_list = std::vector<resource_link<resources::system>>;
-		system_list systems;
+		system_list systems,
+			all_systems;
 
 		//client systems
 		using render_system_list = std::vector<resource_link<resources::render_system>>;
-		render_system_list render_systems;
+		render_system_list render_systems,
+			all_render_systems;
 
 		// tags
-		tag_list tags;
+		tag_list tags,
+			all_tags;
 	};
 
 	//TODO: hide behind func
 	extern std::vector<resource_link<object>> all_objects;
+}
+
+namespace hades::resources::object_functions
+{
+	const std::vector<resource_link<system>>& get_systems(const object& o);
+	const std::vector<resource_link<render_system>>& get_render_systems(const object& o);
+
+	const tag_list& get_tags(const object& o);
 }
 
 namespace hades
@@ -129,9 +142,6 @@ namespace hades
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
 	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
 
-	std::vector<const resources::system*> get_systems(const resources::object& o);
-	std::vector<const resources::render_system*> get_render_systems(const resources::object& o);
-
 	const resources::animation *get_editor_icon(const resources::object &o);
 	const resources::animation *get_random_animation(const object_instance &o);
 	std::vector<const resources::animation*> get_editor_animations(const resources::object &o);
@@ -154,10 +164,7 @@ namespace hades
 	tag_list get_collision_groups(const object_instance &o);
 	tag_list get_collision_groups(const resources::object &o);
 
-	tag_list get_tags(const object_instance &o);
-	tag_list get_tags(const resources::object &o);
-
-	//container for saved object data
+	//container for object data in level fiels
 	struct object_data
 	{
 		std::vector<object_instance> objects;
@@ -165,6 +172,7 @@ namespace hades
 		entity_id next_id = next(bad_entity);
 	};
 
+	//container for saved object data
 	struct object_save_data
 	{
 		std::vector<object_save_instance> objects;

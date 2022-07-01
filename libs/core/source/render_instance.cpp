@@ -72,9 +72,8 @@ namespace hades
 		for (auto& o : new_objects)
 		{
 			const auto id = o->id;
-			const auto systems = get_render_systems(*o->object_type);
-			for (const auto s : systems)
-				_extra.systems.attach_system(object_ref{ o->id, &*o }, s->id);
+			for (const auto& s : resources::object_functions::get_render_systems(*o->object_type))
+				_extra.systems.attach_system(object_ref{ o->id, &*o }, s.id());
 		}
 	}
 }

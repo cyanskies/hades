@@ -576,7 +576,7 @@ namespace hades
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::object_list_gui(gui& g)
 	{
-		if (g.listbox("", _obj_list_selected, _data->objects, detail::obj_ui::get_name))
+		if (g.listbox("##obj_list", _obj_list_selected, _data->objects, detail::obj_ui::get_name))
 		{
 			_set_selected(_obj_list_selected);
 		}
@@ -695,7 +695,7 @@ namespace hades
 				g.text("data type: " + to_string(c->data_type));
 				g.text("default value: " + to_string(*c));
 
-				g.listbox("", w.list_index, curves, [](auto&& c)->string {
+				g.listbox("##curve_list", w.list_index, curves, [](auto&& c)->string {
 					return to_string(c->id);
 				});
 			}
@@ -705,34 +705,32 @@ namespace hades
 		{
 			if (g.window_begin("remove curve", open))
 			{
-				// TODO: what?
-
-				/*const auto o = _get_obj(_obj_list_selected);
-				const auto &curves = o->all_curves;
+				const auto o = _get_obj(_obj_list_selected);
+				const auto &curves = get_all_curves(*o);
 				assert(w.list_index < std::size(curves));
 				const auto &curve = curves[w.list_index];
 				const auto& c = curve.curve;
-				assert(c);*/
+				assert(c);
 
 				if (g.button("remove"))
 				{
-					/*const auto iter = std::next(std::begin(o->curves), w.list_index);
+					const auto iter = std::next(std::begin(o->curves), w.list_index);
 					o->curves.erase(iter);
-					*/open = false;
+					open = false;
 				}
 				g.layout_horizontal();
 				if (g.button("cancel"))
 					open = false;
 
-				/*g.text("data type: " + to_string(c->data_type));
+				g.text("data type: " + to_string(c->data_type));
 				const auto& value = curve.value;
 				if(resources::is_set(value))
 					g.text("current value: " + curve_to_string(*c, value));
 				g.text("default value: " + to_string(*c));
 
 				g.listbox("", w.list_index, curves, [](auto&& c)->string {
-					return to_string(c->id);
-				});*/
+					return to_string(c.curve->id);
+				});
 			}
 			g.window_end();
 		}

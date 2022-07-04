@@ -209,7 +209,7 @@ namespace hades
 		}
 
 		//list
-		if (_gui.listbox("", _player_window_state.selected, _players, [](const player& p)->string {
+		if (_gui.listbox("##players_list", _player_window_state.selected, _players, [](const player& p)->string {
 			return to_string(p.id);
 			}))
 		{

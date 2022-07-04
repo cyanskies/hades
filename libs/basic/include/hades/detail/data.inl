@@ -108,13 +108,15 @@ namespace hades
 							", name has already been used for a different resource type."s);
 					}
 				}
-				else
+				else if (mod != get_r->mod)
 				{
 					auto new_r = std::invoke(get_r->clone, *get_r);
 					r = static_cast<Type*>(new_r.get());
 					r->*member_ptr = *mod;
 					_set<Type>(target, std::move(new_r), group);
 				}
+				else
+					r = get_r;
 			}
 
 			return r;

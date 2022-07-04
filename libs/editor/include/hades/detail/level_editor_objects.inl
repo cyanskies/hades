@@ -705,32 +705,34 @@ namespace hades
 		{
 			if (g.window_begin("remove curve", open))
 			{
-				const auto o = _get_obj(_obj_list_selected);
-				const auto &curves = o->curves;
+				// TODO: what?
+
+				/*const auto o = _get_obj(_obj_list_selected);
+				const auto &curves = o->all_curves;
 				assert(w.list_index < std::size(curves));
 				const auto &curve = curves[w.list_index];
-				const auto c = std::get<const resources::curve*>(curve);
-				assert(c);
+				const auto& c = curve.curve;
+				assert(c);*/
 
 				if (g.button("remove"))
 				{
-					const auto iter = std::next(std::begin(o->curves), w.list_index);
+					/*const auto iter = std::next(std::begin(o->curves), w.list_index);
 					o->curves.erase(iter);
-					open = false;
+					*/open = false;
 				}
 				g.layout_horizontal();
 				if (g.button("cancel"))
 					open = false;
 
-				g.text("data type: " + to_string(c->data_type));
-				const auto& value = std::get<resources::curve_default_value>(curve);
+				/*g.text("data type: " + to_string(c->data_type));
+				const auto& value = curve.value;
 				if(resources::is_set(value))
 					g.text("current value: " + curve_to_string(*c, value));
 				g.text("default value: " + to_string(*c));
 
 				g.listbox("", w.list_index, curves, [](auto&& c)->string {
-					return to_string(std::get<const resources::curve*>(c)->id);
-				});
+					return to_string(c->id);
+				});*/
 			}
 			g.window_end();
 		}
@@ -891,10 +893,11 @@ namespace hades
 		{
 			if constexpr (visual_editor)
 			{
-				if (std::none_of(std::begin(_curve_properties),
+				// TODO:
+				/*if (std::none_of(std::begin(_curve_properties),
 					std::end(_curve_properties), [&c](auto&& curve)
 					{ return std::get<curve_type>(c) == curve.curve; }))
-					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
+					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);*/
 			}
 			else
 				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);

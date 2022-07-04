@@ -110,6 +110,11 @@ namespace hades
 				return &**_link;
 			}
 
+			bool is_linked() const noexcept
+			{
+				return _link;
+			}
+
 			const T& operator*() const
 			{
 				return **_link;

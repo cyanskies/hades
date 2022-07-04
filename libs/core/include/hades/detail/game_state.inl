@@ -41,7 +41,7 @@ namespace hades::state_api
 
 		struct make_object_visitor
 		{
-			const resources::curve* c;
+			const resources::curve& c;
 			game_state& s;
 			game_obj& obj;
 			std::vector<object_save_instance::saved_curve::saved_keyframe> keyframes;
@@ -52,16 +52,16 @@ namespace hades::state_api
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				switch (c->keyframe_style)
+				switch (c.keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<const_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::linear:
-					return create_object_property<linear_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<linear_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::pulse:
-					return create_object_property<pulse_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<pulse_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::step:
-					return create_object_property<step_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<step_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::end:
 					throw hades::logic_error{ "invalid keyframe style" };
 				}
@@ -74,16 +74,16 @@ namespace hades::state_api
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				switch (c->keyframe_style)
+				switch (c.keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<const_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::linear:
 					throw hades::logic_error{ "linear curve on wrong type" };
 				case keyframe_style::pulse:
-					return create_object_property<pulse_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<pulse_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::step:
-					return create_object_property<step_curve, T>(obj, c->id, s, std::move(keyframes));
+					return create_object_property<step_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::end:
 					throw hades::logic_error{ "invalid keyframe style" };
 				}
@@ -110,7 +110,7 @@ namespace hades::state_api
 				assert(c);
 				assert(!v.valueless_by_exception());
 				assert(resources::is_set(v));
-				std::visit(detail::make_object_visitor{ c, s,
+				std::visit(detail::make_object_visitor{ *c, s,
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, v} } }, v);
 			}
 
@@ -132,28 +132,26 @@ namespace hades::state_api
 			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
 			assert(obj);
 
+			//list of curve ids
+			auto ids = std::vector<unique_id>{};
+			ids.reserve(size(o.curves));
+
 			//add the saved curves
 			for (auto& [c, v] : o.curves)
 			{
 				assert(c);
 				assert(!std::empty(v));
 
-				std::visit(detail::make_object_visitor{ c, s, *obj, v }, v[0].value);
+				ids.emplace_back(c->id);
+				std::visit(detail::make_object_visitor{ *c, s, *obj, v }, v[0].value);
 			}
 
 			assert(size(o.curves) == size(obj->object_variables));
 
 			//add the object curves that weren't saved
-			//list of curve ids
-			auto ids = std::vector<unique_id>{};
-			ids.reserve(size(o.curves));
-			std::transform(begin(o.curves), end(o.curves), back_inserter(ids), [](auto&& saved_curve) {
-				return saved_curve.curve->id;
-			});
-
 			std::sort(begin(ids), end(ids));
 
-			auto base_curves = get_all_curves(*o.obj_type);
+			const auto& base_curves = resources::object_functions::get_all_curves(*o.obj_type);
 			for (auto& [c, v] : base_curves)
 			{
 				//if the id is in the saved list, then don't restore it
@@ -162,7 +160,7 @@ namespace hades::state_api
 
 				auto keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
 				keyframes.push_back({ time_point{}, std::move(v) });
-				std::visit(detail::make_object_visitor{c, s, *obj, keyframes}, keyframes[0].value);
+				std::visit(detail::make_object_visitor{*c, s, *obj, keyframes}, keyframes[0].value);
 			}
 
 			if (!empty(o.name_id))
@@ -187,7 +185,7 @@ namespace hades::state_api
 			s.object_creation_time[o.id] = o.creation_time;
 			s.object_destruction_time[o.id] = o.destruction_time;
 
-			// TODO: we have a ptr to the system in sys, pass that into the extra state
+			// TODO: attach_system_from_load should accept a ptr, we have a ptr to the system in sys
 			for (const auto& sys : resources::object_functions::get_systems(*o.obj_type))
 				e.systems.attach_system_from_load(obj, sys.id());
 

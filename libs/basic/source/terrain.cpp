@@ -727,7 +727,7 @@ namespace hades::resources
 		auto &terr = static_cast<terrainset&>(r);
 
 		for (const auto t : terr.terrains)
-			d.get<terrain>(t->id);
+				d.get<terrain>(t->id);
 
 		terr.loaded = true;
 	}

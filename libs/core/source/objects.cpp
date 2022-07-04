@@ -24,40 +24,44 @@ namespace hades::resources
 	// TODO: get rid off this, we cant have global refs like this anymore
 	std::vector<resource_link<object>> all_objects{};
 
-	static std::tuple<const curve*, curve_default_value> get_curve_info(const data::parser_node &n)
+	static object::unloaded_curve get_curve_info2(data::data_manager& d, const unique_id parent, const data::parser_node& n)
 	{
 		//TODO: this is probably wrong
 		// n == curve name and n.children are entries?
 		const auto curve_info = n.get_children();
-	
-		if(curve_info.empty())
-			return { nullptr, curve_default_value{} };
+
+		/*if (curve_info.size() < 2)
+		{
+			LOGWARNING("Unrecognised format for curve node while parsing object: " + d.get_as_string(parent));
+			return {};
+		}*/
 
 		using namespace data::parse_tools;
 
 		const auto curve_id = curve_info[0]->to_scalar<unique_id>();
-		
-		try
-		{
-			const auto curve_ptr = data::get<curve>(curve_id);
-			//NOTE: curve_ptr must be valid, get<> throws otherwise
 
-			if (curve_info.size() == 2)
-			{
-				const auto value = curve_from_node(*curve_ptr, *curve_info[1]);
-				return { curve_ptr, value };
-			}
-
-			return { curve_ptr, curve_ptr->default_value };
-		}
-		catch (const data::resource_null&)
+		if (!curve_id)
 		{
-			const auto name = curve_info[0]->to_string();
-			throw invalid_curve{ "\'"s + name + "\' has not been registered as a resource name"s };
+			LOGWARNING("Invalid curve name parsing object: " + d.get_as_string(parent) + ", name was: " + curve_info[0]->to_string());
+			return {};
 		}
+
+		const auto curve_link = d.make_resource_link<curve>(curve_id, parent);
+		auto out = object::unloaded_curve{ curve_link };
+		const  auto size = std::size(curve_info);
+		if (size > 1)
+		{
+			if(curve_info[1]->is_sequence())
+				out.value = curve_info[1]->to_sequence<string>();
+			else
+				out.value = curve_info[1]->to_scalar<string>();
+		}
+		else
+			out.value = std::monostate{};
+		return out;
 	}
 
-	static void parse_objects(hades::unique_id mod, const data::parser_node &node, hades::data::data_manager &d)
+	static void parse_objects(hades::unique_id mod, const data::parser_node& node, hades::data::data_manager& d)
 	{
 		//objects:
 		//	thing:
@@ -73,7 +77,7 @@ namespace hades::resources
 		constexpr auto resource_type = "objects"sv;
 		const auto all_objects_id = d.get_uid("all-objects-list"sv);
 
-		for (const auto &o : node.get_children())
+		for (const auto& o : node.get_children())
 		{
 			const auto name = o->to_string();
 			const auto id = d.get_uid(name);
@@ -106,37 +110,37 @@ namespace hades::resources
 			const auto curves_node = o->get_child("curves"sv);
 			if (curves_node)
 			{
-				for (const auto &c : curves_node->get_children())
+				for (const auto& c : curves_node->get_children())
 				{
-					try
-					{
-						// TODO: we need a better way to parse curve values
-						//		curves wont play nice with the resource_link system or the data_leaf
-						//		we need a way to specify what type we're treating the curve as
-						//		at this point
-						auto [curve, value] = get_curve_info(*c);
-
-						//curve_info returns nullptr if 
-						//c has no children
-						if (curve)
-							set_curve(*obj, *curve, std::move(value));
-						//TODO: else: error
-					}
-					catch (const invalid_curve& err)
-					{
-						//get curve info will throw this if the curve type is unregistered
-						// or its values are invalid
-						const auto msg = "Unable to add curve to object type: "s + name + ", reason was: "s + err.what();
-						LOGERROR(msg);
-					}
-					catch (const bad_conversion& err)
-					{
-						const auto msg = "Unable to add curve to object type: "s + name + ", bad type conversion: "s + err.what();
-						LOGERROR(msg);
-					}
+					auto unloaded = get_curve_info2(d, id, *c);
+					if (unloaded.curve.is_linked())
+						obj->curves.emplace_back(unloaded);
 				}
 			}
+
 			obj->curves.shrink_to_fit();
+
+			// check for duplicate curves
+			// ie.
+			//	- [health, 10]
+			//	- [health]
+			//	- [health, 100]
+			//	
+			//	Only one of these will survive, no telling which
+			//	This indicates an error in the mod or data file.
+			std::sort(begin(obj->curves), end(obj->curves), [](auto&& l, auto&& r) {
+				return l.curve.id() < r.curve.id();
+				});
+
+			const auto iter = std::unique(begin(obj->curves), end(obj->curves), [](auto&& l, auto&& r) {
+				return l.curve.id() == r.curve.id();
+				});
+
+			if (iter != end(obj->curves))
+			{
+				LOGWARNING("Duplicate curves provided while parsing object: " + d.get_as_string(id));
+				obj->curves.erase(iter, end(obj->curves));
+			}
 
 			auto new_tags = merge_unique_sequence(*o, "tags"sv, std::move(obj->tags));
 			remove_duplicates(new_tags);
@@ -155,6 +159,26 @@ namespace hades::resources
 		}
 
 		remove_duplicates(all_objects);
+	}
+
+	static curve_list get_all_curves(data::data_manager& d, const resources::object& o)
+	{
+		auto out = curve_list{};
+
+		out.reserve(size(o.curves));
+		std::transform(begin(o.curves), end(o.curves), back_inserter(out), [&d](const object::unloaded_curve& c) {
+			assert(c.curve);
+			return object::curve_obj{ c.curve.get(),
+				curve_from_str(d, *c.curve.get(), c.value)};
+			});
+
+		for (auto& b : o.base)
+		{
+			assert(b && b->loaded);
+			out.insert(end(out), begin(b->all_curves), end(b->all_curves));
+		}
+
+		return out;
 	}
 
 	static std::vector<resources::resource_link<resources::system>> get_all_systems(const resources::object& o)
@@ -199,6 +223,15 @@ namespace hades::resources
 		return tags;
 	}
 
+}
+
+namespace hades
+{
+	static curve_list unique_curves(curve_list);
+}
+
+namespace hades::resources
+{
 	static void load_objects(resource_type<object_t> &r, data::data_manager &d)
 	{
 		assert(dynamic_cast<object*>(&r));
@@ -225,7 +258,9 @@ namespace hades::resources
 			anim_groupf::get_resource(d, anim_groupf::get_id(*o.animations));
 		
 		///collate the curves, tags and systems in all_* for fast lookup during gameplay
-		o.all_curves = hades::get_all_curves(o);
+		o.all_curves = get_all_curves(d, o);
+		o.all_curves = unique_curves(std::move(o.all_curves));
+		o.all_curves.shrink_to_fit();
 	
 		o.all_systems = get_all_systems(o);
 		remove_duplicates(o.all_systems);
@@ -249,19 +284,207 @@ namespace hades::resources
 
 namespace hades::resources::object_functions
 {
+	const curve_list& get_all_curves(const resources::object& o)
+	{
+		assert(o.loaded);
+		return o.all_curves;
+	}
+
 	const std::vector<resource_link<system>>& get_systems(const object& o)
 	{
+		assert(o.loaded);
 		return o.all_systems;
 	}
 
 	const std::vector<resource_link<render_system>>& get_render_systems(const object& o)
 	{
+		assert(o.loaded);
 		return o.all_render_systems;
 	}
 
 	const tag_list& get_tags(const object& o)
 	{
+		assert(o.loaded);
 		return o.all_tags;
+	}
+
+	static object::unloaded_value to_unloaded_curve(const curve& c, curve_default_value v)
+	{
+		const auto def = reset_default_value(c);
+
+		return std::visit([](auto&& t, auto&& v)->object::unloaded_value {
+			using T = std::decay_t<decltype(t)>;
+			using U = std::decay_t<decltype(v)>;
+			if constexpr (std::is_same_v<U, std::monostate>)
+			{
+				return v;
+			}
+			else if constexpr (std::is_same_v<T, U>)
+			{
+
+				if constexpr (curve_types::is_vector_type_v<U>)
+				{
+					return std::vector{
+						to_string(v.x),
+						to_string(v.y)
+					};
+				}
+				else if constexpr (curve_types::is_collection_type_v<U>)
+				{
+					auto out = std::vector<string>{};
+					out.reserve(v.size());
+					constexpr auto to_str = func_ref<string(typename U::value_type)>(to_string);
+					std::transform(begin(v), end(v), back_inserter(out), to_str);
+					return out;
+				}
+				else
+					return to_string(v);
+			}
+			else
+			{
+				LOGERROR("Type mismatch while converting curve values"s);
+				throw invalid_curve{ "Error converting curve values"s };
+			}
+			}, def, v);
+	}
+
+	void add_curve(object& o, unique_id i, curve_default_value v)
+	{
+		const auto c = data::get<resources::curve>(i);
+		
+		{
+			// check object_curves
+			auto iter = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
+				return c->id == curve.curve.id();
+				});
+
+			if (iter == end(o.curves))
+			{
+				auto value = to_unloaded_curve(*c, v);
+				auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
+				std::ignore = lock;
+				o.curves.emplace_back(object::unloaded_curve{
+					d->make_resource_link<curve>(i, o.id),
+					std::move(value)
+					});
+			}
+		}
+
+		if (!o.loaded)
+			return;
+
+		// check object all curves
+		auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
+			return other == c.curve;
+			});
+
+		if (iter == end(o.all_curves))
+			o.all_curves.emplace_back(object::curve_obj{ c, std::move(v) });
+		else
+			iter->value = std::move(v);
+
+		return;
+	}
+
+	bool has_curve(const object& o, const curve& c)
+	{
+		return std::any_of(begin(o.all_curves), end(o.all_curves), [&other = c](auto&& c){
+			return c.curve == &other;
+		});
+	}
+
+	void remove_curve(object& o, unique_id c)
+	{
+		{
+			const auto iter = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
+				return c == curve.curve.id();
+				});
+
+			if (iter == end(o.curves))
+				throw curve_not_found{ "Requested curve not found on object type: "s
+					+ data::get_as_string(o.id) + ", curve was: "s
+					+ data::get_as_string(c) };
+
+			o.curves.erase(iter);
+		}
+
+		if (!o.loaded)
+			return;
+
+		// check for any new base values
+		auto objects = std::stack<const object*>{};
+		for (auto& object : o.base)
+			objects.push(object.get());
+
+		auto found_curves = curve_list{};
+
+		auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
+		std::ignore = lock;
+		while (!objects.empty())
+		{
+			const auto top = objects.top();
+
+			const auto iter = std::find_if(begin(top->curves), end(top->curves), [c](auto&& curve) {
+				return c == curve.curve.id();
+				});
+
+			if (iter != end(top->curves))
+				found_curves.emplace_back(object::curve_obj{ iter->curve.get(), curve_from_str(*d, *iter->curve.get(), iter->value) });
+
+			for (auto& obj : top->base)
+				objects.push(obj.get());
+
+			objects.pop();
+		}
+
+		found_curves = unique_curves(std::move(found_curves));
+		o.all_curves.emplace_back(found_curves[0]);
+		return;
+	}
+
+	curve_default_value get_curve(const object& o, const curve& c)
+	{
+		const auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [&other = c](auto&& c){
+			return &other == c.curve;
+		});
+
+		if(iter == end(o.all_curves))
+			throw curve_not_found{ "Requested curve not found on object type: "s 
+				+ hades::data::get_as_string(o.id) + ", curve was: "s 
+				+ hades::data::get_as_string(c.id) };
+
+		if (auto& v = iter->curve; is_set(v))
+			return v;
+
+		LOGWARNING("Curve wasn't set, curve: "s + data::get_as_string(c.id) + ", on object: "s + data::get_as_string(o.id));
+		assert(hades::resources::is_set(c.default_value));
+		return c.default_value;
+	}
+
+	void change_default_curve(object& o, const unique_id i, curve_default_value v)
+	{
+		assert(o.loaded);
+		const auto c = data::get<resources::curve>(i);
+		// check object all curves
+		auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
+			return other == c.curve;
+			});
+
+		// check object_curves
+		auto iter2 = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
+			return c->id == curve.curve.id();
+			});
+
+		if (iter == end(o.all_curves) ||
+			iter2 == end(o.curves))
+			throw curve_not_found{ "Requested curve not found on object type: "s
+				+ hades::data::get_as_string(o.id) + ", curve was: "s
+				+ hades::data::get_as_string(c->id) };
+
+		iter2->value = to_unloaded_curve(*c, v);
+		iter->value = std::move(v);
+	
+		return;
 	}
 }
 
@@ -292,34 +515,14 @@ namespace hades
 		assert(o);
 		assert(c);
 
-		using curve_t = hades::resources::curve;
-		const curve_t* curve_ptr = nullptr;
-		for (const auto& cur : o->curves)
-		{
-			const auto curve = std::get<const curve_t*>(cur);
-			if (curve == c)
-			{
-				curve_ptr = curve;
-				const auto& v = std::get<hades::resources::curve_default_value>(cur);
-				if (hades::resources::is_set(v))
-					return { curve, v };
-			}
-		}
+		const auto iter = std::find_if(begin(o->all_curves), end(o->all_curves), [other = c](auto&& c){
+			return other == c.curve;
+		});
 
-		for (const auto obj : o->base)
-		{
-			assert(obj);
-			auto ret = TryGetCurve(obj.get(), c);
-			auto curve = std::get<const curve_t*>(ret);
-			if (curve)
-			{
-				curve_ptr = curve;
-				if (hades::resources::is_set(std::get<hades::resources::curve_default_value>(ret)))
-					return ret;
-			}
-		}
+		if (iter == end(o->all_curves))
+			return {};
 
-		return std::make_tuple(curve_ptr, hades::resources::curve_default_value{});
+		return *iter;
 	}
 
 	object_instance make_instance(const resources::object *o)
@@ -355,21 +558,16 @@ namespace hades
 	bool has_curve(const object_instance & o, const resources::curve & c)
 	{
 		//check object curve list
-		if (std::any_of(std::begin(o.curves), std::end(o.curves), [&c](auto &&curve) {
-			return std::get<const resources::curve*>(curve) == &c;
+		if (std::any_of(std::begin(o.curves), std::end(o.curves), [c](auto &&curve) {
+			return curve.curve == &c;
 		}))
 			return true;
 
 		//check obj prototype
 		if(o.obj_type)
-			return has_curve(*o.obj_type, c);
+			return resources::object_functions::has_curve(*o.obj_type, c);
 
 		return false;
-	}
-
-	bool has_curve(const resources::object & o, const resources::curve & c)
-	{
-		return std::get<const resources::curve*>(TryGetCurve(&o, &c)) != nullptr;
 	}
 
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
@@ -377,8 +575,8 @@ namespace hades
 		//check the objects curve list
 		for (const auto& cur : o.curves)
 		{
-			const auto curve = std::get<const hades::resources::curve*>(cur);
-			const auto& v = std::get<hades::resources::curve_default_value>(cur);
+			const auto& curve = cur.curve;
+			const auto& v = cur.value;
 			assert(curve);
 			//if we have the right id and this
 			if (curve->id == c.id && hades::resources::is_set(v))
@@ -398,55 +596,33 @@ namespace hades
 		return c.default_value;
 	}
 
-	curve_value get_curve(const resources::object &o, const hades::resources::curve &c)
+	void set_curve(object_instance &o, const resources::curve &c, curve_value v)
 	{
-		auto out = TryGetCurve(&o, &c);
-		using curve_t = hades::resources::curve;
-		if (std::get<const curve_t*>(out) == nullptr)
-			throw curve_not_found{ "Requested curve not found on object type: "s + hades::data::get_as_string(o.id)
-				+ ", curve was: "s + hades::data::get_as_string(c.id) };
+		const auto end = std::end(o.obj_type->all_curves);
+		const auto iter = std::find_if(begin(o.obj_type->all_curves), end, [&other = c](auto&& c){
+			return c.curve == &other;
+		});
 
-		if (auto v = std::get<hades::resources::curve_default_value>(out); hades::resources::is_set(v))
-			return v;
+		if(iter == end)
+			throw curve_not_found{ "Requested curve not found on object type: "s 
+			+ hades::data::get_as_string(o.obj_type->id) + ", curve was: "s
+			+ hades::data::get_as_string(c.id) };
 
-		assert(hades::resources::is_set(c.default_value));
-		return c.default_value;
-	}
-
-	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v)
-	{
-		for (auto &curve : o.curves)
+		for (auto &[curve, value] : o.curves)
 		{
-			if (std::get<const hades::resources::curve*>(curve)->id == c.id)
+			if (curve == &c)
 			{
 				assert(resources::is_curve_valid(c, v));
-				std::get<curve_value>(curve) = std::move(v);
+				value = std::move(v);
 				return;
 			}
 		}
 
-		o.curves.push_back({ &c, std::move(v)});
+		o.curves.push_back({ iter->curve, std::move(v)});
+		return;
 	}
 
 	void set_curve(object_instance& o, const unique_id i, curve_value v)
-	{
-		const auto c = data::get<resources::curve>(i);
-		set_curve(o, *c, std::move(v));
-	}
-
-	void set_curve(resources::object& o, const hades::resources::curve& c, curve_value v)
-	{
-		const auto prev = std::find(begin(o.curves), end(o.curves), resources::object::curve_obj{ &c, v });
-
-		//if the curve is already in the list, then just replace it's value
-		//otherwise add it
-		if (prev == end(o.curves))
-			o.curves.emplace_back(&c, std::move(v));
-		else
-			*prev = { &c, std::move(v) };
-	}
-
-	void set_curve(resources::object& o, const unique_id i, curve_value v)
 	{
 		const auto c = data::get<resources::curve>(i);
 		set_curve(o, *c, std::move(v));
@@ -458,8 +634,9 @@ namespace hades
 		using curve = hades::resources::curve;
 		using value = hades::resources::curve_default_value;
 
-		std::stable_sort(std::begin(list), std::end(list), [](auto&& lhs, auto&& rhs) {
-			return std::get<const curve*>(lhs)->id < std::get<const curve*>(rhs)->id;
+		std::stable_sort(begin(list), end(list), [](auto&& lhs, auto&& rhs)->bool {
+			constexpr auto less = std::less<const resources::curve*>{};
+			return less(lhs.curve, rhs.curve);
 		});
 
 		//for each unique curve, we want to keep the 
@@ -467,90 +644,44 @@ namespace hades
 		const auto last = std::end(list);
 		auto iter = std::begin(list);
 		auto output = curve_list{};
+		output.reserve(size(list));
 		while (iter != last)
 		{
 			auto v = value{};
-			const auto c = std::get<const curve*>(*iter);
+			const auto& c = iter->curve;
 			assert(c);
 			//while each item represents the same curve c
 			//store the value if it is set
 			//and then find the next different curve
 			// or iterate to the next c
 			do {
-				auto &val = std::get<value>(*iter);
+				auto &val = iter->value;
 				if (hades::resources::is_set(val))
 				{
 					v = std::move(val);
 					iter = std::find_if_not(iter, last, [c](const curve_obj &lhs) {
-						return c == std::get<const curve*>(lhs);
+						return c == lhs.curve;
 					});
 				}
 				else
 					++iter;
-			} while (iter != last && std::get<const curve*>(*iter) == c);
+			} while (iter != last && iter->curve == c);
 
 			//store c and v in output
 			if (!resources::is_set(v))
 				v = resources::reset_default_value(*c);
-			output.emplace_back(c, std::move(v));
+			output.emplace_back(curve_obj{ c, std::move(v) });
 		}
 
 		return output;
 	}
 
-	static curve_list get_all_curves_iterative(const resources::object* o)
-	{
-		using object = resources::object;
-		std::stack<const object*> objects{};
-		curve_list out{};
-		objects.emplace(o);
-
-		do 
-		{
-			const auto cur = objects.top();
-			objects.pop();
-			out.insert(std::end(out), std::begin(cur->curves), std::end(cur->curves));
-
-			if (!std::empty(cur->base))
-			{
-				auto iter = std::rbegin(cur->base);
-				const auto end = std::rend(cur->base);
-				do
-				{
-					objects.emplace(iter->get());
-				} while (++iter != end);
-			}
-		}while (!std::empty(objects));
-
-		return out;
-	}
-
 	curve_list get_all_curves(const object_instance &o)
 	{
-		auto output = get_all_curves_iterative(o.obj_type);
+		curve_list curves = o.curves;
+		const auto& obj_curves = resources::object_functions::get_all_curves(*o.obj_type);
+		curves.insert(end(curves), begin(obj_curves), end(obj_curves));
 
-		const auto begin = std::begin(output);
-		const auto end = std::end(output);
-		//curves from the instance
-		for (auto& [c, v] : o.curves)
-		{
-			auto iter = std::find_if(begin, end,
-				[c = c](auto&& elm) { return c->id == std::get<const resources::curve*>(elm)->id; });
-			if (iter != end)
-				std::get<resources::curve_default_value>(*iter) = v;
-			//else // ignore vagrant curves in saved files or object blueprints
-			//{
-			//	//TODO: real error
-			//	throw hades::runtime_error{ "object instance has a curve it isn't meant to have" };
-			//}
-		}
-
-		return unique_curves(std::move(output));
-	}
-	
-	curve_list get_all_curves(const resources::object &o)
-	{
-		auto curves = get_all_curves_iterative(&o);
 		return unique_curves(std::move(curves));
 	}
 
@@ -563,7 +694,7 @@ namespace hades
 			icon)
 			return icon;
 
-		for (auto b : o.base)
+		for (auto& b : o.base)
 		{
 			assert(b);
 			auto icon = get_editor_icon(*b);
@@ -637,6 +768,7 @@ namespace hades
 		try
 		{
 			const auto name_curve = get_name_curve();
+			using resources::object_functions::get_curve;
 			const auto name = get_curve(o, *name_curve);
 			assert(std::holds_alternative<string>(name));
 			return std::get<string>(name);
@@ -668,6 +800,7 @@ namespace hades
 	static inline resources::curve_types::vec2_float get_vector_curve_impl(const Object &o, Func f)
 	{
 		const auto c = std::invoke(f);
+		using resources::object_functions::get_curve;
 		const auto value = get_curve(o, *c);
 		assert(std::holds_alternative<resources::curve_types::vec2_float>(value));
 		return std::get<resources::curve_types::vec2_float>(value);
@@ -715,6 +848,7 @@ namespace hades
 		try
 		{
 			const auto curve = std::invoke(get_vec_curve);
+			using resources::object_functions::get_curve;
 			const auto name = get_curve(o, *curve);
 			assert(std::holds_alternative<group>(name));
 			return std::get<group>(name);
@@ -738,7 +872,7 @@ namespace hades
 
 	static void write_curve(data::writer& w, const curve_obj& c)
 	{
-		const auto curve_ptr = std::get<0>(c);
+		const auto& curve_ptr = c.curve;
 		assert(curve_ptr);
 		const auto name_str = to_string(curve_ptr->id);
 
@@ -764,7 +898,8 @@ namespace hades
 				w.write(name_str, v);
 
 			return;
-		}, std::get<1>(c));
+		}, c.value);
+
 		return;
 	}
 
@@ -886,7 +1021,7 @@ namespace hades
 				const auto curve_value = resources::curve_from_node(*curve_ptr, *c);
 
 				if (resources::is_set(curve_value))
-					obj.curves.emplace_back(curve_ptr, curve_value);
+					obj.curves.emplace_back(curve_obj{ curve_ptr, curve_value });
 				else
 					;//TODO: warning, unable to parse curve value
 			}

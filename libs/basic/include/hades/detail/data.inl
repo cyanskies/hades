@@ -13,6 +13,8 @@ namespace hades
 		template<typename T>
 		inline void resource_link_type<T>::update_link()
 		{
+			//LOGERROR("Tried to create resource link to incorrect type. Link from: "
+				//+ get_as_string(from) + " to " + get_as_string(id));
 			assert(id());
 			_resource = std::invoke(_get, id());// data::get<T>(id());
 			return;

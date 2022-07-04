@@ -71,6 +71,7 @@ namespace hades::resources
 	bool is_curve_valid(const resources::curve&) noexcept;
 	bool is_curve_valid(const resources::curve&, const curve_default_value&) noexcept;
 
+	curve_default_value curve_from_str(data::data_manager&, const resources::curve&, const std::variant<std::monostate, string, std::vector<string>>&);
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
 
 	template<typename T>

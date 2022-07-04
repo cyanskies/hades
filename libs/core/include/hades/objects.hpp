@@ -30,7 +30,7 @@ namespace hades::resources
 		// [[deprecated("use animation groups instead")]]
 		//editor anim list
 		//used for placed objects
-		using animation_list = std::vector<resource_link<resources::animation>>;
+		using animation_list = std::vector<resource_link<animation>>;
 		animation_list editor_anims; // TODO: can we fit this in animation_group too somehow
 		//base objects, curves and systems are inherited from these
 		using base_list = std::vector<resource_link<object>>;
@@ -38,18 +38,32 @@ namespace hades::resources
 		//list of curves
 		// NOTE: curves need  to be defined before other resources can reference them
 		//		no benifit to using resource_link here
-		using curve_obj = std::tuple<const curve*, curve_default_value>;
+		struct curve_obj
+		{
+			const curve* curve = nullptr;
+			curve_default_value value;
+		};
+
 		using curve_list = std::vector<curve_obj>;
-		curve_list curves,	// just the curves added by this object when parsed
-			all_curves; // all the curves on this object: calculated on load()
+
+		using unloaded_value = std::variant<std::monostate, string, std::vector<string>>;
+		struct unloaded_curve
+		{
+			resource_link<curve> curve;
+			unloaded_value value;
+		};
+
+		using unloaded_curve_list = std::vector<unloaded_curve>;
+		unloaded_curve_list curves;	// just the curves added by this object when parsed
+		curve_list all_curves; // all the curves on this object: calculated on load()
 
 		//server systems
-		using system_list = std::vector<resource_link<resources::system>>;
+		using system_list = std::vector<resource_link<system>>;
 		system_list systems,
 			all_systems;
 
 		//client systems
-		using render_system_list = std::vector<resource_link<resources::render_system>>;
+		using render_system_list = std::vector<resource_link<render_system>>;
 		render_system_list render_systems,
 			all_render_systems;
 
@@ -64,10 +78,20 @@ namespace hades::resources
 
 namespace hades::resources::object_functions
 {
+	const object::curve_list& get_all_curves(const object& o);
 	const std::vector<resource_link<system>>& get_systems(const object& o);
 	const std::vector<resource_link<render_system>>& get_render_systems(const object& o);
-
 	const tag_list& get_tags(const object& o);
+
+	// modifying curves
+	// NOTE: add_curve will throw 
+	void add_curve(object&, unique_id, curve_default_value);
+	bool has_curve(const object& o, const curve& c);
+	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
+	// this will just reset the curve to its inherited value if one of its bases still has the curve
+	void remove_curve(object&, unique_id);
+	curve_default_value get_curve(const object& o, const curve& c);
+	void change_default_curve(object&, const unique_id, curve_default_value);
 }
 
 namespace hades
@@ -105,7 +129,7 @@ namespace hades
 				resources::curve_default_value value{};
 			};
 
-			const resources::curve* curve = nullptr;
+			const resources::curve* curve;
 			std::vector<saved_keyframe> keyframes;
 		};
 
@@ -113,6 +137,12 @@ namespace hades
 	};
 
 	class curve_not_found : public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
+	class curve_already_present : public std::runtime_error
 	{
 	public:
 		using std::runtime_error::runtime_error;
@@ -128,20 +158,14 @@ namespace hades
 	using curve_value = hades::resources::curve_default_value;
 
 	bool has_curve(const object_instance &o, const resources::curve &c);
-	bool has_curve(const resources::object &o, const resources::curve &c);
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// or the value hasn't been set
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c);
-	curve_value get_curve(const resources::object &o, const hades::resources::curve &c);
 	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v);
-
 	void set_curve(object_instance& o, const unique_id i, curve_value v); 
-	void set_curve(resources::object& o, const resources::curve& c, curve_value v);
-	void set_curve(resources::object& o, const unique_id i, curve_value v);
 
 	curve_list get_all_curves(const object_instance &o); // < collates all unique curves from the class tree
-	curve_list get_all_curves(const resources::object &o); // < prefers data from decendants over ancestors
-
+	
 	const resources::animation *get_editor_icon(const resources::object &o);
 	const resources::animation *get_random_animation(const object_instance &o);
 	std::vector<const resources::animation*> get_editor_animations(const resources::object &o);

@@ -54,7 +54,7 @@ namespace hades
 			virtual ~resource_base() {}
 
 			virtual void load(data::data_manager&) {}
-			virtual void serialise(data::data_manager&, data::writer&) const {}
+			virtual void serialise(data::data_manager&, data::writer&) const {} // TODO: mandatory when mod editor can save changes on its own
 
 			using unload_func = void(*)(resource_base&);
 			using clone_func = std::unique_ptr<resource_base>(*)(const resource_base&);
@@ -79,8 +79,8 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
+			// TODO: turn into virtual func
 			using loader_func = void(*)(resource_type<T>&, data::data_manager&);
-			using writer_func = void(*)(resource_type<T>&, data::writer&);
 
 			resource_type() = default;
 			// TODO: why do we do this with a loader func,

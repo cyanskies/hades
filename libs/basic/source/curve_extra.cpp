@@ -274,6 +274,78 @@ namespace hades::resources
 		return out;
 	}
 
+	curve_default_value curve_from_str(data::data_manager& d, const resources::curve& c, const std::variant<std::monostate, string, std::vector<string>>& n)
+	{
+		if (std::holds_alternative<std::monostate>(n))
+			return std::monostate{};
+
+		auto value = reset_default_value(c);
+
+		std::visit([&d](auto&& v, auto&& str) {
+			using T = std::decay_t<decltype(v)>;
+			using U = std::decay_t<decltype(str)>;
+			if constexpr (std::is_same_v<U, std::monostate>)
+				return;
+			else if constexpr (curve_types::is_vector_type_v<T>)
+			{
+				if constexpr (std::is_same_v<string, U>) // not a collection
+				{
+					// TODO: log bad
+					return;
+				}
+				else
+				{
+					if (str.size() < 2)
+					{
+						// TODO: log bad
+						return;
+					}
+					else if (str.size() > 2)
+					{
+						//TODO: warn, excess elements ignored
+					}
+
+					using V = typename T::value_type;
+					v = T{ from_string<V>(str[0]), from_string<V>(str[1]) };
+				}
+			}
+			else if constexpr (curve_types::is_collection_type_v<T>)
+			{
+				if constexpr (std::is_same_v<string, U>) // not a collection
+				{
+					// TODO: log bad
+					return;
+				}
+				else
+				{
+					using V = typename T::value_type;
+					if constexpr (std::is_same_v<V, unique_id>)
+					{
+						std::transform(begin(str), end(str), back_inserter(v), [&d](auto&& s) {
+							return d.get_uid(s);
+							});
+					}
+					else
+						std::transform(begin(str), end(str), back_inserter(v), from_string<V>);
+				}
+			}
+			else
+			{
+				if constexpr (std::is_same_v<string, U>)
+				{
+					if constexpr (std::is_same_v<T, unique_id>)
+						v = d.get_uid(str);
+					else
+						v = from_string<T>(str);
+				}
+				else // is a collection
+					;// TODO: log bad
+			}
+			}, value, n);
+
+		return value;
+	}
+
 	curve_default_value curve_from_node(const resources::curve &c, const data::parser_node &n)
 	{
 		auto value = reset_default_value(c);

@@ -34,6 +34,7 @@ namespace hades
 {
 	void register_level_editor_object_resources(data::data_manager&);
 
+	// For editing object_instance and object_editor_instance decendents
 	template<typename ObjectType = object_instance, typename OnChange = nullptr_t, typename IsValidPos = nullptr_t>
 	class object_editor_ui
 	{

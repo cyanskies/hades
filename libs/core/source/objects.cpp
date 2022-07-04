@@ -598,6 +598,7 @@ namespace hades
 
 	void set_curve(object_instance &o, const resources::curve &c, curve_value v)
 	{
+		assert(o.obj_type->loaded);
 		const auto end = std::end(o.obj_type->all_curves);
 		const auto iter = std::find_if(begin(o.obj_type->all_curves), end, [&other = c](auto&& c){
 			return c.curve == &other;

@@ -657,13 +657,14 @@ namespace hades
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_add_remove_curve_window(gui& g)
 	{
+		using namespace std::string_literals;
+		using namespace std::string_view_literals;
 		using window = add_remove_curve_window;
 		auto& w = _add_remove_window_state;
 		auto open = true;
 
 		if (w.state == window::window_state::add)
 		{
-			
 			if (g.window_begin("add curve", open))
 			{
 				const auto o = _get_obj(_obj_list_selected);
@@ -703,7 +704,7 @@ namespace hades
 		}
 		else if (w.state == window::window_state::remove)
 		{
-			if (g.window_begin("remove curve", open))
+			if (g.window_begin("reset curve"sv, open))
 			{
 				const auto o = _get_obj(_obj_list_selected);
 				const auto &curves = get_all_curves(*o);
@@ -712,23 +713,23 @@ namespace hades
 				const auto& c = curve.curve;
 				assert(c);
 
-				if (g.button("remove"))
+				if (g.button("reset"sv))
 				{
 					const auto iter = std::next(std::begin(o->curves), w.list_index);
 					o->curves.erase(iter);
 					open = false;
 				}
 				g.layout_horizontal();
-				if (g.button("cancel"))
+				if (g.button("cancel"sv))
 					open = false;
 
-				g.text("data type: " + to_string(c->data_type));
+				g.text("data type: "s + to_string(c->data_type));
 				const auto& value = curve.value;
 				if(resources::is_set(value))
-					g.text("current value: " + curve_to_string(*c, value));
-				g.text("default value: " + to_string(*c));
+					g.text("current value: "s + curve_to_string(*c, value));
+				g.text("default value: "s + to_string(*c));
 
-				g.listbox("", w.list_index, curves, [](auto&& c)->string {
+				g.listbox("##curve_list", w.list_index, curves, [](auto&& c)->string {
 					return to_string(c.curve->id);
 				});
 			}
@@ -824,20 +825,22 @@ namespace hades
 		auto id_str = to_string(o->id);
 		g.input_text("id"sv, id_str, gui::input_text_flags::readonly);
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
-		g.text("curves:");
-		const bool global_curves = !std::empty(resources::get_all_curves());
-		if (global_curves && g.button("add")) // dont show the 'add' button if thir are no addable curves
-		{
-			_reset_add_remove_curve_window();
-			_add_remove_window_state.state = add_remove_curve_window::window_state::add;
-		}
+		g.text("curves:"sv);
+		// NOTE(steven): we dont allow adding loose curves to object instances
+		//	if they have a curve that is defined by the object type
+		// 
+		//if (g.button("add"sv)) // dont show the 'add' button if thir are no addable curves
+		//{
+		//	_reset_add_remove_curve_window();
+		//	_add_remove_window_state.state = add_remove_curve_window::window_state::add;
+		//}
 
 		if (!std::empty(o->curves))
 		{
-			if(global_curves) //only horizontal layout if the 'add' button was also present
-				g.layout_horizontal();
+			//if(global_curves) //only horizontal layout if the 'add' button was also present
+			//	g.layout_horizontal();
 
-			if (g.button("remove"))
+			if (g.button("reset curve"sv))
 			{
 				_reset_add_remove_curve_window();
 				_add_remove_window_state.state = add_remove_curve_window::window_state::remove;
@@ -851,7 +854,7 @@ namespace hades
 		{
 			//position
 			auto& pos = _curve_properties[enum_type(curve_index::pos)];
-			_positional_property_field(g, "position", *o, pos, [](const ObjectType& o, const curve_info &c)->rect_float {
+			_positional_property_field(g, "position"sv, *o, pos, [](const ObjectType& o, const curve_info &c)->rect_float {
 				const auto size = get_size(o);
 				const auto pos = std::get<vector_float>(c.value);
 				return { pos, size };
@@ -861,14 +864,14 @@ namespace hades
 			const auto p = get_position(*o);
 			if (p != std::get<vector_float>(pos.value))
 			{
-				g.tooltip("The value of position would cause an collision");
+				g.tooltip("The value of position would cause an collision"sv);
 				pos.value = p;
 			}
 
 			auto& siz = _curve_properties[enum_type(curve_index::size_index)];
 			if (resources::is_set(siz.value))
 			{
-				_positional_property_field(g, "size", *o, siz, [](const ObjectType& o, const curve_info& c)->rect_float {
+				_positional_property_field(g, "size"sv, *o, siz, [](const ObjectType& o, const curve_info& c)->rect_float {
 					const auto size = std::get<vector_float>(c.value);
 					const auto pos = get_position(o);
 					return { pos, size };
@@ -878,7 +881,7 @@ namespace hades
 				const auto s = get_size(*o);
 				if (s != std::get<vector_float>(siz.value))
 				{
-					g.tooltip("The value of size would cause an collision");
+					g.tooltip("The value of size would cause an collision"sv);
 					siz.value = s;
 				}
 			}
@@ -891,11 +894,10 @@ namespace hades
 		{
 			if constexpr (visual_editor)
 			{
-				// TODO:
-				/*if (std::none_of(std::begin(_curve_properties),
+				if (std::none_of(std::begin(_curve_properties),
 					std::end(_curve_properties), [&c](auto&& curve)
-					{ return std::get<curve_type>(c) == curve.curve; }))
-					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);*/
+					{ return c.curve == curve.curve; }))
+					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
 			}
 			else
 				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);

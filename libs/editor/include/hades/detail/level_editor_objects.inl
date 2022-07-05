@@ -412,7 +412,7 @@ namespace hades::detail::obj_ui
 				g.text(name);
 				g.columns_begin(2u, false);
 
-				g.listbox(std::string_view{}, target.selected, value);
+				g.listbox("##listbox", target.selected, value);
 
 				g.columns_next();
 
@@ -529,26 +529,39 @@ namespace hades
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::show_object_list_buttons(gui& g)
 	{
+		using namespace std::string_view_literals;
+		using namespace std::string_literals;
 		const auto &objs = resources::all_objects;
 
 		assert(_next_added_object_base < std::size(objs) + 1 || std::empty(objs));
 
-		const auto preview = [&objs](std::size_t index)->string {
+		const auto preview = [&objs](std::size_t index) {
 			if (index == std::size_t{})
-				return "none";
+				return "none"s;
 			else
 				return to_string(objs[index - 1]->id);
 		}(_next_added_object_base);
 
-		if (g.combo_begin("object type", preview))
+		const auto position_curve = get_position_curve();
+		const auto size_curve = get_size_curve();
+
+		if (g.combo_begin("object type"sv, preview))
 		{
-			if (g.selectable("none", _next_added_object_base == std::size_t{}))
+			if (g.selectable("none"sv, _next_added_object_base == std::size_t{}))
 				_next_added_object_base = std::size_t{};
 
 			const auto end = std::size(objs);
 			for (auto i = std::size_t{}; i < end; ++i)
 			{
 				const auto name = to_string(objs[i]->id);
+
+				if constexpr (visual_editor)
+				{
+					using resources::object_functions::has_curve;
+					if (has_curve(*objs[i], *position_curve) || has_curve(*objs[i], *size_curve))
+						continue;
+				}
+
 				if (g.selectable(name, _next_added_object_base == i + 1))
 					_next_added_object_base = i + 1;
 			}
@@ -556,19 +569,23 @@ namespace hades
 			g.combo_end();
 		}
 
-		if (g.button("add"))
+		if (_next_added_object_base == std::size_t{})
+			g.begin_disabled();
+
+		if (g.button("add"sv))
 		{
-			if (_next_added_object_base == std::size_t{})
-				add();
-			else
-			{
-				const auto o_type = objs[_next_added_object_base - 1];
-				auto obj = ObjectType{ o_type.get() };
-				add(std::move(obj));
-			}
+			const auto o_type = objs[_next_added_object_base - 1];
+			// NOTE: need to force load the object type
+			data::get<resources::object>(o_type.id()); 
+			auto o_instance = make_instance(o_type.get());
+			add(ObjectType{ std::move(o_instance) });
 		}
+
+		if (_next_added_object_base == std::size_t{})
+			g.end_disabled();
+
 		g.layout_horizontal();
-		if (g.button("remove") && _obj_list_selected < std::size(_data->objects))
+		if (g.button("remove"sv) && _obj_list_selected < std::size(_data->objects))
 			_erase(_obj_list_selected);
 		return;
 	}
@@ -576,9 +593,33 @@ namespace hades
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::object_list_gui(gui& g)
 	{
-		if (g.listbox("##obj_list", _obj_list_selected, _data->objects, detail::obj_ui::get_name))
+		using namespace std::string_view_literals;
+		if constexpr (visual_editor)
 		{
-			_set_selected(_obj_list_selected);
+			// only list the invisible objects for the visual editor
+			const auto position_curve = get_position_curve();
+			const auto size_curve = get_size_curve();
+			if (g.listbox_begin("##obj_list"sv))
+			{
+				const auto siz = size(_data->objects);
+				for (auto i = std::size_t{}; i < siz; ++i)
+				{
+					auto& o = _data->objects[i];
+					if ( !(has_curve(o, *position_curve) && has_curve(o, *size_curve)) )
+					{
+						if (g.selectable(detail::obj_ui::get_name(o), _obj_list_selected == i))
+							_set_selected(i);
+					}
+				}
+				g.listbox_end();
+			}
+		}
+		else
+		{
+			if (g.listbox("##obj_list"sv, _obj_list_selected, _data->objects, detail::obj_ui::get_name))
+			{
+				_set_selected(_obj_list_selected);
+			}
 		}
 		return;
 	}
@@ -626,6 +667,7 @@ namespace hades
 		return nullptr;
 	}
 
+	// TODO: should this be allowed? Probably not
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add()
 	{
@@ -854,18 +896,21 @@ namespace hades
 		{
 			//position
 			auto& pos = _curve_properties[enum_type(curve_index::pos)];
-			_positional_property_field(g, "position"sv, *o, pos, [](const ObjectType& o, const curve_info &c)->rect_float {
-				const auto size = get_size(o);
-				const auto pos = std::get<vector_float>(c.value);
-				return { pos, size };
-			});
-
-			//test for collision
-			const auto p = get_position(*o);
-			if (p != std::get<vector_float>(pos.value))
+			if (resources::is_set(pos.value))
 			{
-				g.tooltip("The value of position would cause an collision"sv);
-				pos.value = p;
+				_positional_property_field(g, "position"sv, *o, pos, [](const ObjectType& o, const curve_info& c)->rect_float {
+					const auto size = get_size(o);
+					const auto pos = std::get<vector_float>(c.value);
+					return { pos, size };
+					});
+
+				//test for collision
+				const auto p = get_position(*o);
+				if (p != std::get<vector_float>(pos.value))
+				{
+					g.tooltip("The value of position would cause an collision"sv);
+					pos.value = p;
+				}
 			}
 
 			auto& siz = _curve_properties[enum_type(curve_index::size_index)];
@@ -924,12 +969,10 @@ namespace hades
 		_obj_list_selected = index;
 		const auto pos_curve = get_position_curve();
 		const auto siz_curve = get_size_curve();
-		const auto posc = get_curve(o, *pos_curve);
-		const auto sizc = get_curve(o, *siz_curve);
 
 		_curve_properties = std::array{
-			curve_info{pos_curve, posc},
-			has_curve(o, *siz_curve) ? curve_info{siz_curve, sizc} : curve_info{}
+			has_curve(o, *pos_curve) ? curve_info{pos_curve, get_curve(o, *pos_curve)} : curve_info{},
+			has_curve(o, *siz_curve) ? curve_info{siz_curve, get_curve(o, *siz_curve)} : curve_info{}
 		};
 
 		_entity_name_id_uncommited = o.name_id;

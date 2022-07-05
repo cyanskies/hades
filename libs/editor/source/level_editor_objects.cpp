@@ -84,6 +84,7 @@ namespace hades
 		}
 	}
 
+	//TODO: make into member function
 	static vector_float get_safe_size(const object_instance &o)
 	{
 		const auto size = get_size(o);
@@ -320,6 +321,12 @@ namespace hades
 				if (g.collapsing_header(std::get<string>(group)))
 					add_object_buttons(g, toolbox_width, std::get<std::vector<resources::resource_link<resources::object>>>(group), on_click_object);
 			}
+		}
+
+		if (g.collapsing_header("object list"sv))
+		{
+			_obj_ui.show_object_list_buttons(g);
+			_obj_ui.object_list_gui(g);
 		}
 
 		if (g.collapsing_header("properties"sv))

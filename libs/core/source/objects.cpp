@@ -680,9 +680,11 @@ namespace hades
 	curve_list get_all_curves(const object_instance &o)
 	{
 		curve_list curves = o.curves;
-		const auto& obj_curves = resources::object_functions::get_all_curves(*o.obj_type);
-		curves.insert(end(curves), begin(obj_curves), end(obj_curves));
-
+		if (o.obj_type)
+		{
+			const auto& obj_curves = resources::object_functions::get_all_curves(*o.obj_type);
+			curves.insert(end(curves), begin(obj_curves), end(obj_curves));
+		}
 		return unique_curves(std::move(curves));
 	}
 
@@ -690,10 +692,13 @@ namespace hades
 	{
 		namespace ag = resources::animation_group_functions;
 
-		if (const auto icon = 
-			resources::animation_group_functions::get_animation(*o.animations, editor_icon_id);
-			icon)
-			return icon;
+		if (o.animations)
+		{
+			if (const auto icon =
+				resources::animation_group_functions::get_animation(*o.animations, editor_icon_id);
+				icon)
+				return icon;
+		}
 
 		for (auto& b : o.base)
 		{

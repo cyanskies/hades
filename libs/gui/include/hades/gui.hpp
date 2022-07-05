@@ -335,6 +335,9 @@ namespace hades
 		// only call combo_end if combo_begin returns true
 		void combo_end();
 
+		bool listbox_begin(std::string_view label, const vector2& size = {0.f, 0.f});
+		// list selectables inbetween listbox calls
+		void listbox_end(); // only call if listbox_begin returns true
 		//listboxes
 		//return true if selected item changes
 		//TODO: use newer listbox api

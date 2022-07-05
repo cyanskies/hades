@@ -743,6 +743,19 @@ namespace hades
 		ImGui::EndCombo();
 	}
 
+	bool gui::listbox_begin(std::string_view label, const vector2& size)
+	{
+		_active_assert();
+		return ImGui::BeginListBox(to_string(label).data(), { size.x, size.y });
+	}
+
+	void gui::listbox_end()
+	{
+		_active_assert();
+		ImGui::EndListBox();
+		return;
+	}
+
 	bool gui::slider_float(std::string_view label, float& v, float min, float max, slider_flags flags, std::string_view format)
 	{
 		_active_assert();

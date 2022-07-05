@@ -165,6 +165,7 @@ namespace hades
 			sprite_batch::sprite_id sprite_id = sprite_utility::bad_sprite_id;
 		};
 
+		// TODO(steven): redo this with collision_grid
 		using object_collision_tree = quad_tree<entity_id, rect_float>;
 		using collision_layer_map = std::unordered_map<unique_id, object_collision_tree>;
 

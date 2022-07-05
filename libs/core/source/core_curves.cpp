@@ -57,13 +57,14 @@ namespace hades
 		// collision layer controls which objects you will collide with 
 		collision_groups_id = d.get_uid("collision-layer"sv);
 		resources::make_curve(d, collision_groups_id,
-			resources::curve_variable_type::unique,
+			resources::curve_variable_type::collection_unique,
 			keyframe_style::const_t,
-			resources::curve_types::bad_unique,
+			resources::curve_types::collection_unique{},
 			false, //sync to client
 			false); //save to file
 
 		// tags for this object
+		// TODO: deprecate
 		tags_id = d.get_uid("tags"sv);
 		resources::make_curve(d, tags_id,
 			resources::curve_variable_type::collection_unique,

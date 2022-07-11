@@ -39,27 +39,31 @@ function(hades_make_compile_settings ARG_NAME)
 						     # EHsc for standard compliant exception specification
 							 # W4 for high warning level
 							 # analyze for static code analysis
+							 # Zi to gen .pdb
 							 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" "/analyze" >
+                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" "/analyze" "/Zi" >
 
 							 # general settings for gcc/clang
-                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                             $<$<CXX_COMPILER_ID:Clang,GNU>:
                                   "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion -fvisibility=hidden" >
 
 							 #debug settings
                              $<$<CONFIG:Debug>:
                                 $<$<CXX_COMPILER_ID:MSVC>:
                                    >
-                                $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                $<$<CXX_COMPILER_ID:Clang,GNU>:
                                    >
                              >
 							 $<$<CONFIG:Release>:
                                 # '/GS-' for no extra buffer overflow checks
                                 # GL for link time code gen (causes internal compiler errors)
 								# Oi for compiler intrinsics
+								# Gy for function level linking
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                  "/GS-" "/Oi" "/O2" >
-								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                  "/GS-" "/Oi" "/O2" "/Gy" 
+								  # "/GL"
+								  >
+								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                   "-O3" >
                              >
 							 # release mode optimisations
@@ -69,7 +73,7 @@ function(hades_make_compile_settings ARG_NAME)
 								# Oi for compiler intrinsics
 								$<$<CXX_COMPILER_ID:MSVC>:
                                   "/GS-" "/Oi" "/O2" >
-								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                   "-O3" >
 							 >)
 	target_link_options(${ARG_NAME} PRIVATE
@@ -80,29 +84,37 @@ function(hades_make_compile_settings ARG_NAME)
                                   "/LARGEADDRESSAWARE" >
 
 							 # general settings for gcc/clang
-                             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                             $<$<CXX_COMPILER_ID:Clang,GNU>:
                                   >
 
 							 #debug settings
                              $<$<CONFIG:Debug>:
                                 $<$<CXX_COMPILER_ID:MSVC>:
                                    >
-                                $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                $<$<CXX_COMPILER_ID:Clang,GNU>:
                                    >
                              >
 							 # release mode link settings
 							 # INCREMENTAL disabled for smaller executable size and compat with LTCG
+							 # LTCG for while program optimization
+							 # following microsoft recommendations
+							 # /OPT:REF for x32(disable icf)
+							 # /OPT:REF,ICF for 64
 							 $<$<CONFIG:Release>:
 								$<$<CXX_COMPILER_ID:MSVC>:
-                                   "/INCREMENTAL:NO" >
-								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+                                   "/INCREMENTAL:NO" "/OPT:REF"
+								   # "/LTCG"
+								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},Win32>: "/OPT:NOICF" >
+								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},x64>: "/OPT:ICF" >
+								   >
+								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                    >
 							 >
 							 # release mode link settings
 							 $<$<CONFIG:RelWithDebInfo>:
 								$<$<CXX_COMPILER_ID:MSVC>:
                                    >
-								$<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                    >
 							 >)
 endfunction(hades_make_compile_settings)

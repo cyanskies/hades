@@ -4,6 +4,7 @@
 
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
+#include "hades/random.hpp"
 #include "hades/table.hpp"
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"

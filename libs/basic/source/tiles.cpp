@@ -5,6 +5,7 @@
 
 #include "hades/data.hpp"
 #include "hades/parser.hpp"
+#include "hades/random.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/table.hpp"
 #include "hades/writer.hpp"

@@ -27,6 +27,7 @@ namespace hades
 	{
 		using SystemType = typename JobDataType::system_type;
 
+		assert(jdata.systems);
 		auto& sys_behaviours = *jdata.systems;
 
 		while (sys_behaviours.needs_update())
@@ -35,12 +36,14 @@ namespace hades
 			const auto systems = sys_behaviours.get_systems();
 			for (const auto s : new_systems)
 			{
+				assert(s);
 				if (!s->on_create)
 					continue;
 
 				SystemType* system = nullptr;
 				for (auto sys : systems)
 				{
+					assert(sys);
 					if (sys->system == s)
 					{
 						system = sys;

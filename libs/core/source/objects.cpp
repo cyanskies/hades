@@ -8,9 +8,10 @@
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
+#include "hades/game_system.hpp"
 #include "hades/level.hpp"
 #include "hades/parser.hpp"
-#include "hades/game_system.hpp"
+#include "hades/random.hpp"
 #include "hades/utility.hpp"
 
 using namespace std::string_view_literals;
@@ -26,23 +27,21 @@ namespace hades::resources
 
 	static object::unloaded_curve get_curve_info2(data::data_manager& d, const unique_id parent, const data::parser_node& n)
 	{
-		//TODO: this is probably wrong
-		// n == curve name and n.children are entries?
+		// NOTE: n = sequence
+		// eg:
+		//	curves:
+		//		-(n) [ curve_info[0], curve_info[1] ]
+		// or
+		//		-(n) curve_info
 		const auto curve_info = n.get_children();
 
-		/*if (curve_info.size() < 2)
-		{
-			LOGWARNING("Unrecognised format for curve node while parsing object: " + d.get_as_string(parent));
-			return {};
-		}*/
-
-		using namespace data::parse_tools;
-
-		const auto curve_id = curve_info[0]->to_scalar<unique_id>();
+		const auto curve_id = curve_info[0]->to_scalar<unique_id>([&d](std::string_view s) {
+			return d.get_uid(s);
+		});
 
 		if (!curve_id)
 		{
-			LOGWARNING("Invalid curve name parsing object: " + d.get_as_string(parent) + ", name was: " + curve_info[0]->to_string());
+			LOGWARNING("Invalid curve name while parsing object: " + d.get_as_string(parent) + ", name was: " + curve_info[0]->to_string());
 			return {};
 		}
 
@@ -161,12 +160,17 @@ namespace hades::resources
 		remove_duplicates(all_objects);
 	}
 
-	static curve_list get_all_curves(data::data_manager& d, const resources::object& o)
+	static curve_list get_all_curves(data::data_manager& d, resources::object& o)
 	{
 		auto out = curve_list{};
 
+		using unloaded_curve = object::unloaded_curve;
+		
 		out.reserve(size(o.curves));
-		std::transform(begin(o.curves), end(o.curves), back_inserter(out), [&d](const object::unloaded_curve& c) {
+		// we dont want to include any curves that didnt get loaded, so we move them to the back
+		const auto curve_end = std::partition(begin(o.curves), end(o.curves), std::mem_fn(&unloaded_curve::curve));
+
+		std::transform(begin(o.curves), curve_end, back_inserter(out), [&d](const object::unloaded_curve& c) {
 			assert(c.curve);
 			return object::curve_obj{ c.curve.get(),
 				curve_from_str(d, *c.curve.get(), c.value)};

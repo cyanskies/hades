@@ -574,7 +574,7 @@ namespace hades
 
 		if (g.button("add"sv))
 		{
-			const auto o_type = objs[_next_added_object_base - 1];
+			const auto& o_type = objs[_next_added_object_base - 1];
 			// NOTE: need to force load the object type
 			data::get<resources::object>(o_type.id()); 
 			auto o_instance = make_instance(o_type.get());

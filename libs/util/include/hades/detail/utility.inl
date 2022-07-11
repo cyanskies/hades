@@ -1,8 +1,8 @@
 #include "hades/utility.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
-#include <random>
 
 namespace hades
 {
@@ -295,54 +295,6 @@ namespace hades
 			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
 	}
 
-	namespace detail
-	{
-		struct random_data
-		{
-			std::random_device rd{};
-			// TODO: PCG random engine
-			std::default_random_engine random_generator{ rd() };
-		};
-
-		thread_local extern random_data random_runtime_data;
-
-		template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-		T random(T min, T max)
-		{
-			std::uniform_int_distribution<T> random{ min, max };
-			return random(random_runtime_data.random_generator);
-		}
-
-		template<typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
-		T random(T min, T max)
-		{
-			std::uniform_real_distribution<T> random{ min, max };
-			return random(random_runtime_data.random_generator);
-		}
-	}
-
-	template<typename T>
-	T random(T min, T max)
-	{
-		if (min > max)
-			return detail::random(max, min);
-
-		return detail::random(min, max);
-	}
-
-	template<typename Iter>
-	typename Iter random_element(Iter first, const Iter last)
-	{
-		if (first == last)
-			return first;
-
-		const auto dist = std::distance(first, last) - 1;
-		const auto target = detail::random(decltype(dist){}, dist);
-
-		std::advance(first, target);
-		return first;
-	}
-
 	template<typename Index2D, typename T>
 	constexpr T to_1d_index(Index2D pos, T array_width)
 	{
@@ -388,11 +340,6 @@ namespace hades
 	constexpr Enum next(Enum e) noexcept
 	{
 		return Enum{ enum_type(e) + 1 };
-	}
-
-	inline bool random()
-	{
-		return random(0, 1) != 0;
 	}
 
 	template<typename Func>

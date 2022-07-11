@@ -10,7 +10,7 @@
 #include <optional>
 #include <type_traits>
 
-#include "hades/utility.hpp" // for hades::random
+//#include "hades/random.hpp"
 
 // NOTE: current implementation suffers with async functions starting their own async funcs
 //	this results in eating up stack for each additional layer. Something to keep in mind.
@@ -19,7 +19,16 @@
 namespace hades
 {
 	class thread_pool;
+}
 
+namespace hades::detail
+{
+	void set_shared_thread_pool(thread_pool*) noexcept;
+	thread_pool* get_shared_thread_pool() noexcept;
+}
+
+namespace hades
+{
 	namespace detail
 	{
 		template<typename T>
@@ -92,7 +101,7 @@ namespace hades
 		{
 			auto work = std::function<void()>{};
 			{
-				const auto index = random(std::size_t{}, std::size(_queues) - 1);
+				const auto index = 0;//random(std::size_t{}, std::size(_queues) - 1);
 				auto& other_queue = _queues[index];
 
 				const auto lock = std::scoped_lock{ other_queue.mut };
@@ -215,12 +224,6 @@ namespace hades
 
 	static_assert(!(std::is_copy_constructible_v<thread_pool> || std::is_move_constructible_v<thread_pool> ||
 		std::is_copy_assignable_v<thread_pool> || std::is_move_assignable_v<thread_pool>));
-
-	namespace detail
-	{
-		void set_shared_thread_pool(thread_pool*) noexcept;
-		thread_pool* get_shared_thread_pool() noexcept;
-	}
 
 	//queue a function instance into the shared thread pool
 	template<typename Func, typename ...Args>

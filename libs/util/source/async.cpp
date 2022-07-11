@@ -2,6 +2,8 @@
 
 #include <iterator>
 
+#include "hades/utility.hpp"
+
 namespace hades
 {
 	thread_local static std::size_t worker_id = 0; // default == main thread
@@ -41,7 +43,7 @@ namespace hades
 				{
 					// no tasks, lets be a thief
 					// pick from a pool of queues one less than actually exist
-					auto index = random(std::size_t{}, std::size(_queues) - 2);
+					auto index = 0; // random(std::size_t{}, std::size(_queues) - 2);
 					if (index == thread_id)
 						++index;
 

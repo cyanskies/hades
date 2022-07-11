@@ -2,9 +2,9 @@ include(../../cmake.txt)
 
 set(HADES_UTIL_SRC
 	source/async.cpp
+	source/random.cpp
 	source/string.cpp
 	source/time.cpp
-	source/utility.cpp
 	include/hades/any_map.hpp
 	include/hades/async.hpp
 	include/hades/curve.hpp
@@ -12,6 +12,7 @@ set(HADES_UTIL_SRC
 	include/hades/line_math.hpp
 	include/hades/math.hpp
 	include/hades/poly_math.hpp
+	include/hades/random.hpp
 	include/hades/rectangle_math.hpp
 	include/hades/string.hpp
 	include/hades/strong_typedef.hpp

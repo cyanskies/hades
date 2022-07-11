@@ -7,7 +7,9 @@
 
 namespace hades
 {
-	using time_clock = std::chrono::steady_clock;
+	using time_clock = std::conditional_t<std::chrono::high_resolution_clock::is_steady,
+		std::chrono::high_resolution_clock, 
+		std::chrono::steady_clock>;
 	using time_point = time_clock::time_point;
 
 	using wall_clock = std::chrono::system_clock;

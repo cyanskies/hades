@@ -1,7 +1,5 @@
 #include "hades/data.hpp"
 
-#include <typeindex>
-
 #include "hades/logging.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/utility.hpp"
@@ -104,7 +102,7 @@ namespace hades
 					if (e == get_error::resource_wrong_type)
 					{
 						//name is already used for something else, this cannnot be loaded
-						LOGERROR("Failed to create resource: "s + get_as_string(target) + " in mod : "s + get_as_string(*mod) +
+						LOGERROR("Failed to create "s + to_string(group) + " resource: "s + get_as_string(target) + " in mod : "s + get_as_string(*mod) +
 							", name has already been used for a different resource type."s);
 					}
 				}

@@ -4,6 +4,7 @@
 #include "hades/core_curves.hpp"
 #include "hades/game_api.hpp"
 #include "hades/objects.hpp"
+#include "hades/random.hpp"
 
 namespace hades
 {

@@ -273,7 +273,7 @@ namespace hades
 			virtual void refresh() = 0;
 			virtual void refresh(unique_id) = 0;
 
-			virtual string get_as_string(unique_id id) const = 0;
+			virtual const string& get_as_string(unique_id id) const noexcept = 0;
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
 
@@ -306,7 +306,7 @@ namespace hades
 		//===Shared functions, these can be used without blocking other shared threads===
 		//returns true if there is a resource associated with this ID
 		bool exists(unique_id id);
-		string get_as_string(unique_id id);
+		const string& get_as_string(unique_id id);
 		//returns UniqueId::zero if the name cannot be assiciated with an id
 		unique_id get_uid(std::string_view name);
 		const mod& get_mod(unique_id id);

@@ -7,7 +7,7 @@ namespace hades::state_api
 	namespace detail
 	{
 		template<template<typename> typename CurveType, typename T>
-		static inline void create_object_property(game_obj& object, unique_id curve_id,
+		static inline void create_object_property(game_obj& object, const unique_id curve_id,
 			game_state& state, std::vector<object_save_instance::saved_curve::saved_keyframe> value)
 		{
 			//add the curve and value into the game_state database
@@ -17,11 +17,14 @@ namespace hades::state_api
 
 			if constexpr (std::is_same_v<CurveType<T>, const_curve<T>>)
 			{
+				// TODO: move const curves out of game objects
+				//		just ref them from the object resource?
 				assert(!std::empty(value));
 				curve.set(std::move(std::get<T>(value[0].value)));
 			}
 			else
 			{
+				curve.reserve(size(value));
 				for (const auto& [time, frame_value] : value)
 					curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
 			}

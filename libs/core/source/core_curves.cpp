@@ -17,7 +17,7 @@ namespace hades
 			resources::curve_variable_type::vec2_float,
 			keyframe_style::linear,
 			resources::curve_types::vec2_float{ 0.f, 0.f },
-			true, true);
+			true, true, true);
 		return;
 	}
 
@@ -35,6 +35,7 @@ namespace hades
 
 		// the position curves store the objects 2d position
 		pos_id = d.get_uid("position"sv);
+		// TODO: get rid of this function and bring it into this one
 		setup_position_curve(d, pos_id);
 		// size curves store the objects 2d size
 		siz_id = d.get_uid("size"sv);
@@ -61,7 +62,7 @@ namespace hades
 			keyframe_style::const_t,
 			resources::curve_types::collection_unique{},
 			false, //sync to client
-			false); //save to file
+			false, true); //save to file
 
 		// tags for this object
 		// TODO: deprecate

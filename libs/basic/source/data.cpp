@@ -179,7 +179,7 @@ namespace hades
 			return data->exists(id);
 		}
 
-		string get_as_string(unique_id id)
+		const string& get_as_string(const unique_id id)
 		{
 			auto [data, lock] = detail::get_data_manager_ptr_shared();
 			std::ignore = lock;

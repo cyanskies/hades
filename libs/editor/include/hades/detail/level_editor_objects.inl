@@ -92,9 +92,6 @@ namespace hades::detail::obj_ui
 		return;
 	}
 
-	//TODO: rename these overloads to make the usage more obvious
-	// make_prop_edit is for main call
-	// make_prop_edit2 is for implementing the actual property row
 	template<typename T>
 	struct has_custom_edit_func : std::false_type {};
 
@@ -229,13 +226,6 @@ namespace hades::detail::obj_ui
 	template<>
 	struct has_custom_edit_func<time_duration> : std::true_type {};
 
-	/*struct curve_edit_cache
-	{
-		string edit_buffer;
-		int32 edit_generation = 0;
-		std::any extra_data;
-	};*/
-
 	template<typename ObjEditor>
 	inline std::optional<time_duration> make_property_edit_custom(gui& g, std::string_view name, const time_duration& value,
 		typename ObjEditor::cache_map& cache)
@@ -341,7 +331,8 @@ namespace hades::detail::obj_ui
 	inline std::optional<T> make_property_edit_impl(gui& g, std::string_view name, const T& value,
 		typename ObjEditor::cache_map& cache)
 	{
-
+		// TODO: do we need this seperation?
+		// canot be just overload make_property_edit_basic?
 		if constexpr (has_custom_edit_func<T>::value)
 			return make_property_edit_custom<ObjEditor>(g, name, value, cache);
 		else
@@ -349,14 +340,22 @@ namespace hades::detail::obj_ui
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, const T& value,
+	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
+		const auto disabled = c.locked || c.keyframe_style == keyframe_style::const_t;
+
+		if (disabled)
+			g.begin_disabled();
+
 		if constexpr (resources::curve_types::is_vector_type_v<T>)
 		{
 			auto arr = std::array{ value.x, value.y };
 			if (g.input(name, arr))
 				set_curve(o, c, T{ arr[0], arr[1] });
+
+			value.x = arr[0];
+			value.y = arr[1];
 
 			g.tooltip(name);
 		}
@@ -364,12 +363,20 @@ namespace hades::detail::obj_ui
 		{
 			auto new_value = make_property_edit_impl<ObjEditor>(g, name, value, cache);
 			if (new_value)
+			{
+				value = *new_value;
 				set_curve(o, c, std::move(*new_value));
+			}
 		}
+
+		if (disabled)
+			g.end_disabled();
+
+		return;
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, const T& value,
+	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
@@ -380,17 +387,17 @@ namespace hades::detail::obj_ui
 		auto result = make_property_edit_impl<ObjEditor>(g, "edit"sv, value_ref, cache);
 		if (result)
 		{
-			auto container = value;
+			auto& container = value;
 			auto target = std::begin(container);
 			std::advance(target, selected);
 			*target = std::move(*result);
-			set_curve(o, c, std::move(container));
+			set_curve(o, c, container);
 		}
 	}
 
 	template<typename T, typename U, typename V, typename Obj>
 	void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
-		const resources::curve* c, const T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target,
+		const resources::curve* c, T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target,
 		typename object_editor_ui<Obj, U, V>::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
@@ -401,6 +408,14 @@ namespace hades::detail::obj_ui
 			target.target = c;
 		g.layout_horizontal();
 		g.text(name);
+
+		const auto disabled = c->locked || c->keyframe_style == keyframe_style::const_t;
+
+		// NOTE: throughout this func we don't std::move container
+		// this is because we want to copy the updated value into the object
+		// but also keep the changed object in our curve cache(the source
+		// of &value)
+		auto& container = value;
 
 		if (target.target == c)
 		{
@@ -416,6 +431,9 @@ namespace hades::detail::obj_ui
 
 				g.columns_next();
 
+				if (disabled)
+					g.begin_disabled();
+
 				assert(target.selected >= 0);
 				if (static_cast<std::size_t>(target.selected) < std::size(value))
 					make_vector_edit_field<object_editor_ui<Obj, U, V>>(g, o, *c, integer_cast<int32>(target.selected), value, cache);
@@ -427,9 +445,9 @@ namespace hades::detail::obj_ui
 
 				if (g.button("add"sv))
 				{
-					auto container = value;
 					auto iter = std::begin(container);
 
+					// insert after currently selected item
 					if (!std::empty(container))
 					{
 						++target.selected;
@@ -444,7 +462,6 @@ namespace hades::detail::obj_ui
 
 				if (g.button("remove"sv) && !std::empty(value))
 				{
-					auto container = value;
 					auto iter = std::begin(container);
 					std::advance(iter, target.selected);
 					container.erase(iter);
@@ -458,8 +475,6 @@ namespace hades::detail::obj_ui
 
 				if (g.button("move up"sv) && target.selected > 0)
 				{
-					auto container = value;
-
 					auto at = std::begin(container);
 					std::advance(at, target.selected);
 					auto before = at - 1;
@@ -471,7 +486,6 @@ namespace hades::detail::obj_ui
 
 				if (g.button("move down"sv) && target.selected + 1 != std::size(value))
 				{
-					auto container = value;
 					auto at = std::begin(container);
 					std::advance(at, target.selected);
 					auto after = at + 1;
@@ -479,6 +493,9 @@ namespace hades::detail::obj_ui
 					++target.selected;
 					set_curve(o, *c, container);
 				}
+
+				if (disabled)
+					g.end_disabled();
 			}
 			g.window_end();
 		}
@@ -486,10 +503,10 @@ namespace hades::detail::obj_ui
 
 	template< typename T, typename U, typename Obj>
 	inline void make_property_row(gui& g, Obj& o,
-		const resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
+		resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
 		typename object_editor_ui<Obj, T, U>::cache_map& cache)
 	{
-		const auto [curve, value] = c;
+		auto& [curve, value] = c;
 
 		if (!resources::is_curve_valid(*curve, value))
 			return;
@@ -667,18 +684,6 @@ namespace hades
 		return nullptr;
 	}
 
-	// TODO: should this be allowed? Probably not
-	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add()
-	{
-		static_assert(std::is_default_constructible_v<ObjectType>);
-		const auto id = post_increment(_data->next_id);
-		auto o = ObjectType{};
-		o.id = id;
-		_data->objects.emplace_back(std::move(o));
-		return id;
-	}
-
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add(ObjectType o)
 	{
@@ -705,62 +710,34 @@ namespace hades
 		auto& w = _add_remove_window_state;
 		auto open = true;
 
-		if (w.state == window::window_state::add)
-		{
-			if (g.window_begin("add curve", open))
-			{
-				const auto o = _get_obj(_obj_list_selected);
-
-				const auto curves = [&o]() {
-					const auto& all_curves = resources::get_all_curves();
-					auto curves = std::vector<const resources::curve*>{};
-					curves.reserve(std::size(all_curves));
-					std::copy_if(std::begin(all_curves), std::end(all_curves), std::back_inserter(curves),
-						[&o](auto&& curve) {
-							return !has_curve(*o, *curve);
-						});
-					return curves;
-				}();
-
-				assert(w.list_index < std::size(curves));
-				const auto c = curves[w.list_index];
-				assert(c);
-
-				if(g.button("add"))
-				{
-					set_curve(*o, *c, {});
-					open = false;
-				}
-				g.layout_horizontal();
-				if(g.button("cancel"))
-					open = false;
-
-				g.text("data type: " + to_string(c->data_type));
-				g.text("default value: " + to_string(*c));
-
-				g.listbox("##curve_list", w.list_index, curves, [](auto&& c)->string {
-					return to_string(c->id);
-				});
-			}
-			g.window_end();
-		}
-		else if (w.state == window::window_state::remove)
+		assert(w.state != window::window_state::add);
+		if (w.state == window::window_state::remove)
 		{
 			if (g.window_begin("reset curve"sv, open))
 			{
 				const auto o = _get_obj(_obj_list_selected);
-				const auto &curves = get_all_curves(*o);
+				auto &curves = _curves;
 				assert(w.list_index < std::size(curves));
-				const auto &curve = curves[w.list_index];
+				auto &curve = curves[w.list_index];
 				const auto& c = curve.curve;
 				assert(c);
 
+				const auto selected_disabled = c->locked || c->keyframe_style == keyframe_style::const_t;
+
+				if (selected_disabled)
+					g.begin_disabled();
+
 				if (g.button("reset"sv))
 				{
-					const auto iter = std::next(std::begin(o->curves), w.list_index);
-					o->curves.erase(iter);
+					auto val = resources::object_functions::get_curve(*o->obj_type, *c);
+					set_curve(*o, c->id, val);
+					curve.value = std::move(val);
 					open = false;
 				}
+
+				if (selected_disabled)
+					g.end_disabled();
+
 				g.layout_horizontal();
 				if (g.button("cancel"sv))
 					open = false;
@@ -771,6 +748,7 @@ namespace hades
 					g.text("current value: "s + curve_to_string(*c, value));
 				g.text("default value: "s + to_string(*c));
 
+				// TODO: new listbox, add disabled
 				g.listbox("##curve_list", w.list_index, curves, [](auto&& c)->string {
 					return to_string(c.curve->id);
 				});
@@ -807,21 +785,33 @@ namespace hades
 		static_assert(std::is_invocable_r_v<rect_float, MakeRect, const ObjectType&, const curve_info&>,
 			"MakeRect must have the following definition: (const object_instance&, const curve_info&)->rect_float");
 
+		const auto disabled = c.curve->locked || c.curve->keyframe_style == keyframe_style::const_t;
+
 		const auto v = std::get<vector_float>(c.value);
 		auto value = std::array{ v.x, v.y };
+		if (disabled)
+			g.begin_disabled();
+
 		if (g.input(label, value))
 		{
 			c.value = vector_float{ value[0], value[1] };
 			
+			// TODO: is_valid_pos and on_change are only used here
+			//		but position and size should always be disabled
+			//		so we could remove these and the template arguments from
+			//		the obj_ui class
 			const auto rect = std::invoke(std::forward<MakeRect>(make_rect), o, c);
 			const auto safe_pos = std::invoke(_is_valid_pos, rect, o);
 
 			if (safe_pos)
 			{
-				set_curve(o, c.curve->id, c.value);
+				set_curve(o, *c.curve, c.value);
 				std::invoke(_on_change, o);
 			}
 		}
+
+		if (disabled)
+			g.end_disabled();
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
@@ -865,7 +855,9 @@ namespace hades
 		//properties
 		//immutable object id
 		auto id_str = to_string(o->id);
-		g.input_text("id"sv, id_str, gui::input_text_flags::readonly);
+		g.begin_disabled();
+		g.input_text("id"sv, id_str);
+		g.end_disabled();
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
 		g.text("curves:"sv);
 		// NOTE(steven): we dont allow adding loose curves to object instances
@@ -933,20 +925,8 @@ namespace hades
 		}
 
 		//other properties
-		const auto all_curves = get_all_curves(*o);
-		using curve_type = const resources::curve*;
-		for (auto& c : all_curves)
-		{
-			if constexpr (visual_editor)
-			{
-				if (std::none_of(std::begin(_curve_properties),
-					std::end(_curve_properties), [&c](auto&& curve)
-					{ return c.curve == curve.curve; }))
-					make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
-			}
-			else
-				make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
-		}
+		for (auto& c : _curves)
+			make_property_row<OnChange, IsValidPos>(g, *o, c, _vector_curve_edit, _edit_cache);
 
 		g.pop_id(); // entity_id
 	}
@@ -974,6 +954,24 @@ namespace hades
 			has_curve(o, *pos_curve) ? curve_info{pos_curve, get_curve(o, *pos_curve)} : curve_info{},
 			has_curve(o, *siz_curve) ? curve_info{siz_curve, get_curve(o, *siz_curve)} : curve_info{}
 		};
+
+		// stash the objects curve list
+		auto all_curves = get_all_curves(o);
+		if constexpr (visual_editor)
+		{
+			all_curves.erase(std::remove_if(begin(all_curves), end(all_curves),
+				[others = _curve_properties](auto&& c) {
+					return std::any_of(begin(others),
+						end(others), [&c](auto&& curve)
+						{ return c.curve == curve.curve; });
+				}), end(all_curves));
+		}
+
+		std::sort(begin(all_curves), end(all_curves), [](auto&& lhs, auto&& rhs) {
+			return data::get_as_string(lhs.curve->id) < data::get_as_string(rhs.curve->id);
+			});
+
+		_curves = std::move(all_curves);
 
 		_entity_name_id_uncommited = o.name_id;
 		_edit_cache = {}; // reset the edit cache

@@ -12,8 +12,8 @@ using namespace std::string_view_literals;
 
 namespace hades::data
 {
-	constexpr auto no_id_string = "ERROR_NO_UNIQUE_ID"sv;
-	constexpr auto unnamed_id_string = "ERROR_UNNAMED_UNIQUE_ID"sv;
+	const auto no_id_string = "ERROR_NO_UNIQUE_ID"s;
+	const auto unnamed_id_string = "ERROR_UNNAMED_UNIQUE_ID"s;
 
 	data_system::data_system() : _ids({ {string{ no_id_string }, unique_id::zero} })
 	{}
@@ -177,7 +177,7 @@ namespace hades::data
 	}
 
 	//convert string to uid
-	types::string data_system::get_as_string(unique_id uid) const
+	const string &data_system::get_as_string(const unique_id uid) const noexcept
 	{
 		for (const auto &id : _ids)
 		{
@@ -186,9 +186,9 @@ namespace hades::data
 		}
 
 		if(uid == unique_zero)
-			return string{ no_id_string };
+			return no_id_string;
 
-		return string{ unnamed_id_string };
+		return unnamed_id_string;
 	}
 
 	unique_id data_system::get_uid(std::string_view name) const

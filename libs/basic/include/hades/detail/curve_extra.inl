@@ -10,7 +10,7 @@ namespace hades::resources
 	}
 
 	template<typename T>
-	const curve* make_curve(data::data_manager& d, unique_id name, curve_variable_type v_type, keyframe_style k_style, T default_value, bool sync, bool save)
+	const curve* make_curve(data::data_manager& d, unique_id name, curve_variable_type v_type, keyframe_style k_style, T default_value, bool sync, bool save, bool locked)
 	{
 		using namespace std::string_view_literals;
 		auto c = d.find_or_create<curve>(name, {}, "curves"sv);
@@ -19,6 +19,7 @@ namespace hades::resources
 		c->default_value = std::move(default_value);
 		c->sync = sync;
 		c->save = save;
+		c->locked = locked;
 		c->loaded = true;
 
 		assert(is_curve_valid(*c));
@@ -29,10 +30,10 @@ namespace hades::resources
 	template<typename T>
 	const curve* make_curve(data::data_manager& d, std::string_view name,
 		curve_variable_type v_type, keyframe_style k_style, T default_value, bool sync,
-		bool save)
+		bool save, bool locked)
 	{
 		const auto id = d.get_uid(name);
-		return make_curve(d, id, v_type, k_style, std::move(default_value), sync, save);
+		return make_curve(d, id, v_type, k_style, std::move(default_value), sync, save, locked);
 	}
 }
 

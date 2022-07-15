@@ -1,7 +1,7 @@
 #ifndef HADES_LEVEL_HPP
 #define HADES_LEVEL_HPP
 
-//#include "hades/game_state.hpp"
+// TODO: order these
 #include "hades/math.hpp"
 #include "hades/objects.hpp"
 #include "hades/colour.hpp"

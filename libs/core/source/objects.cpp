@@ -122,7 +122,7 @@ namespace hades::resources
 			// check for duplicate curves
 			// ie.
 			//	- [health, 10]
-			//	- [health]
+			//	- health
 			//	- [health, 100]
 			//	
 			//	Only one of these will survive, no telling which
@@ -457,8 +457,11 @@ namespace hades::resources::object_functions
 				+ hades::data::get_as_string(o.id) + ", curve was: "s 
 				+ hades::data::get_as_string(c.id) };
 
-		if (auto& v = iter->curve; is_set(v))
+		if (auto& v = iter->value; is_set(v))
+		{
+			assert(is_curve_valid(*iter->curve, v));
 			return v;
+		}
 
 		LOGWARNING("Curve wasn't set, curve: "s + data::get_as_string(c.id) + ", on object: "s + data::get_as_string(o.id));
 		assert(hades::resources::is_set(c.default_value));

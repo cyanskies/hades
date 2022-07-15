@@ -56,7 +56,7 @@ namespace hades::data
 		//void load(Iter first, Iter last);
 
 		//convert string to uid
-		types::string get_as_string(unique_id id) const override;
+		const types::string& get_as_string(unique_id id) const noexcept override;
 		unique_id get_uid(std::string_view name) const override;
 		unique_id get_uid(std::string_view name) override;
 

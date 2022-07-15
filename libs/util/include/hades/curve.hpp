@@ -18,7 +18,7 @@
 namespace hades::detail
 {
 	template<typename Vector>
-	auto curve_get_near_impl(Vector& v,  time_point t) noexcept
+	inline auto curve_get_near_impl(Vector& v,  time_point t) noexcept
 	{
 		const auto beg = std::begin(v);
 		const auto end = std::end(v);

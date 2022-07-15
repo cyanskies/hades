@@ -380,7 +380,8 @@ namespace hades
 			const auto anim = anims[0];
 			auto sprite = sf::Sprite{};
 			animation::apply(*anim, time_point{}, sprite);
-
+			const auto bounds = sprite.getLocalBounds();
+			sprite.setScale({ size.x / bounds.width, size.y / bounds.height });
 			sprite.setPosition({ obj_pos.x, obj_pos.y });
 			sf::Color col = sprite.getColor();
 
@@ -553,9 +554,10 @@ namespace hades
 		{
 			const auto snapped_pos = snap_to_grid(pos, _grid);
 
+			const auto id = _held_object->id;
 			if (_try_place_object(snapped_pos, *_held_object))
 			{
-				const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id = _held_object->id](auto &&o){
+				const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id](auto &&o){
 					return id == o.id;
 				});
 
@@ -563,7 +565,10 @@ namespace hades
 
 				_held_object = *obj;
 				update_selection_rect(*_held_object, _held_preview);
+				_obj_ui.set_selected(id);
 			}
+
+			// todo: if try place returned false, selection is mucked up
 
 			_brush_type = brush_type::object_selector;
 		}
@@ -698,8 +703,6 @@ namespace hades
 				_objects.objects.emplace_back(std::move(o));
 			else
 				*obj = std::move(o);
-
-			//_obj_ui.set_selected(bad_entity);
 
 			return true;
 		}

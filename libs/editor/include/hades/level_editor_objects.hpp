@@ -88,7 +88,6 @@ namespace hades
 		void set_selected(entity_id) noexcept;
 		ObjectType* get_obj(entity_id) noexcept;
 		const ObjectType* get_obj(entity_id) const noexcept;
-		entity_id add();
 		entity_id add(ObjectType);
 		void erase(entity_id);
 
@@ -147,6 +146,7 @@ namespace hades
 		std::size_t _obj_list_selected = std::size_t{};
 		std::size_t _next_added_object_base = std::size_t{};
 		entity_id _selected = bad_entity;
+		curve_list _curves;
 		add_remove_curve_window _add_remove_window_state;
 		std::string _entity_name_id_uncommited;
 		vector_curve_edit _vector_curve_edit;

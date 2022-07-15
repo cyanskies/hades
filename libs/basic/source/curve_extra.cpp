@@ -122,7 +122,7 @@ namespace hades::resources
 			break;
 		case curve_variable_type::error:
 			[[fallthrough]];
-		default:
+		default: // TODO: remove default, always throw this
 			throw invalid_curve{ to_string(c.id) + " is an invalid curve type, it may not have been registered"s };
 		}
 
@@ -145,6 +145,20 @@ namespace hades::resources
 		return curve_from_node(current_value, *value_node);
 	}
 
+	static keyframe_style to_style(std::string_view s) noexcept
+	{
+		if (s == "step"sv)
+			return keyframe_style::step;
+		else if (s == "linear"sv)
+			return keyframe_style::linear;
+		else if (s == "pulse"sv)
+			return keyframe_style::pulse;
+		else if (s == "const"sv)
+			return keyframe_style::const_t;
+		else
+			return keyframe_style::end;
+	}
+
 	static void parse_curves(unique_id mod, const data::parser_node& n, data::data_manager& d)
 	{
 		//curves:
@@ -153,6 +167,7 @@ namespace hades::resources
 		//			value: default: int32 //determines the value type
 		//			sync: default: false //true if this should be syncronised to the client
 		//			save: default false //true if this should be saved when creating a save file
+		//			locked: default false // if true, the curve cannot be edited in the level editor
 		//			default: value, [value1, value2, value3, ...] etc
 
 		//these are loaded into the game instance before anything else
@@ -177,9 +192,11 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
+			new_curve->keyframe_style = get_scalar(*c, "type"sv, new_curve->keyframe_style, to_style);
 			new_curve->data_type = get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
 			new_curve->sync = get_scalar(*c, "sync"sv, new_curve->sync);
 			new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
+			new_curve->locked = get_scalar(*c, "locked"sv, new_curve->locked);
 
 			if (old_type != new_curve->data_type)
 				new_curve->default_value = reset_default_value(*new_curve);
@@ -240,7 +257,7 @@ namespace hades::resources
 		case curve_variable_type::collection_time_d:
 			return std::holds_alternative<collection_time_d>(v);
 		case curve_variable_type::error:
-			return false;
+			;
 		}
 		return false;
 	}

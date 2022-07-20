@@ -8,6 +8,7 @@ namespace hades
 	static auto siz_id = unique_zero;
 	static auto player_owner_id = unique_zero;
 	static auto terrain_layer_id = unique_zero;
+	static auto terrain_values_id = unique_zero;
 	static auto collision_groups_id = unique_zero;
 	static auto tags_id = unique_zero;
 
@@ -45,22 +46,29 @@ namespace hades
 			resources::curve_types::vec2_float{ 0.f, 0.f },
 			true, false);
 		
-		// terrain layer, object can only move on tiles that have this tag
-		collision_groups_id = d.get_uid("move-layer"sv);
-		resources::make_curve(d, collision_groups_id,
-			resources::curve_variable_type::unique,
+		// terrain layer, object can only move on tiles that have one of these tags
+		terrain_layer_id = d.get_uid("move-layers"sv);
+		resources::make_curve(d, terrain_layer_id,
+			resources::curve_variable_type::collection_unique,
 			keyframe_style::const_t,
-			resources::curve_types::bad_unique,
+			resources::curve_types::collection_unique{},
 			false, //sync to client
-			false); //save to file
+			false);  //save to file
 
+		terrain_values_id = d.get_uid("move-layer-values"sv);
+		resources::make_curve(d, terrain_values_id,
+			resources::curve_variable_type::collection_float,
+			keyframe_style::const_t,
+			resources::curve_types::collection_float{},
+			false, //sync to client
+			false);  //save to file
 
 		// collision layer controls which objects you will collide with 
 		collision_groups_id = d.get_uid("collision-layer"sv);
 		resources::make_curve(d, collision_groups_id,
-			resources::curve_variable_type::collection_unique,
+			resources::curve_variable_type::unique,
 			keyframe_style::const_t,
-			resources::curve_types::collection_unique{},
+			resources::curve_types::unique{},
 			false, //sync to client
 			false, true); //save to file
 
@@ -137,9 +145,14 @@ namespace hades
 		return siz_id;
 	}
 
-	unique_id get_move_layer_id() noexcept
+	unique_id get_move_layers_id() noexcept
 	{
 		return terrain_layer_id;
+	}
+
+	unique_id get_move_values_id() noexcept
+	{
+		return terrain_values_id;
 	}
 
 	unique_id get_collision_layer_curve_id() noexcept

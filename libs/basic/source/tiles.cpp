@@ -114,7 +114,7 @@ namespace hades
 		}
 	}
 
-	void resources::detail::parse_tiles(unique_id mod, resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d)
+	void resources::detail::parse_tiles(resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d)
 	{
 		using namespace data::parse_tools;
 		tileset.tags = get_unique_sequence(n, "tags"sv, tileset.tags);
@@ -133,7 +133,7 @@ namespace hades
 
 			if (tex_id == unique_id::zero)
 			{
-				const auto name = d.get_as_string(tileset.id);
+				const auto& name = d.get_as_string(tileset.id);
 				const auto m = "error parsing tileset: " + name + ", tilegroup is missing texture";
 				LOGERROR(m);
 				continue;
@@ -148,7 +148,7 @@ namespace hades
 
 			if (width == tile_index_t{})
 			{
-				const auto name = d.get_as_string(tileset.id);
+				const auto& name = d.get_as_string(tileset.id);
 				const auto m = "error parsing tileset: " + name + ", tiles-per-row is 0";
 				LOGERROR(m);
 				continue;
@@ -158,7 +158,7 @@ namespace hades
 
 			if (tile_count == tile_index_t{})
 			{
-				const auto name = d.get_as_string(tileset.id);
+				const auto& name = d.get_as_string(tileset.id);
 				const auto m = "error parsing tileset: " + name + ", tile-count is 0";
 				LOGERROR(m);
 				continue;
@@ -196,7 +196,7 @@ namespace hades
 
 			auto tileset = d.find_or_create<resources::tileset>(id, mod, tilesets_name);
 
-			resources::detail::parse_tiles(mod, *tileset, tile_size, *tileset_n, d);
+			resources::detail::parse_tiles(*tileset, tile_size, *tileset_n, d);
 
 			tile_settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id, id::tile_settings));
 		}
@@ -483,12 +483,12 @@ namespace hades
 
 		//we'll store a replacement table in tile swap 
 		std::vector<tile_id_t> tile_swap;
-		tile_index_t start{};
+		auto start = std::size_t{};//tile_index_t start{};
 		const auto end = std::end(r.tilesets);
 		for (auto iter = std::begin(r.tilesets); iter != end; ++iter)
 		{
 			//get the current starting id
-			const auto[id, starting_id] = *iter;
+			const auto [id, starting_id] = *iter;
 
 			if (id == unique_id::zero)
 				throw tileset_not_found{ "tileset id was unique_id::zero" };
@@ -499,7 +499,7 @@ namespace hades
 
 				//get the next starting id
 				const auto iter2 = std::next(iter);
-				const auto end_id = [iter2, end, starting_id = starting_id, tileset]()->tile_index_t {
+				const auto end_id = [iter2, end, starting_id = starting_id, tileset]() {
 					if (iter2 != end)
 						return std::get<tile_id_t>(*iter2);
 					else
@@ -624,7 +624,7 @@ namespace hades
 
 	resources::tile get_tile(const tile_map &m, tile_id_t t)
 	{
-		tile_index_t start{};
+		auto start = std::size_t{};
 
 		for (const auto &tileset : m.tilesets)
 		{

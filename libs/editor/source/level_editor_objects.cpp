@@ -160,9 +160,13 @@ namespace hades
 
 			//update the quad data and sprites
 			auto object = editor_object_instance{ *iter };
-			_update_quad_data(object);
-			update_object_sprite(object, sprites);
-			
+			if (has_curve(object, get_position_curve_id()) &&
+				has_curve(object, get_size_curve_id()))
+			{
+				_update_quad_data(object);
+				update_object_sprite(object, sprites);
+			}
+
 			objects.emplace_back(std::move(object));
 		}
 
@@ -622,7 +626,7 @@ namespace hades
 	{
 		const auto id = o.id;
 
-		const auto collision_groups = get_collision_groups(o);
+		const auto collision_group = get_collision_groups(o);
 		const auto& current_groups = get_collision_layers();
 
 		if (!within_level(position(r), size(r), get_level_size()))
@@ -631,19 +635,16 @@ namespace hades
 		//for each group that this object is a member of
 		//check each neaby rect for a collision
 		//return true if any such collision would occur
-		const auto object_collision = std::any_of(std::begin(collision_groups), std::end(collision_groups),
-			[&current_groups, &r, id](const unique_id cg) {
-				const auto group_quadtree = current_groups.find(cg);
-				if (group_quadtree == std::end(current_groups))
-					return false;
+		const auto group_quadtree = current_groups.find(collision_group);
+		if (group_quadtree == std::end(current_groups))
+			return false;
 
-				const auto local_rects = group_quadtree->second.find_collisions(r);
+		const auto local_rects = group_quadtree->second.find_collisions(r);
 
-				return std::any_of(std::begin(local_rects), std::end(local_rects),
-					[&r, id](const quad_data<entity_id, rect_float>& other) {
-						return other.key != id && intersects(other.rect, r);
-				});
-		});
+		const auto object_collision = std::any_of(std::begin(local_rects), std::end(local_rects),
+			[&r, id](const quad_data<entity_id, rect_float>& other) {
+				return other.key != id && intersects(other.rect, r);
+			});
 
 		//TODO: a way to ask the terrain system for it's say on this object?
 		return !object_collision;
@@ -728,7 +729,7 @@ namespace hades
 		}
 		
 		//update collision quad
-		const auto collision_groups = get_collision_groups(o);
+		const auto collision_group = get_collision_groups(o);
 		const auto size = get_size(o);
 		const auto rect = rect_float{ position, size };
 
@@ -738,18 +739,14 @@ namespace hades
 		for (auto &group : _collision_quads)
 			group.second.remove(o.id);
 
-		//reinsert into the correct trees
-		//making new trees if needed
-		for (const curve_types::unique col_group_id : collision_groups)
-		{
-			//emplace creates the entry if needed, otherwise returns
+		//emplace creates the entry if needed, otherwise returns
 			//the existing one, we don't care which
-			auto[group, found] = _collision_quads.try_emplace(col_group_id,
-				rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit);
+		auto [group, found] = _collision_quads.try_emplace(collision_group,
+			rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit);
 
-			std::ignore = found;
-			group->second.insert(rect, o.id);
-		}
+		std::ignore = found;
+		group->second.insert(rect, o.id);
+		return;
 	}
 
 	level_editor_objects_impl::editor_object_instance::editor_object_instance(const object_instance &o)

@@ -517,7 +517,7 @@ namespace hades::state_api
 						return static_cast<state_field<CurveType<T>>*>(entry.var)->data;
 					else
 						throw object_property_wrong_type{ "attempted to get property using the wrong type, requested: "
-						+ to_string(get_curve_info<CurveType, T>()) + "; stored:"
+						+ to_string(get_curve_info<CurveType, T>()) + "; stored: "
 						+ to_string(entry.info) };
 				}
 			}

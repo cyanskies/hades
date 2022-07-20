@@ -18,17 +18,20 @@ namespace hades
 			return position.y * (size.x + position.x) + position.x;
 		}
 
-		/// @brief generate a vector containing all the 2d index locations within the provided area
-		inline std::vector<table_index_t> all_indexes(table_index_t pos, table_index_t size)
+		/// @brief call Func on each index in the table t
+		template<typename Table, typename Func>
+		inline void for_each_index(const Table& t, Func&& f)
 		{
-			auto positions = std::vector<table_index_t>{};
-			positions.reserve(size.x * size.y);
-			using index_t = typename table_index_t::value_type;
-			for (index_t y = 0; y < size.y; ++y)
-				for (index_t x = 0; x < size.x; ++x)
-					positions.emplace_back(table_index_t{ pos.x + x, pos.y + y });
-
-			return positions;
+			using size_ty = typename Table::size_type;
+			using index_t = typename Table::index_type;
+			static_assert(std::is_base_of_v<basic_table<typename Table::value_type>, Table>);
+			static_assert(std::is_invocable_v<Func, index_t, typename Table::value_type>);
+			const auto size = t.size();
+			for (size_ty y = 0; y < size.y; ++y)
+				for (size_ty x = 0; x < size.x; ++x)
+					std::invoke(f, index_t{ x, y }, t[{x, y}]);
+			
+			return;
 		}
 	}
 
@@ -38,9 +41,10 @@ namespace hades
 		const auto pos = v.position();
 		const auto size = v.size();
 		
-		const auto indexes = detail::all_indexes(pos, size);
-		for (const auto i : indexes)
-			set(i, v[i]);
+		detail::for_each_index(v, [this](auto index, auto&& value) {
+			set(index, value);
+			return;
+			});
 
 		return;
 	}
@@ -62,7 +66,7 @@ namespace hades
 	template<typename Value>
 	typename table<Value>::value_type table<Value>::operator[](const index_type index) const
 	{
-		const auto size = base_type::size();
+		//const auto size = base_type::size();
 		return _data[_index(index)];
 	}
 

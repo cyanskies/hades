@@ -10,10 +10,16 @@ namespace hades
 {
 	namespace game
 	{
-		const activated_object_view &get_objects() noexcept
+		activated_object_view &get_objects() noexcept
 		{
 			const auto game_data_ptr = detail::get_game_data_ptr();
 			return game_data_ptr->entity;
+		}
+
+		const resources::object* get_object(object_ref& o)
+		{
+			const auto game_data_ptr = detail::get_game_data_ptr();
+			return state_api::get_object(o, *game_data_ptr->extra).object_type;
 		}
 
 		time_point get_last_time() noexcept

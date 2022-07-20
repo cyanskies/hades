@@ -27,7 +27,8 @@ namespace hades
 	unique_id get_player_owner_id() noexcept;
 	unique_id get_position_curve_id() noexcept;
 	unique_id get_size_curve_id() noexcept;
-	unique_id get_move_layer_id() noexcept;
+	unique_id get_move_layers_id() noexcept;
+	unique_id get_move_values_id() noexcept;
 	unique_id get_collision_layer_curve_id() noexcept;
 	unique_id get_tags_curve_id() noexcept;
 }

@@ -78,19 +78,22 @@ namespace hades::resources
 
 namespace hades::resources::object_functions
 {
-	const object::curve_list& get_all_curves(const object& o);
-	const std::vector<resource_link<system>>& get_systems(const object& o);
-	const std::vector<resource_link<render_system>>& get_render_systems(const object& o);
-	const tag_list& get_tags(const object& o);
+	unique_id get_id(const object& o) noexcept;
+	const object::curve_list& get_all_curves(const object& o) noexcept;
+	const std::vector<resource_link<system>>& get_systems(const object& o) noexcept;
+	const std::vector<resource_link<render_system>>& get_render_systems(const object& o) noexcept;
+	const tag_list& get_tags(const object& o) noexcept;
 
 	// modifying curves
 	// NOTE: add_curve will throw 
 	void add_curve(object&, unique_id, curve_default_value);
-	bool has_curve(const object& o, const curve& c);
+	bool has_curve(const object& o, const curve& c) noexcept;
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// this will just reset the curve to its inherited value if one of its bases still has the curve
 	void remove_curve(object&, unique_id);
+	// TODO: these functions should return ptrs, to indicate that they're safe to store
 	curve_default_value get_curve(const object& o, const curve& c);
+	const object::curve_obj& get_curve(const object& o, unique_id);
 	void change_default_curve(object&, const unique_id, curve_default_value);
 }
 
@@ -157,7 +160,8 @@ namespace hades
 	using curve_list = resources::object::curve_list;
 	using curve_value = hades::resources::curve_default_value;
 
-	bool has_curve(const object_instance &o, const resources::curve &c);
+	bool has_curve(const object_instance &o, const resources::curve &c) noexcept;
+	bool has_curve(const object_instance& o, unique_id) noexcept;
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// or the value hasn't been set
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c);
@@ -185,8 +189,8 @@ namespace hades
 	resources::curve_types::vec2_float get_size(const resources::object &o);
 	void set_size(object_instance &o, resources::curve_types::vec2_float v);
 
-	tag_list get_collision_groups(const object_instance &o);
-	tag_list get_collision_groups(const resources::object &o);
+	unique_id get_collision_groups(const object_instance &o);
+	unique_id get_collision_groups(const resources::object &o);
 
 	//container for object data in level fiels
 	struct object_data

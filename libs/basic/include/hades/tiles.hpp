@@ -96,7 +96,7 @@ namespace hades::resources
 
 	namespace detail
 	{
-		void parse_tiles(unique_id mod, resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d);
+		void parse_tiles(resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d);
 		void load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d);
 	}
 

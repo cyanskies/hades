@@ -301,11 +301,12 @@ namespace hades::resources
 		std::visit([&d](auto&& v, auto&& str) {
 			using T = std::decay_t<decltype(v)>;
 			using U = std::decay_t<decltype(str)>;
+			constexpr auto string_not_collection = std::is_same_v<string, U>;
 			if constexpr (std::is_same_v<U, std::monostate>)
 				return;
 			else if constexpr (curve_types::is_vector_type_v<T>)
 			{
-				if constexpr (std::is_same_v<string, U>) // not a collection
+				if constexpr (string_not_collection)
 				{
 					// TODO: log bad
 					return;
@@ -328,9 +329,11 @@ namespace hades::resources
 			}
 			else if constexpr (curve_types::is_collection_type_v<T>)
 			{
-				if constexpr (std::is_same_v<string, U>) // not a collection
+				if constexpr (string_not_collection)
 				{
 					// TODO: log bad
+					// TODO: report error, suggest fixing resource file
+					// - [curve, value] -> - [curve, [value]]
 					return;
 				}
 				else
@@ -348,7 +351,7 @@ namespace hades::resources
 			}
 			else
 			{
-				if constexpr (std::is_same_v<string, U>)
+				if constexpr (string_not_collection)
 				{
 					if constexpr (std::is_same_v<T, unique_id>)
 						v = d.get_uid(str);

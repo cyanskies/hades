@@ -983,7 +983,7 @@ namespace hades::resources
 			auto terrain = d.find_or_create<resources::terrain>(id, m, terrains_str);
 			assert(terrain);
 			//parse_tiles will fill in the tags and tiles
-			resources::detail::parse_tiles(m, *terrain, tile_size, *terrain_node, d);
+			resources::detail::parse_tiles(*terrain, tile_size, *terrain_node, d);
 
 			const auto terrain_n = terrain_node->get_child("terrain"sv);
 			if (terrain_n)

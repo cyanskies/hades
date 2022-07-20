@@ -53,7 +53,9 @@ namespace hades
 	namespace game
 	{
 		using namespace curve_types;
-		const activated_object_view &get_objects() noexcept;
+		activated_object_view &get_objects() noexcept;
+		// NOTE: workaround for accessing const curves
+		const resources::object* get_object(object_ref&);
 
 		//the time of the previous dt
 		// equals get_time - dt7

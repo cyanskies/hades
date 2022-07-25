@@ -15,7 +15,7 @@ namespace hades::debug
 		return _overlays.emplace_back(std::move(ptr)).get();
 	}
 
-	nullptr_t overlay_manager::destroy_overlay(basic_overlay* ptr) noexcept
+	basic_overlay* overlay_manager::destroy_overlay(basic_overlay* ptr) noexcept
 	{
 		const auto iter = std::find_if(begin(_overlays), end(_overlays), [ptr](const auto& overlay) {
 			return overlay.get() == ptr;
@@ -45,13 +45,13 @@ namespace hades::debug
 		return;
 	}
 
-	basic_overlay* create_overlay(std::unique_ptr<basic_overlay> ptr)
+	basic_overlay* detail::create_overlay(std::unique_ptr<basic_overlay> ptr)
 	{
 		assert(overlay_manager_ptr);
 		return overlay_manager_ptr->create_overlay(std::move(ptr));
 	}
 
-	nullptr_t destroy_overlay(basic_overlay* ptr) noexcept
+	basic_overlay* detail::destroy_overlay(basic_overlay* ptr) noexcept
 	{
 		assert(overlay_manager_ptr);
 		return overlay_manager_ptr->destroy_overlay(ptr);
@@ -137,7 +137,7 @@ namespace hades::debug
 		return &*_overlays.back();
 	}
 
-	screen_overlay* screen_overlay_manager::destroy_overlay(screen_overlay* ptr)
+	screen_overlay* screen_overlay_manager::destroy_overlay(screen_overlay* ptr) noexcept
 	{
 		const auto loc = std::find_if(_overlays.begin(), _overlays.end(), [ptr](std::unique_ptr<screen_overlay>& e) {
 			return ptr == &*e;
@@ -169,7 +169,7 @@ namespace hades::debug
 		return;
 	}
 
-	screen_overlay* create_screen_overlay(std::unique_ptr<screen_overlay> overlay)
+	screen_overlay* detail::create_screen_overlay(std::unique_ptr<screen_overlay> overlay) noexcept
 	{
 		if (screen_overlay_ptr)
 			return screen_overlay_ptr->create_overlay(std::move(overlay));
@@ -177,7 +177,7 @@ namespace hades::debug
 		return nullptr;
 	}
 
-	screen_overlay* destroy_screen_overlay(screen_overlay* overlay)
+	screen_overlay* detail::destroy_screen_overlay(screen_overlay* overlay) noexcept
 	{
 		if (screen_overlay_ptr)
 			return screen_overlay_ptr->destroy_overlay(overlay);

@@ -9,6 +9,7 @@ namespace hades
 			tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 			noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 		{
+			static_assert(std::is_invocable_v<Func, tile_index_t>);
 			assert(size.x >= 0);
 			assert(size.y >= 0);
 			const auto pos_y = pos / map_width;
@@ -36,6 +37,7 @@ namespace hades
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
 		const auto func = [&f, width = world_size.x](tile_index_t i) {
+			static_assert(std::is_invocable_v<std::decay_t<decltype(f)>, tile_position>);
 			const auto tile = i == bad_tile_index ? bad_tile_position : hades::from_tile_index(i, width);
 			std::invoke(f, tile);
 			return;
@@ -50,6 +52,7 @@ namespace hades
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
 		const auto func = [&f, width = world_size.x](tile_index_t i) {
+			static_assert(std::is_invocable_v<std::decay_t<decltype(f)>, tile_position>);
 			const auto tile = from_tile_index(i, width);
 			std::invoke(f, tile);
 			return;

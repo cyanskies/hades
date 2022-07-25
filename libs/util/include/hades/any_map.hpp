@@ -39,7 +39,11 @@ namespace hades
 		template<class T>
 		T& get_ref(Key key);
 		template<class T>
+		const T& get_ref(Key key) const;
+		template<class T>
 		T* try_get(Key key) noexcept;
+		template<class T>
+		const T* try_get(Key key) const noexcept;
 
 		void erase(Key key);
 		bool contains(Key key) const noexcept;

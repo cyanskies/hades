@@ -64,7 +64,7 @@ namespace hades
 
 		const auto empty_tileset_id = d.get_uid(resources::get_empty_tileset_name());
 		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, {}, terrains_str);
-
+		
 		//fill all the terrain tile lists with a default constructed tile
 		apply_to_terrain(*empty, [empty](std::vector<resources::tile>&v) {
 			v.emplace_back(resources::tile{ {}, 0u, 0u, empty });

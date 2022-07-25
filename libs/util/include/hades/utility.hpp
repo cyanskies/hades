@@ -165,7 +165,6 @@ namespace hades {
 
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors
-
 	template<typename Container>
 	decltype(auto) remove_duplicates(Container &cont);
 

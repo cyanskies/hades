@@ -46,6 +46,17 @@ namespace hades
 			throw any_map_value_wrong_type("Tried to retrieve value from any_map using wrong type. requested: "s
 				+ typeid(T).name() + ", stored type was: "s + iter->second.type().name());
 		}
+
+		template<typename T, typename Key, typename Map>
+		inline T* any_try_get_impl(Key key, Map& map) noexcept
+		{
+			using namespace std::string_literals;
+			const auto iter = map.find(key);
+			if (iter == map.end())
+				return nullptr;
+
+			return std::any_cast<T>(&iter->second);
+		}
 	}
 
 	template<class Key>
@@ -64,12 +75,23 @@ namespace hades
 
 	template<class Key>
 	template<class T>
+	inline const T& any_map<Key>::get_ref(Key key) const
+	{
+		return detail::any_get_impl<const T>(key, _bag);
+	}
+
+	template<class Key>
+	template<class T>
 	inline T* any_map<Key>::try_get(Key key) noexcept
 	{
-		const auto iter = _bag.find(key);
-		if (iter == end(_bag)) return nullptr;
+		return detail::any_try_get_impl<T>(key, _bag);
+	}
 
-		return std::any_cast<T>(&iter->second);
+	template<class Key>
+	template<class T>
+	inline const T* any_map<Key>::try_get(Key key) const noexcept
+	{
+		return detail::any_try_get_impl<const T>(key, _bag);
 	}
 
 	template<class Key>

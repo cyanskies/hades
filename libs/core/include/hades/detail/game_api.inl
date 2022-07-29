@@ -73,10 +73,11 @@ namespace hades
 	namespace game::level::object
 	{
 		template<template<typename> typename CurveType, typename T>
-		CurveType<T>& get_property_ref(object_ref& o, variable_id v)
+		state_api::get_property_return_t<CurveType, T>&
+			get_property_ref(object_ref& o, variable_id v)
 		{
 			static_assert(curve_types::is_curve_type_v<T>);
-			const auto g_ptr = detail::get_game_level_ptr();
+			const auto g_ptr = hades::detail::get_game_level_ptr();
 			auto& obj = state_api::get_object(o, g_ptr->get_extras());
 			return state_api::get_object_property_ref<CurveType, T>(obj, v);
 		}
@@ -141,10 +142,11 @@ namespace hades
 		namespace object
 		{
 			template<template<typename> typename CurveType, typename T>
-			const CurveType<T>& get_property_ref(object_ref& o, variable_id v)
+			const state_api::get_property_return_t<CurveType, T>&
+				get_property_ref(object_ref& o, variable_id v)
 			{
 				static_assert(curve_types::is_curve_type_v<T>);
-				auto& obj = state_api::get_object(o, *detail::get_render_extra_ptr());
+				auto& obj = state_api::get_object(o, *hades::detail::get_render_extra_ptr());
 				return state_api::get_object_property_ref<CurveType, T>(obj, v);
 			}
 		}

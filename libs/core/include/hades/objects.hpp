@@ -88,6 +88,7 @@ namespace hades::resources::object_functions
 	// NOTE: add_curve will throw 
 	void add_curve(object&, unique_id, curve_default_value);
 	bool has_curve(const object& o, const curve& c) noexcept;
+	bool has_curve(const object& o, unique_id) noexcept;
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// this will just reset the curve to its inherited value if one of its bases still has the curve
 	void remove_curve(object&, unique_id);
@@ -139,6 +140,7 @@ namespace hades
 		std::vector<saved_curve> curves;
 	};
 
+	// TODO: these shouldn't be std errors
 	class curve_not_found : public std::runtime_error
 	{
 	public:
@@ -151,7 +153,7 @@ namespace hades
 		using std::runtime_error::runtime_error;
 	};
 
-	object_instance make_instance(const resources::object*);
+	object_instance make_instance(const resources::object*) noexcept;
 	object_save_instance make_save_instance(object_instance obj_instance);
 
 	//functions for getting info from objects

@@ -118,9 +118,11 @@ namespace hades
 			//property access
 			//TODO: rename to curve_ref
 			template<template<typename> typename CurveType, typename T>
-			CurveType<T>& get_property_ref(object_ref&, variable_id);
+			state_api::get_property_return_t<CurveType, T>&
+				get_property_ref(object_ref&, variable_id);
 			template<template<typename> typename CurveType, typename T>
-			CurveType<T>& get_property_ref(const object_ref& o, variable_id v)
+			state_api::get_property_return_t<CurveType, T>&
+				get_property_ref(const object_ref& o, variable_id v)
 			{
 				auto obj = o;
 				return get_property_ref<CurveType, T>(obj, v);
@@ -142,9 +144,9 @@ namespace hades
 
 			// common curves
 			linear_curve<vec2_float>& get_position(object_ref);
-			vec2_float get_size(object_ref);
+			const vec2_float& get_size(object_ref);
 			step_curve<unique>& get_player_owner(object_ref);
-			unique get_collision_group(object_ref);
+			const unique& get_collision_group(object_ref);
 		}
 
 		template<std::size_t Size>
@@ -276,17 +278,20 @@ namespace hades
 		namespace object
 		{
 			time_point get_creation_time(object_ref);
+
 			template<template<typename> typename CurveType, typename T>
-			const CurveType<T>& get_property_ref(object_ref&, variable_id);
+			const state_api::get_property_return_t<CurveType, T>& 
+				get_property_ref(object_ref&, variable_id);
 			template<template<typename> typename CurveType, typename T>
-			const CurveType<T>& get_property_ref(const object_ref& o, variable_id v)
+			const state_api::get_property_return_t<CurveType, T>&
+				get_property_ref(const object_ref& o, variable_id v)
 			{
 				auto obj = o;
 				return get_property_ref<CurveType, T>(obj, v);
 			}
 
 			const hades::linear_curve<vec2_float>& get_position(object_ref);
-			vec2_float get_size(object_ref);
+			const vec2_float& get_size(object_ref);
 
 			const resources::animation* get_animation(object_ref&, unique_id);
 		}

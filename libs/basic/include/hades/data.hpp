@@ -22,8 +22,9 @@ namespace hades
 
 	namespace resources
 	{
-		using parser_func = std::function<void(unique_id mod, const data::parser_node&, data::data_manager&)>;
-
+		// parser func accepts the current mod as unique_id
+		using parser_func = void(*)(unique_id, const data::parser_node&, data::data_manager&);
+		
 		class resource_link_base
 		{
 		public:

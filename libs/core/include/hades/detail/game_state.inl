@@ -10,6 +10,7 @@ namespace hades::state_api
 		static inline void create_object_property(game_obj& object, const unique_id curve_id,
 			game_state& state, std::vector<object_save_instance::saved_curve::saved_keyframe> value)
 		{
+			static_assert(!std::is_same_v<CurveType<T>, const_curve<T>>);
 			//add the curve and value into the game_state database
 			//then record a ptr to the data in the game object
 			auto& colony = std::get<game_state::data_colony<CurveType, T>>(state.state_data);
@@ -58,7 +59,7 @@ namespace hades::state_api
 				switch (c.keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c.id, s, std::move(keyframes));
+					return;// "const curve cannot be stored in game state"
 				case keyframe_style::linear:
 					return create_object_property<linear_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::pulse:
@@ -80,7 +81,7 @@ namespace hades::state_api
 				switch (c.keyframe_style)
 				{
 				case keyframe_style::const_t:
-					return create_object_property<const_curve, T>(obj, c.id, s, std::move(keyframes));
+					return;// "const curve cannot be stored in game state"
 				case keyframe_style::linear:
 					throw hades::logic_error{ "linear curve on wrong type" };
 				case keyframe_style::pulse:
@@ -117,7 +118,8 @@ namespace hades::state_api
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, v} } }, v);
 			}
 
-			assert(size(curves) == size(obj->object_variables));
+			// no longer true now that we no longer store const curves
+			//assert(size(curves) == size(obj->object_variables));
 
 			if (!empty(o.name_id))
 				name_object(o.name_id, { id, obj }, t, s);
@@ -259,7 +261,7 @@ namespace hades::state_api
 			switch (curve_info.first)
 			{
 			case k::const_t:
-				return call_with_curve_type<const_curve>(curve_info.second, f);
+				throw logic_error{ "const curves cannot be stored on objects" };
 			case k::linear:
 				return call_with_curve_type<linear_curve>(curve_info.second, f);
 			case k::pulse:
@@ -291,13 +293,9 @@ namespace hades::state_api
 			// copy_curve
 			// copies the param at the current time point to the object
 			template<typename T>
-			void copy_curve(unique_id id, const const_curve<T>& c)
+			void copy_curve(unique_id, const const_curve<T>&)
 			{
-				using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
-				auto frames = saved_keyframes{};
-				frames.push_back({ time_point::min(), c.get() });
-				detail::create_object_property<const_curve, T>(*obj, id, state, std::move(frames));
-				return;
+				throw logic_error{ "const curve cannot be stored in game state" };
 			}
 
 			// func for linear and step curves
@@ -373,6 +371,8 @@ namespace hades::state_api
 			template<template<typename> typename CurveType, typename T>
 			void operator()()
 			{
+				static_assert(!std::is_same_v<CurveType<T>, const_curve<T>>);
+
 				using namespace std::string_literals;
 				const auto entry = static_cast<state_field<CurveType<T>>*>(var);
 				//TODO: search the colony for the target vars more efficiently
@@ -487,65 +487,97 @@ namespace hades::state_api
 
 	namespace detail
 	{
-		template<template<typename> typename CurveType, typename T, typename GameObj>
-		inline CurveType<T>* get_object_property_ptr(GameObj& g, const variable_id v) noexcept
+		template<template<typename> typename CurveType, typename T>
+		inline get_property_return_t<CurveType, T>* get_object_property_ptr(const game_obj& g, const variable_id v) noexcept
 		{
 			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
 				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
 
-			for (auto& entry : g.object_variables)
+			if constexpr (std::is_same_v<CurveType<T>, const_curve<T>>)
 			{
-				if (entry.id == v &&
-					entry.info == get_curve_info<CurveType, T>())
-						return &(static_cast<state_field<CurveType<T>>*>(entry.var)->data);
+				const auto base_object = g.object_type;
+				assert(base_object);
+				if (!resources::object_functions::has_curve(*base_object, v))
+					return nullptr;
+
+				const auto& prop = resources::object_functions::get_curve(*base_object, v);
+				assert(prop.curve->keyframe_style == keyframe_style::const_t);
+				assert(resources::is_curve_valid(*prop.curve, prop.value));
+				return std::get_if<T>(&prop.value);
 			}
-
-			return nullptr;
-		}
-
-		template<template<typename> typename CurveType, typename T, typename GameObj>
-		inline CurveType<T>& get_object_property_ref(GameObj& g, const variable_id v)
-		{
-			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
-				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
-
-			for (auto& entry : g.object_variables)
+			else
 			{
-				if (entry.id == v)
+				for (auto& entry : g.object_variables)
 				{
-					if (entry.info == get_curve_info<CurveType, T>())
-						return static_cast<state_field<CurveType<T>>*>(entry.var)->data;
-					else
-						throw object_property_wrong_type{ "attempted to get property using the wrong type, requested: "
-						+ to_string(get_curve_info<CurveType, T>()) + "; stored: "
-						+ to_string(entry.info) };
+					if (entry.id == v &&
+						entry.info == get_curve_info<CurveType, T>())
+						return &(static_cast<state_field<CurveType<T>>*>(entry.var)->data);
 				}
+
+				return nullptr;
 			}
-			assert(false);
-			throw object_property_not_found{ "object missing expected property " + to_string(v) };
 		}
+
+		template<template<typename> typename CurveType, typename T>
+		inline get_property_return_t<CurveType, T>& get_object_property_ref(const game_obj& g, const variable_id v)
+		{
+			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
+				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
+
+			if constexpr(std::is_same_v<CurveType<T>, const_curve<T>>)
+			{
+				const auto base_object = g.object_type;
+				assert(base_object);
+				const auto& prop = resources::object_functions::get_curve(*base_object, v);
+				assert(prop.curve->keyframe_style == keyframe_style::const_t);
+				assert(resources::is_curve_valid(*prop.curve, prop.value));
+				return std::get<T>(prop.value);
+			}
+			else
+			{
+				for (auto& entry : g.object_variables)
+				{
+					if (entry.id == v)
+					{
+						if (entry.info == get_curve_info<CurveType, T>())
+							return static_cast<state_field<CurveType<T>>*>(entry.var)->data;
+						else
+							throw object_property_wrong_type{ "attempted to get property using the wrong type, requested: "
+							+ to_string(get_curve_info<CurveType, T>()) + "; stored: "
+							+ to_string(entry.info) };
+					}
+				}
+
+				assert(false);
+				throw object_property_not_found{ "object missing expected property " + to_string(v) };
+			} // !else
+		}// !get_object_property_ref
 	}
 
 	template<template<typename> typename CurveType, typename T>
-	const CurveType<T>& get_object_property_ref(const game_obj& o, variable_id v)
+	const get_property_return_t<CurveType, T>&
+		get_object_property_ref(const game_obj& o, variable_id v)
 	{
 		return detail::get_object_property_ref<const CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
-	CurveType<T>& get_object_property_ref(game_obj& o, variable_id v)
+	get_property_return_t<CurveType, T>&
+		get_object_property_ref(game_obj& o, variable_id v)
 	{
 		return detail::get_object_property_ref<CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
-	const CurveType<T>* get_object_property_ptr(const game_obj& o, variable_id v) noexcept
+	const get_property_return_t<CurveType, T>* 
+		get_object_property_ptr(const game_obj& o, variable_id v) noexcept
 	{
 		return detail::get_object_property_ptr<const CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
-	CurveType<T>* get_object_property_ptr(game_obj& o, variable_id v) noexcept
+	get_property_return_t<CurveType, T>*
+		get_object_property_ptr(game_obj& o, variable_id v) noexcept
 	{
 		return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}

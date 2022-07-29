@@ -17,8 +17,8 @@
 using namespace std::string_view_literals;
 using namespace std::string_literals;
 
-hades::unique_id editor_icon_id = hades::unique_zero;
-hades::unique_id editor_anim = hades::unique_zero;
+static hades::unique_id editor_icon_id = hades::unique_zero;
+static hades::unique_id editor_anim = hades::unique_zero;
 
 namespace hades::resources
 {
@@ -530,6 +530,7 @@ namespace hades
 	void register_objects(hades::data::data_manager &d)
 	{
 		editor_icon_id = d.get_uid("editor-icon"sv);
+		editor_anim = d.get_uid("editor-anim"sv);
 
 		register_animation_resource(d);
 		register_curve_resource(d);
@@ -547,12 +548,12 @@ namespace hades
 	//returns the curve with the value unset if it was found but not set
 	//returns the requested curve plus it's value otherwise
 	//TODO: rename with correct naming scheme
-	static curve_obj TryGetCurve(const resources::object *o, const hades::resources::curve *c)
+	static curve_obj try_get_curve(const resources::object *o, const hades::resources::curve *c) noexcept
 	{
 		assert(o);
 		assert(c);
 
-		const auto iter = std::find_if(begin(o->all_curves), end(o->all_curves), [other = c](auto&& c){
+		const auto iter = std::find_if(begin(o->all_curves), end(o->all_curves), [other = c](auto&& c) noexcept {
 			return other == c.curve;
 		});
 
@@ -562,7 +563,7 @@ namespace hades
 		return *iter;
 	}
 
-	object_instance make_instance(const resources::object *o)
+	object_instance make_instance(const resources::object *o) noexcept
 	{
 		return object_instance{ o };
 	}
@@ -585,7 +586,7 @@ namespace hades
 			auto c = object_save_instance::saved_curve{};
 			c.curve = curve;
 			auto k = object_save_instance::saved_curve::saved_keyframe{};
-			k.value = std::move(val);
+			swap(k.value, val);
 			c.keyframes.push_back(std::move(k));
 			obj.curves.push_back(std::move(c));
 		}
@@ -614,13 +615,15 @@ namespace hades
 		if (std::any_of(std::begin(o.curves), std::end(o.curves), [c](auto&& curve) {
 			return curve.curve->id == c;
 			}))
+		{
 			return true;
+		}
 
-			//check obj prototype
-			if (o.obj_type)
-				return resources::object_functions::has_curve(*o.obj_type, c);
+		//check obj prototype
+		if (o.obj_type)
+			return resources::object_functions::has_curve(*o.obj_type, c);
 
-			return false;
+		return false;
 	}
 
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c)
@@ -638,7 +641,7 @@ namespace hades
 
 		//check the object prototype
 		assert(o.obj_type);
-		const auto out = TryGetCurve(o.obj_type, &c);
+		const auto out = try_get_curve(o.obj_type, &c);
 		if (const auto &[curve, value] = out; curve && hades::resources::is_set(value))
 			return value;
 
@@ -673,6 +676,9 @@ namespace hades
 				return;
 			}
 		}
+
+		if (c.keyframe_style == keyframe_style::const_t)
+			throw curve_error{ "Tried to store const curve in a object instance." };
 
 		o.curves.push_back({ iter->curve, std::move(v)});
 		return;
@@ -775,7 +781,7 @@ namespace hades
 		const auto index = random(std::size_t{ 0 }, anims.size() - 1);
 
 		return anims[index];
-		// C26816: The pointer points to memory allocated on the stack
+		// MSVC warning C26816: The pointer points to memory allocated on the stack
 		// NOTE: it doesn't, it points to a animation resource allocated on the heap
 		//	it's lifetime is managed by the data_manager
 	}
@@ -1075,17 +1081,14 @@ namespace hades
 				{
 					const auto curve_id = c->to_scalar<unique_id>(data::make_uid);
 					//TODO: log error?
-						//TODO: same
 					if (curve_id == unique_id::zero)
 						continue;
 
 					const auto curve_ptr = data::get<resources::curve>(curve_id);
 					const auto curve_value = resources::curve_from_node(*curve_ptr, *c);
 
-					if (resources::is_set(curve_value))
-						obj.curves.emplace_back(curve_obj{ curve_ptr, curve_value });
-					else
-						;//TODO: warning, unable to parse curve value
+					assert(resources::is_set(curve_value));
+					obj.curves.emplace_back(curve_obj{ curve_ptr, curve_value });
 				}
 			}
 

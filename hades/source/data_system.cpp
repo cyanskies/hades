@@ -102,12 +102,8 @@ namespace hades::data
 	{
 		//copy and clear the mod list, so that
 		// when add_mod readds them we don't double up
-		const auto mods = std::move(_mods);
-		_mods = {};
-
-		// unset main_loaded, so that the newly parsed data doesnt
-		// get put into the leaf
-		//_main_loaded = false;
+		auto mods = std::vector<unique_id>{};
+		std::swap(mods, _mods);
 
 		//reparse the game
 		const auto& game = get_mod(_game).source;
@@ -116,7 +112,7 @@ namespace hades::data
 		//go through the mod list and reload them in the
 		//same order as they were origionally loaded
 		//(this means we will parse the game and it's dependents again)
-		for (const auto m : mods)
+		for (const auto& m : mods)
 		{
 			//for each mod reload it
 			const auto& name = get_mod(m).source;

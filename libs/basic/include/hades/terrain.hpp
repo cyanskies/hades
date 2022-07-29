@@ -69,17 +69,23 @@ namespace hades::resources
 	{
 		terrain_settings();
 
-		resource_link<terrain> empty_terrain = nullptr;
-		resource_link<terrainset> empty_terrainset = nullptr;
+		resource_link<terrain> empty_terrain = {};
+		resource_link<terrainset> empty_terrainset = {};
+		resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
 	};
+
+	unique_id get_background_terrain_id() noexcept;
 
 	const terrain_settings *get_terrain_settings();
 	const terrain *get_terrain(const resources::tile&);
 
 	std::string_view get_empty_terrainset_name() noexcept;
+
+	// exceptions: these three can through resource_error
 	const terrain *get_empty_terrain();
+	const terrain* get_background_terrain();
 	//NOTE: used for maps with no tile terrains
 	// returns a terrainset only holding the empty terrain
 	const terrainset* get_empty_terrainset();

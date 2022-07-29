@@ -111,13 +111,13 @@ namespace hades
 	{
 		object_ref get_from_name(std::string_view n, time_point t)
 		{
-			auto ptr = detail::get_game_level_ptr();
+			auto ptr = hades::detail::get_game_level_ptr();
 			return ptr->get_object_ref(n, t);
 		}
 
 		object_ref create(const object_instance& obj)
 		{
-			auto ptr = detail::get_game_level_ptr();
+			auto ptr = hades::detail::get_game_level_ptr();
 			assert(obj.id == bad_entity);
 			auto new_obj = ptr->create_object(obj, get_time());
 
@@ -126,28 +126,28 @@ namespace hades
 
 		object_ref clone(object_ref o)
 		{
-			auto ptr = detail::get_game_level_ptr();
+			auto ptr = hades::detail::get_game_level_ptr();
 			return ptr->clone_object(o, get_time());
 		}
 
 		void destroy(object_ref e)
 		{
-			auto ptr = detail::get_game_level_ptr();
+			auto ptr = hades::detail::get_game_level_ptr();
 			ptr->destroy_object(e, get_time());
 			return;
 		}
 
 		void sleep_system(object_ref o, time_point t)
 		{
-			auto game_ptr = detail::get_game_data_ptr();
-			auto sys_ptr = detail::get_game_systems_ptr();
+			auto game_ptr = hades::detail::get_game_data_ptr();
+			auto sys_ptr = hades::detail::get_game_systems_ptr();
 			sys_ptr->sleep_entity(o, game_ptr->system, t);
 			return;
 		}
 
 		time_point get_creation_time(object_ref o)
 		{
-			const auto game_data_ptr = detail::get_game_level_ptr();
+			const auto game_data_ptr = hades::detail::get_game_level_ptr();
 			auto& extra = game_data_ptr->get_extras();
 			const auto& state = game_data_ptr->get_state();
 			const auto& obj = state_api::get_object(o, extra);
@@ -156,7 +156,7 @@ namespace hades
 
 		tag_list get_tags(object_ref o)
 		{
-			const auto game_data_ptr = detail::get_game_level_ptr();
+			const auto game_data_ptr = hades::detail::get_game_level_ptr();
 			auto& extra = game_data_ptr->get_extras();
 			const auto& obj = state_api::get_object(o, extra);
 			return resources::object_functions::get_tags(*obj.object_type);
@@ -164,7 +164,7 @@ namespace hades
 
 		bool is_alive(object_ref o) noexcept
 		{
-			auto ptr = detail::get_game_level_ptr();
+			auto ptr = hades::detail::get_game_level_ptr();
 			// NOTE: get_object_ptr returns nullptr for stale object refs
 			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
 		}
@@ -175,10 +175,10 @@ namespace hades
 			return get_property_ref<linear_curve, vec2_float>(o, pos_id);
 		}
 
-		vec2_float get_size(const object_ref o)
+		const vec2_float& get_size(const object_ref o)
 		{
 			const auto id = hades::get_size_curve_id();
-			return get_property_ref<const_curve, vec2_float>(o, id).get();
+			return get_property_ref<const_curve, vec2_float>(o, id);
 		}
 
 		step_curve<unique>& get_player_owner(object_ref o)
@@ -187,10 +187,10 @@ namespace hades
 			return get_property_ref<step_curve, unique>(o, id);
 		}
 
-		unique get_collision_group(object_ref o)
+		const unique& get_collision_group(object_ref o)
 		{
 			const auto id = hades::get_collision_layer_curve_id();
-			return get_property_ref<const_curve, unique>(o, id).get();
+			return get_property_ref<const_curve, unique>(o, id);
 		}
 	}
 
@@ -380,8 +380,8 @@ namespace hades
 	{
 		time_point get_creation_time(object_ref o)
 		{
-			const auto obj = state_api::get_object_ptr(o, *detail::get_render_extra_ptr());
-			return state_api::get_object_creation_time(*obj, detail::get_render_level_ptr()->get_state());
+			const auto obj = state_api::get_object_ptr(o, *hades::detail::get_render_extra_ptr());
+			return state_api::get_object_creation_time(*obj, hades::detail::get_render_level_ptr()->get_state());
 		}
 
 		const hades::linear_curve<vec2_float>& get_position(const object_ref o)
@@ -390,15 +390,15 @@ namespace hades
 			return get_property_ref<hades::linear_curve, vec2_float>(o, id);
 		}
 
-		vec2_float get_size(const object_ref o)
+		const vec2_float& get_size(const object_ref o)
 		{
 			const auto id = hades::get_size_curve_id();
-			return get_property_ref<hades::const_curve, vec2_float>(o, id).get();
+			return get_property_ref<hades::const_curve, vec2_float>(o, id);
 		}
 
 		const resources::animation* get_animation(object_ref& o, unique_id id)
 		{
-			const auto& game_obj = state_api::get_object(o, *detail::get_render_extra_ptr());
+			const auto& game_obj = state_api::get_object(o, *hades::detail::get_render_extra_ptr());
 			return get_animation(*game_obj.object_type, id);
 		}
 	}

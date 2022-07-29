@@ -222,6 +222,11 @@ namespace hades::resources
 		return air_tileset_name;
 	}
 
+	unique_id get_empty_tileset_id() noexcept
+	{
+		return id::empty_tileset;
+	}
+
 	bool operator==(const tile &lhs, const tile &rhs) noexcept
 	{
 		return lhs.left == rhs.left &&

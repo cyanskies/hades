@@ -45,6 +45,7 @@ namespace hades::resources
 	std::string_view get_tilesets_name() noexcept;
 	std::string_view get_tile_settings_name() noexcept;
 	std::string_view get_empty_tileset_name() noexcept;
+	unique_id get_empty_tileset_id() noexcept;
 	
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;

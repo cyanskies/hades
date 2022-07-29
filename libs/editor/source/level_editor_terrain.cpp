@@ -21,6 +21,12 @@ namespace hades
 	level_editor_terrain::level_editor_terrain() :
 		_settings{resources::get_terrain_settings()}
 	{
+		assert(!empty(_settings->empty_tileset.get()->tiles));
+		_empty_tile = _settings->empty_tileset.get()->tiles[0];
+		_empty_terrain = _settings->empty_terrain.get();
+		_empty_terrainset = _settings->empty_terrainset.get();
+		_tile_size = _settings->tile_size;
+
 		//default terrain set
 		const auto terrainset_name = console::get_string(cvars::editor_default_terrainset, cvars::default_value::editor_default_terrainset);
 		if (!empty(terrainset_name->load()))
@@ -111,7 +117,7 @@ namespace hades
 		{
 			map_raw.tile_layer.width = integer_cast<tile_index_t>(size.x);
 			map_raw.tile_layer.tilesets.clear();
-			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_terrain()->id, 0u);
+			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_tileset_id(), 0u);
 
  			map_raw.tile_layer.tiles = std::vector<tile_id_t>(
 				static_cast<std::size_t>(size.x) * static_cast<std::size_t>(size.y),

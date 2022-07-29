@@ -9,6 +9,8 @@
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"
 
+hades::unique_id background_terrain_id = {};
+
 namespace hades::resources
 {
 	static void parse_terrain(unique_id, const data::parser_node&, data::data_manager&);
@@ -30,11 +32,11 @@ namespace hades
 	template<typename Func>
 	static void apply_to_terrain(resources::terrain &t, Func&& func)
 	{
-		//tileset tiles
+		// tileset tiles
 		std::invoke(func, t.tiles);
-
-		for (auto &vector : t.terrain_transition_tiles)
-			std::invoke(func, vector);
+		// terrain tiles
+		std::for_each(begin(t.terrain_transition_tiles), end(t.terrain_transition_tiles), std::forward<Func>(func));
+		return;
 	}
 
 	void register_terrain_resources(data::data_manager &d)
@@ -78,6 +80,22 @@ namespace hades
 		empty_tset->terrains.emplace_back(terrain_settings->empty_terrain);
 
 		terrain_settings->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id, id::terrain_settings);
+
+		// the exact same as empty tile
+		// since its now used as 'air' tiles for higher layers
+		// it can be made unpathable by games, so that unwalkable
+		// background can be visible through the map
+		background_terrain_id = d.get_uid("terrain-background"sv);
+		auto background_terrain = d.find_or_create<resources::terrain>(background_terrain_id, {}, terrains_str);
+		
+		// add empty tiles to all the tile arrays
+		apply_to_terrain(*background_terrain, [background_terrain](std::vector<resources::tile>& v) {
+			v.emplace_back(resources::tile{ {}, 0u, 0u, background_terrain });
+			return;
+		});
+
+		terrain_settings->background_terrain = d.make_resource_link<resources::terrain>(background_terrain_id, id::terrain_settings);
+
 
 		//register tile resources
 		register_tiles_resources(d, func);
@@ -317,7 +335,9 @@ namespace hades
 		m.tile_layer = to_tile_map(r.tile_layer);
 		const auto size = get_size(m.tile_layer);
 
-		const auto empty = resources::get_empty_terrain();
+		const auto settings = resources::get_terrain_settings();
+
+		const auto empty = settings->empty_terrain.get();
 		//if the terrain_vertex isn't present, then fill with empty
 		if (std::empty(r.terrain_vertex))
 			m.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), empty);
@@ -338,7 +358,7 @@ namespace hades
 
 		if (std::empty(r.terrain_layers))
 		{
-			if (m.terrainset == resources::get_empty_terrainset())
+			if (m.terrainset == settings->empty_terrainset.get())
 				m.terrain_layers.emplace_back(m.tile_layer);
 		}
 		else
@@ -600,7 +620,7 @@ namespace hades
 	{
 		auto out = std::vector<tile_position>{};
 
-		for (const auto p : v)
+		for (const auto& p : v)
 		{
 			const auto pos = get_adjacent_tiles(p);
 			out.insert(std::end(out), std::begin(pos), std::end(pos));
@@ -645,7 +665,7 @@ namespace hades
 		assert(std::size(m.terrain_layers) == std::size(m.terrainset->terrains));
 		for (terrain_iter, layer_iter; terrain_iter != end; ++terrain_iter, ++layer_iter)
 		{
-			for (const auto p : positions)
+			for (const auto& p : positions)
 			{
 				//get the terrain corners for this tile
 				const auto corners = get_terrain_at_tile(m, p);
@@ -688,7 +708,7 @@ namespace hades
 	void place_terrain(terrain_map &m, const std::vector<terrain_vertex_position> &positions, const resources::terrain *t)
 	{
 		const auto s = get_vertex_size(m);
-		for (const auto p : positions)
+		for (const auto& p : positions)
 			if (within_map(s, p))
 				place_terrain_internal(m, p, t);
 
@@ -727,7 +747,7 @@ namespace hades::resources
 
 		auto &terr = static_cast<terrainset&>(r);
 
-		for (const auto t : terr.terrains)
+		for (const auto& t : terr.terrains)
 				d.get<terrain>(t->id);
 
 		terr.loaded = true;
@@ -747,10 +767,10 @@ namespace hades::resources
 		if (s.empty_terrain)
 			d.get<terrain>(s.empty_terrain->id);
 
-		for (const auto t : s.terrains)
+		for (const auto& t : s.terrains)
 			d.get<terrain>(t->id);
 
-		for (const auto t : s.terrainsets)
+		for (const auto& t : s.terrainsets)
 			d.get<terrainset>(t->id);
 
 		s.loaded = true;
@@ -758,9 +778,12 @@ namespace hades::resources
 
 	terrain_settings::terrain_settings() : tile_settings{ load_terrain_settings } {}
 
+	// if anyone asks for the 'none' type just give them the empty tile
 	template<class U = std::vector<tile>, class W>
 	U& get_transition(transition_tile_type type, W& t)
 	{
+		// is_const is only false for the functions inside this file
+		// where we want to assert
 		if constexpr (std::is_const_v<U>)
 		{
 			if (type == transition_tile_type::none)
@@ -1048,6 +1071,18 @@ namespace hades::resources
 		const auto settings = get_terrain_settings();
 		assert(settings->empty_terrain);
 		return settings->empty_terrain.get();
+	}
+
+	const terrain* get_background_terrain()
+	{
+		const auto settings = get_terrain_settings();
+		assert(settings->empty_terrain);
+		return settings->background_terrain.get();
+	}
+
+	unique_id get_background_terrain_id() noexcept
+	{
+		return background_terrain_id;
 	}
 
 	const terrainset* get_empty_terrainset()

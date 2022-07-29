@@ -65,13 +65,11 @@ namespace hades
 				std::tuple<
 				plf::colony<state_field<linear_curve<T>>>,
 				plf::colony<state_field<step_curve<T>>>,
-				plf::colony<state_field<pulse_curve<T>>>,
-				plf::colony<state_field<const_curve<T>>>
+				plf::colony<state_field<pulse_curve<T>>>
 				>,
 				std::tuple<
 				plf::colony<state_field<step_curve<T>>>,
-				plf::colony<state_field<pulse_curve<T>>>,
-				plf::colony<state_field<const_curve<T>>>
+				plf::colony<state_field<pulse_curve<T>>>
 				>
 			>;
 
@@ -304,19 +302,29 @@ namespace hades
 		template<typename GameSystem>
 		const game_obj* get_object_ptr(const object_ref&, const extra_state<GameSystem>&) noexcept;
 
+		template<template<typename> typename CurveType, typename T>
+		using get_property_return_t = std::conditional_t<
+			std::is_same_v<CurveType<T>, const_curve<T>>,
+			const T, CurveType<T>>;;
+
 		// NOTE: get_object_property_ref throws object_property_not_found if 
 		//		 the requested variable is not stored in the object.
 		//		 and object_property_wrong_type if the type requested doesn't
 		//		 match the recorded type for that property
 		// CurveType is one of linear, step, pulse, const (see hades/curves.hpp)
 		template<template<typename> typename CurveType, typename T>
-		const CurveType<T>& get_object_property_ref(const game_obj&, variable_id);
+		const get_property_return_t<CurveType, T>&
+			get_object_property_ref(const game_obj&, variable_id);
 		template<template<typename> typename CurveType, typename T>
-		CurveType<T>& get_object_property_ref(game_obj&, variable_id);
+		get_property_return_t<CurveType, T>& 
+			get_object_property_ref(game_obj&, variable_id);
+
 		template<template<typename> typename CurveType, typename T>
-		const CurveType<T>* get_object_property_ptr(const game_obj&, variable_id) noexcept;
+		const get_property_return_t<CurveType, T>*
+			get_object_property_ptr(const game_obj&, variable_id) noexcept;
 		template<template<typename> typename CurveType, typename T>
-		CurveType<T>* get_object_property_ptr(game_obj&, variable_id) noexcept;
+		get_property_return_t<CurveType, T>* 
+			get_object_property_ptr(game_obj&, variable_id) noexcept;
 	}
 }
 

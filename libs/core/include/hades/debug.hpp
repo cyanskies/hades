@@ -35,6 +35,8 @@ namespace hades
 
 			void update(gui&);
 		private:
+			std::vector<std::unique_ptr<basic_overlay>> _new_overlays;
+			std::vector<basic_overlay*> _removal_list;
 			std::vector<std::unique_ptr<basic_overlay>> _overlays;
 		};
 
@@ -78,6 +80,8 @@ namespace hades
 			void update();
 			void draw(time_duration, sf::RenderTarget& target, sf::RenderStates states = sf::RenderStates()) final override;
 		private:
+			std::vector<std::unique_ptr<text_overlay>> _new_overlays;
+			std::vector<text_overlay*> _removal_list;
 			std::vector<std::unique_ptr<text_overlay>> _overlays;
 			const resources::font* _font = nullptr;
 			console::property<types::int32> _char_size;

@@ -581,4 +581,45 @@ namespace hades::state_api
 	{
 		return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}
+
+	template<typename T, typename GameSystem>
+	T& get_level_local_ref(const unique_id id, extra_state<GameSystem>& extras)
+	{
+		auto val = extras.level_locals.try_get<T>(id);
+		if (val) return *val;
+
+		static_assert(std::is_default_constructible_v<T>);
+		try
+		{
+			return extras.level_locals.set<T>(id, {});
+		}
+		catch (const any_map_value_wrong_type& e)
+		{
+			throw level_local_wrong_type{ e.what() };
+		}
+	}
+
+	template<typename T, typename GameSystem>
+	const T& get_level_local_ref(unique_id id, const extra_state<GameSystem>& extra)
+	{
+		try
+		{
+			return extra.level_locals.get_ref<T>(id);
+		}
+		catch (const any_map_key_null& e)
+		{
+			throw level_local_not_found{ e.what() };
+		}
+		catch (const any_map_value_wrong_type& e)
+		{
+			throw level_local_wrong_type{ e.what() };
+		}
+	}
+
+	template<typename T, typename GameSystem>
+	void set_level_local_value(const unique_id id, T value, extra_state<GameSystem>& extras)
+	{
+		extras.level_locals.set(any_map<unique_id>::allow_overwrite, id, std::move(value));
+		return;
+	}
 }

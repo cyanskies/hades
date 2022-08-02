@@ -12,23 +12,31 @@ namespace hades::debug
 {
 	basic_overlay* overlay_manager::create_overlay(std::unique_ptr<basic_overlay> ptr)
 	{
-		return _overlays.emplace_back(std::move(ptr)).get();
+		return _new_overlays.emplace_back(std::move(ptr)).get();
 	}
 
 	basic_overlay* overlay_manager::destroy_overlay(basic_overlay* ptr) noexcept
 	{
-		const auto iter = std::find_if(begin(_overlays), end(_overlays), [ptr](const auto& overlay) {
-			return overlay.get() == ptr;
-		});
-
-		if (iter != end(_overlays))
-			_overlays.erase(iter);
-
+		_removal_list.emplace_back(ptr);
 		return nullptr;
 	}
 
 	void overlay_manager::update(gui& g)
 	{
+		for (auto& ptr : _removal_list)
+		{
+			const auto iter = std::find_if(begin(_overlays), end(_overlays), [ptr](const auto& overlay) {
+				return overlay.get() == ptr;
+				});
+
+			if (iter != end(_overlays))
+				_overlays.erase(iter);
+		}
+		_removal_list.clear();
+
+		std::move(begin(_new_overlays), end(_new_overlays), back_inserter(_overlays));
+		_new_overlays.clear();
+
 		for (auto& elm : _overlays)
 			elm->update(g);
 		return;
@@ -70,21 +78,26 @@ namespace hades::debug
 
 	text_overlay* text_overlay_manager::destroy_overlay(text_overlay* ptr)
 	{
-		const auto loc = std::find_if(_overlays.begin(), _overlays.end(), [ptr](std::unique_ptr<text_overlay>& e) {
-			return ptr == &*e;
-			});
-
-		if (loc != _overlays.end())
-		{
-			_overlays.erase(loc);
-			return nullptr;
-		}
-
-		return ptr;
+		_removal_list.emplace_back(ptr);
+		return nullptr;
 	}
 
 	void text_overlay_manager::update()
 	{
+		for (auto& ptr : _removal_list)
+		{
+			const auto iter = std::find_if(begin(_overlays), end(_overlays), [ptr](const auto& overlay) {
+				return overlay.get() == ptr;
+				});
+
+			if (iter != end(_overlays))
+				_overlays.erase(iter);
+		}
+		_removal_list.clear();
+
+		std::move(begin(_new_overlays), end(_new_overlays), back_inserter(_overlays));
+		_new_overlays.clear();
+
 		_overlay_output.clear();
 		for (auto& o : _overlays)
 		{

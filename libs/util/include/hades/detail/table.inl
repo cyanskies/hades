@@ -17,34 +17,15 @@ namespace hades
 		{
 			return position.y * (size.x + position.x) + position.x;
 		}
-
-		/// @brief call Func on each index in the table t
-		template<typename Table, typename Func>
-		inline void for_each_index(const Table& t, Func&& f)
-		{
-			using size_ty = typename Table::size_type;
-			using index_t = typename Table::index_type;
-			static_assert(std::is_base_of_v<basic_table<typename Table::value_type>, Table>);
-			static_assert(std::is_invocable_v<Func, index_t, typename Table::value_type>);
-			const auto size = t.size();
-			for (size_ty y = 0; y < size.y; ++y)
-				for (size_ty x = 0; x < size.x; ++x)
-					std::invoke(f, index_t{ x, y }, t[{x, y}]);
-			
-			return;
-		}
 	}
 
 	template<typename T>
 	inline table<T>::table(const basic_table<T> &v, const value_type value) : table(v.position(), v.size(), value)
 	{
-		const auto pos = v.position();
 		const auto size = v.size();
-		
-		detail::for_each_index(v, [this](auto index, auto&& value) {
-			set(index, value);
-			return;
-			});
+		const auto end = integer_cast<size_type>(size.x) * integer_cast<size_type>(size.y);
+		for (auto i = size_type{}; i < end; ++i)
+			set(i, v[i]);
 
 		return;
 	}
@@ -66,7 +47,6 @@ namespace hades
 	template<typename Value>
 	typename table<Value>::value_type table<Value>::operator[](const index_type index) const
 	{
-		//const auto size = base_type::size();
 		return _data[_index(index)];
 	}
 

@@ -916,7 +916,7 @@ namespace hades::resources
 		return out;
 	}
 
-	static void parse_terrain_group(const unique_id m, terrain &t, const data::parser_node &p, data::data_manager &d, const tile_size_t tile_size)
+	static void parse_terrain_group(terrain &t, const data::parser_node &p, data::data_manager &d, const tile_size_t tile_size)
 	{
 		// p:
 		//	texture:
@@ -1013,7 +1013,7 @@ namespace hades::resources
 			{
 				const auto terrain_group = terrain_n->get_children();
 				for (const auto &group : terrain_group)
-					parse_terrain_group(m, *terrain, *group, d, tile_size);
+					parse_terrain_group(*terrain, *group, d, tile_size);
 			}
 
 			settings->tilesets.emplace_back(d.make_resource_link<resources::tileset>(id, id::terrain_settings));

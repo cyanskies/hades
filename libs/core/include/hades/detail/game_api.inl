@@ -10,20 +10,15 @@ namespace hades
 	namespace detail
 	{
 		template<typename T, typename GameSystem>
-		T& get_level_local_ref_imp(unique_id id, extra_state<GameSystem>& extras)
+		T& get_level_local_ref_imp(const unique_id id, extra_state<GameSystem>& extras)
 		{
-			auto val = extras.level_locals.try_get<T>(id);
-			if (val) return *val;
-
-			static_assert(std::is_default_constructible_v<T>);
-			return extras.level_locals.set<T>(id, {});
+			return state_api::get_level_local_ref<T>(id, extras);
 		}
 
 		template<typename T, typename GameSystem>
-		void set_level_local_value_imp(unique_id id, T value, extra_state<GameSystem>& extras)
+		void set_level_local_value_imp(const unique_id id, T value, extra_state<GameSystem>& extras)
 		{
-			extras.level_locals.set(id, std::move(value));
-			return;
+			return state_api::set_level_local_value<T>(id, std::move(value), extras);
 		}
 	}
 

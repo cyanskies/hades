@@ -73,6 +73,7 @@ namespace hades
 		unique_id current_system() noexcept;
 		//system data is a data store persisted between frames
 		// it is per-level and is never saved
+		// TODO: move these into the state api
 		template<typename T>
 		T &get_system_data();
 		template<typename T>
@@ -94,10 +95,12 @@ namespace hades
 		// used for level local system data that is needed
 		// by multiple systems
 		// eg. collision trees
+		// exceptions: level_local_wrong_type
 		template<typename T>
 		T& get_level_local_ref(unique_id);
+		// overwrites previous value even if it was a different type
 		template<typename T>
-		void set_level_local_value(unique_id, T value);
+		void set_level_local_value(unique_id, T);
 
 		//==world data==
 		//world bounds in pixels

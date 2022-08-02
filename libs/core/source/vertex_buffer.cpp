@@ -231,6 +231,9 @@ namespace hades
 	{
 		const auto size = std::size(_verts);
 		
+		if (size == 0)
+			return;
+
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
 		auto success = true;

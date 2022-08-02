@@ -262,6 +262,18 @@ namespace hades
 			using game_state_error::game_state_error;
 		};
 
+		class level_local_wrong_type : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
+		};
+
+		class level_local_not_found : public game_state_error
+		{
+		public:
+			using game_state_error::game_state_error;
+		};
+
 		namespace loading
 		{
 			//restores an object from a save file, this can only be called before the game loop starts(during a load)
@@ -325,6 +337,23 @@ namespace hades
 		template<template<typename> typename CurveType, typename T>
 		get_property_return_t<CurveType, T>* 
 			get_object_property_ptr(game_obj&, variable_id) noexcept;
+
+		// level locals
+		// gets or creates a local ref
+		//exception: level_local_wrong_type thrown if a id was already used by
+		//				a value of a different type
+		template<typename T, typename GameSystem>
+		T& get_level_local_ref(unique_id, extra_state<GameSystem>&);
+		//exception: level_local_not_found, level_local_wrong_type
+		template<typename T, typename GameSystem>
+		const T& get_level_local_ref(unique_id, const extra_state<GameSystem>&);
+
+		// sets a game value to the passed value
+		// overwrites the previous value even if the types are different
+		template<typename T, typename GameSystem>
+		void set_level_local_value(unique_id, T, extra_state<GameSystem>&);
+
+		// system data
 	}
 }
 

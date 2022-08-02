@@ -497,32 +497,6 @@ namespace hades::resources::object_functions
 
 		return *iter;
 	}
-
-	void change_default_curve(object& o, const unique_id i, curve_default_value v)
-	{
-		assert(o.loaded);
-		const auto c = data::get<resources::curve>(i);
-		// check object all curves
-		auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
-			return other == c.curve;
-			});
-
-		// check object_curves
-		auto iter2 = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
-			return c->id == curve.curve.id();
-			});
-
-		if (iter == end(o.all_curves) ||
-			iter2 == end(o.curves))
-			throw curve_not_found{ "Requested curve not found on object type: "s
-				+ hades::data::get_as_string(o.id) + ", curve was: "s
-				+ hades::data::get_as_string(c->id) };
-
-		iter2->value = to_unloaded_curve(*c, v);
-		iter->value = std::move(v);
-	
-		return;
-	}
 }
 
 namespace hades
@@ -541,13 +515,9 @@ namespace hades
 
 	using curve_obj = resources::object::curve_obj;
 
-	//TODO: FIXME: many of the functions below are recursive
-	//			they should be changed to be iterative instead
-
 	//returns nullptr if the curve wasn't found
 	//returns the curve with the value unset if it was found but not set
 	//returns the requested curve plus it's value otherwise
-	//TODO: rename with correct naming scheme
 	static curve_obj try_get_curve(const resources::object *o, const hades::resources::curve *c) noexcept
 	{
 		assert(o);

@@ -32,7 +32,13 @@ namespace hades
 		using key_type = Key;
 		
 		template<class T>
-		T& set(Key key, T value);
+		T& set(Key, T);
+
+		struct allow_overwrite_t {};
+		static constexpr allow_overwrite_t allow_overwrite = {};
+
+		template<class T>
+		T& set(allow_overwrite_t, Key, T);
 
 		template<class T>
 		T get(Key key) const;

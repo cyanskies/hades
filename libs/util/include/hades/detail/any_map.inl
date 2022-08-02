@@ -8,8 +8,9 @@ namespace hades
 {
 	template<class Key>
 	template<class T>
-	T& any_map<Key>::set(Key key, T value)
+	T& any_map<Key>::set(const Key key, T value)
 	{
+
 		auto iter = _bag.find(key);
 		if (iter == _bag.end())
 		{
@@ -17,16 +18,34 @@ namespace hades
 			return std::any_cast<T&>(elm);
 		}
 
-		T* elm = std::any_cast<T>(&iter->second);
-		if (elm == nullptr)
+		try
+		{
+			auto& elm = std::any_cast<T&>(iter->second);
+			elm = std::move(value);
+			return elm;
+		}
+		catch (std::bad_any_cast&)
 		{
 			using namespace std::string_literals;
 			throw any_map_value_wrong_type("Passed wrong type for this key to any_map, provided: "s
 				+ typeid(T).name() + ", expected: "s + iter->second.type().name());
 		}
+	}
 
-		*elm = std::move(value);
-		return *elm;
+	template<class Key>
+	template<class T>
+	T& any_map<Key>::set(const allow_overwrite_t, const Key key, T value)
+	{
+		if (auto iter = _bag.find(key); 
+			iter == _bag.end())
+		{
+			auto& elm = _bag.emplace(key, std::make_any<T>(std::move(value))).first->second;
+			return std::any_cast<T&>(elm);
+		}
+		else
+		{
+			return iter->second.emplace<T>(std::move(value));
+		}
 	}
 
 	namespace detail
@@ -39,12 +58,15 @@ namespace hades
 			if (iter == map.end())
 				throw any_map_key_null("Tried to retrieve unassigned key.");
 
-			auto ret = std::any_cast<T>(&iter->second);
-			if (ret)
-				return *ret;
-
-			throw any_map_value_wrong_type("Tried to retrieve value from any_map using wrong type. requested: "s
-				+ typeid(T).name() + ", stored type was: "s + iter->second.type().name());
+			try
+			{
+				return std::any_cast<T&>(iter->second);
+			}
+			catch (const std::bad_any_cast&)
+			{
+				throw any_map_value_wrong_type("Tried to retrieve value from any_map using wrong type. requested: "s
+					+ typeid(T).name() + ", stored type was: "s + iter->second.type().name());
+			}
 		}
 
 		template<typename T, typename Key, typename Map>

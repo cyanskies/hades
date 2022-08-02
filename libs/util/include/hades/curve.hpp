@@ -237,7 +237,6 @@ namespace hades
 	template<typename T>
 	using pulse_keyframe = typename pulse_curve<T>::pulse_keyframe;
 
-	//TODO: tempted to rename this to static_curve
 	template<typename T>
 	class const_curve
 	{

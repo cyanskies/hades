@@ -5,10 +5,32 @@
 
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
-#include "Hades/game_types.hpp"
+#include "hades/exceptions.hpp"
+#include "hades/game_types.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/vector_math.hpp"
 #include "hades/writer.hpp"
+
+namespace hades
+{
+	class object_error : public runtime_error
+	{
+	public :
+		using runtime_error::runtime_error;
+	};
+
+	class curve_not_found : public object_error
+	{
+	public:
+		using object_error::object_error;
+	};
+
+	class curve_already_present : public object_error
+	{
+	public:
+		using object_error::object_error;
+	};
+}
 
 namespace hades::resources
 {
@@ -85,17 +107,20 @@ namespace hades::resources::object_functions
 	const tag_list& get_tags(const object& o) noexcept;
 
 	// modifying curves
-	// NOTE: add_curve will throw 
+	// add curve to object, overriding inherited values
+	// or update the default value for this curve.
 	void add_curve(object&, unique_id, curve_default_value);
 	bool has_curve(const object& o, const curve& c) noexcept;
 	bool has_curve(const object& o, unique_id) noexcept;
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
-	// this will just reset the curve to its inherited value if one of its bases still has the curve
+	// remove curve will just reset the curve to its inherited value if one of its bases still has the curve
+	// exceptions: curve_not_found
 	void remove_curve(object&, unique_id);
-	// TODO: these functions should return ptrs, to indicate that they're safe to store
+	
+	// exceptions: curve_not_found
 	curve_default_value get_curve(const object& o, const curve& c);
+	// exceptions: curve_not_found
 	const object::curve_obj& get_curve(const object& o, unique_id);
-	void change_default_curve(object&, const unique_id, curve_default_value);
 }
 
 namespace hades
@@ -138,19 +163,6 @@ namespace hades
 		};
 
 		std::vector<saved_curve> curves;
-	};
-
-	// TODO: these shouldn't be std errors
-	class curve_not_found : public std::runtime_error
-	{
-	public:
-		using std::runtime_error::runtime_error;
-	};
-
-	class curve_already_present : public std::runtime_error
-	{
-	public:
-		using std::runtime_error::runtime_error;
 	};
 
 	object_instance make_instance(const resources::object*) noexcept;

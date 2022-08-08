@@ -12,8 +12,6 @@
 #include "hades/types.hpp"
 #include "hades/system.hpp"
 
-//TODO: replace mutex with spinlock and recheck all the mutex usage
-
 //Console is a unique engine object for holding game wide properties
 //it also exposes dev commands
 //it also provides logging functionality
@@ -97,6 +95,7 @@ namespace hades
 
 		ConsoleStringBuffer get_new_output() override;
 		ConsoleStringBuffer get_output() override;
+		ConsoleStringBuffer steal_output() noexcept override;
 
 	private:
 		//returns false if var was not found; true if out contains the requested value

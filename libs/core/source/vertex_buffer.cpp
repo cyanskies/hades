@@ -7,102 +7,8 @@
 
 using namespace std::string_literals;
 
-static bool buffer_available() noexcept
-{
-	static const auto avail = sf::VertexBuffer::isAvailable();
-	return avail;
-}
-
 namespace hades
 {
-	vertex_buffer::vertex_buffer()
-	{
-		if (sf::VertexBuffer::isAvailable())
-			_verts.emplace<sf::VertexBuffer>();
-	}
-
-	vertex_buffer::vertex_buffer(sf::PrimitiveType t)
-	{
-		if (sf::VertexBuffer::isAvailable())
-			_verts.emplace<sf::VertexBuffer>(t);
-		else
-			_verts.emplace<vert_array>(vert_array{ {}, t });
-	}
-
-	vertex_buffer::vertex_buffer(sf::VertexBuffer::Usage u)
-	{
-		if (sf::VertexBuffer::isAvailable())
-			_verts.emplace<sf::VertexBuffer>(u);
-	}
-
-	vertex_buffer::vertex_buffer(sf::PrimitiveType t, sf::VertexBuffer::Usage u)
-	{
-		if (sf::VertexBuffer::isAvailable())
-			_verts.emplace<sf::VertexBuffer>(t, u);
-		else
-			_verts.emplace<vert_array>(vert_array{ {}, t });
-	}
-
-	void vertex_buffer::set_type(sf::PrimitiveType t)
-	{
-		std::visit([t](auto &&v) {
-			v.setPrimitiveType(t);
-		}, _verts);
-	}
-
-	void vertex_buffer::set_usage(sf::VertexBuffer::Usage u)
-	{
-		std::visit([u](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-			if constexpr (std::is_same_v<T, sf::VertexBuffer>)
-				v.setUsage(u);
-		}, _verts);
-	}
-
-	void vertex_buffer::set_verts(const std::vector<sf::Vertex> &vertex)
-	{
-		std::visit([&vertex](auto &&v) {
-			using T = std::decay_t<decltype(v)>;
-			const auto count = v.getVertexCount();
-			const auto vertex_count = vertex.size();
-			if constexpr (std::is_same_v<T, sf::VertexBuffer>)
-			{
-				auto success = true;
-				if (count <= vertex_count && count != 0)
-					success = v.update(std::data(vertex), vertex_count, 0u);
-				else
-				{
-					auto sb = std::stringbuf{};
-					const auto prev = sf::err().rdbuf(&sb);
-					if (v.create(vertex_count))
-						success = v.update(vertex.data());
-					else
-						LOGERROR("Unable to create vertex buffer. "s + sb.str());
-					sf::err().set_rdbuf(prev);
-				}
-
-				if (!success)
-					LOGWARNING("Failed to update vertex buffer.");
-			}
-			else // VertexArray
-			{
-				v.vertex = vertex;
-			}
-		}, _verts);
-	}
-
-	void vertex_buffer::draw(sf::RenderTarget &t, const sf::RenderStates& s) const
-	{
-		std::visit([&t, &s](auto &&v) {
-			if constexpr (std::is_same_v<std::decay_t<decltype(v)>, sf::VertexBuffer>)
-			{
-				t.draw(v, s);
-			}
-			else
-				t.draw(v.vertex.data(), v.getVertexCount(), v.primative, s);
-		}, _verts);
-	}
-
 	quad_buffer::quad_buffer(sf::VertexBuffer::Usage u) noexcept : _buffer{_prim_type, u}
 	{
 		return;
@@ -287,10 +193,7 @@ namespace hades
 	
 	void quad_buffer::draw(sf::RenderTarget& t, const sf::RenderStates& s) const
 	{
-		if (buffer_available())
-			t.draw(_buffer, std::size_t{}, std::size(_verts), s);
-		else
-			t.draw(_verts.data(), std::size(_verts), _prim_type, s);
+		t.draw(_verts.data(), std::size(_verts), _prim_type, s);
 		return;
 	}
 }

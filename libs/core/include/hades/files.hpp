@@ -161,6 +161,9 @@ namespace hades::files
 	//as above, calls UserConfigDir instead
 	void write_config(std::string_view);
 
+	// uncompressed stream to a file in UserCustomFileDirectory
+	std::ofstream output_file_stream(const std::filesystem::path& path);
+
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path);
 }
 

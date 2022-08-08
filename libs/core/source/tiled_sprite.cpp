@@ -60,7 +60,7 @@ namespace hades
 		s.texture = &resources::texture_functions::get_sf_texture(tex);
 		s.transform *= getTransform();
 
-		t.draw(_vert_buffer, s);
+		t.draw(_quad_buffer, s);
 	}
 
 	void tiled_sprite::_generate_buffer()
@@ -88,9 +88,9 @@ namespace hades
 		const auto tex_pos = vector_float{ _frame.x, _frame.y };
 		const auto tex_size = vector_float{ _frame.w, _frame.h };
 
-		std::vector<sf::Vertex> vertex{};
-		vertex.reserve(vertex_x * vertex_y);
-
+		_quad_buffer.clear();
+		_quad_buffer.reserve(integer_cast<std::size_t>(vertex_x) * vertex_y);
+		
 		for (auto y = 0u; y <= vertex_y; ++y)
 		{
 			for (auto x = 0u; x <= vertex_x; ++x)
@@ -105,10 +105,11 @@ namespace hades
 					size.y *= y_part;
 
 				const auto quad = make_quad_animation({ position, size }, { tex_pos, size });
-				vertex.insert(std::end(vertex), std::begin(quad), std::end(quad));
+				_quad_buffer.append(quad);
 			}
 		}
 
-		_vert_buffer.set_verts(vertex);
+		_quad_buffer.apply();
+		return;
 	}
 }

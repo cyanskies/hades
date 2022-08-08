@@ -9,6 +9,7 @@
 #include "SFML/Window/Event.hpp"
 #include "SFML/Window/VideoMode.hpp"
 
+#include "hades/capabilities.hpp"
 #include "hades/console_variables.hpp"
 #include "hades/core_resources.hpp"
 #include "hades/data.hpp"
@@ -133,6 +134,8 @@ namespace hades
 		constexpr auto hades_version_major = 0,
 			hades_version_minor = 1,
 			hades_version_patch = 0;
+
+		test_capabilities();
 
 		//create a hidden window early to let us start making textures without
 		//creating GL errors
@@ -365,11 +368,13 @@ namespace hades
 			const auto float_draw_time = time_cast<milliseconds_float>(game_loop_metrics.draw_duration);
 			frame_draw_time->store(float_draw_time.count());
 
+			#ifndef NDEBUG
 			//check for floating point exceptions
 			assert_floating_point_exceptions();
+			#endif
 		}
 
-		return EXIT_SUCCESS;
+		std::quick_exit(EXIT_SUCCESS);
 	}
 
 	void App::cleanUp()
@@ -397,7 +402,10 @@ namespace hades
 			bool handled = false;
 			//window events
 			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
+			{
+				std::quick_exit(EXIT_SUCCESS);
 				_window.close();
+			}
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
 			{
@@ -441,7 +449,7 @@ namespace hades
 		//general functions
 		{
 			auto exit = [this]()->bool {
-				_window.close();
+				std::quick_exit(EXIT_SUCCESS);
 				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
@@ -612,7 +620,7 @@ namespace hades
 
 			_console.add_function("compress"sv, compress_dir, true);
 
-			auto uncompress_dir = [](const argument_list &args)->bool
+			auto uncompress_dir = [](const argument_list &args)
 			{
 				if (args.size() != 1)
 					throw invalid_argument("Uncompress function expects one argument"s);
@@ -621,16 +629,16 @@ namespace hades
 
 				//run uncompress func in a seperate thread to spare the UI
 				std::thread t([path]() {
-					try {
+					try 
+					{
 						zip::uncompress_archive(to_string(path));
-						return true;
 					}
 					catch (files::file_error &e)
 					{
 						LOGERROR(e.what());
 					}
 
-					return false;
+					return;
 				});
 
 				t.detach();

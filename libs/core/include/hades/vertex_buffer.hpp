@@ -13,52 +13,10 @@
 
 namespace hades
 {
-	//vertex buffer class, with fallback to array if the buffer is not available
-
-	class vertex_buffer : public sf::Drawable
-	{
-	public:
-		vertex_buffer();
-		vertex_buffer(sf::PrimitiveType);
-		vertex_buffer(sf::VertexBuffer::Usage);
-		vertex_buffer(sf::PrimitiveType, sf::VertexBuffer::Usage);
-
-		vertex_buffer(const vertex_buffer&) = default;
-		vertex_buffer &operator=(const vertex_buffer&) = default;
-
-		~vertex_buffer() noexcept = default;
-
-		void set_type(sf::PrimitiveType);
-		void set_usage(sf::VertexBuffer::Usage);
-		void set_verts(const std::vector<sf::Vertex>&);
-
-		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
-
-	private:
-		struct vert_array
-		{
-			std::vector<sf::Vertex> vertex;
-			sf::PrimitiveType primative = sf::PrimitiveType::Points;
-
-			std::size_t getVertexCount() const noexcept
-			{
-				return size(vertex);
-			}
-
-			void setPrimitiveType(sf::PrimitiveType p) noexcept
-			{
-				primative = p;
-				return;
-			}
-		};
-
-		std::variant<vert_array, sf::VertexBuffer> _verts;
-	};
-
 	class quad_buffer : public sf::Drawable
 	{
 	public:
-		quad_buffer() = default;
+		quad_buffer() noexcept = default;
 		quad_buffer(sf::VertexBuffer::Usage) noexcept;
 
 		quad_buffer(const quad_buffer&);

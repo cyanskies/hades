@@ -6,6 +6,8 @@
 #include "Hades/App.hpp"
 #include "Hades/archive.hpp"
 #include "Hades/Console.hpp"
+#include "hades/files.hpp"
+#include "hades/logging.hpp"
 #include "Hades/Main.hpp"
 #include "Hades/Types.hpp"
 
@@ -68,19 +70,30 @@ int hades_main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
+	// we handled and ran a proccess in main, so don't start the normal app
 	if (commands.size() != command_length)
 		return EXIT_SUCCESS;
 
-	int returnCode = EXIT_FAILURE;
-	{
-		hades::App app;
+	auto app = hades::App{};
 
-		app.init();
-		app.postInit(commands);
-		returnCode = app.run();
+	app.init();
 
-		app.cleanUp();
-	}
+	std::at_quick_exit([] {
+		//write log to file
+		#ifdef NDEBUG
+		auto logfile = hades::files::output_file_stream(std::filesystem::path{ hades::date() + ".txt" });
+		#else
+		auto logfile = std::ofstream(std::filesystem::path{ hades::date() + ".txt" }, std::ios_base::app);
+		#endif
+		assert(logfile.is_open());
+		const auto log = hades::console::steal_output();
+		for (const auto& str : log)
+			logfile << static_cast<std::string>(str) << '\n';
+		return;
+		});
 
-	return returnCode;
+	app.postInit(commands);
+	app.run();
+
+	return EXIT_SUCCESS;
 }

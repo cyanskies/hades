@@ -83,9 +83,17 @@ namespace hades
 
 			return console::output_buffer{};
 		}
+
+		console::output_buffer steal_output() noexcept
+		{
+			if (log)
+				return log->steal_output();
+
+			return console::output_buffer{};
+		}
 	}
 
-	string time()
+	static string time_to_string(const char* fmt)
 	{
 		const auto t = wall_clock::now();
 		const auto ct = wall_clock::to_time_t(t);
@@ -93,14 +101,25 @@ namespace hades
 		//for better threading security
 		tm time;
 		#if defined(__STDC_LIB_EXT1__) || defined(__STDC_SECURE_LIB__)
-			localtime_s(&time, &ct);
+		localtime_s(&time, &ct);
 		#else
-			//updated c version unavailable, have to suffer with the C99 version
-			time = *localtime(&ct);
+		//updated c version unavailable, have to suffer with the C99 version
+		time = *localtime(&ct);
 		#endif
+
 		//use stream to collect formatted time
 		std::stringstream ss;
-		ss << std::put_time(&time, "%T");
+		ss << std::put_time(&time, fmt);
 		return ss.str();
+	}
+
+	string date()
+	{
+		return time_to_string("%Y%m%d");
+	}
+
+	string time()
+	{
+		return time_to_string("%T");
 	}
 }//hades

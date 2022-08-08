@@ -385,24 +385,26 @@ namespace hades
 		ConsoleStringBuffer out(iter, TextBuffer.end());
 
 		recentOutputPos = TextBuffer.size();
-		/*out.remove_if([maxVerbosity](auto& s) {
-			return s.verbosity() > maxVerbosity;
-			});*/
-
+		
 		return out;
 	}
 
 	ConsoleStringBuffer Console::get_output()
 	{
 		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
-		ConsoleStringBuffer out(TextBuffer.begin(), TextBuffer.end());
-
+		auto out = TextBuffer;
 		recentOutputPos = TextBuffer.size();
 
-		/*out.remove_if([maxVerbosity](auto& s) {
-			return s.verbosity() > maxVerbosity;
-			});*/
+		return out;
+	}
 
+	ConsoleStringBuffer Console::steal_output() noexcept
+	{
+		auto out = ConsoleStringBuffer{};
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+		out = std::move(TextBuffer);
+		TextBuffer = {};
+		recentOutputPos = {};
 		return out;
 	}
 

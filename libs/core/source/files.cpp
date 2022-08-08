@@ -412,6 +412,26 @@ namespace hades::files
 			LOGERROR("Failed to open file for writing: " + p.generic_string());
 	}
 
+	std::ofstream output_file_stream(const std::filesystem::path& path)
+	{
+		const auto p = user_custom_file_directory() / path;
+
+		if (!p.has_filename())
+		{
+			const auto message = "unable to write file, path didn't include a filename; path was: " + p.generic_string();
+			throw file_error{ message };
+		}
+
+		const auto parent = p.parent_path();
+		if (!make_directory(parent))
+		{
+			const auto message = "No write permission for directory or unable to create directory; was: " + parent.generic_string();
+			throw file_error{ message };
+		}
+
+		return std::ofstream{ p, std::ios::app };
+	}
+
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path)
 	{
 		std::vector<types::string> output;

@@ -41,7 +41,7 @@ namespace hades
 		void _generate_buffer();
 
 		const resources::animation* _animation{ nullptr };
-		vertex_buffer _vert_buffer{ sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Dynamic };
+		quad_buffer _quad_buffer{ sf::VertexBuffer::Usage::Dynamic };
 		resources::animation_frame _frame;
 		vector_float _size{};
 	};

@@ -1,7 +1,9 @@
 include(../cmake.txt)
 
 set(HADES_APP_SRC
+	source/capabilities.cpp
 	source/debug/console_overlay.cpp
+	include/hades/capabilities.hpp
 	include/hades/debug/console_overlay.hpp
 )
 

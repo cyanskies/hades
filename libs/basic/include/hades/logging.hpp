@@ -29,6 +29,8 @@ namespace hades
 
 			virtual output_buffer get_new_output() = 0;
 			virtual output_buffer get_output() = 0;
+			// The logging record will be emptied after calling steal
+			virtual output_buffer steal_output() noexcept = 0;
 		};
 
 		class string
@@ -63,8 +65,10 @@ namespace hades
 
 		console::output_buffer new_output();
 		console::output_buffer output();
+		console::output_buffer steal_output() noexcept;
 	}
 
+	string date();
 	string time();
 
 	/* Need a standard way to get line number and filename without macros

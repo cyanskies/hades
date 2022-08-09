@@ -1,5 +1,5 @@
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+#version 3.12 needed for CXX_STANDARD 20 settings
+cmake_minimum_required(VERSION 3.12)
 
 function(hades_make_common ARG_NAME)
 	# Specify default build type if none provided (before project() command)
@@ -20,8 +20,8 @@ function(hades_make_common ARG_NAME)
 	project(${ARG_NAME})
 
 	# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-	set(CMAKE_CXX_STANDARD 17 PARENT_SCOPE)
-	set(CMAKE_CXX_STANDARD_REQUIRED ON PARENT_SCOPE) #we use variant
+	set(CMAKE_CXX_STANDARD 20 PARENT_SCOPE)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON PARENT_SCOPE)
 	set(CMAKE_CXX_EXTENSIONS OFF PARENT_SCOPE)
 
 	#make visual studio debug the desired project by default

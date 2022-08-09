@@ -10,9 +10,10 @@
 //same as the standard compiant LIB_EXT1 but with a different name
 #define __STDC_WANT_SECURE_LIB__ 1
 #define __STDC_WANT_LIB_EXT1__ 1
-#include <time.h>
+#include <ctime>
 
 #include "hades/time.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -38,11 +39,11 @@ namespace hades
 		const auto brace2 = "]"s;
 		const auto verb = to_string(_verb);
 		const auto line = to_string(_line);
-		const auto elems = std::array{ &brace, &verb, &colon, &_time, &colon,
+		const auto elems = std::array{ &brace, &verb, &colon, &brace, &_time, &brace2, &colon,
 			&_file, &colon, &_function, &colon, &line, &brace2,	&_message };
 
 		auto out = types::string{};
-		out.reserve(/*seperators*/6 + size(verb) + size(line)
+		out.reserve(/*seperators*/8 + size(verb) + size(line)
 			+ size(_time) + size(_file) + size(_function) + size(_message));
 
 		for (const auto s : elems)
@@ -66,6 +67,12 @@ namespace hades
 				else
 					std::cerr << val.text();
 			}
+		}
+
+		void echo(hades::string str, logger::log_verbosity verb, std::source_location loc)
+		{
+			echo(string{ std::move(str), hades::integer_clamp_cast<int>(loc.line()), loc.function_name(), loc.file_name(), hades::time(), verb});
+			return;
 		}
 
 		console::output_buffer new_output()

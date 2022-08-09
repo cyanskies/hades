@@ -37,9 +37,7 @@ namespace hades
 		gui _gui;
 
 		hades::data::resource_inspector _inspector;
-
 		sf::RectangleShape _backdrop;
-
 		data::data_manager *d;
 	};
 

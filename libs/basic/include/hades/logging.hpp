@@ -1,6 +1,7 @@
 #ifndef HADES_LOGGING_HPP
 #define HADES_LOGGING_HPP
 
+#include <source_location>
 #include <vector>
 
 #include "hades/string.hpp"
@@ -62,6 +63,7 @@ namespace hades
 		extern logger *log;
 
 		void echo(string);
+		void echo(hades::string str, logger::log_verbosity verb, std::source_location loc);
 
 		console::output_buffer new_output();
 		console::output_buffer output();
@@ -71,55 +73,70 @@ namespace hades
 	string date();
 	string time();
 
-	/* Need a standard way to get line number and filename without macros
-	Waiting for std::source_location
-	void log();
-	void log_warning();
-	void log_error();
-	*/
+	template<string_type String>
+	void log(String msg, std::source_location loc = std::source_location::current())
+	{
+		if constexpr (std::is_same_v<string, String>)
+			console::echo(std::move(msg), console::logger::log_verbosity::log, loc);
+		else
+			console::echo(to_string(msg), console::logger::log_verbosity::log, loc);
+		return;
+	}
+
+	template<string_type String>
+	void log_warning(String msg, std::source_location loc = std::source_location::current())
+	{
+		if constexpr (std::is_same_v<string, String>)
+			console::echo(std::move(msg), console::logger::log_verbosity::warning, loc);
+		else
+			console::echo(to_string(msg), console::logger::log_verbosity::warning, loc);
+		return;
+	}
+
+	template<string_type String>
+	void log_error(String msg, std::source_location loc = std::source_location::current())
+	{
+		if constexpr (std::is_same_v<string, String>)
+			console::echo(std::move(msg), console::logger::log_verbosity::error, loc);
+		else
+			console::echo(to_string(msg), console::logger::log_verbosity::error, loc); 
+		return;
+	}
+
+	template<string_type String>
+	void log_debug(String msg, std::source_location loc = std::source_location::current())
+	{
+		if constexpr (std::is_same_v<string, String>)
+			console::echo(std::move(msg), console::logger::log_verbosity::debug, loc);
+		else
+			console::echo(to_string(msg), console::logger::log_verbosity::debug, loc); 
+		return;
+	}
 }//hades
 
 
+// deprecated: use the log_* functions above
 //logging macros, 
 //these use the global console ptr, 
 //they can be used to easily log with timestamps and function names/line numbers
-
-#define HADESLOG(Message_, Verbosity_)					\
-		hades::console::echo(hades::console::string(	\
-			Message_,									\
-			__LINE__,									\
-			__func__,									\
-			__FILE__,									\
-			hades::time(),								\
-			Verbosity_									\
-	))													\
-
 //Standard information log, for requst responses 
 //or inforamtional messages
-#define LOG(Message_)									\
-	HADESLOG(Message_,									\
-		hades::console::logger::log_verbosity::normal	\
-	)
+#define LOG(Message_)			\
+	hades::log(Message_)
 
 //Error log, indicates that a requested
 //action failed to complete
-#define LOGERROR(Message_)								\
-	HADESLOG(Message_,									\
-		hades::console::logger::log_verbosity::error	\
-	)
+#define LOGERROR(Message_)		\
+	hades::log_error(Message_)
 
 //Warning log, for incorrect behaviour, any error which
 //recovers becomes a warning, represents correctness and
 //performace problems
-#define LOGWARNING(Message_)							\
-	HADESLOG(Message_,									\
-		hades::console::logger::log_verbosity::warning	\
-	)
+#define LOGWARNING(Message_)	\
+	hades::log_warning(Message_)
 
 //Debug log, like the normal log, but with an annoying amount of detail
-#define LOGDEBUG(Message_)								\
-	HADESLOG(Message_,									\
-		hades::console::logger::log_verbosity::debug	\
-	)
+#define LOGDEBUG(Message_)		\
+	hades::log_debug(Message_)
 
 #endif //HADES_LOGGING_HPP

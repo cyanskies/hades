@@ -11,7 +11,7 @@
 
 namespace hades {
 	template<typename T>
-	struct lerpable : public std::bool_constant<std::is_floating_point_v<T>> {};
+	struct lerpable : public std::is_floating_point<T> {};
 
 	template<typename T>
 	constexpr auto lerpable_v = lerpable<T>::value;

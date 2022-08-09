@@ -22,8 +22,8 @@ add_subdirectory(plf_colony)
 #cmake for imgui
 #########################
 
-#version 3.10 needed for CXX_STANDARD settings
-cmake_minimum_required(VERSION 3.10)
+#version 3.12 needed for CXX_STANDARD settings
+cmake_minimum_required(VERSION 3.12)
 
 # Specify default build type if none provided (before project() command)
 if(NOT CMAKE_BUILD_TYPE)
@@ -39,7 +39,7 @@ endif()
 project(imgui)
 
 # https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
 set(CMAKE_CXX_EXTENSIONS OFF)
 

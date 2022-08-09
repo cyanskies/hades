@@ -20,10 +20,14 @@ namespace hades
 	template<typename T>
 	constexpr bool is_string_v = is_string<T>::value;
 
+	template<typename T>
+	concept string_type = is_string<T>::value;
 	// These are the types that we consider 'string' types
 	//	static_assert(is_string_v<std::string>);
 	//	static_assert(is_string_v<const char*>);
 	//	static_assert(is_string_v<std::string_view>);
+	//
+	// basically anything that can be converted to string_view
 
 	//pass a back_inserter to result
 	template<typename Out>

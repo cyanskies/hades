@@ -16,17 +16,9 @@ namespace hades {
 	template<typename T>
 	constexpr auto lerpable_v = lerpable<T>::value;
 
-	template<typename Float,
-		typename std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-		constexpr Float lerp(Float a, Float b, Float t) noexcept;
-
-	//NOTE: define provided to allow compilation of path that will never be called
-	template<typename T,
-		typename std::enable_if_t<!lerpable_v<T>, int> = 0>
-		T lerp(T, T, float)
-	{
-		throw std::logic_error{ "called lerp with a non-arithmetic type" };
-	}
+	template<typename Float>
+		requires std::floating_point<Float>
+	constexpr Float lerp(Float a, Float b, Float t) noexcept;
 
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
 	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;
@@ -190,9 +182,8 @@ namespace hades {
 	// constexpr auto& n = func_ref<string(int)>(to_string);
 	// eg. auto deduce function type
 	// constexpr auto& g = func_ref(vector_from_string<std::vector<int>>);
-	// TODO: cpp20 consteval
 	template<typename Func, std::enable_if_t<std::is_function_v<Func>, int> = 0>
-	constexpr const Func &func_ref(const Func &func)
+	consteval const Func &func_ref(const Func &func)
 	{
 		return func;
 	}

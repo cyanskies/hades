@@ -73,9 +73,10 @@ namespace hades
 	static_assert(std::is_trivial_v<vector_t<int32>>);
 
 	template<typename T>
-	struct lerpable<vector_t<T>> : public std::bool_constant<lerpable_v<T>> {};
+	struct lerpable<vector_t<T>> : public lerpable<T> {};
 
-	template<typename Float, typename std::enable_if_t<lerpable_v<vector_t<Float>>, int> = 0>
+	template<typename Float>
+		requires std::floating_point<Float>
 	constexpr vector_t<Float> lerp(vector_t<Float> a, vector_t<Float> b, Float t) noexcept
 	{
 		return {

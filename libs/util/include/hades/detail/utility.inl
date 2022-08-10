@@ -6,10 +6,14 @@
 
 namespace hades
 {
-	template<typename Float,
-		typename std::enable_if_t<std::is_floating_point_v<Float>, int>>
-		constexpr Float lerp(Float a, Float b, Float t) noexcept
+	template<typename Float>
+		requires std::floating_point<Float>
+	constexpr Float lerp(Float a, Float b, Float t) noexcept
 	{
+		#ifdef __cpp_lib_interpolate
+		return std::lerp(a, b, t);
+		#else
+		//pre-cpp20 implementation
 		//algorithm recommended for consistancy in P0811R2 : https://wg21.link/p0811r2
 		if (a <= 0 && b >= 0 ||
 			a >= 0 && b <= 0)
@@ -19,6 +23,7 @@ namespace hades
 
 		const auto x = a + t * (b - a);
 		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
+		#endif
 	}
 
 	//based on logic from

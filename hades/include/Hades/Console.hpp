@@ -16,9 +16,6 @@
 //it also exposes dev commands
 //it also provides logging functionality
 
-// =========
-// Type Base
-// =========
 namespace hades
 {
 	namespace detail
@@ -95,6 +92,7 @@ namespace hades
 
 		ConsoleStringBuffer get_new_output() override;
 		ConsoleStringBuffer get_output() override;
+		ConsoleStringBuffer copy_output() override;
 		ConsoleStringBuffer steal_output() noexcept override;
 
 	private:

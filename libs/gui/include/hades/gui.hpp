@@ -164,12 +164,10 @@ namespace hades
 			appearing = ImGuiCond_::ImGuiCond_Appearing // first recent use
 		};
 
-		void set_next_window_size(const vector2& size, set_condition_enum = set_condition_enum::always);
-
 		//window manipulation
 		//TODO: some funcs are missing
 		void next_window_position(vector2);
-		void next_window_size(vector2);
+		void next_window_size(vector2, set_condition_enum = set_condition_enum::always);
 
 		// TODO: window scrolling
 		//		some funcs missing

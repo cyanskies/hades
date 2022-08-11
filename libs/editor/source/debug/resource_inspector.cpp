@@ -206,7 +206,7 @@ namespace hades::data
 				g.checkbox("Play animation"sv, _play);
 				if (_play)
 					g.begin_disabled();
-				g.slider_int("Frame"s, _current_frame, 0, size(_anim_frames) - 1, gui::slider_flags::no_input);
+				g.slider_int("Frame"s, _current_frame, 0, integer_cast<int>(size(_anim_frames) - 1), gui::slider_flags::no_input);
 				if (_play)
 					g.end_disabled();
 				if (g.child_window_begin("##anim-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))

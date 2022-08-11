@@ -307,23 +307,17 @@ namespace hades
 		return { size.x, size.y };
 	}
 
-	void gui::set_next_window_size(const vector2& size, set_condition_enum e)
-	{
-		_active_assert();
-		ImGui::SetNextWindowSize({ size.x, size.y }, enum_type(e));
-	}
-
-
 	void gui::next_window_position(vector2 p)
 	{
 		_active_assert();
 		ImGui::SetNextWindowPos({ p.x, p.y });
 	}
 
-	void gui::next_window_size(vector2 s)
+	void gui::next_window_size(vector2 s, set_condition_enum cond)
 	{
 		_active_assert();
-		ImGui::SetNextWindowSize({ s.x, s.y });
+		ImGui::SetNextWindowSize({ s.x, s.y }, enum_type(cond));
+		return;
 	}
 
 	float gui::get_scroll_x() const

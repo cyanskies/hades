@@ -30,6 +30,7 @@ namespace hades
 
 			virtual output_buffer get_new_output() = 0;
 			virtual output_buffer get_output() = 0;
+			virtual output_buffer copy_output() = 0;
 			// The logging record will be emptied after calling steal
 			virtual output_buffer steal_output() noexcept = 0;
 		};
@@ -67,6 +68,8 @@ namespace hades
 
 		console::output_buffer new_output();
 		console::output_buffer output();
+		// same as output(); but doesn't update the new output mark
+		console::output_buffer copy_output();
 		console::output_buffer steal_output() noexcept;
 	}
 

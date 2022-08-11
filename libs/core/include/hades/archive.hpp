@@ -43,7 +43,18 @@ namespace hades::files
 
 namespace hades::zip
 {
-	using unarchive = void*;
+	struct unarchive
+	{
+		string path;
+		void* handle = {};
+	};
+
+	struct toarchive
+	{
+		string path;
+		void* handle = {};
+	};
+
 	struct z_stream;
 
 	class archive_error : public files::file_error
@@ -77,7 +88,14 @@ namespace hades::zip
 		using off_type = stream_t::traits_type::off_type;
 
 		iafstream() noexcept = default;
-		explicit iafstream(const std::filesystem::path&);
+
+		// throws files::file_not_found and archive_error
+		explicit iafstream(const std::filesystem::path& p)
+		{
+			open(p);
+			return;
+		}
+
 		iafstream(const std::filesystem::path& archive, const std::filesystem::path& file);
 
 		iafstream(const iafstream&) = delete;
@@ -88,6 +106,7 @@ namespace hades::zip
 
 		~iafstream() noexcept;
 
+		// throws files::file_not_found and archive_error
 		void open(const std::filesystem::path&);
 		void close() noexcept;
 		bool is_open() const noexcept;
@@ -110,12 +129,58 @@ namespace hades::zip
 		void seekg(pos_type);
 		void seekg(off_type, std::ios_base::seekdir);
 	private:
-		unarchive _archive = nullptr;
+		unarchive _archive = {};
 		std::streamsize _gcount{};
 		bool _file = false;
 	};
 
-	//in zlib file stream
+	class oafstream
+	{
+	public:
+		using char_t = std::byte;
+		using stream_t = std::ifstream;
+		
+		oafstream() noexcept = default;
+
+		// throws archive_error
+		explicit oafstream(const std::filesystem::path& p)
+		{
+			open(p);
+			return;
+		}
+
+		oafstream(const oafstream&) = delete;
+		oafstream& operator=(const oafstream&) = delete;
+
+		oafstream(oafstream&&) noexcept = default;
+		oafstream& operator=(oafstream&&) noexcept = default;
+
+		~oafstream() noexcept
+		{
+			close();
+		}
+
+		// throws archive_error
+		void open(const std::filesystem::path&);
+		void close() noexcept;
+		bool is_open() const noexcept;
+
+		//throws archive_error and zip::file_not_found
+		void open_file(const std::filesystem::path&);
+		void close_file() noexcept;
+		bool is_file_open() const noexcept
+		{
+			return !empty(_file);
+		}
+
+		oafstream& write(const char_t* buffer, std::streamsize count);
+
+	private:
+		toarchive _archive = {};
+		string _file;
+	};
+
+	//in compressed file stream
 	class izfstream
 	{
 	public:
@@ -188,8 +253,8 @@ namespace hades::zip
 
 	//test for zip compression header
 	using zip_header = std::array<std::byte, 2u>;
-	bool probably_compressed(zip_header);
-	bool probably_compressed(const buffer& data);
+	bool probably_compressed(zip_header) noexcept;
+	bool probably_compressed(const buffer& data) noexcept;
 
 	//both of these return archive exception on failure.
 	buffer deflate(buffer uncompressed);

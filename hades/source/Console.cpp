@@ -118,7 +118,7 @@ namespace hades
 			LOG(s);
 	}
 
-	bool Console::add_function(std::string_view identifier, console::function func, bool replace, bool silent)
+	bool Console::add_function(std::string_view identifier, Console_Function func, bool replace, bool silent)
 	{
 		//test to see the name hasn't been used for a variable
 		{
@@ -396,6 +396,12 @@ namespace hades
 		recentOutputPos = TextBuffer.size();
 
 		return out;
+	}
+
+	ConsoleStringBuffer Console::copy_output()
+	{
+		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
+		return TextBuffer;
 	}
 
 	ConsoleStringBuffer Console::steal_output() noexcept

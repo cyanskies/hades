@@ -1,6 +1,7 @@
 #include "hades/logging.hpp"
 
 #include <chrono>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -71,7 +72,8 @@ namespace hades
 
 		void echo(hades::string str, logger::log_verbosity verb, std::source_location loc)
 		{
-			echo(string{ std::move(str), hades::integer_clamp_cast<int>(loc.line()), loc.function_name(), loc.file_name(), hades::time(), verb});
+			const auto file = std::filesystem::path{ loc.file_name() };
+			echo(string{ std::move(str), hades::integer_clamp_cast<int>(loc.line()), loc.function_name(), file.filename().string(), hades::time(), verb});
 			return;
 		}
 
@@ -89,6 +91,14 @@ namespace hades
 				return log->get_output();
 
 			return console::output_buffer{};
+		}
+
+		console::output_buffer copy_output()
+		{
+			if (log)
+				return log->copy_output();
+
+			return {};
 		}
 
 		console::output_buffer steal_output() noexcept

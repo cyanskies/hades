@@ -374,6 +374,7 @@ namespace hades
 			#endif
 		}
 
+		_gui.reset(); // destroy gui so it calls shutdown funcs
 		std::quick_exit(EXIT_SUCCESS);
 	}
 
@@ -403,8 +404,9 @@ namespace hades
 			//window events
 			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
 			{
+				hades::log_debug("Window closed"sv);
+				_gui.reset(); // destroy gui so it calls shutdown funcs
 				std::quick_exit(EXIT_SUCCESS);
-				_window.close();
 			}
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
@@ -449,8 +451,9 @@ namespace hades
 		//general functions
 		{
 			auto exit = [this]()->bool {
+				hades::log_debug("'exit' called"sv);
+				_gui.reset(); // destroy gui so it calls shutdown funcs
 				std::quick_exit(EXIT_SUCCESS);
-				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
 			_console.add_function("exit"sv, exit, true);
@@ -580,7 +583,10 @@ namespace hades
 		{
 			auto util_dir = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
-					throw invalid_argument("Dir function expects one argument"s);
+				{
+					log_error("'dir' requires an argument; eg. 'dir ./'"sv);
+					return false;
+				}
 
 				const auto files = files::ListFilesInDirectory(to_string(args.front()));
 
@@ -595,19 +601,23 @@ namespace hades
 			auto compress_dir = [](const argument_list &args)->bool
 			{
 				if (args.size() != 1)
-					throw invalid_argument("Compress function expects one argument"s);
-
+				{
+					log_error("'compress' requires an argument; eg. 'compress foldername'"sv);
+					return false;
+				}
+				
 				const auto& path = args.front();
 
 				//compress in a seperate thread to let the UI continue updating
 				std::thread t([path]() {
-					try {
+					try 
+					{
 						zip::compress_directory(to_string(path));
 						return true;
 					}
-					catch (files::file_error &e)
+					catch (const std::exception &e)
 					{
-						LOGERROR(e.what());
+						log_error(e.what());
 					}
 
 					return false;

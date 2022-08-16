@@ -348,11 +348,22 @@ namespace hades
 	}
 
 	template<typename Func>
-	finally_t<Func> make_finally(Func&& f)
+	decltype(auto) make_finally(Func&& f)
 	{
 		static_assert(std::is_nothrow_invocable_v<Func>, 
 			"make_finally only accepts a callable that accepts no arguments and is noexcept");
-		return finally_t<Func>{std::forward<Func>(f)};
+
+		struct {
+			struct finally_return {
+				~finally_return() noexcept {
+					std::invoke(f);
+					return;
+				}
+				Func f;
+			};
+			finally_return r;
+		} ret{ {std::forward<Func>(f)} };
+		return ret;
 	}
 
 	template<typename Container>

@@ -262,13 +262,19 @@ namespace hades
 				std::vector<resource_group> resources_by_type;
 			};
 
+			virtual bool try_load_mod(std::string_view) = 0;
+
 			void push_mod(mod);
 			void pop_mod();
 
 			const mod& get_mod(unique_id) const;
 			mod& get_mod(unique_id);
 
-			std::vector<resource_storage*> get_mod_stack();
+			static std::string_view built_in_mod_name() noexcept;
+			[[nodiscard]] bool is_built_in_mod(unique_id) const noexcept;
+
+			[[nodiscard]] std::size_t get_mod_count() const noexcept;
+			[[nodiscard]] std::vector<resource_storage*> get_mod_stack();
 
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;

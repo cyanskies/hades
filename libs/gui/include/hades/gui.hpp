@@ -348,6 +348,7 @@ namespace hades
 			std::size_t& current_item, const Container&, int height_in_items = -1);
 
 		template<typename Container, typename ToString>
+			requires std::regular_invocable<ToString, typename Container::value_type>
 		bool listbox(std::string_view label, std::size_t& current_item,
 			const Container&, ToString to_string_func, int height_in_items = -1);
 
@@ -600,8 +601,12 @@ namespace hades
 		};
 
 		// tables
-		bool begin_table(std::string_view id, int column, table_flags flags = table_flags::none, const vector2& outer_size = {}, float inner_width = {});
-		void end_table();                                         // only call EndTable() if BeginTable() returns true!
+		// NOTE: must call table_next_column for the first column
+		bool begin_table(std::string_view id, int column_count,
+			table_flags flags = table_flags::none, const vector2& outer_size = {}, float inner_width = {});
+		// only call if begin_table returned true
+		void end_table();
+		// start a new row, must call table_next_column or table_set_column_index to get the correct column
 		void table_next_row(table_row_flags row_flags = table_row_flags::none, float min_row_height = {}); // append into the first cell of a new row.
 		bool table_next_column();                                  // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
 		bool table_set_column_index(int column_n);

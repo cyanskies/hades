@@ -81,23 +81,52 @@ namespace hades
 			[](T value) { return to_string(value); },
 			height_in_items);
 	}
+	
+	namespace detail
+	{
+		static thread_local void* to_string_stash = {};
+		static thread_local string listbox_string_buffer;
+		template<typename Container, typename ToString>
+		bool listbox_helper_func(void* data, int idx, const char** out_text)
+		{
+			const auto& func = *static_cast<ToString*>(to_string_stash);
+			const auto& container = *static_cast<const Container*>(data);
+			if (idx >= size(container))
+				return false;
+
+			auto iter = begin(container);
+			iter = std::next(iter, idx);
+			listbox_string_buffer = std::invoke(func, *iter);
+			*out_text = listbox_string_buffer.c_str();
+			return empty(listbox_string_buffer);
+		}
+	}
 
 	template<typename Container, typename ToString>
-	inline bool gui::listbox(std::string_view label, std::size_t &current_item,
-		const Container &container, ToString to_string_func,
-		int height_in_items)
+		requires std::regular_invocable<ToString, typename Container::value_type>
+	bool gui::listbox(std::string_view lable, std::size_t& current_item,
+		const Container& data, ToString to_string_func, int height_in_items)
 	{
 		using T = typename Container::value_type;
 		static_assert(std::is_invocable_r_v<string, ToString, const T&>,
 			"ToString must accept the list entry type and return a string");
 
-		auto strings = std::vector<string>{};
-		strings.reserve(std::size(container));
+		auto int_item = integer_cast<int>(current_item);
+		const auto item_count = integer_cast<int>(size(data));
+		detail::to_string_stash = &to_string_func;
+		//NOTE: container is not modified, but ImGui::ListBox() only accepts non-const
+		auto& cont = const_cast<Container&>(data);
+		const auto ret = ImGui::ListBox(to_string(lable).c_str(), &int_item,
+			detail::listbox_helper_func<Container, ToString>, &cont, item_count, height_in_items);
+		current_item = integer_cast<std::size_t>(int_item);
 
-		std::transform(std::begin(container), std::end(container),
-			std::back_inserter(strings), to_string_func);
+		#ifndef NDEBUG
+		// clear out the thread globals
+		detail::to_string_stash = {};
+		detail::listbox_string_buffer = {};
+		#endif // !NDEBUG
 
-		return listbox(label, current_item, strings, height_in_items);
+		return ret;
 	}
 
 	namespace detail

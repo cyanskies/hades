@@ -134,6 +134,7 @@ namespace hades::zip
 		bool _file = false;
 	};
 
+	// out archive file stream
 	class oafstream
 	{
 	public:
@@ -157,7 +158,10 @@ namespace hades::zip
 
 		~oafstream() noexcept
 		{
+			if (is_file_open())
+				close_file();
 			close();
+			return;
 		}
 
 		// throws archive_error

@@ -32,13 +32,54 @@ namespace hades
 		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
 		void draw(sf::RenderTarget&, time_duration) override;
 		void reinit() override;
+
 	private:
+		void _close_mod(data::data_manager&);
+		void _mod_properties(gui&, data::data_manager&);
+		void _request_load_mod(std::string_view mod, data::data_manager&);
+		void _set_loaded_mod(std::string_view mod, data::data_manager&);
+		void _set_mod(std::string_view mod, data::data_manager&);
+
+		struct new_mod_window
+		{
+			string name = "new_mod";
+			bool open = false;
+		};
+
+		struct load_mod_window
+		{
+			string name = "mod";
+			bool open = false;
+		};
+
+		struct edit_mod_window
+		{
+			std::vector<std::pair<string, unique_id>> dependencies;
+			std::size_t dep_selected = {};
+			std::size_t mods_selected = {};
+			string pretty_name;
+			bool open = false;
+		};
+
+		enum class edit_mode
+		{
+			normal,// for creating or loading a mod on top of the normal game
+			already_loaded // for editing one of the mods that was loaded on startup
+		};
+
 		sf::View _gui_view;
 		gui _gui;
+		new_mod_window _new_mod = {};
+		load_mod_window _load_mod = {};
+		edit_mod_window _edit_mod_window = {};
+		std::vector<string> _mods;
+		unique_id _current_mod = unique_zero;
 
 		hades::data::resource_inspector _inspector;
 		sf::RectangleShape _backdrop;
-		data::data_manager *d;
+		edit_mode _mode = edit_mode::normal;
+		std::size_t _mod_count = {};
+		bool _editing_mod = false;
 	};
 
 	// provide mission editor

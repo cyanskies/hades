@@ -6,7 +6,7 @@
 #include "SFML/Graphics/Texture.hpp"
 
 #include "hades/Console.hpp"
-#include "hades/Data.hpp"
+#include "hades/data.hpp"
 #include "hades/data_system.hpp"
 #include "hades/files.hpp"
 #include "hades/font.hpp"
@@ -37,17 +37,17 @@ namespace hades
 		void parseString(unique_id mod, const data::parser_node &node, data::data_manager&);
 	}
 
-	void RegisterCommonResources(hades::data::data_system *data)
+	void RegisterCommonResources(data::data_manager& data)
 	{
-		data->register_resource_type("strings"sv, resources::parseString);
+		data.register_resource_type("strings"sv, resources::parseString);
 
-		register_font_resource(*data);
+		register_font_resource(data);
 
 		//create default font
 		//we do it here because the resource isn't availble yet
 		//in hades-core
 		//TODO: move to hades core
-		auto f = data->find_or_create<resources::font>(resources::default_font_id(), {}, "fonts"sv);
+		auto f = data.find_or_create<resources::font>(resources::default_font_id(), {}, "fonts"sv);
 		assert(f);
 
 		f->loaded = f->value.loadFromMemory(default_font.data(), default_font.size());

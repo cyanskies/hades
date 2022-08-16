@@ -12,8 +12,21 @@ namespace hades::data
 	public:
 		virtual ~resource_editor() = default;
 
+		void set_editable_mod(unique_id m) noexcept
+		{
+			_editable = m;
+		}
+
+		bool editable(unique_id r) const noexcept
+		{
+			return _editable == r;
+		}
+
 		virtual void set_target(data_manager&, unique_id, unique_id mod) = 0;
 		virtual void update(data_manager&, gui&) = 0;
+
+	private:
+		unique_id _editable = unique_zero;
 	};
 
 	using make_resource_editor_fn = std::unique_ptr<resource_editor>(*)();
@@ -24,6 +37,13 @@ namespace hades::data
 	{
 	public:
 		void update(gui&, data_manager*);
+		void lock_editing_to(unique_id mod)
+		{
+			_mod = mod;
+			if(_tree_state.res_editor)
+				_tree_state.res_editor->set_editable_mod(_mod);
+			return;
+		}
 
 		struct resource_tree_state
 		{
@@ -54,6 +74,7 @@ namespace hades::data
 		void _resource_tree(gui&, data::data_manager*);
 
 		resource_tree_state _tree_state;
+		unique_id _mod = unique_zero;
 	};
 }
 

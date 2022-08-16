@@ -50,6 +50,8 @@ namespace hades::data
 			assert(!empty(_anim_frames));
 			const auto& first = _anim_frames.front();
 			_size = { abs(first.w * first.scale_w), abs(first.h * first.scale_h) };
+
+			_mod = mod;
 		}
 
 		void update(data::data_manager& d, gui& g) override
@@ -65,8 +67,12 @@ namespace hades::data
 			if (empty(_yaml))
 				generate_yaml(d);
 
+			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin(_name, gui::window_flags::no_collapse))
 			{
+				if (!editable(_mod))
+					g.begin_disabled();
+
 				g.begin_disabled();
 				g.input("Texture"sv, _tex_name);
 				g.end_disabled();
@@ -79,14 +85,21 @@ namespace hades::data
 					generate_yaml(d);
 				}
 
+				if (!editable(_mod))
+					g.end_disabled();
+
 				g.text("Resource as YAML:"sv);
 				g.input_text_multiline("##yaml"sv, _yaml, {}, gui::input_text_flags::readonly);
 			}
 
 			g.window_end();
 
+			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin("Animation frames"sv, gui::window_flags::no_collapse))
 			{
+				if (!editable(_mod))
+					g.begin_disabled();
+
 				auto mod = false;
 				g.text("Frames:"sv);
 				g.layout_horizontal();
@@ -189,9 +202,13 @@ namespace hades::data
 					}
 				}
 				g.child_window_end();
+
+				if (!editable(_mod))
+					g.end_disabled();
 			}
 			g.window_end();
 
+			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin("Animation preview", gui::window_flags::no_collapse))
 			{
 				g.slider_float("Scale"sv, _scale, 0.5f, 50.f, gui::slider_flags::logarithmic);
@@ -253,10 +270,10 @@ namespace hades::data
 		}
 
 	private:
-		resources::animation* _anim;
-		resources::resource_base* _base;
+		resources::animation* _anim = {};
+		resources::resource_base* _base = {};
 		time_duration _duration;
-		int _current_frame = int{};
+		int _current_frame = {};
 		std::array<float, 2> _size;
 		std::vector<resources::animation_frame> _anim_frames;
 		string _name;
@@ -266,6 +283,7 @@ namespace hades::data
 		float _time = 0.f;
 		float _play_speed = 1.f;
 		bool _play = false;
+		unique_id _mod;
 	};
 
 	class texture_editor : public resource_editor
@@ -292,6 +310,7 @@ namespace hades::data
 			const auto requested_size = tex::get_requested_size(*_texture);
 			_requested_size[0] = requested_size.x;
 			_requested_size[1] = requested_size.y;
+			_mod = mod;
 		}
 
 		void update(data::data_manager& d,gui& g) override
@@ -307,6 +326,9 @@ namespace hades::data
 
 			if (g.window_begin(_name, gui::window_flags::no_collapse))
 			{
+				if (!editable(_mod))
+					g.begin_disabled();
+
 				auto mod = false;
 				mod |= g.checkbox("Smooth"sv, _smooth)
 					| g.checkbox("Repeating"sv, _repeat)
@@ -363,6 +385,9 @@ namespace hades::data
 					generate_yaml(d);
 				}
 
+				if (!editable(_mod))
+					g.end_disabled();
+
 				g.text("Resource as YAML:"sv);
 				g.input_text_multiline("##yaml"sv, _yaml, {}, gui::input_text_flags::readonly);
 			}
@@ -418,12 +443,13 @@ namespace hades::data
 			}
 			
 			g.window_end();
+
 			return;
 		}
 
 	private:
-		const resources::resource_base* _texture_base;
-		resources::texture* _texture;
+		const resources::resource_base* _texture_base = {};
+		resources::texture* _texture = {};
 		string _name;
 		string _yaml;
 		string _source;
@@ -431,6 +457,7 @@ namespace hades::data
 		bool _mips;
 		bool _repeat;
 		float _scale = 1.f;
+		unique_id _mod;
 
 		std::array<uint8, 3> _alpha;
 		bool _alpha_set = false;
@@ -460,6 +487,7 @@ namespace hades::data
 	void resource_inspector::update(gui& g, data::data_manager* d)
 	{
 		assert(d);
+
 		_resource_tree(g, d);
 
 		if (_tree_state.res_editor)
@@ -479,8 +507,12 @@ namespace hades::data
 			if (g.is_item_clicked() && !g.is_item_toggled_open())
 			{
 				_tree_state.res_editor = make_resource_editor(group.name);
+
 				if (_tree_state.res_editor)
+				{
 					_tree_state.res_editor->set_target(d, id, mod);
+					_tree_state.res_editor->set_editable_mod(_mod);
+				}
 			}
 
 			if (mod !=  mod_id)
@@ -552,6 +584,7 @@ namespace hades::data
 	{
 		const auto mods = d->get_mod_stack();
 		//main resource list
+		g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 		if (g.window_begin("resource tree"sv, gui::window_flags::no_collapse))
 		{
 			if (_tree_state.mod_index >= size(mods))

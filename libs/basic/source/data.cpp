@@ -5,6 +5,7 @@
 #include "hades/exceptions.hpp"
 
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 namespace hades
 {
@@ -45,11 +46,13 @@ namespace hades
 			}
 		}
 
+		constexpr auto built_in_name = "built-in"sv;
+
 		data_manager::data_manager()
 		{
-			auto& m = _mod_stack.emplace_back();
+			auto& m = _mod_stack.emplace_back(); 
 			m.mod_info.id = make_unique_id();
-			m.mod_info.name = "built-in";
+			m.mod_info.name = built_in_name;
 			return;
 		}
 
@@ -99,7 +102,8 @@ namespace hades
 		{
 			for (auto& link : _resource_links)
 			{
-				try {
+				try
+				{
 					link->update_link();
 				}
 				catch (const resource_null& n)
@@ -145,6 +149,22 @@ namespace hades
 		mod& data_manager::get_mod(unique_id id)
 		{
 			return _get_mod(id).mod_info;
+		}
+
+		std::string_view data_manager::built_in_mod_name() noexcept
+		{
+			return built_in_name;
+		}
+
+		bool data_manager::is_built_in_mod(unique_id id) const noexcept
+		{
+			assert(!empty(_mod_stack));
+			return _mod_stack.front().mod_info.id == id;
+		}
+
+		std::size_t data_manager::get_mod_count() const noexcept
+		{
+			return size(_mod_stack);
 		}
 
 		std::vector<data_manager::resource_storage*> data_manager::get_mod_stack()

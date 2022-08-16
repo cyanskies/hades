@@ -14,7 +14,7 @@
 
 // NOTE: current implementation suffers with async functions starting their own async funcs
 //	this results in eating up stack for each additional layer. Something to keep in mind.
-//	ei. Dont use async recursively. Needs cpp20 to fix(corutines)
+//	ei. Dont use async recursively in a heavy manner.
 
 namespace hades
 {

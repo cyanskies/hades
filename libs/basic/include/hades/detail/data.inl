@@ -44,14 +44,11 @@ namespace hades
 			void reset(resources::resource_base& rb)
 			{
 				// reset everything except the resource_base
-				auto& t = static_cast<T&>(rb);
 				// slice to preserve r_base member variables
-				resources::resource_base r = t;
+				const auto r = rb;
 				// reset t
-				t = T{};
-				// get reference to r_base so we can assign the stored member variables
-				auto& r_ref = static_cast<resources::resource_base&>(t);
-				r_ref = r;
+				static_cast<T&>(rb) = T{};
+				rb = r;
 				return;
 			}
 		}

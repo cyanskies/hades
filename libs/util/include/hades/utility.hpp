@@ -57,7 +57,7 @@ namespace hades {
 		using std::overflow_error::overflow_error;
 	};
 
-	// convert floating point types to intergrals
+	// convert floating point types to integrals
 	// throws overflow error
 	template<typename Integral, typename T, typename RoundingTag = detail::round_nearest_t, 
 		std::enable_if_t<std::is_integral_v<Integral> 
@@ -140,20 +140,9 @@ namespace hades {
 	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
 	constexpr Enum next(Enum e) noexcept;
 
-	template<typename Func>
-	struct finally_t
-	{
-		~finally_t() noexcept
-		{
-			std::invoke(f);
-		}
-
-		Func f;
-	};
-
 	// returns an object that calls f when it goes out of scope
 	template<typename Func>
-	finally_t<Func> make_finally(Func&& f);
+	decltype(auto) make_finally(Func&& f);
 
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors

@@ -26,6 +26,8 @@ namespace hades::data
 		//mod is the name of a folder or archive containing a mod.yaml file
 		void add_mod(std::string_view mod, bool autoLoad = false, std::string_view name = "mod.yaml");
 
+		bool try_load_mod(std::string_view) override;
+
 		//returns true if the mod or game with that name has been parsed
 		//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
 		bool loaded(std::string_view mod);

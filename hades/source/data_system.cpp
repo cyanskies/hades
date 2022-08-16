@@ -16,7 +16,13 @@ namespace hades::data
 	const auto unnamed_id_string = "ERROR_UNNAMED_UNIQUE_ID"s;
 
 	data_system::data_system() : _ids({ {string{ no_id_string }, unique_id::zero} })
-	{}
+	{
+		const auto& mod_stack = get_mod_stack();
+		assert(!empty(mod_stack));
+		const auto& built_in = mod_stack.front();
+		const auto [iter, success] = _ids.emplace(std::make_pair(built_in->mod_info.name, built_in->mod_info.id));
+		assert(success);
+	}
 
 	//application registers the custom resource types
 	//parser must convert yaml into a resource manifest object
@@ -60,12 +66,13 @@ namespace hades::data
 	//mod is the name of a folder or archive containing a mod.yaml file
 	void data_system::add_mod(std::string_view mod, bool autoLoad, std::string_view name)
 	{
+		// TODO: if a mod fails to load, we need to unload the mod and any dependencies that it brought it
 		auto m = data::mod{};
 		m.source = mod;
 		const auto modyaml = files::read_resource(m, name);
 
 		if (ContainsTab(modyaml))
-			LOGWARNING("Yaml file: " + to_string(mod) + "/" + to_string(name) + " contains tabs, expect errors.");
+			log_warning("Yaml file: "s + to_string(mod) + "/"s + to_string(name) + " contains tabs, expect errors."s);
 		//parse game.yaml
 		const auto root = data::make_parser(modyaml);
 		const auto mod_key = get_uid(mod);
@@ -74,9 +81,34 @@ namespace hades::data
 		
 		//record the list of loaded games/mods
 		if (name == "game.yaml")
+		{
+			assert(!_game);
 			_game = mod_key;
+		}
 		else
 			_mods.push_back(mod_key);
+	}
+
+	bool data_system::try_load_mod(std::string_view mod)
+	{
+		const auto old_stack = get_mod_count();
+		try
+		{
+			add_mod(mod);
+			return true;
+		}
+		catch (const runtime_error& e)
+		{
+			const auto new_stack = get_mod_count();
+			const auto end = new_stack - old_stack;
+			for (auto i = std::size_t{}; i < end; ++i)
+				pop_mod();
+
+			log_error("Unable to load mod: "s + to_string(mod));
+			log_error(e.what());
+			return false;
+		}
+
 	}
 
 	bool data_system::loaded(std::string_view mod)
@@ -278,7 +310,7 @@ namespace hades::data
 				if (load_deps)
 					add_mod(s, load_deps);
 				else if(!loaded(s)) {
-					LOGERROR("One of mods: " + to_string(source) + ", dependencies has not been provided, was: " + s);
+					log_error("One of mods: "s + to_string(source) + ", dependencies has not been provided, was: "s + s);
 				}
 			}
 		}
@@ -290,7 +322,7 @@ namespace hades::data
 		//for every other headers, check for a header parser
 		parseYaml(modKey, modRoot);
 		
-		LOG("Loaded mod: " + mod_name);
+		log("Loaded mod: "s + mod_name);
 		return;
 	}
 

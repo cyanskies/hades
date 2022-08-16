@@ -19,10 +19,10 @@ namespace hades
 {
 	namespace data
 	{
-		class data_system;
+		class data_manager;
 	}
 
-	void RegisterCommonResources(hades::data::data_system*);
+	void RegisterCommonResources(hades::data::data_manager&);
 
 	template<class First, class Last>
 	sf::Color MakeColour(First begin, Last end)
@@ -101,6 +101,7 @@ namespace hades
 			}
 		};
 
+		// TODO: replace with is_uniqorm type trait or concept
 		template<>
 		constexpr bool shader::valid_type<float>()
 		{

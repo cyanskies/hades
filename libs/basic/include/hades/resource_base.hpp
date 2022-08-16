@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "hades/exceptions.hpp"
+#include "hades/logging.hpp" // for temp serialise func
 #include "hades/string.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -16,7 +17,6 @@ namespace hades
 		class data_manager;
 		class writer;
 
-		//TODO: move the exceptions to data.hpp
 		class resource_error : public runtime_error
 		{
 		public:
@@ -54,7 +54,10 @@ namespace hades
 			virtual ~resource_base() {}
 
 			virtual void load(data::data_manager&) {}
-			virtual void serialise(data::data_manager&, data::writer&) const {} // TODO: mandatory when mod editor can save changes on its own
+			virtual void serialise(data::data_manager&, data::writer&) const
+			{
+				throw logic_error{ "resource_base::serialise base implementation should never be invoked" };
+			}
 
 			using unload_func = void(*)(resource_base&);
 			using clone_func = std::unique_ptr<resource_base>(*)(const resource_base&);
@@ -67,13 +70,6 @@ namespace hades
 
 			unload_func clear = nullptr;
 			clone_func clone = nullptr;
-
-		protected:
-			/*resource_base() = default;
-			resource_base(const resource_base &rhs) = default;
-			resource_base(resource_base &&rhs) = default;
-			resource_base &operator=(const resource_base &rhs) = default;
-			resource_base &operator=(resource_base &&rhs) = default;*/
 		};
 
 		template<class T>
@@ -93,6 +89,13 @@ namespace hades
 					std::invoke(_resource_loader, *this, d);
 			}
 
+			void serialise(data::data_manager&, data::writer&) const override
+			{	
+				using namespace std::string_literals;
+				log_debug("No serialise function for: "s + typeid(T).name());
+				return;
+			}
+
 			//the actual resource
 			// NOTE: this is often a empty tag type
 			T value;
@@ -101,22 +104,6 @@ namespace hades
 		private:
 			loader_func _resource_loader = nullptr;
 		};
-
-		//replaced with data::mod
-		//struct mod_t {};
-
-		//struct mod : public resource_type<mod_t>
-		//{
-		//	// source == the name of the archive containing the mod
-		//	// dependencies: a list of mods this mod depends on
-		//	std::vector<unique_id> dependencies,
-		//		//names: unique id's provided by this mod
-		//		names;
-
-		//	string name;
-		//	//value is unused
-		//	//mod_t value
-		//};
 	}
 
 	template<typename T>

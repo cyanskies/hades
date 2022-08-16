@@ -273,11 +273,13 @@ namespace hades::zip
 	void oafstream::open(const std::filesystem::path& p)
 	{
 		_archive = create_archive(p);
+		return;
 	}
 
 	void oafstream::close() noexcept
 	{
 		close_archive(_archive);
+		return;
 	}
 
 	bool oafstream::is_open() const noexcept

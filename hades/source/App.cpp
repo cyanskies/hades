@@ -84,7 +84,7 @@ namespace hades
 		register_sfml_input(_window, _input);
 
 		register_core_resources(_dataMan);
-		RegisterCommonResources(&_dataMan);
+		RegisterCommonResources(_dataMan);
 		data::detail::set_data_manager_ptr(&_dataMan);
 
 		//debug overlays

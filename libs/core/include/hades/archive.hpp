@@ -184,6 +184,10 @@ namespace hades::zip
 		string _file;
 	};
 
+	// stream buffer for reading or writing compressed files
+	template<typename CharT, typename Traits = std::char_traits<CharT>>
+	class basic_compressed_filebuf;
+
 	//in compressed file stream
 	class izfstream
 	{

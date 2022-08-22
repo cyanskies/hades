@@ -76,6 +76,7 @@ set(HADES_CORE_SRC
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
 	include/hades/debug/object_overlay.hpp
+	include/hades/detail/archive.inl
 	include/hades/detail/game_api.inl
 	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl

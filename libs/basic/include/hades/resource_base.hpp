@@ -68,6 +68,9 @@ namespace hades
 			unique_id mod = unique_id::zero;
 			bool loaded = false;
 
+			// the file to write this resource to(eg. ./terrain/terrain)
+			string data_file;
+
 			unload_func clear = nullptr;
 			clone_func clone = nullptr;
 		};

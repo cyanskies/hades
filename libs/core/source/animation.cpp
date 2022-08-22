@@ -190,7 +190,9 @@ namespace hades::resources::animation_functions
 
 	const texture* get_texture(const animation& a) noexcept
 	{
-		return a.tex.get();
+		if(a.tex.is_linked())
+			return a.tex.get();
+		return nullptr;
 	}
 
 	time_duration get_duration(const animation& a) noexcept
@@ -230,14 +232,14 @@ namespace hades::resources::animation_functions
 
 namespace hades::resources::animation_group_functions
 {
-	const animation_group* get_resource(unique_id id)
+	const animation_group* get_resource(const unique_id id, const std::optional<unique_id> mod)
 	{
 		return data::get<animation_group>(id);
 	}
 
-	const animation_group* get_resource(data::data_manager& d, unique_id i)
+	animation_group* get_resource(data::data_manager& d, const unique_id i, const std::optional<unique_id> mod)
 	{
-		return d.get<animation_group>(i);
+		return d.get<animation_group>(i, mod);
 	}
 
 	resource_link<animation_group> make_resource_link(data::data_manager& d, const unique_id id, const unique_id from)
@@ -274,6 +276,20 @@ namespace hades::resources::animation_group_functions
 			return nullptr;
 
 		return iter->second.get();
+	}
+
+	std::vector<std::pair<unique_id, unique_id>> get_all_animations(const animation_group& g)
+	{
+		auto out = std::vector<std::pair<unique_id, unique_id>>{};
+		for (const auto& [name, elm] : g.value)
+			out.emplace_back(name, elm.id());
+		return out;
+	}
+
+	void replace_animations(animation_group& a, std::unordered_map<unique_id, resource_link<animation>> data)
+	{
+		a.value = std::move(data);
+		return;
 	}
 }
 

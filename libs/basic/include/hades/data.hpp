@@ -276,6 +276,8 @@ namespace hades
 			[[nodiscard]] std::size_t get_mod_count() const noexcept;
 			[[nodiscard]] std::vector<resource_storage*> get_mod_stack();
 
+			std::vector<std::string_view> get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod = {}) const;
+
 			//refresh functions request that the mentioned resources be pre-loaded
 			virtual void refresh() = 0;
 			virtual void refresh(unique_id) = 0;

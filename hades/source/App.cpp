@@ -277,7 +277,7 @@ namespace hades
 		return;
 	}
 
-	bool App::run()
+	void App::run()
 	{
 		//We copy the famous gaffer on games timestep here.
 		//however we don't have a system to blend renderstates,

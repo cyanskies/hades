@@ -24,9 +24,6 @@ namespace hades
 	class mod_editor_impl : public state
 	{
 	public:
-		//mod_editor_impl();
-		//mod_editor_impl() // make new mod
-
 		void init() override;
 		bool handle_event(const event&) override;
 		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
@@ -35,8 +32,8 @@ namespace hades
 
 	private:
 		void _close_mod(data::data_manager&);
+		void _save_mod(data::data_manager&);
 		void _mod_properties(gui&, data::data_manager&);
-		void _request_load_mod(std::string_view mod, data::data_manager&);
 		void _set_loaded_mod(std::string_view mod, data::data_manager&);
 		void _set_mod(std::string_view mod, data::data_manager&);
 
@@ -75,11 +72,10 @@ namespace hades
 		std::vector<string> _mods;
 		unique_id _current_mod = unique_zero;
 
-		hades::data::resource_inspector _inspector;
+		hades::data::basic_resource_inspector _inspector;
 		sf::RectangleShape _backdrop;
 		edit_mode _mode = edit_mode::normal;
 		std::size_t _mod_count = {};
-		bool _editing_mod = false;
 	};
 
 	// provide mission editor

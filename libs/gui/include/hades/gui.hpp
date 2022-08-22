@@ -18,6 +18,8 @@
 
 namespace hades
 {
+	struct colour;
+
 	namespace resources
 	{
 		struct animation;
@@ -231,7 +233,8 @@ namespace hades
 		// TODO: missing funcs
 		void push_font(const resources::font*);
 		void pop_font();
-		void push_colour(colour_target element, const sf::Color&); //TODO: hades::colour
+		void push_colour(colour_target element, const sf::Color&);
+		void push_colour(colour_target element, const colour&);
 		void pop_colour();
 
 		//current window parameters
@@ -547,6 +550,13 @@ namespace hades
 		void modal_end();
 		void close_current_modal();
 
+		enum class sort_direction : ImGuiSortDirection
+		{
+			none = ImGuiSortDirection_None,
+			ascending =ImGuiSortDirection_Ascending,    // Ascending = 0->9, A->Z etc.
+			descending = ImGuiSortDirection_Descending	// Descending = 9->0, Z->A etc.
+		};
+
 		enum class table_flags : ImGuiTableFlags
 		{
 			// Features
@@ -600,16 +610,65 @@ namespace hades
 			headers = ImGuiTableRowFlags_Headers    // Identify header row (set default background color + width of its contents accounted differently for auto column width)
 		};
 
+		enum class table_column_flags : ImGuiTableColumnFlags
+		{
+			// Input configuration flags
+			none = ImGuiTableColumnFlags_None,
+			disabled = ImGuiTableColumnFlags_Disabled,   // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
+			default_hide = ImGuiTableColumnFlags_DefaultHide,   // Default as a hidden/disabled column.
+			default_sort = ImGuiTableColumnFlags_DefaultSort,   // Default as a sorting column.
+			width_stretch = ImGuiTableColumnFlags_WidthStretch,   // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
+			width_fixed = ImGuiTableColumnFlags_WidthFixed,   // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
+			no_resize = ImGuiTableColumnFlags_NoResize,   // Disable manual resizing.
+			no_reorder = ImGuiTableColumnFlags_NoReorder,   // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
+			no_hide = ImGuiTableColumnFlags_NoHide,   // Disable ability to hide/disable this column.
+			no_clip = ImGuiTableColumnFlags_NoClip,   // Disable clipping for this column (all NoClip columns will render in a same draw command).
+			no_sort = ImGuiTableColumnFlags_NoSort,   // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
+			no_sort_ascending = ImGuiTableColumnFlags_NoSortAscending,  // Disable ability to sort in the ascending direction.
+			no_sort_descending = ImGuiTableColumnFlags_NoSortDescending,  // Disable ability to sort in the descending direction.
+			no_header_label = ImGuiTableColumnFlags_NoHeaderLabel,  // TableHeadersRow() will not submit label for this column. Convenient for some small columns. Name will still appear in context menu.
+			no_header_width = ImGuiTableColumnFlags_NoHeaderWidth,  // Disable header text width contribution to automatic column width.
+			prefer_sort_ascending = ImGuiTableColumnFlags_PreferSortAscending,  // Make the initial sort direction Ascending when first sorting on this column (default).
+			prefer_sort_descending = ImGuiTableColumnFlags_PreferSortDescending,  // Make the initial sort direction Descending when first sorting on this column.
+			indent_enabled = ImGuiTableColumnFlags_IndentEnable,  // Use current Indent value when entering cell (default for column 0).
+			indent_disabled = ImGuiTableColumnFlags_IndentDisable,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.		
+		};
+
+		// Output status flags, read-only via TableGetColumnFlags()
+		enum class table_column_status : ImGuiTableColumnFlags
+		{
+			enabled = ImGuiTableColumnFlags_IsEnabled,  // Status: is enabled == not hidden by user/api (referred to as "Hide" in _DefaultHide and _NoHide) flags.
+			visible = ImGuiTableColumnFlags_IsVisible,  // Status: is visible == is enabled AND not clipped by scrolling.
+			sorted = ImGuiTableColumnFlags_IsSorted,	// Status: is currently part of the sort specs
+			hovered = ImGuiTableColumnFlags_IsHovered,  // Status: is hovered by mouse
+		};
+
 		// tables
 		// NOTE: must call table_next_column for the first column
 		bool begin_table(std::string_view id, int column_count,
 			table_flags flags = table_flags::none, const vector2& outer_size = {}, float inner_width = {});
 		// only call if begin_table returned true
 		void end_table();
+		void table_setup_column(std::string_view label, table_column_flags = table_column_flags::none,
+			float init_width_or_weight = 0.0f/*, ImGuiID user_id = 0*/);
+
+		void table_headers_row(); // automatically setup headers as defined in table_setup_column
 		// start a new row, must call table_next_column or table_set_column_index to get the correct column
 		void table_next_row(table_row_flags row_flags = table_row_flags::none, float min_row_height = {}); // append into the first cell of a new row.
 		bool table_next_column();                                  // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
 		bool table_set_column_index(int column_n);
+
+		// if true then you need to call table_sort_column
+		bool table_needs_sort() const noexcept;
+		
+		struct sort_column_return
+		{
+			int column;
+			sort_direction direction;
+		};
+		
+		// call with increasing sort_order until sort_direction returns none
+		sort_column_return table_sort_column(int sort_order) const noexcept;
 
 		//columns, soon to be deprecated
 		void columns_begin(std::size_t count = 1u, bool border = true);
@@ -777,7 +836,7 @@ namespace hades
 		return details::enum_or(lhs, rhs);
 	}
 
-	//TODO: selrctable, combo, etc...
+	//TODO: selectable, combo, etc...
 	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
@@ -792,6 +851,16 @@ namespace hades
 	{
 		return details::enum_or(lhs, rhs);
 	}
+
+	constexpr inline gui::table_flags operator|(gui::table_flags lhs, gui::table_flags rhs) noexcept
+	{
+		return details::enum_or(lhs, rhs);
+	}
+
+	constexpr inline gui::table_column_flags operator|(gui::table_column_flags lhs, gui::table_column_flags rhs) noexcept
+	{
+		return details::enum_or(lhs, rhs);
+	}	
 
 	//NOTE: right_max is absolute, not relative to the current elements x position
 	template<typename InputIt, typename MakeButton>

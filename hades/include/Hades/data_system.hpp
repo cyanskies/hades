@@ -1,6 +1,8 @@
 #ifndef HADES_DATAMANAGER_HPP
 #define HADES_DATAMANAGER_HPP
 
+#include <iosfwd>
+#include <filesystem>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,7 +26,8 @@ namespace hades::data
 		//game is the name of a folder or archive containing a game.yaml file
 		void load_game(std::string_view game);
 		//mod is the name of a folder or archive containing a mod.yaml file
-		void add_mod(std::string_view mod, bool autoLoad = false, std::string_view name = "mod.yaml");
+		// throws parser_exception
+		void add_mod(std::string_view mod, bool autoLoad = false, std::filesystem::path name = "./mod.yaml");
 
 		bool try_load_mod(std::string_view) override;
 

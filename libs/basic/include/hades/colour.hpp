@@ -71,6 +71,7 @@ namespace hades
 		constexpr auto off_lime = colour{ 186, 218, 85 };
 		constexpr auto mute_cyan = colour{ 127, 229, 240 };
 		constexpr auto red = colour{ 255, 0, 0 };
+		constexpr auto dark_red = colour{ 174,8,35 };
 		constexpr auto lavender = colour{ 255, 128, 237 };
 		constexpr auto dark_blue = colour{ 64, 114, 148 };
 		constexpr auto dark_cream = colour{ 203, 203, 169 };
@@ -80,9 +81,9 @@ namespace hades
 		constexpr auto turquoise = colour{ 64, 224, 208 };
 
 		using namespace std::string_view_literals;
-		constexpr auto all_colour_names = std::array{ "off_lime"sv, "mute_cyan"sv, "red"sv, "lavender"sv,
+		constexpr auto all_colour_names = std::array{ "off_lime"sv, "mute_cyan"sv, "red"sv, "dark-red"sv, "lavender"sv,
 			"dark-blue"sv, "dark-cream"sv, "lawn-green"sv, "orange"sv, "gold"sv, "turquoise"sv, "black"sv, "white"sv };
-		constexpr auto all_colours = std::array{ off_lime, mute_cyan, red, lavender,
+		constexpr auto all_colours = std::array{ off_lime, mute_cyan, red, dark_red, lavender,
 			dark_blue, dark_cream, lawn_green, orange, gold, turquoise, black, white };
 	}
 }

@@ -1,8 +1,9 @@
 #include "hades/async.hpp"
 
+#include <cassert>
 #include <iterator>
 
-#include "hades/utility.hpp"
+//#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -61,7 +62,7 @@ namespace hades
 					//take half of the queue
 					const auto steal_count = (count + 1) / 2;
 					auto beg = begin(other_queue.work);
-					auto iter = next(beg, integer_cast<ptrdiff_t>(steal_count));
+					auto iter = next(beg, /*integer_cast*/static_cast<ptrdiff_t>(steal_count));
 					std::move(beg, iter, std::back_inserter(our_queue.work)); // TODO: possible throw?
 					other_queue.work.erase(beg, iter);
 

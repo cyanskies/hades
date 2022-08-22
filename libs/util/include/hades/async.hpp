@@ -1,14 +1,16 @@
 #ifndef HADES_UTIL_ASYNC_HPP
 #define HADES_UTIL_ASYNC_HPP
 
-#include <atomic>
-#include <cassert>
+//#include <atomic>
+//#include <cassert>
 #include <deque>
 #include <functional>
-#include <future>
-#include <memory>
+//#include <future>
+//#include <memory>
+#include <mutex>
 #include <optional>
-#include <type_traits>
+#include <thread>
+//#include <type_traits>
 
 //#include "hades/random.hpp"
 

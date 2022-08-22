@@ -25,6 +25,7 @@ set(HADES_EDITOR_SRC
 	include/hades/detail/level_editor_grid.inl
 	include/hades/detail/level_editor_objects.inl
 	include/hades/debug/resource_inspector.hpp
+	include/hades/debug/resource_inspector.inl
 )
 
 set(HADES_EDITOR_LIBS 

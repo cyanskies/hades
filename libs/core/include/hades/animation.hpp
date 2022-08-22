@@ -68,14 +68,16 @@ namespace hades::resources
 	namespace animation_group_functions
 	{
 		using try_get_return = data::data_manager::try_get_return<const animation_group>;
-		const animation_group* get_resource(unique_id);
-		const animation_group* get_resource(data::data_manager&, unique_id);
+		const animation_group* get_resource(unique_id, std::optional<unique_id> mod = {});
+		animation_group* get_resource(data::data_manager& d, unique_id id, std::optional<unique_id> mod = {});
 		resource_link<animation_group> make_resource_link(data::data_manager&, unique_id, unique_id from);
 		try_get_return try_get(unique_id) noexcept;
 		const animation_group* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod);
 		bool is_loaded(const animation_group&) noexcept;
 		unique_id get_id(const animation_group&) noexcept;
 		const animation* get_animation(const animation_group&, unique_id);
+		std::vector<std::pair<unique_id, unique_id>> get_all_animations(const animation_group&);
+		void replace_animations(animation_group&, std::unordered_map<unique_id, resource_link<animation>>);
 	}
 }
 

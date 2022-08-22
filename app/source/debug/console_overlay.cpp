@@ -140,9 +140,7 @@ namespace hades::debug
 
 				const auto text = std::string_view{ input.input_contents() };
 				names.erase(std::remove_if(begin(names), end(names), [text](auto name) {
-					if(name.find(text) != std::string_view::npos)
-						return false;
-					return true;
+					return name.find(text) == std::string_view::npos;
 				}), end(names));
 
 				std::partition(begin(names), end(names), [text](auto name) {

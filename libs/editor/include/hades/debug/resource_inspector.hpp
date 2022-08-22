@@ -28,15 +28,11 @@ namespace hades::data
 	private:
 		unique_id _editable = unique_zero;
 	};
-
-	using make_resource_editor_fn = std::unique_ptr<resource_editor>(*)();
-
-	void register_resource_editor(std::string_view, make_resource_editor_fn);
-
-	class resource_inspector
+	
+	class basic_resource_inspector
 	{
 	public:
-		void update(gui&, data_manager*);
+		void update(gui&, data_manager&);
 		void lock_editing_to(unique_id mod)
 		{
 			_mod = mod;
@@ -67,11 +63,13 @@ namespace hades::data
 			std::unique_ptr<resource_editor> res_editor;
 		};
 
+		virtual std::unique_ptr<resource_editor> make_resource_editor(std::string_view resource_type);
+
 	private:
-		void _list_resources_from_group(resource_inspector::resource_tree_state::group& group, gui& g,
+		void _list_resources_from_group(resource_tree_state::group& group, gui& g,
 			data_manager&, unique_id);
 		void _refresh(data_manager&);
-		void _resource_tree(gui&, data::data_manager*);
+		void _resource_tree(gui&, data::data_manager&);
 
 		resource_tree_state _tree_state;
 		unique_id _mod = unique_zero;
@@ -80,24 +78,33 @@ namespace hades::data
 
 namespace hades::debug
 {
+	template<typename ResourceInspector>
+	concept is_resource_inspector = std::same_as<data::basic_resource_inspector, ResourceInspector>
+		|| std::is_base_of_v<data::basic_resource_inspector, ResourceInspector>;
+
 	// displays object information
+	template<typename ResourceInspector = data::basic_resource_inspector>
+		requires is_resource_inspector<ResourceInspector>
 	class resource_inspector_overlay : public basic_overlay
 	{
 	public:
-		resource_inspector_overlay(data::data_manager* d)
-			: _data_man{ d }
-		{}
-
 		void update(gui& g) override
 		{
-			_inspector.update(g, _data_man);
+			[[maybe_unused]]
+			auto [data, lock] = data::detail::get_data_manager_exclusive_lock();
+			_inspector.update(g, *data);
 			return;
 		}
 
 	private:	
-		data::resource_inspector _inspector;
-		data::data_manager* _data_man;
+		ResourceInspector _inspector;
 	};
+
+	template<typename ResourceInspector>
+		requires is_resource_inspector<ResourceInspector>
+	void enable_resource_inspector();
 }
 
-#endif // !HADES_OBJECT_OVERLAY_HPP
+#include "hades/debug/resource_inspector.inl"
+
+#endif // !HADES_RESOURCE_INSPECTOR_HPP

@@ -15,22 +15,6 @@ using namespace std::string_view_literals;
 
 namespace hades::data
 {
-	static std::vector<std::pair<string, make_resource_editor_fn>> resource_editors;
-
-	void register_resource_editor(std::string_view s, make_resource_editor_fn fn)
-	{
-		auto end = std::end(resource_editors);
-		auto iter = std::find_if(begin(resource_editors), end, [s](auto&& elm) {
-			return elm.first == s;
-			});
-
-		if (iter != end)
-			iter->second = std::move(fn);
-		else
-			resource_editors.emplace_back(s, std::move(fn));
-		return;
-	}
-
 	class animation_editor : public resource_editor
 	{
 	public:
@@ -40,18 +24,24 @@ namespace hades::data
 			_anim = anim::get_resource(d, i, mod);
 			_name = "Animation: "s + d.get_as_string(i) + "###anim-edit"s;
 			const auto texture = anim::get_texture(*_anim);
-			const auto tex_id = resources::texture_functions::get_id(texture);
-			_tex_name = d.get_as_string(tex_id);
+			if (texture)
+			{
+				const auto tex_id = resources::texture_functions::get_id(texture);
+				_tex_name = d.get_as_string(tex_id);
+			}
+
 			_duration = anim::get_duration(*_anim);
 			_base = d.get_resource(i);
 
 			// size of first frame
 			_anim_frames = anim::get_animation_frames(*_anim);
-			assert(!empty(_anim_frames));
-			const auto& first = _anim_frames.front();
-			_size = { abs(first.w * first.scale_w), abs(first.h * first.scale_h) };
+			if (!empty(_anim_frames))
+			{
+				const auto& first = _anim_frames.front();
+				_size = { abs(first.w * first.scale_w), abs(first.h * first.scale_h) };
+			}
 
-			_mod = mod;
+			return;
 		}
 
 		void update(data::data_manager& d, gui& g) override
@@ -70,7 +60,7 @@ namespace hades::data
 			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin(_name, gui::window_flags::no_collapse))
 			{
-				if (!editable(_mod))
+				if (!editable(_base->mod))
 					g.begin_disabled();
 
 				g.begin_disabled();
@@ -85,7 +75,7 @@ namespace hades::data
 					generate_yaml(d);
 				}
 
-				if (!editable(_mod))
+				if (!editable(_base->mod))
 					g.end_disabled();
 
 				g.text("Resource as YAML:"sv);
@@ -97,7 +87,7 @@ namespace hades::data
 			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin("Animation frames"sv, gui::window_flags::no_collapse))
 			{
-				if (!editable(_mod))
+				if (!editable(_base->mod))
 					g.begin_disabled();
 
 				auto mod = false;
@@ -203,7 +193,7 @@ namespace hades::data
 				}
 				g.child_window_end();
 
-				if (!editable(_mod))
+				if (!editable(_base->mod))
 					g.end_disabled();
 			}
 			g.window_end();
@@ -223,44 +213,45 @@ namespace hades::data
 				g.checkbox("Play animation"sv, _play);
 				if (_play)
 					g.begin_disabled();
-				g.slider_int("Frame"s, _current_frame, 0, integer_cast<int>(size(_anim_frames) - 1), gui::slider_flags::no_input);
+				g.slider_int("Frame"s, _current_frame, 0, std::max(integer_cast<int>(size(_anim_frames)) - 1, 0), gui::slider_flags::no_input);
 				if (_play)
 					g.end_disabled();
 				if (g.child_window_begin("##anim-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
 				{
-					const auto float_size = gui::vector2{ _size[0], _size[1] };
-					if (_play)
+					if (integer_cast<std::size_t>(_current_frame) < size(_anim_frames))
 					{
-						const auto& io = ImGui::GetIO();
-						_time += io.DeltaTime * _play_speed;
-						const auto sec = seconds_float{ _time };
-						const auto time = time_point{ time_cast<time_duration>(sec) };
-						g.image(*_anim, float_size * _scale, time, sf::Color::White, sf::Color::White);
-
-						//select correct frame in ui
-						const auto& frame = animation::get_frame(*_anim, time);
-						const auto& frames = anim::get_animation_frames(*_anim);
-						for (auto i = std::size_t{}; i < size(frames); ++i)
+						const auto float_size = gui::vector2{ _size[0], _size[1] };
+						if (_play)
 						{
-							if (&frame == &frames[i])
-								_current_frame = integer_cast<int>(i);
-						}
-					}
-					else
-					{
-						assert(integer_cast<std::size_t>(_current_frame) < size(_anim_frames));
-						const auto iter = next(begin(_anim_frames), _current_frame);
-						_time = std::transform_reduce(begin(_anim_frames), iter,
-							0.f, std::plus<>(), std::mem_fn(&resources::animation_frame::normalised_duration));
-						_time *= time_cast<seconds_float>(_duration).count(); // -> to seconds first
+							const auto& io = ImGui::GetIO();
+							_time += io.DeltaTime * _play_speed;
+							const auto sec = seconds_float{ _time };
+							const auto time = time_point{ time_cast<time_duration>(sec) };
+							g.image(*_anim, float_size * _scale, time, sf::Color::White, sf::Color::White);
 
-						// Add epsilon to tie break frames. Otherwise we err towards frames towards the start of the animation
-						// when we have an even number of frames, this means half the frames are inaccessible.
-						const auto sec = seconds_float{ _time + std::numeric_limits<float>::epsilon() };
-						const auto time = time_cast<time_duration>(sec);// *_duration.count();
-						g.image(*_anim, float_size* _scale, time_point{ time }, sf::Color::White, sf::Color::White);
-					}
-					
+							//select correct frame in ui
+							const auto& frame = animation::get_frame(*_anim, time);
+							const auto& frames = anim::get_animation_frames(*_anim);
+							for (auto i = std::size_t{}; i < size(frames); ++i)
+							{
+								if (&frame == &frames[i])
+									_current_frame = integer_cast<int>(i);
+							}
+						}
+						else
+						{
+							const auto iter = next(begin(_anim_frames), _current_frame);
+							_time = std::transform_reduce(begin(_anim_frames), iter,
+								0.f, std::plus<>(), std::mem_fn(&resources::animation_frame::normalised_duration));
+							_time *= time_cast<seconds_float>(_duration).count(); // -> to seconds first
+
+							// Add epsilon to tie break frames. Otherwise we err towards frames towards the start of the animation
+							// when we have an even number of frames, this means half the frames are inaccessible.
+							const auto sec = seconds_float{ _time + std::numeric_limits<float>::epsilon() };
+							const auto time = time_cast<time_duration>(sec);// *_duration.count();
+							g.image(*_anim, float_size * _scale, time_point{ time }, sf::Color::White, sf::Color::White);
+						}
+					}//! if currentframe < size
 				}
 				g.child_window_end();
 			}
@@ -283,7 +274,6 @@ namespace hades::data
 		float _time = 0.f;
 		float _play_speed = 1.f;
 		bool _play = false;
-		unique_id _mod;
 	};
 
 	class texture_editor : public resource_editor
@@ -310,7 +300,7 @@ namespace hades::data
 			const auto requested_size = tex::get_requested_size(*_texture);
 			_requested_size[0] = requested_size.x;
 			_requested_size[1] = requested_size.y;
-			_mod = mod;
+			return;
 		}
 
 		void update(data::data_manager& d,gui& g) override
@@ -326,7 +316,7 @@ namespace hades::data
 
 			if (g.window_begin(_name, gui::window_flags::no_collapse))
 			{
-				if (!editable(_mod))
+				if (!editable(_texture_base->mod))
 					g.begin_disabled();
 
 				auto mod = false;
@@ -385,7 +375,7 @@ namespace hades::data
 					generate_yaml(d);
 				}
 
-				if (!editable(_mod))
+				if (!editable(_texture_base->mod))
 					g.end_disabled();
 
 				g.text("Resource as YAML:"sv);
@@ -457,7 +447,6 @@ namespace hades::data
 		bool _mips;
 		bool _repeat;
 		float _scale = 1.f;
-		unique_id _mod;
 
 		std::array<uint8, 3> _alpha;
 		bool _alpha_set = false;
@@ -466,36 +455,228 @@ namespace hades::data
 		std::array<texture_size_t, 2> _size;
 	};
 
-	static std::unique_ptr<resource_editor> make_resource_editor(std::string_view s)
+	class animation_group_editor : public resource_editor
 	{
-		auto end = std::end(resource_editors);
-		auto iter = std::find_if(begin(resource_editors), end, [s](auto&& elm) {
-			return elm.first == s;
-			});
+	public:
+		void set_target(data_manager& d, unique_id i, unique_id mod) override
+		{
+			_group = resources::animation_group_functions::get_resource(d, i, mod);
+			_base = d.get_resource(i, mod);
 
-		if (iter != end)
-			return std::invoke(iter->second);
+			assert(_group);
+			const auto anims = resources::animation_group_functions::get_all_animations(*_group);
 
+			for (const auto& [name, anim] : anims)
+				_anim_list.emplace_back(d.get_as_string(name), d.get_as_string(anim));
+
+			_title = "animation group: "s + d.get_as_string(i) + "###anim_group_win"s;
+
+			return;
+		}
+
+		void update(data::data_manager& d, gui& g) override
+		{
+			auto text_callback = [this, &d](gui_input_text_callback& input) {
+				if (empty(_completion_list))
+				{
+					const auto current = input.input_contents();
+					_completion_index = {};
+					auto resource_list = d.get_all_names_for_type("animations"sv);
+					resource_list.erase(std::remove_if(begin(resource_list), end(resource_list), [current](const std::string_view& elm) {
+						return elm.find(current) == std::string_view::npos;
+						}), end(resource_list));
+
+					std::partition(begin(resource_list), end(resource_list), [current](auto name) {
+						return name.find(current) == std::string_view::size_type{};
+						});
+
+					_completion_list = std::move(resource_list);
+					if (!empty(_completion_list))
+					{
+						input.clear_chars();
+						input.insert_chars(0, _completion_list[_completion_index]);
+					}
+				}
+				else
+				{
+					input.clear_chars();
+					if (++_completion_index >= size(_completion_list))
+						_completion_index = {};
+					input.insert_chars(0, _completion_list[_completion_index]);
+				}
+			};
+
+			g.next_window_size({}, gui::set_condition_enum::first_use);
+			if (g.window_begin(_title))
+			{
+				if (!editable(_base->mod))
+					g.begin_disabled();
+
+				using tflags = gui::table_flags;
+				if (g.begin_table("things"sv, 3, tflags::sortable | tflags::borders
+					| tflags::sizing_stretch_same))
+				{
+					using flags = gui::table_column_flags;
+					g.table_setup_column("Name"sv, {}, 3.f);
+					g.table_setup_column("Animation"sv, flags::no_sort, 3.f);
+					g.table_setup_column("Remove row", flags::no_sort | flags::no_header_label |flags::no_header_width, 1.f);
+					g.table_headers_row();
+
+					if (g.table_needs_sort())
+					{
+						auto [column, sort_order] = g.table_sort_column(0);
+						assert(column == 0);
+						switch (sort_order)
+						{
+						case gui::sort_direction::ascending:
+							std::ranges::sort(_anim_list, {}, &entry_t::name);
+							break;
+						case gui::sort_direction::descending:
+							std::ranges::sort(_anim_list, std::ranges::greater{}, &entry_t::name);
+							break;
+						case gui::sort_direction::none:
+							; // TODO: there doesn't seem to be a way to set this as the default in ImGui with tri-state?
+						}
+					}
+
+					auto changed = false;
+					auto remove = end(_anim_list);
+
+					const auto end = std::end(_anim_list);
+					for(auto iter = begin(_anim_list); iter != end; ++iter)
+					{
+						auto& [name, value] = *iter;
+						g.table_next_row();
+						if (g.table_next_column())
+						{
+							g.push_id(&name);
+							g.push_item_width(-1.f);
+
+							const auto was_invalid = std::ranges::count(_anim_list, name, &entry_t::name) > 1;
+							if (was_invalid)
+								g.push_colour(gui::colour_target::frame_background, colours::dark_red);
+							// must be unique
+							if(g.input("##name"sv, name) 
+								&& std::ranges::count(_anim_list, name, &entry_t::name) == 1)
+								changed = true;
+							if (was_invalid)
+								g.pop_colour();
+
+							g.pop_item_width();
+							g.pop_id();
+						}
+
+						if (g.table_next_column())
+						{
+							g.push_id(&name);
+							g.push_item_width(-1.f);
+
+							const auto anim_names = d.get_all_names_for_type("animations"sv);
+							const auto was_invalid = std::ranges::none_of(anim_names, [&value](const auto& str)->bool {
+									return str == value;
+								});
+
+							if (was_invalid)
+								g.push_colour(gui::colour_target::frame_background, colours::dark_red);
+							if (g.input_text("##value"sv, value, gui::input_text_flags::callback_completion, text_callback)
+								&& std::ranges::any_of(anim_names, [&value](const auto& str)->bool{
+									return str == value;
+									}))
+							{
+								changed = true;
+							}
+							if (was_invalid)
+								g.pop_colour();
+
+							if (g.is_item_focused() && _last_focused != &value)
+							{
+								_last_focused = &value;
+								_completion_list = {};
+							}
+							g.pop_item_width();
+							g.pop_id();
+						}
+
+						if (g.table_next_column())
+						{
+							g.push_id(&name);
+							if (g.button("remove", {-1.f, 0.f}))
+								remove = iter;
+							
+							g.pop_id();
+						}
+					}
+
+					if (remove != end)
+					{
+						_anim_list.erase(remove);
+						changed = true;
+					}
+
+					if (changed)
+					{
+						// update resource
+						auto new_values = std::unordered_map<unique_id, resources::resource_link<resources::animation>>{};
+						new_values.reserve(size(_anim_list));
+						for (const auto& [name, value] : _anim_list)
+						{
+							new_values.emplace(d.get_uid(name),
+								resources::animation_functions::make_resource_link(d, d.get_uid(value), _base->id));
+						}
+
+						resources::animation_group_functions::replace_animations(*_group, std::move(new_values));
+					}
+
+					g.end_table();
+				}
+
+				if (g.button("Add row"sv))
+					_anim_list.emplace_back();
+
+				if (!editable(_base->mod))
+					g.end_disabled();
+			}
+			g.window_end();
+		}
+
+	private:
+		struct entry_t
+		{
+			string name;
+			string animation;
+		};
+
+		std::vector<entry_t> _anim_list;
+		std::vector<std::string_view> _completion_list;
+		string _title;
+		std::string* _last_focused = {};
+		std::size_t _completion_index;
+		resources::animation_group* _group = {};
+		const resources::resource_base* _base = {};
+	};
+
+	void basic_resource_inspector::update(gui& g, data::data_manager& d)
+	{
+		_resource_tree(g, d);
+
+		if (_tree_state.res_editor)
+			_tree_state.res_editor->update(d, g);
+		return;
+	}
+
+	std::unique_ptr<resource_editor> basic_resource_inspector::make_resource_editor(std::string_view s)
+	{
 		if (s == "textures"sv)
 			return std::make_unique<texture_editor>();
 		else if (s == "animations"sv)
 			return std::make_unique<animation_editor>();
+		else if (s == "animation-groups"sv)
+			return std::make_unique<animation_group_editor>();
 
 		return {};
 	}
 
-	void resource_inspector::update(gui& g, data::data_manager* d)
-	{
-		assert(d);
-
-		_resource_tree(g, d);
-
-		if (_tree_state.res_editor)
-			_tree_state.res_editor->update(*d, g);
-		return;
-	}
-
-	void resource_inspector::_list_resources_from_group(resource_inspector::resource_tree_state::group& group, gui& g,
+	void basic_resource_inspector::_list_resources_from_group(resource_tree_state::group& group, gui& g,
 		data::data_manager& d, unique_id mod)
 	{
 		auto ids = std::vector<unique_id>{};
@@ -526,7 +707,7 @@ namespace hades::data
 		}
 	}
 
-	void resource_inspector::_refresh(data::data_manager& d)
+	void basic_resource_inspector::_refresh(data::data_manager& d)
 	{
 		const auto dat = d.get_mod_stack();
 		// build the list of resource types
@@ -580,9 +761,9 @@ namespace hades::data
 		return;
 	}
 
-	void resource_inspector::_resource_tree(gui& g, data::data_manager* d)
+	void basic_resource_inspector::_resource_tree(gui& g, data::data_manager& d)
 	{
-		const auto mods = d->get_mod_stack();
+		const auto mods = d.get_mod_stack();
 		//main resource list
 		g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 		if (g.window_begin("resource tree"sv, gui::window_flags::no_collapse))
@@ -590,16 +771,29 @@ namespace hades::data
 			if (_tree_state.mod_index >= size(mods))
 			{
 				_tree_state.mod_index = size(mods) - 1;
-				_refresh(*d);
+				_refresh(d);
 			}
 
 			auto current_mod = _tree_state.mod_index;
-			if (g.combo_begin("Mod"sv, mods[current_mod]->mod_info.name))
+			const auto preview_str = [&] {
+				auto& current = mods[current_mod]->mod_info;
+				if (_mod == current.id)
+					return current.name + "*"s;
+				else
+					return current.name;
+			}();
+
+			if (g.combo_begin("Mod"sv, preview_str))
 			{
 				//list other mod options
 				for (auto i = std::size_t{}; i < size(mods); ++i)
 				{
-					if (g.selectable(mods[i]->mod_info.name, i == current_mod))
+					auto& mod_info = mods[i]->mod_info;
+					auto str = mod_info.name;
+					if (mod_info.id == _mod)
+						str += "*"s;
+
+					if (g.selectable(str, i == current_mod))
 						_tree_state.mod_index = i;
 				}
 
@@ -607,7 +801,7 @@ namespace hades::data
 			}
 
 			if (current_mod != _tree_state.mod_index)
-				_refresh(*d);
+				_refresh(d);
 
 			if (g.child_window_begin("##resource-tree-list"sv))
 			{
@@ -624,7 +818,7 @@ namespace hades::data
 
 						if (open)
 						{
-							_list_resources_from_group(resource_type, g, *d,
+							_list_resources_from_group(resource_type, g, d,
 								mods[_tree_state.mod_index]->mod_info.id);
 							g.tree_pop();
 						}

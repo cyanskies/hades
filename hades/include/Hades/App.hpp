@@ -51,7 +51,7 @@ namespace hades
 		/// \brief Starts the main app loop.
 		///
 		////////////////////////////////////////////////////////////
-		[[noreturn]] bool run();
+		[[noreturn]] void run();
 
 		////////////////////////////////////////////////////////////
 		/// \brief Closes the Window and ends any lingering states.

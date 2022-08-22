@@ -1,5 +1,6 @@
 #include "hades/data.hpp"
 
+#include <algorithm>
 #include <shared_mutex>
 
 #include "hades/exceptions.hpp"
@@ -173,6 +174,38 @@ namespace hades
 			std::transform(begin(_mod_stack), end(_mod_stack), back_inserter(out), [](auto&& res) {
 				return &res;
 				});
+			return out;
+		}
+
+		std::vector<std::string_view> data_manager::get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod) const
+		{
+			const auto end = std::rend(_mod_stack);
+			auto iter = mod ? std::find_if(rbegin(_mod_stack), end, [mod](const auto& elm) {
+				return elm.mod_info.id == *mod;
+				}) : _mod_stack.rbegin();
+
+			if (iter == end)
+				return {};
+
+			auto out = std::vector<std::string_view>{};
+
+			for (; iter != end; ++iter)
+			{
+				auto anim_groups = std::find_if(begin(iter->resources_by_type),
+					std::end(iter->resources_by_type), [resource_type](const auto& res) {
+						return res.first == resource_type;
+					});
+
+				if (anim_groups == std::end(iter->resources_by_type))
+					break;
+
+				std::transform(begin(anim_groups->second), std::end(anim_groups->second),
+					back_inserter(out), [this](const auto& elm) -> std::string_view {
+					return get_as_string(elm->id);
+					});
+			}
+
+			remove_duplicates(out);
 			return out;
 		}
 

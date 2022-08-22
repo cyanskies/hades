@@ -14,6 +14,7 @@
 #include "SFML/System/Err.hpp"
 
 #include "hades/animation.hpp"
+#include "hades/colour.hpp"
 #include "hades/data.hpp"
 #include "hades/draw_clamp.hpp"
 #include "hades/font.hpp"
@@ -384,12 +385,19 @@ namespace hades
 		ImGui::PopFont();
 	}
 
-	ImVec4 to_imvec4(const sf::Color &c)
+	template<typename Colour>
+	ImVec4 to_imvec4(const Colour &c) noexcept
 	{
 		return { c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f };
 	}
 
 	void gui::push_colour(colour_target element, const sf::Color &c)
+	{
+		_active_assert();
+		ImGui::PushStyleColor(static_cast<ImGuiCol>(element), to_imvec4(c));
+	}
+
+	void gui::push_colour(colour_target element, const colour& c)
 	{
 		_active_assert();
 		ImGui::PushStyleColor(static_cast<ImGuiCol>(element), to_imvec4(c));
@@ -1031,6 +1039,20 @@ namespace hades
 		return;
 	}
 
+	void gui::table_setup_column(std::string_view label, table_column_flags flags, float init_width_or_weight/*, ImGuiID user_id*/)
+	{
+		_active_assert();
+		ImGui::TableSetupColumn(to_string(label).c_str(), enum_type(flags), init_width_or_weight);
+		return;
+	}
+
+	void gui::table_headers_row()
+	{
+		_active_assert();
+		ImGui::TableHeadersRow();
+		return;
+	}
+
 	void gui::table_next_row(table_row_flags row_flags, float min_row_height)
 	{
 		_active_assert();
@@ -1048,6 +1070,27 @@ namespace hades
 	{
 		_active_assert();
 		return ImGui::TableSetColumnIndex(column_n);
+	}
+
+	bool gui::table_needs_sort() const noexcept
+	{
+		_active_assert();
+		auto specs = ImGui::TableGetSortSpecs();
+		auto ret = specs && specs->SpecsDirty && specs->SpecsCount;
+		if (ret)
+			specs->SpecsDirty = false;
+		return ret;
+	}
+
+	gui::sort_column_return gui::table_sort_column(int sort_order) const noexcept
+	{
+		auto specs = ImGui::TableGetSortSpecs();
+		assert(specs);
+		assert(specs->Specs);
+		assert(specs->SpecsCount > sort_order);
+
+		auto& entry = *(specs->Specs + sort_order);
+		return { entry.ColumnIndex, sort_direction{ entry.SortDirection } };
 	}
 
 	void gui::columns_begin(std::size_t count, bool border)

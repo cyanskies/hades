@@ -58,35 +58,36 @@ namespace hades::data
 		}
 	}
 
-	static bool ContainsTab(std::string_view yaml)
-	{
-		return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
-	}
-
 	//mod is the name of a folder or archive containing a mod.yaml file
-	void data_system::add_mod(std::string_view mod, bool autoLoad, std::string_view name)
+	void data_system::add_mod(std::string_view mod, bool autoLoad, std::filesystem::path name)
 	{
 		// TODO: if a mod fails to load, we need to unload the mod and any dependencies that it brought it
-		auto m = data::mod{};
-		m.source = mod;
-		const auto modyaml = files::read_resource(m, name);
-
-		if (ContainsTab(modyaml))
-			log_warning("Yaml file: "s + to_string(mod) + "/"s + to_string(name) + " contains tabs, expect errors."s);
-		//parse game.yaml
-		const auto root = data::make_parser(modyaml);
-		const auto mod_key = get_uid(mod);
-
-		_parse_mod(mod_key, mod, *root, autoLoad);
-		
-		//record the list of loaded games/mods
-		if (name == "game.yaml")
+		try
 		{
-			assert(!_game);
-			_game = mod_key;
+			auto m = data::mod{};
+			m.source = mod;
+			const auto modyaml = files::read_resource(m, name);
+	
+			//parse game.yaml
+			const auto root = data::make_parser(modyaml);
+			const auto mod_key = get_uid(mod);
+
+			_parse_mod(mod_key, mod, *root, autoLoad);
+
+			//record the list of loaded games/mods
+			if (name == "game.yaml")
+			{
+				assert(!_game);
+				_game = mod_key;
+			}
+			else
+				_mods.push_back(mod_key);
 		}
-		else
-			_mods.push_back(mod_key);
+		catch (const parser_exception& e)
+		{
+			log_error(e.what() + ", while parsing: "s + to_string(mod) + "/"s + name.generic_string());
+			throw;
+		}
 	}
 
 	bool data_system::try_load_mod(std::string_view mod)
@@ -253,10 +254,6 @@ namespace hades::data
 		try
 		{
 			const auto include_yaml = files::read_resource(mod_info, file);
-
-			if (ContainsTab(include_yaml))
-				LOGWARNING("Yaml file: " + mod_info.name + "/" + file + " contains tabs, expect errors.");
-
 			const auto parser = data::make_parser(include_yaml);
 			std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
 		}

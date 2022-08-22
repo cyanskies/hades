@@ -116,14 +116,16 @@ int hades_main(int argc, char* argv[])
 		app.postInit(commands);
 		app.run();
 	}
-	catch (const std::bad_alloc& e)
-	{
-		throw;
-	}
 	catch(const std::exception &e)
 	{
 		hades::log_error("Unhandled exception"sv);
 		hades::log_error(e.what());
+		write_log();
+		throw;
+	}
+	catch (...)
+	{
+		hades::log_error("Unexpected exception"sv);
 		write_log();
 		throw;
 	}

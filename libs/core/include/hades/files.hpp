@@ -9,7 +9,6 @@
 
 #include "hades/archive.hpp"
 #include "hades/exceptions.hpp"
-//#include "hades/resource_base.hpp"
 
 namespace hades::data
 {

@@ -1,5 +1,7 @@
 #include "hades/mod_editor.hpp"
 
+#include <iterator>
+
 #include "hades/console_variables.hpp"
 #include "hades/properties.hpp"
 
@@ -9,15 +11,8 @@ namespace hades
 {
 	void mod_editor_impl::init()
 	{
-		[[maybe_unused]] auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
-
-		const auto mods = data_man->get_mod_stack();
-		_mods.clear();
-
-		for (const auto& m : mods)
-			_mods.emplace_back(m->mod_info.name);
-
 		reinit();
+		return;
 	}
 	
 	bool mod_editor_impl::handle_event(const event& e)
@@ -38,9 +33,9 @@ namespace hades
 		{
 			if (_gui.menu_begin("File"sv))
 			{
-				if (_gui.menu_item("New mod..."sv, !_editing_mod))
+				if (_gui.menu_item("New mod..."sv, !_current_mod))
 					_new_mod.open = true;
-				if (_gui.menu_begin("Edit mod"sv, !_editing_mod))
+				if (_gui.menu_begin("Edit mod"sv, !_current_mod))
 				{
 					if(_gui.menu_item("Load mod..."sv))
 						_load_mod.open = true;
@@ -50,7 +45,7 @@ namespace hades
 						const auto disabled = data::data_manager::built_in_mod_name() == m;
 						if (disabled)
 							_gui.begin_disabled();
-						if (_gui.menu_item(m, !_editing_mod))
+						if (_gui.menu_item(m, !_current_mod))
 						{
 							_mode = edit_mode::already_loaded;
 							_set_loaded_mod(m, *data_man);
@@ -62,15 +57,21 @@ namespace hades
 					_gui.menu_end();
 				}
 
-				_gui.menu_item("Save mod"sv, _editing_mod);
-				if (_gui.menu_item("Close mod"sv, _editing_mod))
+				if (_gui.menu_item("Save mod"sv, _current_mod))
+					_save_mod(*data_man);
+
+				if (_gui.menu_item("Close mod"sv, _current_mod))
 					_close_mod(*data_man);
+
+				if (_gui.menu_item("Exit"sv))
+					kill();
+
 				_gui.menu_end();
 			}
 
 			if (_gui.menu_begin("Mod"))
 			{
-				if (_gui.menu_item("Edit mod properties...", _editing_mod))
+				if (_gui.menu_item("Edit mod properties...", _current_mod))
 				{
 					_edit_mod_window.open = true;
 				}
@@ -123,7 +124,7 @@ namespace hades
 
 		_mod_properties(_gui, *data_man);
 
-		_inspector.update(_gui, data_man);
+		_inspector.update(_gui, *data_man);
 		_gui.frame_end();
 	}
 
@@ -151,6 +152,15 @@ namespace hades
 		_backdrop.setSize({ fwidth, fheight });
 		const auto background_colour = sf::Color{ 200u, 200u, 200u, 255u };
 		_backdrop.setFillColor(background_colour);
+
+		[[maybe_unused]] auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
+
+		const auto mods = data_man->get_mod_stack();
+		_mods.clear();
+
+		for (const auto& m : mods)
+			_mods.emplace_back(m->mod_info.name);
+		return;
 	}
 
 	void mod_editor_impl::_close_mod(data::data_manager& d)
@@ -160,6 +170,9 @@ namespace hades
 		case edit_mode::normal:
 		{
 			const auto mod_count = d.get_mod_count();
+			const auto count_diff = mod_count - _mod_count;
+			for (auto i = std::size_t{}; i < count_diff; ++i)
+				d.pop_mod();
 		}
 		case edit_mode::already_loaded:
 		{
@@ -167,7 +180,18 @@ namespace hades
 		}
 		}
 
+		_current_mod = unique_zero;
+
 		return;
+	}
+
+	void mod_editor_impl::_save_mod(data::data_manager& d)
+	{
+		//if (/*portable*/)
+		//	;
+
+		//if (/*compressed*/)
+		//	;
 	}
 
 	void mod_editor_impl::_mod_properties(gui& g, data::data_manager& d)
@@ -289,10 +313,6 @@ namespace hades
 		}		
 	}
 
-	void mod_editor_impl::_request_load_mod(std::string_view mod, data::data_manager& d)
-	{
-	}
-
 	void mod_editor_impl::_set_loaded_mod(std::string_view mod, data::data_manager& d)
 	{
 		const auto uid = d.get_uid(mod);
@@ -312,13 +332,13 @@ namespace hades
 			});
 
 		_edit_mod_window.pretty_name = m.name;
-		_editing_mod = true;
 
 		return;
 	}
 
 	void mod_editor_impl::_set_mod(std::string_view mod, data::data_manager& d)
 	{
+		_mod_count = d.get_mod_count();
 		if (d.try_load_mod(mod))
 		{
 			_set_loaded_mod(mod, d);

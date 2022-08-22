@@ -3,20 +3,21 @@
 
 #include <iterator>
 #include <random>
-#include <type_traits>
 
 namespace hades::detail
 {
 	std::default_random_engine& get_engine() noexcept;
 
-	template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+	template<typename T>
+		requires std::integral<T>
 	T random(T min, T max)
 	{
 		std::uniform_int_distribution<T> random{ min, max };
 		return random(get_engine());
 	}
 
-	template<typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+	template<typename T>
+		requires std::floating_point<T>
 	T random(T min, T max)
 	{
 		std::uniform_real_distribution<T> random{ min, max };

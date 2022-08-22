@@ -7,6 +7,8 @@
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
 
+using namespace std::string_literals;
+
 namespace hades::data
 {
 	class yaml_parser_node : public parser_node
@@ -41,7 +43,7 @@ namespace hades::data
 		{
 			auto seq = get_children();
 			if (seq.size() > 1)
-				LOGWARNING("Called get_child on a data node: " + to_string() + ", but that node has more than one child.");
+				LOGWARNING("Called get_child on a data node: "s + to_string() + ", but that node has more than one child."s);
 
 			if (seq.empty())
 				return nullptr;
@@ -125,10 +127,18 @@ namespace hades::data
 		return std::make_unique<yaml_parser_node>(src);
 	}
 
+	static bool contains_tab(std::string_view yaml)
+	{
+		return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
+	}
+
 	std::unique_ptr<parser_node> make_yaml_parser(std::string_view src)
 	{
 		try
 		{
+			if (contains_tab(src))
+				throw parser_exception("yaml file contains tabs."s);
+
 			return make_yaml_parser(YAML::Load(to_string(src)));
 		}
 		catch (const YAML::ParserException &p)

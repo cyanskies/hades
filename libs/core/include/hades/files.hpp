@@ -19,44 +19,7 @@ namespace hades::files
 {
 	//hades input file stream
 	//defers to izfsteam for compressed files
-	class ifstream
-	{
-	public:
-		using char_t = std::byte;
-		using stream_t = std::ifstream;
-		using pos_type = stream_t::traits_type::pos_type;
-		using off_type = stream_t::traits_type::off_type;
-
-		ifstream() noexcept = default;
-		explicit ifstream(const std::filesystem::path& p)
-		{
-			open(p);
-			return;
-		}
-
-		//std::ifstream is not guaranteed noexcept move
-		ifstream(ifstream&&) noexcept(std::is_nothrow_move_constructible_v<stream_t> 
-			&& std::is_nothrow_move_constructible_v<zip::izfstream>) = default;
-		ifstream& operator=(ifstream&&) noexcept(std::is_nothrow_move_assignable_v<stream_t>
-			&& std::is_nothrow_move_assignable_v<zip::izfstream>) = default;
-
-		void open(const std::filesystem::path&);
-		void close() noexcept;
-		bool is_open() const noexcept;
-
-		ifstream& read(char_t*, std::size_t);
-		std::streamsize gcount() const;
-		pos_type tellg();
-
-		bool eof() const;
-
-		void seekg(pos_type);
-		void seekg(off_type, std::ios_base::seekdir);
-
-	private:
-		std::variant<stream_t, zip::izfstream> _stream{};
-	};
-
+	using ifstream = zip::izfstream;
 	static_assert(std::is_move_constructible_v<ifstream>);
 
 	//TODO: check error paths/ throw file not found?
@@ -89,6 +52,7 @@ namespace hades
 	{
 	public:
 		using char_t = std::byte;
+		using char_type = char_t;
 		using stream_t = files::ifstream;
 		using pos_type = stream_t::pos_type;
 		using off_type = stream_t::off_type;
@@ -141,7 +105,6 @@ namespace hades
 	};
 
 	static_assert(std::is_move_constructible_v<irfstream>);
-
 }
 
 namespace hades::files

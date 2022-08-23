@@ -359,171 +359,109 @@ namespace hades::zip
 	// in file mode
 	constexpr auto if_mode = std::ios_base::binary;
 
-	izfstream::izfstream(const std::filesystem::path& p)
-		: _stream{ p, if_mode }, _zip_stream{ new z_stream, delete_z_stream }
+
+	izfstream::izfstream() noexcept
+		: _stream{ std::filebuf{} },
+		std::istream{ nullptr }
+	{}
+
+	izfstream::izfstream(const std::filesystem::path& p) 
+		: std::istream{ nullptr }
 	{
-		if (!std::filesystem::exists(p))
-			throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
-		if (!_stream.is_open())
-			throw files::file_error{ "cannot open file: "s + p.generic_string() };
-		start_z_stream(_stream, _zip_stream->stream);
+		_stream = compressed_filebuf{ p, compressed_filebuf::open_mode::read };
+		rdbuf(&std::get<compressed_filebuf>(_stream));
+		if (!is_open())
+		{
+			// try normal file opening
+			auto p_str = p.string();
+			auto file = std::fopen(p_str.c_str(), "rb");
+			_stream = std::filebuf{ file };
+			rdbuf(&std::get<std::filebuf>(_stream));
+
+			if (!is_open())
+			{
+				if (!std::filesystem::exists(p))
+					throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
+				throw files::file_error{ "cannot open file: "s + p.generic_string() };
+			}
+		}
+
 		return;
 	}
 
-	izfstream::izfstream(stream_t s)
+	/*izfstream::izfstream(stream_t s)
 		: _stream{ std::move(s) }, _zip_stream{ new z_stream, delete_z_stream }
 	{
 		if (!_stream.is_open())
 			throw files::file_not_open{ "stream passed to izfstream(stream_t) is not open"s };
 		start_z_stream(_stream, _zip_stream->stream);
 		return;
+	}*/
+
+	izfstream::izfstream(izfstream&& rhs) noexcept
+		: std::istream{ std::move(rhs) }
+	{
+		_stream = std::move(rhs._stream);
+		rhs._stream = {};
+		std::streambuf* ptr = {};
+		std::visit([&ptr](auto& stream) {
+			ptr = &stream;
+			return;
+			}, _stream);
+
+		rdbuf(ptr);
+		rhs.rdbuf(nullptr);
+		return;
 	}
 
-	izfstream::~izfstream() noexcept
+
+	izfstream& izfstream::operator=(izfstream&& rhs) noexcept
 	{
-		if (is_open())
-			inflateEnd(&_zip_stream->stream);
-		return;
+		std::istream::operator=(std::move(rhs));
+		_stream = std::move(rhs._stream);
+		rhs._stream = {};
+		std::streambuf* ptr = {};
+		std::visit([&ptr](auto& stream) {
+			ptr = &stream;
+			return;
+			}, _stream);
+
+		rdbuf(ptr);
+		rhs.rdbuf(nullptr);
+		return *this;
 	}
 
 	void izfstream::open(const std::filesystem::path& p)
 	{
 		assert(!is_open());
-		if (!std::filesystem::exists(p))
-			throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
-		_stream.open(p, if_mode);
-		if (!_stream.is_open())
+		_stream = compressed_filebuf{ p, compressed_filebuf::open_mode::read };
+		rdbuf(&std::get<compressed_filebuf>(_stream));
+
+		if (!is_open())
+		{
+			auto p_str = p.string();
+			auto file = std::fopen(p_str.c_str(), "rb");
+			_stream = std::filebuf{ file };
+			rdbuf(&std::get<std::filebuf>(_stream));
+		}
+
+		if (!is_open())
+		{
+			if (!std::filesystem::exists(p))
+				throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
 			throw files::file_error{ "cannot open file: "s + p.generic_string() };
-		start_z_stream(_stream, _zip_stream->stream);
+		}
+
 		return;
 	}
 
 	void izfstream::close() noexcept
 	{
 		assert(is_open());
-		inflateEnd(&_zip_stream->stream);
-		*_zip_stream = z_stream{};
-		_stream.close();
-		_buffer.clear();
-		_buffer_pos = std::size_t{};
-		_buffer_end = std::size_t{};
-		_eof = false;
-		return;
-	}
-
-	izfstream& izfstream::read(char_t* buffer, std::size_t count)
-	{
-		if (std::empty(_buffer))
-		{
-			_buffer.resize(buffer_size);
-			using char_type = izfstream::stream_t::char_type;
-			_stream.read(reinterpret_cast<char_type*>(std::data(_buffer)), buffer_size);
-			_buffer_pos = std::size_t{};
-			_buffer_end = integer_cast<std::size_t>(_stream.gcount());
-		}
-
-		//uint as defined by zlib
-		using z_uint = uInt;
-		_zip_stream->stream.avail_in = integer_cast<z_uint>(_buffer_end - _buffer_pos);
-		_zip_stream->stream.next_in = reinterpret_cast<Bytef*>(std::data(_buffer) + _buffer_pos);
-		_zip_stream->stream.avail_out = integer_cast<z_uint>(count);
-		_zip_stream->stream.next_out = reinterpret_cast<Bytef*>(buffer);
-
-		const auto ret = ::inflate(&_zip_stream->stream, Z_NO_FLUSH);
-		if (ret == Z_STREAM_END)
-			_eof = true;
-		else if (ret != Z_OK)
-			throw archive_error{ "izfstream failed to inflate during read"s };
-
-		if (_zip_stream->stream.avail_in == 0)
-		{
-			_buffer.clear();
-			_buffer_pos = std::size_t{};
-			_buffer_end = std::size_t{};
-		}
-
-		_last_read = integer_cast<std::streamsize>(count) -
-			integer_cast<std::streamsize>(_zip_stream->stream.avail_out);
-
-		// i don't know why this is part of the std streams api
-		return *this;
-	}
-
-	izfstream::pos_type izfstream::tellg()
-	{
-		return static_cast<pos_type>(_zip_stream->stream.total_out);
-	}
-
-	void izfstream::seekg(pos_type p)
-	{
-		assert(is_open());
-		if (p == pos_type{})
+		std::visit([](auto&& stream) {
+			stream.close();
 			return;
-		
-		const auto o = p - tellg();
-		seekg(o, std::ios_base::cur);
-		return;
-	}
-
-	void izfstream::seekg(off_type o, std::ios_base::seekdir d)
-	{
-		assert(is_open());
-		if (d == std::ios_base::beg)
-		{
-			_stream.seekg(izfstream::stream_t::off_type{}, std::ios_base::beg);
-			::inflateReset(&_zip_stream->stream);
-			_buffer.clear();
-			_buffer_pos = std::size_t{};
-			_buffer_end = std::size_t{};
-			_eof = false;
-			seekg(o, std::ios_base::cur);
-		}
-		else if (d == std::ios_base::cur)
-		{
-			if (o == off_type{})
-				return;
-			else if (o < 0)
-			{
-				//convert to absolute position
-				o = tellg() + o;
-				seekg(o);
-			}
-			else
-			{
-				//go forward untill we find the target
-				auto out_buffer = buffer{ buffer_size };
-				while (!eof())
-				{
-					const auto dist = o - tellg();
-					if (dist == 0)
-						break;
-					else if (dist < buffer_size)
-						read(std::data(out_buffer), integer_cast<std::size_t>(dist));
-					else
-						read(std::data(out_buffer), std::size(out_buffer));
-				}
-			}
-		}
-		else if (d == std::ios_base::end)
-		{
-			if (o == off_type{})
-			{
-				//seek to end
-				auto out_buffer = buffer{ buffer_size };
-				while (!eof())
-					read(std::data(out_buffer), std::size(out_buffer));
-			}
-			else if(o > 0)
-				seekg(0, std::ios_base::end);
-			else
-			{
-				seekg(0, std::ios_base::end);
-				const auto size = tellg();
-				const auto target = size + o;
-				seekg(target);
-			}
-		}
-
+			}, _stream);
 		return;
 	}
 
@@ -834,25 +772,6 @@ namespace hades::zip
 		} while (unzGoToNextFile(archive.handle) != UNZ_END_OF_LIST_OF_FILE);
 
 		LOG("Finished uncompressing archive: " + fs_path.generic_string());
-	}
-
-	namespace header
-	{
-		constexpr std::byte first{ 0x78 };
-		constexpr std::array<std::byte, 3> others{
-			static_cast<std::byte>(0x01),
-			static_cast<std::byte>(0x9C),
-			static_cast<std::byte>(0xDA)
-		};
-	}
-
-	bool probably_compressed(zip_header header) noexcept
-	{
-		return header[0] == header::first &&
-			std::any_of(std::begin(header::others), std::end(header::others), [second = header[1]](auto&& other)
-		{
-			return second == other;
-		});
 	}
 
 	bool probably_compressed(const buffer& stream) noexcept

@@ -15,95 +15,6 @@
 
 namespace fs = std::filesystem;
 
-namespace hades::files
-{
-	void ifstream::open(const fs::path& p)
-	{
-		if (!fs::exists(p))
-			throw file_not_found{ "file not found: " + p.string() };
-		auto f = stream_t{ p, std::ios::in | std::ios::binary };
-		auto h = zip::zip_header{};
-		using char_type = ifstream::stream_t::char_type;
-		f.read(reinterpret_cast<char_type*>(std::data(h)), std::size(h));
-		f.seekg({}, std::ios_base::beg);
-		if (zip::probably_compressed(h))
-			_stream.emplace<zip::izfstream>(std::move(f));
-		else
-			_stream = std::move(f);
-
-		return;
-	}
-
-	void ifstream::close() noexcept
-	{
-		std::visit([](auto&& stream) {
-			stream.close();
-			return;
-			}, _stream);
-
-		return;
-	}
-
-	bool ifstream::is_open() const noexcept
-	{
-		return std::visit([](const auto& stream)->bool {
-			return stream.is_open();
-			}, _stream);
-	}
-
-	ifstream& ifstream::read(char_t* ptr, std::size_t size)
-	{
-		std::visit([ptr, size](auto&& stream) {
-			using T = std::decay_t<decltype(stream)>;
-			if constexpr(std::is_same_v<T, std::ifstream>)
-				stream.read(reinterpret_cast<std::ifstream::char_type*>(ptr), size);
-			else
-				stream.read(ptr, size);
-			return;
-			}, _stream);
-		return *this;
-	}
-
-	std::streamsize ifstream::gcount() const
-	{
-		return std::visit([](auto&& stream)->std::streamsize const {
-			return stream.gcount();
-			}, _stream);
-	}
-
-	ifstream::pos_type ifstream::tellg()
-	{
-		return std::visit([](auto&& stream)->pos_type {
-			return stream.tellg();
-			}, _stream);
-	}
-
-	bool ifstream::eof() const
-	{
-		return std::visit([](const auto& stream)->bool {
-			return stream.eof();
-			}, _stream);
-	}
-
-	void ifstream::seekg(pos_type p)
-	{
-		std::visit([p](auto&& stream) {
-			stream.seekg(p);
-			return;
-			}, _stream);
-		return;
-	}
-
-	void ifstream::seekg(off_type o, std::ios_base::seekdir dir)
-	{
-		std::visit([o, dir](auto&& stream) {
-			stream.seekg(o, dir);
-			return;
-			}, _stream);
-		return;
-	}
-}
-
 namespace hades
 {
 	void irfstream::open(const fs::path& m, const fs::path& f)
@@ -156,7 +67,8 @@ namespace hades
 	irfstream& irfstream::read(char_t* d, std::size_t c)
 	{
 		std::visit([d, c](auto&& stream) {
-			stream.read(d, c);
+			using T = std::decay_t<decltype(stream)>;
+			stream.read(reinterpret_cast<T::char_type*>(d), c);
 			return;
 		}, _stream);
 
@@ -232,7 +144,7 @@ namespace hades
 		auto f = files::ifstream{ mod_path / file };
 		if (f.is_open())
 		{
-			_stream = std::move(f);
+			_stream = std::move(f);// = std::move(f);
 			_mod_path = mod_path;
 			_rel_path = file;
 			return true;
@@ -279,7 +191,7 @@ namespace hades::files
 			if (str.eof())
 				break;
 
-			str.read(std::data(buf), default_buffer_size);
+			str.read(reinterpret_cast<Stream::char_type*>(std::data(buf)), default_buffer_size);
 			
 			const auto beg = std::begin(buf);
 			using diff_t = typename std::iterator_traits<std::decay_t<decltype(beg)>>::difference_type;

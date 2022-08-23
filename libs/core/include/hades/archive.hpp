@@ -1,45 +1,18 @@
 #ifndef HADES_ARCHIVE_HPP
 #define HADES_ARCHIVE_HPP
 
-#include <cstddef>
+//#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <variant>
 #include <vector>
 
+#include "hades/archive_streams.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/string.hpp"
-
-namespace hades
-{
-	//buffer of bytes
-	using buffer = std::vector<std::byte>;
-	//NOTE: .net recently moved from 4kb default to 8kb
-	constexpr auto default_buffer_size = std::size_t{ 4096 }; //4kb buffer
-}
-
-namespace hades::files
-{
-	class file_error : public runtime_error
-	{
-	public:
-		using runtime_error::runtime_error;
-	};
-
-	class file_not_found : public file_error
-	{
-	public:
-		using file_error::file_error;
-	};
-
-	class file_not_open : public file_error
-	{
-	public:
-		using file_error::file_error;
-	};
-}
 
 namespace hades::zip
 {
@@ -57,25 +30,6 @@ namespace hades::zip
 
 	struct z_stream;
 
-	class archive_error : public files::file_error
-	{
-	public:
-		using file_error::file_error;
-	};
-
-	//TODO: rename archive member not found
-	class file_not_found : public archive_error
-	{
-	public:
-		using archive_error::archive_error;
-	};
-
-	class file_not_open : public archive_error
-	{
-	public:
-		using archive_error::archive_error;
-	};
-
 	std::string_view zlib_version() noexcept;
 
 	//in archive file stream
@@ -83,6 +37,7 @@ namespace hades::zip
 	{
 	public:
 		using char_t = std::byte;
+		using char_type = std::byte; 
 		using stream_t = std::ifstream;
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
@@ -184,67 +139,42 @@ namespace hades::zip
 		string _file;
 	};
 
-	// stream buffer for reading or writing compressed files
-	template<typename CharT, typename Traits = std::char_traits<CharT>>
-	class basic_compressed_filebuf;
-
+	
 	//in compressed file stream
-	class izfstream
+	//reads possibly compressed files
+	class izfstream : public std::istream
 	{
 	public:
-		using char_t = std::byte;
+		using char_t = char;
 		using stream_t = std::ifstream;
 		using pos_type = stream_t::traits_type::pos_type;
 		using off_type = stream_t::traits_type::off_type;
 
-		izfstream() noexcept = default;
+		izfstream() noexcept;
 		explicit izfstream(const std::filesystem::path&);
-		explicit izfstream(stream_t s); //stream will seek back to the begining
+		//explicit izfstream(stream_t s); //stream will seek back to the begining
 
 		//std::ifstream is not required to be noexcept movable
-		izfstream(izfstream&&) noexcept(std::is_nothrow_move_constructible_v<std::ifstream>) = default;
-		izfstream& operator=(izfstream&&) noexcept(std::is_nothrow_move_assignable_v<std::ifstream>) = default;
-
-		~izfstream() noexcept;
+		izfstream(izfstream&&) noexcept;
+		izfstream& operator=(izfstream&&) noexcept;
 
 		void open(const std::filesystem::path&);
 		void close() noexcept;
 
 		bool is_open() const noexcept
 		{
-			return _stream.is_open();
+			return std::visit([](auto&& stream) {
+				return stream.is_open();
+				}, _stream);
 		}
-
-		izfstream& read(char_t* buffer, std::size_t count);
-
-		//sizes and positions are based on the uncompressed file
-		//so usage of this class is the same as the equivalent ifstream on a normal file
-		std::streamsize gcount() const
-		{
-			return _last_read;
-		}
-
-		pos_type tellg();
-
-		bool eof() const
-		{
-			return _eof;
-		}
-
-		void seekg(pos_type);
-		void seekg(off_type, std::ios_base::seekdir);
 
 	private:
-		buffer _buffer;
-		bool _eof = false;
-		std::size_t _buffer_pos = std::size_t{};
-		std::size_t _buffer_end = std::size_t{};
-		std::streamsize _last_read = std::streamsize{};
-		std::unique_ptr<z_stream, void(*)(z_stream*)noexcept> _zip_stream;
-		std::ifstream _stream;
+		std::variant<std::filebuf, compressed_filebuf> _stream;
 	};
-
+	
+	static_assert(std::is_default_constructible_v<izfstream>);
 	static_assert(std::is_move_constructible_v<izfstream>);
+	static_assert(std::is_move_assignable_v<izfstream>);
 
 	//ditermines if a file within an archive exists
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path);
@@ -259,9 +189,6 @@ namespace hades::zip
 	//uncompress archive
 	void uncompress_archive(const std::filesystem::path& path);
 
-	//test for zip compression header
-	using zip_header = std::array<std::byte, 2u>;
-	bool probably_compressed(zip_header) noexcept;
 	bool probably_compressed(const buffer& data) noexcept;
 
 	//both of these return archive exception on failure.

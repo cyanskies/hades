@@ -38,6 +38,7 @@ set(HADES_CORE_SRC
 	source/debug/object_overlay.cpp
 	include/hades/animation.hpp
 	include/hades/archive.hpp
+	include/hades/archive_streams.hpp
 	include/hades/background.hpp
 	include/hades/camera.hpp
 	include/hades/console_functions.hpp
@@ -76,7 +77,6 @@ set(HADES_CORE_SRC
 	include/hades/tile_map.hpp
 	include/hades/vertex_buffer.hpp
 	include/hades/debug/object_overlay.hpp
-	include/hades/detail/archive.inl
 	include/hades/detail/game_api.inl
 	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
@@ -95,7 +95,8 @@ set(HADES_CORE_LIBS
 	#sfml-system 
 	#sfml-window
 	plf-colony
-	PRIVATE	minizip)
+	minizip
+)
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")
 

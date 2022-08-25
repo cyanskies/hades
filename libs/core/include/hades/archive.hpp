@@ -154,7 +154,6 @@ namespace hades::zip
 		explicit izfstream(const std::filesystem::path&);
 		//explicit izfstream(stream_t s); //stream will seek back to the begining
 
-		//std::ifstream is not required to be noexcept movable
 		izfstream(izfstream&&) noexcept;
 		izfstream& operator=(izfstream&&) noexcept;
 
@@ -169,12 +168,32 @@ namespace hades::zip
 		}
 
 	private:
-		std::variant<std::filebuf, compressed_filebuf> _stream;
+		std::variant<std::filebuf, in_compressed_filebuf> _stream;
 	};
 	
 	static_assert(std::is_default_constructible_v<izfstream>);
 	static_assert(std::is_move_constructible_v<izfstream>);
 	static_assert(std::is_move_assignable_v<izfstream>);
+
+	//out compressed file stream
+	//writes compressed files
+	class ozfstream : public std::ostream
+	{
+	public:
+		ozfstream() noexcept;
+		explicit ozfstream(const std::filesystem::path&);
+
+		ozfstream(ozfstream&&) noexcept;
+		ozfstream& operator=(ozfstream&&) noexcept;
+
+		void open(const std::filesystem::path&);
+		void close() noexcept;
+
+		bool is_open() noexcept;
+
+	private:
+		out_compressed_filebuf _streambuf;
+	};
 
 	//ditermines if a file within an archive exists
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path);

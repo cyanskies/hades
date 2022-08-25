@@ -8,12 +8,86 @@
 #include <filesystem>
 
 #include "hades/archive.hpp"
+#include "hades/console_variables.hpp"
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
+#include "hades/properties.hpp"
 #include "hades/standard_paths.hpp"
 #include "hades/utility.hpp"
 
 namespace fs = std::filesystem;
+
+namespace hades::files 
+{
+	ofstream::ofstream() noexcept
+		: std::ostream{ nullptr }
+	{}
+
+	ofstream::ofstream(const std::filesystem::path& p)
+		: std::ostream{ nullptr }
+	{
+		open(p);
+		return;
+	}
+
+	ofstream::ofstream(ofstream&& rhs) noexcept
+		: std::ostream{ nullptr }
+	{
+		*this = std::move(rhs);
+		return;
+	}
+
+	ofstream& ofstream::operator=(ofstream&& rhs) noexcept
+	{
+		_stream = std::move(rhs._stream);
+		std::streambuf* str_ptr = {};
+		std::visit([&str_ptr](auto&& stream) {
+			str_ptr = &stream;
+			return;
+			}, _stream);
+
+		rdbuf(str_ptr);
+		rhs.rdbuf(nullptr);
+		return *this;
+	}
+
+	void ofstream::open(const std::filesystem::path& p)
+	{
+		if (*console::get_bool(cvars::file_deflate, true))//cvars::default_value::file_deflate))
+			_stream = zip::out_compressed_filebuf{ p };
+		else
+		{
+			auto buf = std::filebuf{};
+			buf.open(p, std::ios_base::out | std::ios_base::binary);
+			_stream = std::move(buf);
+		}
+
+		std::streambuf* str_ptr = {};
+		std::visit([&str_ptr](auto&& stream) {
+			str_ptr = &stream;
+			return;
+			}, _stream);
+
+		rdbuf(str_ptr);
+		return;
+	}
+
+	void ofstream::close() noexcept
+	{
+		std::visit([](auto&& stream) {
+			stream.close();
+			return;
+			}, _stream);
+		return;
+	}
+
+	bool ofstream::is_open() const noexcept
+	{
+		return std::visit([](auto&& stream) {
+			return stream.is_open();
+			}, _stream);
+	}
+}
 
 namespace hades
 {
@@ -288,10 +362,8 @@ namespace hades::files
 		return fs::create_directories(dir);
 	}
 
-	void write_file(const fs::path& path, std::string_view file_contents)
+	static ofstream make_ofstream(const std::filesystem::path& p)
 	{
-		const auto p = user_custom_file_directory() / path;
-
 		if (!p.has_filename())
 		{
 			const auto message = "unable to write file, path didn't include a filename; path was: " + p.generic_string();
@@ -299,34 +371,45 @@ namespace hades::files
 		}
 
 		const auto parent = p.parent_path();
-		if (!make_directory(parent))
+		if (!parent.empty() && !make_directory(parent))
 		{
 			const auto message = "No write permission for directory or unable to create directory; was: " + parent.generic_string();
 			throw file_error{ message };
 		}
 
-		//TODO: stream deflation
-		// we dont want to hold the whole stream in memory
-		// even though our input is
-		auto as_bytes = buffer{};
-
-		std::transform(std::begin(file_contents), std::end(file_contents), std::back_inserter(as_bytes), [](const auto c) {
-			return static_cast<std::byte>(c);
-			});
-
-		const auto output = zip::deflate(std::move(as_bytes));
-
-		std::ofstream file{ p, std::ios::binary | std::ios::trunc };
-		if (file.is_open())
-			file.write(reinterpret_cast<const char*>(std::data(output)), std::size(output));
-		else
-			//todo throw instead
-			LOGERROR("Failed to open file for writing: " + p.generic_string());
+		return ofstream{ p };
 	}
 
-	std::ofstream output_file_stream(const std::filesystem::path& path)
+	ofstream write_file(const std::filesystem::path& path)
 	{
-		const auto p = user_custom_file_directory() / path;
+		auto p = path;
+		if (!console::get_bool(cvars::file_portable, cvars::default_value::file_portable))
+			p = user_custom_file_directory() / path;
+
+		return make_ofstream(p);
+	}
+
+	void write_file(const fs::path& path, std::string_view file_contents)
+	{
+		auto stream = write_file(path);
+		stream.write(reinterpret_cast<const char*>(std::data(file_contents)), std::size(file_contents));
+		return;
+	}
+
+	std::ofstream append_file_uncompressed(const std::filesystem::path& path)
+	{
+		// no way to append with our ofstream
+		/*auto deflate = console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate);
+		const auto deflate_val = deflate->load();
+		deflate->store(false);
+		auto stream = make_ofstream(path);
+		deflate->store(deflate_val);
+
+		return stream;*/
+
+		auto p = path;
+		if(!console::get_bool(cvars::file_portable, cvars::default_value::file_portable))
+			p = user_custom_file_directory() / path;
 
 		if (!p.has_filename())
 		{
@@ -335,7 +418,7 @@ namespace hades::files
 		}
 
 		const auto parent = p.parent_path();
-		if (!make_directory(parent))
+		if (!parent.empty() && !make_directory(parent))
 		{
 			const auto message = "No write permission for directory or unable to create directory; was: " + parent.generic_string();
 			throw file_error{ message };

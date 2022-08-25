@@ -2,9 +2,11 @@
 
 #include <set>
 
+#include "hades/console_variables.hpp"
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/files.hpp"
+#include "hades/properties.hpp"
 #include "hades/utility.hpp"
 
 using namespace std::string_literals;
@@ -45,6 +47,8 @@ namespace hades::data
 		try
 		{
 			add_mod(game, true, "game.yaml");
+			auto& g = get_mod(get_uid(game));
+			console::set_property(cvars::game_name, g.name.empty() ? game : g.name);
 			game_loaded = true;
 		}
 		catch (const files::file_error& f)

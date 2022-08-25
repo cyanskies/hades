@@ -43,6 +43,9 @@ namespace hades
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_tick_count = "c_ticks_per_frame"; // reports number of ticks taken to generate the previous frame
 
+		// mod vars
+		constexpr auto game_name = "game";
+
 		//file vars
 		constexpr auto file_portable = "file_portable"; //if portable is true, saves and configs are stored in game directory
 														//rather than users home directory
@@ -79,8 +82,15 @@ namespace hades
 			constexpr auto client_previous_frametime = -1.f;
 			constexpr auto client_tick_count = 0;
 
-			constexpr auto file_portable = false;
+			constexpr auto game_name = "hades game engine";
+
+#ifdef NDEBUG
 			constexpr auto file_deflate = true;
+			constexpr auto file_portable = false;
+#else		
+			constexpr auto file_portable = true;
+			constexpr auto file_deflate = false;
+#endif
 
 			constexpr auto console_charsize = 15;
 			constexpr auto console_fade = 180;

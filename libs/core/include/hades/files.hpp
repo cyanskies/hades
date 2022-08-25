@@ -18,9 +18,28 @@ namespace hades::data
 namespace hades::files
 {
 	//hades input file stream
-	//defers to izfsteam for compressed files
+	//defers to izfstream for compressed files
 	using ifstream = zip::izfstream;
 	static_assert(std::is_move_constructible_v<ifstream>);
+
+	// compresses output if file_deflate flag is set
+	class ofstream : public std::ostream
+	{
+	public:
+		ofstream() noexcept;
+		explicit ofstream(const std::filesystem::path&);
+
+		ofstream(ofstream&&) noexcept;
+		ofstream& operator=(ofstream&&) noexcept;
+
+		void open(const std::filesystem::path&);
+		void close() noexcept;
+
+		bool is_open() const noexcept;
+
+	private:
+		std::variant<zip::out_compressed_filebuf, std::filebuf> _stream;
+	};
 
 	//TODO: check error paths/ throw file not found?
 	//open streams to files, saves and configs
@@ -117,14 +136,16 @@ namespace hades::files
 	//writes file_contents to the file at path,
 	//will place UserCustomFileDirectory before path if portable flag isnt set
 	//throws file_exception
+	// overwrites any existing file
+	ofstream write_file(const std::filesystem::path&);
 	void write_file(const std::filesystem::path& path, std::string_view file_contents);
+	// uncompressed stream to a file in UserCustomFileDirectory
+	std::ofstream append_file_uncompressed(const std::filesystem::path& path);
 	//same as above, calls UserSaveDirectory instead
 	void write_save(std::string_view);
 	//as above, calls UserConfigDir instead
 	void write_config(std::string_view);
 
-	// uncompressed stream to a file in UserCustomFileDirectory
-	std::ofstream output_file_stream(const std::filesystem::path& path);
 
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path);
 }

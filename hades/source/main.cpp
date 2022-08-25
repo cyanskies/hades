@@ -8,8 +8,8 @@
 #include "hades/Console.hpp"
 #include "hades/files.hpp"
 #include "hades/logging.hpp"
-#include "Hades/Main.hpp"
-#include "Hades/Types.hpp"
+#include "hades/Main.hpp"
+#include "hades/types.hpp"
 
 using namespace std::string_view_literals;
 
@@ -17,11 +17,7 @@ template<bool Steal = true>
 std::conditional_t<Steal, void, bool> write_log()
 {
 	//write log to file
-	#ifdef NDEBUG
-	auto logfile = hades::files::output_file_stream(std::filesystem::path{ hades::date() + ".txt" });
-	#else
-	auto logfile = std::ofstream(std::filesystem::path{ hades::date() + ".txt" }, std::ios_base::app);
-	#endif
+	auto logfile = hades::files::append_file_uncompressed(std::filesystem::path{ hades::date() + ".txt" });
 	assert(logfile.is_open());
 	
 	auto log = hades::console::output_buffer{};

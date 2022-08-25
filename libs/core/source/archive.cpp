@@ -368,8 +368,8 @@ namespace hades::zip
 	izfstream::izfstream(const std::filesystem::path& p) 
 		: std::istream{ nullptr }
 	{
-		_stream = compressed_filebuf{ p, compressed_filebuf::open_mode::read };
-		rdbuf(&std::get<compressed_filebuf>(_stream));
+		_stream = in_compressed_filebuf{ p };
+		rdbuf(&std::get<in_compressed_filebuf>(_stream));
 		if (!is_open())
 		{
 			// try normal file opening
@@ -434,8 +434,8 @@ namespace hades::zip
 	void izfstream::open(const std::filesystem::path& p)
 	{
 		assert(!is_open());
-		_stream = compressed_filebuf{ p, compressed_filebuf::open_mode::read };
-		rdbuf(&std::get<compressed_filebuf>(_stream));
+		_stream = in_compressed_filebuf{ p };
+		rdbuf(&std::get<in_compressed_filebuf>(_stream));
 
 		if (!is_open())
 		{
@@ -463,6 +463,55 @@ namespace hades::zip
 			return;
 			}, _stream);
 		return;
+	}
+
+	ozfstream::ozfstream() noexcept
+		: std::ostream{ &_streambuf }
+	{}
+
+	ozfstream::ozfstream(const std::filesystem::path& p)
+		: std::ostream{ nullptr }
+	{
+		open(p);
+		return;
+	}
+
+	ozfstream::ozfstream(ozfstream&& rhs) noexcept
+		: _streambuf{ std::move(rhs._streambuf) },
+		std::ostream{ nullptr }
+	{
+		rdbuf(&_streambuf);
+		rhs.rdbuf(nullptr);
+		rhs._streambuf = {};
+		return;
+	}
+
+	ozfstream& ozfstream::operator=(ozfstream&& rhs) noexcept
+	{
+		_streambuf = std::move(rhs._streambuf); 
+		rdbuf(&_streambuf);
+		rhs.rdbuf(nullptr);
+		rhs._streambuf = {};
+		return *this;
+	}
+
+	void ozfstream::open(const std::filesystem::path& p)
+	{
+		assert(!is_open());
+		_streambuf.open(p);
+		return;
+	}
+
+	void ozfstream::close() noexcept
+	{
+		assert(is_open());
+		_streambuf.close();
+		return;
+	}
+
+	bool ozfstream::is_open() noexcept
+	{
+		return _streambuf.is_open();
 	}
 
 	// list of open archive handles
@@ -784,7 +833,7 @@ namespace hades::zip
 
 	buffer deflate(buffer stream)
 	{
-		if (!*hades::console::get_bool(cvars::file_deflate, true))
+		if (!*hades::console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate))
 			return stream;
 
 		::z_stream deflate_stream;

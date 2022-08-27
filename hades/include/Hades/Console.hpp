@@ -105,15 +105,21 @@ namespace hades
 		void DisplayFunctions(std::vector<std::string_view> args);
 
 	private:
+		bool _exists(const std::string_view& command, variable_t) const;
+		bool _exists(const std::string_view& command, function_t) const;
+
 		template<class T>
 		void _create_property(std::string_view identifier, T value, bool lock);
 
 		template<class T>
 		void _set_property(std::string_view identifier, T value);
 
+		// guard all usage of GetValue
 		mutable std::mutex _consoleVariableMutex;
 		mutable std::mutex _consoleFunctionMutex;
+		// guard all usage of TextBuffer
 		mutable std::mutex _consoleBufferMutex;
+		// guard all useage of _commandHistory
 		mutable std::mutex _historyMutex;
 
 		struct function_struct

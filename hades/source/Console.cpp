@@ -38,10 +38,12 @@ namespace hades
 		bool ret = false;
 
 		detail::Property var;
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		if(GetValue(identifier, var))
 		{
 			if(value.empty())
 			{
+				// this func ends up calling GetValue again...
 				EchoVariable(identifier);
 			}
 			else
@@ -50,7 +52,10 @@ namespace hades
 				{
 					std::visit([identifier, &value, this](auto &&arg) {
 						using T = typename std::decay_t<decltype(arg)>::element_type::value_type;
-						set(identifier, from_string<T>(value));
+						if (arg->locked())
+							echo("Unable to set locked property, name: " + to_string(identifier), log_verbosity::error);
+						else
+							_set_property(identifier, from_string<T>(value));
 					}, var);
 
 					LOG(to_string(identifier) + " " + to_string(value));
@@ -193,21 +198,25 @@ namespace hades
 
 	void Console::set(std::string_view name, types::int32 val)
 	{
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, float val)
 	{
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, bool val)
 	{
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		_set_property(name, val);
 	}
 
 	void Console::set(std::string_view name, std::string_view val)
 	{
+		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
 		_set_property(name, to_string(val));
 	}
 
@@ -342,13 +351,24 @@ namespace hades
 
 	bool Console::exists(const std::string_view &command) const
 	{
-		return exists(command, variable) ||
-			exists(command, function);
+		return _exists(command, variable) ||
+			_exists(command, function);
 	}
 
-	bool Console::exists(const std::string_view &command, variable_t) const
+	bool Console::exists(const std::string_view& command, variable_t tag) const
 	{
 		const std::lock_guard<std::mutex> lock(_consoleVariableMutex);
+		return _exists(command, tag);
+	}
+
+	bool Console::exists(const std::string_view& command, function_t tag) const
+	{
+		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
+		return _exists(command, tag);
+	}
+
+	bool Console::_exists(const std::string_view &command, variable_t) const
+	{
 		detail::Property var;
 		if (GetValue(command, var))
 			return true;
@@ -356,9 +376,8 @@ namespace hades
 		return false;
 	}
 
-	bool Console::exists(const std::string_view &command, function_t) const
+	bool Console::_exists(const std::string_view &command, function_t) const
 	{
-		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		const auto funcIter = _consoleFunctions.find(to_string(command));
 
 		if (funcIter != _consoleFunctions.end())
@@ -457,8 +476,7 @@ namespace hades
 			to_string(identifier) + ", this name is used for a function" };
 
 		detail::Property out;
-		std::lock_guard<std::mutex> lock(_consoleVariableMutex);
-
+		
 		const auto get = GetValue(identifier, out);
 
 		if (!get)
@@ -471,9 +489,6 @@ namespace hades
 			using W = std::decay_t<U::element_type::value_type>;
 			if constexpr (std::is_same_v<ValueType, W>)
 			{
-				if (arg->locked())
-					throw console::property_locked{ "Unable to set locked property, name: " + to_string(identifier) };
-
 				*arg = value;
 			}
 			else

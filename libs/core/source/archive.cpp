@@ -3,7 +3,10 @@
 #include <cassert>
 #include <filesystem>
 
-#undef ERROR
+#include "zlib.h"
+#include "zip.h"
+#include "unzip.h"
+#undef zlib_version
 
 #include "hades/console_variables.hpp"
 #include "hades/logging.hpp"

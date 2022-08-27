@@ -1,7 +1,6 @@
 #ifndef HADES_ARCHIVE_HPP
 #define HADES_ARCHIVE_HPP
 
-//#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -16,77 +15,46 @@
 
 namespace hades::zip
 {
-	struct unarchive
-	{
-		string path;
-		void* handle = {};
-	};
-
-	struct toarchive
-	{
-		string path;
-		void* handle = {};
-	};
-
-	struct z_stream;
-
 	std::string_view zlib_version() noexcept;
 
+	//open and close zip archives
+	toarchive create_archive(const std::filesystem::path&);
+	void close_archive(toarchive) noexcept;
+
 	//in archive file stream
-	class iafstream
+	class iafstream : public std::istream
 	{
 	public:
-		using char_t = std::byte;
-		using char_type = std::byte; 
-		using stream_t = std::ifstream;
-		using pos_type = stream_t::traits_type::pos_type;
-		using off_type = stream_t::traits_type::off_type;
+		iafstream() noexcept;
+		explicit iafstream(const std::filesystem::path&);
+		iafstream(const std::filesystem::path&, const std::filesystem::path&);
 
-		iafstream() noexcept = default;
+		iafstream(iafstream&&) noexcept;
+		iafstream& operator=(iafstream&&) noexcept;
 
-		// throws files::file_not_found and archive_error
-		explicit iafstream(const std::filesystem::path& p)
+		// throws file_error
+		void open(const std::filesystem::path&);
+		void open_file(const std::filesystem::path&);
+		void close_file();
+
+		void close() noexcept
 		{
-			open(p);
+			_stream.close();
 			return;
 		}
 
-		iafstream(const std::filesystem::path& archive, const std::filesystem::path& file);
+		bool is_open() const noexcept
+		{
+			return _stream.is_open();
+		}
 
-		iafstream(const iafstream&) = delete;
-		iafstream& operator=(const iafstream&) = delete;
+		bool is_file_open() const noexcept
+		{
+			return _stream.is_file_open();
+		}
 
-		iafstream(iafstream&&) noexcept = default;
-		iafstream& operator=(iafstream&&) noexcept = default;
-
-		~iafstream() noexcept;
-
-		// throws files::file_not_found and archive_error
-		void open(const std::filesystem::path&);
-		void close() noexcept;
-		bool is_open() const noexcept;
-
-		//throws archive_error and zip::file_not_found
-		void open_file(const std::filesystem::path&);
-		void close_file() noexcept;
-		bool is_file_open() const noexcept;
-
-		iafstream& read(char_t * buffer, std::size_t count);
-
-		//sizes and positions are based on the uncompressed file
-		//so usage of this class is the same as the equivalent ifstream on a normal file
-		std::streamsize gcount() const noexcept;
-
-		pos_type tellg();
-
-		bool eof() const noexcept;
-
-		void seekg(pos_type);
-		void seekg(off_type, std::ios_base::seekdir);
 	private:
-		unarchive _archive = {};
-		std::streamsize _gcount{};
-		bool _file = false;
+		in_archive_filebuf _stream;
 	};
 
 	// out archive file stream
@@ -139,7 +107,6 @@ namespace hades::zip
 		string _file;
 	};
 
-	
 	//in compressed file stream
 	//reads possibly compressed files
 	class izfstream : public std::istream

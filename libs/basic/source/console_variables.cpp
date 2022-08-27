@@ -14,7 +14,7 @@ namespace hades
 		#endif
 		console::create_property(cvars::render_threadcount, render_threads);
 
-		console::create_property(cvars::render_drawtime, cvars::default_value::render_drawtime);
+		console::create_property(cvars::render_drawtime, cvars::default_value::render_drawtime, true);
 
 		#ifdef NDEBUG
 				constexpr auto server_threads = cvars::default_value::server_threadcount;
@@ -24,13 +24,15 @@ namespace hades
 		console::create_property(cvars::server_threadcount, server_threads);
 
 		console::create_property(cvars::client_tick_rate, cvars::default_value::client_tickrate);
-		console::create_property(cvars::client_avg_tick_time, cvars::default_value::client_avg_tick_time);
-		console::create_property(cvars::client_max_tick_time, cvars::default_value::client_max_tick_time);
-		console::create_property(cvars::client_min_tick_time, cvars::default_value::client_min_tick_time);
-		console::create_property(cvars::client_total_tick_time, cvars::default_value::client_total_tick_time);
-		console::create_property(cvars::client_max_tick, cvars::default_value::client_tick_max);
-		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime);
-		console::create_property(cvars::client_tick_count, cvars::default_value::client_tick_count);
+		console::create_property(cvars::client_avg_tick_time, cvars::default_value::client_avg_tick_time, true);
+		console::create_property(cvars::client_max_tick_time, cvars::default_value::client_max_tick_time, true);
+		console::create_property(cvars::client_min_tick_time, cvars::default_value::client_min_tick_time, true);
+		console::create_property(cvars::client_total_tick_time, cvars::default_value::client_total_tick_time, true);
+		console::create_property(cvars::client_max_tick, cvars::default_value::client_tick_max, true);
+		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime, true);
+		console::create_property(cvars::client_tick_count, cvars::default_value::client_tick_count, true);
+
+		console::create_property<std::string_view>(cvars::game_name, cvars::default_value::game_name, true);
 
 		//in debug we want portable = true 
 		//					deflate = false

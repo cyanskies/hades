@@ -107,7 +107,7 @@ namespace hades
 			template<typename T>
 			property<T> make_property(T value, bool locked)
 			{
-				return std::make_shared< basic_property<T> >(value, locked);
+				return std::make_shared<basic_property<T>>(value, locked);
 			}
 		}
 

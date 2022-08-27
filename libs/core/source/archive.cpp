@@ -1,25 +1,13 @@
 #include "hades/archive.hpp"
 
-#include <algorithm>
-#include <array>
 #include <cassert>
-#include <cstring> // for std::memcopy
 #include <filesystem>
-#include <fstream>
-#include <limits>
-#include <set>
-#include <string>
-
-#include "zlib.h"
-#include "zip.h"
-#include "unzip.h"
 
 #undef ERROR
 
 #include "hades/console_variables.hpp"
 #include "hades/logging.hpp"
 #include "hades/properties.hpp"
-#include "hades/types.hpp"
 #include "hades/utility.hpp"
 
 namespace fs = std::filesystem;
@@ -33,32 +21,11 @@ constexpr auto archive_ext = ".zip"sv;
 
 namespace hades::zip
 {
-	struct z_stream
-	{
-		::z_stream stream;
-	};
-
-	static void delete_z_stream(z_stream* p) noexcept
-	{
-		delete p;
-		return;
-	}
-
-	#undef zlib_version
 	std::string_view zlib_version() noexcept
 	{
 		constexpr auto version = std::string_view{ ZLIB_VERSION };
 		return version;
 	}
-
-	//open a close unzip archives
-	static unarchive open_archive(const std::filesystem::path&);
-	static void close_archive(unarchive f) noexcept;
-	static bool file_exists(unarchive, const fs::path&);
-
-	//open and close zip archives
-	static toarchive create_archive(const std::filesystem::path&);
-	static void close_archive(toarchive) noexcept;
 
 	template<typename Integer>
 	static unsigned int CheckSizeLimits(Integer size)
@@ -81,193 +48,72 @@ namespace hades::zip
 		return integer_cast<unsigned int>(size);
 	}
 
-	iafstream::iafstream(const std::filesystem::path& archive, const std::filesystem::path& file)
-		: iafstream{archive}
+	iafstream::iafstream() noexcept
+		: std::istream{ &_stream }
+	{}
+
+	iafstream::iafstream(const std::filesystem::path& p)
+		: std::istream{ &_stream }
 	{
-		if(is_open())
-			open_file(file);
+		_stream.open(p);
 		return;
 	}
 
-	iafstream::~iafstream() noexcept
+	iafstream::iafstream(const std::filesystem::path& a, const std::filesystem::path& f)
+		: std::istream{ &_stream }
 	{
-		close();
+		if (!_stream.open(a))
+			throw archive_error{ "Failed to open archive: "s + a.generic_string() };
+		_stream.open_file(f);
 		return;
+	}
+
+	iafstream::iafstream(iafstream&& rhs) noexcept
+		: std::istream{ &_stream }, _stream{ std::move(rhs._stream) }
+	{
+		rhs._stream = {};
+		return;
+	}
+
+	iafstream& iafstream::operator=(iafstream&& rhs) noexcept
+	{
+		std::swap(_stream, rhs._stream);
+		return *this;
 	}
 
 	void iafstream::open(const std::filesystem::path& p)
 	{
-		_archive = open_archive(p);
-	}
-
-	void iafstream::close() noexcept
-	{
-		if (_archive.handle)
-		{
-			if (_file)
-				close_file();
-			close_archive(_archive);
-		}
-	}
-
-	bool iafstream::is_open() const noexcept
-	{
-		return _archive.handle;
-	}
-
-	static void iafstream_open_file_internal(unarchive a)
-	{
-		if (unzOpenCurrentFile(a.handle) != UNZ_OK)
-			throw archive_error{ "error opening file in archive"s };
+		_stream.open(p);
 		return;
 	}
 
 	void iafstream::open_file(const std::filesystem::path& p)
 	{
-		assert(_archive.handle);
-		if (_file)
-			close_file();
-
-		if (!file_exists(_archive, p))
-			throw file_not_found{"file not found in archive: "s + p.string()};
-
-		//open current file for reading
-		iafstream_open_file_internal(_archive);
-		_file = true;
-		return;
-	}
-
-	void iafstream::close_file() noexcept
-	{
-		assert(_archive.handle);
-		if (!_file)
-			return;
-
-		if (unzCloseCurrentFile(_archive.handle) == UNZ_CRCERROR)
-			LOGWARNING("CRC error reading archive"sv);
-		return;
-	}
-
-	bool iafstream::is_file_open() const noexcept
-	{
-		return _file;
-	}
-
-	iafstream& iafstream::read(char_t* buffer, std::size_t count)
-	{
-		assert(buffer);
-		if (!_file)
-			throw file_not_open{ "iafstream::read tried to read without an open file"s };
-
-		//unsigned int type used by ReadCurrentFile
-		using z_len_t = unsigned;
-		const auto z_len = integer_cast<z_len_t>(count);
-		const auto pos = tellg();
-		const auto read = unzReadCurrentFile(_archive.handle, buffer, z_len);
-		
-		if (read == 0) //unz return 0 for eof
-			_gcount = tellg() - pos;
-		else if (read < 0)
-			throw archive_error{ "error decompressing archive"s };
-		else
-			_gcount = integer_cast<std::streamsize>(read);
-
-		return *this;
-	}
-
-	std::streamsize iafstream::gcount() const noexcept
-	{
-		return _gcount;
-	}
-
-	iafstream::pos_type iafstream::tellg()
-	{
-		const auto p = unztell64(_archive.handle);
-		if (p == std::numeric_limits<ZPOS64_T>::max())
-			throw archive_error{ "iafstream::tellg error, check is_open and is_file_open"s };
-		return p;
-	}
-
-	bool iafstream::eof() const noexcept
-	{
-		return unzeof(_archive.handle) == 1;
-	}
-
-	void iafstream::seekg(pos_type p)
-	{
-		if (p <= pos_type{})
+		try
 		{
-			seekg({}, std::ios_base::beg);
+			_stream.open_file(p);
+			clear();
+		}
+		catch (...)
+		{
+			setstate(failbit);
+			throw;
+		}
+		return;
+	}
+
+	void iafstream::close_file()
+	{
+		try
+		{
+			_stream.close_file();
 			return;
 		}
-
-		const auto o = p - tellg();
-		seekg(o, std::ios_base::cur);
-		return;
-	}
-
-	constexpr auto buffer_size = default_buffer_size;
-
-	void iafstream::seekg(off_type o, std::ios_base::seekdir d)
-	{
-		assert(is_open());
-		if (d == std::ios_base::beg)
+		catch (...)
 		{
-			close_file();
-			iafstream_open_file_internal(_archive);
-			_file = true;
-			if(o > 0)
-				seekg(o, std::ios_base::cur);
+			setstate(failbit);
+			throw;
 		}
-		else if (d == std::ios_base::cur)
-		{
-			if (o == off_type{})
-				return;
-			else if (o < 0)
-			{
-				//convert to absolute position
-				o = tellg() + o;
-				seekg(o);
-			}
-			else
-			{
-				//go forward untill we find the target
-				auto out_buffer = buffer{ buffer_size };
-				while (!eof())
-				{
-					const auto dist = o - tellg();
-					if (dist == 0)
-						break;
-					else if (dist < buffer_size)
-						read(std::data(out_buffer), integer_cast<std::size_t>(dist));
-					else
-						read(std::data(out_buffer), std::size(out_buffer));
-				}
-			}
-		}
-		else if (d == std::ios_base::end)
-		{
-			unz_file_info64 file_info;
-			const auto ret = unzGetCurrentFileInfo64(_archive.handle, &file_info,
-				nullptr, 0, 
-				nullptr, 0,
-				nullptr, 0);
-
-			if (ret != UNZ_OK)
-				throw archive_error{ "unexcpected error seeking in archive"s };
-
-			const auto size = file_info.uncompressed_size;
-
-			if (o > 0)
-				seekg(0, std::ios_base::end);
-			else
-			{
-				const auto target = size + o;
-				seekg(target);
-			}
-		}
-
-		return;
 	}
 
 	void oafstream::open(const std::filesystem::path& p)
@@ -327,35 +173,6 @@ namespace hades::zip
 		return *this;
 	}
 
-	static bool zlib_inflate_begin(::z_stream& stream) noexcept
-	{
-		stream.zalloc = Z_NULL;
-		stream.zfree = Z_NULL;
-		stream.opaque = Z_NULL;
-		stream.avail_in = 0;
-		stream.next_in = Z_NULL;
-		return inflateInit(&stream) == Z_OK;
-	}
-
-	//tests if the stream is good for izfstream
-	static void start_z_stream(izfstream::stream_t& s, ::z_stream& z)
-	{
-		zip_header h;
-		using char_t = izfstream::stream_t::char_type;
-		s.read(reinterpret_cast<char_t*>(std::data(h)), std::size(h));
-		if (s.gcount() < integer_cast<std::streamsize>(std::size(h))
-			|| !probably_compressed(h)
-			|| !zlib_inflate_begin(z))
-		{
-			throw archive_error{ "stream not compressed"s };
-		}
-
-		s.seekg(izfstream::stream_t::off_type{}, std::ios_base::beg);
-		if (!zlib_inflate_begin(z))
-			throw archive_error{ "unable to start zlib engine"s };
-		return;
-	}
-
 	// in file mode
 	constexpr auto if_mode = std::ios_base::binary;
 
@@ -380,12 +197,14 @@ namespace hades::zip
 
 			if (!is_open())
 			{
+				setstate(badbit);
 				if (!std::filesystem::exists(p))
 					throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
 				throw files::file_error{ "cannot open file: "s + p.generic_string() };
 			}
 		}
 
+		clear();
 		return;
 	}
 
@@ -447,11 +266,13 @@ namespace hades::zip
 
 		if (!is_open())
 		{
+			setstate(badbit);
 			if (!std::filesystem::exists(p))
 				throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
 			throw files::file_error{ "cannot open file: "s + p.generic_string() };
 		}
 
+		clear();
 		return;
 	}
 
@@ -514,114 +335,12 @@ namespace hades::zip
 		return _streambuf.is_open();
 	}
 
-	// list of open archive handles
-	static std::multiset<string> open_for_read;
-	static std::set<string> open_for_write;
-
-	static unarchive open_archive(const fs::path& path)
-	{
-		auto path_str = path.string();
-		if (open_for_write.contains(path_str))
-			throw files::file_error{ "Cannot open archive: " + path_str + ", it is already being open for writing"s };
-
-		if (!fs::exists(path))
-			throw files::file_not_found{ "archive not found: "s + path.generic_string() };
-		//open archive
-		auto zip = unzOpen(path_str.c_str());
-
-		if (!zip)
-			throw archive_error{ "unable to open archive: "s + path.generic_string() };
-
-		open_for_read.emplace(path_str);
-
-		return { std::move(path_str), zip };
-	}
-
-	static void close_archive(unarchive f) noexcept
-	{
-		const auto r = unzClose(f.handle);
-		if (r != UNZ_OK)
-			log_error("Error while closing archive"sv);
-
-		const auto iter = open_for_read.find(f.path);
-		assert(iter != end(open_for_read));
-		open_for_read.erase(iter);
-
-		return;
-	}
-
 	bool file_exists(const std::filesystem::path& archive, const std::filesystem::path& path)
 	{
-		const auto a = open_archive(archive);
+		auto a = open_archive(archive);
 		const auto ret = file_exists(a, path );
 		close_archive(a);
 		return ret;
-	}
-
-	constexpr int case_sensitivity_auto = 0,//no sensitivity on windows
-		case_sensitivity_sensitive = 1,		//case sensitivity everywhere
-		case_sensitivity_none = 2; 			//no sensitivity on any platform
-
-	static bool file_exists(unarchive a, const std::filesystem::path& path)
-	{
-		const auto path_str = path.string();
-		const auto r = unzLocateFile(a.handle, path_str.c_str(), case_sensitivity_sensitive);
-		return r == UNZ_OK;
-	}
-
-	static toarchive create_archive(const std::filesystem::path& path)
-	{
-		auto path_str = path.generic_string(); 
-		if (open_for_read.contains(path_str) || open_for_write.contains(path_str))
-			throw files::file_error{ "Cannot open archive: " + path_str + ", for writing; it is already being used"s };
-
-		auto a = toarchive{ path_str };
-		if (!fs::exists(path))
-		{
-			a.handle = zipOpen(path_str.c_str(), APPEND_STATUS_CREATE);
-			if(a.handle)
-				log_debug("Created new archive: "s + path_str);
-		}
-		else
-		{
-			const auto file = std::ofstream{ path }; // hold the file
-			if (file)
-			{
-				if (fs::file_size(path) != 0)
-				{
-					try
-					{
-						fs::resize_file(path, 0);
-					}
-					catch (const fs::filesystem_error& e)
-					{
-						throw files::file_error{ e.what() };
-					}
-				}
-			}
-			else
-				throw files::file_error{ "Cannot open file: "s + path.generic_string() };
-
-			a.handle = zipOpen(path_str.c_str(), APPEND_STATUS_ADDINZIP);
-			if(a.handle)
-				log_debug("Overwriting archive: "s + path_str);
-		}
-
-		if (!a.handle)
-			throw archive_error{ "unable to create archive: "s + path.generic_string() };
-
-		open_for_write.emplace(std::move(path_str));
-		return a;
-	}
-
-	static void close_archive(toarchive f) noexcept
-	{
-		const auto r = zipClose(f.handle, {});
-		if (r != UNZ_OK)
-			log_error("tried to close archive before closing file"sv);
-
-		open_for_write.erase(f.path);
-		return;
 	}
 
 	static std::string_view::iterator::difference_type
@@ -640,7 +359,7 @@ namespace hades::zip
 	{
 		std::vector<types::string> output;
 
-		const auto zip = open_archive(archive);
+		auto zip = open_archive(archive);
 
 		const auto ret = unzGoToFirstFile(zip.handle);
 		if (ret != ZIP_OK)
@@ -756,9 +475,9 @@ namespace hades::zip
 
 		//create directory if absent
 		const auto root_dir = fs_path.parent_path() / fs_path.stem();
-		const auto archive = open_archive(fs_path);
+		auto archive = open_archive(fs_path);
 
-		const auto finally = make_finally([archive]() noexcept {
+		const auto finally = make_finally([&archive]() noexcept {
 			close_archive(archive);
 			return;
 			});

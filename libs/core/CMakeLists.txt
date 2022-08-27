@@ -3,6 +3,7 @@ include(../../cmake.txt)
 set(HADES_CORE_SRC
 	source/animation.cpp
 	source/archive.cpp
+	source/archive_streams.cpp
 	source/background.cpp
 	source/camera.cpp
 	source/console_functions.cpp

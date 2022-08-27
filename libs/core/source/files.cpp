@@ -206,9 +206,14 @@ namespace hades
 		if (fs::exists(m_path / file))
 			return _try_open_file(m_path, file);
 
-		if (fs::exists(m_path) && !fs::is_directory(m_path)
-			&& zip::file_exists(m_path, file))
-			return _try_open_archive(std::move(m_path), file);
+		for (const auto& entry : fs::directory_iterator{ dir })
+		{
+			if (!entry.is_directory() && entry.path().stem() == mod)
+			{
+				if (_try_open_archive(entry.path(), file))
+					return true;
+			}
+		}
 
 		return false;
 	}
@@ -230,15 +235,19 @@ namespace hades
 	bool irfstream::_try_open_archive(fs::path archive,
 		const fs::path& file)
 	{
-		auto a = zip::iafstream{ archive, file };
-		if (a.is_file_open())
-		{
-			_stream = std::move(a);
-			_mod_path = std::move(archive);
-			_rel_path = file;
-			return true;
-		}
-		return false;
+		auto a = zip::iafstream{};
+		a.open(archive);
+		if (!a.is_open())
+			return false;
+
+		a.open_file(file);
+		if (!a.is_file_open())
+			return false;
+		
+		_stream = std::move(a);
+		_mod_path = std::move(archive);
+		_rel_path = file;
+		return true;
 	}
 }
 

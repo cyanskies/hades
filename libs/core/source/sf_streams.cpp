@@ -11,7 +11,7 @@ namespace hades
 	{
 		try
 		{
-			_stream.read(static_cast<irfstream::char_t*>(data), integer_cast<std::size_t>(size));
+			_stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::size_t>(size));
 		}
 		catch (const files::file_error& e)
 		{
@@ -52,14 +52,6 @@ namespace hades
 
 	sf::Int64 sf_resource_stream::getSize()
 	{
-		try
-		{
-			return _stream.size();
-		}
-		catch (const files::file_error& e)
-		{
-			LOGERROR(e.what());
-			return errorval;
-		}
+		return _size;
 	}
 }

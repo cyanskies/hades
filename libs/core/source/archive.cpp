@@ -68,12 +68,14 @@ namespace hades::zip
 		if (!_stream.open(a))
 			throw archive_error{ "Failed to open archive: "s + a.generic_string() };
 		_stream.open_file(f);
+		clear();
 		return;
 	}
 
 	iafstream::iafstream(iafstream&& rhs) noexcept
-		: std::istream{ &_stream }, _stream{ std::move(rhs._stream) }
+		: std::istream{ std::move(rhs) }, _stream{ std::move(rhs._stream) }
 	{
+		rdbuf(&_stream);
 		rhs._stream = {};
 		return;
 	}
@@ -81,6 +83,7 @@ namespace hades::zip
 	iafstream& iafstream::operator=(iafstream&& rhs) noexcept
 	{
 		std::swap(_stream, rhs._stream);
+		setstate(rhs.rdstate());
 		return *this;
 	}
 
@@ -211,35 +214,16 @@ namespace hades::zip
 		return;
 	}
 
-	/*izfstream::izfstream(stream_t s)
-		: _stream{ std::move(s) }, _zip_stream{ new z_stream, delete_z_stream }
-	{
-		if (!_stream.is_open())
-			throw files::file_not_open{ "stream passed to izfstream(stream_t) is not open"s };
-		start_z_stream(_stream, _zip_stream->stream);
-		return;
-	}*/
-
 	izfstream::izfstream(izfstream&& rhs) noexcept
-		: std::istream{ std::move(rhs) }
+		: std::istream{ nullptr }
 	{
-		_stream = std::move(rhs._stream);
-		rhs._stream = {};
-		std::streambuf* ptr = {};
-		std::visit([&ptr](auto& stream) {
-			ptr = &stream;
-			return;
-			}, _stream);
-
-		rdbuf(ptr);
-		rhs.rdbuf(nullptr);
+		*this = std::move(rhs);
 		return;
 	}
 
 
 	izfstream& izfstream::operator=(izfstream&& rhs) noexcept
 	{
-		std::istream::operator=(std::move(rhs));
 		_stream = std::move(rhs._stream);
 		rhs._stream = {};
 		std::streambuf* ptr = {};
@@ -249,7 +233,7 @@ namespace hades::zip
 			}, _stream);
 
 		rdbuf(ptr);
-		rhs.rdbuf(nullptr);
+		setstate(rhs.rdstate());
 		return *this;
 	}
 
@@ -286,6 +270,7 @@ namespace hades::zip
 			stream.close();
 			return;
 			}, _stream);
+		setstate(badbit);
 		return;
 	}
 
@@ -301,12 +286,9 @@ namespace hades::zip
 	}
 
 	ozfstream::ozfstream(ozfstream&& rhs) noexcept
-		: _streambuf{ std::move(rhs._streambuf) },
-		std::ostream{ nullptr }
+		: std::ostream{ nullptr }
 	{
-		rdbuf(&_streambuf);
-		rhs.rdbuf(nullptr);
-		rhs._streambuf = {};
+		*this = std::move(rhs);
 		return;
 	}
 
@@ -314,8 +296,7 @@ namespace hades::zip
 	{
 		_streambuf = std::move(rhs._streambuf); 
 		rdbuf(&_streambuf);
-		rhs.rdbuf(nullptr);
-		rhs._streambuf = {};
+		setstate(rhs.rdstate());
 		return *this;
 	}
 
@@ -323,6 +304,7 @@ namespace hades::zip
 	{
 		assert(!is_open());
 		_streambuf.open(p);
+		clear();
 		return;
 	}
 
@@ -330,6 +312,7 @@ namespace hades::zip
 	{
 		assert(is_open());
 		_streambuf.close();
+		setstate(badbit);
 		return;
 	}
 

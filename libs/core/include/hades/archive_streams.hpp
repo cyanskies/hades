@@ -144,6 +144,8 @@ namespace hades::zip
 	class basic_in_compressed_filebuf<char> : public std::basic_streambuf<char>
 	{
 	public:
+		basic_in_compressed_filebuf() noexcept = default;
+
 		basic_in_compressed_filebuf(const std::filesystem::path& p)
 		{
 			open(p);

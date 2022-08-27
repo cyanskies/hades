@@ -67,26 +67,22 @@ namespace hades
 	//then the mods in user custom dir
 	//then overrides in the game dir
 	// then mods in the game dir
-	class irfstream
+	class irfstream : public std::istream
 	{
 	public:
-		using char_t = std::byte;
-		using char_type = char_t;
-		using stream_t = files::ifstream;
-		using pos_type = stream_t::pos_type;
-		using off_type = stream_t::off_type;
+		irfstream() noexcept :
+			std::istream{ nullptr }
+		{}
 
-		irfstream() = default;
 		irfstream(const std::filesystem::path& mod, const std::filesystem::path& file)
+			: std::istream{ nullptr }
 		{
 			open(mod, file);
 			return;
 		}
 
-		irfstream(irfstream&&) noexcept(std::is_nothrow_move_constructible_v<stream_t>
-			&& std::is_nothrow_move_constructible_v<zip::iafstream>) = default;
-		irfstream& operator=(irfstream&&) noexcept(std::is_nothrow_move_assignable_v<stream_t>
-			&& std::is_nothrow_move_assignable_v<zip::iafstream>) = default;
+		irfstream(irfstream&&) noexcept;
+		irfstream& operator=(irfstream&&) noexcept;
 
 		void open(const std::filesystem::path& mod, const std::filesystem::path& file);
 		void close() noexcept;
@@ -102,23 +98,13 @@ namespace hades
 			return _rel_path;
 		}
 
-		irfstream& read(char_t*, std::size_t);
-		std::streamsize gcount() const;
-		pos_type tellg();
-
-		bool eof() const;
-
-		void seekg(pos_type);
-		void seekg(off_type, std::ios_base::seekdir);
-
-		std::size_t size();
-
 	private:
 		bool _try_open_from_dir(const std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path&);
 		bool _try_open_file(const std::filesystem::path&, const std::filesystem::path&);
-		bool _try_open_archive(std::filesystem::path, const std::filesystem::path&);
+		bool _try_open_archive(const std::filesystem::path&, const std::filesystem::path&);
+		void _bind_buffer() noexcept;
 
-		std::variant<files::ifstream, zip::iafstream> _stream{};
+		std::variant<std::filebuf, zip::in_compressed_filebuf, zip::in_archive_filebuf> _stream{};
 		std::filesystem::path _mod_path;
 		std::filesystem::path _rel_path;
 	};
@@ -128,7 +114,6 @@ namespace hades
 
 namespace hades::files
 {
-	//TODO: check error paths/ throw file not found?
 	irfstream stream_resource(const data::mod&, const std::filesystem::path& path);
 	buffer raw_resource(const data::mod&, const std::filesystem::path& path);
 	string read_resource(const data::mod&, const std::filesystem::path& path);

@@ -91,6 +91,24 @@ namespace hades::files
 
 namespace hades
 {
+	irfstream::irfstream(irfstream&& rhs) noexcept
+		: std::istream{ nullptr }
+	{
+		*this = std::move(rhs);
+		return;
+	}
+
+	irfstream& irfstream::operator=(irfstream&& rhs) noexcept
+	{
+		std::swap(_stream, rhs._stream);
+		std::swap(_mod_path, rhs._mod_path);
+		std::swap(_rel_path, rhs._rel_path);
+		_bind_buffer();
+		setstate(rhs.rdstate());
+
+		return *this;
+	}
+
 	void irfstream::open(const fs::path& m, const fs::path& f)
 	{
 		//check debug path
@@ -120,83 +138,15 @@ namespace hades
 		return;
 	}
 
-	struct is_open_functor
-	{
-		bool operator()(const files::ifstream& s) noexcept
-		{
-			return s.is_open();
-		}
-
-		bool operator()(const zip::iafstream& a) noexcept
-		{
-			return a.is_file_open();
-		}
-	};
-
 	bool irfstream::is_open() const noexcept
 	{
-		return std::visit(is_open_functor{}, _stream);
-	}
-
-	irfstream& irfstream::read(char_t* d, std::size_t c)
-	{
-		std::visit([d, c](auto&& stream) {
+		return std::visit([](auto& stream) {
 			using T = std::decay_t<decltype(stream)>;
-			stream.read(reinterpret_cast<T::char_type*>(d), c);
-			return;
-		}, _stream);
-
-		return *this;
-	}
-
-	std::streamsize irfstream::gcount() const
-	{
-		return std::visit([](auto&& stream) {
-			return stream.gcount();
-		}, _stream);
-	}
-
-	irfstream::pos_type irfstream::tellg()
-	{
-		return std::visit([](auto&& stream) {
-			return stream.tellg();
-		}, _stream);
-	}
-
-	bool irfstream::eof() const
-	{
-		return std::visit([](auto&& stream)	{
-				return stream.eof();
-		}, _stream);
-	}
-
-	void irfstream::seekg(pos_type p)
-	{
-		std::visit([p](auto&& stream) {
-			stream.seekg(p);
-			return;
-		}, _stream);
-
-		return;
-	}
-
-	void irfstream::seekg(off_type o, std::ios_base::seekdir s)
-	{
-		std::visit([o, s](auto&& stream) {
-			stream.seekg(o, s);
-			return;
-		}, _stream);
-
-		return;
-	}
-
-	std::size_t irfstream::size()
-	{
-		const auto pos = tellg();
-		seekg({}, std::ios_base::end);
-		const auto size = tellg();
-		seekg(pos);
-		return integer_cast<std::size_t>(static_cast<std::streamoff>(size));
+			if constexpr (std::is_same_v<T, zip::in_archive_filebuf>)
+				return stream.is_file_open();
+			else
+				return stream.is_open();
+			}, _stream);
 	}
 
 	bool irfstream::_try_open_from_dir(const fs::path& dir,
@@ -220,22 +170,39 @@ namespace hades
 	
 	bool irfstream::_try_open_file(const fs::path& mod_path, const fs::path& file)
 	{
-		auto f = files::ifstream{ mod_path / file };
-		if (f.is_open())
-		{
-			_stream = std::move(f);// = std::move(f);
+		
+		const auto set_stream = [&, this]<typename T>(T && stream)noexcept {
+			_stream = std::forward<T>(stream);
 			_mod_path = mod_path;
 			_rel_path = file;
+			_bind_buffer();
+			clear();
+		};
+
+		auto c = zip::in_compressed_filebuf{};
+		const auto path = mod_path / file;
+		c.open(path);
+		if (c.is_open())
+		{
+			set_stream(std::move(c));
+			return true;
+		}
+
+		auto f = std::filebuf{};
+		f.open(path, std::ios_base::in | std::ios_base::binary);
+		if (f.is_open())
+		{
+			set_stream(std::move(f));
 			return true;
 		}
 
 		return false;
 	}
 
-	bool irfstream::_try_open_archive(fs::path archive,
+	bool irfstream::_try_open_archive(const fs::path& archive,
 		const fs::path& file)
 	{
-		auto a = zip::iafstream{};
+		auto a = zip::in_archive_filebuf{};
 		a.open(archive);
 		if (!a.is_open())
 			return false;
@@ -245,9 +212,22 @@ namespace hades
 			return false;
 		
 		_stream = std::move(a);
-		_mod_path = std::move(archive);
+		_mod_path = archive;
 		_rel_path = file;
+		_bind_buffer();
+		clear();
 		return true;
+	}
+
+	void irfstream::_bind_buffer() noexcept
+	{
+		std::streambuf* ptr = {};
+		std::visit([&ptr](auto&& stream) {
+			ptr = &stream;
+			return;
+			}, _stream);
+		rdbuf(ptr);
+		return;
 	}
 }
 

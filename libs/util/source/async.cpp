@@ -3,8 +3,6 @@
 #include <cassert>
 #include <iterator>
 
-//#include "hades/utility.hpp"
-
 namespace hades
 {
 	thread_local static std::size_t worker_id = 0; // default == main thread
@@ -43,13 +41,12 @@ namespace hades
 				if (!work)
 				{
 					// no tasks, lets be a thief
-					// pick from a pool of queues one less than actually exist
-					auto index = 0; // random(std::size_t{}, std::size(_queues) - 2);
-					if (index == thread_id)
+					static thread_local auto index = 0;
+					if (index % size(_queues) == thread_id)
 						++index;
 
 					auto& our_queue = _queues[thread_id];
-					auto& other_queue = _queues[index];
+					auto& other_queue = _queues[index++ % size(_queues)];
 
 					//lock both queues
 					const auto lock = std::scoped_lock{ our_queue.mut, other_queue.mut };

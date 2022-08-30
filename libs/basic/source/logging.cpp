@@ -64,9 +64,9 @@ namespace hades
 			else
 			{
 				if (val.verbosity() == console::logger::log_verbosity::normal)
-					std::cout << val.text();
+					std::cout << val.text() << '\n';
 				else
-					std::cerr << val.text();
+					std::cerr << val.text() << '\n';
 			}
 		}
 
@@ -114,6 +114,7 @@ namespace hades
 	{
 		const auto t = wall_clock::now();
 		const auto ct = wall_clock::to_time_t(t);
+	
 		//Use the updated C version of localtime
 		//for better threading security
 		tm time;

@@ -58,16 +58,16 @@ namespace hades::zip
 	iafstream::iafstream(const std::filesystem::path& p)
 		: std::istream{ &_stream }
 	{
-		_stream.open(p);
+		_stream.open_archive(p);
 		return;
 	}
 
 	iafstream::iafstream(const std::filesystem::path& a, const std::filesystem::path& f)
 		: std::istream{ &_stream }
 	{
-		if (!_stream.open(a))
+		if (!_stream.open_archive(a))
 			throw archive_error{ "Failed to open archive: "s + a.generic_string() };
-		_stream.open_file(f);
+		_stream.open(f);
 		clear();
 		return;
 	}
@@ -87,17 +87,17 @@ namespace hades::zip
 		return *this;
 	}
 
-	void iafstream::open(const std::filesystem::path& p)
+	void iafstream::open_archive(const std::filesystem::path& p)
 	{
-		_stream.open(p);
+		_stream.open_archive(p);
 		return;
 	}
 
-	void iafstream::open_file(const std::filesystem::path& p)
+	void iafstream::open(const std::filesystem::path& p)
 	{
 		try
 		{
-			_stream.open_file(p);
+			_stream.open(p);
 			clear();
 		}
 		catch (...)
@@ -108,11 +108,29 @@ namespace hades::zip
 		return;
 	}
 
-	void iafstream::close_file()
+	void iafstream::open_first()
+	{
+		_stream.open_first();
+		clear();
+		return;
+	}
+
+	bool iafstream::open_next()
+	{
+		if (_stream.open_next())
+		{
+			clear();
+			return true;
+		}
+
+		return false;
+	}
+
+	void iafstream::close()
 	{
 		try
 		{
-			_stream.close_file();
+			_stream.close();
 			return;
 		}
 		catch (...)
@@ -121,67 +139,6 @@ namespace hades::zip
 			throw;
 		}
 	}
-
-	void oafstream::open(const std::filesystem::path& p)
-	{
-		_archive = create_archive(p);
-		return;
-	}
-
-	void oafstream::close() noexcept
-	{
-		close_archive(_archive);
-		return;
-	}
-
-	bool oafstream::is_open() const noexcept
-	{
-		return _archive.handle;
-	}
-
-	void oafstream::open_file(const std::filesystem::path& path)
-	{
-		auto path_str = path.generic_string();
-
-		zip_fileinfo file_info{ tm_zip{}, 0, 0, 0 };
-		//no const for 'ret' the variable is resued a few times for other results
-		auto ret = zipOpenNewFileInZip(_archive.handle, path_str.c_str(), &file_info, nullptr, 0, nullptr, 0, nullptr,
-			Z_DEFLATED, // 0 = store, Z_DEFLATE = deflate
-			Z_DEFAULT_COMPRESSION);
-
-		if (ret != ZIP_OK)
-			throw archive_error{ "Error creating file: "s + path_str + " in archive: "s
-			+ _archive.path };
-
-		_file = std::move(path_str);
-
-		return;
-	}
-
-	void oafstream::close_file() noexcept
-	{
-		assert(!empty(_file));
-		const auto ret = zipCloseFileInZip(_archive.handle);
-		if (ret != ZIP_OK)
-			log_error( "Error writing file: "s + _file + " to archive: "s + _archive.path );
-
-		_file.clear();
-		return;
-	}
-
-	oafstream& oafstream::write(const char_t* buffer, std::streamsize count)
-	{
-		assert(buffer);
-		const auto ret = zipWriteInFileInZip(_archive.handle, buffer, integer_cast<unsigned int>(count));
-		if (ret != ZIP_OK)
-			throw archive_error{ "Error writing file: "s + _file + " to archive: "s + _archive.path };
-
-		return *this;
-	}
-
-	// in file mode
-	constexpr auto if_mode = std::ios_base::binary;
-
 
 	izfstream::izfstream() noexcept
 		: _stream{ std::filebuf{} },
@@ -275,7 +232,7 @@ namespace hades::zip
 	}
 
 	ozfstream::ozfstream() noexcept
-		: std::ostream{ &_streambuf }
+		: std::ostream{ nullptr }
 	{}
 
 	ozfstream::ozfstream(const std::filesystem::path& p)
@@ -304,6 +261,7 @@ namespace hades::zip
 	{
 		assert(!is_open());
 		_streambuf.open(p);
+		rdbuf(&_streambuf);
 		clear();
 		return;
 	}
@@ -406,7 +364,7 @@ namespace hades::zip
 			throw archive_error{ "Tried to open \"./\"."s };
 
 		auto zip_stream = oafstream{ final_path };
-		assert(zip_stream.is_open());
+		assert(zip_stream.is_archive_open());
 		log("Opened archive for writing: " + final_path.generic_string());
 
 		//for each file in dir
@@ -422,110 +380,54 @@ namespace hades::zip
 			if (file_path.find(directory) == types::string::npos)
 				throw files::file_error{ "Directory path isn't a subset of the file path, unexpected error" };
 
-			auto file_name = file_path.substr(directory.length(), file_path.length() - directory.length());
-			//remove leading /
-			file_name.erase(file_name.begin());
+			// + 1 to remove leading /
+			auto file_name = file_path.substr(directory.length() + 1, file_path.length() - directory.length() + 1);
 
-			//NOTE: if this is firing, then we need to enable zip64 compression below
-			if (fs::file_size(p) > 0xffffffff)
-				throw archive_error{ "Cannot store file in archive: "s + file_name + " file too large"s };
-
-			assert(zip_stream.is_file_open() == false);
-			zip_stream.open_file(file_name);
+			assert(zip_stream.is_open() == false);
+			zip_stream.open(file_name);
 			
-			auto in_stream = std::ifstream{ p, std::ios::binary };		
-			auto buf = std::array<std::byte, default_buffer_size>{};
-			// if buffer size needs to be increased, then we probably need to upgrade 
-			// to the zip64 funcs
-			static_assert(default_buffer_size < std::numeric_limits<unsigned int>::max(),
-				"buffer size must be smaller than the read limit for zip32");
-			do
-			{
-				constexpr auto read_size = integer_cast<std::streamsize>(default_buffer_size);
-				in_stream.read(reinterpret_cast<char*>(buf.data()), read_size);
-				zip_stream.write(buf.data(), in_stream.gcount());
-			} while (in_stream.gcount() == default_buffer_size);
-
+			auto in_stream = izfstream{ p };
+			assert(in_stream.is_open());
+			zip_stream << in_stream.rdbuf();
+			assert(zip_stream.good());
 			log_debug("Wrote "s + file_name + " to archive: "s + final_path.generic_string());
-			zip_stream.close_file();
+			zip_stream.close();
 		}
 
 		log("Finished writing archive: "s + final_path.string());
+		return;
 	}
 
 	void uncompress_archive(const std::filesystem::path& fs_path)
 	{
-		//confirm is archive
-		if (!fs::exists(fs_path))
-			throw files::file_not_found{ "Cannot open archive, file not found: " + fs_path.generic_string() };
-
+		auto archive = iafstream{ fs_path };
+		
 		//create directory if absent
-		const auto root_dir = fs_path.parent_path() / fs_path.stem();
-		auto archive = open_archive(fs_path);
+		const auto root_dir = fs_path.parent_path() / fs_path.stem();		
+		log("Uncompressing archive: " + fs_path.generic_string());
 
-		const auto finally = make_finally([&archive]() noexcept {
-			close_archive(archive);
-			return;
-			});
-
-		//NOTE: no const for ret, variable is resued later
-		auto ret = unzGoToFirstFile(archive.handle);
-		if (ret != ZIP_OK)
-			throw archive_error{ "Error finding file in archive.handle: " + fs_path.generic_string() };
-
-		LOG("Uncompressing archive.handle: " + fs_path.generic_string());
+		archive.open_first();
 
 		//for each file in directory
 		do {
-			unz_file_info info;
-			unzGetCurrentFileInfo(archive.handle, &info, nullptr, 0, nullptr, 0, nullptr, 0);
-
-			using char_buffer = std::vector<char>;
-			char_buffer name(info.size_filename);
-
-			ret = unzGetCurrentFileInfo(archive.handle, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
-			if (ret != ZIP_OK)
-				throw archive_error{ "Error reading file info from archive.handle" };
-
-			const types::string filename_str(name.begin(), name.end());
-			const auto filename = fs::path{ filename_str };
+			const auto& filename = archive.file_path();
 
 			//create directory if it dosn't already exist
 			fs::create_directories(root_dir / filename.parent_path()); //only creates missing directories
 
 			//open file
-			std::ofstream file(root_dir / filename, std::ios::binary | std::ios::trunc);
+			std::ofstream file(root_dir / filename, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
 
 			if (!file.is_open())
 				throw files::file_error{ "Failed to create or open file: " + filename.generic_string() };
 
-			//write data to file
-			const auto usize = CheckSizeLimits(info.uncompressed_size);
-			using char_buffer = std::vector<char>;
-			char_buffer buff(integer_cast<buffer::size_type>(usize));
+			log("Uncompressing file: " + filename.generic_string() + " from archive: " + fs_path.generic_string());
+			file << archive.rdbuf();
+			assert(file.good());
+			archive.close();
+		} while (archive.open_next());
 
-			ret = unzOpenCurrentFile(archive.handle);
-			if (ret != ZIP_OK)
-				throw archive_error{ "Failed to open file in archive.handle: " + (fs_path / filename).generic_string() };
-
-			types::uint32 total_written = 0;
-
-			LOG("Uncompressing file: " + filename.generic_string() + " from archive.handle: " + fs_path.generic_string());
-
-			//write the data to actual files
-			while (total_written < usize)
-			{
-				const auto amount = unzReadCurrentFile(archive.handle, &buff[0], usize);
-				file.write(buff.data(), amount);
-				total_written += amount;
-			}
-
-			ret = unzCloseCurrentFile(archive.handle);
-			if (ret != ZIP_OK)
-				throw archive_error{ "Failed to close file in archive.handle: " + (fs_path / filename).generic_string() };
-		} while (unzGoToNextFile(archive.handle) != UNZ_END_OF_LIST_OF_FILE);
-
-		LOG("Finished uncompressing archive: " + fs_path.generic_string());
+		log("Finished uncompressing archive: " + fs_path.generic_string());
 	}
 
 	bool probably_compressed(const buffer& stream) noexcept

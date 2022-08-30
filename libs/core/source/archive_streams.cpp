@@ -110,7 +110,10 @@ namespace hades::zip
 			throw archive_error{ "error opening file in archive"s };
 
 		auto file_info = unz_file_info64{};
-		unzGetCurrentFileInfo64(a.handle, &file_info, nullptr, 0, nullptr, 0, nullptr, 0);
+		auto ret = unzGetCurrentFileInfo64(a.handle, &file_info, {}, {}, {}, {}, {}, {});
+
+		if (ret < 0)
+			throw archive_error{ "error opening file in archive"s }; 
 
 		auto character_buffer = std::string(file_info.size_filename, '\0');
 		unzGetCurrentFileInfo64(a.handle, nullptr, character_buffer.data(),
@@ -166,7 +169,7 @@ namespace hades::zip
 		auto a = toarchive{ path_str };
 		if (!fs::exists(path))
 		{
-			a.handle = zipOpen(path_str.c_str(), APPEND_STATUS_CREATE);
+			a.handle = zipOpen64(path_str.c_str(), APPEND_STATUS_CREATE);
 			if(a.handle)
 				log_debug("Created new archive: "s + path_str);
 		}
@@ -190,25 +193,57 @@ namespace hades::zip
 			else
 				throw files::file_error{ "Cannot open file: "s + path.generic_string() };
 
-			a.handle = zipOpen(path_str.c_str(), APPEND_STATUS_ADDINZIP);
+			a.handle = zipOpen64(path_str.c_str(), APPEND_STATUS_CREATEAFTER);
 			if(a.handle)
 				log_debug("Overwriting archive: "s + path_str);
 		}
 
 		if (!a.handle)
-			throw archive_error{ "unable to create archive: "s + path.generic_string() };
+			throw archive_error{ "Unable to create archive: "s + path.generic_string() };
 
+		a.path = path;
 		open_for_write.emplace(std::move(path_str));
 		return a;
 	}
 
-	void close_archive(toarchive f) noexcept
+	void open_file(toarchive& a, const std::filesystem::path& f)
+	{
+		const auto path_str = f.generic_string();
+		
+		auto ret = zipOpenNewFileInZip64(a.handle,
+			path_str.c_str(), {}, {}, {}, {}, {}, {},
+			Z_DEFLATED,
+			Z_BEST_COMPRESSION,
+			1);
+
+		if (ret < 0)
+			throw archive_error{ "Failed to create file in archive"s };
+
+		a.file = f;
+		return;
+	}
+
+	void close_file(toarchive& a) noexcept
+	{
+		assert(a.handle);
+		assert(!a.file.empty());
+
+		if (zipCloseFileInZip(a.handle) < 0)
+			log_error("error writing file in archive: "s + a.file.generic_string());
+
+		a.file.clear();
+		return;
+	}
+
+	void close_archive(toarchive& f) noexcept
 	{
 		const auto r = zipClose(f.handle, {});
-		if (r != UNZ_OK)
+		if (r != ZIP_OK)
 			log_error("tried to close archive before closing file"sv);
 
-		open_for_write.erase(f.path);
+		open_for_write.erase(f.path.generic_string());
+		f.handle = {};
+		f.path.clear();
 		return;
 	}
 
@@ -217,22 +252,21 @@ namespace hades::zip
 		std::swap(_get_area, rhs._get_area);
 		std::swap(_device_buffer, rhs._device_buffer);
 		std::swap(_file, rhs._file);
-		std::swap(_buffer_pos, rhs._buffer_pos);
-		std::swap(_buffer_end, rhs._buffer_end);
 		std::swap(_zip_stream, rhs._zip_stream);
 
 		// fix up the access ptrs
 		auto ptr = rhs.gptr();
+		auto end = rhs.egptr();
 		auto ptr_offset = std::distance(rhs._get_area.data(), ptr);
+		auto end_offset = std::distance(rhs._get_area.data(), end);
 		auto beg = _get_area.data();
-		auto end = beg + size(_get_area);
-		setg(beg, beg + ptr_offset, end);
+		setg(beg, beg + ptr_offset, beg + end_offset);
 		rhs.setg(nullptr, nullptr, nullptr);
 
 		using z_byte = Bytef;
 		using z_uint = uInt;
 
-		// fixup the zip stream ptrs
+		//// fixup the zip stream ptrs
 		if (_zip_stream->z.next_in)
 		{
 			const auto in_distance = std::distance(rhs._get_area.data(), reinterpret_cast<char*>(_zip_stream->z.next_in));
@@ -261,91 +295,91 @@ namespace hades::zip
 
 	basic_in_compressed_filebuf<char>::int_type basic_in_compressed_filebuf<char>::underflow()
 	{
-		auto beg = eback(), ptr = gptr(), end = egptr();
+		auto ptr = gptr(), end = egptr();
 		if (ptr != end)
-			return *ptr;
+			return traits_type::to_int_type(*ptr);
 
-		// this function depends on these types being used as generic byte ptr types
-		static_assert(sizeof(char_type) == sizeof(Bytef));
+		if(end != _get_area.data() + size(_get_area))
+			return traits_type::eof();
+
+		return _fill_buffer();
+	}
+
+	basic_in_compressed_filebuf<char>::int_type basic_in_compressed_filebuf<char>::_fill_buffer()
+	{
+		// assume the get buffer is empty
+		// 
+		// fill the device buffer
+		// feed into the get buffer
+		// repeat until the get buffer is full
 
 		//uint as defined by zlib
 		using z_uint = uInt;
 		using z_byte = Bytef;
-		auto eof = false;
 
-		if (_zip_stream->z.avail_in < size(_device_buffer))
-		{
-			const auto device_begin = _device_buffer.data();
-			const auto buffer_end = device_begin + size(_device_buffer);
-
-			if (!_zip_stream->z.next_in)
-			{
-				_zip_stream->z.next_in = reinterpret_cast<z_byte*>(buffer_end);
-			}
-
-			const auto next_in = std::move(reinterpret_cast<std::byte*>(_zip_stream->z.next_in),
-				buffer_end, device_begin);
-			const auto dist = std::distance(next_in, buffer_end);
-			const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file);
-			_buffer_pos = device_begin;
-			_buffer_end = _buffer_pos + std::distance(_buffer_pos, next_in) + read_amount;
-
-			_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_buffer_pos, _buffer_end));
-			_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_buffer_pos);
-		}
-
-		// always has room from here
+		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_get_area.data());
 		_zip_stream->z.avail_out = integer_cast<z_uint>(size(_get_area));
-		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(beg);
 
-		const auto ret = ::inflate(&_zip_stream->z, Z_NO_FLUSH);
-		if (ret == Z_STREAM_END)
-			eof = true;
-		else if (ret != Z_OK)
+		while (_zip_stream->z.avail_out > 0)
 		{
-			auto msg = std::string{};
-			if (_zip_stream->z.msg)
-				msg = _zip_stream->z.msg;
-
-			using namespace std::string_literals;
-
-			switch (ret)
+			// fill device buffer
+			if (_zip_stream->z.avail_in < size(_device_buffer))
 			{
-			case Z_STREAM_ERROR:
-				// generic error
-				throw archive_error{ "error while reading compresed file; " + msg };
-			case Z_DATA_ERROR:
-				// corrupted data
-				throw archive_error{ "compressed file was corrupt; " + msg };
-			case Z_MEM_ERROR:
-				// not enough memory
-				throw archive_error{ "not enough memory to run decompression; " + msg };
+				const auto buffer_end = _device_buffer.data() + size(_device_buffer);
+
+				const auto next_in = std::move(reinterpret_cast<std::byte*>(_zip_stream->z.next_in),
+					buffer_end, _device_buffer.data());
+				const auto dist = std::distance(next_in, buffer_end);
+				const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file);
+				const auto new_buffer_end = next_in + read_amount;
+				_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_device_buffer.data(),
+					new_buffer_end));
+				_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_device_buffer.data());
+			}
+
+			const auto ret = ::inflate(&_zip_stream->z, Z_NO_FLUSH);
+			if (ret == Z_STREAM_END)
+			{
+				auto beg = _get_area.data();
+				auto end = _get_area.data() + (size(_get_area) - _zip_stream->z.avail_out);
+				setg(beg, beg, end);
+				return traits_type::to_int_type(*beg);
+			}
+			else if (ret != Z_OK)
+			{
+				auto msg = std::string{};
+				if (_zip_stream->z.msg)
+					msg = _zip_stream->z.msg;
+
+				using namespace std::string_literals;
+
+				switch (ret)
+				{
+				case Z_STREAM_ERROR:
+					// generic error
+					throw archive_error{ "error while reading compresed file; " + msg };
+				case Z_DATA_ERROR:
+					// corrupted data
+					throw archive_error{ "compressed file was corrupt; " + msg };
+				case Z_MEM_ERROR:
+					// not enough memory
+					throw archive_error{ "not enough memory to run decompression; " + msg };
+				}
 			}
 		}
 
-		if (eof)
-			end = reinterpret_cast<char_type*>(_zip_stream->z.next_out);
-
+		auto beg = _get_area.data();
+		auto end = _get_area.data() + size(_get_area);
 		setg(beg, beg, end);
-
-		if (eof && beg == end)
-			return traits_type::eof();
-
-		return *beg;
+		return traits_type::to_int_type(*beg);
 	}
 
 	void basic_in_compressed_filebuf<char>::_seek_beg() noexcept
-	{
-		if (_file)
-		{
-			auto beg = _get_area.data();
-			auto ptr = beg + size(_get_area);
-			setg(beg, ptr, ptr);
-			rewind(_file);
-			_pos = {};
-			inflateEnd(&_zip_stream->z);
-			_start_zlib();
-		}
+	{		
+		rewind(_file);
+		inflateEnd(&_zip_stream->z);
+		_start_zlib();
+		_fill_buffer();
 		return;
 	}
 
@@ -356,7 +390,12 @@ namespace hades::zip
 		_zip_stream->z.zfree = Z_NULL;
 		_zip_stream->z.opaque = Z_NULL;
 		_zip_stream->z.avail_in = 0;
-		_zip_stream->z.next_in = Z_NULL;
+		_zip_stream->z.next_in = reinterpret_cast<Bytef*>(_device_buffer.data() + size(_device_buffer));
+
+		auto beg = _get_area.data();
+		auto ptr = beg + size(_get_area);
+		setg(beg, ptr, ptr);
+		_pos = {};
 
 		return inflateInit(&_zip_stream->z) == Z_OK;
 	}
@@ -392,60 +431,50 @@ namespace hades::zip
 	{
 		if (_file)
 		{
-			deflate_some(Z_FINISH);
-			sync();
+			_deflate_some(Z_FINISH);
+			sync(); 
 			deflateEnd(&_zip_stream->z);
-			const auto ret = std::fclose(_file);
+			const auto fret = std::fclose(_file);
 			_file = {};
-			return ret == 0 ? this : nullptr;
+			return fret == 0 ? this : nullptr;
 		}
 		return this;
 	}
 
-	basic_out_compressed_filebuf<char>::int_type basic_out_compressed_filebuf<char>::overflow(int_type)
+	basic_out_compressed_filebuf<char>::int_type basic_out_compressed_filebuf<char>::overflow(int_type i)
 	{
 		const auto ptr = pptr(), end = epptr();
 		if (ptr && ptr < end)
-			return {};
+			return !traits_type::eof();
 
 		// this function depends on these types being used as generic byte ptr types
 		static_assert(sizeof(char_type) == sizeof(Bytef));
 
-		deflate_some(Z_NO_FLUSH);
-		return {};
+		_deflate_some(Z_NO_FLUSH);
+		if (i != traits_type::eof())
+		{
+			const auto beg = pbase();
+			*beg = traits_type::to_char_type(i);
+			setp(beg, beg + 1, end);
+		}
+
+		return !traits_type::eof();
 	}
 
 	basic_out_compressed_filebuf<char>::int_type basic_out_compressed_filebuf<char>::sync()
 	{
 		const auto beg = pbase(), ptr = pptr();
 		if (beg != ptr)
-			deflate_some(Z_NO_FLUSH);
-
-		auto ret = int_type{};
+			_deflate_some(Z_NO_FLUSH);
 
 		if (_zip_stream->z.avail_out != size(_device_buffer))
-		{
-			using z_byte = Bytef;
-			using z_uint = uInt;
+			_empty_device_buffer();
 
-			const auto device_end = reinterpret_cast<std::byte*>(_zip_stream->z.next_out);
-			const auto write_amount = std::distance(_device_buffer.data(), device_end);
-			const auto out = fwrite(_device_buffer.data(), sizeof(std::byte), write_amount, _file);
-			if (out != integer_cast<std::size_t>(write_amount))
-				throw files::file_error{ "write error" };
-			const auto flush = fflush(_file);
-			if (flush != int{})
-				throw files::file_error{ "flush error" };
-
-			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data());
-			_zip_stream->z.avail_out = integer_cast<z_uint>(size(_device_buffer));
-		}
-
-		return ret;
+		return {};
 	}
 
 	// deflates untill the put buffer is empty, only writes out to file as needed
-	void basic_out_compressed_filebuf<char>::deflate_some(int flush)
+	void basic_out_compressed_filebuf<char>::_deflate_some(int flush)
 	{
 		const auto beg = pbase(), ptr = pptr(), end = epptr();
 
@@ -460,16 +489,7 @@ namespace hades::zip
 		{
 			// check avail_out
 			if (_zip_stream->z.avail_out == 0)
-			{
-				const auto write = fwrite(_device_buffer.data(), sizeof(std::byte), size(_device_buffer), _file);
-				if (write < size(_device_buffer))
-				{
-					throw files::file_error{ "error while writing compressed data" };
-				}
-
-				_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data());
-				_zip_stream->z.avail_out = integer_cast<z_uint>(size(_device_buffer));
-			}
+				_empty_device_buffer();
 
 			const auto ret = deflate(&_zip_stream->z, flush);
 			if (ret != Z_OK)
@@ -495,7 +515,28 @@ namespace hades::zip
 		} while (cont);
 
 		setp(beg, end);
+		return;
+	}
 
+	void basic_out_compressed_filebuf<char>::_empty_device_buffer()
+	{
+		if (_zip_stream->z.avail_out != size(_device_buffer))
+		{
+			using z_byte = Bytef;
+			using z_uint = uInt;
+
+			const auto device_end = reinterpret_cast<std::byte*>(_zip_stream->z.next_out);
+			const auto write_amount = std::distance(_device_buffer.data(), device_end);
+			const auto out = fwrite(_device_buffer.data(), sizeof(std::byte), write_amount, _file);
+			if (out != integer_cast<std::size_t>(write_amount))
+				throw files::file_error{ "write error" };
+			const auto flush = fflush(_file);
+			if (flush != int{})
+				throw files::file_error{ "flush error" };
+
+			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data());
+			_zip_stream->z.avail_out = integer_cast<z_uint>(size(_device_buffer));
+		}
 		return;
 	}
 
@@ -518,8 +559,8 @@ namespace hades::zip
 
 	void basic_in_archived_filebuf<char>::_seek_beg()
 	{
+		assert(is_archive_open());
 		assert(is_open());
-		assert(is_file_open());
 		unzCloseCurrentFile(_archive.handle);
 		unzOpenCurrentFile(_archive.handle);
 		_readsome();
@@ -533,26 +574,14 @@ namespace hades::zip
 
 		using namespace std::string_literals;
 
-		switch (ret)
-		{
-		case Z_ERRNO:
-			[[fallthrough]];
-		case Z_STREAM_ERROR:
-			// generic error
+		if(ret < 0)
 			throw archive_error{ "error while reading compresed file"s };
-		case Z_DATA_ERROR:
-			// corrupted data
-			throw archive_error{ "compressed file was corrupt"s };
-		case Z_MEM_ERROR:
-			// not enough memory
-			throw archive_error{ "not enough memory to run decompression"s };
-		}
 
 		if (ret != 0)
 		{
 			const auto beg = _get_area.data();
 			setg(beg, beg, beg + ret);
-			return *beg;
+			return traits_type::to_int_type(*beg);
 		}
 		else
 			return traits_type::eof();
@@ -562,5 +591,20 @@ namespace hades::zip
 	{
 		const auto ptr = gptr(), end = egptr();
 		return unztell64(_archive.handle) - std::distance(ptr, end);
+	}
+
+	void basic_out_archived_filebuf<char>::_consume_buffer()
+	{
+		const auto beg = pbase(), ptr = pptr();
+		auto file = _archive.file;
+		if (beg != ptr)
+		{
+			auto ret = zipWriteInFileInZip(_archive.handle, _put_area.data(),
+				integer_cast<unsigned int>(std::distance(beg, ptr)));
+			if (ret < 0)
+				throw archive_error{ "error writing archive"s };
+		}
+		setp(beg, beg + size(_put_area));
+		return;
 	}
 }

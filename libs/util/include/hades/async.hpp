@@ -1,16 +1,12 @@
 #ifndef HADES_UTIL_ASYNC_HPP
 #define HADES_UTIL_ASYNC_HPP
 
-//#include <atomic>
-//#include <cassert>
+#include <cassert>
 #include <deque>
 #include <functional>
-//#include <future>
-//#include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
-//#include <type_traits>
 
 //#include "hades/random.hpp"
 
@@ -103,8 +99,8 @@ namespace hades
 		{
 			auto work = std::function<void()>{};
 			{
-				const auto index = 0;//random(std::size_t{}, std::size(_queues) - 1);
-				auto& other_queue = _queues[index];
+				static thread_local auto index = 0;
+				auto& other_queue = _queues[index++ % size(_queues)];
 
 				const auto lock = std::scoped_lock{ other_queue.mut };
 

@@ -353,17 +353,14 @@ namespace hades
 		static_assert(std::is_nothrow_invocable_v<Func>, 
 			"make_finally only accepts a callable that accepts no arguments and is noexcept");
 
-		struct {
-			struct finally_return {
-				~finally_return() noexcept {
+		struct make_finally_return {
+				~make_finally_return() noexcept {
 					std::invoke(f);
 					return;
 				}
 				Func f;
 			};
-			finally_return r;
-		} ret{ {std::forward<Func>(f)} };
-		return ret;
+		return make_finally_return{ f };
 	}
 
 	template<typename Container>

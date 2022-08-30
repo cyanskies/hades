@@ -143,7 +143,7 @@ namespace hades
 		return std::visit([](auto& stream) {
 			using T = std::decay_t<decltype(stream)>;
 			if constexpr (std::is_same_v<T, zip::in_archive_filebuf>)
-				return stream.is_file_open();
+				return stream.is_open();
 			else
 				return stream.is_open();
 			}, _stream);
@@ -203,12 +203,12 @@ namespace hades
 		const fs::path& file)
 	{
 		auto a = zip::in_archive_filebuf{};
-		a.open(archive);
+		a.open_archive(archive);
 		if (!a.is_open())
 			return false;
 
-		a.open_file(file);
-		if (!a.is_file_open())
+		a.open(file);
+		if (!a.is_open())
 			return false;
 		
 		_stream = std::move(a);

@@ -21,7 +21,7 @@ namespace hades
 {
 	//buffer of bytes
 	using buffer = std::vector<std::byte>;
-	//NOTE: .net recently moved from 4kb default to 8kb
+	//NOTE: .net recently moved from 4kb default to 8kb(8192)
 	constexpr auto default_buffer_size = std::size_t{ 4096 }; //4kb buffer
 }
 
@@ -88,11 +88,17 @@ namespace hades::zip
 
 	constexpr bool probably_compressed(zip_header header) noexcept
 	{
-		return header[0] == header::first &&
-			std::any_of(std::begin(header::others), std::end(header::others), [second = header[1]](auto&& other)
-				{
-					return second == other;
-				});
+		switch (header[1])
+		{
+		case header::others[0]:
+			[[fallthrough]];
+		case header::others[1]:
+			[[fallthrough]];
+		case header::others[2]:
+			return header[0] == header::first;
+		default:
+			return false;
+		}
 	}
 
 	struct unarchive
@@ -118,9 +124,16 @@ namespace hades::zip
 
 	struct toarchive
 	{
-		string path;
+		std::filesystem::path path;
+		std::filesystem::path file;
 		void* handle = {};
 	};
+
+	//open and close zip archives
+	toarchive create_archive(const std::filesystem::path&);
+	void open_file(toarchive&, const std::filesystem::path&);
+	void close_file(toarchive&) noexcept;
+	void close_archive(toarchive&) noexcept;
 
 	// stream buffer for reading compressed files
 	template<typename CharT, typename Traits = std::char_traits<CharT>>
@@ -198,10 +211,7 @@ namespace hades::zip
 				return nullptr;
 			}
 			
-			auto beg = _get_area.data();
-			auto ptr = beg + size(_get_area);
-			setg(beg, ptr, ptr);
-
+			_fill_buffer();
 			return this;
 		}
 
@@ -272,7 +282,18 @@ namespace hades::zip
 			return std::streambuf::uflow();
 		}
 
+		int_type pbackfail(int_type c = traits_type::eof()) final override
+		{
+			auto old_pos = _pos;
+			_seek_beg();
+			seekpos(old_pos - 1);
+			if (c != traits_type::eof())
+				_get_area[0] = traits_type::to_char_type(c);
+			return !traits_type::eof();
+		}
+
 	private:
+		int_type _fill_buffer();
 		//seek back to the start of the file
 		// requires reseting zlib and some of the other ptrs
 		void _seek_beg() noexcept;
@@ -282,8 +303,6 @@ namespace hades::zip
 		std::array<std::byte, default_buffer_size> _device_buffer;
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
 		FILE* _file = {};
-		std::byte* _buffer_pos = {};
-		std::byte* _buffer_end = {};
 		std::streamsize _pos = {};
 	};
 
@@ -309,7 +328,7 @@ namespace hades::zip
 
 		basic_out_compressed_filebuf& operator=(basic_out_compressed_filebuf&& rhs) noexcept;
 
-		~basic_out_compressed_filebuf() noexcept
+		~basic_out_compressed_filebuf() noexcept final override
 		{
 			close();
 			return;
@@ -350,12 +369,13 @@ namespace hades::zip
 
 	// Writing funcs
 	protected:
-		int_type overflow(int_type = traits_type::eof());
-		int_type sync();
+		int_type overflow(int_type = traits_type::eof()) final override;
+		int_type sync() final override;
 
 	private:
 		// deflates until the put buffer is empty, only writes out to file as needed
-		void deflate_some(int flush);
+		void _deflate_some(int flush);
+		void _empty_device_buffer(); 
 		bool _start_zlib() noexcept;
 
 		std::array<char_type, default_buffer_size> _put_area;
@@ -383,75 +403,108 @@ namespace hades::zip
 			std::swap(_get_area, rhs._get_area);
 
 			// fix up the access ptrs
-			auto ptr = rhs.pptr();
+			auto ptr = rhs.gptr();
+			auto end = rhs.egptr();
 			auto ptr_offset = std::distance(rhs._get_area.data(), ptr);
+			auto end_offset = std::distance(rhs._get_area.data(), end);
 			auto beg = _get_area.data();
-			auto end = beg + size(_get_area);
-			setp(beg, beg + ptr_offset, end);
-			rhs.setp(nullptr, nullptr, nullptr);
+			setg(beg, beg + ptr_offset, beg + end_offset);
+			rhs.setg(nullptr, nullptr, nullptr);
 
 			return *this;
 		}
 
 		~basic_in_archived_filebuf() noexcept
 		{
-			if (is_file_open())
+			if (is_open())
 			{
 				try
 				{
-					close_file();
+					close();
 				}
 				catch (const archive_error& e)
 				{
 					log_warning(e.what());
 				}
-				close();
+				close_archive();
 			}
-			else if(is_open())
-				close();
+			else if(is_archive_open())
+				close_archive();
 			return;
 		}
 
-		bool is_open() const noexcept
+		bool is_archive_open() const noexcept
 		{
 			return _archive.handle;
 		}
 
-		bool is_file_open() const noexcept
+		bool is_open() const noexcept
 		{
 			return !_archive.file.empty();
 		}
 
-		basic_in_archived_filebuf* open(const std::filesystem::path& p)
+		basic_in_archived_filebuf* open_archive(const std::filesystem::path& p)
 		{
 			assert(!is_open());
-			_archive = open_archive(p);
+			_archive = zip::open_archive(p);
 			if(_archive.handle)
 				return this;
 			return nullptr;
 		}
 
-		basic_in_archived_filebuf* open_file(const std::filesystem::path& p)
+		basic_in_archived_filebuf* open(const std::filesystem::path& p)
 		{
-			assert(is_open());
-			assert(!is_file_open());
+			assert(is_archive_open());
+			assert(!is_open());
 			zip::open_file(_archive, p);
 			_readsome();
 			return this;
 		}
 
-		basic_in_archived_filebuf* close() noexcept
+		basic_in_archived_filebuf* open_first()
 		{
-			close_archive(_archive); 
+			assert(is_archive_open());
+			assert(!is_open());
+			zip::open_first_file(_archive);
+			_readsome();
+			return this;
+		}
+
+		basic_in_archived_filebuf* open_next()
+		{
+			assert(is_archive_open());
+			assert(!is_open());
+			if (zip::open_next_file(_archive))
+			{
+				_readsome();
+				return this;
+			}
+
+			return nullptr;
+		}
+
+		basic_in_archived_filebuf* close_archive() noexcept
+		{
+			zip::close_archive(_archive); 
 			return this;
 		}
 
 		// throws archive_error
-		basic_in_archived_filebuf* close_file()
+		basic_in_archived_filebuf* close()
 		{
-			assert(is_file_open());
+			assert(is_archive_open());
 			zip::close_file(_archive);
 			return this;
+		}
+
+		const std::filesystem::path& archive_path() const noexcept
+		{
+			return _archive.path;
+		}
+
+		const std::filesystem::path& file_path() const noexcept
+		{
+			return _archive.file;
 		}
 
 		// Seeking functions
@@ -459,7 +512,7 @@ namespace hades::zip
 		pos_type seekoff(off_type off, std::ios_base::seekdir dir,
 			std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
 		{
-			assert(is_file_open());
+			assert(is_open());
 
 			if (off < 0)
 			{
@@ -503,7 +556,7 @@ namespace hades::zip
 		pos_type seekpos(pos_type pos,
 			std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
 		{
-			assert(is_file_open());
+			assert(is_open());
 			return seekoff(std::streamoff{ pos }, std::ios_base::beg);
 		}
 
@@ -519,7 +572,7 @@ namespace hades::zip
 		{
 			const auto ptr = gptr(), end = egptr();
 			if (ptr != end)
-				return *ptr;
+				return traits_type::to_int_type(*ptr);
 
 			return _readsome();
 		}
@@ -534,11 +587,120 @@ namespace hades::zip
 		unarchive _archive;
 	};
 
+	// stream buffer for writing compressed files
+	// we only support basic char
+	template<>
+	class basic_out_archived_filebuf<char> : public std::basic_streambuf<char>
+	{
+	public:
+		basic_out_archived_filebuf() noexcept = default;
+
+		basic_out_archived_filebuf(basic_out_archived_filebuf&& rhs) noexcept
+		{
+			*this = std::move(rhs);
+			return;
+		}
+
+		basic_out_archived_filebuf& operator=(basic_out_archived_filebuf&& rhs) noexcept
+		{
+			std::swap(_put_area, rhs._put_area);
+			std::swap(_archive, rhs._archive);
+
+			// fix up the access ptrs
+			auto ptr = rhs.pptr();
+			auto ptr_offset = std::distance(rhs._put_area.data(), ptr);
+			auto beg = _put_area.data();
+			auto end = beg + size(_put_area);
+			setp(beg, beg + ptr_offset, end);
+			rhs.setp(nullptr, nullptr, nullptr);
+		}
+
+		~basic_out_archived_filebuf() noexcept final override
+		{
+			close_archive();
+			return;
+		}
+
+		bool is_open() const noexcept
+		{
+			return !_archive.file.empty();
+		}
+
+		bool is_archive_open() const noexcept
+		{
+			return _archive.handle;
+		}
+
+		basic_out_archived_filebuf* open_archive(const std::filesystem::path& p)
+		{
+			assert(!is_archive_open());
+			_archive = zip::create_archive(p);
+			return this;
+		}
+
+		void close_archive() noexcept
+		{
+			if(is_open())
+				close();
+			zip::close_archive(_archive);
+			return;
+		}
+
+		basic_out_archived_filebuf* open(const std::filesystem::path& p)
+		{
+			assert(is_archive_open());
+			assert(!is_open());
+			zip::open_file(_archive, p);
+			auto beg = _put_area.data();
+			setp(beg, beg + size(_put_area));
+			return this;
+		}
+
+		void close()
+		{
+			assert(is_archive_open());
+			assert(is_open());
+			sync();
+			zip::close_file(_archive);
+			return;
+		}
+
+		// Writing funcs
+	protected:
+		int_type overflow(int_type i = traits_type::eof()) final override
+		{
+			const auto ptr = pptr(), end = epptr();
+			if (ptr == end)
+				_consume_buffer();
+
+			if (i != traits_type::eof())
+			{
+				const auto beg = pbase();
+				*beg = traits_type::to_char_type(i);
+				setp(beg, beg + 1, end);
+			}
+
+			return !traits_type::eof();
+		}
+
+		int_type sync() final override
+		{
+			_consume_buffer();
+			return {};
+		}
+
+	private:
+		void _consume_buffer();
+
+		std::array<char_type, default_buffer_size> _put_area;
+		toarchive _archive;
+	};
 
 	using in_compressed_filebuf = basic_in_compressed_filebuf<char>;
 	using out_compressed_filebuf = basic_out_compressed_filebuf<char>;
 
 	using in_archive_filebuf = basic_in_archived_filebuf<char>;
+	using out_archive_filebuf = basic_out_archived_filebuf<char>;
 }
 
 #endif // !HADES_ARCHIVE_STREAMS_HPP

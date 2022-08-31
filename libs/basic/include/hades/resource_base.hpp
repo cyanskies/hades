@@ -1,6 +1,7 @@
 #ifndef HADES_RESOURCE_BASE_HPP
 #define HADES_RESOURCE_BASE_HPP
 
+#include <filesystem>
 #include <vector>
 
 #include "hades/exceptions.hpp"
@@ -59,7 +60,6 @@ namespace hades
 				throw logic_error{ "resource_base::serialise base implementation should never be invoked" };
 			}
 
-			using unload_func = void(*)(resource_base&);
 			using clone_func = std::unique_ptr<resource_base>(*)(const resource_base&);
 
 			unique_id id;
@@ -68,10 +68,17 @@ namespace hades
 			unique_id mod = unique_id::zero;
 			bool loaded = false;
 
-			// the file to write this resource to(eg. ./terrain/terrain)
+			// the file to write this resource to(eg. ./terrain/terrain(.yaml))
 			string data_file;
+			//the path for this resource within a mod(eg. ./terrain/dirt.png)
+			std::filesystem::path source;
+			//if the file was loaded from an archive, then this contains the archive path
+			std::filesystem::path loaded_archive_path;
+			//the absolute path to the resource(eg. C:/game/mod.zip/terrain/dirt.png, or C:/user/game/mod/terrain/dirt.png)
+			// or the relative path if the resource was loaded from an archive
+			std::filesystem::path loaded_path;
 
-			unload_func clear = nullptr;
+			//unload_func clear = nullptr;
 			clone_func clone = nullptr;
 		};
 
@@ -102,8 +109,6 @@ namespace hades
 			//the actual resource
 			// NOTE: this is often a empty tag type
 			T value;
-			//the path for this resource
-			hades::string source;
 		private:
 			loader_func _resource_loader = nullptr;
 		};

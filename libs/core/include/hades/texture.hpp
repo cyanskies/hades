@@ -36,7 +36,7 @@ namespace hades
 			// set_alpha_colour: reload the texture to see the effects of this.
 			void set_alpha_colour(texture&, colour) noexcept;
 			void clear_alpha(texture&) noexcept;
-			string get_source(const texture*);
+			const resource_base* get_resource_base(texture&) noexcept;
 			const sf::Texture& get_sf_texture(const texture*) noexcept;
 			sf::Texture& get_sf_texture(texture*) noexcept;
 			vector_t<texture_size_t> get_requested_size(const texture&) noexcept;

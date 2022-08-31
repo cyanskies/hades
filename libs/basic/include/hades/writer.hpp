@@ -52,9 +52,12 @@ namespace hades::data
 	};
 
 	using make_writer_f = std::unique_ptr<writer>(*)();
+	using make_writer2_f = std::unique_ptr<writer>(*)(std::ostream&);
 	
 	void set_default_writer(make_writer_f);
+	void set_default_writer(make_writer2_f);
 	std::unique_ptr<writer> make_writer();
+	std::unique_ptr<writer> make_writer(std::ostream&);
 }
 
 #endif // !HADES_WRITER_HPP

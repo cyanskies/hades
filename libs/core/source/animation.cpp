@@ -234,7 +234,7 @@ namespace hades::resources::animation_group_functions
 {
 	const animation_group* get_resource(const unique_id id, const std::optional<unique_id> mod)
 	{
-		return data::get<animation_group>(id);
+		return data::get<animation_group>(id, mod);
 	}
 
 	animation_group* get_resource(data::data_manager& d, const unique_id i, const std::optional<unique_id> mod)

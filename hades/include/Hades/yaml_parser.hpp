@@ -19,8 +19,9 @@ namespace hades::data
 	class parser_node;
 	//NOTE: throws yaml_parse_exception on error
 	std::unique_ptr<parser_node> make_yaml_parser(std::string_view src);
+	std::unique_ptr<parser_node> make_yaml_parser(std::istream& in);
 	//TODO: remove
-	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src);
+	[[deprecated]] std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src);
 }
 
 #endif //HADES_YAML_PARSER_HPP

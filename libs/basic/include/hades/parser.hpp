@@ -78,11 +78,14 @@ namespace hades::data
 	};
 
 	using make_parser_f = std::unique_ptr<parser_node>(*)(std::string_view);
+	using make_parser2_f = std::unique_ptr<parser_node>(*)(std::istream&);
 
 	void set_default_parser(make_parser_f);
+	void set_default_parser(make_parser2_f);
 
 	//NOTE: can throw parser_exception on error
 	std::unique_ptr<parser_node> make_parser(std::string_view);
+	std::unique_ptr<parser_node> make_parser(std::istream&);
 
 	namespace parse_tools
 	{

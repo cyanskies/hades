@@ -39,18 +39,6 @@ namespace hades
 				const auto& t = static_cast<const T&>(rb);
 				return std::make_unique<T>(t);
 			}
-
-			template<typename T>
-			void reset(resources::resource_base& rb)
-			{
-				// reset everything except the resource_base
-				// slice to preserve r_base member variables
-				const auto r = rb;
-				// reset t
-				static_cast<T&>(rb) = T{};
-				rb = r;
-				return;
-			}
 		}
 
 		template<class T>
@@ -84,7 +72,6 @@ namespace hades
 				auto new_ptr = std::make_unique<Type>();
 				r = &*new_ptr;
 				r->clone = detail::clone<Type>;
-				r->clear = detail::reset<Type>;
 				r->*member_ptr = *mod;
 
 				_set<Type>(target, std::move(new_ptr), group);
@@ -268,27 +255,27 @@ namespace hades
 		}
 
 		template<class T>
-		const T* get(unique_id id)
+		const T* get(unique_id id, std::optional<unique_id> mod)
 		{
 			data_manager* data = nullptr;
 			detail::exclusive_lock lock;
 			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
-			return data->get<T>(id);
+			return data->get<T>(id, mod);
 		}
 
 		template<class T>
-		const T* get(const unique_id id, const no_load_t)
+		const T* get(const unique_id id, const no_load_t, std::optional<unique_id> mod)
 		{
 			auto [data, lock] = detail::get_data_manager_exclusive_lock();
 			std::ignore = lock;
-			return data->get<T>(id, no_load);
+			return data->get<T>(id, no_load, mod);
 		}
 
 		template<class T>
-		data_manager::try_get_return<const T> try_get(unique_id id)
+		data_manager::try_get_return<const T> try_get(unique_id id, std::optional<unique_id> mod)
 		{
 			const auto &[data, lock] = detail::get_data_manager_exclusive_lock();
-			auto[anim, error] = data->try_get<T>(id);
+			auto[anim, error] = data->try_get<T>(id, mod);
 			return { anim, error };
 		}
 	}

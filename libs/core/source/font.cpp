@@ -41,7 +41,7 @@ namespace hades
 		}
 		catch (const files::file_error &e)
 		{
-			LOGERROR("Failed to load font: " + mod.source + "/" + font.source + ". " + e.what());
+			log_error("Failed to load font: " + mod.source + "/" + font.source.generic_string() + ". " + e.what());
 		}
 	}
 

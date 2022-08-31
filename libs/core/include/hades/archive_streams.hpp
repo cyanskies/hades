@@ -88,13 +88,13 @@ namespace hades::zip
 
 	constexpr bool probably_compressed(zip_header header) noexcept
 	{
-		switch (header[1])
+		switch (static_cast<char>(header[1]))
 		{
-		case header::others[0]:
+		case static_cast<char>(header::others[0]):
 			[[fallthrough]];
-		case header::others[1]:
+		case static_cast<char>(header::others[1]):
 			[[fallthrough]];
-		case header::others[2]:
+		case static_cast<char>(header::others[2]):
 			return header[0] == header::first;
 		default:
 			return false;
@@ -134,6 +134,11 @@ namespace hades::zip
 	void open_file(toarchive&, const std::filesystem::path&);
 	void close_file(toarchive&) noexcept;
 	void close_archive(toarchive&) noexcept;
+
+	namespace detail
+	{
+		FILE* open_file(const char*, const char*) noexcept;
+	}
 
 	// stream buffer for reading compressed files
 	template<typename CharT, typename Traits = std::char_traits<CharT>>
@@ -190,7 +195,7 @@ namespace hades::zip
 				return nullptr;
 
 			const auto p_str = p.generic_string();
-			_file = std::fopen(p_str.c_str(), "rb");
+			_file = detail::open_file(p_str.c_str(), "rb");
 			if (!_file)
 				return nullptr;
 			
@@ -347,7 +352,7 @@ namespace hades::zip
 				throw files::file_error{ "Tried to open a file for compressed output with an already opened stream"s };
 
 			const auto p_str = p.generic_string();
-			_file = std::fopen(p_str.c_str(), "wb");
+			_file = detail::open_file(p_str.c_str(), "wb");
 			if (!_file)
 				return nullptr;
 

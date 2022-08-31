@@ -27,7 +27,8 @@ namespace hades
 
 	static std::once_flag setup_keys_flag;
 
-	gui::gui()	
+	gui::gui()
+		: _my_context{ {}, {} }
 	{
 		std::call_once(setup_keys_flag, setup_keys);
 
@@ -35,7 +36,7 @@ namespace hades
 			_font_atlas = std::make_unique<ImFontAtlas>();
 		assert(_font_atlas);
 
-		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()) };
+		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()), ImGui::DestroyContext };
 		assert(_my_context);
 
 		const auto prev_context = ImGui::GetCurrentContext();

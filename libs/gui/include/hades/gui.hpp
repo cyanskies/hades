@@ -747,17 +747,8 @@ namespace hades
 		static void _generate_atlas();
 
 		using context = ImGuiContext;
-
-		struct context_destroyer
-		{
-			void operator()(context *c)
-			{
-				ImGui::DestroyContext(c);
-			}
-		};
-
-		using context_ptr = std::unique_ptr<context, context_destroyer>;
-		context_ptr _my_context{nullptr};
+		using context_ptr = std::unique_ptr<context, void(*)(context*)>;
+		context_ptr _my_context;
 
 		struct toolbar_layout_info
 		{

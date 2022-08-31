@@ -94,8 +94,10 @@ namespace hades
 		debug::set_text_overlay_manager(&*_text_overlay_manager);
 		debug::set_screen_overlay_manager(&_screen_overlay_manager);
 
-		data::set_default_parser(data::make_yaml_parser);
-		data::set_default_writer(data::make_yaml_writer);
+		data::set_default_parser(data::make_parser_f{ data::make_yaml_parser });
+		data::set_default_parser(data::make_parser2_f{ data::make_yaml_parser });
+		data::set_default_writer(data::make_writer_f{ data::make_yaml_writer });
+		data::set_default_writer(data::make_writer2_f{ data::make_yaml_writer });
 
 		resourceTypes(_dataMan);
 
@@ -374,8 +376,7 @@ namespace hades
 			#endif
 		}
 
-		_gui.reset(); // destroy gui so it calls shutdown funcs
-		std::quick_exit(EXIT_SUCCESS);
+		_shutdown();
 	}
 
 	void App::cleanUp()
@@ -405,8 +406,7 @@ namespace hades
 			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
 			{
 				hades::log_debug("Window closed"sv);
-				_gui.reset(); // destroy gui so it calls shutdown funcs
-				std::quick_exit(EXIT_SUCCESS);
+				_shutdown();
 			}
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
 				e.key.code == sf::Keyboard::Tilde)
@@ -452,8 +452,8 @@ namespace hades
 		{
 			auto exit = [this]()->bool {
 				hades::log_debug("'exit' called"sv);
-				_gui.reset(); // destroy gui so it calls shutdown funcs
-				std::quick_exit(EXIT_SUCCESS);
+				_shutdown();
+				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
 			_console.add_function("exit"sv, exit, true);
@@ -697,5 +697,11 @@ namespace hades
 		_console_debug = static_cast<debug::console_overlay*>
 			(_overlay_manager.destroy_overlay(_console_debug));
 		return;
+	}
+	void App::_shutdown()
+	{
+		_states.drop();
+		_gui.reset(); // destroy gui so it calls shutdown funcs
+		std::quick_exit(EXIT_SUCCESS);
 	}
 }//hades

@@ -37,6 +37,11 @@ namespace hades::zip::detail
 	{
 		return z_stream_p{ new z_stream{}, delete_z_stream };
 	}
+
+	FILE* open_file(const char* filename, const char* mode) noexcept
+	{
+		return std::fopen(filename, mode);
+	}
 }
 
 namespace hades::zip

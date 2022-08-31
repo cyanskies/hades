@@ -70,7 +70,7 @@ namespace hades::data
 		{
 			auto m = data::mod{};
 			m.source = mod;
-			const auto modyaml = files::read_resource(m, name);
+			auto modyaml = files::stream_resource(m, name);
 	
 			//parse game.yaml
 			const auto root = data::make_parser(modyaml);
@@ -252,12 +252,13 @@ namespace hades::data
 		return out.first->second;
 	}
 
+	// TODO: redo this func
 	template<typename YAMLPARSER>
-	static void parseInclude(unique_id mod, types::string file, const data::mod& mod_info, YAMLPARSER &&yamlParser)
+	static void parseInclude(unique_id mod, std::string_view file, const data::mod& mod_info, YAMLPARSER &&yamlParser)
 	{
 		try
 		{
-			const auto include_yaml = files::read_resource(mod_info, file);
+			auto include_yaml = files::stream_resource(mod_info, file);
 			const auto parser = data::make_parser(include_yaml);
 			std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
 		}
@@ -268,7 +269,7 @@ namespace hades::data
 		}
 		catch (const parser_exception& e)
 		{
-			const auto message = to_string(e.what()) + " while parsing: " + mod_info.name + "/" + file;
+			const auto message = to_string(e.what()) + " while parsing: " + mod_info.name + "/" + to_string(file);
 			LOGERROR(message);
 		}
 

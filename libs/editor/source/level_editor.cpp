@@ -7,6 +7,7 @@
 #include "hades/level_editor_grid.hpp"
 #include "hades/level_editor_level_properties.hpp"
 #include "hades/level_editor_objects.hpp"
+#include "hades/parser.hpp"
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/mission_editor.hpp"
@@ -524,28 +525,30 @@ namespace hades::detail
 				{
 					_window_flags.load_level = false;
 					
-					const auto file = [this]()->string {
+					// TODO: use streams here
+					const auto file = [this]()->std::unique_ptr<std::istream> {
 						if (_load_level_mod.empty())
-							return files::read_file(_load_level_path);
+							return std::make_unique<files::ifstream>(files::stream_file(_load_level_path));
 						else
 						{
 							const auto mod_id = data::get_uid(_load_level_mod);
 							const auto& mod = data::get_mod(mod_id);
-							return files::read_resource(mod, _load_level_path);
+							return std::make_unique<irfstream>(files::stream_resource(mod, _load_level_path));
 						}
 					}();
 
-					if (!file.empty())
+					if (file->good())
 					{
+						auto parser = data::make_parser(*file);
 						if (_mission_mode())
 						{
-							auto l = deserialise_level(file);
+							auto l = deserialise_level(*parser);
 							*_level = std::move(l);
 							_load(_level);
 						}
 						else
 						{
-							_level_ptr = std::make_unique<level>(deserialise_level(file));
+							_level_ptr = std::make_unique<level>(deserialise_level(*parser));
 							_load(_level_ptr.get());
 						}
 					}

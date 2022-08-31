@@ -240,7 +240,9 @@ namespace hades
 					};
 
 					const auto mod_stack = d.get_mod_stack();
-					auto add_disabled = std::count_if(begin(mod_stack), end(mod_stack), std::not_fn(already_depened)) <= _edit_mod_window.mods_selected;
+					auto add_disabled = _edit_mod_window.mods_selected > 
+						integer_cast<std::size_t>(std::count_if(begin(mod_stack),
+							end(mod_stack), std::not_fn(already_depened)));
 
 					const auto stack_end = size(mod_stack);
 					assert(stack_end > 0);

@@ -16,6 +16,12 @@ namespace
 			_emitter << YAML::BeginMap;
 		}
 
+		yaml_writer(std::ostream& o) noexcept
+			: _emitter{ o }
+		{
+			_emitter << YAML::BeginMap;
+		}
+
 		void start_sequence() override
 		{
 			_emitter << YAML::Flow << YAML::BeginSeq;
@@ -78,5 +84,10 @@ namespace hades::data
 	std::unique_ptr<writer> make_yaml_writer()
 	{
 		return std::make_unique<yaml_writer>();
+	}
+
+	std::unique_ptr<writer> make_yaml_writer(std::ostream& s)
+	{
+		return std::make_unique<yaml_writer>(s);
 	}
 }

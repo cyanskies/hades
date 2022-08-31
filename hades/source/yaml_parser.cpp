@@ -61,7 +61,7 @@ namespace hades::data
 				if (!n.IsDefined())
 					return nullptr;
 				
-				return make_yaml_parser(n);
+				return std::make_unique<yaml_parser_node>(n);
 			}
 			catch (const YAML::Exception&)
 			{
@@ -121,29 +121,32 @@ namespace hades::data
 		yaml_type _type = yaml_type::SCALAR;
 	};
 
-	//TODO: make static
 	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node &src)
 	{
 		return std::make_unique<yaml_parser_node>(src);
-	}
-
-	static bool contains_tab(std::string_view yaml)
-	{
-		return std::find(yaml.begin(), yaml.end(), '\t') != yaml.end();
 	}
 
 	std::unique_ptr<parser_node> make_yaml_parser(std::string_view src)
 	{
 		try
 		{
-			if (contains_tab(src))
-				throw parser_exception("yaml file contains tabs."s);
-
-			return make_yaml_parser(YAML::Load(to_string(src)));
+			return std::make_unique<yaml_parser_node>(YAML::Load(to_string(src)));
 		}
-		catch (const YAML::ParserException &p)
+		catch (const YAML::Exception &p)
 		{
 			throw yaml_parse_exception(p.what());
+		}
+	}
+
+	std::unique_ptr<parser_node> make_yaml_parser(std::istream& in)
+	{
+		try
+		{
+			return std::make_unique<yaml_parser_node>(YAML::Load(in));
+		}
+		catch (const YAML::Exception& p)
+		{
+			throw yaml_parse_exception{ p.what() };
 		}
 	}
 }

@@ -282,8 +282,8 @@ namespace hades::data
 		void set_target(data_manager& d, unique_id i, unique_id mod) override
 		{
 			namespace tex = resources::texture_functions;
-			_texture_base = d.get_resource(i, mod);
 			_texture = tex::get_resource(d, i);
+			_texture_base = tex::get_resource_base(*_texture);
 			_name = "Texture: "s + d.get_as_string(i) + "###texture-edit"s;
 			_smooth = tex::get_smooth(_texture);
 			_mips = tex::get_mips(_texture);
@@ -293,7 +293,7 @@ namespace hades::data
 				_alpha = { a->r, a->g, a->b };
 
 			_repeat = tex::get_repeat(_texture);
-			_source = tex::get_source(_texture);
+			_source = _texture_base->source.generic_string();
 			const auto size = tex::get_size(*_texture);
 			_size[0] = size.x;
 			_size[1] = size.y;
@@ -765,6 +765,8 @@ namespace hades::data
 	{
 		const auto mods = d.get_mod_stack();
 		//main resource list
+		// need to set min size manually
+		// since the child creates a scrolling region that can fit in a tiny window
 		g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 		if (g.window_begin("resource tree"sv, gui::window_flags::no_collapse))
 		{
@@ -775,7 +777,7 @@ namespace hades::data
 			}
 
 			auto current_mod = _tree_state.mod_index;
-			const auto preview_str = [&] {
+			const string preview_str = [&] {
 				auto& current = mods[current_mod]->mod_info;
 				if (_mod == current.id)
 					return current.name + "*"s;
@@ -803,6 +805,7 @@ namespace hades::data
 			if (current_mod != _tree_state.mod_index)
 				_refresh(d);
 
+			g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 			if (g.child_window_begin("##resource-tree-list"sv))
 			{
 				g.set_next_item_open(true, gui::set_condition_enum::once);

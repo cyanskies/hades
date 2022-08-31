@@ -241,36 +241,22 @@ namespace hades::files
 	template<typename ReturnType, typename Stream>
 	ReturnType from_stream(Stream& str)
 	{
-		str.seekg({}, std::ios_base::end);
-		const auto size = integer_cast<std::size_t>(static_cast<std::streamoff>(str.tellg()));
-		str.seekg({}, std::ios_base::beg);
-
-		auto out = ReturnType{};
-		out.reserve(size);
-
-		auto buf = buffer{ default_buffer_size };
-		while (std::size(out) != size)
+		if constexpr (std::is_same_v<ReturnType, string>)
 		{
-			if (str.eof())
-				break;
-
-			str.read(reinterpret_cast<Stream::char_type*>(std::data(buf)), default_buffer_size);
-			
-			const auto beg = std::begin(buf);
-			using diff_t = typename std::iterator_traits<std::decay_t<decltype(beg)>>::difference_type;
-			auto end = std::next(beg, integer_cast<diff_t>(str.gcount()));
-
-			if constexpr(std::is_same_v<buffer::value_type, typename ReturnType::value_type>)
-				out.insert(std::end(out), beg, end);
-			else
-			{
-				std::transform(beg, end, std::back_inserter(out), [](const std::byte b) {
-					return static_cast<typename ReturnType::value_type>(b);
-					});
-			}
+			auto str_stream = std::stringstream{};
+			str_stream << str.rdbuf();
+			return std::move(str_stream.str());
 		}
+		else if constexpr (std::is_same_v<ReturnType, buffer>)
+		{
+			str.seekg({}, std::ios_base::end);
+			const auto size = str.tellg();
+			str.seekg({}, std::ios_base::beg);
 
-		return out;
+			auto out = buffer(size, {});
+			str.get(reinterpret_cast<char*>(out.data()), size);
+			return out;
+		}
 	}
 
 	buffer raw_resource(const data::mod& m, const fs::path& path)

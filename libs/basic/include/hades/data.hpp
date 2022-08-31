@@ -169,14 +169,23 @@ namespace hades
 			std::vector<string> includes;
 
 			string name;
+			// TODO: filesystem::path
 			string source; // path to source
 		};
 
 		template<class T>
-		const T* get(unique_id id, const no_load_t);
+		const T* get(unique_id id, std::optional<unique_id> = {});
+		template<class T>
+		const T* get(unique_id id, const no_load_t, std::optional<unique_id> = {});
 
 		namespace detail
 		{
+			template<class T>
+			const T* get(const unique_id id)
+			{
+				return data::get<T>(id);
+			}
+
 			template<class T>
 			const T* get_no_load(const unique_id id)
 			{
@@ -209,7 +218,7 @@ namespace hades
 			template<typename T>
 			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
 			template<typename T>
-			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = data::get<T>);
+			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get<T>);
 
 			//returns the resource associated with the id
 			//returns the resource base class
@@ -312,6 +321,7 @@ namespace hades
 			data_manager_exclusive get_data_manager_exclusive_lock();
 		}
 
+		// TODO: move these to the top of the file
 		//===Shared functions, these can be used without blocking other shared threads===
 		//returns true if there is a resource associated with this ID
 		bool exists(unique_id id);
@@ -325,12 +335,12 @@ namespace hades
 		//		or hades::data::resource_wrong_type
 		//	always returns a valid ptr
 		template<class T>
-		const T* get(unique_id id);
+		const T* get(unique_id id, std::optional<unique_id> mod);
 		template<class T>
-		const T* get(unique_id id, const no_load_t);
+		const T* get(unique_id id, const no_load_t, std::optional<unique_id> mod);
 
 		template<class T>
-		data_manager::try_get_return<const T> try_get(unique_id id);
+		data_manager::try_get_return<const T> try_get(unique_id id, std::optional<unique_id> mod = {});
 
 		//refresh requests
 

@@ -78,6 +78,7 @@ namespace hades
 		void registerConsoleCommands();
 		/// @brief closes the debug console
 		void _close_console();
+		[[noreturn]] void _shutdown();
 
 		////////////////////////////////////////////////////////////
 		/// Member Data

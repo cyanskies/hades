@@ -46,7 +46,7 @@ namespace hades::resources
 		w.start_map(d.get_as_string(id));
 		if(width != def.width)		w.write("width"sv, width);
 		if(height != def.height)	w.write("height"sv, height);
-		if(source != def.source)	w.write("source"sv, source);
+		if(source != def.source)	w.write("source"sv, source.generic_string());
 		if(smooth != def.smooth)	w.write("smooth"sv, smooth);
 		if(repeat != def.repeat)	w.write("repeating"sv, repeat);
 		if(mips != def.mips)		w.write("mips"sv, mips);
@@ -168,7 +168,7 @@ namespace hades
 			tex->smooth = get_scalar(*t, "smooth"sv,	tex->smooth);
 			tex->repeat = get_scalar(*t, "repeating"sv, tex->repeat);
 			tex->mips	= get_scalar(*t, "mips"sv,		tex->mips);
-			tex->source = get_scalar(*t, "source"sv,	tex->source);
+			tex->source = get_scalar(*t, "source"sv,	tex->source.generic_string());
 
 			// get alpha from rgb or by colour name
 			const auto alpha = t->get_child("alpha-mask"sv);
@@ -246,7 +246,7 @@ namespace hades
 			if (tex.width != 0 && too_small ||
 				tex.height != 0 && too_small)
 			{
-				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source +
+				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source.generic_string() +
 					". Texture size smaller than requested in mod: "s + mod.name + ", Requested("s +
 					to_string(tex.width) + ", "s + to_string(tex.height) + "), Found("s 
 					+ to_string(size.x) + ", "s + to_string(size.y) + ")"s);
@@ -361,10 +361,9 @@ namespace hades
 				return;
 			}
 
-			string get_source(const texture* t)
+			const resource_base* get_resource_base(texture& t) noexcept
 			{
-				assert(t);
-				return t->source;
+				return &t;
 			}
 
 			const sf::Texture& get_sf_texture(const texture* t) noexcept

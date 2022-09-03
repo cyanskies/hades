@@ -105,17 +105,61 @@ namespace hades
 			{
 				try
 				{
-					link->update_link();
+					link->update_link(*this);
 				}
 				catch (const resource_null& n)
 				{
 					using namespace std::string_literals;
 					const auto& ids = link->get_reverse_links();
-					const auto others = " Referenced from: "s + to_string(begin(ids), end(ids));
+					auto id_msg = "["s;
+					assert(!empty(ids));
+					for (auto id : ids)
+						id_msg += get_as_string(id) + ", ";
+
+					id_msg.replace(size(id_msg) - 2, 2, "]");
+
+					const auto others = " Referenced from: "s + id_msg;
 					LOGWARNING("Missing resource. "s + n.what() + others);
 				}
 			}
 
+			return;
+		}
+
+		void data_manager::erase(unique_id id, std::optional<unique_id> mod) noexcept
+		{
+			if (!mod)
+				mod = _mod_stack.front().mod_info.id;
+
+			auto& m = _get_mod(mod.value());
+
+			const auto mend = end(m.resources);
+			const auto res_iter = std::find_if(begin(m.resources), mend, [id](auto&& other) {
+					return other->id == id;
+				});
+
+			if (res_iter == mend)
+				return;
+
+			//search all the groups to remove the resource
+			for ([[maybe_unused]] auto& [name, group] : m.resources_by_type)
+			{
+				const auto gend = end(group);
+				const auto iter = std::find_if(begin(group), gend, [id](auto&& other) {
+					return other->id == id;
+					});
+
+				if (iter != gend)
+				{
+					group.erase(iter);
+					break;
+				}
+			}
+
+			m.resources.erase(res_iter);
+			//update links, since some of them may have been pointing to the
+			// erased resource
+			update_all_links();
 			return;
 		}
 

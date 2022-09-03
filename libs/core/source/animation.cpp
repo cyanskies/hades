@@ -140,15 +140,15 @@ namespace hades::resources::animation_functions
 
 	resource_link<animation> make_resource_link(data::data_manager& d, unique_id id, unique_id from)
 	{
-		return d.make_resource_link<animation>(id, from, [](unique_id target) {
-			return data::get<animation>(target, data::no_load);
+		return d.make_resource_link<animation>(id, from, [](data::data_manager& d, unique_id target)->const animation* {
+			return d.get<animation>(target, data::no_load);
 			});
 	}
 
 	std::vector<resource_link<animation>> make_resource_link(data::data_manager& d, const std::vector<unique_id>& ids, unique_id from)
 	{
-		return d.make_resource_link<animation>(ids, from, [](unique_id target) {
-			return data::get<animation>(target, data::no_load);
+		return d.make_resource_link<animation>(ids, from, [](data::data_manager& d, unique_id target)->const animation* {
+			return d.get<animation>(target, data::no_load);
 			});
 	}
 
@@ -244,8 +244,8 @@ namespace hades::resources::animation_group_functions
 
 	resource_link<animation_group> make_resource_link(data::data_manager& d, const unique_id id, const unique_id from)
 	{
-		return d.make_resource_link<animation_group>(id, from, [](const unique_id target) {
-			return data::get<animation_group>(target, data::no_load);
+		return d.make_resource_link<animation_group>(id, from, [](data::data_manager& d, const unique_id target)-> const animation_group* {
+			return d.get<animation_group>(target, data::no_load);
 			});
 	}
 

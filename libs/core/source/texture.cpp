@@ -307,8 +307,8 @@ namespace hades
 
 			resource_link<texture> make_resource_link(data::data_manager& d, const unique_id id, const unique_id from)
 			{
-				return d.make_resource_link<texture>(id, from, [](unique_id target) {
-						return data::get<texture>(target, data::no_load);
+				return d.make_resource_link<texture>(id, from, [](data::data_manager& d, const unique_id target)->const texture* {
+						return d.get<texture>(target, data::no_load);
 					});
 			}
 

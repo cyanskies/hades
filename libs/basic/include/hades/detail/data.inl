@@ -9,12 +9,12 @@ namespace hades
 	namespace resources
 	{
 		template<typename T>
-		inline void resource_link_type<T>::update_link()
+		inline void resource_link_type<T>::update_link(data::data_manager& d)
 		{
 			//LOGERROR("Tried to create resource link to incorrect type. Link from: "
 				//+ get_as_string(from) + " to " + get_as_string(id));
 			assert(id());
-			_resource = std::invoke(_get, id());// data::get<T>(id());
+			_resource = std::invoke(_get, d, id());// data::get<T>(id());
 			return;
 		}
 
@@ -33,6 +33,12 @@ namespace hades
 	{
 		namespace detail
 		{
+			template<class T>
+			const T* get_no_load(data::data_manager& d, const unique_id id)
+			{
+				return d.get<T>(id, no_load);
+			}
+
 			template<typename T>
 			std::unique_ptr<resources::resource_base> clone(const resources::resource_base& rb)
 			{

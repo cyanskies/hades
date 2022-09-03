@@ -32,7 +32,8 @@ namespace hades
 
 			virtual ~resource_link_base() noexcept = default;
 
-			virtual void update_link() = 0;
+			virtual void update_link(data::data_manager&) = 0;
+
 			unique_id id() const noexcept
 			{
 				return _id;
@@ -67,12 +68,12 @@ namespace hades
 		public:
 			// get_func should be a function that gets the pointer to the resource without loading it
 			// eg. call get<> with the no_load tag
-			using get_func = const T* (*)(unique_id);
+			using get_func = const T* (*)(data::data_manager&, unique_id);
 
 			constexpr explicit resource_link_type(unique_id id, get_func get) noexcept :
 				resource_link_base{ id }, _get{ get } {}
 
-			void update_link() override;
+			void update_link(data::data_manager&) override;
 
 			const T& operator*() const
 			{
@@ -173,24 +174,10 @@ namespace hades
 			string source; // path to source
 		};
 
-		template<class T>
-		const T* get(unique_id id, std::optional<unique_id> = {});
-		template<class T>
-		const T* get(unique_id id, const no_load_t, std::optional<unique_id> = {});
-
 		namespace detail
 		{
 			template<class T>
-			const T* get(const unique_id id)
-			{
-				return data::get<T>(id);
-			}
-
-			template<class T>
-			const T* get_no_load(const unique_id id)
-			{
-				return get<T>(id, no_load);
-			}
+			const T* get_no_load(data::data_manager&, unique_id);
 		}
 
 		class data_manager
@@ -218,7 +205,7 @@ namespace hades
 			template<typename T>
 			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
 			template<typename T>
-			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get<T>);
+			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
 
 			//returns the resource associated with the id
 			//returns the resource base class
@@ -263,6 +250,8 @@ namespace hades
 			try_get_return<T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
 
 			void update_all_links();
+
+			void erase(unique_id id, std::optional<unique_id> mod = {}) noexcept;
 
 			using resource_group = std::pair<string, std::vector<const resources::resource_base*>>;
 			struct resource_storage
@@ -335,9 +324,9 @@ namespace hades
 		//		or hades::data::resource_wrong_type
 		//	always returns a valid ptr
 		template<class T>
-		const T* get(unique_id id, std::optional<unique_id> mod);
+		const T* get(unique_id id, std::optional<unique_id> mod = {});
 		template<class T>
-		const T* get(unique_id id, const no_load_t, std::optional<unique_id> mod);
+		const T* get(unique_id id, const no_load_t, std::optional<unique_id> mod = {});
 
 		template<class T>
 		data_manager::try_get_return<const T> try_get(unique_id id, std::optional<unique_id> mod = {});

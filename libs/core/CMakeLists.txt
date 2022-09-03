@@ -28,7 +28,6 @@ set(HADES_CORE_SRC
 	source/render_interface.cpp
 	source/save_load_api.cpp
 	source/sf_input.cpp
-	source/sf_streams.cpp
 	source/sprite_batch.cpp
 	source/state.cpp
 	source/terrain_map.cpp

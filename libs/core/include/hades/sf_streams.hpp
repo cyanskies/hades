@@ -4,14 +4,17 @@
 #include "SFML/System/InputStream.hpp"
 
 #include "hades/files.hpp"
+#include "hades/logging.hpp"
 
 namespace hades
 {
-	class sf_resource_stream : public sf::InputStream
+	template<typename Stream>
+	class sf_stream_wrapper : public sf::InputStream
 	{
 	public:
-		sf_resource_stream(std::filesystem::path mod, std::filesystem::path file)
-			: _stream{ mod, file }
+		template<typename ...Args>
+		sf_stream_wrapper(Args&&... args)
+			: _stream{ std::forward<Args>(args)... }
 		{
 			_stream.seekg({}, std::ios_base::end);
 			_size = integer_cast<sf::Int64>(static_cast<std::streamoff>(_stream.tellg()));
@@ -19,23 +22,61 @@ namespace hades
 			return;
 		}
 
-		/*explicit sf_resource_stream(irfstream s)
-			: _stream{ std::move(s) }
+		sf::Int64 read(void* data, sf::Int64 size) override
 		{
-			if (!_stream.is_open())
-				throw files::file_not_open{ "Passed empty stream to sf_resource_stream" };
-			return;
-		}*/
+			try
+			{
+				_stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::size_t>(size));
+			}
+			catch (const files::file_error& e)
+			{
+				log_error(e.what());
+				return errorval;
+			}
 
-		sf::Int64 read(void* data, sf::Int64 size) override;
-		sf::Int64 seek(sf::Int64 position) override;
-		sf::Int64 tell() override;
-		sf::Int64 getSize() override;
+			return _stream.gcount();
+		}
+
+		sf::Int64 seek(sf::Int64 position) override
+		{
+			try
+			{
+				_stream.seekg(position);
+			}
+			catch (const files::file_error& e)
+			{
+				log_error(e.what());
+				return errorval;
+			}
+
+			return tell();
+		}
+
+		sf::Int64 tell() override
+		{
+			try
+			{
+				return _stream.tellg();
+			}
+			catch (const files::file_error& e)
+			{
+				log_error(e.what());
+				return errorval;
+			}
+		}
+
+		sf::Int64 getSize() override
+		{
+			return _size;
+		}
 
 	private:
-		irfstream _stream;
+		static constexpr sf::Int64 errorval = -1;
+		Stream _stream;
 		sf::Int64 _size;
 	};
+
+	using sf_resource_stream = sf_stream_wrapper<irfstream>;
 }
 
 #endif // !HADES_SF_STREAMS_HPP

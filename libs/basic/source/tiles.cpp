@@ -246,12 +246,8 @@ namespace hades::resources
 			< std::tie(rhs.texture, rhs.left, rhs.top, rhs.source);
 	}
 
-	static void load_tileset(resource_type<tileset_t> &r, data::data_manager &d)
+	static void load_tileset(tileset& tset, data::data_manager &d)
 	{
-		assert(dynamic_cast<tileset*>(&r));
-
-		auto &tset = static_cast<tileset&>(r);
-
 		for (auto &t : tset.tiles)
 		{
 			if (t.texture)
@@ -263,14 +259,11 @@ namespace hades::resources
 		}
 
 		tset.loaded = true;
+		return;
 	}
 
-	void detail::load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d)
+	void detail::load_tile_settings(tile_settings &s, data::data_manager &d)
 	{
-		assert(dynamic_cast<tile_settings*>(&r));
-
-		auto &s = static_cast<tile_settings&>(r);
-
 		if (s.empty_tileset)
 			d.get<tileset>(s.empty_tileset->id);
 
@@ -281,17 +274,20 @@ namespace hades::resources
 			d.get<tileset>(t->id);
 
 		s.loaded = true;
+		return;
 	}
 
-	tileset::tileset() : resource_type{ load_tileset } {}
+	void tileset::load(data::data_manager& d)
+	{
+		load_tileset(*this, d);
+		return;
+	}
 
-	tileset::tileset(loader_func f) : resource_type{ f } {}
-
-	tile_settings::tile_settings() : resource_type{ detail::load_tile_settings }
-	{}
-
-	tile_settings::tile_settings(loader_func f) : resource_type{ f }
-	{}
+	void tile_settings::load(data::data_manager& d)
+	{
+		detail::load_tile_settings(*this, d);
+		return;
+	}
 
 	const tile_settings *get_tile_settings()
 	{

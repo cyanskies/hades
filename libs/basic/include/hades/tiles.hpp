@@ -70,36 +70,37 @@ namespace hades::resources
 	bool operator!=(const tile &lhs, const tile &rhs) noexcept;
 	bool operator<(const tile &lhs, const tile &rhs) noexcept;
 
+	struct tileset;
+	struct tile_settings;
+
+	namespace detail
+	{
+		void parse_tiles(tileset& tileset, tile_size_t tile_size, const data::parser_node& n, data::data_manager& d);
+		void load_tile_settings(tile_settings& r, data::data_manager& d);
+	}
+
 	//contains all the tiles defined by a particular tileset
 	//used to map the integers in maps to actual tiles
 	struct tileset_t {};
 	struct tileset : public resource_type<tileset_t>
 	{
-		tileset();
-		tileset(loader_func);
+		void load(data::data_manager&) override;
 
 		std::vector<tile> tiles; 
-		tag_list tags{};
+		tag_list tags;
 	};
 
 	struct tile_settings_t {};
 	struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 	{
-		tile_settings();
-		tile_settings(loader_func);
+		void load(data::data_manager&) override;
 
 		resource_link<tileset> error_tileset;
 		resource_link<tileset> empty_tileset;
 
 		std::vector<resource_link<tileset>> tilesets;
-		tile_size_t tile_size{};
+		tile_size_t tile_size = {};
 	};
-
-	namespace detail
-	{
-		void parse_tiles(resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d);
-		void load_tile_settings(resource_type<tile_settings_t> &r, data::data_manager &d);
-	}
 
 	//exceptions: all three throw resource_error
 	// either as resource_null or resource_wrong_type

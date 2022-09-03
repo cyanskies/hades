@@ -19,10 +19,8 @@ namespace hades
 		d.register_resource_type("fonts"sv, parse_font);
 	}
 
-	void load_font(resources::resource_type<sf::Font> &f, data::data_manager &d)
+	void load_font(resources::font& font, data::data_manager &d)
 	{
-		assert(dynamic_cast<resources::font*>(&f));
-		auto &font = static_cast<resources::font&>(f);
 		const auto& mod = d.get_mod(font.mod);
 
 		try
@@ -81,5 +79,9 @@ namespace hades::resources
 		return ::default_font_id;
 	}
 
-	font::font() : resource_type<sf::Font>(load_font) {}
+	void font::load(data::data_manager& d)
+	{
+		load_font(*this, d);
+		return;
+	}
 }

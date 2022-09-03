@@ -16,18 +16,27 @@ using namespace std::string_view_literals;
 
 hades::unique_id error_texture_id = hades::unique_zero;
 
+namespace hades::resources
+{
+	struct texture;
+}
+
 namespace hades
 {
-	void load_texture(resources::resource_type<sf::Texture>&, data::data_manager&);
+	static void load_texture(resources::texture&, data::data_manager&);
 }
 
 namespace hades::resources
 {
 	struct texture : public resource_type<sf::Texture>
 	{
-		texture() : resource_type{ load_texture } {}
+		void load(data::data_manager& d) final override
+		{
+			load_texture(*this, d);
+			return;
+		}  
 
-		void serialise(data::data_manager&, data::writer&) const override;
+		void serialise(data::data_manager&, data::writer&) const final override;
 
 		texture_size_t width = 0, height = 0;
 		texture_size_t actual_width = 0, actual_height = 0;
@@ -200,12 +209,9 @@ namespace hades
 		}
 	}
 
-	void load_texture(resources::resource_type<sf::Texture> &r, data::data_manager &d)
+	static void load_texture(resources::texture &tex, data::data_manager &d)
 	{
 		using namespace std::string_literals;
-
-		auto &tex = static_cast<resources::texture&>(r);
-
 		if (!tex.source.empty())
 		{
 			//the mod not being available should be 'impossible'

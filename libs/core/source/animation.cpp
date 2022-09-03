@@ -25,13 +25,16 @@ constexpr auto offset_str = "offset"sv;
 
 namespace hades::resources
 {
-	using anim_base = resource_type<std::vector<animation_frame>>;
-	static void load_animation(anim_base& r, data::data_manager& d);
+	struct animation;
+	static void load_animation(animation&, data::data_manager&);
 	//TODO: add field for fragment shaders
-	struct animation : public anim_base
+	struct animation : public resource_type<std::vector<animation_frame>>
 	{
-		animation() noexcept : anim_base(load_animation)
-		{}
+		void load(data::data_manager& d) final override
+		{
+			load_animation(*this, d);
+			return;
+		}
 
 		void serialise(data::data_manager&, data::writer&) const override;
 
@@ -40,13 +43,17 @@ namespace hades::resources
 		//const shader *anim_shader = nullptr;
 	};
 
-	using anim_group_base = resource_type<std::unordered_map<unique_id, resource_link<animation>>>;
-	static void load_anim_group(anim_group_base& res, data::data_manager& d);
+	//using anim_group_base = ;
+	struct animation_group;
+	static void load_anim_group(animation_group&, data::data_manager&);
 
-	struct animation_group : public anim_group_base
+	struct animation_group : public resource_type<std::unordered_map<unique_id, resource_link<animation>>>
 	{
-		animation_group() noexcept : anim_group_base(load_anim_group)
-		{}
+		void load(data::data_manager& d) final override
+		{
+			load_anim_group(*this, d);
+			return;
+		}
 	};
 
 	static void normalise_durations(std::vector<animation_frame>& frame_list)
@@ -540,12 +547,11 @@ namespace hades::resources
 		return;
 	}
 
-	static void load_animation(anim_base&r, data::data_manager &d)
+	static void load_animation(animation&a, data::data_manager &d)
 	{
 		using namespace std::string_literals;
-		auto &a = dynamic_cast<animation&>(r);
 		if (!a.tex)
-			LOGWARNING("Failed to load animation: " + d.get_as_string(r.id) + ", missing texture"s);
+			log_warning("Failed to load animation: " + d.get_as_string(a.id) + ", missing texture"s);
 		else if (!texture_functions::get_is_loaded(a.tex.get()))
 		{
 			//data->get will lazy load texture
@@ -553,7 +559,7 @@ namespace hades::resources
 		}
 	}
 
-	static void load_anim_group(anim_group_base& r, data::data_manager& d)
+	static void load_anim_group(animation_group& r, data::data_manager& d)
 	{
 		for (const auto& anim : r.value)
 			animation_functions::get_resource(d, anim.second->id);

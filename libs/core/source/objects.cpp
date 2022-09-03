@@ -236,12 +236,9 @@ namespace hades
 
 namespace hades::resources
 {
-	static void load_objects(resource_type<object_t> &r, data::data_manager &d)
+	static void load_objects(object &o, data::data_manager &d)
 	{
-		assert(dynamic_cast<object*>(&r));
-		auto &o = static_cast<object&>(r);
-
-		const auto name = d.get_as_string(o.id);
+		const auto& name = d.get_as_string(o.id);
 
 		for (auto& b : o.base)
 		{
@@ -279,11 +276,15 @@ namespace hades::resources
 		o.all_tags.shrink_to_fit();
 
 		//all of the other resources used by objects are parse-only and don't require loading
-		r.loaded = true;
+		o.loaded = true;
+		return;
 	}
 
-	object::object() : resource_type<object_t>(load_objects)
-	{}
+	void object::load(data::data_manager& d)
+	{
+		load_objects(*this, d);
+		return;
+	}
 }
 
 namespace hades::resources::object_functions

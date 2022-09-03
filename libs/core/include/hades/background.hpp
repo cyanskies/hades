@@ -24,7 +24,7 @@ namespace hades::resources
 			vector_float parallax{ 0.f, 0.f };
 		};
 
-		background();
+		void load(data::data_manager&) final override;
 
 		colour colour = colours::black;
 		std::vector<layer> layers;

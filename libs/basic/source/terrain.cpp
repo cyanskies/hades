@@ -718,12 +718,8 @@ namespace hades
 
 namespace hades::resources
 {
-	static void load_terrain(resource_type<tileset_t> &r, data::data_manager &d)
+	static void load_terrain(terrain& terr, data::data_manager &d)
 	{
-		assert(dynamic_cast<terrain*>(&r));
-
-		auto &terr = static_cast<terrain&>(r);
-
 		apply_to_terrain(terr, [&d](std::vector<tile> &v){
 			for (auto &t : v)
 			{
@@ -739,29 +735,30 @@ namespace hades::resources
 		terr.loaded = true;
 	}
 
-	terrain::terrain() : tileset{ load_terrain } {}
-
-	static void load_terrainset(resource_type<terrainset_t> &r, data::data_manager &d)
+	void terrain::load(data::data_manager& d)
 	{
-		assert(dynamic_cast<terrainset*>(&r));
-
-		auto &terr = static_cast<terrainset&>(r);
-
+		load_terrain(*this, d);
+		return;
+	}
+	
+	static void load_terrainset(terrainset& terr, data::data_manager &d)
+	{
 		for (const auto& t : terr.terrains)
 				d.get<terrain>(t->id);
 
 		terr.loaded = true;
+		return;
 	}
 
-	terrainset::terrainset() : resource_type{ load_terrainset } {}
-
-	static void load_terrain_settings(resource_type<tile_settings_t> &r, data::data_manager &d)
+	void terrainset::load(data::data_manager& d)
 	{
-		assert(dynamic_cast<terrain_settings*>(&r));
+		load_terrainset(*this, d);
+		return;
+	}
 
-		auto &s = static_cast<terrain_settings&>(r);
-
-		detail::load_tile_settings(r, d);
+	static void load_terrain_settings(terrain_settings& s, data::data_manager &d)
+	{
+		detail::load_tile_settings(s, d);
 
 		//load terrains
 		if (s.empty_terrain)
@@ -774,9 +771,14 @@ namespace hades::resources
 			d.get<terrainset>(t->id);
 
 		s.loaded = true;
+		return;
 	}
 
-	terrain_settings::terrain_settings() : tile_settings{ load_terrain_settings } {}
+	void terrain_settings::load(data::data_manager& d) 
+	{
+		load_terrain_settings(*this, d);
+		return;
+	}
 
 	// if anyone asks for the 'none' type just give them the empty tile
 	template<class U = std::vector<tile>, class W>

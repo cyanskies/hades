@@ -10,11 +10,8 @@ using namespace std::string_view_literals;
 
 namespace hades::resources
 {
-	static void load_background(resource_type<background_t> &r, data::data_manager &d)
+	static void load_background(background& b, data::data_manager &d)
 	{
-		assert(dynamic_cast<background*>(&r));
-		auto &b = static_cast<background&>(r);
-
 		for (auto &l : b.layers)
 		{
 			assert(l.animation);
@@ -24,8 +21,11 @@ namespace hades::resources
 		}
 	}
 
-	background::background() : resource_type{ load_background }
-	{}
+	void background::load(data::data_manager& d)
+	{
+		load_background(*this, d);
+		return;
+	}
 
 	static void parse_background(unique_id m, const data::parser_node &n, data::data_manager &d)
 	{

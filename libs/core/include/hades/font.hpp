@@ -17,7 +17,7 @@ namespace hades
 
 		struct font : public resource_type<sf::Font>
 		{
-			font();
+			void load(data::data_manager&) final override;
 
 			buffer source_buffer;
 		};

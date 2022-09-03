@@ -45,7 +45,7 @@ namespace hades::resources
 
 	struct object : public resource_type<object_t>
 	{
-		object();
+		void load(data::data_manager&) final override;
 
 		//editor icon, used in the object picker
 		resource_link<resources::animation_group> animations;

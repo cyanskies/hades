@@ -44,7 +44,7 @@ namespace hades::resources
 
 	struct terrain final : tileset
 	{
-		terrain();
+		void load(data::data_manager&) final override;
 
 		//an array of tiles for each transition_type, except all(which should be an empty tile)
 		//use get_transitions() to access the correct element
@@ -54,20 +54,20 @@ namespace hades::resources
 		// which contains all the tiles from the above lists as well
 	};
 
-	struct terrainset_t final {};
+	struct terrainset_t {};
 
 	struct terrainset final : resource_type<terrainset_t>
 	{
-		terrainset();
+		void load(data::data_manager&) final override;
 
 		std::vector<resource_link<terrain>> terrains;
 	};
 
-	struct terrain_settings_t final {};
+	struct terrain_settings_t {};
 
 	struct terrain_settings final : tile_settings
 	{
-		terrain_settings();
+		void load(data::data_manager&) final override;
 
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};

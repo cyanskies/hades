@@ -55,10 +55,8 @@ namespace hades
 			virtual ~resource_base() {}
 
 			virtual void load(data::data_manager&) {}
-			virtual void serialise(data::data_manager&, data::writer&) const
-			{
-				throw logic_error{ "resource_base::serialise base implementation should never be invoked" };
-			}
+			virtual void serialise(data::data_manager&, data::writer&) const = 0;
+			virtual void serialise(std::ostream&) const {}
 
 			using clone_func = std::unique_ptr<resource_base>(*)(const resource_base&);
 
@@ -85,20 +83,6 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			// TODO: turn into virtual func
-			using loader_func = void(*)(resource_type<T>&, data::data_manager&);
-
-			resource_type() = default;
-			// TODO: why do we do this with a loader func,
-			//	since load is virtual we can just let users override it?
-			resource_type(loader_func loader) : _resource_loader{ loader } {}
-
-			void load(data::data_manager &d) override 
-			{
-				if (_resource_loader)
-					std::invoke(_resource_loader, *this, d);
-			}
-
 			void serialise(data::data_manager&, data::writer&) const override
 			{	
 				using namespace std::string_literals;
@@ -109,8 +93,6 @@ namespace hades
 			//the actual resource
 			// NOTE: this is often a empty tag type
 			T value;
-		private:
-			loader_func _resource_loader = nullptr;
 		};
 	}
 

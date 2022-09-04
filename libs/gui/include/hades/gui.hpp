@@ -271,6 +271,7 @@ namespace hades
 		//text widgets
 		void text(std::string_view);
 		void text_coloured(std::string_view, const sf::Color&);
+		void text_coloured(std::string_view, const colour&);
 		void text_disabled(std::string_view);
 		void text_wrapped(std::string_view);
 		// text_label

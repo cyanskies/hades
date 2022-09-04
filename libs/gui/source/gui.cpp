@@ -530,6 +530,14 @@ namespace hades
 		pop_colour();
 	}
 
+	void gui::text_coloured(std::string_view s, const colour& c)
+	{
+		_active_assert();
+		push_colour(colour_target::text, c);
+		text(s);
+		pop_colour();
+	}
+
 	void gui::text_disabled(std::string_view s)
 	{
 		_active_assert();

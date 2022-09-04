@@ -9,7 +9,7 @@
 namespace hades
 {
 	template<typename Stream>
-	class sf_stream_wrapper : public sf::InputStream
+	class sf_stream_wrapper final : public sf::InputStream
 	{
 	public:
 		template<typename ...Args>
@@ -22,13 +22,13 @@ namespace hades
 			return;
 		}
 
-		sf::Int64 read(void* data, sf::Int64 size) override
+		sf::Int64 read(void* data, sf::Int64 size) noexcept final override 
 		{
 			try
 			{
 				_stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::size_t>(size));
 			}
-			catch (const files::file_error& e)
+			catch (const std::exception& e)
 			{
 				log_error(e.what());
 				return errorval;
@@ -37,13 +37,13 @@ namespace hades
 			return _stream.gcount();
 		}
 
-		sf::Int64 seek(sf::Int64 position) override
+		sf::Int64 seek(sf::Int64 position) noexcept final override
 		{
 			try
 			{
 				_stream.seekg(position);
 			}
-			catch (const files::file_error& e)
+			catch (const std::exception& e)
 			{
 				log_error(e.what());
 				return errorval;
@@ -52,22 +52,27 @@ namespace hades
 			return tell();
 		}
 
-		sf::Int64 tell() override
+		sf::Int64 tell() noexcept final override
 		{
 			try
 			{
 				return _stream.tellg();
 			}
-			catch (const files::file_error& e)
+			catch (const std::exception& e)
 			{
 				log_error(e.what());
 				return errorval;
 			}
 		}
 
-		sf::Int64 getSize() override
+		sf::Int64 getSize() noexcept final override
 		{
 			return _size;
+		}
+
+		const Stream& stream() const noexcept
+		{
+			return _stream;
 		}
 
 	private:

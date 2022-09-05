@@ -12,15 +12,19 @@ namespace hades
 	class sf_stream_wrapper final : public sf::InputStream
 	{
 	public:
-		template<typename ...Args>
-		sf_stream_wrapper(Args&&... args)
-			: _stream{ std::forward<Args>(args)... }
+		sf_stream_wrapper(Stream strm)
+			: _stream{ std::move(strm) }
 		{
 			_stream.seekg({}, std::ios_base::end);
 			_size = integer_cast<sf::Int64>(static_cast<std::streamoff>(_stream.tellg()));
 			_stream.seekg({}, std::ios_base::beg);
 			return;
 		}
+
+		template<typename ...Args>
+		sf_stream_wrapper(Args&&... args)
+			: sf_stream_wrapper{ Stream{ std::forward<Args>(args)... } }
+		{}
 
 		sf::Int64 read(void* data, sf::Int64 size) noexcept final override 
 		{

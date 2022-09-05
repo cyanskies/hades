@@ -38,17 +38,27 @@ namespace hades::resources
 
 		void serialise(data::data_manager&, data::writer&) const final override;
 
+		bool serialise_source() const noexcept final override
+		{
+			return source_mod == mod;
+		}
+
+		void serialise(std::ostream&) const final override;
+
 		texture_size_t width = 0, height = 0;
 		texture_size_t actual_width = 0, actual_height = 0;
 		bool smooth = false, repeat = false, mips = false;
+		// should_serialise_image_file: should be true if we assigned
+		// an image or if we loaded the image from this mod
+		bool should_serialise_image_file = false;
 		std::optional<colour> alpha = {};
+		std::filesystem::path loaded_archive_path;
+		std::filesystem::path loaded_path;
+		unique_id source_mod = {}; // the last mod that set the source or loaded* value
 	};
 
 	void texture::serialise(data::data_manager& d, data::writer& w) const
 	{
-		// TODO: consider storing the width/height seperatly to the calculated width/height
-		//			that way we can serialise without losing the auto-size mechanic
-
 		//default texture
 		const auto def = texture{};
 
@@ -69,6 +79,23 @@ namespace hades::resources
 			w.end_sequence();
 		}
 		w.end_map();
+	}
+
+	void texture::serialise(std::ostream& o) const
+	{
+		if (!loaded_archive_path.empty())
+		{
+			// pull out of current archive
+			auto strm = irfstream{ loaded_archive_path, loaded_path };
+			log("Loaded: " + (loaded_archive_path / loaded_path).generic_string());
+			o << strm.rdbuf();
+		}
+		else
+		{
+			auto strm = std::ifstream{ loaded_path, std::ios::binary };
+			log("Loaded: " + loaded_path.generic_string());
+			o << strm.rdbuf();
+		}
 	}
 }
 
@@ -96,7 +123,7 @@ namespace hades
 		texture_size_t checker_scale, colour c1, colour c2)
 	{
 		auto pixels = std::vector<sf::Uint8>{};
-		const std::size_t size = width * height;
+		const auto size = integer_cast<std::size_t>(width) * integer_cast<std::size_t>(height);
 		pixels.reserve(size);
 
 		for (auto i = std::size_t{}; i < size; ++i)
@@ -177,7 +204,11 @@ namespace hades
 			tex->smooth = get_scalar(*t, "smooth"sv,	tex->smooth);
 			tex->repeat = get_scalar(*t, "repeating"sv, tex->repeat);
 			tex->mips	= get_scalar(*t, "mips"sv,		tex->mips);
+			const std::filesystem::path old_source = tex->source;
 			tex->source = get_scalar(*t, "source"sv,	tex->source.generic_string());
+			if (tex->source != old_source)
+				tex->source_mod = mod;
+
 
 			// get alpha from rgb or by colour name
 			const auto alpha = t->get_child("alpha-mask"sv);
@@ -212,10 +243,10 @@ namespace hades
 	static void load_texture(resources::texture &tex, data::data_manager &d)
 	{
 		using namespace std::string_literals;
-		if (!tex.source.empty())
+		if (!tex.source.empty() && tex.source_mod)
 		{
-			//the mod not being available should be 'impossible'
-			const auto& mod = d.get_mod(tex.mod);
+			//  the mod not being available should be 'impossible'
+			const auto& mod = d.get_mod(tex.source_mod);
 
 			try
 			{
@@ -228,6 +259,19 @@ namespace hades
 					});
 				if (!tex.value.loadFromStream(fstream))
 					throw data::resource_error{ sb.str() };
+
+				const auto& stream = fstream.stream();
+				const auto mod_path = stream.mod_path();
+				if (mod_path.has_filename())
+				{
+					tex.loaded_archive_path = mod_path;
+					tex.loaded_path = stream.path();
+				}
+				else
+				{
+					tex.loaded_archive_path.clear();
+					tex.loaded_path = mod_path / stream.path();
+				}
 			}
 			catch (const files::file_error &e)
 			{
@@ -367,7 +411,12 @@ namespace hades
 				return;
 			}
 
-			const resource_base* get_resource_base(texture& t) noexcept
+			std::tuple<const std::filesystem::path&, const std::filesystem::path&> get_loaded_paths(const texture& t) noexcept
+			{
+				return std::tie(t.loaded_archive_path, t.loaded_path);
+			}
+
+			resource_base* get_resource_base(texture& t) noexcept
 			{
 				return &t;
 			}
@@ -394,6 +443,42 @@ namespace hades
 				const auto width = t.width == 0 ? t.actual_width : t.width;
 				const auto height = t.height == 0 ? t.actual_height : t.height;
 				return { width, height };
+			}
+
+			bool load_from_file(texture& t, const std::filesystem::path& p)
+			{
+				auto strm = sf_stream_wrapper<std::ifstream>{ p, std::ios::binary };
+				if (t.value.loadFromStream(strm))
+				{
+					t.loaded_archive_path.clear();
+					t.loaded_path = p;
+					const auto [x, y] = t.value.getSize();
+					t.actual_width = integer_cast<texture_size_t>(x);
+					t.actual_height = integer_cast<texture_size_t>(y);
+					t.source_mod = t.mod;
+					set_settings(&t,
+						{ integer_cast<texture_size_t>(x), integer_cast<texture_size_t>(y) },
+						t.smooth, t.repeat, t.mips, true);
+					return true;
+				}
+
+				return false;
+			}
+
+			void load_from_image(texture& t, const sf::Image& i)
+			{
+				const auto [x, y] = i.getSize();
+				if (t.value.loadFromImage(i))
+				{
+					t.actual_width = integer_cast<texture_size_t>(x);
+					t.actual_height = integer_cast<texture_size_t>(y);
+					set_settings(&t,
+						{ integer_cast<texture_size_t>(x), integer_cast<texture_size_t>(y) },
+						t.smooth, t.repeat, t.mips, true);
+				}
+				else
+					throw data::resource_error{ "Failed to load texture from image" };
+				return;
 			}
 
 			void set_settings(texture* t, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool loaded) noexcept

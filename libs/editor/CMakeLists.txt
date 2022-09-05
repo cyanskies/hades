@@ -33,6 +33,8 @@ set(HADES_EDITOR_LIBS
 	hades-basic
 	hades-core
 	hades-gui
+	PRIVATE
+	imguifiledialog
 )
 
 hades_make_library(hades-editor include "${HADES_EDITOR_SRC}" "${HADES_EDITOR_LIBS}")

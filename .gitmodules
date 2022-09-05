@@ -13,3 +13,6 @@
 [submodule "deps/plf_colony"]
 	path = deps/plf_colony
 	url = https://github.com/cyanskies/plf_colony
+[submodule "deps/imguifiledialog"]
+	path = deps/imguifiledialog
+	url = https://github.com/cyanskies/ImGuiFileDialog

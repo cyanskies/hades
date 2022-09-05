@@ -76,3 +76,44 @@ install(TARGETS ${IMGUI_LIB}
 		RUNTIME DESTINATION lib
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
+
+#########################
+#cmake for file dialogue
+#########################
+
+project(imguifiledialog)
+
+# https://cmake.org/cmake/help/latest/prop_tgt/CXX_STANDARD.html
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON) #we use variant
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# C++ source files
+set(FILEDIALOG_SRC
+	./imguifiledialog/ImGuiFileDialog.h
+	./imguifiledialog/ImGuiFileDialog.cpp
+	./imguifiledialog/stb/stb_image.h
+	./imguifiledialog/stb/stb_image_resize.h
+	./imguifiledialog/dirent/dirent.h
+	./ImGuiFileDialogConfig.h
+)
+
+# Library to build
+set(FILEDIALOG_LIB ${PROJECT_NAME})
+
+# Determine library suffixes depending on static/shared configuration
+add_library(${FILEDIALOG_LIB} STATIC ${FILEDIALOG_SRC})
+target_compile_definitions(${FILEDIALOG_LIB} PUBLIC CUSTOM_IMGUIFILEDIALOG_CONFIG="../ImGuiFileDialogConfig.h")
+
+set_target_properties(${FILEDIALOG_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
+set_target_properties(${FILEDIALOG_LIB} PROPERTIES RELEASE_POSTFIX -s)
+
+target_include_directories(${FILEDIALOG_LIB} PUBLIC ./imguifiledialog)
+target_link_libraries(${FILEDIALOG_LIB} PUBLIC imgui)
+
+
+# Install (use "bin" folder for DLL, "lib" for SO files)
+install(TARGETS ${FILEDIALOG_LIB}
+		RUNTIME DESTINATION lib
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib)

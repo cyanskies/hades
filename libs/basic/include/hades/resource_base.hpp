@@ -56,6 +56,12 @@ namespace hades
 
 			virtual void load(data::data_manager&) {}
 			virtual void serialise(data::data_manager&, data::writer&) const = 0;
+			//serialise(ostream&) will only be called if this returns true
+			virtual bool serialise_source() const
+			{
+				return false;
+			}
+
 			virtual void serialise(std::ostream&) const {}
 
 			using clone_func = std::unique_ptr<resource_base>(*)(const resource_base&);
@@ -69,14 +75,9 @@ namespace hades
 			// the file to write this resource to(eg. ./terrain/terrain(.yaml))
 			string data_file;
 			//the path for this resource within a mod(eg. ./terrain/dirt.png)
+			// serialise(ostream&) will only be called if this isn't empty
 			std::filesystem::path source;
-			//if the file was loaded from an archive, then this contains the archive path
-			std::filesystem::path loaded_archive_path;
-			//the absolute path to the resource(eg. C:/game/mod.zip/terrain/dirt.png, or C:/user/game/mod/terrain/dirt.png)
-			// or the relative path if the resource was loaded from an archive
-			std::filesystem::path loaded_path;
 
-			//unload_func clear = nullptr;
 			clone_func clone = nullptr;
 		};
 

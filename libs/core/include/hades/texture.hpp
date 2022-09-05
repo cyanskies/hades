@@ -7,6 +7,7 @@
 namespace sf
 {
 	class Texture;
+	class Image;
 }
 
 namespace hades
@@ -36,12 +37,15 @@ namespace hades
 			// set_alpha_colour: reload the texture to see the effects of this.
 			void set_alpha_colour(texture&, colour) noexcept;
 			void clear_alpha(texture&) noexcept;
-			const resource_base* get_resource_base(texture&) noexcept;
+			// returns the current texture file source(path to archive/ path to file)
+			std::tuple<const std::filesystem::path&, const std::filesystem::path&> get_loaded_paths(const texture&) noexcept;
+			resource_base* get_resource_base(texture&) noexcept;
 			const sf::Texture& get_sf_texture(const texture*) noexcept;
 			sf::Texture& get_sf_texture(texture*) noexcept;
 			vector_t<texture_size_t> get_requested_size(const texture&) noexcept;
 			vector_t<texture_size_t> get_size(const texture&) noexcept;
-
+			bool load_from_file(texture&, const std::filesystem::path&);
+			void load_from_image(texture&, const sf::Image&);
 			void set_settings(texture*, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool set_loaded) noexcept;
 		}
 

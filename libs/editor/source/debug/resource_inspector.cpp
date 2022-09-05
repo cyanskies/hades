@@ -2,10 +2,13 @@
 
 #include "SFML/Graphics/Image.hpp"
 
+#include "ImGuiFileDialog.h"
+
 #include "hades/animation.hpp"
 #include "hades/data.hpp"
 #include "hades/gui.hpp"
 #include "hades/sf_color.hpp"
+#include "hades/sf_streams.hpp"
 #include "hades/texture.hpp"
 #include "hades/utility.hpp"
 #include "hades/writer.hpp"
@@ -300,11 +303,44 @@ namespace hades::data
 			const auto requested_size = tex::get_requested_size(*_texture);
 			_requested_size[0] = requested_size.x;
 			_requested_size[1] = requested_size.y;
+
+			_data_man = &d;
+			_file_dialog.SetCreateThumbnailCallback([this](IGFD_Thumbnail_Info* data) {
+				if (data && data->isReadyToUpload && data->textureFileDatas)
+				{
+					auto id = make_unique_id();
+					auto tex = resources::texture_functions::find_create_texture(*_data_man, id);
+					static_assert(sizeof(unique_id) >= sizeof(void*));
+					assert(tex);
+					auto image = sf::Image{};
+					image.create(data->textureWidth, data->textureHeight, reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+					resources::texture_functions::load_from_image(*tex, image);
+					data->textureID = tex;
+					delete[] data->textureFileDatas;
+					data->textureFileDatas = {};
+					data->isReadyToUpload = false;
+					data->isReadyToDisplay = true;
+				}
+				return;
+				});
+
+			_file_dialog.SetDestroyThumbnailCallback([this](IGFD_Thumbnail_Info* data) {
+				if (data && data->textureID)
+				{
+					auto tex = reinterpret_cast<const resources::texture*>(data->textureID);
+					_data_man->erase(resources::texture_functions::get_id(tex));
+				}
+				return;
+				});
+
 			return;
 		}
 
 		void update(data::data_manager& d,gui& g) override
 		{
+			// we can call this here, because we
+			// use a single threaded OGLrendering paths
+			_file_dialog.ManageGPUThumbnails();
 			const auto generate_yaml = [this](data::data_manager& d) {
 				auto writer = data::make_writer();
 				_texture_base->serialise(d, *writer);
@@ -356,9 +392,15 @@ namespace hades::data
 
 				g.begin_disabled();
 				g.input_scalar("Raw size"sv, _size, {}, {});
-				g.input_text("Source"sv, _source);
 				g.end_disabled();
-
+				g.input_text("##Source"sv, _source);
+				g.same_line();
+				if (g.button("Source..."))
+				{
+					const auto& [arc_path, path] = resources::texture_functions::get_loaded_paths(*_texture);
+					_texture_source_window = source_window{ true, _source, arc_path.generic_string(), path.generic_string()};
+				}
+				
 				if (mod)
 				{
 					if (_alpha_set)
@@ -434,11 +476,103 @@ namespace hades::data
 			
 			g.window_end();
 
+			if (_texture_source_window.open)
+			{
+				g.next_window_size({}, gui::set_condition_enum::first_use);
+				if (g.window_begin("Choose texture source",
+					_texture_source_window.open, gui::window_flags::no_collapse))
+				{
+					g.input_text("Resource path"sv, _texture_source_window.source);
+					g.begin_disabled();
+					if (!_texture_source_window.raw_archive.empty())
+					{
+						g.input_text("##archive_path"sv, _texture_source_window.raw_archive);
+						g.same_line();
+					}
+					g.input_text("##src_path"sv, _texture_source_window.raw_path);
+					g.end_disabled();
+					g.same_line();
+					if (g.button("Choose new file"sv))
+						_make_file_dialog();
+
+					using fs_path = std::filesystem::path;
+					const auto good_ext = fs_path{ _texture_source_window.source }.extension()
+						== fs_path{ _texture_source_window.raw_path }.extension();
+
+					const auto applyable = good_ext && (_texture_source_window.raw_archive == string{} ||
+						_texture_source_window.source != _source);
+
+					if (!good_ext)
+						g.text_coloured("file extensions must match"sv, colours::red);
+
+					if (!applyable)
+							g.begin_disabled();
+
+					if (g.button("Apply"sv))
+					{
+						if (_texture_source_window.raw_archive == string{})
+						{
+							namespace tex = resources::texture_functions;
+							if (tex::load_from_file(*_texture, _texture_source_window.raw_path))
+							{
+								const auto size = tex::get_size(*_texture);
+								_size[0] = size.x;
+								_size[1] = size.y;
+								const auto requested_size = tex::get_requested_size(*_texture);
+								_requested_size[0] = requested_size.x;
+								_requested_size[1] = requested_size.y;
+							}
+						}
+
+						if (_source != _texture_source_window.source)
+						{
+							_texture_base->source = _texture_source_window.source;
+							_source = _texture_base->source.generic_string();
+						}
+					}
+
+					if (!applyable)
+						g.end_disabled();
+
+					g.same_line();
+					g.button("Cancel"sv);
+				}
+
+				g.window_end();
+			}
+
+			if (_file_dialog.Display("texture_dialog"s))
+			{
+				if (_file_dialog.IsOk())
+				{
+					_texture_source_window.raw_archive = {};
+					_texture_source_window.raw_path = _file_dialog.GetFilePathName();
+				}
+
+				_file_dialog.Close();
+			}
+
 			return;
 		}
 
 	private:
-		const resources::resource_base* _texture_base = {};
+		void _make_file_dialog()
+		{
+			constexpr auto supported_image_file_types = 
+				"Image Files (*.bmp;*.dds;*.jpg;*.png;*.tga;*.psd){.bmp,.dds,.jpg,.jpeg,.png,.tga,.psd}";
+			_file_dialog.OpenDialog("texture_dialog"s, "Image"s, supported_image_file_types, "."s, 1, {}, ImGuiFileDialogFlags_DisableCreateDirectoryButton);
+		}
+
+		struct source_window
+		{
+			bool open = false;
+			string source; 
+			string raw_archive;
+			string raw_path;
+		};
+
+		data::data_manager* _data_man = {};
+		resources::resource_base* _texture_base = {};
 		resources::texture* _texture = {};
 		string _name;
 		string _yaml;
@@ -447,6 +581,8 @@ namespace hades::data
 		bool _mips;
 		bool _repeat;
 		float _scale = 1.f;
+		source_window _texture_source_window;
+		ImGuiFileDialog _file_dialog;
 
 		std::array<uint8, 3> _alpha;
 		bool _alpha_set = false;

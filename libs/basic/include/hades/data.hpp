@@ -262,8 +262,16 @@ namespace hades
 
 			virtual bool try_load_mod(std::string_view) = 0;
 
+			// TODO: these should be protected:
 			void push_mod(mod);
 			void pop_mod();
+
+			// export the mod 'id' 
+			// set a filename to save as a different name
+			void export_mod(unique_id, std::string_view = {}) const;
+
+			// TODO: unload leaf
+			//		removes mods loaded by a mission
 
 			const mod& get_mod(unique_id) const;
 			mod& get_mod(unique_id);

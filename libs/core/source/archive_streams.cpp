@@ -27,7 +27,7 @@ namespace hades::zip::detail
 		::z_stream z = {};
 	};
 
-	static void delete_z_stream(z_stream* z) noexcept
+	void z_stream_deleter::operator()(z_stream* z) const noexcept
 	{
 		delete z;
 		return;
@@ -35,12 +35,18 @@ namespace hades::zip::detail
 
 	z_stream_p make_z_stream()
 	{
-		return z_stream_p{ new z_stream{}, delete_z_stream };
+		return z_stream_p{ new z_stream{} };
 	}
 
-	FILE* open_file(const char* filename, const char* mode) noexcept
+	void file_closer::operator()(FILE* f) const noexcept
 	{
-		return std::fopen(filename, mode);
+		std::fclose(f);
+		return;
+	}
+
+	file_ptr open_file(const char* filename, const char* mode) noexcept
+	{
+		return file_ptr{ std::fopen(filename, mode) };
 	}
 }
 
@@ -291,9 +297,7 @@ namespace hades::zip
 		if (_file)
 		{
 			inflateEnd(&_zip_stream->z);
-			const auto ret = std::fclose(_file);
 			_file = {};
-			return ret == 0 ? this : nullptr;
 		}
 		return this;
 	}
@@ -335,7 +339,7 @@ namespace hades::zip
 				const auto next_in = std::move(reinterpret_cast<std::byte*>(_zip_stream->z.next_in),
 					buffer_end, _device_buffer.data());
 				const auto dist = std::distance(next_in, buffer_end);
-				const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file);
+				const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file.get());
 				const auto new_buffer_end = next_in + read_amount;
 				_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_device_buffer.data(),
 					new_buffer_end));
@@ -381,7 +385,7 @@ namespace hades::zip
 
 	void basic_in_compressed_filebuf<char>::_seek_beg() noexcept
 	{		
-		rewind(_file);
+		rewind(_file.get());
 		inflateEnd(&_zip_stream->z);
 		_start_zlib();
 		_fill_buffer();
@@ -439,9 +443,7 @@ namespace hades::zip
 			_deflate_some(Z_FINISH);
 			sync(); 
 			deflateEnd(&_zip_stream->z);
-			const auto fret = std::fclose(_file);
 			_file = {};
-			return fret == 0 ? this : nullptr;
 		}
 		return this;
 	}
@@ -532,10 +534,10 @@ namespace hades::zip
 
 			const auto device_end = reinterpret_cast<std::byte*>(_zip_stream->z.next_out);
 			const auto write_amount = std::distance(_device_buffer.data(), device_end);
-			const auto out = fwrite(_device_buffer.data(), sizeof(std::byte), write_amount, _file);
+			const auto out = fwrite(_device_buffer.data(), sizeof(std::byte), write_amount, _file.get());
 			if (out != integer_cast<std::size_t>(write_amount))
 				throw files::file_error{ "write error" };
-			const auto flush = fflush(_file);
+			const auto flush = fflush(_file.get());
 			if (flush != int{})
 				throw files::file_error{ "flush error" };
 

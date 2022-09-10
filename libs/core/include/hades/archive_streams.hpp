@@ -70,7 +70,12 @@ namespace hades::zip
 	namespace detail
 	{
 		struct z_stream;
-		using z_stream_p = std::unique_ptr<z_stream, void(*)(z_stream*)noexcept>;
+		struct z_stream_deleter
+		{
+			void operator()(z_stream*) const noexcept;
+		};
+
+		using z_stream_p = std::unique_ptr<z_stream, z_stream_deleter>;
 		z_stream_p make_z_stream();
 	}
 
@@ -137,7 +142,12 @@ namespace hades::zip
 
 	namespace detail
 	{
-		FILE* open_file(const char*, const char*) noexcept;
+		struct file_closer
+		{
+			void operator()(FILE*) const noexcept;
+		};
+		using file_ptr = std::unique_ptr<FILE, file_closer>;
+		file_ptr open_file(const char*, const char*) noexcept;
 	}
 
 	// stream buffer for reading compressed files
@@ -186,7 +196,7 @@ namespace hades::zip
 
 		bool is_open() const noexcept
 		{
-			return _file;
+			return _file.get();
 		}
 
 		basic_in_compressed_filebuf* open(const std::filesystem::path& p)
@@ -200,18 +210,16 @@ namespace hades::zip
 				return nullptr;
 			
 			auto header = zip_header{};
-			const auto read_count = std::fread(header.data(), sizeof(zip_header::value_type), size(header), _file);
-			std::rewind(_file);
+			const auto read_count = std::fread(header.data(), sizeof(zip_header::value_type), size(header), _file.get());
+			std::rewind(_file.get());
 			if (read_count != size(header) || !probably_compressed(header))
 			{
-				std::fclose(_file);
 				_file = {};
 				return nullptr;
 			}
 
 			if (!_start_zlib())
 			{
-				std::fclose(_file);
 				_file = {};
 				return nullptr;
 			}
@@ -307,7 +315,7 @@ namespace hades::zip
 		std::array<char_type, default_buffer_size> _get_area;
 		std::array<std::byte, default_buffer_size> _device_buffer;
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
-		FILE* _file = {};
+		detail::file_ptr _file;
 		std::streamsize _pos = {};
 	};
 
@@ -341,7 +349,7 @@ namespace hades::zip
 
 		bool is_open() const noexcept
 		{
-			return _file;
+			return _file.get();
 		}
 
 		basic_out_compressed_filebuf* open(const std::filesystem::path& p)
@@ -358,7 +366,6 @@ namespace hades::zip
 
 			if (!_start_zlib())
 			{
-				std::fclose(_file);
 				_file = {};
 				return nullptr;
 			}
@@ -386,7 +393,7 @@ namespace hades::zip
 		std::array<char_type, default_buffer_size> _put_area;
 		std::array<std::byte, default_buffer_size> _device_buffer;
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
-		FILE* _file = {};
+		detail::file_ptr _file;
 	};
 
 	// stream buffer for reading from archives

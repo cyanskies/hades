@@ -41,7 +41,7 @@ namespace hades::data
 		//adds all objects into the load queue
 		//note: this wont effect resources that are only parsed(strings and game parameters)
 		void refresh() override;
-		//adds a specific object into the load queue
+		//adds a specific resource into the load queue
 		void refresh(unique_id) override;
 		//adds a range to the load queue
 		//template<Iter>

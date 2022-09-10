@@ -12,6 +12,7 @@
 #include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "hades/exceptions.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/timers.hpp"
 #include "hades/vector_math.hpp"
@@ -76,7 +77,27 @@ namespace hades
 
 		template<typename T>
 		constexpr auto valid_input_scalar_v = valid_input_scalar_t<T>::value;
+
+		using gui_context = ImGuiContext;
+		struct gui_context_deleter
+		{
+			void operator()(gui_context*) const noexcept;
+		};
 	}
+
+	class gui_error : public runtime_error
+	{
+	public:
+		using runtime_error::runtime_error;
+	};
+
+	// thrown if user tried to push a font that isn't part of the font atlas
+	// create_fonts before new_frame is called
+	class gui_font_missing : public gui_error
+	{
+	public:
+		using gui_error::gui_error;
+	};
 
 	class gui_input_text_callback;
 
@@ -102,6 +123,9 @@ namespace hades
 		//TODO: hades::event
 		bool handle_event(const sf::Event& e);
 		void update(time_duration dt);
+
+		//copies the font into the gui system for use
+		void create_font(const resources::font*);
 
 		void frame_begin();
 		void frame_end();
@@ -744,11 +768,11 @@ namespace hades
 		void _active_assert() const noexcept;
 		void _toolbar_layout_next();
 		static font* _get_font(const resources::font*);
-		static font* _create_font(const resources::font*);
+		static void _create_font(const resources::font*);
+		static void _create_default_font();
 		static void _generate_atlas();
 
-		using context = ImGuiContext;
-		using context_ptr = std::unique_ptr<context, void(*)(context*)>;
+		using context_ptr = std::unique_ptr<detail::gui_context, detail::gui_context_deleter>;
 		context_ptr _my_context;
 
 		struct toolbar_layout_info

@@ -181,8 +181,15 @@ namespace hades
 
 		void data_manager::pop_mod()
 		{
+			// TODO: remove any resources from this mod from the data_system
+			// eg. the load queue
 			assert(!empty(_mod_stack));
 			_mod_stack.pop_back();
+		}
+
+		void data_manager::export_mod(unique_id mod, std::string_view name) const
+		{
+			// TODO: implement
 		}
 
 		const mod& data_manager::get_mod(const unique_id id) const

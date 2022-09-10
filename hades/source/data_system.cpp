@@ -151,6 +151,8 @@ namespace hades::data
 		//(this means we will parse the game and it's dependents again)
 		for (const auto& m : mods)
 		{
+			// TODO: clear all the resources and rebase them
+
 			//for each mod reload it
 			const auto& name = get_mod(m).source;
 			add_mod(name);

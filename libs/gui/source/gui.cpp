@@ -22,10 +22,17 @@
 
 namespace hades
 {
-	
+
+	void detail::gui_context_deleter::operator()(gui_context* c) const noexcept
+	{
+		ImGui::DestroyContext(c);
+		return;
+	}
+
 	static void setup_keys();
 
 	static std::once_flag setup_keys_flag;
+	static std::once_flag make_default_font;
 
 	gui::gui()
 		: _my_context{ {}, {} }
@@ -36,12 +43,13 @@ namespace hades
 			_font_atlas = std::make_unique<ImFontAtlas>();
 		assert(_font_atlas);
 
-		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()), ImGui::DestroyContext };
+		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()) };
 		assert(_my_context);
 
 		const auto prev_context = ImGui::GetCurrentContext();
-
 		_activate_context(); //context will only be activated by default if it is the only one
+
+		std::call_once(make_default_font, _create_default_font);
 
 		auto &io = ImGui::GetIO();
 
@@ -49,15 +57,13 @@ namespace hades
 		io.BackendFlags |= flags::ImGuiBackendFlags_RendererHasVtxOffset;
 		// TODO: ImGuiBackendFlags_HasMouseCursors
 		//			_SetCursorPos
-		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
-		io.BackendRendererName = "hades";
+		io.BackendPlatformName = ""; //TODO: this should be game_name()
+		io.BackendRendererName = "hades(SFML)";
 		
 		// TODO: clipboard support
 
 		set_display_size({ 1.f, 1.f });
 
-		_generate_atlas();
-		
 		frame_begin();
 		frame_end();
 
@@ -184,6 +190,13 @@ namespace hades
 		auto &io = ImGui::GetIO();
 		io.DeltaTime = seconds_float{ dt }.count();
 	}
+
+	void gui::create_font(const resources::font* f)
+	{
+		_create_font(f);
+		return;
+	}
+
 
 	void gui::frame_begin()
 	{
@@ -1359,23 +1372,30 @@ namespace hades
 
 		if (const auto font = _fonts.find(f); font != std::end(_fonts))
 			return font->second;
-		else
-			return _create_font(f);
+
+		throw gui_font_missing{ "Font hasn't been created yet" };
 	}
 
-	gui::font *gui::_create_font(const resources::font *f)
+	void gui::_create_font(const resources::font *f)
 	{
 		auto &f_atlas = *_font_atlas;
 		ImFontConfig cfg;
 		cfg.FontDataOwnedByAtlas = false;
-		//const cast, because f_atlas demands control of the ptr
-		//though it won't actually do anything, since FontDataOwned is set to false
 		const auto size = f->source_buffer.size();
 		const auto int_size = integer_cast<int>(size);
-		const auto out = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), int_size, 13.f, &cfg);
+		//const cast, because f_atlas demands control of the ptr
+		//though it won't actually do anything, since FontDataOwned is set to false
+		auto font = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), int_size, 13.f, &cfg);
 		_generate_atlas();
+		_fonts.emplace(f, font);
+		return;
+	}
 
-		return out;
+	void gui::_create_default_font()
+	{
+		_font_atlas->AddFontDefault();
+		_generate_atlas();
+		return;
 	}
 
 	void gui::_generate_atlas()
@@ -1386,32 +1406,26 @@ namespace hades
 		std::ignore = lock;
 
 		static unique_id font_texture_id = d->get_uid("gui-font-texture-atlas");
-
 		auto t = tex::find_create_texture(*d, font_texture_id);
 
-		if (tex::get_is_loaded(t))
-			return;
-
 		//get the data and set the correct ids
-		auto& f_atlas = *_font_atlas;
 		int width = 0, height = 0;
 		unsigned char* texture_data = nullptr;
-		f_atlas.GetTexDataAsRGBA32(&texture_data, &width, &height);
+		_font_atlas->GetTexDataAsRGBA32(&texture_data, &width, &height);
 
 		//make the texture
 		auto& texture = tex::get_sf_texture(t);
-
 
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
 		if (!texture.create(width, height))
 		{
-			LOGERROR("Unable to create gui texture atlas.");
-			LOGERROR(sb.str());
+			log_error("Unable to create gui texture atlas.");
+			log_error(sb.str());
 		}
 		else
 		{
-			f_atlas.SetTexID(t);
+			_font_atlas->SetTexID(t);
 			texture.update(texture_data);
 			//apply correct settings
 			tex::set_settings(t,

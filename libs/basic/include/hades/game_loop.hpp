@@ -16,7 +16,7 @@ namespace hades
 		//the start time of the update step
 		time_point update_start{};
 		//the duration of each call of OnTick
-		std::vector<time_duration> tick_times{};
+		std::vector<time_duration> tick_times;
 		//number of times OnTick was called
 		std::size_t tick_count{};
 		//used internally
@@ -27,6 +27,9 @@ namespace hades
 		time_point draw_start{};
 		//the time it took to draw
 		time_duration draw_duration = time_duration::zero();
+		std::vector<time_duration> frame_times;
+		time_duration average_frame_sum = {};
+		time_duration average_frame_time = time_duration::zero();
 	};
 
 	struct no_stats_t {};

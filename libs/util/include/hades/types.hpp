@@ -25,12 +25,9 @@ namespace hades {
 		template<typename Float, typename = std::enable_if_t<std::is_floating_point_v<Float> && std::numeric_limits<Float>::has_infinity>>
 		constexpr auto infinity = std::numeric_limits<Float>::infinity();
 
-		//defined names for common types
 		template<typename ...Types> struct always_false : public std::false_type {};
-
 		template<typename ...Ts>
 		constexpr auto always_false_v = always_false<Ts...>::value;
-
 		template<typename ...Ts>
         constexpr auto always_true_v = !always_false_v<Ts...>;
 	}
@@ -46,29 +43,11 @@ namespace hades {
 
 	//identify tuple-like types
 	//these should support tuple_size, tuple_element and get<>
-	template<typename T, typename = void>
-	struct is_tuple : std::false_type {};
-
-	//black magic for checking for a complete definition of tuple_size<T>
 	template<typename T>
-	struct is_tuple<T,
-		std::enable_if_t<sizeof(std::tuple_size<T>) == sizeof(std::tuple_size<T>)>> 
-		: std::true_type {};
-
-	template<typename T>
-	constexpr auto is_tuple_v = is_tuple<T>::value;
-
-	// detect iterable
-	template<typename, typename = void, typename = void>
-	struct is_iterable : std::false_type { };
-	template<typename T>
-	struct is_iterable<T,
-		std::void_t<decltype(std::declval<T>().begin())>,
-		std::void_t<decltype(std::declval<T>().end())>>
-		: std::true_type { };
-
-	template<typename T>
-	constexpr auto is_iterable_v = is_iterable<T>::value;
+	concept is_tuple = requires
+	{
+		std::tuple_size<T>::value;
+	};
 }
 
 #endif //HADES_UTIL_TYPES_HPP

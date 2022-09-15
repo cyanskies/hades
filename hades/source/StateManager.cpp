@@ -1,6 +1,5 @@
 #include "Hades/StateManager.hpp"
 
-#include "hades/properties.hpp"
 #include "hades/state.hpp"
 
 namespace hades

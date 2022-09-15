@@ -1,47 +1,41 @@
 #ifndef HADES_BEGIN_HPP
 #define HADES_BEGIN_HPP
 
-#include <memory>
-
-#include "Hades/data_system.hpp"
 #include "hades/input.hpp"
 #include "Hades/StateManager.hpp"
 #include "hades/system.hpp"
-#include "hades/types.hpp"
 
+namespace hades::data
+{
+	class data_manager;
+}
 
-//TODO: pass default name, and callbacks for create_resources and app_begin
-//handles application startup and command line parameters
-int hades_main(int argc, char* argv[]);
+namespace hades
+{
+	/////////////////////////////////////
+	/// Called before app_main
+	/// 
+	/// Allows the app to register its unique resource types.
+	///	Apps must register both yaml parsers for the resource and loaders
+	///
+	/// Apps may register their Actions here
+	/////////////////////////////////////
+	using register_resource_types_fn = void(*)(hades::data::data_manager&);
+	
+	/////////////////////////////////////
+	/// Called at the start of the app
+	/// to set the starting state
+	///
+	///	allows users to set custom console functions and set the starting state
+	///
+	///	Allows users to define the ui for the game, both list commands and provide default binds for them.
+	/////////////////////////////////////
+	using app_main_fn = void(*)(hades::StateManager&, hades::input_system&, hades::command_list&);
 
-/////////////////////////////////////
-/// Called after defaultBindings
-/// 
-/// Allows the app to register its default game archive.
-/// eg. return "hades";, will load hades.zip
-/////////////////////////////////////
-//TODO: make constexpr??
-std::string_view defaultGame();
-
-/////////////////////////////////////
-/// Called before HadesMain defaultBindings
-/// 
-/// Allows the app to register its unique resource types.
-///	Apps must register both yaml parsers for the resource and loaders
-///
-/// Apps may register their Actions here
-/////////////////////////////////////
-void resourceTypes(hades::data::data_system &data);
-
-/////////////////////////////////////
-/// Called at the start of the app
-/// to set the starting state
-///
-/// Called after initial preperations and config files are loaded
-///	allows users to set custom console functions and set the starting state
-///
-///	Allows users to define the ui for the game, both list commands and provide default binds for them.
-/////////////////////////////////////
-void hadesMain(hades::StateManager &state, hades::input_system &bindings, hades::command_list &commandLine);
+	// call to let hades-app manage the main function
+	int hades_main(int argc, char* argv[], std::string_view game, 
+		register_resource_types_fn = nullptr,
+		app_main_fn = nullptr);
+}
 
 #endif //HADES_BEGIN_HPP

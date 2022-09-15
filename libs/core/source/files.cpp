@@ -156,6 +156,9 @@ namespace hades
 		if (fs::exists(m_path / file))
 			return _try_open_file(m_path, file);
 
+		if (!fs::exists(dir))
+			return false;
+
 		for (const auto& entry : fs::directory_iterator{ dir })
 		{
 			if (!entry.is_directory() && entry.path().stem() == mod)

@@ -41,10 +41,12 @@ namespace hades
 		constexpr auto client_total_tick_time = "c_total_tick_time"; //reports the total time taken to do liguc update 
 		constexpr auto client_max_tick = "c_max_allowed_frametime"; // [[deprecated]] the max amount of time that can be spent on a single frame in ms
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // reports time taken to generate the last frame
+		constexpr auto client_average_frametime = "c_average_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_tick_count = "c_ticks_per_frame"; // reports number of ticks taken to generate the previous frame
 
 		// mod vars
-		constexpr auto game_name = "game";
+		constexpr auto game_name = "game"; // the game archive name
+		constexpr auto game_vanity_name = "game_vanity";
 
 		//file vars
 		constexpr auto file_portable = "file_portable"; //if portable is true, saves and configs are stored in game directory
@@ -79,10 +81,12 @@ namespace hades
 			constexpr auto client_min_tick_time = 0.f;
 			constexpr auto client_total_tick_time = 0.f;
 			constexpr auto client_tick_max = 150;
-			constexpr auto client_previous_frametime = -1.f;
+			constexpr auto client_previous_frametime = -1.f; 
+			constexpr auto client_average_frametime = -1.f;
 			constexpr auto client_tick_count = 0;
 
-			constexpr auto game_name = "hades game engine";
+			constexpr auto game_name = "game"; 
+			constexpr auto game_vanity_name = "game_vanity";
 
 #ifdef NDEBUG
 			constexpr auto file_deflate = true;

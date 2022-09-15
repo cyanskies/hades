@@ -238,7 +238,7 @@ namespace hades::resources
 {
 	static void load_objects(object &o, data::data_manager &d)
 	{
-		const auto& name = d.get_as_string(o.id);
+		//const auto& name = d.get_as_string(o.id);
 
 		for (auto& b : o.base)
 		{

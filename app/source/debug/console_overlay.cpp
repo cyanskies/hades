@@ -28,10 +28,20 @@ namespace hades::debug
 			"Debug(3)"sv
 		};
 
+		constexpr auto con_limit = 800;
+		constexpr auto con_target_size = 500;
+
 		auto new_output = console::new_output();
 		const auto has_new_output = !empty(new_output);
-		_output.reserve(size(_output) + size(new_output));
+		//_output.reserve(size(_output) + size(new_output));
 		std::move(begin(new_output), end(new_output), back_inserter(_output));
+
+		if (size(_output) > con_limit)
+		{
+			const auto beg = begin(_output);
+			const auto end = next(beg, con_limit - con_target_size);
+			_output.erase(beg, end);
+		}
 
 		constexpr auto child_window_name = "##console_child"sv;
 		g.next_window_size({ 380.f,450.f }, gui::set_condition_enum::first_use);

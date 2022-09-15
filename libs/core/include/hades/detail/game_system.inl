@@ -141,9 +141,8 @@ namespace hades
 		//systems cannot be created or destroyed while we are editing the entity list
 		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
 
-		auto& ent_list = system.attached_entities;
 		//not being already_attached implies a bug in the game api
-		assert(!detail::assert_system_already_attached(entity, ent_list));
+		assert(!detail::assert_system_already_attached(entity, system.attached_entities));
 
 		system.new_ents.emplace_back(typename name_list::value_type{ entity, time_point::min() });
 		_dirty_systems = true;

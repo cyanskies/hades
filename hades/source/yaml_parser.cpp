@@ -11,6 +11,8 @@ using namespace std::string_literals;
 
 namespace hades::data
 {
+	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node&);
+
 	class yaml_parser_node : public parser_node
 	{
 	public:

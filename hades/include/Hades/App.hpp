@@ -37,7 +37,7 @@ namespace hades
 		/// \brief Creates and starts most of the apps subsystems and config files.
 		///
 		////////////////////////////////////////////////////////////
-		void init();
+		void init(std::string_view game, register_resource_types_fn);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Runs the last few init steps after letting command line variables run.
@@ -45,7 +45,7 @@ namespace hades
 		///	\param commands The command line arguments.
 		///
 		////////////////////////////////////////////////////////////
-		void postInit(command_list commands);
+		void postInit(command_list commands, app_main_fn);
 
 		////////////////////////////////////////////////////////////
 		/// \brief Starts the main app loop.
@@ -108,8 +108,8 @@ namespace hades
 	};
 
 	// deprecated command line funcs, see handle_command in system.hpp
-	bool LoadCommand(command_list&, std::string_view, console::function_no_argument);
-	bool LoadCommand(command_list&, std::string_view, console::function);
+	[[deprecated("use handle_command() instead")]] bool LoadCommand(command_list&, std::string_view, console::function_no_argument);
+	[[deprecated("use handle_command() instead")]] bool LoadCommand(command_list&, std::string_view, console::function);
 };//hades
 
 #endif //HADES_APP_HPP

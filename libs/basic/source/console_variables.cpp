@@ -30,9 +30,11 @@ namespace hades
 		console::create_property(cvars::client_total_tick_time, cvars::default_value::client_total_tick_time, true);
 		console::create_property(cvars::client_max_tick, cvars::default_value::client_tick_max, true);
 		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime, true);
+		console::create_property(cvars::client_average_frametime, cvars::default_value::client_average_frametime, true);
 		console::create_property(cvars::client_tick_count, cvars::default_value::client_tick_count, true);
 
 		console::create_property<std::string_view>(cvars::game_name, cvars::default_value::game_name, true);
+		console::create_property<std::string_view>(cvars::game_vanity_name, cvars::default_value::game_vanity_name, true);
 
 		//in debug we want portable = true 
 		//					deflate = false

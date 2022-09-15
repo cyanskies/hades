@@ -35,7 +35,9 @@ std::conditional_t<Steal, void, bool> write_log()
 		return true;
 }
 
-int hades_main(int argc, char* argv[])
+int hades::hades_main(int argc, char* argv[], std::string_view game,
+	register_resource_types_fn resource_fn,
+	app_main_fn app_fn)
 {
 	std::ios_base::sync_with_stdio(false);
 	//new commands start with a '-'.
@@ -60,7 +62,7 @@ int hades_main(int argc, char* argv[])
 		else if (index != -1)
 			commands[index].arguments.push_back(s);
 	}
-	
+
 	const auto command_length = commands.size();
 
 	//===special commands===
@@ -68,7 +70,7 @@ int hades_main(int argc, char* argv[])
 	//the engine will not actually open if invoked with these commands
 	try
 	{
-		hades::LoadCommand(commands, "compress"sv, [](const hades::argument_list &command) {
+		hades::handle_command(commands, "compress"sv, [](const hades::argument_list& command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument"sv);
@@ -76,9 +78,9 @@ int hades_main(int argc, char* argv[])
 			}
 			hades::zip::compress_directory(hades::to_string(command.front()));
 			return true;
-		});
+			});
 
-		hades::LoadCommand(commands, "uncompress"sv, [](const hades::argument_list &command) {
+		hades::handle_command(commands, "uncompress"sv, [](const hades::argument_list& command) {
 			if (command.size() != 1)
 			{
 				LOGERROR("game command expects a single argument"sv);
@@ -86,9 +88,9 @@ int hades_main(int argc, char* argv[])
 			}
 			hades::zip::uncompress_archive(hades::to_string(command.front()));
 			return true;
-		});
+			});
 	}
-	catch (hades::files::file_error &e)
+	catch (hades::files::file_error& e)
 	{
 		LOGERROR(e.what());
 		return EXIT_FAILURE;
@@ -100,19 +102,19 @@ int hades_main(int argc, char* argv[])
 
 	auto app = hades::App{};
 
-	app.init();
+	app.init(game, resource_fn);
 	hades::console::add_function("write_log"sv, write_log<false>, true);
 
-	#ifndef NDEBUG
+#ifndef NDEBUG
 	std::at_quick_exit(write_log);
-	#endif
+#endif
 
 	try
 	{
-		app.postInit(commands);
+		app.postInit(commands, app_fn);
 		app.run();
 	}
-	catch(const std::exception &e)
+	catch (const std::exception& e)
 	{
 		hades::log_error("Unhandled exception"sv);
 		hades::log_error(e.what());

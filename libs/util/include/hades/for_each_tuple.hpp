@@ -23,6 +23,7 @@ namespace hades
 	template<typename Tuple, typename Func, typename ...Args>
 	void for_each_tuple(Tuple& t, Func function, Args&& ...args)
 		noexcept(noexcept(detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...)))
+		requires is_tuple<Tuple>
 	{
 		detail::for_each_impl(t, function, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...);
 		return;
@@ -33,6 +34,7 @@ namespace hades
 	template<typename Tuple, typename Func, typename ...Args>
 	decltype(auto) for_each_tuple_r(Tuple& t, Func f, Args&& ...args)
 		noexcept(noexcept(detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...)))
+		requires is_tuple<Tuple>
 	{
 		return detail::for_each_r_impl(t, f, std::make_index_sequence<std::tuple_size_v<Tuple>>{}, std::forward<Args>(args)...);
 	}
@@ -43,6 +45,7 @@ namespace hades
 	template<typename Tuple, typename Func, typename ...Args>
 	constexpr void for_index_tuple(Tuple& t, std::size_t index, Func&& function, Args&& ...args)
 		noexcept(noexcept(detail::for_index_impl<0, std::tuple_size_v<Tuple>>(t, index, std::forward<Func>(function), std::forward<Args>(args)...)))
+		requires is_tuple<Tuple>
 	{
 		constexpr auto s = std::tuple_size_v<Tuple>;
 		assert(index < s);

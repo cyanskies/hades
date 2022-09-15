@@ -69,7 +69,7 @@ namespace hades
 		console->add_function("vid_default", vid_default, true);
 	}
 
-	void App::init()
+	void App::init(std::string_view game, register_resource_types_fn app_resources)
 	{
 		//record the global console as logger
 		console::log = &_console;
@@ -79,6 +79,11 @@ namespace hades
 		console::system_object = &_console;
 		//record the thread pool as the proccess shared pool
 		detail::set_shared_thread_pool(&_thread_pool);
+
+		//load default console settings
+		create_core_console_variables();
+
+		_console.set(cvars::game_name, game);
 
 		//register sfml input names
 		register_sfml_input(_window, _input);
@@ -99,12 +104,10 @@ namespace hades
 		data::set_default_writer(data::make_writer_f{ data::make_yaml_writer });
 		data::set_default_writer(data::make_writer2_f{ data::make_yaml_writer });
 
-		resourceTypes(_dataMan);
+		if (app_resources)
+			std::invoke(app_resources, _dataMan);
 
-		//load defualt console settings
-		create_core_console_variables();
-
-		//load config files and overwrite any updated settings
+		//load config defaults
 
 		registerConsoleCommands();
 		register_vid_default(&_console);
@@ -131,7 +134,7 @@ namespace hades
 		return;
 	}
 
-	void App::postInit(command_list commands)
+	void App::postInit(command_list commands, app_main_fn app_main)
 	{
 		constexpr auto hades_version_major = 0,
 			hades_version_minor = 1,
@@ -165,9 +168,14 @@ namespace hades
 			return true;
 		};
 
+		const auto game = _console.getString(cvars::game_name);
+		const auto game_str = game->load();
+		if (game_str.empty())
+			throw logic_error{ "Failed to privide a game name" };
+
 		// look for a game command, or load the default game
-		if (!handle_command(commands, "game"sv"", load_game))
-			std::invoke(load_game, argument_list{ defaultGame() });
+		if (!handle_command(commands, "game"sv, load_game))
+			std::invoke(load_game, argument_list{ game_str });
 
 		handle_command(commands, "mod"sv, [&data](const argument_list &command) {
 			if (command.size() != 1)
@@ -185,7 +193,8 @@ namespace hades
 		_window.resetGLStates();
 
 		//if hades main handles any of the commands then they will be removed from 'commands'
-		hadesMain(_states, _input, commands);
+		if (app_main)
+			std::invoke(app_main, _states, _input, commands);
 
 		//TODO: handle autoexec.console files
 		//TODO: handle config.conf settings files
@@ -195,7 +204,7 @@ namespace hades
 		//process command lines
 		//pass the commands into the console to be fullfilled using the normal parser
 		for (auto &c : commands)
-			console::run_command(c);
+			_console.run_command(c);
 
 		//create  the normal window
 		if (!_console.run_command(command{ "vid_reinit"sv }))
@@ -214,7 +223,7 @@ namespace hades
 	}
 
 	static void record_tick_stats(const std::vector<time_duration>& times,
-		console::property_float avg, console::property_float max, console::property_float min) noexcept
+		console::basic_property<float>& avg, console::basic_property<float>& max, console::basic_property<float>& min) noexcept
 	{
 		auto max_t = time_duration::zero();
 		auto min_t = time_duration{ seconds{ 500 } };
@@ -231,22 +240,23 @@ namespace hades
 
 		if (count == 0)
 		{
-			avg->store(0.f);
-			min->store(0.f);
-			max->store(0.f);
+			avg.store(0.f);
+			min.store(0.f);
+			max.store(0.f);
 			return;
 		}
 
 		const auto max_f = time_cast<milliseconds_float>(max_t);
 		const auto min_f = time_cast<milliseconds_float>(min_t);
 		const auto avg_f = time_cast<milliseconds_float>(accumulator / count);
-		avg->store(avg_f.count());
-		min->store(min_f.count());
-		max->store(max_f.count());
+		avg.store(avg_f.count());
+		min.store(min_f.count());
+		max.store(max_f.count());
 		return;
 	}
 
 	/// @brief in debug builds this function dumps fp exceptions to the console
+	// TODO: move this to util or something and start sprinkling it around
 	static void assert_floating_point_exceptions()
 	{
 		const auto message = "Floating point exception: "s;
@@ -285,7 +295,6 @@ namespace hades
 		//however we don't have a system to blend renderstates,
 		//we use curves instead.
 
-		//TODO: use safe functions for this from the console:: namespace
 		//ticks per second, dt = 1 / tick_rate
 		const auto tick_rate = _console.getInt(cvars::client_tick_rate);
 		//const auto maxframetime = _console.getInt(cvars::client_max_tick); // NOTE: unused
@@ -294,6 +303,7 @@ namespace hades
 		auto min_tick_time = _console.getFloat(cvars::client_min_tick_time);
 		auto total_tick_time = _console.getFloat(cvars::client_total_tick_time);
 		auto last_frame_time = _console.getFloat(cvars::client_previous_frametime);
+		auto average_frame_time = _console.getFloat(cvars::client_average_frametime);
 		auto frame_tick_count = _console.getInt(cvars::client_tick_count);
 		auto frame_draw_time = _console.getFloat(cvars::render_drawtime);
 
@@ -352,12 +362,16 @@ namespace hades
 
 			//TODO: dont use console vars to store this stuff? 
 			//tick stats
-			record_tick_stats(game_loop_metrics.tick_times, avg_tick_time, max_tick_time, min_tick_time);
+			record_tick_stats(game_loop_metrics.tick_times, *avg_tick_time, *max_tick_time, *min_tick_time);
 			
 			//frame time
 			using milliseconds_float = basic_duration<float, std::chrono::milliseconds::period>;
 			const auto frame_time_ms = time_cast<milliseconds_float>(game_loop_metrics.previous_frame_time);
 			last_frame_time->store(frame_time_ms.count());
+
+			//average frame time
+			const auto average_frame_time_ms = time_cast<milliseconds_float>(game_loop_metrics.average_frame_time);
+			average_frame_time->store(average_frame_time_ms.count());
 
 			//total update time
 			const auto update_time = time_cast<milliseconds_float>(game_loop_metrics.update_duration);
@@ -376,6 +390,7 @@ namespace hades
 			#endif
 		}
 
+		log_debug("all states closed"sv);
 		_shutdown();
 	}
 
@@ -405,7 +420,7 @@ namespace hades
 			//window events
 			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
 			{
-				hades::log_debug("Window closed"sv);
+				hades::log_debug("window closed"sv);
 				_shutdown();
 			}
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
@@ -453,7 +468,6 @@ namespace hades
 			auto exit = [this]()->bool {
 				hades::log_debug("'exit' called"sv);
 				_shutdown();
-				return true;
 			};
 			//exit and quit allow states, players or scripts to close the engine.
 			_console.add_function("exit"sv, exit, true);
@@ -489,8 +503,10 @@ namespace hades
 				else if (resizable->load())
 					window_type |= sf::Style::Resize;
 
-				const auto name = to_string(defaultGame());
-				_window.create(mode, name, window_type);
+				const auto game_vanity = _console.getString(cvars::game_vanity_name);
+				log_debug("recreating window"sv);
+
+				_window.create(mode, game_vanity->load(), window_type);
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);
@@ -666,7 +682,6 @@ namespace hades
 				//TODO: why would this throw
 				if (empty(args))
 					return false;
-					
 
 				const std::string_view param = args[0];
 				const auto int_param = from_string<int32>(param);

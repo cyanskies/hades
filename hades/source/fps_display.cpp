@@ -11,7 +11,7 @@ using namespace std::string_literals;
 namespace hades
 {
 	fps_overlay::fps_overlay(fps_mode mode)
-		: _frame_time{console::get_float(cvars::client_previous_frametime)},
+		: _frame_time{console::get_float(cvars::client_average_frametime)},
 		_tick_per_frame{console::get_int(cvars::client_tick_count)},
 		_tick_avg{console::get_float(cvars::client_avg_tick_time)},
 		_tick_max{console::get_float(cvars::client_max_tick_time)},

@@ -57,6 +57,16 @@ namespace hades
 	{		
 		logger* log = nullptr;
 
+		std::ostream& operator<<(std::ostream& os, const string& s)
+		{
+			//[verb]:[time]:[file:func():line] Message
+			const auto log_verbosity = to_string(s.verbosity());
+			os << '[' << log_verbosity << "]:["s << s.time() << 
+				"]:["s << s.file() << ':' << s.func() << "():"s <<
+				s.line() << ']' << s.text();
+			return os;
+		}
+
 		void echo(string val)
 		{
 			if (log)
@@ -107,6 +117,34 @@ namespace hades
 				return log->steal_output();
 
 			return console::output_buffer{};
+		}
+
+		void start_log()
+		{
+			if (log)
+				log->start_log();
+			return;
+		}
+
+		bool is_logging() noexcept
+		{
+			if (log)
+				return log->is_logging();
+			return false;
+		}
+
+		void stop_log()
+		{
+			if (log)
+				log->stop_log();
+			return;
+		}
+
+		void dump_log()
+		{
+			if (log)
+				log->dump_log();
+			return;
 		}
 	}
 

@@ -1,6 +1,7 @@
 #ifndef HADES_LOGGING_HPP
 #define HADES_LOGGING_HPP
 
+#include <filesystem>
 #include <source_location>
 #include <vector>
 
@@ -14,6 +15,11 @@ namespace hades
 {
 	namespace console
 	{
+		// logging data is streamed to log when it reaches this count
+		constexpr auto log_limit = 800;
+		// data will be streamed out until only this many entries remain in the log buffer
+		constexpr auto log_shrink_count = 500;
+
 		class string;
 
 		using output_buffer = std::vector<string>;
@@ -33,6 +39,11 @@ namespace hades
 			virtual output_buffer copy_output() = 0;
 			// The logging record will be emptied after calling steal
 			virtual output_buffer steal_output() noexcept = 0;
+			virtual void start_log() = 0;
+			virtual bool is_logging() noexcept = 0;
+			virtual void stop_log() = 0;
+			// opens log with default path if loggin was off
+			virtual void dump_log() = 0;
 		};
 
 		class string
@@ -50,6 +61,10 @@ namespace hades
 			{}
 
 			const hades::string& text() const { return _message; }
+			const hades::string& func() const { return _function; }
+			const hades::string& file() const { return _file; }
+			const hades::string& time() const { return _time; }
+			int line() const { return _line; }
 			const logger::log_verbosity verbosity() const { return _verb; }
 
 			operator hades::string() const;
@@ -59,6 +74,8 @@ namespace hades
 			int _line = -1;
 			hades::string _function, _file, _time;
 		};
+
+		std::ostream& operator<<(std::ostream& os, const string& s);
 
 		//TODO: set log ptr function, so log is hidden from users
 		extern logger *log;
@@ -71,6 +88,11 @@ namespace hades
 		// same as output(); but doesn't update the new output mark
 		console::output_buffer copy_output();
 		console::output_buffer steal_output() noexcept;
+
+		void start_log();
+		bool is_logging() noexcept;
+		void stop_log();
+		void dump_log();
 	}
 
 	string date();

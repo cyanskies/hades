@@ -32,21 +32,13 @@ namespace hades
 		console::create_property(cvars::client_previous_frametime, cvars::default_value::client_previous_frametime, true);
 		console::create_property(cvars::client_average_frametime, cvars::default_value::client_average_frametime, true);
 		console::create_property(cvars::client_tick_count, cvars::default_value::client_tick_count, true);
+		console::create_property(cvars::client_log_to_file, cvars::default_value::client_log_to_file, true);
 
 		console::create_property<std::string_view>(cvars::game_name, cvars::default_value::game_name, true);
 		console::create_property<std::string_view>(cvars::game_vanity_name, cvars::default_value::game_vanity_name, true);
 
-		//in debug we want portable = true 
-		//					deflate = false
-		// and the reverse in release
-		#ifdef NDEBUG
-			constexpr auto file_defaults = false;
-		#else
-			constexpr auto file_defaults = true;
-		#endif
-
-		console::create_property(cvars::file_portable,	file_defaults);
-		console::create_property(cvars::file_deflate,	!file_defaults);
+		console::create_property(cvars::file_portable,	cvars::default_value::file_portable);
+		console::create_property(cvars::file_deflate,	cvars::default_value::file_deflate);
 
 		console::create_property(cvars::console_charsize, cvars::default_value::console_charsize);
 		console::create_property(cvars::console_fade, cvars::default_value::console_fade);

@@ -111,6 +111,12 @@ namespace hades
 
 		registerConsoleCommands();
 		register_vid_default(&_console);
+
+		// start log if it was previously enabled
+		if (_console.getBool(cvars::client_log_to_file)->load())
+			_console.start_log();
+
+		return;
 	}
 
 	bool LoadCommand(command_list& commands, std::string_view command, console::function_no_argument job)
@@ -525,7 +531,7 @@ namespace hades
 			auto vsync = [this](const argument_list &args)->bool {
 				if (args.size() != 1)
 				{
-					LOG("vid_vsync 0"sv);
+					LOG("vid_vsync "s + to_string(_framelimit.vsync));
 					return true;
 				}
 
@@ -677,6 +683,44 @@ namespace hades
 
 		//debug funcs
 		{
+			//console logging
+			auto console_log = [this](const argument_list& args) {
+				auto enabled = _console.getBool(cvars::client_log_to_file);
+				if (empty(args))
+				{
+					log("c_log_to_file "s + to_string(enabled->load()));
+					return true;
+				}
+				else if (size(args) != 1)
+					return false; //add msg
+
+				const auto arg = from_string<bool>(args[0]);
+				
+				if (arg == enabled->load())
+				{
+					log("c_log_to_file "s + to_string(enabled->load()));
+					return true;
+				}
+
+				assert(arg != _console.is_logging());
+
+				if (arg)
+				{
+					_console.start_log();
+					enabled->store(true);
+					log("c_log_to_file true"sv);
+				}
+				else
+				{
+					_console.stop_log();
+					enabled->store(false);
+					log("c_log_to_file false"sv);
+				}
+
+				return true;
+			};
+			_console.add_function("c_log_to_file"sv, console_log, true, true);
+
 			//stats display
 			auto stats = [](const argument_list &args) {
 				//TODO: why would this throw
@@ -689,7 +733,6 @@ namespace hades
 
 				return true;
 			};
-
 			_console.add_function("stats"sv, stats, true);
 
 			//start the stats by default on debug builds
@@ -701,7 +744,6 @@ namespace hades
 				g = !g;
 				return true;
 			};
-
 			_console.add_function("imgui_demo"sv, imgui_demo, true);
 		}
 	}

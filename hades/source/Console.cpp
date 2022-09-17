@@ -1,5 +1,6 @@
 #include "Hades/Console.hpp"
 
+#include <filesystem>
 #include <map>
 #include <list>
 #include <sstream>
@@ -10,6 +11,7 @@
 #endif
 
 #include "hades/exceptions.hpp"
+#include "hades/files.hpp"
 #include "hades/utility.hpp"
 
 //==============
@@ -75,8 +77,12 @@ namespace hades
 	{
 		detail::Property var;
 
+		const auto to_string_lamb = [](auto&& val)->types::string {
+			return to_string(val->load());
+		};
+
 		if(GetValue(identifier, var))
-			LOG(to_string(identifier) + " " + std::visit(detail::to_string_lamb, var));
+			LOG(to_string(identifier) + " " + std::visit(to_string_lamb, var));
 	}
 
 	void Console::DisplayVariables(std::vector<std::string_view> args)
@@ -346,6 +352,26 @@ namespace hades
 			std::cout << message.text() << "\n";
 		#endif
 		TextBuffer.emplace_back(std::move(message));
+
+		// TODO: should we delete log entries even if logging is disabled?
+		//			need to consider log memory usage effect on performance
+		// Uncomment the if below and remove the is_logging check guarding the log shrink behaviour
+		if (_log_output.is_open() && size(TextBuffer) > console::log_limit)
+		{
+			constexpr auto stream_count = console::log_limit - console::log_shrink_count;
+			const auto beg = begin(TextBuffer);
+			const auto end = next(beg, stream_count);
+			//if (_log_output.is_open())
+			//{
+				std::for_each(beg, end, [this](auto&& str) {
+					_log_output << str << '\n';
+					});
+			//}
+
+			recentOutputPos -= distance(beg, end);
+			TextBuffer.erase(beg, end);
+		}
+
 		return;
 	}
 
@@ -431,6 +457,43 @@ namespace hades
 		TextBuffer = {};
 		recentOutputPos = {};
 		return out;
+	}
+
+	void Console::start_log() 
+	{
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+		_log_output = hades::files::append_file_uncompressed(std::filesystem::path{ hades::date() + ".txt" });
+		assert(_log_output.is_open());
+		return;
+	}
+
+	bool Console::is_logging() noexcept 
+	{
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+		return _log_output.is_open();
+	}
+
+	void Console::stop_log() 
+	{
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+		_log_output = {};
+		return;
+	}
+
+	void Console::dump_log() 
+	{
+		const auto lock = std::scoped_lock{ _consoleBufferMutex };
+
+		if (!_log_output.is_open())
+			start_log();
+
+		std::for_each(begin(TextBuffer), end(TextBuffer), [this](auto&& str) {
+			_log_output << str << '\n';
+			});
+
+		TextBuffer.clear();
+		recentOutputPos = {};
+		return;
 	}
 
 	template<class T>

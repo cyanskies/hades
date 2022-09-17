@@ -51,14 +51,18 @@ namespace hades
 		const auto start = in.find_first_not_of(' ');
 		const auto end = in.find_last_not_of(' ');
 
+		if (start == end)
+			return {};
+
 		return in.substr(start, end - start + 1);
 	}
 
 	template<typename T, std::enable_if_t<!is_string_v<T>, int>>
 	string to_string(T value)
 	{
+		using namespace std::string_literals;
 		if constexpr (std::is_same_v<T, bool>)
-			return std::to_string(value);
+			return value ? "true"s : "false"s;
 		else
 		{
 			auto cstr = std::array<char, 30>{};

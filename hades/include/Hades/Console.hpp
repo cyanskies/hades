@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <mutex>
+#include <fstream>
 #include <string_view>
 #include <unordered_map>
 #include <variant>
@@ -22,10 +23,6 @@ namespace hades
 	{
 		using Property = std::variant<console::property_int, console::property_bool,
 			console::property_float, console::property_str>;
-
-		const auto to_string_lamb = [](auto &&val)->types::string {
-			return to_string(val->load());
-		};
 	}
 
 	// ==================
@@ -95,6 +92,12 @@ namespace hades
 		ConsoleStringBuffer copy_output() override;
 		ConsoleStringBuffer steal_output() noexcept override;
 
+		void start_log() override;
+		bool is_logging() noexcept override;
+		void stop_log() override;
+		// opens log with default path if logging was off
+		void dump_log() override;
+
 	private:
 		//returns false if var was not found; true if out contains the requested value
 		bool GetValue(std::string_view var, detail::Property &out) const;
@@ -127,13 +130,15 @@ namespace hades
 			Console_Function func;
 			bool silent;
 		};
+
 		using ConsoleFunctionMap = std::unordered_map<types::string, function_struct>;
 		ConsoleFunctionMap _consoleFunctions;
 		using ConsoleVariableMap = std::unordered_map<types::string, detail::Property>;
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;
-		std::size_t recentOutputPos = 0u;
+		std::size_t recentOutputPos = {};
+		std::ofstream _log_output;
 	};
 }//hades
 

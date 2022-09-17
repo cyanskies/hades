@@ -13,26 +13,11 @@
 
 using namespace std::string_view_literals;
 
-template<bool Steal = true>
-std::conditional_t<Steal, void, bool> write_log()
+void try_write_log()
 {
-	//write log to file
-	auto logfile = hades::files::append_file_uncompressed(std::filesystem::path{ hades::date() + ".txt" });
-	assert(logfile.is_open());
-	
-	auto log = hades::console::output_buffer{};
-	if constexpr (Steal)
-		log = hades::console::steal_output();
-	else
-		log = hades::console::copy_output();
-
-	for (const auto& str : log)
-		logfile << static_cast<std::string>(str) << '\n';
-
-	if constexpr (Steal)
-		return;
-	else
-		return true;
+	if (hades::console::is_logging())
+		hades::console::dump_log();
+	return;
 }
 
 int hades::hades_main(int argc, char* argv[], std::string_view game,
@@ -103,11 +88,8 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 	auto app = hades::App{};
 
 	app.init(game, resource_fn);
-	hades::console::add_function("write_log"sv, write_log<false>, true);
 
-#ifndef NDEBUG
-	std::at_quick_exit(write_log);
-#endif
+	std::at_quick_exit(try_write_log);
 
 	try
 	{
@@ -118,13 +100,13 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 	{
 		hades::log_error("Unhandled exception"sv);
 		hades::log_error(e.what());
-		write_log();
+		hades::console::dump_log();
 		throw;
 	}
 	catch (...)
 	{
 		hades::log_error("Unexpected exception"sv);
-		write_log();
+		hades::console::dump_log();
 		throw;
 	}
 

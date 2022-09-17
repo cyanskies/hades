@@ -28,18 +28,16 @@ namespace hades::debug
 			"Debug(3)"sv
 		};
 
-		constexpr auto con_limit = 800;
-		constexpr auto con_target_size = 500;
-
 		auto new_output = console::new_output();
 		const auto has_new_output = !empty(new_output);
 		//_output.reserve(size(_output) + size(new_output));
 		std::move(begin(new_output), end(new_output), back_inserter(_output));
 
-		if (size(_output) > con_limit)
+		if (size(_output) > console::log_limit)
 		{
 			const auto beg = begin(_output);
-			const auto end = next(beg, con_limit - con_target_size);
+			constexpr auto cull_count = console::log_limit - console::log_shrink_count;
+			const auto end = next(beg, cull_count);
 			_output.erase(beg, end);
 		}
 

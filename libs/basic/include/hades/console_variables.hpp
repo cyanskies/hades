@@ -43,6 +43,7 @@ namespace hades
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_average_frametime = "c_average_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_tick_count = "c_ticks_per_frame"; // reports number of ticks taken to generate the previous frame
+		constexpr auto client_log_to_file = "c_log_to_file_enabled";
 
 		// mod vars
 		constexpr auto game_name = "game"; // the game archive name
@@ -84,6 +85,11 @@ namespace hades
 			constexpr auto client_previous_frametime = -1.f; 
 			constexpr auto client_average_frametime = -1.f;
 			constexpr auto client_tick_count = 0;
+#ifdef NDEBUG
+			constexpr auto client_log_to_file = false;
+#else
+			constexpr auto client_log_to_file = true;
+#endif
 
 			constexpr auto game_name = "game"; 
 			constexpr auto game_vanity_name = "game_vanity";

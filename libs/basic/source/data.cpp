@@ -93,7 +93,7 @@ namespace hades
 				});
 
 				if (res != res_end)
-					return res->get();
+					return *res;
 			}
 
 			return nullptr;
@@ -184,6 +184,15 @@ namespace hades
 			// TODO: remove any resources from this mod from the data_system
 			// eg. the load queue
 			assert(!empty(_mod_stack));
+			auto& mod = _mod_stack.back();
+
+			for (auto res : mod.resources)
+			{
+				assert(mod.mod_info.id == res->mod);
+				abandon_refresh(res->id, mod.mod_info.id);
+				_resources.erase(res->id, mod.mod_info.id);
+			}
+
 			_mod_stack.pop_back();
 		}
 

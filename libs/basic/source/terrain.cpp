@@ -15,6 +15,7 @@ namespace hades::resources
 {
 	static void parse_terrain(unique_id, const data::parser_node&, data::data_manager&);
 	static void parse_terrainset(unique_id, const data::parser_node&, data::data_manager&);
+	static void parse_terrain_settings(unique_id, const data::parser_node&, data::data_manager&);
 }
 
 namespace hades
@@ -103,6 +104,8 @@ namespace hades
 		//replace the tileset and tile settings parsers
 		using namespace std::string_view_literals;
 		//register tile resources
+		d.register_resource_type(resources::get_tile_settings_name(), resources::parse_terrain_settings);
+		d.register_resource_type(terrain_settings_str, resources::parse_terrain_settings);
 		d.register_resource_type(resources::get_tilesets_name(), resources::parse_terrain);
 		d.register_resource_type("terrain"sv, resources::parse_terrain);
 		d.register_resource_type(terrainsets_str, resources::parse_terrainset);
@@ -1053,6 +1056,19 @@ namespace hades::resources
 		}
 
 		remove_duplicates(settings->terrainsets);
+	}
+
+	static void parse_terrain_settings(unique_id mod, const data::parser_node& n, data::data_manager& d)
+	{
+		//tile-settings:
+		//  tile-size: 32
+		//	error-tileset
+
+		const auto id = d.get_uid(resources::get_tile_settings_name());
+		auto s = d.find_or_create<resources::terrain_settings>(id::terrain_settings, mod, terrain_settings_str);
+		assert(s);
+
+		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
 	}
 
 	const terrain_settings *get_terrain_settings()

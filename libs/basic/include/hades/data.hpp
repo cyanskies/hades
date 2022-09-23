@@ -8,6 +8,7 @@
 #include <tuple>
 
 #include "hades/resource_base.hpp"
+#include "hades/resource_collection.hpp"
 #include "hades/string.hpp"
 #include "hades/uniqueid.hpp"
 
@@ -176,7 +177,7 @@ namespace hades
 
 		namespace detail
 		{
-			template<class T>
+			template<Resource T>
 			const T* get_no_load(data::data_manager&, unique_id);
 		}
 
@@ -193,18 +194,18 @@ namespace hades
 			//this should be used when writing parsers
 			//allows creating a ptr to a resource that hasn't actually been defined yet
 			// returns nullptr on error
-			template<class T>
+			template<Resource T>
 			[[nodiscard]] T* find_or_create(unique_id target, std::optional<unique_id> mod = {}, std::string_view group = {});
 
-			template<typename T>
+			template<Resource T>
 			[[nodiscard]] std::vector<T*> find_or_create(const std::vector<unique_id>& target, std::optional<unique_id> mod = {}, std::string_view group = {});
 
 			//returns true if the id has a resource associated with it
 			bool exists(unique_id id) const;
 
-			template<typename T>
+			template<Resource T>
 			resources::resource_link<T> make_resource_link(unique_id, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
-			template<typename T>
+			template<Resource T>
 			std::vector<resources::resource_link<T>> make_resource_link(const std::vector<unique_id>&, unique_id from, typename resources::resource_link_type<T>::get_func = detail::get_no_load<T>);
 
 			//returns the resource associated with the id
@@ -216,12 +217,12 @@ namespace hades
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
 			// throws resource_null or resource_wrong_type
-			template<class T>
+			template<Resource T>
 			T* get(unique_id id, std::optional<unique_id> = {});
 
 			//gets a non-owning ptr to the resource represented by id
 			// throws resource_null or resource_wrong_type
-			template<class T>
+			template<Resource T>
 			T* get(unique_id id, const no_load_t, std::optional<unique_id> = {});
 
 			enum class get_error {
@@ -230,7 +231,7 @@ namespace hades
 				resource_wrong_type
 			};
 
-			template<class T>
+			template<typename T>
 			struct try_get_return
 			{
 				//try_get_return(T* t) : result(t) {}
@@ -242,11 +243,11 @@ namespace hades
 
 			//gets a non-owning ptr to the resource represented by id
 			//if the reasource has not been loaded it will be loaded before returning
-			template<class T>
+			template<Resource T>
 			try_get_return<T> try_get(unique_id id, std::optional<unique_id> = {}) noexcept;
 
 			//gets a non-owning ptr to the resource represented by id
-			template<class T>
+			template<Resource T>
 			try_get_return<T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
 
 			void update_all_links();
@@ -288,6 +289,8 @@ namespace hades
 			virtual void refresh() = 0;
 			virtual void refresh(unique_id) = 0;
 
+			virtual void abandon_refresh(unique_id, std::optional<unique_id> = {}) = 0;
+
 			virtual const string& get_as_string(unique_id id) const noexcept = 0;
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
@@ -295,17 +298,19 @@ namespace hades
 		private:
 			struct mod_storage : resource_storage
 			{
-				std::vector<std::unique_ptr<resources::resource_base>> resources;
+				// ptrs to all resources from this mod
+				std::vector<resources::resource_base*> resources;
 			};
 
 			mod_storage& _get_mod(unique_id);
 			//creates a resource with the value of ptr
 			//and assigns it to the name id
 			//throws resource_name_already_used if the id already refers to a resource
-			template<class T>
-			void _set(unique_id id, std::unique_ptr<resources::resource_base> ptr, std::string_view group);
+			Resource auto* _set(Resource auto ptr, std::string_view group);
 
+			resource_collection _resources;
 			std::vector<mod_storage> _mod_stack;
+			std::vector<resources::resource_base*> _resource_base_ptrs;
 			std::vector<std::unique_ptr<resources::resource_link_base>> _resource_links;
 		};
 
@@ -331,12 +336,12 @@ namespace hades
 		//NOTE: Can throw hades::data::resource_null
 		//		or hades::data::resource_wrong_type
 		//	always returns a valid ptr
-		template<class T>
+		template<Resource T>
 		const T* get(unique_id id, std::optional<unique_id> mod = {});
-		template<class T>
+		template<Resource T>
 		const T* get(unique_id id, const no_load_t, std::optional<unique_id> mod = {});
 
-		template<class T>
+		template<Resource T>
 		data_manager::try_get_return<const T> try_get(unique_id id, std::optional<unique_id> mod = {});
 
 		//refresh requests

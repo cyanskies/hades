@@ -16,7 +16,10 @@ using namespace std::string_view_literals;
 void try_write_log()
 {
 	if (hades::console::is_logging())
+	{
 		hades::console::dump_log();
+		hades::console::stop_log();
+	}
 	return;
 }
 
@@ -89,7 +92,9 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 
 	app.init(game, resource_fn);
 
+#ifdef HADES_QUICK_EXIT
 	std::at_quick_exit(try_write_log);
+#endif
 
 	try
 	{
@@ -100,15 +105,19 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 	{
 		hades::log_error("Unhandled exception"sv);
 		hades::log_error(e.what());
-		hades::console::dump_log();
+		try_write_log();
 		throw;
 	}
 	catch (...)
 	{
 		hades::log_error("Unexpected exception"sv);
-		hades::console::dump_log();
+		try_write_log();
 		throw;
 	}
+
+#ifndef HADES_QUICK_EXIT
+	try_write_log();
+#endif
 
 	return EXIT_SUCCESS;
 }

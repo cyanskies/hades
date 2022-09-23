@@ -285,7 +285,7 @@ namespace hades::data
 		void set_target(data_manager& d, unique_id i, unique_id mod) override
 		{
 			namespace tex = resources::texture_functions;
-			_texture = tex::get_resource(d, i);
+			_texture = tex::get_resource(d, i, mod);
 			_texture_base = tex::get_resource_base(*_texture);
 			_name = "Texture: "s + d.get_as_string(i) + "###texture-edit"s;
 			_smooth = tex::get_smooth(_texture);

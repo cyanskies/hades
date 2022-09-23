@@ -88,6 +88,7 @@ namespace hades
 		//register sfml input names
 		register_sfml_input(_window, _input);
 
+		// TODO: why do we regester these by default
 		register_core_resources(_dataMan);
 		RegisterCommonResources(_dataMan);
 		data::detail::set_data_manager_ptr(&_dataMan);
@@ -313,16 +314,17 @@ namespace hades
 		auto frame_tick_count = _console.getInt(cvars::client_tick_count);
 		auto frame_draw_time = _console.getFloat(cvars::render_drawtime);
 
-		assert(tick_rate && "failed to get tick rate value from console");
-
 		game_loop_timing gl_times;
 		performance_statistics game_loop_metrics;
 
 		while(_window.isOpen())
 		{
 			state *activeState = _states.getActiveState();
-			if(!activeState)
+			if (!activeState)
+			{
+				log_debug("all states ended");
 				break;
+			}
 
 			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
@@ -396,8 +398,10 @@ namespace hades
 			#endif
 		}
 
+#ifdef HADES_QUICK_EXIT
 		log_debug("all states closed"sv);
 		_shutdown();
+#endif	
 	}
 
 	void App::cleanUp()
@@ -755,10 +759,16 @@ namespace hades
 			(_overlay_manager.destroy_overlay(_console_debug));
 		return;
 	}
+
 	void App::_shutdown()
 	{
-		_states.drop();
+#ifdef HADES_QUICK_EXIT
+		_states.drop(); // destroy gamestates, so they can call shutdown funcs
 		_gui.reset(); // destroy gui so it calls shutdown funcs
 		std::quick_exit(EXIT_SUCCESS);
+#else
+		_window.close();
+		return;
+#endif	
 	}
 }//hades

@@ -1,11 +1,12 @@
 #ifndef HADES_UTIL_STRING_HPP
 #define HADES_UTIL_STRING_HPP
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-#include "hades/exceptions.hpp"
+//#include "hades/exceptions.hpp"
 
 namespace hades
 {
@@ -54,10 +55,10 @@ namespace hades
 	string to_string(First begin, Last end);
 
 	//thrown by all the from_string functions
-	class bad_conversion : public runtime_error
+	class bad_conversion : public std::runtime_error
 	{
 	public:
-		using runtime_error::runtime_error;
+		using std::runtime_error::runtime_error;
 	};
 
 	template<typename T>

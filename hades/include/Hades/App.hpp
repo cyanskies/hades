@@ -17,6 +17,11 @@
 #include "Hades/StateManager.hpp"
 #include "hades/system.hpp"
 
+// Toggles using quick exit to shutdown
+#if 1
+#define HADES_QUICK_EXIT
+#endif
+
 namespace hades::debug
 {
 	class console_overlay;
@@ -51,7 +56,10 @@ namespace hades
 		/// \brief Starts the main app loop.
 		///
 		////////////////////////////////////////////////////////////
-		[[noreturn]] void run();
+#ifdef HADES_QUICK_EXIT
+		[[noreturn]] 
+#endif
+		void run();
 
 		////////////////////////////////////////////////////////////
 		/// \brief Closes the Window and ends any lingering states.
@@ -78,7 +86,15 @@ namespace hades
 		void registerConsoleCommands();
 		/// @brief closes the debug console
 		void _close_console();
-		[[noreturn]] void _shutdown();
+
+		////////////////////////////////////////////////////////////
+		/// \brief Triggers the app to close down.
+		///
+		////////////////////////////////////////////////////////////
+#ifdef HADES_QUICK_EXIT
+		[[noreturn]]
+#endif
+		void _shutdown();
 
 		////////////////////////////////////////////////////////////
 		/// Member Data

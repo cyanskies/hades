@@ -31,6 +31,7 @@ set(HADES_BASIC_SRC
 	include/hades/logging.hpp
 	include/hades/parser.hpp
 	include/hades/properties.hpp
+	include/hades/resource_collection.hpp
 	include/hades/standard_paths.hpp
 	include/hades/quad_map.hpp
 	include/hades/resource_base.hpp
@@ -48,10 +49,16 @@ set(HADES_BASIC_SRC
 	include/hades/detail/game_loop.inl
 	include/hades/detail/input.inl
 	include/hades/detail/parser.inl
+	include/hades/detail/resource_collection.inl
 	include/hades/detail/terrain.inl
 	include/hades/detail/tiles.inl
 	include/hades/detail/quad_map.inl
 	include/hades/detail/writer.inl
 )
 
-hades_make_library(hades-basic include "${HADES_BASIC_SRC}" hades-util)
+set(HADES_BASIC_LIBS
+	hades-util
+	plf-colony
+)
+
+hades_make_library(hades-basic include "${HADES_BASIC_SRC}" "${HADES_BASIC_LIBS}")

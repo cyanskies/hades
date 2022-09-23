@@ -173,6 +173,24 @@ namespace hades::data
 			_loadQueue.push_back(get_resource(id));
 	}
 
+	void data_system::abandon_refresh(unique_id id, std::optional<unique_id> mod)
+	{
+		auto end = std::end(_loadQueue);
+		for (auto res = begin(_loadQueue); res != end;)
+		{
+			if (mod && *mod != (*res)->mod)
+				continue;
+
+			if ((*res)->id == id)
+			{
+				res = _loadQueue.erase(res);
+			}
+			else
+				++res;
+		}
+		return;
+	}
+
 	void data_system::load()
 	{
 		auto res = std::vector<resources::resource_base*>{ std::move(_loadQueue) };
@@ -352,6 +370,9 @@ namespace hades::data
 				for (const auto& s : includes)
 				{
 					// record the include files used by this mod
+					// :stop double includes
+					if (std::ranges::any_of(mod_res.includes, [&s](auto&& inc) { return inc == s; }))
+						continue;
 					mod_res.includes.emplace_back(s);
 					parseInclude(mod, s, mod_res, yaml_parser);
 				}

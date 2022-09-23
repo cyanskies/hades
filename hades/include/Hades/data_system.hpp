@@ -43,6 +43,9 @@ namespace hades::data
 		void refresh() override;
 		//adds a specific resource into the load queue
 		void refresh(unique_id) override;
+
+		void abandon_refresh(unique_id, std::optional<unique_id>) override;
+
 		//adds a range to the load queue
 		//template<Iter>
 		//void refresh(Iter first, Iter last);

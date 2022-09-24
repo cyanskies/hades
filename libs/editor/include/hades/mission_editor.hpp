@@ -144,7 +144,7 @@ namespace hades
 		player_dialog_t _player_dialog;
 		save_load_dialog_t _save_window;
 		save_load_dialog_t _load_window;
-		gui _gui;
+		gui _gui = { "mission_editor" };
 		time_point _editor_time;
 		vector_int _window_size{};
 		sf::View _gui_view;

@@ -18,11 +18,14 @@
 #include "hades/data.hpp"
 #include "hades/draw_clamp.hpp"
 #include "hades/font.hpp"
+#include "hades/standard_paths.hpp"
 #include "hades/texture.hpp"
+
+using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 namespace hades
 {
-
 	void detail::gui_context_deleter::operator()(gui_context* c) const noexcept
 	{
 		ImGui::DestroyContext(c);
@@ -34,7 +37,13 @@ namespace hades
 	static std::once_flag setup_keys_flag;
 	static std::once_flag make_default_font;
 
+	constexpr auto default_config_name = "ui.ini"sv;
+
 	gui::gui()
+		: gui{ default_config_name }
+	{}
+
+	gui::gui(std::string_view filename)
 		: _my_context{ {}, {} }
 	{
 		std::call_once(setup_keys_flag, setup_keys);
@@ -43,22 +52,33 @@ namespace hades
 			_font_atlas = std::make_unique<ImFontAtlas>();
 		assert(_font_atlas);
 
+		const auto prev_context = ImGui::GetCurrentContext();
+
 		_my_context = context_ptr{ ImGui::CreateContext(_font_atlas.get()) };
 		assert(_my_context);
-
-		const auto prev_context = ImGui::GetCurrentContext();
+		
 		_activate_context(); //context will only be activated by default if it is the only one
 
 		std::call_once(make_default_font, _create_default_font);
 
+		// save config path for this gui
 		auto &io = ImGui::GetIO();
+		const auto path = user_config_directory() / (empty(filename) ? default_config_name : filename);
+		if (const auto directory = path.parent_path(); !std::filesystem::exists(directory))
+			std::filesystem::create_directory(directory);
+		else if (!std::filesystem::is_directory(directory))
+			log_error("Unable to create directory for ui config: "s + std::filesystem::absolute(directory).generic_string());
+
+		assert(path.extension() == ".ini");
+		_ini_filename = path.generic_string();
+		io.IniFilename = _ini_filename.c_str();
 
 		using flags = ImGuiBackendFlags_;
 		io.BackendFlags |= flags::ImGuiBackendFlags_RendererHasVtxOffset;
 		// TODO: ImGuiBackendFlags_HasMouseCursors
 		//			_SetCursorPos
-		io.BackendPlatformName = ""; //TODO: this should be game_name()
-		io.BackendRendererName = "hades(SFML)";
+		io.BackendPlatformName = "hades"; //TODO: this should be game_name()
+		io.BackendRendererName = "hades_SFML";
 		
 		// TODO: clipboard support
 

@@ -65,7 +65,7 @@ namespace hades
 		};
 
 		sf::View _gui_view;
-		gui _gui;
+		gui _gui = { "mod_editor.ini" };
 		new_mod_window _new_mod = {};
 		load_mod_window _load_mod = {};
 		edit_mod_window _edit_mod_window = {};

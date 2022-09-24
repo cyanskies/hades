@@ -110,7 +110,7 @@ namespace hades::detail
 		string _error_msg = "no error";
 
 		level_editor_component::editor_windows _window_flags;
-		gui _gui;
+		gui _gui = { "level_editor.ini" };
 		std::unique_ptr<level> _level_ptr; //used in level mode
 		const mission_editor_t* _mission_editor = nullptr;
 		level *_level = nullptr;

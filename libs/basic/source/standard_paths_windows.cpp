@@ -8,6 +8,7 @@
 #include "Shlobj.h"
 #include "winerror.h"
 
+#include "hades/console_variables.hpp"
 #include "hades/properties.hpp"
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
@@ -55,7 +56,7 @@ namespace hades
 
 	static types::string game()
 	{
-		const auto name = hades::console::get_string("game", "game");
+		const auto name = hades::console::get_string(cvars::game_vanity_name, cvars::default_value::game_vanity_name);
 		return name->load() + "/";
 	}
 

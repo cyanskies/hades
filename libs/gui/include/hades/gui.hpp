@@ -104,7 +104,8 @@ namespace hades
 	class gui : public sf::Drawable
 	{
 	public:
-		gui();
+		gui(); 
+		gui(std::string_view config_filename);
 
 		gui(const gui&) = delete;
 		gui(gui&&) noexcept = default;
@@ -772,6 +773,8 @@ namespace hades
 		static void _create_default_font();
 		static void _generate_atlas();
 
+		std::string _ini_filename; // Placed above context so that it is
+								   // still valid during contexts destructor.
 		using context_ptr = std::unique_ptr<detail::gui_context, detail::gui_context_deleter>;
 		context_ptr _my_context;
 

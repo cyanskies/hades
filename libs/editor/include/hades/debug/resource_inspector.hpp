@@ -47,31 +47,32 @@ namespace hades::data
 
 			struct group_val
 			{
+				std::string_view res_type;
+				string data_file;
 				unique_id id;
 				string name;
 				unique_id mod_id;
 				string mod;
 			};
 
-			struct group
-			{
-				string name;
-				std::vector<group_val> resources;
-			};
-
-			std::vector<group> resource_groups;
+			using group_storage = std::vector<group_val>;
+			using group_iter = group_storage::iterator;
+			group_storage resource_groups;
 			std::unique_ptr<resource_editor> res_editor;
 		};
 
 		virtual std::unique_ptr<resource_editor> make_resource_editor(std::string_view resource_type);
 
 	private:
-		void _list_resources_from_group(resource_tree_state::group& group, gui& g,
+		void _list_resources_from_data_file(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
+			data_manager&, unique_id);
+		void _list_resources_from_group(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
 			data_manager&, unique_id);
 		void _refresh(data_manager&);
 		void _resource_tree(gui&, data::data_manager&);
 
 		resource_tree_state _tree_state;
+		bool _show_by_data_file = false;
 		unique_id _mod = unique_zero;
 	};
 }

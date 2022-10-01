@@ -74,28 +74,13 @@ namespace hades::data
 			}
 		}
 		//queue is currently sorted by resource type
-		// sort by include type
-		std::ranges::sort(queue, {}, [](auto&& pair) {return pair.res->data_file; });
+		// sort by data file then resource type
+		std::ranges::sort(queue, [](auto&& left, auto&& right) noexcept {
+			return std::tie(left.res->data_file, left.type) <
+				std::tie(right.res->data_file, right.type);
+			});
 		
 		const std::filesystem::path* data_file = {};
-		// subsort by resource type again
-		{
-			auto iter = begin(queue);
-			auto end = std::end(queue);
-			while (iter != end)
-			{
-				if (!data_file)
-					data_file = &iter->res->data_file;
-
-				auto next = std::next(iter);
-				while (next != end && next->res->data_file == *data_file)
-					next = std::next(next);
-				std::ranges::sort(iter, next, {}, &detail::resource_pair::type);
-				iter = next;
-			}
-			data_file = {};
-		}
-
 		auto res_type = std::string_view{};
 		auto data_output = std::unique_ptr<writer>{};
 

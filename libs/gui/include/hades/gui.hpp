@@ -83,6 +83,10 @@ namespace hades
 		{
 			void operator()(gui_context*) const noexcept;
 		};
+
+		// concept for types that can be safely passed as dragdrop payloads
+		template<typename T>
+		concept DragDropPayload = std::is_trivially_copyable_v<T>;
 	}
 
 	class gui_error : public runtime_error
@@ -100,6 +104,9 @@ namespace hades
 	};
 
 	class gui_input_text_callback;
+
+	template<detail::DragDropPayload T>
+	class gui_dragdrop_payload;
 
 	class gui : public sf::Drawable
 	{
@@ -705,6 +712,54 @@ namespace hades
 		//TODO: tabbars
 
 		// Drag Drop
+		enum class dragdrop_flags : ImGuiDragDropFlags
+		{
+			none = ImGuiDragDropFlags_None,
+			// BeginDragDropSource() flags
+			// By default, a successful call to BeginDragDropSource opens a tooltip so 
+			// you can display a preview or description of the source contents. This flag disables this behavior.
+			source_no_preview_tooltip = ImGuiDragDropFlags_SourceNoPreviewTooltip, 
+			// By default, when dragging we clear data so that IsItemHovered() will return false,
+			// to avoid subsequent user code submitting tooltips. This flag disables this behavior
+			// so you can still call IsItemHovered() on the source item.
+			source_no_disable_hover = ImGuiDragDropFlags_SourceNoDisableHover,   
+			// Disable the behavior that allows to open tree nodes and collapsing header by holding
+			// over them while dragging a source item.
+			source_no_hold_to_open_others = ImGuiDragDropFlags_SourceNoHoldToOpenOthers,
+			// Allow items such as Text(), Image() that have no unique identifier to be used as drag source,
+			// by manufacturing a temporary identifier based on their window-relative position. 
+			// This is extremely unusual within the dear imgui ecosystem and so we made it explicit.
+			source_allow_null_id = ImGuiDragDropFlags_SourceAllowNullID,
+			// External source (from outside of dear imgui), won't attempt to read current item/window info.
+			// Will always return true. Only one Extern source can be active simultaneously.
+			source_extern = ImGuiDragDropFlags_SourceExtern,   
+			// Automatically expire the payload if the source cease to be submitted
+			// (otherwise payloads are persisting while being dragged)
+			source_auto_expire_payload = ImGuiDragDropFlags_SourceAutoExpirePayload,   
+			// AcceptDragDropPayload() flags
+			// AcceptDragDropPayload() will returns true even before the mouse button is released.
+			// You can then call IsDelivery() on the return value to test if the payload needs to be delivered.
+			accept_before_delivery = ImGuiDragDropFlags_AcceptBeforeDelivery,  
+			// Do not draw the default highlight rectangle when hovering over target.
+			accept_no_draw_default_highlight = ImGuiDragDropFlags_AcceptNoDrawDefaultRect, 
+			// Request hiding the BeginDragDropSource tooltip from the BeginDragDropTarget site.
+			accept_no_preview_tooltip = ImGuiDragDropFlags_AcceptNoPreviewTooltip,  
+			// For peeking ahead and inspecting the payload before delivery.
+			accept_peek_only = ImGuiDragDropFlags_AcceptPeekOnly  
+		};
+
+		// call after submitting an item which may be dragged. when this returns true, you can call SetDragDropPayload() + EndDragDropSource()
+		bool begin_dragdrop_source(dragdrop_flags = dragdrop_flags::none);
+		// Data is copied and held by imgui. Return true when payload has been accepted.
+		bool set_dragdrop_payload(detail::DragDropPayload auto payload, std::string_view type_name, set_condition_enum = set_condition_enum::always);
+		// only call EndDragDropSource() if BeginDragDropSource() returns true!
+		void end_dragdrop_source();
+		// call after submitting an item that may receive a payload. If this returns true, you can call AcceptDragDropPayload() + EndDragDropTarget()
+		bool begin_dragdrop_target();
+		// accept contents of a given type. If ImGuiDragDropFlags_AcceptBeforeDelivery is set you can peek into the payload before the mouse button is released.
+		template<detail::DragDropPayload T>
+		gui_dragdrop_payload<T> accept_dragdrop_payload(std::string_view type_name, dragdrop_flags = dragdrop_flags::none);
+		void end_dragdrop_target();
 
 		// Disabled 
 		void begin_disabled();
@@ -840,6 +895,39 @@ namespace hades
 		ImGuiInputTextCallbackData* _data;
 	};
 
+	template<detail::DragDropPayload T>
+	class gui_dragdrop_payload
+	{
+	public:
+		gui_dragdrop_payload(const ImGuiPayload* p)
+			: _payload{ p } {}
+
+		bool is_correct_type(std::string_view type) const noexcept
+		{
+			return _payload && _payload->IsDataType(to_string(type).c_str());
+		}
+
+		bool is_preview() const noexcept
+		{
+			return _payload && _payload->IsPreview();
+		}
+
+		bool is_delivery() const noexcept
+		{
+			return _payload && _payload->IsDelivery();
+		}
+
+		T get() const noexcept
+		{
+			assert(_payload && _payload->Data);
+			assert(sizeof(T) == _payload->DataSize);
+			return *static_cast<T*>(_payload->Data);
+		}
+
+	private:
+		const ImGuiPayload* _payload;
+	};
+
 	namespace details
 	{
 		template<typename Enum>
@@ -880,6 +968,11 @@ namespace hades
 	{
 		return details::enum_or(lhs, rhs);
 	}	
+
+	constexpr inline gui::dragdrop_flags operator|(gui::dragdrop_flags lhs, gui::dragdrop_flags rhs) noexcept
+	{
+		return details::enum_or(lhs, rhs);
+	}
 
 	//NOTE: right_max is absolute, not relative to the current elements x position
 	template<typename InputIt, typename MakeButton>

@@ -1161,6 +1161,31 @@ namespace hades
 		ImGui::Columns();
 	}
 
+	bool gui::begin_dragdrop_source(dragdrop_flags flags)
+	{
+		_active_assert();
+		return ImGui::BeginDragDropSource(enum_type(flags));
+	}
+
+	void gui::end_dragdrop_source()
+	{
+		_active_assert();
+		return ImGui::EndDragDropSource();
+	}
+
+	bool gui::begin_dragdrop_target()
+	{
+		_active_assert();
+		return ImGui::BeginDragDropTarget();
+	}
+
+	void gui::end_dragdrop_target()
+	{
+		_active_assert();
+		ImGui::EndDragDropTarget();
+		return;
+	}
+
 	void gui::begin_disabled()
 	{
 		_active_assert();

@@ -811,36 +811,76 @@ namespace hades::data
 
 		return {};
 	}
-
-	void basic_resource_inspector::_list_resources_from_group(resource_tree_state::group& group, gui& g,
-		data::data_manager& d, unique_id mod)
+	
+	void basic_resource_inspector::_list_resources_from_data_file(
+		resource_tree_state::group_iter first,
+		resource_tree_state::group_iter last,
+		gui& g,	data_manager& d, unique_id mod)
 	{
-		auto ids = std::vector<unique_id>{};
+		if (first == last)
+			return;
 
-		for (const auto& [id, name, mod_id, mod_name] : group.resources)
+		while (first != last)
 		{
-			const auto tree_open = g.tree_node(name, gui::tree_node_flags::leaf);
+			auto type = first->res_type;
+			auto next = std::next(first);
+			while (next != last &&
+				next->res_type == type)
+				++next;
+
+			if (g.tree_node(empty(type) ? "unknown"sv : type))
+			{
+				_list_resources_from_group(first, next, g, d, mod);
+				g.tree_pop();
+			}
+
+			first = next;
+		}
+		return;
+	}
+
+	constexpr auto dragdrop_type_name = "resource_ptr"sv;
+
+	void basic_resource_inspector::_list_resources_from_group(
+		resource_tree_state::group_iter first,
+		resource_tree_state::group_iter last,
+		gui& g, data_manager& d, unique_id mod)
+	{
+		while (first != last)
+		{
+			const auto tree_open = g.tree_node(first->name, gui::tree_node_flags::leaf);
+
+			if (_show_by_data_file && _mod == first->mod_id && g.begin_dragdrop_source())
+			{
+				auto res = d.get_resource(first->id, first->mod_id);
+				g.set_dragdrop_payload(res, dragdrop_type_name);
+				g.text(first->name);
+				g.end_dragdrop_source();
+			}
 
 			if (g.is_item_clicked() && !g.is_item_toggled_open())
 			{
-				_tree_state.res_editor = make_resource_editor(group.name);
+				_tree_state.res_editor = make_resource_editor(first->res_type);
 
 				if (_tree_state.res_editor)
 				{
-					_tree_state.res_editor->set_target(d, id, mod);
+					_tree_state.res_editor->set_target(d, first->id, mod);
 					_tree_state.res_editor->set_editable_mod(_mod);
 				}
 			}
 
-			if (mod !=  mod_id)
+			if (mod != first->mod_id)
 			{
 				g.layout_horizontal();
-				g.text_disabled(mod_name);
+				g.text_disabled(first->mod);
 			}
-			
+
 			if (tree_open)
 				g.tree_pop();
+
+			++first;
 		}
+		return;
 	}
 
 	void basic_resource_inspector::_refresh(data::data_manager& d)
@@ -855,24 +895,21 @@ namespace hades::data
 		const auto stack_end = mod_index >= size(dat) ?
 			end(dat) : next(begin(dat), mod_index + 1);
 		
-		for (auto iter = begin(dat); iter != stack_end; ++iter)
+		auto& group = _tree_state.resource_groups;
+
+		auto iter = begin(dat);
+		if (_show_by_data_file)
+			std::advance(iter, mod_index);
+
+		for (iter; iter != stack_end; ++iter)
 		{
 			const auto m = *iter;
+
 			for (const auto& type : m->resources_by_type)
 			{
-				resource_tree_state::group* group = nullptr;
-				auto group_iter = std::find_if(begin(g), end(g), [&](auto&& elm) noexcept {
-					return elm.name == type.first;
-				});
-				
-				if (group_iter == end(g))
-					group = &g.emplace_back(resource_tree_state::group{ type.first });
-				else
-					group = &*group_iter;
-
 				using val_type = resource_tree_state::group_val;
-				std::transform(begin(type.second), end(type.second), back_inserter(group->resources), [&d, &mod = m->mod_info](auto&& elm)->val_type {
-					return { elm->id, d.get_as_string(elm->id), mod.id, mod.name };
+				std::transform(begin(type.second), end(type.second), back_inserter(group), [&type = type.first, &d, &mod = m->mod_info](auto&& elm)->val_type {
+					return { type, elm->data_file.generic_string(), elm->id, d.get_as_string(elm->id), mod.id, mod.name };
 				});
 			}
 		}
@@ -885,14 +922,24 @@ namespace hades::data
 			return left.id == right.id;
 		};
 
-		for (auto&& group : g)
-		{
-			remove_duplicates(group.resources, less, equal);
-		}
+		remove_duplicates(group, less, equal);
 
-		std::sort(begin(g), end(g), [](auto&& left, auto&& right) {
-			return left.name < right.name;
-			});
+		if (_show_by_data_file)
+		{
+			std::ranges::sort(group, [](auto&& left, auto&& right)
+				{
+					return std::tie(left.data_file, left.res_type, left.name) <
+						std::tie(right.data_file, right.res_type, right.name);
+				});
+		}
+		else
+		{
+			std::ranges::sort(group, [](auto&& left, auto&& right)
+				{
+					return std::tie(left.res_type, left.name) <
+						std::tie(right.res_type, right.name);
+				});
+		}
 
 		return;
 	}
@@ -900,7 +947,7 @@ namespace hades::data
 	void basic_resource_inspector::_resource_tree(gui& g, data::data_manager& d)
 	{
 		const auto mods = d.get_mod_stack();
-		//main resource list
+		// main resource list
 		// need to set min size manually
 		// since the child creates a scrolling region that can fit in a tiny window
 		g.next_window_size({}, hades::gui::set_condition_enum::first_use);
@@ -908,6 +955,7 @@ namespace hades::data
 		{
 			if (_tree_state.mod_index >= size(mods))
 			{
+				assert(size(mods) > 0);
 				_tree_state.mod_index = size(mods) - 1;
 				_refresh(d);
 			}
@@ -921,13 +969,17 @@ namespace hades::data
 					return current.name;
 			}();
 
+			const auto no_mod = size(mods) == 1;
+			if (no_mod)
+				g.begin_disabled();
+
 			if (g.combo_begin("Mod"sv, preview_str))
 			{
-				//list other mod options
+				// list other mod options
 				for (auto i = std::size_t{}; i < size(mods); ++i)
 				{
 					auto& mod_info = mods[i]->mod_info;
-					auto str = mod_info.name;
+					auto str = mod_info.name; // copy
 					if (mod_info.id == _mod)
 						str += "*"s;
 
@@ -938,36 +990,65 @@ namespace hades::data
 				g.combo_end();
 			}
 
-			if (current_mod != _tree_state.mod_index)
+			const auto data_file_toggle = g.checkbox("Show by data file"sv, _show_by_data_file);
+
+			if (no_mod)
+				g.end_disabled();
+
+			if (current_mod != _tree_state.mod_index ||
+				data_file_toggle)
 				_refresh(d);
 
 			g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 			if (g.child_window_begin("##resource-tree-list"sv))
 			{
-				g.set_next_item_open(true, gui::set_condition_enum::once);
-				if (g.tree_node("resources"sv))
-				{
-					for (auto& resource_type : _tree_state.resource_groups)
-					{
-						bool open;
-						if (resource_type.name.empty())
-							open = g.tree_node("unknown"sv);
-						else
-							open = g.tree_node(resource_type.name);
+				auto iter = begin(_tree_state.resource_groups);
+				const auto end = std::end(_tree_state.resource_groups);
 
-						if (open)
+				if (_show_by_data_file)
+				{	
+					auto needs_refresh = false;
+					while (iter != end)
+					{
+						const auto& data_file = iter->data_file;
+						auto next = std::next(iter);
+						while (next != end && next->data_file == data_file)
+							++next;
+						
+						assert(!empty(data_file));
+						const auto tree_node = g.tree_node(data_file);
+
+						if (g.begin_dragdrop_target())
 						{
-							_list_resources_from_group(resource_type, g, d,
+							const auto drop = g.accept_dragdrop_payload<resources::resource_base*>(dragdrop_type_name);
+							if (drop.is_delivery())
+							{
+								assert(drop.is_correct_type(dragdrop_type_name));
+								auto ret = drop.get();
+								ret->data_file = data_file;
+								needs_refresh = true;
+							}
+						}
+
+						if (tree_node)
+						{
+							_list_resources_from_data_file(iter, next, g, d,
 								mods[_tree_state.mod_index]->mod_info.id);
 							g.tree_pop();
 						}
+
+						iter = next;
 					}
 
-					g.tree_pop();
+					if (needs_refresh)
+						_refresh(d);
 				}
-			}
-
-			g.child_window_end();
+				else
+				{
+					_list_resources_from_data_file(iter, end, g, d,
+							mods[_tree_state.mod_index]->mod_info.id);
+				} // ! _show_by_data_file
+			} g.child_window_end();
 		}
 		g.window_end();
 	}

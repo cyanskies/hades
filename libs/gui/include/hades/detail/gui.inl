@@ -388,5 +388,22 @@ namespace hades
 			x2 = g.get_item_rect_max().x;
 		}
 	}
+
+	bool gui::set_dragdrop_payload(detail::DragDropPayload auto payload, std::string_view type_name, set_condition_enum cond)
+	{
+		_active_assert();
+		assert("This type requires a manually provided type name" && !empty(type_name));
+		assert("Type name must be shorter than 32 chars" && size(type_name) < 32);
+		return ImGui::SetDragDropPayload(to_string(type_name).c_str(),
+			&payload, sizeof(payload), enum_type(cond));
+	}
+
+	template<detail::DragDropPayload T>
+	gui_dragdrop_payload<T> gui::accept_dragdrop_payload(std::string_view type_name, dragdrop_flags flags)
+	{
+		_active_assert();
+		return { ImGui::AcceptDragDropPayload(to_string(type_name).c_str(), enum_type(flags)) };
+	}
+
 }
 

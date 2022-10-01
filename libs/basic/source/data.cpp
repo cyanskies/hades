@@ -196,11 +196,6 @@ namespace hades
 			_mod_stack.pop_back();
 		}
 
-		void data_manager::export_mod(unique_id mod, std::string_view name) const
-		{
-			// TODO: implement
-		}
-
 		const mod& data_manager::get_mod(const unique_id id) const
 		{
 			auto ptr = const_cast<data_manager*>(this);
@@ -210,6 +205,12 @@ namespace hades
 		mod& data_manager::get_mod(unique_id id)
 		{
 			return _get_mod(id).mod_info;
+		}
+
+		const data_manager::resource_storage& data_manager::get_mod_data(unique_id id) const
+		{
+			auto ptr = const_cast<data_manager*>(this);
+			return ptr->_get_mod(id);
 		}
 
 		std::string_view data_manager::built_in_mod_name() noexcept

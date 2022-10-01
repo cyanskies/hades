@@ -12,6 +12,7 @@ set(HADES_SRC
 	include/hades/yaml_parser.hpp
 	include/hades/yaml_writer.hpp
 	include/hades/detail/Console.inl
+	include/hades/detail/data_system.inl
 	include/hades/resource/fonts.hpp
 	source/App.cpp
 	source/Console.cpp

@@ -2,8 +2,10 @@
 
 #include <iterator>
 
+#include "hades/colour.hpp"
 #include "hades/console_variables.hpp"
 #include "hades/properties.hpp"
+#include "hades/standard_paths.hpp"
 
 using namespace std::string_view_literals;
 
@@ -21,6 +23,39 @@ namespace hades
 		return _gui.handle_event(e);
 	}
 
+	static bool mod_exists(std::string_view name) noexcept
+	{
+		try
+		{
+			auto root = std::filesystem::path{ "."sv };
+
+			if (!console::get_bool(cvars::file_portable, cvars::default_value::file_portable))
+				root = user_custom_file_directory();
+
+			auto filename = std::filesystem::path{ name };
+			auto deflate = console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate);
+			if (filename.has_extension())
+				return std::filesystem::exists(root / filename);
+
+			filename.replace_extension(zip::resource_archive_ext());
+			if (std::filesystem::exists(root / filename))
+				return true;
+
+			filename.replace_extension();
+			return std::filesystem::is_directory(root / filename);
+		}
+		catch (const std::exception& exc)
+		{
+			log_warning(exc.what());
+			return true;
+		}
+		catch (...)
+		{
+			log_error("Unexpected error"sv);
+			return true;
+		}
+	}
+
 	void mod_editor_impl::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
 	{
 		_gui.activate_context();
@@ -34,7 +69,11 @@ namespace hades
 			if (_gui.menu_begin("File"sv))
 			{
 				if (_gui.menu_item("New mod..."sv, !_current_mod))
+				{
+					_new_mod = {};
+					_new_mod.exists = mod_exists(_new_mod.name);
 					_new_mod.open = true;
+				}
 				if (_gui.menu_begin("Edit mod"sv, !_current_mod))
 				{
 					if(_gui.menu_item("Load mod..."sv))
@@ -58,7 +97,13 @@ namespace hades
 				}
 
 				if (_gui.menu_item("Save mod"sv, _current_mod))
-					_save_mod(*data_man);
+					data_man->export_mod(_current_mod);
+
+				if (_gui.menu_item("Save mod as..."sv, _current_mod))
+				{
+					const auto& name = data_man->get_as_string(_current_mod);
+					_save_as_window = { name, mod_exists(name), true };
+				}
 
 				if (_gui.menu_item("Close mod"sv, _current_mod))
 					_close_mod(*data_man);
@@ -97,6 +142,12 @@ namespace hades
 				}
 				if (disabled)
 					_gui.end_disabled();
+
+				if (_new_mod.exists)
+				{
+					_gui.same_line();
+					_gui.text_coloured("mod with this name already exists"sv, colours::red);
+				}
 			}
 			_gui.window_end();
 		}
@@ -113,11 +164,37 @@ namespace hades
 				if (_gui.button("Load"sv))
 				{
 					_mode = edit_mode::normal;
-					_set_mod(_new_mod.name, *data_man);
-					log_debug("Loaded mod: " + _new_mod.name);
+					_set_mod(_load_mod.name, *data_man);
+					log_debug("Loaded mod: " + _load_mod.name);
 				}
 				if (disabled)
 					_gui.end_disabled();
+			}
+			_gui.window_end();
+		}
+
+		if (_save_as_window.open)
+		{
+			_gui.next_window_size({}, gui::set_condition_enum::first_use);
+			if (_gui.window_begin("Save mod"sv, _save_as_window.open))
+			{
+				if (_gui.input("Mod filename"sv, _save_as_window.name))
+					_save_as_window.exists = mod_exists(_save_as_window.name);
+				const auto disabled = _save_as_window.name == data::data_manager::built_in_mod_name();
+				if (disabled)
+					_gui.begin_disabled();
+
+				if (_gui.button("Save"sv))
+					data_man->export_mod(_current_mod, _save_as_window.name);
+				
+				if (disabled)
+					_gui.end_disabled();
+
+				if (_save_as_window.exists)
+				{
+					_gui.same_line();
+					_gui.text_coloured("A mod with this name already exists, overwrite?"sv, colours::red);
+				}
 			}
 			_gui.window_end();
 		}
@@ -153,7 +230,7 @@ namespace hades
 		const auto background_colour = sf::Color{ 200u, 200u, 200u, 255u };
 		_backdrop.setFillColor(background_colour);
 
-		[[maybe_unused]] auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
+		auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
 
 		const auto mods = data_man->get_mod_stack();
 		_mods.clear();
@@ -176,7 +253,7 @@ namespace hades
 		}
 		case edit_mode::already_loaded:
 		{
-
+			// do nothing
 		}
 		}
 

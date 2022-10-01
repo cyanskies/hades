@@ -17,6 +17,8 @@ namespace hades::zip
 {
 	std::string_view zlib_version() noexcept;
 
+	std::string_view resource_archive_ext() noexcept;
+
 	//in archive file stream
 	class iafstream : public std::istream
 	{
@@ -113,7 +115,7 @@ namespace hades::zip
 			return _stream.is_archive_open();
 		}
 
-		//throws archive_error and zip::file_not_found
+		//throws archive_error and zip::archive_member_not_found
 		void open(const std::filesystem::path& p)
 		{
 			_stream.open(p);

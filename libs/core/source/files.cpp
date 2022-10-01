@@ -177,7 +177,6 @@ namespace hades
 		const auto set_stream = [&, this]<typename T>(T && stream)noexcept {
 			_stream = std::forward<T>(stream);
 			_mod_path = mod_path;
-			_mod_path.remove_filename();
 			_rel_path = file;
 			_bind_buffer();
 			clear();

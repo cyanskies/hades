@@ -50,6 +50,7 @@ namespace hades::data
 		//template<Iter>
 		//void refresh(Iter first, Iter last);
 
+		// TODO: move the loadqueue to data_manager
 		//loads all queued resources
 		void load();
 		//loads a number of objects from the queue(no order specified)
@@ -57,34 +58,49 @@ namespace hades::data
 		//loads from the queue for a specified time
 		//returns the number of objects loaded
 		//>>types::uint32 load(Time ms);
-		//loads a specific object(only if it is on the queue)
+
+		//loads a specific object
 		void load(unique_id);
+
 		//loads a range of objects(only if they are on the queue)
 		//template<Iter>
 		//void load(Iter first, Iter last);
+
+		void export_mod(unique_id, std::string_view) override;
 
 		//convert string to uid
 		const types::string& get_as_string(unique_id id) const noexcept override;
 		unique_id get_uid(std::string_view name) const override;
 		unique_id get_uid(std::string_view name) override;
 
+	protected:
+		const std::filesystem::path& _current_data_file() const noexcept override
+		{
+			return _data_file;
+		}
+
 	private:
+		template<typename Stream>
+		void _write_mod(const mod&, const std::filesystem::path&, Stream&);
 		void _parse_mod(unique_id id, std::string_view source, const data::parser_node& modRoot, bool load_deps);
 		void parseYaml(unique_id, const data::parser_node&);
 		
 		//==parsing and loading data==
 		std::unordered_map<string, resources::parser_func> _resourceParsers;
+		std::filesystem::path _data_file;
 		//==stored resource data==
 		//list of used names
 		std::unordered_set<string> _names;
 		unique_id _game = unique_zero;
 		std::vector<unique_id> _mods;
-		unique_id _leaf_source = unique_zero; // temp loaded mod, this is the id of a mission file
+		[[deprecated]] unique_id _leaf_source = unique_zero; // temp loaded mod, this is the id of a mission file
 		//map of names to Uids
 		std::unordered_map<string, unique_id> _ids;
 		//list of unloaded resources
 		std::vector<resources::resource_base*> _loadQueue;
 	};
 }
+
+#include "hades/detail/data_system.inl"
 
 #endif // hades_data_hpp

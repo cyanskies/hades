@@ -36,7 +36,7 @@ namespace hades::resources
 			return;
 		}  
 
-		void serialise(data::data_manager&, data::writer&) const final override;
+		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		bool serialise_source() const noexcept final override
 		{
@@ -57,7 +57,7 @@ namespace hades::resources
 		unique_id source_mod = {}; // the last mod that set the source or loaded* value
 	};
 
-	void texture::serialise(data::data_manager& d, data::writer& w) const
+	void texture::serialise(const data::data_manager& d, data::writer& w) const
 	{
 		//default texture
 		const auto def = texture{};
@@ -83,19 +83,33 @@ namespace hades::resources
 
 	void texture::serialise(std::ostream& o) const
 	{
+		assert(o.good());
 		if (!loaded_archive_path.empty())
 		{
 			// pull out of current archive
 			auto strm = irfstream{ loaded_archive_path, loaded_path };
-			log("Loaded: " + (loaded_archive_path / loaded_path).generic_string());
-			o << strm.rdbuf();
+			if (!strm.is_open())
+				log_error("Failed to write resource; unable to find file: " +
+					loaded_archive_path.generic_string() + "/"  + loaded_path.generic_string());
+			else if (!strm.good())
+				log_error("Failed to write resource; unable to read resource: " +
+					loaded_archive_path.generic_string() + "/" + loaded_path.generic_string());
+			else
+				o << strm.rdbuf();
 		}
 		else
 		{
-			auto strm = std::ifstream{ loaded_path, std::ios::binary };
-			log("Loaded: " + loaded_path.generic_string());
-			o << strm.rdbuf();
+			auto strm = std::ifstream{ loaded_path, std::ios_base::binary };
+			if(!strm.is_open())
+				log_error("Failed to write resource; unable to find file: " + 
+					(loaded_path.empty() ? source.generic_string() : loaded_path.generic_string()));
+			else if (!strm.good())
+				log_error("Failed to write resource; unable to read resource: " + loaded_path.generic_string());
+			else
+				o << strm.rdbuf();
 		}
+
+		return;
 	}
 }
 
@@ -262,7 +276,7 @@ namespace hades
 
 				const auto& stream = fstream.stream();
 				const auto mod_path = stream.mod_path();
-				if (mod_path.has_filename())
+				if (mod_path.has_extension())
 				{
 					tex.loaded_archive_path = mod_path;
 					tex.loaded_path = stream.path();
@@ -280,6 +294,7 @@ namespace hades
 				const auto tex_size = tex.value.getSize();
 				tex.actual_width = integer_cast<texture_size_t>(tex_size.x);
 				tex.actual_height = integer_cast<texture_size_t>(tex_size.y);
+				return;
 			}
 
 			if (tex.alpha)

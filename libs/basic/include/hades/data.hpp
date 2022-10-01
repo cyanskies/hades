@@ -168,11 +168,12 @@ namespace hades
 		{
 			unique_id id;
 			std::vector<unique_id> dependencies;
-			std::vector<string> includes;
+			std::vector<std::filesystem::path> includes;
 
 			string name;
 			// TODO: filesystem::path
-			string source; // path to source
+			string source; // path to source where the mod was loaded from?
+			// do we just use the id for this?
 		};
 
 		namespace detail
@@ -269,13 +270,15 @@ namespace hades
 
 			// export the mod 'id' 
 			// set a filename to save as a different name
-			void export_mod(unique_id, std::string_view = {}) const;
+			virtual void export_mod(unique_id, std::string_view = {}) = 0;
 
 			// TODO: unload leaf
 			//		removes mods loaded by a mission
 
 			const mod& get_mod(unique_id) const;
 			mod& get_mod(unique_id);
+
+			const resource_storage& get_mod_data(unique_id) const;
 
 			static std::string_view built_in_mod_name() noexcept;
 			[[nodiscard]] bool is_built_in_mod(unique_id) const noexcept;
@@ -294,6 +297,9 @@ namespace hades
 			virtual const string& get_as_string(unique_id id) const noexcept = 0;
 			virtual unique_id get_uid(std::string_view name) const = 0;
 			virtual unique_id get_uid(std::string_view name) = 0;
+
+		protected:
+			virtual const std::filesystem::path& _current_data_file() const noexcept = 0;
 
 		private:
 			struct mod_storage : resource_storage

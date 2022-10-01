@@ -55,7 +55,7 @@ namespace hades
 			virtual ~resource_base() {}
 
 			virtual void load(data::data_manager&) {}
-			virtual void serialise(data::data_manager&, data::writer&) const = 0;
+			virtual void serialise(const data::data_manager&, data::writer&) const = 0;
 			//serialise(ostream&) will only be called if this returns true
 			virtual bool serialise_source() const
 			{
@@ -73,7 +73,7 @@ namespace hades
 			bool loaded = false;
 
 			// the file to write this resource to(eg. ./terrain/terrain(.yaml))
-			string data_file;
+			std::filesystem::path data_file;
 			//the path for this resource within a mod(eg. ./terrain/dirt.png)
 			// serialise(ostream&) will only be called if this isn't empty
 			std::filesystem::path source;
@@ -84,7 +84,7 @@ namespace hades
 		template<class T>
 		struct resource_type : public resource_base
 		{
-			void serialise(data::data_manager&, data::writer&) const override
+			void serialise(const data::data_manager&, data::writer&) const override
 			{	
 				using namespace std::string_literals;
 				log_debug("No serialise function for: "s + typeid(T).name());

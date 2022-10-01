@@ -12,6 +12,8 @@ namespace hades
 {
 	//entity identification type
 	struct entity_id_t {};
+	// TODO: upgrade this to uint32
+	//		needs some changes to actions as well
 	using entity_id = strong_typedef<entity_id_t, uint16>;
 
 	//constant value for a bad entity id

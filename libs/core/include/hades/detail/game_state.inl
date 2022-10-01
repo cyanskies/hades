@@ -100,7 +100,7 @@ namespace hades::state_api
 		template<typename GameSystem>
 		inline object_ref make_object_impl(const object_instance& o, time_point t, game_state& s, extra_state<GameSystem>& e)
 		{
-			// give this instance a new unique id if  it doesn't have one
+			// give this instance a new unique id if it doesn't have one
 			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
 
 			// insert always returns a valid ptr

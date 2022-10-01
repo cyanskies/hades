@@ -60,7 +60,10 @@ namespace hades::zip
 	{
 		auto path_str = path.generic_string();
 		if (open_for_write.contains(path_str))
-			throw files::file_error{ "Cannot open archive: " + path_str + ", it is already open for writing"s };
+		{
+			log_debug("Ignored " + path.generic_string() + " because it is currently open for writing");
+			return {};
+		}
 
 		if (!fs::exists(path))
 			throw files::file_not_found{ "archive not found: "s + path.generic_string() };
@@ -81,7 +84,7 @@ namespace hades::zip
 
 		//sets current file to the target if it returns true
 		if (!file_exists(a, f))
-			throw file_not_found{ "file not found in archive: "s + f.generic_string() };
+			throw archive_member_not_found{ "file not found in archive: "s + f.generic_string() };
 
 		if (unzOpenCurrentFile(a.handle) != UNZ_OK)
 			throw archive_error{ "error opening file in archive"s };

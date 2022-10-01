@@ -36,7 +36,7 @@ namespace hades::resources
 			return;
 		}
 
-		void serialise(data::data_manager&, data::writer&) const override;
+		void serialise(const data::data_manager&, data::writer&) const override;
 
 		resource_link<texture> tex;
 		time_duration duration = time_duration::zero();
@@ -65,7 +65,7 @@ namespace hades::resources
 			f.normalised_duration = f.duration / total_duration;
 	}
 
-	void animation::serialise(data::data_manager& d, data::writer& w) const
+	void animation::serialise(const data::data_manager& d, data::writer& w) const
 	{
 		const auto def_anim = animation{};
 		const auto def = animation_frame{};

@@ -30,6 +30,11 @@ namespace hades::zip
 		return version;
 	}
 
+	std::string_view resource_archive_ext() noexcept
+	{
+		return archive_ext;
+	}
+
 	template<typename Integer>
 	static unsigned int CheckSizeLimits(Integer size)
 	{
@@ -307,7 +312,7 @@ namespace hades::zip
 
 		const auto ret = unzGoToFirstFile(zip.handle);
 		if (ret != ZIP_OK)
-			throw file_not_found{ "Error finding file in archive: " + archive.generic_string() };
+			throw archive_member_not_found{ "Error finding file in archive: " + archive.generic_string() };
 
 		const auto separator_count = count_separators(dir_path);
 

@@ -40,12 +40,20 @@ namespace hades
 		struct new_mod_window
 		{
 			string name = "new_mod";
+			bool exists = false;
 			bool open = false;
 		};
 
 		struct load_mod_window
 		{
 			string name = "mod";
+			bool open = false;
+		};
+
+		struct save_mod_window
+		{
+			string name = "mod";
+			bool exists = false;
 			bool open = false;
 		};
 
@@ -69,6 +77,7 @@ namespace hades
 		new_mod_window _new_mod = {};
 		load_mod_window _load_mod = {};
 		edit_mod_window _edit_mod_window = {};
+		save_mod_window _save_as_window = {};
 		std::vector<string> _mods;
 		unique_id _current_mod = unique_zero;
 

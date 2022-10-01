@@ -7,6 +7,7 @@
 #include "hades/logging.hpp"
 #include "hades/files.hpp"
 #include "hades/properties.hpp"
+#include "hades/standard_paths.hpp"
 #include "hades/utility.hpp"
 
 using namespace std::string_literals;
@@ -76,7 +77,9 @@ namespace hades::data
 			const auto root = data::make_parser(modyaml);
 			const auto mod_key = get_uid(mod);
 
+			_data_file = name;
 			_parse_mod(mod_key, mod, *root, autoLoad);
+			_data_file.clear();
 
 			//record the list of loaded games/mods
 			if (name == "game.yaml")
@@ -207,15 +210,12 @@ namespace hades::data
 
 	void data_system::load(unique_id id)
 	{
-		auto it = std::find_if(_loadQueue.begin(), _loadQueue.end(), [id](const resources::resource_base* r) {return r->id == id; });
-		auto resource = *it;
-		if (it == _loadQueue.end())
-			return;
-
+		auto resource = get_resource(id);
 		//erase all the matching id's
-		_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), *it), _loadQueue.end());
+		_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), resource), _loadQueue.end());
 
 		resource->load(*this);
+		return;
 	}
 
 	void data_system::load(types::uint8 count)
@@ -227,6 +227,43 @@ namespace hades::data
 			_loadQueue.back()->load(*this);
 			_loadQueue.pop_back();
 		}
+	}
+
+	void data_system::export_mod(unique_id mod, std::string_view name)
+	{
+		if (name == std::string_view{})
+			name = get_as_string(mod);
+
+		log("Writing mod: "s + to_string(name));
+
+		const auto& mod_data = get_mod(mod);
+
+		auto root = std::filesystem::path{ "."sv };
+		if (!console::get_bool(cvars::file_portable, cvars::default_value::file_portable))
+			root = user_custom_file_directory();
+
+		auto filename = std::filesystem::path{ name };
+		auto deflate = console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate);
+		auto path = root / filename;
+		if (deflate->load())
+		{
+			//archive stream
+			if (!path.has_extension())
+				path.replace_extension(zip::resource_archive_ext());
+			log("Target file: " + std::filesystem::absolute(path).generic_string());
+			auto strm = zip::oafstream{ path };
+			_write_mod(mod_data, {}, strm);
+		}
+		else
+		{
+			log("Target dir: " + std::filesystem::absolute(path).generic_string());
+			//file stream
+			auto strm = std::ofstream{};
+			_write_mod(mod_data, path, strm);
+		}
+
+		log("Finised writing mod: "s + to_string(name));
+		return;
 	}
 
 	//convert string to uid
@@ -322,6 +359,8 @@ namespace hades::data
 
 		assert(mod_info.name != default_mod_name);
 
+		const auto mod_data_source = _data_file;
+
 		//check mod dependencies
 		const auto dependencies = mod->get_child("depends");
 		if (dependencies)
@@ -341,6 +380,7 @@ namespace hades::data
 		const auto mod_name = mod_info.name;
 		push_mod(std::move(mod_info));
 
+		_data_file = mod_data_source;
 		//for every other headers, check for a header parser
 		parseYaml(modKey, modRoot);
 		
@@ -363,6 +403,7 @@ namespace hades::data
 			//if type is include, then open the file and pass it to parseyaml
 			if (type == "include")
 			{
+				const auto data_source = _data_file;
 				const auto yaml_parser = [this](unique_id mod, const data::parser_node& root) { parseYaml(mod, root); };
 
 				auto& mod_res = get_mod(mod);
@@ -374,8 +415,11 @@ namespace hades::data
 					if (std::ranges::any_of(mod_res.includes, [&s](auto&& inc) { return inc == s; }))
 						continue;
 					mod_res.includes.emplace_back(s);
+					_data_file = s;
 					parseInclude(mod, s, mod_res, yaml_parser);
 				}
+
+				_data_file = data_source;
 			}
 
 			//if this resource name has a parser then load it

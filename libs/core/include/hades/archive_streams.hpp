@@ -38,12 +38,6 @@ namespace hades::files
 	public:
 		using file_error::file_error;
 	};
-
-	class file_not_open : public file_error
-	{
-	public:
-		using file_error::file_error;
-	};
 }
 
 namespace hades::zip
@@ -54,14 +48,7 @@ namespace hades::zip
 		using file_error::file_error;
 	};
 
-	//TODO: rename archive member not found
-	class file_not_found : public archive_error
-	{
-	public:
-		using archive_error::archive_error;
-	};
-
-	class file_not_open : public archive_error
+	class archive_member_not_found : public archive_error
 	{
 	public:
 		using archive_error::archive_error;

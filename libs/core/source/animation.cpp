@@ -580,13 +580,13 @@ namespace hades::animation
 				"; while setting animation: " + to_string(animation.id));
 		}
 
-		//force lazy load if the texture hasn't been loaded yet.
-		// TODO: is this ever reached
-		assert(resources::texture_functions::get_is_loaded(animation.tex.get()));
+		// Warn if texture isn't loaded.
+		// this can only happen if we got the animation without allowing 
+		// autoload. Usually in an editor. Get the texture and manually load it
+		// before calling this type of dunction.
 		if (!resources::texture_functions::get_is_loaded(animation.tex.get()))
 		{
-			//data->get will lazy load texture
-			resources::texture_functions::get_resource(animation.tex.id());
+			log_warning("texture not loaded for animation: " + to_string(animation.id));
 		}
 		
 		//calculate the progress to find the correct rect for this time

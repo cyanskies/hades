@@ -642,9 +642,9 @@ namespace hades
 	void gui::image(const resources::animation &a, vector2 size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
 	{		
 		_active_assert();
-		const auto& f = animation::get_frame(a, time);
 		const auto texture = resources::animation_functions::get_texture(a);
-
+		const auto& f = animation::get_frame(a, time);
+		
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
 		if (window->SkipItems)
 			return;

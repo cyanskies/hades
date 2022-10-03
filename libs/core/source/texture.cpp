@@ -294,6 +294,7 @@ namespace hades
 				const auto tex_size = tex.value.getSize();
 				tex.actual_width = integer_cast<texture_size_t>(tex_size.x);
 				tex.actual_height = integer_cast<texture_size_t>(tex_size.y);
+				tex.loaded = true;
 				return;
 			}
 

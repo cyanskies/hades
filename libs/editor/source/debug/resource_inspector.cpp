@@ -2,6 +2,7 @@
 
 #include "SFML/Graphics/Image.hpp"
 
+#include "imgui.h" // for GetID
 #include "imgui_internal.h" // for BeginDragDropTargetCustom
 
 #include "ImGuiFileDialog.h"
@@ -33,10 +34,12 @@ namespace hades::data
 			{
 				const auto tex_id = resources::texture_functions::get_id(texture);
 				_tex_name = d.get_as_string(tex_id);
+				//force load texture
+				resources::texture_functions::get_resource(d, tex_id, mod);
 			}
 
 			_duration = anim::get_duration(*_anim);
-			_base = d.get_resource(i);
+			_base = d.get_resource(i, mod);
 
 			// size of first frame
 			_anim_frames = anim::get_animation_frames(*_anim);
@@ -832,15 +835,25 @@ namespace hades::data
 		else
 			_new_datafile = {};
 
+		// TODO: func for this
 		if (_new_datafile.open)
 		{
 			if (g.window_begin("create new data file"sv, _new_datafile.open))
 			{
-				g.text("Create a new datafile with the following name\nand move "sv);
+				g.text("Create a new datafile with the following name"sv);
+				g.text("and move "sv);
 				g.same_line();
-				g.text(_tree_state.res_editor->resource_name());
+
+				//remove hidden elements from the resource display name
+				// res editors may be storing the imgui id in the end of the name
+				// eg. "resource name##type"
+				const auto name = _tree_state.res_editor->resource_name();
+				constexpr auto hashes = std::array{ '#', '#' };
+				const auto name_beg = begin(name);
+				auto iter = std::find_first_of(name_beg, end(name), begin(hashes), end(hashes));
+				g.text({ name_beg, iter });
 				g.same_line();
-				g.text(" into it"sv);
+				g.text(" into it."sv);
 
 				g.input("filename"sv, _new_datafile.name);
 
@@ -857,6 +870,7 @@ namespace hades::data
 					_new_datafile = {};
 				}
 			}
+			g.window_end();
 		}
 		return;
 	}
@@ -932,14 +946,23 @@ namespace hades::data
 	{
 		while (first != last)
 		{
-			const auto tree_open = g.tree_node(first->name, gui::tree_node_flags::leaf);
+			auto tree_flags = gui::tree_node_flags::leaf;
+			if (_tree_state.res_editor)
+			{
+				const auto res = _tree_state.res_editor->get();
+				assert(res);
+				if(res->mod == first->mod_id &&
+					res->id == first->id)
+					tree_flags |= gui::tree_node_flags::selected;
+			}
+			const auto tree_open = g.tree_node(first->name, tree_flags);
 			const auto max = g.get_item_rect_max();
 			rect_max.x = std::max(max.x, rect_max.x);
 			rect_max.y = std::max(max.y, rect_max.y);
 
 			if (_show_by_data_file && _mod == first->mod_id && g.begin_dragdrop_source(gui::dragdrop_flags::source_no_hold_to_open_others))
 			{
-				auto res = d.get_resource(first->id, first->mod_id);
+				auto res = d.get_resource(first->id, mod);
 				g.set_dragdrop_payload(res, dragdrop_type_name);
 				g.text(first->name);
 				g.end_dragdrop_source();
@@ -974,15 +997,13 @@ namespace hades::data
 	{
 		const auto dat = d.get_mod_stack();
 		// build the list of resource types
-		auto& g = _tree_state.resource_groups;
-		g.clear();
-
 		const auto& mod_index = _tree_state.mod_index;
 
 		const auto stack_end = mod_index >= size(dat) ?
 			end(dat) : next(begin(dat), mod_index + 1);
 		
 		auto& group = _tree_state.resource_groups;
+		group.clear();
 
 		auto iter = begin(dat);
 		if (_show_by_data_file)
@@ -1009,7 +1030,11 @@ namespace hades::data
 			return left.id == right.id;
 		};
 
-		remove_duplicates(group, less, equal);
+		const auto beg = rbegin(group);
+		const auto end = rend(group);
+		std::stable_sort(beg, end, less);
+		auto last = std::unique(beg, end, equal);
+		group.erase(end.base(), last.base());
 
 		if (_show_by_data_file)
 		{
@@ -1122,8 +1147,9 @@ namespace hades::data
 							g.tree_pop();
 						}
 
+						constexpr auto min_offset = 4.f;
 						if (ImGui::BeginDragDropTargetCustom(
-							ImRect{min.x, min.y, max.x, max.y},
+							ImRect{ min.x + min_offset, min.y + min_offset, max.x, max.y },
 							ImGui::GetID((data_file + "+dragdrop_target"s).c_str())))
 						{
 							const auto drop = g.accept_dragdrop_payload<resources::resource_base*>(dragdrop_type_name);

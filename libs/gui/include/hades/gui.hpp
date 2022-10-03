@@ -931,6 +931,13 @@ namespace hades
 	namespace details
 	{
 		template<typename Enum>
+		concept EnumFlag = requires(Enum a, Enum b)
+		{
+			requires std::is_enum_v<Enum>;
+			a | b;
+		};
+
+		template<typename Enum>
 		constexpr inline Enum enum_or(Enum lhs, Enum rhs) noexcept
 		{
 			using T = std::underlying_type_t<Enum>;
@@ -972,6 +979,11 @@ namespace hades
 	constexpr inline gui::dragdrop_flags operator|(gui::dragdrop_flags lhs, gui::dragdrop_flags rhs) noexcept
 	{
 		return details::enum_or(lhs, rhs);
+	}
+
+	constexpr inline details::EnumFlag auto operator|=(details::EnumFlag auto& a, const details::EnumFlag auto b) noexcept
+	{
+		return a = a | b;
 	}
 
 	//NOTE: right_max is absolute, not relative to the current elements x position

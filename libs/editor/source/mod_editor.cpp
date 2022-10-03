@@ -114,11 +114,22 @@ namespace hades
 				_gui.menu_end();
 			}
 
-			if (_gui.menu_begin("Mod"))
+			if (_gui.menu_begin("Mod"sv))
 			{
 				if (_gui.menu_item("Edit mod properties...", _current_mod))
 				{
 					_edit_mod_window.open = true;
+				}
+				_gui.menu_end();
+			}
+
+			if (_gui.menu_begin("Resource"sv))
+			{
+				const auto res_open = _inspector.is_resource_open();
+				const auto res = _inspector.get_current_resource();
+				if (_gui.menu_item("Create new datafile for current resource"sv, res_open && res->mod == _current_mod))
+				{
+					_inspector.prompt_new_data_file();
 				}
 				_gui.menu_end();
 			}

@@ -24,6 +24,8 @@ namespace hades::data
 
 		virtual void set_target(data_manager&, unique_id, unique_id mod) = 0;
 		virtual void update(data_manager&, gui&) = 0;
+		virtual std::string resource_name() const = 0;
+		virtual resources::resource_base* get() const noexcept = 0;
 
 	private:
 		unique_id _editable = unique_zero;
@@ -40,6 +42,13 @@ namespace hades::data
 				_tree_state.res_editor->set_editable_mod(_mod);
 			return;
 		}
+
+		bool is_resource_open() const noexcept;
+		// opens a prompt to move the currently selected
+		// resource to a new data file
+		void prompt_new_data_file() noexcept;
+
+		const resources::resource_base* get_current_resource() const noexcept;
 
 		struct resource_tree_state
 		{
@@ -64,14 +73,21 @@ namespace hades::data
 		virtual std::unique_ptr<resource_editor> make_resource_editor(std::string_view resource_type);
 
 	private:
+		struct new_data_file_prompt
+		{
+			bool open = false;
+			std::string name = "new_data_file.yaml";
+		};
+
 		void _list_resources_from_data_file(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
-			data_manager&, unique_id);
+			data_manager&, unique_id, vector_float&);
 		void _list_resources_from_group(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
-			data_manager&, unique_id);
+			data_manager&, unique_id, vector_float&);
 		void _refresh(data_manager&);
 		void _resource_tree(gui&, data::data_manager&);
 
 		resource_tree_state _tree_state;
+		new_data_file_prompt _new_datafile;
 		bool _show_by_data_file = false;
 		unique_id _mod = unique_zero;
 	};

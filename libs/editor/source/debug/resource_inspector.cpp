@@ -2,6 +2,8 @@
 
 #include "SFML/Graphics/Image.hpp"
 
+#include "imgui_internal.h" // for BeginDragDropTargetCustom
+
 #include "ImGuiFileDialog.h"
 
 #include "hades/animation.hpp"
@@ -261,6 +263,16 @@ namespace hades::data
 
 			g.window_end();
 			return;
+		}
+
+		std::string resource_name() const override
+		{
+			return _name;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _base;
 		}
 
 	private:
@@ -555,6 +567,16 @@ namespace hades::data
 			return;
 		}
 
+		std::string resource_name() const override
+		{
+			return _name;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _texture_base;
+		}
+
 	private:
 		void _make_file_dialog()
 		{
@@ -775,6 +797,16 @@ namespace hades::data
 			g.window_end();
 		}
 
+		std::string resource_name() const override
+		{
+			return _title;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _base;
+		}
+
 	private:
 		struct entry_t
 		{
@@ -788,7 +820,7 @@ namespace hades::data
 		std::string* _last_focused = {};
 		std::size_t _completion_index;
 		resources::animation_group* _group = {};
-		const resources::resource_base* _base = {};
+		resources::resource_base* _base = {};
 	};
 
 	void basic_resource_inspector::update(gui& g, data::data_manager& d)
@@ -797,7 +829,55 @@ namespace hades::data
 
 		if (_tree_state.res_editor)
 			_tree_state.res_editor->update(d, g);
+		else
+			_new_datafile = {};
+
+		if (_new_datafile.open)
+		{
+			if (g.window_begin("create new data file"sv, _new_datafile.open))
+			{
+				g.text("Create a new datafile with the following name\nand move "sv);
+				g.same_line();
+				g.text(_tree_state.res_editor->resource_name());
+				g.same_line();
+				g.text(" into it"sv);
+
+				g.input("filename"sv, _new_datafile.name);
+
+				if (g.button("create"sv))
+				{
+					auto res = _tree_state.res_editor->get();
+					res->data_file = _new_datafile.name;
+					_refresh(d);
+					_new_datafile = {};
+				}
+
+				if (g.button("cancel"sv))
+				{
+					_new_datafile = {};
+				}
+			}
+		}
 		return;
+	}
+
+	bool basic_resource_inspector::is_resource_open() const noexcept
+	{
+		return static_cast<bool>(_tree_state.res_editor);
+	}
+
+	void basic_resource_inspector::prompt_new_data_file() noexcept
+	{
+		assert(_tree_state.res_editor);
+		_new_datafile.open = true;
+		return;
+	}
+
+	const resources::resource_base* basic_resource_inspector::get_current_resource() const noexcept
+	{
+		if (!_tree_state.res_editor)
+			return nullptr;
+		return _tree_state.res_editor->get();
 	}
 
 	std::unique_ptr<resource_editor> basic_resource_inspector::make_resource_editor(std::string_view s)
@@ -815,11 +895,9 @@ namespace hades::data
 	void basic_resource_inspector::_list_resources_from_data_file(
 		resource_tree_state::group_iter first,
 		resource_tree_state::group_iter last,
-		gui& g,	data_manager& d, unique_id mod)
+		gui& g,	data_manager& d, unique_id mod,
+		vector_float& rect_max)
 	{
-		if (first == last)
-			return;
-
 		while (first != last)
 		{
 			auto type = first->res_type;
@@ -828,9 +906,14 @@ namespace hades::data
 				next->res_type == type)
 				++next;
 
-			if (g.tree_node(empty(type) ? "unknown"sv : type))
+			const auto tree = g.tree_node(empty(type) ? "unknown"sv : type);
+			const auto max = g.get_item_rect_max();
+			rect_max.x = std::max(max.x, rect_max.x);
+			rect_max.y = std::max(max.y, rect_max.y);
+
+			if (tree)
 			{
-				_list_resources_from_group(first, next, g, d, mod);
+				_list_resources_from_group(first, next, g, d, mod, rect_max);
 				g.tree_pop();
 			}
 
@@ -844,13 +927,17 @@ namespace hades::data
 	void basic_resource_inspector::_list_resources_from_group(
 		resource_tree_state::group_iter first,
 		resource_tree_state::group_iter last,
-		gui& g, data_manager& d, unique_id mod)
+		gui& g, data_manager& d, unique_id mod,
+		vector_float& rect_max)
 	{
 		while (first != last)
 		{
 			const auto tree_open = g.tree_node(first->name, gui::tree_node_flags::leaf);
+			const auto max = g.get_item_rect_max();
+			rect_max.x = std::max(max.x, rect_max.x);
+			rect_max.y = std::max(max.y, rect_max.y);
 
-			if (_show_by_data_file && _mod == first->mod_id && g.begin_dragdrop_source())
+			if (_show_by_data_file && _mod == first->mod_id && g.begin_dragdrop_source(gui::dragdrop_flags::source_no_hold_to_open_others))
 			{
 				auto res = d.get_resource(first->id, first->mod_id);
 				g.set_dragdrop_payload(res, dragdrop_type_name);
@@ -990,14 +1077,22 @@ namespace hades::data
 				g.combo_end();
 			}
 
+			const auto built_in = _tree_state.mod_index == std::size_t{};
+			if (built_in)
+				g.begin_disabled();
 			const auto data_file_toggle = g.checkbox("Show by data file"sv, _show_by_data_file);
-
+			if (built_in)
+				g.end_disabled();
 			if (no_mod)
 				g.end_disabled();
 
 			if (current_mod != _tree_state.mod_index ||
 				data_file_toggle)
+			{
+				if (built_in)
+					_show_by_data_file = false;
 				_refresh(d);
+			}
 
 			g.next_window_size({}, hades::gui::set_condition_enum::first_use);
 			if (g.child_window_begin("##resource-tree-list"sv))
@@ -1017,8 +1112,19 @@ namespace hades::data
 						
 						assert(!empty(data_file));
 						const auto tree_node = g.tree_node(data_file);
+						const auto min = g.get_item_rect_min();
+						auto max = g.get_item_rect_max();
 
-						if (g.begin_dragdrop_target())
+						if (tree_node)
+						{
+							_list_resources_from_data_file(iter, next, g, d,
+								mods[_tree_state.mod_index]->mod_info.id, max);	
+							g.tree_pop();
+						}
+
+						if (ImGui::BeginDragDropTargetCustom(
+							ImRect{min.x, min.y, max.x, max.y},
+							ImGui::GetID((data_file + "+dragdrop_target"s).c_str())))
 						{
 							const auto drop = g.accept_dragdrop_payload<resources::resource_base*>(dragdrop_type_name);
 							if (drop.is_delivery())
@@ -1028,13 +1134,7 @@ namespace hades::data
 								ret->data_file = data_file;
 								needs_refresh = true;
 							}
-						}
-
-						if (tree_node)
-						{
-							_list_resources_from_data_file(iter, next, g, d,
-								mods[_tree_state.mod_index]->mod_info.id);
-							g.tree_pop();
+							g.end_dragdrop_target();
 						}
 
 						iter = next;
@@ -1045,8 +1145,9 @@ namespace hades::data
 				}
 				else
 				{
+					auto unused_max = gui::vector2{};
 					_list_resources_from_data_file(iter, end, g, d,
-							mods[_tree_state.mod_index]->mod_info.id);
+							mods[_tree_state.mod_index]->mod_info.id, unused_max);
 				} // ! _show_by_data_file
 			} g.child_window_end();
 		}

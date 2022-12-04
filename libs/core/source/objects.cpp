@@ -371,10 +371,9 @@ namespace hades::resources::object_functions
 			if (iter == end(o.curves))
 			{
 				auto value = to_unloaded_curve(*c, v);
-				auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
-				std::ignore = lock;
+				auto& d = data::detail::get_data_manager();
 				o.curves.emplace_back(object::unloaded_curve{
-					d->make_resource_link<curve>(i, o.id),
+					d.make_resource_link<curve>(i, o.id),
 					std::move(value)
 					});
 			}
@@ -435,8 +434,7 @@ namespace hades::resources::object_functions
 
 		auto found_curves = curve_list{};
 
-		auto [d, lock] = data::detail::get_data_manager_exclusive_lock();
-		std::ignore = lock;
+		auto &d = data::detail::get_data_manager();
 		while (!objects.empty())
 		{
 			const auto top = objects.top();
@@ -446,7 +444,7 @@ namespace hades::resources::object_functions
 				});
 
 			if (iter != end(top->curves))
-				found_curves.emplace_back(object::curve_obj{ iter->curve.get(), curve_from_str(*d, *iter->curve.get(), iter->value) });
+				found_curves.emplace_back(object::curve_obj{ iter->curve.get(), curve_from_str(d, *iter->curve.get(), iter->value) });
 
 			for (auto& obj : top->base)
 				objects.push(obj.get());

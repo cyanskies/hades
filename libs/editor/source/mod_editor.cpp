@@ -62,7 +62,7 @@ namespace hades
 		_gui.update(dt);
 		_gui.frame_begin();
 
-		[[maybe_unused]] auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
+		auto& data_man = data::detail::get_data_manager();
 		
 		if (_gui.main_menubar_begin())
 		{
@@ -87,7 +87,7 @@ namespace hades
 						if (_gui.menu_item(m, !_current_mod))
 						{
 							_mode = edit_mode::already_loaded;
-							_set_loaded_mod(m, *data_man);
+							_set_loaded_mod(m, data_man);
 						}
 						if (disabled)
 							_gui.end_disabled();
@@ -97,16 +97,17 @@ namespace hades
 				}
 
 				if (_gui.menu_item("Save mod"sv, _current_mod))
-					data_man->export_mod(_current_mod);
+					data_man.export_mod(_current_mod);
 
 				if (_gui.menu_item("Save mod as..."sv, _current_mod))
 				{
-					const auto& name = data_man->get_as_string(_current_mod);
+					_close_windows();
+					const auto& name = data_man.get_as_string(_current_mod);
 					_save_as_window = { name, mod_exists(name), true };
 				}
 
 				if (_gui.menu_item("Close mod"sv, _current_mod))
-					_close_mod(*data_man);
+					_close_mod(data_man);
 
 				if (_gui.menu_item("Exit"sv))
 					kill();
@@ -175,7 +176,7 @@ namespace hades
 				if (_gui.button("Load"sv))
 				{
 					_mode = edit_mode::normal;
-					_set_mod(_load_mod.name, *data_man);
+					_set_mod(_load_mod.name, data_man);
 					log_debug("Loaded mod: " + _load_mod.name);
 				}
 				if (disabled)
@@ -196,7 +197,7 @@ namespace hades
 					_gui.begin_disabled();
 
 				if (_gui.button("Save"sv))
-					data_man->export_mod(_current_mod, _save_as_window.name);
+					data_man.export_mod(_current_mod, _save_as_window.name);
 				
 				if (disabled)
 					_gui.end_disabled();
@@ -210,9 +211,9 @@ namespace hades
 			_gui.window_end();
 		}
 
-		_mod_properties(_gui, *data_man);
+		_mod_properties(_gui, data_man);
 
-		_inspector.update(_gui, *data_man);
+		_inspector.update(_gui, data_man);
 		_gui.frame_end();
 	}
 
@@ -241,9 +242,9 @@ namespace hades
 		const auto background_colour = sf::Color{ 200u, 200u, 200u, 255u };
 		_backdrop.setFillColor(background_colour);
 
-		auto [data_man, lock] = data::detail::get_data_manager_exclusive_lock();
+		auto& data_man = data::detail::get_data_manager();
 
-		const auto mods = data_man->get_mod_stack();
+		const auto mods = data_man.get_mod_stack();
 		_mods.clear();
 
 		for (const auto& m : mods)

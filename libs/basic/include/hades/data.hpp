@@ -189,7 +189,10 @@ namespace hades
 
 			virtual ~data_manager() = default;
 
-			virtual void register_resource_type(std::string_view name, resources::parser_func parser) = 0;
+			void register_resource_type(std::string_view name, resources::parser_func parser)
+			{
+				return register_type(name, parser);
+			}
 
 			//returns a resource if it exists, or creates it if it doesn't
 			//this should be used when writing parsers
@@ -235,9 +238,6 @@ namespace hades
 			template<typename T>
 			struct try_get_return
 			{
-				//try_get_return(T* t) : result(t) {}
-				//try_get_return(get_error e) : error(e) {}
-
 				T *result = nullptr;
 				get_error error = get_error::ok;
 			};
@@ -251,6 +251,7 @@ namespace hades
 			template<Resource T>
 			try_get_return<T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
 
+			// update all resource links to point to the latest version of the target resource
 			void update_all_links();
 
 			void erase(unique_id id, std::optional<unique_id> mod = {}) noexcept;
@@ -262,16 +263,22 @@ namespace hades
 				std::vector<resource_group> resources_by_type;
 			};
 
-			virtual bool try_load_mod(std::string_view) = 0;
+			bool try_load_mod(std::string_view mod)
+			{
+				const auto lock = std::unique_lock{ _mut };
+				return try_load_mod_impl(mod);
+			}
 
-			// TODO: these should be protected:
 			void push_mod(mod);
 			void pop_mod();
 
 			// export the mod 'id' 
-			// set a filename to save as a different name
-			virtual void export_mod(unique_id, std::string_view = {}) = 0;
-
+			// set a name to save as a different name
+			void export_mod(unique_id id, std::string_view name = {})
+			{
+				return export_mod_impl(id, name);
+			}
+			
 			// TODO: unload leaf
 			//		removes mods loaded by a mission
 
@@ -289,16 +296,51 @@ namespace hades
 			std::vector<std::string_view> get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod = {}) const;
 
 			//refresh functions request that the mentioned resources be pre-loaded
-			virtual void refresh() = 0;
-			virtual void refresh(unique_id) = 0;
+			void refresh()
+			{
+				return refresh_impl();
+			}
 
-			virtual void abandon_refresh(unique_id, std::optional<unique_id> = {}) = 0;
+			void refresh(unique_id id)
+			{
+				return refresh_impl(id);
+			}
 
-			virtual const string& get_as_string(unique_id id) const noexcept = 0;
-			virtual unique_id get_uid(std::string_view name) const = 0;
-			virtual unique_id get_uid(std::string_view name) = 0;
+			void abandon_refresh(unique_id id, std::optional<unique_id> mod = {})
+			{
+				return abandon_refresh_impl(id, mod);
+			}
+
+			const string& get_as_string(unique_id id) const noexcept
+			{
+				return get_as_string_impl(id);
+			}
+
+			unique_id get_uid(std::string_view name) const
+			{
+				return get_uid_impl(name);
+			}
+
+			unique_id get_uid(std::string_view name)
+			{
+				return get_uid_impl(name);
+			}
 
 		protected:
+			// called by register_resource_type
+			virtual void register_type(std::string_view name, resources::parser_func parser) = 0;
+			virtual bool try_load_mod_impl(std::string_view) = 0; 
+			virtual void export_mod_impl(unique_id, std::string_view) = 0;
+
+			virtual void refresh_impl() = 0;
+			virtual void refresh_impl(unique_id) = 0;
+			virtual void abandon_refresh_impl(unique_id, std::optional<unique_id>) = 0;
+
+
+			virtual const string& get_as_string_impl(unique_id id) const noexcept = 0;
+			virtual unique_id get_uid_impl(std::string_view name) const = 0;
+			virtual unique_id get_uid_impl(std::string_view name) = 0;
+
 			virtual const std::filesystem::path& _current_data_file() const noexcept = 0;
 
 		private:
@@ -308,11 +350,26 @@ namespace hades
 				std::vector<resources::resource_base*> resources;
 			};
 
+			bool _exists(unique_id id) const;
+			template<Resource T>
+			resources::resource_link<T> _make_resource_link(unique_id id, unique_id from,
+				typename resources::resource_link_type<T>::get_func);
+			resources::resource_base* _try_get_resource(unique_id, std::optional<unique_id>) noexcept;
+
+			template<Resource T>
+			try_get_return<T> _try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
+
+
 			mod_storage& _get_mod(unique_id);
 			//creates a resource with the value of ptr
 			//and assigns it to the name id
 			//throws resource_name_already_used if the id already refers to a resource
 			Resource auto* _set(Resource auto ptr, std::string_view group);
+
+			// mutex for _resources, _mod_stack, _resource_base_ptrs
+			mutable std::shared_mutex _mut;
+			// mutex for _resource_links
+			std::mutex _links_mut;
 
 			resource_collection _resources;
 			std::vector<mod_storage> _mod_stack;
@@ -323,10 +380,7 @@ namespace hades
 		namespace detail
 		{
 			void set_data_manager_ptr(data_manager* ptr);
-			using exclusive_lock = std::unique_lock<std::shared_mutex>;
-			//TODO: return data_manager& here instead; as user is not permitted to store the result
-			using data_manager_exclusive = std::tuple<data_manager*, exclusive_lock>;
-			data_manager_exclusive get_data_manager_exclusive_lock();
+			data_manager& get_data_manager();
 		}
 
 		// TODO: move these to the top of the file

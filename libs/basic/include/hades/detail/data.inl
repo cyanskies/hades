@@ -11,10 +11,8 @@ namespace hades
 		template<typename T>
 		inline void resource_link_type<T>::update_link(data::data_manager& d)
 		{
-			//LOGERROR("Tried to create resource link to incorrect type. Link from: "
-				//+ get_as_string(from) + " to " + get_as_string(id));
 			assert(id());
-			_resource = std::invoke(_get, d, id());// data::get<T>(id());
+			_resource = std::invoke(_get, d, id());
 			return;
 		}
 
@@ -53,12 +51,6 @@ namespace hades
 			using namespace std::string_literals;
 			using Type = std::decay_t<T>;
 
-			// NOTE: member variable ptr
-			// this is a work around for syntax error when T == resources::mod
-			// need to disambiguate r->mod when mod is also the name of T
-			// compiler(MSVC) mistakes mod for an illegal constructor call
-			//constexpr auto member_ptr = &resources::resource_base::mod;
-
 			Type* r = nullptr;
 
 			if (target == unique_zero)
@@ -67,11 +59,13 @@ namespace hades
 				return r;
 			}
 
+			const auto lock = std::unique_lock{ _mut };
+
 			assert(!empty(_mod_stack));
 			if (!mod)
 				mod = _mod_stack.front().mod_info.id;
 
-			if (!exists(target))
+			if (!_exists(target))
 			{
 				auto res = T{};
 				res.id = target;
@@ -82,7 +76,7 @@ namespace hades
 			else
 			{
 				//get the one from the correct mod
-				auto [get_r, e]= try_get<Type>(target, no_load);
+				auto [get_r, e]= _try_get<Type>(target, no_load);
 
 				if (!get_r)
 				{
@@ -112,9 +106,12 @@ namespace hades
 		template<Resource T>
 		inline std::vector<T*> data_manager::find_or_create(const std::vector<unique_id>& target, std::optional<unique_id> mod, std::string_view group)
 		{
-			assert(!empty(_mod_stack));
-			if (!mod)
-				mod = _mod_stack.front().mod_info.id;
+			{
+				const auto lock = std::shared_lock{ _mut };
+				assert(!empty(_mod_stack));
+				if (!mod)
+					mod = _mod_stack.front().mod_info.id;
+			}
 
 			std::vector<T*> out;
 			out.reserve(target.size());
@@ -130,31 +127,8 @@ namespace hades
 		resources::resource_link<T> data_manager::make_resource_link(unique_id id, unique_id from,
 			typename resources::resource_link_type<T>::get_func get)
 		{
-			using namespace std::string_literals;
-			if (!id)
-			{
-				LOGERROR("Tried to make link to zero id from: "s + get_as_string(from));
-				return {};
-			}
-
-			for (const auto& link : _resource_links)
-			{
-				if (link->id() == id)
-				{
-					const auto link_ptr = dynamic_cast<resources::resource_link_type<T>*>(link.get());
-					if (link_ptr)
-					{
-						link->add_reverse_link(from);
-						return { link_ptr };
-					}
-				}
-			}
-
-			auto link_type = std::make_unique<resources::resource_link_type<T>>(id, get);
-			const auto ret = resources::resource_link<T>{ link_type.get() };
-			link_type->add_reverse_link(from);
-			_resource_links.emplace_back(std::move(link_type));
-			return ret;
+			const auto lock = std::scoped_lock{ _links_mut };
+			return _make_resource_link<T>(id, from, get);
 		}
 
 		template<Resource T>
@@ -164,8 +138,10 @@ namespace hades
 			auto out = std::vector<resources::resource_link<T>>{};
 			out.reserve(size(ids));
 
+			const auto lock = std::scoped_lock{ _links_mut };
+
 			const auto func = [this, from, getter](const unique_id id) {
-				return make_resource_link<T>(id, from, getter);
+				return _make_resource_link<T>(id, from, getter);
 			};
 
 			std::transform(begin(ids), end(ids), back_inserter(out), func);
@@ -217,9 +193,48 @@ namespace hades
 		}
 
 		template<Resource T>
-        inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) noexcept
+		inline data_manager::try_get_return<T> data_manager::try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) noexcept
 		{
-			auto res = try_get_resource(id, mod);
+			const auto lock = std::shared_lock{ _mut };
+			return  _try_get<std::decay_t<T>>(id, no_load, mod);
+		}
+
+		template<Resource T>
+		resources::resource_link<T> data_manager::_make_resource_link(unique_id id, unique_id from,
+			typename resources::resource_link_type<T>::get_func get)
+		{
+			// NOTE: expects _links_mut to be held
+			using namespace std::string_literals;
+			if (!id)
+			{
+				LOGERROR("Tried to make link to zero id from: "s + get_as_string(from));
+				return {};
+			}
+
+			for (const auto& link : _resource_links)
+			{
+				if (link->id() == id)
+				{
+					const auto link_ptr = dynamic_cast<resources::resource_link_type<T>*>(link.get());
+					if (link_ptr)
+					{
+						link->add_reverse_link(from);
+						return { link_ptr };
+					}
+				}
+			}
+
+			auto link_type = std::make_unique<resources::resource_link_type<T>>(id, get);
+			const auto ret = resources::resource_link<T>{ link_type.get() };
+			link_type->add_reverse_link(from);
+			_resource_links.emplace_back(std::move(link_type));
+			return ret;
+		}
+
+		template<Resource T>
+        inline data_manager::try_get_return<T> data_manager::_try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) noexcept
+		{
+			auto res = _try_get_resource(id, mod);
 			if (!res)
 				return { nullptr, get_error::no_resource_for_id };
 
@@ -268,26 +283,22 @@ namespace hades
 		template<Resource T>
 		const T* get(unique_id id, std::optional<unique_id> mod)
 		{
-			data_manager* data = nullptr;
-			detail::exclusive_lock lock;
-			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
-			return data->get<T>(id, mod);
+			return detail::get_data_manager().get<T>(id, mod);
 		}
 
 		template<Resource T>
 		const T* get(const unique_id id, const no_load_t, std::optional<unique_id> mod)
 		{
-			auto [data, lock] = detail::get_data_manager_exclusive_lock();
-			std::ignore = lock;
-			return data->get<T>(id, no_load, mod);
+			return detail::get_data_manager().get<T>(id, no_load, mod);
 		}
 
 		template<Resource T>
 		data_manager::try_get_return<const T> try_get(unique_id id, std::optional<unique_id> mod)
 		{
-			const auto &[data, lock] = detail::get_data_manager_exclusive_lock();
-			auto[anim, error] = data->try_get<T>(id, mod);
-			return { anim, error };
+			// NOTE: need to convert try_get_return<T> !not const
+			//		to try_get_return<const T>
+			auto [res, err] = detail::get_data_manager().try_get<T>(id, mod);
+			return { res, err };
 		}
 	}
 }

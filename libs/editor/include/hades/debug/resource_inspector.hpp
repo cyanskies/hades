@@ -107,9 +107,8 @@ namespace hades::debug
 	public:
 		void update(gui& g) override
 		{
-			[[maybe_unused]]
-			auto [data, lock] = data::detail::get_data_manager_exclusive_lock();
-			_inspector.update(g, *data);
+			auto& data = data::detail::get_data_manager();
+			_inspector.update(g, data);
 			return;
 		}
 

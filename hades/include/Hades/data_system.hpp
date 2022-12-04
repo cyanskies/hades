@@ -21,7 +21,7 @@ namespace hades::data
 
 		//application registers the custom resource types
 		//parser must convert yaml into a resource manifest object
-		void register_resource_type(std::string_view name, resources::parser_func parser) override;
+		void register_type(std::string_view name, resources::parser_func parser) override;
 
 		//game is the name of a folder or archive containing a game.yaml file
 		void load_game(std::string_view game);
@@ -29,7 +29,7 @@ namespace hades::data
 		// throws parser_exception
 		void add_mod(std::string_view mod, bool autoLoad = false, std::filesystem::path name = "./mod.yaml");
 
-		bool try_load_mod(std::string_view) override;
+		bool try_load_mod_impl(std::string_view) override;
 
 		//returns true if the mod or game with that name has been parsed
 		//note: this uses the mods self identified name, not the archive or folder name(as this can change in debug mode)
@@ -40,11 +40,11 @@ namespace hades::data
 
 		//adds all objects into the load queue
 		//note: this wont effect resources that are only parsed(strings and game parameters)
-		void refresh() override;
+		void refresh_impl() override;
 		//adds a specific resource into the load queue
-		void refresh(unique_id) override;
+		void refresh_impl(unique_id) override;
 
-		void abandon_refresh(unique_id, std::optional<unique_id>) override;
+		void abandon_refresh_impl(unique_id, std::optional<unique_id>) override;
 
 		//adds a range to the load queue
 		//template<Iter>
@@ -66,12 +66,12 @@ namespace hades::data
 		//template<Iter>
 		//void load(Iter first, Iter last);
 
-		void export_mod(unique_id, std::string_view) override;
+		void export_mod_impl(unique_id, std::string_view) override;
 
 		//convert string to uid
-		const types::string& get_as_string(unique_id id) const noexcept override;
-		unique_id get_uid(std::string_view name) const override;
-		unique_id get_uid(std::string_view name) override;
+		const types::string& get_as_string_impl(unique_id id) const noexcept override;
+		unique_id get_uid_impl(std::string_view name) const override;
+		unique_id get_uid_impl(std::string_view name) override;
 
 	protected:
 		const std::filesystem::path& _current_data_file() const noexcept override
@@ -97,6 +97,7 @@ namespace hades::data
 		//map of names to Uids
 		std::unordered_map<string, unique_id> _ids;
 		//list of unloaded resources
+		std::mutex _load_mutex;
 		std::vector<resources::resource_base*> _loadQueue;
 	};
 }

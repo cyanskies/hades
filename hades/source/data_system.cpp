@@ -29,7 +29,7 @@ namespace hades::data
 
 	//application registers the custom resource types
 	//parser must convert yaml into a resource manifest object
-	void data_system::register_resource_type(std::string_view name, resources::parser_func parser)
+	void data_system::register_type(std::string_view name, resources::parser_func parser)
 	{
 		_resourceParsers[to_string(name)] = parser;
 	}
@@ -97,7 +97,7 @@ namespace hades::data
 		}
 	}
 
-	bool data_system::try_load_mod(std::string_view mod)
+	bool data_system::try_load_mod_impl(std::string_view mod)
 	{
 		const auto old_stack = get_mod_count();
 		try
@@ -162,7 +162,7 @@ namespace hades::data
 		}
 	}
 
-	void data_system::refresh()
+	void data_system::refresh_impl()
 	{
 		//note: load queue can be full of duplicates,
 		//the load functions resolve them
@@ -170,14 +170,16 @@ namespace hades::data
 			refresh(id.second);
 	}
 
-	void data_system::refresh(unique_id id)
+	void data_system::refresh_impl(unique_id id)
 	{
+		const auto lock = std::scoped_lock{ _load_mutex };
 		if (exists(id))
 			_loadQueue.push_back(get_resource(id));
 	}
 
-	void data_system::abandon_refresh(unique_id id, std::optional<unique_id> mod)
+	void data_system::abandon_refresh_impl(unique_id id, std::optional<unique_id> mod)
 	{
+		const auto lock = std::scoped_lock{ _load_mutex };
 		auto end = std::end(_loadQueue);
 		for (auto res = begin(_loadQueue); res != end;)
 		{
@@ -196,6 +198,7 @@ namespace hades::data
 
 	void data_system::load()
 	{
+		const auto lock = std::scoped_lock{ _load_mutex };
 		auto res = std::vector<resources::resource_base*>{ std::move(_loadQueue) };
 		_loadQueue = {};
 		
@@ -210,6 +213,7 @@ namespace hades::data
 
 	void data_system::load(unique_id id)
 	{
+		const auto lock = std::scoped_lock{ _load_mutex };
 		auto resource = get_resource(id);
 		//erase all the matching id's
 		_loadQueue.erase(std::remove(_loadQueue.begin(), _loadQueue.end(), resource), _loadQueue.end());
@@ -220,6 +224,7 @@ namespace hades::data
 
 	void data_system::load(types::uint8 count)
 	{
+		const auto lock = std::scoped_lock{ _load_mutex };
 		remove_duplicates(_loadQueue);
 
 		while (count-- > 0 && !_loadQueue.empty())
@@ -229,7 +234,7 @@ namespace hades::data
 		}
 	}
 
-	void data_system::export_mod(unique_id mod, std::string_view name)
+	void data_system::export_mod_impl(unique_id mod, std::string_view name)
 	{
 		if (name == std::string_view{})
 			name = get_as_string(mod);
@@ -267,7 +272,7 @@ namespace hades::data
 	}
 
 	//convert string to uid
-	const string &data_system::get_as_string(const unique_id uid) const noexcept
+	const string &data_system::get_as_string_impl(const unique_id uid) const noexcept
 	{
 		for (const auto &id : _ids)
 		{
@@ -281,7 +286,7 @@ namespace hades::data
 		return unnamed_id_string;
 	}
 
-	unique_id data_system::get_uid(std::string_view name) const
+	unique_id data_system::get_uid_impl(std::string_view name) const
 	{
 		if (name.empty())
 			return unique_id::zero;
@@ -294,7 +299,7 @@ namespace hades::data
 		return id->second;
 	}
 
-	unique_id data_system::get_uid(std::string_view name)
+	unique_id data_system::get_uid_impl(std::string_view name)
 	{
 		if (name.empty())
 			return unique_id::zero;

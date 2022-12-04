@@ -12,50 +12,20 @@ namespace hades
 {
 	namespace data
 	{
-		using lock_t = detail::exclusive_lock;
-		using shared_lock_t = std::shared_lock<std::shared_mutex>;
-
 		namespace detail
 		{
-			static std::shared_mutex data_mutex;
-			static data_manager* ptr = nullptr;
+			static data_manager* ptr = {};
 
 			void set_data_manager_ptr(data_manager* new_ptr)
 			{
 				assert(ptr == nullptr);
 				ptr = new_ptr;
 			}
-		
-			data_manager_exclusive get_data_manager_exclusive_lock()
+
+			data_manager& get_data_manager()
 			{
-				if (ptr == nullptr)
-					throw provider_unavailable("data_manager provider unavailable");
-
-				lock_t lock(data_mutex);
-				return std::make_tuple(ptr, std::move(lock));
-			}
-
-			bool data_manager_can_lock_shared() noexcept
-			{
-				const auto lock = std::shared_lock{ data_mutex, std::try_to_lock };
-				return lock.owns_lock();
-			}
-
-			bool data_manager_can_lock_exclusive() noexcept
-			{
-				const auto lock = std::unique_lock{ data_mutex, std::try_to_lock };
-				return lock.owns_lock();
-			}
-
-			using data_manager_shared = std::tuple<const data_manager*, shared_lock_t>;
-
-			data_manager_shared get_data_manager_ptr_shared()
-			{
-				if (ptr == nullptr)
-					throw provider_unavailable("data_manager provider unavailable");
-
-				shared_lock_t lock(data_mutex);
-				return std::make_tuple(ptr, std::move(lock));
+				assert(ptr);
+				return *ptr;
 			}
 		}
 
@@ -125,7 +95,7 @@ namespace hades
 
 		void data_manager::update_all_links()
 		{
-			const auto lock = std::unique_lock{ _links_mut };
+			const auto lock = std::scoped_lock{ _links_mut };
 			for (auto& link : _resource_links)
 			{
 				try
@@ -322,49 +292,27 @@ namespace hades
 
 		bool exists(unique_id id)
 		{
-			const data_manager* data = nullptr;
-			shared_lock_t lock;
-
-			std::tie(data, lock) = detail::get_data_manager_ptr_shared();
-
-			return data->exists(id);
+			return detail::get_data_manager().exists(id);
 		}
 
 		const string& get_as_string(const unique_id id)
 		{
-			auto [data, lock] = detail::get_data_manager_ptr_shared();
-			std::ignore = lock;
-			return data->get_as_string(id);
+			return detail::get_data_manager().get_as_string(id);
 		}
 
 		unique_id get_uid(std::string_view name)
 		{
-			const data_manager* data = nullptr;
-			shared_lock_t lock;
-
-			std::tie(data, lock) = detail::get_data_manager_ptr_shared();
-
-			return data->get_uid(name);
+			return detail::get_data_manager().get_uid(name);
 		}
 
 		const mod& get_mod(unique_id id)
 		{
-			auto [data, lock] = detail::get_data_manager_ptr_shared();
-			std::ignore = lock;
-
-			return data->get_mod(id);
+			return detail::get_data_manager().get_mod(id);
 		}
 
 		unique_id make_uid(std::string_view name)
 		{
-			data_manager* data = nullptr;
-			lock_t lock;
-
-			std::tie(data, lock) = detail::get_data_manager_exclusive_lock();
-
-			std::ignore = lock;
-
-			return data->get_uid(name);
+			return detail::get_data_manager().get_uid(name);
 		}
 	}
 

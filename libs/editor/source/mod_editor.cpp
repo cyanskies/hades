@@ -86,6 +86,7 @@ namespace hades
 							_gui.begin_disabled();
 						if (_gui.menu_item(m, !_current_mod))
 						{
+							_close_windows();
 							_mode = edit_mode::already_loaded;
 							_set_loaded_mod(m, data_man);
 						}
@@ -269,8 +270,18 @@ namespace hades
 		}
 		}
 
-		_current_mod = unique_zero;
+		_close_windows();
 
+		_current_mod = unique_zero;
+		return;
+	}
+
+	void mod_editor_impl::_close_windows()
+	{
+		_edit_mod_window = {};
+		_load_mod = {};
+		_new_mod = {};
+		_save_as_window = {};
 		return;
 	}
 

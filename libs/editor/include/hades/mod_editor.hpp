@@ -32,6 +32,7 @@ namespace hades
 
 	private:
 		void _close_mod(data::data_manager&);
+		void _close_windows();
 		void _save_mod(data::data_manager&);
 		void _mod_properties(gui&, data::data_manager&);
 		void _set_loaded_mod(std::string_view mod, data::data_manager&);

@@ -78,7 +78,7 @@ install(TARGETS ${IMGUI_LIB}
 		ARCHIVE DESTINATION lib)
 
 #########################
-#cmake for file dialogue
+# cmake for file dialogue
 #########################
 
 project(imguifiledialog)
@@ -111,9 +111,25 @@ set_target_properties(${FILEDIALOG_LIB} PROPERTIES RELEASE_POSTFIX -s)
 target_include_directories(${FILEDIALOG_LIB} PUBLIC ./imguifiledialog)
 target_link_libraries(${FILEDIALOG_LIB} PUBLIC imgui)
 
-
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${FILEDIALOG_LIB}
 		RUNTIME DESTINATION lib
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib)
+
+#########################
+# hide unused targets
+#########################
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_target_properties(
+	example #from zlib
+	minigzip #zib example
+	zlib
+	# yaml-cpp CI
+	Continuous
+	Experimental
+	Nightly
+	NightlyMemoryCheck
+	# end yaml-cpp CI
+	PROPERTIES FOLDER Unused)

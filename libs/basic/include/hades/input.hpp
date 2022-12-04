@@ -25,21 +25,6 @@ namespace hades
 
 	struct action
 	{
-		constexpr action() noexcept = default;
-		// TODO: turn these into make_action functions so action can become a trivial type
-		explicit constexpr action(unique_id uid) noexcept : id{ uid }
-		{}
-		constexpr action(unique_id uid, int32 x) noexcept : id{ uid }, x_axis{ x }
-		{}
-		constexpr action(unique_id uid, int32 x, int32 y) noexcept : id{ uid }, x_axis{ x }, y_axis{ y }
-		{}
-
-		explicit constexpr action(bool active) noexcept : active(active)
-		{}
-		constexpr action(unique_id i, int32 x, int32 y, int32 u, int32 v) noexcept :
-			id{ i }, x_axis{ x }, y_axis{ y }, u_axis{ u }, v_axis{v}
-		{}
-
 		void merge(const action &other) noexcept;
 
 		unique_id id = unique_id::zero;
@@ -48,15 +33,56 @@ namespace hades
 		bool active = false; //always true for mouseposition and axis
 	};
 
-	inline constexpr  bool operator<(const action &lhs, const action &rhs)
+	constexpr action make_action(unique_id id, int32 x) noexcept
+	{
+		return action{ id, x };
+	}
+
+	constexpr action make_action(unique_id id, int32 x, int32 y) noexcept
+	{
+		return action{ id, x, y };
+	}
+
+	constexpr action make_action(unique_id id, int32 x, int32 y, int32 u, int32 v) noexcept
+	{
+		return action{ id, x, y, u, v };
+	}
+
+	constexpr action make_action(bool b) noexcept
+	{
+		return action{ {}, {}, {}, {}, {}, b };
+	}
+
+	inline constexpr  bool operator<(const action &lhs, const action &rhs) noexcept
 	{
 		return lhs.id < rhs.id;
 	}
 
-	inline constexpr bool operator==(const action &lhs, const action &rhs)
+	inline constexpr bool operator==(const action &lhs, const action &rhs) noexcept
 	{
 		return lhs.id == rhs.id;
 	}
+
+	struct action_compare
+	{
+	public:
+		using is_transparent = void; 
+
+		constexpr bool operator()(const unique_id& id, const action& a) const noexcept
+		{
+			return id < a.id;
+		}
+
+		constexpr bool operator()(const action& a, const unique_id& id) const noexcept
+		{
+			return a.id < id;
+		}
+
+		constexpr bool operator()(const action& a, const action& b) const noexcept
+		{
+			return a < b;
+		}
+	};
 
 	struct input_interpreter
 	{
@@ -163,7 +189,7 @@ namespace hades
 		//load bindings config
 		//save binding config, //this only works for bindable actions
 		void generate_state(); //runs all the action test functions, including custom ones
-		using action_set = std::set<action>; // TODO: review usage of set
+		using action_set = std::set<action, action_compare>; // TODO: review usage of set
 		action_set input_state() const;
 
 	protected:

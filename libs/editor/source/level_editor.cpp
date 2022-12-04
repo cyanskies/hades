@@ -123,7 +123,7 @@ namespace hades::detail
 	{
 		_total_run_time += dt;
 
-		const auto mouse_position = actions.find(action{ input::mouse_position });
+		const auto mouse_position = actions.find(input::mouse_position);
 		assert(mouse_position != std::end(actions));
 
 		if (mouse_position->active)
@@ -155,7 +155,7 @@ namespace hades::detail
 			if (_active_brush != invalid_brush)
 				_generate_brush_preview(_active_brush, dt, world_mouse_pos);
 
-			const auto mouse_left = actions.find(action{ input::mouse_left });
+			const auto mouse_left = actions.find(input::mouse_left);
 			assert(mouse_left != std::end(actions));
 			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
 

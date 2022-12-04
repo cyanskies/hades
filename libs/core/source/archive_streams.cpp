@@ -73,7 +73,7 @@ namespace hades::zip
 		if (!zip)
 			return {};
 
-		open_for_read.emplace(path_str);
+		open_for_read.emplace(std::move(path_str));
 
 		return { path, {}, zip };
 	}
@@ -154,9 +154,11 @@ namespace hades::zip
 		if (r != UNZ_OK)
 			log_error("Error while closing archive"sv);
 
-		const auto iter = open_for_read.find(f.path.generic_string());
-		assert(iter != end(open_for_read));
-		open_for_read.erase(iter);
+		//const auto iter = open_for_read.find(f.path.generic_string());
+		//assert(iter != end(open_for_read));
+		//open_for_read.erase(iter);
+		assert(open_for_read.find(f.path.generic_string()) != end(open_for_read));
+		open_for_read.erase(f.path.generic_string());
 		f = {};
 
 		return;

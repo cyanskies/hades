@@ -35,6 +35,18 @@ namespace hades
 				return std::make_tuple(ptr, std::move(lock));
 			}
 
+			bool data_manager_can_lock_shared() noexcept
+			{
+				const auto lock = std::shared_lock{ data_mutex, std::try_to_lock };
+				return lock.owns_lock();
+			}
+
+			bool data_manager_can_lock_exclusive() noexcept
+			{
+				const auto lock = std::unique_lock{ data_mutex, std::try_to_lock };
+				return lock.owns_lock();
+			}
+
 			using data_manager_shared = std::tuple<const data_manager*, shared_lock_t>;
 
 			data_manager_shared get_data_manager_ptr_shared()
@@ -59,6 +71,12 @@ namespace hades
 
 		bool data_manager::exists(unique_id id) const
 		{
+			const auto lock = std::shared_lock{ _mut };
+			return _exists(id);
+		}
+
+		bool data_manager::_exists(unique_id id) const
+		{
 			return std::any_of(begin(_mod_stack), end(_mod_stack), [id](auto&& elm) {
 				return std::any_of(begin(elm.resources), end(elm.resources), [id](auto&& res) {
 					return res->id == id;
@@ -76,7 +94,13 @@ namespace hades
 			return r;
 		}
 
-		resources::resource_base *data_manager::try_get_resource(unique_id id, std::optional<unique_id> mod) noexcept
+		resources::resource_base* data_manager::try_get_resource(unique_id id, std::optional<unique_id> mod) noexcept
+		{
+			const auto lock = std::shared_lock{ _mut };
+			return _try_get_resource(id, mod);
+		}
+
+		resources::resource_base *data_manager::_try_get_resource(unique_id id, std::optional<unique_id> mod) noexcept
 		{
 			// find the resource in the highest mod on the stack
 			// starting at mod if specified
@@ -101,6 +125,7 @@ namespace hades
 
 		void data_manager::update_all_links()
 		{
+			const auto lock = std::unique_lock{ _links_mut };
 			for (auto& link : _resource_links)
 			{
 				try
@@ -128,35 +153,40 @@ namespace hades
 
 		void data_manager::erase(unique_id id, std::optional<unique_id> mod) noexcept
 		{
-			if (!mod)
-				mod = _mod_stack.front().mod_info.id;
-
-			auto& m = _get_mod(mod.value());
-
-			const auto mend = end(m.resources);
-			const auto res_iter = std::find_if(begin(m.resources), mend, [id](auto&& other) {
-					return other->id == id;
-				});
-
-			if (res_iter == mend)
-				return;
-
-			//search all the groups to remove the resource
-			for ([[maybe_unused]] auto& [name, group] : m.resources_by_type)
 			{
-				const auto gend = end(group);
-				const auto iter = std::find_if(begin(group), gend, [id](auto&& other) {
+				const auto lock = std::unique_lock{ _mut };
+
+				if (!mod)
+					mod = _mod_stack.front().mod_info.id;
+
+				auto& m = _get_mod(mod.value());
+
+				const auto mend = end(m.resources);
+				const auto res_iter = std::find_if(begin(m.resources), mend, [id](auto&& other) {
 					return other->id == id;
 					});
 
-				if (iter != gend)
+				if (res_iter == mend)
+					return;
+
+				//search all the groups to remove the resource
+				for ([[maybe_unused]] auto& [name, group] : m.resources_by_type)
 				{
-					group.erase(iter);
-					break;
+					const auto gend = end(group);
+					const auto iter = std::find_if(begin(group), gend, [id](auto&& other) {
+						return other->id == id;
+						});
+
+					if (iter != gend)
+					{
+						group.erase(iter);
+						break;
+					}
 				}
+
+				m.resources.erase(res_iter);
 			}
 
-			m.resources.erase(res_iter);
 			//update links, since some of them may have been pointing to the
 			// erased resource
 			update_all_links();
@@ -165,6 +195,7 @@ namespace hades
 
 		void data_manager::push_mod(mod m)
 		{
+			const auto lock = std::unique_lock{ _mut };
 			const auto end = std::end(_mod_stack);
 			auto iter = std::find_if(begin(_mod_stack), end, [id = m.id](auto&& elm) {
 				return id == elm.mod_info.id;
@@ -181,8 +212,7 @@ namespace hades
 
 		void data_manager::pop_mod()
 		{
-			// TODO: remove any resources from this mod from the data_system
-			// eg. the load queue
+			const auto lock = std::unique_lock{ _mut };
 			assert(!empty(_mod_stack));
 			auto& mod = _mod_stack.back();
 
@@ -198,17 +228,20 @@ namespace hades
 
 		const mod& data_manager::get_mod(const unique_id id) const
 		{
+			const auto lock = std::shared_lock{ _mut };
 			auto ptr = const_cast<data_manager*>(this);
 			return ptr->get_mod(id);
 		}
 
 		mod& data_manager::get_mod(unique_id id)
 		{
+			const auto lock = std::shared_lock{ _mut };
 			return _get_mod(id).mod_info;
 		}
 
 		const data_manager::resource_storage& data_manager::get_mod_data(unique_id id) const
 		{
+			const auto lock = std::shared_lock{ _mut };
 			auto ptr = const_cast<data_manager*>(this);
 			return ptr->_get_mod(id);
 		}
@@ -220,17 +253,20 @@ namespace hades
 
 		bool data_manager::is_built_in_mod(unique_id id) const noexcept
 		{
+			const auto lock = std::shared_lock{ _mut };
 			assert(!empty(_mod_stack));
 			return _mod_stack.front().mod_info.id == id;
 		}
 
 		std::size_t data_manager::get_mod_count() const noexcept
 		{
+			const auto lock = std::shared_lock{ _mut };
 			return size(_mod_stack);
 		}
 
 		std::vector<data_manager::resource_storage*> data_manager::get_mod_stack()
 		{
+			const auto lock = std::shared_lock{ _mut };
 			auto out = std::vector<resource_storage*>{};
 			std::transform(begin(_mod_stack), end(_mod_stack), back_inserter(out), [](auto&& res) {
 				return &res;
@@ -240,6 +276,7 @@ namespace hades
 
 		std::vector<std::string_view> data_manager::get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod) const
 		{
+			const auto lock = std::shared_lock{ _mut };
 			const auto end = std::rend(_mod_stack);
 			auto iter = mod ? std::find_if(rbegin(_mod_stack), end, [mod](const auto& elm) {
 				return elm.mod_info.id == *mod;

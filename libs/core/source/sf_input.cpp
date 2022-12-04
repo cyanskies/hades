@@ -28,7 +28,7 @@ namespace hades
 			const auto pressed = sf::Keyboard::isKeyPressed(k);
 			if (prev.active == pressed)
 				return prev;
-			return action{ pressed };
+			return make_action(pressed);
 		};
 
 		auto is_match = [](const sf::Event &e)->bool {
@@ -41,12 +41,12 @@ namespace hades
 
 		auto event_check = [](bool handled, const sf::Event &e, action)->action {
 			if (handled)
-				return action{ false };
+				return make_action(false);
 			
 			if (e.type == sf::Event::KeyPressed)
-				return action{ true }; //TODO: encode modifier key state in the x,y params
+				return make_action(true); //TODO: encode modifier key state in the x,y params
 
-			return action{ false }; // KeyReleased
+			return make_action(false); // KeyReleased
 		};
 
 		return { is_match, event_check, nullptr /*realtime*/};

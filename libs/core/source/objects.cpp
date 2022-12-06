@@ -548,9 +548,9 @@ namespace hades
 		auto curve_list = get_all_curves(obj_instance);
 		for (auto& [curve, val] : curve_list)
 		{
-			// only add curves that need to be saved
-			if (!curve->save)
-				continue;
+			//// only add curves that need to be saved
+			//if (!curve->save)
+			//	continue;
 
 			auto c = object_save_instance::saved_curve{};
 			c.curve = curve;

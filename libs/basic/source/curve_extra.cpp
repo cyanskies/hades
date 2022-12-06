@@ -1,6 +1,7 @@
 #include "hades/curve_extra.hpp"
 
 #include "hades/parser.hpp"
+#include "hades/writer.hpp"
 
 using namespace std::string_literals;
 using namespace std::string_view_literals;
@@ -132,7 +133,7 @@ namespace hades::resources
 	curve_default_value get_default_value(const data::parser_node &n,
 		const curve &current_value, hades::unique_id mod)
 	{
-		constexpr auto property_name = "default_value"sv;
+		constexpr auto property_name = "default"sv;
 
 		if (!is_curve_valid(current_value))
 			throw invalid_curve{ "Tried to call get_default_value on an invalid curve while parsing mod: "s + to_string(mod) };
@@ -163,8 +164,8 @@ namespace hades::resources
 	{
 		//curves:
 		//		name:
-		//			type: default: step //determines how the values are read between keyframes
-		//			value: default: int32 //determines the value type
+		//			type: default: const //determines how the values are read between keyframes
+		//			value: default: error //determines the value type
 		//			sync: default: false //true if this should be syncronised to the client
 		//			save: default false //true if this should be saved when creating a save file
 		//			locked: default false // if true, the curve cannot be edited in the level editor
@@ -195,8 +196,9 @@ namespace hades::resources
 			new_curve->keyframe_style = get_scalar(*c, "type"sv, new_curve->keyframe_style, to_style);
 			new_curve->data_type = get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
 			new_curve->sync = get_scalar(*c, "sync"sv, new_curve->sync);
-			new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
+			//new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
 			new_curve->locked = get_scalar(*c, "locked"sv, new_curve->locked);
+			new_curve->hidden = get_scalar(*c, "hidden"sv, new_curve->hidden);
 
 			if (old_type != new_curve->data_type)
 				new_curve->default_value = reset_default_value(*new_curve);
@@ -425,11 +427,45 @@ namespace hades::resources
 		remove_duplicates(curve_master_list);
 		return;
 	}
+
+	void curve::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		//curves:
+		//		name:
+		//			type: default: const //determines how the values are read between keyframes
+		//			value: default: error //determines the value type
+		//			sync: default: false //true if this should be syncronised to the client
+		//			locked: default false // if true, the curve cannot be edited in the level editor
+		//			hidden: default false
+		//			default: value, [value1, value2, value3, ...] etc
+
+		w.start_map(d.get_as_string(id));
+		if(keyframe_style != keyframe_style::default_value)
+			w.write("type"sv, to_string(keyframe_style));
+		
+		w.write("value"sv, to_string(data_type));
+
+		if (sync)
+			w.write("sync"sv, to_string(sync));
+		if (locked)
+			w.write("locked"sv, to_string(locked));
+		if (hidden)
+			w.write("hidden"sv, to_string(hidden));
+
+		if (is_set(default_value))
+		{
+			auto str = curve_to_string(*this, default_value);
+			w.write("default"sv, str);
+		}
+
+		w.end_map();
+		return;
+	}
 }
 
 namespace hades
 {
-	static string to_string(keyframe_style k)
+	string to_string(keyframe_style k)
 	{
 		switch(k)
 		{

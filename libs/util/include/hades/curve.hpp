@@ -53,10 +53,12 @@ namespace hades
 	enum class keyframe_style : uint8
 	{
 		linear,
+		begin = linear,
 		step,
 		pulse,
 		const_t,
-		end
+		end,
+		default_value = const_t
 	};
 
 	// basic_curve

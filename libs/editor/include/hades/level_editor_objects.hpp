@@ -40,7 +40,8 @@ namespace hades
 	{
 	public:
 		static_assert(std::is_base_of_v<object_instance, ObjectType> ||
-			std::is_same_v<object_instance, ObjectType>);
+			std::is_same_v<object_instance, ObjectType> ||
+			std::is_same_v<nullptr_t, ObjectType>); // nullptr is used only to access subclassess without using the full editor
 
 		static_assert(std::is_same_v<OnChange, nullptr_t> ||
 			std::is_invocable_v<OnChange, ObjectType&>,
@@ -55,6 +56,8 @@ namespace hades
 			"If one of the editor callbacks are provided, then both must be.");
 
 		static constexpr bool visual_editor = !std::is_same_v<OnChange, nullptr_t>;
+
+		using object_type = ObjectType;
 
 		struct object_data
 		{
@@ -153,6 +156,11 @@ namespace hades
 		cache_map _edit_cache;
 		std::array<curve_info, 2> _curve_properties;
 	};
+
+	void make_curve_default_value_editor(gui& g, resources::curve* c,
+		resources::curve_default_value& value,
+		typename object_editor_ui<nullptr_t>::vector_curve_edit& target,
+		typename object_editor_ui<nullptr_t>::cache_map& cache);
 
 	class level_editor_objects_impl : public level_editor_component
 	{

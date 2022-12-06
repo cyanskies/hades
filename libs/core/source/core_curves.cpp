@@ -18,7 +18,7 @@ namespace hades
 			resources::curve_variable_type::vec2_float,
 			keyframe_style::linear,
 			resources::curve_types::vec2_float{ 0.f, 0.f },
-			true, true, true);
+			true, true);
 		return;
 	}
 
@@ -32,7 +32,7 @@ namespace hades
 		// the objects name, usually the name of the object type
 		name_id = d.get_uid("name"sv);
 		resources::make_curve(d, name_id, resources::curve_variable_type::string,
-			keyframe_style::const_t, string{}, true, true);
+			keyframe_style::const_t, string{}, true);
 
 		// the position curves store the objects 2d position
 		pos_id = d.get_uid("position"sv);
@@ -44,7 +44,7 @@ namespace hades
 			resources::curve_variable_type::vec2_float,
 			keyframe_style::const_t,
 			resources::curve_types::vec2_float{ 0.f, 0.f },
-			true, false);
+			true);
 		
 		// terrain layer, object can only move on tiles that have one of these tags
 		terrain_layer_id = d.get_uid("move-layers"sv);
@@ -52,16 +52,16 @@ namespace hades
 			resources::curve_variable_type::collection_unique,
 			keyframe_style::const_t,
 			resources::curve_types::collection_unique{},
-			false, //sync to client
-			false);  //save to file
+			false //sync to client
+			);
 
 		terrain_values_id = d.get_uid("move-layer-values"sv);
 		resources::make_curve(d, terrain_values_id,
 			resources::curve_variable_type::collection_float,
 			keyframe_style::const_t,
 			resources::curve_types::collection_float{},
-			false, //sync to client
-			false);  //save to file
+			false //sync to client
+			);
 
 		// collision layer controls which objects you will collide with 
 		collision_groups_id = d.get_uid("collision-layer"sv);
@@ -70,7 +70,7 @@ namespace hades
 			keyframe_style::const_t,
 			resources::curve_types::unique{},
 			false, //sync to client
-			false, true); //save to file
+			true); //locked
 
 		// tags for this object
 		// TODO: deprecate
@@ -79,15 +79,14 @@ namespace hades
 			resources::curve_variable_type::collection_unique,
 			keyframe_style::const_t,
 			resources::curve_types::collection_unique{},
-			true, // sync to client
-			false); // save to file
+			true // sync to client
+			);
 
 		player_owner_id = d.get_uid("player-owner"sv);
 		resources::make_curve(d, player_owner_id,
 			resources::curve_variable_type::unique,
 			keyframe_style::step,
 			resources::curve_types::bad_unique,
-			true,
 			true);
 
 		return;

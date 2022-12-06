@@ -53,14 +53,14 @@ namespace hades::resources
 
 	struct curve : public resource_type<curve_t>
 	{
+		void serialise(const data::data_manager&, data::writer&) const override;
+
 		curve_variable_type data_type = curve_variable_type::error;
-		keyframe_style keyframe_style = keyframe_style::const_t;
+		keyframe_style keyframe_style = keyframe_style::default_value;
 		bool sync = false; //sync shares the value with clients
-							//and saves
-		bool save = false; //save records the value in save files TODO: remove
 		bool locked = false; // sets whether the curve is locked from level editor
-		// TODO: hidden: dont show at all in editor
-		// TODO: is non-saved curves ever a good idea??? I dont think so
+		bool hidden = false; // don't show the curve in level editor
+		
 		curve_default_value default_value{};
 	};
 
@@ -78,9 +78,9 @@ namespace hades::resources
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
 
 	template<typename T>
-	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, keyframe_style, T default_value, bool sync, bool save, bool locked = false);
+	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, keyframe_style, T default_value, bool sync, bool locked = false, bool hidden = false);
 	template<typename T>
-	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, keyframe_style, T default_value, bool sync, bool save, bool locked = false);
+	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, keyframe_style, T default_value, bool sync, bool locked = false, bool hidden = false);
 
 	const std::vector<const curve*> &get_all_curves();
 }
@@ -89,6 +89,7 @@ namespace hades
 {
 	template<template<typename> typename CurveType, typename VariableType>
 	std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept;
+	string to_string(keyframe_style);
 	string to_string(std::pair<keyframe_style, curve_variable_type>);
 
 	string to_string(const resources::curve &c);

@@ -407,7 +407,6 @@ namespace hades
 					g.text("Dependencies won't be loaded unless this mod is closed and reloaded"sv);
 				}
 
-				//deps
 				//includes
 				//pretty name
 			}

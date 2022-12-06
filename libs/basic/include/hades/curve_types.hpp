@@ -20,7 +20,7 @@ namespace hades
 namespace hades
 {
 	enum class curve_variable_type {
-		begin, int_t = begin, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
+		int_t, begin = int_t, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
 		string, object_ref, unique, colour, time_d, collection_int, collection_float,
 		collection_object_ref, collection_unique, collection_colour, collection_time_d, error, end = error
 	};

@@ -8,8 +8,10 @@
 #include "ImGuiFileDialog.h"
 
 #include "hades/animation.hpp"
+#include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/gui.hpp"
+#include "hades/level_editor_objects.hpp"
 #include "hades/sf_color.hpp"
 #include "hades/sf_streams.hpp"
 #include "hades/texture.hpp"
@@ -309,6 +311,8 @@ namespace hades::data
 			_alpha_set = a.has_value();
 			if (_alpha_set)
 				_alpha = { a->r, a->g, a->b };
+			else
+				_alpha.fill({});
 
 			_repeat = tex::get_repeat(_texture);
 			_source = _texture_base->source.generic_string();
@@ -396,10 +400,17 @@ namespace hades::data
 					g.combo_end();
 				}
 
-				if (g.input_scalar("Alpha rgb"sv, _alpha)
-					|| g.button("Remove custom alpha"sv))
+				if (const auto current_alpha = _alpha; 
+					g.input_scalar("Alpha rgb"sv, _alpha) && current_alpha != _alpha)
 				{
 					_alpha_set = true;
+					mod = true;
+				}
+
+				if(g.button("Remove custom alpha"sv))
+				{
+					_alpha.fill({});
+					_alpha_set = false;
 					mod = true;
 				}
 
@@ -826,6 +837,120 @@ namespace hades::data
 		resources::resource_base* _base = {};
 	};
 
+	class curve_editor : public resource_editor
+	{
+	public:
+		void set_target(data_manager& d, unique_id i, unique_id mod) override
+		{
+			_curve = d.get<resources::curve>(i, mod);
+			_base = d.get_resource(i, mod);
+			_title = "curve: "s + d.get_as_string(i) + "###curve_win"s;
+
+			return;
+		}
+
+		void update(data::data_manager& d, gui& g) override
+		{
+			const auto generate_yaml = [this](data::data_manager& d) {
+				auto writer = data::make_writer();
+				_base->serialise(d, *writer);
+				_yaml = writer->get_string();
+			};
+
+			if (empty(_yaml))
+				std::invoke(generate_yaml, d);
+
+			g.next_window_size({}, gui::set_condition_enum::first_use);
+			if (g.window_begin(_title))
+			{
+				const auto disabled = !editable(_base->mod);
+				auto mod = false;
+				if (disabled)
+					g.begin_disabled();
+
+				//data type
+				if (g.combo_begin("data type"sv, to_string(_curve->data_type)))
+				{
+					for (auto i = curve_variable_type::begin; i < curve_variable_type::end; i = next(i))
+					{
+						if (g.selectable(to_string(i), _curve->data_type == i))
+						{
+							_curve->data_type = i;
+							mod = true;
+							// TODO: reset default value type
+						}
+					}
+
+					g.combo_end();
+				}
+
+				//curve type
+				if (g.combo_begin("keyframe style"sv, to_string(_curve->keyframe_style)))
+				{
+					for (auto i = keyframe_style::begin; i < keyframe_style::end; i = next(i))
+					{
+						if (g.selectable(to_string(i), _curve->keyframe_style == i))
+						{
+							_curve->keyframe_style = i;
+							mod = true;
+						}
+					}
+
+					g.combo_end();
+				}
+
+				//sync
+				if (g.checkbox("sync to clients"sv, _curve->sync))
+					mod = true;
+
+				//locked
+				if (g.checkbox("lock in editor"sv, _curve->locked))
+					mod = true;
+
+				//hidden
+				if (g.checkbox("hide in editor"sv, _curve->hidden))
+					mod = true;
+
+				// default value
+				// TODO: need to check if this modified the value in a better way
+				const auto old = _curve->default_value;
+				make_curve_default_value_editor(g, _curve, _curve->default_value, _curve_vec_edit_cache, _curve_edit_cache);
+				
+				if (old != _curve->default_value)
+					mod = true;
+
+				if (disabled)
+					g.end_disabled();
+
+				if (mod)
+					std::invoke(generate_yaml, d);
+
+				g.text("Resource as YAML:"sv);
+				g.input_text_multiline("##yaml"sv, _yaml, {}, gui::input_text_flags::readonly);
+			}
+			g.window_end();
+		}
+
+		std::string resource_name() const override
+		{
+			return _title;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _base;
+		}
+
+	private:
+		object_editor_ui<nullptr_t>::cache_map _curve_edit_cache;
+		object_editor_ui<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
+		string _title;
+		string _yaml;
+		resources::curve* _curve = {};
+		resources::resource_base* _base = {};
+	};
+
+
 	void basic_resource_inspector::update(gui& g, data::data_manager& d)
 	{
 		_resource_tree(g, d);
@@ -902,6 +1027,8 @@ namespace hades::data
 			return std::make_unique<animation_editor>();
 		else if (s == "animation-groups"sv)
 			return std::make_unique<animation_group_editor>();
+		else if (s == "curves"sv)
+			return std::make_unique<curve_editor>();
 
 		return {};
 	}

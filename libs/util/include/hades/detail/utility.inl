@@ -344,7 +344,8 @@ namespace hades
 	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int>>
 	constexpr Enum next(Enum e) noexcept
 	{
-		return Enum{ enum_type(e) + 1 };
+		auto val = enum_type(e);
+		return Enum{ ++val };
 	}
 
 	template<typename Func>

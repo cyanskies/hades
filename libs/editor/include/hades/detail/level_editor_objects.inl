@@ -340,10 +340,15 @@ namespace hades::detail::obj_ui
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_property_edit(gui& g, object_instance& o, std::string_view name, const resources::curve& c, T& value,
+	void make_property_edit(gui& g, typename ObjEditor::object_type& o, std::string_view name, const resources::curve& c, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
-		const auto disabled = c.locked || c.keyframe_style == keyframe_style::const_t;
+		constexpr auto use_object_type = !std::is_same_v<nullptr_t, typename ObjEditor::object_type>;
+		const auto disabled = use_object_type && (c.locked || c.keyframe_style == keyframe_style::const_t);
+
+		using namespace std::string_view_literals;
+		if constexpr (!use_object_type)
+			name = "default value"sv;
 
 		if (disabled)
 			g.begin_disabled();
@@ -352,7 +357,10 @@ namespace hades::detail::obj_ui
 		{
 			auto arr = std::array{ value.x, value.y };
 			if (g.input(name, arr))
-				set_curve(o, c, T{ arr[0], arr[1] });
+			{
+				if constexpr (use_object_type)
+					set_curve(o, c, T{ arr[0], arr[1] });
+			}
 
 			value.x = arr[0];
 			value.y = arr[1];
@@ -364,8 +372,13 @@ namespace hades::detail::obj_ui
 			auto new_value = make_property_edit_impl<ObjEditor>(g, name, value, cache);
 			if (new_value)
 			{
-				value = *new_value;
-				set_curve(o, c, std::move(*new_value));
+				if constexpr (use_object_type)
+				{
+					value = *new_value;
+					set_curve(o, c, std::move(*new_value));
+				}
+				else
+					value = std::move(*new_value);
 			}
 		}
 
@@ -376,7 +389,7 @@ namespace hades::detail::obj_ui
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_vector_edit_field(gui& g, object_instance& o, const resources::curve& c, int32 selected, T& value,
+	void make_vector_edit_field(gui& g, typename ObjEditor::object_type& o, const resources::curve& c, int32 selected, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
@@ -391,7 +404,9 @@ namespace hades::detail::obj_ui
 			auto target = std::begin(container);
 			std::advance(target, selected);
 			*target = std::move(*result);
-			set_curve(o, c, container);
+			// for calling without an object type (don't call set_curve)
+			if constexpr (!std::is_same_v<typename ObjEditor::object_type, nullptr_t>)
+				set_curve(o, c, container);
 		}
 	}
 
@@ -401,15 +416,20 @@ namespace hades::detail::obj_ui
 		typename object_editor_ui<Obj, U, V>::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
-
 		using vector_curve_edit = typename object_editor_ui<Obj, U, V>::vector_curve_edit;
+
+		constexpr auto use_object_type = !std::is_same_v<Obj, nullptr_t>;
+
+		// for curve editor ui
+		if constexpr (!use_object_type)
+			name = "default value"sv;
 
 		if (g.button("edit vector..."sv))
 			target.target = c;
 		g.layout_horizontal();
 		g.text(name);
 
-		const auto disabled = c->locked || c->keyframe_style == keyframe_style::const_t;
+		const auto disabled = use_object_type && (c->locked || c->keyframe_style == keyframe_style::const_t);
 
 		// NOTE: throughout this func we don't std::move container
 		// this is because we want to copy the updated value into the object
@@ -455,7 +475,8 @@ namespace hades::detail::obj_ui
 					}
 
 					container.emplace(iter);
-					set_curve(o, *c, container);
+					if constexpr (use_object_type)
+						set_curve(o, *c, container);
 				}
 
 				g.layout_horizontal();
@@ -465,8 +486,8 @@ namespace hades::detail::obj_ui
 					auto iter = std::begin(container);
 					std::advance(iter, target.selected);
 					container.erase(iter);
-
-					set_curve(o, *c, container);
+					if constexpr (use_object_type)
+						set_curve(o, *c, container);
 					if (std::empty(container))
 						target.selected = 0;
 					else
@@ -481,7 +502,8 @@ namespace hades::detail::obj_ui
 
 					std::iter_swap(before, at);
 					--target.selected;
-					set_curve(o, *c, container);
+					if constexpr (use_object_type)
+						set_curve(o, *c, container);
 				}
 
 				if (g.button("move down"sv) && target.selected + 1 != std::size(value))
@@ -491,7 +513,8 @@ namespace hades::detail::obj_ui
 					auto after = at + 1;
 					std::iter_swap(at, after);
 					++target.selected;
-					set_curve(o, *c, container);
+					if constexpr (use_object_type)
+						set_curve(o, *c, container);
 				}
 
 				if (disabled)

@@ -929,6 +929,7 @@ namespace hades
 				w.start_sequence(name_str);
 				for(auto &elm : v)
 					w.write(elm);
+				w.end_sequence();
 			}
 			else
 				w.write(name_str, v);

@@ -98,7 +98,7 @@ namespace hades
 			iter = std::next(iter, idx);
 			listbox_string_buffer = std::invoke(func, *iter);
 			*out_text = listbox_string_buffer.c_str();
-			return empty(listbox_string_buffer);
+			return !empty(listbox_string_buffer);
 		}
 	}
 

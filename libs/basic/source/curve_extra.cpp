@@ -454,8 +454,31 @@ namespace hades::resources
 
 		if (is_set(default_value))
 		{
-			auto str = curve_to_string(*this, default_value);
-			w.write("default"sv, str);
+			std::visit([&w](auto&& v) {
+				using T = std::decay_t<decltype(v)>;
+				constexpr auto name_str = "default"sv;
+
+				if constexpr (std::is_same_v<T, std::monostate>)
+					throw logic_error{ "monostate poisoning"s };
+				else if constexpr (resources::curve_types::is_vector_type_v<T>)
+				{
+					w.start_sequence(name_str);
+					w.write(v.x);
+					w.write(v.y);
+					w.end_sequence();
+				}
+				else if constexpr (resources::curve_types::is_collection_type_v<T>)
+				{
+					w.start_sequence(name_str);
+					for (auto& elm : v)
+						w.write(elm);
+					w.end_sequence();
+				}
+				else
+					w.write(name_str, v);
+
+				return;
+			}, default_value);
 		}
 
 		w.end_map();

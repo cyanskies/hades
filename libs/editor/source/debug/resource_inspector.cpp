@@ -877,7 +877,9 @@ namespace hades::data
 						{
 							_curve->data_type = i;
 							mod = true;
-							// TODO: reset default value type
+							_curve->default_value = resources::reset_default_value(*_curve);
+							_curve_edit_cache = {};
+							_curve_vec_edit_cache = {};
 						}
 					}
 

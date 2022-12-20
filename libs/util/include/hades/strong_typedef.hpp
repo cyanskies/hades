@@ -236,7 +236,7 @@ namespace hades
 	}
 
 	template<typename Tag, typename T>
-	T to_value(strong_typedef<Tag, T> e)
+	constexpr T to_value(strong_typedef<Tag, T> e)
 	{
 		return static_cast<T>(e);
 	}

@@ -52,11 +52,7 @@ namespace hades
 
 	template<>
 	object_ref from_string<object_ref>(std::string_view);
-
-	inline string to_string(object_ref o)
-	{
-		return to_string(o.id);
-	}
+	string to_string(object_ref o);
 }
 
 namespace hades::curve_types

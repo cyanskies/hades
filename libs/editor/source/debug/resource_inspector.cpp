@@ -10,6 +10,7 @@
 #include "hades/animation.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
+#include "hades/font.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_editor_objects.hpp"
 #include "hades/sf_color.hpp"
@@ -296,6 +297,8 @@ namespace hades::data
 		bool _play = false;
 	};
 
+	// TODO: this class needs to use the source_window class,
+	//  rather than duplicating its implementation
 	class texture_editor : public resource_editor
 	{
 	public:
@@ -627,6 +630,168 @@ namespace hades::data
 		std::array<texture_size_t, 2> _size;
 	};
 
+	struct source_window
+	{
+		source_window() = default;
+
+		source_window(data::data_manager* data, std::string_view title, std::string_view source,
+			std::string_view raw_path, std::string_view raw_archive,
+			std::string_view supported_file_types, std::string_view file_type)
+			: _title{ title }, _dialog_title{ string{ title } + "##dialog" },
+			_source{ source }, _old_source{ source }, _raw_path{ raw_path },
+			_raw_archive{ raw_archive }, _file_types{ supported_file_types },
+			_file_type_name{ file_type }, _data_man{ data }
+		{
+			_setup_callbacks();
+		}
+
+		source_window& operator=(source_window&& rhs)
+		{
+			_file_dialog.Close();
+			rhs._file_dialog.Close();
+			_title = std::move(rhs._title);
+			_dialog_title = std::move(rhs._dialog_title);
+			_source = std::move(rhs._source);
+			_old_source = std::move(rhs._old_source);
+			_raw_path = std::move(rhs._raw_path);
+			_raw_archive = std::move(rhs._raw_archive);
+			_file_types = std::move(rhs._file_types);
+			_file_type_name = std::move(rhs._file_type_name);
+			_data_man = rhs._data_man;
+			_setup_callbacks();
+			return *this;
+		}
+		
+		void open()
+		{
+			_open = true;
+			return;
+		}
+
+		bool update(gui& g)
+		{
+			_file_dialog.ManageGPUThumbnails();
+			auto ret = false;
+
+			if (_open)
+			{
+				g.next_window_size({}, gui::set_condition_enum::first_use);
+				if (g.window_begin(_title,
+					_open, gui::window_flags::no_collapse))
+				{
+					g.input_text("Resource path"sv, _source);
+					g.begin_disabled();
+					if (!empty(_raw_archive))
+					{
+						g.input_text("##archive_path"sv, _raw_archive);
+						g.same_line();
+					}
+					g.input_text("##src_path"sv, _raw_path);
+					g.end_disabled();
+					g.same_line();
+					if (g.button("Choose new file"sv))
+						_make_file_dialog();
+
+					using fs_path = std::filesystem::path;
+					const auto good_ext = fs_path{ _source }.extension()
+						== fs_path{ _raw_path }.extension();
+
+					const auto applyable = good_ext && (_raw_archive == string{} ||
+						_source != _old_source);
+
+					if (!good_ext)
+						g.text_coloured("file extensions must match"sv, colours::red);
+
+					if (!applyable)
+						g.begin_disabled();
+
+					if (g.button("Apply"sv))
+						ret = true;
+
+					if (!applyable)
+						g.end_disabled();
+
+					g.same_line();
+					g.button("Cancel"sv);
+				}
+
+				g.window_end();
+			}
+			else if (_file_dialog.IsOpened())
+				_file_dialog.Close();
+
+			if (_file_dialog.Display(_dialog_title))
+			{
+				if (_file_dialog.IsOk())
+				{
+					_raw_archive = {};
+					_raw_path = _file_dialog.GetFilePathName();
+				}
+
+				_file_dialog.Close();
+			}
+
+			return ret;
+		}
+
+		string get_new_source()
+		{
+			return std::exchange(_source, _old_source);
+		}
+		
+	private:
+		void _setup_callbacks()
+		{
+			_file_dialog.SetCreateThumbnailCallback([this](IGFD_Thumbnail_Info* data) {
+				if (data && data->isReadyToUpload && data->textureFileDatas)
+				{
+					auto id = make_unique_id();
+					auto tex = resources::texture_functions::find_create_texture(*_data_man, id);
+					static_assert(sizeof(unique_id) >= sizeof(void*));
+					assert(tex);
+					auto image = sf::Image{};
+					image.create(data->textureWidth, data->textureHeight, reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+					resources::texture_functions::load_from_image(*tex, image);
+					data->textureID = tex;
+					delete[] data->textureFileDatas;
+					data->textureFileDatas = {};
+					data->isReadyToUpload = false;
+					data->isReadyToDisplay = true;
+				}
+				return;
+			});
+
+			_file_dialog.SetDestroyThumbnailCallback([this](IGFD_Thumbnail_Info* data) {
+				if (data && data->textureID)
+				{
+					auto tex = reinterpret_cast<const resources::texture*>(data->textureID);
+					_data_man->erase(resources::texture_functions::get_id(tex));
+				}
+				return;
+			});
+		}
+		void _make_file_dialog()
+		{
+			_file_dialog.OpenDialog(_dialog_title, _file_type_name,
+				_file_types.c_str(), "."s, 1, {},
+				ImGuiFileDialogFlags_DisableCreateDirectoryButton);
+			return;
+		}
+
+		data::data_manager* _data_man = {};
+		ImGuiFileDialog _file_dialog;
+		string _source;
+		string _title;
+		string _dialog_title;
+		string _old_source;
+		string _raw_archive;
+		string _raw_path;
+
+		string _file_types;
+		string _file_type_name;
+		bool _open = false;
+	};
+
 	class animation_group_editor : public resource_editor
 	{
 	public:
@@ -952,6 +1117,84 @@ namespace hades::data
 		resources::resource_base* _base = {};
 	};
 
+	class font_editor : public resource_editor
+	{
+	public:
+		void set_target(data_manager& d, unique_id i, unique_id mod) override
+		{
+			_font = d.get<resources::font>(i, mod);
+			_base = d.get_resource(i, mod);
+			_source = _font->source.generic_string();
+			_title = "font: "s + d.get_as_string(i) + "###font_win"s;
+
+			_source_window = source_window{ &d, "Font source"s, _source,
+				_base->loaded_archive_path.generic_string(),
+				_base->loaded_path.generic_string(),
+			"Font Files (*.ttf;*.otf;){.ttf,.otf}"sv, "Fonts"sv };
+
+			return;
+		}
+
+		void update(data::data_manager& d, gui& g) override
+		{
+			const auto generate_yaml = [this](data::data_manager& d) {
+				auto writer = data::make_writer();
+				_base->serialise(d, *writer);
+				_yaml = writer->get_string();
+			};
+
+			if (empty(_yaml))
+				std::invoke(generate_yaml, d);
+
+			g.next_window_size({}, gui::set_condition_enum::first_use);
+			if (g.window_begin(_title))
+			{
+				const auto disabled = !editable(_base->mod);
+				auto mod = false;
+				if (disabled)
+					g.begin_disabled();
+
+				g.input("##font_source"sv, _source, gui::input_text_flags::readonly);
+				g.same_line();
+				if (g.button("Source..."))
+					_source_window.open();
+
+				if (disabled)
+					g.end_disabled();
+
+				if (mod)
+					std::invoke(generate_yaml, d);
+
+				g.text("Resource as YAML:"sv);
+				g.input_text_multiline("##yaml"sv, _yaml, {}, gui::input_text_flags::readonly);
+			}
+			g.window_end();
+
+			if (_source_window.update(g))
+				_source = _source_window.get_new_source();
+
+			return;
+		}
+
+		std::string resource_name() const override
+		{
+			return _title;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _base;
+		}
+
+	private:
+		source_window _source_window;
+		string _title;
+		string _yaml;
+		string _source;
+		resources::font* _font = {};
+		resources::resource_base* _base = {};
+	};
+
 
 	void basic_resource_inspector::update(gui& g, data::data_manager& d)
 	{
@@ -1031,6 +1274,8 @@ namespace hades::data
 			return std::make_unique<animation_group_editor>();
 		else if (s == "curves"sv)
 			return std::make_unique<curve_editor>();
+		else if (s == "fonts"sv)
+			return std::make_unique<font_editor>();
 
 		return {};
 	}

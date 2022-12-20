@@ -52,8 +52,8 @@ namespace hades::resources
 		// an image or if we loaded the image from this mod
 		bool should_serialise_image_file = false;
 		std::optional<colour> alpha = {};
-		std::filesystem::path loaded_archive_path;
-		std::filesystem::path loaded_path;
+		//std::filesystem::path loaded_archive_path;
+		//std::filesystem::path loaded_path;
 		unique_id source_mod = {}; // the last mod that set the source or loaded* value
 	};
 

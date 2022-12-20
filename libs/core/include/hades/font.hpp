@@ -18,6 +18,14 @@ namespace hades
 		struct font : public resource_type<sf::Font>
 		{
 			void load(data::data_manager&) final override;
+			void serialise(const data::data_manager&, data::writer&) const final override;
+			
+			bool serialise_source() const final override
+			{
+				return true;
+			}
+
+			void serialise(std::ostream&) const final override;
 
 			buffer source_buffer;
 		};

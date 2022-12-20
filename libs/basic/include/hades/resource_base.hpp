@@ -78,6 +78,10 @@ namespace hades
 			// serialise(ostream&) will only be called if this isn't empty
 			std::filesystem::path source;
 
+			// recorded raw paths for the resource
+			std::filesystem::path loaded_archive_path;
+			std::filesystem::path loaded_path;
+
 			clone_func clone = nullptr;
 		};
 

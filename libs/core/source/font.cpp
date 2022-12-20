@@ -5,6 +5,7 @@
 #include "hades/files.hpp"
 #include "hades/parser.hpp"
 #include "hades/utility.hpp"
+#include "hades/writer.hpp"
 
 static hades::unique_id default_font_id = hades::unique_zero;
 
@@ -82,6 +83,21 @@ namespace hades::resources
 	void font::load(data::data_manager& d)
 	{
 		load_font(*this, d);
+		return;
+	}
+
+	void font::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		w.start_map(d.get_as_string(id));
+		w.write("source"sv, source.generic_string());
+		w.end_map();
+		return;
+	}
+
+	void font::serialise(std::ostream& o) const
+	{
+		const auto fstrm = files::stream_resource(data::get_mod(mod), source);
+		o << fstrm.rdbuf();
 		return;
 	}
 }

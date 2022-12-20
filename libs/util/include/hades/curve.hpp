@@ -87,6 +87,11 @@ namespace hades
 			const auto near = _get_near(t);
 			if (near.second != _end() && near.second->time == t)
 			{
+				// NOTE: if the currently stored value is a contaner
+				// then references to its elements will be erased by this.
+				// keep in mind when writing recursive game systems
+
+				// TODO: consider bumping t by a nanosecond to avoid issues
 				near.second->value = std::move(val);
 				return near.second->value;
 			}

@@ -53,7 +53,7 @@ namespace hades::resources
 
 	struct curve : public resource_type<curve_t>
 	{
-		void serialise(const data::data_manager&, data::writer&) const override;
+		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		curve_variable_type data_type = curve_variable_type::error;
 		keyframe_style keyframe_style = keyframe_style::default_value;
@@ -94,7 +94,6 @@ namespace hades
 
 	string to_string(const resources::curve &c);
 	string to_string(std::tuple<const resources::curve&, const resources::curve_default_value&> curve);
-
 	string curve_to_string(const resources::curve &c, const resources::curve_default_value &v);
 }
 

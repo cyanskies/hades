@@ -157,8 +157,8 @@ namespace hades
 		std::array<curve_info, 2> _curve_properties;
 	};
 
-	void make_curve_default_value_editor(gui& g, resources::curve* c,
-		resources::curve_default_value& value,
+	bool make_curve_default_value_editor(gui& g, std::string_view name,
+		const resources::curve* c, resources::curve_default_value& value,
 		typename object_editor_ui<nullptr_t>::vector_curve_edit& target,
 		typename object_editor_ui<nullptr_t>::cache_map& cache);
 

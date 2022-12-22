@@ -170,10 +170,10 @@ namespace hades::resources
 		// we dont want to include any curves that didnt get loaded, so we move them to the back
 		const auto curve_end = std::partition(begin(o.curves), end(o.curves), std::mem_fn(&unloaded_curve::curve));
 
-		std::transform(begin(o.curves), curve_end, back_inserter(out), [&d](const object::unloaded_curve& c) {
+		std::transform(begin(o.curves), curve_end, back_inserter(out), [&d, &o](const object::unloaded_curve& c) {
 			assert(c.curve);
-			return object::curve_obj{ c.curve.get(),
-				curve_from_str(d, *c.curve.get(), c.value)};
+			return object::curve_obj{ curve_from_str(d, *c.curve.get(), c.value),
+				c.curve.get(),  o.id };
 			});
 
 		for (auto& b : o.base)
@@ -285,6 +285,112 @@ namespace hades::resources
 		load_objects(*this, d);
 		return;
 	}
+
+	void object::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		w.start_map(d.get_as_string(id));
+
+		// animations
+		if (animations)
+			w.write("animations"sv, d.get_as_string(animations.id()));
+		
+		// editor anims(deprecated)
+		if (size(editor_anims) == 1)
+			w.write("editor-anims"sv, d.get_as_string(editor_anims[0].id()));
+		else if (!empty(editor_anims))
+		{
+			w.start_sequence("editor-anims"sv);
+			for (const auto& a : editor_anims)
+				w.write(d.get_as_string(a.id()));
+			w.end_sequence();
+		}
+
+		// base objects
+		if (size(base) == 1)
+			w.write("base"sv, base[0].id());
+		else if (!empty(base))
+		{
+			w.start_sequence("base"sv);
+			for (const auto& b : base)
+				w.write(d.get_as_string(b.id()));
+			w.end_sequence();
+		}
+
+		// unloaded curves
+		if (!empty(curves))
+		{
+			w.start_sequence("curves"sv);
+			for (const auto& [c, v] : curves)
+			{
+				std::visit([&w, &c, &d](auto&& v) {
+					using T = std::decay_t<decltype(v)>;
+					const auto name_str = d.get_as_string(c.id());
+
+					if constexpr (std::is_same_v<T, std::monostate>)
+					{
+						w.write(name_str); // no value
+					}
+					else if constexpr (resources::curve_types::is_collection_type_v<T>)
+					{
+						w.start_sequence();
+						w.write(d.get_as_string(c.id()));
+
+						w.start_sequence();
+						for (auto& elm : v)
+							w.write(elm);
+						w.end_sequence();
+
+						w.end_sequence();
+					}
+					else
+					{
+						w.start_sequence();
+						w.write(name_str);
+						w.write(v);
+						w.end_sequence();
+					}
+
+					return;
+				}, v);
+			}
+			w.end_sequence();
+		}
+
+		//  system list
+		if (size(systems) == 1)
+			w.write("systems"sv, d.get_as_string(systems[0].id()));
+		else if (!empty(systems))
+		{
+			w.start_sequence("systems"sv);
+			for (const auto& s : systems)
+				w.write(d.get_as_string(s.id()));
+			w.end_sequence();
+		}
+
+		// render list
+		if (size(render_systems) == 1)
+			w.write("client-systems"sv, d.get_as_string(render_systems[0].id()));
+		else if (!empty(render_systems))
+		{
+			w.start_sequence("client-systems"sv);
+			for (const auto& rs : render_systems)
+				w.write(d.get_as_string(rs.id()));
+			w.end_sequence();
+		}
+
+		// tags
+		if (size(tags) == 1)
+			w.write("tags"sv, d.get_as_string(tags[0]));
+		else if (!empty(tags))
+		{
+			w.start_sequence("tags"sv);
+			for (const auto& t : tags)
+				w.write(d.get_as_string(t));
+			w.end_sequence();
+		}
+
+		w.end_map();
+	}
 }
 
 namespace hades::resources::object_functions
@@ -388,7 +494,7 @@ namespace hades::resources::object_functions
 			});
 
 		if (iter == end(o.all_curves))
-			o.all_curves.emplace_back(object::curve_obj{ c, std::move(v) });
+			o.all_curves.emplace_back(object::curve_obj{ std::move(v), c });
 		else
 			iter->value = std::move(v);
 
@@ -444,7 +550,7 @@ namespace hades::resources::object_functions
 				});
 
 			if (iter != end(top->curves))
-				found_curves.emplace_back(object::curve_obj{ iter->curve.get(), curve_from_str(d, *iter->curve.get(), iter->value) });
+				found_curves.emplace_back(object::curve_obj{ curve_from_str(d, *iter->curve.get(), iter->value), iter->curve.get()  });
 
 			for (auto& obj : top->base)
 				objects.push(obj.get());
@@ -546,16 +652,16 @@ namespace hades
 		obj.name_id = std::move(obj_instance.name_id);
 
 		auto curve_list = get_all_curves(obj_instance);
-		for (auto& [curve, val] : curve_list)
+		for (auto& cur : curve_list)
 		{
 			//// only add curves that need to be saved
 			//if (!curve->save)
 			//	continue;
 
 			auto c = object_save_instance::saved_curve{};
-			c.curve = curve;
+			c.curve = cur.curve;
 			auto k = object_save_instance::saved_curve::saved_keyframe{};
-			swap(k.value, val);
+			swap(k.value, cur.value);
 			c.keyframes.push_back(std::move(k));
 			obj.curves.push_back(std::move(c));
 		}
@@ -611,8 +717,8 @@ namespace hades
 		//check the object prototype
 		assert(o.obj_type);
 		const auto out = try_get_curve(o.obj_type, &c);
-		if (const auto &[curve, value] = out; curve && hades::resources::is_set(value))
-			return value;
+		if (const auto &cur = out; cur.curve && hades::resources::is_set(cur.value))
+			return cur.value;
 
 		if (!has_curve(o, c))
 			throw curve_not_found{"Tried to get_curve for curve: "s +  to_string(c.id) +
@@ -636,12 +742,12 @@ namespace hades
 			+ hades::data::get_as_string(o.obj_type->id) + ", curve was: "s
 			+ hades::data::get_as_string(c.id) };
 
-		for (auto &[curve, value] : o.curves)
+		for (auto &cur : o.curves)
 		{
-			if (curve == &c)
+			if (cur.curve == &c)
 			{
 				assert(resources::is_curve_valid(c, v));
-				value = std::move(v);
+				cur.value = std::move(v);
 				return;
 			}
 		}
@@ -649,7 +755,7 @@ namespace hades
 		if (c.keyframe_style == keyframe_style::const_t)
 			throw curve_error{ "Tried to store const curve in a object instance." };
 
-		o.curves.push_back({ iter->curve, std::move(v)});
+		o.curves.push_back({ std::move(v),  iter->curve });
 		return;
 	}
 
@@ -680,6 +786,7 @@ namespace hades
 		{
 			auto v = value{};
 			const auto& c = iter->curve;
+			const auto obj = iter->object;
 			assert(c);
 			//while each item represents the same curve c
 			//store the value if it is set
@@ -701,7 +808,7 @@ namespace hades
 			//store c and v in output
 			if (!resources::is_set(v))
 				v = resources::reset_default_value(*c);
-			output.emplace_back(curve_obj{ c, std::move(v) });
+			output.emplace_back(curve_obj{ std::move(v), c, obj });
 		}
 
 		return output;
@@ -1058,7 +1165,7 @@ namespace hades
 					const auto curve_value = resources::curve_from_node(*curve_ptr, *c);
 
 					assert(resources::is_set(curve_value));
-					obj.curves.emplace_back(curve_obj{ curve_ptr, curve_value });
+					obj.curves.emplace_back(curve_obj{ curve_value, curve_ptr });
 				}
 			}
 

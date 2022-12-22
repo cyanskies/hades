@@ -340,24 +340,23 @@ namespace hades::detail::obj_ui
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_property_edit(gui& g, typename ObjEditor::object_type& o, std::string_view name, const resources::curve& c, T& value,
+	bool make_property_edit(gui& g, typename ObjEditor::object_type& o, std::string_view name, const resources::curve& c, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
 		constexpr auto use_object_type = !std::is_same_v<nullptr_t, typename ObjEditor::object_type>;
 		const auto disabled = use_object_type && (c.locked || c.keyframe_style == keyframe_style::const_t);
 
 		using namespace std::string_view_literals;
-		if constexpr (!use_object_type)
-			name = "default value"sv;
 
 		if (disabled)
 			g.begin_disabled();
-
+		auto ret = false;
 		if constexpr (resources::curve_types::is_vector_type_v<T>)
 		{
 			auto arr = std::array{ value.x, value.y };
 			if (g.input(name, arr))
 			{
+				ret = true;
 				if constexpr (use_object_type)
 					set_curve(o, c, T{ arr[0], arr[1] });
 			}
@@ -372,6 +371,7 @@ namespace hades::detail::obj_ui
 			auto new_value = make_property_edit_impl<ObjEditor>(g, name, value, cache);
 			if (new_value)
 			{
+				ret = true;
 				if constexpr (use_object_type)
 				{
 					value = *new_value;
@@ -385,11 +385,11 @@ namespace hades::detail::obj_ui
 		if (disabled)
 			g.end_disabled();
 
-		return;
+		return ret;
 	}
 
 	template<typename ObjEditor, typename T>
-	void make_vector_edit_field(gui& g, typename ObjEditor::object_type& o, const resources::curve& c, int32 selected, T& value,
+	bool make_vector_edit_field(gui& g, typename ObjEditor::object_type& o, const resources::curve& c, int32 selected, T& value,
 		typename ObjEditor::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
@@ -407,11 +407,14 @@ namespace hades::detail::obj_ui
 			// for calling without an object type (don't call set_curve)
 			if constexpr (!std::is_same_v<typename ObjEditor::object_type, nullptr_t>)
 				set_curve(o, c, container);
+
+			return true;
 		}
+		return false;
 	}
 
 	template<typename T, typename U, typename V, typename Obj>
-	void make_vector_property_edit(gui& g, Obj& o, std::string_view name,
+	bool make_vector_property_edit(gui& g, Obj& o, std::string_view name,
 		const resources::curve* c, T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target,
 		typename object_editor_ui<Obj, U, V>::cache_map& cache)
 	{
@@ -419,10 +422,6 @@ namespace hades::detail::obj_ui
 		using vector_curve_edit = typename object_editor_ui<Obj, U, V>::vector_curve_edit;
 
 		constexpr auto use_object_type = !std::is_same_v<Obj, nullptr_t>;
-
-		// for curve editor ui
-		if constexpr (!use_object_type)
-			name = "default value"sv;
 
 		if (g.button("edit vector..."sv))
 			target.target = c;
@@ -437,6 +436,7 @@ namespace hades::detail::obj_ui
 		// of &value)
 		auto& container = value;
 
+		auto ret = false;
 		if (target.target == c)
 		{
 			if (g.window_begin("edit vector"sv, gui::window_flags::no_collapse))
@@ -456,7 +456,10 @@ namespace hades::detail::obj_ui
 
 				assert(target.selected >= 0);
 				if (static_cast<std::size_t>(target.selected) < std::size(value))
-					make_vector_edit_field<object_editor_ui<Obj, U, V>>(g, o, *c, integer_cast<int32>(target.selected), value, cache);
+				{
+					ret = make_vector_edit_field<object_editor_ui<Obj, U, V>>(g, o,
+						*c, integer_cast<int32>(target.selected), value, cache);
+				}
 				else
 				{
 					string empty{};
@@ -477,6 +480,7 @@ namespace hades::detail::obj_ui
 					container.emplace(iter);
 					if constexpr (use_object_type)
 						set_curve(o, *c, container);
+					ret = true;
 				}
 
 				g.layout_horizontal();
@@ -492,6 +496,7 @@ namespace hades::detail::obj_ui
 						target.selected = 0;
 					else
 						target.selected = std::clamp(target.selected, { 0 }, std::size(container) - 1);
+					ret = true;
 				}
 
 				if (g.button("move up"sv) && target.selected > 0)
@@ -504,6 +509,7 @@ namespace hades::detail::obj_ui
 					--target.selected;
 					if constexpr (use_object_type)
 						set_curve(o, *c, container);
+					ret = true;
 				}
 
 				if (g.button("move down"sv) && target.selected + 1 != std::size(value))
@@ -515,6 +521,7 @@ namespace hades::detail::obj_ui
 					++target.selected;
 					if constexpr (use_object_type)
 						set_curve(o, *c, container);
+					ret = true;
 				}
 
 				if (disabled)
@@ -522,6 +529,8 @@ namespace hades::detail::obj_ui
 			}
 			g.window_end();
 		}
+
+		return ret;
 	}
 
 	template< typename T, typename U, typename Obj>
@@ -529,13 +538,11 @@ namespace hades::detail::obj_ui
 		resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
 		typename object_editor_ui<Obj, T, U>::cache_map& cache)
 	{
-		auto& [curve, value] = c;
-
-		if (!resources::is_curve_valid(*curve, value))
+		if (!resources::is_curve_valid(*c.curve, c.value))
 			return;
 
-		g.push_id(curve);
-		std::visit([&g, &o, &curve, &target, &cache](auto&& value) {
+		g.push_id(c.curve);
+		std::visit([&g, &o, curve = c.curve, &target, &cache](auto&& value) {
 			using Type = std::decay_t<decltype(value)>;
 
 			if constexpr (!std::is_same_v<std::monostate, Type>)
@@ -546,7 +553,7 @@ namespace hades::detail::obj_ui
 					make_property_edit<object_editor_ui<Obj, T, U>>(g, o, data::get_as_string(curve->id), *curve, value, cache);
 			}
 
-			}, value);
+			}, c.value);
 		g.pop_id(); // curve address
 		return;
 	}
@@ -884,7 +891,7 @@ namespace hades
 		make_name_id_property(g, *o, _entity_name_id_uncommited, _data->entity_names);
 		g.text("curves:"sv);
 		// NOTE(steven): we dont allow adding loose curves to object instances
-		//	if they have a curve that is defined by the object type
+		//	attached curves is defined by the object type
 		// 
 		//if (g.button("add"sv)) // dont show the 'add' button if thir are no addable curves
 		//{

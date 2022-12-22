@@ -1079,11 +1079,8 @@ namespace hades::data
 					mod = true;
 
 				// default value
-				// TODO: need to check if this modified the value in a better way
-				const auto old = _curve->default_value;
-				make_curve_default_value_editor(g, _curve, _curve->default_value, _curve_vec_edit_cache, _curve_edit_cache);
-				
-				if (old != _curve->default_value)
+				if(make_curve_default_value_editor(g, "default_value"sv, _curve,
+					_curve->default_value, _curve_vec_edit_cache, _curve_edit_cache))
 					mod = true;
 
 				if (disabled)
@@ -1195,6 +1192,377 @@ namespace hades::data
 		resources::resource_base* _base = {};
 	};
 
+	// game-system editor: not configurable with the current editor
+	// level-scripts editor: not configurable with the current editor
+
+	void add_or_update_curve_on_object(hades::data::data_manager& d, 
+		hades::resources::object& o, const hades::resources::curve* c,
+		const hades::resources::curve_default_value& value)
+	{
+		auto unloaded_iter = std::ranges::find(o.curves, c->id, [](auto&& unloaded_curve) {
+			return unloaded_curve.curve.id();
+			});
+
+		if (end(o.curves) != unloaded_iter)
+			unloaded_iter->value = to_string({ *c, value });
+		else
+		{
+			o.curves.emplace_back(
+				d.make_resource_link<hades::resources::curve>(c->id, o.id),
+				to_string({ *c, value })
+			);
+			d.update_all_links();
+		}
+
+		return;
+	}
+
+	class object_editor : public resource_editor
+	{
+	public:
+		void set_target(data_manager& d, unique_id i, unique_id mod) override
+		{
+			_obj = d.get<resources::object>(i, mod);
+			_base = d.get_resource(i, mod);
+			_title = "object: "s + d.get_as_string(i) + "###obj_win"s;
+			
+			const auto base_size = size(_obj->base);
+			_base_objects.reserve(base_size);
+			_base_object_ids.reserve(base_size);
+			for (const auto& base : _obj->base)
+			{
+				const auto id = base.id();
+				_base_objects.emplace_back(d.get_as_string(id));
+				_base_object_ids.emplace_back(id);
+			}
+
+			// add this object to the base id list, so this object
+			// cannot add itself as a base.
+			_base_object_ids.emplace_back(_obj->id);
+
+			std::ranges::sort(_base_objects);
+
+			_generate_objects_combo(d);
+			_generate_curves_combo(d);
+
+			const auto groups = d.get_all_names_for_type("animation group"sv);
+			_anim_groups.clear();
+			_anim_groups.reserve(size(groups));
+			std::ranges::transform(groups, back_inserter(_anim_groups), [](auto&& str) {
+				return to_string(str);
+				});
+
+			return;
+		}
+
+		void update(data::data_manager& d, gui& g) override
+		{
+			using hades::gui;
+
+			const auto generate_yaml = [this](data::data_manager& d) {
+				auto writer = data::make_writer();
+				_base->serialise(d, *writer);
+				_yaml = writer->get_string();
+			};
+
+			if (empty(_yaml))
+				std::invoke(generate_yaml, d);
+
+			g.next_window_size({}, gui::set_condition_enum::first_use);
+			if (g.window_begin(_title))
+			{
+				const auto disabled = !editable(_base->mod);
+				auto mod = false;
+				if (disabled)
+					g.begin_disabled();
+
+				g.text("base objects:"sv);
+				// list base objects
+				if(g.begin_table("##base-tables"sv, 2))
+				{
+					if(g.table_next_column())
+					{
+						if (g.listbox_begin("##base_list"))
+						{
+							for (auto i = std::size_t{}; i < size(_base_objects); ++i)
+							{
+								if (g.selectable(_base_objects[i], i == _base_objects_selected))
+									_base_objects_selected = i;
+							}
+
+							g.listbox_end();
+						}
+					}
+
+					if (g.table_next_column())
+					{
+						const auto size = std::size(_objects_combo);
+						const auto combo_selected = _objects_combo_selected < size;
+						const auto preview =  combo_selected ?
+							std::string_view{ _objects_combo[_objects_combo_selected] } :
+							""sv;
+
+						if (g.combo_begin("objects"sv, preview))
+						{
+							for (auto i = std::size_t{}; i < size; ++i)
+							{
+								if (g.selectable(_objects_combo[i], i == _objects_combo_selected))
+									_objects_combo_selected = i;
+							}
+
+							g.combo_end();
+						}
+
+						if (!combo_selected)
+							g.begin_disabled();
+						if (g.button("add new base"sv))
+						{
+							mod = true;
+							_add_new_base(d.get_uid(_objects_combo[_objects_combo_selected]), d);
+						}
+						if (!combo_selected)
+							g.end_disabled();
+
+						const auto base_selected = _base_objects_selected < std::size(_base_objects);
+
+						if (!base_selected)
+							g.begin_disabled();
+
+						if (g.button("remove base"sv))
+						{
+							mod = true;
+							_remove_base(d);
+						}
+
+						if (!base_selected)
+							g.end_disabled();
+					}
+
+					g.end_table();
+				}
+
+				// animations
+				const auto anim_groups_size = size(_anim_groups);
+				const auto anim_preview = _anim_group_selected < anim_groups_size ?
+					std::string_view{ _anim_groups[_anim_group_selected] } :
+					"none"sv;
+				if (g.combo_begin("animation group", anim_preview))
+				{
+					if (g.selectable("none"sv, !(_anim_group_selected < anim_groups_size)))
+					{
+						mod = true;
+						_anim_group_selected = std::numeric_limits<std::size_t>::max();
+						_obj->animations = {};
+					}
+
+					for (auto i = std::size_t{}; i < anim_groups_size; ++i)
+					{
+						if (g.selectable(_anim_groups[i], _anim_group_selected == i))
+						{
+							mod = true;
+							_anim_group_selected = i;
+							using namespace resources::animation_group_functions;
+							_obj->animations = make_resource_link(d, d.get_uid(_anim_groups[i]), _obj->id);
+						}
+					}
+
+					g.combo_end();
+				}
+
+				const auto curve_list_size = size(_add_curve);
+				const auto prev = _curve_selected < curve_list_size ?
+					std::string_view{ _add_curve[_curve_selected] } : "select a curve"sv;
+				g.text("curves");
+				if (g.combo_begin("##add_curve"sv, prev))
+				{
+					for (auto i = std::size_t{}; i < curve_list_size; ++i)
+					{
+						if (g.selectable(_add_curve[i], i == _curve_selected))
+							_curve_selected = i;
+					}
+					g.combo_end();
+				}
+
+				g.same_line();
+				if(g.button("add curve"sv) && _curve_selected < curve_list_size)
+				{
+					mod = true;
+					const auto curve = d.get<resources::curve>(d.get_uid(_add_curve[_curve_selected]));
+					add_or_update_curve_on_object(d, *_obj, curve, curve->default_value);
+				}
+
+				if (g.begin_table("curves_table"sv, 2, gui::table_flags::borders))
+				{
+					g.table_setup_column("###curve_col"sv, gui::table_column_flags::width_stretch, .8f);
+					g.table_setup_column("###button_col"sv, gui::table_column_flags::width_stretch, .2f);
+
+					for (auto& c : _obj->all_curves)
+					{
+						// curves inherited from base objects
+						const auto foreign_curve = c.object != _obj->id;
+						g.push_id(c.curve);
+						if (g.table_next_column())
+						{
+							if (foreign_curve)
+								g.begin_disabled();
+							if (make_curve_default_value_editor(g, d.get_as_string(c.curve->id),
+								c.curve, c.value, _curve_vec_edit_cache, _curve_edit_cache))
+							{
+								mod = true;
+								add_or_update_curve_on_object(d, *_obj, c.curve, c.value);
+							}
+							if (foreign_curve)
+								g.end_disabled();
+
+							if (foreign_curve)
+							{
+								g.same_line();
+								g.text_disabled(d.get_as_string(c.object));
+							}
+						}
+
+						if (g.table_next_column())
+						{
+							if (foreign_curve)
+							{
+								if (g.button("override"sv))
+								{
+									mod = true;
+									add_or_update_curve_on_object(d, *_obj, c.curve, c.value);
+								}
+							}
+							else
+							{
+								if (g.button("remove"sv))
+								{
+									mod = true;
+									auto unloaded_iter = std::ranges::find(_obj->curves, c.curve->id, [](auto&& unloaded_curve) {
+										return unloaded_curve.curve.id();
+										});
+
+									assert(end(_obj->curves) != unloaded_iter);
+									_obj->curves.erase(unloaded_iter);
+								}
+							}
+						}
+						g.pop_id();
+					}
+
+					g.end_table();
+				}
+
+				// systems
+
+				// render systems
+
+				// tags
+
+				if (disabled)
+					g.end_disabled();
+
+				if (mod)
+				{
+					//reload to generate curve list
+					_obj->load(d);
+					_generate_curves_combo(d);
+					std::invoke(generate_yaml, d);
+				}
+
+				g.text("Resource as YAML:"sv);
+				g.input_text_multiline("##yaml"sv, _yaml, {}, gui::input_text_flags::readonly);
+			}
+			g.window_end();
+			return;
+		}
+
+		std::string resource_name() const override
+		{
+			return _title;
+		}
+
+		resources::resource_base* get() const noexcept override
+		{
+			return _base;
+		}
+
+	private:
+		void _generate_curves_combo(data::data_manager& d)
+		{
+			auto curves = d.get_all_names_for_type("curves"sv);
+			const auto removed = std::ranges::remove_if(curves, [&d, &all_curves = _obj->all_curves](auto&& str)->bool {
+				return std::ranges::find(all_curves, str, [&d](auto&& c)->std::string_view {
+					return d.get_as_string(c.curve->id);
+					}) != end(all_curves);
+				});
+			const auto unique = std::ranges::unique(begin(curves), begin(removed));
+
+			_add_curve.clear();
+			_add_curve.reserve(size(curves) - size(unique));
+			std::transform(begin(curves), begin(unique), back_inserter(_add_curve), [](auto&& str) {
+				return to_string(str); 
+				});
+
+			if (_curve_selected > size(_add_curve))
+				_curve_selected = std::numeric_limits<std::size_t>::max();
+		}
+
+		void _generate_objects_combo(data::data_manager& d)
+		{
+			const auto& objects = resources::all_objects;
+			_objects_combo.clear();
+			_objects_combo.reserve(size(objects));
+
+			for (const auto& obj : objects)
+			{
+				if (std::ranges::find(_base_object_ids, obj.id()) == end(_base_object_ids))
+					_objects_combo.emplace_back(d.get_as_string(obj.id()));
+			}
+
+			std::ranges::sort(_objects_combo);
+
+			return;
+		}
+
+		// curves, tags, etc
+		void _generate_subtypes(data::data_manager& d);
+
+		void _add_new_base(unique_id base, data::data_manager& d)
+		{
+			_base_objects.emplace_back(d.get_as_string(base));
+			_base_object_ids.emplace_back(base);
+			std::ranges::sort(_base_objects);
+			_generate_objects_combo(d);
+			return;
+		}
+
+		void _remove_base(data::data_manager& d)
+		{
+			const auto iter = next(begin(_base_objects), _base_objects_selected);
+			const auto id = d.get_uid(*iter);
+			_base_objects.erase(iter);
+			_base_objects_selected = std::numeric_limits<std::size_t>::max();
+			const auto iter2 = std::ranges::find(_base_object_ids, id);
+			_base_object_ids.erase(iter2);
+			_generate_objects_combo(d);
+			return;
+		}
+
+		object_editor_ui<nullptr_t>::cache_map _curve_edit_cache;
+		object_editor_ui<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
+		std::vector<string> _base_objects;
+		std::vector<string> _objects_combo;
+		std::vector<string> _add_curve;
+		std::vector<string> _anim_groups;
+		std::vector<unique_id> _base_object_ids;
+		std::size_t _base_objects_selected = std::numeric_limits<std::size_t>::max();
+		std::size_t _objects_combo_selected = std::numeric_limits<std::size_t>::max();
+		std::size_t _curve_selected = std::numeric_limits<std::size_t>::max();
+		std::size_t _anim_group_selected = std::numeric_limits<std::size_t>::max();
+		string _title;
+		string _yaml;
+		resources::object* _obj = {};
+		resources::resource_base* _base = {};
+	};
 
 	void basic_resource_inspector::update(gui& g, data::data_manager& d)
 	{
@@ -1276,6 +1644,8 @@ namespace hades::data
 			return std::make_unique<curve_editor>();
 		else if (s == "fonts"sv)
 			return std::make_unique<font_editor>();
+		else if (s == "objects"sv)
+			return std::make_unique<object_editor>();
 
 		return {};
 	}

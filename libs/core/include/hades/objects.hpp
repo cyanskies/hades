@@ -46,7 +46,7 @@ namespace hades::resources
 	struct object : public resource_type<object_t>
 	{
 		void load(data::data_manager&) final override;
-
+		void serialise(const data::data_manager&, data::writer&) const final override;
 		//editor icon, used in the object picker
 		resource_link<resources::animation_group> animations;
 		// [[deprecated("use animation groups instead")]]
@@ -62,8 +62,9 @@ namespace hades::resources
 		//		no benifit to using resource_link here
 		struct curve_obj
 		{
-			const curve* curve = nullptr;
 			curve_default_value value;
+			const curve* curve = nullptr;
+			unique_id object;
 		};
 
 		using curve_list = std::vector<curve_obj>;

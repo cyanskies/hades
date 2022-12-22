@@ -54,26 +54,27 @@ namespace hades::resources
 
 namespace hades
 {
-	void make_curve_default_value_editor(gui& g, resources::curve* curve,
-		resources::curve_default_value &value,
+	bool make_curve_default_value_editor(gui& g, std::string_view name,
+		const resources::curve* curve, resources::curve_default_value &value,
 		typename object_editor_ui<nullptr_t>::vector_curve_edit& target,
 		typename object_editor_ui<nullptr_t>::cache_map& cache)
 	{
 		g.push_id(curve);
-		std::visit([&g, &curve, &target, &cache](auto&& value) {
+		const auto ret = std::visit([&g, &curve, &target, &cache, name](auto&& value)->bool {
 			using Type = std::decay_t<decltype(value)>;
 			if constexpr (!std::is_same_v<std::monostate, Type>)
 			{
 				auto nullr = nullptr_t{};
 				if constexpr (resources::curve_types::is_collection_type_v<Type>)
-					detail::obj_ui::make_vector_property_edit<Type, nullptr_t, nullptr_t>(g, nullr, data::get_as_string(curve->id), curve, value, target, cache);
+					return detail::obj_ui::make_vector_property_edit<Type, nullptr_t, nullptr_t>(g, nullr, name, curve, value, target, cache);
 				else
-					detail::obj_ui::make_property_edit<object_editor_ui<nullptr_t>>(g, nullr, data::get_as_string(curve->id), *curve, value, cache);
+					return detail::obj_ui::make_property_edit<object_editor_ui<nullptr_t>>(g, nullr, name, *curve, value, cache);
 			}
+			return false;
 		}, value);
 		g.pop_id(); // curve address
 
-		return;
+		return ret;
 	}
 
 	void register_level_editor_object_resources(data::data_manager &d)

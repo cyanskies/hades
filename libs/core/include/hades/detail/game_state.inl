@@ -109,13 +109,13 @@ namespace hades::state_api
 
 			auto curves = get_all_curves(o);
 
-			for (auto& [c, v] : curves)
+			for (auto& c : curves)
 			{
-				assert(c);
-				assert(!v.valueless_by_exception());
-				assert(resources::is_set(v));
-				std::visit(detail::make_object_visitor{ *c, s,
-					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, v} } }, v);
+				assert(c.curve);
+				assert(!c.value.valueless_by_exception());
+				assert(resources::is_set(c.value));
+				std::visit(detail::make_object_visitor{ *c.curve, s,
+					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, c.value} } }, c.value);
 			}
 
 			// no longer true now that we no longer store const curves
@@ -151,21 +151,22 @@ namespace hades::state_api
 				std::visit(detail::make_object_visitor{ *c, s, *obj, v }, v[0].value);
 			}
 
-			assert(size(o.curves) == size(obj->object_variables));
+			// no longer true now that we no longer store const curves
+			//assert(size(o.curves) == size(obj->object_variables));
 
 			//add the object curves that weren't saved
 			std::sort(begin(ids), end(ids));
 
 			const auto& base_curves = resources::object_functions::get_all_curves(*o.obj_type);
-			for (auto& [c, v] : base_curves)
+			for (auto& c : base_curves)
 			{
 				//if the id is in the saved list, then don't restore it
-				if (std::binary_search(begin(ids), end(ids), c->id))
+				if (std::binary_search(begin(ids), end(ids), c.curve->id))
 					continue;
 
 				auto keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
-				keyframes.push_back({ time_point{}, std::move(v) });
-				std::visit(detail::make_object_visitor{*c, s, *obj, keyframes}, keyframes[0].value);
+				keyframes.push_back({ time_point{}, std::move(c.value) });
+				std::visit(detail::make_object_visitor{*c.curve, s, *obj, keyframes}, keyframes[0].value);
 			}
 
 			if (!empty(o.name_id))

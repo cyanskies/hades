@@ -62,7 +62,7 @@ namespace hades
 		struct object_data
 		{
 			std::vector<ObjectType> objects;
-			std::unordered_map<string, entity_id> entity_names;
+			unordered_map_string<entity_id> entity_names;
 			entity_id next_id = next(bad_entity);
 		};
 
@@ -101,7 +101,7 @@ namespace hades
 			std::any extra_data;
 		};
 
-		using cache_map = std::unordered_map<string, curve_edit_cache>;
+		using cache_map = unordered_map_string<curve_edit_cache>;
 
 	private:
 		struct curve_info

@@ -154,7 +154,7 @@ namespace hades
 		_quad_selection = object_collision_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
 		_collision_quads.clear();
 		auto sprites = sprite_batch{};
-		auto names = std::unordered_map<string, entity_id>{};
+		auto names = unordered_map_string<entity_id>{};
 
 		//copy the objects into the editor
 		//and set up the sprites and quad data

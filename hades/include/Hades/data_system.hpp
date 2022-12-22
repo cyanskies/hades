@@ -86,16 +86,15 @@ namespace hades::data
 		void parseYaml(unique_id, const data::parser_node&);
 		
 		//==parsing and loading data==
-		std::unordered_map<string, resources::parser_func> _resourceParsers;
+		unordered_map_string<resources::parser_func> _resourceParsers;
 		std::filesystem::path _data_file;
 		//==stored resource data==
 		//list of used names
-		std::unordered_set<string> _names;
 		unique_id _game = unique_zero;
 		std::vector<unique_id> _mods;
 		[[deprecated]] unique_id _leaf_source = unique_zero; // temp loaded mod, this is the id of a mission file
 		//map of names to Uids
-		std::unordered_map<string, unique_id> _ids;
+		unordered_map_string<unique_id> _ids;
 		//list of unloaded resources
 		std::mutex _load_mutex;
 		std::vector<resources::resource_base*> _loadQueue;

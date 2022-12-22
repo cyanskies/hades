@@ -21,7 +21,7 @@ namespace hades
 
 	void input_system::create(input_system::action_id action, bool rebindable, std::string_view default_binding)
 	{
-		const auto default_interpreter = _interpreter_names.find(to_string(default_binding));
+		const auto default_interpreter = _interpreter_names.find(default_binding);
 		assert(default_interpreter != std::end(_interpreter_names));
 		//TODO: throw if interpreter not found
 		_action_input.insert({ action, default_interpreter->second});
@@ -44,7 +44,7 @@ namespace hades
 		if (_bindable.find(action) == _bindable.end())
 			return false;
 
-		auto inter = _interpreter_names.find(to_string(interpretor));
+		auto inter = _interpreter_names.find(interpretor);
 		if (inter == std::end(_interpreter_names))
 			return false;
 
@@ -54,7 +54,7 @@ namespace hades
 
 	void input_system::unbind(input_system::action_id action, std::string_view input)
 	{
-		auto inter = _interpreter_names.find(to_string(input));
+		auto inter = _interpreter_names.find(input);
 		if (inter == std::end(_interpreter_names))
 			return;
 

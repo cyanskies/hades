@@ -1,10 +1,14 @@
 #ifndef HADES_UTIL_STRING_HPP
 #define HADES_UTIL_STRING_HPP
 
+#include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
+#include <unordered_map>
 
 //#include "hades/exceptions.hpp"
 
@@ -78,6 +82,27 @@ namespace hades
 
 	template<typename T>
 	T vector_from_string(std::string_view str);
+
+	// map containers that can be searched with char* and string_view
+	template<typename T>
+	using map_string = std::map<string, T, std::less<>>;
+	using set_string = std::set<string, std::less<>>;
+
+	// hash for unordered containers
+	// compares all string types
+	struct string_hash 
+	{
+		using is_transparent = std::true_type;
+
+		constexpr std::size_t operator()(const string_type auto&& t)const {
+			return std::hash<std::string_view>{}(t);
+		}
+	};
+
+	// unordered collections that can be searched with char* and string_view
+	template<typename T>
+	using unordered_map_string = std::unordered_map<string, T, string_hash, std::equal_to<>>;
+	using unordered_set_string = std::unordered_map<string, string_hash, std::equal_to<>>;
 }
 
 #include "hades/detail/string.inl"

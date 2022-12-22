@@ -411,7 +411,7 @@ namespace hades::state_api
 	object_ref get_object_ref(std::string_view s, time_point t, game_state& g, extra_state<GameSystem>& e) noexcept
 	{
 		//find and entry for this name
-		auto obj = g.names.find(to_string(s));
+		auto obj = g.names.find(s);
 		if (obj == end(g.names))
 		{
 			LOGWARNING("tried to find named object that doesn't exist, name was: " + to_string(s));

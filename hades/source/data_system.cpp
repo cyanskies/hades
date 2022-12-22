@@ -121,7 +121,7 @@ namespace hades::data
 
 	bool data_system::loaded(std::string_view mod)
 	{
-		const auto iter = _ids.find(string{ mod });
+		const auto iter = _ids.find(mod);
 		//name hasn't even been used yet
 		if (iter == end(_ids))
 			return false;
@@ -291,7 +291,7 @@ namespace hades::data
 		if (name.empty() || name == no_id_string)
 			return unique_id::zero;
 
-		auto id = _ids.find(types::string(name));
+		auto id = _ids.find(name);
 
 		if (id == std::end(_ids))
 			return unique_id::zero;
@@ -304,12 +304,11 @@ namespace hades::data
 		if (name.empty() || name == no_id_string)
 			return unique_id::zero;
 
-		auto str = to_string(name);
-		auto iter = _ids.find(str);
+		auto iter = _ids.find(name);
 		if (iter != end(_ids))
 			return iter->second;
 
-		const auto out = _ids.emplace(std::move(str), make_unique_id());
+		const auto out = _ids.emplace(name, make_unique_id());
 		assert(out.second);
 		return out.first->second;
 	}

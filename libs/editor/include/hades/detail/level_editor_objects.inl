@@ -19,7 +19,7 @@ namespace hades::detail::obj_ui
 		return to_string(str.substr(0, Length)) + "..."s;
 	}
 
-	static inline void make_name_id_property(gui& g, object_instance& o, string& text, std::unordered_map<string, entity_id>& name_map)
+	static inline void make_name_id_property(gui& g, object_instance& o, string& text, unordered_map_string<entity_id>& name_map)
 	{
 		using namespace std::string_view_literals;
 
@@ -232,7 +232,8 @@ namespace hades::detail::obj_ui
 	{
 		using namespace std::string_view_literals;
 
-		auto& cache_entry = cache[to_string(name)];
+		auto iter = cache.find(name);
+		auto& cache_entry = iter == end(cache) ? cache[to_string(name)] : iter->second;
 		if (cache_entry.edit_generation == 0)
 		{
 			std::tie(cache_entry.edit_buffer, cache_entry.extra_data) = duration_to_string(value);

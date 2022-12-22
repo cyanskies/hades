@@ -52,7 +52,7 @@ namespace hades
 		entity_variable_list_t object_variables;
 	};
 
-	using object_name_map = std::unordered_map<string, step_curve<object_ref>>;
+	using object_name_map = unordered_map_string<step_curve<object_ref>>;
 
 	namespace detail
 	{		

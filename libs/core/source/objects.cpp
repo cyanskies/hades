@@ -226,7 +226,6 @@ namespace hades::resources
 		tags.insert(end(tags), begin(o.tags), end(o.tags));
 		return tags;
 	}
-
 }
 
 namespace hades
@@ -383,7 +382,13 @@ namespace hades::resources
 			w.write("tags"sv, d.get_as_string(tags[0]));
 		else if (!empty(tags))
 		{
-			w.start_sequence("tags"sv);
+			// generate like this [1, 2, 3, 4]
+			// rather than:
+			//	 - 1
+			//	 - 2
+			//	 - 3
+			w.write("tags"sv);
+			w.start_sequence();
 			for (const auto& t : tags)
 				w.write(d.get_as_string(t));
 			w.end_sequence();
@@ -422,6 +427,27 @@ namespace hades::resources::object_functions
 	{
 		assert(o.loaded);
 		return o.all_tags;
+	}
+
+	inherited_tag_list get_inherited_tags(const object& o)
+	{
+		auto tags = inherited_tag_list{};
+		for (auto& base : o.base)
+		{
+			assert(base && base->loaded);
+			const auto base_tags = get_inherited_tags(*base);
+			tags.insert(end(tags), begin(base_tags), end(base_tags));
+
+			for (const auto t : base->tags)
+				tags.emplace_back(t, base->id);
+		}
+
+		std::ranges::stable_sort(tags, {}, &inherited_tag_entry::tag);
+		const auto duplicates = std::ranges::unique(tags, {}, &inherited_tag_entry::tag);
+		assert(end(duplicates) == end(tags));
+		tags.erase(begin(duplicates), end(duplicates));
+
+		return tags;
 	}
 
 	static object::unloaded_value to_unloaded_curve(const curve& c, curve_default_value v)

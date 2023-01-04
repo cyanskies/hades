@@ -94,7 +94,7 @@ namespace hades
 	{
 		using is_transparent = std::true_type;
 
-		constexpr std::size_t operator()(const string_type auto&& t)const {
+		constexpr std::size_t operator()(const string_type auto& t)const {
 			return std::hash<std::string_view>{}(t);
 		}
 	};

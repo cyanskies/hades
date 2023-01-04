@@ -106,7 +106,12 @@ namespace hades::resources::object_functions
 	const std::vector<resource_link<system>>& get_systems(const object& o) noexcept;
 	const std::vector<resource_link<render_system>>& get_render_systems(const object& o) noexcept;
 	const tag_list& get_tags(const object& o) noexcept;
-
+	struct inherited_tag_entry
+	{
+		unique_id tag, object;
+	};
+	using inherited_tag_list = std::vector<inherited_tag_entry>;
+	inherited_tag_list get_inherited_tags(const object&);
 	// modifying curves
 	// add curve to object, overriding inherited values
 	// or update the default value for this curve.

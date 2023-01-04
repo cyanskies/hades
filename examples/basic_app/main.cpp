@@ -4,7 +4,7 @@
 class basic_state : public hades::state
 {};
 
-void app_main(hades::StateManager& state, hades::input_system& bindings, hades::command_list& commandLine)
+void app_main(hades::StateManager& state, hades::input_system&, hades::command_list&)
 {
 	state.push(std::make_unique<basic_state>());
 }

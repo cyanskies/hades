@@ -70,7 +70,8 @@ namespace hades
 				else
 					return detail::obj_ui::make_property_edit<object_editor_ui<nullptr_t>>(g, nullr, name, *curve, value, cache);
 			}
-			return false;
+			else
+				return false;
 		}, value);
 		g.pop_id(); // curve address
 

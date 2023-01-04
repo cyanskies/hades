@@ -372,21 +372,17 @@ namespace hades
 		bool listbox_begin(std::string_view label, const vector2& size = {0.f, 0.f});
 		// list selectables inbetween listbox calls
 		void listbox_end(); // only call if listbox_begin returns true
-		//listboxes
+		//quick listbox, handles the simple selectable listbox case
 		//return true if selected item changes
-		//TODO: use newer listbox api
 		template<typename Container>
-		detail::listbox_with_string<Container> listbox(std::string_view label,
-			std::size_t& current_item, const Container&, int height_in_items = -1);
-
-		template<typename Container>
-		detail::listbox_no_string<Container> listbox(std::string_view label,
-			std::size_t& current_item, const Container&, int height_in_items = -1);
-
+			requires string_type<typename Container::value_type>
+		bool listbox(std::string_view label,
+			std::size_t& current_item, const Container&, const vector2& size = { 0.f, 0.f });
 		template<typename Container, typename ToString>
-			requires std::regular_invocable<ToString, typename Container::value_type>
-		bool listbox(std::string_view label, std::size_t& current_item,
-			const Container&, ToString to_string_func, int height_in_items = -1);
+			requires std::convertible_to<std::invoke_result_t<ToString, typename Container::value_type>, std::string_view>
+		bool listbox(std::string_view label, std::size_t& current_item,	const Container&,
+			ToString = func_ref<string(typename Container::value_type)>(to_string),
+			const vector2& size = { 0.f, 0.f });
 
 		//TODO: drags
 

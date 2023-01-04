@@ -15,8 +15,8 @@ using namespace std::string_view_literals;
 
 namespace hades::data
 {
-	constexpr auto no_id_string = "null-id";
-	constexpr auto unnamed_id_string = "unnamed-id";
+	const auto no_id_string = "null-id"s;
+	const auto unnamed_id_string = "unnamed-id"s;
 
 	data_system::data_system() : _ids({ {string{ no_id_string }, unique_id::zero} })
 	{

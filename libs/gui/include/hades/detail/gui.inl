@@ -29,104 +29,39 @@ namespace hades
 	}
 
 	template<typename Container>
-	inline detail::listbox_with_string<Container> gui::listbox(std::string_view label,
-		std::size_t &current_item, const Container& container, int height_in_items)
+		requires string_type<typename Container::value_type>
+	bool gui::listbox(std::string_view label,
+		std::size_t& current_item, const Container& container, const vector2& size)
 	{
-		using T = typename Container::value_type;
-		static_assert(is_string_v<T>);
-		static_assert(!std::is_same_v<T, std::string_view>);
+		const auto to_string_view = [](auto&& s) noexcept -> std::string_view {
+			return s;
+		};
 
-		_active_assert();
-
-		//convert the current item into an int to pass into IMGUI
-		auto current_as_int = integer_cast<int>(current_item);
-
-		//NOTE: container is not modified, but ListBox() only accepts non-const
-		auto &cont = const_cast<Container&>(container);
-
-		const auto result = ImGui::ListBox(to_string(label).data(), &current_as_int,
-			[](void *data, int index, const char **out_text)->bool {
-			assert(index >= 0);
-			const auto i = integer_cast<std::size_t>(index);
-			const auto &container = *static_cast<Container*>(data);
-			if (i > std::size(container))
-				return false;
-
-			auto at = std::begin(container);
-			std::advance(at, i);
-
-			*out_text = [](auto &&val)->const char* {
-				if constexpr (std::is_same_v<string, std::decay_t<decltype(val)>>)
-					return val.c_str();
-				else
-					return val; // must be a char*
-			}(*at);
-			return true;
-		}, &cont, integer_cast<int32>(std::size(container)), height_in_items);
-
-		//update the current_item ref
-		assert(current_as_int >= 0);
-		current_item = integer_cast<std::size_t>(current_as_int);
-
-		return result;
-	}
-
-	template<typename Container>
-	inline detail::listbox_no_string<Container> gui::listbox(std::string_view label,
-		std::size_t &current_item, const Container &container, int height_in_items)
-	{
-		using T = typename Container::value_type;
-		using hades::to_string;
-		return listbox(label, current_item, container,
-			[](T value) { return to_string(value); },
-			height_in_items);
-	}
-	
-	namespace detail
-	{
-		static thread_local void* to_string_stash = {};
-		static thread_local string listbox_string_buffer;
-		template<typename Container, typename ToString>
-		bool listbox_helper_func(void* data, int idx, const char** out_text)
-		{
-			const auto& func = *static_cast<ToString*>(to_string_stash);
-			const auto& container = *static_cast<const Container*>(data);
-			if (idx >= size(container))
-				return false;
-
-			auto iter = begin(container);
-			iter = std::next(iter, idx);
-			listbox_string_buffer = std::invoke(func, *iter);
-			*out_text = listbox_string_buffer.c_str();
-			return !empty(listbox_string_buffer);
-		}
+		return listbox(label, current_item, container, to_string_view, size);
 	}
 
 	template<typename Container, typename ToString>
-		requires std::regular_invocable<ToString, typename Container::value_type>
-	bool gui::listbox(std::string_view lable, std::size_t& current_item,
-		const Container& data, ToString to_string_func, int height_in_items)
+		requires std::convertible_to<std::invoke_result_t<ToString, typename Container::value_type>, std::string_view>
+	bool gui::listbox(std::string_view label, std::size_t& current_item,
+		const Container& container, ToString to_string_func, const vector2& size)
 	{
-		using T = typename Container::value_type;
-		static_assert(std::is_invocable_r_v<string, ToString, const T&>,
-			"ToString must accept the list entry type and return a string");
+		auto changed = false;
+		if (listbox_begin(label, size))
+		{
+			const auto s = std::size(container);
+			for (auto i = std::size_t{}; i < s; ++i)
+			{
+				if (selectable(std::invoke(to_string_func, container[i]), i == current_item))
+				{
+					current_item = i;
+					changed = true;
+				}
+			}
 
-		auto int_item = integer_cast<int>(current_item);
-		const auto item_count = integer_cast<int>(size(data));
-		detail::to_string_stash = &to_string_func;
-		//NOTE: container is not modified, but ImGui::ListBox() only accepts non-const
-		auto& cont = const_cast<Container&>(data);
-		const auto ret = ImGui::ListBox(to_string(lable).c_str(), &int_item,
-			detail::listbox_helper_func<Container, ToString>, &cont, item_count, height_in_items);
-		current_item = integer_cast<std::size_t>(int_item);
+			listbox_end();
+		}
 
-		#ifndef NDEBUG
-		// clear out the thread globals
-		detail::to_string_stash = {};
-		detail::listbox_string_buffer = {};
-		#endif // !NDEBUG
-
-		return ret;
+		return changed;
 	}
 
 	namespace detail

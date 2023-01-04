@@ -11,6 +11,7 @@
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
 #include "hades/font.hpp"
+#include "hades/game_system_resources.hpp"
 #include "hades/gui.hpp"
 #include "hades/level_editor_objects.hpp"
 #include "hades/sf_color.hpp"
@@ -1211,7 +1212,6 @@ namespace hades::data
 				d.make_resource_link<hades::resources::curve>(c->id, o.id),
 				to_string({ *c, value })
 			);
-			d.update_all_links();
 		}
 
 		return;
@@ -1224,25 +1224,16 @@ namespace hades::data
 		{
 			_obj = d.get<resources::object>(i, mod);
 			_base = d.get_resource(i, mod);
-			_title = "object: "s + d.get_as_string(i) + "###obj_win"s;
+			const auto str = d.get_as_string(i);
+			_title = "object: "s + str + "###obj_win"s;
 			
-			const auto base_size = size(_obj->base);
-			_base_objects.reserve(base_size);
-			_base_object_ids.reserve(base_size);
-			for (const auto& base : _obj->base)
-			{
-				const auto id = base.id();
-				_base_objects.emplace_back(d.get_as_string(id));
-				_base_object_ids.emplace_back(id);
-			}
+			_generate_combo(d, _base_objects, _obj->base, {}, "objects"sv);
+			_base_objects.attached_ids.emplace_back(_obj->id);
+			std::erase(_base_objects.combo, str);
 
-			// add this object to the base id list, so this object
-			// cannot add itself as a base.
-			_base_object_ids.emplace_back(_obj->id);
+			_generate_combo(d, _systems, _obj->systems, &_obj->all_systems, "systems"sv);
+			_generate_combo(d, _render_systems, _obj->render_systems, &_obj->all_render_systems, "render systems"sv);
 
-			std::ranges::sort(_base_objects);
-
-			_generate_objects_combo(d);
 			_generate_curves_combo(d);
 
 			const auto groups = d.get_all_names_for_type("animation group"sv);
@@ -1251,6 +1242,24 @@ namespace hades::data
 			std::ranges::transform(groups, back_inserter(_anim_groups), [](auto&& str) {
 				return to_string(str);
 				});
+
+			_tags.clear();
+			_tags.reserve(size(_obj->tags));
+			std::ranges::transform(_obj->tags, back_inserter(_tags), [&d](auto&& id) {
+				return d.get_as_string(id);
+				});
+
+			const auto inherited_tags = resources::object_functions::get_inherited_tags(*_obj);
+			_base_tags.clear();
+			_base_tags.reserve(size(inherited_tags));
+			std::ranges::transform(inherited_tags, back_inserter(_base_tags), [&d](auto&& pair)->std::pair<string, string> {
+				return { d.get_as_string(pair.tag), d.get_as_string(pair.object) };
+				});
+
+			std::ranges::sort(_base_tags, {}, &std::pair<string, string>::first);
+
+			/*for (const auto& s : _tags)
+				erase(_base_tags, s);*/
 
 			return;
 		}
@@ -1276,70 +1285,23 @@ namespace hades::data
 				if (disabled)
 					g.begin_disabled();
 
-				g.text("base objects:"sv);
-				// list base objects
-				if(g.begin_table("##base-tables"sv, 2))
-				{
-					if(g.table_next_column())
-					{
-						if (g.listbox_begin("##base_list"))
-						{
-							for (auto i = std::size_t{}; i < size(_base_objects); ++i)
-							{
-								if (g.selectable(_base_objects[i], i == _base_objects_selected))
-									_base_objects_selected = i;
-							}
+				const auto add_base = [this](data::data_manager& d, unique_id id) {
+					_obj->base.emplace_back(d.make_resource_link<resources::object>(id, _obj->id));
+					return;
+				};
 
-							g.listbox_end();
-						}
-					}
+				const auto rem_base = [this](data::data_manager& d, unique_id id) {
+					const auto base = std::ranges::find(_obj->base, id);
+					_obj->base.erase(base);
+					return;
+				};
 
-					if (g.table_next_column())
-					{
-						const auto size = std::size(_objects_combo);
-						const auto combo_selected = _objects_combo_selected < size;
-						const auto preview =  combo_selected ?
-							std::string_view{ _objects_combo[_objects_combo_selected] } :
-							""sv;
+				// base object list
+				g.text("base objects"sv);
+				if (_update_list_ui("base objects"sv, _base_objects, d, g, add_base, rem_base))
+					mod = true;
 
-						if (g.combo_begin("objects"sv, preview))
-						{
-							for (auto i = std::size_t{}; i < size; ++i)
-							{
-								if (g.selectable(_objects_combo[i], i == _objects_combo_selected))
-									_objects_combo_selected = i;
-							}
-
-							g.combo_end();
-						}
-
-						if (!combo_selected)
-							g.begin_disabled();
-						if (g.button("add new base"sv))
-						{
-							mod = true;
-							_add_new_base(d.get_uid(_objects_combo[_objects_combo_selected]), d);
-						}
-						if (!combo_selected)
-							g.end_disabled();
-
-						const auto base_selected = _base_objects_selected < std::size(_base_objects);
-
-						if (!base_selected)
-							g.begin_disabled();
-
-						if (g.button("remove base"sv))
-						{
-							mod = true;
-							_remove_base(d);
-						}
-
-						if (!base_selected)
-							g.end_disabled();
-					}
-
-					g.end_table();
-				}
+				g.separator_horizontal();
 
 				// animations
 				const auto anim_groups_size = size(_anim_groups);
@@ -1368,6 +1330,8 @@ namespace hades::data
 
 					g.combo_end();
 				}
+
+				g.separator_horizontal();
 
 				const auto curve_list_size = size(_add_curve);
 				const auto prev = _curve_selected < curve_list_size ?
@@ -1451,17 +1415,107 @@ namespace hades::data
 					g.end_table();
 				}
 
+				g.separator_horizontal();
+
+				const auto add_system = [this](data::data_manager& d, unique_id id) {
+					_obj->systems.emplace_back(d.make_resource_link<resources::system>(id, _obj->id));
+					return;
+				};
+
+				const auto rem_system = [this](data::data_manager& d, unique_id id) {
+					const auto iter = std::ranges::find(_obj->systems, id);
+					_obj->systems.erase(iter);
+					return;
+				};
+
 				// systems
+				g.text("systems"sv);
+				if (_update_list_ui("systems"sv, _systems, d, g, add_system, rem_system))
+					mod = true;
+
+				g.separator_horizontal();
+
+				const auto add_rsystem = [this](data::data_manager& d, unique_id id) {
+					_obj->render_systems.emplace_back(d.make_resource_link<resources::render_system>(id, _obj->id));
+					return;
+				};
+
+				const auto rem_rsystem = [this](data::data_manager& d, unique_id id) {
+					const auto iter = std::ranges::find(_obj->render_systems, id);
+					_obj->render_systems.erase(iter);
+					return;
+				};
 
 				// render systems
+				g.text("render systems"sv);
+				if (_update_list_ui("render systems"sv, _systems, d, g, add_rsystem, rem_rsystem))
+					mod = true;
+
+				g.separator_horizontal();
 
 				// tags
+				const auto tag_add = [&] {
+					if (std::ranges::find(_tags, _next_tag) == end(_tags))
+					{
+						mod = true;
+						_tags.emplace_back(_next_tag);
+						std::ranges::sort(_tags);
+						const auto id = d.get_uid(_next_tag);
+						_obj->tags.emplace_back(id);
+						_next_tag.clear();
+					}
+
+					return;
+				};
+
+				g.text("tags"sv);
+
+				if (g.listbox_begin("inherited"sv))
+				{
+					for(const auto& [tag, source] : _base_tags)
+					{ 
+						g.selectable(tag, false);
+						g.same_line();
+						g.text_disabled(source);
+					}
+
+					g.listbox_end();
+				}
+
+				if (g.input_text("###next-tag"sv, _next_tag,
+					gui::input_text_flags::enter_returns_true))
+				{
+					std::invoke(tag_add);
+				}
+
+				g.same_line();
+
+				if (g.button("add tag"sv))
+					std::invoke(tag_add);
+
+				g.same_line();
+				if (g.button("remove selected"sv) && _tag_selected < size(_tags))
+				{
+					const auto iter = next(begin(_tags), _tag_selected);
+					if (iter != end(_tags))
+					{
+						mod = true;
+						const auto id = d.get_uid(*iter);
+						_tags.erase(iter);
+						erase(_obj->tags, id);
+					}
+				}
+
+				g.listbox("tags"sv, _tag_selected, _tags);
+
+				g.separator_horizontal();
 
 				if (disabled)
 					g.end_disabled();
 
 				if (mod)
 				{
+					d.update_all_links();
 					//reload to generate curve list
 					_obj->load(d);
 					_generate_curves_combo(d);
@@ -1486,6 +1540,17 @@ namespace hades::data
 		}
 
 	private:
+		//used for base objects,
+		//	systems + render systems
+		struct resource_list
+		{
+			std::vector<string> attached;
+			std::vector<unique_id> attached_ids;  
+			std::vector<string> combo;
+			std::size_t attached_selected = std::numeric_limits<std::size_t>::max();
+			std::size_t combo_selected = std::numeric_limits<std::size_t>::max();
+		};
+
 		void _generate_curves_combo(data::data_manager& d)
 		{
 			auto curves = d.get_all_names_for_type("curves"sv);
@@ -1506,60 +1571,144 @@ namespace hades::data
 				_curve_selected = std::numeric_limits<std::size_t>::max();
 		}
 
-		void _generate_objects_combo(data::data_manager& d)
+		template<typename T>
+		void _generate_combo(data::data_manager& d, resource_list& r,
+			const std::vector<resources::resource_link<T>>& source,
+			const std::vector<resources::resource_link<T>>* all_source,
+			std::string_view res_type)
 		{
-			const auto& objects = resources::all_objects;
-			_objects_combo.clear();
-			_objects_combo.reserve(size(objects));
-
-			for (const auto& obj : objects)
+			const auto res_size = size(source);
+			r.attached.reserve(res_size);
+			r.attached_ids.reserve(res_size);
+			for (const auto& rl : source)
 			{
-				if (std::ranges::find(_base_object_ids, obj.id()) == end(_base_object_ids))
-					_objects_combo.emplace_back(d.get_as_string(obj.id()));
+				const auto id = rl.id();
+				r.attached.emplace_back(d.get_as_string(id));
+				r.attached_ids.emplace_back(id);
 			}
 
-			std::ranges::sort(_objects_combo);
+			std::ranges::sort(r.attached);
+
+			auto resources = d.get_all_names_for_type(res_type);
+
+			const auto remove_duplicates = [&](const auto& source) {
+				const auto removed = std::ranges::remove_if(resources, [&d, &source](auto&& str)->bool {
+					return std::ranges::find(source, str, [&d](auto&& c)->std::string_view {
+						return d.get_as_string(c.id());
+						}) != end(source);
+					});
+				const auto unique = std::ranges::unique(begin(resources), begin(removed));
+				resources.erase(begin(unique), end(resources));
+			};
+
+			if (all_source)
+				std::invoke(remove_duplicates, *all_source);
+			else
+				std::invoke(remove_duplicates, source);
+
+			r.combo.clear();
+			r.combo.reserve(size(resources));
+			std::ranges::transform(resources, back_inserter(r.combo), [](auto&& str) {
+				return to_string(str);
+				});
 
 			return;
 		}
 
-		// curves, tags, etc
-		void _generate_subtypes(data::data_manager& d);
-
-		void _add_new_base(unique_id base, data::data_manager& d)
+		template<typename AddFunc, typename RemoveFunc>
+		bool _update_list_ui(std::string_view label, resource_list& res,
+			data::data_manager& d, gui& g, AddFunc add, RemoveFunc remove)
 		{
-			_base_objects.emplace_back(d.get_as_string(base));
-			_base_object_ids.emplace_back(base);
-			std::ranges::sort(_base_objects);
-			_generate_objects_combo(d);
-			return;
-		}
+			auto ret = false;
+			g.push_id(label);
+			if (g.begin_table("##table"sv, 2))
+			{
+				if (g.table_next_column())
+					g.listbox("##resource_list"sv, res.attached_selected, res.attached);
 
-		void _remove_base(data::data_manager& d)
-		{
-			const auto iter = next(begin(_base_objects), _base_objects_selected);
-			const auto id = d.get_uid(*iter);
-			_base_objects.erase(iter);
-			_base_objects_selected = std::numeric_limits<std::size_t>::max();
-			const auto iter2 = std::ranges::find(_base_object_ids, id);
-			_base_object_ids.erase(iter2);
-			_generate_objects_combo(d);
-			return;
+				if (g.table_next_column())
+				{
+					const auto size = std::size(res.combo);
+					const auto combo_selected = res.combo_selected < size;
+					const auto preview = combo_selected ?
+						std::string_view{ res.combo[res.combo_selected] } :
+						""sv;
+
+					if (g.combo_begin("##add_combo"sv, preview))
+					{
+						for (auto i = std::size_t{}; i < size; ++i)
+						{
+							if (g.selectable(res.combo[i], i == res.combo_selected))
+								res.combo_selected = i;
+						}
+
+						g.combo_end();
+					}
+
+					if (!combo_selected)
+						g.begin_disabled();
+					if (g.button("add"sv))
+					{
+						ret = true;
+						auto str_iter = next(begin(res.combo), res.combo_selected);
+						const auto id = d.get_uid(*str_iter);
+						res.attached_ids.emplace_back(id);
+						res.attached.emplace_back(std::move(*str_iter));
+						std::ranges::sort(res.attached);
+						res.combo.erase(str_iter);
+						std::invoke(add, d, id);
+					}
+					if (!combo_selected)
+						g.end_disabled();
+
+					const auto base_selected = res.attached_selected < std::size(res.attached);
+
+					if (!base_selected)
+						g.begin_disabled();
+
+					if (g.button("remove"sv))
+					{
+						ret = true;
+						const auto iter = next(begin(res.attached), res.attached_selected);
+						const auto id = d.get_uid(*iter);
+						_base_objects.combo.emplace_back(std::move(*iter));
+						std::ranges::sort(_base_objects.combo);
+
+						res.attached.erase(iter);
+						res.attached_selected = std::numeric_limits<std::size_t>::max();
+
+						const auto id_iter = std::ranges::find(res.attached_ids, id);
+						res.attached_ids.erase(id_iter);
+
+						std::invoke(remove, d, id);
+					}
+
+					if (!base_selected)
+						g.end_disabled();
+				} 
+
+				g.end_table();
+			}
+
+			g.pop_id();
+			return ret;
 		}
 
 		object_editor_ui<nullptr_t>::cache_map _curve_edit_cache;
 		object_editor_ui<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
-		std::vector<string> _base_objects;
-		std::vector<string> _objects_combo;
+		resource_list _base_objects;
+		resource_list _systems;
+		resource_list _render_systems;
 		std::vector<string> _add_curve;
 		std::vector<string> _anim_groups;
-		std::vector<unique_id> _base_object_ids;
-		std::size_t _base_objects_selected = std::numeric_limits<std::size_t>::max();
-		std::size_t _objects_combo_selected = std::numeric_limits<std::size_t>::max();
+		std::vector<std::pair<string, string>> _base_tags;
+		std::vector<string> _tags;
 		std::size_t _curve_selected = std::numeric_limits<std::size_t>::max();
 		std::size_t _anim_group_selected = std::numeric_limits<std::size_t>::max();
+		std::size_t _tag_selected = std::numeric_limits<std::size_t>::max();
 		string _title;
 		string _yaml;
+		string _next_tag;
 		resources::object* _obj = {};
 		resources::resource_base* _base = {};
 	};

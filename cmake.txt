@@ -46,7 +46,12 @@ function(hades_make_compile_settings ARG_NAME)
 							 # analyze for static code analysis
 							 # Zi to gen .pdb
 							 $<$<CXX_COMPILER_ID:MSVC>:
-                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" "/analyze" "/Zi" >
+                                  "/MP" "/permissive-" "/fp:fast" "/EHsc" "/W4" "/analyze" "/Zi"
+						# more standard conformance for msvc
+						"/volatile:iso" "/Zc:__cplusplus" "/Zc:externConstexpr" "/Zc:throwingNew" "/Zc:inline"
+						# preprocessor causes issues with windows include headers
+						#"/Zc:preprocessor"
+						>
 
 							 # general settings for gcc/clang
                              $<$<CXX_COMPILER_ID:Clang,GNU>:

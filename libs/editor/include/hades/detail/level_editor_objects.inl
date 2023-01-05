@@ -3,6 +3,7 @@
 #include "hades/colour.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
+#include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/gui.hpp"
 

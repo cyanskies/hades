@@ -41,7 +41,7 @@ namespace hades
 	}
 
 	template<typename Container, typename ToString>
-		requires std::convertible_to<std::invoke_result_t<ToString, typename Container::value_type>, std::string_view>
+		requires string_type<std::invoke_result_t<ToString, typename Container::value_type>>
 	bool gui::listbox(std::string_view label, std::size_t& current_item,
 		const Container& container, ToString to_string_func, const vector2& size)
 	{

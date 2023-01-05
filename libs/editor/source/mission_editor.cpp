@@ -349,7 +349,7 @@ namespace hades
 		}
 	}
 
-	static string to_string(const mission_editor_t::level_info& l)
+	static string level_info_to_string(const mission_editor_t::level_info& l)
 	{
 		if (l.path)
 		{
@@ -439,7 +439,7 @@ namespace hades
 				make_editor_state(l);
 		}
 
-		_gui.listbox("##levels", s.selected, _levels);
+		_gui.listbox("##levels", s.selected, _levels, level_info_to_string);
 
 		if (s.add_level_open)
 		{

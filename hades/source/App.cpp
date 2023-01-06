@@ -74,7 +74,7 @@ namespace hades
 		//record the global console as logger
 		console::log = &_console;
 		//record the console as the property provider
-		console::property_provider = &_console;
+		console::set_property_provider(&_console);
 		//record the console as the engine command line
 		console::system_object = &_console;
 		//record the thread pool as the proccess shared pool
@@ -415,7 +415,6 @@ namespace hades
 
 		//unregister the global providers
 		console::log = nullptr;
-		console::property_provider = nullptr;
 		console::system_object = nullptr;
 	}
 

@@ -102,8 +102,12 @@ namespace hades
 		template<typename T>
 		using property = std::shared_ptr<basic_property<T>>;
 	
+		class properties;
+
 		namespace detail
 		{
+			properties* get_property_provider() noexcept;
+			
 			template<typename T>
 			property<T> make_property(T value, bool locked)
 			{
@@ -130,6 +134,7 @@ namespace hades
 			virtual void create(std::string_view, bool default_val, bool locked = false) = 0;
 			virtual void create(std::string_view, std::string_view default_val, bool locked = false) = 0;
 
+			// no error handling
 			virtual void lock_property(std::string_view) = 0;
 
 			//assigns the value to the id
@@ -150,8 +155,8 @@ namespace hades
 			//TODO: exists + erase
 		};
 
-		//TODO: replace with set property ptr
-		extern properties *property_provider;
+		void set_property_provider(properties*);
+		void use_fallback_property_provider();
 
 		std::vector<std::string_view> get_property_names();
 
@@ -159,8 +164,8 @@ namespace hades
 		template<typename T>
 		void create_property(std::string_view s, T v, bool locked = false)
 		{
-			if (property_provider)
-                property_provider->create(s, std::forward<T>(v), locked);
+			if (detail::get_property_provider())
+                detail::get_property_provider()->create(s, std::forward<T>(v), locked);
 			else
 				throw provider_unavailable{ "property provider not available" };
 		}
@@ -172,8 +177,8 @@ namespace hades
 		template<class T>
 		void set_property(std::string_view name, const T &value)
 		{
-			if (property_provider)
-				property_provider->set(name, value);
+			if (detail::get_property_provider())
+				detail::get_property_provider()->set(name, value);
 		}
 
 		void lock_property(std::string_view);

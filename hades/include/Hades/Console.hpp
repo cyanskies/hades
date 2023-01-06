@@ -131,9 +131,9 @@ namespace hades
 			bool silent;
 		};
 
-		using ConsoleFunctionMap = std::unordered_map<types::string, function_struct>;
+		using ConsoleFunctionMap = unordered_map_string<function_struct>;
 		ConsoleFunctionMap _consoleFunctions;
-		using ConsoleVariableMap = std::unordered_map<types::string, detail::Property>;
+		using ConsoleVariableMap = unordered_map_string<detail::Property>;
 		ConsoleVariableMap _consoleVariables;
 		std::vector<Console_String> TextBuffer;
 		console::command_history_list _commandHistory;

@@ -23,7 +23,7 @@ namespace hades
 {
 	bool Console::GetValue(std::string_view var, detail::Property &out) const
 	{
-		const auto iter = _consoleVariables.find(to_string(var));
+		const auto iter = _consoleVariables.find(var);
 		if(iter == _consoleVariables.end())
 			return false;
 		else
@@ -142,19 +142,17 @@ namespace hades
 			}
 		}
 
-		const auto id_str = to_string(identifier);
-
 		const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
 		
-		const auto funcIter = _consoleFunctions.find(id_str);
+		const auto funcIter = _consoleFunctions.find(identifier);
 
 		if (funcIter != _consoleFunctions.end() && !replace)
 		{
-			LOGERROR("Attempted multiple definitions of function: " + id_str);
+			LOGERROR("Attempted multiple definitions of function: " + to_string(identifier));
 			return false;
 		}
 
-		_consoleFunctions[id_str] = { func, silent };
+		_consoleFunctions[to_string(identifier)] = { func, silent };
 
 		return true;
 	}
@@ -286,7 +284,7 @@ namespace hades
 		bool silent = false;
 		{
 			const std::lock_guard<std::mutex> lock(_consoleFunctionMutex);
-			const auto funcIter = _consoleFunctions.find(to_string(command.request));
+			const auto funcIter = _consoleFunctions.find(command.request);
 
 			if (funcIter != _consoleFunctions.end())
 			{
@@ -353,20 +351,18 @@ namespace hades
 		#endif
 		TextBuffer.emplace_back(std::move(message));
 
-		// TODO: should we delete log entries even if logging is disabled?
-		//			need to consider log memory usage effect on performance
-		// Uncomment the if below and remove the is_logging check guarding the log shrink behaviour
+		// shrink the stored log history if it's too big
 		if (_log_output.is_open() && size(TextBuffer) > console::log_limit)
 		{
 			constexpr auto stream_count = console::log_limit - console::log_shrink_count;
 			const auto beg = begin(TextBuffer);
 			const auto end = next(beg, stream_count);
-			//if (_log_output.is_open())
-			//{
+			if (_log_output.is_open())
+			{
 				std::for_each(beg, end, [this](auto&& str) {
 					_log_output << str << '\n';
 					});
-			//}
+			}
 
 			recentOutputPos -= distance(beg, end);
 			TextBuffer.erase(beg, end);
@@ -404,7 +400,7 @@ namespace hades
 
 	bool Console::_exists(const std::string_view &command, function_t) const
 	{
-		const auto funcIter = _consoleFunctions.find(to_string(command));
+		const auto funcIter = _consoleFunctions.find(command);
 
 		if (funcIter != _consoleFunctions.end())
 			return true;
@@ -521,7 +517,7 @@ namespace hades
 
 		auto var = console::detail::make_property<T>(value, l);
 
-		_consoleVariables.emplace( to_string(identifier), std::move(var) );
+		_consoleVariables.emplace(to_string(identifier), std::move(var));
 	}
 
 	template<class T>

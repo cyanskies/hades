@@ -306,6 +306,8 @@ namespace hades
 		// can throw object_stale_error
 		template<typename GameSystem>
 		game_obj& get_object(object_ref&, extra_state<GameSystem>&);
+		template<typename GameSystem>
+		const game_obj& get_object(const object_ref&, const extra_state<GameSystem>&);
 		//returns true if the object ref has gone stale
 		bool is_object_stale(object_ref&) noexcept;
 		// same as get_object except no LOGging

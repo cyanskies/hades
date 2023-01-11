@@ -1213,6 +1213,13 @@ namespace hades
 		ImGui::SetItemDefaultFocus();
 	}
 
+	gui::vector2 gui::get_mouse_pos() const
+	{
+		_active_assert();
+		const auto& io = ImGui::GetIO();
+		return { io.MousePos.x, io.MousePos.y };
+	}
+
 	bool gui::is_item_hovered(hovered_flags f)
 	{
 		_active_assert();

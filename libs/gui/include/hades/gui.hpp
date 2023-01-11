@@ -30,22 +30,6 @@ namespace hades
 
 	namespace detail
 	{
-		//we can throw a container holding a string straight into the listbox
-		//NOTE: we cannot use a string_view without processing
-		template<typename Cont>
-		using listbox_with_string = std::enable_if_t<
-			is_string_v<typename Cont::value_type> &&
-			!std::is_same_v<std::string_view, typename Cont::value_type>,
-			bool>;
-
-		//a string_view or anything other than a string, we generate a default
-		// to_string function
-		template<typename Cont>
-		using listbox_no_string = std::enable_if_t<
-			!is_string_v<typename Cont::value_type> ||
-			std::is_same_v<std::string_view, typename Cont::value_type>,
-			bool>;
-
 		template<typename T>
 		constexpr bool gui_supported_types =
 			std::is_same_v<T, int8> ||
@@ -793,6 +777,9 @@ namespace hades
 			middle =ImGuiMouseButton_::ImGuiMouseButton_Middle,
 			count = ImGuiMouseButton_::ImGuiMouseButton_COUNT
 		};
+
+		// input state
+		vector2 get_mouse_pos() const;
 
 		//item utils
 		bool is_item_hovered(hovered_flags = hovered_flags::none); //returns true if mouse is over object

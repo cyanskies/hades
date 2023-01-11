@@ -25,7 +25,7 @@ namespace hades::resources
 		//    object-groups:
 		//        group-name: [elms, elms]
 
-		auto settings = d.find_or_create<level_editor_object_settings>(object_settings_id, mod);
+		auto settings = d.find_or_create<level_editor_object_settings>(object_settings_id, mod, level_editor_object_resource_name);
 
 		const auto object_groups = node.get_child("object-groups"sv);
 		if (object_groups)
@@ -85,8 +85,8 @@ namespace hades
 		d.register_resource_type(level_editor_object_resource_name, resources::parse_level_editor_object_resource);
 
 		//create default settings object
-		object_settings_id = d.get_uid("level-editor-object-settings");
-		std::ignore = d.find_or_create<resources::level_editor_object_settings>(object_settings_id, {}, "level-editor-object-settings"sv);
+		object_settings_id = d.get_uid(level_editor_object_resource_name);
+		std::ignore = d.find_or_create<resources::level_editor_object_settings>(object_settings_id, {}, level_editor_object_resource_name);
 	}
 
 	level_editor_objects_impl::level_editor_objects_impl()

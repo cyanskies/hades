@@ -434,33 +434,55 @@ namespace hades::state_api
 		return ob_ref;
 	}
 
-	template<typename GameSystem>
-	game_obj& get_object(object_ref& o, extra_state<GameSystem>& e)
+	namespace detail
 	{
-		if (o.ptr == nullptr)
+		template<typename ObjRef, typename Extra>
+		std::conditional_t<std::is_const_v<ObjRef> || std::is_const_v<Extra>, const game_obj&, game_obj&>
+			get_object_impl(ObjRef& o, Extra& e)
 		{
-			o.ptr = e.objects.find(o.id);
-
-			//entity is gone, goodbye
 			if (o.ptr == nullptr)
-				throw object_stale_error{ "stale object ref, the object is no longer with us" };
+			{
+				const auto ptr = e.objects.find(o.id);
+				//entity is gone, goodbye
+				if (ptr == nullptr)
+					throw object_stale_error{ "stale object ref, the object is no longer with us" };
+
+				if constexpr(!std::is_const_v<ObjRef>)
+					o.ptr = ptr;
+				
+				return *ptr;
+			}
+
+			if (o.ptr->id == bad_entity)
+			{
+				if constexpr (!std::is_const_v<ObjRef>)
+					o.ptr = nullptr;
+
+				throw object_stale_error{ "dead object" };
+			}
+
+			if (o.id != o.ptr->id)
+			{
+				if constexpr (!std::is_const_v<ObjRef>)
+					o.ptr = nullptr;
+
+				throw object_stale_error{ "stale object ref, the ptr has been resused for a new object" };
+			}
 
 			return *o.ptr;
 		}
+	}
 
-		if (o.ptr->id == bad_entity)
-		{
-			o.ptr = nullptr;
-			throw object_stale_error{ "dead object" };
-		}
+	template<typename GameSystem>
+	game_obj& get_object(object_ref& o, extra_state<GameSystem>& e)
+	{
+		return detail::get_object_impl(o, e);
+	}
 
-		if (o.id != o.ptr->id)
-		{
-			o.ptr = nullptr;
-			throw object_stale_error{ "stale object ref, the ptr has been resused for a new object" };
-		}
-
-		return *o.ptr;
+	template<typename GameSystem>
+	const game_obj& get_object(const object_ref& o, const extra_state<GameSystem>& e)
+	{
+		return detail::get_object_impl(o, e);
 	}
 
 	template<typename GameSystem>

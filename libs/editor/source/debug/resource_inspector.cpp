@@ -1931,16 +1931,14 @@ namespace hades::data
 
 		if (_show_by_data_file)
 		{
-			std::ranges::sort(group, [](auto&& left, auto&& right)
-				{
+			std::ranges::sort(group, [](auto&& left, auto&& right) {
 					return std::tie(left.data_file, left.res_type, left.name) <
 						std::tie(right.data_file, right.res_type, right.name);
 				});
 		}
 		else
 		{
-			std::ranges::sort(group, [](auto&& left, auto&& right)
-				{
+			std::ranges::sort(group, [](auto&& left, auto&& right) {
 					return std::tie(left.res_type, left.name) <
 						std::tie(right.res_type, right.name);
 				});

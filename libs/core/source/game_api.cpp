@@ -192,6 +192,18 @@ namespace hades
 			const auto id = hades::get_collision_layer_curve_id();
 			return get_property_ref<const_curve, unique>(o, id);
 		}
+
+		const collection_unique& get_move_layers(object_ref o)
+		{
+			const auto id = hades::get_move_layers_id();
+			return get_property_ref<const_curve, collection_unique>(o, id);
+		}
+
+		const collection_float& get_move_values(object_ref o)
+		{
+			const auto id = hades::get_move_values_id();
+			return get_property_ref<const_curve, collection_float>(o, id);
+		}
 	}
 
 	namespace render

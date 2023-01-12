@@ -67,7 +67,7 @@ namespace hades
 		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
-		return detail::for_each_index_rect_impl(pos, size, map_width, max_index, std::forward<Func>(f));
+		return detail::for_each_index_rect_impl<false>(pos, size, map_width, max_index, std::forward<Func>(f));
 	}
 
 
@@ -76,6 +76,6 @@ namespace hades
 		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
-		return detail::for_each_index_rect_impl<false>(pos, size, map_width, max_index, std::forward<Func>(f));
+		return detail::for_each_index_rect_impl(pos, size, map_width, max_index, std::forward<Func>(f));
 	}
 }

@@ -209,8 +209,6 @@ namespace hades
 		interpreter_name_map _interpreter_names;
 	};
 
-	
-
 	template<typename Event>
 	class input_event_system_t final : public input_system
 	{

@@ -235,11 +235,11 @@ namespace hades
 		interpreter_map.insert({ "lcontrol", keyboard<sf::Keyboard::LControl>() });
 		interpreter_map.insert({ "lshift", keyboard<sf::Keyboard::RControl>() });
 		interpreter_map.insert({ "lalt", keyboard<sf::Keyboard::LAlt>() });
-		//i.insert({ "lsystem", keyboard<sf::Keyboard::Num3>() }); //don't rebind system key
+		//i.insert({ "lsystem", keyboard<sf::Keyboard::LSystem>() }); //don't rebind system key
 		interpreter_map.insert({ "rcontrol", keyboard<sf::Keyboard::RControl>() });
 		interpreter_map.insert({ "rshift", keyboard<sf::Keyboard::RShift>() });
 		interpreter_map.insert({ "ralt", keyboard<sf::Keyboard::RAlt>() });
-		//i.insert({ "rsystem", keyboard<sf::Keyboard::Num7>() });
+		//i.insert({ "rsystem", keyboard<sf::Keyboard::RSystem>() });
 		interpreter_map.insert({ "menu", keyboard<sf::Keyboard::Menu>() });
 		//special
 		interpreter_map.insert({ "lbracket", keyboard<sf::Keyboard::LBracket>() });
@@ -250,7 +250,7 @@ namespace hades
 		interpreter_map.insert({ "quote", keyboard<sf::Keyboard::Quote>() });
 		interpreter_map.insert({ "slash", keyboard<sf::Keyboard::Slash>() });
 		interpreter_map.insert({ "backslash", keyboard<sf::Keyboard::Backslash>() });
-		//i.insert({ "tilde", keyboard<sf::Keyboard::Num9>() });
+		//i.insert({ "tilde", keyboard<sf::Keyboard::Tilde>() }); // Reserved for engine usage
 		interpreter_map.insert({ "equal", keyboard<sf::Keyboard::Equal>() });
 		interpreter_map.insert({ "dash", keyboard<sf::Keyboard::Hyphen>() });
 		interpreter_map.insert({ "space", keyboard<sf::Keyboard::Space>() });
@@ -294,7 +294,7 @@ namespace hades
 		interpreter_map.insert({ "f10", keyboard<sf::Keyboard::F10>() });
 		interpreter_map.insert({ "f11", keyboard<sf::Keyboard::F11>() });
 		interpreter_map.insert({ "f12", keyboard<sf::Keyboard::F12>() });
-		////???
+		// Extended function keys (not available on most keyboards)
 		//interpreter_map.insert({ "f13", keyboard<sf::Keyboard::F13>() });
 		//interpreter_map.insert({ "f14", keyboard<sf::Keyboard::F14>() });
 		//interpreter_map.insert({ "f15", keyboard<sf::Keyboard::F15>() });
@@ -303,7 +303,9 @@ namespace hades
 		//======mouse buttons=======
 		interpreter_map.insert({ "mouseleft", mouse_button<sf::Mouse::Button::Left>(win) });
 		interpreter_map.insert({ "mouseright", mouse_button<sf::Mouse::Button::Right>(win) });
+		// wheelbutton
 		interpreter_map.insert({ "mousemiddle", mouse_button<sf::Mouse::Button::Middle>(win) });
+		// mouse extra buttons
 		interpreter_map.insert({ "mouse_x1", mouse_button<sf::Mouse::Button::XButton1>(win) });
 		interpreter_map.insert({ "mouse_x2", mouse_button<sf::Mouse::Button::XButton2>(win) });
 		//mouse axis

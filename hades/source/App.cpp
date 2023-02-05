@@ -120,17 +120,6 @@ namespace hades
 		return;
 	}
 
-	bool LoadCommand(command_list& commands, std::string_view command, console::function_no_argument job)
-	{
-		return handle_command(commands, command, std::move(job));
-	}
-
-	//calls job on any command that contains command
-	bool LoadCommand(command_list& commands, std::string_view command, console::function job)
-	{
-		return handle_command(commands, command, std::move(job));
-	}
-
 	static void update_overlay_size(sf::View& v, gui& g,
 		float w, float h) noexcept
 	{

@@ -5,7 +5,7 @@ namespace hades::detail
 	struct random_data
 	{
 		std::random_device rd{};
-		// TODO: PCG random engine
+		// TODO: PCG random engine, plf::rand
 		std::default_random_engine random_generator{ rd() };
 	};
 

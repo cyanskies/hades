@@ -18,10 +18,8 @@ namespace hades
 	template<typename U>
 	inline constexpr hades::rect_t<T>::operator rect_t<U>() const noexcept
 	{
-		// TODO: CPP17 aggregate constuction isn't constexpr
-		const auto pos = static_cast<hades::vector_t<U>>(hades::vector_t<T>{x, y});
-		const auto siz = static_cast<hades::vector_t<U>>(hades::vector_t<T>{width, height});
-		return { pos.x, pos.y, siz.x, siz.y };
+		return { static_cast<hades::vector_t<U>>(hades::vector_t<T>{x, y}),
+			static_cast<hades::vector_t<U>>(hades::vector_t<T>{width, height}) };
 	}
 
 	template<typename T>

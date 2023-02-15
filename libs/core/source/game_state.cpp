@@ -97,7 +97,10 @@ namespace hades::state_api
 		return;
 	}
 
-	string get_name(const object_ref o, const time_point t, const game_state& s)
+	// TODO: constexpr or constinit
+	static const auto empty_string = string{};
+	
+	const string& get_name(const object_ref o, const time_point t, const game_state& s) noexcept
 	{
 		for (const auto &[name, objects] : s.names)
 		{
@@ -105,7 +108,7 @@ namespace hades::state_api
 				return name;
 		}
 
-		return {};
+		return empty_string;
 	}
 
 	bool is_object_stale(object_ref& o) noexcept
@@ -115,5 +118,11 @@ namespace hades::state_api
 		if (stale)
 			o.ptr = nullptr;
 		return stale;
+	}
+
+	const tag_list& get_object_tags(const game_obj& o) noexcept
+	{
+		assert(o.object_type);
+		return resources::object_functions::get_tags(*o.object_type);
 	}
 }

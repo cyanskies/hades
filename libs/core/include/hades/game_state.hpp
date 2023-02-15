@@ -287,6 +287,7 @@ namespace hades
 			//object_instance extract object
 		}
 
+		// Object creation:
 		template<typename GameSystem>
 		object_ref make_object(const object_instance&, time_point, game_state&, extra_state<GameSystem>&);
 		// NOTE: the new object will not have the name of the cloned object
@@ -300,7 +301,7 @@ namespace hades
 		template<typename GameSystem>
 		void erase_object(game_obj&, game_state&, extra_state<GameSystem>&);
 		void name_object(string, object_ref, time_point, game_state&);
-		string get_name(object_ref, time_point, const game_state&);
+		const string& get_name(object_ref, time_point, const game_state&) noexcept;
 		template<typename GameSystem>
 		object_ref get_object_ref(std::string_view, time_point, game_state&, extra_state<GameSystem>&) noexcept;
 		// can throw object_stale_error
@@ -310,7 +311,7 @@ namespace hades
 		const game_obj& get_object(const object_ref&, const extra_state<GameSystem>&);
 		//returns true if the object ref has gone stale
 		bool is_object_stale(object_ref&) noexcept;
-		// same as get_object except no LOGging
+		// same as get_object except no logging
 		template<typename GameSystem>
 		game_obj* get_object_ptr(object_ref&, extra_state<GameSystem>&) noexcept;
 		template<typename GameSystem>
@@ -339,6 +340,12 @@ namespace hades
 		template<template<typename> typename CurveType, typename T>
 		get_property_return_t<CurveType, T>* 
 			get_object_property_ptr(game_obj&, variable_id) noexcept;
+
+		// Get tags
+		// Can throw object_stale_error
+		template<typename GameSystem>
+		const tag_list& get_object_tags(object_ref, const extra_state<GameSystem>&);
+		const tag_list&	get_object_tags(const game_obj&) noexcept;
 
 		// level locals
 		// gets or creates a local ref

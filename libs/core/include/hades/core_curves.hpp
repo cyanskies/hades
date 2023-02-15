@@ -20,7 +20,7 @@ namespace hades
 	const resources::curve* get_player_owner_curve();
 	const resources::curve* get_size_curve();
 	const resources::curve* get_collision_layer_curve();
-	const resources::curve* get_tags_curve();
+	[[deprecated]] const resources::curve* get_tags_curve();
 
 	constexpr auto bad_object_type = unique_zero;
 
@@ -30,7 +30,7 @@ namespace hades
 	unique_id get_move_layers_id() noexcept;
 	unique_id get_move_values_id() noexcept;
 	unique_id get_collision_layer_curve_id() noexcept;
-	unique_id get_tags_curve_id() noexcept;
+	[[deprecated]] unique_id get_tags_curve_id() noexcept;
 }
 
 #endif //!HADES_CORE_CURVES_HPP

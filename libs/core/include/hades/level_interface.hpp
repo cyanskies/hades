@@ -66,6 +66,7 @@ namespace hades
 	};
 
 	//game server imp
+	// TODO: final
 	class game_implementation : public game_interface
 	{
 	public:

@@ -605,6 +605,13 @@ namespace hades::state_api
 		return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}
 
+	template<typename GameSystem>
+	const tag_list& get_object_tags(object_ref o, const extra_state<GameSystem>& e)
+	{
+		const auto& obj = get_object(o, e);
+		return get_object_tags(obj);
+	}
+
 	template<typename T, typename GameSystem>
 	T& get_level_local_ref(const unique_id id, extra_state<GameSystem>& extras)
 	{

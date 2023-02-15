@@ -27,7 +27,7 @@ namespace hades
 		//l_ for level
 
 		//render vars
-		constexpr auto render_threadcount = "r_threads"; // [[deprecated]] same as s_threadcount
+		constexpr auto render_threadcount = "r_threads"; // [[deprecated]] same as s_threads
 		constexpr auto render_drawtime = "r_drawtime"; //reports the time taken to generate and display the last frame in ms
 
 		//server vars
@@ -43,7 +43,7 @@ namespace hades
 		constexpr auto client_previous_frametime = "c_previous_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_average_frametime = "c_average_frametime"; // reports time taken to generate the last frame
 		constexpr auto client_tick_count = "c_ticks_per_frame"; // reports number of ticks taken to generate the previous frame
-		constexpr auto client_log_to_file = "c_log_to_file_enabled";
+		constexpr auto client_log_to_file = "c_log_to_file_enabled"; // reports if file logging is enabled (see: c_log_to_file)
 
 		// mod vars
 		constexpr auto game_name = "game"; // the game archive name
@@ -55,7 +55,6 @@ namespace hades
 		constexpr auto file_deflate = "file_deflate"; //if true, saves and configs are compressed before being written to disk
 
 		//console vars
-		//TODO: both deprecated
 		constexpr auto console_charsize = "con_charsize"; // [[deprecated]] the character size to draw in the ingame console
 		constexpr auto console_fade = "con_fade"; // [[deprecated]] the transparency of the backdrop for the console overlay
 		constexpr auto console_level = "con_level"; //the logging level to display in the console

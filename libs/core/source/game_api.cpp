@@ -154,7 +154,7 @@ namespace hades
 			return state_api::get_object_creation_time(obj, state);
 		}
 
-		tag_list get_tags(object_ref o)
+		const tag_list& get_tags(object_ref o)
 		{
 			const auto game_data_ptr = hades::detail::get_game_level_ptr();
 			auto& extra = game_data_ptr->get_extras();

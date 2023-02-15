@@ -29,22 +29,20 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 {
 	std::ios_base::sync_with_stdio(false);
 	//new commands start with a '-'.
-	constexpr char COMMAND_DELIMITER = '-';
+	constexpr auto command_delimiter = '-';
 
 	//convert cmdline to string_view
 	const auto cmdline = std::vector<std::string_view>{ argv, argv + argc };
 
 	hades::command_list commands;
-	int index = -1;
+	auto index = -1;
 
 	for (const auto s : cmdline)
 	{
-		if (s[0] == COMMAND_DELIMITER)
+		if (s[0] == command_delimiter)
 		{
 			const auto s2 = s.substr(1, s.size());
-			hades::command com;
-			com.request = s2;
-			commands.push_back(com);
+			commands.emplace_back(s2);
 			index++;
 		}
 		else if (index != -1)

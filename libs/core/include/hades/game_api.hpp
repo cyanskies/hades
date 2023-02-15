@@ -17,10 +17,14 @@
 //when an object is attached to a system, on_connect is called
 // on_connect is used to update background state, and invoke one off changes to the game state for objects
 // on_connect is only ever called once for each object
+//	- when a level is loaded from a save, on_connect is not called for already existing objects
+//	- but they will have been passed to on_create already
+//  - WARNING: when starting a mission, objects that are pre-placed will not have on_connect called for them (on_create will be called).
 
 //on_tick is called every game tick for any object attached to a system
 // on_tick is for general game logic
 // on_connect is always called for an object before on_tick
+// objects can sleep on a system if they know they have nothing to do until a certain time
 
 //on_diconnect is called when an object is detached
 // it might spawn a death animation
@@ -28,7 +32,9 @@
 // no other on_* function will be called for this object after on_disconnect
 
 //on_destroy can be used to clean up background state
-// typically unused
+// typically unused 
+// - system data is destroyed when the system is: as long as the types are RAII everything will be fine.
+// - level locals should probably be left alone, other systems might reference them before destruction
 
 // fwds
 namespace sf
@@ -58,13 +64,12 @@ namespace hades
 		const resources::object* get_object(object_ref&);
 
 		//the time of the previous dt
-		// equals get_time - dt7
+		// equals get_time - dt
 		time_point get_last_time() noexcept;
 		//the time between this 'last_time' and 'time'
+		// delta time is the games tick rate (it doesn't vary between frames)
 		time_duration get_delta_time() noexcept;
 		//the current time
-		//we need to calculate the state at this time
-		//using values from last_time
 		time_point get_time() noexcept;
 
 		const std::vector<player_data>& get_players() noexcept;
@@ -86,7 +91,7 @@ namespace hades
 	//	you can change to a different level with the switch_level function
 	namespace game::level
 	{
-		void restore_level() noexcept; //restores the origional level
+		void restore_level() noexcept; //restores the origional level (the level set here when the system was called)
 		void switch_level(unique_id); // switches to requested level
 		void switch_to_mission() noexcept; // switches to mission
 
@@ -140,7 +145,7 @@ namespace hades
 			void sleep_system(object_ref, time_point);
 
 			time_point get_creation_time(object_ref);
-			tag_list get_tags(object_ref);
+			const tag_list& get_tags(object_ref);
 
 			//NOTE: this isn't a curve anymore
 			bool is_alive(object_ref) noexcept;
@@ -154,6 +159,7 @@ namespace hades
 			const collection_float& get_move_values(object_ref);
 		}
 
+		//TODO: tags are related to objects, not the level
 		template<std::size_t Size>
 		std::array<bool, Size> check_tags(object_ref o, std::array<unique_id, Size> t)
 		{

@@ -135,7 +135,7 @@ namespace hades
 
         const auto w = integer_cast<std::size_t>(width);
 		const auto map_size = terrain_vertex_position{ 
-			integer_cast<terrain_vertex_position::value_type>(w),
+			width,
             integer_cast<terrain_vertex_position::value_type>(std::size(v) / w)
 		};
 
@@ -151,7 +151,7 @@ namespace hades
 		//top left vertex is always within the map
 		out[static_cast<std::size_t>(rect_corners::top_left)] = v[top_left_i];
 
-		//only override other vertecies if they are within the map
+		//only override other verticies if they are within the map
 		if(p.x < signed_cast(w))
 			out[static_cast<std::size_t>(rect_corners::top_right)] = v[top_right_i];
 
@@ -214,7 +214,7 @@ namespace hades
 		if (std::empty(r.tile_layer.tiles) ||
 			r.tile_layer.width < 1)
 		{
-			LOGWARNING("raw terrain map must have a valid tile layer in ordre to compute size");
+			LOGWARNING("raw terrain map must have a valid tile layer in order to compute size");
 			return false;
 		}
 

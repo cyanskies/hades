@@ -23,7 +23,7 @@ namespace hades
 	inline table<T>::table(const basic_table<T> &v, const value_type value) : table(v.position(), v.size(), value)
 	{
 		const auto size = v.size();
-		const auto end = integer_cast<size_type>(size.x) * integer_cast<size_type>(size.y);
+		const auto end = integer_cast<size_type>(size.x * size.y);
 		for (auto i = size_type{}; i < end; ++i)
 			set(i, v[i]);
 

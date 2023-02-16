@@ -489,7 +489,7 @@ namespace hades
 		for (auto iter = std::begin(r.tilesets); iter != end; ++iter)
 		{
 			//get the current starting id
-			const auto [id, starting_id] = *iter;
+			const auto& [id, starting_id] = *iter;
 
 			if (id == unique_id::zero)
 				throw tileset_not_found{ "tileset id was unique_id::zero" };
@@ -509,8 +509,8 @@ namespace hades
 
 				//the difference between this starting id and the next, is the number
 				//of tiles that should be in this tileset
-				const auto amount = end_id - starting_id;
-				std::vector<tile_id_t> new_entries(std::size_t{ amount }, tile_id_t{});
+				const std::size_t amount = end_id - starting_id;
+				std::vector<tile_id_t> new_entries(amount, tile_id_t{});
 				assert(new_entries.size() == amount); //vague initiliser list constructors :/
 
 				//write the new tile ids into an array
@@ -528,7 +528,7 @@ namespace hades
 			}
 		}
 
-		tile_map t;
+		auto t = tile_map{};
 		t.width = r.width;
 		//use the replacement table to swap out the tile ids
 		t.tiles.reserve(r.tiles.size());
@@ -652,10 +652,11 @@ namespace hades
 				const auto tileset = data::get<resources::tileset>(std::get<unique_id>(tset));
 				const auto begin = std::begin(tileset->tiles);
 				const auto end = std::end(tileset->tiles);
+				// 'iter' is an intended copy
 				for (auto iter = begin; iter != end; ++iter)
 				{
 					if (*iter == t)
-                        return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
+                        return offset + integer_cast<std::size_t>(std::distance(begin, iter));
 				}
 
 				offset += std::size(tileset->tiles);
@@ -678,10 +679,11 @@ namespace hades
 		{
 			const auto begin = std::begin(tileset->tiles);
 			const auto end = std::end(tileset->tiles);
+			// 'iter' is an intended copy
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-                    return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
+                    return offset + integer_cast<std::size_t>(std::distance(begin, iter));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -698,10 +700,11 @@ namespace hades
 		{
 			const auto begin = std::begin(tileset->tiles);
 			const auto end = std::end(tileset->tiles);
+			// 'iter' is an intended copy
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-                    return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
+                    return offset + integer_cast<std::size_t>(std::distance(begin, iter));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -717,7 +720,7 @@ namespace hades
 		for (auto iter = std::begin(tileset->tiles); iter != tileset_end; ++iter)
 		{
 			if (*iter == t)
-                return  integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(std::begin(tileset->tiles), iter)));
+                return offset + integer_cast<std::size_t>(std::distance(std::begin(tileset->tiles), iter));
 		}
 
 		throw tile_error{ "unable to add tile id for this tile_map" };
@@ -875,7 +878,7 @@ namespace hades
 
 	std::vector<tile_position> make_position_circle(tile_position p, tile_index_t radius)
 	{
-		const auto rad = integer_cast<int32>(radius);
+		const auto rad = integer_cast<tile_position::value_type>(radius);
 
 		const auto top = tile_position{ 0, -rad };
 		const auto bottom = tile_position{ 0, rad };

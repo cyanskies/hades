@@ -285,7 +285,7 @@ namespace hades
 		return;
 	}
 
-	void mod_editor_impl::_save_mod(data::data_manager& d)
+	void mod_editor_impl::_save_mod(data::data_manager&)
 	{
 		//if (/*portable*/)
 		//	;

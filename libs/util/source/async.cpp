@@ -41,7 +41,7 @@ namespace hades
 				if (!work)
 				{
 					// no tasks, lets be a thief
-					static thread_local auto index = 0;
+					static thread_local auto index = std::size_t{};
 					if (index % size(_queues) == thread_id)
 						++index;
 
@@ -85,7 +85,7 @@ namespace hades
 
 	thread_pool::~thread_pool() noexcept
 	{
-		_stop_flag.store(true, std::memory_order::memory_order_relaxed);
+		_stop_flag.store(true, std::memory_order_relaxed);
 		_cv.notify_all();
 
 		for (auto& thread : _threads)
@@ -107,13 +107,13 @@ namespace hades::detail
 {
 	static thread_pool* shared_pool = nullptr;
 
-	void hades::detail::set_shared_thread_pool(thread_pool* p) noexcept
+	void set_shared_thread_pool(thread_pool* p) noexcept
 	{
 		shared_pool = p;
 		return;
 	}
 
-	thread_pool* hades::detail::get_shared_thread_pool() noexcept
+	thread_pool* get_shared_thread_pool() noexcept
 	{
 		return shared_pool;
 	}

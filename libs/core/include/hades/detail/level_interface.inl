@@ -50,7 +50,7 @@ namespace hades
 						break;
 					}
 				}
-				assert(system);
+				assert(system); // TODO: throw
 
 				//pass entities that are already attached to this system
 				//this will be entities that were already in the level file

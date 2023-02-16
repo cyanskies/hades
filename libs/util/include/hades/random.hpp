@@ -42,7 +42,7 @@ namespace hades
 	}
 
 	template<typename Iter>
-	typename Iter random_element(Iter first, const Iter last)
+	Iter random_element(Iter first, const Iter last)
 	{
 		if (first == last)
 			return first;

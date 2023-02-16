@@ -2,8 +2,10 @@
 #define HADES_UTIL_ASYNC_HPP
 
 #include <cassert>
+#include <condition_variable>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -99,7 +101,7 @@ namespace hades
 		{
 			auto work = std::function<void()>{};
 			{
-				static thread_local auto index = 0;
+				static thread_local auto index = std::size_t{};
 				auto& other_queue = _queues[index++ % size(_queues)];
 
 				const auto lock = std::scoped_lock{ other_queue.mut };

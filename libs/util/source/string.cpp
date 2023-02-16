@@ -6,7 +6,7 @@
 namespace hades 
 {
 	template<>
-	bool from_string<bool>(std::string_view str) noexcept
+	bool from_string<bool>(std::string_view str)
 	{
 		using namespace std::string_view_literals;
 		constexpr auto true_str = std::array{ "true"sv, "TRUE"sv, /*"1"sv*/ };
@@ -26,7 +26,7 @@ namespace hades
 	}
 
 	template<>
-	std::string_view from_string<std::string_view>(std::string_view str) noexcept
+	std::string_view from_string<std::string_view>(std::string_view str)
 	{
 		return str;
 	}

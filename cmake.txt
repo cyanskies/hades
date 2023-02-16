@@ -55,7 +55,7 @@ function(hades_make_compile_settings ARG_NAME)
 
 							 # general settings for gcc/clang
                              $<$<CXX_COMPILER_ID:Clang,GNU>:
-                                  "-Wall -pedantic-errors -Wextra -Wconversion -Wsign-conversion -fvisibility=hidden" >
+                                  "-Wall" "-pedantic-errors" "-Wextra" "-Wconversion" "-Wsign-conversion" "-fvisibility=hidden" >
 
 							 #debug settings
                              $<$<CONFIG:Debug>:
@@ -71,7 +71,7 @@ function(hades_make_compile_settings ARG_NAME)
 								# Gy for function level linking
 								$<$<CXX_COMPILER_ID:MSVC>:
                                   "/GS-" "/Oi" "/O2" "/Gy" 
-								  # "/GL"
+								  "/GL"
 								  >
 								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                   "-O3" >
@@ -113,7 +113,7 @@ function(hades_make_compile_settings ARG_NAME)
 							 $<$<CONFIG:Release>:
 								$<$<CXX_COMPILER_ID:MSVC>:
                                    "/INCREMENTAL:NO" "/OPT:REF"
-								   # "/LTCG"
+								   "/LTCG"
 								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},Win32>: "/OPT:NOICF" >
 								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},x64>: "/OPT:ICF" >
 								   >

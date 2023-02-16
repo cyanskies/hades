@@ -309,6 +309,7 @@ namespace hades::detail
 		//make toolbar
 		const auto toolbar_created = _gui.main_toolbar_begin();
 		assert(toolbar_created);
+		std::ignore = toolbar_created;
 		const auto toolbar_y2 = _gui.window_position().y + _gui.window_size().y;
 		_top_min = static_cast<int32>(toolbar_y2);
 		_gui.main_toolbar_end();

@@ -61,10 +61,8 @@ namespace hades::data
 	{
 		assert(typeid(std::decay_t<decltype(res)>) == _index);
 		auto hive = std::launder(reinterpret_cast<hive_t<std::decay_t<decltype(res)>>*>(&_mem));
-		auto& id = res.id;
-		auto& mod = res.mod;
-		assert(id != unique_zero || mod != unique_zero);
-		assert(!detail::erased_hive_elm_exists(*hive, id, mod));
+		assert(res.id != unique_zero || res.mod != unique_zero);
+		assert(!detail::erased_hive_elm_exists(*hive, res.id, res.mod));
 		auto iter = hive->emplace(std::move(res));
 		return &*iter;
 	}

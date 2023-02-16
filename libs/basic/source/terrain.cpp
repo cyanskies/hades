@@ -129,13 +129,14 @@ namespace hades
 		return std::array{ empty, empty, empty, empty };
 	}
 
-	static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, terrain_index_t w, tile_position p)
+    static tile_corners get_terrain_at_tile(const std::vector<const resources::terrain*> &v, const terrain_index_t width, tile_position p)
 	{
 		auto out = make_empty_corners();
 
+        const auto w = integer_cast<std::size_t>(width);
 		const auto map_size = terrain_vertex_position{ 
 			integer_cast<terrain_vertex_position::value_type>(w),
-			integer_cast<terrain_vertex_position::value_type>(std::size(v) / w)
+            integer_cast<terrain_vertex_position::value_type>(std::size(v) / w)
 		};
 
 		if (!within_map(map_size - terrain_vertex_position{ 1, 1 }, p))
@@ -143,9 +144,9 @@ namespace hades
 		
 		//calculate vertex indicies
 		const auto top_left_i = to_1d_index(p, w);
-		const auto top_right_i = top_left_i + 1u;
+        const auto top_right_i = top_left_i + 1;
 		const auto bottom_left_i = top_left_i + w;
-		const auto bottom_right_i = bottom_left_i + 1u;
+        const auto bottom_right_i = bottom_left_i + 1;
 
 		//top left vertex is always within the map
 		out[static_cast<std::size_t>(rect_corners::top_left)] = v[top_left_i];
@@ -220,8 +221,8 @@ namespace hades
 		//check the the map has a valid terrain vertex
 		const auto size = get_size(r.tile_layer);
 		const auto terrain_size = terrain_vertex_position{
-			signed_cast(size.x + 1u),
-			signed_cast(size.y + 1u)
+            size.x + 1,
+            size.y + 1
 		};
 
 		const auto vertex_length = terrain_size.x * terrain_size.y;
@@ -343,7 +344,7 @@ namespace hades
 		const auto empty = settings->empty_terrain.get();
 		//if the terrain_vertex isn't present, then fill with empty
 		if (std::empty(r.terrain_vertex))
-			m.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), empty);
+            m.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), empty);
 		else
 		{
 			std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
@@ -432,7 +433,7 @@ namespace hades
 
 		auto map = terrain_map{};
 		map.terrainset = terrainset;
-		map.terrain_vertex = std::vector<const resources::terrain*>((size.x + 1) * (size.y + 1), t);
+        map.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
 
 		const auto empty_layer = make_map(size, resources::get_empty_tile());
 
@@ -533,7 +534,7 @@ namespace hades
 	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
 	{
 		const auto index = to_1d_index(p, get_width(m));
-		return m.terrain_vertex[index];
+        return m.terrain_vertex[integer_cast<std::size_t>(index)];
 	}
 
 	tag_list get_tags_at(const terrain_map &m, tile_position p)
@@ -555,15 +556,15 @@ namespace hades
 
 	void resize_map_relative(terrain_map& m, vector_int top_left, vector_int bottom_right, const resources::terrain* t)
 	{
-		const auto current_height = m.tile_layer.tiles.size() / m.tile_layer.width;
+        const auto current_height = integer_cast<tile_index_t>(m.tile_layer.tiles.size()) / m.tile_layer.width;
 		const auto current_width = m.tile_layer.width;
 
-		const auto new_height = current_height - top_left.y + bottom_right.y;
-		const auto new_width = current_width - top_left.x + bottom_right.x;
+        const auto new_height = current_height - top_left.y + bottom_right.y;
+        const auto new_width = current_width - top_left.x + bottom_right.x;
 
 		const auto size = vector_int{
-			integer_cast<int32>(new_width),
-			integer_cast<int32>(new_height)
+            new_width,
+            new_height
 		};
 
 		resize_map(m, size, { -top_left.x, -top_left.y }, t);
@@ -652,7 +653,7 @@ namespace hades
 	{
 		assert(t);
 		const auto index = to_1d_index(p, get_width(m));
-		m.terrain_vertex[index] = t;
+        m.terrain_vertex[integer_cast<std::size_t>(index)] = t;
 	}
 
 	static void update_tile_layers_internal(terrain_map &m, const std::vector<tile_position> &positions)
@@ -666,7 +667,7 @@ namespace hades
 		auto terrain_iter = std::begin(m.terrainset->terrains);
 		auto layer_iter = std::begin(m.terrain_layers);
 		assert(std::size(m.terrain_layers) == std::size(m.terrainset->terrains));
-		for (terrain_iter, layer_iter; terrain_iter != end; ++terrain_iter, ++layer_iter)
+        for (/*terrain_iter, layer_iter*/; terrain_iter != end; ++terrain_iter, ++layer_iter)
 		{
 			for (const auto& p : positions)
 			{
@@ -726,9 +727,9 @@ namespace hades::resources
 		apply_to_terrain(terr, [&d](std::vector<tile> &v){
 			for (auto &t : v)
 			{
-				if (t.texture)
+				if (t.tex)
 				{
-					auto texture = d.get_resource(t.texture.id());
+					auto texture = d.get_resource(t.tex.id());
 					if (!texture->loaded)
 						texture->load(d);
 				}
@@ -1064,7 +1065,7 @@ namespace hades::resources
 		//  tile-size: 32
 		//	error-tileset
 
-		const auto id = d.get_uid(resources::get_tile_settings_name());
+        //const auto id = d.get_uid(resources::get_tile_settings_name());
 		auto s = d.find_or_create<resources::terrain_settings>(id::terrain_settings, mod, terrain_settings_str);
 		assert(s);
 

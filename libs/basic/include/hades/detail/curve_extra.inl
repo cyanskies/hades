@@ -15,7 +15,7 @@ namespace hades::resources
 		using namespace std::string_view_literals;
 		auto c = d.find_or_create<curve>(name, {}, "curves"sv);
 		c->data_type = v_type;
-		c->keyframe_style = k_style;
+        c->frame_style = k_style;
 		c->default_value = std::move(default_value);
 		c->sync = sync;
 		c->locked = locked;

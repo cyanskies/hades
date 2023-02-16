@@ -16,7 +16,7 @@ namespace hades
 	}
 
 	template<>
-	curve_types::time_d from_string<curve_types::time_d>(std::string_view s) noexcept
+    curve_types::time_d from_string<curve_types::time_d>(std::string_view s)
 	{
 		return duration_from_string(s);
 	}
@@ -180,7 +180,7 @@ namespace hades::resources
 
 		//first check that our node is valid
 		//no point looping though if their are not children
-		constexpr auto resource_type = "curve"sv;
+        //constexpr auto resource_type = "curve"sv;
 		const auto curves = n.get_children();
 
 		for (const auto& c : curves)
@@ -193,7 +193,7 @@ namespace hades::resources
 			const auto old_type = new_curve->data_type;
 
 			using namespace data::parse_tools;
-			new_curve->keyframe_style = get_scalar(*c, "type"sv, new_curve->keyframe_style, to_style);
+            new_curve->frame_style = get_scalar(*c, "type"sv, new_curve->frame_style, to_style);
 			new_curve->data_type = get_scalar(*c, "value"sv, new_curve->data_type, read_variable_type);
 			new_curve->sync = get_scalar(*c, "sync"sv, new_curve->sync);
 			//new_curve->save = get_scalar(*c, "save"sv, new_curve->save);
@@ -361,7 +361,9 @@ namespace hades::resources
 						v = from_string<T>(str);
 				}
 				else // is a collection
-					;// TODO: log bad
+                {
+                    ;// TODO: log bad
+                }
 			}
 			}, value, n);
 
@@ -440,8 +442,8 @@ namespace hades::resources
 		//			default: value, [value1, value2, value3, ...] etc
 
 		w.start_map(d.get_as_string(id));
-		if(keyframe_style != keyframe_style::default_value)
-			w.write("type"sv, to_string(keyframe_style));
+        if(frame_style != keyframe_style::default_value)
+            w.write("type"sv, to_string(frame_style));
 		
 		w.write("value"sv, to_string(data_type));
 

@@ -115,20 +115,20 @@ namespace hades
 			const auto t = get_tile(map_data, tiles[i]);
 
 			//skip 'empty' tiles, no need to render a transparent texture
-			if (!t.texture)
+			if (!t.tex)
 				continue;
 
 			const hades::resources::texture* texture = nullptr;
 
 			for (auto &c : tex_cache)
 			{
-				if (c == t.texture.get())
+				if (c == t.tex.get())
 					texture = c;
 			}
 
 			if (!texture)
 			{
-				texture = t.texture.get();
+				texture = t.tex.get();
 				tex_cache.push_back(texture);
 			}
 
@@ -291,11 +291,11 @@ namespace hades
 		auto layer_index = bad_index;
 		auto layer_count = size(texture_layers);
 
-		if (t.texture)
+		if (t.tex)
 		{
 			for (auto i = std::size_t{}; i < layer_count; ++i)
 			{
-				if (texture_layers[i].texture == t.texture.get())
+				if (texture_layers[i].texture == t.tex.get())
 				{
 					layer_index = i;
 					break;
@@ -308,7 +308,7 @@ namespace hades
 				layer_index = size(texture_layers);
 
 				texture_layers.emplace_back(
-					texture_layer{ t.texture.get(), {vertex_usage}}
+					texture_layer{ t.tex.get(), {vertex_usage}}
 				);
 				_dirty_buffers.emplace_back(true);
 

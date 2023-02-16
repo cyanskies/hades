@@ -28,19 +28,19 @@ namespace hades {
 
 		constexpr basic_table() noexcept = default;
 		constexpr basic_table(index_type o, index_type s) noexcept(std::is_nothrow_constructible_v<index_type, index_type>)
-			: _offset{ o }, _size{ s } {}
+            : _size{ s }, _offset{ o } {}
 		virtual ~basic_table() noexcept = default;
 
 		virtual value_type operator[](index_type) const = 0;
 		virtual value_type operator[](size_type) const = 0;
 
-		index_type position() const noexcept { return _offset; }
+        index_type position() const noexcept { return _offset; }
 		void set_position(index_type p) noexcept
 		{ _offset = p; }
 		index_type size() const noexcept { return _size; }
 
 	private:
-		index_type _size, _offset = {};
+        index_type _size, _offset = {};
 	};
 
 	template<typename T>
@@ -48,15 +48,15 @@ namespace hades {
 	{
 	public:
 		using value_type = T;
-		using base_type = basic_table<typename value_type>;
-		using index_type = typename basic_table<typename value_type>::index_type;
-		using size_type = typename basic_table<typename value_type>::size_type;
+        using base_type = basic_table<value_type>;
+        using index_type = typename basic_table<value_type>::index_type;
+        using size_type = typename basic_table<value_type>::size_type;
 
 		template<typename U, std::enable_if_t<std::is_same_v<std::decay_t<U>, T>, int> = 0>
 		constexpr always_table(index_type position, index_type size, U&& value)
 			noexcept(std::is_nothrow_constructible_v<base_type, index_type, index_type>
 				&& std::is_nothrow_constructible_v<T, decltype(std::forward<U>(value))>)
-			: base_type{ position, size }, _always_value{ std::forward<U>(value) }
+            : base_type{ position, size }, _always_value{ std::forward<U>(value) }
 		{}
 
 		constexpr value_type operator[](const index_type) const noexcept override
@@ -85,7 +85,7 @@ namespace hades {
 
 		table() noexcept = default;
 		table(index_type position, index_type size, value_type value) : base_type{position, size},
-			_data(size.x*size.y, value) {}
+            _data(integer_cast<std::size_t>(size.x*size.y), value) {}
 		table(const table&) = default;
 		table(const basic_table<T>&, value_type value);
 		table(table&&) noexcept = default;

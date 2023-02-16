@@ -11,7 +11,7 @@ namespace hades
 		auto com = command{};
 		if (auto pos = sv.find_first_of(' '); pos == std::string_view::npos)
 		{
-			return command{ sv };
+            return command{ sv, {} };
 		}
 		else
 		{

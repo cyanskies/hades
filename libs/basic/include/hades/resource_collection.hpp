@@ -24,7 +24,7 @@ namespace hades::data
 		erased_hive(const T*);
 		
 		erased_hive(erased_hive&& rhs) noexcept
-			: _destroy{ rhs._destroy }, _move{ rhs._move }, _move_assign{ rhs._move_assign }
+            : _move{ rhs._move }, _move_assign{ rhs._move_assign }, _destroy{ rhs._destroy }
 #ifndef NDEBUG
 			, _index{ rhs._index }
 #endif

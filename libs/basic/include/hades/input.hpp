@@ -162,7 +162,7 @@ struct std::hash<hades::input_event_interpreter<Event>>
 {
 	size_t operator()(const hades::input_event_interpreter<Event>& key) const noexcept
 	{
-		std::hash<hades::input_event_interpreter<Event>::interpreter_id::type> h;
+        std::hash<typename hades::input_event_interpreter<Event>::interpreter_id::type> h;
 		return h(key.id.get());
 	}
 };
@@ -213,15 +213,15 @@ namespace hades
 	class input_event_system_t final : public input_system
 	{
 	public:
-		using event = Event;
+        //using event = Event;
 		//using checked_event = std::tuple<bool, event>;
-		using event_interpreter = input_event_interpreter<event>;
+        using event_interpreter = input_event_interpreter<Event>;
 		using event_interpreter_set = std::unordered_map<event_interpreter, action>;
 
 		struct checked_event
 		{
-			bool handled;
-			event event;
+            bool handled;
+            Event event;
 		};
 
 		//adds a new input interpretor

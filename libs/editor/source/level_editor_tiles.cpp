@@ -111,11 +111,11 @@ namespace hades
 				tile_size
 			};
 
-			assert(t.texture);
+			assert(t.tex);
 
 			//need to push a prefix to avoid the id clashing from the same texture
 			g.push_id(&t);
-			if (g.image_button(*t.texture, tex_coords, button_size))
+			if (g.image_button(*t.tex, tex_coords, button_size))
 				std::invoke(on_click, &t);
 			g.pop_id();
 

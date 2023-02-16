@@ -56,7 +56,7 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		curve_variable_type data_type = curve_variable_type::error;
-		keyframe_style keyframe_style = keyframe_style::default_value;
+        keyframe_style frame_style = keyframe_style::default_value;
 		bool sync = false; //sync shares the value with clients
 		bool locked = false; // sets whether the curve is locked from level editor
 		bool hidden = false; // don't show the curve in level editor

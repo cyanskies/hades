@@ -1,6 +1,7 @@
 #ifndef HADES_WRITER_HPP
 #define HADES_WRITER_HPP
 
+#include <memory>
 #include <string_view>
 
 #include "hades/exceptions.hpp"

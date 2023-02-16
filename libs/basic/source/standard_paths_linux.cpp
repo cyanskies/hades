@@ -1,17 +1,19 @@
+#include "hades/string.hpp"
+
 namespace hades
 {
-    types::string GetUserCustomFileDirectory()
+    string GetUserCustomFileDirectory()
     {
-        return types::string();
+        return string();
     }
 
-    types::string GetUserConfigDirectory()
+    string GetUserConfigDirectory()
     {
-        return types::string();
+        return string();
     }
 
-    types::string GetUserSaveDirectory()
+    string GetUserSaveDirectory()
     {
-        return types::string();
+        return string();
     }
 }

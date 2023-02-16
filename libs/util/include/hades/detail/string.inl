@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <functional>
 #include <sstream>
 #include <vector>
 

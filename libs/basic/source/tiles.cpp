@@ -230,7 +230,7 @@ namespace hades::resources
 	bool operator==(const tile &lhs, const tile &rhs) noexcept
 	{
 		return lhs.left == rhs.left &&
-			lhs.texture == rhs.texture &&
+			lhs.tex == rhs.tex &&
 			lhs.source == rhs.source &&
 			lhs.top == rhs.top;
 	}
@@ -242,17 +242,17 @@ namespace hades::resources
 
 	bool operator<(const tile &lhs, const tile &rhs) noexcept
 	{
-		return std::tie(lhs.texture, lhs.left, lhs.top, lhs.source)
-			< std::tie(rhs.texture, rhs.left, rhs.top, rhs.source);
+		return std::tie(lhs.tex, lhs.left, lhs.top, lhs.source)
+			< std::tie(rhs.tex, rhs.left, rhs.top, rhs.source);
 	}
 
 	static void load_tileset(tileset& tset, data::data_manager &d)
 	{
 		for (auto &t : tset.tiles)
 		{
-			if (t.texture)
+			if (t.tex)
 			{
-				auto texture = d.get_resource(t.texture.id());
+				auto texture = d.get_resource(t.tex.id());
 				if(!texture->loaded)
 					texture->load(d);
 			}
@@ -345,7 +345,7 @@ namespace hades
 		//we should be pointing at a tile_layer
 
 		w.start_sequence(tilesets_str);
-		for (const auto [id, gid] : m.tilesets)
+        for (const auto& [id, gid] : m.tilesets)
 		{
 			w.start_sequence();
 			w.write(id);
@@ -430,7 +430,7 @@ namespace hades
 
 		return tile_position{
 			integer_cast<tile_position::value_type>(t.width),
-			integer_cast<tile_position::value_type>(t.tiles.size() / t.width)
+            integer_cast<tile_position::value_type>(integer_cast<tile_index_t>(t.tiles.size()) / t.width)
 		};
 	}
 
@@ -479,7 +479,7 @@ namespace hades
 		//rather that whatever range they are being stored in the raw map
 
 		//we cant save a jagged map
-		if (r.tiles.size() % r.width != 0)
+        if (r.tiles.size() % integer_cast<std::size_t>(r.width) != 0)
 			throw tile_error{ "raw_map is in an invalid state" };
 
 		//we'll store a replacement table in tile swap 
@@ -550,7 +550,7 @@ namespace hades
 	raw_map to_raw_map(const tile_map &t)
 	{
 		//we cant save a jagged map
-		if (t.tiles.size() % t.width != 0)
+        if (t.tiles.size() % integer_cast<std::size_t>(t.width) != 0)
 			throw tile_error{ "tile_map is in an invalid state" };
 
 		//the tiles id's and width will be unchanged
@@ -603,7 +603,7 @@ namespace hades
 	{
 		try
 		{
-			for (const auto[id, start] : r.tilesets)
+            for (const auto& [id, start] : r.tilesets)
 			{
 				const auto tileset = data::get<resources::tileset>(id);
 				assert(t > start);
@@ -655,7 +655,7 @@ namespace hades
 				for (auto iter = begin; iter != end; ++iter)
 				{
 					if (*iter == t)
-						return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
+                        return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
 				}
 
 				offset += std::size(tileset->tiles);
@@ -681,7 +681,7 @@ namespace hades
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-					return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
+                    return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -701,7 +701,7 @@ namespace hades
 			for (auto iter = begin; iter != end; ++iter)
 			{
 				if (*iter == t)
-					return integer_cast<tile_id_t>(offset + std::distance(begin, iter));
+                    return integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(begin, iter)));
 			}
 
 			offset += std::size(tileset->tiles);
@@ -717,7 +717,7 @@ namespace hades
 		for (auto iter = std::begin(tileset->tiles); iter != tileset_end; ++iter)
 		{
 			if (*iter == t)
-				return  integer_cast<tile_id_t>(offset + std::distance(std::begin(tileset->tiles), iter));
+                return  integer_cast<tile_id_t>(offset + integer_cast<std::size_t>(std::distance(std::begin(tileset->tiles), iter)));
 		}
 
 		throw tile_error{ "unable to add tile id for this tile_map" };
@@ -761,7 +761,7 @@ namespace hades
 
 	void resize_map_relative(tile_map &m, vector_int top_left, vector_int bottom_right, const resources::tile &t)
 	{
-		const auto current_height = m.tiles.size() / m.width;
+        const auto current_height = integer_cast<int32>(m.tiles.size()) / m.width;
 		const auto current_width = m.width;
 
 		const auto new_height = current_height - top_left.y + bottom_right.y;
@@ -820,9 +820,8 @@ namespace hades
 		//TODO: check that tile_id is within the maps id range(valid tile)
 
 		//ignore placements outside of the map
-		const auto index = to_1d_index(p, m.width);
-		if (p.x >= m.width ||
-			integer_cast<std::size_t>(index) >= m.tiles.size())
+        const auto index = integer_cast<std::size_t>(to_1d_index(p, m.width));
+        if (p.x >= m.width || index >= m.tiles.size())
 			return;
 
 		m.tiles[index] = t;
@@ -865,7 +864,7 @@ namespace hades
 			return { position };
 
 		auto positions = std::vector<tile_position>{};
-		positions.reserve(size.x * size.y);
+        positions.reserve(integer_cast<std::size_t>(size.x * size.y));
 
 		for (int32 y = 0; y < size.y; ++y)
 			for (int32 x = 0; x < size.x; ++x)
@@ -882,7 +881,7 @@ namespace hades
 		const auto bottom = tile_position{ 0, rad };
 
 		std::vector<tile_position> out;
-		out.reserve(rad * 4);
+        out.reserve(integer_cast<std::size_t>(rad * 4));
 
 		out.emplace_back(top + p);
 

@@ -54,7 +54,7 @@ namespace hades::resources
 	struct tile
 	{
 		//texture and [left, top] are used for drawing
-		resource_link<texture> texture;
+        resource_link<texture> tex;
 		tile_size_t left{}, top{};
 		// NOTE: this is intentionally not a resource_link
 		//		since tiles themselves aren't a resource

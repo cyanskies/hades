@@ -65,7 +65,7 @@ namespace hades
 			const hades::string& file() const { return _file; }
 			const hades::string& time() const { return _time; }
 			int line() const { return _line; }
-			const logger::log_verbosity verbosity() const { return _verb; }
+            logger::log_verbosity verbosity() const { return _verb; }
 
 			operator hades::string() const;
 		private:

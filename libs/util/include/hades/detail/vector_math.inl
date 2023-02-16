@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <tuple>
 #include <type_traits>
 
@@ -123,15 +124,9 @@ namespace hades
 			auto ret = T{};
 			//NOTE: y is inverted because opengl
 			if constexpr (std::is_floating_point_v<T>)
-			{
-				constexpr auto pi = T{ 3.1415926535897 }; //C++20 brings math constants finally ::rollseyes::
-				ret = std::atan2(v.y * -1.f, v.x) * 180 / pi;
-			}
+                ret = std::atan2(v.y * -1.f, v.x) * 180 / std::numbers::pi_v<T>;
 			else
-			{
-				constexpr auto pi = float{ 3.1415926535897 };
-				ret = static_cast<T>(std::atan2(static_cast<float>(v.y) * -1.f, static_cast<float>(v.x)) * 180 / pi);
-			}
+                ret = static_cast<T>(std::atan2(static_cast<float>(v.y) * -1.f, static_cast<float>(v.x)) * 180 / std::numbers::pi_v<float>);
 
 			//atan2 reurns in the range {180, -180}
 			// convert to {0, 360}

@@ -76,20 +76,20 @@ namespace hades
 	inline std::size_t table<T>::_index(index_type index) const noexcept
 	{
 		const auto size = base_type::size();
-		return to_1d_index(index, size.x) - detail::offset(base_type::position(), size);
+        return integer_cast<std::size_t>(to_1d_index(index, size.x) - detail::offset(base_type::position(), size));
 	}
 
 	template<typename T>
 	inline std::size_t table<T>::_index(size_type index) const noexcept
 	{
 		const auto size = base_type::size();
-		return index - detail::offset(base_type::position(), size);
+        return integer_cast<std::size_t>(index - detail::offset(base_type::position(), size));
 	}
 
 	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
 	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor&& f)
 	{
-		static_assert(std::is_invocable_v<CombineFunctor, const TableFirst::value_type&, const TableSecond::value_type&>);
+        static_assert(std::is_invocable_v<CombineFunctor, const typename TableFirst::value_type&, const typename TableSecond::value_type&>);
 		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const typename TableFirst::value_type&, const typename TableSecond::value_type&>, typename TableFirst::value_type>);
 
 		const auto r_pos = r.position();
@@ -104,18 +104,18 @@ namespace hades
 			return table_t{ l , typename TableFirst::value_type{} };
 
 		const auto stride = l_siz.x;
-		const auto r_stride = r_siz.x - area.width;
+        const auto r_stride = integer_cast<std::size_t>(r_siz.x - area.width);
 		const auto length = area.width; // width of copyable space
 		const auto l_offset = l_pos.y * stride + l_pos.x;
 		const auto start = area.y * stride + area.x - l_offset; //index of first space
-		const auto jump = l_siz.x - (area.x + area.width) + area.x - l_offset;// distance between length and the next region
-		const auto end = area.height * stride + start; //index of last space
+        const auto jump = integer_cast<std::size_t>(l_siz.x - (area.x + area.width) + area.x - l_offset);// distance between length and the next region
+        const auto end = integer_cast<std::size_t>(area.height * stride + start); //index of last space
 
 		auto tab = table<typename TableFirst::value_type>{ l, typename TableFirst::value_type{} };
 		auto &t = tab.data();
 		const auto &tr = r.data();
 		auto r_index = std::size_t{};
-		auto index = start;
+        auto index = integer_cast<std::size_t>(start);
 		while (index < end)
 		{
 			auto count = typename table_t::size_type{};

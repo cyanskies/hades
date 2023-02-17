@@ -190,6 +190,7 @@ namespace hades
 		//save binding config, //this only works for bindable actions
 		void generate_state(); //runs all the action test functions, including custom ones
 		using action_set = std::set<action, action_compare>; // TODO: review usage of set
+		// TODO: pass storage as param, dont allocate a whole set every single tick
 		action_set input_state() const;
 
 	protected:
@@ -213,7 +214,7 @@ namespace hades
 	class input_event_system_t final : public input_system
 	{
 	public:
-        //using event = Event;
+        using event = Event;
 		//using checked_event = std::tuple<bool, event>;
         using event_interpreter = input_event_interpreter<Event>;
 		using event_interpreter_set = std::unordered_map<event_interpreter, action>;

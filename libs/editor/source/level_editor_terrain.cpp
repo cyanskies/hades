@@ -289,7 +289,7 @@ namespace hades
 
 					//need to push a prefix to avoid the id clashing from the same texture
 					g.push_id(terrain);
-					if (g.image_button(*t.texture, tex_coords, button_size))
+					if (g.image_button(*t.tex, tex_coords, button_size))
 						std::invoke(on_click, terrain.get());
 					g.pop_id();
 				};
@@ -363,7 +363,7 @@ namespace hades
 
 						//need to push a prefix to avoid the id clashing from the same texture
 						g.push_id(terrain);
-						if (g.image_button(*t.texture, tex_coords, button_size))
+						if (g.image_button(*t.tex, tex_coords, button_size))
 							std::invoke(on_click, terrain.get());
 						g.pop_id();
 					};

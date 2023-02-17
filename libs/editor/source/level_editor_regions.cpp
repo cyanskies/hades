@@ -31,7 +31,7 @@ namespace hades
 			auto shape = sf::RectangleShape{};
 			shape.setPosition({ r.bounds.x, r.bounds.y });
 			shape.setSize({ r.bounds.width, r.bounds.height });
-			shape.setFillColor({ r.colour.r, r.colour.g, r.colour.b, r.colour.a });
+			shape.setFillColor({ r.display_colour.r, r.display_colour.g, r.display_colour.b, r.display_colour.a });
 
 			auto text = sf::Text{};
 			text.setString(r.name);

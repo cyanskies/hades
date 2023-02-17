@@ -581,7 +581,7 @@ namespace hades::state_api
 	const get_property_return_t<CurveType, T>&
 		get_object_property_ref(const game_obj& o, variable_id v)
 	{
-        return detail::get_object_property_ref<std::add_const_t<CurveType<T>>>(o, v);
+        return detail::get_object_property_ref<CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
@@ -595,7 +595,7 @@ namespace hades::state_api
 	const get_property_return_t<CurveType, T>* 
 		get_object_property_ptr(const game_obj& o, variable_id v) noexcept
 	{
-        return detail::get_object_property_ptr<std::add_const_t<CurveType<T>>>(o, v);
+        return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>

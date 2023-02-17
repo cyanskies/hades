@@ -391,15 +391,15 @@ namespace hades
 			assert(back);
 
 			background_settings b;
-			b.col = back->colour;
+			b.col = back->fill_colour;
 			b.layers.reserve(back->layers.size());
 
 			for (const auto &l : back->layers)
 			{
-				assert(l.animation);
+				assert(l.anim);
 
 				const auto layer = background_settings::background_layer{
-					resources::animation_functions::get_id(*l.animation),
+					resources::animation_functions::get_id(*l.anim),
 					l.offset,
 					l.parallax
 				};

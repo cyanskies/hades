@@ -1053,13 +1053,13 @@ namespace hades::data
 				}
 
 				//curve type
-				if (g.combo_begin("keyframe style"sv, to_string(_curve->keyframe_style)))
+				if (g.combo_begin("keyframe style"sv, to_string(_curve->frame_style)))
 				{
 					for (auto i = keyframe_style::begin; i < keyframe_style::end; i = next(i))
 					{
-						if (g.selectable(to_string(i), _curve->keyframe_style == i))
+						if (g.selectable(to_string(i), _curve->frame_style == i))
 						{
-							_curve->keyframe_style = i;
+							_curve->frame_style = i;
 							mod = true;
 						}
 					}
@@ -1201,7 +1201,7 @@ namespace hades::data
 		const hades::resources::curve_default_value& value)
 	{
 		auto unloaded_iter = std::ranges::find(o.curves, c->id, [](auto&& unloaded_curve) {
-			return unloaded_curve.curve.id();
+			return unloaded_curve.curve_link.id();
 			});
 
 		if (end(o.curves) != unloaded_iter)
@@ -1364,16 +1364,16 @@ namespace hades::data
 					{
 						// curves inherited from base objects
 						const auto foreign_curve = c.object != _obj->id;
-						g.push_id(c.curve);
+						g.push_id(c.curve_ptr);
 						if (g.table_next_column())
 						{
 							if (foreign_curve)
 								g.begin_disabled();
-							if (make_curve_default_value_editor(g, d.get_as_string(c.curve->id),
-								c.curve, c.value, _curve_vec_edit_cache, _curve_edit_cache))
+							if (make_curve_default_value_editor(g, d.get_as_string(c.curve_ptr->id),
+								c.curve_ptr, c.value, _curve_vec_edit_cache, _curve_edit_cache))
 							{
 								mod = true;
-								add_or_update_curve_on_object(d, *_obj, c.curve, c.value);
+								add_or_update_curve_on_object(d, *_obj, c.curve_ptr, c.value);
 							}
 							if (foreign_curve)
 								g.end_disabled();
@@ -1392,7 +1392,7 @@ namespace hades::data
 								if (g.button("override"sv))
 								{
 									mod = true;
-									add_or_update_curve_on_object(d, *_obj, c.curve, c.value);
+									add_or_update_curve_on_object(d, *_obj, c.curve_ptr, c.value);
 								}
 							}
 							else
@@ -1400,8 +1400,8 @@ namespace hades::data
 								if (g.button("remove"sv))
 								{
 									mod = true;
-									auto unloaded_iter = std::ranges::find(_obj->curves, c.curve->id, [](auto&& unloaded_curve) {
-										return unloaded_curve.curve.id();
+									auto unloaded_iter = std::ranges::find(_obj->curves, c.curve_ptr->id, [](auto&& unloaded_curve) {
+										return unloaded_curve.curve_link.id();
 										});
 
 									assert(end(_obj->curves) != unloaded_iter);
@@ -1556,7 +1556,7 @@ namespace hades::data
 			auto curves = d.get_all_names_for_type("curves"sv);
 			const auto removed = std::ranges::remove_if(curves, [&d, &all_curves = _obj->all_curves](auto&& str)->bool {
 				return std::ranges::find(all_curves, str, [&d](auto&& c)->std::string_view {
-					return d.get_as_string(c.curve->id);
+					return d.get_as_string(c.curve_ptr->id);
 					}) != end(all_curves);
 				});
 			const auto unique = std::ranges::unique(begin(curves), begin(removed));

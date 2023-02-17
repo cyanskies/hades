@@ -346,7 +346,7 @@ namespace hades::detail::obj_ui
 		typename ObjEditor::cache_map& cache)
 	{
 		constexpr auto use_object_type = !std::is_same_v<nullptr_t, typename ObjEditor::object_type>;
-		const auto disabled = use_object_type && (c.locked || c.keyframe_style == keyframe_style::const_t);
+		const auto disabled = use_object_type && (c.locked || c.frame_style == keyframe_style::const_t);
 
 		using namespace std::string_view_literals;
 
@@ -430,7 +430,7 @@ namespace hades::detail::obj_ui
 		g.layout_horizontal();
 		g.text(name);
 
-		const auto disabled = use_object_type && (c->locked || c->keyframe_style == keyframe_style::const_t);
+		const auto disabled = use_object_type && (c->locked || c->frame_style == keyframe_style::const_t);
 
 		// NOTE: throughout this func we don't std::move container
 		// this is because we want to copy the updated value into the object
@@ -540,11 +540,11 @@ namespace hades::detail::obj_ui
 		resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
 		typename object_editor_ui<Obj, T, U>::cache_map& cache)
 	{
-		if (!resources::is_curve_valid(*c.curve, c.value))
+		if (!resources::is_curve_valid(*c.curve_ptr, c.value))
 			return;
 
-		g.push_id(c.curve);
-		std::visit([&g, &o, curve = c.curve, &target, &cache](auto&& value) {
+		g.push_id(c.curve_ptr);
+		std::visit([&g, &o, curve = c.curve_ptr, &target, &cache](auto&& value) {
 			using Type = std::decay_t<decltype(value)>;
 
 			if constexpr (!std::is_same_v<std::monostate, Type>)
@@ -751,10 +751,10 @@ namespace hades
 				auto &curves = _curves;
 				assert(w.list_index < std::size(curves));
 				auto &curve = curves[w.list_index];
-				const auto& c = curve.curve;
+				const auto& c = curve.curve_ptr;
 				assert(c);
 
-				const auto selected_disabled = c->locked || c->keyframe_style == keyframe_style::const_t;
+				const auto selected_disabled = c->locked || c->frame_style == keyframe_style::const_t;
 
 				if (selected_disabled)
 					g.begin_disabled();
@@ -782,7 +782,7 @@ namespace hades
 
 				// TODO: new listbox, add disabled
 				g.listbox("##curve_list", w.list_index, curves, [](auto&& c)->string {
-					return to_string(c.curve->id);
+					return to_string(c.curve_ptr->id);
 				});
 			}
 			g.window_end();
@@ -817,7 +817,7 @@ namespace hades
 		static_assert(std::is_invocable_r_v<rect_float, MakeRect, const ObjectType&, const curve_info&>,
 			"MakeRect must have the following definition: (const object_instance&, const curve_info&)->rect_float");
 
-		const auto disabled = c.curve->locked || c.curve->keyframe_style == keyframe_style::const_t;
+		const auto disabled = c.curve->locked || c.curve->frame_style == keyframe_style::const_t;
 
 		const auto v = std::get<vector_float>(c.value);
 		auto value = std::array{ v.x, v.y };
@@ -995,12 +995,12 @@ namespace hades
 				[others = _curve_properties](auto&& c) {
 					return std::any_of(begin(others),
 						end(others), [&c](auto&& curve)
-						{ return c.curve == curve.curve; });
+						{ return c.curve_ptr == curve.curve; });
 				}), end(all_curves));
 		}
 
 		std::sort(begin(all_curves), end(all_curves), [](auto&& lhs, auto&& rhs) {
-			return data::get_as_string(lhs.curve->id) < data::get_as_string(rhs.curve->id);
+			return data::get_as_string(lhs.curve_ptr->id) < data::get_as_string(rhs.curve_ptr->id);
 			});
 
 		_curves = std::move(all_curves);

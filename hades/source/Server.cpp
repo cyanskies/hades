@@ -215,7 +215,7 @@ namespace hades
 			{
 				if (l.name == id)
 				{
-					const auto save = make_save_from_level(l.level);
+					const auto save = make_save_from_level(l.level_obj);
 					auto new_level = level{ id, { save, this } };
 					auto &out = _levels.emplace_back(std::move(new_level));
 					return &out.instance;

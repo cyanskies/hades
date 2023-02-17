@@ -711,7 +711,7 @@ namespace hades
 		{
 			auto lev = level_info{};
 			lev.name = std::move(l.name);
-			lev.level = std::move(l.level);
+			lev.level = std::move(l.level_obj);
 			_levels.emplace_back(std::move(lev));
 		}
 

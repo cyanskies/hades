@@ -165,7 +165,7 @@ namespace hades
 		}
 		else
 			t.update(pixels.data());
-		sf::err().set_rdbuf(prev);
+        sf::err().rdbuf(prev);
 		return t;
 	}
 
@@ -199,7 +199,7 @@ namespace hades
 		//		  alpha-mask: [r, g, b] or accepted colour name eg. black (see colour.hpp)
 
 		using namespace std::string_view_literals;
-		constexpr auto resource_type = "textures"sv;
+        //constexpr auto resource_type = "textures"sv;
 
 		const auto textures = node.get_children();
 
@@ -268,7 +268,7 @@ namespace hades
 				auto sb = std::stringbuf{};
 				const auto prev = sf::err().rdbuf(&sb);
 				const auto f = make_finally([prev]() noexcept {
-					sf::err().set_rdbuf(prev);
+                    sf::err().rdbuf(prev);
 					return;
 					});
 				if (!tex.value.loadFromStream(fstream))
@@ -309,8 +309,8 @@ namespace hades
 			//otherwise log unexpected size
 			const auto size = tex.value.getSize();
 			const auto too_small = size.x != tex.width || size.y != tex.height;
-			if (tex.width != 0 && too_small ||
-				tex.height != 0 && too_small)
+            if ((tex.width != 0 && too_small) ||
+                (tex.height != 0 && too_small))
 			{
 				LOGWARNING("Loaded texture: "s + mod.source + "/"s + tex.source.generic_string() +
 					". Texture size smaller than requested in mod: "s + mod.name + ", Requested("s +
@@ -517,7 +517,7 @@ namespace hades
 						LOGERROR("Unable to generate mipmap for texture");
 						LOGERROR(sb.str());
 					}
-					sf::err().set_rdbuf(prev);
+                    sf::err().rdbuf(prev);
 				}
 
 				t->loaded = loaded;

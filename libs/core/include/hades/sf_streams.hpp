@@ -30,7 +30,7 @@ namespace hades
 		{
 			try
 			{
-				_stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::size_t>(size));
+                _stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::streamsize>(size));
 			}
 			catch (const std::exception& e)
 			{

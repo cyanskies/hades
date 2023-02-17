@@ -256,7 +256,8 @@ namespace hades::files
 			const auto size = str.tellg();
 			str.seekg({}, std::ios_base::beg);
 
-			auto out = buffer(size, {});
+            // NOTE: fpos can be converted to streamoff but not size_t directly
+            auto out = buffer(integer_cast<std::size_t>(static_cast<std::streamoff>(size)), {});
 			str.get(reinterpret_cast<char*>(out.data()), size);
 			return out;
 		}
@@ -370,7 +371,7 @@ namespace hades::files
 	void write_file(const fs::path& path, std::string_view file_contents)
 	{
 		auto stream = write_file(path);
-		stream.write(reinterpret_cast<const char*>(std::data(file_contents)), std::size(file_contents));
+        stream.write(reinterpret_cast<const char*>(std::data(file_contents)), integer_cast<std::streamsize>(std::size(file_contents)));
 		return;
 	}
 

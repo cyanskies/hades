@@ -108,9 +108,7 @@ namespace hades
 	template<typename Interface, typename JobDataType>
 	time_point update_level(JobDataType job_data, Interface& interface)
 	{
-		using SystemType = typename JobDataType::system_type;
-
-		const auto& current_time = job_data.current_time;
+        const auto& current_time = job_data.current_time;
 		
 		// when a level is first loaded on_create needs to be called for all systems
 		// otherwise, on_connect/on_create should be called at the end of the tick
@@ -130,8 +128,7 @@ namespace hades
 			{
 				auto input_q = interface.get_and_clear_input_queue();
 				//player input function, no system data available
-				using ent_list = resources::curve_types::collection_object_ref;
-				auto game_data = job_data;
+                auto game_data = job_data;
 				for (auto p : *game_data.players)
 				{
 					using state = player_data::state;

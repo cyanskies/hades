@@ -74,7 +74,7 @@ namespace hades
 		const auto id = increment(_id_count) ;
 		assert(id != bad_sprite_id);
 
-		_add_sprite({ id });
+        _add_sprite({ id, {}, {}, {}, {}, {} });
 
 		return id;
 	}

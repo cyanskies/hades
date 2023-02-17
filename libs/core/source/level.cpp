@@ -40,10 +40,10 @@ namespace hades
 			w.start_sequence();
 			w.write(r.name);
 
-			w.write(r.colour.r);
-			w.write(r.colour.g);
-			w.write(r.colour.b);
-			w.write(r.colour.a);
+            w.write(r.display_colour.r);
+            w.write(r.display_colour.g);
+            w.write(r.display_colour.b);
+            w.write(r.display_colour.a);
 			
 			w.write(r.bounds.x);
 			w.write(r.bounds.y);
@@ -121,7 +121,8 @@ namespace hades
 
 		w.start_map(level_terrain_str);
 		const auto raw = raw_terrain_map{ l.terrainset,
-			l.terrain_vertex, l.terrain_layers
+            l.terrain_vertex, l.terrain_layers,
+            {}
 		};
 
 		write_raw_terrain_map(raw, w);

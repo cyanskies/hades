@@ -68,7 +68,7 @@ namespace hades
 
 		auto iter = std::begin(_map.terrain_layers);
 		auto iter2 = std::begin(_terrain_layers);
-		for (iter, iter2; iter != std::end(_map.terrain_layers); ++iter, ++iter2)
+        for (/*iter, iter2*/; iter != std::end(_map.terrain_layers); ++iter, ++iter2)
 			iter2->update(*iter);
 	}
 
@@ -100,7 +100,7 @@ namespace hades
 
 		auto iter = std::begin(_terrain_layers);
 		auto iter2 = std::begin(_map.terrain_layers);
-		for (iter, iter2; iter != std::end(_terrain_layers); ++iter, ++iter2)
+        for (/*iter, iter2*/; iter != std::end(_terrain_layers); ++iter, ++iter2)
 			iter->update(*iter2);
 	}
 

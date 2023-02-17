@@ -17,7 +17,7 @@ static std::vector<hades::unique_id> level_load_scripts{};
 
 namespace hades::resources
 {
-	void hades::resources::make_player_input_resource(std::string_view n, player_input::player_input_fn f, data::data_manager &d)
+    void make_player_input_resource(std::string_view n, player_input::player_input_fn f, data::data_manager &d)
 	{
 		assert(f);
 		const auto id = d.get_uid(n);
@@ -34,7 +34,7 @@ namespace hades::resources
 		return player_input_resources;
 	}
 
-	void hades::resources::make_level_load_script_resource(std::string_view n, load_script::load_fn f, data::data_manager& d)
+    void make_level_load_script_resource(std::string_view n, load_script::load_fn f, data::data_manager& d)
 	{
 		assert(f);
 		const auto id = d.get_uid(n);
@@ -54,7 +54,7 @@ namespace hades::resources
 
 namespace hades
 {
-	void register_level_scripts_resource(data::data_manager &d)
+    void register_level_scripts_resource(data::data_manager&)
 	{
 		//player input scripts
 		//d.register_resource_type(player_script_name, parse_player_script);

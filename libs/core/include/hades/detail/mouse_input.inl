@@ -185,7 +185,7 @@ namespace hades::mouse
 	constexpr vector_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
 	{
 		static_assert(Drag, "Dragging is disabled for this mouse state");
-		return false;
+        return {};
 	}
 
 	template<bool DoubleClick>

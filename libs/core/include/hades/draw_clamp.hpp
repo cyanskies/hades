@@ -45,6 +45,7 @@ namespace hades
 			: _drawable{ d }, _region{ rect }
 		{}
 
+        [[deprecated]] // this constructor is a bug
 		draw_clamp_window(const sf::Drawable &d, const sf::IntRect &rect) noexcept
 			: _drawable{ d }, _region{ rect_int{rect.left, rect.top, rect.width, rect.height} }
 		{}

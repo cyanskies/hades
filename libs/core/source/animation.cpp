@@ -470,7 +470,7 @@ namespace hades::resources
 		
 
 		using namespace std::string_view_literals;
-		constexpr auto resource_type = "animation"sv;
+        //constexpr auto resource_type = "animation"sv;
 
 		const auto animations = n.get_children();
 
@@ -614,8 +614,8 @@ namespace hades::animation
 	void apply(const resources::animation& animation, float progress, sf::Sprite& target)
 	{
 		const auto& f = get_frame(animation, progress);
-		const auto tex_x = f.w < 0 ? f.x + abs(f.w) : f.x;
-		const auto tex_y = f.y < 0? f.y + abs(f.h) : f.y;
+        const auto tex_x = f.w < 0 ? f.x + std::abs(f.w) : f.x;
+        const auto tex_y = f.y < 0? f.y + std::abs(f.h) : f.y;
 		const auto tex_w = f.w;
 		const auto tex_h = f.h;
 
@@ -669,8 +669,8 @@ namespace hades
 		const auto scaled_size = vector_float{ size.x * f.scale_w, size.y * f.scale_h };
 
 		return make_quad_animation({ pos - offset, scaled_size }, {
-			f.w < 0 ? f.x + abs(f.w) : f.x, 
-			f.h < 0 ? f.y + abs(f.h) : f.y,
+            f.w < 0 ? f.x + std::abs(f.w) : f.x,
+            f.h < 0 ? f.y + std::abs(f.h) : f.y,
 			f.w, f.h 
 		});
 	}

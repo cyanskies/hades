@@ -31,7 +31,7 @@ namespace hades
 			auto sb = std::stringbuf{};
 			const auto prev = sf::err().rdbuf(&sb);
 			const auto finally = make_finally([prev]() noexcept {
-				sf::err().set_rdbuf(prev);
+                sf::err().rdbuf(prev);
 				return;
 				});
 

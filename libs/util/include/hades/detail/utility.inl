@@ -131,7 +131,7 @@ namespace hades
 				throw overflow_error{ "overflow_error value is smaller than target type can hold" };
 		}
 
-		// all intergrals fit in all floats
+        // all intergrals fit in all floats (but may may loose precision)
 		return static_cast<Float>(t);
 	}
 

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <filesystem>
+#include <string_view>
 
 #include "zlib.h"
 #include "zip.h"
@@ -146,8 +147,8 @@ namespace hades::zip
 	}
 
 	izfstream::izfstream() noexcept
-		: _stream{ std::filebuf{} },
-		std::istream{ nullptr }
+        : std::istream{ nullptr },
+          _stream{ std::filebuf{} }
 	{}
 
 	izfstream::izfstream(const std::filesystem::path& p) 
@@ -158,9 +159,9 @@ namespace hades::zip
 		if (!is_open())
 		{
 			// try normal file opening
-			auto p_str = p.string();
-			auto file = std::fopen(p_str.c_str(), "rb");
-			_stream = std::filebuf{ file };
+            auto file = std::filebuf{};
+            file.open(p, std::ios_base::in | std::ios_base::binary);
+            _stream = std::move(file);
 			rdbuf(&std::get<std::filebuf>(_stream));
 
 			if (!is_open())
@@ -207,10 +208,10 @@ namespace hades::zip
 
 		if (!is_open())
 		{
-			auto p_str = p.string();
-			auto file = std::fopen(p_str.c_str(), "rb");
-			_stream = std::filebuf{ file };
-			rdbuf(&std::get<std::filebuf>(_stream));
+            auto file = std::filebuf{};
+            file.open(p, std::ios_base::in | std::ios_base::binary);
+            _stream = std::move(file);
+            rdbuf(&std::get<std::filebuf>(_stream));
 		}
 
 		if (!is_open())
@@ -292,16 +293,11 @@ namespace hades::zip
 		return ret;
 	}
 
-	static std::string_view::iterator::difference_type
-		count_separators(const std::filesystem::path& p)
-	{
-		//constexpr char separator1 = '\\';
+    static std::size_t count_separators(const std::filesystem::path& p)
+    {
 		constexpr char separator2 = '/';
-		
 		const auto s = p.generic_string();
-
-		//auto sep_count = std::count(s.begin(), s.end(), separator1);
-		return std::count(s.begin(), s.end(), separator2);// = sep_count;
+        return integer_cast<std::size_t>(std::count(s.begin(), s.end(), separator2));
 	}
 
 	std::vector<types::string> list_files_in_archive(const std::filesystem::path& archive, const std::filesystem::path& dir_path, bool recursive)

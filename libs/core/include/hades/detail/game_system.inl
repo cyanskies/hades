@@ -22,7 +22,7 @@ namespace hades
 
 			const auto new_system = hades::data::get<SystemResource>(sys);
 			sys_r.emplace_back(new_system);
-			return systems.emplace_back(System{ new_system });
+            return systems.emplace_back(System{ new_system, {}, {}, {}, {} });
 		}
 
 		template<typename SystemResource, typename System>
@@ -139,7 +139,7 @@ namespace hades
 	inline void system_behaviours<SystemType>::attach_system(object_ref entity, unique_id sys)
 	{
 		//systems cannot be created or destroyed while we are editing the entity list
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
+        auto& system = detail::find_system<typename SystemType::system_t>(sys, _systems, _new_systems);
 
 		//not being already_attached implies a bug in the game api
 		assert(!detail::assert_system_already_attached(entity, system.attached_entities));
@@ -153,7 +153,7 @@ namespace hades
 	inline void system_behaviours<SystemType>::attach_system_from_load(object_ref entity, unique_id sys)
 	{
 		//systems cannot be created or destroyed while we are editing the entity list
-		auto& system = detail::find_system<SystemType::system_t>(sys, _systems, _new_systems);
+        auto& system = detail::find_system<typename SystemType::system_t>(sys, _systems, _new_systems);
 		auto& ent_list = system.attached_entities;
 
 		//check that we arent double attaching

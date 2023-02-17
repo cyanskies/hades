@@ -127,7 +127,7 @@ namespace hades
 			else
 				LOGERROR("Unable to create vertex buffer. "s + sb.str());
 
-			sf::err().set_rdbuf(prev);
+            sf::err().rdbuf(prev);
 		}
 
 		return;
@@ -143,7 +143,7 @@ namespace hades
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
 		auto success = true;
-		if (const auto old_size = _buffer.getVertexCount();
+        if (const auto old_size = _buffer.getVertexCount();
 			old_size == 0)
 		{
 			//how many quads the buffer should be able to hold
@@ -167,7 +167,7 @@ namespace hades
 		if (!_buffer.update(_verts.data(), size, std::size_t{}))
 			LOGWARNING("Failed to update vertex buffer. "s + sb.str());
 
-		sf::err().set_rdbuf(prev);
+        sf::err().rdbuf(prev);
 
 		return;
 	}
@@ -186,7 +186,7 @@ namespace hades
 		else
 			LOGERROR("Failed to shrink vertex buffer "s + sb.str());
 
-		sf::err().set_rdbuf(prev);
+        sf::err().rdbuf(prev);
 
 		return;
 	}

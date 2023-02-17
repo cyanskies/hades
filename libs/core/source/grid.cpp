@@ -17,8 +17,8 @@ namespace hades
 
 	static void make_grid(const grid::grid_properties &p, quad_buffer& buffer)
 	{
-		const auto rows = static_cast<int32>(std::floor(p.grid_size.y / p.cell_size));
-		const auto cols = static_cast<int32>(std::floor(p.grid_size.x / p.cell_size));
+        const auto rows = static_cast<uint32>(std::floor(p.grid_size.y / p.cell_size));
+        const auto cols = static_cast<uint32>(std::floor(p.grid_size.x / p.cell_size));
 
 		buffer.clear();
 		buffer.reserve(rows + cols);

@@ -63,7 +63,7 @@ namespace hades::resources
 		struct curve_obj
 		{
 			curve_default_value value;
-			const curve* curve = nullptr;
+            const curve* curve_ptr = {};
 			unique_id object;
 		};
 
@@ -72,7 +72,7 @@ namespace hades::resources
 		using unloaded_value = std::variant<std::monostate, string, std::vector<string>>;
 		struct unloaded_curve
 		{
-			resource_link<curve> curve;
+            resource_link<curve> curve_link;
 			unloaded_value value;
 		};
 
@@ -137,7 +137,7 @@ namespace hades
 	//represents an instance of an object in a level file
 	//also used to prefab objects before creating them
 	struct object_instance
-	{
+    {
 		const resources::object *obj_type = nullptr;
 		entity_id id = bad_entity;
 		//NOTE: name_id is used to address objects using a name rather than id

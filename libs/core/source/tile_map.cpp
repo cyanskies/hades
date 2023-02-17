@@ -34,7 +34,7 @@ namespace hades
 		assert(settings->error_tileset);
 		assert(!settings->error_tileset->tiles.empty());
 		const auto &error_tile = settings->error_tileset->tiles[0];
-		auto error_tex = tex_funcs::find_create_texture(d, error_tile.texture.id(), unique_id::zero);
+        auto error_tex = tex_funcs::find_create_texture(d, error_tile.tex.id(), unique_id::zero);
 		auto img = sf::Image{};
 		img.create(1u, 1u, sf::Color::Magenta);
 		auto& tex = tex_funcs::get_sf_texture(error_tex);
@@ -49,7 +49,7 @@ namespace hades
 			LOGERROR("Failed to generate error tile texture");
 			LOGERROR(sb.str());
 		}
-		sf::err().set_rdbuf(prev);
+        sf::err().rdbuf(prev);
 		
 		return;
 	}
@@ -86,7 +86,7 @@ namespace hades
 	void immutable_tile_map::create(const tile_map &map_data, const sf::VertexBuffer::Usage usage)
 	{
 		const auto &tiles = map_data.tiles;
-		const auto width = map_data.width;
+        const auto width = unsigned_cast(map_data.width);
 
 		//generate a drawable array
 		texture_layers.clear();
@@ -109,8 +109,8 @@ namespace hades
 		//collect info about each cell in the map
 		std::vector<map_tile> map;
 		std::vector<const hades::resources::texture*> tex_cache;
-		const auto map_end = integer_cast<tile_index_t>(size(tiles));
-		for (auto i = tile_index_t{}; i < map_end; ++i)
+        const auto map_end = size(tiles);
+        for (auto i = std::size_t{}; i < map_end; ++i)
 		{
 			const auto t = get_tile(map_data, tiles[i]);
 
@@ -133,7 +133,7 @@ namespace hades
 			}
 
 			assert(texture);
-			const map_tile ntile{ texture, i, t };
+            const map_tile ntile{ texture, integer_cast<tile_index_t>(i), t };
 			map.emplace_back(ntile);
 		}
 
@@ -167,7 +167,7 @@ namespace hades
 				quads.reserve(size(map));
 			}
 
-			const auto pos = to_2d_index<tile_position>(t.index, width);
+            const auto pos = to_2d_index<tile_position>(t.index, map_data.width);
 			const auto p = to_pixels(pos, tile_size);
 
 			const auto quad_rect = rect_float{
@@ -223,13 +223,13 @@ namespace hades
 			|| map.width != _tiles.width)
 			throw tile_map_error("immutable_tile_map::update must be called with a map of the same size and width");
 		
-		const auto map_end = integer_cast<tile_index_t>(size(map.tiles));
-		for (auto i = tile_index_t{}; i < map_end; ++i)
+        const auto map_end = size(map.tiles);
+        for (auto i = std::size_t{}; i < map_end; ++i)
 		{
 			if (map.tiles[i] != _tiles.tiles[i])
 			{
 				const auto &t = get_tile(map, map.tiles[i]);
-				const auto pos = to_2d_index<tile_position>(i, map.width);
+                const auto pos = to_2d_index<tile_position>(integer_cast<tile_index_t>(i), map.width);
 				_update_tile(pos, t);
 			}
 		}
@@ -246,8 +246,8 @@ namespace hades
 
 		hades::place_tile(_tiles, positions, t);
 		
-		const auto level_y = integer_cast<tile_index_t>(_tiles.tiles.size() / _tiles.width);
-		const auto level_x = integer_cast<tile_index_t>(_tiles.width);
+        const auto level_y = integer_cast<tile_index_t>(_tiles.tiles.size()) / _tiles.width;
+        const auto level_x = _tiles.width;
 		for (auto p : positions)
 		{
 			if (p.x < 0 ||
@@ -381,9 +381,9 @@ namespace hades
 
 	void mutable_tile_map::_remove_layer(const std::size_t layer)
 	{
-		const auto iter = std::next(begin(texture_layers), layer);
+        const auto iter = std::next(begin(texture_layers), signed_cast(layer));
 		texture_layers.erase(iter);
-		const auto iter2 = std::next(begin(_dirty_buffers), layer);
+        const auto iter2 = std::next(begin(_dirty_buffers), signed_cast(layer));
 		_dirty_buffers.erase(iter2);
 		return;
 	}

@@ -356,7 +356,7 @@ namespace hades
 			}
 
 			const auto location = _object_layers.emplace(iter, object_layer{ l, std::vector<drawable_object>{} });
-			layer_index = std::distance(std::begin(_object_layers), location);
+            layer_index = integer_cast<std::size_t>(std::distance(std::begin(_object_layers), location));
 		}
 
 		assert(layer_index < std::size(_object_layers));

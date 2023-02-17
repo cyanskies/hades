@@ -67,9 +67,9 @@ namespace hades
 
 	game_implementation::game_implementation(const level_save& sv,
 		game_interface* mission, const std::vector<player_data>* players)
-		: _player_input{ get_if_player_input(sv) },
-		_size{ static_cast<world_unit_t>(sv.source.map_x),
-		static_cast<world_unit_t>(sv.source.map_y) }
+        : _size{ static_cast<world_unit_t>(sv.source.map_x),
+        static_cast<world_unit_t>(sv.source.map_y) },
+          _player_input{ get_if_player_input(sv) }
 	{
 		if (!std::empty(sv.source.tile_map_layer.tiles))
 		{
@@ -118,6 +118,7 @@ namespace hades
 
 	game_implementation::~game_implementation()
 	{
+        // TODO: constructor for system_job_data, and all it's uses
 		auto data = system_job_data{ time_point{}, &_extras, &_extras.systems };
 		data.level_data = this;
 

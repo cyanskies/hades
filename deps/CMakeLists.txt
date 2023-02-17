@@ -9,7 +9,7 @@ add_subdirectory(yaml-cpp)
 get_target_property(HADES_YAML_VERSION yaml-cpp VERSION)
 target_compile_definitions(yaml-cpp INTERFACE HADES_YAML_VERSION="${HADES_YAML_VERSION}")
 
-add_subdirectory(zlib)
+add_subdirectory(zlib EXCLUDE_FROM_ALL)
 #fix for out of tree builds, zconf.h would only appear in #include <zconf.h>
 #but zlib tries to find include "zconf.h"
 #target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)

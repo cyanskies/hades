@@ -117,7 +117,7 @@ namespace hades
 		template<typename T>
 		inline const sf::Drawable& get_drawable_from_any(const std::any& a) noexcept
 		{
-			return std::any_cast<&T>(a);
+            return std::any_cast<T&>(a);
 		}
 	}
 

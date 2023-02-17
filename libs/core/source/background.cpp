@@ -14,10 +14,10 @@ namespace hades::resources
 	{
 		for (auto &l : b.layers)
 		{
-			assert(l.animation);
-			if (!animation_functions::is_loaded(*l.animation))
+            assert(l.anim);
+            if (!animation_functions::is_loaded(*l.anim))
 				//lazy load the animation
-				animation_functions::get_resource(d, animation_functions::get_id(*l.animation));
+                animation_functions::get_resource(d, animation_functions::get_id(*l.anim));
 		}
 	}
 
@@ -55,16 +55,16 @@ namespace hades::resources
 				switch (size(bytes))
 				{
 				case 4:
-					back->colour.a = bytes[3];
+                    back->fill_colour.a = bytes[3];
 					[[fallthrough]];
 				case 3:
-					back->colour.b = bytes[2];
+                    back->fill_colour.b = bytes[2];
 					[[fallthrough]];
 				case 2:
-					back->colour.g = bytes[1];
+                    back->fill_colour.g = bytes[1];
 					[[fallthrough]];
 				case 1:
-					back->colour.r = bytes[0];
+                    back->fill_colour.r = bytes[0];
 				}
 			}
 
@@ -113,7 +113,7 @@ namespace hades::resources
 					continue;
 				}
 
-				layer->animation = animation_functions::make_resource_link(d, anim, id);
+                layer->anim = animation_functions::make_resource_link(d, anim, id);
 
 				//get parallax
 				if (l.size() < 3)
@@ -214,7 +214,7 @@ namespace hades
 	{
 		const auto anim = resources::animation_functions::get_resource(l.animation);
 		assert(anim);
-		_layers.emplace_back(background_layer{ anim, l.offset, l.parallax });
+        _layers.emplace_back(background_layer{ anim, l.offset, l.parallax, {} });
 	}
 
 	void background::clear() noexcept
@@ -240,7 +240,6 @@ namespace hades
 	static void set_view(background::background_layer &b, rect_float v, vector_float s) noexcept
 	{
 		const auto view_pos = position(v);
-		const auto view_size = size(v);
 
 		const auto clamped_pos = vector_float{
 			std::clamp(view_pos.x, 0.f, s.x),

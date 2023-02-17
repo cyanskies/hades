@@ -36,7 +36,7 @@ namespace hades
 		struct level_element
 		{
 			unique_id name = unique_id::zero;
-			level level{};
+            level level_obj{};
 		};
 		std::vector<level_element> inline_levels;
 

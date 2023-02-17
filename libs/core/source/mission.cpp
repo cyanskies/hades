@@ -64,7 +64,7 @@ namespace hades
 			for (const auto& l : m.inline_levels)
 			{
 				w->start_map(l.name);
-				serialise(l.level, *w);
+                serialise(l.level_obj, *w);
 				w->end_map();
 			}
 			w->end_map();

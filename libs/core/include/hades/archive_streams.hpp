@@ -524,7 +524,7 @@ namespace hades::zip
 					while (uflow() != traits_type::eof());
 					[[fallthrough]];
 				case std::ios_base::cur:
-					const auto final = _pos() + off;
+                    const auto final = integer_cast<off_type>(_pos()) + off;
 					if (final < 0)
 						seekoff(0, std::ios_base::beg);
 					else
@@ -549,7 +549,7 @@ namespace hades::zip
 				}
 			}
 
-			return _pos();
+            return integer_cast<std::streamoff>(_pos());
 		}
 
 		pos_type seekpos(pos_type pos,
@@ -602,16 +602,26 @@ namespace hades::zip
 
 		basic_out_archived_filebuf& operator=(basic_out_archived_filebuf&& rhs) noexcept
 		{
-			std::swap(_put_area, rhs._put_area);
-			std::swap(_archive, rhs._archive);
 
-			// fix up the access ptrs
-			auto ptr = rhs.pptr();
-			auto ptr_offset = std::distance(rhs._put_area.data(), ptr);
-			auto beg = _put_area.data();
+            std::swap(_archive, rhs._archive);
+
+            // measure the rhs put area usage
+            const auto ptr = rhs.pptr();
+            const auto ptr_offset = integer_cast<int>(unsigned_cast(std::distance(rhs._put_area.data(), ptr)) / sizeof(char_type));
+
+            // clear the rhs area
+            rhs.setp(nullptr, nullptr);
+            // swap the current put data
+            std::swap(_put_area, rhs._put_area);
+
+            // calculate the new ptrs for our put area
+            auto beg = _put_area.data();
 			auto end = beg + size(_put_area);
-			setp(beg, beg + ptr_offset, end);
-			rhs.setp(nullptr, nullptr, nullptr);
+            setp(beg, end);
+            // advance the put pointer to match rhs
+            pbump(ptr_offset);
+
+            return *this;
 		}
 
 		~basic_out_archived_filebuf() noexcept final override
@@ -676,7 +686,8 @@ namespace hades::zip
 			{
 				const auto beg = pbase();
 				*beg = traits_type::to_char_type(i);
-				setp(beg, beg + 1, end);
+                setp(beg, end);
+                pbump(1);
 			}
 
 			return !traits_type::eof();

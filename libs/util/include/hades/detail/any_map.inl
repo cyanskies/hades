@@ -44,7 +44,8 @@ namespace hades
 		}
 		else
 		{
-			return iter->second.emplace<T>(std::move(value));
+            std::any& a = iter->second;
+            return a.emplace<T>(std::move(value));
 		}
 	}
 

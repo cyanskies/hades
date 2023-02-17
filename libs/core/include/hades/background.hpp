@@ -19,14 +19,14 @@ namespace hades::resources
 	{
 		struct layer
 		{
-			resource_link<animation> animation;
+            resource_link<animation> anim;
 			vector_float offset{ 0.f, 0.f };
 			vector_float parallax{ 0.f, 0.f };
 		};
 
 		void load(data::data_manager&) final override;
 
-		colour colour = colours::black;
+        colour fill_colour = colours::black;
 		std::vector<layer> layers;
 	};
 }

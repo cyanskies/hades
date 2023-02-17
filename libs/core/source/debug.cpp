@@ -108,7 +108,7 @@ namespace hades::debug
 
 		_display.setString(_overlay_output);
 		_display.setFont(_font->value);
-		_display.setCharacterSize(_char_size->load());
+        _display.setCharacterSize(integer_cast<unsigned int>(_char_size->load()));
 		return;
 	}
 

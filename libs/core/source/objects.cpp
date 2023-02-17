@@ -46,7 +46,7 @@ namespace hades::resources
 		}
 
 		const auto curve_link = d.make_resource_link<curve>(curve_id, parent);
-		auto out = object::unloaded_curve{ curve_link };
+        auto out = object::unloaded_curve{ curve_link, {} };
 		const  auto size = std::size(curve_info);
 		if (size > 1)
 		{
@@ -112,7 +112,7 @@ namespace hades::resources
 				for (const auto& c : curves_node->get_children())
 				{
 					auto unloaded = get_curve_info2(d, id, *c);
-					if (unloaded.curve.is_linked())
+                    if (unloaded.curve_link.is_linked())
 						obj->curves.emplace_back(unloaded);
 				}
 			}
@@ -128,11 +128,11 @@ namespace hades::resources
 			//	Only one of these will survive, no telling which
 			//	This indicates an error in the mod or data file.
 			std::sort(begin(obj->curves), end(obj->curves), [](auto&& l, auto&& r) {
-				return l.curve.id() < r.curve.id();
+                return l.curve_link.id() < r.curve_link.id();
 				});
 
 			const auto iter = std::unique(begin(obj->curves), end(obj->curves), [](auto&& l, auto&& r) {
-				return l.curve.id() == r.curve.id();
+                return l.curve_link.id() == r.curve_link.id();
 				});
 
 			if (iter != end(obj->curves))
@@ -168,12 +168,12 @@ namespace hades::resources
 		
 		out.reserve(size(o.curves));
 		// we dont want to include any curves that didnt get loaded, so we move them to the back
-		const auto curve_end = std::partition(begin(o.curves), end(o.curves), std::mem_fn(&unloaded_curve::curve));
+        const auto curve_end = std::partition(begin(o.curves), end(o.curves), std::mem_fn(&unloaded_curve::curve_link));
 
 		std::transform(begin(o.curves), curve_end, back_inserter(out), [&d, &o](const object::unloaded_curve& c) {
-			assert(c.curve);
-			return object::curve_obj{ curve_from_str(d, *c.curve.get(), c.value),
-				c.curve.get(),  o.id };
+            assert(c.curve_link);
+            return object::curve_obj{ curve_from_str(d, *c.curve_link.get(), c.value),
+                c.curve_link.get(),  o.id };
 			});
 
 		for (auto& b : o.base)
@@ -497,7 +497,7 @@ namespace hades::resources::object_functions
 		{
 			// check object_curves
 			auto iter = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
-				return c->id == curve.curve.id();
+                return c->id == curve.curve_link.id();
 				});
 
 			if (iter == end(o.curves))
@@ -516,11 +516,11 @@ namespace hades::resources::object_functions
 
 		// check object all curves
 		auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
-			return other == c.curve;
+            return other == c.curve_ptr;
 			});
 
 		if (iter == end(o.all_curves))
-			o.all_curves.emplace_back(object::curve_obj{ std::move(v), c });
+            o.all_curves.emplace_back( std::move(v), c, unique_zero);
 		else
 			iter->value = std::move(v);
 
@@ -530,14 +530,14 @@ namespace hades::resources::object_functions
 	bool has_curve(const object& o, const curve& c) noexcept
 	{
 		return std::any_of(begin(o.all_curves), end(o.all_curves), [&other = c](auto&& c){
-			return c.curve == &other;
+            return c.curve_ptr == &other;
 		});
 	}
 
 	bool has_curve(const object& o, const unique_id id) noexcept
 	{
 		return std::any_of(begin(o.all_curves), end(o.all_curves), [id](auto&& c) {
-			return c.curve->id == id;
+            return c.curve_ptr->id == id;
 			});
 	}
 
@@ -545,7 +545,7 @@ namespace hades::resources::object_functions
 	{
 		{
 			const auto iter = std::find_if(begin(o.curves), end(o.curves), [c](auto&& curve) {
-				return c == curve.curve.id();
+                return c == curve.curve_link.id();
 				});
 
 			if (iter == end(o.curves))
@@ -572,11 +572,11 @@ namespace hades::resources::object_functions
 			const auto top = objects.top();
 
 			const auto iter = std::find_if(begin(top->curves), end(top->curves), [c](auto&& curve) {
-				return c == curve.curve.id();
+                return c == curve.curve_link.id();
 				});
 
 			if (iter != end(top->curves))
-				found_curves.emplace_back(object::curve_obj{ curve_from_str(d, *iter->curve.get(), iter->value), iter->curve.get()  });
+                found_curves.emplace_back(curve_from_str(d, *iter->curve_link.get(), iter->value), iter->curve_link.get(), unique_zero);
 
 			for (auto& obj : top->base)
 				objects.push(obj.get());
@@ -592,7 +592,7 @@ namespace hades::resources::object_functions
 	curve_default_value get_curve(const object& o, const curve& c)
 	{
 		const auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [&other = c](auto&& c){
-			return &other == c.curve;
+            return &other == c.curve_ptr;
 		});
 
 		if(iter == end(o.all_curves))
@@ -602,7 +602,7 @@ namespace hades::resources::object_functions
 
 		if (auto& v = iter->value; is_set(v))
 		{
-			assert(is_curve_valid(*iter->curve, v));
+            assert(is_curve_valid(*iter->curve_ptr, v));
 			return v;
 		}
 
@@ -614,7 +614,7 @@ namespace hades::resources::object_functions
 	const object::curve_obj& get_curve(const object& o, const unique_id id)
 	{
 		const auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [id](auto&& c) {
-			return id == c.curve->id;
+            return id == c.curve_ptr->id;
 			});
 
 		if (iter == end(o.all_curves))
@@ -654,8 +654,8 @@ namespace hades
 		assert(o);
 		assert(c);
 
-		const auto iter = std::find_if(begin(o->all_curves), end(o->all_curves), [other = c](auto&& c) noexcept {
-			return other == c.curve;
+        const auto iter = std::find_if(begin(o->all_curves), end(o->all_curves), [other = c](auto&& cur) noexcept {
+            return other == cur.curve_ptr;
 		});
 
 		if (iter == end(o->all_curves))
@@ -666,7 +666,7 @@ namespace hades
 
 	object_instance make_instance(const resources::object *o) noexcept
 	{
-		return object_instance{ o };
+        return object_instance{ o, {}, {}, {}, {} };
 	}
 
 	object_save_instance make_save_instance(object_instance obj_instance)
@@ -685,10 +685,10 @@ namespace hades
 			//	continue;
 
 			auto c = object_save_instance::saved_curve{};
-			c.curve = cur.curve;
+            c.curve = cur.curve_ptr;
 			auto k = object_save_instance::saved_curve::saved_keyframe{};
 			swap(k.value, cur.value);
-			c.keyframes.push_back(std::move(k));
+            c.keyframes.push_back(std::move(k));
 			obj.curves.push_back(std::move(c));
 		}
 
@@ -699,7 +699,7 @@ namespace hades
 	{
 		//check object curve list
 		if (std::any_of(std::begin(o.curves), std::end(o.curves), [c](auto &&curve) {
-			return curve.curve == &c;
+            return curve.curve_ptr == &c;
 		}))
 			return true;
 
@@ -714,7 +714,7 @@ namespace hades
 	{
 		//check object curve list
 		if (std::any_of(std::begin(o.curves), std::end(o.curves), [c](auto&& curve) {
-			return curve.curve->id == c;
+            return curve.curve_ptr->id == c;
 			}))
 		{
 			return true;
@@ -732,7 +732,7 @@ namespace hades
 		//check the objects curve list
 		for (const auto& cur : o.curves)
 		{
-			const auto& curve = cur.curve;
+            const auto& curve = cur.curve_ptr;
 			const auto& v = cur.value;
 			assert(curve);
 			//if we have the right id and this
@@ -743,7 +743,7 @@ namespace hades
 		//check the object prototype
 		assert(o.obj_type);
 		const auto out = try_get_curve(o.obj_type, &c);
-		if (const auto &cur = out; cur.curve && hades::resources::is_set(cur.value))
+        if (const auto &cur = out; cur.curve_ptr && hades::resources::is_set(cur.value))
 			return cur.value;
 
 		if (!has_curve(o, c))
@@ -760,7 +760,7 @@ namespace hades
 		assert(o.obj_type->loaded);
 		const auto end = std::end(o.obj_type->all_curves);
 		const auto iter = std::find_if(begin(o.obj_type->all_curves), end, [&other = c](auto&& c){
-			return c.curve == &other;
+            return c.curve_ptr == &other;
 		});
 
 		if(iter == end)
@@ -770,7 +770,7 @@ namespace hades
 
 		for (auto &cur : o.curves)
 		{
-			if (cur.curve == &c)
+            if (cur.curve_ptr == &c)
 			{
 				assert(resources::is_curve_valid(c, v));
 				cur.value = std::move(v);
@@ -778,10 +778,10 @@ namespace hades
 			}
 		}
 
-		if (c.keyframe_style == keyframe_style::const_t)
+        if (c.frame_style == keyframe_style::const_t)
 			throw curve_error{ "Tried to store const curve in a object instance." };
 
-		o.curves.push_back({ std::move(v),  iter->curve });
+        o.curves.emplace_back(std::move(v),  iter->curve_ptr, unique_zero);
 		return;
 	}
 
@@ -794,12 +794,11 @@ namespace hades
 	static curve_list unique_curves(curve_list list)
 	{
 		//list should not contain any nullptr curves
-		using curve = hades::resources::curve;
-		using value = hades::resources::curve_default_value;
+        using value = hades::resources::curve_default_value;
 
 		std::stable_sort(begin(list), end(list), [](auto&& lhs, auto&& rhs)->bool {
 			constexpr auto less = std::less<const resources::curve*>{};
-			return less(lhs.curve, rhs.curve);
+            return less(lhs.curve_ptr, rhs.curve_ptr);
 		});
 
 		//for each unique curve, we want to keep the 
@@ -811,7 +810,7 @@ namespace hades
 		while (iter != last)
 		{
 			auto v = value{};
-			const auto& c = iter->curve;
+            const auto& c = iter->curve_ptr;
 			const auto obj = iter->object;
 			assert(c);
 			//while each item represents the same curve c
@@ -824,12 +823,12 @@ namespace hades
 				{
 					v = std::move(val);
 					iter = std::find_if_not(iter, last, [c](const curve_obj &lhs) {
-						return c == lhs.curve;
+                        return c == lhs.curve_ptr;
 					});
 				}
 				else
 					++iter;
-			} while (iter != last && iter->curve == c);
+            } while (iter != last && iter->curve_ptr == c);
 
 			//store c and v in output
 			if (!resources::is_set(v))
@@ -1041,7 +1040,7 @@ namespace hades
 
 	static void write_curve(data::writer& w, const curve_obj& c)
 	{
-		const auto& curve_ptr = c.curve;
+        const auto& curve_ptr = c.curve_ptr;
 		assert(curve_ptr);
 		const auto name_str = to_string(curve_ptr->id);
 
@@ -1174,7 +1173,7 @@ namespace hades
 			}();
 
 			const auto time = get_scalar(*o, obj_time, time_duration{}, duration_from_string);
-			auto obj = object_instance{ object_type, id, name, time_point{time} };
+            auto obj = object_instance{ object_type, id, name, time_point{time}, {} };
 
 			const auto curves_node = o->get_child(obj_curves);
 			if (curves_node)
@@ -1191,7 +1190,7 @@ namespace hades
 					const auto curve_value = resources::curve_from_node(*curve_ptr, *c);
 
 					assert(resources::is_set(curve_value));
-					obj.curves.emplace_back(curve_obj{ curve_value, curve_ptr });
+                    obj.curves.emplace_back(curve_value, curve_ptr, unique_zero);
 				}
 			}
 

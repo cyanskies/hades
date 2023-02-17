@@ -73,7 +73,7 @@ namespace hades
 				>
 			>;
 
-			using type = typename tuple_type_cat_t<tuple_curve_colony_t<Ts>...>;// decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
+            using type = tuple_type_cat_t<tuple_curve_colony_t<Ts>...>;// decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
 		};
 
 		template<typename T>

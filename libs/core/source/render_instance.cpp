@@ -18,7 +18,7 @@ namespace hades
 		return _extra;
 	}
 
-	void render_instance::make_frame_at(time_point t, const common_interface *m, render_interface &i)
+    void render_instance::make_frame_at(time_point t, const common_interface *, render_interface &i)
 	{
 		assert(_interface);
 
@@ -41,6 +41,7 @@ namespace hades
 			}
 		}
 
+        // TODO: make rjd constructor for all usages
 		auto constant_job_data = render_job_data{ t, &_extra, &_extra.systems };
 		constant_job_data.level_data = _interface;
 		constant_job_data.render_output = &i;
@@ -71,8 +72,7 @@ namespace hades
 
 		for (auto& o : new_objects)
 		{
-			const auto id = o->id;
-			for (const auto& s : resources::object_functions::get_render_systems(*o->object_type))
+            for (const auto& s : resources::object_functions::get_render_systems(*o->object_type))
 				_extra.systems.attach_system(object_ref{ o->id, &*o }, s.id());
 		}
 	}

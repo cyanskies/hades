@@ -56,7 +56,7 @@ namespace hades::state_api
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				switch (c.keyframe_style)
+                switch (c.frame_style)
 				{
 				case keyframe_style::const_t:
 					return;// "const curve cannot be stored in game state"
@@ -78,7 +78,7 @@ namespace hades::state_api
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
 				using T = std::decay_t<decltype(v)>;
-				switch (c.keyframe_style)
+                switch (c.frame_style)
 				{
 				case keyframe_style::const_t:
 					return;// "const curve cannot be stored in game state"
@@ -104,17 +104,17 @@ namespace hades::state_api
 			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
 
 			// insert always returns a valid ptr
-			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
+            auto obj = e.objects.insert(game_obj{ id, o.obj_type, {} });
 			assert(obj);
 
 			auto curves = get_all_curves(o);
 
 			for (auto& c : curves)
 			{
-				assert(c.curve);
+                assert(c.curve_ptr);
 				assert(!c.value.valueless_by_exception());
 				assert(resources::is_set(c.value));
-				std::visit(detail::make_object_visitor{ *c.curve, s,
+                std::visit(detail::make_object_visitor{ *c.curve_ptr, s,
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, c.value} } }, c.value);
 			}
 
@@ -134,7 +134,7 @@ namespace hades::state_api
 			const auto id = o.id == bad_entity ? increment(s.next_id) : o.id;
 
 			// insert always returns a valid ptr
-			auto obj = e.objects.insert(game_obj{ id, o.obj_type });
+            auto obj = e.objects.insert(game_obj{ id, o.obj_type, {} });
 			assert(obj);
 
 			//list of curve ids
@@ -161,12 +161,12 @@ namespace hades::state_api
 			for (auto& c : base_curves)
 			{
 				//if the id is in the saved list, then don't restore it
-				if (std::binary_search(begin(ids), end(ids), c.curve->id))
+                if (std::binary_search(begin(ids), end(ids), c.curve_ptr->id))
 					continue;
 
 				auto keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>{};
 				keyframes.push_back({ time_point{}, std::move(c.value) });
-				std::visit(detail::make_object_visitor{*c.curve, s, *obj, keyframes}, keyframes[0].value);
+                std::visit(detail::make_object_visitor{*c.curve_ptr, s, *obj, keyframes}, keyframes[0].value);
 			}
 
 			if (!empty(o.name_id))
@@ -240,7 +240,7 @@ namespace hades::state_api
 			typename std::enable_if_t<linear_compat<CurveType, T>, int> = 0>
 		void do_call_with_curve_type(Func& f)
 		{
-			f.operator()<CurveType, T>();
+            f.template operator()<CurveType, T>();
 			return;
 		}
 
@@ -333,7 +333,7 @@ namespace hades::state_api
 	inline object_ref clone_object(const game_obj& obj, const time_point t, game_state& state, extra_state<GameSystem>& extra)
 	{
 		const auto id = increment(state.next_id);
-		auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type });
+        auto new_obj = extra.objects.insert(game_obj{ id, obj.object_type, {} });
 
 		//copy all object properties
 		for (const auto& var_entry : obj.object_variables)
@@ -524,8 +524,8 @@ namespace hades::state_api
 					return nullptr;
 
 				const auto& prop = resources::object_functions::get_curve(*base_object, v);
-				assert(prop.curve->keyframe_style == keyframe_style::const_t);
-				assert(resources::is_curve_valid(*prop.curve, prop.value));
+                assert(prop.curve_ptr->frame_style == keyframe_style::const_t);
+                assert(resources::is_curve_valid(*prop.curve_ptr, prop.value));
 				return std::get_if<T>(&prop.value);
 			}
 			else
@@ -552,8 +552,8 @@ namespace hades::state_api
 				const auto base_object = g.object_type;
 				assert(base_object);
 				const auto& prop = resources::object_functions::get_curve(*base_object, v);
-				assert(prop.curve->keyframe_style == keyframe_style::const_t);
-				assert(resources::is_curve_valid(*prop.curve, prop.value));
+                assert(prop.curve_ptr->frame_style == keyframe_style::const_t);
+                assert(resources::is_curve_valid(*prop.curve_ptr, prop.value));
 				return std::get<T>(prop.value);
 			}
 			else
@@ -581,28 +581,28 @@ namespace hades::state_api
 	const get_property_return_t<CurveType, T>&
 		get_object_property_ref(const game_obj& o, variable_id v)
 	{
-		return detail::get_object_property_ref<const CurveType, T>(o, v);
+        return detail::get_object_property_ref<std::add_const_t<CurveType<T>>>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
 	get_property_return_t<CurveType, T>&
 		get_object_property_ref(game_obj& o, variable_id v)
 	{
-		return detail::get_object_property_ref<CurveType, T>(o, v);
+        return detail::get_object_property_ref<CurveType, T>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
 	const get_property_return_t<CurveType, T>* 
 		get_object_property_ptr(const game_obj& o, variable_id v) noexcept
 	{
-		return detail::get_object_property_ptr<const CurveType, T>(o, v);
+        return detail::get_object_property_ptr<std::add_const_t<CurveType<T>>>(o, v);
 	}
 
 	template<template<typename> typename CurveType, typename T>
 	get_property_return_t<CurveType, T>*
 		get_object_property_ptr(game_obj& o, variable_id v) noexcept
 	{
-		return detail::get_object_property_ptr<CurveType, T>(o, v);
+        return detail::get_object_property_ptr<CurveType, T>(o, v);
 	}
 
 	template<typename GameSystem>
@@ -615,13 +615,13 @@ namespace hades::state_api
 	template<typename T, typename GameSystem>
 	T& get_level_local_ref(const unique_id id, extra_state<GameSystem>& extras)
 	{
-		auto val = extras.level_locals.try_get<T>(id);
+        auto val = extras.level_locals.template try_get<T>(id);
 		if (val) return *val;
 
 		static_assert(std::is_default_constructible_v<T>);
 		try
 		{
-			return extras.level_locals.set<T>(id, {});
+            return extras.level_locals.template set<T>(id, {});
 		}
 		catch (const any_map_value_wrong_type& e)
 		{
@@ -634,7 +634,7 @@ namespace hades::state_api
 	{
 		try
 		{
-			return extra.level_locals.get_ref<T>(id);
+            return extra.level_locals.template get_ref<T>(id);
 		}
 		catch (const any_map_key_null& e)
 		{

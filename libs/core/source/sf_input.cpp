@@ -24,12 +24,13 @@ namespace hades
 	template<sf::Keyboard::Key k>
 	interpreter_funcs keyboard()
 	{
+        /*
 		auto realtime = [](action prev)->action {
 			const auto pressed = sf::Keyboard::isKeyPressed(k);
 			if (prev.active == pressed)
 				return prev;
 			return make_action(pressed);
-		};
+        };*/
 
 		auto is_match = [](const sf::Event &e)->bool {
 			if (e.type == sf::Event::KeyPressed ||
@@ -82,6 +83,7 @@ namespace hades
 			return a;
 		};
 
+        /*
 		auto realtime_check = [&window](action) {
 			action a;
 
@@ -98,7 +100,7 @@ namespace hades
 			a.y_axis = mouse_pos.y;
 
 			return a;
-		};
+        };*/
 
 		return { is_match, event_check, nullptr /*realtime_check*/};
 	}
@@ -142,6 +144,7 @@ namespace hades
 			return a;
 		};
 
+        /*
 		auto realtime_check = [&window](action) {
 			action a;
 
@@ -156,7 +159,7 @@ namespace hades
 			a.y_axis = pos.y;
 
 			return a;
-		};
+        };*/
 
 		return {is_match, event_check, nullptr};
 	}

@@ -95,7 +95,7 @@ namespace hades
 		{
 			for (auto x = 0u; x <= vertex_x; ++x)
 			{
-				const vector_float position{ x * anim_size.x, y * anim_size.y };
+                const vector_float position{ float_cast(x) * anim_size.x, float_cast(y) * anim_size.y };
 				auto size = tex_size;
 				//for the final column the size may be truncated
 				if (x == vertex_x)

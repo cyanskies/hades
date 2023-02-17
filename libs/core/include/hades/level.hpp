@@ -40,7 +40,7 @@ namespace hades
 
 		struct region
 		{
-			colour colour;
+            colour display_colour;
 			rect_float bounds;
 			string name;
 		};

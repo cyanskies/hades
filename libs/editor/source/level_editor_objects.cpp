@@ -13,7 +13,7 @@ namespace obj_fn = hades::resources::object_functions;
 using namespace std::string_view_literals;
 constexpr auto level_editor_object_resource_name = "level-editor-object-settings"sv;
 static auto object_settings_id = hades::unique_id::zero;
-constexpr auto reserved_object_names = { 
+[[deprecated]] constexpr auto reserved_object_names = {
 	"world" // reserved for the world object
 };
 

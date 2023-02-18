@@ -31,7 +31,7 @@ namespace hades
 	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
 	inline bool float_near_equal(Float a, Float b, int32 ulp) noexcept
 	{
-		return std::abs(a - b) <= std::numeric_limits<Float>::epsilon() * std::abs(a + b) * ulp
+        return std::abs(a - b) <= std::numeric_limits<Float>::epsilon() * std::abs(a + b) * float_cast(ulp)
 			// unless the result is subnormal
 			|| std::abs(a - b) < std::numeric_limits<Float>::min();
 	}

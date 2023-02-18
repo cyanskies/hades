@@ -39,7 +39,7 @@ namespace hades
 		struct level_info
 		{
 			unique_id name = unique_id::zero;
-			level level;
+            level level_data;
 			std::optional<string> path;
 		};
 
@@ -181,7 +181,7 @@ namespace hades
 		void make_editor_state(level_info &l) override
 		{
 			static_assert(std::is_constructible_v<LevelEditor, const mission_editor_t*, level*>);
-			push_state(std::make_unique<LevelEditor>(this, &l.level));
+            push_state(std::make_unique<LevelEditor>(this, &l.level_data));
 			return;
 		}
 

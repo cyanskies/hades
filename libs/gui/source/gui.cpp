@@ -527,7 +527,7 @@ namespace hades
 	{
 		_active_assert();
 		assert(!std::empty(s));
-		auto *last = &*(--std::end(s));
+        auto *last = &*(std::prev(std::end(s)));
 		ImGui::PushID(&*std::begin(s), ++last);
 	}
 
@@ -583,8 +583,8 @@ namespace hades
 
 	void gui::text_wrapped(std::string_view s)
 	{
-		_active_assert();
-		ImGui::TextWrapped(to_string(s).data());
+        _active_assert();
+        ImGui::TextWrapped(to_string(s).data());
 		return;
 	}
 
@@ -1017,8 +1017,8 @@ namespace hades
 	{
 		_active_assert();
 		if(is_item_hovered())
-			ImGui::SetTooltip(to_string(s).data());
-		return;
+            ImGui::SetTooltip(to_string(s).data());
+        return;
 	}
 
 	void gui::open_popup(std::string_view s)
@@ -1362,7 +1362,8 @@ namespace hades
 					const auto index_end = std::next(index_begin, cmd.ElemCount);
 					std::transform(index_begin, index_end, back_inserter(vertex_array), 
 						[&](const auto index) {
-						return to_vertex(draw_list->VtxBuffer[index + v_offset], texture_size);
+                        // NOTE: sign cast the index calculation, ImVector uses signed indexes.
+                        return to_vertex(draw_list->VtxBuffer[signed_cast(index + v_offset)], texture_size);
 						}
 					);
 
@@ -1469,7 +1470,7 @@ namespace hades
 
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
-		if (!texture.create(width, height))
+        if (!texture.create(unsigned_cast(width), unsigned_cast(height)))
 		{
 			log_error("Unable to create gui texture atlas.");
 			log_error(sb.str());
@@ -1487,7 +1488,7 @@ namespace hades
 				true); //set loaded
 		}
 
-		sf::err().set_rdbuf(prev);
+        sf::err().rdbuf(prev);
 	}
 
 	//gui::static objects

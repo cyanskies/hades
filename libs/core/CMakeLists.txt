@@ -100,10 +100,10 @@ set(HADES_CORE_LIBS
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")
 
-source_group("Header files\\debug" REGULAR_EXPRESSION 
+source_group("Header Files\\debug" REGULAR_EXPRESSION
 	"include\/hades\/debug\/.+\.hpp"
 )
 
-source_group("Source files\\debug" REGULAR_EXPRESSION 
+source_group("Source Files\\debug" REGULAR_EXPRESSION
 	"source\/debug\/.+\.cpp"
 )

@@ -13,8 +13,9 @@ namespace hades
 	constexpr auto char_size = 8u;
 
 	level_editor_regions::level_editor_regions()
-		: _font{ data::get<resources::font>(resources::default_font_id())},
-		_region_min_size{ console::get_float(cvars::region_min_size) }
+        : _region_min_size{ console::get_float(cvars::region_min_size) },
+          _font{ data::get<resources::font>(resources::default_font_id())}
+
 	{}
 
 	void level_editor_regions::level_load(const level &l)
@@ -96,7 +97,7 @@ namespace hades
 			{
 				assert(_edit.selected < _regions.size());
 
-				const auto target = std::begin(_regions) + _edit.selected;
+                const auto target = std::begin(_regions) + signed_cast(_edit.selected);
 				_regions.erase(target);
 				_edit.selected = region_edit::nothing_selected;
 			}
@@ -294,7 +295,7 @@ namespace hades
 				return;
 
 			const auto index = std::distance(begin, target);
-			_on_selected(index);
+            _on_selected(unsigned_cast(index));
 		}
 	}
 
@@ -339,7 +340,6 @@ namespace hades
 		{
 			//body drag
 			const auto target = [m, &regions = _regions] {
-				const auto begin = std::begin(regions);
 				const auto size = std::size(regions);
 				for (auto i = std::size_t{ 0 }; i < size; ++i)
 				{

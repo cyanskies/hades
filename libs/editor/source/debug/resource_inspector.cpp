@@ -336,7 +336,7 @@ namespace hades::data
 					static_assert(sizeof(unique_id) >= sizeof(void*));
 					assert(tex);
 					auto image = sf::Image{};
-					image.create(data->textureWidth, data->textureHeight, reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+                    image.create(unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight), reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
 					resources::texture_functions::load_from_image(*tex, image);
 					data->textureID = tex;
 					delete[] data->textureFileDatas;
@@ -638,10 +638,10 @@ namespace hades::data
 		source_window(data::data_manager* data, std::string_view title, std::string_view source,
 			std::string_view raw_path, std::string_view raw_archive,
 			std::string_view supported_file_types, std::string_view file_type)
-			: _title{ title }, _dialog_title{ string{ title } + "##dialog" },
-			_source{ source }, _old_source{ source }, _raw_path{ raw_path },
-			_raw_archive{ raw_archive }, _file_types{ supported_file_types },
-			_file_type_name{ file_type }, _data_man{ data }
+            : _data_man{ data }, _source{ source }, _title{ title },
+              _dialog_title{ string{ title } + "##dialog" }, _old_source{ source },
+              _raw_archive{ raw_archive }, _raw_path{ raw_path },
+              _file_types{ supported_file_types }, _file_type_name{ file_type }
 		{
 			_setup_callbacks();
 		}
@@ -751,7 +751,7 @@ namespace hades::data
 					static_assert(sizeof(unique_id) >= sizeof(void*));
 					assert(tex);
 					auto image = sf::Image{};
-					image.create(data->textureWidth, data->textureHeight, reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+                    image.create(unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight), reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
 					resources::texture_functions::load_from_image(*tex, image);
 					data->textureID = tex;
 					delete[] data->textureFileDatas;
@@ -1496,7 +1496,7 @@ namespace hades::data
 				g.same_line();
 				if (g.button("remove selected"sv) && _tag_selected < size(_tags))
 				{
-					const auto iter = next(begin(_tags), _tag_selected);
+                    const auto iter = next(begin(_tags), signed_cast(_tag_selected));
 					if (iter != end(_tags))
 					{
 						mod = true;
@@ -1650,7 +1650,7 @@ namespace hades::data
 					if (g.button("add"sv))
 					{
 						ret = true;
-						auto str_iter = next(begin(res.combo), res.combo_selected);
+                        auto str_iter = next(begin(res.combo), signed_cast(res.combo_selected));
 						const auto id = d.get_uid(*str_iter);
 						res.attached_ids.emplace_back(id);
 						res.attached.emplace_back(std::move(*str_iter));
@@ -1669,7 +1669,7 @@ namespace hades::data
 					if (g.button("remove"sv))
 					{
 						ret = true;
-						const auto iter = next(begin(res.attached), res.attached_selected);
+                        const auto iter = next(begin(res.attached), signed_cast(res.attached_selected));
 						const auto id = d.get_uid(*iter);
 						_base_objects.combo.emplace_back(std::move(*iter));
 						std::ranges::sort(_base_objects.combo);
@@ -1893,7 +1893,7 @@ namespace hades::data
 		const auto& mod_index = _tree_state.mod_index;
 
 		const auto stack_end = mod_index >= size(dat) ?
-			end(dat) : next(begin(dat), mod_index + 1);
+            end(dat) : next(begin(dat), signed_cast(mod_index + 1));
 		
 		auto& group = _tree_state.resource_groups;
 		group.clear();
@@ -1902,7 +1902,7 @@ namespace hades::data
 		if (_show_by_data_file)
 			std::advance(iter, mod_index);
 
-		for (iter; iter != stack_end; ++iter)
+        for (/*iter*/; iter != stack_end; ++iter)
 		{
 			const auto m = *iter;
 

@@ -172,20 +172,21 @@ namespace hades
 				col.b = colour[2];
 			}
 
-			auto &selected = window.selected_layer;
+            // MOTE: made signed so that it can be converted to ptrdiff_t safely
+            const auto selected = signed_cast(window.selected_layer);
 			auto &layers = uncommitted.layers;
 
-			assert(selected <= size(layers));
+            assert(window.selected_layer <= size(layers));
 			
 			//layer editor
 			if (g.button("move up"sv))
 			{
 				const auto beg = std::begin(layers);
-				const auto at = beg + selected;
+                const auto at = std::next(beg, selected);
 				if (at != beg)
 				{
 					std::iter_swap(at, at - 1);
-					--selected;
+                    --window.selected_layer;
 				}
 			}
 
@@ -197,7 +198,8 @@ namespace hades
 					layers.emplace_back();
 				else
 				{
-					const auto at = std::begin(layers) + selected++;
+                    const auto at = std::begin(layers) + selected + 1;
+                    ++window.selected_layer;
 					layers.emplace(at);
 				}
 			}
@@ -205,11 +207,11 @@ namespace hades
 			if (g.button("move down"sv))
 			{
 				const auto rbeg = std::rbegin(layers);
-				const auto at = rbeg + (std::size(layers) - selected - 1);
+                const auto at = rbeg + signed_cast(std::size(layers) - window.selected_layer - 1);
 				if (at != rbeg)
 				{
 					std::iter_swap(at, at - 1);
-					++selected;
+                    ++window.selected_layer;
 				}
 			}
 
@@ -220,19 +222,19 @@ namespace hades
 				const auto at = std::begin(layers) + selected;
 				layers.erase(at);
 
-				if (selected == std::size(layers)
-					&& selected > 0)
-					--selected;
+                if (window.selected_layer == std::size(layers)
+                    && window.selected_layer != 0)
+                    --window.selected_layer;
 			}
 
 			g.columns_begin(2, false);
 
-			if (g.listbox("layers"sv, selected, layers, [](const auto &l) {
+            if (g.listbox("layers"sv, window.selected_layer, layers, [](const auto &l) {
 				return to_string(l.anim);
 			}))
 			{
 				//selected item changed
-				window.animation_input = to_string(uncommitted.layers[selected].anim);
+                window.animation_input = to_string(uncommitted.layers[window.selected_layer].anim);
 			}
 
 			g.columns_next();

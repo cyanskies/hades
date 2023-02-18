@@ -314,7 +314,7 @@ namespace hades
 					if (g.button("Remove selected"sv))
 					{
 						auto iter = begin(_edit_mod_window.dependencies);
-						iter = next(iter, _edit_mod_window.dep_selected);
+                        iter = next(iter, signed_cast(_edit_mod_window.dep_selected));
 						_edit_mod_window.dependencies.erase(iter);
 
 						if (_edit_mod_window.dep_selected > 0)

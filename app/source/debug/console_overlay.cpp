@@ -96,22 +96,22 @@ namespace hades::debug
 
 			g.layout_horizontal();
 
-			const auto mode = _log_mode->load();
+            const auto mode = _log_mode->load();
 			const auto log_preview = [mode, &mode_names] {
 				if (mode < 0)
 					return mode_names[0];
 				else if (mode > 3)
 					return mode_names[3];
 				else
-					return mode_names[mode];
+                    return mode_names[integer_cast<std::size_t>(mode)];
 			}();
 
 			if (g.combo_begin("##console_level", log_preview))
 			{
-				for (auto i = 0; i < 4; ++i)
+                for (auto i = std::size_t{}; i < 4; ++i)
 				{
-					if (g.selectable(mode_names[i], i == mode))
-						_log_mode->store(i);
+                    if (g.selectable(mode_names[i], i == integer_cast<std::size_t>(mode)))
+                        _log_mode->store(integer_cast<int32>(i));
 				}
 				g.combo_end();
 			}

@@ -52,7 +52,7 @@ namespace hades
 			"If the IsValidPos callback is provided it must have the following signiture: bool IsValidPos(const rect_float&, const object_instance&)");
 
 		static_assert(!std::is_same_v<OnChange, IsValidPos> || 
-			std::is_same_v<IsValidPos, nullptr_t> && std::is_same_v<OnChange, nullptr_t>,
+            (std::is_same_v<IsValidPos, nullptr_t> && std::is_same_v<OnChange, nullptr_t>),
 			"If one of the editor callbacks are provided, then both must be.");
 
 		static constexpr bool visual_editor = !std::is_same_v<OnChange, nullptr_t>;
@@ -79,7 +79,7 @@ namespace hades
 		}
 
 		object_editor_ui(object_data* d, OnChange change_func, IsValidPos isvalid_func)
-		: _data{ d }, _on_change{ change_func }, _is_valid_pos{ isvalid_func }
+        : _on_change{ change_func }, _is_valid_pos{ isvalid_func }, _data{ d }
 		{
 			assert(_data);
 		}

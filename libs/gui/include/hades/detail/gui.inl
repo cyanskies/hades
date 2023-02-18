@@ -25,7 +25,11 @@ namespace hades
 	{
 		_active_assert();
 		if (radio_button(label, active_selection == this_button))
+        {
 			active_selection = this_button;
+            return true;
+        }
+        return false;
 	}
 
 	template<typename Container>
@@ -97,7 +101,7 @@ namespace hades
 	template<std::size_t N, std::enable_if_t<N < 5, int>>
 	bool gui::slider_float(std::string_view label, std::array<float, N>& v, float min, float max, slider_flags flags, std::string_view format)
 	{
-		if constexpr (N == 0) return;
+        if constexpr (N == 0) return false;
 		if constexpr (N == 1)
 			return slider_float(label, v[0], min, max, flags, format);
 
@@ -116,7 +120,7 @@ namespace hades
 	template<std::size_t N, std::enable_if_t< N < 5, int>>
 	bool gui::slider_int(std::string_view label, std::array<int, N>& v, int min, int max, slider_flags flags, std::string_view format)
 	{
-		if constexpr (N == 0) return;
+        if constexpr (N == 0) return false;
 		if constexpr (N == 1)
 			return slider_int(label, v[0], min, max, flags, format);
 

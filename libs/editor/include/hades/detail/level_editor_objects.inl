@@ -6,6 +6,7 @@
 #include "hades/data.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/gui.hpp"
+#include "hades/utility.hpp"
 
 namespace hades::detail::obj_ui
 {
@@ -40,7 +41,7 @@ namespace hades::detail::obj_ui
 			{
 				//remove name_id
 				auto begin = std::cbegin(name_map);
-				for (begin; ; ++begin)
+                for (/*begin*/; ; ++begin)
 				{
 					assert(begin != std::cend(name_map));
 					if (begin->second == o.id)
@@ -449,7 +450,7 @@ namespace hades::detail::obj_ui
 				g.text(name);
 				g.columns_begin(2u, false);
 
-				g.listbox("##listbox", target.selected, value);
+                g.listbox("##listbox", target.selected, value, func_ref<string(typename T::value_type)>(to_string));
 
 				g.columns_next();
 
@@ -684,7 +685,7 @@ namespace hades
 			return;
 		}
 
-		g.push_id(integer_cast<int32>(static_cast<entity_id::value_type>(_selected)));
+        g.push_id(integer_cast<int32>(static_cast<entity_id::value_type>(_selected)));
 		_property_editor(g);
 		g.pop_id();
 		return;
@@ -796,7 +797,7 @@ namespace hades
 	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_erase(const std::size_t index)
 	{
 		assert(index < std::size(_data->objects));
-		const auto iter = std::next(std::begin(_data->objects), index);
+        const auto iter = std::next(std::begin(_data->objects), signed_cast(index));
 
 		_data->entity_names.erase(iter->name_id);
 		_data->objects.erase(iter);

@@ -47,7 +47,7 @@ namespace hades
 		return _gui.handle_event(e);
 	}
 
-	void mission_editor_t::update(time_duration dt, const sf::RenderTarget&, input_system::action_set a)
+    void mission_editor_t::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
 	{
 		_editor_time += dt;
 		_update_gui(dt);
@@ -168,7 +168,7 @@ namespace hades
 			_gui.layout_horizontal();
 			if (_gui.button("remove"))
 			{
-				auto iter = std::next(std::begin(_players), _player_window_state.selected);
+                auto iter = std::next(std::begin(_players), signed_cast(_player_window_state.selected));
 
 				if(iter->object != bad_entity)
 					_obj_ui.erase(iter->object);
@@ -185,7 +185,7 @@ namespace hades
 			if (_gui.button("move up")
 				&& _player_window_state.selected > std::size_t{})
 			{
-				const auto iter = std::next(std::begin(_players), _player_window_state.selected);
+                const auto iter = std::next(std::begin(_players), signed_cast(_player_window_state.selected));
 				std::iter_swap(iter, std::prev(iter));
 				--_player_window_state.selected;
 			}
@@ -193,7 +193,7 @@ namespace hades
 			if (_gui.button("move down")
 				&& (_player_window_state.selected + 1) < std::size(_players))
 			{
-				const auto iter = std::next(std::begin(_players), _player_window_state.selected);
+                const auto iter = std::next(std::begin(_players), signed_cast(_player_window_state.selected));
 				std::iter_swap(iter, std::next(iter));
 				++_player_window_state.selected;
 			}
@@ -380,7 +380,7 @@ namespace hades
 
 			s.add_level_open = true;
 			s.add_level_external = t.path.has_value();
-			s.rename_index = s.selected;
+            s.rename_index = signed_cast(s.selected);
 			s.rename = true;
 			s.new_level_name = to_string(t.name);
 			s.new_level_path = t.path.value_or(string{});
@@ -526,7 +526,7 @@ namespace hades
 					if (s.add_level_external)
 					{
 						l.path = s.new_level_path;
-						l.level = {}; //erase level if it was previously internal
+                        l.level_data = {}; //erase level if it was previously internal
 					}
 					else
 						l.path.reset();
@@ -534,14 +534,14 @@ namespace hades
 				else
 				{
 					//create
-					auto l = level_info{ id };
+                    auto l = level_info{ id, {}, {} };
 					if (s.add_level_external)
 						l.path = s.new_level_path;
 					else
 					{
-						l.level = make_new_level();
+                        l.level_data = make_new_level();
 						_gui.activate_context();
-						l.level.name = s.new_level_name;
+                        l.level_data.name = s.new_level_name;
 					}
 					_levels.emplace_back(std::move(l));
 				}
@@ -667,7 +667,7 @@ namespace hades
 			if (l.path)
 				m.external_levels.emplace_back(mission::external_level{ l.name, l.path.value() });
 			else
-				m.inline_levels.emplace_back(mission::level_element{ l.name, l.level });
+                m.inline_levels.emplace_back(mission::level_element{ l.name, l.level_data });
 		}
 
 		for (const auto& p : _players)
@@ -711,7 +711,7 @@ namespace hades
 		{
 			auto lev = level_info{};
 			lev.name = std::move(l.name);
-			lev.level = std::move(l.level_obj);
+            lev.level_data = std::move(l.level_obj);
 			_levels.emplace_back(std::move(lev));
 		}
 

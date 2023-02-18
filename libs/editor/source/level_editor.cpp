@@ -322,9 +322,9 @@ namespace hades::detail
 		const auto toolbox_size = [](int32 width, int32 auto_width, float window_width)->float {
 			constexpr auto auto_mode = cvars::default_value::editor_toolbox_width;
 			if (width == auto_mode)
-				return window_width / auto_width;
+                return window_width / float_cast(auto_width);
 			else
-				return static_cast<float>(width);
+                return float_cast(width);
 		}(*_toolbox_width, *_toolbox_auto_width, _window_width);
 
 		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });

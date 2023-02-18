@@ -270,8 +270,8 @@ namespace hades
 			|| p.y < 0)
 			return;
 
-		if (p.x > _level_size.x
-			|| p.y > _level_size.y)
+        if (p.x > float_cast(_level_size.x)
+            || p.y > float_cast(_level_size.y))
 			return;
 
 		draw_on(p, _settings->tile_size, *_tile, _shape, _preview, _size);

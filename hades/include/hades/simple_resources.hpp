@@ -8,8 +8,8 @@
 #include "SFML/Graphics/Shader.hpp"
 
 #include "hades/curve.hpp"
-#include "Hades/resource_base.hpp"
-#include "Hades/Types.hpp"
+#include "hades/resource_base.hpp"
+#include "hades/types.hpp"
 
 //This header provides resources for built in types
 

@@ -1,4 +1,4 @@
-#include "Hades/Server.hpp"
+#include "hades/Server.hpp"
 
 #include "hades/game_system.hpp"
 #include "hades/level.hpp"

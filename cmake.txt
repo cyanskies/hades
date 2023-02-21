@@ -55,7 +55,8 @@ function(hades_make_compile_settings ARG_NAME)
 
 							 # general settings for gcc/clang
                              $<$<CXX_COMPILER_ID:Clang,GNU>:
-                                  "-Wall" "-pedantic-errors" "-Wextra" "-Wconversion" "-Wsign-conversion" "-fvisibility=hidden" >
+                                  "-Wall" "-pedantic-errors" "-Wextra" "-Wconversion" "-Wsign-conversion" "-fvisibility=hidden"
+                                  "-Wno-missing-field-initializers" > # dont flag at every useage of { init-vale }, other members are intentionally default initialised
 
 							 #debug settings
                              $<$<CONFIG:Debug>:

@@ -1,4 +1,4 @@
-#include "Hades/App.hpp"
+#include "hades/App.hpp"
 
 #include <cassert>
 #include <cerrno> // for assert floating point exceptions 
@@ -14,7 +14,7 @@
 #include "hades/core_resources.hpp"
 #include "hades/data.hpp"
 #include "hades/debug.hpp"
-#include "Hades/fps_display.hpp"
+#include "hades/fps_display.hpp"
 #include "hades/game_loop.hpp"
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
@@ -434,10 +434,10 @@ namespace hades
 			}
 			else if (e.type == sf::Event::Resized)	// handle resize before _console_debug, so that opening the console
 			{									// doesn't block resizing the window
-				_console.setValue<types::int32>(cvars::video_width, e.size.width);
-				_console.setValue<types::int32>(cvars::video_height, e.size.height);
-				const auto widthf = static_cast<float>(e.size.width);
-				const auto heightf = static_cast<float>(e.size.height);
+                _console.setValue<types::int32>(cvars::video_width, integer_cast<int32>(e.size.width));
+                _console.setValue<types::int32>(cvars::video_height, integer_cast<int32>(e.size.height));
+                const auto widthf = float_cast(e.size.width);
+                const auto heightf = float_cast(e.size.height);
 				update_overlay_size(_overlay_view, *_gui, widthf, heightf);
 				
 				_states.getActiveState()->reinit();
@@ -504,7 +504,7 @@ namespace hades
 				const auto game_vanity = _console.getString(cvars::game_vanity_name);
 				log_debug("recreating window"sv);
 
-				_window.create(mode, game_vanity->load(), window_type);
+                _window.create(mode, game_vanity->load(), integer_cast<sf::Uint32>(window_type));
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);
@@ -570,7 +570,7 @@ namespace hades
 
 				try
 				{
-					const auto limit = std::stoi(to_string(args.front()));
+                    const auto limit = integer_cast<unsigned int>(std::stoi(to_string(args.front())));
 					_window.setFramerateLimit(limit);
 				}
 				catch (std::invalid_argument&)

@@ -1,4 +1,4 @@
-#include "Hades/StateManager.hpp"
+#include "hades/StateManager.hpp"
 
 #include "hades/state.hpp"
 

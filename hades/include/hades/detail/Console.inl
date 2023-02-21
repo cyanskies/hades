@@ -33,7 +33,7 @@ namespace hades
 
 			std::visit([identifier, &value](auto &&arg) {
 				using U = std::decay_t<decltype(arg)>;
-				using W = std::decay_t<U::element_type::value_type>;
+                using W = std::decay_t<typename U::element_type::value_type>;
 				if constexpr(std::is_same_v<ValueType, W>)
 					*arg = value;
 				else

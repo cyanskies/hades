@@ -1,4 +1,4 @@
-#include "Hades/simple_resources.hpp"
+#include "hades/simple_resources.hpp"
 
 #include <array>
 

@@ -8,13 +8,13 @@
 #include "SFML/Graphics/RenderWindow.hpp"
 
 #include "hades/async.hpp"
-#include "Hades/Console.hpp"
-#include "Hades/data_system.hpp"
+#include "hades/Console.hpp"
+#include "hades/data_system.hpp"
 #include "hades/debug.hpp"
 #include "hades/gui.hpp"
 #include "hades/sf_input.hpp"
-#include "Hades/Main.hpp"
-#include "Hades/StateManager.hpp"
+#include "hades/Main.hpp"
+#include "hades/StateManager.hpp"
 #include "hades/system.hpp"
 
 // Toggles using quick exit to shutdown

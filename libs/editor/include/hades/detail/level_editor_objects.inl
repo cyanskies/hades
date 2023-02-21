@@ -450,7 +450,8 @@ namespace hades::detail::obj_ui
 				g.text(name);
 				g.columns_begin(2u, false);
 
-                g.listbox("##listbox", target.selected, value, func_ref<string(typename T::value_type)>(to_string));
+                constexpr auto& to_str = func_ref<string(typename T::value_type)>(to_string);
+                g.listbox("##listbox", target.selected, value, to_str);
 
 				g.columns_next();
 

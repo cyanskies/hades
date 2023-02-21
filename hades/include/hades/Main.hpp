@@ -2,7 +2,7 @@
 #define HADES_BEGIN_HPP
 
 #include "hades/input.hpp"
-#include "Hades/StateManager.hpp"
+#include "hades/StateManager.hpp"
 #include "hades/system.hpp"
 
 namespace hades::data

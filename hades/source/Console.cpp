@@ -1,4 +1,4 @@
-#include "Hades/Console.hpp"
+#include "hades/Console.hpp"
 
 #include <filesystem>
 #include <map>
@@ -364,7 +364,7 @@ namespace hades
 					});
 			}
 
-			recentOutputPos -= distance(beg, end);
+            recentOutputPos -= unsigned_cast(distance(beg, end));
 			TextBuffer.erase(beg, end);
 		}
 
@@ -421,7 +421,7 @@ namespace hades
 	ConsoleStringBuffer Console::get_new_output()
 	{
 		const std::lock_guard<std::mutex> lock(_consoleBufferMutex);
-		const std::vector<Console_String>:: iterator iter = TextBuffer.begin() + recentOutputPos;
+        const std::vector<Console_String>:: iterator iter = TextBuffer.begin() + signed_cast(recentOutputPos);
 
 		ConsoleStringBuffer out(iter, TextBuffer.end());
 
@@ -545,7 +545,7 @@ namespace hades
 
 		std::visit([identifier, &value](auto &&arg) {
 			using U = std::decay_t<decltype(arg)>;
-			using W = std::decay_t<U::element_type::value_type>;
+            using W = std::decay_t<typename U::element_type::value_type>;
 			if constexpr (std::is_same_v<ValueType, W>)
 			{
 				*arg = value;

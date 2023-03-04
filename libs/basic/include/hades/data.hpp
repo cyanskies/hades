@@ -32,6 +32,9 @@ namespace hades
 		public:
 			explicit resource_link_base(unique_id id) noexcept : _id{ id } {}
 
+			resource_link_base(const resource_link_base&) = delete;
+			resource_link_base& operator=(const resource_link_base) = delete;
+
 			virtual ~resource_link_base() noexcept = default;
 
 			virtual void update_link(data::data_manager&) = 0;
@@ -102,7 +105,7 @@ namespace hades
 		{
 		public:
 			constexpr resource_link() noexcept = default;
-			constexpr resource_link(resource_link_type<T>* link) noexcept : _link{ link } {}
+			constexpr resource_link(const resource_link_type<T>* link) noexcept : _link{ link } {}
 
 			unique_id id() const noexcept
 			{

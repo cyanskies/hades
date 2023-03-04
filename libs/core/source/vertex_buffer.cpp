@@ -11,6 +11,7 @@ namespace hades
 {
 	quad_buffer::quad_buffer(sf::VertexBuffer::Usage u) noexcept : _buffer{_prim_type, u}
 	{
+		assert(sf::VertexBuffer::isAvailable());
 		return;
 	}
 
@@ -26,16 +27,18 @@ namespace hades
 		return *this;
 	}
 
-	quad_buffer::quad_buffer(quad_buffer &&rhs) noexcept : _verts{std::move(rhs._verts)}
+	quad_buffer::quad_buffer(quad_buffer &&rhs) noexcept : _verts{ std::move(rhs._verts) }
 	{
-		std::swap(_buffer, rhs._buffer);
+		// no adl swap function for sf::VertexBuffer
+		_buffer.swap(rhs._buffer);
 		return;
 	}
 
 	quad_buffer& quad_buffer::operator=(quad_buffer &&rhs) noexcept
 	{
 		std::swap(_verts, rhs._verts);
-		std::swap(_buffer, rhs._buffer);
+		// see move constructor re: adl swap function
+		_buffer.swap(rhs._buffer);
 		return *this;
 	}
 
@@ -193,7 +196,7 @@ namespace hades
 	
 	void quad_buffer::draw(sf::RenderTarget& t, const sf::RenderStates& s) const
 	{
-		t.draw(_verts.data(), std::size(_verts), _prim_type, s);
+		t.draw(_buffer, s);
 		return;
 	}
 }

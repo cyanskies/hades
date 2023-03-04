@@ -74,7 +74,7 @@ namespace hades
 
 			// the file to write this resource to(eg. ./terrain/terrain(.yaml))
 			std::filesystem::path data_file;
-			//the path for this resource within a mod(eg. ./terrain/dirt.png)
+			// the path for this resource within a mod(eg. ./terrain/dirt.png)
 			// serialise(ostream&) will only be called if this isn't empty
 			std::filesystem::path source;
 
@@ -95,7 +95,7 @@ namespace hades
 				return;
 			}
 
-			//the actual resource
+			// the actual resource
 			// NOTE: this is often a empty tag type
 			T value;
 		};

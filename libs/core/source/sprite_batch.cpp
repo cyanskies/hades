@@ -36,7 +36,7 @@ namespace hades
 
 		for (auto& v : _vertex)
 		{
-			v.buffer = quad_buffer{};
+			v.buffer.clear();
 			v.sprites.clear();
 		}
 
@@ -54,7 +54,7 @@ namespace hades
 		return;
 	}
 
-	static std::size_t find_batch(const sprite_utility::sprite_settings s, const std::deque<sprite_utility::batch> &v) noexcept
+	static sprite_batch::index_t find_batch(const sprite_utility::sprite_settings s, const std::vector<sprite_utility::batch> &v) noexcept
 	{
 		auto index = std::size(v);
 		for (auto i = std::size_t{}; i != std::size(v); ++i)
@@ -276,18 +276,10 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::draw(sf::RenderTarget &t, sprite_utility::layer_t l, const sf::RenderStates& s) const
-	{
-		for (auto i = std::size_t{}; i < std::size(_sprites); ++i)
-		{
-			if (_sprites[i].settings.layer == l)
-				draw(t, i, s);
-		}
-	}
-
-	void sprite_batch::draw(sf::RenderTarget& target, index_t layer_index, sf::RenderStates s) const
+	void sprite_batch::draw(sf::RenderTarget& target, index_t layer_index, const sf::RenderStates& states) const
 	{
 		assert(layer_index < std::size(_sprites));
+		auto s = states;
 
 		if(_sprites[layer_index].settings.texture)
 			s.texture = &resources::texture_functions::get_sf_texture(_sprites[layer_index].settings.texture);
@@ -359,7 +351,7 @@ namespace hades
 			if (s.animation && !anims::is_loaded(*s.animation))
 				anims::get_resource(anims::get_id(*s.animation)); // force lazy load
 
-			_sprites.emplace_back(sprite_utility::batch{ settings, std::vector<sprite_utility::sprite>{} });
+			_sprites.emplace_back(settings, std::vector<sprite_utility::sprite>{});
 			_vertex.emplace_back();
 		}
 

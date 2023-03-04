@@ -254,16 +254,10 @@ namespace hades
 			auto& m = _get_mod(res.mod);
 
 			// add to resource storage
-			const auto res_ptr = _resources.set(res);
-			//const auto res_ptr = m.resources.emplace_back(std::move(res)).get();
+			const auto res_ptr = _resources.set(std::move(res));
 
 			// add to mod
-			// don't double up on resource ptrs
-			/*auto iter = std::ranges::find_if(m.resources, [id = res.id, mod = res.mod](auto&& resource) {
-				return id == resource->id && mod == resource->mod;
-				});
-			if (iter == end(m.resources))*/
-				m.resources.emplace_back(res_ptr);
+			m.resources.emplace_back(res_ptr);
 
 			// add to resource group
 			resource_group* res_group = nullptr;
@@ -277,6 +271,7 @@ namespace hades
 				res_group = &m.resources_by_type.emplace_back(group, std::vector<const resources::resource_base*>{});
 
 			res_group->second.emplace_back(res_ptr);
+
 			return res_ptr;
 		}
 

@@ -907,7 +907,7 @@ namespace hades
 				return { anim };
 		}
 
-		for (auto b : o.base)
+		for (const auto& b : o.base)
 		{
 			assert(b);
 			auto anim = get_editor_animations(*b);

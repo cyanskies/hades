@@ -45,6 +45,7 @@ namespace hades
 		// good for static data
 		void shrink_to_fit();
 
+	protected:
 		void draw(sf::RenderTarget&, const sf::RenderStates& = sf::RenderStates{}) const override;
 
 	private:

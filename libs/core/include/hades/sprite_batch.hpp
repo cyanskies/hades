@@ -2,8 +2,6 @@
 #define HADES_SPRITE_BATCH_HPP
 
 #include <deque>
-#include <mutex>
-#include <shared_mutex>
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
@@ -84,8 +82,6 @@ namespace hades
 	{
 	public:
 		using sprite_id = sprite_utility::sprite_id;
-		using shared_mutex_type = std::shared_mutex;
-		using mutex_type = std::mutex;
 		using index_t = std::size_t;
 
 		//clears all of the stored data
@@ -110,36 +106,34 @@ namespace hades
 		void set_size(sprite_id id, vector_float size);
 		
 		//NOTE: the position of the layer_t in the vector
-		// indicates it's layer_index for draw(3)
-		// this can be used to avoid the search needed to find the layer
-		// in draw(2)
+		// indicates it's layer_index for draw
 		std::vector<sprite_utility::layer_t> get_layer_list() const;
 		
 		struct layer_info {
 			sprite_utility::layer_t l;
 			index_t i;
 		};
+
+		// TODO: redesign rendering to avoid this function and its mandatory allocations (see render_interface)
 		//returns a sorted vector of layer info,
 		//pass the index type to draw to avoid a lookup
-		std::vector <layer_info> get_layer_info_list() const;
+		std::vector<layer_info> get_layer_info_list() const;
 
 		void apply();
 
 		void draw(sf::RenderTarget& target, const sf::RenderStates& states = sf::RenderStates{}) const override;
-		void draw(sf::RenderTarget& target, sprite_utility::layer_t, const sf::RenderStates& states = sf::RenderStates{}) const;
-
+		
 		static_assert(!std::is_same_v<sprite_utility::layer_t, index_t>,
 			"if these are the same then we cannot use index_t in api due to ambiguity");
 
-		//NOTE: this uses quad_buffer internally, so tranforms passed through states won't have any effect
-		//NOTE: not true ^
-		void draw(sf::RenderTarget& target, index_t layer_index, sf::RenderStates states = sf::RenderStates{}) const;
+		void draw(sf::RenderTarget& target, index_t layer_index, const sf::RenderStates& states = sf::RenderStates{}) const;
 
 	private:
+		// stores the sprites id and it's position in both the sprites info and quad batch arrays
 		struct sprite_pos 
 		{
 			sprite_id id;
-			index_t index;
+			index_t index; // index into _vertex and _sprites
 		};
 
 		struct vert_batch
@@ -155,8 +149,8 @@ namespace hades
 		index_t _find_sprite(sprite_id) const;
 		sprite_utility::sprite _remove_sprite(sprite_id, index_t current_batch, index_t buffer_index);
 		
-		std::deque<sprite_utility::batch> _sprites;
-		std::deque<vert_batch> _vertex;
+		std::vector<sprite_utility::batch> _sprites; // stores sprite information(pos, size, anim time, etc.)
+		std::vector<vert_batch> _vertex; // stores sprite quad batches
 		std::vector<sprite_pos> _ids;
 		sprite_id _id_count = sprite_id{ static_cast<sprite_id::value_type>(sprite_utility::bad_sprite_id) + 1 };
 	};

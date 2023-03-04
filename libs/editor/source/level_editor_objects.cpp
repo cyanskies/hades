@@ -101,7 +101,7 @@ namespace hades
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
 
-		for (const auto o : resources::all_objects)
+		for (const auto& o : resources::all_objects)
 		{
 			if (!o->loaded)
 				data::get<resources::object>(o->id);

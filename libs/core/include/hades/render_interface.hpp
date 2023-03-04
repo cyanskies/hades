@@ -27,7 +27,7 @@ namespace hades
 
 	//allows batching of sprites and drawables
 	// drawables on the same layer as sprites
-	// will be draw before the sprites
+	// will be drawn before the sprites
 
 	class render_interface final : public sf::Drawable
 	{
@@ -124,14 +124,14 @@ namespace hades
 	template<typename DrawableObject>
 	inline render_interface::drawable_id render_interface::create_drawable_copy(DrawableObject &&d, sprite_layer l)
 	{
-		return _create_drawable_any(std::forward(d), detail::get_drawable_from_any<Drawable>, l);
+		return _create_drawable_any(std::forward(d), detail::get_drawable_from_any<DrawableObject>, l);
 	}
 
 	template<typename DrawableObject>
 	inline void render_interface::update_drawable_copy(drawable_id id, DrawableObject &&d, sprite_layer l)
 	{
 		_update_drawable_any(id, std::forward(d),
-			detail::get_drawable_from_any<Drawable>, l);
+			detail::get_drawable_from_any<DrawableObject>, l);
 	}
 }
 

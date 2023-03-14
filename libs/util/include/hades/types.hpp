@@ -48,6 +48,12 @@ namespace hades {
 	{
 		std::tuple_size<T>::value;
 	};
+
+	template<typename T>
+	concept Tuple = requires
+	{
+		std::tuple_size<std::remove_reference<T>>::value;
+	};
 }
 
 #endif //HADES_UTIL_TYPES_HPP

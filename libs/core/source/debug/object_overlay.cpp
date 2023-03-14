@@ -5,7 +5,6 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 
 #include "hades/data.hpp"
-#include "hades/for_each_tuple.hpp"
 #include "hades/game_state.hpp"
 #include "hades/level_interface.hpp"
 #include "hades/utility.hpp"

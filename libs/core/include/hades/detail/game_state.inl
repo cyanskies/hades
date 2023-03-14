@@ -1,6 +1,6 @@
 #include "hades/game_state.hpp"
 
-#include "hades/for_each_tuple.hpp"
+#include "hades/tuple.hpp"
 
 namespace hades::state_api
 {
@@ -247,10 +247,10 @@ namespace hades::state_api
 		template<template<typename> typename CurveType, typename Func>
 		void call_with_curve_type(curve_variable_type curve_info, Func& f)
 		{
-			// NOTE: use for_index_tuple to get the type for this enum value
-			// only do this for the type pack, it's so large that writing out the switch is undesired
+			// NOTE: use tuple_index_invoke to get the type for this enum value
+			// only do this for the type pack, it's so large that writing out the switch is undesirable
 			// this generates the same code as the switch would have
-			for_index_tuple(curve_types::type_pack_instance, integer_cast<std::size_t>(enum_type(curve_info)), [&f](const auto& type) {
+			tuple_index_invoke(curve_types::type_pack_instance, integer_cast<std::size_t>(enum_type(curve_info)), [&f](const auto& type) {
 				return do_call_with_curve_type<CurveType, std::decay_t<decltype(type)>>(f);
 				});
 		}

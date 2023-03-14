@@ -8,8 +8,6 @@
 #include "hades/game_system.hpp"
 #include "hades/uniqueid.hpp"
 
-#include "hades/for_each_tuple.hpp"
-
 namespace hades
 {
 	//this isn't needed for EntityId's and Entity names are strings, and rarely used, where

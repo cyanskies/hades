@@ -1,6 +1,6 @@
 #include "hades/curve_extra.hpp"
 
-#include "hades/for_each_tuple.hpp"
+#include "hades/tuple.hpp"
 
 namespace hades::resources
 {
@@ -40,7 +40,7 @@ namespace hades::resources
 namespace hades
 {
 	template<template<typename> typename CurveType, typename VariableType>
-	std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept
+	consteval std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept
 	{
 		static_assert(is_const_curve_v<CurveType<VariableType>> ||
 			is_linear_curve_v<CurveType<VariableType>> ||
@@ -58,8 +58,7 @@ namespace hades
 			keyframe = keyframe_style::step;
 
 		auto var = curve_variable_type::begin;
-		const auto tuple = curve_types::type_pack{};
-		for_each_tuple(tuple , [&var](const auto& type, const auto index) noexcept {
+		tuple_for_each(curve_types::type_pack{}, [&var](const auto& type, const auto index) noexcept {
 			using T = std::decay_t<decltype(type)>;
 			if constexpr (std::is_same_v<T, VariableType>)
 				var = curve_variable_type{ static_cast<std::underlying_type_t<curve_variable_type>>(index) };

@@ -5,24 +5,25 @@
 #include "hades/animation.hpp"
 #include "hades/properties.hpp"
 #include "hades/console_variables.hpp"
-#include "hades/for_each_tuple.hpp"
+#include "hades/tuple.hpp"
 
 namespace hades
 {
-	template<typename Func, typename ...Components>
-	inline void level_editor_do_tuple_work(std::tuple<Components...> &t, std::size_t i, Func f)
+	template<typename Components, typename Func>
+	inline void level_editor_do_tuple_work(Components&& t, std::size_t i, Func&& f)
+		requires is_tuple<std::remove_reference_t<Components>>
 	{
 		//if no brush is set, then do nothing
-		if (i > std::tuple_size_v<std::tuple<Components...>>)
+		if (i > std::tuple_size_v<std::remove_reference_t<Components>>)
 			return;
 
-		for_index_tuple(t, i, f);
+		tuple_index_invoke(std::forward<Components>(t), i, std::forward<Func>(f));
 	}
 
 	template<typename ...Components>
 	inline level basic_level_editor<Components...>::_component_on_new(level l) const
 	{
-		for_each_tuple(_editor_components, [&l](auto &&c) {
+		tuple_for_each(_editor_components, [&l](auto &&c) {
 			l = c.level_new(std::move(l));
 		});
 
@@ -32,7 +33,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_load(const level &l)
 	{
-		for_each_tuple(_editor_components, [&l](auto &&c) {
+		tuple_for_each(_editor_components, [&l](auto &&c) {
 			c.level_load(l);
 		});
 	}
@@ -40,7 +41,7 @@ namespace hades
 	template<typename ...Components>
 	inline level basic_level_editor<Components...>::_component_on_save(level l) const
 	{
-		for_each_tuple(_editor_components, [&l](auto &&c) {
+		tuple_for_each(_editor_components, [&l](auto &&c) {
 			l = c.level_save(std::move(l));
 		});
 
@@ -50,7 +51,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_resize(vector_int size, vector_int offset)
 	{
-		for_each_tuple(_editor_components, [size, offset](auto&& c) {
+		tuple_for_each(_editor_components, [size, offset](auto&& c) {
 			c.level_resize(size, offset);
 			return;
 		});
@@ -64,7 +65,7 @@ namespace hades
 			return c.get_object_tags_at_location(rect);
 		};
 
-		const auto results = for_each_tuple_r(_editor_components, func, area);
+		const auto results = tuple_transform(_editor_components, func, area);
 
 		auto size = std::size_t{};
 		for (const auto& r : results)
@@ -85,7 +86,7 @@ namespace hades
 			return c.get_terrain_tags_at_location(rect);
 		};
 
-		const auto results = for_each_tuple_r(_editor_components, func, area);
+		const auto results = tuple_transform(_editor_components, func, area);
 
 		auto size = std::size_t{};
 		for (const auto& r : results)
@@ -133,7 +134,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target, time_duration delta_time, brush_index_t active_brush)
 	{
-		for_each_tuple(_editor_components, [&target, &delta_time](auto &&v) {
+		tuple_for_each(_editor_components, [&target, &delta_time](auto &&v) {
 			v.draw(target, delta_time, sf::RenderStates{});
 		});
 
@@ -141,7 +142,7 @@ namespace hades
 		if (active_brush == invalid_brush)
 			return;
 
-		for_index_tuple(_editor_components, active_brush, [&target, &delta_time](auto &&v) {
+		tuple_index_invoke(_editor_components, active_brush, [&target, &delta_time](auto &&v) {
 			v.draw_brush_preview(target, delta_time, sf::RenderStates{});
 		});
 	}
@@ -157,7 +158,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_handle_component_setup()
 	{
-		for_each_tuple(_editor_components, [this](auto &&c, std::size_t index) {
+		tuple_for_each(_editor_components, [this](auto &&c, std::size_t index) {
 			auto activate_brush = [this, index] () noexcept {
 				_set_active_brush(index);
 			};
@@ -186,7 +187,7 @@ namespace hades
 	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_update_component_gui(gui &g, level_editor_component::editor_windows &win_flags)
 	{
-		for_each_tuple(_editor_components, [&g, &win_flags](auto &&c) {
+		tuple_for_each(_editor_components, [&g, &win_flags](auto &&c) {
 			c.gui_update(g, win_flags);
 		});
 	}

@@ -88,7 +88,7 @@ namespace hades::resources
 namespace hades
 {
 	template<template<typename> typename CurveType, typename VariableType>
-	std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept;
+	consteval std::pair<keyframe_style, curve_variable_type> get_curve_info() noexcept;
 	string to_string(keyframe_style);
 	string to_string(std::pair<keyframe_style, curve_variable_type>);
 

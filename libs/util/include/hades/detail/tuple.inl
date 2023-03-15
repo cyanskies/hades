@@ -1,6 +1,6 @@
 #include "hades/tuple.hpp"
 
-#include <tuple>
+#include <array>
 
 //implementations of the tuple algorithms
 

@@ -1,10 +1,10 @@
 #ifndef HADES_UTIL_FOR_EACH_TUPLE_HPP
 #define HADES_UTIL_FOR_EACH_TUPLE_HPP
 
-#include <array>
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 
+#include "hades/types.hpp"
 #include "hades/detail/tuple.inl"
 
 namespace hades

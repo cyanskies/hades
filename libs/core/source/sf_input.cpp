@@ -236,7 +236,7 @@ namespace hades
 		//control
 		interpreter_map.insert({ "escape", keyboard<sf::Keyboard::Escape>() });
 		interpreter_map.insert({ "lcontrol", keyboard<sf::Keyboard::LControl>() });
-		interpreter_map.insert({ "lshift", keyboard<sf::Keyboard::RControl>() });
+		interpreter_map.insert({ "lshift", keyboard<sf::Keyboard::LShift>() });
 		interpreter_map.insert({ "lalt", keyboard<sf::Keyboard::LAlt>() });
 		//i.insert({ "lsystem", keyboard<sf::Keyboard::LSystem>() }); //don't rebind system key
 		interpreter_map.insert({ "rcontrol", keyboard<sf::Keyboard::RControl>() });

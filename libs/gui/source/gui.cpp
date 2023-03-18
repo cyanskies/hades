@@ -65,7 +65,7 @@ namespace hades
 		auto &io = ImGui::GetIO();
 		const auto path = user_config_directory() / (empty(filename) ? default_config_name : filename);
 		if (const auto directory = path.parent_path(); !std::filesystem::exists(directory))
-			std::filesystem::create_directory(directory);
+			std::filesystem::create_directories(directory);
 		else if (!std::filesystem::is_directory(directory))
 			log_error("Unable to create directory for ui config: "s + std::filesystem::absolute(directory).generic_string());
 

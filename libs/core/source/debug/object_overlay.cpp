@@ -7,68 +7,87 @@
 #include "hades/data.hpp"
 #include "hades/game_state.hpp"
 #include "hades/level_interface.hpp"
+#include "hades/time.hpp"
 #include "hades/utility.hpp"
 
 using namespace std::string_literals;
 
 namespace hades::debug
 {
-	template<typename T>
-	string print_value(const T& value)
-	{
-		static_assert(resources::curve_types::is_curve_type_v<T>);
-		if constexpr (resources::curve_types::is_collection_type_v<T>)
-			return "[...]"s;// to_string(std::begin(t), std::end(t));
-		else if constexpr (resources::curve_types::is_vector_type_v<T>)
-			return "["s + to_string(value.x) + ", "s + to_string(value.y) + "]"s;
-		else
-			return to_string(value);
-	}
-
-	template<typename CurveType>
-	string print_curve(std::string_view name, void* curve, time_point t)
-	{
-		auto variable = static_cast<CurveType*>(curve);
-
-		if constexpr (is_pulse_curve_v<CurveType>)
-		{
-			auto pulses = variable->get(t);
-			return to_string(name) + "["s + print_value(pulses.first.value) + ","s + print_value(pulses.second.value) + "]"s;
-		}
-		else
-		{
-			const auto& value = [](auto variable, time_point t)->typename CurveType::value_type {
-				if constexpr (is_linear_curve_v<CurveType> || is_step_curve_v<CurveType>)
-					return variable->get(t);
-				else if constexpr (is_const_curve_v<CurveType>)
-					return variable->get();
-			}(variable, t);
-
-			return to_string(name) + print_value(value);
-		}
-	}
-
-	object_overlay::object_overlay(common_interface* l, game_interface* g, object_ref o) :
-		_object{ o }, _level{ l }, _game{ g }
+	object_overlay::object_overlay(common_interface* l, game_interface* g, object_ref o, bool sticky) :
+		_object{ o }, _level{ l }, _game{ g }, _sticky{ sticky }
 	{
 		assert(l);
 
 		//try and fix a bad object
 		if (state_api::is_object_stale(_object) && _game)
 			state_api::get_object_ptr(_object, g->get_extras());
-
-		if (state_api::is_object_stale(_object))
-			_object.ptr = nullptr;
+		
+		if(_object.ptr)
+			_type = to_string(hades::resources::object_functions::get_id(*_object.ptr->object_type));		
 	}
+
+	class print_curve_visitor
+	{
+	public:
+		void* var;
+		string& str;
+		time_point t;
+
+		template<template<typename> typename CurveType, typename T,
+			std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>>
+			|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
+		void print_curve(const CurveType<T>&c)
+		{
+			if constexpr (resources::curve_types::is_collection_type_v<T>)
+				str += "[...]"s;
+			else if constexpr (resources::curve_types::is_vector_type_v<T>)
+				str += vector_to_string(c.get(t));
+			else
+				str += to_string(c.get(t));
+
+			str += "\n"s;
+			return;
+		}
+
+		template<typename T>
+		void print_curve(const pulse_curve<T>& c)
+		{
+			const auto pulses = c.get(t);
+
+			if constexpr (resources::curve_types::is_collection_type_v<T>)
+				str += "[...]"s;
+			else if constexpr (resources::curve_types::is_vector_type_v<T>)
+				str += vector_to_string(pulses.second.value);
+			else
+				str += to_string(pulses.second.value);
+
+			str += "\n"s;
+
+			return;
+		}
+		
+		template<template <typename> typename CurveType, typename VarType>
+			void operator()()
+		{
+			auto state_var = static_cast<state_field<CurveType<VarType>>*>(var);
+			str += to_string(state_var->id) + " = "s;
+			print_curve(state_var->data);
+			return;
+		}
+	};
 
 	string object_overlay::update()
 	{
-		if (_object.ptr == nullptr)
-			return "object: unavailable"s;
+		if (state_api::is_object_stale(_object))
+			return "object("s + hades::to_string(hades::to_value(_object.id)) + "): unavailable"s;
 
-		auto string = "___Object_Inspector___\n"s + _name + "\n"s;
-		for (auto& c : _curves)
-			string += c.print(c.name, c.curve, _time) + "\n"s;
+		auto string = "___Object_Inspector___\n"s + _type +
+			": (id: "s + hades::to_string(hades::to_value(_object.id)) + ") "s + _name + "\n"s;
+
+		for (auto& entry : _object.ptr->object_variables)
+			state_api::detail::call_with_curve_info(entry.info, print_curve_visitor{ entry.var, string, _time });
+
 		return string;
 	}
 }

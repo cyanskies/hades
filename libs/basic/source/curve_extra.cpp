@@ -530,13 +530,6 @@ namespace hades
 		return curve_to_string(std::get<0>(curve), std::get<1>(curve));
 	}
 
-	template<typename T>
-	static string vector_t_to_string(const T &v)
-	{
-		static_assert(resources::curve_types::is_vector_type_v<T>);
-		return "[" + to_string(v.x) + ", " + to_string(v.y) + "]";
-	}
-
 	string curve_to_string(const resources::curve &c, const resources::curve_default_value &v)
 	{
 		if (!resources::is_curve_valid(c) ||
@@ -551,7 +544,7 @@ namespace hades
 			if constexpr (resources::curve_types::is_collection_type_v<T>)
 				return to_string(std::begin(t), std::end(t));
 			else if constexpr (resources::curve_types::is_vector_type_v<T>)
-				return vector_t_to_string(t);
+				return vector_to_string(t);
 			else
 				return to_string(t);
 		}, v);

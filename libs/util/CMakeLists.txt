@@ -2,7 +2,6 @@ include(../../cmake.txt)
 
 set(HADES_UTIL_SRC
 	source/async.cpp
-	source/random.cpp
 	source/string.cpp
 	source/time.cpp
 	include/hades/any_map.hpp

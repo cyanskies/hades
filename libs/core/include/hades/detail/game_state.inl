@@ -230,7 +230,7 @@ namespace hades::state_api
 
 		template<template<typename> typename CurveType, typename T, typename Func,
 			typename std::enable_if_t<!linear_compat<CurveType, T>, int> = 0>
-		constexpr void do_call_with_curve_type(Func&) noexcept
+		constexpr void do_call_with_curve_type(Func&&) noexcept
 		{
 			assert(false);
 			return;
@@ -238,25 +238,25 @@ namespace hades::state_api
 
 		template<template<typename> typename CurveType, typename T, typename Func,
 			typename std::enable_if_t<linear_compat<CurveType, T>, int> = 0>
-		void do_call_with_curve_type(Func& f)
+		void do_call_with_curve_type(Func&& f)
 		{
             f.template operator()<CurveType, T>();
 			return;
 		}
 
 		template<template<typename> typename CurveType, typename Func>
-		void call_with_curve_type(curve_variable_type curve_info, Func& f)
+		void call_with_curve_type(curve_variable_type curve_info, Func&& f)
 		{
 			// NOTE: use tuple_index_invoke to get the type for this enum value
 			// only do this for the type pack, it's so large that writing out the switch is undesirable
 			// this generates the same code as the switch would have
-			tuple_index_invoke(curve_types::type_pack_instance, integer_cast<std::size_t>(enum_type(curve_info)), [&f](const auto& type) {
-				return do_call_with_curve_type<CurveType, std::decay_t<decltype(type)>>(f);
+			tuple_index_invoke(curve_types::type_pack_instance, integer_cast<std::size_t>(enum_type(curve_info)), [&](const auto& type) {
+				return do_call_with_curve_type<CurveType, std::decay_t<decltype(type)>>(std::forward<Func>(f));
 				});
 		}
 
 		template<typename Func>
-		void call_with_curve_info(curve_info_t curve_info, Func& f)
+		void call_with_curve_info(curve_info_t curve_info, Func&& f)
 		{
 			using k = keyframe_style;
 			switch (curve_info.first)
@@ -264,11 +264,11 @@ namespace hades::state_api
 			case k::const_t:
 				throw logic_error{ "const curves cannot be stored on objects" };
 			case k::linear:
-				return call_with_curve_type<linear_curve>(curve_info.second, f);
+				return call_with_curve_type<linear_curve>(curve_info.second, std::forward<Func>(f));
 			case k::pulse:
-				return call_with_curve_type<pulse_curve>(curve_info.second, f);
+				return call_with_curve_type<pulse_curve>(curve_info.second, std::forward<Func>(f));
 			case k::step:
-				return call_with_curve_type<step_curve>(curve_info.second, f);
+				return call_with_curve_type<step_curve>(curve_info.second, std::forward<Func>(f));
 			case k::end:
 				;
 			}

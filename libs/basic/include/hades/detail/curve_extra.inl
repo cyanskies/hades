@@ -57,7 +57,7 @@ namespace hades
 		else if constexpr (is_step_curve_v<CurveType<VariableType>>)
 			keyframe = keyframe_style::step;
 
-		auto var = curve_variable_type::begin;
+		auto var = curve_variable_type::end;
 		tuple_for_each(curve_types::type_pack{}, [&var](const auto& type, const auto index) noexcept {
 			using T = std::decay_t<decltype(type)>;
 			if constexpr (std::is_same_v<T, VariableType>)

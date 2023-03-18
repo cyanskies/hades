@@ -9,9 +9,8 @@
 
 namespace hades
 {
-	template<typename Components, typename Func>
+	template<tuple Components, typename Func>
 	inline void level_editor_do_tuple_work(Components&& t, std::size_t i, Func&& f)
-		requires is_tuple<std::remove_reference_t<Components>>
 	{
 		//if no brush is set, then do nothing
 		if (i > std::tuple_size_v<std::remove_reference_t<Components>>)

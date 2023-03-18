@@ -27,7 +27,7 @@ namespace hades
 	constexpr bool is_string_v = is_string<T>::value;
 
 	template<typename T>
-	concept string_type = is_string<T>::value;
+	concept string_type = std::is_convertible_v<T, std::string_view>;
 	// These are the types that we consider 'string' types
 	//	static_assert(is_string_v<std::string>);
 	//	static_assert(is_string_v<const char*>);
@@ -45,11 +45,12 @@ namespace hades
 	constexpr std::string_view trim(std::string_view in) noexcept;
 
 	// catch overloads that can be satisfied by std::to_chars
-	template<typename T, std::enable_if_t<!is_string_v<T>, int> = 0>
+	template<typename T>
+		requires (!string_type<T>)
 	string to_string(T value);
 
 	// convert string types to hades::string
-	template<typename T, std::enable_if_t<is_string_v<T>, int> = 0>
+	template<string_type T>
 	string to_string(T&& value)
 	{
 		return string{ std::forward<T>(value) };

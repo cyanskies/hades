@@ -40,20 +40,6 @@ namespace hades {
 	//  max texture size for older hardware is 512
 	//  max size for modern hardware is 8192 or higher
 	using texture_size_t = uint16;
-
-	//identify tuple-like types
-	//these should support tuple_size, tuple_element and get<>
-	template<typename T>
-	concept is_tuple = requires
-	{
-		std::tuple_size<T>::value;
-	};
-
-	template<typename T>
-	concept Tuple = requires
-	{
-		std::tuple_size<std::remove_reference<T>>::value;
-	};
 }
 
 #endif //HADES_UTIL_TYPES_HPP

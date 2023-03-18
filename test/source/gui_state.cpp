@@ -4,7 +4,7 @@
 
 #include "hades/console_variables.hpp"
 #include "hades/properties.hpp"
-#include "Hades/time.hpp"
+#include "hades/time.hpp"
 
 void gui_state::init()
 {

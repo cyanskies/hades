@@ -13,6 +13,7 @@ function(hades_make_common ARG_NAME)
 		mark_as_advanced(CMAKE_CONFIGURATION_TYPES)
 	endif()
 
+	# make sure sfml matches the static settings of the project
 	if(NOT BUILD_SHARED_LIBS)
 		add_definitions(-DSFML_STATIC)
 	endif()
@@ -72,7 +73,7 @@ function(hades_make_compile_settings ARG_NAME)
 								# Gy for function level linking
 								$<$<CXX_COMPILER_ID:MSVC>:
                                   "/GS-" "/Oi" "/O2" "/Gy" 
-								  "/GL"
+								  # "/GL" GL still fails to build
 								  >
 								$<$<CXX_COMPILER_ID:Clang,GNU>:
                                   "-O3" >
@@ -114,7 +115,7 @@ function(hades_make_compile_settings ARG_NAME)
 							 $<$<CONFIG:Release>:
 								$<$<CXX_COMPILER_ID:MSVC>:
                                    "/INCREMENTAL:NO" "/OPT:REF"
-								   "/LTCG"
+								   # "/LTCG" Causes compiler crashes
 								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},Win32>: "/OPT:NOICF" >
 								   # $<$<STREQUAL:${CMAKE_GENERATOR_PLATFORM},x64>: "/OPT:ICF" >
 								   >

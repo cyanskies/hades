@@ -5,15 +5,11 @@
 
 #include "hades/curve_types.hpp"
 #include "hades/debug.hpp"
+#include "hades/game_state.hpp"
 #include "hades/font.hpp"
+#include "hades/level_interface.hpp"
 #include "hades/properties.hpp"
 #include "hades/uniqueid.hpp"
-
-namespace hades
-{
-	class common_interface;
-	class game_interface;
-}
 
 namespace hades::debug
 {
@@ -21,11 +17,23 @@ namespace hades::debug
 	class object_overlay : public text_overlay
 	{
 	public:
-		object_overlay(common_interface*, game_interface* = nullptr, object_ref = curve_types::bad_object_ref);
+		object_overlay(common_interface*, game_interface* = nullptr, object_ref = curve_types::bad_object_ref, bool sticky = false);
 		
+		object_ref get_obj() const noexcept
+		{
+			return _object;
+		}
+
+		bool sticky_selection() const noexcept
+		{
+			return _sticky;
+		}
+
 		void set_time(time_point t)
 		{
 			_time = t;
+			if(_game)
+				_name = state_api::get_name(_object, t, _game->get_state());
 		}
 
 		string update() override;
@@ -39,11 +47,12 @@ namespace hades::debug
 			fn print;
 		};
 
-		string _name; 
+		string _type, _name; 
 		std::vector<curve_struct> _curves;
 		object_ref _object;
 		common_interface* _level;
 		game_interface* _game;
+		bool _sticky;
 		time_point _time;
 	};
 }

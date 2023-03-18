@@ -14,7 +14,7 @@ namespace hades
 	//curves need to be identified often by a consistant lookup name
 	//we do the same with variable Ids since they also need to be unique and easily network transferrable
 	using variable_id = unique_id;
-	constexpr auto bad_variable = variable_id{ variable_id::zero_id };
+	constexpr auto bad_variable = variable_id::zero_id;
 
 	template<typename DataType>
 	struct state_field

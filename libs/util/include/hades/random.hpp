@@ -6,22 +6,20 @@
 
 namespace hades::detail
 {
-	std::default_random_engine& get_engine() noexcept;
-
-	template<typename T>
-		requires std::integral<T>
+	thread_local static inline auto random_generator = std::default_random_engine{ std::random_device{}() };
+	
+	template<std::integral T>
 	T random(T min, T max)
 	{
 		std::uniform_int_distribution<T> random{ min, max };
-		return random(get_engine());
+		return random(random_generator);
 	}
 
-	template<typename T>
-		requires std::floating_point<T>
+	template<std::floating_point T>
 	T random(T min, T max)
 	{
 		std::uniform_real_distribution<T> random{ min, max };
-		return random(get_engine());
+		return random(random_generator);
 	}
 }
 

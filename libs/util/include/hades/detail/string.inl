@@ -58,7 +58,8 @@ namespace hades
 		return in.substr(start, end - start + 1);
 	}
 
-	template<typename T, std::enable_if_t<!is_string_v<T>, int>>
+	template<typename T>
+		requires (!string_type<T>)
 	string to_string(T value)
 	{
 		using namespace std::string_literals;

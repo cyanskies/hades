@@ -32,9 +32,6 @@ namespace hades
 		return;
 	}
 
-	static void setup_keys();
-
-	static std::once_flag setup_keys_flag;
 	static std::once_flag make_default_font;
 
 	constexpr auto default_config_name = "ui.ini"sv;
@@ -46,8 +43,6 @@ namespace hades
 	gui::gui(std::string_view filename)
 		: _my_context{ {}, {} }
 	{
-		std::call_once(setup_keys_flag, setup_keys);
-
 		if (!_font_atlas)
 			_font_atlas = std::make_unique<ImFontAtlas>();
 		assert(_font_atlas);
@@ -104,46 +99,71 @@ namespace hades
 		_main_toolbar_info.width = size.x;
 	}
 
-	static std::array<ImGuiKey, sf::Keyboard::KeyCount> sf_key_table;
-	static_assert(sf::Keyboard::KeyCount == 101);
-	static_assert(ImGuiKey_COUNT == 645);
-
-	static void setup_keys()
+	constexpr ImGuiKey to_imgui_key(sf::Keyboard::Key k) noexcept
 	{
-		sf_key_table.fill(ImGuiKey_COUNT);
-
-		sf_key_table[sf::Keyboard::Tab] = ImGuiKey_Tab;
-		sf_key_table[sf::Keyboard::Left] = ImGuiKey_LeftArrow;
-		sf_key_table[sf::Keyboard::Right] = ImGuiKey_RightArrow;
-		sf_key_table[sf::Keyboard::Up] = ImGuiKey_UpArrow;
-		sf_key_table[sf::Keyboard::Down] = ImGuiKey_DownArrow;
-		sf_key_table[sf::Keyboard::PageUp] = ImGuiKey_PageUp;
-		sf_key_table[sf::Keyboard::PageDown] = ImGuiKey_PageDown;
-		sf_key_table[sf::Keyboard::Home] = ImGuiKey_Home;
-		sf_key_table[sf::Keyboard::End] = ImGuiKey_End;
-		sf_key_table[sf::Keyboard::Insert] = ImGuiKey_Insert;
+		switch(k)
+		{
+		case sf::Keyboard::Tab: return ImGuiKey_Tab;
+		case sf::Keyboard::Left: return ImGuiKey_LeftArrow;
+		case sf::Keyboard::Right: return ImGuiKey_RightArrow;
+		case sf::Keyboard::Up: return ImGuiKey_UpArrow;
+		case sf::Keyboard::Down: return ImGuiKey_DownArrow;
+		case sf::Keyboard::PageUp: return ImGuiKey_PageUp;
+		case sf::Keyboard::PageDown: return ImGuiKey_PageDown;
+		case sf::Keyboard::Home: return ImGuiKey_Home;
+		case sf::Keyboard::End: return ImGuiKey_End;
+		case sf::Keyboard::Insert: return ImGuiKey_Insert;
 		//see sfml_imgui for android bindings
-		sf_key_table[sf::Keyboard::Delete] = ImGuiKey_Delete;
-		sf_key_table[sf::Keyboard::Backspace] = ImGuiKey_Backspace;
-		sf_key_table[sf::Keyboard::Space] = ImGuiKey_Space;
-		sf_key_table[sf::Keyboard::Enter] = ImGuiKey_Enter;
-		sf_key_table[sf::Keyboard::Escape] = ImGuiKey_Escape;
-		sf_key_table[sf::Keyboard::A] = ImGuiKey_A;
-		sf_key_table[sf::Keyboard::C] = ImGuiKey_C;
-		sf_key_table[sf::Keyboard::V] = ImGuiKey_V;
-		sf_key_table[sf::Keyboard::X] = ImGuiKey_X;
-		sf_key_table[sf::Keyboard::Y] = ImGuiKey_Y;
-		sf_key_table[sf::Keyboard::Z] = ImGuiKey_Z;
-		return;
+		case sf::Keyboard::Delete: return ImGuiKey_Delete;
+		case sf::Keyboard::Backspace: return ImGuiKey_Backspace;
+		case sf::Keyboard::Space: return ImGuiKey_Space;
+		case sf::Keyboard::Enter: return ImGuiKey_Enter;
+		case sf::Keyboard::Escape: return ImGuiKey_Escape;
+		case sf::Keyboard::A: return ImGuiKey_A;
+		case sf::Keyboard::C: return ImGuiKey_C;
+		case sf::Keyboard::V: return ImGuiKey_V;
+		case sf::Keyboard::X: return ImGuiKey_X;
+		case sf::Keyboard::Y: return ImGuiKey_Y;
+		case sf::Keyboard::Z: return ImGuiKey_Z;
+		default: return ImGuiKey_COUNT;
+		}
 	}
 
-	static ImGuiKey to_imgui_key(sf::Keyboard::Key k)
+	// Custom output iterator for SFML algorithm
+	// performs like a normal random access iterator
+	template<typename Container, typename Iter>
+	class special_iterator
 	{
-		if (k == sf::Keyboard::Unknown)
-			return ImGuiKey_COUNT;
+	public:
+		using container_type = Container; // required by SFML for some reason, only certain iterators support this
+		using value_type = Iter::value_type;
 
-		return sf_key_table[integer_cast<std::size_t>(enum_type(k))];
-	}
+		constexpr special_iterator(const Container&, Iter iter) noexcept
+			: _iter{ iter } {}
+
+		template<typename T>
+			requires std::same_as<value_type, std::decay_t<T>>
+		constexpr special_iterator& operator=(T&& val) 
+		{
+			*_iter = std::forward<T>(val);
+			return *this;
+		}
+
+		[[nodiscard]] 
+		constexpr value_type& operator*() noexcept 
+		{
+			return *_iter;
+		}
+
+		constexpr Iter operator++(int) noexcept
+		{
+			auto i = _iter++;
+			return i;
+		}
+
+	protected:
+		Iter _iter;
+	};
 
 	bool gui::handle_event(const sf::Event &e)
 	{
@@ -186,16 +206,18 @@ namespace hades
 			return io.WantCaptureKeyboard;
 		}
 		case sf::Event::TextEntered:
-			if (e.text.unicode > 0 && e.text.unicode < 0x10000) {
-				const auto str = sf::String{ e.text.unicode };
-				const auto utf8 = str.toUtf8();
-				auto std_str = string{};
-				std::transform(begin(utf8), end(utf8), std::back_inserter(std_str), [](sf::Uint8 u8)noexcept->char{
-					auto output = char{};
-					std::memcpy(&output, &u8, sizeof(char));
-					return output;
-				});
-				io.AddInputCharactersUTF8(std_str.data());
+			if (e.text.unicode == '\b') // Manually insert backspace keys, 
+			{							// otherwise imgui won't allow repeats
+				io.AddKeyEvent(to_imgui_key(sf::Keyboard::Backspace), true); //keydown
+				io.AddKeyEvent(to_imgui_key(sf::Keyboard::Backspace), false); // keyup
+			}
+			else if (e.text.unicode < 0x10000) 
+			{
+				auto u8_buffer = std::array<sf::Uint8, 5>{}; // maximum of 4 encoded bytes, plus a null byte
+				u8_buffer.fill('\0');
+				// unicode encoder requires special iterator wrapper to provide ::container_type
+				sf::Utf8::encode(e.text.unicode, special_iterator{ u8_buffer, begin(u8_buffer) });
+				io.AddInputCharactersUTF8(reinterpret_cast<const char*>(u8_buffer.data()));
 			}
 			return io.WantTextInput;
 		default:

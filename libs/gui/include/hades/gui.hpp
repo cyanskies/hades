@@ -5,6 +5,7 @@
 #include <string_view>
 #include <unordered_map>
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 #include "SFML/Graphics/Color.hpp"
@@ -534,7 +535,8 @@ namespace hades
 
 		//tooltips
 		//begin/end tooltip
-		void tooltip_begin();
+		[[nodiscard]]
+		bool tooltip_begin(); // only if returns true, must call tooltip_end
 		void tooltip_end();
 		//equivelent to checking is_item_hovered and calling begin/end tooltip with a text element
 		void tooltip(std::string_view); 
@@ -850,7 +852,7 @@ namespace hades
 		// set to '0' to deny the input.
 		void set_char_filter_replacement(ImWchar) noexcept;
 
-		enum class input_key : ImGuiKey {
+		enum class input_key : std::underlying_type_t<ImGuiKey> {
 			tab = ImGuiKey_Tab,
 			up = ImGuiKey_UpArrow,
 			down = ImGuiKey_DownArrow

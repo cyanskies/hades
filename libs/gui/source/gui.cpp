@@ -1,7 +1,7 @@
 #include "hades/gui.hpp"
 
-#include "imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui.h"
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -1021,11 +1021,10 @@ namespace hades
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 	}
 
-	void gui::tooltip_begin()
+	bool gui::tooltip_begin()
 	{
 		_active_assert();
-		ImGui::BeginTooltip();
-		return;
+		return ImGui::BeginTooltip();
 	}
 
 	void gui::tooltip_end()

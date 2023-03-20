@@ -2,6 +2,7 @@
 
 #include "SFML/Graphics/Image.hpp"
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h" // for GetID
 #include "imgui_internal.h" // for BeginDragDropTargetCustom
 
@@ -485,20 +486,21 @@ namespace hades::data
 						const auto col = from_sf_color(img.getPixel(std::min(img_size.x - 1, region_uint.x),
 							std::min(img_size.y - 1, region_uint.y)));
 
-						g.tooltip_begin();
+						if (g.tooltip_begin())
+						{
+							g.text("Texel coord: ["s + to_string(region_pos.x) + ", "s + to_string(region_pos.y) + "]"s);
+							const auto size1 = g.get_item_rect_size();
+							g.text("Colour: "s + to_string(col));
+							const auto size2 = g.get_item_rect_size();
+							const auto size = ImVec2{ std::max(size1.x, size2.x), size1.y + size2.y };
 
-						g.text("Texel coord: ["s + to_string(region_pos.x) + ", "s + to_string(region_pos.y) + "]"s);
-						const auto size1 = g.get_item_rect_size();
-						g.text("Colour: "s + to_string(col));
-						const auto size2 = g.get_item_rect_size();
-						const auto size = ImVec2{ std::max(size1.x, size2.x), size1.y + size2.y };
-
-						auto drawlist = ImGui::GetWindowDrawList();
-						const auto im_col = ImGui::GetColorU32(IM_COL32(col.r, col.g, col.b, col.a));
-						const auto rect_pos = ImGui::GetCursorScreenPos();
-						drawlist->AddRectFilled(rect_pos, { rect_pos.x + size.x, rect_pos.y + size.y }, im_col);
-						ImGui::Dummy(size);
-						g.tooltip_end();
+							auto drawlist = ImGui::GetWindowDrawList();
+							const auto im_col = ImGui::GetColorU32(IM_COL32(col.r, col.g, col.b, col.a));
+							const auto rect_pos = ImGui::GetCursorScreenPos();
+							drawlist->AddRectFilled(rect_pos, { rect_pos.x + size.x, rect_pos.y + size.y }, im_col);
+							ImGui::Dummy(size);
+							g.tooltip_end();
+						}
 					}
 				}
 				g.child_window_end();

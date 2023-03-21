@@ -36,7 +36,7 @@ namespace hades
 		const auto &error_tile = settings->error_tileset->tiles[0];
         auto error_tex = tex_funcs::find_create_texture(d, error_tile.tex.id(), unique_id::zero);
 		auto img = sf::Image{};
-		img.create(1u, 1u, sf::Color::Magenta);
+		img.create({ 1u, 1u }, sf::Color::Magenta);
 		auto& tex = tex_funcs::get_sf_texture(error_tex);
 		
 		auto sb = std::stringbuf{};

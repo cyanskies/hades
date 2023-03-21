@@ -213,7 +213,7 @@ namespace hades
 			}
 			else if (e.text.unicode < 0x10000) 
 			{
-				auto u8_buffer = std::array<sf::Uint8, 5>{}; // maximum of 4 encoded bytes, plus a null byte
+				auto u8_buffer = std::array<std::uint8_t, 5>{}; // maximum of 4 encoded bytes, plus a null byte
 				u8_buffer.fill('\0');
 				// unicode encoder requires special iterator wrapper to provide ::container_type
 				sf::Utf8::encode(e.text.unicode, special_iterator{ u8_buffer, begin(u8_buffer) });
@@ -1305,10 +1305,10 @@ namespace hades
 		const auto col = ImColor{ vert.col }.Value;
 
 		return { {vert.pos.x, vert.pos.y},
-			sf::Color{static_cast<sf::Uint8>(col.x * 255.f),
-					static_cast<sf::Uint8>(col.y * 255.f),
-					static_cast<sf::Uint8>(col.z * 255.f),
-					static_cast<sf::Uint8>(col.w * 255.f)},
+			sf::Color{static_cast<std::uint8_t>(col.x * 255.f),
+					static_cast<std::uint8_t>(col.y * 255.f),
+					static_cast<std::uint8_t>(col.z * 255.f),
+					static_cast<std::uint8_t>(col.w * 255.f)},
 			//uv coords are normalised for the texture size as [0.f, 1.f]
 			//we need to expand them to the range of [0, tex_size]
 			//same as the colours above
@@ -1491,7 +1491,7 @@ namespace hades
 
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
-        if (!texture.create(unsigned_cast(width), unsigned_cast(height)))
+		if (!texture.create({ unsigned_cast(width), unsigned_cast(height) }))
 		{
 			log_error("Unable to create gui texture atlas.");
 			log_error(sb.str());

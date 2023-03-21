@@ -136,7 +136,7 @@ namespace hades
 	static sf::Texture generate_checkerboard_texture(texture_size_t width, texture_size_t height,
 		texture_size_t checker_scale, colour c1, colour c2)
 	{
-		auto pixels = std::vector<sf::Uint8>{};
+		auto pixels = std::vector<std::uint8_t>{};
 		const auto size = integer_cast<std::size_t>(width) * integer_cast<std::size_t>(height);
 		pixels.reserve(size);
 
@@ -158,7 +158,7 @@ namespace hades
 		sf::Texture t;
 		auto sb = std::stringbuf{};
 		const auto prev = sf::err().rdbuf(&sb);
-		if (!t.create(width, height))
+		if (!t.create({ width, height }))
 		{
 			LOGERROR("Unable to create error texture");
 			LOGERROR(sb.str());

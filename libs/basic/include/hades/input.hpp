@@ -189,7 +189,7 @@ namespace hades
 		//load bindings config
 		//save binding config, //this only works for bindable actions
 		void generate_state(); //runs all the action test functions, including custom ones
-		using action_set = std::set<action, action_compare>; // TODO: review usage of set
+		using action_set = std::set<action, action_compare>; // TODO: review usage of set //TODO flat set
 		// TODO: pass storage as param, dont allocate a whole set every single tick
 		action_set input_state() const;
 
@@ -229,6 +229,7 @@ namespace hades
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e);
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e, input_interpreter::function f);
 
+		// TODO: allow sending one event at a time
 		void generate_state(const std::vector<checked_event>&); //runs all the action test functions, including custom ones
 		action_set input_state() const;
 	private:

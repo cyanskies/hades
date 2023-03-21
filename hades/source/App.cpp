@@ -59,8 +59,8 @@ namespace hades
 		console->set(cvars::video_fullscreen, 0); // TODO: set this to fake fullscreen: 2
 		console->set(cvars::video_resizable, true);
 		////resolution
-		console->set(cvars::video_width, integer_clamp_cast<int32>(mode.width));
-		console->set(cvars::video_height, integer_clamp_cast<int32>(mode.height));
+		console->set(cvars::video_width, integer_clamp_cast<int32>(mode.size.x));
+		console->set(cvars::video_height, integer_clamp_cast<int32>(mode.size.y));
 		////depth
 		console->set(cvars::video_depth, integer_clamp_cast<int32>(mode.bitsPerPixel));
 
@@ -123,7 +123,7 @@ namespace hades
 	static void update_overlay_size(sf::View& v, gui& g,
 		float w, float h) noexcept
 	{
-		v.setSize(w, h);
+		v.setSize({ w, h });
 		v.setCenter({ w / 2.f, h / 2.f });
 		g.activate_context();
 		g.set_display_size({ w, h });
@@ -422,7 +422,7 @@ namespace hades
 				_shutdown();
 			}
 			else if (e.type == event::KeyPressed && // otherwise check for console summon
-				e.key.code == sf::Keyboard::Tilde)
+				e.key.code == sf::Keyboard::Grave)
 			{
 				if (_console_debug)
 					_close_console();
@@ -451,7 +451,7 @@ namespace hades
 				else if (activeState->handle_event(e)) // check state raw event
 					handled = true;
 
-				if(handled == false)
+				if(handled == false) // TODO: pass directly to input system?
 					_event_buffer.emplace_back(input_event_system::checked_event{ handled, e });
 			}
 		}
@@ -481,8 +481,8 @@ namespace hades
 
 				const auto fullscreen = _console.getValue<int32>(cvars::video_fullscreen);
 
-				const auto mode = sf::VideoMode{ integer_cast<unsigned int>(width->load()),
-					integer_cast<unsigned int>(height->load()),
+				const auto mode = sf::VideoMode{ {integer_cast<unsigned int>(width->load()),
+					integer_cast<unsigned int>(height->load()) },
 					integer_cast<unsigned int>(depth->load()) };
 
 				// if we're in fullscreen mode, then the videomode must be 'valid'
@@ -504,13 +504,13 @@ namespace hades
 				const auto game_vanity = _console.getString(cvars::game_vanity_name);
 				log_debug("recreating window"sv);
 
-                _window.create(mode, game_vanity->load(), integer_cast<sf::Uint32>(window_type));
+                _window.create(mode, game_vanity->load(), integer_cast<std::uint32_t>(window_type));
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);
 
-				const auto widthf = static_cast<float>(mode.width);
-				const auto heightf = static_cast<float>(mode.height);
+				const auto widthf = static_cast<float>(mode.size.x);
+				const auto heightf = static_cast<float>(mode.size.y);
 				update_overlay_size(_overlay_view, *_gui, widthf, heightf);
 
 				_states.getActiveState()->reinit();
@@ -753,7 +753,7 @@ namespace hades
 #ifdef HADES_QUICK_EXIT
 		_states.drop(); // destroy gamestates, so they can call shutdown funcs
 		_gui.reset(); // destroy gui so it calls shutdown funcs
-		std::quick_exit(EXIT_SUCCESS);
+		std::exit(EXIT_SUCCESS);
 #else
 		_window.close();
 		return;

@@ -337,7 +337,7 @@ namespace hades::data
 					static_assert(sizeof(unique_id) >= sizeof(void*));
 					assert(tex);
 					auto image = sf::Image{};
-                    image.create(unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight), reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+					image.create({ unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight) }, reinterpret_cast<std::uint8_t*>(data->textureFileDatas));
 					resources::texture_functions::load_from_image(*tex, image);
 					data->textureID = tex;
 					delete[] data->textureFileDatas;
@@ -483,8 +483,8 @@ namespace hades::data
 							integral_cast<unsigned int>(region_pos.y, round_down_tag)
 						};
 						
-						const auto col = from_sf_color(img.getPixel(std::min(img_size.x - 1, region_uint.x),
-							std::min(img_size.y - 1, region_uint.y)));
+						const auto col = from_sf_color(img.getPixel({ std::min(img_size.x - 1, region_uint.x),
+							std::min(img_size.y - 1, region_uint.y) } ));
 
 						if (g.tooltip_begin())
 						{
@@ -753,7 +753,7 @@ namespace hades::data
 					static_assert(sizeof(unique_id) >= sizeof(void*));
 					assert(tex);
 					auto image = sf::Image{};
-                    image.create(unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight), reinterpret_cast<sf::Uint8*>(data->textureFileDatas));
+					image.create({ unsigned_cast(data->textureWidth), unsigned_cast(data->textureHeight) }, reinterpret_cast<std::uint8_t*>(data->textureFileDatas));
 					resources::texture_functions::load_from_image(*tex, image);
 					data->textureID = tex;
 					delete[] data->textureFileDatas;

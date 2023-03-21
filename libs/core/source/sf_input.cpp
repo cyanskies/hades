@@ -250,7 +250,7 @@ namespace hades
 		interpreter_map.insert({ "semicolon", keyboard<sf::Keyboard::Semicolon>() });
 		interpreter_map.insert({ "comma", keyboard<sf::Keyboard::Comma>() });
 		interpreter_map.insert({ "period", keyboard<sf::Keyboard::Period>() });
-		interpreter_map.insert({ "quote", keyboard<sf::Keyboard::Quote>() });
+		interpreter_map.insert({ "quote", keyboard<sf::Keyboard::Apostrophe>()});
 		interpreter_map.insert({ "slash", keyboard<sf::Keyboard::Slash>() });
 		interpreter_map.insert({ "backslash", keyboard<sf::Keyboard::Backslash>() });
 		//i.insert({ "tilde", keyboard<sf::Keyboard::Tilde>() }); // Reserved for engine usage

@@ -16,7 +16,7 @@ namespace hades
 			: _stream{ std::move(strm) }
 		{
 			_stream.seekg({}, std::ios_base::end);
-			_size = integer_cast<sf::Int64>(static_cast<std::streamoff>(_stream.tellg()));
+			_size = integer_cast<std::int64_t>(static_cast<std::streamoff>(_stream.tellg()));
 			_stream.seekg({}, std::ios_base::beg);
 			return;
 		}
@@ -26,7 +26,7 @@ namespace hades
 			: sf_stream_wrapper{ Stream{ std::forward<Args>(args)... } }
 		{}
 
-		sf::Int64 read(void* data, sf::Int64 size) noexcept final override 
+		std::int64_t read(void* data, std::int64_t size) noexcept final override 
 		{
 			try
 			{
@@ -41,7 +41,7 @@ namespace hades
 			return _stream.gcount();
 		}
 
-		sf::Int64 seek(sf::Int64 position) noexcept final override
+		std::int64_t seek(std::int64_t position) noexcept final override
 		{
 			try
 			{
@@ -56,7 +56,7 @@ namespace hades
 			return tell();
 		}
 
-		sf::Int64 tell() noexcept final override
+		std::int64_t tell() noexcept final override
 		{
 			try
 			{
@@ -69,7 +69,7 @@ namespace hades
 			}
 		}
 
-		sf::Int64 getSize() noexcept final override
+		std::int64_t getSize() noexcept final override
 		{
 			return _size;
 		}
@@ -80,9 +80,9 @@ namespace hades
 		}
 
 	private:
-		static constexpr sf::Int64 errorval = -1;
+		static constexpr std::int64_t errorval = -1;
 		Stream _stream;
-		sf::Int64 _size;
+		std::int64_t _size;
 	};
 
 	using sf_resource_stream = sf_stream_wrapper<irfstream>;

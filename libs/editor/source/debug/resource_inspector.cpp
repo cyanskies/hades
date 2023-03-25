@@ -773,6 +773,7 @@ namespace hades::data
 				return;
 			});
 		}
+
 		void _make_file_dialog()
 		{
 			_file_dialog.OpenDialog(_dialog_title, _file_type_name,

@@ -3,11 +3,13 @@
 
 #include "SFML/System/InputStream.hpp"
 
-#include "hades/files.hpp"
-#include "hades/logging.hpp"
+#include "hades/logging.hpp" // log_error
+#include "hades/utility.hpp" // integer_cast
 
 namespace hades
 {
+	// Wrap any stream which implements the cpp std stream interface
+	// so that they can be used by any SFML functions that use streams.
 	template<typename Stream>
 	class sf_stream_wrapper final : public sf::InputStream
 	{
@@ -30,7 +32,7 @@ namespace hades
 		{
 			try
 			{
-                _stream.read(static_cast<irfstream::char_type*>(data), integer_cast<std::streamsize>(size));
+                _stream.read(static_cast<Stream::char_type*>(data), integer_cast<std::streamsize>(size));
 			}
 			catch (const std::exception& e)
 			{
@@ -84,8 +86,6 @@ namespace hades
 		Stream _stream;
 		std::int64_t _size;
 	};
-
-	using sf_resource_stream = sf_stream_wrapper<irfstream>;
 }
 
 #endif // !HADES_SF_STREAMS_HPP

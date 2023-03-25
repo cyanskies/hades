@@ -6,6 +6,7 @@
 #include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
+#include "hades/files.hpp"
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
 #include "hades/sf_color.hpp"
@@ -259,12 +260,13 @@ namespace hades
 		using namespace std::string_literals;
 		if (!tex.source.empty() && tex.source_mod)
 		{
-			//  the mod not being available should be 'impossible'
+			// The mod not being available should be 'impossible'
+			// If it throws we won't catch it.
 			const auto& mod = d.get_mod(tex.source_mod);
 
 			try
 			{
-				auto fstream = sf_resource_stream{ mod.source, tex.source };
+				auto fstream = sf_stream_wrapper<irfstream>{ mod.source, tex.source };
 				auto sb = std::stringbuf{};
 				const auto prev = sf::err().rdbuf(&sb);
 				const auto f = make_finally([prev]() noexcept {

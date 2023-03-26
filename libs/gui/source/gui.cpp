@@ -178,7 +178,7 @@ namespace hades
 			return false;
 		case sf::Event::MouseMoved:
 			io.AddMousePosEvent(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
-			return false; // TODO: maybe return io.WantCaptureMouse;
+			return io.WantCaptureMouse;
 		case sf::Event::MouseButtonPressed:
 			[[fallthrough]];
 		case sf::Event::MouseButtonReleased:

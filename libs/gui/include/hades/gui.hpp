@@ -310,8 +310,8 @@ namespace hades
 		bool arrow_button(std::string_view label, direction);
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector2 size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
-		bool image_button(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
-		bool image_button(const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
+		bool image_button(std::string_view id, const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
+		bool image_button(std::string_view id, const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool checkbox(std::string_view label, bool& checked); //returns true on checked changed
 		//checkbox_flags
 		bool radio_button(std::string_view label, bool active);
@@ -530,7 +530,7 @@ namespace hades
 		bool main_toolbar_begin();
 		void main_toolbar_end();
 		bool toolbar_button(std::string_view);
-		bool toolbar_button(const resources::animation&);
+		bool toolbar_button(std::string_view, const resources::animation&);
 		void toolbar_separator();
 
 		//tooltips

@@ -112,10 +112,10 @@ namespace hades
 			};
 
 			assert(t.tex);
-
+			using namespace std::string_view_literals;
 			//need to push a prefix to avoid the id clashing from the same texture
 			g.push_id(&t);
-			if (g.image_button(*t.tex, tex_coords, button_size))
+			if (g.image_button("###tile_button"sv, * t.tex, tex_coords, button_size))
 				std::invoke(on_click, &t);
 			g.pop_id();
 

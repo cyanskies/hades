@@ -249,7 +249,7 @@ namespace hades
 
 			g.push_id(&*o);
 			if (const auto ico = get_editor_icon(*o); ico)
-				clicked = g.image_button(*ico, button_size);	
+				clicked = g.image_button("###obj_button"sv, * ico, button_size);
 			else
 				clicked = g.button(name, button_size_no_img);
 			g.pop_id();

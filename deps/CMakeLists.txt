@@ -45,6 +45,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # C++ source files
 set(IMGUI_SRC
+	./imconfig.hpp
 	./imgui/imconfig.h
 	./imgui/imgui.cpp
 	./imgui/imgui.h
@@ -70,6 +71,8 @@ set_target_properties(${IMGUI_LIB} PROPERTIES DEBUG_POSTFIX -s-d)
 set_target_properties(${IMGUI_LIB} PROPERTIES RELEASE_POSTFIX -s)
 
 target_include_directories(${IMGUI_LIB} PUBLIC ./imgui)
+target_compile_definitions(${IMGUI_LIB} PUBLIC IMGUI_USER_CONFIG="../imconfig.hpp")
+
 
 # Install (use "bin" folder for DLL, "lib" for SO files)
 install(TARGETS ${IMGUI_LIB}

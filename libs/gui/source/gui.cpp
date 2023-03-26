@@ -198,10 +198,10 @@ namespace hades
 			if (k != ImGuiKey_COUNT)
 			{
 				io.AddKeyEvent(k, e.type == sf::Event::KeyPressed);
-				io.AddKeyEvent(ImGuiKey_ModCtrl, e.key.control);
-				io.AddKeyEvent(ImGuiKey_ModShift, e.key.shift);
-				io.AddKeyEvent(ImGuiKey_ModAlt, e.key.alt);
-				io.AddKeyEvent(ImGuiKey_ModSuper, e.key.system);
+				io.AddKeyEvent(ImGuiMod_Ctrl, e.key.control);
+				io.AddKeyEvent(ImGuiMod_Shift, e.key.shift);
+				io.AddKeyEvent(ImGuiMod_Alt, e.key.alt);
+				io.AddKeyEvent(ImGuiMod_Super, e.key.system);
 			}
 			return io.WantCaptureKeyboard;
 		}
@@ -317,13 +317,13 @@ namespace hades
 	bool gui::window_begin(std::string_view name, bool &closed, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::Begin(to_string(name).data(), &closed, static_cast<ImGuiWindowFlags>(flags));
+		return ImGui::Begin(name, &closed, static_cast<ImGuiWindowFlags>(flags));
 	}
 
 	bool gui::window_begin(std::string_view name, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::Begin(to_string(name).data(), nullptr, static_cast<ImGuiWindowFlags>(flags));;
+		return ImGui::Begin(name, nullptr, static_cast<ImGuiWindowFlags>(flags));;
 	}
 
 	void gui::window_end()
@@ -335,7 +335,7 @@ namespace hades
 	bool gui::child_window_begin(std::string_view name, vector2 size, bool border, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::BeginChild(to_string(name).data(), { size.x, size.y }, border, static_cast<ImGuiWindowFlags>(flags));
+		return ImGui::BeginChild(name, { size.x, size.y }, border, static_cast<ImGuiWindowFlags>(flags));
 	}
 
 	void gui::child_window_end()
@@ -549,8 +549,7 @@ namespace hades
 	{
 		_active_assert();
 		assert(!std::empty(s));
-        auto *last = &*(std::prev(std::end(s)));
-		ImGui::PushID(&*std::begin(s), ++last);
+        ImGui::PushID(s);
 	}
 
 	void gui::push_id(int32 i)
@@ -574,7 +573,7 @@ namespace hades
 	void gui::text(std::string_view s)
 	{
 		_active_assert();
-		ImGui::TextUnformatted(s.data(), s.data() + s.size());
+		ImGui::TextUnformatted(s);
 	}
 
 	void gui::text_coloured(std::string_view s, const sf::Color &c)
@@ -606,7 +605,9 @@ namespace hades
 	void gui::text_wrapped(std::string_view s)
 	{
         _active_assert();
-        ImGui::TextWrapped(to_string(s).data());
+		ImGui::PushTextWrapPos();
+        ImGui::TextUnformatted(s);
+		ImGui::PopTextWrapPos();
 		return;
 	}
 
@@ -620,25 +621,25 @@ namespace hades
 	bool gui::button(std::string_view label, const vector2 &size)
 	{
 		_active_assert();
-		return ImGui::Button(to_string(label).data(), { size.x, size.y });
+		return ImGui::Button(label, { size.x, size.y });
 	}
 
 	bool gui::small_button(std::string_view label)
 	{
 		_active_assert();
-		return ImGui::SmallButton(to_string(label).data());
+		return ImGui::SmallButton(label);
 	}
 
 	bool gui::invisible_button(std::string_view label, const vector2 & size)
 	{
 		_active_assert();
-		return ImGui::InvisibleButton(to_string(label).data(), { size.x, size.y });
+		return ImGui::InvisibleButton(label, { size.x, size.y });
 	}
 
 	bool gui::arrow_button(std::string_view label, direction d)
 	{
 		_active_assert();
-		return ImGui::ArrowButton(to_string(label).data(), static_cast<ImGuiDir>(d));
+		return ImGui::ArrowButton(label, static_cast<ImGuiDir>(d));
 	}
 
 	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour, const sf::Color &border_colour)
@@ -712,7 +713,9 @@ namespace hades
 		return;
 	}
 
-	bool gui::image_button(const resources::texture &texture, const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour, const sf::Color &tint_colour)
+	bool gui::image_button(std::string_view id, const resources::texture &texture,
+		const rect_float &text_coords, const vector2 &size, const sf::Color &background_colour,
+		const sf::Color &tint_colour)
 	{
 		_active_assert();
 
@@ -724,16 +727,15 @@ namespace hades
 		namespace tex = resources::texture_functions;
 		const auto [tex_width, tex_height] = tex::get_size(texture);
 
-		return ImGui::ImageButton(const_cast<resources::texture*>(&texture), //ImGui only accepts these as non-const void* 
+		return ImGui::ImageButton(id, &texture, 
 			{ size.x, size.y },
 			{ x / tex_width, y / tex_height }, // normalised coords
 			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
-			-1, // frame padding
 			to_imvec4(background_colour),
 			to_imvec4(tint_colour));
 	}
 
-	bool gui::image_button(const resources::animation &a, const vector2 &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
+	bool gui::image_button(std::string_view id, const resources::animation &a, const vector2 &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
 	{
 		_active_assert();
 		const auto& f = animation::get_frame(a, time);
@@ -742,15 +744,15 @@ namespace hades
 
 		//push the animation address, so that animations with the same texture
 		// dont have the same id
-		push_id(&a);
-		const auto result = image_button(
+		//push_id(&a);
+		const auto result = image_button(id,
 			*texture,
 			rect_float{ f.x, f.y, f.w, f.h },
 			size,
 			background_colour,
 			tint_colour
 		);
-		pop_id();
+		//pop_id();
 
 		return result;
 	}
@@ -758,13 +760,13 @@ namespace hades
 	bool gui::checkbox(std::string_view label, bool &checked)
 	{
 		_active_assert();
-		return ImGui::Checkbox(to_string(label).data(), &checked);
+		return ImGui::Checkbox(label, &checked);
 	}
 
 	bool gui::radio_button(std::string_view label, bool active)
 	{
 		_active_assert();
-		return ImGui::RadioButton(to_string(label).data(), active);
+		return ImGui::RadioButton(label, active);
 	}
 
 	void gui::progress_bar(float progress, const vector2 &size)
@@ -776,7 +778,7 @@ namespace hades
 	void gui::progress_bar(float progress, std::string_view overlay_text, const vector2 & size)
 	{
 		_active_assert();
-		ImGui::ProgressBar(progress, { size.x, size.y }, to_string(overlay_text).data());
+		ImGui::ProgressBar(progress, { size.x, size.y }, overlay_text);
 	}
 
 	void gui::bullet()
@@ -788,19 +790,19 @@ namespace hades
 	bool gui::selectable(std::string_view label, bool selected, selectable_flag flag, const vector2 & size)
 	{
 		_active_assert();
-		return ImGui::Selectable(to_string(label).data(), selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
+		return ImGui::Selectable(label, selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
 	}
 
 	bool gui::selectable_easy(std::string_view label, bool &selected, selectable_flag flag, const vector2 & size)
 	{
 		_active_assert();
-		return ImGui::Selectable(to_string(label).data(), &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
+		return ImGui::Selectable(label, &selected, static_cast<ImGuiSelectableFlags>(flag), { size.x, size.y });
 	}
 
 	bool gui::combo_begin(std::string_view l, std::string_view preview_value, combo_flags f)
 	{
 		_active_assert();
-		return ImGui::BeginCombo(to_string(l).data(), to_string(preview_value).data(), static_cast<ImGuiComboFlags>(f));
+		return ImGui::BeginCombo(l, preview_value, static_cast<ImGuiComboFlags>(f));
 	}
 
 	void gui::combo_end()
@@ -812,7 +814,7 @@ namespace hades
 	bool gui::listbox_begin(std::string_view label, const vector2& size)
 	{
 		_active_assert();
-		return ImGui::BeginListBox(to_string(label).data(), { size.x, size.y });
+		return ImGui::BeginListBox(label, { size.x, size.y });
 	}
 
 	void gui::listbox_end()
@@ -825,19 +827,22 @@ namespace hades
 	bool gui::slider_float(std::string_view label, float& v, float min, float max, slider_flags flags, std::string_view format)
 	{
 		_active_assert();
-		return ImGui::SliderFloat(to_string(label).c_str(), &v, min, max, to_string(format).c_str(), enum_type(flags));
+		// FIXME: Format params don't support string_view
+		return ImGui::SliderFloat(label, &v, min, max, to_string(format).c_str(), enum_type(flags));
 	}
 
 	bool gui::slider_int(std::string_view label, int& v, int min, int max, slider_flags flags, std::string_view format)
 	{
 		_active_assert();
-		return ImGui::SliderInt(to_string(label).c_str(), &v, min, max, to_string(format).c_str(), enum_type(flags));
+		// FIXME: Format params don't support string_view
+		return ImGui::SliderInt(label, &v, min, max, to_string(format).c_str(), enum_type(flags));
 	}
 
 	bool gui::input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size, input_text_flags f)
 	{
 		_active_assert();
-		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, { size.x, size.y }, static_cast<ImGuiInputTextFlags>(f));
+		// FIXME: imgui_stdlib.h doesn't support ImStrv yet 
+		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));
 	}
 
 	void gui::colour_editor_options(colour_edit_settings s)
@@ -853,7 +858,7 @@ namespace hades
 			return col / 255.f;
 		});
 
-		const auto r = ImGui::ColorPicker3(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
+		const auto r = ImGui::ColorPicker3(label, float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
 			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col) noexcept ->uint8 {
@@ -871,7 +876,7 @@ namespace hades
 			return col / 255.f;
 		});
 
-		const auto r = ImGui::ColorPicker4(to_string(label).data(), float_col.data(), static_cast<ImGuiColorEditFlags>(f));
+		const auto r = ImGui::ColorPicker4(label, float_col.data(), static_cast<ImGuiColorEditFlags>(f));
 		if (r)
 		{
 			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)noexcept->uint8 {
@@ -897,13 +902,13 @@ namespace hades
 	bool gui::collapsing_header(std::string_view s, tree_node_flags f)
 	{
 		_active_assert();
-		return ImGui::CollapsingHeader(to_string(s).data(), static_cast<ImGuiTreeNodeFlags>(f));
+		return ImGui::CollapsingHeader(s, static_cast<ImGuiTreeNodeFlags>(f));
 	}
 
 	bool gui::collapsing_header(std::string_view s, bool &open, tree_node_flags f)
 	{
 		_active_assert();
-		return ImGui::CollapsingHeader(to_string(s).data(), &open, static_cast<ImGuiTreeNodeFlags>(f));
+		return ImGui::CollapsingHeader(s, &open, static_cast<ImGuiTreeNodeFlags>(f));
 	}
 
 	void gui::set_next_item_open(bool is_open, set_condition_enum e)
@@ -942,7 +947,7 @@ namespace hades
 	bool gui::menu_begin(std::string_view s, bool enabled)
 	{
 		_active_assert();
-		return ImGui::BeginMenu(to_string(s).data(), enabled);
+		return ImGui::BeginMenu(s, enabled);
 	}
 
 	void gui::menu_end()
@@ -954,13 +959,13 @@ namespace hades
 	bool gui::menu_item(std::string_view l, bool enabled)
 	{
 		_active_assert();
-		return ImGui::MenuItem(to_string(l).data(), nullptr, false, enabled);
+		return ImGui::MenuItem(l, nullptr, false, enabled);
 	}
 
 	bool gui::menu_toggle_item(std::string_view l, bool &selected, bool enabled)
 	{
 		_active_assert();
-		ImGui::MenuItem(to_string(l).data(), nullptr, &selected, enabled);
+		ImGui::MenuItem(l, nullptr, &selected, enabled);
 		return false;
 	}
 
@@ -1002,12 +1007,12 @@ namespace hades
 		return result;
 	}
 
-	bool gui::toolbar_button(const resources::animation &a)
+	bool gui::toolbar_button(std::string_view id, const resources::animation &a)
 	{
 		_active_assert();
 		_toolbar_layout_next();
 
-		const auto result = image_button(a, toolbar_button_size);
+		const auto result = image_button(id, a, toolbar_button_size);
 		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 		return result;
 	}
@@ -1038,20 +1043,20 @@ namespace hades
 	{
 		_active_assert();
 		if(is_item_hovered())
-            ImGui::SetTooltip(to_string(s).data());
+            ImGui::SetTooltip(to_string(s).c_str()); // FIXME: fmt strings aren't string view
         return;
 	}
 
 	void gui::open_popup(std::string_view s)
 	{
 		_active_assert();
-		ImGui::OpenPopup(to_string(s).data());
+		ImGui::OpenPopup(s);
 	}
 
 	void gui::popup_begin(std::string_view s)
 	{
 		_active_assert();
-		ImGui::BeginPopup(to_string(s).data());
+		ImGui::BeginPopup(s);
 	}
 
 	void gui::popup_end()
@@ -1074,7 +1079,7 @@ namespace hades
 	bool gui::modal_begin(std::string_view s, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::BeginPopupModal(to_string(s).data(), nullptr, static_cast<ImGuiWindowFlags>(flags));
+		return ImGui::BeginPopupModal(s, nullptr, static_cast<ImGuiWindowFlags>(flags));
 	}
 
 	void gui::modal_end()
@@ -1091,7 +1096,7 @@ namespace hades
 		const vector2& outer_size, float inner_width)
 	{
 		_active_assert();
-		return ImGui::BeginTable(to_string(str_id).data(), column, enum_type(flags),
+		return ImGui::BeginTable(str_id, column, enum_type(flags),
 			{ outer_size.x, outer_size.y }, inner_width);
 	}
 
@@ -1105,7 +1110,7 @@ namespace hades
 	void gui::table_setup_column(std::string_view label, table_column_flags flags, float init_width_or_weight/*, ImGuiID user_id*/)
 	{
 		_active_assert();
-		ImGui::TableSetupColumn(to_string(label).c_str(), enum_type(flags), init_width_or_weight);
+		ImGui::TableSetupColumn(label, enum_type(flags), init_width_or_weight);
 		return;
 	}
 
@@ -1167,7 +1172,7 @@ namespace hades
 	{
 		_active_assert();
 		const auto int_count = integer_cast<int>(count);
-		ImGui::Columns(int_count, to_string(id).data(), border);
+		ImGui::Columns(int_count, id, border);
 	}
 
 	void gui::columns_next()
@@ -1296,7 +1301,7 @@ namespace hades
 	gui::vector2 gui::calculate_text_size(std::string_view s, bool include_text_after_double_hash, float wrap_width)
 	{
 		_active_assert();
-		const auto v = ImGui::CalcTextSize(s.data(), s.data() + s.size(), !include_text_after_double_hash, wrap_width);
+		const auto v = ImGui::CalcTextSize(s, !include_text_after_double_hash, wrap_width);
 		return { v.x, v.y };
 	}
  
@@ -1594,7 +1599,7 @@ namespace hades
 
 	void gui_input_text_callback::insert_chars(int pos, std::string_view text)
 	{
-		_data->InsertChars(pos, text.data(), text.data() + text.size());
+		_data->InsertChars(pos, text);
 		return;
 	}
 

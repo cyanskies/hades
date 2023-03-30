@@ -354,7 +354,7 @@ namespace hades
 		}
 		w.end_sequence();
 
-		w.write(map_str, ""sv);
+		w.write(map_str);
 		w.start_sequence();
 		for (const auto t : m.tiles)
 			w.write(t);

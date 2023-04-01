@@ -80,10 +80,6 @@ namespace hades
 		_backdrop.setFillColor(background_colour);
 	}
 
-	void mission_editor_t::resume()
-	{
-	}
-
 	mission_editor_t::get_players_return_type mission_editor_t::get_players() const
 	{
 		auto out = detail::level_editor_impl::get_players_return_type{};
@@ -690,13 +686,39 @@ namespace hades
 	{
 		const auto f = files::read_file(p);
 		if (empty(f))
-			return;//TODO: unable to find or read file
+			return;//TODO: unable to find or read file gui message
 
 		auto m = deserialise_mission(f);
 		_mission_name = std::move(m.name);
 		_mission_desc = std::move(m.description);
 
 		_players = std::move(m.players);
+
+		_objects.objects = m.objects.objects;
+		_objects.next_id = m.objects.next_id;
+
+		// iterate over objects and record the names into _objects.names
+		for (const auto& obj : _objects.objects)
+		{
+			//if the object has a name then try and apply it
+			const auto& name = obj.name_id;
+			if (!empty(name))
+			{
+				//try and record the objects name
+				auto [name_iter, name_already_used] = _objects.entity_names.try_emplace(name, obj.id);
+				std::ignore = name_iter;
+
+				//log error if duplicate names
+				if (!name_already_used)
+				{
+					// TODO: gui message, unload level?
+					using namespace std::string_literals;
+					const auto msg = "error loading level, name: "s + name
+						+ " has already been used by another entity"s;
+					log_error(msg);
+				}
+			}
+		}
 
 		_levels.clear();
 		for (auto& l : m.external_levels)

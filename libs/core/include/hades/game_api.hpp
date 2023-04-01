@@ -92,6 +92,8 @@ namespace hades
 	namespace game::level
 	{
 		void restore_level() noexcept; //restores the origional level (the level set here when the system was called)
+		unique_id current_level() noexcept;
+		// TODO: report failure(only levels that are connected to by a player can be accessed)
 		void switch_level(unique_id); // switches to requested level
 		void switch_to_mission() noexcept; // switches to mission
 
@@ -148,7 +150,9 @@ namespace hades
 			const tag_list& get_tags(object_ref);
 
 			//NOTE: this isn't a curve anymore
-			bool is_alive(object_ref) noexcept;
+			bool is_alive(object_ref&) noexcept;
+			bool is_alive(const object_ref&) noexcept;
+
 
 			// common curves
 			linear_curve<vec2_float>& get_position(object_ref);

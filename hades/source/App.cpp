@@ -753,7 +753,7 @@ namespace hades
 #ifdef HADES_QUICK_EXIT
 		_states.drop(); // destroy gamestates, so they can call shutdown funcs
 		_gui.reset(); // destroy gui so it calls shutdown funcs
-		std::exit(EXIT_SUCCESS);
+		std::quick_exit(EXIT_SUCCESS);
 #else
 		_window.close();
 		return;

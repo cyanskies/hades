@@ -490,7 +490,7 @@ namespace hades::resources::object_functions
 			}, def, v);
 	}
 
-	void add_curve(object& o, unique_id i, curve_default_value v)
+	void add_curve(object& o, unique_id i, std::optional<curve_default_value> v)
 	{
 		const auto c = data::get<resources::curve>(i);
 		
@@ -502,27 +502,39 @@ namespace hades::resources::object_functions
 
 			if (iter == end(o.curves))
 			{
-				auto value = to_unloaded_curve(*c, v);
 				auto& d = data::detail::get_data_manager();
-				o.curves.emplace_back(object::unloaded_curve{
-					d.make_resource_link<curve>(i, o.id),
-					std::move(value)
-					});
+				if (v.has_value())
+				{
+					auto value = to_unloaded_curve(*c, *v);
+					o.curves.emplace_back(object::unloaded_curve{
+						d.make_resource_link<curve>(i, o.id),
+						std::move(value)
+						});
+				}
+				else
+				{
+					o.curves.emplace_back(object::unloaded_curve{
+						d.make_resource_link<curve>(i, o.id), {}				
+						});
+				}
 			}
 		}
 
 		if (!o.loaded)
 			return;
 
-		// check object all curves
-		auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
-            return other == c.curve_ptr;
-			});
+		if (v.has_value())
+		{
+			// check object all curves
+			auto iter = std::find_if(begin(o.all_curves), end(o.all_curves), [other = c](auto&& c) {
+				return other == c.curve_ptr;
+				});
 
-		if (iter == end(o.all_curves))
-            o.all_curves.emplace_back( std::move(v), c, unique_zero);
-		else
-			iter->value = std::move(v);
+			if (iter == end(o.all_curves))
+				o.all_curves.emplace_back(std::move(*v), c, unique_zero);
+			else
+				iter->value = std::move(*v);
+		}
 
 		return;
 	}

@@ -168,6 +168,7 @@ namespace hades
 	}	
 
 	static system_job_data* game_data_ptr = nullptr;
+	static unique_id game_current_level_id = {};
 	static game_interface* game_current_level_ptr = nullptr;
 	static system_behaviours<game_system>* game_current_level_system_ptr = nullptr;
 
@@ -175,6 +176,7 @@ namespace hades
 	{
 		assert(d);
 		game_data_ptr = d;
+		game_current_level_id = d->level_id;
 		game_current_level_ptr = d->level_data;
 		game_current_level_system_ptr = d->systems;
 		return;
@@ -197,6 +199,11 @@ namespace hades
 			return game_data_ptr;
 		}
 
+		unique_id get_game_level_id() noexcept
+		{
+			return game_current_level_id;
+		}
+
 		game_interface* get_game_level_ptr() noexcept
 		{
 			assert(game_current_level_ptr);
@@ -209,9 +216,10 @@ namespace hades
 			return game_current_level_system_ptr;
 		}
 
-		void change_level(game_interface* g) noexcept
+		void change_level(game_interface* g, unique_id id) noexcept
 		{
 			assert(g);
+			game_current_level_id = id;
 			game_current_level_ptr = g;
 		}
 

@@ -76,21 +76,26 @@ namespace hades
 		void restore_level() noexcept
 		{
 			auto ptr = detail::get_game_data_ptr();
-			detail::change_level(ptr->level_data);
+			detail::change_level(ptr->level_data, ptr->level_id);
 			return;
+		}
+
+		unique_id current_level() noexcept
+		{
+			return detail::get_game_level_id();
 		}
 
 		void switch_level(unique_id id)
 		{
 			auto ptr = detail::get_game_data_ptr();
-			detail::change_level(std::invoke(ptr->get_level, id));
+			detail::change_level(std::invoke(ptr->get_level, id), id);
 			return;
 		}
 
 		void switch_to_mission() noexcept
 		{
 			auto ptr = detail::get_game_data_ptr();
-			detail::change_level(ptr->mission_data);
+			detail::change_level(ptr->mission_data, {});
 			return;
 		}
 
@@ -162,11 +167,17 @@ namespace hades
 			return resources::object_functions::get_tags(*obj.object_type);
 		}
 
-		bool is_alive(object_ref o) noexcept
+		bool is_alive(object_ref& o) noexcept
 		{
 			auto ptr = hades::detail::get_game_level_ptr();
 			// NOTE: get_object_ptr returns nullptr for stale object refs
 			return state_api::get_object_ptr(o, ptr->get_extras()) != nullptr;
+		}
+
+		bool is_alive(const object_ref& o) noexcept
+		{
+			auto obj = o;
+			return is_alive(obj);
 		}
 
 		linear_curve<vec2_float>& get_position(object_ref o)

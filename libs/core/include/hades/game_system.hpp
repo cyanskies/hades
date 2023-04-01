@@ -235,6 +235,7 @@ namespace hades
 		//level data interface:
 		// contains units, particles, buildings, terrain
 		// per level quests and objectives
+		unique_id level_id = {}; // currently open level id
 		game_interface *level_data = nullptr; // <- currently open level
 		//mission data interface
 		game_interface *mission_data = nullptr;
@@ -282,12 +283,11 @@ namespace hades
 
 	namespace detail
 	{
-		//TODO: functions to swap current level
-		//		these would be for examining state of another area
 		system_job_data* get_game_data_ptr() noexcept;
+		unique_id get_game_level_id() noexcept;
 		game_interface* get_game_level_ptr() noexcept;
 		system_behaviours<game_system>* get_game_systems_ptr() noexcept;
-		void change_level(game_interface*) noexcept;
+		void change_level(game_interface*, unique_id) noexcept;
 		render_job_data* get_render_data_ptr() noexcept;
 		const common_interface* get_render_level_ptr() noexcept;
 		extra_state<render_system>* get_render_extra_ptr() noexcept;

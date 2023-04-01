@@ -51,8 +51,7 @@ namespace hades
 		void update(time_duration dt, const sf::RenderTarget& t, input_system::action_set a) override;
 		void draw(sf::RenderTarget&, time_duration) override;
 		void reinit() override;
-		void resume() override;
-
+		
 		using get_players_return_type = detail::level_editor_impl::get_players_return_type;
 		get_players_return_type get_players() const;
 		

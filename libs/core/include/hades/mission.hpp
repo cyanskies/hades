@@ -68,7 +68,9 @@ namespace hades
 		time_point time;
 	};
 
+	// TODO: straight to writer
 	string serialise(const mission&);
+	// TODO: straight from parser
 	mission deserialise_mission(std::string_view);
 
 	mission_save make_save_from_mission(mission l);

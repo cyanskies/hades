@@ -91,7 +91,7 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 	app.init(game, resource_fn);
 
 #ifdef HADES_QUICK_EXIT
-	std::atexit(try_write_log);
+	std::at_quick_exit(try_write_log);
 #endif
 
 	try

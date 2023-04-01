@@ -25,11 +25,13 @@ namespace hades
 			: _game{ sv, get_game_interface(*server), get_players(*server) }, _server(server)
 		{}
 
-		void tick(time_duration dt, const std::vector<player_data>* p)
+		void tick(time_duration dt, unique_id level_id, const std::vector<player_data>* p, system_job_data::get_level_fn get_level)
 		{
 			auto data = system_job_data{ _level_time + dt, &_game.get_extras(), &_game.get_systems() };
+			data.get_level = get_level;
 			data.dt = dt;
 			data.players = p;
+			data.level_id = level_id;
 			data.level_data = &_game;
 			data.mission_data = get_game_interface(*_server);
 			_level_time = update_level(std::move(data), _game);
@@ -86,6 +88,9 @@ namespace hades
 		mutable time_point _last_update_time;
 	};
 
+	// used to implement get_level
+	static local_server_hub* local_server = {};
+
 	//TODO: handle advertising local network and accepting connections from remote_server_hubs
 	class local_server_hub final : public server_hub
 	{
@@ -112,11 +117,16 @@ namespace hades
 				throw server_error{ "no player slot" };
 
 			//TODO: init the _mission_instance
-			//	on_load and so on.
+			//	call on_load and so on.
 			auto mission_sv = level_save{};
 			mission_sv.objects = _mission.objects;
 			_mission_instance.emplace(mission_sv, nullptr, &_players);
 
+			// update the object ptrs for the players
+			for (auto& p : _players)
+				std::ignore = state_api::get_object(p.player_object, _mission_instance->get_extras());
+
+			// store the levels
 			for (auto& l : _mission.level_saves)
 				_levels.emplace_back(level{ l.name, local_server_level{ l.save, this } });
 		}
@@ -128,8 +138,16 @@ namespace hades
 			_mission_time += dt;
 			//tick all the level contructs
 			//they will give accesss to the mission construct as well.
+			local_server = this;
+
+			constexpr auto get_level = [](unique_id lvl) noexcept {
+				return local_server->find_level(lvl);
+			};
+
 			for(auto &l : _levels)
-				l.instance.tick(dt, &_players);
+				l.instance.tick(dt, l.id, &_players, get_level);
+
+			local_server = {};
 		}
 
 		time_point get_time() const noexcept override
@@ -181,6 +199,12 @@ namespace hades
 		mission get_mission() override
 		{
 			return _mission.source;
+		}
+
+		game_interface* find_level(unique_id id) noexcept
+		{
+			const auto out = std::ranges::find(_levels, id, &local_server_hub::level::id);
+			return out == end(_levels) ? nullptr : out->instance.try_get_game_interface();
 		}
 
 		server_level* connect_to_level(unique_id id) override

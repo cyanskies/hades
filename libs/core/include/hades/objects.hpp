@@ -115,7 +115,7 @@ namespace hades::resources::object_functions
 	// modifying curves
 	// add curve to object, overriding inherited values
 	// or update the default value for this curve.
-	void add_curve(object&, unique_id, curve_default_value);
+	void add_curve(object&, unique_id, std::optional<curve_default_value> = {});
 	bool has_curve(const object& o, const curve& c) noexcept;
 	bool has_curve(const object& o, unique_id) noexcept;
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve

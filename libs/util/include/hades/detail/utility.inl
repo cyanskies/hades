@@ -6,8 +6,7 @@
 
 namespace hades
 {
-	template<typename Float>
-		requires std::floating_point<Float>
+	template<std::floating_point Float>
 	constexpr Float lerp(Float a, Float b, Float t) noexcept
 	{
 		#ifdef __cpp_lib_interpolate
@@ -28,7 +27,7 @@ namespace hades
 
 	//based on logic from
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	template<std::floating_point Float>
 	inline bool float_near_equal(Float a, Float b, int32 ulp) noexcept
 	{
         return std::abs(a - b) <= std::numeric_limits<Float>::epsilon() * std::abs(a + b) * float_cast(ulp)
@@ -36,25 +35,25 @@ namespace hades
 			|| std::abs(a - b) < std::numeric_limits<Float>::min();
 	}
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	template<std::floating_point Float>
 	bool float_rounded_equal(Float a, Float b, detail::round_nearest_t) noexcept
 	{
 		return std::round(a) == std::round(b);
 	}
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	template<std::floating_point Float>
 	bool float_rounded_equal(Float a, Float b, detail::round_down_t) noexcept
 	{
 		return std::floor(a) == std::floor(b);
 	}
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	template<std::floating_point Float>
 	bool float_rounded_equal(Float a, Float b, detail::round_up_t) noexcept
 	{
 		return std::ceil(a) == std::ceil(b);
 	}
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int>>
+	template<std::floating_point Float>
 	bool float_rounded_equal(Float a, Float b, detail::round_towards_zero_t) noexcept
 	{
 		return std::trunc(a) == std::trunc(b);
@@ -62,7 +61,7 @@ namespace hades
 
 	namespace detail
 	{
-		template<typename Integral, typename Float, typename T>
+		template<std::integral Integral, std::floating_point Float, rounding_tag T>
 		constexpr Integral integral_do_cast(Float f, T) noexcept
 		{
 			static_assert(is_round_tag_v<T>);
@@ -77,49 +76,40 @@ namespace hades
 		}
 	}
 
-	template<typename Integral, typename Float, typename RoundingTag, 
-		std::enable_if_t<std::is_integral_v<Integral>
-		&& std::is_arithmetic_v<Float>
-		&& detail::is_round_tag_v<RoundingTag>, int>>
-	constexpr Integral integral_cast(Float f, RoundingTag t)
+	template<std::integral Integral, typename Ty, detail::rounding_tag RoundingTag>
+		requires std::is_arithmetic_v<Ty>
+	constexpr Integral integral_cast(Ty f, RoundingTag t)
 	{
-		if constexpr (std::is_integral_v<Float>)
+		if constexpr (std::is_integral_v<Ty>)
 			return integer_cast<Integral>(f);
 		else
 		{
-			if (f > static_cast<Float>(std::numeric_limits<Integral>::max()))
+			if (f > static_cast<Ty>(std::numeric_limits<Integral>::max()))
 				throw overflow_error{ "overflow_error value is larger than target type can hold" };
-			else if constexpr (std::is_signed_v<Integral>)
-			{
-				if (f < static_cast<Float>(std::numeric_limits<Integral>::min()))
-					throw overflow_error{ "overflow_error value is smaller than target type can hold" };
-			}
-			return detail::integral_do_cast<Integral>(f, t);
-		}
-	}
-	template<typename Integral, typename Float, typename RoundingTag, 
-		std::enable_if_t<std::is_integral_v<Integral>
-		&& std::is_arithmetic_v<Float>
-		&& detail::is_round_tag_v<RoundingTag>, int>>
-	constexpr Integral integral_clamp_cast(Float f, RoundingTag t) noexcept
-	{
-		if constexpr (std::is_integral_v<Float>)
-			return integer_clamp_cast<Integral>(f);
-		else
-		{
-			if (f > static_cast<Float>(std::numeric_limits<Integral>::max()))
-				return std::numeric_limits<Integral>::max();
-			else if constexpr (std::is_signed_v<Integral>)
-			{
-				if (f < static_cast<Float>(std::numeric_limits<Integral>::min()))
-					return std::numeric_limits<Integral>::min();
-			}
+			else if (f < static_cast<Ty>(std::numeric_limits<Integral>::min()))
+				throw overflow_error{ "overflow_error value is smaller than target type can hold" };
 			return detail::integral_do_cast<Integral>(f, t);
 		}
 	}
 
-	template<typename Float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
-		std::is_arithmetic_v<T>, int>>
+	template<std::integral Integral, typename Ty, detail::rounding_tag RoundingTag>
+		requires std::is_arithmetic_v<Ty>
+	constexpr Integral integral_clamp_cast(Ty f, RoundingTag t) noexcept
+	{
+		if constexpr (std::is_integral_v<Ty>)
+			return integer_clamp_cast<Integral>(f);
+		else
+		{
+			if (f > static_cast<Ty>(std::numeric_limits<Integral>::max()))
+				return std::numeric_limits<Integral>::max();
+			else if (f < static_cast<Ty>(std::numeric_limits<Integral>::min()))
+				return std::numeric_limits<Integral>::min();
+			return detail::integral_do_cast<Integral>(f, t);
+		}
+	}
+
+	template<std::floating_point Float, typename T>
+		requires std::is_arithmetic_v<T>
 	constexpr Float float_cast(T t)
 	{
 		// handle different float type sizes
@@ -135,8 +125,8 @@ namespace hades
 		return static_cast<Float>(t);
 	}
 
-	template<typename Float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
-		std::is_arithmetic_v<T>, int>>
+	template<std::floating_point Float, typename T>
+		requires std::is_arithmetic_v<T>
 	constexpr Float float_clamp_cast(T t) noexcept
 	{
 		// handle different float type sizes

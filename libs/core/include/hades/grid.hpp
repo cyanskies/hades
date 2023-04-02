@@ -23,12 +23,21 @@ namespace hades
 			float line_thickness{ 1.f };
 		};
 
+		grid() = default;
+
+		grid(grid_properties p)
+		{
+			set_all(p);
+			return;
+		}
+
 		void set_size(vector_float);
 		void set_cell_size(float);
 		void set_line_thickness(float);
 		void set_colour(colour);
 		void set_all(grid_properties);
 
+	protected:
 		void draw(sf::RenderTarget&, const sf::RenderStates& = sf::RenderStates{}) const override;
 
 	private:

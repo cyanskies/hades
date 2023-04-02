@@ -29,8 +29,6 @@ namespace hades::debug
 		};
 
 		auto new_output = console::new_output();
-		const auto has_new_output = !empty(new_output);
-		//_output.reserve(size(_output) + size(new_output));
 		std::move(begin(new_output), end(new_output), back_inserter(_output));
 
 		if (size(_output) > console::log_limit)
@@ -51,9 +49,10 @@ namespace hades::debug
 			if (g.child_window_begin(child_window_name, {0.f, -g.get_frame_height_with_spacing()},
 				true))
 			{
-				const auto auto_scroll = g.get_scroll_max_y() == g.get_scroll_y() && has_new_output;
+				const auto auto_scroll = g.get_scroll_max_y() == g.get_scroll_y();
 				const auto max_zero = g.get_scroll_max_y() == 0; //scrollbar doesnt exist yet
 				const auto verb = console::logger::log_verbosity{ _log_mode->load() };
+				auto has_new_output = false;
 				for (const auto& s : _output)
 				{
 					const auto message_verb = s.verbosity();
@@ -65,6 +64,8 @@ namespace hades::debug
 					else if (message_verb == mode::warning)
 						g.push_colour(gui::colour_target::text, sf::Color::Yellow);
 
+					has_new_output = true;
+
 					g.push_text_wrap_pos(0.f);
 					g.text(s.text());
 					g.pop_text_wrap_pos();
@@ -74,7 +75,7 @@ namespace hades::debug
 						g.pop_colour();
 				}
 
-				if (auto_scroll || appearing || max_zero)
+				if ((auto_scroll && has_new_output) || appearing || max_zero)
 					g.set_scroll_here_y(1.f);
 			}
 			g.child_window_end();

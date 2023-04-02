@@ -16,11 +16,10 @@ namespace hades {
 	template<typename T>
 	constexpr auto lerpable_v = lerpable<T>::value;
 
-	template<typename Float>
-		requires std::floating_point<Float>
+	template<std::floating_point Float>
 	constexpr Float lerp(Float a, Float b, Float t) noexcept;
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	template<std::floating_point Float>
 	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;
 
 	namespace detail
@@ -35,6 +34,8 @@ namespace hades {
 			std::is_same_v<round_down_t, T> ||
 			std::is_same_v<round_up_t, T> ||
 			std::is_same_v<round_towards_zero_t, T>;
+		template<typename T>
+		concept rounding_tag = is_round_tag_v<T>;
 	}
 
 	constexpr detail::round_nearest_t round_nearest_tag;
@@ -42,13 +43,13 @@ namespace hades {
 	constexpr detail::round_up_t round_up_tag;
 	constexpr detail::round_towards_zero_t round_towards_zero_tag;
 
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	template<std::floating_point Float>
 	inline bool float_rounded_equal(Float a, Float b, detail::round_nearest_t = round_nearest_tag) noexcept;
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	template<std::floating_point Float>
 	inline bool float_rounded_equal(Float a, Float b, detail::round_down_t) noexcept;
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	template<std::floating_point Float>
 	inline bool float_rounded_equal(Float a, Float b, detail::round_up_t) noexcept;
-	template<typename Float, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	template<std::floating_point Float>
 	inline bool float_rounded_equal(Float a, Float b, detail::round_towards_zero_t) noexcept;
 
 	class overflow_error : public std::overflow_error
@@ -59,24 +60,20 @@ namespace hades {
 
 	// convert floating point types to integrals
 	// throws overflow error
-	template<typename Integral, typename T, typename RoundingTag = detail::round_nearest_t, 
-		std::enable_if_t<std::is_integral_v<Integral> 
-		&& std::is_arithmetic_v<T> 
-		&& detail::is_round_tag_v<RoundingTag>, int> = 0>
+	template<std::integral Integral, typename T, detail::rounding_tag RoundingTag = detail::round_nearest_t>
+		requires std::is_arithmetic_v<T>
 	constexpr Integral integral_cast(T, RoundingTag = round_nearest_tag);
-	template<typename Integral, typename T, typename RoundingTag = detail::round_nearest_t,
-		std::enable_if_t<std::is_integral_v<Integral>
-		&& std::is_arithmetic_v<T>
-		&& detail::is_round_tag_v<RoundingTag>, int> = 0>
+	template<std::integral Integral, typename T, detail::rounding_tag RoundingTag = detail::round_nearest_t>
+		requires std::is_arithmetic_v<T>
 	constexpr Integral integral_clamp_cast(T, RoundingTag = round_nearest_tag) noexcept;
 
 	// Convert between floating types, and convert integrals to float 
 	// throws overflow error
-	template<typename Float = float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
-		std::is_arithmetic_v<T>, int> = 0>
+	template<std::floating_point Float = float, typename T>
+		requires std::is_arithmetic_v<T>
 	constexpr Float float_cast(T);
-	template<typename Float = float, typename T, std::enable_if_t<std::is_floating_point_v<Float> &&
-		std::is_arithmetic_v<T>, int> = 0>
+	template<std::floating_point Float = float, typename T>
+		requires std::is_arithmetic_v<T>
 	constexpr Float float_clamp_cast(T) noexcept;
 
 	//converts value to unsigned, throws overflow_error if out of range

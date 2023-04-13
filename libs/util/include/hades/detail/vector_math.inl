@@ -137,6 +137,14 @@ namespace hades
 		}
 
 		template<typename T>
+		[[nodiscard]] auto angle(vector_t<T> a, vector_t<T> b) noexcept
+		{
+			const auto d = dot(a, b);
+			const auto determinant = a.x * b.y - a.y * b.x;
+			return std::atan2(determinant, d);
+		}
+
+		template<typename T>
 		T x_comp(pol_vector_t<T> v) noexcept
 		{
 			return v.m * std::cos(v.a);

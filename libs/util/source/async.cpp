@@ -85,7 +85,7 @@ namespace hades
 
 	thread_pool::~thread_pool() noexcept
 	{
-		_stop_flag.store(true, std::memory_order_relaxed);
+		_stop_flag.store(true, std::memory_order_release);
 		_cv.notify_all();
 
 		for (auto& thread : _threads)

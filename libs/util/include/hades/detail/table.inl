@@ -51,23 +51,22 @@ namespace hades
 	}
 
 	template<typename Value>
-	template<typename U>
-	auto table<Value>::operator[](index_type index) -> 
-		typename std::enable_if_t<!std::is_same_v<U, bool>, U&>
+	typename std::vector<typename table<Value>::value_type>::reference
+		table<Value>::operator[](const index_type index)
+	{
+		return _data[_index(index)];
+	}
+
+
+	template<typename Value>
+	typename table<Value>::value_type table<Value>::operator[](const size_type index) const
 	{
 		return _data[_index(index)];
 	}
 
 	template<typename Value>
-	typename table<Value>::value_type table<Value>::operator[](size_type index) const
-	{
-		return _data[_index(index)];
-	}
-
-	template<typename Value>
-	template<typename U>
-	auto table<Value>::operator[](size_type index) ->
-		typename std::enable_if_t<!std::is_same_v<U, bool>, U&>
+	typename std::vector<typename table<Value>::value_type>::reference
+		table<Value>::operator[](const size_type index)
 	{
 		return _data[_index(index)];
 	}

@@ -277,6 +277,38 @@ namespace hades
 	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_safe_index_rect(const tile_index_t pos,
 		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+
+	template<typename Func>
+		requires std::is_invocable_v<Func, tile_index_t>
+	void for_each_safe_index_9_patch(const tile_index_t pos,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+	template<typename Func>
+		requires std::is_invocable_v<Func, tile_index_t>
+	void for_each_index_9_patch(const tile_index_t pos,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+	
+	// For each expanding calls func with an expanding ring of cell positions
+	//	stopping when func returns true
+	template<typename Func>
+		requires std::is_invocable_r_v<bool, Func, tile_position>
+	void for_each_safe_expanding_position(const tile_position position,
+		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<typename Func>
+		requires std::is_invocable_r_v<bool, Func, tile_position>
+	void for_each_expanding_position(const tile_position position,
+		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+
+	template<typename Func>
+		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+	void for_each_safe_expanding_index(const tile_index_t pos, const tile_index_t map_width,
+		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+	template<typename Func>
+		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
+		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
+
 }
 
 #include "hades/detail/tiles.inl"

@@ -96,18 +96,10 @@ namespace hades {
 		void set(index_type i, value_type v);
 		void set(size_type s, value_type v);
 
-		// NOTE: workaround for vector<bool>:
-		//	vector<bool>[] doesn't return a T&
-		//	we have to disable this
-		template<typename U = T>
-		typename std::enable_if_t<!std::is_same_v<U, bool>,
-			U&> operator[](index_type);
+		typename std::vector<value_type>::reference operator[](index_type);
 		value_type operator[](index_type) const override;
 
-		// NOTE: workaround for vector<bool>: as above
-		template<typename U = T>
-		typename std::enable_if_t<!std::is_same_v<U, bool>,
-			U&> operator[](size_type);
+		typename std::vector<value_type>::reference operator[](size_type);
 		value_type operator[](size_type) const override;
 
 		std::vector<value_type> &data() noexcept

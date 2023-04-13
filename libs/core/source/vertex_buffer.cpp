@@ -196,7 +196,8 @@ namespace hades
 	
 	void quad_buffer::draw(sf::RenderTarget& t, const sf::RenderStates& s) const
 	{
-		t.draw(_buffer, s);
+		// only draw the part of the buffer that contains active vertex
+		t.draw(_buffer, {}, std::size(_verts), s);
 		return;
 	}
 }

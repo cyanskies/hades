@@ -158,9 +158,16 @@ namespace hades
 		template<typename T>
 		constexpr T magnitude_squared(vector_t<T> v) noexcept;
 
-		//returns the angle of the vector
+		//returns the angle of the vector compared to the vector [1, 0]
+		// returns in degrees
+		// TODO: return in radians
 		template<typename T>
 		[[nodiscard]] T angle(vector_t<T>) noexcept;
+
+		// returns the angle between the two vectors
+		// returns in radians
+		template<typename T>
+		[[nodiscard]] auto angle(vector_t<T>, vector_t<T>) noexcept;
 
 		template<typename T>
 		T x_comp(pol_vector_t<T>) noexcept;

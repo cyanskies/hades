@@ -5,7 +5,15 @@
 #include <numeric>
 #include <vector>
 
+// Toggle building a list of uniques as strings for viewing in the debugger
+#define HADES_DISPLAY_UNIQUE_NAMES 0
+
 #include "hades/curve_types.hpp"
+
+#if HADES_DISPLAY_UNIQUE_NAMES
+#include "hades/data.hpp"
+#endif
+
 #include "hades/entity_id.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/uniqueid.hpp"
@@ -30,6 +38,15 @@ namespace hades
 	template<std::size_t N>
 	constexpr std::array<bool, N> check_tags(const tag_list& list, std::array<tag_list::value_type, N> check_list) noexcept
 	{
+		#if HADES_DISPLAY_UNIQUE_NAMES
+		auto check_tags = std::array<std::string_view, N>{};
+		std::ranges::transform(check_list, std::begin(check_tags), data::get_as_string);
+		
+		auto list_tags = std::vector<std::string_view>{};
+		list_tags.reserve(size(list));
+		std::ranges::transform(list, std::back_inserter(list_tags), data::get_as_string);
+		#endif
+
 		auto ret = std::array<bool, N>{};
 		ret.fill(false);
 

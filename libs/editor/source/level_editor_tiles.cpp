@@ -56,7 +56,7 @@ namespace hades
 			_tiles.create(empty_map);
 		else
 		{
-			//TODO: resize if not the correct size
+			//TODO: if size != to level xy, then resize the map
 			const auto map = to_tile_map(l.tile_map_layer);
 			_tiles.create(map);
 		}
@@ -249,6 +249,7 @@ namespace hades
 		const auto tile_size_f = float_cast(tile_size);
 		const auto pos_int = static_cast<tile_position>(mouse::snap_to_grid(p, tile_size_f) / tile_size_f);
 
+		// TODO: don't use the allocating make_position funcs
 		const auto positions = [&] {
 			if (level_editor_tiles::draw_shape::square == shape)
 				return make_position_square_from_centre(pos_int, size);

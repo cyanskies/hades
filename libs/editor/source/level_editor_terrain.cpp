@@ -24,6 +24,7 @@ namespace hades
 		assert(!empty(_settings->empty_tileset.get()->tiles));
 		_empty_tile = _settings->empty_tileset.get()->tiles[0];
 		_empty_terrain = _settings->empty_terrain.get();
+		_resize.terrain = _empty_terrain;
 		_empty_terrainset = _settings->empty_terrainset.get();
 		_tile_size = _settings->tile_size;
 
@@ -52,7 +53,7 @@ namespace hades
 			_new_options.terrain == nullptr &&
 			!empty(_new_options.terrain_set->terrains))
 		{
-			_new_options.terrain = _new_options.terrain_set->terrains.back().get();
+			_new_options.terrain = _new_options.terrain_set->terrains.front().get();
 		}
 	}
 
@@ -162,10 +163,11 @@ namespace hades
 		const auto new_size_tiles = to_tiles(s, _tile_size);
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
-		resize_map(map, new_size_tiles, offset_tiles);
+		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain);
 		auto empty_map = make_map(new_size_tiles + vector_int{ 1, 1 }, map.terrainset, _empty_terrain);
 		_clear_preview.create(std::move(empty_map));
 		_map.create(std::move(map));
+		_resize.terrain = _empty_terrain;
 	}
 
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
@@ -183,10 +185,42 @@ namespace hades
 
 		g.main_toolbar_end();
 
+		constexpr auto button_size = gui::vector2{
+			25.f,
+			25.f
+		};
+
+		const auto tile_size_f = float_cast(_tile_size);
+
+		const auto make_terrain_button_wrapped = [this, &g, tile_size_f](auto&& terrain, auto&& func) {
+			if (empty(terrain->tiles))
+				return;
+
+			const auto& t = terrain->tiles.front();
+
+			const auto x = static_cast<float>(t.left),
+				y = static_cast<float>(t.top);
+
+			const auto tex_coords = rect_float{
+				x,
+				y,
+				tile_size_f,
+				tile_size_f
+			};
+
+			//need to push a prefix to avoid the id clashing from the same texture
+			g.push_id(terrain.get());
+			const auto size = g.calculate_button_size({}, button_size);
+			g.same_line_wrapping(size.x);
+			if (g.image_button("###terrain_button"sv, *t.tex, tex_coords, button_size))
+				std::invoke(func, terrain.get());
+			g.tooltip(data::get_as_string(terrain->id));
+			g.pop_id();
+			return;
+		};
+
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
-			const auto toolbox_width = g.get_item_rect_max().x;
-
 			if (g.collapsing_header("map drawing settings"sv))
 			{
 				constexpr auto draw_shapes = std::array{
@@ -214,96 +248,67 @@ namespace hades
 
 			if (g.collapsing_header("tiles"sv))
 			{
-				auto on_click = [this](resources::tile t) {
-					activate_brush();
-					_brush = brush_type::draw_tile;
-					_tile = t;
-				};
-
-				auto make_button = [this, on_click](gui &g, const resources::tile &t) {
-					constexpr auto button_size = gui::vector2{
-						25.f,
-						25.f
-					};
-
-					const auto x = static_cast<float>(t.left),
-						y = static_cast<float>(t.top);
-
-					const auto tile_size = static_cast<float>(_tile_size);
-
-					const auto tex_coords = rect_float{
-						x,
-						y,
-						tile_size,
-						tile_size
-					};
-
-					//need to push a prefix to avoid the id clashing from the same texture
-					g.push_id(&t);
-					if (g.image_button("###tile_button"sv, * t.tex, tex_coords, button_size))
-						std::invoke(on_click, t);
-					g.pop_id();
-				};
-
 				//each tileset
 				//the tiles from a terrain wont appear here unless
 				//they are listed under the tiles: tag in the terrain
-				for (const auto tileset : _settings->tilesets)
+				for (const auto& tileset : _settings->tilesets)
 				{
-					const auto name = data::get_as_string(tileset->id);
+					const auto& name = data::get_as_string(tileset->id);
 
 					g.indent();
 					if (g.collapsing_header(name))
-						gui_make_horizontal_wrap_buttons(g, toolbox_width, std::begin(tileset->tiles), std::end(tileset->tiles), make_button);
+					{
+						for (const auto &t : tileset->tiles)
+						{
+							const auto x = static_cast<float>(t.left),
+								y = static_cast<float>(t.top);
+
+							const auto tex_coords = rect_float{
+								x,
+								y,
+								tile_size_f,
+								tile_size_f
+							};
+
+							//need to push a prefix to avoid the id clashing from the same texture
+							g.push_id(&t);
+							const auto siz = g.calculate_button_size({}, button_size);
+							g.same_line_wrapping(siz.x);
+							if (g.image_button("###tile_button"sv, *t.tex, tex_coords, button_size))
+							{
+								activate_brush();
+								_brush = brush_type::draw_tile;
+								_tile = t;
+							}
+							g.pop_id();
+						}
+					}
 				}
 			}
 
 			if (g.collapsing_header("terrain"sv))
 			{
-				auto on_click = [this](const resources::terrain *t) {
+				assert(_current.terrain_set);
+
+				if (g.button("empty"sv))
+				{
 					activate_brush();
 					_brush = brush_type::draw_terrain;
-					_current.terrain = t;
-				};
-
-				auto make_button = [this, on_click](gui &g, resources::resource_link<resources::terrain> terrain) {
-					constexpr auto button_size = gui::vector2{
-						25.f,
-						25.f
-					};
-
-					assert(!std::empty(terrain->tiles));
-					const auto& t = terrain->tiles.front();
-
-					const auto x = static_cast<float>(t.left),
-						y = static_cast<float>(t.top);
-					
-					const auto tile_size = static_cast<float>(_tile_size);
-
-					const auto tex_coords = rect_float{
-						x,
-						y,
-						tile_size,
-						tile_size
-					};
-
-					//need to push a prefix to avoid the id clashing from the same texture
-					g.push_id(terrain);
-					if (g.image_button("###terrain_button"sv, * t.tex, tex_coords, button_size))
-						std::invoke(on_click, terrain.get());
-					g.pop_id();
-				};
-
-				assert(_current.terrain_set);
+					_current.terrain = _empty_terrain;
+				}
 
 				//if we have the empty terrainset then skip this,
 				// the menu would be useless anyway
 				if (_current.terrain_set != _empty_terrainset)
 				{
-					g.indent();
-					gui_make_horizontal_wrap_buttons(g, toolbox_width,
-						std::begin(_current.terrain_set->terrains),
-						std::end(_current.terrain_set->terrains), make_button);
+					for (const auto& ter : _current.terrain_set->terrains)
+					{
+						make_terrain_button_wrapped(ter, [&](auto&& t) {
+							activate_brush();
+							_brush = brush_type::draw_terrain;
+							_current.terrain = t;
+						});
+					}
 				}
 			}
 		}
@@ -313,9 +318,6 @@ namespace hades
 		{
 			if (g.window_begin(editor::gui_names::new_level))
 			{
-				auto dialog_pos = g.window_position().x;
-				auto dialog_size = g.get_item_rect_max().x;
-				
 				using namespace std::string_literals;
 				auto string = "none"s;
 				if (_new_options.terrain_set != nullptr)
@@ -323,7 +325,7 @@ namespace hades
 
 				if (g.combo_begin("terrain set"sv, string))
 				{
-					for (const auto tset : _settings->terrainsets)
+					for (const auto& tset : _settings->terrainsets)
 					{
 						assert(tset);
 						if (g.selectable(data::get_as_string(tset->id), tset.get() == _new_options.terrain_set))
@@ -333,48 +335,25 @@ namespace hades
 					g.combo_end();
 				}
 
+				g.text("Fill new level with: "sv);
+				g.same_line();
+
 				if (_new_options.terrain_set != nullptr)
 				{
-					auto on_click = [this](const resources::terrain *t) {
-						_new_options.terrain = t;
-					};
-
-					auto make_button = [this, on_click](gui &g, resources::resource_link<resources::terrain> terrain) {
-						constexpr auto button_size = gui::vector2{
-							25.f,
-							25.f
-						};
-
-						//TODO: FIXME: hide empty tilesets from combobox rather than crash here
-						assert(!std::empty(terrain->tiles));
-						const auto& t = terrain->tiles.front();
-
-						const auto x = static_cast<float>(t.left),
-							y = static_cast<float>(t.top);
-
-						const auto tile_size = static_cast<float>(_tile_size);
-
-						const auto tex_coords = rect_float{
-							x,
-							y,
-							tile_size,
-							tile_size
-						};
-
-						//need to push a prefix to avoid the id clashing from the same texture
-						g.push_id(terrain);
-						if (g.image_button("###terrain_button"sv, * t.tex, tex_coords, button_size))
-							std::invoke(on_click, terrain.get());
-						g.pop_id();
-					};
+					g.text(data::get_as_string(_new_options.terrain->id));
 
 					if (g.button("empty"sv))
-						std::invoke(on_click, _empty_terrain);
+						_new_options.terrain = _empty_terrain;
 
-					gui_make_horizontal_wrap_buttons(g, dialog_pos + dialog_size,
-						std::begin(_new_options.terrain_set->terrains),
-						std::end(_new_options.terrain_set->terrains), make_button);
+					for (const auto& ter : _new_options.terrain_set->terrains)
+					{
+						make_terrain_button_wrapped(ter, [&](auto&& t) {
+							_new_options.terrain = t;
+							});
+					}
 				}
+				else
+					g.text("empty"sv);
 
 			}
 			g.window_end();
@@ -384,9 +363,19 @@ namespace hades
 		{
 			if (g.window_begin(editor::gui_names::resize_level))
 			{
-				// TODO:
-				g.text("terrain stuff");
-				
+				g.text("Fill new areas with: "sv);
+				g.same_line();
+				g.text(data::get_as_string(_resize.terrain->id));
+
+				if (g.button("empty"sv))
+					_resize.terrain = _empty_terrain;
+			
+				for (const auto& ter : _current.terrain_set->terrains)
+				{
+					make_terrain_button_wrapped(ter, [&](auto&& t) {
+						_resize.terrain = t;
+						});
+				}
 			}
 
 			g.window_end();
@@ -401,6 +390,7 @@ namespace hades
 			static_cast<tile_position::value_type>(p.y / tile_size)
 		};
 
+		// TODO: don't use the allocating make_position funcs
 		if (shape == level_editor_terrain::draw_shape::rect)
 			return make_position_square(draw_pos, size);
 		else if (shape == level_editor_terrain::draw_shape::circle)

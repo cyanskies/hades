@@ -214,7 +214,7 @@ namespace hades
 
 	//TODO: replace calls to this with the helper in gui
 	template<typename Func, typename ObjectPtr>
-	static void add_object_buttons(gui &g, float toolbox_width, const std::vector<ObjectPtr> &objects, Func on_click)
+	static void add_object_buttons(gui &g, const std::vector<ObjectPtr> &objects, Func on_click)
 	{
 		static_assert(std::is_invocable_v<Func, const resources::object*>);
 
@@ -225,42 +225,37 @@ namespace hades
 
 		const auto name_curve = get_name_curve();
 
-		g.indent();
-
-		const auto indent_amount = g.get_item_rect_max().x;
-
-		auto x2 = 0.f;
 		for (const auto o : objects)
 		{
-			const auto new_x2 = x2 + button_size.x;
-			if (indent_amount + new_x2 < toolbox_width)
-				g.layout_horizontal();
-			else
-				g.indent();
-
 			auto clicked = false;
-			
-			string name{};
+
+			auto name = string{};
 			using obj_fn::has_curve;
-			if(has_curve(*o, *name_curve))
+			if (has_curve(*o, *name_curve))
 				name = get_name(*o);
 			else
 				name = data::get_as_string(o->id);
 
 			g.push_id(&*o);
 			if (const auto ico = get_editor_icon(*o); ico)
-				clicked = g.image_button("###obj_button"sv, * ico, button_size);
+			{
+				g.same_line_wrapping(25); // TODO: image button size calc
+				clicked = g.image_button("###obj_button"sv, *ico, button_size);
+			}
 			else
+			{
+				g.same_line_wrapping(g.calculate_button_size(name, button_size_no_img).x);
 				clicked = g.button(name, button_size_no_img);
+			}
 			g.pop_id();
 
 			g.tooltip(name);
 
 			if (clicked)
 				std::invoke(on_click, &*o);
-
-			x2 = g.get_item_rect_max().x;
 		}
+
+		return;
 	}
 
 	void level_editor_objects_impl::gui_update(gui &g, editor_windows&)
@@ -292,76 +287,68 @@ namespace hades
 
 		g.main_toolbar_end();
 
-		//TODO:
-		//if(*)
-		g.window_begin(editor::gui_names::toolbox);
-
-		const auto toolbox_width = g.get_item_rect_max().x;
-
-		if (g.collapsing_header("objects"sv))
+		if (g.window_begin(editor::gui_names::toolbox))
 		{
-			g.checkbox("show objects"sv, _show_objects);
-			g.checkbox("allow_intersection"sv, _allow_intersect);
-
-			const auto player_preview = _object_owner == unique_zero ? "none"s 
-				: data::get_as_string(_object_owner);
-
-			if (g.combo_begin("player"sv, player_preview))
+			if (g.collapsing_header("objects"sv))
 			{
-				const auto players = get_players();
-				for (auto& [p, o] : players)
+				g.checkbox("show objects"sv, _show_objects);
+				g.checkbox("allow_intersection"sv, _allow_intersect);
+
+				const auto player_preview = _object_owner == unique_zero ? "none"s
+					: data::get_as_string(_object_owner);
+
+				if (g.combo_begin("player"sv, player_preview))
 				{
-					if (g.selectable(data::get_as_string(p), _object_owner == p))
+					const auto players = get_players();
+					for (auto& [p, o] : players)
 					{
-						_object_owner = p;
-						if(_held_object.has_value())
-							set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
+						if (g.selectable(data::get_as_string(p), _object_owner == p))
+						{
+							_object_owner = p;
+							if (_held_object.has_value())
+								set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
+						}
 					}
+
+					if (g.selectable("none"sv, _object_owner == unique_zero))
+						_object_owner = unique_zero;
+
+					g.combo_end();
 				}
 
-				if (g.selectable("none"sv, _object_owner == unique_zero))
-					_object_owner = unique_zero;
+				auto on_click_object = [this](const resources::object* o) {
+					activate_brush();
+					_brush_type = brush_type::object_place;
+					_held_object = make_instance(o);
+					set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
 
-				g.combo_end();
-			}
+					if (_grid.auto_mode)
+						set_grid_settings_for_object_type(_grid, *_held_object);
+				};
 
-			auto on_click_object = [this](const resources::object *o) {
-				activate_brush();
-				_brush_type = brush_type::object_place;
-				_held_object = make_instance(o);
-				set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
-
-				if (_grid.auto_mode)
-				{
-					set_grid_settings_for_object_type(_grid, *_held_object);
-				}
-			};
-
-			g.indent();
-
-			if (g.collapsing_header("all"sv))
-				add_object_buttons(g, toolbox_width, resources::all_objects, on_click_object);
-
-			for (const auto &group : _settings->groups)
-			{
 				g.indent();
 
-				if (g.collapsing_header(std::get<string>(group)))
-					add_object_buttons(g, toolbox_width, std::get<std::vector<resources::resource_link<resources::object>>>(group), on_click_object);
+				if (g.collapsing_header("all"sv))
+					add_object_buttons(g, resources::all_objects, on_click_object);
+
+				for (const auto& group : _settings->groups)
+				{
+					g.indent();
+
+					if (g.collapsing_header(std::get<string>(group)))
+						add_object_buttons(g, std::get<std::vector<resources::resource_link<resources::object>>>(group), on_click_object);
+				}
 			}
-		}
 
-		if (g.collapsing_header("object list"sv))
-		{
-			_obj_ui.show_object_list_buttons(g);
-			_obj_ui.object_list_gui(g);
-		}
+			if (g.collapsing_header("object list"sv))
+			{
+				_obj_ui.show_object_list_buttons(g);
+				_obj_ui.object_list_gui(g);
+			}
 
-		if (g.collapsing_header("properties"sv))
-		{
-			_obj_ui.object_properties(g);
+			if (g.collapsing_header("properties"sv))
+				_obj_ui.object_properties(g);
 		}
-
 		g.window_end();
 
 		//NOTE: this is the latest in a frame that we can call this

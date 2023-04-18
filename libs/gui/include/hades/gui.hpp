@@ -270,6 +270,7 @@ namespace hades
 		void indent();
 		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline TODO: make this sameline again
 		void same_line(float pos = 0.f, float width = -1.f);
+		void same_line_wrapping(float next_item_size_x, float pos = 0.f, float width = -1.f); // sameline, unless the window width has been exhausted
 		void layout_vertical(); //undoes layout_horizontal; newline
 		void vertical_spacing();
 		void group_begin();
@@ -320,6 +321,9 @@ namespace hades
 		void progress_bar(float progress, const vector2& size = { -1.f, 0.f });
 		void progress_bar(float progress, std::string_view overlay_text, const vector2& size = { -1.f, 0.f });
 		void bullet();
+
+		//
+		vector2 calculate_button_size(std::string_view label, const vector2& size = {});
 
 		enum class selectable_flag : ImGuiSelectableFlags
 		{
@@ -807,7 +811,6 @@ namespace hades
 
 		void _activate_context() noexcept;
 		void _active_assert() const noexcept;
-		void _toolbar_layout_next();
 		static font* _get_font(const resources::font*);
 		static void _create_font(const resources::font*);
 		static void _create_default_font();
@@ -818,9 +821,9 @@ namespace hades
 		using context_ptr = std::unique_ptr<detail::gui_context, detail::gui_context_deleter>;
 		context_ptr _my_context;
 
+		// used to help place the toolbar window in the correct location
 		struct toolbar_layout_info
 		{
-			float last_item_x2;
 			float main_menubar_y2;
 			float width;
 		};
@@ -970,10 +973,6 @@ namespace hades
 	{
 		return a = a | b;
 	}
-
-	//NOTE: right_max is absolute, not relative to the current elements x position
-	template<typename InputIt, typename MakeButton>
-	void gui_make_horizontal_wrap_buttons(gui&, float right_max, InputIt first, InputIt last, MakeButton&&);
 }
 
 #include "hades/detail/gui.inl"

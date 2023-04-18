@@ -52,6 +52,11 @@ namespace hades
 			const resources::terrain *terrain = nullptr;
 		};
 
+		struct level_resize_options
+		{
+			const resources::terrain* terrain = nullptr;
+		};
+
 		resources::tile _empty_tile;
 		const resources::terrain * _empty_terrain;
 		const resources::terrainset* _empty_terrainset;
@@ -69,6 +74,7 @@ namespace hades
 		//selected tile/terrain
 		resources::tile _tile = resources::bad_tile;
 		level_options _current;
+		level_resize_options _resize;
 
 		const resources::terrain_settings *_settings = nullptr;
 		level_options _new_options;

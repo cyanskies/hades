@@ -43,6 +43,8 @@ namespace hades
 
 		rect_float get_local_bounds() const noexcept;
 
+		// TODO: split this into place_tile/terrain and generate layers
+		//		this will allow us to use the non-allocating tile_position functions
 		void place_tile(const std::vector<tile_position>&, const resources::tile&);
 		void place_terrain(const std::vector<terrain_vertex_position>&, const resources::terrain*);
 

@@ -243,10 +243,7 @@ namespace hades
 	void gui::frame_begin()
 	{
 		_active_assert();
-
-		_main_toolbar_info.last_item_x2 = 0.f;
 		_main_toolbar_info.main_menubar_y2 = 0.f;
-
 		ImGui::NewFrame();
 	}
 
@@ -507,6 +504,20 @@ namespace hades
 	{
 		_active_assert();
 		ImGui::SameLine(pos, width);
+	}
+
+	void gui::same_line_wrapping(const float next_item_size_x, const float pos, const float width)
+	{
+		_active_assert();
+		const auto& style = ImGui::GetStyle();
+		const auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+		auto last_button_x2 = ImGui::GetItemRectMax().x;
+		// expected position if next button was on same line
+		auto next_button_x2 = last_button_x2 + style.ItemSpacing.x + next_item_size_x; 
+		if (next_button_x2 < window_visible_x2)
+			ImGui::SameLine(pos, width);
+
+		return;
 	}
 
 	void gui::layout_vertical()
@@ -787,6 +798,18 @@ namespace hades
 		ImGui::Bullet();
 	}
 
+	gui::vector2 gui::calculate_button_size(std::string_view label, const gui::vector2& size)
+	{
+		_active_assert();
+		const auto& style = ImGui::GetStyle();
+		const auto label_size = ImGui::CalcTextSize(label);
+		const auto ret = ImGui::CalcItemSize({ size.x, size.y },
+			label_size.x + style.FramePadding.x * 2.0f,
+			label_size.y + style.FramePadding.y * 2.0f);
+
+		return { ret.x, ret.y };
+	}
+
 	bool gui::selectable(std::string_view label, bool selected, selectable_flag flag, const vector2 & size)
 	{
 		_active_assert();
@@ -980,8 +1003,6 @@ namespace hades
 
 		using namespace std::string_view_literals;
 		const auto r = window_begin("##main_toolbar"sv, window_flags::panel);
-
-		//_main_toolbar_info.width = get_item_rect_max().x;
 		return r;
 	}
 
@@ -994,36 +1015,29 @@ namespace hades
 	bool gui::toolbar_button(std::string_view s)
 	{
 		_active_assert();
-		_toolbar_layout_next();
-
 		const auto str_size = calculate_text_size(s, false);
-
-		//add frame pad
-		const auto &pad = ImGui::GetStyle().FramePadding.x * 2;
-		const auto result = button(s, {
-			std::max(toolbar_button_size.x, str_size.x + pad), toolbar_button_size.y });
-
-		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
-		return result;
+		const auto& pad = ImGui::GetStyle().FramePadding.x * 2;
+		const auto button_size = vector2{
+			std::max(toolbar_button_size.x, str_size.x + pad), toolbar_button_size.y };
+		const auto size = calculate_button_size(s, button_size);
+		same_line_wrapping(size.x);
+		return button(s, button_size);
 	}
 
 	bool gui::toolbar_button(std::string_view id, const resources::animation &a)
 	{
 		_active_assert();
-		_toolbar_layout_next();
-
-		const auto result = image_button(id, a, toolbar_button_size);
-		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
-		return result;
+		const auto size = calculate_button_size({}, toolbar_button_size);
+		same_line_wrapping(size.x);
+		return image_button(id, a, toolbar_button_size);
 	}
 
 	void gui::toolbar_separator()
 	{
 		_active_assert();
-		_toolbar_layout_next();
-
+		const auto size = calculate_button_size({}, toolbar_button_size);
+		same_line_wrapping(size.x);
 		separator_horizontal();
-		_main_toolbar_info.last_item_x2 = get_item_rect_max().x;
 	}
 
 	bool gui::tooltip_begin()
@@ -1431,18 +1445,6 @@ namespace hades
 	{
 		assert(_my_context);
 		assert(ImGui::GetCurrentContext() == _my_context.get());
-	}
-
-	void gui::_toolbar_layout_next()
-	{
-		const auto &style = ImGui::GetStyle();
-		//const auto frame_pad = style.FramePadding.x * 2;
-		const auto item_spacing = style.ItemSpacing.x;
-		
-		constexpr auto size = toolbar_button_size.x;
-		const auto x2 = _main_toolbar_info.last_item_x2;
-		const auto next_button_x2 = size + item_spacing + x2;
-		if (next_button_x2 < _main_toolbar_info.width) layout_horizontal(); // layout_horizontal(toolbar_layout_size.x, toolbar_layout_size.y);
 	}
 
 	gui::font *gui::_get_font(const resources::font *f)

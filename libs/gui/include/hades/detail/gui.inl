@@ -292,42 +292,6 @@ namespace hades
 		return ImGui::InputScalarN(to_string(label).data(), type, v.data(), integer_cast<int>(size(v)), step_ptr, step_fast_ptr, format, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	template<typename InputIt, typename MakeButton>
-	void gui_make_horizontal_wrap_buttons(gui &g, float right_max, InputIt first, InputIt last, MakeButton&& make_button)
-	{
-		using T = typename std::iterator_traits<InputIt>::value_type;
-		using TRef = typename std::iterator_traits<InputIt>::reference;
-		using TPtr = typename std::iterator_traits<InputIt>::pointer;
-
-		constexpr auto button_size = vector_float{ 25.f, 25.f };
-
-		g.indent();
-
-		const auto indent_amount = g.get_item_rect_max().x;
-
-		auto x2 = 0.f;
-		while (first != last)
-		{
-			const auto new_x2 = x2 + button_size.x;
-			if (indent_amount + new_x2 < right_max)
-				g.layout_horizontal();
-			else
-				g.indent();
-			
-			if constexpr (std::is_invocable_v<MakeButton, gui&, T> ||
-				std::is_invocable_v<MakeButton, gui&, TRef> ||
-				std::is_invocable_v<MakeButton, gui&, const TRef>)
-				std::invoke(make_button, g, *first++);
-			else if constexpr (std::is_invocable_v<MakeButton, gui&, TPtr> ||
-				std::is_invocable_v<MakeButton, gui&, const TPtr>)
-				std::invoke(make_button, g, &*first++);
-			else
-				static_assert(always_false_v<MakeButton>, "MakeButton must have the following definition: void(gui&, T); where T can be any of(T, T&, const T&, T*, const T*");
-
-			x2 = g.get_item_rect_max().x;
-		}
-	}
-
 	bool gui::set_dragdrop_payload(detail::DragDropPayload auto payload, std::string_view type_name, set_condition_enum cond)
 	{
 		_active_assert();

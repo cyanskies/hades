@@ -13,10 +13,23 @@ namespace hades
 	{
 		//returns the 1d position of this rect in the global space
 		template<typename Vector2>
-		constexpr inline typename Vector2::value_type offset(Vector2 position, Vector2 size) noexcept
+		constexpr inline typename Vector2::value_type offset(Vector2 position, typename Vector2::value_type size) noexcept
 		{
-			return position.y * (size.x + position.x) + position.x;
+			//same as to_1d_index, but we don't prevent negative calculations
+			return position.y * size + position.x;
 		}
+	}
+
+	template<typename T>
+	inline std::size_t basic_table<T>::_index(index_type index) const noexcept
+	{
+		return integer_cast<std::size_t>(to_1d_index(index, _size.x) - detail::offset(_offset, _size.x));
+	}
+
+	template<typename T>
+	inline std::size_t basic_table<T>::_index(size_type index) const noexcept
+	{
+		return integer_cast<std::size_t>(index - detail::offset(_offset, _size.x));
 	}
 
 	template<typename T>
@@ -33,103 +46,53 @@ namespace hades
 	template<typename Value>
 	void table<Value>::set(index_type index, value_type v)
 	{
-		_data[_index(index)] = v;
+		_data[base_type::_index(index)] = v;
 		return;
 	}
 
 	template<typename Value>
 	void table<Value>::set(size_type s, value_type v)
 	{
-		_data[_index(s)] = v;
+		_data[base_type::_index(s)] = v;
 		return;
 	}
 
 	template<typename Value>
 	typename table<Value>::value_type table<Value>::operator[](const index_type index) const
 	{
-		return _data[_index(index)];
+		return _data[base_type::_index(index)];
 	}
 
 	template<typename Value>
 	typename std::vector<typename table<Value>::value_type>::reference
 		table<Value>::operator[](const index_type index)
 	{
-		return _data[_index(index)];
+		return _data[base_type::_index(index)];
 	}
-
 
 	template<typename Value>
 	typename table<Value>::value_type table<Value>::operator[](const size_type index) const
 	{
-		return _data[_index(index)];
+		return _data[base_type::_index(index)];
 	}
 
 	template<typename Value>
 	typename std::vector<typename table<Value>::value_type>::reference
 		table<Value>::operator[](const size_type index)
 	{
-		return _data[_index(index)];
+		return _data[base_type::_index(index)];
 	}
 
-	template<typename T>
-	inline std::size_t table<T>::_index(index_type index) const noexcept
+	template<typename Value>
+	typename table_view<Value>::value_type table_view<Value>::operator[](const index_type index) const
 	{
-		const auto size = base_type::size();
-        return integer_cast<std::size_t>(to_1d_index(index, size.x) - detail::offset(base_type::position(), size));
+		return _data[base_type::_index(index)];
 	}
 
-	template<typename T>
-	inline std::size_t table<T>::_index(size_type index) const noexcept
+	template<typename Value>
+	typename table_view<Value>::value_type table_view<Value>::operator[](const size_type index) const
 	{
-		const auto size = base_type::size();
-        return integer_cast<std::size_t>(index - detail::offset(base_type::position(), size));
-	}
-
-	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
-	auto combine_table(const TableFirst &l, const TableSecond &r, CombineFunctor&& f)
-	{
-        static_assert(std::is_invocable_v<CombineFunctor, const typename TableFirst::value_type&, const typename TableSecond::value_type&>);
-		static_assert(std::is_convertible_v<std::invoke_result_t<CombineFunctor, const typename TableFirst::value_type&, const typename TableSecond::value_type&>, typename TableFirst::value_type>);
-
-		const auto r_pos = r.position();
-		const auto r_siz = r.size();
-		const auto l_pos = l.position();
-		const auto l_siz = l.size();
-
-		//generate intersecting subrectangle
-		using table_t = table<typename TableFirst::value_type>;
-		auto area = rect_t<typename table_t::size_type>{};
-		if (!intersect_area({l_pos, l_siz}, {r_pos, r_siz}, area))
-			return table_t{ l , typename TableFirst::value_type{} };
-
-		const auto stride = l_siz.x;
-        const auto r_stride = integer_cast<std::size_t>(r_siz.x - area.width);
-		const auto length = area.width; // width of copyable space
-		const auto l_offset = l_pos.y * stride + l_pos.x;
-		const auto start = area.y * stride + area.x - l_offset; //index of first space
-        const auto jump = integer_cast<std::size_t>(l_siz.x - (area.x + area.width) + area.x - l_offset);// distance between length and the next region
-        const auto end = integer_cast<std::size_t>(area.height * stride + start); //index of last space
-
-		auto tab = table<typename TableFirst::value_type>{ l, typename TableFirst::value_type{} };
-		auto &t = tab.data();
-		const auto &tr = r.data();
-		auto r_index = std::size_t{};
-        auto index = integer_cast<std::size_t>(start);
-		while (index < end)
-		{
-			auto count = typename table_t::size_type{};
-			while (count < length)
-			{
-				const auto i = index;
-				t[i] = std::invoke(f, t[i], tr[r_index]);
-				++index; ++r_index; ++count;
-			}
-
-			index += jump;
-			r_index += r_stride;
-		}
-
-		return tab;
+		return _data[base_type::_index(index)];
 	}
 
 	template<typename T, typename BinaryOp>
@@ -142,7 +105,6 @@ namespace hades
 	template<typename T, typename BinaryOp>
 	inline void table_reduce_view<T, BinaryOp>::add_table(const basic_table<T>& t)
 	{
-		assert(is_within(rect_t{ t.position(), t.size() }, rect_t{ base_type::position(), base_type::size() }));
 		_tables.emplace_back(t);
 		return;
 	}
@@ -167,6 +129,6 @@ namespace hades
 	inline typename hades::table_reduce_view<T, BinaryOp>::value_type
 		hades::table_reduce_view<T, BinaryOp>::operator[](size_type index) const
 	{
-		return operator[](to_2d_index<index_type>(index, this->size().x));
+		return operator[](to_2d_index<index_type>(index, base_type::size().x));
 	}
 }

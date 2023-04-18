@@ -583,21 +583,27 @@ namespace hades
 		resize_map(m.tile_layer, s, o);
 
 		//update terrain vertex
-		const auto new_terrain = always_table<const resources::terrain*>{ {}, s + vector_int{1, 1}, t };
-		auto current_terrain = table<const resources::terrain*>{ o, old_size, nullptr };
-		auto& current_terrain_data = current_terrain.data();
-		assert(std::size(m.terrain_vertex) == std::size(current_terrain_data));
-		std::copy(std::begin(m.terrain_vertex), std::end(m.terrain_vertex), std::begin(current_terrain_data));
+		auto new_terrain = table_reduce_view{ vector_int{},
+			s + vector_int{ 1, 1 }, t, [](auto&&, auto&& t) noexcept -> const resources::terrain* {
+				return t;
+		} };
 
-		auto resized_map = combine_table(new_terrain, current_terrain, [](auto&&, auto&& rhs) {
-			return rhs;
-		});
+		auto current_terrain = table_view{ o, old_size, m.terrain_vertex };
 
-		m.terrain_vertex = std::move(resized_map.data());
+		new_terrain.add_table(current_terrain);
+		
+		auto vertex = std::vector<const resources::terrain*>{};
+		const auto size = (s.x + 1) * (s.y + 1);
+		vertex.reserve(size);
+
+		for (auto i = vector_int::value_type{}; i < size; ++i)
+			vertex.emplace_back(new_terrain[i]);
+
+		m.terrain_vertex = std::move(vertex);
 
 		//regenerate terrain layers
 		m.terrain_layers = generate_terrain_layers(m.terrainset,
-			m.terrain_vertex, integer_cast<terrain_index_t>(s.x) + 1);
+			m.terrain_vertex, integer_cast<terrain_index_t>(s.x));
 
 		return;
 	}

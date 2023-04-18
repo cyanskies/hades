@@ -143,6 +143,7 @@ namespace hades
 	constexpr auto bad_tile_position = tile_position{ -1, -1 };
 	// unique id for each tile
 	// TODO: use this properly throughout tiles and terrain .hpp/.cpp
+	// TODO: this doesn't need the full range of size_type, reduce it to uint16
 	using tile_id_t = std::vector<resources::tile>::size_type;
 
 	//stores a tileset and the starting id for that tileset in a map

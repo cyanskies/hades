@@ -48,6 +48,7 @@ namespace hades
 		struct level_options
 		{
 			const resources::terrainset *terrain_set = nullptr;
+			// current terrain brush
 			const resources::terrain *terrain = nullptr;
 		};
 

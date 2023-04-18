@@ -163,7 +163,7 @@ namespace hades
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
 		resize_map(map, new_size_tiles, offset_tiles);
-		auto empty_map = make_map(new_size_tiles, map.terrainset, _empty_terrain);
+		auto empty_map = make_map(new_size_tiles + vector_int{ 1, 1 }, map.terrainset, _empty_terrain);
 		_clear_preview.create(std::move(empty_map));
 		_map.create(std::move(map));
 	}
@@ -386,6 +386,7 @@ namespace hades
 			{
 				// TODO:
 				g.text("terrain stuff");
+				
 			}
 
 			g.window_end();

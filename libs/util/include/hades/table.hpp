@@ -13,8 +13,6 @@
 
 //intended usage is for pathfinding system, ability to add multiple cost maps together to get the sum cost for a specific tile
 
-//TODO: adding tables together should be able to create larger tables
-
 namespace hades {
 	using table_index_t = vector_int;
 
@@ -38,6 +36,10 @@ namespace hades {
 		void set_position(index_type p) noexcept
 		{ _offset = p; }
 		index_type size() const noexcept { return _size; }
+
+	protected:
+		std::size_t _index(index_type) const noexcept;
+		std::size_t _index(size_type) const noexcept;
 
 	private:
         index_type _size, _offset = {};
@@ -75,7 +77,7 @@ namespace hades {
 
 	//main table class, can be added together to compound tables
 	template<typename T>
-	class table : public basic_table<T>
+	class table final : public basic_table<T>
 	{
 	public:
 		using base_type = basic_table<T>;
@@ -113,21 +115,41 @@ namespace hades {
 		}
 
 	private:
-		std::size_t _index(index_type) const noexcept;
-		std::size_t _index(size_type) const noexcept;
-
 		std::vector<value_type> _data;
 	};
 
-	//combines two tables using CombineFunctor
-	//presses any areas of the second table onto the areas
-	//of first table that it overlaps
-	//return value is the size of the first table
-	template<typename TableFirst, typename TableSecond, typename CombineFunctor>
-	auto combine_table(const TableFirst&, const TableSecond&, CombineFunctor&&);
+	// wraps an array or vector in the table interface
+	template<typename T>
+	class table_view final : public basic_table<T>
+	{
+	public:
+		using value_type = T;
+		using base_type = basic_table<value_type>;
+		using index_type = typename basic_table<value_type>::index_type;
+		using size_type = typename basic_table<value_type>::size_type;
+
+		template<typename U, std::enable_if_t<std::is_same_v<std::decay_t<U>, T>, int> = 0>
+		constexpr table_view(index_type position, index_type size, const U* data)
+			noexcept(std::is_nothrow_constructible_v<base_type, index_type, index_type>)
+			: base_type{ position, size }, _data{ data }
+		{}
+
+		constexpr table_view(index_type position, index_type size, const std::vector<T>& data)
+			noexcept(std::is_nothrow_constructible_v<base_type, index_type, index_type>)
+			: base_type{ position, size }, _data{ data.data() }
+		{
+			assert(std::size(data) == (size.x * size.y));
+		}
+
+		value_type operator[](const index_type) const override;
+		value_type operator[](const size_type) const override;
+
+	private:
+		const T* _data;
+	};
 
 	template<typename T, typename BinaryOp = std::plus<T>>
-	class table_reduce_view : public basic_table<T>
+	class table_reduce_view final : public basic_table<T>
 	{
 	public:
 		using base_type = basic_table<T>;
@@ -148,18 +170,9 @@ namespace hades {
 		value_type _default_val;
 	};
 
-	//operators
-	/*template<typename T>
-	table<Value> operator+(const table<T>&, const table<T>&);
-
-	template<typename Value>
-	table<Value>& operator+=(table<Value>&, const table<Value>&);
-
-	template<typename Value>
-	table<Value> operator+(const table<Value>&, const virtual_table<Value>&);
-
-	template<typename Value>
-	table<Value>& operator+=(table<Value>&, const virtual_table<Value>&);*/
+	template<typename T, typename BinaryOp>
+	table_reduce_view(auto pos, auto size, T defaul,
+		BinaryOp op) -> table_reduce_view<T, BinaryOp>;
 }
 
 #include "detail/table.inl"

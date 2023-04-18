@@ -787,25 +787,28 @@ namespace hades
 	void resize_map(tile_map &m, const vector_int size, const vector_int offset, const resources::tile &t)
 	{
 		const auto tile = make_tile_id(m, t);
-		const auto new_map = always_table<tile_id_t>( vector_int{}, vector_int{ size.x, size.y }, tile );
 
-		auto current_map = table<tile_id_t>{ offset,
-			get_size(m), tile_id_t{} };
+		auto new_tilemap = table_reduce_view{ vector_int{},
+			size, tile, [](auto&&, auto&& tile_id) noexcept -> tile_id_t {
+				return tile_id;
+		} };
 
-		auto &current_tiles = current_map.data();
-		assert(current_tiles.size() == m.tiles.size());
-		std::copy(std::begin(m.tiles), std::end(m.tiles), std::begin(current_tiles));
+		const auto old_size = get_size(m);
+		auto current_map = table_view{ offset, old_size, m.tiles };
 
-		const auto resized_map = combine_table(new_map, current_map, [](auto &&, auto &&rhs)
-		{
-			return rhs;
-		});
+		new_tilemap.add_table(current_map);
 
-		assert(resized_map.size() == size);
-		
+		auto tiles = std::vector<tile_id_t>{};
+		const auto arr_size = size.x * size.y;
+		tiles.reserve(arr_size);
+
+		for (auto i = vector_int::value_type{}; i < arr_size; ++i)
+			tiles.emplace_back(new_tilemap[i]);
+
+		m.tiles = std::move(tiles);
 		m.width = size.x;
-		const auto &new_tiles = resized_map.data();
-		m.tiles = new_tiles;
+
+		return;
 	}
 
 	void resize_map(tile_map &t, vector_int size, vector_int offset)

@@ -40,7 +40,7 @@ set(HADES_EDITOR_LIBS
 hades_make_library(hades-editor include "${HADES_EDITOR_SRC}" "${HADES_EDITOR_LIBS}")
 
 source_group("Header files\\debug" REGULAR_EXPRESSION 
-	"include\/hades\/debug\/.+\.hpp"
+	"include\/hades\/debug\/.+\.hpp|include\/hades\/debug\/.+\.inl"
 )
 
 source_group("Source files\\debug" REGULAR_EXPRESSION 

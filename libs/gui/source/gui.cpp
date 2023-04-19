@@ -665,7 +665,7 @@ namespace hades
 		namespace tex = resources::texture_functions;
 		const auto [tex_width, tex_height] = tex::get_size(t);
 
-		ImGui::Image(const_cast<resources::texture*>(&t), //ImGui only accepts these as non-const void* 
+		ImGui::Image(&t,
 			{ size.x, size.y },
 			{ x / tex_width, y / tex_height }, // normalised coords
 			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
@@ -686,7 +686,13 @@ namespace hades
 		const auto flip_x = f.scale_w < 0 || f.w < 0;
 		const auto flip_y = f.scale_h < 0 || f.h < 0;
 
+		// calculate the extra size needed to store the image at its offset
+		// TODO: find the correct size of the animation, so that the gui sees it 
+		//		as a consistantly sized element.
+		//		Would be nice to render the border correctly over the whole animation
+		//		are, rather than around the current frame.
 		const auto min_off = resources::animation_functions::get_minimum_offset(a);
+		//const auto max_off = resources::animation_functions::get_maximum_offset(a);
 		const auto im_min_off = ImVec2{ abs(min_off.x), abs(min_off.y) };
 		const auto im_off = ImVec2{ f.off_x, f.off_y };
 		const auto im_size = ImVec2{ (size.x + f.off_x) * abs(f.scale_w), (size.y + f.off_y) * abs(f.scale_h) };
@@ -710,16 +716,14 @@ namespace hades
 			std::swap(uv0.y, uv1.y);
 
 		const auto tint_col = to_imvec4(tint_colour);
-		//ImGui only accepts these as non-const void*
-		const auto user_texture_id = const_cast<resources::texture*>(texture); 
-
+		
 		if (border_col.w > 0.0f)
 		{
 			window->DrawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(border_col), 0.0f);
-			window->DrawList->AddImage(user_texture_id, bb.Min + ImVec2(1, 1), bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
+			window->DrawList->AddImage(texture, bb.Min + ImVec2(1, 1), bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
 		}
 		else
-			window->DrawList->AddImage(user_texture_id, bb.Min, bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
+			window->DrawList->AddImage(texture, bb.Min, bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
 
 		return;
 	}

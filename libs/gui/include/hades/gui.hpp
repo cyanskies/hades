@@ -309,6 +309,7 @@ namespace hades
 		bool small_button(std::string_view label);
 		bool invisible_button(std::string_view label, const vector2& size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
+		// TODO: use hades::colour
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector2 size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		bool image_button(std::string_view id, const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
@@ -322,7 +323,7 @@ namespace hades
 		void progress_bar(float progress, std::string_view overlay_text, const vector2& size = { -1.f, 0.f });
 		void bullet();
 
-		//
+		// calculate the size of a button with the following settings
 		vector2 calculate_button_size(std::string_view label, const vector2& size = {});
 
 		enum class selectable_flag : ImGuiSelectableFlags

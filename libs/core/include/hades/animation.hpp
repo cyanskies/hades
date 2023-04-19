@@ -62,6 +62,9 @@ namespace hades::resources
 		void set_animation_frames(animation&, std::vector<animation_frame>);
 		void set_duration(animation&, time_duration) noexcept;
 		vector_float get_minimum_offset(const animation&) noexcept;
+		// calculates the total area the animation might cover
+		// accounting for origin offsets and scale changes
+		rect_float get_bounding_area(const animation&, vector_float size) noexcept;
 		// const shader* get_shader(const animation&) noexcept;
 	}
 
@@ -85,6 +88,7 @@ namespace hades::animation
 {
 	//returns the first frame of the animation, or the animation for the requested time, with wrapping
 	const resources::animation_frame& get_frame(const resources::animation &animation, time_point time_played);
+	const resources::animation_frame& get_frame(const resources::animation& animation, int32 frame);
 
 	//applys an animation to a sprite, progress is a float in the range (0, 1), indicating how far into the animation the sprite should be set to.
 	void apply(const resources::animation &animation, float progress, sf::Sprite &target);

@@ -25,6 +25,7 @@ namespace hades
 	namespace resources
 	{
 		struct animation;
+		struct animation_frame;
 		struct font;
 		struct texture;
 	}
@@ -311,7 +312,9 @@ namespace hades
 		bool arrow_button(std::string_view label, direction);
 		// TODO: use hades::colour
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
-		void image(const resources::animation&, const vector2 size, time_point time = time_point{}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2 size, time_point time, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2 size, std::size_t frame = {}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+
 		bool image_button(std::string_view id, const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool image_button(std::string_view id, const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool checkbox(std::string_view label, bool& checked); //returns true on checked changed
@@ -816,6 +819,9 @@ namespace hades
 		static void _create_font(const resources::font*);
 		static void _create_default_font();
 		static void _generate_atlas();
+		void _image_animation_frame(const resources::animation&, const vector2 size,
+			const resources::animation_frame&, const sf::Color& tint_colour,
+			const sf::Color& border_colour);
 
 		std::string _ini_filename; // Placed above context so that it is
 								   // still valid during contexts destructor.

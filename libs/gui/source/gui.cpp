@@ -673,58 +673,21 @@ namespace hades
 			to_imvec4(border_colour));
 	}
 
-	void gui::image(const resources::animation &a, vector2 size, time_point time, const sf::Color &tint_colour, const sf::Color &border_colour)
+	void gui::image(const resources::animation &a, const vector2 size, const time_point time,
+		const sf::Color &tint_colour, const sf::Color &border_colour)
 	{		
-		_active_assert();
 		const auto texture = resources::animation_functions::get_texture(a);
 		const auto& f = animation::get_frame(a, time);
-		
-		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems)
-			return;
+		_image_animation_frame(a, size, f, tint_colour, border_colour);
+		return;
+	}
 
-		const auto flip_x = f.scale_w < 0 || f.w < 0;
-		const auto flip_y = f.scale_h < 0 || f.h < 0;
-
-		// calculate the extra size needed to store the image at its offset
-		// TODO: find the correct size of the animation, so that the gui sees it 
-		//		as a consistantly sized element.
-		//		Would be nice to render the border correctly over the whole animation
-		//		are, rather than around the current frame.
-		const auto min_off = resources::animation_functions::get_minimum_offset(a);
-		//const auto max_off = resources::animation_functions::get_maximum_offset(a);
-		const auto im_min_off = ImVec2{ abs(min_off.x), abs(min_off.y) };
-		const auto im_off = ImVec2{ f.off_x, f.off_y };
-		const auto im_size = ImVec2{ (size.x + f.off_x) * abs(f.scale_w), (size.y + f.off_y) * abs(f.scale_h) };
-		ImRect bb(window->DC.CursorPos + im_min_off + im_off, window->DC.CursorPos + im_min_off + im_size);
-
-		const auto border_col = to_imvec4(border_colour);
-		if (border_col.w > 0.0f)
-			bb.Max += ImVec2(2, 2);
-		ImGui::ItemSize(bb);
-		if (!ImGui::ItemAdd(bb, 0))
-			return;
-		
-		const auto [tex_width, tex_height] = resources::texture_functions::get_size(*texture);
-
-		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
-		auto uv1 = ImVec2{ (f.x + abs(f.w)) / tex_width, (f.y + abs(f.h)) / tex_height };
-
-		if (flip_x)
-			std::swap(uv0.x, uv1.x);
-		if (flip_y)
-			std::swap(uv0.y, uv1.y);
-
-		const auto tint_col = to_imvec4(tint_colour);
-		
-		if (border_col.w > 0.0f)
-		{
-			window->DrawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(border_col), 0.0f);
-			window->DrawList->AddImage(texture, bb.Min + ImVec2(1, 1), bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
-		}
-		else
-			window->DrawList->AddImage(texture, bb.Min, bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
-
+	void gui::image(const resources::animation& a, const vector2 size, const std::size_t frame,
+		const sf::Color& tint_colour, const sf::Color& border_colour)
+	{
+		const auto texture = resources::animation_functions::get_texture(a);
+		const auto& f = animation::get_frame(a, frame);
+		_image_animation_frame(a, size, f, tint_colour, border_colour);
 		return;
 	}
 
@@ -1449,6 +1412,63 @@ namespace hades
 	{
 		assert(_my_context);
 		assert(ImGui::GetCurrentContext() == _my_context.get());
+	}
+
+	void gui::_image_animation_frame(const resources::animation& a, const vector2 size,
+		const resources::animation_frame& f, const sf::Color& tint_colour,
+		const sf::Color& border_colour)
+	{
+		_active_assert();
+		const auto texture = resources::animation_functions::get_texture(a);
+		
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return;
+
+		const auto flip_x = f.scale_w < 0 || f.w < 0;
+		const auto flip_y = f.scale_h < 0 || f.h < 0;
+
+		// calculate the extra size needed to store the image at its offset
+		const auto bounds = resources::animation_functions::get_bounding_area(a, size);
+		const auto im_min_off = ImVec2{ abs(bounds.x), abs(bounds.y) };
+		const auto im_off = ImVec2{ f.off_x, f.off_y };
+		const auto im_size = ImVec2{ (size.x + f.off_x) * abs(f.scale_w), (size.y + f.off_y) * abs(f.scale_h) };
+		ImRect image_bb(window->DC.CursorPos + im_min_off + im_off, window->DC.CursorPos + im_min_off + im_size);
+		const auto bounds_size = ImVec2{ bounds.width, bounds.height };
+		ImRect bb(window->DC.CursorPos, window->DC.CursorPos + bounds_size + im_min_off);
+		
+		const auto border_col = to_imvec4(border_colour);
+		if (border_col.w > 0.0f)
+		{
+			image_bb.Max += ImVec2{ 2, 2 };
+			bb.Max += ImVec2{ 2, 2 };
+		}
+
+		ImGui::ItemSize(bb);
+		if (!ImGui::ItemAdd(bb, 0))
+			return;
+
+		const auto [tex_width, tex_height] = resources::texture_functions::get_size(*texture);
+
+		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
+		auto uv1 = ImVec2{ (f.x + abs(f.w)) / tex_width, (f.y + abs(f.h)) / tex_height };
+
+		if (flip_x)
+			std::swap(uv0.x, uv1.x);
+		if (flip_y)
+			std::swap(uv0.y, uv1.y);
+
+		const auto tint_col = to_imvec4(tint_colour);
+
+		if (border_col.w > 0.0f)
+		{
+			window->DrawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(border_col), 0.0f);
+			window->DrawList->AddImage(texture, image_bb.Min + ImVec2(1, 1), image_bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
+		}
+		else
+			window->DrawList->AddImage(texture, image_bb.Min, image_bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
+
+		return;
 	}
 
 	gui::font *gui::_get_font(const resources::font *f)

@@ -226,7 +226,7 @@ namespace hades::data
 				g.checkbox("Play animation"sv, _play);
 				if (_play)
 					g.begin_disabled();
-				g.slider_int("Frame"s, _current_frame, 0, std::max(integer_cast<int>(size(_anim_frames)) - 1, 0), gui::slider_flags::no_input);
+				g.slider_int("Frame"s, _current_frame, 0, std::max(integer_cast<int32>(size(_anim_frames)) - 1, 0), gui::slider_flags::no_input);
 				if (_play)
 					g.end_disabled();
 				if (g.child_window_begin("##anim-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
@@ -248,21 +248,12 @@ namespace hades::data
 							for (auto i = std::size_t{}; i < size(frames); ++i)
 							{
 								if (&frame == &frames[i])
-									_current_frame = integer_cast<int>(i);
+									_current_frame = integer_cast<int32>(i);
 							}
 						}
 						else
 						{
-							const auto iter = next(begin(_anim_frames), _current_frame);
-							_time = std::transform_reduce(begin(_anim_frames), iter,
-								0.f, std::plus<>(), std::mem_fn(&resources::animation_frame::normalised_duration));
-							_time *= time_cast<seconds_float>(_duration).count(); // -> to seconds first
-
-							// Add epsilon to tie break frames. Otherwise we err towards frames towards the start of the animation
-							// when we have an even number of frames, this means half the frames are inaccessible.
-							const auto sec = seconds_float{ _time + std::numeric_limits<float>::epsilon() };
-							const auto time = time_cast<time_duration>(sec);// *_duration.count();
-							g.image(*_anim, float_size * _scale, time_point{ time }, sf::Color::White, sf::Color::White);
+							g.image(*_anim, float_size * _scale, _current_frame, sf::Color::White, sf::Color::White);
 						}
 					}//! if currentframe < size
 				}
@@ -287,7 +278,7 @@ namespace hades::data
 		resources::animation* _anim = {};
 		resources::resource_base* _base = {};
 		time_duration _duration;
-		int _current_frame = {};
+		int32 _current_frame = {};
 		std::array<float, 2> _size;
 		std::vector<resources::animation_frame> _anim_frames;
 		string _name;

@@ -235,6 +235,19 @@ namespace hades::resources::animation_functions
 		}
 		return ret;
 	}
+
+	rect_float get_bounding_area(const animation& a, vector_float size) noexcept
+	{
+		auto ret = rect_float{};
+		for(const auto& f : a.value)
+		{
+			ret.x = std::min(ret.x, f.off_x);
+			ret.y = std::min(ret.y, f.off_y);
+			ret.width = std::max(ret.width, f.off_x + size.x * std::abs(f.scale_w));
+			ret.height = std::max(ret.height, f.off_y + size.y * std::abs(f.scale_h));
+		}
+		return ret;
+	}
 }
 
 namespace hades::resources::animation_group_functions
@@ -609,6 +622,14 @@ namespace hades::animation
 	{
 		const auto ratio = normalise_time(t, animation.duration);
 		return get_frame(animation, ratio);
+	}
+
+	const resources::animation_frame& get_frame(const resources::animation& animation, int32 frame)
+	{
+		const auto& frames = resources::animation_functions::get_animation_frames(animation);
+		const auto size = std::size(frames);
+		// support wrapping in either direction [-int, int]
+		return frames[(frame % size + size) % size];
 	}
 
 	void apply(const resources::animation& animation, float progress, sf::Sprite& target)

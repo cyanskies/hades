@@ -212,16 +212,66 @@ namespace hades
 		return l;
 	}
 
-	//TODO: replace calls to this with the helper in gui
+	void level_editor_objects_impl::level_resize(vector_int size, vector_int offset)
+	{
+		const auto offset_f = static_cast<vector_float>(offset);
+
+		_level_limit = static_cast<vector_float>(size);
+		const auto new_world_limit = rect_float{
+			{}, _level_limit
+		};
+
+		_quad_selection = object_collision_tree{ new_world_limit, quad_bucket_limit };
+		_collision_quads.clear();
+
+		auto removal_list = std::vector<entity_id>{};
+		removal_list.reserve(std::size(_objects.objects));
+
+		const auto position_id = get_position_curve_id();
+		const auto position_c = get_position_curve();
+		const auto size_id = get_size_curve_id();
+		const auto size_c = get_size_curve();
+
+		for (auto& o : _objects.objects)
+		{
+			const auto id = o.id;
+			if (has_curve(o, position_id) &&
+				has_curve(o, size_id))
+			{
+				const auto pos_value = get_curve(o, *position_c);
+				assert(std::holds_alternative<resources::curve_types::vec2_float>(pos_value));
+				const auto old_pos = std::get<resources::curve_types::vec2_float>(pos_value);
+
+				const auto pos = old_pos + offset_f;
+				set_curve(o, *position_c, pos);
+
+				const auto siz_value = get_curve(o, *size_c);
+				assert(std::holds_alternative<resources::curve_types::vec2_float>(siz_value));
+				const auto siz = std::get<resources::curve_types::vec2_float>(siz_value);
+
+				if (is_within({ pos, siz }, new_world_limit))
+					_update_changed_obj(o);
+				else
+					removal_list.emplace_back(id);
+			}
+		}
+
+		std::ranges::for_each(removal_list, [this](auto&& id) {
+			_remove_object(id);
+			return;
+			});
+
+		return;
+	}
+
 	template<typename Func, typename ObjectPtr>
 	static void add_object_buttons(gui &g, const std::vector<ObjectPtr> &objects, Func on_click)
 	{
 		static_assert(std::is_invocable_v<Func, const resources::object*>);
 
 		constexpr auto button_size = vector_float{ 25.f, 25.f };
-		constexpr auto button_scale_diff = 6.f;
-		constexpr auto button_size_no_img = vector_float{ button_size.x + button_scale_diff,
-														  button_size.y + button_scale_diff };
+		constexpr auto button_scale_diff = vector_float{ 8.f, 6.f };
+		constexpr auto button_size_no_img = button_size + button_scale_diff;
 
 		const auto name_curve = get_name_curve();
 
@@ -239,7 +289,7 @@ namespace hades
 			g.push_id(&*o);
 			if (const auto ico = get_editor_icon(*o); ico)
 			{
-				g.same_line_wrapping(25); // TODO: image button size calc
+				g.same_line_wrapping(g.calculate_button_size({}, button_size).x);
 				clicked = g.image_button("###obj_button"sv, *ico, button_size);
 			}
 			else
@@ -247,9 +297,14 @@ namespace hades
 				g.same_line_wrapping(g.calculate_button_size(name, button_size_no_img).x);
 				clicked = g.button(name, button_size_no_img);
 			}
+
+			const auto s = g.get_item_rect_size();
+
 			g.pop_id();
 
 			g.tooltip(name);
+			// for debugging the button size
+			//g.tooltip(name + " x: " + to_string(s.x) + ", y: " + to_string(s.y));
 
 			if (clicked)
 				std::invoke(on_click, &*o);

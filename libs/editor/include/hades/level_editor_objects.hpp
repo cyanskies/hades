@@ -181,7 +181,7 @@ namespace hades
 
 		void level_load(const level&) override final;
 		level level_save(level l) const override final;
-		//void level_resize(vector_int, vector_int) override; //TODO:
+		void level_resize(vector_int, vector_int) override final;
 
 		void gui_update(gui&, editor_windows&) override final;
 		void make_brush_preview(time_duration, mouse_pos) override final;

@@ -174,8 +174,8 @@ namespace hades
 		};
 
 		// TODO(steven): redo this with collision_grid
-		using object_collision_tree = quad_tree<entity_id, rect_float>;
-		using collision_layer_map = std::unordered_map<unique_id, object_collision_tree>;
+		using object_collision_grid = quad_tree<entity_id, rect_float>;
+		using collision_layer_map = std::unordered_map<unique_id, object_collision_grid>;
 
 		level_editor_objects_impl();
 
@@ -198,7 +198,7 @@ namespace hades
 
 	protected:
 		const std::vector<editor_object_instance>& get_objects() const noexcept;
-		const object_collision_tree& get_quadmap() const noexcept;
+		const object_collision_grid& get_quadmap() const noexcept;
 		const collision_layer_map& get_collision_layers() const noexcept;
 		world_vector_t get_level_size() const noexcept;
 
@@ -243,7 +243,7 @@ namespace hades
 		sprite_batch _sprites;
 		//level info
 		vector_float _level_limit = {};
-		object_collision_tree _quad_selection; // quadtree used for selecting objects
+		object_collision_grid _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
 		collision_layer_map _collision_quads;
 

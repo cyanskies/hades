@@ -313,7 +313,7 @@ namespace hades
 		// TODO: use hades::colour
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector2 size, time_point time, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
-		void image(const resources::animation&, const vector2 size, std::size_t frame = {}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
+		void image(const resources::animation&, const vector2 size, int32 frame = {}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 
 		bool image_button(std::string_view id, const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);
 		bool image_button(std::string_view id, const resources::animation&, const vector2& size, time_point time = time_point{}, const sf::Color& background_colour = sf::Color::Transparent, const sf::Color& tint_colour = sf::Color::White);

@@ -676,16 +676,14 @@ namespace hades
 	void gui::image(const resources::animation &a, const vector2 size, const time_point time,
 		const sf::Color &tint_colour, const sf::Color &border_colour)
 	{		
-		const auto texture = resources::animation_functions::get_texture(a);
 		const auto& f = animation::get_frame(a, time);
 		_image_animation_frame(a, size, f, tint_colour, border_colour);
 		return;
 	}
 
-	void gui::image(const resources::animation& a, const vector2 size, const std::size_t frame,
+	void gui::image(const resources::animation& a, const vector2 size, const int32 frame,
 		const sf::Color& tint_colour, const sf::Color& border_colour)
 	{
-		const auto texture = resources::animation_functions::get_texture(a);
 		const auto& f = animation::get_frame(a, frame);
 		_image_animation_frame(a, size, f, tint_colour, border_colour);
 		return;

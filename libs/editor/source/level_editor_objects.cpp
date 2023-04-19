@@ -152,7 +152,7 @@ namespace hades
 						 static_cast<float>(l.map_y) };
 
 		//setup the quad used for selecting objects
-		_quad_selection = object_collision_tree{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
+		_quad_selection = object_collision_grid{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
 		_collision_quads.clear();
 		auto sprites = sprite_batch{};
 		auto names = unordered_map_string<entity_id>{};
@@ -221,7 +221,7 @@ namespace hades
 			{}, _level_limit
 		};
 
-		_quad_selection = object_collision_tree{ new_world_limit, quad_bucket_limit };
+		_quad_selection = object_collision_grid{ new_world_limit, quad_bucket_limit };
 		_collision_quads.clear();
 
 		auto removal_list = std::vector<entity_id>{};
@@ -526,7 +526,7 @@ namespace hades
 	}
 
 	static entity_id object_at(level_editor_objects_impl::mouse_pos pos, 
-		const level_editor_objects_impl::object_collision_tree &quads)
+		const level_editor_objects_impl::object_collision_grid &quads)
 	{
 		const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
 		const auto rects = quads.find_collisions(target);
@@ -657,7 +657,7 @@ namespace hades
 		return _objects.objects;
 	}
 
-	const level_editor_objects_impl::object_collision_tree& level_editor_objects_impl::get_quadmap() const noexcept
+	const level_editor_objects_impl::object_collision_grid& level_editor_objects_impl::get_quadmap() const noexcept
 	{
 		return _quad_selection;
 	}

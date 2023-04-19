@@ -143,20 +143,11 @@ namespace hades {
 
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors
-	template<typename Container>
-	decltype(auto) remove_duplicates(Container &cont);
+	template<typename Container, typename Iter, typename Less = std::less<>, typename Equal = std::equal_to<>>
+	Iter remove_duplicates(Container& cont, Iter first, Iter last, Less less = std::less{}, Equal equal = std::equal_to{}) noexcept;
 
-	template<typename Container, typename Less>
-	decltype(auto) remove_duplicates(Container &cont, Less less);
-
-	template<typename Container, typename Less, typename Equal>
-	decltype(auto) remove_duplicates(Container &cont, Less less, Equal equal);
-
-	template<typename Container, typename Iter>
-	Iter remove_duplicates(Container &cont, Iter first, Iter last);
-
-	template<typename Container, typename Iter, typename Less, typename Equal>
-	Iter remove_duplicates(Container &cont, Iter first, Iter last, Less less, Equal equal);
+	template<typename Container, typename Less = std::less<>, typename Equal = std::equal_to<>>
+	typename Container::iterator remove_duplicates(Container& cont, Less less = std::less{}, Equal equal = std::equal_to{}) noexcept;
 
 	// TODO: vv move this to some function related header vv
 

@@ -354,37 +354,22 @@ namespace hades
 		return make_finally_return{ f };
 	}
 
-	template<typename Container>
-	decltype(auto) remove_duplicates(Container &cont)
-	{
-		return remove_duplicates(cont,
-			std::less<typename Container::value_type>{});
-	}
-
-	template<typename Container, typename Less>
-	decltype(auto) remove_duplicates(Container &cont, Less less)
-	{
-		return remove_duplicates(cont, less,
-			std::equal_to<typename Container::value_type>{});
-	}
-
-	template<typename Container, typename Less, typename Equal>
-	decltype(auto) remove_duplicates(Container &cont, Less less, Equal equal)
-	{
-		return remove_duplicates(cont, std::begin(cont), std::end(cont), less, equal);
-	}
-
-	template<typename Container, typename Iter>
-	Iter remove_duplicates(Container &cont, Iter first, Iter last)
-	{
-		return remove_duplicates(cont, first, last, std::less<typename std::iterator_traits<Iter>::value_type>{}, std::equal_to<typename std::iterator_traits<Iter>::value_type>{});
-	}
-
 	template<typename Container, typename Iter, typename Less, typename Equal>
-	Iter remove_duplicates(Container &cont, Iter first, Iter last, Less less, Equal equal)
+	Iter remove_duplicates(Container& cont, Iter first, Iter last, Less less, Equal equal) noexcept
 	{
 		std::stable_sort(first, last, less);
 		const auto last_unique = std::unique(first, last, equal);
 		return cont.erase(last_unique, last);
 	}
+
+	template<typename Container, typename Less, typename Equal>
+	typename Container::iterator remove_duplicates(Container& cont, Less less, Equal equal) noexcept
+	{
+		const auto beg = begin(cont);
+		const auto last = end(cont);
+		std::stable_sort(beg, last, less);
+		const auto last_unique = std::unique(beg, last, equal);
+		return cont.erase(last_unique, last);
+	}
+
 }

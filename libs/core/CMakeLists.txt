@@ -100,6 +100,8 @@ set(HADES_CORE_LIBS
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")
 
+add_definitions(-DHADES_ROOT_PROJECT_PATH=\"${CMAKE_SOURCE_DIR}\")
+
 source_group("Header Files\\debug" REGULAR_EXPRESSION
 	"include\/hades\/debug\/.+\.hpp"
 )

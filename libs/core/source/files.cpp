@@ -113,7 +113,7 @@ namespace hades
 	{
 		//check debug path
 		#ifndef NDEBUG
-		constexpr auto debug_path_str = "../../game/";
+		constexpr auto debug_path_str = HADES_ROOT_PROJECT_PATH "/game/";
 		if(_try_open_from_dir({ debug_path_str }, m, f))
 			return;
 		#endif

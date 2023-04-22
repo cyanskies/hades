@@ -53,7 +53,7 @@ namespace hades::files
 
 	void ofstream::open(const std::filesystem::path& p)
 	{
-		if (*console::get_bool(cvars::file_deflate, true))//cvars::default_value::file_deflate))
+		if (*console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate))
 			_stream = zip::out_compressed_filebuf{ p };
 		else
 		{
@@ -62,10 +62,8 @@ namespace hades::files
 			_stream = std::move(buf);
 		}
 
-		std::streambuf* str_ptr = {};
-		std::visit([&str_ptr](auto&& stream) {
-			str_ptr = &stream;
-			return;
+		std::streambuf* str_ptr = std::visit([](auto&& stream) noexcept -> std::streambuf* {
+			return &stream;
 			}, _stream);
 
 		rdbuf(str_ptr);
@@ -224,10 +222,8 @@ namespace hades
 
 	void irfstream::_bind_buffer() noexcept
 	{
-		std::streambuf* ptr = {};
-		std::visit([&ptr](auto&& stream) {
-			ptr = &stream;
-			return;
+		std::streambuf* ptr = std::visit([](auto&& stream) noexcept -> std::streambuf* {
+			return &stream;
 			}, _stream);
 		rdbuf(ptr);
 		return;

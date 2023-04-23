@@ -147,7 +147,7 @@ namespace hades::detail
 				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
-				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
+				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level_x), static_cast<float>(_level_y) });
 			}
 
 			const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);

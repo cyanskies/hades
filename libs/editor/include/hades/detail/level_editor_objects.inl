@@ -562,15 +562,16 @@ namespace hades::detail::obj_ui
 		return;
 	}
 
+	template<bool Tag = false>
 	static inline string get_name(const object_instance &o)
 	{
 		using namespace std::string_literals;
 		const auto type = o.obj_type ? data::get_as_string(o.obj_type->id) : to_string(o.id);
-		constexpr auto max_length = 15u;
+		const auto id = to_string(o.id);
 		if (!o.name_id.empty())
-			return clamp_length<max_length>(o.name_id) + "("s + clamp_length<max_length>(type) + ")"s;
+			return o.name_id + "("s + type + ")"s + (Tag ? "##"s + id : ""s);
 		else
-			return clamp_length<max_length>(type);
+			return type + (Tag ? "##"s + id : ""s);
 	}
 }
 
@@ -658,7 +659,7 @@ namespace hades
 					auto& o = _data->objects[i];
 					if ( !(has_curve(o, *position_curve) && has_curve(o, *size_curve)) )
 					{
-						if (g.selectable(detail::obj_ui::get_name(o), _obj_list_selected == i))
+						if (g.selectable(detail::obj_ui::get_name<true>(o), _obj_list_selected == i))
 							_set_selected(i);
 					}
 				}
@@ -667,7 +668,7 @@ namespace hades
 		}
 		else
 		{
-			if (g.listbox("##obj_list"sv, _obj_list_selected, _data->objects, detail::obj_ui::get_name))
+			if (g.listbox("##obj_list"sv, _obj_list_selected, _data->objects, detail::obj_ui::get_name<true>))
 			{
 				_set_selected(_obj_list_selected);
 			}

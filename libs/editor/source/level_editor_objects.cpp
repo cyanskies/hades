@@ -231,7 +231,6 @@ namespace hades
 		const auto position_c = get_position_curve();
 		const auto size_id = get_size_curve_id();
 		const auto size_c = get_size_curve();
-
 		for (auto& o : _objects.objects)
 		{
 			const auto id = o.id;
@@ -250,7 +249,10 @@ namespace hades
 				const auto siz = std::get<resources::curve_types::vec2_float>(siz_value);
 
 				if (is_within({ pos, siz }, new_world_limit))
+				{
 					_update_changed_obj(o);
+					on_object_place(o);
+				}
 				else
 					removal_list.emplace_back(id);
 			}
@@ -756,8 +758,7 @@ namespace hades
 			else
 				set_position(o, pos);
 
-			_update_quad_data(o);
-			update_object_sprite(o, _sprites);
+			_update_changed_obj(o);
 			on_object_place(o);
 
 			const auto end = std::end(_objects.objects);

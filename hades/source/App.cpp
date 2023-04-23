@@ -103,8 +103,7 @@ namespace hades
 		data::set_default_parser(data::make_parser_f{ data::make_yaml_parser });
 		data::set_default_parser(data::make_parser2_f{ data::make_yaml_parser });
 		data::set_default_writer(data::make_writer_f{ data::make_yaml_writer });
-		data::set_default_writer(data::make_writer2_f{ data::make_yaml_writer });
-
+		
 		if (app_resources)
 			std::invoke(app_resources, _dataMan);
 

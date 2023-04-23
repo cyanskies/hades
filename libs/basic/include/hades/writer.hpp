@@ -32,6 +32,8 @@ namespace hades::data
 		virtual void write(std::string_view key, std::string_view value) = 0;
 
 		virtual string get_string() const = 0;
+		//output to stream
+		virtual void print(std::ostream&) const = 0;
 
 		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
 		void start_map(T value)
@@ -52,13 +54,21 @@ namespace hades::data
 		}
 	};
 
+	inline std::ostream& operator<<(std::ostream& os, const writer& w)
+	{
+		w.print(os);
+		return os;
+	}
+
+	inline std::ostream& operator<<(std::ostream& os, const std::unique_ptr<writer>& w) 
+	{
+		return os << *w;
+	}
+
 	using make_writer_f = std::unique_ptr<writer>(*)();
-	using make_writer2_f = std::unique_ptr<writer>(*)(std::ostream&);
 	
 	void set_default_writer(make_writer_f);
-	void set_default_writer(make_writer2_f);
 	std::unique_ptr<writer> make_writer();
-	std::unique_ptr<writer> make_writer(std::ostream&);
 }
 
 #endif // !HADES_WRITER_HPP

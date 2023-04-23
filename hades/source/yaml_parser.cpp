@@ -13,7 +13,7 @@ namespace hades::data
 {
 	std::unique_ptr<parser_node> make_yaml_parser(const YAML::Node&);
 
-	class yaml_parser_node : public parser_node
+	class yaml_parser_node final : public parser_node
 	{
 	public:
 		enum class yaml_type : uint8 {MAP, SEQUENCE, SCALAR};

@@ -8,7 +8,7 @@
 
 namespace
 {
-	class yaml_writer : public hades::data::writer
+	class yaml_writer final : public hades::data::writer
 	{
 	public:
 		yaml_writer() noexcept 
@@ -67,11 +67,20 @@ namespace
 
 		hades::string get_string() const override
 		{
-			assert(_emitter.good());
-			const auto s = hades::string{ _emitter.c_str() };
-			return s + '\n'; //manually add the final newline(emitter sometimes misses it)
-								//no harm in having it twice
+			auto strm = std::ostringstream{};
+			print(strm);
+			return strm.str();
 		}
+
+		void print(std::ostream& os) const override
+		{
+			assert(_emitter.good());
+			os << _emitter.c_str() << '\n';
+			//manually add the final newline(emitter sometimes misses it)
+			//no harm in having it twice
+			return;
+		}
+
 	private:
 		YAML::Emitter _emitter;
 	};
@@ -82,10 +91,5 @@ namespace hades::data
 	std::unique_ptr<writer> make_yaml_writer()
 	{
 		return std::make_unique<yaml_writer>();
-	}
-
-	std::unique_ptr<writer> make_yaml_writer(std::ostream& s)
-	{
-		return std::make_unique<yaml_writer>(s);
 	}
 }

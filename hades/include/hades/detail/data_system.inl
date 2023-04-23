@@ -86,7 +86,10 @@ namespace hades::data
 
 		const auto close_writers = [&data_output, &strm]() {
 			if (data_output)
+			{
 				data_output->end_map();
+				strm << data_output;
+			}
 
 			data_output.reset();
 
@@ -128,7 +131,7 @@ namespace hades::data
 				if (!strm.good())
 					throw files::file_error{ "Error creating data file" };
 
-				data_output = make_writer(strm);
+				data_output = make_writer();
 
 				log_debug("Writing: " + (root / *data_file).generic_string());
 
@@ -162,7 +165,7 @@ namespace hades::data
 				if (!loaded)
 					load(res->id);
 
-				if (!loaded)
+				if (!loaded || (res->loaded_path.empty() && res->loaded_archive_path.empty()))
 				{
 					log_warning("Failed to load: " + res->source.generic_string() + " skipping file");
 					continue;

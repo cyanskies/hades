@@ -22,7 +22,7 @@ namespace hades
 	constexpr auto player_name_str = "name"sv,
 		player_object_str = "object"sv;
 
-	string serialise(const mission& m)
+	static string serialise_impl(const mission& m, data::writer& w)
 	{
 		//mission.mis
 		//name: string
@@ -37,53 +37,65 @@ namespace hades
 		//inline-levels:
 		//external-levels:
 
-		auto w = data::make_writer();
 		if(!empty(m.name))
-			w->write(name_str, m.name);
+			w.write(name_str, m.name);
 		if(!empty(m.description))
-			w->write(desc_str, m.description);
+			w.write(desc_str, m.description);
 
 		//players
 		if (!std::empty(m.players))
 		{
-			w->start_map(players_str);
+			w.start_map(players_str);
 			for (const auto& p : m.players)
 			{
-				w->start_map(p.id);
-				w->write(player_object_str, p.object);
-				w->end_map();
+				w.start_map(p.id);
+				w.write(player_object_str, p.object);
+				w.end_map();
 			}
-			w->end_map();
+			w.end_map();
 		}
 
-		serialise(m.objects, *w);
+		serialise(m.objects, w);
 
 		if (!std::empty(m.inline_levels))
 		{
-			w->start_map(levels_str);
+			w.start_map(levels_str);
 			for (const auto& l : m.inline_levels)
 			{
-				w->start_map(l.name);
-                serialise(l.level_obj, *w);
-				w->end_map();
+				w.start_map(l.name);
+                serialise(l.level_obj, w);
+				w.end_map();
 			}
-			w->end_map();
+			w.end_map();
 		}
 
 		if (!std::empty(m.external_levels))
 		{
-			w->start_map(ext_levels_str);
+			w.start_map(ext_levels_str);
 			for (const auto& l : m.external_levels)
-				w->write(l.name, l.path);
-			w->end_map();
+				w.write(l.name, l.path);
+			w.end_map();
 		}
 
+		return w.get_string();
+	}
+
+	string serialise(const mission& m)
+	{
+		auto w = data::make_writer();
+		assert(w);
+		serialise_impl(m, *w);
 		return w->get_string();
 	}
 
-	mission deserialise_mission(std::string_view s)
+	void serialise(const mission& m, data::writer& w)
 	{
-		const auto parser = data::make_parser(s);
+		serialise_impl(m, w);
+		return;
+	}
+
+	static mission deserialise_mission_impl(const std::unique_ptr<hades::data::parser_node> parser)
+	{
 		auto m = mission{};
 
 		namespace pt = data::parse_tools;
@@ -123,6 +135,16 @@ namespace hades
 		}
 
 		return m;
+	}
+
+	mission deserialise_mission(std::string_view s)
+	{
+		return deserialise_mission_impl(data::make_parser(s));
+	}
+
+	mission deserialise_mission(std::unique_ptr<data::parser_node> n)
+	{
+		return deserialise_mission_impl(std::move(n));
 	}
 
 	mission_save make_save_from_mission(mission l)

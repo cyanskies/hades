@@ -2,6 +2,7 @@
 
 #include "hades/level_editor.hpp"
 #include "hades/objects.hpp"
+#include "hades/parser.hpp"
 
 namespace hades
 {
@@ -677,18 +678,20 @@ namespace hades
 		m.objects.next_id = _objects.next_id;
 		m.objects.objects = _objects.objects;
 
-		const auto s = serialise(m);
-		files::write_file(sv_path, s);
+		auto w = data::make_writer();
+		serialise(m, *w);
+		auto strm = files::write_file(sv_path);
+		strm << w;
 		_mission_src = std::move(sv_path);
 	}
 
 	void mission_editor_t::_load(path p)
 	{
-		const auto f = files::read_file(p);
-		if (empty(f))
+		auto strm = files::stream_file(p);
+		if (!strm.is_open())
 			return;//TODO: unable to find or read file gui message
 
-		auto m = deserialise_mission(f);
+		auto m = deserialise_mission(data::make_parser(strm));
 		_mission_name = std::move(m.name);
 		_mission_desc = std::move(m.description);
 

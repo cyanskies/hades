@@ -5,6 +5,12 @@
 #include "hades/objects.hpp"
 #include "hades/time.hpp"
 
+namespace hades::data
+{
+	class parser_node;
+	class writer;
+}
+
 namespace hades
 {
 	constexpr auto mission_ext = "mission";
@@ -68,10 +74,10 @@ namespace hades
 		time_point time;
 	};
 
-	// TODO: straight to writer
 	string serialise(const mission&);
-	// TODO: straight from parser
+	void serialise(const mission&, data::writer&);
 	mission deserialise_mission(std::string_view);
+	mission deserialise_mission(std::unique_ptr<data::parser_node> n);
 
 	mission_save make_save_from_mission(mission l);
 }

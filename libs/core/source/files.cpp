@@ -275,6 +275,15 @@ namespace hades::files
 		const fs::path& second, const fs::path& path)
 	{
 		assert(path.is_relative());
+
+		// allow reading from game data dir in debug mode
+		#ifndef NDEBUG
+		constexpr auto debug_path_str = HADES_ROOT_PROJECT_PATH "/game/";
+		auto z = debug_path_str / path;
+		if (fs::exists(z))
+			return ifstream{ std::move(z) };
+		#endif
+
 		auto a = first / path;
 		if (fs::exists(a))
 			return ifstream{ std::move(a) };

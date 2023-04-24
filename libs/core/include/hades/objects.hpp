@@ -185,6 +185,16 @@ namespace hades
 	//NOTE: the following curve functions throw curve_not_found if the object doesn't have that curve
 	// or the value hasn't been set
 	curve_value get_curve(const object_instance &o, const hades::resources::curve &c);
+
+	// TODO: objects.inl
+	template<curve_type CurveType>
+	CurveType get_curve_value(const object_instance& o, const resources::curve& curve)
+	{
+		const auto c = get_curve(o, curve);
+		assert(std::holds_alternative<CurveType>(c));
+		return std::get<CurveType>(c);
+	}
+
 	void set_curve(object_instance &o, const hades::resources::curve &c, curve_value v);
 	void set_curve(object_instance& o, const unique_id i, curve_value v); 
 

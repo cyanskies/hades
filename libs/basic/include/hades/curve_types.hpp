@@ -146,6 +146,12 @@ namespace hades::curve_types
 		std::is_same_v<T, time_d>;
 }
 
+namespace hades
+{
+	template<typename T>
+	concept curve_type = curve_types::is_curve_type<T>::value;
+}
+
 #include "detail/curve_types.inl"
 
 #endif //HADES_CURVE_TYPES_HPP

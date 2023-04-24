@@ -6,6 +6,7 @@ set(HADES_UTIL_SRC
 	source/time.cpp
 	include/hades/any_map.hpp
 	include/hades/async.hpp
+	include/hades/collision_grid.hpp
 	include/hades/curve.hpp
 	include/hades/line_math.hpp
 	include/hades/math.hpp
@@ -24,6 +25,7 @@ set(HADES_UTIL_SRC
 	include/hades/vector_math.hpp
 	include/hades/zip.hpp
 	include/hades/detail/any_map.inl
+	include/hades/detail/collision_grid.inl
 	include/hades/detail/line_math.inl
 	include/hades/detail/math.inl
 	include/hades/detail/poly_math.inl

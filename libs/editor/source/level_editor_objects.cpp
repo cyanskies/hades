@@ -142,7 +142,7 @@ namespace hades
 		s.set_size(o.sprite_id, size);
 	}
 
-	static constexpr auto quad_bucket_limit = 5;
+	static constexpr auto grid_size = 64.f;
 
 	void level_editor_objects_impl::level_load(const level &l)
 	{
@@ -152,7 +152,7 @@ namespace hades
 						 static_cast<float>(l.map_y) };
 
 		//setup the quad used for selecting objects
-		_quad_selection = object_collision_grid{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, quad_bucket_limit };
+		_quad_selection = object_collision_grid{ rect_float{0.f, 0.f, _level_limit.x, _level_limit.y }, grid_size };
 		_collision_quads.clear();
 		auto sprites = sprite_batch{};
 		auto names = unordered_map_string<entity_id>{};
@@ -221,7 +221,7 @@ namespace hades
 			{}, _level_limit
 		};
 
-		_quad_selection = object_collision_grid{ new_world_limit, quad_bucket_limit };
+		_quad_selection = object_collision_grid{ new_world_limit, grid_size };
 		_collision_quads.clear();
 
 		auto removal_list = std::vector<entity_id>{};
@@ -237,17 +237,12 @@ namespace hades
 			if (has_curve(o, position_id) &&
 				has_curve(o, size_id))
 			{
-				const auto pos_value = get_curve(o, *position_c);
-				assert(std::holds_alternative<resources::curve_types::vec2_float>(pos_value));
-				const auto old_pos = std::get<resources::curve_types::vec2_float>(pos_value);
-
+				const auto old_pos = get_curve_value<resources::curve_types::vec2_float>(o, *position_c);
 				const auto pos = old_pos + offset_f;
 				set_curve(o, *position_c, pos);
 
-				const auto siz_value = get_curve(o, *size_c);
-				assert(std::holds_alternative<resources::curve_types::vec2_float>(siz_value));
-				const auto siz = std::get<resources::curve_types::vec2_float>(siz_value);
-
+				const auto siz = get_curve_value<resources::curve_types::vec2_float>(o, *size_c);
+				
 				if (is_within({ pos, siz }, new_world_limit))
 				{
 					_update_changed_obj(o);
@@ -510,11 +505,14 @@ namespace hades
 	{
 		auto tags = tag_list{};
 
+		const auto pos_id = get_position_curve();
+		const auto siz_id = get_size_curve();
+
 		for(const auto &o : _objects.objects)
 		{
-			const auto pos = get_position(o);
-			const auto size = get_size(o);
-			const auto rect = rect_float{ pos, size };
+			const auto pos = get_curve_value<curve_types::vec2_float>(o, *pos_id);
+			const auto siz = get_curve_value<curve_types::vec2_float>(o, *siz_id);
+			const auto rect = rect_float{ pos, siz };
 
 			if (intersects(rect, area))
 			{
@@ -528,15 +526,24 @@ namespace hades
 	}
 
 	static entity_id object_at(level_editor_objects_impl::mouse_pos pos, 
-		const level_editor_objects_impl::object_collision_grid &quads)
+		const level_editor_objects_impl::object_collision_grid &quads,
+		const std::vector<level_editor_objects_impl::editor_object_instance>& objects)
 	{
 		const auto target = rect_float{ {pos.x - .5f, pos.y - .5f}, {.5f, .5f} };
-		const auto rects = quads.find_collisions(target);
+		const auto rects = quads.find(target);
 
-		for (const auto &o : rects)
+		const auto pos_id = get_position_curve();
+		const auto siz_id = get_size_curve();
+
+		for (const auto o : rects)
 		{
-			if (intersects(o.rect, target))
-				return o.key;
+			const auto obj = std::ranges::find(objects, o, &level_editor_objects_impl::editor_object_instance::id);
+
+			assert(obj != end(objects));
+			const auto p = get_curve_value<curve_types::vec2_float>(*obj, *pos_id);
+			const auto s = get_curve_value<curve_types::vec2_float>(*obj, *siz_id);
+			if (intersects({ p, s }, target))
+				return o;
 		}
 
 		return bad_entity;
@@ -550,13 +557,11 @@ namespace hades
 			&& _show_objects 
 			&& within_level(pos, vector_float{}, _level_limit))
 		{
-			const auto id = object_at(pos, _quad_selection);
+			const auto id = object_at(pos, _quad_selection.value(), _objects.objects);
 			if (id == bad_entity) // nothing under cursor
 				return;
 
-			const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id](auto &&o) {
-				return o.id == id;
-			});
+			const auto obj = std::ranges::find(_objects.objects, id, &editor_object_instance::id);
 
 			//object was in quadmap but not objectlist
 			assert(obj != std::cend(_objects.objects));
@@ -583,14 +588,12 @@ namespace hades
 		if (_brush_type == brush_type::object_selector
 			&& _show_objects)
 		{
-			const auto id = object_at(pos, _quad_selection);
+			const auto id = object_at(pos, _quad_selection.value(), _objects.objects);
 
 			if (id == bad_entity)
 				return;
 
-			const auto obj = std::find_if(std::cbegin(_objects.objects), std::cend(_objects.objects), [id](auto &&o) {
-				return id == o.id;
-			});
+			const auto obj = std::ranges::find(_objects.objects, id, &editor_object_instance::id);
 
 			assert(obj != std::cend(_objects.objects));
 			_held_object = *obj;
@@ -661,7 +664,7 @@ namespace hades
 
 	const level_editor_objects_impl::object_collision_grid& level_editor_objects_impl::get_quadmap() const noexcept
 	{
-		return _quad_selection;
+		return _quad_selection.value();
 	}
 
 	const level_editor_objects_impl::collision_layer_map& level_editor_objects_impl::get_collision_layers() const noexcept
@@ -707,11 +710,24 @@ namespace hades
 		if (group_quadtree == std::end(current_groups))
 			return false;
 
-		const auto local_rects = group_quadtree->second.find_collisions(r);
+		const auto local_rects = group_quadtree->second.find(r);
+		const auto& objects = get_objects();
+
+		const auto pos_id = get_position_curve();
+		const auto siz_id = get_size_curve();
 
 		const auto object_collision = std::any_of(std::begin(local_rects), std::end(local_rects),
-			[&r, id](const quad_data<entity_id, rect_float>& other) {
-				return other.key != id && intersects(other.rect, r);
+			[&](auto&& other) {
+				if (other == id)
+					return false;
+
+				auto obj = std::ranges::find(objects, other, &editor_object_instance::id);
+				assert(obj != end(objects));
+
+				const auto pos = get_curve_value<curve_types::vec2_float>(*obj, *pos_id);
+				const auto siz = get_curve_value<curve_types::vec2_float>(*obj, *siz_id);
+
+				return intersects({ pos, siz }, r);
 			});
 
 		//TODO: a way to ask the terrain system for it's say on this object?
@@ -726,7 +742,7 @@ namespace hades
 		});
 
 		_sprites.destroy_sprite(obj->sprite_id);
-		_quad_selection.remove(obj->id);
+		_quad_selection.value().remove(obj->id);
 
 		for (auto& [name, tree] : _collision_quads)
 		{
@@ -792,7 +808,7 @@ namespace hades
 
 		{
 			const auto select_size = get_safe_size(o);
-			_quad_selection.insert({ position, select_size }, o.id);
+			_quad_selection.value().update(o.id, {position, select_size});
 		}
 		
 		//update collision quad
@@ -808,11 +824,12 @@ namespace hades
 
 		//emplace creates the entry if needed, otherwise returns
 			//the existing one, we don't care which
+		using rect_type = object_collision_grid::rect_type;
 		auto [group, found] = _collision_quads.try_emplace(collision_group,
-			rect_float{ {0.f, 0.f}, _level_limit }, quad_bucket_limit);
+			rect_type{ { 0.f, 0.f }, _level_limit }, grid_size);
 
 		std::ignore = found;
-		group->second.insert(rect, o.id);
+		group->second.insert(o.id, rect);
 		return;
 	}
 

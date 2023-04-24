@@ -10,11 +10,11 @@
 #include "SFML/Graphics/Sprite.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 
+#include "hades/collision_grid.hpp"
 #include "hades/level_editor_component.hpp"
 #include "hades/level_editor_grid.hpp"
 #include "hades/objects.hpp"
 #include "hades/properties.hpp"
-#include "hades/quad_map.hpp" // TODO: switch to collision grid
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 
@@ -173,8 +173,7 @@ namespace hades
 			sprite_batch::sprite_id sprite_id = sprite_utility::bad_sprite_id;
 		};
 
-		// TODO(steven): redo this with collision_grid
-		using object_collision_grid = quad_tree<entity_id, rect_float>;
+		using object_collision_grid = uniform_collision_grid<entity_id, rect_float>;
 		using collision_layer_map = std::unordered_map<unique_id, object_collision_grid>;
 
 		level_editor_objects_impl();
@@ -243,7 +242,8 @@ namespace hades
 		sprite_batch _sprites;
 		//level info
 		vector_float _level_limit = {};
-		object_collision_grid _quad_selection; // quadtree used for selecting objects
+		float _collision_grid_cell_size;
+		std::optional<object_collision_grid> _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision
 		collision_layer_map _collision_quads;
 

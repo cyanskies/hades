@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string_view>
 
+#define ZLIB_CONST
 #include "zlib.h"
 #include "zip.h"
 #include "unzip.h"

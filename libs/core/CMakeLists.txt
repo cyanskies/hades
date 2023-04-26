@@ -2,8 +2,6 @@ include(../../cmake.txt)
 
 set(HADES_CORE_SRC
 	source/animation.cpp
-	source/archive.cpp
-	source/archive_streams.cpp
 	source/background.cpp
 	source/camera.cpp
 	source/console_functions.cpp
@@ -12,7 +10,6 @@ set(HADES_CORE_SRC
 	source/debug.cpp
 	source/draw_clamp.cpp
 	source/export_curves.cpp
-	source/files.cpp
 	source/font.cpp
 	source/game_api.cpp
 	source/game_state.cpp
@@ -37,8 +34,6 @@ set(HADES_CORE_SRC
 	source/vertex_buffer.cpp
 	source/debug/object_overlay.cpp
 	include/hades/animation.hpp
-	include/hades/archive.hpp
-	include/hades/archive_streams.hpp
 	include/hades/background.hpp
 	include/hades/camera.hpp
 	include/hades/console_functions.hpp
@@ -48,7 +43,6 @@ set(HADES_CORE_SRC
 	include/hades/drawable.hpp
 	include/hades/draw_clamp.hpp
 	include/hades/export_curves.hpp
-	include/hades/files.hpp
 	include/hades/font.hpp
 	include/hades/game_api.hpp
 	include/hades/game_state.hpp
@@ -95,12 +89,9 @@ set(HADES_CORE_LIBS
 	#sfml-system 
 	#sfml-window
 	plf-colony
-	minizip
 )
 
 hades_make_library(hades-core include "${HADES_CORE_SRC}" "${HADES_CORE_LIBS}")
-
-add_definitions(-DHADES_ROOT_PROJECT_PATH=\"${CMAKE_SOURCE_DIR}\")
 
 source_group("Header Files\\debug" REGULAR_EXPRESSION
 	"include\/hades\/debug\/.+\.hpp"

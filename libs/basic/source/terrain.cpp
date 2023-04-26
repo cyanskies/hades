@@ -3,6 +3,7 @@
 #include <map>
 
 #include "hades/data.hpp"
+#include "hades/deflate.hpp"
 #include "hades/parser.hpp"
 #include "hades/random.hpp"
 #include "hades/table.hpp"
@@ -274,8 +275,8 @@ namespace hades
 
 	using namespace std::string_view_literals;
 	constexpr auto terrainset_str = "terrainset"sv;
-	constexpr auto terrain_vertex_str = "terrain-vertex"sv; // TODO: terrain-vertex
-	constexpr auto terrain_layers_str = "terrain-layers"sv;// TODO: terrain-layers
+	constexpr auto terrain_vertex_str = "terrain-vertex"sv;
+	constexpr auto terrain_layers_str = "terrain-layers"sv;
 
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
 	{
@@ -288,12 +289,8 @@ namespace hades
 		using namespace std::string_view_literals;
 		w.write(terrainset_str, m.terrainset);
 
-		w.start_map(terrain_vertex_str); 
-		w.start_sequence();
-		for (const auto t : m.terrain_vertex)
-			w.write(t);
-		w.end_sequence();
-		w.end_map();
+		const auto compressed = zip::deflate(std::span{ m.terrain_vertex });
+		w.write(terrain_vertex_str, base64_encode(std::span{ compressed }));
 
 		w.start_sequence(terrain_layers_str); 
 		for (const auto &l : m.terrain_layers)
@@ -307,21 +304,36 @@ namespace hades
 	}
 
 	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
-		read_raw_terrain_map(const data::parser_node &p)
+		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size)
 	{
 		//terrain:
 		//	terrainset:
+		//  vertex_encoding:
 		//	terrain_vertex:
 		//	terrain_layers:
 
 		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
-		const auto terrain_vertex = data::parse_tools::get_sequence(p, terrain_vertex_str, std::vector<terrain_id_t>{});
 
+		auto terrain_vertex = std::vector<terrain_id_t>{};
+
+		if (auto vertex_node = p.get_child(terrain_vertex_str); 
+			vertex_node)
+		{
+			if(vertex_node->is_sequence())
+				terrain_vertex = vertex_node->to_sequence<terrain_id_t>();
+			else
+			{
+				const auto map_encoded = vertex_node->to_string();
+				const auto bytes = base64_decode<std::byte>(map_encoded);
+				terrain_vertex = zip::inflate<terrain_id_t>(std::span{ bytes }, vert_size * sizeof(terrain_id_t));
+			}
+		}
+		
 		auto layers = std::vector<raw_map>{};
 
 		const auto layer_node = p.get_child(terrain_layers_str);
-		for (const auto &l : layer_node->get_children())
-			layers.emplace_back(read_raw_map(*l));
+		for (const auto& l : layer_node->get_children())
+			layers.emplace_back(read_raw_map(*l, layer_size));
 
 		return { terrainset, terrain_vertex, layers };
 	}

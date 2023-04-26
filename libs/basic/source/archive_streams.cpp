@@ -3,6 +3,7 @@
 #include <fstream>
 #include <set>
 
+#define ZLIB_CONST
 #include "zlib.h"
 #include "zip.h"
 #include "unzip.h"
@@ -284,7 +285,7 @@ namespace hades::zip
 		//// fixup the zip stream ptrs
 		if (_zip_stream->z.next_in)
 		{
-			const auto in_distance = std::distance(rhs._get_area.data(), reinterpret_cast<char*>(_zip_stream->z.next_in));
+			const auto in_distance = std::distance(static_cast<const char*>(rhs._get_area.data()), reinterpret_cast<const char*>(_zip_stream->z.next_in));
 			_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_get_area.data() + in_distance);
 		}
 
@@ -338,11 +339,11 @@ namespace hades::zip
 			// fill device buffer
 			if (_zip_stream->z.avail_in < size(_device_buffer))
 			{
-				const auto buffer_end = _device_buffer.data() + size(_device_buffer);
+				const std::byte* buffer_end = _device_buffer.data() + size(_device_buffer);
 
-				const auto next_in = std::move(reinterpret_cast<std::byte*>(_zip_stream->z.next_in),
+				const auto next_in = std::move(reinterpret_cast<const std::byte*>(_zip_stream->z.next_in),
 					buffer_end, _device_buffer.data());
-                const auto dist = integer_cast<std::size_t>(std::distance(next_in, buffer_end));
+                const auto dist = integer_cast<std::size_t>(std::distance(static_cast<const std::byte*>(next_in), buffer_end));
 				const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file.get());
 				const auto new_buffer_end = next_in + read_amount;
 				_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_device_buffer.data(),
@@ -422,7 +423,8 @@ namespace hades::zip
         using z_byte = Bytef;
 
         // fixup the zip stream ptrs
-        const auto in_distance = std::distance(rhs._put_area.data(), reinterpret_cast<char*>(_zip_stream->z.next_in));
+        const auto in_distance = std::distance(static_cast<const char*>(rhs._put_area.data()),
+			reinterpret_cast<const char*>(_zip_stream->z.next_in));
         _zip_stream->z.next_in = reinterpret_cast<z_byte*>(_put_area.data() + in_distance);
         const auto out_distance = std::distance(rhs._device_buffer.data(), reinterpret_cast<std::byte*>(_zip_stream->z.next_out));
         _zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data() + out_distance);

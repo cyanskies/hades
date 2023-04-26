@@ -170,13 +170,18 @@ namespace hades
 		l.on_load = data::parse_tools::get_unique(level_node, level_load_str, l.on_load);
 		l.player_input_script = data::parse_tools::get_unique(level_node, level_scripts_input, l.player_input_script);
 
+		const auto tile_size = resources::get_tile_size();
+		const auto layer_size = (l.map_x / tile_size) * (l.map_y / tile_size);
+
 		const auto tiles = level_node.get_child(level_tiles_layer_str);
 		if (tiles)
-			l.tile_map_layer = read_raw_map(*tiles);
+			l.tile_map_layer = read_raw_map(*tiles, layer_size);
 
 		const auto terrain = level_node.get_child(level_terrain_str);
 		if (terrain)
-			std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = read_raw_terrain_map(*terrain);
+			std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = 
+			read_raw_terrain_map(*terrain, layer_size,
+				(static_cast<size_t>(l.map_x / tile_size) + 1) * (static_cast<std::size_t>(l.map_y / tile_size) + 1));
 
 		return l;
 	}

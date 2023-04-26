@@ -162,7 +162,7 @@ namespace hades
 
 	//read and write raw maps
 	void write_raw_map(const raw_map&, data::writer&);
-	raw_map read_raw_map(const data::parser_node&);
+	raw_map read_raw_map(const data::parser_node&, std::size_t size);
 
 	//this is a map that can be used for game logic
 	struct tile_map

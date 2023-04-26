@@ -4,6 +4,7 @@
 #include <numeric>
 
 #include "hades/data.hpp"
+#include "hades/deflate.hpp"
 #include "hades/parser.hpp"
 #include "hades/random.hpp"
 #include "hades/resource_base.hpp"
@@ -339,7 +340,7 @@ namespace hades
 		//tile_layer:
 		//    tilesets:
 		//        - [name, gid]
-		//    map: [1,2,3,4...]
+		//    map: [1,2,3,4...] OR 1
 		//    width: 1
 
 		//we should be pointing at a tile_layer
@@ -354,16 +355,20 @@ namespace hades
 		}
 		w.end_sequence();
 
-		w.write(map_str);
+		const auto compressed = zip::deflate(std::span{ m.tiles });
+		w.write(map_str, base64_encode(std::span{ compressed }));
+
+		/*w.write(map_str);
 		w.start_sequence();
 		for (const auto t : m.tiles)
 			w.write(t);
-		w.end_sequence();
+		w.end_sequence();*/
 
 		w.write(width_str, m.width);
+		return;
 	}
 
-	raw_map read_raw_map(const data::parser_node &p)
+	raw_map read_raw_map(const data::parser_node &p, const std::size_t size)
 	{
 		//tile_layer:
 		//    tilesets:
@@ -391,8 +396,18 @@ namespace hades
 		}
 
 		//map content
-		const auto map_node = p.get_child(map_str);
-		map.tiles = map_node->to_sequence<tile_id_t>();
+		if (auto map_node = p.get_child(map_str);
+			map_node)
+		{
+			if(map_node->is_sequence())
+				map.tiles = map_node->to_sequence<tile_id_t>();
+			else
+			{
+				const auto map_encoded = map_node->to_string();
+				const auto bytes = base64_decode<std::byte>(map_encoded);
+				map.tiles = zip::inflate<tile_id_t>(std::span{ bytes }, size * sizeof(tile_id_t));
+			}
+		}
 
 		//width
 		const auto width = p.get_child(width_str);

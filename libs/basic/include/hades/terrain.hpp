@@ -135,8 +135,9 @@ namespace hades
 	//NOTE: doesn't write the tile layer, this must be done seperately
 	//		with write_raw_map(m.tile_layer, ...);
 	void write_raw_terrain_map(const raw_terrain_map &m, data::writer &w);
+	// TODO: return a named struct
 	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
-		read_raw_terrain_map(const data::parser_node &p);
+		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size);
 
 	struct terrain_map
 	{

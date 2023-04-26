@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "hades/types.hpp"
+#include "hades/utility.hpp"
 
 namespace hades
 {
@@ -209,5 +210,111 @@ namespace hades
 	T vector_from_string(std::string_view str)
 	{
 		return detail::vector_from_string_impl<T, nullptr_t>(str, nullptr);
+	}
+
+	namespace detail
+	{
+		constexpr auto to_table = std::array<unsigned char, 64>
+		{ 
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+			'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+			'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+			'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+			'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+			'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+			'w', 'x', 'y', 'z', '0', '1', '2', '3',
+			'4', '5', '6', '7', '8', '9', '+', '/'
+		};
+
+		constexpr auto from_table = std::array<unsigned char, 128>
+		{
+			0,  0,  0,  0,  0,  0,  0,  0,  // 0
+			0,  0,  0,  0,  0,  0,  0,  0,  // 8
+			0,  0,  0,  0,  0,  0,  0,  0,  // 16
+			0,  0,  0,  0,  0,  0,  0,  0,  // 24
+			0,  0,  0,  0,  0,  0,  0,  0,  // 32
+			0,  0,  0,  62, 0,  0,  0,  63, // 40
+			52, 53, 54, 55, 56, 57, 58, 59, // 48
+			60, 61, 0,  0,  0,  0,  0,  0,  // 56
+			0,  0,  1,  2,  3,  4,  5,  6,  // 64
+			7,  8,  9,  10, 11, 12, 13, 14, // 72
+			15, 16, 17, 18, 19, 20, 21, 22, // 80
+			23, 24, 25, 0,  0,  0,  0,  0,  // 88
+			0,  26, 27, 28, 29, 30, 31, 32, // 96
+			33, 34, 35, 36, 37, 38, 39, 40, // 104
+			41, 42, 43, 44, 45, 46, 47, 48, // 112
+			49, 50, 51, 0,  0,  0,  0,  0   // 120
+		};
+	}
+
+	template<typename Ty>
+		requires std::is_trivially_copyable_v<Ty>
+	std::string base64_encode(std::span<Ty> source)
+	{
+		constexpr auto type_size = sizeof(Ty);
+		const auto len = size(source) * type_size;
+
+		auto result = std::string((len + 2) / 3 * 4, '=');
+
+		auto* p = reinterpret_cast<const unsigned char*>(std::data(source));
+		char* str = &result[0];
+		std::size_t j = 0, pad = len % 3;
+		const std::size_t last = len - pad;
+
+		for (std::size_t i = 0; i < last; i += 3)
+		{
+			int n = int(p[i]) << 16 | int(p[i + 1]) << 8 | p[i + 2];
+			str[j++] = detail::to_table[n >> 18];
+			str[j++] = detail::to_table[n >> 12 & 0x3F];
+			str[j++] = detail::to_table[n >> 6 & 0x3F];
+			str[j++] = detail::to_table[n & 0x3F];
+		}
+		if (pad)  /// Set padding
+		{
+			int n = --pad ? int(p[last]) << 8 | p[last + 1] : p[last];
+			str[j++] = detail::to_table[pad ? n >> 10 & 0x3F : n >> 2];
+			str[j++] = detail::to_table[pad ? n >> 4 & 0x03F : static_cast<std::array<unsigned char, 64Ui64>::size_type>(n) << 4 & 0x3F];
+			str[j++] = pad ? detail::to_table[static_cast<std::array<unsigned char, 64Ui64>::size_type>(n) << 2 & 0x3F] : '=';
+		}
+		return result;
+	}
+
+	template<typename Ty>
+		requires std::is_default_constructible_v<Ty> && std::is_trivially_copyable_v<Ty>
+	std::vector<Ty> base64_decode(std::string_view source)
+	{
+		if (empty(source)) return {};
+
+		const auto len = size(source);
+
+		auto p = reinterpret_cast<const unsigned char*>(std::data(source));
+		size_t j = 0,
+			// NOTE: MSVC warning about | being possibly intended 
+			//		instead of || is incorrect
+			pad1 = len % 4 || p[len - 1] == '=',
+			pad2 = pad1 && (len % 4 > 2 || p[len - 2] != '=');
+		const size_t last = (len - pad1) / 4 << 2;
+		const auto result_size = last / 4 * 3 + pad1 + pad2;
+		auto result = std::vector<Ty>(result_size / sizeof(Ty), {});
+		unsigned char* str = reinterpret_cast<unsigned char*>(std::data(result));
+
+		for (size_t i = 0; i < last; i += 4)
+		{
+			int n = detail::from_table[p[i]] << 18 | detail::from_table[p[i + 1]] << 12 | detail::from_table[p[i + 2]] << 6 | detail::from_table[p[i + 3]];
+			str[j++] = integer_cast<unsigned char>(n >> 16);
+			str[j++] = n >> 8 & 0xFF;
+			str[j++] = n & 0xFF;
+		}
+		if (pad1)
+		{
+			int n = detail::from_table[p[last]] << 18 | detail::from_table[p[last + 1]] << 12;
+			str[j++] = integer_cast<unsigned char>(n >> 16);
+			if (pad2)
+			{
+				n |= detail::from_table[p[last + 2]] << 6;
+				str[j++] = n >> 8 & 0xFF;
+			}
+		}
+		return result;
 	}
 }

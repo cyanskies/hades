@@ -371,5 +371,4 @@ namespace hades
 		const auto last_unique = std::unique(beg, last, equal);
 		return cont.erase(last_unique, last);
 	}
-
 }

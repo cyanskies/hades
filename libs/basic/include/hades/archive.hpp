@@ -200,10 +200,6 @@ namespace hades::zip
 	//uncompress archive
 	void uncompress_archive(const std::filesystem::path& path);
 	bool probably_compressed(const buffer& data) noexcept;
-
-	//both of these return archive exception on failure.
-	[[deprecated]] buffer deflate(buffer uncompressed);
-	[[deprecated]] buffer inflate(buffer compressed);
 }
 
 #endif // hades_data_hpp

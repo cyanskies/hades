@@ -1,11 +1,14 @@
 include(../../cmake.txt)
 
 set(HADES_BASIC_SRC
+	source/archive.cpp
+	source/archive_streams.cpp
 	source/colour.cpp
 	source/console_variables.cpp
 	source/curve_extra.cpp
 	source/curve_types.cpp
 	source/data.cpp
+	source/files.cpp
 	source/input.cpp
 	source/logging.cpp
 	source/parser.cpp
@@ -17,14 +20,18 @@ set(HADES_BASIC_SRC
 	source/timers.cpp
 	source/writer.cpp
 	include/hades/action_input.hpp
+	include/hades/archive.hpp
+	include/hades/archive_streams.hpp
 	include/hades/collision.hpp
 	include/hades/colour.hpp
 	include/hades/console_variables.hpp
 	include/hades/curve_extra.hpp
 	include/hades/curve_types.hpp
 	include/hades/data.hpp
+	include/hades/deflate.hpp
 	include/hades/entity_id.hpp
 	include/hades/exceptions.hpp
+	include/hades/files.hpp
 	include/hades/game_loop.hpp
 	include/hades/game_types.hpp
 	include/hades/input.hpp
@@ -59,6 +66,9 @@ set(HADES_BASIC_SRC
 set(HADES_BASIC_LIBS
 	hades-util
 	plf-colony
+	minizip
 )
 
 hades_make_library(hades-basic include "${HADES_BASIC_SRC}" "${HADES_BASIC_LIBS}")
+
+add_definitions(-DHADES_ROOT_PROJECT_PATH=\"${CMAKE_SOURCE_DIR}\")

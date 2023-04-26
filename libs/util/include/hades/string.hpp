@@ -3,6 +3,7 @@
 
 #include <map>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -83,6 +84,14 @@ namespace hades
 
 	template<typename T>
 	T vector_from_string(std::string_view str);
+
+	template<typename Ty>
+		requires std::is_trivially_copyable_v<Ty>
+	std::string base64_encode(std::span<Ty> data);
+
+	template<typename Ty>
+		requires std::is_default_constructible_v<Ty> && std::is_trivially_copyable_v<Ty>
+	std::vector<Ty> base64_decode(std::string_view source);
 
 	// map containers that can be searched with char* and string_view
 	template<typename T>

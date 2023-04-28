@@ -355,8 +355,8 @@ namespace hades
 		}
 		w.end_sequence();
 
-		const auto compressed = zip::deflate(std::span{ m.tiles });
-		w.write(map_str, base64_encode(std::span{ compressed }));
+		const auto compressed = zip::deflate(m.tiles);
+		w.write(map_str, base64_encode(compressed));
 
 		/*w.write(map_str);
 		w.start_sequence();
@@ -405,7 +405,7 @@ namespace hades
 			{
 				const auto map_encoded = map_node->to_string();
 				const auto bytes = base64_decode<std::byte>(map_encoded);
-				map.tiles = zip::inflate<tile_id_t>(std::span{ bytes }, size * sizeof(tile_id_t));
+				map.tiles = zip::inflate<tile_id_t>(bytes, size * sizeof(tile_id_t));
 			}
 		}
 

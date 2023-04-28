@@ -279,6 +279,15 @@ namespace hades
 		return result;
 	}
 
+	template<typename Cont>
+		requires requires(const Cont& cont)	{
+		std::span{ cont };
+	}
+	std::string base64_encode(const Cont& cont)
+	{
+		return base64_encode(std::span{ cont });
+	}
+
 	template<typename Ty>
 		requires std::is_default_constructible_v<Ty> && std::is_trivially_copyable_v<Ty>
 	std::vector<Ty> base64_decode(std::string_view source)

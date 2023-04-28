@@ -289,8 +289,8 @@ namespace hades
 		using namespace std::string_view_literals;
 		w.write(terrainset_str, m.terrainset);
 
-		const auto compressed = zip::deflate(std::span{ m.terrain_vertex });
-		w.write(terrain_vertex_str, base64_encode(std::span{ compressed }));
+		const auto compressed = zip::deflate(m.terrain_vertex);
+		w.write(terrain_vertex_str, base64_encode(compressed));
 
 		w.start_sequence(terrain_layers_str); 
 		for (const auto &l : m.terrain_layers)
@@ -325,7 +325,7 @@ namespace hades
 			{
 				const auto map_encoded = vertex_node->to_string();
 				const auto bytes = base64_decode<std::byte>(map_encoded);
-				terrain_vertex = zip::inflate<terrain_id_t>(std::span{ bytes }, vert_size * sizeof(terrain_id_t));
+				terrain_vertex = zip::inflate<terrain_id_t>(bytes, vert_size * sizeof(terrain_id_t));
 			}
 		}
 		

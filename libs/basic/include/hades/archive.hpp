@@ -199,7 +199,6 @@ namespace hades::zip
 	void compress_directory(const std::filesystem::path& path);
 	//uncompress archive
 	void uncompress_archive(const std::filesystem::path& path);
-	bool probably_compressed(const buffer& data) noexcept;
 }
 
 #endif // hades_data_hpp

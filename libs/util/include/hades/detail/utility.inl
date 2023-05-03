@@ -365,10 +365,6 @@ namespace hades
 	template<typename Container, typename Less, typename Equal>
 	typename Container::iterator remove_duplicates(Container& cont, Less less, Equal equal) noexcept
 	{
-		const auto beg = begin(cont);
-		const auto last = end(cont);
-		std::stable_sort(beg, last, less);
-		const auto last_unique = std::unique(beg, last, equal);
-		return cont.erase(last_unique, last);
+		return remove_duplicates(cont, begin(cont), end(cont), less, equal);
 	}
 }

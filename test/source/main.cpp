@@ -22,7 +22,7 @@ void resourceTypes(hades::data::data_manager &data)
 	hades::register_mission_editor_resources(data);
 }
 
-void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list &commandLine)
+void hadesMain(hades::StateManager &state, hades::input_system &bind, hades::command_list&)
 {
 	hades::register_mouse_input(bind);
 	

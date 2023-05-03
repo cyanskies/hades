@@ -1,21 +1,29 @@
 #include "hades/math.hpp"
 
 #include <algorithm>
+#include <numbers>
 
 namespace hades
 {
 	template<typename T>
-	constexpr T clamp(T value, T min, T max) noexcept
+	constexpr auto to_radians(T degrees) noexcept
 	{
-		return std::clamp(value, std::min(min, max), std::max(min, max));
+		return (degrees * std::numbers::pi_v<std::conditional_t<std::floating_point<T>, T, float>>) / 180;
+	}
+
+	template<std::floating_point Float>
+	constexpr auto to_degrees(Float radians) noexcept
+	{
+		auto degs = (radians * 180.f) / std::numbers::pi_v<Float>;
+		if (degs < 0)
+			return degs + 360;
+		return degs;
 	}
 
 	template<typename T>
-	T distance(point_t<T> a, point_t<T> b)
+	constexpr T clamp(T value, T min, T max) noexcept
 	{
-		const auto x = b.x - a.x;
-		const auto y = b.y - a.y;
-		return vector::magnitude(vector_t<T>{ x, y });
+		return std::clamp(value, std::min(min, max), std::max(min, max));
 	}
 
 	template<typename T>

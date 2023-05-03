@@ -130,13 +130,13 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr std::array<point_t<T>, 4> corners(rect_t<T> r) noexcept
+	constexpr std::array<vector_t<T>, 4> corners(rect_t<T> r) noexcept
 	{
 		return {
-			point_t<T>{r.x, r.y},
-			point_t<T>{r.x + r.width, r.y},
-			point_t<T>{r.x + r.width, r.y + r.height},
-			point_t<T>{r.x, r.y + r.height}
+			vector_t<T>{r.x, r.y},
+			vector_t<T>{r.x + r.width, r.y},
+			vector_t<T>{r.x + r.width, r.y + r.height},
+			vector_t<T>{r.x, r.y + r.height}
 		};
 	}
 
@@ -155,19 +155,19 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr const point_t<T> &get_corner(rect_corners c, const std::array<point_t<T>, 4> &a) noexcept
+	constexpr const vector_t<T> &get_corner(rect_corners c, const std::array<vector_t<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	constexpr point_t<T> &get_corner(rect_corners c, std::array<point_t<T>, 4> &a) noexcept
+	constexpr vector_t<T> &get_corner(rect_corners c, std::array<vector_t<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	constexpr bool is_within(point_t<T> value, rect_t<T> other) noexcept
+	constexpr bool is_within(vector_t<T> value, rect_t<T> other) noexcept
 	{
 		return is_within(value.x, other.x, other.x + other.width)
 			&& is_within(value.y, other.y, other.y + other.height);

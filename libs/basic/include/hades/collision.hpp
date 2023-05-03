@@ -17,6 +17,12 @@
 
 //algorithms work best with floating point types.
 
+namespace hades
+{
+	template<typename T>
+	using point_t = vector_t<T>;
+}
+
 namespace hades::detail
 {
 	template<typename T>

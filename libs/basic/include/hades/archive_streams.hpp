@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <memory>
+#include <span>
 #include <streambuf>
 
 #include "hades/exceptions.hpp"
@@ -21,7 +22,7 @@ namespace hades
 {
 	//buffer of bytes
 	using buffer = std::vector<std::byte>;
-	//NOTE: .net recently moved from 4kb default to 8kb(8192)
+	//NOTE: consider moving to 8kb(8192)
 	constexpr auto default_buffer_size = std::size_t{ 4096 }; //4kb buffer
 }
 
@@ -78,7 +79,7 @@ namespace hades::zip
 		};
 	}
 
-	constexpr bool probably_compressed(zip_header header) noexcept
+	constexpr bool probably_compressed(std::span<const std::byte, 2> header) noexcept
 	{
 		switch (static_cast<char>(header[1]))
 		{
@@ -702,7 +703,7 @@ namespace hades::zip
 	private:
 		void _consume_buffer();
 
-		std::array<char_type, default_buffer_size> _put_area;
+		std::array<char_type, default_buffer_size> _put_area = {};
 		toarchive _archive;
 	};
 

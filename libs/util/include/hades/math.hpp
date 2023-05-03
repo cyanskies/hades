@@ -2,19 +2,17 @@
 #define HADES_UTIL_MATH_HPP
 
 #include "hades/types.hpp"
-#include "hades/vector_math.hpp"
 
 namespace hades
 {
 	template<typename T>
-	using point_t = vector_t<T>;
+	constexpr auto to_radians(T degrees) noexcept;
+
+	template<std::floating_point Float>
+	constexpr auto to_degrees(Float radians) noexcept;
 
 	template<typename T>
 	constexpr T clamp(T value, T min, T max) noexcept;
-
-	//returns the distance between two points
-	template<typename T>
-	T distance(point_t<T> a, point_t<T> b);
 
 	template<typename T>
 	bool is_within(T value, T min, T max);

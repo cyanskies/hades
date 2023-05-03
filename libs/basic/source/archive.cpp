@@ -319,9 +319,7 @@ namespace hades::zip
 			unz_file_info info;
 			unzGetCurrentFileInfo(zip.handle, &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
-			using char_buffer = std::vector<char>;
-			char_buffer name(info.size_filename);
-
+			auto name = std::vector<char>(info.size_filename);
 			unzGetCurrentFileInfo(zip.handle, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
 
 			types::string file_name(name.begin(), name.end());
@@ -430,13 +428,5 @@ namespace hades::zip
 		} while (archive.open_next());
 
 		log("Finished uncompressing archive: " + fs_path.generic_string());
-	}
-
-	bool probably_compressed(const buffer& stream) noexcept
-	{
-		if (stream.size() < 2)
-			return false;
-
-		return probably_compressed(std::array{ stream[0], stream[1] });
 	}
 }

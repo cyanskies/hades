@@ -162,7 +162,7 @@ namespace hades
 		// returns in degrees
 		// TODO: return in radians
 		template<typename T>
-		[[nodiscard]] T angle(vector_t<T>) noexcept;
+		[[nodiscard]] auto angle(vector_t<T>) noexcept;
 
 		// returns the angle between the two vectors
 		// returns in radians

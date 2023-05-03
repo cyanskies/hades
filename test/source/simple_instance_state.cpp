@@ -42,6 +42,8 @@ void register_simple_instance_resources(hades::data::data_manager &d)
 
 void print_changes(const hades::exported_curves& e)
 {
+	std::ignore = e;
+
 #if false
 	std::size_t count = 0;
 
@@ -76,12 +78,12 @@ void simple_instance_state::init()
 	_client_instance.input_updates(level_state);*/
 }
 
-bool simple_instance_state::handle_event(const hades::event & windowEvent)
+bool simple_instance_state::handle_event(const hades::event&)
 {
 	return false;
 }
 
-void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarget &t, hades::input_system::action_set a)
+void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarget&, hades::input_system::action_set a)
 {
 	_server->update(dt);
 }

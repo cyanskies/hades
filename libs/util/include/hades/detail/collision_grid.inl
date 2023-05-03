@@ -62,7 +62,7 @@ namespace hades
 	}
 
 	template<typename Key, typename Rect>
-	std::vector<typename uniform_collision_grid<Key, Rect>::key_type> uniform_collision_grid<Key, Rect>::find(rect_type r) const
+	std::vector<typename uniform_collision_grid<Key, Rect>::key_type> uniform_collision_grid<Key, Rect>::find(const rect_type r) const
 	{
 		auto out = std::vector<key_type>{};
 

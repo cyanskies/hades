@@ -6,6 +6,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "hades/math.hpp"
 #include "hades/utility.hpp"
 
 namespace hades
@@ -119,21 +120,14 @@ namespace hades
 		}
 
 		template<typename T>
-		T angle(vector_t<T> v) noexcept
+		auto angle(vector_t<T> v) noexcept
 		{
-			auto ret = T{};
 			//NOTE: y is inverted because opengl
 			if constexpr (std::is_floating_point_v<T>)
-                ret = std::atan2(v.y * -1.f, v.x) * 180 / std::numbers::pi_v<T>;
+				return to_degrees(std::atan2(v.y * -1.f, v.x));
 			else
-                ret = static_cast<T>(std::atan2(static_cast<float>(v.y) * -1.f, static_cast<float>(v.x)) * 180 / std::numbers::pi_v<float>);
-
-			//atan2 reurns in the range {180, -180}
-			// convert to {0, 360}
-			if (ret < 0)
-				ret += 360;
-
-			return ret;
+				return to_degrees(std::atan2(static_cast<float>(v.y) * -1.f,
+					static_cast<float>(v.x)));
 		}
 
 		template<typename T>

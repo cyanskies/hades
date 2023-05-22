@@ -679,6 +679,32 @@ namespace hades
 		};
 	}
 
+	poly_quad make_quad_line(vector_float start, vector_float end, float thickness, colour hades_colour) noexcept
+	{
+		const auto direction = end - start;
+		const auto unit_direction = vector::unit(direction);
+		const auto unit_perpendicular = vector::perpendicular(unit_direction);
+		const auto offset = unit_perpendicular * (thickness / 2.f);
+
+		auto a = start + offset;
+		auto b = end + offset;
+		auto c = end - offset;
+		auto d = start - offset;
+
+		const auto col = to_sf_color(hades_colour);
+
+		return hades::poly_quad{
+			//first triangle
+			sf::Vertex{ {a.x, a.y}, col },
+			sf::Vertex{ {b.x, b.y}, col },
+			sf::Vertex{ {c.x, c.y}, col },
+			//second triangle
+			sf::Vertex{ {c.x, c.y}, col },
+			sf::Vertex{ {d.x, d.y}, col },
+			sf::Vertex{ {a.x, a.y}, col }
+		};
+	}
+
 	poly_quad make_quad_animation(const vector_float p, const resources::animation_frame &f) noexcept
 	{
 		return make_quad_animation(p, {f.w, f.h}, f);

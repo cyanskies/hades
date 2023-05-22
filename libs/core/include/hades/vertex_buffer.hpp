@@ -31,6 +31,7 @@ namespace hades
 		std::size_t size() const noexcept;
 
 		void append(const poly_quad&);
+
 		poly_quad get_quad(std::size_t) const noexcept;
 		void replace(const poly_quad&, std::size_t) noexcept;
 		void swap(std::size_t, std::size_t) noexcept;

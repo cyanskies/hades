@@ -20,14 +20,13 @@ namespace hades::camera
 	{
 		const auto centre = v.getCenter();
 		const auto size = v.getSize();
+		const auto half_size = size / 2.f;
 
-		auto pos = vector_float{ centre.x - size.x / 2, centre.y - size.y / 2 } + move;
+		auto pos = vector_float{ centre.x - half_size.x, centre.y - half_size.y } + move;
 
 		const auto moved_rect = rect_float{ pos, { size.x, size.y } };
 		const auto clamped_rect = clamp_rect(moved_rect, static_cast<rect_float>(rect));
-
-		//round to pixel pos
-		v.reset({ {std::floor(clamped_rect.x), std::floor(clamped_rect.y)}, size });
+		v.setCenter({ std::trunc(clamped_rect.x + half_size.x), std::trunc(clamped_rect.y + half_size.y) });
 		return;
 	}
 }

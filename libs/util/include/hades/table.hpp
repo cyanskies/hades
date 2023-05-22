@@ -138,7 +138,7 @@ namespace hades {
 			noexcept(std::is_nothrow_constructible_v<base_type, index_type, index_type>)
 			: base_type{ position, size }, _data{ data.data() }
 		{
-			assert(std::size(data) == (size.x * size.y));
+			assert(std::size(data) == (integer_cast<std::size_t>(size.x) * size.y));
 		}
 
 		value_type operator[](const index_type) const override;

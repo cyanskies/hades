@@ -1,7 +1,7 @@
 #ifndef HADES_LEVEL_EDITOR_GRID_HPP
 #define HADES_LEVEL_EDITOR_GRID_HPP
 
-#include<string_view>
+#include <string_view>
 
 #include "hades/grid.hpp"
 #include "hades/level_editor_component.hpp"

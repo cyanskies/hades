@@ -158,7 +158,7 @@ namespace hades
 			linear_curve<vec2_float>& get_position(object_ref);
 			const vec2_float& get_size(object_ref);
 			step_curve<unique>& get_player_owner(object_ref);
-			const unique& get_collision_group(object_ref);
+			const unique& get_collision_group(object_ref); // TODO: deprecate, this and the underlying curve type
 			const collection_unique& get_move_layers(object_ref);
 			const collection_float& get_move_values(object_ref);
 		}

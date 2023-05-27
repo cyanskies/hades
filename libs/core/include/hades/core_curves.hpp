@@ -1,6 +1,8 @@
 #ifndef HADES_CORE_CURVES_HPP
 #define HADES_CORE_CURVES_HPP
 
+// TODO: despite the name, there's no reason for this to be in core, rather than basic
+
 #include <tuple>
 
 #include "hades/curve_extra.hpp"

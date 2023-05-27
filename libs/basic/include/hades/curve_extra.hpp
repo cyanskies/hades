@@ -1,6 +1,8 @@
 #ifndef HADES_CURVE_EXTRA_HPP
 #define HADES_CURVE_EXTRA_HPP
 
+// TODO: rename to curve_resource.hpp
+
 #include <type_traits>
 #include <variant>
 #include <vector>

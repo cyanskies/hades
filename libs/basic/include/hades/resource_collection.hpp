@@ -2,18 +2,13 @@
 #define HADES_RESOURCE_COLLECTION_HPP
 
 #include <array>
-#include <cstddef>
 #include <typeindex>
 #include <vector>
 
 #include "plf_colony.h"
 
+#include "hades/resource_base.hpp"
 #include "hades/uniqueid.hpp"
-
-namespace hades::resources
-{
-	struct resource_base;
-}
 
 namespace hades::data
 {

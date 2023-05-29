@@ -50,24 +50,14 @@ namespace hades
 		auto ret = std::array<bool, N>{};
 		ret.fill(false);
 
-		auto index_map = std::array<std::size_t, N>{};
-		std::iota(begin(index_map), end(index_map), std::size_t{});
-
-		auto list_begin = std::size_t{};
-
-		for (const auto elm : list)
+		const auto size_check = size(check_list);
+		for (auto i = std::size_t{}; i < size_check; ++i)
 		{
-			const auto end_index = N - list_begin;
-			for (auto i = list_begin; i < end_index; ++i)
+			if (std::ranges::any_of(list, [val = check_list[i]](auto& id) {
+				return id == val;
+				}))
 			{
-				if (elm == check_list[i])
-				{
-					std::swap(check_list[list_begin], check_list[i]);
-					ret[index_map[i]] = true;
-					std::swap(index_map[list_begin], index_map[i]);
-					++list_begin;
-					break;
-				}
+				ret[i] = true;
 			}
 		}
 

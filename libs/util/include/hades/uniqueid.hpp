@@ -29,15 +29,7 @@ namespace hades
 			assert(_count != std::numeric_limits<type>::max());
 		}
 
-		constexpr bool operator==(const unique_id_t &rhs) const noexcept
-		{
-			return _value == rhs._value;
-		}
-
-		constexpr bool operator!=(const unique_id_t &rhs) const noexcept
-		{
-			return !(_value == rhs._value);
-		}
+		auto operator<=>(const unique_id_t&) const = default;
 
 		constexpr type get() const noexcept { return _value; }
 
@@ -58,12 +50,6 @@ namespace hades
 
 	template<typename id_type>
 	unique_id_t<id_type> unique_id_t<id_type>::zero = unique_id_t<id_type>{ zero_id };
-
-	template<typename T>
-	constexpr bool operator<(const unique_id_t<T>& lhs, const unique_id_t<T>& rhs) noexcept
-	{
-		return lhs.get() < rhs.get();
-	}
 
 	//process wide unique id
 	using unique_id = unique_id_t<hades::types::uint64>;

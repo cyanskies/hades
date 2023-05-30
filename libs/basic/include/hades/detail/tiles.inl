@@ -67,14 +67,14 @@ namespace hades
 		}
 
 		template<bool PassInvalid = true, typename Func>
-			requires std::is_invocable_r_v<bool, Func, tile_index_t>
+			requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 		void for_each_expanding_index_impl(const tile_index_t pos,
 			const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 			noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 		{
-			// start below the actual start pos
-			auto pos_y = (pos / map_width) + 1;
+			auto pos_y = (pos / map_width);
 			auto pos_x = pos - pos_y * map_width;
+			++pos_y; // start below the actual start pos
 			auto edge_length = 1;
 			auto edge_count = 0;
 	
@@ -112,13 +112,14 @@ namespace hades
 					{
 						if constexpr (PassInvalid)
 						{
-							if (std::invoke(f, bad_tile_index))
+							if (std::invoke(f, bad_tile_index) == for_each_expanding_return::stop)
 								return true;
 						}
 					}
 					else
 					{
-						if (std::invoke(f, hades::to_1d_index({ pos_x, pos_y }, map_width)))
+						if (std::invoke(f, hades::to_1d_index({ pos_x, pos_y }, map_width)) == 
+							for_each_expanding_return::stop)
 							return true;
 					}
 				}
@@ -241,7 +242,7 @@ namespace hades
 	}
 
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_position>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
 	void for_each_safe_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
@@ -257,7 +258,7 @@ namespace hades
 	}
 	
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_position>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
 	void for_each_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
@@ -273,7 +274,7 @@ namespace hades
 	}
 
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 	void for_each_safe_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
@@ -281,7 +282,7 @@ namespace hades
 	}
 
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{

@@ -292,21 +292,26 @@ namespace hades
 	
 	// For each expanding calls func with an expanding ring of cell positions
 	//	stopping when func returns true
+	enum class for_each_expanding_return : bool {
+		stop = true,
+		continue_expanding = false
+	};
+
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_position>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
 	void for_each_safe_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_position>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
 	void for_each_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 	void for_each_safe_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
 	template<typename Func>
-		requires std::is_invocable_r_v<bool, Func, tile_index_t>
+		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
 

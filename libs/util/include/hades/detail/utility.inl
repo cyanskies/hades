@@ -367,4 +367,36 @@ namespace hades
 	{
 		return remove_duplicates(cont, begin(cont), end(cont), less, equal);
 	}
+
+	template <typename Cont>
+		requires is_container_adapter_v<Cont>
+	auto& get_underlying_container(Cont& q) noexcept
+	{
+		struct hacked_queue : private Cont
+		{
+			static decltype(hacked_queue::c)& get_container(Cont& q) noexcept
+			{
+				// subcontianer is specified to be the member c
+				return q.*&hacked_queue::c;
+			}
+		};
+
+		return hacked_queue::get_container(q);
+	}
+
+	template <typename Cont>
+		requires is_container_adapter_v<Cont>
+	const auto& get_underlying_container(const Cont& q) noexcept
+	{
+		struct hacked_queue : private Cont
+		{
+			static const decltype(hacked_queue::c)& get_container(const Cont& q) noexcept
+			{
+				// subcontianer is specified to be the member c
+				return q.*&hacked_queue::c;
+			}
+		};
+
+		return hacked_queue::get_container(q);
+	}
 }

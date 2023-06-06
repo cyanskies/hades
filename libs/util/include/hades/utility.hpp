@@ -2,8 +2,11 @@
 #define HADES_UTIL_UTILITY_HPP
 
 #include <array>
+#include <queue> // get_underlying_container
+#include <stack> // get_underlying_container
 #include <stdexcept>
 #include <utility>
+
 
 #include "hades/types.hpp"
 
@@ -148,6 +151,39 @@ namespace hades {
 
 	template<typename Container, typename Less = std::less<>, typename Equal = std::equal_to<>>
 	typename Container::iterator remove_duplicates(Container& cont, Less less = std::less{}, Equal equal = std::equal_to{}) noexcept;
+
+	// Type tests for get_underlying_container
+	template<typename T>
+	struct is_container_adapter : std::bool_constant<false>
+	{};
+
+	template<typename ...Args>
+	struct is_container_adapter<std::stack<Args...>> : std::bool_constant<true>
+	{};
+
+	template<typename ...Args>
+	struct is_container_adapter<std::queue<Args...>> : std::bool_constant<true>
+	{};
+
+	template<typename ...Args>
+	struct is_container_adapter<std::priority_queue<Args...>> : std::bool_constant<true>
+	{};
+
+	template<typename T>
+	constexpr auto is_container_adapter_v = is_container_adapter<T>::value;
+
+	// Extracts a reference to the underlying container for a std container adapter
+	//			eg. stack, queue, or priority_queue
+	// This allows you to inspect the raw data or clear the container more efficiently
+	// NOTE: don't mess with the elements of a priority_queue, you'll muck up the 
+	//		heap invariants
+	template <typename Cont>
+		requires is_container_adapter_v<Cont>
+	auto& get_underlying_container(Cont& q) noexcept;
+
+	template <typename Cont>
+		requires is_container_adapter_v<Cont>
+	const auto& get_underlying_container(const Cont& q) noexcept;
 
 	// TODO: vv move this to some function related header vv
 

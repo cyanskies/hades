@@ -177,14 +177,17 @@ namespace hades
 	constexpr bool is_within(rect_t<T> first, rect_t<T> second) noexcept
 	{
 		auto area = rect_t<T>{};
-		intersect_area(first, second, area);
-
-		if constexpr(std::is_floating_point_v<T>)
+		if (intersect_area(first, second, area))
 		{
-			return float_near_equal(first.width, area.width)
-				&& float_near_equal(first.height, area.height);
+			if constexpr (std::is_floating_point_v<T>)
+			{
+				return float_near_equal(first.width, area.width)
+					&& float_near_equal(first.height, area.height);
+			}
+			else
+				return size(first) == size(area);
 		}
-		else
-			return size(first) == size(area);
+		
+		return false;
 	}
 }

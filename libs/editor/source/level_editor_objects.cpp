@@ -54,30 +54,6 @@ namespace hades::resources
 
 namespace hades
 {
-	bool make_curve_default_value_editor(gui& g, std::string_view name,
-		const resources::curve* curve, resources::curve_default_value &value,
-		typename object_editor_ui<nullptr_t>::vector_curve_edit& target,
-		typename object_editor_ui<nullptr_t>::cache_map& cache)
-	{
-		g.push_id(curve);
-		const auto ret = std::visit([&g, &curve, &target, &cache, name](auto&& value)->bool {
-			using Type = std::decay_t<decltype(value)>;
-			if constexpr (!std::is_same_v<std::monostate, Type>)
-			{
-				auto nullr = nullptr_t{};
-				if constexpr (resources::curve_types::is_collection_type_v<Type>)
-					return detail::obj_ui::make_vector_property_edit<Type, nullptr_t, nullptr_t>(g, nullr, name, curve, value, target, cache);
-				else
-					return detail::obj_ui::make_property_edit<object_editor_ui<nullptr_t>>(g, nullr, name, *curve, value, cache);
-			}
-			else
-				return false;
-		}, value);
-		g.pop_id(); // curve address
-
-		return ret;
-	}
-
 	void register_level_editor_object_resources(data::data_manager &d)
 	{
 		register_objects(d);
@@ -90,11 +66,13 @@ namespace hades
 	}
 
 	level_editor_objects_impl::level_editor_objects_impl()
-		: _obj_ui{ &_objects, [this](editor_object_instance& o) {
-				return _update_changed_obj(o);
+		: _obj_ui{ &_objects, [this](editor_object_instance* o) {
+				assert(o);
+				return _update_changed_obj(*o);
 			},
-			[this](const rect_float& r, const object_instance& o)->bool {
-				return _object_valid_location(r, o);
+			[this](const rect_float& r, const object_instance* o)->bool {
+				assert(o);
+				return _object_valid_location(r, *o);
 			}
 		}
 	{

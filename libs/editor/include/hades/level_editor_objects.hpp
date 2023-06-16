@@ -1,12 +1,6 @@
 #ifndef HADES_LEVEL_EDITOR_OBJECTS_HPP
 #define HADES_LEVEL_EDITOR_OBJECTS_HPP
 
-#include <any>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
-#include <variant>
-
 #include "SFML/Graphics/Sprite.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 
@@ -14,7 +8,7 @@
 #include "hades/level_editor_component.hpp"
 #include "hades/level_editor_grid.hpp"
 #include "hades/objects.hpp"
-#include "hades/properties.hpp"
+#include "hades/object_editor.hpp"
 #include "hades/resource_base.hpp"
 #include "hades/sprite_batch.hpp"
 
@@ -33,134 +27,6 @@ namespace hades::resources
 namespace hades
 {
 	void register_level_editor_object_resources(data::data_manager&);
-
-	// For editing object_instance and object_editor_instance decendents
-	template<typename ObjectType = object_instance, typename OnChange = nullptr_t, typename IsValidPos = nullptr_t>
-	class object_editor_ui
-	{
-	public:
-		static_assert(std::is_base_of_v<object_instance, ObjectType> ||
-			std::is_same_v<object_instance, ObjectType> ||
-			std::is_same_v<nullptr_t, ObjectType>); // nullptr is used only to access subclassess without using the full editor
-
-		static_assert(std::is_same_v<OnChange, nullptr_t> ||
-			std::is_invocable_v<OnChange, ObjectType&>,
-			"If the OnChange callback is provided it must have the following signiture: auto OnChange(ObjectType&)");
-
-		static_assert(std::is_same_v<IsValidPos, nullptr_t> ||
-			std::is_invocable_r_v<bool, IsValidPos, const rect_float&, const object_instance&>,
-			"If the IsValidPos callback is provided it must have the following signiture: bool IsValidPos(const rect_float&, const object_instance&)");
-
-		static_assert(!std::is_same_v<OnChange, IsValidPos> || 
-            (std::is_same_v<IsValidPos, nullptr_t> && std::is_same_v<OnChange, nullptr_t>),
-			"If one of the editor callbacks are provided, then both must be.");
-
-		static constexpr bool visual_editor = !std::is_same_v<OnChange, nullptr_t>;
-
-		using object_type = ObjectType;
-
-		struct object_data
-		{
-			std::vector<ObjectType> objects;
-			unordered_map_string<entity_id> entity_names;
-			entity_id next_id = next(bad_entity);
-		};
-
-		struct vector_curve_edit
-		{
-			std::size_t selected = 0;
-			const resources::curve* target = nullptr;
-		};
-
-		explicit object_editor_ui(object_data* d) noexcept
-			: _data{d}
-		{
-			assert(_data);
-		}
-
-		object_editor_ui(object_data* d, OnChange change_func, IsValidPos isvalid_func)
-        : _on_change{ change_func }, _is_valid_pos{ isvalid_func }, _data{ d }
-		{
-			assert(_data);
-		}
-
-		void show_object_list_buttons(gui&);
-		void object_list_gui(gui&);
-		void object_properties(gui&);
-
-		void set_selected(entity_id) noexcept;
-		ObjectType* get_obj(entity_id) noexcept;
-		const ObjectType* get_obj(entity_id) const noexcept;
-		entity_id add(ObjectType);
-		void erase(entity_id);
-
-		struct curve_edit_cache
-		{
-			string edit_buffer;
-			int32 edit_generation = 0;
-			std::any extra_data;
-		};
-
-		using cache_map = unordered_map_string<curve_edit_cache>;
-
-	private:
-		struct curve_info
-		{
-			const resources::curve* curve = nullptr;
-			resources::curve_default_value value;
-		};
-
-		enum class curve_index : std::size_t {
-			pos,
-			size_index
-		};
-
-		struct add_remove_curve_window
-		{
-			enum class window_state {
-				closed,
-				add,
-				remove
-			};
-
-			window_state state = window_state::closed;
-			std::size_t list_index = std::size_t{};
-		};
-
-		void _add_remove_curve_window(gui&);
-		void _erase(std::size_t);
-		std::size_t _get_obj(entity_id) const noexcept;
-		ObjectType* _get_obj(std::size_t) noexcept;
-		void _reset_add_remove_curve_window() noexcept;
-		template<typename MakeRect>
-		void _positional_property_field(gui&, std::string_view, ObjectType&, 
-			curve_info&, MakeRect&&);
-		void _property_editor(gui&);
-		void _set_selected(std::size_t);
-
-		//callbacks
-		OnChange _on_change{};
-		IsValidPos _is_valid_pos{};
-
-		//shared state
-		object_data *_data = nullptr;
-
-		//editing and ui data
-		std::size_t _obj_list_selected = std::size_t{};
-		std::size_t _next_added_object_base = std::size_t{};
-		entity_id _selected = bad_entity;
-		curve_list _curves;
-		add_remove_curve_window _add_remove_window_state;
-		std::string _entity_name_id_uncommited;
-		vector_curve_edit _vector_curve_edit;
-		cache_map _edit_cache;
-		std::array<curve_info, 2> _curve_properties;
-	};
-
-	bool make_curve_default_value_editor(gui& g, std::string_view name,
-		const resources::curve* c, resources::curve_default_value& value,
-		typename object_editor_ui<nullptr_t>::vector_curve_edit& target,
-		typename object_editor_ui<nullptr_t>::cache_map& cache);
 
 	class level_editor_objects_impl : public level_editor_component
 	{
@@ -248,11 +114,13 @@ namespace hades
 		collision_layer_map _collision_quads;
 
 		//object instances
-		using obj_ui = object_editor_ui<editor_object_instance,
-			std::function<void(editor_object_instance&)>,
-			std::function<bool(const rect_float & r, const object_instance & o)>>;
-		obj_ui::object_data _objects;
-		obj_ui _obj_ui;
+		using obj_data_type = obj_ui::object_data<editor_object_instance>;
+		using obj_ui_type = object_editor_ui<obj_data_type,
+			std::function<void(editor_object_instance*)>,
+			std::function<bool(const rect_float& r, const object_instance* o)>>;
+
+		obj_data_type _objects;
+		obj_ui_type _obj_ui;
 
 		//grid info for snapping
 		grid_vars _grid = get_console_grid_vars();
@@ -264,7 +132,5 @@ namespace hades
 		using level_editor_objects_impl::level_editor_objects_impl;
 	};
 }
-
-#include "hades/detail/level_editor_objects.inl"
 
 #endif //!HADES_LEVEL_EDITOR_OBJECTS_HPP

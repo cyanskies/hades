@@ -161,8 +161,9 @@ namespace hades
 		std::vector<level_info> _levels;
 
 		//objects
-		using obj_ui = object_editor_ui<object_instance>;
-		obj_ui::object_data _objects;
+		using obj_data = obj_ui::object_data<object_instance>;
+		using obj_ui = object_editor_ui<obj_data>;
+		obj_data _objects;
 		obj_ui _obj_ui{ &_objects };
 	};
 

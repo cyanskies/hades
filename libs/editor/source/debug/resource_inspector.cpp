@@ -1101,8 +1101,8 @@ namespace hades::data
 		}
 
 	private:
-		object_editor_ui<nullptr_t>::cache_map _curve_edit_cache;
-		object_editor_ui<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
+		object_editor_ui_old<nullptr_t>::cache_map _curve_edit_cache;
+		object_editor_ui_old<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
 		string _title;
 		string _yaml;
 		resources::curve* _curve = {};
@@ -1688,8 +1688,8 @@ namespace hades::data
 			return ret;
 		}
 
-		object_editor_ui<nullptr_t>::cache_map _curve_edit_cache;
-		object_editor_ui<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
+		object_editor_ui_old<nullptr_t>::cache_map _curve_edit_cache;
+		object_editor_ui_old<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
 		resource_list _base_objects;
 		resource_list _systems;
 		resource_list _render_systems;

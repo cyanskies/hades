@@ -1,6 +1,5 @@
-#include "hades/level_editor_objects.hpp"
+#include "hades/object_editor.hpp"
 
-#include "hades/colour.hpp"
 #include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
@@ -418,11 +417,11 @@ namespace hades::detail::obj_ui
 
 	template<typename T, typename U, typename V, typename Obj>
 	bool make_vector_property_edit(gui& g, Obj& o, std::string_view name,
-		const resources::curve* c, T& value, typename object_editor_ui<Obj, U, V>::vector_curve_edit& target,
-		typename object_editor_ui<Obj, U, V>::cache_map& cache)
+		const resources::curve* c, T& value, typename object_editor_ui_old<Obj, U, V>::vector_curve_edit& target,
+		typename object_editor_ui_old<Obj, U, V>::cache_map& cache)
 	{
 		using namespace std::string_view_literals;
-		using vector_curve_edit = typename object_editor_ui<Obj, U, V>::vector_curve_edit;
+		using vector_curve_edit = typename object_editor_ui_old<Obj, U, V>::vector_curve_edit;
 
 		constexpr auto use_object_type = !std::is_same_v<Obj, nullptr_t>;
 
@@ -461,7 +460,7 @@ namespace hades::detail::obj_ui
 				assert(target.selected >= 0);
 				if (static_cast<std::size_t>(target.selected) < std::size(value))
 				{
-					ret = make_vector_edit_field<object_editor_ui<Obj, U, V>>(g, o,
+					ret = make_vector_edit_field<object_editor_ui_old<Obj, U, V>>(g, o,
 						*c, integer_cast<int32>(target.selected), value, cache);
 				}
 				else
@@ -539,8 +538,8 @@ namespace hades::detail::obj_ui
 
 	template< typename T, typename U, typename Obj>
 	inline void make_property_row(gui& g, Obj& o,
-		resources::object::curve_obj& c, typename object_editor_ui<Obj, T, U>::vector_curve_edit& target,
-		typename object_editor_ui<Obj, T, U>::cache_map& cache)
+		resources::object::curve_obj& c, typename object_editor_ui_old<Obj, T, U>::vector_curve_edit& target,
+		typename object_editor_ui_old<Obj, T, U>::cache_map& cache)
 	{
 		if (!resources::is_curve_valid(*c.curve_ptr, c.value))
 			return;
@@ -554,7 +553,7 @@ namespace hades::detail::obj_ui
 				if constexpr (resources::curve_types::is_collection_type_v<Type>)
 					make_vector_property_edit<Type, T, U>(g, o, data::get_as_string(curve->id), curve, value, target, cache);
 				else
-					make_property_edit<object_editor_ui<Obj, T, U>>(g, o, data::get_as_string(curve->id), *curve, value, cache);
+					make_property_edit<object_editor_ui_old<Obj, T, U>>(g, o, data::get_as_string(curve->id), *curve, value, cache);
 			}
 
 			}, c.value);
@@ -575,11 +574,195 @@ namespace hades::detail::obj_ui
 	}
 }
 
+namespace hades::obj_ui
+{
+	template<typename ObjectType>
+	inline bool object_data<ObjectType>::valid_ref(object_ref_t ref) const noexcept
+	{
+		return std::ranges::find(objects, ref, &ObjectType::id) != end(objects);
+	}
+
+	template<typename ObjectType>
+	inline auto object_data<ObjectType>::get_object(object_ref_t ref) -> object_t
+	{
+		const auto iter = std::ranges::find(objects, ref, &ObjectType::id);
+		return iter != end(objects) ? &*iter : nullptr;
+	}
+
+	template<typename ObjectType>
+	inline auto object_data<ObjectType>::get_ref(const object_t o) const noexcept -> object_ref_t
+	{
+		return o->id;
+	}
+}
+
 namespace hades
 {
+	template<typename ObjectData, typename OnChange, typename IsValidPos>
+	object_editor<ObjectData, OnChange, IsValidPos>::object_editor(ObjectData* d) noexcept
+		: _data{ d }
+	{}
+
+	template<typename ObjectData, typename OnChange, typename IsValidPos>
+	object_editor<ObjectData, OnChange, IsValidPos>::object_editor(ObjectData* d,
+		OnChange on_change, IsValidPos is_valid_pos)
+		: _data{ d }, _on_change{ on_change }, _is_valid_pos{ is_valid_pos }
+	{}
+
+	template<typename ObjectData, typename OnChange, typename IsValidPos>
+	inline void object_editor<ObjectData, OnChange, IsValidPos>::show_object_list_buttons(gui& g)
+	{
+		using namespace std::string_view_literals;
+		using namespace std::string_literals;
+		const auto& objs = resources::all_objects;
+
+		assert(_next_added_object_base < std::size(objs) + 1 || std::empty(objs));
+
+		const auto preview = [&objs](std::size_t index) {
+			if (index == std::size_t{})
+				return "none"s;
+			else
+				return to_string(objs[index - 1]->id);
+		}(_next_added_object_base);
+
+		const auto position_curve = get_position_curve();
+		const auto size_curve = get_size_curve();
+
+		if (g.combo_begin("object type"sv, preview))
+		{
+			if (g.selectable("none"sv, _next_added_object_base == std::size_t{}))
+				_next_added_object_base = std::size_t{};
+
+			const auto end = std::size(objs);
+			for (auto i = std::size_t{}; i < end; ++i)
+			{
+				const auto name = to_string(objs[i]->id);
+
+				if constexpr (visual_editor)
+				{
+					using resources::object_functions::has_curve;
+					if (has_curve(*objs[i], *position_curve) || has_curve(*objs[i], *size_curve))
+						continue;
+				}
+
+				if (g.selectable(name, _next_added_object_base == i + 1))
+					_next_added_object_base = i + 1;
+			}
+
+			g.combo_end();
+		}
+
+		if (_next_added_object_base == std::size_t{})
+			g.begin_disabled();
+
+		if (g.button("add"sv))
+		{
+			const auto& o_type = objs[_next_added_object_base - 1];
+			// NOTE: need to force load the object type
+			data::get<resources::object>(o_type.id());
+			add(make_instance(o_type.get()));
+		}
+
+		if (_next_added_object_base == std::size_t{})
+			g.end_disabled();
+
+		g.layout_horizontal();
+		/*if (g.button("remove"sv) && _obj_list_selected < std::size(_data->objects))
+			_erase(_obj_list_selected);*/
+		return;
+	}
+
+	template<typename ObjectData, typename OnChange, typename IsValidPos>
+	inline void object_editor<ObjectData, OnChange, IsValidPos>::object_list_gui(gui& g)
+	{
+		using namespace std::string_view_literals;
+		
+		// only list the invisible objects for the visual editor
+		const auto position_curve = get_position_curve();
+		const auto size_curve = get_size_curve();
+		if (g.listbox_begin("##obj_list"sv))
+		{
+			auto iter = _data->objects_begin();
+			const auto end = _data->objects_end();
+			for (iter; iter != end; ++iter)
+			{
+				auto o = &*iter;
+				auto ref = _data->get_ref(o);
+
+				if constexpr (visual_editor)
+				{
+					if (!(_data->has_curve(o, position_curve) && _data->has_curve(o, size_curve)))
+					{
+						if (g.selectable(_get_name_with_tag(o), ref == selected()))
+							_set_selected(ref);
+					}
+				}
+				else
+				{
+					if (g.selectable(_get_name_with_tag(o), ref == selected()))
+						_set_selected(ref);
+				}
+			}
+			g.listbox_end();
+		}
+		return;
+	}
+
+	template<typename ObjectData, typename OnChange, typename IsValidPos>
+	inline void object_editor<ObjectData, OnChange, IsValidPos>::_set_selected(object_ref_t ref)
+	{
+		//_reset_add_remove_curve_window();
+		//_vector_curve_edit = vector_curve_edit{};
+
+		if (!_data->valid_ref(ref))
+		{
+			_selected = data_type::nothing_selected;
+			//_obj_list_selected = std::size_t{};
+			return;
+		}
+
+		const auto o = _data->get_object(ref);// _data->objects[index];
+		_selected = ref;
+		//_obj_list_selected = index;
+		const auto pos_curve = get_position_curve();
+		const auto siz_curve = get_size_curve();
+
+		/*_curve_properties = std::array{
+			has_curve(o, *pos_curve) ? curve_info{pos_curve, get_curve(o, *pos_curve)} : curve_info{},
+			has_curve(o, *siz_curve) ? curve_info{siz_curve, get_curve(o, *siz_curve)} : curve_info{}
+		};*/
+
+		// stash the objects curve list
+		/*auto all_curves = get_all_curves(o);
+		if constexpr (visual_editor)
+		{
+			all_curves.erase(std::remove_if(begin(all_curves), end(all_curves),
+				[others = _curve_properties](auto&& c) {
+					return std::any_of(begin(others),
+					end(others), [&c](auto&& curve)
+						{ return c.curve_ptr == curve.curve; });
+				}), end(all_curves));
+		}*/
+
+		//std::sort(begin(all_curves), end(all_curves), [](auto&& lhs, auto&& rhs) {
+		//	return data::get_as_string(lhs.curve_ptr->id) < data::get_as_string(rhs.curve_ptr->id);
+		//	});
+
+		//_curves = std::move(all_curves);
+
+		//_entity_name_id_uncommited = o.name_id;
+		//_edit_cache = {}; // reset the edit cache
+	}
+
+	/// OLD
+	///====================================================
+	///====================================================
+	///====================================================
+	/// OLD
+
 	//TODO: handle objectlist == empty in all the editor_ui functions
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::show_object_list_buttons(gui& g)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::show_object_list_buttons(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
@@ -643,7 +826,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::object_list_gui(gui& g)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::object_list_gui(gui& g)
 	{
 		using namespace std::string_view_literals;
 		if constexpr (visual_editor)
@@ -677,7 +860,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::object_properties(gui& g)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::object_properties(gui& g)
 	{
 		using namespace std::string_view_literals;
 		if (_selected == bad_entity)
@@ -694,7 +877,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::set_selected(entity_id id) noexcept
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::set_selected(entity_id id) noexcept
 	{
 		const auto index = _get_obj(id);
 		_set_selected(index);
@@ -702,7 +885,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline ObjectType* object_editor_ui<ObjectType, OnChange, IsValidPos>::get_obj(entity_id id) noexcept
+	inline ObjectType* object_editor_ui_old<ObjectType, OnChange, IsValidPos>::get_obj(entity_id id) noexcept
 	{
 		const auto index = _get_obj(id);
 		if (index < std::size(_data->objects))
@@ -711,7 +894,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline const ObjectType* object_editor_ui<ObjectType, OnChange, IsValidPos>::get_obj(entity_id id) const noexcept
+	inline const ObjectType* object_editor_ui_old<ObjectType, OnChange, IsValidPos>::get_obj(entity_id id) const noexcept
 	{
 		const auto index = _get_obj(id);
 		if (index < std::size(_data->objects))
@@ -720,7 +903,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline entity_id object_editor_ui<ObjectType, OnChange, IsValidPos>::add(ObjectType o)
+	inline entity_id object_editor_ui_old<ObjectType, OnChange, IsValidPos>::add(ObjectType o)
 	{
 		assert(o.id == bad_entity);
 		const auto id = o.id = post_increment(_data->next_id);
@@ -729,7 +912,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::erase(const entity_id id)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::erase(const entity_id id)
 	{
 		const auto index = _get_obj(id);
 		_erase(index);
@@ -737,7 +920,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_add_remove_curve_window(gui& g)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_add_remove_curve_window(gui& g)
 	{
 		using namespace std::string_literals;
 		using namespace std::string_view_literals;
@@ -796,7 +979,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_erase(const std::size_t index)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_erase(const std::size_t index)
 	{
 		assert(index < std::size(_data->objects));
         const auto iter = std::next(std::begin(_data->objects), signed_cast(index));
@@ -813,7 +996,7 @@ namespace hades
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
 	template<typename MakeRect>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_positional_property_field(
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_positional_property_field(
 		gui& g, std::string_view label,	ObjectType& o, curve_info& c,
 		MakeRect&& make_rect)
 	{
@@ -850,7 +1033,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline std::size_t object_editor_ui<ObjectType, OnChange, IsValidPos>::_get_obj(entity_id id) const noexcept
+	inline std::size_t object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_get_obj(entity_id id) const noexcept
 	{
 		const auto size = std::size(_data->objects);
 		for (auto i = std::size_t{}; i < size; ++i)
@@ -862,21 +1045,21 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline ObjectType* object_editor_ui<ObjectType, OnChange, IsValidPos>::_get_obj(std::size_t index) noexcept
+	inline ObjectType* object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_get_obj(std::size_t index) noexcept
 	{
 		assert(index < std::size(_data->objects));
 		return &_data->objects[index];
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_reset_add_remove_curve_window() noexcept
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_reset_add_remove_curve_window() noexcept
 	{
 		_add_remove_window_state = add_remove_curve_window{}; 
 		return;
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_property_editor(gui& g)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_property_editor(gui& g)
 	{
 		using namespace detail::obj_ui;
 		const auto o = _get_obj(_obj_list_selected);
@@ -967,7 +1150,7 @@ namespace hades
 	}
 
 	template<typename ObjectType, typename OnChange, typename IsValidPos>
-	inline void object_editor_ui<ObjectType, OnChange, IsValidPos>::_set_selected(std::size_t index)
+	inline void object_editor_ui_old<ObjectType, OnChange, IsValidPos>::_set_selected(std::size_t index)
 	{
 		_reset_add_remove_curve_window();
 		_vector_curve_edit = vector_curve_edit{};

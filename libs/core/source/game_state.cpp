@@ -45,6 +45,7 @@ namespace hades::detail
 			if (_data[i].id == o->id)
 			{
 				_emptys[i] = empty_flag;
+				_data[i].id = bad_entity;
 				--_size;
 				return;
 			}

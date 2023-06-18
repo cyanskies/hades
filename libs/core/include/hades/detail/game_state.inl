@@ -401,8 +401,6 @@ namespace hades::state_api
 			detail::call_with_curve_info(info, visitor);
 		}
 		o.object_variables.clear();
-
-		o.id = bad_entity;
 		e.objects.erase(&o);
 		return;
 	}

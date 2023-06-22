@@ -1,7 +1,10 @@
 #ifndef HADES_GAME_STATE_HPP
 #define HADES_GAME_STATE_HPP
 
+#pragma warning(push, 0)
+#pragma warning(disable: 28182)
 #include "plf_colony.h"
+#pragma warning(pop)
 
 #include "hades/any_map.hpp"
 #include "hades/curve_types.hpp"

@@ -5,7 +5,10 @@
 #include <typeindex>
 #include <vector>
 
+#pragma warning(push, 0)
+#pragma warning(disable: 28182)
 #include "plf_colony.h"
+#pragma warning(pop)
 
 #include "hades/resource_base.hpp"
 #include "hades/uniqueid.hpp"

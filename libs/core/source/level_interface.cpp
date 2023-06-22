@@ -32,7 +32,16 @@ namespace hades
 
 		state_api::destroy_object(o, t, _state, _extras);
 		_destroy_objects.emplace_back(obj);
-		_removed_objects.emplace_back(o.id);
+
+		// if this object is still in the new_objects list(client hasn't been told about it)
+		// then just erase it from the new list, the client will never know of this obj
+		if (auto iter = std::ranges::find(_new_objects, o.id, &game_obj::id);
+			iter != end(_new_objects))
+		{
+			_new_objects.erase(iter);
+		}
+		else
+			_removed_objects.emplace_back(o.id);
 	}
 
 	std::vector<game_obj*> game_implementation::get_destroyed_objects() noexcept

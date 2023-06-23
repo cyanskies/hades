@@ -19,6 +19,22 @@ namespace hades
 {
 	namespace obj_ui
 	{
+		struct curve_cache_entry
+		{
+			string edit_buffer;
+			std::size_t edit_generation = {};
+			std::any extra_data;
+		};
+
+		using curve_edit_cache = unordered_map_string<curve_cache_entry>;
+
+		template<curve_type CurveType>
+		bool edit_curve_value(gui&, std::string_view, curve_edit_cache&, bool disabled, CurveType& value);
+		// collection specialisation
+		template<curve_type CurveType>
+		bool edit_curve_value(gui&, std::string_view, curve_edit_cache&, bool disabled, CurveType& value)
+			requires curve_types::is_collection_type_v<CurveType>;
+
 		// Base type, used for object_instance and editor_object_instance
 		// see: object inspector for editing live objects
 		template<typename ObjectType>
@@ -174,26 +190,6 @@ namespace hades
 		void erase(object_ref_t);
 
 	private:
-		// TODO: merge these edit caches into a generic cache
-		//		needed to cache unique_id pickers, colour pickers
-		//		keyframe based editor
-		struct vector_edit_window
-		{
-			static constexpr auto nothing_selected = std::numeric_limits<std::size_t>::max();
-			std::size_t selected = nothing_selected;
-		};
-
-		using vector_window_map = unordered_map_string<vector_edit_window>;
-
-		struct duration_edit_cache
-		{
-			string edit_buffer;
-			int32 edit_generation = 0;
-			duration_ratio ratio;
-		};
-
-		using duration_cache_map = unordered_map_string<duration_edit_cache>;
-
 		struct curve_entry
 		{
 			data_type::curve_t curve = {};
@@ -229,25 +225,11 @@ namespace hades
 		}
 
 		void _property_editor(gui&);
-		template<curve_type CurveType>
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, CurveType& value);
-		// specialisations
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::vec2_float& value);
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::object_ref& value);
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::colour& value);
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::bool_t& value);
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::unique& value);
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, curve_types::time_d& value);
-		// collection specialisation
-		template<curve_type CurveType>
-		bool _property_row(gui&, std::string_view, curve_t, bool disabled, CurveType& value)
-			requires curve_types::is_collection_type_v<CurveType>;
-
+		
 		// Edit state
 		string _entity_name_id_cache;
 		string _entity_name_id_uncommited;
-		duration_cache_map _duration_edit_cache;
-		vector_window_map _vector_edit_windows;
+		obj_ui::curve_edit_cache _edit_cache;
 
 		// selection index for the available object bases when creating new objects
 		std::size_t _next_added_object_base = std::size_t{};

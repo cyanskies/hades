@@ -1038,8 +1038,7 @@ namespace hades::data
 							_curve->data_type = i;
 							mod = true;
 							_curve->default_value = resources::reset_default_value(*_curve);
-							_curve_edit_cache = {};
-							_curve_vec_edit_cache = {};
+							_curve_edit_cache.clear();
 						}
 					}
 
@@ -1073,13 +1072,21 @@ namespace hades::data
 				if (g.checkbox("hide in editor"sv, _curve->hidden))
 					mod = true;
 
-				// default value
-				if(make_curve_default_value_editor(g, "default_value"sv, _curve,
-					_curve->default_value, _curve_vec_edit_cache, _curve_edit_cache))
-					mod = true;
-
 				if (disabled)
 					g.end_disabled();
+
+				// default value
+				assert(resources::is_curve_valid(*_curve));
+
+				if (std::visit([&](auto& value) {
+					if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::monostate>)
+						return false;
+					else
+						return obj_ui::edit_curve_value(g, data::get_as_string(_curve->id), _curve_edit_cache, disabled, value);
+					}, _curve->default_value))
+				{
+					mod = true;
+				}
 
 				if (mod)
 					std::invoke(generate_yaml, d);
@@ -1101,8 +1108,7 @@ namespace hades::data
 		}
 
 	private:
-		object_editor_ui_old<nullptr_t>::cache_map _curve_edit_cache;
-		object_editor_ui_old<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
+		obj_ui::curve_edit_cache _curve_edit_cache;
 		string _title;
 		string _yaml;
 		resources::curve* _curve = {};
@@ -1252,9 +1258,6 @@ namespace hades::data
 
 			std::ranges::sort(_base_tags, {}, &std::pair<string, string>::first);
 
-			/*for (const auto& s : _tags)
-				erase(_base_tags, s);*/
-
 			return;
 		}
 
@@ -1351,6 +1354,12 @@ namespace hades::data
 
 				if (g.begin_table("curves_table"sv, 2, gui::table_flags::borders))
 				{
+					// NOTE: we re-enable editing in this table
+					//		this allows users to press the "view" button and
+					//		examine the elements in a collection
+					if (disabled)
+						g.end_disabled();
+
 					g.table_setup_column("###curve_col"sv, gui::table_column_flags::width_stretch, .8f);
 					g.table_setup_column("###button_col"sv, gui::table_column_flags::width_stretch, .2f);
 
@@ -1361,16 +1370,18 @@ namespace hades::data
 						g.push_id(c.curve_ptr);
 						if (g.table_next_column())
 						{
-							if (foreign_curve)
-								g.begin_disabled();
-							if (make_curve_default_value_editor(g, d.get_as_string(c.curve_ptr->id),
-								c.curve_ptr, c.value, _curve_vec_edit_cache, _curve_edit_cache))
+							assert(resources::is_curve_valid(*c.curve_ptr));
+
+							if (std::visit([&](auto& value) {
+								if constexpr (std::is_same_v<std::decay_t<decltype(value)>, std::monostate>)
+									return false;
+								else
+									return obj_ui::edit_curve_value(g, data::get_as_string(c.curve_ptr->id), _curve_edit_cache, foreign_curve, value);
+								}, c.value))
 							{
 								mod = true;
 								add_or_update_curve_on_object(d, *_obj, c.curve_ptr, c.value);
 							}
-							if (foreign_curve)
-								g.end_disabled();
 
 							if (foreign_curve)
 							{
@@ -1405,6 +1416,10 @@ namespace hades::data
 						}
 						g.pop_id();
 					}
+
+					// Restore disabled status if tempararily ended it
+					if (disabled)
+						g.begin_disabled();
 
 					g.end_table();
 				}
@@ -1688,7 +1703,7 @@ namespace hades::data
 			return ret;
 		}
 
-		object_editor_ui_old<nullptr_t>::cache_map _curve_edit_cache;
+		obj_ui::curve_edit_cache _curve_edit_cache;
 		object_editor_ui_old<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
 		resource_list _base_objects;
 		resource_list _systems;

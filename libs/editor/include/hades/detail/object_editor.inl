@@ -578,6 +578,352 @@ namespace hades::detail::obj_ui
 
 namespace hades::obj_ui
 {
+	template<curve_type CurveType>
+	inline bool edit_curve_value(gui& g, std::string_view name, curve_edit_cache&,
+		bool disabled, CurveType& value)
+	{
+		auto ret = false;
+		if (disabled)
+			g.begin_disabled();
+		ret = g.input(name, value);
+		if (disabled)
+			g.end_disabled();
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::vec2_float>(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::vec2_float& value)
+	{
+		auto ret = false;
+		if (disabled)
+			g.begin_disabled();
+		auto val2 = std::array{ value.x, value.y };
+		if (g.input(name, val2))
+		{
+			value = { val2[0], val2[1] };
+			ret = true;
+		}
+		if (disabled)
+			g.end_disabled();
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::object_ref>(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::object_ref& value)
+	{
+		auto ret = false;
+		auto value2 = integer_cast<int>(to_value(value.id));
+		if (disabled)
+			g.begin_disabled();
+		if (g.input(name, value2))
+		{
+			value = object_ref{ entity_id{ integer_cast<entity_id::value_type>(value2) } };
+			ret = true;
+		}
+		if (disabled)
+			g.end_disabled();
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::colour>(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::colour& value)
+	{
+		auto ret = false;
+		auto arr = std::array{
+			integer_cast<int>(value[0]),
+				integer_cast<int>(value[1]),
+				integer_cast<int>(value[2]),
+				integer_cast<int>(value[3])
+		};
+
+		if (disabled)
+			g.begin_disabled();
+		if (g.input(name, arr))
+		{
+			value = {
+				integer_clamp_cast<uint8>(arr[0]),
+				integer_clamp_cast<uint8>(arr[1]),
+				integer_clamp_cast<uint8>(arr[2]),
+				integer_clamp_cast<uint8>(arr[3])
+			};
+			ret = true;
+		}
+		if (disabled)
+			g.end_disabled();
+
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::bool_t>(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::bool_t& value)
+	{
+		auto ret = false;
+		if (disabled)
+			g.begin_disabled();
+		ret = g.checkbox(name, value);
+		if (disabled)
+			g.end_disabled();
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::unique>(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::unique& value)
+	{
+		auto ret = false;
+		// intentional copy
+		string u_string = data::get_as_string(value);
+		if (disabled)
+			g.begin_disabled();
+		if (g.input_text(name, u_string))
+		{
+			value = data::make_uid(u_string);
+			ret = true;
+		}
+		if (disabled)
+			g.end_disabled();
+		return ret;
+	}
+
+	template<>
+	inline bool edit_curve_value<curve_types::time_d>(gui& g, std::string_view name,
+		curve_edit_cache& cache, bool disabled, curve_types::time_d& value)
+	{
+		using duration_extra_data = duration_ratio;
+
+		using namespace std::string_view_literals;
+		auto ret = false;
+
+		auto iter = cache.find(name);
+		auto& cache_entry = iter == end(cache) ? cache[to_string(name)] : iter->second;
+		if (!cache_entry.extra_data.has_value())
+			cache_entry.extra_data.emplace<duration_extra_data>();
+
+		auto& ratio = std::any_cast<duration_extra_data&>(cache_entry.extra_data);
+
+
+		if (cache_entry.edit_generation == 0)
+		{
+			std::tie(cache_entry.edit_buffer, ratio) = duration_to_string(value);
+			++cache_entry.edit_generation;
+		}
+
+		const auto preview = [ratio]() noexcept {
+			if (ratio == duration_ratio::seconds)
+				return "seconds"sv;
+			if (ratio == duration_ratio::millis)
+				return "milliseconds"sv;
+			if (ratio == duration_ratio::micros)
+				return "microseconds"sv;
+			return "nanoseconds"sv;
+		}();
+
+		if (disabled)
+			g.begin_disabled();
+		if (g.combo_begin("##duration_ratio"sv, preview))
+		{
+			if (g.selectable("seconds"sv, ratio == duration_ratio::seconds))
+			{
+				++cache_entry.edit_generation;
+				const auto secs = time_cast<seconds>(value);
+				cache_entry.edit_buffer = to_string(secs.count());
+				ratio = duration_ratio::seconds;
+				ret = true;
+			}
+
+			if (g.selectable("milliseconds"sv, ratio == duration_ratio::millis))
+			{
+				++cache_entry.edit_generation;
+				const auto millis = time_cast<milliseconds>(value);
+				cache_entry.edit_buffer = to_string(millis.count());
+				ratio = duration_ratio::millis;
+				ret = true;
+			}
+
+			if (g.selectable("microseconds"sv, ratio == duration_ratio::micros))
+			{
+				++cache_entry.edit_generation;
+				const auto micros = time_cast<microseconds>(value);
+				cache_entry.edit_buffer = to_string(micros.count());
+				ratio = duration_ratio::micros;
+				ret = true;
+			}
+
+			if (g.selectable("nanoseconds"sv, ratio == duration_ratio::nanos))
+			{
+				++cache_entry.edit_generation;
+				const auto nanos = time_cast<nanoseconds>(value);
+				cache_entry.edit_buffer = to_string(nanos.count());
+				ratio = duration_ratio::nanos;
+				ret = true;
+			}
+
+			g.combo_end();
+		}
+
+		g.push_id(integer_cast<int32>(cache_entry.edit_generation));
+		if (g.input_text(name, cache_entry.edit_buffer, gui::input_text_flags::chars_decimal))
+		{
+			switch (ratio)
+			{
+			case duration_ratio::seconds:
+			{
+				const auto secs = seconds{ from_string<int64>(cache_entry.edit_buffer) };
+				value = time_cast<time_duration>(secs);
+			}break;
+			case duration_ratio::millis:
+			{
+				const auto millis = milliseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				value = time_cast<time_duration>(millis);
+			}break;
+			case duration_ratio::micros:
+			{
+				const auto micros = microseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				value = time_cast<time_duration>(micros);
+			}break;
+			case duration_ratio::nanos:
+			{
+				const auto nanos = nanoseconds{ from_string<int64>(cache_entry.edit_buffer) };
+				value = time_cast<time_duration>(nanos);
+			}break;
+			default:
+				throw out_of_range_error{"out of range"};
+			}
+
+			ret = true;
+		}
+		if (disabled)
+			g.end_disabled();
+		g.pop_id();
+		return ret;
+	}
+
+	template<curve_type CurveType>
+	inline bool edit_curve_value(gui& g, std::string_view name, curve_edit_cache& cache, 
+		bool disabled, CurveType& value) requires curve_types::is_collection_type_v<CurveType>
+	{
+		using namespace std::string_view_literals;
+
+		using vector_window_open = bool;
+		// TODO: move this up into property_edit
+		//		so this function can be used more generically by the resource editor
+		// create vector window
+		g.push_id(name);
+		auto iter = cache.find(name);
+		if (g.button("view"sv) && iter == end(cache))
+			std::tie(iter, std::ignore) = cache.emplace(to_string(name), obj_ui::curve_cache_entry{});
+		g.pop_id();
+
+		enum class elem_mod {
+			remove,
+			move_up,
+			move_down,
+			error
+		};
+
+		auto changed = false;
+
+		if (iter != end(cache))
+		{
+			auto open = true;
+			if (g.window_begin(name, open))
+			{
+				constexpr auto max_index = std::numeric_limits<std::size_t>::max();
+				auto index = max_index;
+				auto mod = elem_mod::error;
+				const auto size = std::size(value);
+				const auto max = size - 1;
+
+				g.text("elements:"sv);
+
+				if (disabled)
+					g.begin_disabled();
+
+				if (g.button("add new"sv))
+				{
+					value.emplace_back(typename CurveType::value_type{});
+					changed = true;
+				}
+
+				for (auto i = std::size_t{}; i != size; ++i)
+				{
+					g.push_id(integer_cast<int32>(i));
+					g.separator_horizontal();
+
+					if (i == 0)
+						g.begin_disabled();
+					if (g.button("^"sv))
+					{
+						index = i;
+						mod = elem_mod::move_up;
+					}
+					if (i == 0)
+						g.end_disabled();
+					g.same_line();
+
+					if (i == max)
+						g.begin_disabled();
+					if (g.button("v"sv))
+					{
+						index = i;
+						mod = elem_mod::move_down;
+					}
+					if (i == max)
+						g.end_disabled();
+					g.same_line();
+
+					if (g.button("remove"sv))
+					{
+						index = i;
+						mod = elem_mod::remove;
+					}
+
+					if (edit_curve_value(g, {}, cache, disabled, value[i]))
+						changed = true;
+
+					g.pop_id();
+				}
+
+				if (index != max_index &&
+					mod != elem_mod::error)
+				{
+					switch (mod)
+					{
+					case elem_mod::move_up:
+						std::swap(value[index], value[index - 1]);
+						break;
+					case elem_mod::move_down:
+						std::swap(value[index], value[index + 1]);
+						break;
+					case elem_mod::remove:
+						value.erase(next(begin(value), index));
+					}
+					changed = true;
+				}
+
+				g.layout_horizontal();
+				if (disabled)
+					g.end_disabled();
+			}
+			g.window_end();
+
+			if (!open)
+				cache.erase(iter);
+		}
+
+		g.same_line();
+		if (disabled)
+			g.begin_disabled();
+		g.text(name);
+		if (disabled)
+			g.end_disabled();
+		return changed;
+	}
+
 	template<typename ObjectType>
 	inline bool object_data<ObjectType>::valid_ref(object_ref_t ref) const noexcept
 	{
@@ -776,7 +1122,8 @@ namespace hades
 
 				if constexpr (visual_editor)
 				{
-					if (!(_data->has_curve(o, position_curve) && _data->has_curve(o, size_curve)))
+					if (!_data->get_name(o).empty() ||
+						!(_data->has_curve(o, position_curve) && _data->has_curve(o, size_curve)))
 					{
 						if (g.selectable(_get_name_with_tag(o), ref != data_type::nothing_selected && ref == selected()))
 						{
@@ -854,7 +1201,6 @@ namespace hades
 
 		std::ranges::sort(_curves, {}, &curve_entry::name);
 		_entity_name_id_cache = _entity_name_id_uncommited = _data->get_name(o);
-		_duration_edit_cache.clear();
 		return;
 	}
 
@@ -951,7 +1297,11 @@ namespace hades
 				if (val != c.value)
 				{
 					c.value = std::move(val);
-					_duration_edit_cache.erase(c.name);
+					auto iter = _edit_cache.find(c.name);
+					if (iter != end(_edit_cache))
+					{
+						iter->second.edit_generation = {};
+					}
 				}
 			}
 
@@ -977,7 +1327,7 @@ namespace hades
 						c_ptr->locked)
 						disabled = true;
 
-					if (_property_row(g, c.name, c.curve, disabled, value))
+					if (obj_ui::edit_curve_value(g, c.name, _edit_cache, disabled, value))
 					{
 						_data->set_value(o, c.curve, value);
 
@@ -991,347 +1341,6 @@ namespace hades
 
 		g.pop_id(); // entity_id
 		return;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	template<curve_type CurveType>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, CurveType& value)
-	{
-		auto ret = false;
-		if (disabled)
-			g.begin_disabled();
-		ret = g.input(name, value);
-		if (disabled)
-			g.end_disabled();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::vec2_float& value)
-	{
-		auto ret = false;
-		if (disabled)
-			g.begin_disabled();
-		auto val2 = std::array{ value.x, value.y };
-		if (g.input(name, val2))
-		{
-			value = { val2[0], val2[1] };
-			ret = true;
-		}
-		if (disabled)
-			g.end_disabled();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::object_ref& value)
-	{
-		auto ret = false;
-		auto value2 = integer_cast<int>(to_value(value.id));
-		if (disabled)
-			g.begin_disabled();
-		if (g.input(name, value2))
-		{
-			value = object_ref{ entity_id{ integer_cast<entity_id::value_type>(value2) } };
-			ret = true;
-		}
-		if (disabled)
-			g.end_disabled();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::colour& value)
-	{
-		auto ret = false;
-		auto arr = std::array{
-			integer_cast<int>(value[0]),
-				integer_cast<int>(value[1]),
-				integer_cast<int>(value[2]),
-				integer_cast<int>(value[3])
-		};
-
-		if (disabled)
-			g.begin_disabled();
-		if (g.input(name, arr))
-		{
-			value = {
-				integer_clamp_cast<uint8>(arr[0]),
-				integer_clamp_cast<uint8>(arr[1]),
-				integer_clamp_cast<uint8>(arr[2]),
-				integer_clamp_cast<uint8>(arr[3])
-			};
-			ret = true;
-		}
-		if (disabled)
-			g.end_disabled();
-
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::bool_t& value)
-	{
-		auto ret = false;
-		if (disabled)
-			g.begin_disabled();
-		ret = g.checkbox(name, value);
-		if (disabled)
-			g.end_disabled();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::unique& value)
-	{
-		auto ret = false;
-		// intentional copy
-		string u_string = data::get_as_string(value);
-		if (disabled)
-			g.begin_disabled();
-		if (g.input_text(name, u_string))
-		{
-			value = data::make_uid(u_string);
-			ret = true;
-		}
-		if (disabled)
-			g.end_disabled();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool hades::object_editor<ObjectData, OnChange, OnRemove>::
-		_property_row(gui& g, std::string_view name, curve_t, bool disabled, curve_types::time_d& value)
-	{
-		using namespace std::string_view_literals;
-		auto ret = false;
-		auto& cache = _duration_edit_cache;
-
-		auto iter = cache.find(name);
-		auto& cache_entry = iter == end(cache) ? cache[to_string(name)] : iter->second;
-		if (cache_entry.edit_generation == 0)
-		{
-			std::tie(cache_entry.edit_buffer, cache_entry.ratio) = duration_to_string(value);
-			++cache_entry.edit_generation;
-		}
-
-		auto& ratio = cache_entry.ratio;
-
-		const auto preview = [ratio]() noexcept {
-			if (ratio == duration_ratio::seconds)
-				return "seconds"sv;
-			if (ratio == duration_ratio::millis)
-				return "milliseconds"sv;
-			if (ratio == duration_ratio::micros)
-				return "microseconds"sv;
-			return "nanoseconds"sv;
-		}();
-
-		if (disabled)
-			g.begin_disabled();
-		if (g.combo_begin("##duration_ratio"sv, preview))
-		{
-			if (g.selectable("seconds"sv, ratio == duration_ratio::seconds))
-			{
-				++cache_entry.edit_generation;
-				const auto secs = time_cast<seconds>(value);
-				cache_entry.edit_buffer = to_string(secs.count());
-				ratio = duration_ratio::seconds;
-				ret = true;
-			}
-
-			if (g.selectable("milliseconds"sv, ratio == duration_ratio::millis))
-			{
-				++cache_entry.edit_generation;
-				const auto millis = time_cast<milliseconds>(value);
-				cache_entry.edit_buffer = to_string(millis.count());
-				ratio = duration_ratio::millis;
-				ret = true;
-			}
-
-			if (g.selectable("microseconds"sv, ratio == duration_ratio::micros))
-			{
-				++cache_entry.edit_generation;
-				const auto micros = time_cast<microseconds>(value);
-				cache_entry.edit_buffer = to_string(micros.count());
-				ratio = duration_ratio::micros;
-				ret = true;
-			}
-
-			if (g.selectable("nanoseconds"sv, ratio == duration_ratio::nanos))
-			{
-				++cache_entry.edit_generation;
-				const auto nanos = time_cast<nanoseconds>(value);
-				cache_entry.edit_buffer = to_string(nanos.count());
-				ratio = duration_ratio::nanos;
-				ret = true;
-			}
-
-			g.combo_end();
-		}
-
-		g.push_id(cache_entry.edit_generation);
-		if (g.input_text(name, cache_entry.edit_buffer, gui::input_text_flags::chars_decimal))
-		{
-			switch (ratio)
-			{
-			case duration_ratio::seconds:
-			{
-				const auto secs = seconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(secs);
-			}break;
-			case duration_ratio::millis:
-			{
-				const auto millis = milliseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(millis);
-			}break;
-			case duration_ratio::micros:
-			{
-				const auto micros = microseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(micros);
-			}break;
-			case duration_ratio::nanos:
-			{
-				const auto nanos = nanoseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(nanos);
-			}break;
-			default:
-				throw out_of_range_error{"out of range"};
-			}
-
-			ret = true;
-		}
-		if (disabled)
-			g.end_disabled();
-		g.pop_id();
-		return ret;
-	}
-
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	template<curve_type CurveType>
-	inline bool object_editor<ObjectData, OnChange, OnRemove>::_property_row(gui& g,
-		std::string_view name, curve_t c, bool disabled, CurveType& value)
-		requires curve_types::is_collection_type_v<CurveType>
-	{
-		using namespace std::string_view_literals;
-
-		// create vector window
-		g.push_id(name);
-		auto iter = _vector_edit_windows.find(name);
-		if (g.button("view"sv))
-		{
-			if (iter == std::end(_vector_edit_windows))
-				std::tie(iter, std::ignore) = _vector_edit_windows.emplace(name, vector_edit_window{});
-		}
-		g.pop_id();
-
-		enum class elem_mod {
-			remove, 
-			move_up,
-			move_down,
-			error
-		};
-
-		auto changed = false;
-
-		if (iter != std::end(_vector_edit_windows))
-		{
-			auto open = true;
-			
-			if (g.window_begin(name, open))
-			{
-				auto index = vector_edit_window::nothing_selected;
-				auto mod = elem_mod::error;
-				const auto size = std::size(value);
-				const auto max = size - 1;
-
-				auto c_ptr = _data->get_ptr(c);
-
-				const auto var_type = to_string(curve_collection_element_type(c_ptr->data_type));
-
-				g.text("elements:"sv);
-
-				if (disabled)
-					g.begin_disabled();
-				for (auto i = std::size_t{}; i != size; ++i)
-				{
-					g.push_id(integer_cast<int32>(i));
-					g.separator_horizontal();
-
-					if (i == 0)
-						g.begin_disabled();
-					if (g.button("^"sv))
-					{
-						index = i;
-						mod = elem_mod::move_up;
-					}
-					if (i == 0)
-						g.end_disabled();
-					g.same_line();
-
-					if(i == max)
-						g.begin_disabled();
-					if (g.button("v"sv))
-					{
-						index = i;
-						mod = elem_mod::move_down;
-					}
-					if (i == max)
-						g.end_disabled();
-					g.same_line();
-
-					if (g.button("remove"sv))
-					{
-						index = i;
-						mod = elem_mod::remove;
-					}
-
-					if (_property_row(g, var_type, c, disabled, value[i]))
-						changed = true;
-
-					if (index != vector_edit_window::nothing_selected &&
-						mod != elem_mod::error)
-					{
-						switch(mod)
-						{
-						case elem_mod::move_up:
-							std::swap(value[index], value[index - 1]);
-							break;
-						case elem_mod::move_down:
-							std::swap(value[index], value[index + 1]);
-							break;
-						case elem_mod::remove:
-							value.erase(next(begin(value), index));
-						}
-						changed = true;
-					}
-
-					g.pop_id();
-				}
-				g.layout_horizontal();
-				if (disabled)
-					g.end_disabled();
-			}
-			g.window_end();
-			
-
-			if (!open)
-				_vector_edit_windows.erase(iter);
-		}
-
-		g.same_line();
-		if (disabled)
-			g.begin_disabled();
-		g.text(name);
-		if (disabled)
-			g.end_disabled();
-		return changed;
 	}
 
 	/// OLD

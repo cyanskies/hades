@@ -96,6 +96,7 @@ namespace hades
 	template<typename T>
 	string vector_to_string(vector_t<T> v)
 	{
+		// TODO: use fmt
 		using namespace std::string_literals;
 		return "["s + to_string(v.x) + ", "s + to_string(v.y) + "]"s;
 	}

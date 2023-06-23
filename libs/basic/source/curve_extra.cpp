@@ -264,35 +264,6 @@ namespace hades::resources
 		return false;
 	}
 
-	template<typename T>
-	static T vector_t_from_string(std::string_view str)
-	{
-		static_assert(resources::curve_types::is_vector_type_v<T>);
-		const auto elms = vector_from_string<std::vector<typename T::value_type>>(str);
-		const auto siz = std::size(elms);
-
-		if (siz != 2u)
-		{
-			if(siz == 0u)
-			{
-				//TODO: warn, bad
-				using Ty = typename T::value_type;
-				return { Ty{}, Ty{} };
-			}
-
-			//size must be > 2
-			//TODO: warn excess elms lost
-		}
-
-		auto out = T{};
-		
-		out.x = elms[0];
-		if (siz != 1)
-			out.y = elms[1];
-
-		return out;
-	}
-
 	curve_default_value curve_from_str(data::data_manager& d, const resources::curve& c, const std::variant<std::monostate, string, std::vector<string>>& n)
 	{
 		if (std::holds_alternative<std::monostate>(n))

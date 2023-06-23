@@ -162,7 +162,7 @@ namespace hades
 
 		//objects
 		using obj_data = obj_ui::object_data<object_instance>;
-		using obj_ui = object_editor_ui<obj_data>;
+		using obj_ui = object_editor<obj_data>;
 		obj_data _objects;
 		std::optional<obj_ui> _obj_ui;
 	};

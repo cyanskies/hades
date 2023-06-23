@@ -116,7 +116,7 @@ namespace hades
 
 		//object instances
 		using obj_data_type = obj_ui::object_data<editor_object_instance>;
-		using obj_ui_type = object_editor_ui<obj_data_type,
+		using obj_ui_type = object_editor<obj_data_type,
 			std::function<void(editor_object_instance*)>,
 			std::function<void(entity_id)>>;
 

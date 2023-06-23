@@ -10,7 +10,6 @@ set(HADES_EDITOR_SRC
 	source/level_editor_tiles.cpp
 	source/mission_editor.cpp
 	source/mod_editor.cpp
-	source/object_editor.cpp
 	source/debug/resource_inspector.cpp
 	include/hades/level_editor.hpp
 	include/hades/level_editor_component.hpp

@@ -1704,7 +1704,6 @@ namespace hades::data
 		}
 
 		obj_ui::curve_edit_cache _curve_edit_cache;
-		object_editor_ui_old<nullptr_t>::vector_curve_edit _curve_vec_edit_cache;
 		resource_list _base_objects;
 		resource_list _systems;
 		resource_list _render_systems;

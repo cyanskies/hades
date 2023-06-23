@@ -278,7 +278,7 @@ namespace hades::debug
 
 	private:
 		object_inspector_data<GameSystem> _data;
-		hades::object_editor_ui<object_inspector_data<game_system>> _editor_ui;
+		object_editor<object_inspector_data<game_system>> _editor_ui;
 		bool _sticky = false;
 		bool _open = true;
 	};

@@ -1199,12 +1199,12 @@ namespace hades::data
 			});
 
 		if (end(o.curves) != unloaded_iter)
-			unloaded_iter->value = to_string({ *c, value });
+			unloaded_iter->value = resources::object_functions::to_unloaded_curve(*c, value);
 		else
 		{
 			o.curves.emplace_back(
 				d.make_resource_link<hades::resources::curve>(c->id, o.id),
-				to_string({ *c, value })
+				resources::object_functions::to_unloaded_curve(*c, value)
 			);
 		}
 

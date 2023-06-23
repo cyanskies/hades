@@ -112,6 +112,10 @@ namespace hades::resources::object_functions
 	};
 	using inherited_tag_list = std::vector<inherited_tag_entry>;
 	inherited_tag_list get_inherited_tags(const object&);
+
+	// utility func for converting curve values back to the unloaded string format
+	object::unloaded_value to_unloaded_curve(const curve& c, curve_default_value v);
+
 	// modifying curves
 	// add curve to object, overriding inherited values
 	// or update the default value for this curve.

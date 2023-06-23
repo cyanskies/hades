@@ -450,7 +450,7 @@ namespace hades::resources::object_functions
 		return tags;
 	}
 
-	static object::unloaded_value to_unloaded_curve(const curve& c, curve_default_value v)
+	object::unloaded_value to_unloaded_curve(const curve& c, curve_default_value v)
 	{
 		const auto def = reset_default_value(c);
 

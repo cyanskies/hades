@@ -95,7 +95,12 @@ namespace hades
 				near.second->value = std::move(val);
 				return near.second->value;
 			}
-			else
+			else if(near.first->time == t) // if there is only one keyframe, and it shares the time_point of t
+			{
+				near.first->value = std::move(val);
+				return near.first->value;
+			}
+			else // add new keyframe
 				return _data.insert(near.second, { t, std::move(val) })->value;
 		}
 
@@ -109,7 +114,7 @@ namespace hades
 			}
 
 			const auto end = std::end(_data);
-			const auto iter = std::lower_bound(begin(_data), end);
+			const auto iter = std::lower_bound(begin(_data), end, t);
 			if (iter != end)
 				_data.erase(iter, end);
 			_data.push_back({ t, std::move(val) });

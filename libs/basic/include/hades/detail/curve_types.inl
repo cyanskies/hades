@@ -39,10 +39,32 @@ inline hades::string hades::to_string(hades::curve_variable_type t) noexcept
 	case curve_variable_type::collection_time_d:
 		return "collection-time-d"s;
 	case curve_variable_type::error:
-		[[fallthrough]];
-	default:
-		return "error"s;
+		;
 	}
+
+	return "error"s;
+}
+
+constexpr hades::curve_variable_type hades::curve_collection_element_type(curve_variable_type t) noexcept
+{
+	using ty = curve_variable_type;
+	switch (t)
+	{
+	case ty::collection_int:
+		return ty::int_t;
+	case ty::collection_float:
+		return ty::float_t;
+	case ty::collection_object_ref:
+		return ty::object_ref;
+	case ty::collection_unique:
+		return ty::unique;
+	case ty::collection_colour:
+		return ty::colour;
+	case ty::collection_time_d:
+		return ty::time_d;
+	}
+
+	return t;
 }
 
 template <>

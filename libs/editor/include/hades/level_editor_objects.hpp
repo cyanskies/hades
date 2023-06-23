@@ -89,6 +89,7 @@ namespace hades
 
 		bool _object_valid_location(const rect_float&, const object_instance&) const;
 		//removes object
+		void _remove_object_callback(entity_id);
 		void _remove_object(entity_id);
 		bool _try_place_object(vector_float pos, editor_object_instance);
 		void _update_changed_obj(editor_object_instance& o);
@@ -117,7 +118,7 @@ namespace hades
 		using obj_data_type = obj_ui::object_data<editor_object_instance>;
 		using obj_ui_type = object_editor_ui<obj_data_type,
 			std::function<void(editor_object_instance*)>,
-			std::function<bool(const rect_float& r, const object_instance* o)>>;
+			std::function<void(entity_id)>>;
 
 		obj_data_type _objects;
 		obj_ui_type _obj_ui;

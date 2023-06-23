@@ -26,6 +26,7 @@ namespace hades
 	};
 
 	string to_string(curve_variable_type) noexcept;
+	constexpr curve_variable_type curve_collection_element_type(curve_variable_type) noexcept;
 
 	// held by objects to refer to one another
 	struct object_ref

@@ -1018,6 +1018,8 @@ namespace hades
 		return;
 	}
 
+	// TODO: these functions that pass through to fmt strings
+	//		need to go back to accepting const string&
 	void gui::tooltip(std::string_view s)
 	{
 		_active_assert();

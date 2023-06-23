@@ -24,6 +24,8 @@ namespace hades
 
 	void mission_editor_t::init()
 	{
+		_obj_ui.emplace(&_objects);
+		
 		if (_mission_src == path{})
 		{
 			const auto mis = new_mission();
@@ -86,7 +88,7 @@ namespace hades
 		auto out = detail::level_editor_impl::get_players_return_type{};
 		out.reserve(size(_players));
 		for (const auto& [name, obj_id] : _players)
-			out.emplace_back(name, _obj_ui.get_obj(obj_id));
+			out.emplace_back(name, _obj_ui.value().get_obj(obj_id));
 		return out;
 	}
 
@@ -168,7 +170,7 @@ namespace hades
                 auto iter = std::next(std::begin(_players), signed_cast(_player_window_state.selected));
 
 				if(iter->object != bad_entity)
-					_obj_ui.erase(iter->object);
+					_obj_ui.value().erase(iter->object);
 
 				iter = _players.erase(iter);
 
@@ -200,7 +202,7 @@ namespace hades
 				_gui.layout_horizontal();
 				if (_gui.button("select object"))
 				{
-					_obj_ui.set_selected(_players[_player_window_state.selected].object);
+					_obj_ui.value().set_selected(_players[_player_window_state.selected].object);
 				}
 			}
 		}
@@ -253,7 +255,7 @@ namespace hades
 							{
 								const auto obj = data::get<resources::object>(object_id);
 								auto o = make_instance(obj);
-								p.object = _obj_ui.add(std::move(o));
+								p.object = _obj_ui.value().add(std::move(o));
 							}
 							catch (const data::resource_null&)
 							{
@@ -339,7 +341,7 @@ namespace hades
 				if (p.object == bad_entity && _gui.button("make entity"))
 				{
 					auto o = object_instance{};
-					p.object = _obj_ui.add(std::move(o));
+					p.object = _obj_ui.value().add(std::move(o));
 				}
 			}
 			_gui.window_end();
@@ -574,8 +576,8 @@ namespace hades
 
 	void mission_editor_t::_gui_object_window()
 	{
-		_obj_ui.show_object_list_buttons(_gui);
-		_obj_ui.object_list_gui(_gui);
+		_obj_ui.value().show_object_list_buttons(_gui);
+		_obj_ui.value().object_list_gui(_gui);
 
 		return;
 	}
@@ -616,7 +618,7 @@ namespace hades
 		if (_obj_prop_w)
 		{
 			if (_gui.window_begin("Properties", _obj_prop_w))
-				_obj_ui.object_properties(_gui);
+				_obj_ui.value().object_properties(_gui);
 			_gui.window_end();
 		}
 

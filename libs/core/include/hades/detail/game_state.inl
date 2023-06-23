@@ -244,6 +244,9 @@ namespace hades::state_api
 			return;
 		}
 
+		// call this with the curve keyframe style, and Func will be invoked with
+		//	the variable type as the second template param
+		// NOTE: part of the impl for call_with_curve_info
 		template<template<typename> typename CurveType, typename Func>
 		void call_with_curve_type(curve_variable_type curve_info, Func&& f)
 		{
@@ -255,6 +258,34 @@ namespace hades::state_api
 				});
 		}
 
+		// Calls Func with the correct curve type as a template parameter
+		// <template<typename> typename CurveType> Func
+		template<curve_type Type, typename Func>
+		void call_with_keyframe_style(keyframe_style style, Func&& f)
+		{
+			using k = keyframe_style;
+			switch (style)
+			{
+			case k::const_t:
+				throw logic_error{ "const curves cannot be stored on objects" };
+			case k::linear:
+			{
+				if constexpr (linear_compat<linear_curve, Type>)
+					return f.template operator()<linear_curve>();
+				break;
+			}
+			case k::pulse:
+				return f.template operator()<pulse_curve>();
+			case k::step:
+				return f.template operator()<step_curve>();
+			case k::end:
+				;
+			}
+			throw logic_error{ "invalid keyframe style" };
+		}
+
+		// Calls Func with the correct types as template parameters
+		// <template<typename> typename CurveType, typename Type> Func
 		template<typename Func>
 		void call_with_curve_info(curve_info_t curve_info, Func&& f)
 		{
@@ -357,7 +388,7 @@ namespace hades::state_api
 	void destroy_object(object_ref o, time_point t, game_state& s, extra_state<GameSystem>& e)
 	{
 		e.systems.detach_all(o);
-		s.object_destruction_time.insert({ o.id, t });
+		s.object_destruction_time.insert_or_assign(o.id, t);
 		return;
 	}
 
@@ -464,7 +495,7 @@ namespace hades::state_api
 				if constexpr (!std::is_const_v<ObjRef>)
 					o.ptr = nullptr;
 
-				throw object_stale_error{ "stale object ref, the ptr has been resused for a new object" };
+				throw object_stale_error{ "stale object ref, the ptr has been reused for a new object" };
 			}
 
 			return *o.ptr;

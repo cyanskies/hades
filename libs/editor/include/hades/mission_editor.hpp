@@ -164,7 +164,7 @@ namespace hades
 		using obj_data = obj_ui::object_data<object_instance>;
 		using obj_ui = object_editor_ui<obj_data>;
 		obj_data _objects;
-		obj_ui _obj_ui{ &_objects };
+		std::optional<obj_ui> _obj_ui;
 	};
 
 	//NOTE: LevelEditor must be a hades::state with a constructor that accepts

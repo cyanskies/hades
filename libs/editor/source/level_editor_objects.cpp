@@ -69,11 +69,11 @@ namespace hades
 		: _obj_ui{ &_objects, [this](editor_object_instance* o) {
 				assert(o);
 				return _update_changed_obj(*o);
-			},
-			[this](const rect_float& r, const object_instance* o)->bool {
-				assert(o);
-				return _object_valid_location(r, *o);
-			}
+			} ,
+			[this](entity_id id) {
+				_remove_object_callback(id);
+				return;
+			} 
 		}
 	{
 		if (object_settings_id != unique_id::zero)
@@ -309,10 +309,6 @@ namespace hades
 		{
 			//erase the selected object
 			_remove_object(_held_object->id);
-
-			_held_object.reset();
-			_obj_ui.set_selected(bad_entity);
-			_held_preview = sf::Sprite{};
 		}
 
 		g.main_toolbar_end();
@@ -389,7 +385,7 @@ namespace hades
 
 	constexpr bool within_level(vector_float pos, vector_float size, vector_float level_size) noexcept
 	{
-		return is_within(rect_float{ pos, size }, { {0.f, 0.f}, level_size });
+		return is_within(pos, { {0.f, 0.f}, level_size });
 	}
 
 	//TODO: remove some params, pass in the snapped position in pos, if needed
@@ -712,12 +708,13 @@ namespace hades
 		return !object_collision;
 	}
 
-	void level_editor_objects_impl::_remove_object(entity_id id)
+
+	void level_editor_objects_impl::_remove_object_callback(entity_id id)
 	{
 		//we assume the the object isn't duplicated in the object list
-		const auto obj = std::find_if(std::begin(_objects.objects), std::end(_objects.objects), [id](auto &&o) {
+		const auto obj = std::find_if(std::begin(_objects.objects), std::end(_objects.objects), [id](auto&& o) {
 			return o.id == id;
-		});
+			});
 
 		_sprites.destroy_sprite(obj->sprite_id);
 		_quad_selection.value().remove(obj->id);
@@ -728,7 +725,16 @@ namespace hades
 			tree.remove(obj->id);
 		}
 
+		_held_object.reset();
+		_held_preview = sf::Sprite{};
+
+		return;
+	}
+
+	void level_editor_objects_impl::_remove_object(entity_id id)
+	{
 		_obj_ui.erase(id);
+		return;
 	}
 
 	bool level_editor_objects_impl::_try_place_object(vector_float pos, editor_object_instance o)

@@ -16,15 +16,13 @@ namespace hades
 
 	template<typename Rep, typename Period>
 	using basic_duration = std::chrono::duration<Rep, Period>;
-	template<typename Rep>
-	using basic_second = std::chrono::duration<Rep, std::chrono::seconds::period>;
 
 	using nanoseconds = std::chrono::nanoseconds;
 	using microseconds = std::chrono::microseconds;
 	using milliseconds = std::chrono::milliseconds;
 	using milliseconds_float = basic_duration<float, milliseconds::period>;
 	using seconds = std::chrono::seconds;
-	using seconds_float = basic_second<float>;
+	using seconds_float = basic_duration<float, seconds::period>;
 
 	using time_duration = time_point::duration;
 

@@ -3,17 +3,10 @@
 
 #include <any>
 #include <memory>
-#include <optional>
 #include <unordered_map>
-#include <unordered_set>
-#include <variant>
 
-#include "hades/collision_grid.hpp"
-#include "hades/level_editor_component.hpp"
-#include "hades/level_editor_grid.hpp"
+#include "hades/gui.hpp"
 #include "hades/objects.hpp"
-#include "hades/properties.hpp"
-#include "hades/resource_base.hpp"
 
 namespace hades
 {
@@ -28,14 +21,19 @@ namespace hades
 
 		using curve_edit_cache = unordered_map_string<curve_cache_entry>;
 
-		// returns true if value was modified
-		template<curve_type CurveType>
-		bool edit_curve_value(gui&, std::string_view, curve_edit_cache&, bool disabled, CurveType& value);
-		// collection specialisation
-		template<curve_type CurveType>
-		bool edit_curve_value(gui&, std::string_view, curve_edit_cache&, bool disabled, CurveType& value)
-			requires curve_types::is_collection_type_v<CurveType>;
-
+		/// edit_curve_value:
+		// Generates a ui for editing the value of the curve
+		// Returns true if value was modified.
+		// Use Callback to inject additional ui before the edit ui
+		// eg. a callback that creates an extra button for the curve_types::unique
+		//		editor; when pressed could open that resource in the resource inspector
+		// BinaryFunction = auto Function(gui&, const CurveType&)
+		// If curvetype is a collection then the new gui will be injected after
+		//		the moveup/movedown add/remove buttons
+		template<curve_type CurveType, typename BinaryFunction = nullptr_t>
+		bool edit_curve_value(gui&, std::string_view, curve_edit_cache&, bool disabled,
+			CurveType& value, BinaryFunction = {});
+		
 		// Base type, used for object_instance and editor_object_instance
 		// see: object inspector for editing live objects
 		template<typename ObjectType>
@@ -53,8 +51,16 @@ namespace hades
 			bool valid_ref(object_ref_t) const noexcept;
 			object_t get_object(object_ref_t) noexcept;
 			const object_t get_object(object_ref_t) const noexcept;
+			
+			// optional
+			object_ref_t to_ref_t(curve_types::object_ref ref) const noexcept
+			{
+				return ref.id;
+			}
+			
 			object_ref_t get_ref(const object_t) const noexcept;
 
+			//optional
 			object_ref_t add(object_instance);
 			void remove(object_ref_t) noexcept;
 
@@ -71,11 +77,6 @@ namespace hades
 			// returns true if the name could be set
 			// doesn't take the name from another object
 			bool set_name(object_t o, std::string_view s);
-
-			string get_type_name(const object_t o) const
-			{
-				return o->obj_type ? data::get_as_string(o->obj_type->id) : to_string(o->id);
-			}
 
 			string get_id_string(const object_t o) const
 			{
@@ -135,13 +136,37 @@ namespace hades
 
 			// if true, hide visible objects from the object list
 			static constexpr bool visual_editor = !std::is_same_v<ObjectType, object_instance>;
+			static constexpr bool show_hidden = false;
 			static constexpr bool keyframe_editor = false; // TODO: not implemented
 			static constexpr bool edit_pulse_curves = true;
 			static constexpr object_ref_t nothing_selected = bad_entity;
 		};
 	}
 
-	template<typename ObjectData, typename OnChange = nullptr_t, typename OnRemove = nullptr_t>
+	namespace detail
+	{
+		// default callback used by the object editor
+		struct default_curve_editor_callback
+		{
+		public:
+			curve_types::object_ref get_reset_target() noexcept
+			{
+				return std::exchange(select_target, curve_types::bad_object_ref);
+			}
+
+			void operator()(gui& g, const typename curve_types::object_ref& u)
+			{
+				if (g.button("select"))
+					select_target = u;
+			}
+
+		private:
+			static inline curve_types::object_ref select_target = curve_types::bad_object_ref;
+		};
+	}
+
+	template<typename ObjectData, typename OnChange = nullptr_t, typename OnRemove = nullptr_t,
+			typename CurveGuiCallback = detail::default_curve_editor_callback>
 		class object_editor
 	{
 	public:
@@ -149,6 +174,8 @@ namespace hades
 		using object_t = typename data_type::object_t;
 		using object_ref_t = typename data_type::object_ref_t;
 		using curve_t = typename data_type::curve_t;
+
+		static constexpr bool default_curve_callback = std::is_same_v<CurveGuiCallback, detail::default_curve_editor_callback>;
 
 		static constexpr bool on_change_callback = std::is_invocable_v<OnChange, object_t&>;
 		static_assert(std::is_same_v<OnChange, nullptr_t> || on_change_callback,
@@ -159,15 +186,28 @@ namespace hades
 			"If the OnRemove callback is provided it must have the following signiture: auto OnRemove(object_ref_t)");
 
 		static constexpr bool can_add_objects = requires (ObjectData& data, object_instance o) { data.add(o); };
+		static constexpr bool can_convert_ref = requires (ObjectData& data, curve_types::object_ref o)
+		{
+			{ data.to_ref_t(o) } -> std::convertible_to<ObjectData::object_ref_t>;
+		};
+
 		static constexpr bool visual_editor = data_type::visual_editor;
+		static constexpr bool show_hidden = data_type::show_hidden;
 
 		//constructor
-		object_editor(data_type*, OnChange = nullptr, OnRemove = nullptr);
+		object_editor(data_type*, OnChange = nullptr, OnRemove = nullptr,
+			CurveGuiCallback = detail::default_curve_editor_callback{});
 
 		void show_object_list_buttons(gui&);
 		// returns true if something was selected through the ui
 		bool object_list_gui(gui&);
 		void object_properties(gui&);
+
+		void set_selected(curve_types::object_ref obj) noexcept requires can_convert_ref
+		{
+			set_selected(_data->to_ref_t(obj));
+			return;
+		}
 
 		void set_selected(object_ref_t obj) noexcept;
 
@@ -203,26 +243,28 @@ namespace hades
 		string _get_name(const object_t o) const
 		{
 			const auto name = _data->get_name(o);
-			const auto type = _data->get_type_name(o);
+			const auto type = _data->get_type(o);
+			const auto& type_name = data::get_as_string(type->id);
 
 			using namespace std::string_literals;
 			if (!name.empty())
-				return name + "("s + type + ")"s;
+				return name + "("s + type_name + ")"s;
 			else
-				return type;
+				return type_name;
 		}
 
 		string _get_name_with_tag(const object_t o) const
 		{
 			const auto name = _data->get_name(o);
-			const auto type = _data->get_type_name(o);
+			const auto type = _data->get_type(o);
+			const auto& type_name = data::get_as_string(type->id);
 			const auto id = _data->get_id_string(o);
 
 			using namespace std::string_literals;
 			if (!name.empty())
-				return name + "("s + type + ")##"s + id;
+				return name + "("s + type_name + ")##"s + id;
 			else
-				return type + "##"s + id;
+				return type_name + "##"s + id;
 		}
 
 		void _property_editor(gui&);
@@ -230,6 +272,7 @@ namespace hades
 		// Edit state
 		string _entity_name_id_cache;
 		string _entity_name_id_uncommited;
+		string _obj_type_str;
 		obj_ui::curve_edit_cache _edit_cache;
 
 		// selection index for the available object bases when creating new objects
@@ -238,14 +281,12 @@ namespace hades
 		//callbacks
 		OnChange _on_change{};
 		OnRemove _on_remove{};
+		CurveGuiCallback _curve_edit_callback{};
 
 		//shared state
 		data_type* _data = {};
 		std::vector<curve_entry> _curves;
 		object_ref_t _selected = data_type::nothing_selected;
-
-		// hidden curves are not shown by default
-		bool _show_hidden = false;
 	};
 }
 

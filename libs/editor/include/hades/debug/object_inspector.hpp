@@ -108,11 +108,6 @@ namespace hades::debug
 			return true;
 		}
 
-		string get_type_name(const object_t o) const
-		{
-			return o->object_type ? data::get_as_string(o->object_type->id) : to_string(o->id);
-		}
-
 		string get_id_string(const object_t o) const
 		{
 			return to_string(o->id);
@@ -204,6 +199,7 @@ namespace hades::debug
 		time_point time = time_point::min();
 
 		static constexpr bool visual_editor = true;
+		static constexpr bool show_hidden = true;
 		static constexpr bool keyframe_editor = false; // TODO: not implemented
 		static constexpr bool edit_pulse_curves = keyframe_editor;
 		static constexpr object_ref_t nothing_selected = hades::curve_types::bad_object_ref;

@@ -3,15 +3,13 @@
 #include "hades/core_curves.hpp"
 #include "hades/curve_extra.hpp"
 #include "hades/data.hpp"
-#include "hades/exceptions.hpp"
-#include "hades/gui.hpp"
 #include "hades/utility.hpp"
 
 namespace hades::obj_ui
 {
-	template<curve_type CurveType>
+	template<curve_type CurveType, typename BinaryFunction>
 	inline bool edit_curve_value(gui& g, std::string_view name, curve_edit_cache&,
-		bool disabled, CurveType& value)
+		bool disabled, CurveType& value, BinaryFunction)
 	{
 		auto ret = false;
 		if (disabled)
@@ -22,9 +20,9 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::vec2_float>(gui& g, std::string_view name,
-		curve_edit_cache&, bool disabled, curve_types::vec2_float& value)
+	template<typename Callback = nullptr_t>
+	inline bool edit_curve_value(gui& g, std::string_view name,	curve_edit_cache&,
+		bool disabled, curve_types::vec2_float& value, Callback = {})
 	{
 		auto ret = false;
 		if (disabled)
@@ -40,12 +38,16 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::object_ref>(gui& g, std::string_view name,
-		curve_edit_cache&, bool disabled, curve_types::object_ref& value)
+	template<typename Callback = nullptr_t>	
+	inline bool edit_curve_value(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::object_ref& value, Callback cb = {})
 	{
 		auto ret = false;
 		auto value2 = integer_cast<int>(to_value(value.id));
+
+		if constexpr (std::is_invocable_v<Callback, gui&, const curve_types::object_ref&>)
+			std::invoke(cb, g, value);
+
 		if (disabled)
 			g.begin_disabled();
 		if (g.input(name, value2))
@@ -58,9 +60,9 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::colour>(gui& g, std::string_view name,
-		curve_edit_cache&, bool disabled, curve_types::colour& value)
+	template<typename Callback = nullptr_t>
+	inline bool edit_curve_value(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::colour& value, Callback = {})
 	{
 		auto ret = false;
 		auto arr = std::array{
@@ -88,9 +90,9 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::bool_t>(gui& g, std::string_view name,
-		curve_edit_cache&, bool disabled, curve_types::bool_t& value)
+	template<typename Callback = nullptr_t>
+	inline bool edit_curve_value(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::bool_t& value, Callback = {})
 	{
 		auto ret = false;
 		if (disabled)
@@ -101,13 +103,19 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::unique>(gui& g, std::string_view name,
-		curve_edit_cache&, bool disabled, curve_types::unique& value)
+	template<typename Callback = nullptr_t>
+	inline bool edit_curve_value(gui& g, std::string_view name,
+		curve_edit_cache&, bool disabled, curve_types::unique& value, Callback cb = {})
 	{
 		auto ret = false;
 		// intentional copy
 		string u_string = data::get_as_string(value);
+
+		if constexpr (std::is_invocable_v<Callback, gui&, const curve_types::unique&>)
+		{
+			std::invoke(cb, g, value);
+		}
+
 		if (disabled)
 			g.begin_disabled();
 		if (g.input_text(name, u_string))
@@ -120,9 +128,9 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<>
-	inline bool edit_curve_value<curve_types::time_d>(gui& g, std::string_view name,
-		curve_edit_cache& cache, bool disabled, curve_types::time_d& value)
+	template<typename Callback = nullptr_t>
+	inline bool edit_curve_value(gui& g, std::string_view name,
+		curve_edit_cache& cache, bool disabled, curve_types::time_d& value, Callback = {})
 	{
 		using duration_extra_data = duration_ratio;
 
@@ -233,9 +241,10 @@ namespace hades::obj_ui
 		return ret;
 	}
 
-	template<curve_type CurveType>
-	inline bool edit_curve_value(gui& g, std::string_view name, curve_edit_cache& cache, 
-		bool disabled, CurveType& value) requires curve_types::is_collection_type_v<CurveType>
+	template<curve_type CurveType, typename Callback = nullptr_t>
+		requires curve_types::is_collection_type_v<CurveType>
+	inline bool edit_curve_value(gui& g, std::string_view name, curve_edit_cache& cache,
+		bool disabled, CurveType& value, Callback cb = {})
 	{
 		using namespace std::string_view_literals;
 
@@ -280,6 +289,9 @@ namespace hades::obj_ui
 					changed = true;
 				}
 
+				if (disabled)
+					g.end_disabled();
+
 				for (auto i = std::size_t{}; i != size; ++i)
 				{
 					g.push_id(integer_cast<int32>(i));
@@ -307,13 +319,19 @@ namespace hades::obj_ui
 						g.end_disabled();
 					g.same_line();
 
+					if (disabled)
+						g.begin_disabled();
+
 					if (g.button("remove"sv))
 					{
 						index = i;
 						mod = elem_mod::remove;
 					}
 
-					if (edit_curve_value(g, {}, cache, disabled, value[i]))
+					if (disabled)
+						g.end_disabled();
+					
+					if (edit_curve_value(g, {}, cache, disabled, value[i], cb))
 						changed = true;
 
 					g.pop_id();
@@ -337,8 +355,6 @@ namespace hades::obj_ui
 				}
 
 				g.layout_horizontal();
-				if (disabled)
-					g.end_disabled();
 			}
 			g.window_end();
 
@@ -454,14 +470,14 @@ namespace hades::obj_ui
 
 namespace hades
 {
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	object_editor<ObjectData, OnChange, OnRemove>::object_editor(ObjectData* d,
-		OnChange on_change, OnRemove on_remove)
-		: _data{ d }, _on_change{ on_change }, _on_remove{ on_remove }
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_editor(ObjectData* d,
+		OnChange on_change, OnRemove on_remove, CurveGuiCallback curve_gui_callback)
+		: _data{ d }, _on_change{ on_change }, _on_remove{ on_remove }, _curve_edit_callback{ curve_gui_callback }
 	{}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::show_object_list_buttons(gui& g)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::show_object_list_buttons(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
@@ -532,8 +548,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline bool object_editor<ObjectData, OnChange, OnRemove>::object_list_gui(gui& g)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline bool object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_list_gui(gui& g)
 	{
 		using namespace std::string_view_literals;
 		
@@ -578,8 +594,8 @@ namespace hades
 		return sel;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::object_properties(gui& g)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_properties(gui& g)
 	{
 		using namespace std::string_view_literals;
 		if (!_data->valid_ref(_selected))
@@ -598,8 +614,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::set_selected(object_ref_t ref) noexcept
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::set_selected(object_ref_t ref) noexcept
 	{
 		if (!_data->valid_ref(ref))
 		{
@@ -632,11 +648,13 @@ namespace hades
 
 		std::ranges::sort(_curves, {}, &curve_entry::name);
 		_entity_name_id_cache = _entity_name_id_uncommited = _data->get_name(o);
+		const auto type = _data->get_type(o);
+		_obj_type_str = data::get_as_string(type->id);
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline auto object_editor<ObjectData, OnChange, OnRemove>::add(object_instance o) -> object_ref_t
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline auto object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::add(object_instance o) -> object_ref_t
 		requires can_add_objects
 	{
 		const auto new_obj = _data->add(std::move(o));
@@ -644,8 +662,8 @@ namespace hades
 		return new_obj;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::erase(object_ref_t ref)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::erase(object_ref_t ref)
 	{
 		if constexpr (on_remove_callback)
 			std::invoke(_on_remove, ref);
@@ -654,8 +672,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::_edit_name(gui& g, const object_t o)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::_edit_name(gui& g, const object_t o)
 	{
 		using namespace std::string_view_literals;
 
@@ -686,14 +704,12 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove>
-	inline void object_editor<ObjectData, OnChange, OnRemove>::_property_editor(gui& g)
+	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::_property_editor(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
-		g.checkbox("Show hidden"sv, _show_hidden);
 
-		using namespace detail::obj_ui;
 		const auto o = _data->get_object(_selected);
 		if (!o)
 		{
@@ -714,6 +730,11 @@ namespace hades
 		g.end_disabled();
 		// object name
 		_edit_name(g, o);
+		// object_type
+		auto type = _data->get_type(o);
+		auto type_id = type->id;
+		obj_ui::edit_curve_value(g, "object type"sv, _edit_cache, true, type_id, _curve_edit_callback);
+
 		g.text("curves:"sv);
 		g.separator_horizontal();
 
@@ -743,9 +764,13 @@ namespace hades
 			g.push_id(c_ptr);
 			std::visit([&](auto&& value) {
 				using Type = std::decay_t<decltype(value)>;
-				// dont show hidden props
-				if (c_ptr->hidden && !_show_hidden)
-					return;
+				
+				if constexpr (!show_hidden)
+				{
+					// dont show hidden props
+					if (c_ptr->hidden)
+						return;
+				}
 
 				if constexpr (!std::is_same_v<std::monostate, Type>)
 				{
@@ -758,19 +783,29 @@ namespace hades
 						c_ptr->locked)
 						disabled = true;
 
-					if (obj_ui::edit_curve_value(g, c.name, _edit_cache, disabled, value))
+					if (obj_ui::edit_curve_value(g, c.name, _edit_cache, disabled, value, _curve_edit_callback))
 					{
 						_data->set_value(o, c.curve, value);
 
 						if constexpr (on_change_callback)
 							std::invoke(_on_change, o);
 					}
+
+					g.separator_horizontal();
 				}
 			}, c.value);
 			g.pop_id(); // curve address
 		}
 
 		g.pop_id(); // entity_id
+
+		if constexpr (default_curve_callback)
+		{
+			const auto select_ref = _curve_edit_callback.get_reset_target();
+			if(select_ref != curve_types::bad_object_ref)
+				set_selected(select_ref);
+		}
+
 		return;
 	}
 }

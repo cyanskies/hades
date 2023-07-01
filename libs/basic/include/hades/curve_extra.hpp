@@ -75,6 +75,8 @@ namespace hades::resources
 	
 	bool is_curve_valid(const resources::curve&) noexcept;
 	bool is_curve_valid(const resources::curve&, const curve_default_value&) noexcept;
+	// sets a curves keyframe style, data type and defautl value so that is valid
+	void make_curve_valid(resources::curve&) noexcept;
 
 	curve_default_value curve_from_str(data::data_manager&, const resources::curve&, const std::variant<std::monostate, string, std::vector<string>>&);
 	curve_default_value curve_from_node(const resources::curve&, const data::parser_node&);
@@ -84,6 +86,7 @@ namespace hades::resources
 	template<typename T>
 	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, keyframe_style, T default_value, bool sync, bool locked = false, bool hidden = false);
 
+	// TODO: deprecate,  use get_all_ids_for_type
 	const std::vector<const curve*> &get_all_curves();
 }
 

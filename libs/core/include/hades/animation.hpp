@@ -51,10 +51,11 @@ namespace hades::resources
 		resource_link<animation> make_resource_link(data::data_manager&, unique_id, unique_id from);
 		std::vector<resource_link<animation>> make_resource_link(data::data_manager&, const std::vector<unique_id>&, unique_id from);
 		try_get_return try_get(unique_id) noexcept;
-		const animation* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
+		animation* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
 		std::vector<const animation*> find_or_create(data::data_manager&, const std::vector<unique_id>&, std::optional<unique_id> mod = {});
 		bool is_loaded(const animation&) noexcept;
 		unique_id get_id(const animation&) noexcept;
+		resource_base* get_resource_base(animation&) noexcept;
 		std::vector<unique_id> get_id(const std::vector<const animation*>&) noexcept;
 		const texture* get_texture(const animation&) noexcept;
 		time_duration get_duration(const animation&) noexcept;
@@ -75,9 +76,10 @@ namespace hades::resources
 		animation_group* get_resource(data::data_manager& d, unique_id id, std::optional<unique_id> mod = {});
 		resource_link<animation_group> make_resource_link(data::data_manager&, unique_id, unique_id from);
 		try_get_return try_get(unique_id) noexcept;
-		const animation_group* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod);
+		animation_group* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod);
 		bool is_loaded(const animation_group&) noexcept;
 		unique_id get_id(const animation_group&) noexcept;
+		resource_base* get_resource_base(animation_group&) noexcept;
 		const animation* get_animation(const animation_group&, unique_id);
 		std::vector<std::pair<unique_id, unique_id>> get_all_animations(const animation_group&);
 		void replace_animations(animation_group&, std::unordered_map<unique_id, resource_link<animation>>);

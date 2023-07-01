@@ -1193,8 +1193,8 @@ namespace hades::data
 		resources::resource_base* _base = {};
 	};
 
-	// game-system editor: not configurable with the current editor
-	// level-scripts editor: not configurable with the current editor
+	// TODO: game-system editor: not configurable with the current editor
+	// TODO: level-scripts editor: not configurable with the current editor
 
 	void add_or_update_curve_on_object(hades::data::data_manager& d, 
 		hades::resources::object& o, const hades::resources::curve* c,
@@ -1721,6 +1721,17 @@ namespace hades::data
 		resources::resource_base* _base = {};
 	};
 
+	basic_resource_inspector::basic_resource_inspector()
+		: _editor_funcs{
+			{ "textures"s, &std::make_unique<texture_editor> },
+			{ "animations"s, &std::make_unique<animation_editor> },
+			{ "animation-groups"s, &std::make_unique<animation_group_editor> },
+			{ "curves"s, &std::make_unique<curve_editor> },
+			{ "fonts"s, &std::make_unique<font_editor> },
+			{ "objects"s, &std::make_unique<object_editor> }
+		}
+	{}
+
 	void basic_resource_inspector::update(gui& g, data::data_manager& d)
 	{
 		_resource_tree(g, d);
@@ -1782,6 +1793,31 @@ namespace hades::data
 		return;
 	}
 
+	void basic_resource_inspector::inspect(data_manager& d, unique_id id, unique_id mod)
+	{
+		for (auto& group : _tree_state.resource_groups)
+		{
+			if (group.id == id && group.mod_id == mod)
+			{
+				inspect(d, group.res_type, id, mod);
+				return;
+			}
+		}
+		return;
+	}
+
+	void basic_resource_inspector::inspect(data_manager& d, std::string_view type, unique_id id, unique_id mod)
+	{
+		_tree_state.res_editor = _make_resource_editor(type);
+
+		if (_tree_state.res_editor)
+		{
+			_tree_state.res_editor->set_target(d, id, mod);
+			_tree_state.res_editor->set_editable_mod(_mod);
+		}
+		return;
+	}
+
 	const resources::resource_base* basic_resource_inspector::get_current_resource() const noexcept
 	{
 		if (!_tree_state.res_editor)
@@ -1789,22 +1825,10 @@ namespace hades::data
 		return _tree_state.res_editor->get();
 	}
 
-	std::unique_ptr<resource_editor> basic_resource_inspector::make_resource_editor(std::string_view s)
+	void basic_resource_inspector::refresh(data_manager& d)
 	{
-		if (s == "textures"sv)
-			return std::make_unique<texture_editor>();
-		else if (s == "animations"sv)
-			return std::make_unique<animation_editor>();
-		else if (s == "animation-groups"sv)
-			return std::make_unique<animation_group_editor>();
-		else if (s == "curves"sv)
-			return std::make_unique<curve_editor>();
-		else if (s == "fonts"sv)
-			return std::make_unique<font_editor>();
-		else if (s == "objects"sv)
-			return std::make_unique<object_editor>();
-
-		return {};
+		_refresh(d);
+		return;
 	}
 	
 	void basic_resource_inspector::_list_resources_from_data_file(
@@ -1871,13 +1895,7 @@ namespace hades::data
 
 			if (g.is_item_clicked() && !g.is_item_toggled_open())
 			{
-				_tree_state.res_editor = make_resource_editor(first->res_type);
-
-				if (_tree_state.res_editor)
-				{
-					_tree_state.res_editor->set_target(d, first->id, mod);
-					_tree_state.res_editor->set_editable_mod(_mod);
-				}
+				inspect(d,first->res_type, first->id, mod);
 			}
 
 			if (mod != first->mod_id)
@@ -1892,6 +1910,15 @@ namespace hades::data
 			++first;
 		}
 		return;
+	}
+
+	std::unique_ptr<resource_editor> basic_resource_inspector::_make_resource_editor(std::string_view s)
+	{
+		auto iter = _editor_funcs.find(s);
+		if (iter == end(_editor_funcs))
+			return {};
+
+		return std::invoke(iter->second);
 	}
 
 	void basic_resource_inspector::_refresh(data::data_manager& d)

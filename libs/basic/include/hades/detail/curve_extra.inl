@@ -6,6 +6,7 @@ namespace hades::resources
 {
 	namespace detail
 	{
+		// TODO: this should no longer be needed, see data_manager resource types
 		void add_to_curve_master_list(const curve*);
 	}
 

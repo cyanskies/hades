@@ -529,6 +529,7 @@ namespace hades
 		void main_menubar_end();
 		bool menubar_begin();
 		void menubar_end();
+		// TODO: remove the enabled params, users need to use begin_disabled/end_disabled
 		bool menu_begin(std::string_view, bool enabled = true);
 		// Only call if menu_begin() returns true 
 		void menu_end();

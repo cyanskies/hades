@@ -244,18 +244,16 @@ namespace hades
 			return out;
 		}
 
-		std::vector<std::string_view> data_manager::get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod) const
+		template<typename ResourcesStackCollection, typename Func>
+		void for_each_resource_type(std::string_view resource_type, ResourcesStackCollection collection, std::optional<unique_id> mod, Func func)
 		{
-			const auto lock = std::shared_lock{ _mut };
-			const auto end = std::rend(_mod_stack);
-			auto iter = mod ? std::find_if(rbegin(_mod_stack), end, [mod](const auto& elm) {
+			const auto end = std::rend(collection);
+			auto iter = mod ? std::find_if(rbegin(collection), end, [mod](const auto& elm) {
 				return elm.mod_info.id == *mod;
-				}) : _mod_stack.rbegin();
+				}) : collection.rbegin();
 
 			if (iter == end)
-				return {};
-
-			auto out = std::vector<std::string_view>{};
+				return;
 
 			for (; iter != end; ++iter)
 			{
@@ -267,11 +265,32 @@ namespace hades
 				if (anim_groups == std::end(iter->resources_by_type))
 					break;
 
-				std::transform(begin(anim_groups->second), std::end(anim_groups->second),
-					back_inserter(out), [this](const auto& elm) -> std::string_view {
-					return get_as_string(elm->id);
-					});
+				std::ranges::for_each(anim_groups->second, func);
 			}
+			return;
+		}
+
+		std::vector<unique_id> data_manager::get_all_ids_for_type(std::string_view resource_type, std::optional<unique_id> mod) const
+		{
+			const auto lock = std::shared_lock{ _mut };
+			auto out = std::vector<unique_id>{};
+
+			for_each_resource_type(resource_type, _mod_stack, mod, [&out](auto &&elm){
+				out.emplace_back(elm->id);
+			});
+
+			remove_duplicates(out);
+			return out;
+		}
+
+		std::vector<std::string_view> data_manager::get_all_names_for_type(std::string_view resource_type, std::optional<unique_id> mod) const
+		{
+			const auto lock = std::shared_lock{ _mut };
+			auto out = std::vector<std::string_view>{};
+
+			for_each_resource_type(resource_type, _mod_stack, mod, [&](auto&& elm) {
+				out.emplace_back(get_as_string(elm->id));
+				});
 
 			remove_duplicates(out);
 			return out;

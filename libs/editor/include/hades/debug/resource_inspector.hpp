@@ -34,6 +34,8 @@ namespace hades::data
 	class basic_resource_inspector
 	{
 	public:
+		basic_resource_inspector();
+
 		void update(gui&, data_manager&);
 		void lock_editing_to(unique_id mod)
 		{
@@ -48,7 +50,11 @@ namespace hades::data
 		// resource to a new data file
 		void prompt_new_data_file() noexcept;
 
+		void inspect(data_manager&, unique_id, unique_id mod);
+		void inspect(data_manager&, std::string_view type, unique_id, unique_id mod);
 		const resources::resource_base* get_current_resource() const noexcept;
+
+		void refresh(data_manager&);
 
 		struct resource_tree_state
 		{
@@ -70,8 +76,15 @@ namespace hades::data
 			std::unique_ptr<resource_editor> res_editor;
 		};
 
-		virtual std::unique_ptr<resource_editor> make_resource_editor(std::string_view resource_type);
+		using resource_editor_function = std::function<std::unique_ptr<resource_editor>()>;
 
+	protected:
+		void register_resource_editor(std::string resource_type, resource_editor_function func)
+		{
+			_editor_funcs.emplace(std::move(resource_type), std::move(func));
+			return;
+		}
+		
 	private:
 		struct new_data_file_prompt
 		{
@@ -83,15 +96,19 @@ namespace hades::data
 			data_manager&, unique_id, vector_float&);
 		void _list_resources_from_group(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
 			data_manager&, unique_id, vector_float&);
+		std::unique_ptr<resource_editor> _make_resource_editor(std::string_view resource_type);
 		void _refresh(data_manager&);
 		void _resource_tree(gui&, data::data_manager&);
 
+		unordered_map_string<resource_editor_function> _editor_funcs;
 		resource_tree_state _tree_state;
 		new_data_file_prompt _new_datafile;
+		unique_id _mod = unique_zero; 
 		bool _show_by_data_file = false;
-		unique_id _mod = unique_zero;
 	};
 }
+
+
 
 namespace hades::debug
 {
@@ -116,6 +133,7 @@ namespace hades::debug
 		ResourceInspector _inspector;
 	};
 
+	// TODO: find a way for game to open on demand and give resource id too
 	template<typename ResourceInspector>
 		requires is_resource_inspector<ResourceInspector>
 	void enable_resource_inspector();

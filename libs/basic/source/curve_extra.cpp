@@ -264,6 +264,13 @@ namespace hades::resources
 		return false;
 	}
 
+	void make_curve_valid(resources::curve& c) noexcept
+	{
+		c.data_type = curve_variable_type::int_t;
+		c.frame_style = keyframe_style::step;
+		c.default_value = curve_types::int_t{};
+	}
+
 	curve_default_value curve_from_str(data::data_manager& d, const resources::curve& c, const std::variant<std::monostate, string, std::vector<string>>& n)
 	{
 		if (std::holds_alternative<std::monostate>(n))

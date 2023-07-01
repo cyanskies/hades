@@ -24,6 +24,7 @@ set(HADES_EDITOR_SRC
 	include/hades/object_editor.hpp
 	include/hades/detail/level_editor.inl
 	include/hades/detail/level_editor_grid.inl
+	include/hades/detail/mod_editor.inl
 	include/hades/detail/object_editor.inl
 	include/hades/debug/object_inspector.hpp
 	include/hades/debug/resource_inspector.hpp

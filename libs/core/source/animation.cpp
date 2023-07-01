@@ -164,7 +164,7 @@ namespace hades::resources::animation_functions
 		return data::try_get<animation>(id);
 	}
 
-	const animation* find_or_create(data::data_manager& d, unique_id id, std::optional<unique_id> mod)
+	animation* find_or_create(data::data_manager& d, unique_id id, std::optional<unique_id> mod)
 	{
 		return d.find_or_create<animation>(id, mod, anim_str);
 	}
@@ -182,6 +182,11 @@ namespace hades::resources::animation_functions
 	unique_id get_id(const animation& a) noexcept
 	{
 		return a.id;
+	}
+
+	resource_base* get_resource_base(animation& a) noexcept
+	{
+		return &a;
 	}
 
 	std::vector<unique_id> get_id(const std::vector<const animation*>& a) noexcept
@@ -274,7 +279,7 @@ namespace hades::resources::animation_group_functions
 		return data::try_get<animation_group>(i);
 	}
 
-	const animation_group* find_or_create(data::data_manager& d, unique_id i, std::optional<unique_id> mod)
+	animation_group* find_or_create(data::data_manager& d, unique_id i, std::optional<unique_id> mod)
 	{
 		return d.find_or_create<animation_group>(i, mod, anim_group_str);
 	}
@@ -287,6 +292,11 @@ namespace hades::resources::animation_group_functions
 	unique_id get_id(const animation_group& a) noexcept
 	{
 		return a.id;
+	}
+
+	resource_base* get_resource_base(animation_group& a) noexcept
+	{
+		return &a;
 	}
 
 	const animation* get_animation(const animation_group& a, unique_id i)

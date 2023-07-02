@@ -238,6 +238,12 @@ namespace hades
 			curve_value value;
 		};
 
+		struct object_entry
+		{
+			std::string_view name;
+			const resources::object* obj;
+		};
+
 		void _edit_name(gui&, object_t);
 
 		string _get_name(const object_t o) const
@@ -269,20 +275,21 @@ namespace hades
 
 		void _property_editor(gui&);
 		
-		// Edit state
-		string _entity_name_id_cache;
-		string _entity_name_id_uncommited;
-		string _obj_type_str;
-		obj_ui::curve_edit_cache _edit_cache;
-
-		// selection index for the available object bases when creating new objects
-		std::size_t _next_added_object_base = std::size_t{};
-
 		//callbacks
 		OnChange _on_change{};
 		OnRemove _on_remove{};
 		CurveGuiCallback _curve_edit_callback{};
 
+		// Edit state
+		std::vector<object_entry> _object_types;
+		obj_ui::curve_edit_cache _edit_cache;
+		string _entity_name_id_cache;
+		string _entity_name_id_uncommited;
+		string _obj_type_str;
+		
+		// selection index for the available object bases when creating new objects
+		std::size_t _next_added_object_base = std::size_t{};
+		
 		//shared state
 		data_type* _data = {};
 		std::vector<curve_entry> _curves;

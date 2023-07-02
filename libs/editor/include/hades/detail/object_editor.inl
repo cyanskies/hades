@@ -474,22 +474,28 @@ namespace hades
 	object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_editor(ObjectData* d,
 		OnChange on_change, OnRemove on_remove, CurveGuiCallback curve_gui_callback)
 		: _data{ d }, _on_change{ on_change }, _on_remove{ on_remove }, _curve_edit_callback{ curve_gui_callback }
-	{}
+	{
+		using namespace std::string_view_literals;
+		const auto objects = data::get_all_names_for_type("objects"sv);
+		_object_types.reserve(size(objects));
+		std::ranges::transform(objects, std::back_inserter(_object_types), [](auto name) {
+			return object_entry{ name, data::get<resources::object>(data::get_uid(name), data::no_load) };
+			});
+	}
 
 	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
 	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::show_object_list_buttons(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
-		const auto& objs = resources::all_objects;
+		
+		assert(_next_added_object_base < std::size(_object_types) + 1 || std::empty(_object_types));
 
-		assert(_next_added_object_base < std::size(objs) + 1 || std::empty(objs));
-
-		const auto preview = [&objs](std::size_t index) {
+		const auto preview = [&](std::size_t index) {
 			if (index == std::size_t{})
-				return "none"s;
+				return "none"sv;
 			else
-				return to_string(objs[index - 1]->id);
+				return _object_types[index - 1].name;
 		}(_next_added_object_base);
 
 		const auto position_curve = get_position_curve();
@@ -500,19 +506,18 @@ namespace hades
 			if (g.selectable("none"sv, _next_added_object_base == std::size_t{}))
 				_next_added_object_base = std::size_t{};
 
-			const auto end = std::size(objs);
+			const auto end = std::size(_object_types);
 			for (auto i = std::size_t{}; i < end; ++i)
 			{
-				const auto name = to_string(objs[i]->id);
-
+				const auto& obj = _object_types[i];
 				if constexpr (visual_editor)
 				{
 					using resources::object_functions::has_curve;
-					if (has_curve(*objs[i], *position_curve) || has_curve(*objs[i], *size_curve))
+					if (has_curve(*obj.obj, *position_curve) || has_curve(*obj.obj, *size_curve))
 						continue;
 				}
 
-				if (g.selectable(name, _next_added_object_base == i + 1))
+				if (g.selectable(obj.name, _next_added_object_base == i + 1))
 					_next_added_object_base = i + 1;
 			}
 
@@ -526,10 +531,10 @@ namespace hades
 		{
 			if (g.button("add"sv))
 			{
-				const auto& o_type = objs[_next_added_object_base - 1];
+				const auto& o_type = _object_types[_next_added_object_base - 1];
 				// NOTE: need to force load the object type
-				data::get<resources::object>(o_type.id());
-				add(make_instance(o_type.get()));
+				data::get<resources::object>(o_type.obj->id);
+				add(make_instance(o_type.obj));
 			}
 		}
 		else

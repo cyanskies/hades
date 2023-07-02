@@ -46,7 +46,6 @@ namespace hades
 		auto curve_func = [](dm& d, unique_id n, unique_id m)->rb {
 			auto curve = d.find_or_create<resources::curve>(n, m, "curves"sv);
 			resources::make_curve_valid(*curve);
-			resources::detail::add_to_curve_master_list(curve);
 			return curve;
 		};
 

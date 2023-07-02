@@ -79,10 +79,14 @@ namespace hades
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
 
-		for (const auto& o : resources::all_objects)
+		auto objects = data::get_all_ids_for_type("objects"sv);
+		_object_types.reserve(size(objects));
+		for (const auto& o : objects)
 		{
-			if (!o->loaded)
-				data::get<resources::object>(o->id);
+			const auto obj = data::get<resources::object>(o, data::no_load);
+			if (!obj->loaded)
+				data::get<resources::object>(o);
+			_object_types.emplace_back(obj);
 		}
 	}
 
@@ -355,7 +359,7 @@ namespace hades
 				g.indent();
 
 				if (g.collapsing_header("all"sv))
-					add_object_buttons(g, resources::all_objects, on_click_object);
+					add_object_buttons(g, _object_types, on_click_object);
 
 				for (const auto& group : _settings->groups)
 				{

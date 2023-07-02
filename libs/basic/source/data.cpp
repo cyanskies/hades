@@ -329,6 +329,16 @@ namespace hades
 			return detail::get_data_manager().get_mod(id);
 		}
 
+		std::vector<unique_id> get_all_ids_for_type(std::string_view type, std::optional<unique_id> mod)
+		{
+			return detail::get_data_manager().get_all_ids_for_type(type, mod);
+		}
+
+		std::vector<std::string_view> get_all_names_for_type(std::string_view type, std::optional<unique_id> mod)
+		{
+			return detail::get_data_manager().get_all_names_for_type(type, mod);
+		}
+
 		unique_id make_uid(std::string_view name)
 		{
 			return detail::get_data_manager().get_uid(name);

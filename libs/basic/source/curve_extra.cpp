@@ -207,8 +207,6 @@ namespace hades::resources
 
 			if (!is_curve_valid(*new_curve))
 				throw invalid_curve{ "get_default_value returned an invalid curve"s };
-
-			detail::add_to_curve_master_list(new_curve);
 		}
 	}
 
@@ -391,21 +389,6 @@ namespace hades::resources
 		}, value);
 
 		return value;
-	}
-
-	// TODO: remove this
-	static std::vector<const curve*> curve_master_list;
-
-	const std::vector<const curve*> &get_all_curves()
-	{
-		return curve_master_list;
-	}
-
-	void detail::add_to_curve_master_list(const curve* c)
-	{
-		curve_master_list.emplace_back(c);
-		remove_duplicates(curve_master_list);
-		return;
 	}
 
 	void curve::serialise(const data::data_manager& d, data::writer& w) const

@@ -95,6 +95,7 @@ namespace hades
 		void _update_changed_obj(editor_object_instance& o);
 		void _update_quad_data(const object_instance& o);
 
+		std::vector<const resources::object*> _object_types;
 		//editing settings and state
 		bool _show_objects = true;
 		bool _allow_intersect = false;

@@ -85,9 +85,6 @@ namespace hades::resources
 	const curve* make_curve(data::data_manager&, unique_id name, curve_variable_type, keyframe_style, T default_value, bool sync, bool locked = false, bool hidden = false);
 	template<typename T>
 	const curve* make_curve(data::data_manager&, std::string_view name, curve_variable_type, keyframe_style, T default_value, bool sync, bool locked = false, bool hidden = false);
-
-	// TODO: deprecate,  use get_all_ids_for_type
-	const std::vector<const curve*> &get_all_curves();
 }
 
 namespace hades

@@ -94,9 +94,6 @@ namespace hades::resources
 		tag_list tags,
 			all_tags;
 	};
-
-	//TODO: hide behind func, deprecate and use resource manager instead
-	extern std::vector<resource_link<object>> all_objects;
 }
 
 namespace hades::resources::object_functions

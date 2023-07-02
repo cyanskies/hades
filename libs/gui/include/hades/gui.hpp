@@ -269,7 +269,8 @@ namespace hades
 		void separator_horizontal();
 		template<std::size_t Count = 1u>
 		void indent();
-		void layout_horizontal(float pos = 0.f, float width = -1.f); // sameline TODO: make this sameline again
+		// TODO: deprecate, this is just an alias for same_line
+		void layout_horizontal(float pos = 0.f, float width = -1.f);
 		void same_line(float pos = 0.f, float width = -1.f);
 		void same_line_wrapping(float next_item_size_x, float pos = 0.f, float width = -1.f); // sameline, unless the window width has been exhausted
 		void layout_vertical(); //undoes layout_horizontal; newline

@@ -22,9 +22,6 @@ static hades::unique_id editor_anim = hades::unique_zero;
 
 namespace hades::resources
 {
-	// TODO: get rid off this, we cant have global refs like this anymore
-	std::vector<resource_link<object>> all_objects{};
-
 	static object::unloaded_curve get_curve_info2(data::data_manager& d, const unique_id parent, const data::parser_node& n)
 	{
 		// NOTE: n = sequence
@@ -86,8 +83,6 @@ namespace hades::resources
 			// TODO: log something here
 			if (!obj)
 				continue;
-
-			all_objects.push_back(d.make_resource_link<resources::object>(id, all_objects_id));
 
 			using namespace data::parse_tools;
 
@@ -156,8 +151,6 @@ namespace hades::resources
 			const auto render_system_ids = merge_unique_sequence(*o, "client-systems"sv, std::move(current_render_system_ids));
 			obj->render_systems = d.make_resource_link<render_system>(render_system_ids, id);
 		}
-
-		remove_duplicates(all_objects);
 	}
 
 	static curve_list get_all_curves(data::data_manager& d, resources::object& o)

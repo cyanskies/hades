@@ -40,7 +40,6 @@ set(HADES_BASIC_SRC
 	include/hades/properties.hpp
 	include/hades/resource_collection.hpp
 	include/hades/standard_paths.hpp
-	include/hades/quad_map.hpp
 	include/hades/resource_base.hpp
 	include/hades/server_actions.hpp
 	include/hades/system.hpp
@@ -59,7 +58,6 @@ set(HADES_BASIC_SRC
 	include/hades/detail/resource_collection.inl
 	include/hades/detail/terrain.inl
 	include/hades/detail/tiles.inl
-	include/hades/detail/quad_map.inl
 	include/hades/detail/writer.inl
 )
 

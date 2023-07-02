@@ -398,6 +398,10 @@ namespace hades
 		unique_id get_uid(std::string_view name);
 		const mod& get_mod(unique_id id);
 
+		// get all ids / names for resources of a particular type
+		std::vector<unique_id> get_all_ids_for_type(std::string_view type, std::optional<unique_id> mod = {});
+		std::vector<std::string_view> get_all_names_for_type(std::string_view type, std::optional<unique_id> mod = {});
+
 		//===Exclusive Functions: this will block all threads===
 		//NOTE: Can throw hades::data::resource_null
 		//		or hades::data::resource_wrong_type

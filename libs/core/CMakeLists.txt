@@ -82,12 +82,7 @@ set(HADES_CORE_SRC
 set(HADES_CORE_LIBS 
 	hades-util 
 	hades-basic
-	#sfml-audio	
 	sfml-graphics
-	#sfml-main	
-	#sfml-network 
-	#sfml-system 
-	#sfml-window
 	plf-colony
 )
 

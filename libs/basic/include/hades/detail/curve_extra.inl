@@ -4,12 +4,6 @@
 
 namespace hades::resources
 {
-	namespace detail
-	{
-		// TODO: this should no longer be needed, see data_manager resource types
-		void add_to_curve_master_list(const curve*);
-	}
-
 	template<typename T>
 	const curve* make_curve(data::data_manager& d, unique_id name, curve_variable_type v_type, keyframe_style k_style, T default_value, bool sync, bool locked, bool hidden)
 	{
@@ -24,7 +18,6 @@ namespace hades::resources
 		c->loaded = true;
 
 		assert(is_curve_valid(*c));
-		detail::add_to_curve_master_list(c);
 		return c;
 	}
 

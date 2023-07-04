@@ -43,7 +43,6 @@ namespace hades::resources
 		//const shader *anim_shader = nullptr;
 	};
 
-	//using anim_group_base = ;
 	struct animation_group;
 	static void load_anim_group(animation_group&, data::data_manager&);
 
@@ -52,6 +51,15 @@ namespace hades::resources
 		void load(data::data_manager& d) final override
 		{
 			load_anim_group(*this, d);
+			return;
+		}
+
+		void serialise(const data::data_manager& d, data::writer& w) const override
+		{
+			w.start_map(d.get_as_string(id));
+			for (const auto& anim : value)
+				w.write(d.get_as_string(anim.first), d.get_as_string(anim.second.id()));
+			w.end_map();
 			return;
 		}
 	};

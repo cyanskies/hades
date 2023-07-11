@@ -53,7 +53,7 @@ namespace hades::data
 		//merges the stored sequence with the current sequence using the sequence operators
 		// [=, elm1, elm2] replaces the current sequence with the new sequence
 		// NOTE: = will cause the elements before it to be removed [elm1, =, elm2] == [elm2]
-		// [+, elm1, elm2] adds the following elements to the sequence(is assumed by default
+		// [+, elm1, elm2] adds the following elements to the sequence(is assumed by default)
 		// [-, elm1, elm2] removes elements equal to elm1 and elm2 are removed from the sequence
 		template<typename T, typename Converter>
 		std::vector<T> merge_sequence(std::vector<T> current, Converter conv) const;

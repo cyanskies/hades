@@ -199,6 +199,33 @@ namespace hades
 			return  _try_get<std::decay_t<T>>(id, no_load, mod);
 		}
 
+		// TODO: duplicate of above to support const
+		template<Resource T>
+		inline data_manager::try_get_return<const T> data_manager::try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) const noexcept
+		{
+			const auto lock = std::shared_lock{ _mut };
+			return  _try_get<std::decay_t<T>>(id, no_load, mod);
+		}
+
+		template<Resource T>
+		inline data_manager::try_get_return<const T> data_manager::try_get_previous(const T* r) const noexcept
+		{
+			const auto lock = std::shared_lock{ _mut };
+			
+			// find the current mod
+			const auto iter = std::ranges::find_if(_mod_stack, [m = r->mod](auto&& mod) {
+				return mod.mod_info.id == m;
+				});
+
+			assert(iter != end(_mod_stack));
+			if (iter == begin(_mod_stack))
+				return { nullptr, get_error::no_resource_for_id };
+
+			const auto prev_mod = std::prev(iter);
+
+			return try_get<const T>(r->id, no_load, prev_mod->mod_info.id);
+		}
+
 		template<Resource T>
 		resources::resource_link<T> data_manager::_make_resource_link(unique_id id, unique_id from,
 			typename resources::resource_link_type<T>::get_func get)
@@ -239,6 +266,22 @@ namespace hades
 				return { nullptr, get_error::no_resource_for_id };
 
 			auto out = dynamic_cast<T*>(res);
+
+			if (!out)
+				return { nullptr, get_error::resource_wrong_type };
+
+			return { out, get_error::ok };
+		}
+
+		// TODO: this function is duplicated so that it can be accessed with const(no_load_t is implicit in a const context).
+		template<Resource T>
+		inline data_manager::try_get_return<const T> data_manager::_try_get(unique_id id, const no_load_t, std::optional<unique_id> mod) const noexcept
+		{
+			auto res = _try_get_resource(id, mod);
+			if (!res)
+				return { nullptr, get_error::no_resource_for_id };
+
+			auto out = dynamic_cast<const T*>(res);
 
 			if (!out)
 				return { nullptr, get_error::resource_wrong_type };

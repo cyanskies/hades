@@ -70,6 +70,7 @@ namespace hades
 			return _try_get_resource(id, mod);
 		}
 
+		// TODO: this function is duplicated in order to provide it for const access
 		resources::resource_base *data_manager::_try_get_resource(unique_id id, std::optional<unique_id> mod) noexcept
 		{
 			// find the resource in the highest mod on the stack
@@ -91,6 +92,29 @@ namespace hades
 			}
 
 			return nullptr;
+		}
+
+		const resources::resource_base* data_manager::_try_get_resource(unique_id id, std::optional<unique_id> mod) const noexcept
+		{
+			// find the resource in the highest mod on the stack
+			// starting at mod if specified
+			const auto end = rend(_mod_stack);
+			auto iter = mod ? std::find_if(rbegin(_mod_stack), end, [mod](auto&& elm) {
+				return mod == elm.mod_info.id;
+				}) : rbegin(_mod_stack);
+
+				for (; iter != end; ++iter)
+				{
+					const auto res_end = std::end(iter->resources);
+					auto res = std::find_if(begin(iter->resources), res_end, [id](auto&& res) noexcept {
+						return res->id == id;
+						});
+
+					if (res != res_end)
+						return *res;
+				}
+
+				return nullptr;
 		}
 
 		void data_manager::update_all_links()

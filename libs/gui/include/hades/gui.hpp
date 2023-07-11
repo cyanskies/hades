@@ -372,11 +372,16 @@ namespace hades
 			requires string_type<typename Container::value_type>
 		bool listbox(std::string_view label,
 			std::size_t& current_item, const Container&, const vector2& size = { 0.f, 0.f });
-        template<typename Container, typename ToString = decltype(func_ref<string(typename Container::value_type)>(to_string))>
+		template<typename Container, string_transform<typename Container::value_type> ToString = nullptr_t>
+		bool listbox(std::string_view label, std::size_t& current_item, const Container&,
+			ToString&& = {}, const vector2& size = { 0.f, 0.f });
+
+
+        /*template<typename Container, typename ToString = decltype(func_ref<string(typename Container::value_type)>(to_string))>
 			requires string_type<std::invoke_result_t<ToString, typename Container::value_type>>
 		bool listbox(std::string_view label, std::size_t& current_item,	const Container&,
             ToString = func_ref<string(typename Container::value_type)>(to_string),
-			const vector2& size = { 0.f, 0.f });
+			const vector2& size = { 0.f, 0.f });*/
 
 		//TODO: drags
 

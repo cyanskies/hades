@@ -85,6 +85,7 @@ namespace hades::resources
 	struct tileset : public resource_type<tileset_t>
 	{
 		void load(data::data_manager&) override;
+		void serialise(const data::data_manager&, data::writer&) const override;
 
 		std::vector<tile> tiles; 
 		tag_list tags;

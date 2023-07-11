@@ -13,6 +13,10 @@
 // TODO: break this header up into smaller groups
 
 namespace hades {
+
+	template<typename Func, typename Ret, typename T>
+	concept unary_operator = std::is_invocable_r_v<Ret, Func, T>;
+
 	template<typename T>
 	struct lerpable : public std::is_floating_point<T> {};
 

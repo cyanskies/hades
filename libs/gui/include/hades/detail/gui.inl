@@ -44,18 +44,18 @@ namespace hades
 		return listbox(label, current_item, container, to_string_view, size);
 	}
 
-	template<typename Container, typename ToString>
-		requires string_type<std::invoke_result_t<ToString, typename Container::value_type>>
-	bool gui::listbox(std::string_view label, std::size_t& current_item,
-		const Container& container, ToString to_string_func, const vector2& size)
+	template<typename Container, string_transform<typename Container::value_type> ToString>
+	bool gui::listbox(std::string_view label, std::size_t& current_item, const Container& container,
+		ToString&& to_string_func, const vector2& size)
 	{
 		auto changed = false;
 		if (listbox_begin(label, size))
 		{
 			const auto s = std::size(container);
+			const auto to_str = make_to_string_functor<typename Container::value_type>(std::forward<ToString>(to_string_func));
 			for (auto i = std::size_t{}; i < s; ++i)
 			{
-				if (selectable(std::invoke(to_string_func, container[i]), i == current_item))
+				if (selectable(to_str(container[i]), i == current_item))
 				{
 					current_item = i;
 					changed = true;

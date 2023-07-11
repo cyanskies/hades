@@ -36,6 +36,28 @@ namespace hades
 	//
 	// basically anything that can be converted to string_view
 
+	// concept for to_string functions
+	// TODO: rename string_conversion?
+	template<typename Func, typename T>
+	concept string_transform = requires (Func&& f, T&& ty) {
+		{ std::invoke(f, ty) }->string_type;
+	};
+
+	// string_transform accepts nullptr as a valid transform function
+	// this is so users can opt in to the to_string functions and templates
+
+	// This produces a functor that calls the appropriate to_string function
+	template<typename T, string_transform<T> Func>
+	auto make_to_string_functor(Func&& f)
+	{
+		static_assert(!std::is_same_v<Func, nullptr_t> || requires(T && ty) { { to_string(ty) } -> string_type; },
+			"This type needs a custom conversion function, or a new to_string overload needs to be defined for it.");
+		if constexpr (std::is_same_v<Func, nullptr_t>)
+			return [](const T& ty) { return to_string(ty); };
+		else
+			return [func = std::forward<Func>(f)](const T& ty) { return std::invoke(func, ty); };
+	}
+
 	//pass a back_inserter to result
 	template<typename Out>
 	void split(const std::string &s, char delim, Out result);

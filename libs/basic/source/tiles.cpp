@@ -118,7 +118,8 @@ namespace hades
 	void resources::detail::parse_tiles(resources::tileset &tileset, tile_size_t tile_size, const data::parser_node &n, data::data_manager &d)
 	{
 		using namespace data::parse_tools;
-		tileset.tags = get_unique_sequence(n, "tags"sv, tileset.tags);
+		
+		tileset.tags = merge_unique_sequence(n, "tags"sv, tileset.tags);
 
 		const auto tile_groups_parent = n.get_child("tiles"sv);
 		if (!tile_groups_parent)
@@ -282,6 +283,43 @@ namespace hades::resources
 	{
 		load_tileset(*this, d);
 		return;
+	}
+
+	void tileset::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		//tilesets:
+		//	sand: <// tileset name, these must be unique
+		//		tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
+		//		tiles:
+		//			- {
+		//				texture: <// texture to draw the tiles from
+		//				left: <// pixel start of tileset; default: 0
+		//				top: <// pixel left of tileset; default: 0
+		//				tiles_per_row: <// number of tiles per row
+		//				tile_count: <// total amount of tiles in tileset; default: tiles_per_row
+		//			}
+
+		if (empty(tags) ||
+			empty(tiles))
+			return;
+
+		auto prev = d.try_get_previous(this);
+
+		// tileset name
+		w.start_map(d.get_as_string(id));
+		// tags
+		if (!empty(tags))
+		{
+			w.write("tags"sv);
+			w.start_sequence();
+			for (const auto& tag : tags)
+				w.write(d.get_as_string(tag));
+			w.end_sequence();
+		}
+
+		// TODO: tile list
+
+		w.end_map();
 	}
 
 	void tile_settings::load(data::data_manager& d)

@@ -19,11 +19,43 @@ static auto object_settings_id = hades::unique_id::zero;
 
 namespace hades::resources
 {
+	void level_editor_object_settings::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		// object groups
+		if (!empty(groups))
+		{
+			w.start_map("object-groups"sv);
+
+			for (const auto& g : groups)
+			{
+				const auto& list = std::get<1>(g);
+				if (empty(list))
+					continue;
+
+				w.write(std::get<0>(g));
+				w.start_sequence();
+				for (const auto& obj : list)
+					w.write(d.get_as_string(obj.id()));
+				w.end_sequence();
+			}
+
+			w.end_map();
+		}
+
+		//object colour
+		if (object_colour != default_colour)
+		{
+			const auto hades_colour = colour{ object_colour.r, object_colour.g, object_colour.b, object_colour.a };
+			w.write("object-colour"sv, to_string(hades_colour));
+		}
+	}
+
 	static inline void parse_level_editor_object_resource(unique_id mod, const data::parser_node &node, data::data_manager &d)
 	{
 		//level-editor-object-settings:
 		//    object-groups:
 		//        group-name: [elms, elms]
+		//		  object-colour: red
 
 		auto settings = d.find_or_create<level_editor_object_settings>(object_settings_id, mod, level_editor_object_resource_name);
 
@@ -49,6 +81,14 @@ namespace hades::resources
 				});
 			}
 		}//!object_groups
+
+		// object colour
+		const auto col_node = node.get_child("object-colour"sv);
+		if (col_node)
+		{
+			const auto col = col_node->to_scalar<colour>();
+			settings->object_colour = sf::Color{ col.r, col.g, col.b, col.a };
+		}
 	}
 }
 

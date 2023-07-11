@@ -247,13 +247,20 @@ namespace hades
 			};
 
 			//gets a non-owning ptr to the resource represented by id
-			//if the reasource has not been loaded it will be loaded before returning
+			//if the resource has not been loaded it will be loaded before returning
 			template<Resource T>
 			try_get_return<T> try_get(unique_id id, std::optional<unique_id> = {}) noexcept;
 
 			//gets a non-owning ptr to the resource represented by id
 			template<Resource T>
 			try_get_return<T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
+			// const try_get, never loads
+			template<Resource T>
+			try_get_return<const T> try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) const noexcept;
+
+			// access the base version of this resource
+			template<Resource T>
+			try_get_return<const T> try_get_previous(const T*) const noexcept;
 
 			// update all resource links to point to the latest version of the target resource
 			void update_all_links();
@@ -361,9 +368,12 @@ namespace hades
 			resources::resource_link<T> _make_resource_link(unique_id id, unique_id from,
 				typename resources::resource_link_type<T>::get_func);
 			resources::resource_base* _try_get_resource(unique_id, std::optional<unique_id>) noexcept;
+			const resources::resource_base* _try_get_resource(unique_id, std::optional<unique_id>) const noexcept;
 
 			template<Resource T>
 			try_get_return<T> _try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) noexcept;
+			template<Resource T>
+			try_get_return<const T> _try_get(unique_id id, const no_load_t, std::optional<unique_id> = {}) const noexcept;
 
 
 			mod_storage& _get_mod(unique_id);

@@ -18,9 +18,12 @@ namespace hades::resources
 
 	struct level_editor_object_settings : resource_type<level_editor_object_settings_t>
 	{
+		void serialise(const data::data_manager&, data::writer&) const override;
+
 		using object_group = std::tuple<string, std::vector<resource_link<object>>>;
 		std::vector<object_group> groups;
-		sf::Color object_colour = sf::Color::Cyan;
+		static constexpr auto default_colour = sf::Color::Cyan;
+		sf::Color object_colour = default_colour;
 	};
 }
 

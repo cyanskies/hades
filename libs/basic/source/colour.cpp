@@ -9,6 +9,8 @@ namespace hades
 	template<>
 	colour from_string<colour>(std::string_view s)
 	{
+		// TODO: convert string names into colour too
+
 		const auto v = vector_from_string<std::vector<uint8>>(s);
 		if (size(v) < 3)
 			throw bad_conversion{ "a colour must have at least red, green and blue components." };

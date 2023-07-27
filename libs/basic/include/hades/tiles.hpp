@@ -37,6 +37,11 @@ namespace hades
 	void register_tiles_resources(data::data_manager&);
 	//as above, but loads textures from the requested function
 	void register_tiles_resources(data::data_manager&, detail::make_texture_link_f);
+
+	//x/y coords of a tile, negative tile positions aren't supported
+	using tile_position = vector_int;
+	// 1d tile positions
+	using tile_index_t = tile_position::value_type;
 }
 
 //resources for loading tiles and tilesets
@@ -87,6 +92,16 @@ namespace hades::resources
 		void load(data::data_manager&) override;
 		void serialise(const data::data_manager&, data::writer&) const override;
 
+		// as cache of the tile loading data
+		struct tile_source
+		{
+			unique_id texture;
+			tile_size_t left, top;
+			tile_index_t tiles_per_row;
+			tile_index_t tile_count;
+		};
+
+		std::vector<tile_source> tile_source_groups;
 		std::vector<tile> tiles; 
 		tag_list tags;
 	};
@@ -95,6 +110,7 @@ namespace hades::resources
 	struct tile_settings : public::hades::resources::resource_type<tile_settings_t>
 	{
 		void load(data::data_manager&) override;
+		void serialise(const data::data_manager&, data::writer&) const override;
 
 		resource_link<tileset> error_tileset;
 		resource_link<tileset> empty_tileset;
@@ -136,10 +152,6 @@ namespace hades
 		using tile_error::tile_error;
 	};
 
-	//x/y coords of a tile, negative tile positions aren't supported
-	using tile_position = vector_int;
-	// 1d tile positions
-	using tile_index_t = tile_position::value_type;
 	constexpr auto bad_tile_index = tile_index_t{ -1 };
 	constexpr auto bad_tile_position = tile_position{ -1, -1 };
 	// unique id for each tile

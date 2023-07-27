@@ -80,7 +80,7 @@ namespace hades::resources
 
 		w.start_map(d.get_as_string(id));
 		if (duration != def_anim.duration)
-			w.write(dur_str, duration);
+			w.write(dur_str, to_string(duration));
 		if (tex)						
 			w.write(tex_str, d.get_as_string(tex.id()));
 

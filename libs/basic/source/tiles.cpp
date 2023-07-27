@@ -77,7 +77,9 @@ namespace hades
 	{
 		//tile-settings:
 		//  tile-size: 32
-		//	error-tileset
+
+		// TODO: why dont we parse the error and empty tileset?
+		//		need to update the serialise function if this changes
 
 		const auto id = d.get_uid(tile_settings_name);
 		auto s = d.find_or_create<resources::tile_settings>(id, mod, tile_settings_name);
@@ -168,6 +170,8 @@ namespace hades
 
 			add_tiles_to_tileset(tileset.tiles, tex, left, top, width,
 				tile_count, tile_size);
+
+			tileset.tile_source_groups.emplace_back(tex_id, left, top, width, tile_count);
 		}
 	}
 
@@ -303,21 +307,40 @@ namespace hades::resources
 			empty(tiles))
 			return;
 
-		auto prev = d.try_get_previous(this);
+		const auto prev = d.try_get_previous(this);
 
 		// tileset name
 		w.start_map(d.get_as_string(id));
 		// tags
 		if (!empty(tags))
 		{
+			const auto string_conv = [&d](auto u_id) {
+				return d.get_as_string(u_id);
+			};
+
+			assert(std::ranges::is_sorted(tags));
 			w.write("tags"sv);
-			w.start_sequence();
-			for (const auto& tag : tags)
-				w.write(d.get_as_string(tag));
-			w.end_sequence();
+			if (prev.result)
+				w.mergable_sequence({}, tags, prev.result->tags, string_conv);
+			else
+				w.sequence({}, tags, string_conv);
 		}
 
-		// TODO: tile list
+		if (!empty(tiles))
+		{
+			w.start_sequence("tiles"sv);
+			for (const auto& g : tile_source_groups)
+			{
+				w.start_map();
+				w.write("texture"sv, g.texture);
+				w.write("top"sv, g.top);
+				w.write("left"sv, g.left);
+				w.write("tiles-per-row"sv, g.tiles_per_row);
+				w.write("tile-count"sv, g.tile_count);
+				w.end_map();
+			}
+			w.end_sequence();
+		}
 
 		w.end_map();
 	}
@@ -325,6 +348,15 @@ namespace hades::resources
 	void tile_settings::load(data::data_manager& d)
 	{
 		detail::load_tile_settings(*this, d);
+		return;
+	}
+
+	void tile_settings::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		//tile-settings:
+		//  tile-size: 32
+
+		w.write("tile-size"sv, tile_size);
 		return;
 	}
 

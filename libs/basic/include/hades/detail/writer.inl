@@ -7,12 +7,14 @@ namespace hades::data
 	template<typename T, string_transform<T> ToString>
 	void writer::mergable_sequence(std::string_view key, const std::vector<T>& current, const std::vector<T>& prev, ToString&& func)
 	{
+		using namespace std::string_view_literals;
+
 		assert(std::ranges::is_sorted(current));
 		assert(std::ranges::is_sorted(prev));
 		// list containing the elements in prev, that are absent from current;
-		auto removed = std::vector<T>{ size(prev), {} };
+		auto removed = std::vector<T>{ size(prev), T{} };
 		// list containing the elements in current, that weren't present in prev
-		auto added = std::vector<T>{ size(current), {} };
+		auto added = std::vector<T>{ size(current), T{} };
 		const auto [prev_end, removed_end] = std::ranges::set_difference(prev, current, begin(removed));
 		const auto [current_end, added_end] = std::ranges::set_difference(current, prev, begin(added));
 
@@ -47,6 +49,22 @@ namespace hades::data
 		for (const auto& elm : added)
 			write(std::invoke(to_str, elm));
 		
+		end_sequence();
+		return;
+	}
+
+	template<typename T, string_transform<T> ToString>
+	void writer::sequence(std::string_view key, const std::vector<T>& collection, ToString&& func)
+	{
+		if (empty(key))
+			start_sequence();
+		else
+			start_sequence(key);
+
+		auto to_str = make_to_string_functor<T>(std::forward<ToString>(func));
+
+		for (const auto& elm : collection)
+			write(std::invoke(to_str, elm));
 		end_sequence();
 		return;
 	}

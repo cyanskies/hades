@@ -35,6 +35,10 @@ namespace hades
 	//	static_assert(is_string_v<std::string_view>);
 	//
 	// basically anything that can be converted to string_view
+	
+	// everything not considered a string_type
+	template<typename T>
+	concept not_string_type = !std::is_convertible_v<T, std::string_view>;
 
 	// concept for to_string functions
 	// TODO: rename string_conversion?
@@ -68,8 +72,8 @@ namespace hades
 	constexpr std::string_view trim(std::string_view in) noexcept;
 
 	// catch overloads that can be satisfied by std::to_chars
-	template<typename T>
-		requires (!string_type<T>)
+	template<not_string_type T>
+		requires std::integral<T> || std::floating_point<T>
 	string to_string(T value);
 
 	// convert string types to hades::string
@@ -81,6 +85,10 @@ namespace hades
 
 	template<class First, class Last>
 	string to_string(First begin, Last end);
+
+	// types that can be converted to string
+	template<typename T>
+	concept stringable = not_string_type<T> && requires(T t) { {to_string(t)}->string_type; };
 
 	//thrown by all the from_string functions
 	class bad_conversion : public std::runtime_error

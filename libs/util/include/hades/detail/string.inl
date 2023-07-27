@@ -59,8 +59,8 @@ namespace hades
 		return in.substr(start, end - start + 1);
 	}
 
-	template<typename T>
-		requires (!string_type<T>)
+	template<not_string_type T>
+		requires std::integral<T> || std::floating_point<T>
 	string to_string(T value)
 	{
 		using namespace std::string_literals;

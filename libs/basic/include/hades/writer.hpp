@@ -54,27 +54,34 @@ namespace hades::data
 		// current and prev must both be sorted
 		template<typename T, string_transform<T> ToString = nullptr_t>
 		void mergable_sequence(std::string_view, const std::vector<T>& current, const std::vector<T>& prev, ToString&&);
+		template<typename T, string_transform<T> ToString = nullptr_t>
+		void sequence(std::string_view, const std::vector<T>& collection, ToString&&);
 
-		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
-			requires requires (T ty) {
-			to_string(ty);
-		}
+		template<stringable T>
 		void start_map(T value)
 		{
 			start_map(to_string(value));
 		}
 
-		template<typename T, typename U, typename = std::enable_if_t<!is_string_v<T> || !is_string_v<U>>>
-			requires requires (T ty, U u) {
-			to_string(ty);
-			to_string(u);
-		}
+		template<stringable T, stringable U>
 		void write(T key, U value)
 		{
 			write(to_string(key), to_string(value));
 		}
 
-		template<typename T, typename = std::enable_if_t<!is_string_v<T>>>
+		template<stringable T>
+		void write(std::string_view key, T value)
+		{
+			write(key, to_string(value));
+		}
+
+		template<stringable T>
+		void write(T key, std::string_view value)
+		{
+			write(to_string(key), value);
+		}
+
+		template<not_string_type T>
 			requires requires (T ty) {
 			to_string(ty);
 		}
@@ -100,5 +107,7 @@ namespace hades::data
 	void set_default_writer(make_writer_f);
 	std::unique_ptr<writer> make_writer();
 }
+
+#include "hades/detail/writer.inl"
 
 #endif // !HADES_WRITER_HPP

@@ -81,10 +81,7 @@ namespace hades::data
 			write(to_string(key), value);
 		}
 
-		template<not_string_type T>
-			requires requires (T ty) {
-			to_string(ty);
-		}
+		template<stringable T>
 		void write(T value)
 		{
 			write(to_string(value));

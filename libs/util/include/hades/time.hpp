@@ -50,11 +50,12 @@ namespace hades
 
 	// NOTE: using std::string here, since pulling in string.hpp causes weird issues
 	// 	if string.hpp is included before to_string(time_duration) is declared, 
-	//  everything in curve_extra.cpp explodes 	 
-	using string = std::string;
-	std::pair<string, duration_ratio> duration_to_string(time_duration);
-	string duration_to_string(time_duration, duration_ratio, int units_after_decimal = 2);
-	string to_string(time_duration);
+	//  then other files have trouble finding to_string(duration) due to ADL;
+	//	The fact that this workaround works might be a MSVC bug.
+
+	std::pair<std::string, duration_ratio> duration_to_string(time_duration);
+	std::string duration_to_string(time_duration, duration_ratio, int units_after_decimal = 2);
+	std::string to_string(time_duration); // NOTE: ADL lookup cannot find this overload
 	time_duration duration_from_string(std::string_view) noexcept;
 }
 

@@ -6,8 +6,9 @@
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
 #include "hades/sf_color.hpp"
+#include "hades/string.hpp"
 #include "hades/texture.hpp"
-#include "hades/timers.hpp"
+#include "hades/time.hpp"
 #include "hades/writer.hpp"
 
 using namespace std::string_view_literals;

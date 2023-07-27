@@ -38,7 +38,7 @@ namespace hades
 	
 	// everything not considered a string_type
 	template<typename T>
-	concept not_string_type = !std::is_convertible_v<T, std::string_view>;
+	concept not_string_type = !string_type<T>;
 
 	// concept for to_string functions
 	// TODO: rename string_conversion?
@@ -56,9 +56,11 @@ namespace hades
 	{
 		static_assert(!std::is_same_v<Func, nullptr_t> || requires(T && ty) { { to_string(ty) } -> string_type; },
 			"This type needs a custom conversion function, or a new to_string overload needs to be defined for it.");
-		if constexpr (std::is_same_v<Func, nullptr_t>)
-			return [](const T& ty) { return to_string(ty); };
-		else
+		if constexpr (string_type<T> && std::same_as<Func, nullptr_t>)
+			return std::identity; // strings returned unchannged
+		else if constexpr (not_string_type<T> && std::same_as<Func, nullptr_t>)
+			return [](const T& ty) { return to_string(ty); }; // try default conversion func
+		else // use provided conversion func
 			return [func = std::forward<Func>(f)](const T& ty) { return std::invoke(func, ty); };
 	}
 
@@ -86,9 +88,10 @@ namespace hades
 	template<class First, class Last>
 	string to_string(First begin, Last end);
 
-	// types that can be converted to string
+	// types that can be converted to string using ADL to_string
 	template<typename T>
-	concept stringable = not_string_type<T> && requires(T t) { {to_string(t)}->string_type; };
+	concept stringable = not_string_type<T> &&
+		requires(T t) { { to_string(t) }->string_type; };
 
 	//thrown by all the from_string functions
 	class bad_conversion : public std::runtime_error

@@ -53,7 +53,7 @@ namespace hades
 
 	constexpr auto terrain_settings_str = "terrain-settings"sv;
 	constexpr auto terrainsets_str = "terrainsets"sv;
-	constexpr auto terrains_str = "terrains"sv;
+	constexpr auto terrains_str = "tilesets"sv;
 
 	void register_terrain_resources(data::data_manager &d, detail::make_texture_link_f func)
 	{
@@ -108,7 +108,7 @@ namespace hades
 		d.register_resource_type(resources::get_tile_settings_name(), resources::parse_terrain_settings);
 		d.register_resource_type(terrain_settings_str, resources::parse_terrain_settings);
 		d.register_resource_type(resources::get_tilesets_name(), resources::parse_terrain);
-		d.register_resource_type("terrain"sv, resources::parse_terrain);
+		//d.register_resource_type("terrain"sv, resources::parse_terrain);
 		d.register_resource_type(terrainsets_str, resources::parse_terrainset);
 	}
 
@@ -762,7 +762,79 @@ namespace hades::resources
 		load_terrain(*this, d);
 		return;
 	}
-	
+
+	//short transition names, same values an order as the previous list
+	// this is the format output by the terrain serialise func
+	constexpr auto transition_short_names = std::array{
+		"n"sv, // causes a tile skip
+		"tr"sv,
+		"br"sv,
+		"tr-br"sv,
+		"bl"sv,
+		"tr-bl"sv,
+		"blr"sv,
+		"tr-blr"sv,
+		"tl"sv,
+		"tlr"sv,
+		"tl-br"sv,
+		"tlr-br"sv,
+		"tl-bl"sv,
+		"tlr-bl"sv,
+		"tl-blr"sv,
+		"a"sv
+	};
+
+	void terrain::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		w.start_map(d.get_as_string(id));
+		serialise_impl(d, w); // tileset
+
+		const auto prev = d.try_get_previous(this);
+
+		auto beg = begin(terrain_source_groups);
+
+		if (prev.result)
+			advance(beg, size(prev.result->terrain_source_groups));
+
+		if (beg != end(terrain_source_groups))
+		{
+			w.start_sequence("terrain"sv);
+			std::for_each(beg, end(terrain_source_groups), [&](auto g) {
+				w.start_map();
+				w.write("texture"sv, g.texture);
+				w.write("top"sv, g.top);
+				w.write("left"sv, g.left);
+				w.write("tiles-per-row"sv, g.tiles_per_row);
+				w.write("tile-count"sv, g.tile_count);
+
+				std::visit([&](const auto& layout) {
+					using T = std::decay_t<decltype(layout)>;
+					if constexpr (std::same_as<T, terrain_source::layout_type>)
+						w.write("layout"sv, "default"sv);
+					else
+					{
+						w.write("layout"sv);
+						w.start_sequence();
+						for (auto index : layout)
+						{
+							const auto i = integer_cast<std::size_t>(enum_type(index));
+							assert(i < size(transition_short_names));
+							w.write(transition_short_names[i]);
+						}
+						w.end_sequence();
+					}
+					}, g.layout);
+
+				w.end_map();
+				});
+
+			w.end_sequence();
+		}
+
+		w.end_map();
+		return;
+	}
+
 	static void load_terrainset(terrainset& terr, data::data_manager &d)
 	{
 		for (const auto& t : terr.terrains)
@@ -776,6 +848,18 @@ namespace hades::resources
 	{
 		load_terrainset(*this, d);
 		return;
+	}
+
+	void terrainset::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		//terrainsets:
+		//	name: [terrains, terrains, terrains]
+
+		const auto prev = d.try_get_previous(this);
+		w.write(d.get_as_string(id));
+		w.mergable_sequence({}, terrains, prev.result ? prev.result->terrains : decltype(prev.result->terrains){}, [&](auto link) {
+			return d.get_as_string(link.id());
+			});
 	}
 
 	static void load_terrain_settings(terrain_settings& s, data::data_manager &d)
@@ -851,8 +935,11 @@ namespace hades::resources
 		}
 	}
 
-	static std::vector<transition_tile_type> parse_layout(const std::vector<string> &s)
+	static std::pair<std::vector<transition_tile_type>, terrain::terrain_source::layout_type>
+		parse_layout(const std::vector<string> &s)
 	{
+		using layout_type = terrain::terrain_source::layout_type;
+
 		//layouts
 		//This is the layout used by warcraft 3 tilesets, a common layout
 		// on tileset websites
@@ -864,8 +951,9 @@ namespace hades::resources
 
 		//default to the war 3 layout
 		if (s.empty())
-			return { std::begin(war3_layout), std::end(war3_layout) };
+			return { { std::begin(war3_layout), std::end(war3_layout) }, layout_type::empty };
 
+		using namespace std::string_literals;
 		using namespace std::string_view_literals;
 
 		//named based on which tile corners have terrain in them
@@ -888,32 +976,12 @@ namespace hades::resources
 			"all"sv
 		};
 
-		//short names, same values an order as the previous list
-		constexpr auto short_names = std::array{
-			"n"sv, // causes a tile skip
-			"tr"sv,
-			"br"sv,
-			"tr-br"sv,
-			"bl"sv,
-			"tr-bl"sv,
-			"blr"sv,
-			"tr-blr"sv,
-			"tl"sv,
-			"tlr"sv,
-			"tl-br"sv,
-			"tlr-br"sv,
-			"tl-bl"sv,
-			"tlr-bl"sv,
-			"tl-blr"sv,
-			"a"sv
-		};
-
 		//check against named layouts
 		if (s.size() == 1u)
 		{
 			if (s[0] == "default"sv ||
 				s[0] == "war3"sv)
-				return { std::begin(war3_layout), std::end(war3_layout) };
+				return { { std::begin(war3_layout), std::end(war3_layout) }, layout_type::war3 };
 		}
 
 		std::vector<transition_tile_type> out;
@@ -922,11 +990,11 @@ namespace hades::resources
 		for (const auto &str : s)
 		{
 			assert(std::numeric_limits<uint8>::max() > std::size(transition_names));
-			assert(std::size(transition_names) == std::size(short_names));
+			assert(std::size(transition_names) == std::size(transition_short_names));
 			for (auto i = uint8{}; i < std::size(transition_names); ++i)
 			{
 				if (transition_names[i] == str ||
-					short_names[i] == str)
+					transition_short_names[i] == str)
 				{
 					out.emplace_back(transition_tile_type{ i });
 					break;
@@ -937,7 +1005,7 @@ namespace hades::resources
 			//		warn for missing str?
 		}
 
-		return out;
+		return { out, layout_type::custom };
 	}
 
 	static void parse_terrain_group(terrain &t, const data::parser_node &p, data::data_manager &d, const tile_size_t tile_size)
@@ -954,30 +1022,42 @@ namespace hades::resources
 		using namespace data::parse_tools;
 
 		const auto layout_str = get_sequence<string>(p, "layout"sv, {});
-		auto transitions = parse_layout(layout_str);
+		auto [transitions, layout_type] = parse_layout(layout_str);
 
 		const auto tile_count = get_scalar<int32>(p, "tile-count"sv, -1);
 		const auto tiles_per_row = get_scalar<int32>(p, "tiles-per-row"sv, -1);
 
 		if (tiles_per_row < 0)
 		{
+			// TODO: need to throw here
 			LOGERROR("a terrain group must provide tiles-per-row");
 		}
 
-		const auto left = get_scalar<int32>(p, "left"sv, 0);
-		const auto top = get_scalar<int32>(p, "top"sv, 0);
+		const auto left = get_scalar<tile_size_t>(p, "left"sv, 0);
+		const auto top = get_scalar<tile_size_t>(p, "top"sv, 0);
 
 		const auto texture_id = get_unique(p, "texture"sv, unique_id::zero);
 		// TODO: handle texture_id == zero
 		assert(texture_id);
 		const auto texture = std::invoke(hades::detail::make_texture_link, d, texture_id, t.id);
 
+		// store the parsed information for this terrain group
+		using layout_type_enum = terrain::terrain_source::layout_type;
+		using stored_layout = terrain::terrain_source::stored_layout;
+		auto layout = stored_layout{ layout_type };
+
+		if (layout_type == layout_type_enum::custom)
+			layout = transitions;
+
+		t.terrain_source_groups.emplace_back(terrain::tile_source{ texture_id, left, top, tiles_per_row,
+			tile_count }, std::move(layout));
+
 		//make transitions list match the length of tile_count
 		//looping if needed
 		if (tile_count != -1)
 		{
 			const auto count = unsigned_cast(tile_count);
-			//copy the range untill it is longer than tile_count
+			//copy the range until it is longer than tile_count
 			while (count > std::size(transitions))
 				std::copy(std::begin(transitions), std::end(transitions), std::back_inserter(transitions));
 
@@ -1001,8 +1081,8 @@ namespace hades::resources
 		//				texture: <// texture to draw the tiles from; required
 		//				left: <// pixel start of tileset; default: 0
 		//				top: <// pixel left of tileset; default: 0
-		//				tiles_per_row: <// number of tiles per row; required
-		//				tile_count: <// total amount of tiles in tileset; default: tiles_per_row
+		//				tiles-per-row: <// number of tiles per row; required
+		//				tile-count: <// total amount of tiles in tileset; default: tiles_per_row
 		//			}
 		//		terrain:
 		//			- {
@@ -1010,7 +1090,7 @@ namespace hades::resources
 		//				left: <// as above
 		//				top: <// as above
 		//				tiles-per-row: <// as above
-		//				tile_count: <// optional; default is the length of layout
+		//				tile-count: <// optional; default is the length of layout
 		//				layout: //either war3, a single unique_id, or a set of tile_count unique_ids; required
 		//						// see parse_layout()::transition_names for a list of unique_ids
 		//			}

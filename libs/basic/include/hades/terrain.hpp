@@ -1,6 +1,8 @@
 #ifndef HADES_TERRAIN_HPP
 #define HADES_TERRAIN_HPP
 
+#include <variant>
+
 #include "hades/resource_base.hpp"
 
 #include "hades/data.hpp"
@@ -45,6 +47,22 @@ namespace hades::resources
 	struct terrain final : tileset
 	{
 		void load(data::data_manager&) final override;
+		void serialise(const data::data_manager&, data::writer&) const override;
+
+		struct terrain_source final : public tileset::tile_source
+		{
+			enum class layout_type
+			{
+				empty,
+				war3,
+				custom
+			};
+
+			using stored_layout = std::variant<layout_type, std::vector<transition_tile_type>>;
+			stored_layout layout;
+		};
+
+		std::vector<terrain_source> terrain_source_groups;
 
 		//an array of tiles for each transition_type, except all(which should be an empty tile)
 		//use get_transitions() to access the correct element
@@ -59,6 +77,7 @@ namespace hades::resources
 	struct terrainset final : resource_type<terrainset_t>
 	{
 		void load(data::data_manager&) final override;
+		void serialise(const data::data_manager&, data::writer&) const override;
 
 		std::vector<resource_link<terrain>> terrains;
 	};
@@ -68,6 +87,7 @@ namespace hades::resources
 	struct terrain_settings final : tile_settings
 	{
 		void load(data::data_manager&) final override;
+		// this doesn't require a serialise function, its covered by tile_settings
 
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};

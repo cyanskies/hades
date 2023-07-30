@@ -291,6 +291,14 @@ namespace hades::resources
 
 	void tileset::serialise(const data::data_manager& d, data::writer& w) const
 	{
+		w.start_map(d.get_as_string(id));
+		serialise_impl(d, w);
+		w.end_map();
+		return;
+	}
+
+	void tileset::serialise_impl(const data::data_manager& d, data::writer& w) const
+	{
 		//tilesets:
 		//	sand: <// tileset name, these must be unique
 		//		tags: <// a list of trait tags that get added to the tiles in this tileset; default: []
@@ -309,10 +317,15 @@ namespace hades::resources
 
 		const auto prev = d.try_get_previous(this);
 
-		// tileset name
-		w.start_map(d.get_as_string(id));
 		// tags
-		if (!empty(tags))
+		if (empty(tags) && prev.result && !empty(prev.result->tags))
+		{
+			w.write("tags"sv);
+			w.start_sequence();
+			w.write("="sv);
+			w.end_sequence();
+		}
+		else if (!empty(tags))
 		{
 			const auto string_conv = [&d](auto u_id) {
 				return d.get_as_string(u_id);
@@ -320,17 +333,18 @@ namespace hades::resources
 
 			assert(std::ranges::is_sorted(tags));
 			w.write("tags"sv);
-			if (prev.result)
-				w.mergable_sequence({}, tags, prev.result->tags, string_conv);
-			else
-				w.sequence({}, tags, string_conv);
+			w.mergable_sequence({}, tags, prev.result ? prev.result->tags : tag_list{}, string_conv);
 		}
 
-		if (!empty(tiles))
+		auto beg = begin(tile_source_groups);
+
+		if (prev.result)
+			advance(beg, size(prev.result->tile_source_groups));
+
+		if (beg != end(tile_source_groups))
 		{
 			w.start_sequence("tiles"sv);
-			for (const auto& g : tile_source_groups)
-			{
+			std::for_each(beg, end(tile_source_groups), [&](auto g) {
 				w.start_map();
 				w.write("texture"sv, g.texture);
 				w.write("top"sv, g.top);
@@ -338,11 +352,11 @@ namespace hades::resources
 				w.write("tiles-per-row"sv, g.tiles_per_row);
 				w.write("tile-count"sv, g.tile_count);
 				w.end_map();
-			}
+				});
 			w.end_sequence();
 		}
 
-		w.end_map();
+		return;
 	}
 
 	void tile_settings::load(data::data_manager& d)

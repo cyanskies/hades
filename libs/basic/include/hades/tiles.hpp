@@ -101,9 +101,15 @@ namespace hades::resources
 			tile_index_t tile_count;
 		};
 
+		// stored in order of file load
 		std::vector<tile_source> tile_source_groups;
 		std::vector<tile> tiles; 
 		tag_list tags;
+
+	protected:
+		// used by terrainsets to have the tile portion of their data serialised
+		void serialise_impl(const data::data_manager&, data::writer&) const;
+
 	};
 
 	struct tile_settings_t {};

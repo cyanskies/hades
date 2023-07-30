@@ -853,13 +853,14 @@ namespace hades::resources
 	void terrainset::serialise(const data::data_manager& d, data::writer& w) const
 	{
 		//terrainsets:
-		//	name: [terrains, terrains, terrains]
+		//	name: [terrains, terrains, terrains] // not a merable sequence, this will overwrite
 
-		const auto prev = d.try_get_previous(this);
 		w.write(d.get_as_string(id));
-		w.mergable_sequence({}, terrains, prev.result ? prev.result->terrains : decltype(prev.result->terrains){}, [&](auto link) {
-			return d.get_as_string(link.id());
-			});
+		w.start_sequence();
+		for (auto& terr : terrains)
+			w.write(terr.id());
+		w.end_sequence();
+		return;
 	}
 
 	static void load_terrain_settings(terrain_settings& s, data::data_manager &d)
@@ -1131,7 +1132,7 @@ namespace hades::resources
 	static void parse_terrainset(unique_id mod, const data::parser_node &n, data::data_manager &d)
 	{
 		//terrainsets:
-		//	name: [terrains, terrains, terrains]
+		//	name: [terrains, terrains, terrains] // not a mergable sequence, this will overwrite
 
 		auto settings = d.find_or_create<terrain_settings>(resources::get_tile_settings_id(), mod, terrain_settings_str);
 
@@ -1144,7 +1145,7 @@ namespace hades::resources
 
 			auto t = d.find_or_create<terrainset>(id, mod, terrainsets_str);
 
-			auto unique_list = terrainset_n->merge_sequence(t->terrains, [id, &d](std::string_view s) {
+			auto unique_list = terrainset_n->to_sequence<resources::resource_link<terrain>>([id, &d](std::string_view s) {
 				const auto i = d.get_uid(s);
 				return d.make_resource_link<terrain>(i, id);
 			});

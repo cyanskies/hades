@@ -72,12 +72,21 @@ namespace hades::resources
 		if(mips != def.mips)		w.write("mips"sv, mips);
 		if (alpha)
 		{
-			w.write("alpha-mask"sv);
-			w.start_sequence();
-			w.write(alpha->r);
-			w.write(alpha->g);
-			w.write(alpha->b);
-			w.end_sequence();
+			const auto iter = std::ranges::find(colours::all_colours, alpha);
+			if (iter != end(colours::all_colours))
+			{
+				const auto name = next(begin(colours::all_colour_names), distance(begin(colours::all_colours), iter));
+				w.write("alpha-mask"sv, *name);
+			}
+			else
+			{
+				w.write("alpha-mask"sv);
+				w.start_sequence();
+				w.write(alpha->r);
+				w.write(alpha->g);
+				w.write(alpha->b);
+				w.end_sequence();
+			}
 		}
 		w.end_map();
 	}

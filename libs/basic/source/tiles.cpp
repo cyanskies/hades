@@ -347,8 +347,10 @@ namespace hades::resources
 			std::for_each(beg, end(tile_source_groups), [&](auto g) {
 				w.start_map();
 				w.write("texture"sv, g.texture);
-				w.write("top"sv, g.top);
-				w.write("left"sv, g.left);
+				if (g.top != texture_size_t{})
+					w.write("top"sv, g.top);
+				if (g.left != texture_size_t{})
+					w.write("left"sv, g.left);
 				w.write("tiles-per-row"sv, g.tiles_per_row);
 				w.write("tile-count"sv, g.tile_count);
 				w.end_map();

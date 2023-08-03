@@ -784,6 +784,9 @@ namespace hades::resources
 		"a"sv
 	};
 
+	static_assert(std::signed_integral<tile_index_t>);
+	constexpr auto tile_count_auto_val = tile_index_t{ -1 };
+
 	void terrain::serialise(const data::data_manager& d, data::writer& w) const
 	{
 		w.start_map(d.get_as_string(id));
@@ -802,10 +805,16 @@ namespace hades::resources
 			std::for_each(beg, end(terrain_source_groups), [&](auto g) {
 				w.start_map();
 				w.write("texture"sv, g.texture);
-				w.write("top"sv, g.top);
-				w.write("left"sv, g.left);
+
+				if (g.top != texture_size_t{})
+					w.write("top"sv, g.top);
+				if (g.left != texture_size_t{})
+					w.write("left"sv, g.left);
+
 				w.write("tiles-per-row"sv, g.tiles_per_row);
-				w.write("tile-count"sv, g.tile_count);
+
+				if (g.tile_count != tile_count_auto_val) 
+					w.write("tile-count"sv, g.tile_count);
 
 				std::visit([&](const auto& layout) {
 					using T = std::decay_t<decltype(layout)>;
@@ -1025,12 +1034,12 @@ namespace hades::resources
 		const auto layout_str = get_sequence<string>(p, "layout"sv, {});
 		auto [transitions, layout_type] = parse_layout(layout_str);
 
-		const auto tile_count = get_scalar<int32>(p, "tile-count"sv, -1);
-		const auto tiles_per_row = get_scalar<int32>(p, "tiles-per-row"sv, -1);
+		const auto tile_count = get_scalar<int32>(p, "tile-count"sv, tile_count_auto_val);
+		const auto tiles_per_row = get_scalar<int32>(p, "tiles-per-row"sv, {});
 
-		if (tiles_per_row < 0)
+		if (tiles_per_row < 1)
 		{
-			// TODO: need to throw here
+			// TODO: need to abort this terrain group
 			LOGERROR("a terrain group must provide tiles-per-row");
 		}
 

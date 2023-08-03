@@ -37,10 +37,10 @@ namespace hades::data
 
 			if (!empty(includes))
 			{
-				w.start_map("include"sv);
+				w.start_sequence("include"sv);
 				for (auto& i : includes)
 					w.write(i.generic_string());
-				w.end_map();
+				w.end_sequence();
 			}
 
 			return;
@@ -73,6 +73,13 @@ namespace hades::data
 					includes.emplace_back(res->data_file);
 			}
 		}
+
+		const auto game_yaml = std::filesystem::path{ "game.yaml"sv };
+		const auto mod_yaml = std::filesystem::path{ "mod.yaml"sv };
+
+		std::erase(includes, game_yaml);
+		std::erase(includes, mod_yaml);
+
 		//queue is currently sorted by resource type
 		// sort by data file then resource type
 		std::ranges::sort(queue, [](auto&& left, auto&& right) noexcept {

@@ -267,7 +267,7 @@ namespace hades::data
 			_write_mod(mod_data, path, strm);
 		}
 
-		log("Finised writing mod: "s + to_string(name));
+		log("Finished writing mod: "s + to_string(name));
 		return;
 	}
 

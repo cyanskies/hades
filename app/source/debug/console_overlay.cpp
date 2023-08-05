@@ -92,6 +92,7 @@ namespace hades::debug
 			{
 				if(!empty(_input))
 					send_command();
+				g.activate_context(); // context may have been changed by send_command, eg. called vid_reinit
 				g.set_keyboard_focus_here(-1);
 			}
 

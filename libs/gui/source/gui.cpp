@@ -177,14 +177,17 @@ namespace hades
 			io.AddFocusEvent(false);
 			return false;
 		case sf::Event::MouseMoved:
+			io.AddMouseSourceEvent(ImGuiMouseSource::ImGuiMouseSource_Mouse);
 			io.AddMousePosEvent(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
 			return io.WantCaptureMouse;
 		case sf::Event::MouseButtonPressed:
 			[[fallthrough]];
 		case sf::Event::MouseButtonReleased:
+			io.AddMouseSourceEvent(ImGuiMouseSource::ImGuiMouseSource_Mouse);
 			io.AddMouseButtonEvent(e.mouseButton.button, e.type == sf::Event::MouseButtonPressed);
 			return io.WantCaptureMouse;
 		case sf::Event::MouseWheelScrolled:
+			io.AddMouseSourceEvent(ImGuiMouseSource::ImGuiMouseSource_Mouse);
 			if (e.mouseWheelScroll.wheel == 0)
 				io.AddMouseWheelEvent({}, static_cast<float>(e.mouseWheelScroll.delta));
 			else
@@ -629,6 +632,12 @@ namespace hades
 		text(s);
 	}
 
+	void gui::separator_text(std::string_view s)
+	{
+		_active_assert();
+		return ImGui::SeparatorText(s);
+	}
+
 	bool gui::button(std::string_view label, const vector2 &size)
 	{
 		_active_assert();
@@ -1023,8 +1032,7 @@ namespace hades
 	void gui::tooltip(std::string_view s)
 	{
 		_active_assert();
-		if(is_item_hovered())
-            ImGui::SetTooltip(to_string(s).c_str()); // FIXME: fmt strings aren't string view
+		ImGui::SetItemTooltip(to_string(s).c_str()); // FIXME: fmt strings aren't string view
         return;
 	}
 
@@ -1332,16 +1340,13 @@ namespace hades
 		const auto draw_data = ImGui::GetDrawData();
 		assert(draw_data);
 
-		const auto first = draw_data->CmdLists;
-		const auto last = draw_data->CmdLists + draw_data->CmdListsCount;
-
 		const auto& view = target.getView();
 		const auto view_height = view.getSize().y;
 
 		auto vertex_array = std::vector<sf::Vertex>{};
 
 		//for each entry in the draw list
-		std::for_each(first, last, [&target, &vertex_array, draw_data, states, view_height](ImDrawList *draw_list) {
+		std::ranges::for_each(draw_data->CmdLists, [&target, &vertex_array, draw_data, states, view_height](ImDrawList *draw_list) {
 			const auto index_first = draw_list->IdxBuffer.Data;
 
 			//for each command

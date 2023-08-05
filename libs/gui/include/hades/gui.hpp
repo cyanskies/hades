@@ -296,6 +296,7 @@ namespace hades
 		void text_wrapped(std::string_view);
 		// text_label
 		void text_bullet(std::string_view);
+		void separator_text(std::string_view); // seperator horizontal with title
 
 		enum class direction : ImGuiDir
 		{
@@ -337,7 +338,7 @@ namespace hades
 			span_all_columns = ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns, //TODO: tables
 			allow_double_click = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowDoubleClick,
 			disabled = ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled,
-			allow_item_overlap = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowItemOverlap
+			allow_item_overlap = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowOverlap
 		};
 
 		//selectables
@@ -429,7 +430,8 @@ namespace hades
 			no_undo_redo = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo,
 			chars_scientific = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific,
 			callback_resize = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackResize,
-			callback_edit = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackEdit
+			callback_edit = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackEdit,
+			escape_clears_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_EscapeClearsAll
 		};
 
 		//inputs
@@ -501,7 +503,7 @@ namespace hades
 			none = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_None,
 			selected = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Selected,
 			framed = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed,
-			allow_item_overlap = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_AllowItemOverlap,
+			allow_item_overlap = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_AllowOverlap,
 			no_tree_push_on_open = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoTreePushOnOpen,
 			no_auto_open_on_log = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoAutoOpenOnLog,
 			default_open = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen,
@@ -550,6 +552,7 @@ namespace hades
 
 		//tooltips
 		//begin/end tooltip
+
 		[[nodiscard]]
 		bool tooltip_begin(); // only if returns true, must call tooltip_end
 		void tooltip_end();
@@ -784,7 +787,9 @@ namespace hades
 			allow_when_overlapped = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlapped,
 			allow_when_disabled = ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled,
 			rect_only = ImGuiHoveredFlags_::ImGuiHoveredFlags_RectOnly,
-			root_and_child_windows = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootAndChildWindows
+			root_and_child_windows = ImGuiHoveredFlags_::ImGuiHoveredFlags_RootAndChildWindows,
+			for_tooltips = ImGuiHoveredFlags_::ImGuiHoveredFlags_ForTooltip,
+
 		};
 
 		enum class mouse_button : ImGuiMouseButton

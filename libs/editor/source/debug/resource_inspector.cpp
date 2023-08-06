@@ -1457,7 +1457,7 @@ namespace hades::data
 
 				// render systems
 				g.text("render systems"sv);
-				if (_update_list_ui("render systems"sv, _systems, d, g, add_rsystem, rem_rsystem))
+				if (_update_list_ui("render systems"sv, _render_systems, d, g, add_rsystem, rem_rsystem))
 					mod = true;
 
 				g.separator_horizontal();

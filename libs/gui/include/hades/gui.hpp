@@ -820,7 +820,10 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, const sf::RenderStates& states = sf::RenderStates{}) const override;
 
-		static constexpr std::string_view version() noexcept;
+		static constexpr std::string_view version() noexcept
+		{
+			return IMGUI_VERSION;
+		}
 
 	private:
 		using font = ImFont;

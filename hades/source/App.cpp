@@ -140,13 +140,14 @@ namespace hades
 		//create a hidden window early to let us start making textures without
 		//creating GL errors
 		//this will be replaced with the proper window after the mods are loaded.
-		_window.create(sf::VideoMode{}, "hades", sf::Style::None);
+		_window.create(sf::VideoMode{}, "hades"s, sf::Style::None);
 
-		LOG("Hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
+		LOG("hades " + std::to_string(hades_version_major) + "." + std::to_string(hades_version_minor) + "." + std::to_string(hades_version_patch));
 		LOG("SFML " + std::to_string(SFML_VERSION_MAJOR) + "." + std::to_string(SFML_VERSION_MINOR) + "." + std::to_string(SFML_VERSION_PATCH));
-		//LOG("SFGUI " + std::to_string(SFGUI_MAJOR_VERSION) + "." + std::to_string(SFGUI_MINOR_VERSION) + "." + std::to_string(SFGUI_REVISION_VERSION));
+		log("imgui " + to_string(gui::version()));
 		LOG("zlib " + to_string(zip::zlib_version()));
 		LOG("yaml-cpp " + to_string(HADES_YAML_VERSION));
+		log("plf::colony 7.20"s);
 
 		//pull -game and -mod commands from commands
 		//and load them in the datamanager.

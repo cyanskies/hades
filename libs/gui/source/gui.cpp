@@ -1401,11 +1401,6 @@ namespace hades
 		});
 	}
 
-	constexpr std::string_view gui::version() noexcept
-	{
-		return IMGUI_VERSION;
-	}
-
 	void gui::_activate_context() noexcept
 	{
 		assert(_my_context);

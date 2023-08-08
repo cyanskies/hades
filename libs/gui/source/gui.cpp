@@ -720,26 +720,30 @@ namespace hades
 			to_imvec4(tint_colour));
 	}
 
-	bool gui::image_button(std::string_view id, const resources::animation &a, const vector2 &size, time_point time, const sf::Color & background_colour, const sf::Color & tint_colour)
+	bool gui::image_button(std::string_view id, const resources::animation &a, const vector2 &size, time_point time, const sf::Color &background_colour, const sf::Color &tint_colour)
 	{
 		_active_assert();
 		const auto& f = animation::get_frame(a, time);
 		const auto texture = resources::animation_functions::get_texture(a);
 		assert(texture);
 
-		//push the animation address, so that animations with the same texture
-		// dont have the same id
-		//push_id(&a);
-		const auto result = image_button(id,
-			*texture,
-			rect_float{ f.x, f.y, f.w, f.h },
-			size,
-			background_colour,
-			tint_colour
-		);
-		//pop_id();
+		const auto flip_x = f.scale_w < 0 || f.w < 0;
+		const auto flip_y = f.scale_h < 0 || f.h < 0;
 
-		return result;
+		const auto [tex_width, tex_height] = resources::texture_functions::get_size(*texture);
+
+		auto uv0 = ImVec2{ f.x / tex_width, f.y / tex_height };
+		auto uv1 = ImVec2{ (f.x + abs(f.w)) / tex_width, (f.y + abs(f.h)) / tex_height };
+
+		if (flip_x)
+			std::swap(uv0.x, uv1.x);
+		if (flip_y)
+			std::swap(uv0.y, uv1.y);
+
+		return ImGui::ImageButton(id, texture,
+			{ size.x, size.y }, uv0, uv1,
+			to_imvec4(background_colour),
+			to_imvec4(tint_colour));
 	}
 
 	bool gui::checkbox(std::string_view label, bool &checked)

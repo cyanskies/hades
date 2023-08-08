@@ -99,13 +99,13 @@ namespace hades
 		}
 
 		//searches all components
-		tag_list get_terrain_tags_at(rect_float r)
+		tag_list get_terrain_tags_at(rect_float r) const
 		{
 			return std::invoke(_get_terrain_tags_at, r);
 		}
 		
 		//searches all components
-		tag_list get_object_tags_at(rect_float r)
+		tag_list get_object_tags_at(rect_float r) const
 		{
 			return std::invoke(_get_object_tags_at, r);
 		}
@@ -138,7 +138,7 @@ namespace hades
 		virtual void make_brush_preview(time_duration, mouse_pos) {}
 
 		//return any relevent tags for that location
-
+		// this is for components that implement terrain or object editing
 		virtual tag_list get_terrain_tags_at_location(rect_float) const { return {}; }
 		virtual tag_list get_object_tags_at_location(rect_float) const { return {}; }
 

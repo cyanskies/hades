@@ -1,6 +1,7 @@
 #ifndef HADES_PARSER_HPP
 #define HADES_PARSER_HPP
 
+#include <filesystem>
 #include <memory>
 #include <vector>
 
@@ -83,9 +84,15 @@ namespace hades::data
 	void set_default_parser(make_parser_f);
 	void set_default_parser(make_parser2_f);
 
-	//NOTE: can throw parser_exception on error
-	std::unique_ptr<parser_node> make_parser(std::string_view);
-	std::unique_ptr<parser_node> make_parser(std::istream&);
+	// ext = ".yaml"
+	void set_parser(make_parser_f, std::filesystem::path ext);
+	void set_parser(make_parser2_f, std::filesystem::path ext);
+
+	// Create a parser bound to the source input
+	// Provide an extension to select a parser dynamically 
+	// NOTE: can throw parser_exception on error
+	std::unique_ptr<parser_node> make_parser(std::string_view, std::filesystem::path ext = {});
+	std::unique_ptr<parser_node> make_parser(std::istream&, std::filesystem::path ext = {});
 
 	namespace parse_tools
 	{

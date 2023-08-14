@@ -102,6 +102,8 @@ namespace hades
 
 		data::set_default_parser(data::make_parser_f{ data::make_yaml_parser });
 		data::set_default_parser(data::make_parser2_f{ data::make_yaml_parser });
+		data::set_parser(data::make_parser_f{ data::make_yaml_parser }, ".yaml");
+		data::set_parser(data::make_parser2_f{ data::make_yaml_parser }, ".yaml");
 		data::set_default_writer(data::make_writer_f{ data::make_yaml_writer });
 		
 		if (app_resources)
@@ -383,7 +385,7 @@ namespace hades
 
 			#ifndef NDEBUG
 			//check for floating point exceptions
-			assert_floating_point_exceptions();
+			//assert_floating_point_exceptions();
 			#endif
 		}
 

@@ -313,14 +313,14 @@ namespace hades::data
 		return out.first->second;
 	}
 
-	// TODO: redo this func
+	// TODO: redo this func, see parseYaml
 	template<typename YAMLPARSER>
-	static void parseInclude(unique_id mod, std::string_view file, const data::mod& mod_info, YAMLPARSER &&yamlParser)
+	static void parseInclude(unique_id mod, const std::filesystem::path &file, const data::mod& mod_info, YAMLPARSER &&yamlParser)
 	{
 		try
 		{
 			auto include_yaml = files::stream_resource(mod_info, file);
-			const auto parser = data::make_parser(include_yaml);
+			const auto parser = data::make_parser(include_yaml, file.extension());
 			std::invoke(std::forward<YAMLPARSER>(yamlParser), mod, *parser);
 		}
 		catch (const files::file_error& f)
@@ -330,7 +330,7 @@ namespace hades::data
 		}
 		catch (const parser_exception& e)
 		{
-			const auto message = to_string(e.what()) + " while parsing: " + mod_info.name + "/" + to_string(file);
+			const auto message = to_string(e.what()) + " while parsing: "s + mod_info.name + "/"s + file.string();
 			LOGERROR(message);
 		}
 
@@ -392,6 +392,7 @@ namespace hades::data
 		return;
 	}
 
+	// TODO: doesn't parse yaml, restructure this and the loose parseInclude
 	void data_system::parseYaml(unique_id mod, const data::parser_node& root)
 	{
 		//loop though each of the root level nodes and pass them off
@@ -420,7 +421,7 @@ namespace hades::data
 						continue;
 					mod_res.includes.emplace_back(s);
 					_data_file = s;
-					parseInclude(mod, s, mod_res, yaml_parser);
+					parseInclude(mod, _data_file, mod_res, yaml_parser);
 				}
 
 				_data_file = data_source;

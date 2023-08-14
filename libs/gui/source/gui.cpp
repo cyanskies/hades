@@ -99,7 +99,7 @@ namespace hades
 		_main_toolbar_info.width = size.x;
 	}
 
-	constexpr ImGuiKey to_imgui_key(sf::Keyboard::Key k) noexcept
+	static constexpr ImGuiKey to_imgui_key(sf::Keyboard::Key k) noexcept
 	{
 		switch(k)
 		{
@@ -442,7 +442,7 @@ namespace hades
 	}
 
 	template<typename Colour>
-	ImVec4 to_imvec4(const Colour &c) noexcept
+	static inline ImVec4 to_imvec4(const Colour &c) noexcept
 	{
 		return { c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f };
 	}
@@ -1298,7 +1298,7 @@ namespace hades
 		return { v.x, v.y };
 	}
  
-	inline sf::Vertex to_vertex(ImDrawVert vert, vector_float tex_size = { 1.f, 1.f }) noexcept
+	static inline constexpr sf::Vertex to_vertex(ImDrawVert vert, vector_float tex_size = { 1.f, 1.f }) noexcept
 	{
 		const auto col = ImColor{ vert.col }.Value;
 
@@ -1332,8 +1332,8 @@ namespace hades
 		};
 	}
 
-	//NOTE:mixing gl commands in order to get clip clipping scissor glscissor
-	// this is done through the draw_clamp_window helper
+	//NOTE: mixing gl commands in order to get clip clipping scissor glscissor
+	// this is done through the draw_clamp_region helper
 	void gui::draw(sf::RenderTarget & target, const sf::RenderStates &states) const
 	{
 		namespace tex = resources::texture_functions;
@@ -1361,6 +1361,7 @@ namespace hades
 				else
 				{
 					//get the info needed to denormalise the tex coords.
+					//	used in to_vertex
 					vector_float texture_size = { 1.f, 1.f };
 					if (cmd.TextureId)
 					{

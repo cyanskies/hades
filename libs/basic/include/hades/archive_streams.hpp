@@ -21,9 +21,23 @@
 namespace hades
 {
 	//buffer of bytes
+	// TODO: deprecate
 	using buffer = std::vector<std::byte>;
-	//NOTE: consider moving to 8kb(8192)
-	constexpr auto default_buffer_size = std::size_t{ 4096 }; //4kb buffer
+	//NOTE: buffer sizes:
+	//					16kb(16384)
+	//					8kb(8192)
+	//					4kb(4096)
+	//					2kb(2048)
+	constexpr auto default_buffer_size = std::size_t{ 8192 };
+
+	namespace detail
+	{
+		template<typename CharT>
+		constexpr std::vector<CharT> make_default_buffer()
+		{
+			return std::vector<CharT>(default_buffer_size, CharT{});
+		}
+	}
 }
 
 namespace hades::files
@@ -300,8 +314,8 @@ namespace hades::zip
 		void _seek_beg() noexcept;
 		bool _start_zlib() noexcept;
 
-		std::array<char_type, default_buffer_size> _get_area;
-		std::array<std::byte, default_buffer_size> _device_buffer;
+		std::vector<char_type> _get_area = hades::detail::make_default_buffer<char_type>();
+		std::vector<std::byte> _device_buffer = hades::detail::make_default_buffer<std::byte>();
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
 		detail::file_ptr _file;
 		std::streamsize _pos = {};
@@ -378,8 +392,8 @@ namespace hades::zip
 		void _empty_device_buffer(); 
 		bool _start_zlib() noexcept;
 
-		std::array<char_type, default_buffer_size> _put_area;
-		std::array<std::byte, default_buffer_size> _device_buffer;
+		std::vector<char_type> _put_area = hades::detail::make_default_buffer<char_type>();
+		std::vector<std::byte> _device_buffer = hades::detail::make_default_buffer<std::byte>();
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
 		detail::file_ptr _file;
 	};
@@ -583,7 +597,7 @@ namespace hades::zip
 		int_type _readsome();
 		std::size_t _pos() const noexcept;
 
-		std::array<char_type, default_buffer_size> _get_area;
+		std::vector<char_type> _get_area = hades::detail::make_default_buffer<char_type>();
 		unarchive _archive;
 	};
 
@@ -703,7 +717,7 @@ namespace hades::zip
 	private:
 		void _consume_buffer();
 
-		std::array<char_type, default_buffer_size> _put_area = {};
+		std::vector<char_type> _put_area = hades::detail::make_default_buffer<char_type>();
 		toarchive _archive;
 	};
 

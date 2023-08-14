@@ -938,7 +938,7 @@ namespace hades
 		const ImGuiPayload* _payload;
 	};
 
-	namespace details
+	namespace detail
 	{
 		template<typename Enum>
 		concept EnumFlag = requires(Enum a, Enum b)
@@ -957,41 +957,41 @@ namespace hades
 
 	constexpr inline gui::window_flags operator|(gui::window_flags lhs, gui::window_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
 	//TODO: selectable, combo, etc...
 	constexpr inline gui::colour_edit_flags operator|(gui::colour_edit_flags lhs, gui::colour_edit_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
 	constexpr inline gui::input_text_flags operator|(gui::input_text_flags lhs, gui::input_text_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
 	constexpr inline gui::tree_node_flags operator|(gui::tree_node_flags lhs, gui::tree_node_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
 	constexpr inline gui::table_flags operator|(gui::table_flags lhs, gui::table_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
 	constexpr inline gui::table_column_flags operator|(gui::table_column_flags lhs, gui::table_column_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}	
 
 	constexpr inline gui::dragdrop_flags operator|(gui::dragdrop_flags lhs, gui::dragdrop_flags rhs) noexcept
 	{
-		return details::enum_or(lhs, rhs);
+		return detail::enum_or(lhs, rhs);
 	}
 
-	constexpr inline details::EnumFlag auto operator|=(details::EnumFlag auto& a, const details::EnumFlag auto b) noexcept
+	constexpr inline detail::EnumFlag auto operator|=(detail::EnumFlag auto& a, const detail::EnumFlag auto b) noexcept
 	{
 		return a = a | b;
 	}

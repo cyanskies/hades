@@ -234,8 +234,8 @@ namespace hades::zip
 
 	// Seeking functions
 	protected:
-		pos_type seekoff(off_type off, std::ios_base::seekdir dir,
-			std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
+		pos_type seekoff(const off_type off, const std::ios_base::seekdir dir,
+			const std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
 		{
 			if (off < 0)
 			{
@@ -248,11 +248,11 @@ namespace hades::zip
 					while (uflow() != traits_type::eof()); 
 					[[fallthrough]];
 				case std::ios_base::cur:
-					auto final = _pos + off;
+					const auto final = integer_cast<off_type>(_pos) + off;
 					if (final < 0)
 						seekoff(0, std::ios_base::beg);
 					else
-						seekoff(false, std::ios_base::beg);
+						seekoff(final, std::ios_base::beg);
 				}
 			}
 			else
@@ -523,8 +523,8 @@ namespace hades::zip
 
 		// Seeking functions
 	protected:
-		pos_type seekoff(off_type off, std::ios_base::seekdir dir,
-			std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
+		pos_type seekoff(const off_type off, const std::ios_base::seekdir dir,
+			const std::ios_base::openmode = std::ios_base::in | std::ios_base::out) noexcept final override
 		{
 			assert(is_open());
 

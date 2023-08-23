@@ -148,22 +148,6 @@ namespace hades
 			return size;
 	}
 
-	//TODO: allow this to be overridden
-	//		call create_update_object_sprite with these params
-	static void update_object_sprite(level_editor_objects_impl::editor_object_instance &o, sprite_batch &s)
-	{
-		if (o.sprite_id == sprite_utility::bad_sprite_id)
-			o.sprite_id = s.create_sprite();
-
-		const auto position = get_position(o);
-		const auto size = get_safe_size(o);
-		const auto animation = get_random_animation(o);
-
-		s.set_animation(o.sprite_id, animation, {});
-		s.set_position(o.sprite_id, position);
-		s.set_size(o.sprite_id, size);
-	}
-
 	static constexpr auto grid_size = 64.f;
 
 	void level_editor_objects_impl::level_load(const level &l)
@@ -210,7 +194,7 @@ namespace hades
 				has_curve(object, get_size_curve_id()))
 			{
 				_update_quad_data(object);
-				update_object_sprite(object, sprites);
+				create_update_object_sprite(object, sprites);
 			}
 
 			objects.emplace_back(std::move(object));
@@ -710,6 +694,21 @@ namespace hades
 		const auto step = calculate_grid_step_for_size(std::max(obj_size.x, obj_size.y));
 		g.step->store(std::clamp(step, 0, g.step_max->load()));
 	}
+
+	void level_editor_objects_impl::create_update_object_sprite(editor_object_instance& o, sprite_batch& s)
+	{
+		if (o.sprite_id == sprite_utility::bad_sprite_id)
+			o.sprite_id = s.create_sprite();
+
+		const auto position = get_position(o);
+		const auto size = get_safe_size(o);
+		const auto animation = get_random_animation(o);
+
+		s.set_animation(o.sprite_id, animation, {});
+		s.set_position(o.sprite_id, position);
+		s.set_size(o.sprite_id, size);
+		return;
+	}
 	
 	bool level_editor_objects_impl::_object_valid_location(const rect_float& r, const object_instance& o) const
 	{
@@ -824,7 +823,7 @@ namespace hades
 
 	void level_editor_objects_impl::_update_changed_obj(editor_object_instance& o)
 	{
-		update_object_sprite(o, _sprites);
+		create_update_object_sprite(o, _sprites);
 		_update_quad_data(o);
 		return;
 	}

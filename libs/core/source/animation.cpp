@@ -734,7 +734,7 @@ namespace hades
 		const auto offset = vector_float{ f.off_x * f.scale_w, f.off_y * f.scale_h };
 		const auto scaled_size = vector_float{ size.x * f.scale_w, size.y * f.scale_h };
 
-		return make_quad_animation({ pos - offset, scaled_size }, {
+		return make_quad_animation(rect_t{ pos - offset, scaled_size }, {
             f.w < 0 ? f.x + std::abs(f.w) : f.x,
             f.h < 0 ? f.y + std::abs(f.h) : f.y,
 			f.w, f.h 

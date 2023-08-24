@@ -249,7 +249,7 @@ namespace hades
 
 				const auto siz = get_curve_value<resources::curve_types::vec2_float>(o, *size_c);
 				
-				if (is_within({ pos, siz }, new_world_limit))
+				if (is_within(rect_t{ pos, siz }, new_world_limit))
 				{
 					_update_changed_obj(o);
 					on_object_place(o);

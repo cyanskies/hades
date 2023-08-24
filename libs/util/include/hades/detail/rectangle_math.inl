@@ -11,15 +11,15 @@ namespace hades
 		: x{ x }, y{ y }, width{ width }, height{ height } {}
 
 	template<typename T>
-	constexpr inline rect_t<T>::rect_t(const vector_t<T>& pos, const vector_t<T>& siz) noexcept
+	constexpr inline rect_t<T>::rect_t(const vector2<T>& pos, const vector2<T>& siz) noexcept
 		: x{ pos.x }, y{ pos.y }, width{ siz.x }, height{ siz.y } {}
 
 	template<typename T>
 	template<typename U>
 	inline constexpr hades::rect_t<T>::operator rect_t<U>() const noexcept
 	{
-		return { static_cast<hades::vector_t<U>>(hades::vector_t<T>{x, y}),
-			static_cast<hades::vector_t<U>>(hades::vector_t<T>{width, height}) };
+		return { static_cast<hades::vector2<U>>(hades::vector2<T>{x, y}),
+			static_cast<hades::vector2<U>>(hades::vector2<T>{width, height}) };
 	}
 
 	template<typename T>
@@ -59,18 +59,18 @@ namespace hades
 	constexpr rect_centre_t<T> to_rect_centre(rect_t<T> r) noexcept
 	{
 		r = normalise(r);
-		const vector_t<T> half_size{ r.width / 2, r.height / 2 };
+		const vector2<T> half_size{ r.width / 2, r.height / 2 };
 		return { r.x + half_size.x, r.y + half_size.y, half_size.x, half_size.y };
 	}
 
 	template<typename T>
-	constexpr vector_t<T> position(const rect_t<T> &r) noexcept
+	constexpr vector2<T> position(const rect_t<T> &r) noexcept
 	{
 		return { r.x, r.y };
 	}
 
 	template<typename T>
-	constexpr vector_t<T> size(const rect_t<T> &r) noexcept
+	constexpr vector2<T> size(const rect_t<T> &r) noexcept
 	{
 		return { r.width, r.height };
 	}
@@ -130,13 +130,13 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr std::array<vector_t<T>, 4> corners(rect_t<T> r) noexcept
+	constexpr std::array<vector2<T>, 4> corners(rect_t<T> r) noexcept
 	{
 		return {
-			vector_t<T>{r.x, r.y},
-			vector_t<T>{r.x + r.width, r.y},
-			vector_t<T>{r.x + r.width, r.y + r.height},
-			vector_t<T>{r.x, r.y + r.height}
+			vector2<T>{r.x, r.y},
+			vector2<T>{r.x + r.width, r.y},
+			vector2<T>{r.x + r.width, r.y + r.height},
+			vector2<T>{r.x, r.y + r.height}
 		};
 	}
 
@@ -155,19 +155,19 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr const vector_t<T> &get_corner(rect_corners c, const std::array<vector_t<T>, 4> &a) noexcept
+	constexpr const vector2<T> &get_corner(rect_corners c, const std::array<vector2<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	constexpr vector_t<T> &get_corner(rect_corners c, std::array<vector_t<T>, 4> &a) noexcept
+	constexpr vector2<T> &get_corner(rect_corners c, std::array<vector2<T>, 4> &a) noexcept
 	{
 		return detail::get_corner_impl(c, a);
 	}
 
 	template<typename T>
-	constexpr bool is_within(vector_t<T> value, rect_t<T> other) noexcept
+	constexpr bool is_within(vector2<T> value, rect_t<T> other) noexcept
 	{
 		return is_within(value.x, other.x, other.x + other.width)
 			&& is_within(value.y, other.y, other.y + other.height);

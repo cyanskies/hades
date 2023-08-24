@@ -17,7 +17,7 @@ namespace hades
 
 		constexpr rect_t() noexcept = default;
 		constexpr rect_t(T x, T y, T width, T height) noexcept;
-		constexpr rect_t(const vector_t<T>& pos, const vector_t<T>& siz) noexcept;
+		constexpr rect_t(const vector2<T>& pos, const vector2<T>& siz) noexcept;
 
 		template<typename U>
 		explicit constexpr operator rect_t<U>() const noexcept;
@@ -99,16 +99,16 @@ namespace hades
 	};
 
 	template<typename T>
-	constexpr std::array<vector_t<T>, 4> corners(rect_t<T>) noexcept;
+	constexpr std::array<vector2<T>, 4> corners(rect_t<T>) noexcept;
 
 	template<typename T>
-	constexpr const vector_t<T> &get_corner(rect_corners, const std::array<vector_t<T>, 4>&) noexcept;
+	constexpr const vector2<T> &get_corner(rect_corners, const std::array<vector2<T>, 4>&) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> &get_corner(rect_corners, std::array<vector_t<T>, 4>&) noexcept;
+	constexpr vector2<T> &get_corner(rect_corners, std::array<vector2<T>, 4>&) noexcept;
 
 	template<typename T>
-	constexpr bool is_within(vector_t<T> value, rect_t<T> other) noexcept;
+	constexpr bool is_within(vector2<T> value, rect_t<T> other) noexcept;
 
 	//returns true if the first rectangle is entirely within the second
 	template<typename T>

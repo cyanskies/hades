@@ -11,130 +11,180 @@
 
 namespace hades
 {
-	// TODO: rename vector2
-	template<typename T>
-	struct vector_t
+	namespace detail
 	{
+		// we inherit to add the members, because msvc no_unique_address is broken in cpp20
+		struct vector_z_empty {};
+		struct vector_w_empty {};
+
+		template<typename T>
+		struct vector_xy_comp
+		{
+			T x, y;
+		};
+
+		template<typename T>
+		struct vector_z_comp
+		{
+			T z;
+		};
+
+		template<typename T>
+		struct vector_w_comp
+		{
+			T w;
+		};
+	}
+
+	template<typename T, std::size_t Size = 2>
+	struct vector_t : public detail::vector_xy_comp<T>,
+		// add z component
+		public std::conditional_t < 2 < Size, detail::vector_z_comp<T>, detail::vector_z_empty > ,
+		// add w component
+		public std::conditional_t < 3 < Size, detail::vector_w_comp<T>, detail::vector_w_empty >
+	{
+		static_assert(Size > 1, "vector_t doesn't support 1d vectors");
+		static_assert(Size < 5, "vector_t only supports up to vector4");
 		using value_type = T;
 
-		constexpr vector_t& operator+=(const vector_t& rhs) noexcept
-		{
-			x += rhs.x;
-			y += rhs.y;
-			return *this;
-		}
+		constexpr std::size_t size() noexcept;
 
-		constexpr vector_t& operator-=(const vector_t& rhs) noexcept
-		{
-			x -= rhs.x;
-			y -= rhs.y;
-			return *this;
-		}
+		constexpr vector_t& operator+=(const vector_t& rhs) noexcept;
+		constexpr vector_t& operator-=(const vector_t& rhs) noexcept;
 
 		//scalar multiplication
-		constexpr vector_t& operator*=(const T rhs) noexcept
-		{
-			x *= rhs;
-			y *= rhs;
-			return *this;
-		}
-
+		constexpr vector_t& operator*=(const T rhs) noexcept;
 		//scalar division
-		constexpr vector_t& operator/=(const T rhs) noexcept
-		{
-			x /= rhs;
-			y /= rhs;
-			return *this;
-		}
+		constexpr vector_t& operator/=(const T rhs) noexcept;
 
-		T& operator[](std::size_t i) noexcept
-		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
-			assert(i < size(arr));
-			return std::invoke(arr[i], this);
-		}
-
-		const T& operator[](std::size_t i) const noexcept
-		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
-			assert(i < size(arr));
-			return std::invoke(arr[i], this);
-		}
+		constexpr T& operator[](std::size_t i) noexcept;
+		constexpr const T& operator[](std::size_t i) const noexcept;
 
 		template<typename U>
-		explicit constexpr operator vector_t<U>() const noexcept;
-
-		T x, y;
+		explicit constexpr operator vector_t<U, Size>() const noexcept;
 	};
 
-	static_assert(std::is_trivially_constructible_v<vector_t<int32>>);
+	template<typename T>
+	using vector2 = vector_t<T, 2>;
+	template<typename T>
+	using vector3 = vector_t<T, 3>;
+	template<typename T>
+	using vector4 = vector_t<T, 4>;
+	
+	static_assert(std::is_trivially_constructible_v<vector4<int32>>);
 	static_assert(std::is_trivially_assignable_v<vector_t<int32>, vector_t<int32>>);
-	static_assert(std::is_trivially_copyable_v<vector_t<int32>>);
-	static_assert(std::is_trivial_v<vector_t<int32>>);
+	static_assert(std::is_trivially_copyable_v<vector4<int32>>);
+	static_assert(std::is_trivial_v<vector4<int32>>);
 
 	template<typename T>
 	struct lerpable<vector_t<T>> : public lerpable<T> {};
 
-	template<typename Float>
+	template<typename Float, std::size_t N>
 		requires std::floating_point<Float>
-	constexpr vector_t<Float> lerp(vector_t<Float> a, vector_t<Float> b, Float t) noexcept
+	constexpr vector_t<Float, N> lerp(vector_t<Float, N> a, vector_t<Float, N> b, Float t) noexcept
 	{
-		return {
-			lerp(a.x, b.x, t),
-			lerp(a.y, b.y, t)
-		};
+		if constexpr (N < 3)
+		{
+			return {
+				lerp(a.x, b.x, t),
+				lerp(a.y, b.y, t)
+			};
+		}
+		else if constexpr (N == 3)
+		{
+			return {
+				lerp(a.x, b.x, t),
+				lerp(a.y, b.y, t),
+				lerp(a.z, b.z, t)
+			};
+		}
+		else if constexpr(N > 3)
+		{
+			return {
+				lerp(a.x, b.x, t),
+				lerp(a.y, b.y, t),
+				lerp(a.z, b.z, t),
+				lerp(a.w, b.w, t)
+			};
+		}
 	}
 
-	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	inline bool float_near_equal(Vector<Float> a, Vector<Float> b, int32 units_after_decimal = 2) noexcept
+	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	inline constexpr bool float_near_equal(vector_t<Float, N> a, vector_t<Float, N> b, int32 units_after_decimal = 2) noexcept
 	{
-		return float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
+		auto ret = float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
+		if constexpr (N > 2)
+			ret = ret && float_near_equal(a.z, b.z, units_after_decimal);
+		if constexpr (N > 3)
+			ret = ret && float_near_equal(a.w, b.w, units_after_decimal);
+		return ret;
 	}
 
-	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_nearest_t = round_nearest_tag) noexcept
+	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_nearest_t = round_nearest_tag) noexcept
 	{
-		return float_rounded_equal(a.x, b.x) && float_rounded_equal(a.y, b.y);
+		auto ret = float_rounded_equal(a.x, b.x) && float_rounded_equal(a.y, b.y);
+		if constexpr (N > 2)
+			ret = ret && float_rounded_equal(a.z, b.z);
+		if constexpr (N > 3)
+			ret = ret && float_rounded_equal(a.w, b.w);
+		return ret;
 	}
 
-	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_down_t) noexcept
+	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_down_t) noexcept
 	{
-		return float_rounded_equal(a.x, b.x, round_down_tag) && float_rounded_equal(a.y, b.y, round_down_tag);
+		auto ret = float_rounded_equal(a.x, b.x, round_down_tag) && float_rounded_equal(a.y, b.y, round_down_tag);
+		if constexpr (N > 2)
+			ret = ret && float_rounded_equal(a.z, b.z, round_down_tag);
+		if constexpr (N > 3)
+			ret = ret && float_rounded_equal(a.w, b.w, round_down_tag);
+		return ret;
 	}
 
-	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_up_t) noexcept
+	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_up_t) noexcept
 	{
-		return float_rounded_equal(a.x, b.x, round_up_tag) && float_rounded_equal(a.y, b.y, round_up_tag);
+		auto ret = float_rounded_equal(a.x, b.x, round_up_tag) && float_rounded_equal(a.y, b.y, round_up_tag);
+		if constexpr (N > 2)
+			ret = ret && float_rounded_equal(a.z, b.z, round_up_tag);
+		if constexpr (N > 3)
+			ret = ret && float_rounded_equal(a.w, b.w, round_up_tag);
+		return ret;
 	}
 
-	template<typename Float, template<typename> typename Vector, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(Vector<Float> a, Vector<Float> b, detail::round_towards_zero_t) noexcept
+	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
+	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_towards_zero_t) noexcept
 	{
-		return float_rounded_equal(a.x, b.x, round_towards_zero_tag) && float_rounded_equal(a.y, b.y, round_towards_zero_tag);
+		auto ret = float_rounded_equal(a.x, b.x, round_towards_zero_tag) && float_rounded_equal(a.y, b.y, round_towards_zero_tag);
+		if constexpr (N > 2)
+			ret = ret && float_rounded_equal(a.z, b.z, round_towards_zero_tag);
+		if constexpr (N > 3)
+			ret = ret && float_rounded_equal(a.w, b.w, round_towards_zero_tag);
+		return ret;
 	}
+
+	template<typename T, std::size_t N>
+	constexpr bool operator==(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept;
+
+	template<typename T, std::size_t N>
+	constexpr bool operator!=(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept;
 
 	template<typename T>
-	constexpr bool operator==(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
+	constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr bool operator!=(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
-
-	template<typename T>
-	constexpr vector_t<T> operator+(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
-
-	template<typename T>
-	constexpr vector_t<T> operator-(const vector_t<T> &lhs, const vector_t<T> &rhs) noexcept;
+	constexpr vector2<T> operator-(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
 
 	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
-	constexpr vector_t<T> operator*(const vector_t<T> &lhs, U rhs) noexcept;
+	constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> operator/(const vector_t<T> &lhs, T rhs) noexcept;
+	constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
 
-	using vector_int = vector_t<int32>;
-	using vector_float = vector_t<float>;
+	// TODO: vector2_int, vector2_float
+	using vector_int = vector2<int32>;
+	using vector_float = vector2<float>;
 
 	//TODO: polar vector type
 	template<typename T>
@@ -144,30 +194,30 @@ namespace hades
 	};
 
 	template<typename T>
-	vector_t<T> to_vector(pol_vector_t<T> v);
+	vector2<T> to_vector(pol_vector_t<T> v);
 
 	template<typename T> // TODO: rename to_pol_vector2
-	pol_vector_t<T> to_rad_vector(vector_t<T>);
+	pol_vector_t<T> to_rad_vector(vector2<T>);
 
 	namespace vector
 	{
 		//returns the length of the vector
 		template<typename T>
-		T magnitude(vector_t<T>);
+		T magnitude(vector2<T>);
 
 		template<typename T>
-		constexpr T magnitude_squared(vector_t<T> v) noexcept;
+		constexpr T magnitude_squared(vector2<T> v) noexcept;
 
 		//returns the angle of the vector compared to the vector [1, 0]
 		// returns in degrees
 		// TODO: return in radians
 		template<typename T>
-		[[nodiscard]] auto angle(vector_t<T>) noexcept;
+		[[nodiscard]] auto angle(vector2<T>) noexcept;
 
 		// returns the angle between the two vectors
 		// returns in radians
 		template<typename T>
-		[[nodiscard]] auto angle(vector_t<T>, vector_t<T>) noexcept;
+		[[nodiscard]] auto angle(vector2<T>, vector2<T>) noexcept;
 
 		template<typename T>
 		T x_comp(pol_vector_t<T>) noexcept;
@@ -177,43 +227,43 @@ namespace hades
 
 		//changes the length of a vector to match the provided length
 		template<typename T>
-		vector_t<T> resize(vector_t<T>, T length) noexcept;
+		vector2<T> resize(vector2<T>, T length) noexcept;
 
 		template<typename T>
-		vector_t<T> unit(vector_t<T>) noexcept;
+		vector2<T> unit(vector2<T>) noexcept;
 
 		template<typename T>
-		T distance(vector_t<T>, vector_t<T>) noexcept;
+		T distance(vector2<T>, vector2<T>) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> reverse(vector_t<T>) noexcept;
+		constexpr vector2<T> reverse(vector2<T>) noexcept;
 
 		template<typename T>
-		vector_t<T> abs(vector_t<T>) noexcept;
+		vector2<T> abs(vector2<T>) noexcept;
 
 		//returns a vector that points 90 degrees of the origional vector
 		template<typename T>
-		constexpr vector_t<T> perpendicular(vector_t<T>) noexcept;
+		constexpr vector2<T> perpendicular(vector2<T>) noexcept;
 
 		//returns a vector that points 280 degrees of the origional vector
 		template<typename T>
-		constexpr vector_t<T> perpendicular_reverse(vector_t<T>) noexcept;
+		constexpr vector2<T> perpendicular_reverse(vector2<T>) noexcept;
 
 		template<typename T>
-		constexpr vector_t<T> clamp(vector_t<T> value, vector_t<T> min, vector_t<T> max) noexcept;
+		constexpr vector2<T> clamp(vector2<T> value, vector2<T> min, vector2<T> max) noexcept;
 
 		template<typename T>
-		constexpr T dot(vector_t<T> a, vector_t<T> b) noexcept;
+		constexpr T dot(vector2<T> a, vector2<T> b) noexcept;
 
 		template <typename T>
-		constexpr vector_t<T> project(vector_t<T> vector, vector_t<T> axis) noexcept;
+		constexpr vector2<T> project(vector2<T> vector, vector2<T> axis) noexcept;
 
 		template <typename T>
-		constexpr vector_t<T> reflect(vector_t<T> vector, vector_t<T> normal) noexcept;
+		constexpr vector2<T> reflect(vector2<T> vector, vector2<T> normal) noexcept;
 	}
 
-	template<typename T>
-	string vector_to_string(vector_t<T>);
+	template<typename T, std::size_t N>
+	string vector_to_string(vector_t<T, N>);
 }
 
 #include "hades/detail/vector_math.inl"

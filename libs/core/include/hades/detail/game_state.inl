@@ -40,35 +40,13 @@ namespace hades::state_api
 			game_obj& obj;
 			std::vector<object_save_instance::saved_curve::saved_keyframe> keyframes;
 
-			template<typename Ty, std::enable_if_t<linear_interpable<std::decay_t<Ty>>, int> = 0>
-			void operator()(Ty& v)
+			template<curve_type Ty>
+			void operator()(const Ty&)
 			{
 				//add the curve and value into the game_state database
 				//then record a ptr to the data in the game object
-				using T = std::decay_t<decltype(v)>;
-                switch (c.frame_style)
-				{
-				case keyframe_style::const_t:
-					throw hades::logic_error{ "const curve cannot be stored in game state" };
-				case keyframe_style::linear:
-					return create_object_property<linear_curve, T>(obj, c.id, s, std::move(keyframes));
-				case keyframe_style::pulse:
-					return create_object_property<pulse_curve, T>(obj, c.id, s, std::move(keyframes));
-				case keyframe_style::step:
-					return create_object_property<step_curve, T>(obj, c.id, s, std::move(keyframes));
-				case keyframe_style::end:
-					throw hades::logic_error{ "invalid keyframe style" };
-				}
-			}
-
-			template<typename Ty, std::enable_if_t<!linear_interpable<std::decay_t<Ty>>
-				&& !std::is_same_v<std::decay_t<Ty>, std::monostate>, int> = 0>
-			void operator()(Ty& v)
-			{
-				//add the curve and value into the game_state database
-				//then record a ptr to the data in the game object
-				using T = std::decay_t<decltype(v)>;
-                switch (c.frame_style)
+				using T = std::decay_t<Ty>;
+				switch (c.frame_style)
 				{
 				case keyframe_style::const_t:
 					throw hades::logic_error{ "const curve cannot be stored in game state" };
@@ -83,8 +61,30 @@ namespace hades::state_api
 				}
 			}
 
-			template<typename Ty, std::enable_if_t<std::is_same_v<std::decay_t<Ty>, std::monostate>, int> = 0> // uncalled function to keep std::variant happy
-			void operator()(Ty&) { assert(false); throw logic_error{ "monostate in game_state.inl" }; return; }
+			template<curve_type Ty>
+				requires linear_interpable<Ty>
+			void operator()(const Ty&)
+			{
+				//add the curve and value into the game_state database
+				//then record a ptr to the data in the game object
+				using T = std::decay_t<Ty>;
+				switch (c.frame_style)
+				{
+				case keyframe_style::const_t:
+					throw hades::logic_error{ "const curve cannot be stored in game state" };
+				case keyframe_style::linear:
+					return create_object_property<linear_curve, T>(obj, c.id, s, std::move(keyframes));
+				case keyframe_style::pulse:
+					return create_object_property<pulse_curve, T>(obj, c.id, s, std::move(keyframes));
+				case keyframe_style::step:
+					return create_object_property<step_curve, T>(obj, c.id, s, std::move(keyframes));
+				case keyframe_style::end:
+					throw hades::logic_error{ "invalid keyframe style" };
+				}
+			}
+
+			// uncalled function to keep std::variant happy
+			void operator()(const std::monostate) { assert(false); throw logic_error{ "monostate in game_state.inl" }; return; }
 		};
 
 		template<typename GameSystem>
@@ -139,9 +139,6 @@ namespace hades::state_api
 				ids.emplace_back(c->id);
 				std::visit(detail::make_object_visitor{ *c, s, *obj, v }, v[0].value);
 			}
-
-			// no longer true now that we no longer store const curves
-			//assert(size(o.curves) == size(obj->object_variables));
 
 			//add the object curves that weren't saved
 			std::sort(begin(ids), end(ids));

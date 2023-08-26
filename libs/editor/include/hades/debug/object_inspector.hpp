@@ -177,8 +177,8 @@ namespace hades::debug
 			auto set_value = [&]<template<typename> typename CurveType>() {
 				auto& prop = state_api::get_object_property_ref<CurveType, Type>(*o, c->id);
 				// NOTE: we cannot edit pulse or const curves with this ui
-				if constexpr (std::is_same_v<CurveType<Type>, step_curve<Type>> ||
-					std::is_same_v<CurveType<Type>, linear_curve<Type>>)
+				if constexpr (std::is_same_v<CurveType<float>, step_curve<float>> ||
+					std::is_same_v<CurveType<float>, linear_curve<float>>)
 				{
 					prop.replace_keyframes(time, std::move(v));
 				}

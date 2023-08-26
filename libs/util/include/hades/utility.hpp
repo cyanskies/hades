@@ -17,14 +17,20 @@ namespace hades {
 	template<typename Func, typename Ret, typename T>
 	concept unary_operator = std::is_invocable_r_v<Ret, Func, T>;
 
-	template<typename T>
-	struct lerpable : public std::is_floating_point<T> {};
 
-	template<typename T>
-	constexpr auto lerpable_v = lerpable<T>::value;
+	namespace detail
+	{
+		using std::lerp;
+		template<typename T>
+		concept linear_interpable_impl = requires(T t, T t2, float f)
+		{
+			{ lerp(t, t2, f) } noexcept -> std::same_as<T>;
+		};
+	}
 
-	template<std::floating_point Float>
-	constexpr Float lerp(Float a, Float b, Float t) noexcept;
+	// concepts for types that can be called on std::lerp or ADL- lerp
+	template<typename T>
+	concept linear_interpable = detail::linear_interpable_impl<T>;
 
 	template<std::floating_point Float>
 	inline bool float_near_equal(Float a, Float b, int32 units_after_decimal = 2) noexcept;

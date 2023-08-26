@@ -36,6 +36,7 @@ namespace hades
 		};
 	}
 
+	// TODO: rename to basic_vector
 	template<typename T, std::size_t Size = 2>
 	struct vector_t : public detail::vector_xy_comp<T>,
 		// add z component
@@ -76,13 +77,10 @@ namespace hades
 	static_assert(std::is_trivially_copyable_v<vector4<int32>>);
 	static_assert(std::is_trivial_v<vector4<int32>>);
 
-	template<typename T>
-	struct lerpable<vector_t<T>> : public lerpable<T> {};
-
-	template<typename Float, std::size_t N>
-		requires std::floating_point<Float>
+	template<std::floating_point Float, std::size_t N>
 	constexpr vector_t<Float, N> lerp(vector_t<Float, N> a, vector_t<Float, N> b, Float t) noexcept
 	{
+		using std::lerp;
 		if constexpr (N < 3)
 		{
 			return {

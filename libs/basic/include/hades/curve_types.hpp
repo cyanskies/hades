@@ -136,15 +136,6 @@ namespace hades::curve_types
 		std::bool_constant<is_curve_type_v<T> && detail::is_std_vector<T>::value> {};
 	template<typename T>
 	constexpr auto is_collection_type_v = is_collection_type<T>::value;
-
-	//true if we can perform a linear interpolation for this type
-	template<typename T>
-	constexpr auto is_linear_interpable_v =
-		std::is_same_v<T, int_t> ||
-		std::is_same_v<T, float_t> ||
-		std::is_same_v<T, vec2_float> ||
-		std::is_same_v<T, colour> ||
-		std::is_same_v<T, time_d>;
 }
 
 namespace hades

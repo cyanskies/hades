@@ -6,25 +6,6 @@
 
 namespace hades
 {
-	template<std::floating_point Float>
-	constexpr Float lerp(Float a, Float b, Float t) noexcept
-	{
-		#ifdef __cpp_lib_interpolate
-		return std::lerp(a, b, t);
-		#else
-		//pre-cpp20 implementation
-		//algorithm recommended for consistancy in P0811R2 : https://wg21.link/p0811r2
-		if (a <= 0 && b >= 0 ||
-			a >= 0 && b <= 0)
-			return t * b + (1.f - t) * a;
-
-		if (float_near_equal(t, 1.f)) return b;
-
-		const auto x = a + t * (b - a);
-		return t > 1 == b > a ? std::max(b, x) : std::min(b, x);
-		#endif
-	}
-
 	//based on logic from
 	//here: http://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 	template<std::floating_point Float>

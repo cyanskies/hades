@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <vector>
 
 #include "hades/time.hpp"
@@ -154,37 +155,31 @@ namespace hades
 		std::vector<keyframe> _data;
 	};
 
-	template<typename T>
+	template<linear_interpable T>
 	class linear_curve : public basic_curve<T>
 	{
 	public:
 		using value_type = T;
 
 		// throws curve_no_keyframes
-		T get(time_point t) const noexcept(lerpable_v<T>)
+		T get(time_point t) const
 		{
 			using basic = basic_curve<T>;
 			const auto frames = basic::_get_near(t);
 			if (frames.second == basic::_end())
 				return frames.first->value;
 
-			if constexpr (lerpable_v<T>)
-			{
-				const auto start_time = frames.first->time;
-				assert(t >= start_time);
-				const auto end_time = frames.second->time - start_time;
-				const auto current_time = t - start_time;
+			const auto start_time = frames.first->time;
+			assert(t >= start_time);
+			const auto end_time = frames.second->time - start_time;
+			const auto current_time = t - start_time;
 
-				const auto lerp_progress =
-					static_cast<float>(current_time.count()) /
-					static_cast<float>(end_time.count());
+			const auto lerp_progress =
+				static_cast<float>(current_time.count()) /
+				static_cast<float>(end_time.count());
 
-				return lerp(frames.first->value, frames.second->value, lerp_progress);
-			}
-			else
-			{
-				throw curve_error{ "Tried to store an non-floating type in the linear curve" };
-			}
+			using std::lerp;
+			return lerp(frames.first->value, frames.second->value, lerp_progress);
 		}
 	};
 

@@ -16,19 +16,9 @@ namespace hades::state_api
 			auto& colony = std::get<game_state::data_colony<CurveType, T>>(state.state_data);
 			auto curve = CurveType<T>{};
 
-			if constexpr (std::is_same_v<CurveType<T>, const_curve<T>>)
-			{
-				// TODO: move const curves out of game objects
-				//		just ref them from the object resource?
-				assert(!std::empty(value));
-				curve.set(std::move(std::get<T>(value[0].value)));
-			}
-			else
-			{
-				curve.reserve(size(value));
-				for (const auto& [time, frame_value] : value)
-					curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
-			}
+			curve.reserve(size(value));
+			for (const auto& [time, frame_value] : value)
+				curve.add_keyframe(time, std::move(std::get<T>(frame_value)));
 
 			auto iter = colony.insert(state_field<CurveType<T>>{
 				object.id, curve_id, std::move(curve) 
@@ -50,7 +40,7 @@ namespace hades::state_api
 			game_obj& obj;
 			std::vector<object_save_instance::saved_curve::saved_keyframe> keyframes;
 
-			template<typename Ty, std::enable_if_t<curve_types::is_linear_interpable_v<std::decay_t<Ty>>, int> = 0>
+			template<typename Ty, std::enable_if_t<linear_interpable<std::decay_t<Ty>>, int> = 0>
 			void operator()(Ty& v)
 			{
 				//add the curve and value into the game_state database
@@ -59,7 +49,7 @@ namespace hades::state_api
                 switch (c.frame_style)
 				{
 				case keyframe_style::const_t:
-					return;// "const curve cannot be stored in game state"
+					throw hades::logic_error{ "const curve cannot be stored in game state" };
 				case keyframe_style::linear:
 					return create_object_property<linear_curve, T>(obj, c.id, s, std::move(keyframes));
 				case keyframe_style::pulse:
@@ -71,7 +61,7 @@ namespace hades::state_api
 				}
 			}
 
-			template<typename Ty, std::enable_if_t<!curve_types::is_linear_interpable_v<std::decay_t<Ty>>
+			template<typename Ty, std::enable_if_t<!linear_interpable<std::decay_t<Ty>>
 				&& !std::is_same_v<std::decay_t<Ty>, std::monostate>, int> = 0>
 			void operator()(Ty& v)
 			{
@@ -81,7 +71,7 @@ namespace hades::state_api
                 switch (c.frame_style)
 				{
 				case keyframe_style::const_t:
-					return;// "const curve cannot be stored in game state"
+					throw hades::logic_error{ "const curve cannot be stored in game state" };
 				case keyframe_style::linear:
 					throw hades::logic_error{ "linear curve on wrong type" };
 				case keyframe_style::pulse:
@@ -118,9 +108,6 @@ namespace hades::state_api
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, c.value} } }, c.value);
 			}
 
-			// no longer true now that we no longer store const curves
-			//assert(size(curves) == size(obj->object_variables));
-
 			if (!empty(o.name_id))
 				name_object(o.name_id, { id, obj }, t, s);
 
@@ -146,6 +133,8 @@ namespace hades::state_api
 			{
 				assert(c);
 				assert(!std::empty(v));
+				if (c->frame_style == keyframe_style::const_t)
+					continue;
 
 				ids.emplace_back(c->id);
 				std::visit(detail::make_object_visitor{ *c, s, *obj, v }, v[0].value);
@@ -160,6 +149,8 @@ namespace hades::state_api
 			const auto& base_curves = resources::object_functions::get_all_curves(*o.obj_type);
 			for (auto& c : base_curves)
 			{
+				if (c.curve_ptr->frame_style == keyframe_style::const_t)
+					continue;
 				//if the id is in the saved list, then don't restore it
                 if (std::binary_search(begin(ids), end(ids), c.curve_ptr->id))
 					continue;
@@ -223,24 +214,20 @@ namespace hades::state_api
 	{
 		using curve_info_t = std::pair<keyframe_style, curve_variable_type>;
 
-		template<template<typename> typename CurveType, typename T>
-		constexpr auto linear_compat = (std::is_same_v<CurveType<float>, linear_curve<float>>
-				&& curve_types::is_linear_interpable_v<T>)
-				|| !std::is_same_v<CurveType<float>, linear_curve<float>>;
-
-		template<template<typename> typename CurveType, typename T, typename Func,
-			typename std::enable_if_t<!linear_compat<CurveType, T>, int> = 0>
-		constexpr void do_call_with_curve_type(Func&&) noexcept
-		{
-			assert(false);
-			return;
-		}
-
-		template<template<typename> typename CurveType, typename T, typename Func,
-			typename std::enable_if_t<linear_compat<CurveType, T>, int> = 0>
+		template<template<typename> typename CurveType, typename T, typename Func>
 		void do_call_with_curve_type(Func&& f)
 		{
             f.template operator()<CurveType, T>();
+			return;
+		}
+
+		template<template<typename> typename CurveType, typename T, typename Func>
+			requires (std::is_same_v<CurveType<float>, linear_curve<float>>
+					&& !linear_interpable<T>)
+		constexpr void do_call_with_curve_type(Func&&) noexcept
+		{
+			// Don't perform the call for linear curves with non-lerpable types
+			assert(false);
 			return;
 		}
 
@@ -269,11 +256,28 @@ namespace hades::state_api
 			case k::const_t:
 				throw logic_error{ "const curves cannot be stored on objects" };
 			case k::linear:
-			{
-				if constexpr (linear_compat<linear_curve, Type>)
-					return f.template operator()<linear_curve>();
+				break; // see call_with_keyframe_style below
+			case k::pulse:
+				return f.template operator()<pulse_curve>();
+			case k::step:
+				return f.template operator()<step_curve>();
+			case k::end:
 				break;
 			}
+			throw logic_error{ "invalid keyframe style" };
+		}
+
+		template<curve_type Type, typename Func>
+			requires linear_interpable<Type>
+		void call_with_keyframe_style(keyframe_style style, Func&& f)
+		{
+			using k = keyframe_style;
+			switch (style)
+			{
+			case k::const_t:
+				throw logic_error{ "const curves cannot be stored on objects" };
+			case k::linear:
+				return f.template operator()<linear_curve>();
 			case k::pulse:
 				return f.template operator()<pulse_curve>();
 			case k::step:
@@ -331,9 +335,9 @@ namespace hades::state_api
 			}
 
 			// func for linear and step curves
-			template<template<typename> typename CurveType, typename T,
-				std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>>
-				|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
+			template<template<typename> typename CurveType, typename T>
+				requires std::same_as<CurveType<float>, linear_curve<float>>
+						|| std::same_as<CurveType<float>, step_curve<float>>
 				void copy_curve(unique_id id, const CurveType<T>& c)
 			{
 				using saved_keyframes = std::vector<object_save_instance::saved_curve::saved_keyframe>;
@@ -542,7 +546,7 @@ namespace hades::state_api
 		template<template<typename> typename CurveType, typename T>
 		inline get_property_return_t<CurveType, T>* get_object_property_ptr(const game_obj& g, const variable_id v) noexcept
 		{
-			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
+			static_assert(curve_types::is_curve_type_v<T> && (linear_interpable<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
 				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
 
 			if constexpr (std::is_same_v<CurveType<T>, const_curve<T>>)
@@ -573,7 +577,7 @@ namespace hades::state_api
 		template<template<typename> typename CurveType, typename T>
 		inline get_property_return_t<CurveType, T>& get_object_property_ref(const game_obj& g, const variable_id v)
 		{
-			static_assert(curve_types::is_curve_type_v<T> && (curve_types::is_linear_interpable_v<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
+			static_assert(curve_types::is_curve_type_v<T> && (linear_interpable<T> || !std::is_same_v<CurveType<T>, linear_curve<T>>),
 				"T must be one of the curve types listed in curve_types::type_pack, if T is a collection type, string or bool, then CurveType cannot be linear_curve");
 
 			if constexpr(std::is_same_v<CurveType<T>, const_curve<T>>)

@@ -34,9 +34,9 @@ namespace hades::debug
 		string& str;
 		time_point t;
 
-		template<template<typename> typename CurveType, typename T,
-			std::enable_if_t<std::is_same_v<CurveType<T>, linear_curve<T>>
-			|| std::is_same_v<CurveType<T>, step_curve<T>>, int> = 0>
+		template<template<typename> typename CurveType, typename T>
+			requires std::same_as<CurveType<float>, linear_curve<float>> 
+					|| std::same_as<CurveType<float>, step_curve<float>>
 		void print_curve(const CurveType<T>&c)
 		{
 			if constexpr (resources::curve_types::is_collection_type_v<T>)

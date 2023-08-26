@@ -56,25 +56,31 @@ namespace hades
 	using object_name_map = unordered_map_string<step_curve<object_ref>>;
 
 	namespace detail
-	{		
+	{
 		template<typename T> struct state_data_type;
 		template<typename... Ts>
 		struct state_data_type<std::tuple<Ts...>>
 		{
 			template<typename T>
-			using tuple_curve_colony_t = std::conditional_t<curve_types::is_linear_interpable_v<T>,
-				std::tuple<
-				plf::colony<state_field<linear_curve<T>>>,
-				plf::colony<state_field<step_curve<T>>>,
-				plf::colony<state_field<pulse_curve<T>>>
-				>,
-				std::tuple<
-				plf::colony<state_field<step_curve<T>>>,
-				plf::colony<state_field<pulse_curve<T>>>
-				>
-			>;
+			struct tuple_curve_colony
+			{
+				using type = std::tuple<
+					plf::colony<state_field<step_curve<T>>>,
+					plf::colony<state_field<pulse_curve<T>>>
+				>;
+			};
 
-            using type = tuple_type_cat_t<tuple_curve_colony_t<Ts>...>;// decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
+			template<linear_interpable T>
+			struct tuple_curve_colony<T> // NOTE: specialization
+			{
+				using type = std::tuple<
+					plf::colony<state_field<linear_curve<T>>>,
+					plf::colony<state_field<step_curve<T>>>,
+					plf::colony<state_field<pulse_curve<T>>>
+				>;
+			};
+
+            using type = tuple_type_cat_t<typename tuple_curve_colony<Ts>::type...>;// decltype(std::tuple_cat(std::declval<tuple_curve_colony_t<Ts>>()...));
 		};
 
 		template<typename T>

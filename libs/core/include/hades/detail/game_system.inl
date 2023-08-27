@@ -68,6 +68,7 @@ namespace hades
 				std::begin(prev), std::end(prev),
 				std::back_inserter(output));
 
+			// new ents is the ents that have been added since last time
 			s.new_ents = std::move(output);
 
 			output.clear();
@@ -76,6 +77,7 @@ namespace hades
 				std::begin(next), std::end(next),
 				std::back_inserter(output));
 
+			//removed ents is the ents that have been destroyed
 			s.removed_ents = std::move(output);
 		}
 
@@ -125,24 +127,17 @@ namespace hades
 		return out;
 	}
 
-	namespace detail
-	{
-		inline bool assert_system_already_attached(object_ref o, name_list& s) noexcept
-		{
-			return std::find_if(s.begin(), s.end(), [o](auto&& ent) {
-				return ent.object == o;
-			}) != s.end();
-		}
-	}
-
 	template<typename SystemType>
 	inline void system_behaviours<SystemType>::attach_system(object_ref entity, unique_id sys)
 	{
 		//systems cannot be created or destroyed while we are editing the entity list
         auto& system = detail::find_system<typename SystemType::system_t>(sys, _systems, _new_systems);
 
-		//not being already_attached implies a bug in the game api
-		assert(!detail::assert_system_already_attached(entity, system.attached_entities));
+		// if entitys can have systems attached twice there must be a bug in the game_state
+		// code that creates or load objects
+		assert(std::ranges::find_if(system.attached_entities, [entity](auto&& ent) {
+			return ent.object == entity;
+			}) == system.attached_entities.end());
 
 		system.new_ents.emplace_back(typename name_list::value_type{ entity, time_point::min() });
 		_dirty_systems = true;
@@ -156,22 +151,22 @@ namespace hades
         auto& system = detail::find_system<typename SystemType::system_t>(sys, _systems, _new_systems);
 		auto& ent_list = system.attached_entities;
 
-		//check that we arent double attaching
-		{
-			//TOD: this is possible due to errors in save files, i think, need to double check
-			// and make into assert if its only a dev bug
-			auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
-				return ent.object == entity;
-				});
+#ifndef NDEBUG
+		// NOTE: systems aren't stored in save files anymore, duplicate systems
+		//		 should be handled gracefully by the object loader.
+		//		 This is to catch errors that slip through.
+		auto found = std::find_if(ent_list.begin(), ent_list.end(), [entity](auto&& ent) {
+			return ent.object == entity;
+			});
 
-			if (found != ent_list.end())
-			{
-				const auto message = "The requested entityid is already attached to this system. EntityId: "
-					+ to_string(entity) + ", System: " + to_string(sys);
-				LOGERROR(message);
-				throw system_error{ message };
-			}
+		if (found != ent_list.end())
+		{
+			const auto message = "The requested entityid is already attached to this system. EntityId: "
+				+ to_string(entity) + ", System: " + to_string(sys);
+			LOGERROR(message);
+			throw system_error{ message };
 		}
+#endif
 
 		ent_list.emplace_back(typename name_list::value_type{ entity, time_point::min() });
 		system.created_ents.emplace_back(typename name_list::value_type{ entity, time_point::min() });
@@ -231,22 +226,19 @@ namespace hades
 
 	namespace detail
 	{
-		template<typename System, typename JobData, typename CreateFunc,
+		template<typename System, typename CreateFunc,
 			typename ConnectFunc, typename DisconnectFunc, typename TickFunc,
 			typename DestroyFunc>
-		inline const std::decay_t<System>* make_system(unique_id id, CreateFunc on_create,
+		inline const System* make_system(unique_id id, CreateFunc on_create,
 			ConnectFunc on_connect, DisconnectFunc on_disconnect,
 			TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 		{
-			using namespace std::string_literals;
-			auto system_type = "game-system"s;
-			if constexpr (std::is_same_v<System, resources::render_system>)
-				system_type = "render-system"s;
-
-			auto sys = data.find_or_create<std::decay_t<System>>(id, {}, system_type);
+			using namespace std::string_view_literals;
+			auto sys = data.find_or_create<System>(id, {},
+				std::same_as<System, resources::render_system> ? "render-system"sv : "game-system"sv);
 
 			if (!sys)
-				throw system_error{ "unable to create requested system"s };
+				throw system_error{ "unable to create requested system" };
 
 			sys->on_create = on_create;
 			sys->on_connect = on_connect;
@@ -260,7 +252,7 @@ namespace hades
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
 	inline const resources::system* make_system(unique_id id, CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect, TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &data)
 	{
-		return detail::make_system<resources::system, system_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
+		return detail::make_system<resources::system>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, data);
 	}
 
 	template<typename CreateFunc, typename ConnectFunc, typename DisconnectFunc, typename TickFunc, typename DestroyFunc>
@@ -268,7 +260,6 @@ namespace hades
 		CreateFunc on_create, ConnectFunc on_connect, DisconnectFunc on_disconnect,
 		TickFunc on_tick, DestroyFunc on_destroy, data::data_manager &d)
 	{
-		//TODO: pass const render_job_data instead
-		return detail::make_system<resources::render_system, render_job_data>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
+		return detail::make_system<resources::render_system>(id, on_create, on_connect, on_disconnect, on_tick, on_destroy, d);
 	}
 }

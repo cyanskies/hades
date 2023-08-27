@@ -104,6 +104,8 @@ namespace hades::state_api
                 assert(c.curve_ptr);
 				assert(!c.value.valueless_by_exception());
 				assert(resources::is_set(c.value));
+				if (c.curve_ptr->frame_style == keyframe_style::const_t)
+					continue;
                 std::visit(detail::make_object_visitor{ *c.curve_ptr, s,
 					*obj, std::vector{ object_save_instance::saved_curve::saved_keyframe{t, c.value} } }, c.value);
 			}

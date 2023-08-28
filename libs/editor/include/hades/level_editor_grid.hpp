@@ -28,7 +28,7 @@ namespace hades
 	int32 calculate_grid_step_for_size( float target_size) noexcept;
 	
 	template<typename T>
-	vector_t<T> snap_to_grid(vector_t<T> p, const grid_vars&);
+	vector2<T> snap_to_grid(vector2<T> p, const grid_vars&);
 
 	class level_editor_grid final : public level_editor_component
 	{

@@ -71,10 +71,10 @@ namespace hades
 	constexpr rect_centre_t<T> to_rect_centre(rect_t<T>) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> position(const rect_t<T>&) noexcept;
+	constexpr vector2<T> position(const rect_t<T>&) noexcept;
 
 	template<typename T>
-	constexpr vector_t<T> size(const rect_t<T>&) noexcept;
+	constexpr vector2<T> size(const rect_t<T>&) noexcept;
 
 	template<typename T>
 	constexpr bool aabb_test(const rect_t<T>&, const rect_t<T>&) noexcept;

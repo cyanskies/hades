@@ -20,7 +20,7 @@ namespace hades::line
 	}
 
 	template<typename T>
-	std::optional<vector_t<T>> intersect(line_t<T> first, line_t<T> second)
+	std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second)
 	{
 		//based on the determinants algorithm
 		const auto x1 = first.s.x,
@@ -46,6 +46,6 @@ namespace hades::line
 		const auto py_numerator = numerator_start * (y3 - y4) - (y1 - y2) * numerator_end;
 		const auto py = py_numerator / denominator;
 
-		return vector_t<T>{ px, py };
+		return vector2<T>{ px, py };
 	}
 }

@@ -42,11 +42,11 @@ namespace hades
 			resource_base* get_resource_base(texture&) noexcept;
 			const sf::Texture& get_sf_texture(const texture*) noexcept;
 			sf::Texture& get_sf_texture(texture*) noexcept;
-			vector_t<texture_size_t> get_requested_size(const texture&) noexcept;
-			vector_t<texture_size_t> get_size(const texture&) noexcept;
+			vector2<texture_size_t> get_requested_size(const texture&) noexcept;
+			vector2<texture_size_t> get_size(const texture&) noexcept;
 			bool load_from_file(texture&, const std::filesystem::path&);
 			void load_from_image(texture&, const sf::Image&);
-			void set_settings(texture*, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool set_loaded) noexcept;
+			void set_settings(texture*, vector2<texture_size_t> size, bool smooth, bool repeat, bool mips, bool set_loaded) noexcept;
 		}
 
 		texture_size_t get_hardware_max_texture_size();

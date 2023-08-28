@@ -36,49 +36,51 @@ namespace hades
 		};
 	}
 
-	// TODO: rename to basic_vector
 	template<typename T, std::size_t Size = 2>
-	struct vector_t : public detail::vector_xy_comp<T>,
+	struct basic_vector : public detail::vector_xy_comp<T>,
 		// add z component
 		public std::conditional_t < 2 < Size, detail::vector_z_comp<T>, detail::vector_z_empty > ,
 		// add w component
 		public std::conditional_t < 3 < Size, detail::vector_w_comp<T>, detail::vector_w_empty >
 	{
-		static_assert(Size > 1, "vector_t doesn't support 1d vectors");
-		static_assert(Size < 5, "vector_t only supports up to vector4");
+		static_assert(Size > 1, "basic_vector doesn't support 1d vectors");
+		static_assert(Size < 5, "basic_vector only supports up to vector4");
 		using value_type = T;
 
 		constexpr std::size_t size() noexcept;
 
-		constexpr vector_t& operator+=(const vector_t& rhs) noexcept;
-		constexpr vector_t& operator-=(const vector_t& rhs) noexcept;
+		constexpr basic_vector& operator+=(const basic_vector& rhs) noexcept;
+		constexpr basic_vector& operator-=(const basic_vector& rhs) noexcept;
 
 		//scalar multiplication
-		constexpr vector_t& operator*=(const T rhs) noexcept;
+		constexpr basic_vector& operator*=(const T rhs) noexcept;
 		//scalar division
-		constexpr vector_t& operator/=(const T rhs) noexcept;
+		constexpr basic_vector& operator/=(const T rhs) noexcept;
 
 		constexpr T& operator[](std::size_t i) noexcept;
 		constexpr const T& operator[](std::size_t i) const noexcept;
 
 		template<typename U>
-		explicit constexpr operator vector_t<U, Size>() const noexcept;
+		explicit constexpr operator basic_vector<U, Size>() const noexcept;
 	};
 
 	template<typename T>
-	using vector2 = vector_t<T, 2>;
+	using vector2 = basic_vector<T, 2>;
 	template<typename T>
-	using vector3 = vector_t<T, 3>;
+	using vector3 = basic_vector<T, 3>;
 	template<typename T>
-	using vector4 = vector_t<T, 4>;
+	using vector4 = basic_vector<T, 4>;
 	
+	using vector2_int = vector2<int32>;
+	using vector2_float = vector2<float>;
+
 	static_assert(std::is_trivially_constructible_v<vector4<int32>>);
-	static_assert(std::is_trivially_assignable_v<vector_t<int32>, vector_t<int32>>);
+	static_assert(std::is_trivially_assignable_v<basic_vector<int32>, basic_vector<int32>>);
 	static_assert(std::is_trivially_copyable_v<vector4<int32>>);
 	static_assert(std::is_trivial_v<vector4<int32>>);
 
 	template<std::floating_point Float, std::size_t N>
-	constexpr vector_t<Float, N> lerp(vector_t<Float, N> a, vector_t<Float, N> b, Float t) noexcept
+	constexpr basic_vector<Float, N> lerp(basic_vector<Float, N> a, basic_vector<Float, N> b, Float t) noexcept
 	{
 		using std::lerp;
 		if constexpr (N < 3)
@@ -108,7 +110,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	inline constexpr bool float_near_equal(vector_t<Float, N> a, vector_t<Float, N> b, int32 units_after_decimal = 2) noexcept
+	inline constexpr bool float_near_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, int32 units_after_decimal = 2) noexcept
 	{
 		auto ret = float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
 		if constexpr (N > 2)
@@ -119,7 +121,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_nearest_t = round_nearest_tag) noexcept
+	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_nearest_t = round_nearest_tag) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x) && float_rounded_equal(a.y, b.y);
 		if constexpr (N > 2)
@@ -130,7 +132,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_down_t) noexcept
+	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_down_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_down_tag) && float_rounded_equal(a.y, b.y, round_down_tag);
 		if constexpr (N > 2)
@@ -141,7 +143,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_up_t) noexcept
+	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_up_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_up_tag) && float_rounded_equal(a.y, b.y, round_up_tag);
 		if constexpr (N > 2)
@@ -152,7 +154,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(vector_t<Float, N> a, vector_t<Float, N> b, detail::round_towards_zero_t) noexcept
+	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_towards_zero_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_towards_zero_tag) && float_rounded_equal(a.y, b.y, round_towards_zero_tag);
 		if constexpr (N > 2)
@@ -163,10 +165,10 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	constexpr bool operator==(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept;
+	constexpr bool operator==(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
 
 	template<typename T, std::size_t N>
-	constexpr bool operator!=(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept;
+	constexpr bool operator!=(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
 
 	template<typename T>
 	constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
@@ -179,10 +181,6 @@ namespace hades
 
 	template<typename T>
 	constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
-
-	// TODO: vector2_int, vector2_float
-	using vector_int = vector2<int32>;
-	using vector_float = vector2<float>;
 
 	//TODO: polar vector type
 	template<typename T>
@@ -261,7 +259,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	string vector_to_string(vector_t<T, N>);
+	string vector_to_string(basic_vector<T, N>);
 }
 
 #include "hades/detail/vector_math.inl"

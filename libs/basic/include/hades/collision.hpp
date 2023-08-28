@@ -20,7 +20,7 @@
 namespace hades
 {
 	template<typename T>
-	using point_t = vector_t<T>;
+	using point_t = vector2<T>;
 }
 
 namespace hades::detail
@@ -52,7 +52,7 @@ namespace hades
 	/*template<typename T>
 	struct polygon_t
 	{
-		vector_t<T> position;
+		vector2<T> position;
 		std::vector<point_t<T>> vertex;
 	};*/
 
@@ -80,12 +80,12 @@ namespace hades
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//if return value == move, then no collision occured
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other);
+	vector2<T> safe_move(U<T> object, vector2<T> move, V<T> other);
 	
 	template<typename T, typename Iter>
 	struct collision_move_return
 	{
-		vector_t<T> move;
+		vector2<T> move;
 		Iter other;
 	};
 
@@ -94,18 +94,18 @@ namespace hades
 	// if no collision has been found, then it will return [move, end]
 	template<typename T, template<typename> typename U, typename Iter>
 	collision_move_return<T, Iter>
-	safe_move(U<T> object, vector_t<T> move, Iter begin, Iter end);
+	safe_move(U<T> object, vector2<T> move, Iter begin, Iter end);
 
 	//returns the move needed to bring object as close as possible to other without colliding.
 	//uses as much of the movement vector as possible allowing sliding along walls, etc
 	//if return value == move, then no collision occured
 	//TODO: implement
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other, T collision_friction = 0);
+	vector2<T> collision_move(U<T> object, vector2<T> move, V<T> other, T collision_friction = 0);
 
 	//returns a vector normal from the point of collision
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_normal(U<T> object, vector_t<T> move, V<T> other);
+	vector2<T> collision_normal(U<T> object, vector2<T> move, V<T> other);
 
 	//returns the rect side that collided
 	template<typename T, template<typename> typename U>

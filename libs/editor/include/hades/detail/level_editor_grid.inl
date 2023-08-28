@@ -5,7 +5,7 @@
 namespace hades
 {
 	template<typename T>
-	vector_t<T> snap_to_grid(vector_t<T> p, const grid_vars&g)
+	vector2<T> snap_to_grid(vector2<T> p, const grid_vars&g)
 	{
 		if (g.snap->load())
 		{
@@ -13,7 +13,7 @@ namespace hades
 
 			const auto snap_float_p = mouse::snap_to_grid(static_cast<vector_float>(p), cell_size);
 
-			return static_cast<vector_t<T>>(snap_float_p);
+			return static_cast<vector2<T>>(snap_float_p);
 		}
 
 		return p;

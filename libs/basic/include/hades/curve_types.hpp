@@ -61,7 +61,7 @@ namespace hades::curve_types
 	using int_t = int32;
 	//using int64_t = int64;
 	using float_t = float;
-	using vec2_float = vector_float; //vector2f
+	using vec2_float = vector2_float; //vector2f
 	//TODO: double_t
 	using bool_t = bool;
 	using string = hades::string;
@@ -118,7 +118,7 @@ namespace hades::curve_types
 	template <typename T>
 	struct is_vector_type : std::false_type {};
 	template <typename T>
-	struct is_vector_type<vector_t<T>> : is_curve_type<vector_t<T>> {};
+	struct is_vector_type<vector2<T>> : is_curve_type<vector2<T>> {};
 	template <typename T>
 	constexpr auto is_vector_type_v = is_vector_type<T>::value;
 

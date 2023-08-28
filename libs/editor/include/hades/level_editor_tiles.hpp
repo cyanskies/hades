@@ -40,7 +40,7 @@ namespace hades
 		};
 
 		new_level_options _new_options{};
-		vector_t<level_size_t> _level_size;
+		vector2<level_size_t> _level_size;
 		draw_shape _shape{ draw_shape::square };
 		int _size{};
 		const resources::tile_settings *_settings{ resources::get_tile_settings() };

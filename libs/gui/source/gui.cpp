@@ -90,7 +90,7 @@ namespace hades
 		_activate_context();
 	}
 
-	void gui::set_display_size(vector_t<float> size)
+	void gui::set_display_size(vector2 size)
 	{
 		_active_assert();
 		auto &io = ImGui::GetIO();

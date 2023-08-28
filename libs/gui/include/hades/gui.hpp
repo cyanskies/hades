@@ -106,11 +106,13 @@ namespace hades
 		gui& operator=(const gui&) = delete;
 		gui& operator=(gui&&) noexcept = default;
 
+		using vector2 = vector2<float>;
+
 		//should be called before using any gui function
 		void activate_context() noexcept;
 
 		//this must be called at least once to get valid output
-		void set_display_size(vector_t<float> size);
+		void set_display_size(vector2 size);
 
 		//input must be inserted before frame_begin
 		// returns true if the gui used the event
@@ -164,7 +166,6 @@ namespace hades
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
-		using vector2 = vector_t<float>;
 		//end must be called even if begin returns false
 		bool child_window_begin(std::string_view name, vector2 size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
 		void child_window_end();

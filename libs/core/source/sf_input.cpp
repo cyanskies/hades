@@ -73,7 +73,7 @@ namespace hades
 			else
 				a.active = false;
 
-			const auto mouse_move = vector::clamp(vector_t<int>{ e.mouseMove.x, e.mouseMove.y },
+			const auto mouse_move = vector::clamp(vector2<int>{ e.mouseMove.x, e.mouseMove.y },
 				{ 0, 0 },
 				{ static_cast<types::int32>(window.getSize().x),
 				static_cast<types::int32>(window.getSize().y) });
@@ -91,7 +91,7 @@ namespace hades
 			auto size = window.getSize();
 			a.active = sf::IntRect{ {}, static_cast<sf::Vector2i>(size) }.contains(mpos);
 
-			const auto mouse_pos = vector::clamp(vector_t<int>{ mpos.x, mpos.y },
+			const auto mouse_pos = vector::clamp(basic_vector<int>{ mpos.x, mpos.y },
 				{ 0, 0 },
 				{ static_cast<types::int32>(size.x),
 				static_cast<types::int32>(size.y) });
@@ -122,7 +122,7 @@ namespace hades
 			if (!handled && e.type == sf::Event::MouseButtonPressed)
 			{
 				a.active = in_window({ e.mouseButton.x, e.mouseButton.y }, window);
-				const auto mouse_pos = vector::clamp(vector_t<int>{e.mouseButton.x, e.mouseButton.y},
+				const auto mouse_pos = vector::clamp(vector2<int>{e.mouseButton.x, e.mouseButton.y},
 					{ 0, 0 },
 					{ static_cast<types::int32>(window.getSize().x),
 					static_cast<types::int32>(window.getSize().y) });
@@ -133,7 +133,7 @@ namespace hades
 			else if (e.type == sf::Event::MouseButtonReleased)
 			{
 				a.active = false;
-				const auto pos = vector::clamp(vector_t<int>{e.mouseButton.x, e.mouseButton.y},
+				const auto pos = vector::clamp(vector2<int>{e.mouseButton.x, e.mouseButton.y},
 					{ 0, 0 },
 					{ static_cast<types::int32>(window.getSize().x),
 					static_cast<types::int32>(window.getSize().y) });
@@ -151,7 +151,7 @@ namespace hades
 			const auto m_pos = sf::Mouse::getPosition(window);
 			a.active = sf::Mouse::isButtonPressed(b) && in_window(m_pos, window);; 
 			const auto size = window.getSize();
-			const auto pos = vector::clamp(vector_t<int>{m_pos.x, m_pos.y},
+			const auto pos = vector::clamp(basic_vector<int>{m_pos.x, m_pos.y},
 				{ 0, 0 },
 				{ static_cast<types::int32>(size.x),
 				static_cast<types::int32>(size.y) });

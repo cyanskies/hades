@@ -469,7 +469,7 @@ namespace hades::data
 						const auto region_pos = gui::vector2{ ((io.MousePos.x - pos.x) / _scale),
 											 ((io.MousePos.y - pos.y) / _scale) };
 						
-						const auto region_uint = vector_t<unsigned int>{
+						const auto region_uint = vector2<unsigned int>{
 							integral_cast<unsigned int>(region_pos.x, round_down_tag),
 							integral_cast<unsigned int>(region_pos.y, round_down_tag)
 						};

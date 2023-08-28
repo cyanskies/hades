@@ -33,10 +33,10 @@ namespace hades
 			static_assert(N == 0, "can only convert static polygons to a dynamic polygon");
 		}
 
-		vector_t<T> position;
+		vector2<T> position;
 		std::conditional_t<N == 0, 
-			std::vector<vector_t<T>>,
-			std::array<vector_t<T>, N>> vertex;
+			std::vector<vector2<T>>,
+			std::array<vector2<T>, N>> vertex;
 	};
 
 	using polygon_int = polygon_t<int32>;
@@ -71,7 +71,7 @@ namespace hades
 		//the total location of all vertex stays the same,
 		//but the position will have moved to the location passed in
 		template<typename T, std::size_t N>
-		constexpr void set_origin(polygon_t<T, N>& p, vector_t<T> origin) noexcept;
+		constexpr void set_origin(polygon_t<T, N>& p, vector2<T> origin) noexcept;
 	}
 }
 

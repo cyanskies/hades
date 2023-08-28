@@ -460,12 +460,12 @@ namespace hades
 				return t->value;
 			}
 
-			vector_t<texture_size_t> get_requested_size(const texture& t) noexcept
+			vector2<texture_size_t> get_requested_size(const texture& t) noexcept
 			{
 				return { t.width, t.height };
 			}
 
-			vector_t<texture_size_t> get_size(const texture& t) noexcept
+			vector2<texture_size_t> get_size(const texture& t) noexcept
 			{
 				const auto width = t.width == 0 ? t.actual_width : t.width;
 				const auto height = t.height == 0 ? t.actual_height : t.height;
@@ -508,7 +508,7 @@ namespace hades
 				return;
 			}
 
-			void set_settings(texture* t, vector_t<texture_size_t> size, bool smooth, bool repeat, bool mips, bool loaded) noexcept
+			void set_settings(texture* t, vector2<texture_size_t> size, bool smooth, bool repeat, bool mips, bool loaded) noexcept
 			{
 				assert(t);
 				t->width = size.x;

@@ -84,7 +84,7 @@ namespace hades
 	template<typename T>
 	bool collision_test(point_t<T> current, circle_t<T> object)
 	{
-		const auto ab = current - vector_t<T>{ object.x, object.y };
+		const auto ab = current - vector2<T>{ object.x, object.y };
 		const auto mag = vector::magnitude_squared(ab);
 		return mag < object.r * object.r;
 	}
@@ -129,7 +129,7 @@ namespace hades
 	template<typename T>
 	bool collision_test(circle_t<T> lhs, circle_t<T> rhs)
 	{
-		const auto dist2 = vector::magnitude_squared<T>(vector_t<T>{ lhs.x, lhs.y } - vector_t<T>{ rhs.x, rhs.y });
+		const auto dist2 = vector::magnitude_squared<T>(vector2<T>{ lhs.x, lhs.y } - vector2<T>{ rhs.x, rhs.y });
 		const auto d = lhs.r + rhs.r;
 		return dist2 < d * d;
 	}
@@ -143,16 +143,16 @@ namespace hades
 
 	//point
 	template<typename T>
-	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, point_t<T> other)
+	vector2<T> safe_move(point_t<T> prev, vector2<T> move, point_t<T> other)
 	{
 		if (collision_test(prev + move, other))
-			return move - vector_t<T>{1, 1};
+			return move - vector2<T>{1, 1};
 
 		return move;
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, rect_t<T> other)
+	vector2<T> safe_move(point_t<T> prev, vector2<T> move, rect_t<T> other)
 	{
 		if (prev == prev + move)
 			return move;
@@ -175,20 +175,20 @@ namespace hades
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(point_t<T> prev, vector_t<T> move, circle_t<T> other)
+	vector2<T> safe_move(point_t<T> prev, vector2<T> move, circle_t<T> other)
 	{
 		return safe_move(circle_t<T>{prev.x, prev.y, 0}, move, other);
 	}
 
 	//rect
 	template<typename T>
-	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, point_t<T> other)
+	vector2<T> safe_move(rect_t<T> object, vector2<T> move, point_t<T> other)
 	{
 		return safe_move(object, move, circle_t<T>{other.x, other.y, 1});
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, rect_t<T> other)
+	vector2<T> safe_move(rect_t<T> object, vector2<T> move, rect_t<T> other)
 	{
 		object = normalise(object);
 		other = normalise(other);
@@ -206,7 +206,7 @@ namespace hades
 		const auto object_centre = to_rect_centre(object);
 		const auto other_centre = to_rect_centre(other);
 	
-		const vector_t<T> other_super_size{ 
+		const vector2<T> other_super_size{ 
 			other_centre.half_width + object_centre.half_width,
 			other_centre.half_height + object_centre.half_height
 		};
@@ -224,20 +224,20 @@ namespace hades
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(rect_t<T> object, vector_t<T> move, circle_t<T> other)
+	vector2<T> safe_move(rect_t<T> object, vector2<T> move, circle_t<T> other)
 	{
 		return vector::reverse(safe_move(other, vector::reverse(move), object));
 	}
 
 	//circle
 	template<typename T>
-	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, point_t<T> other)
+	vector2<T> safe_move(circle_t<T> object, vector2<T> move, point_t<T> other)
 	{
 		return safe_move(object, move, circle_t<T>{other.x, other.y, 0});
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, rect_t<T> other)
+	vector2<T> safe_move(circle_t<T> object, vector2<T> move, rect_t<T> other)
 	{
 		const point_t<T> closest_point{ clamp(object.x, other.x, other.x + other.width),
 			clamp(object.y, other.y, other.y + other.height) };
@@ -246,13 +246,13 @@ namespace hades
 	}
 
 	template<typename T>
-	vector_t<T> safe_move(circle_t<T> object, vector_t<T> move, circle_t<T> other)
+	vector2<T> safe_move(circle_t<T> object, vector2<T> move, circle_t<T> other)
 	{
 		//based off article here:
 		//https://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php?print=1
 
-		const vector_t<T> obj_pos{ object.x, object.y };
-		const vector_t<T> oth_pos{ other.x, other.y };
+		const vector2<T> obj_pos{ object.x, object.y };
+		const vector2<T> oth_pos{ other.x, other.y };
 		const auto obj_to_oth = oth_pos - obj_pos;
 		const auto d = object.r + other.r;
 		const auto rad2 = d * d;
@@ -288,7 +288,7 @@ namespace hades
 	}
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> safe_move(U<T> object, vector_t<T> move, V<T> other)
+	vector2<T> safe_move(U<T> object, vector2<T> move, V<T> other)
 	{
 		static_assert(always_false<T, U<T>, V<T>>::value, "safe_move not defined for these types");
 		return move;
@@ -296,7 +296,7 @@ namespace hades
 
 	template<typename T, template<typename> typename U, typename Iter>
 	collision_move_return<T, Iter>
-		safe_move(U<T> object, vector_t<T> move, Iter iter, Iter end)
+		safe_move(U<T> object, vector2<T> move, Iter iter, Iter end)
 	{
 		//calculate move for each member of others
 		//return the shortest move, along with the index for that member
@@ -319,7 +319,7 @@ namespace hades
 	}
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_move(U<T> object, vector_t<T> move, V<T> other, T friction)
+	vector2<T> collision_move(U<T> object, vector2<T> move, V<T> other, T friction)
 	{
 		static_assert(always_false<T, U<T>, V<T>>::value, "collision_move not defined for these types");
 		return move;
@@ -327,7 +327,7 @@ namespace hades
 
 
 	template<typename T>
-	vector_t<T> collision_normal(rect_t<T> object, vector_t<T> move, rect_t<T> other)
+	vector2<T> collision_normal(rect_t<T> object, vector2<T> move, rect_t<T> other)
 	{
 		const auto direc = collision_direction(object, move, other);
 		switch (direc)
@@ -346,10 +346,10 @@ namespace hades
 	}
 
 	template<typename T, template<typename> typename U, template<typename> typename V>
-	vector_t<T> collision_normal(U<T> object, vector_t<T> move, V<T> other)
+	vector2<T> collision_normal(U<T> object, vector2<T> move, V<T> other)
 	{
 		static_assert(always_false_v<U<T>, T, V<T>>, "collision incident hasn't been defined for these types");
-		return vector_t<T>{};
+		return vector2<T>{};
 	}
 
 	template<typename T, template<typename> typename U>
@@ -410,7 +410,7 @@ namespace hades
 	//TODO:
 	//all
 	template<typename T>
-	rect_t<T> bounding_box(vector_t<T> object)
+	rect_t<T> bounding_box(vector2<T> object)
 	{
 		rect_t<T> r{};
 		r.width = object.x;

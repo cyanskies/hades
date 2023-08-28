@@ -85,7 +85,7 @@ namespace hades
 		region_edit _edit;
 		uint32 _new_region_name_counter{};
 		grid_vars _grid = get_console_grid_vars();
-		vector_t<level_size_t> _level_limits{};
+		vector2<level_size_t> _level_limits{};
 	};
 }
 

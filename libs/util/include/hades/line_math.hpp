@@ -13,7 +13,7 @@ namespace hades
 	template<typename T>
 	struct line_t
 	{
-		vector_t<T> s, e;
+		vector2<T> s, e;
 	};
 
 	namespace line
@@ -24,7 +24,7 @@ namespace hades
 		//returns the intersect point for the two lines
 		//returns nothing if the lines are parellel
 		template<typename T>
-		std::optional<vector_t<T>> intersect(line_t<T> first, line_t<T> second);
+		std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second);
 	}
 }
 

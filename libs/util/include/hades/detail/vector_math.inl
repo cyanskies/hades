@@ -14,13 +14,13 @@
 namespace hades
 {
 	template<typename T, std::size_t Size>
-	constexpr std::size_t vector_t<T, Size>::size() noexcept
+	constexpr std::size_t basic_vector<T, Size>::size() noexcept
 	{
 		return Size;
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr vector_t<T, Size>& vector_t<T, Size>::operator+=(const vector_t& rhs) noexcept
+	constexpr basic_vector<T, Size>& basic_vector<T, Size>::operator+=(const basic_vector& rhs) noexcept
 	{
 		this->x += rhs.x;
 		this->y += rhs.y;
@@ -32,7 +32,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr vector_t<T, Size>& vector_t<T, Size>::operator-=(const vector_t& rhs) noexcept
+	constexpr basic_vector<T, Size>& basic_vector<T, Size>::operator-=(const basic_vector& rhs) noexcept
 	{
 		this->x -= rhs.x;
 		this->y -= rhs.y;
@@ -44,7 +44,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr vector_t<T, Size>& vector_t<T, Size>::operator*=(const T rhs) noexcept
+	constexpr basic_vector<T, Size>& basic_vector<T, Size>::operator*=(const T rhs) noexcept
 	{
 		this->x *= rhs;
 		this->y *= rhs;
@@ -56,7 +56,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr vector_t<T, Size>& vector_t<T, Size>::operator/=(const T rhs) noexcept
+	constexpr basic_vector<T, Size>& basic_vector<T, Size>::operator/=(const T rhs) noexcept
 	{
 		this->x /= rhs;
 		this->y /= rhs;
@@ -68,50 +68,50 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr T& vector_t<T, Size>::operator[](std::size_t i) noexcept
+	constexpr T& basic_vector<T, Size>::operator[](std::size_t i) noexcept
 	{
 		assert(i < Size);
 		if constexpr (Size < 3)
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y };
 			return std::invoke(arr[i], this);
 		}
 		else if constexpr (Size == 3)
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y, &vector_t::z };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z };
 			return std::invoke(arr[i], this);
 		}
 		else
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y, &vector_t::z, &vector_t::w };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z, &basic_vector::w };
 			return std::invoke(arr[i], this);
 		}
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr const T& vector_t<T, Size>::operator[](std::size_t i) const noexcept
+	constexpr const T& basic_vector<T, Size>::operator[](std::size_t i) const noexcept
 	{
 		assert(i < Size);
 		if constexpr (Size < 3)
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y };
 			return std::invoke(arr[i], this);
 		}
 		else if constexpr (Size == 3)
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y, &vector_t::z };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z };
 			return std::invoke(arr[i], this);
 		}
 		else
 		{
-			constexpr auto arr = std::array{ &vector_t::x, &vector_t::y, &vector_t::z, &vector_t::w };
+			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z, &basic_vector::w };
 			return std::invoke(arr[i], this);
 		}
 	}
 
 	template<typename T, std::size_t Size>
 	template<typename U>
-	inline constexpr vector_t<T, Size>::operator vector_t<U, Size>() const noexcept
+	inline constexpr basic_vector<T, Size>::operator basic_vector<U, Size>() const noexcept
 	{
 		constexpr auto cast_func = [](auto val) {
 			if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
@@ -126,14 +126,14 @@ namespace hades
 
 		if constexpr (Size < 3)
 		{
-			return vector_t<U>{
+			return basic_vector<U>{
 				cast_func(this->x),
 				cast_func(this->y)
 			};
 		}
 		else if constexpr (Size > 2)
 		{
-			return vector_t<U, Size>{
+			return basic_vector<U, Size>{
 				cast_func(this->x),
 				cast_func(this->y),
 				cast_func(this->z)
@@ -141,7 +141,7 @@ namespace hades
 		}
 		else if constexpr (Size > 3)
 		{
-			return vector_t<U, Size>{
+			return basic_vector<U, Size>{
 				cast_func(this->x),
 				cast_func(this->y),
 				cast_func(this->z),
@@ -151,7 +151,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	constexpr bool operator==(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept
+	constexpr bool operator==(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept
 	{
 		auto ret = lhs.x == rhs.x && lhs.y == rhs.y;
 		if constexpr (N > 2)
@@ -162,7 +162,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	constexpr bool operator!=(const vector_t<T, N> &lhs, const vector_t<T, N> &rhs) noexcept
+	constexpr bool operator!=(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept
 	{
 		return !(lhs == rhs);
 	}
@@ -204,7 +204,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	string vector_to_string(vector_t<T, N> v)
+	string vector_to_string(basic_vector<T, N> v)
 	{
 		using namespace std::string_view_literals;
 		if constexpr (N < 3)

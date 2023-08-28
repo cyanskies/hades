@@ -14,7 +14,7 @@ namespace hades::polygon
 	}
 
 	template<typename T, std::size_t N>
-	constexpr void set_origin(polygon_t<T, N>& p, vector_t<T> origin) noexcept
+	constexpr void set_origin(polygon_t<T, N>& p, vector2<T> origin) noexcept
 	{
 		const auto dif = p.position - origin;
 		for (auto& v : p.vertex)

@@ -23,7 +23,7 @@ namespace hades
 		level level_new(level l) const override;
 		void level_load(const level&) override;
 		level level_save(level l) const override;
-		void level_resize(vector_int s, vector_int o) override;
+		void level_resize(vector2_int s, vector2_int o) override;
 
 		void gui_update(gui&, editor_windows&) override;
 

@@ -249,7 +249,7 @@ namespace hades
 		return true;
 	}
 
-	bool is_valid(const raw_terrain_map &r, vector_int level_size, resources::tile_size_t tile_size)
+	bool is_valid(const raw_terrain_map &r, vector2_int level_size, resources::tile_size_t tile_size)
 	{
 		if (!is_valid(r))
 			return false;
@@ -566,7 +566,7 @@ namespace hades
 		return out;
 	}
 
-	void resize_map_relative(terrain_map& m, vector_int top_left, vector_int bottom_right, const resources::terrain* t)
+	void resize_map_relative(terrain_map& m, vector2_int top_left, vector2_int bottom_right, const resources::terrain* t)
 	{
         const auto current_height = integer_cast<tile_index_t>(m.tile_layer.tiles.size()) / m.tile_layer.width;
 		const auto current_width = m.tile_layer.width;
@@ -574,7 +574,7 @@ namespace hades
         const auto new_height = current_height - top_left.y + bottom_right.y;
         const auto new_width = current_width - top_left.x + bottom_right.x;
 
-		const auto size = vector_int{
+		const auto size = vector2_int{
             new_width,
             new_height
 		};
@@ -582,21 +582,21 @@ namespace hades
 		resize_map(m, size, { -top_left.x, -top_left.y }, t);
 	}
 
-	void resize_map_relative(terrain_map& m, vector_int top_left, vector_int bottom_right)
+	void resize_map_relative(terrain_map& m, vector2_int top_left, vector2_int bottom_right)
 	{
 		const auto terrain = resources::get_empty_terrain();
 		resize_map_relative(m, top_left, bottom_right, terrain);
 	}
 
-	void resize_map(terrain_map& m, vector_int s, vector_int o, const resources::terrain* t)
+	void resize_map(terrain_map& m, vector2_int s, vector2_int o, const resources::terrain* t)
 	{
 		const auto old_size = get_vertex_size(m);
 		//resize tile layer
 		resize_map(m.tile_layer, s, o);
 
 		//update terrain vertex
-		auto new_terrain = table_reduce_view{ vector_int{},
-			s + vector_int{ 1, 1 }, t, [](auto&&, auto&& t) noexcept -> const resources::terrain* {
+		auto new_terrain = table_reduce_view{ vector2_int{},
+			s + vector2_int{ 1, 1 }, t, [](auto&&, auto&& t) noexcept -> const resources::terrain* {
 				return t;
 		} };
 
@@ -608,7 +608,7 @@ namespace hades
 		const auto size = (s.x + 1) * (s.y + 1);
 		vertex.reserve(size);
 
-		for (auto i = vector_int::value_type{}; i < size; ++i)
+		for (auto i = vector2_int::value_type{}; i < size; ++i)
 			vertex.emplace_back(new_terrain[i]);
 
 		m.terrain_vertex = std::move(vertex);
@@ -620,7 +620,7 @@ namespace hades
 		return;
 	}
 
-	void resize_map(terrain_map& m, vector_int size, vector_int offset)
+	void resize_map(terrain_map& m, vector2_int size, vector2_int offset)
 	{
 		const auto terrain = resources::get_empty_terrain();
 		resize_map(m, size, offset, terrain);
@@ -918,7 +918,7 @@ namespace hades::resources
 		return t.terrain_transition_tiles[enum_type(type)];
 	}
 
-	static void add_tiles_to_terrain(terrain &terrain, const vector_int start_pos, resources::resource_link<resources::texture> tex,
+	static void add_tiles_to_terrain(terrain &terrain, const vector2_int start_pos, resources::resource_link<resources::texture> tex,
 		const std::vector<transition_tile_type> &tiles, const tile_index_t tiles_per_row, const tile_size_t tile_size)
 	{
 		auto count = tile_size_t{};

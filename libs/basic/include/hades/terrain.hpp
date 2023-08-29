@@ -150,7 +150,7 @@ namespace hades
 	};
 
 	bool is_valid(const raw_terrain_map&);
-	bool is_valid(const raw_terrain_map&, vector_int level_size, resources::tile_size_t tile_size);
+	bool is_valid(const raw_terrain_map&, vector2_int level_size, resources::tile_size_t tile_size);
 
 	//NOTE: doesn't write the tile layer, this must be done seperately
 	//		with write_raw_map(m.tile_layer, ...);
@@ -223,15 +223,15 @@ namespace hades
 	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
 	// tiles that fall outside the new size are erased
 	// new areas will be set to terrain*
-	// TODO: replace vector_int with tile_position
-	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right,
+	// TODO: replace vector2_int with tile_position
+	void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right,
 		const resources::terrain*);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map_relative(terrain_map&, vector_int top_left, vector_int bottom_right);
+	void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right);
 	//as above, places current map content at offset
-	void resize_map(terrain_map&, vector_int size, vector_int offset, const resources::terrain*);
+	void resize_map(terrain_map&, vector2_int size, vector2_int offset, const resources::terrain*);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map(terrain_map&, vector_int size, vector_int offset);
+	void resize_map(terrain_map&, vector2_int size, vector2_int offset);
 
 	// TODO: investigate where this is used, add for_each_adjacent_tile
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);

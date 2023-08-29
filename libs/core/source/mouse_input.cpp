@@ -21,29 +21,29 @@ namespace hades
 
 	namespace mouse
 	{
-		bool inside_target(const sf::RenderTarget &t, vector_int pos)
+		bool inside_target(const sf::RenderTarget &t, vector2_int pos)
 		{
 			const auto size = static_cast<sf::Vector2i>(t.getSize());
-			const rect_t<vector_int::value_type> window{ 0, 0, size.x, size.y };
+			const rect_t<vector2_int::value_type> window{ 0, 0, size.x, size.y };
 			return is_within(pos, window);
 		}
 
-		vector_float to_world_coords(const sf::RenderTarget &t, vector_int pos, const sf::View &v)
+		vector2_float to_world_coords(const sf::RenderTarget &t, vector2_int pos, const sf::View &v)
 		{
 			const auto r = t.mapPixelToCoords({ pos.x, pos.y }, v);
 			return { r.x, r.y };
 		}
 
-		vector_int to_window_coords(const sf::RenderTarget &t, vector_float pos, const sf::View &v)
+		vector2_int to_window_coords(const sf::RenderTarget &t, vector2_float pos, const sf::View &v)
 		{
 			const auto r = t.mapCoordsToPixel({ pos.x, pos.y }, v);
 			return { r.x, r.y };
 		}
 
-		vector_float snap_to_grid(vector_float coord, float cell_size)
+		vector2_float snap_to_grid(vector2_float coord, float cell_size)
 		{
 			assert(cell_size != 0.f);
-			const auto offset = vector_float{
+			const auto offset = vector2_float{
 				std::abs(std::fmod(coord.x, cell_size)),
 				std::abs(std::fmod(coord.y, cell_size))
 			};

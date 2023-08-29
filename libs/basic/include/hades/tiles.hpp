@@ -39,7 +39,7 @@ namespace hades
 	void register_tiles_resources(data::data_manager&, detail::make_texture_link_f);
 
 	//x/y coords of a tile, negative tile positions aren't supported
-	using tile_position = vector_int;
+	using tile_position = vector2_int;
 	// 1d tile positions
 	using tile_index_t = tile_position::value_type;
 }
@@ -204,11 +204,11 @@ namespace hades
 	//convert pixel mesurement to tile measurement
 	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept; 
 	//convert pixel position to tilemap position
-	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size);
-	tile_position to_tiles(vector_float real_pixels, resources::tile_size_t tile_size);
+	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size);
+	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size);
 	//reverse of the two above functions
 	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept;
-	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept;
+	vector2_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept;
 
 	//throws tile_error, if the tile_map is malformed
 	//returns the size of the map expressed in tiles
@@ -255,14 +255,14 @@ namespace hades
 	// top_left{-1, -1}, bottom_right = current_size + {1, 1}
 	// tiles that fall outside the new size are erased
 	// new areas will be set to tile&
-	void resize_map_relative(tile_map&, vector_int top_left, vector_int bottom_right,
+	void resize_map_relative(tile_map&, vector2_int top_left, vector2_int bottom_right,
 		const resources::tile&);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map_relative(tile_map&, vector_int top_left, vector_int bottom_right);
+	void resize_map_relative(tile_map&, vector2_int top_left, vector2_int bottom_right);
 	//as above, places current map content at offset
-	void resize_map(tile_map&, vector_int size, vector_int offset, const resources::tile&);
+	void resize_map(tile_map&, vector2_int size, vector2_int offset, const resources::tile&);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map(tile_map&, vector_int size, vector_int offset);
+	void resize_map(tile_map&, vector2_int size, vector2_int offset);
 
 	//for editing a tile map
 	void place_tile(tile_map&, tile_position, tile_id_t);

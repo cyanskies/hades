@@ -202,9 +202,9 @@ namespace hades
 
 		id_t create();
 		id_t create(const resources::animation*, time_point,
-			layer_t, vector_float position, vector_float size);
+			layer_t, vector2_float position, vector2_float size);
 		id_t create(const resources::animation*, float progress, layer_t,
-			vector_float position, vector_float size);
+			vector2_float position, vector2_float size);
 
 		void destroy(id_t);
 
@@ -212,12 +212,12 @@ namespace hades
 
 		//replace all the sprite data for id
 		void set(id_t, const resources::animation*, time_point,
-			layer_t, vector_float position, vector_float size);
+			layer_t, vector2_float position, vector2_float size);
 		void set(id_t, const resources::animation*, float progress,
-			layer_t, vector_float position, vector_float size);
+			layer_t, vector2_float position, vector2_float size);
 		//update the commonly changing data
-		void set(id_t, time_point, vector_float position, vector_float size);
-		void set(id_t, float progress, vector_float position, vector_float size);
+		void set(id_t, time_point, vector2_float position, vector2_float size);
+		void set(id_t, float progress, vector2_float position, vector2_float size);
 		void set_animation(id_t, const resources::animation*, time_point);
 		void set_animation(id_t, const resources::animation*, float progress);
 		void set_animation(id_t, time_point);

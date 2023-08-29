@@ -278,7 +278,7 @@ namespace hades
 		void vertical_spacing();
 		void group_begin();
 		void group_end();
-		void dummy(vector_float size = {});
+		void dummy(vector2_float size = {});
 		float get_frame_height_with_spacing() const noexcept;
 
 		//ids

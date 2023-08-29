@@ -26,7 +26,7 @@ namespace hades
 				open = false;
 
 			g.input_text("Name"sv, name, gui::input_text_flags::auto_select_all);
-			g.input_text_multiline("Description"sv, description, vector_float{}, gui::input_text_flags::no_horizontal_scroll);
+			g.input_text_multiline("Description"sv, description, vector2_float{}, gui::input_text_flags::no_horizontal_scroll);
 
 			auto preview = [](unique_id id)->std::string {
 				using namespace std::string_literals;
@@ -307,7 +307,7 @@ namespace hades
 		return l;
 	}
 
-	void level_editor_level_props::level_resize(vector_int s, vector_int)
+	void level_editor_level_props::level_resize(vector2_int s, vector2_int)
 	{
 		_background.set_size({ static_cast<float>(s.x), static_cast<float>(s.y) });
 		return;

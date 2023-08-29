@@ -42,14 +42,14 @@ namespace hades
 			direction held_edge{};
 			string name;
 			array_t selection_lines;
-			vector_float drag_offset{};
+			vector2_float drag_offset{};
 		};
 
 		level_editor_regions();
 
 		void level_load(const level&) override;
 		level level_save(level l) const override;
-		//void level_resize(vector_int, vector_int) override; //TODO:
+		//void level_resize(vector2_int, vector2_int) override; //TODO:
 
 		void gui_update(gui&, editor_windows&) override;
 

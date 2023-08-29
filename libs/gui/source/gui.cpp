@@ -547,7 +547,7 @@ namespace hades
 		ImGui::EndGroup();
 	}
 
-	void gui::dummy(vector_float s)
+	void gui::dummy(vector2_float s)
 	{
 		_active_assert();
 		ImGui::Dummy({ s.x, s.y });
@@ -1298,7 +1298,7 @@ namespace hades
 		return { v.x, v.y };
 	}
  
-	static inline constexpr sf::Vertex to_vertex(ImDrawVert vert, vector_float tex_size = { 1.f, 1.f }) noexcept
+	static inline constexpr sf::Vertex to_vertex(ImDrawVert vert, vector2_float tex_size = { 1.f, 1.f }) noexcept
 	{
 		const auto col = ImColor{ vert.col }.Value;
 
@@ -1362,12 +1362,12 @@ namespace hades
 				{
 					//get the info needed to denormalise the tex coords.
 					//	used in to_vertex
-					vector_float texture_size = { 1.f, 1.f };
+					vector2_float texture_size = { 1.f, 1.f };
 					if (cmd.TextureId)
 					{
 						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
 						assert(texture);
-						texture_size = static_cast<vector_float>(tex::get_size(*texture));
+						texture_size = static_cast<vector2_float>(tex::get_size(*texture));
 					}
 
 					//get the verts from the draw list that are associated with

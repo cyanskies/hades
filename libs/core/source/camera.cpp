@@ -16,13 +16,13 @@ namespace hades::camera
 		v.setSize(size);
 	}
 
-	void move(sf::View& v, const vector_float move, const rect_int rect) noexcept
+	void move(sf::View& v, const vector2_float move, const rect_int rect) noexcept
 	{
 		const auto centre = v.getCenter();
 		const auto size = v.getSize();
 		const auto half_size = size / 2.f;
 
-		auto pos = vector_float{ centre.x - half_size.x, centre.y - half_size.y } + move;
+		auto pos = vector2_float{ centre.x - half_size.x, centre.y - half_size.y } + move;
 
 		const auto moved_rect = rect_float{ pos, { size.x, size.y } };
 		const auto clamped_rect = clamp_rect(moved_rect, static_cast<rect_float>(rect));

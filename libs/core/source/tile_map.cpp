@@ -330,9 +330,9 @@ namespace hades
 			for (auto j = std::size_t{}; j < buffer_size; ++j)
 			{
 				const sf::Vertex vertex = l.quads.get_quad(j)[0];
-				const auto pos = vector_int{
-					integral_cast<vector_int::value_type>(vertex.position.x),
-					integral_cast<vector_int::value_type>(vertex.position.y)
+				const auto pos = vector2_int{
+					integral_cast<vector2_int::value_type>(vertex.position.x),
+					integral_cast<vector2_int::value_type>(vertex.position.y)
 				};
 
 				if (pos == pixel_pos)

@@ -58,13 +58,13 @@ namespace hades::detail
 		virtual level _component_on_new(level) const = 0;
 		virtual void _component_on_load(const level&) = 0;
 		virtual level _component_on_save(level) const = 0;
-		virtual void _component_on_resize(vector_int, vector_int) = 0;
-		virtual void _component_on_click(brush_index_t, vector_float) = 0;
-		virtual void _component_on_drag_start(brush_index_t, vector_float) = 0;
-		virtual void _component_on_drag(brush_index_t, vector_float) = 0;
-		virtual void _component_on_drag_end(brush_index_t, vector_float) = 0;
+		virtual void _component_on_resize(vector2_int, vector2_int) = 0;
+		virtual void _component_on_click(brush_index_t, vector2_float) = 0;
+		virtual void _component_on_drag_start(brush_index_t, vector2_float) = 0;
+		virtual void _component_on_drag(brush_index_t, vector2_float) = 0;
+		virtual void _component_on_drag_end(brush_index_t, vector2_float) = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t) = 0;
-		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector_float world_position) = 0;
+		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector2_float world_position) = 0;
 		virtual void _handle_component_setup() = 0;
 		void _set_active_brush(std::size_t index) noexcept;
 		virtual void _update_component_gui(gui&, level_editor_component::editor_windows&) = 0;
@@ -95,10 +95,10 @@ namespace hades::detail
 
 		struct resize_opt
 		{
-			vector_int size;
-			vector_int offset;
-			vector_int top_left;
-			vector_int bottom_right;
+			vector2_int size;
+			vector2_int offset;
+			vector2_int top_left;
+			vector2_int bottom_right;
 		};
 
 		bool _mission_mode() const;
@@ -151,17 +151,17 @@ namespace hades
 		level _component_on_new(level) const override;
 		void _component_on_load(const level&) override;
 		level _component_on_save(level) const override;
-		void _component_on_resize(vector_int, vector_int) override;
+		void _component_on_resize(vector2_int, vector2_int) override;
 		//returns the sum of tags reported by components for that location
 		//may contain duplicates
 		tag_list _component_get_object_tags_at_location(rect_float) const;
 		tag_list _component_get_terrain_tags_at_location(rect_float) const;
-		void _component_on_click(brush_index_t, vector_float) override;
-		void _component_on_drag_start(brush_index_t, vector_float) override;
-		void _component_on_drag(brush_index_t, vector_float) override;
-		void _component_on_drag_end(brush_index_t, vector_float) override;
+		void _component_on_click(brush_index_t, vector2_float) override;
+		void _component_on_drag_start(brush_index_t, vector2_float) override;
+		void _component_on_drag(brush_index_t, vector2_float) override;
+		void _component_on_drag_end(brush_index_t, vector2_float) override;
 		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t) override;
-		void _generate_brush_preview(brush_index_t, time_duration, vector_float) override;
+		void _generate_brush_preview(brush_index_t, time_duration, vector2_float) override;
 		void _handle_component_setup() override;
 		void _update_component_gui(gui&, level_editor_component::editor_windows&) override;
 

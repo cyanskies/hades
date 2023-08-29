@@ -49,7 +49,7 @@ namespace hades
 
 		void level_load(const level&) override final;
 		level level_save(level l) const override final;
-		void level_resize(vector_int, vector_int) override final;
+		void level_resize(vector2_int, vector2_int) override final;
 
 		void gui_update(gui&, editor_windows&) override final;
 		void make_brush_preview(time_duration, mouse_pos) override final;
@@ -94,7 +94,7 @@ namespace hades
 		//removes object
 		void _remove_object_callback(entity_id);
 		void _remove_object(entity_id);
-		bool _try_place_object(vector_float pos, editor_object_instance);
+		bool _try_place_object(vector2_float pos, editor_object_instance);
 		void _update_changed_obj(editor_object_instance& o);
 		void _update_quad_data(const object_instance& o);
 
@@ -112,7 +112,7 @@ namespace hades
 		std::variant<sf::Sprite, sf::RectangleShape> _held_preview;
 		sprite_batch _sprites;
 		//level info
-		vector_float _level_limit = {};
+		vector2_float _level_limit = {};
 		float _collision_grid_cell_size;
 		std::optional<object_collision_grid> _quad_selection; // quadtree used for selecting objects
 		//quadtree used for object collision

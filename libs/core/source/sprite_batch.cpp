@@ -80,7 +80,7 @@ namespace hades
 	}
 
 	typename sprite_batch::sprite_id sprite_batch::create_sprite(const resources::animation *a, time_point t,
-		sprite_utility::layer_t l, vector_float p, vector_float s)
+		sprite_utility::layer_t l, vector2_float p, vector2_float s)
 	{
 		const auto id = increment(_id_count);
 		assert(id != bad_sprite_id);
@@ -166,7 +166,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_position_animation(sprite_id id, vector_float pos, const resources::animation* a, time_point t)
+	void sprite_batch::set_position_animation(sprite_id id, vector2_float pos, const resources::animation* a, time_point t)
 	{
 		_apply_changes(id, [pos, a, t](sprite s) noexcept {
 			s.position = pos;
@@ -188,7 +188,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector_float p, vector_float s)
+	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float s)
 	{
 		_apply_changes(id, [a, t, l, p, siz = s](sprite s) noexcept {
 			s.animation = a;
@@ -202,7 +202,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, time_point t, vector_float p, vector_float s)
+	void sprite_batch::set_sprite(sprite_id id, time_point t, vector2_float p, vector2_float s)
 	{
 		_apply_changes(id, [t, p , siz = s](sprite s) noexcept {
 			s.animation_progress = t;
@@ -214,7 +214,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector_float pos)
+	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector2_float pos)
 	{
 		_apply_changes(id, [pos](sprite s) noexcept {
 			s.position = pos;
@@ -224,7 +224,7 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_size(typename sprite_batch::sprite_id id, vector_float size)
+	void sprite_batch::set_size(typename sprite_batch::sprite_id id, vector2_float size)
 	{
 		_apply_changes(id, [size](sprite s) noexcept {
 			s.size = size;

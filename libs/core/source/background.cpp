@@ -133,7 +133,7 @@ namespace hades::resources
 				else
 				{
 
-					const auto parallax = vector_float{
+					const auto parallax = vector2_float{
 						par_x->to_scalar<float>(),
 						par_y->to_scalar<float>()
 					};
@@ -157,7 +157,7 @@ namespace hades::resources
 				else
 				{
 
-					const auto offset = vector_float{
+					const auto offset = vector2_float{
 						off_x->to_scalar<float>(),
 						off_y->to_scalar<float>()
 					};
@@ -180,16 +180,16 @@ namespace hades
 		d.register_resource_type("backgrounds"sv, resources::parse_background);
 	}
 
-	static constexpr vector_float absolute_offset(vector_float o, vector_float a) noexcept
+	static constexpr vector2_float absolute_offset(vector2_float o, vector2_float a) noexcept
 	{
 		//TODO: handle offset > animation size
-		return vector_float{
+		return vector2_float{
 			o.x <= 0.f ? o.x : -(a.x - o.x),
 			o.y <= 0.f ? o.y : -(a.y - o.y)
 		} * -1.f;
 	}
 
-	background::background(vector_float size, const std::vector<layer> &layers, colour c)
+	background::background(vector2_float size, const std::vector<layer> &layers, colour c)
 		: _size(size)
 	{
 		set_size(size);
@@ -204,7 +204,7 @@ namespace hades
 		_backdrop.setFillColor({ c.r, c.g, c.b, c.a });
 	}
 
-	void background::set_size(vector_float s) noexcept
+	void background::set_size(vector2_float s) noexcept
 	{
 		_size = s;
 		_backdrop.setSize({ s.x, s.y });
@@ -222,7 +222,7 @@ namespace hades
 		_layers.clear();
 	}
 
-	static void set_animation(background::background_layer &b, time_point t, vector_float s)
+	static void set_animation(background::background_layer &b, time_point t, vector2_float s)
 	{
 		b.sprite.set_animation(b.animation, t, tiled_sprite::dont_regen);
 		b.sprite.set_size({
@@ -237,11 +237,11 @@ namespace hades
 			set_animation(l, t, _size);
 	}
 
-	static void set_view(background::background_layer &b, rect_float v, vector_float s) noexcept
+	static void set_view(background::background_layer &b, rect_float v, vector2_float s) noexcept
 	{
 		const auto view_pos = position(v);
 
-		const auto clamped_pos = vector_float{
+		const auto clamped_pos = vector2_float{
 			std::clamp(view_pos.x, 0.f, s.x),
 			std::clamp(view_pos.y, 0.f, s.y)
 		};
@@ -250,7 +250,7 @@ namespace hades
 		const auto offset = absolute_offset(b.offset, { frame.w, frame.h });
 		const auto offset_pos = clamped_pos - offset;
 
-		const auto parallax_pos = vector_float{
+		const auto parallax_pos = vector2_float{
 			offset_pos.x * b.parallax.x,
 			offset_pos.y * b.parallax.y
 		};

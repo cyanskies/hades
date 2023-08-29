@@ -145,7 +145,7 @@ namespace hades
 		save_load_dialog_t _load_window;
 		gui _gui = { "mission_editor.ini" };
 		time_point _editor_time;
-		vector_int _window_size{};
+		vector2_int _window_size{};
 		sf::View _gui_view;
 		sf::RectangleShape _backdrop;
 

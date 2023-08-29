@@ -12,7 +12,7 @@ namespace sf
 namespace hades::camera
 {
 	void variable_width(sf::View&, float static_height, float width, float height) noexcept;
-	void move(sf::View&, vector_float, rect_int) noexcept;
+	void move(sf::View&, vector2_float, rect_int) noexcept;
 }
 
 #endif //!HADES_CAMERA_HPP

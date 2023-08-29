@@ -127,12 +127,12 @@ namespace hades
 		virtual level level_new(level l) const { return l; }
 		virtual void level_load(const level&) {}
 		virtual level level_save(level l) const { return l; }
-		virtual void level_resize(vector_int /*new_size*/, vector_int /*current_offset*/) {}
+		virtual void level_resize(vector2_int /*new_size*/, vector2_int /*current_offset*/) {}
 
 		virtual void gui_update(gui&, editor_windows&) {}
 
 		//mouse position, in world coords
-		using mouse_pos = vector_float;
+		using mouse_pos = vector2_float;
 
 		//used to generate info for draw_brush_preview
 		virtual void make_brush_preview(time_duration, mouse_pos) {}

@@ -41,7 +41,9 @@ namespace hades::resources
 
 		resource_link<texture> tex;
 		time_duration duration = time_duration::zero();
-		//const shader *anim_shader = nullptr;
+		resource_link<shader> shader;
+		shader_uniform_map shader_uniforms;
+		std::optional<shader_proxy> proxy;
 	};
 
 	struct animation_group;
@@ -239,9 +241,9 @@ namespace hades::resources::animation_functions
 		return;
 	}
 
-	vector_float get_minimum_offset(const animation& a) noexcept
+	vector2_float get_minimum_offset(const animation& a) noexcept
 	{
-		auto ret = vector_float{};
+		auto ret = vector2_float{};
 		for (const auto& f : a.value)
 		{
 			ret.x = std::min(ret.x, f.off_x);
@@ -250,7 +252,7 @@ namespace hades::resources::animation_functions
 		return ret;
 	}
 
-	rect_float get_bounding_area(const animation& a, vector_float size) noexcept
+	rect_float get_bounding_area(const animation& a, vector2_float size) noexcept
 	{
 		auto ret = rect_float{};
 		for(const auto& f : a.value)
@@ -261,6 +263,23 @@ namespace hades::resources::animation_functions
 			ret.height = std::max(ret.height, f.off_y + size.y * std::abs(f.scale_h));
 		}
 		return ret;
+	}
+
+	bool has_shader(const animation& a) noexcept
+	{
+		return a.shader.is_linked();
+	}
+
+	shader_proxy get_shader_proxy(const animation& a)
+	{
+		try
+		{
+			return a.proxy.value();
+		}
+		catch (const std::bad_optional_access&)
+		{
+			throw animation_no_shader{ "Tried to access the shader for an animation that has no shader" };
+		}
 	}
 }
 
@@ -698,7 +717,7 @@ namespace hades
 		};
 	}
 
-	poly_quad make_quad_line(vector_float start, vector_float end, float thickness, colour hades_colour) noexcept
+	poly_quad make_quad_line(vector2_float start, vector2_float end, float thickness, colour hades_colour) noexcept
 	{
 		const auto direction = end - start;
 		const auto unit_direction = vector::unit(direction);
@@ -724,15 +743,15 @@ namespace hades
 		};
 	}
 
-	poly_quad make_quad_animation(const vector_float p, const resources::animation_frame &f) noexcept
+	poly_quad make_quad_animation(const vector2_float p, const resources::animation_frame &f) noexcept
 	{
 		return make_quad_animation(p, {f.w, f.h}, f);
 	}
 
-	poly_quad make_quad_animation(const vector_float pos, const vector_float size, const resources::animation_frame& f) noexcept
+	poly_quad make_quad_animation(const vector2_float pos, const vector2_float size, const resources::animation_frame& f) noexcept
 	{
-		const auto offset = vector_float{ f.off_x * f.scale_w, f.off_y * f.scale_h };
-		const auto scaled_size = vector_float{ size.x * f.scale_w, size.y * f.scale_h };
+		const auto offset = vector2_float{ f.off_x * f.scale_w, f.off_y * f.scale_h };
+		const auto scaled_size = vector2_float{ size.x * f.scale_w, size.y * f.scale_h };
 
 		return make_quad_animation(rect_t{ pos - offset, scaled_size }, {
             f.w < 0 ? f.x + std::abs(f.w) : f.x,

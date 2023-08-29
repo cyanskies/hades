@@ -78,7 +78,7 @@ namespace hades::detail
 		return _gui.handle_event(e);
 	}
 
-	static void clamp_camera(sf::View &camera, vector_float min, vector_float max)
+	static void clamp_camera(sf::View &camera, vector2_float min, vector2_float max)
 	{
 		const auto& pos = camera.getCenter();
 
@@ -481,7 +481,7 @@ namespace hades::detail
 				{
 					_resize_options.top_left = _resize_options.offset;
 					_resize_options.bottom_right = _resize_options.size - 
-						(_resize_options.offset + vector_int{_level_x, _level_y});
+						(_resize_options.offset + vector2_int{_level_x, _level_y});
 					changed = false;
 				}
 
@@ -512,7 +512,7 @@ namespace hades::detail
 				{
 					_resize_options.offset = _resize_options.top_left;
 					_resize_options.size = _resize_options.bottom_right + 
-						vector_int{ _level_x, _level_y } + _resize_options.offset;
+						vector2_int{ _level_x, _level_y } + _resize_options.offset;
 				}
 			}
 			_gui.window_end();

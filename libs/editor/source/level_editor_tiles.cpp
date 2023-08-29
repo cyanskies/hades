@@ -14,7 +14,7 @@ namespace hades
 	level level_editor_tiles::level_new(level l) const
 	{
 		const auto tile_size = _settings->tile_size;
-		const auto size = vector_int{
+		const auto size = vector2_int{
 			signed_cast(l.map_x / tile_size),
 			signed_cast(l.map_y / tile_size)
 		};
@@ -69,7 +69,7 @@ namespace hades
 		return l;
 	}
 
-	void level_editor_tiles::level_resize(vector_int s, vector_int o)
+	void level_editor_tiles::level_resize(vector2_int s, vector2_int o)
 	{
 		auto map = _tiles.get_map();
 		const auto new_size_tiles = to_tiles(s, _settings->tile_size);
@@ -84,7 +84,7 @@ namespace hades
 	{
 		static_assert(std::is_invocable_v<OnClick, resources::tile*>);
 
-		constexpr auto button_size = vector_float{ 25.f, 25.f };
+		constexpr auto button_size = vector2_float{ 25.f, 25.f };
 
 		const auto tile_size = static_cast<float>(resources::get_tile_settings()->tile_size);
 

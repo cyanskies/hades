@@ -10,7 +10,7 @@
 
 namespace hades
 {
-	static poly_quad make_quad(vector_float p, vector_float s, colour c)
+	static poly_quad make_quad(vector2_float p, vector2_float s, colour c)
 	{
 		return make_quad_colour({ p.x, p.y, s.x, s.y }, c);
 	}
@@ -49,7 +49,7 @@ namespace hades
 		return;
 	}
 
-	void grid::set_size(vector_float s)
+	void grid::set_size(vector2_float s)
 	{
 		_properties.grid_size = s;
 		make_grid(_properties, _quads);

@@ -129,14 +129,14 @@ namespace hades::mouse
 	}
 
 	template<bool Drag, bool DoubleClick>
-	constexpr vector_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
+	constexpr vector2_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
 	{
 		static_assert(DoubleClick, "Double click is disabled for this mouse state");
 		return {};
 	}
 
 	template<bool Drag>
-	constexpr vector_int double_click_pos(const mouse_button_state<Drag, true>& s) noexcept
+	constexpr vector2_int double_click_pos(const mouse_button_state<Drag, true>& s) noexcept
 	{
 		assert(s.double_clicked);
 		return s.click_pos;
@@ -182,14 +182,14 @@ namespace hades::mouse
 	}
 
 	template<bool Drag, bool DoubleClick>
-	constexpr vector_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
+	constexpr vector2_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& s) noexcept
 	{
 		static_assert(Drag, "Dragging is disabled for this mouse state");
         return {};
 	}
 
 	template<bool DoubleClick>
-	constexpr vector_int drag_start_pos(const mouse_button_state<true, DoubleClick>& s) noexcept
+	constexpr vector2_int drag_start_pos(const mouse_button_state<true, DoubleClick>& s) noexcept
 	{
 		assert(s.drag_start || s.dragging || s.drag_end);
 		return s.click_pos;

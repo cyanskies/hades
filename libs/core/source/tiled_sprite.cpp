@@ -34,14 +34,14 @@ namespace hades
 		return;
 	}
 
-	void tiled_sprite::set_size(vector_float s)
+	void tiled_sprite::set_size(vector2_float s)
 	{
 		set_size(s, dont_regen);
 
 		_generate_buffer();
 	}
 
-	void tiled_sprite::set_size(vector_float s, dont_regen_t) noexcept
+	void tiled_sprite::set_size(vector2_float s, dont_regen_t) noexcept
 	{
 		_size = s;
 	}
@@ -66,7 +66,7 @@ namespace hades
 	void tiled_sprite::_generate_buffer()
 	{
 		//we want to generate a repeating tiled area covering <size>
-		const auto anim_size = vector_float{
+		const auto anim_size = vector2_float{
 			std::abs(_frame.w * _frame.scale_w),
 			std::abs(_frame.h * _frame.scale_h)
 		};
@@ -85,8 +85,8 @@ namespace hades
 		const auto vertex_x = static_cast<uint32>(x_wholef);
 		const auto vertex_y = static_cast<uint32>(y_wholef);
 
-		const auto tex_pos = vector_float{ _frame.x, _frame.y };
-		const auto tex_size = vector_float{ _frame.w, _frame.h };
+		const auto tex_pos = vector2_float{ _frame.x, _frame.y };
+		const auto tex_size = vector2_float{ _frame.w, _frame.h };
 
 		_quad_buffer.clear();
 		_quad_buffer.reserve(integer_cast<std::size_t>(vertex_x) * vertex_y);
@@ -95,7 +95,7 @@ namespace hades
 		{
 			for (auto x = 0u; x <= vertex_x; ++x)
 			{
-                const vector_float position{ float_cast(x) * anim_size.x, float_cast(y) * anim_size.y };
+                const vector2_float position{ float_cast(x) * anim_size.x, float_cast(y) * anim_size.y };
 				auto size = tex_size;
 				//for the final column the size may be truncated
 				if (x == vertex_x)

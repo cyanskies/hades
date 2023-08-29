@@ -11,7 +11,7 @@ namespace hades
 		{
 			const auto cell_size = calculate_grid_size(*g.step);
 
-			const auto snap_float_p = mouse::snap_to_grid(static_cast<vector_float>(p), cell_size);
+			const auto snap_float_p = mouse::snap_to_grid(static_cast<vector2_float>(p), cell_size);
 
 			return static_cast<vector2<T>>(snap_float_p);
 		}

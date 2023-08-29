@@ -48,7 +48,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_resize(vector_int size, vector_int offset)
+	inline void basic_level_editor<Components...>::_component_on_resize(vector2_int size, vector2_int offset)
 	{
 		tuple_for_each(_editor_components, [size, offset](auto&& c) {
 			c.level_resize(size, offset);
@@ -99,7 +99,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector_float p)
+	inline void basic_level_editor<Components...>::_component_on_click(brush_index_t i, vector2_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_click(p);
@@ -107,7 +107,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag_start(brush_index_t i, vector_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag_start(brush_index_t i, vector2_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag_start(p);
@@ -115,7 +115,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag(brush_index_t i, vector_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag(brush_index_t i, vector2_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag(p);
@@ -123,7 +123,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag_end(brush_index_t i, vector_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag_end(brush_index_t i, vector2_float p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, [p](auto &&c) {
 			c.on_drag_end(p);
@@ -147,7 +147,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, time_duration dt, vector_float world_position)
+	inline void basic_level_editor<Components...>::_generate_brush_preview(brush_index_t brush_index, time_duration dt, vector2_float world_position)
 	{
 		level_editor_do_tuple_work(_editor_components, brush_index, [dt, world_position](auto &&c) {
 			c.make_brush_preview(dt, world_position);

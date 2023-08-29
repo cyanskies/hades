@@ -34,7 +34,7 @@ namespace hades
 	{
 	public:
 		void level_load(const level&) override;
-		void level_resize(vector_int s, vector_int) override;
+		void level_resize(vector2_int s, vector2_int) override;
 
 		void gui_update(gui&, editor_windows&) override;
 

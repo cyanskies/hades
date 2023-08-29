@@ -20,7 +20,7 @@ namespace hades
 		//move the region to account for the views position
 		const auto view_size = view.getSize();
 		const auto view_pos = view.getCenter() - view_size / 2.f;
-		const auto window_rect_pos = vector_float{ _region.x - view_pos.x, _region.y - view_pos.y };
+		const auto window_rect_pos = vector2_float{ _region.x - view_pos.x, _region.y - view_pos.y };
 
 		// TODO: stretch or shrink the region to account for view_size and view_port
 		/*

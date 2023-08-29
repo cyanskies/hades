@@ -36,7 +36,7 @@ namespace hades
 
 			struct click_pos
 			{
-				vector_int click_pos;
+				vector2_int click_pos;
 			};
 
 			struct double_click_data
@@ -63,10 +63,10 @@ namespace hades
 			bool clicked = false;
 		};
 
-		bool inside_target(const sf::RenderTarget&, vector_int window_position);
-		vector_float to_world_coords(const sf::RenderTarget&, vector_int window_position, const sf::View&);
-		vector_int to_window_coords(const sf::RenderTarget&, vector_float world_position, const sf::View&);
-		vector_float snap_to_grid(vector_float coord, float cell_size);
+		bool inside_target(const sf::RenderTarget&, vector2_int window_position);
+		vector2_float to_world_coords(const sf::RenderTarget&, vector2_int window_position, const sf::View&);
+		vector2_int to_window_coords(const sf::RenderTarget&, vector2_float world_position, const sf::View&);
+		vector2_float snap_to_grid(vector2_float coord, float cell_size);
 
 		//call update_button_state each update frame to keep a mouse_button_state current for each button you care about
 		//use the is_* functions to check whether to trigger a mouse event
@@ -80,7 +80,7 @@ namespace hades
 		template<bool Drag, bool DoubleClick>
 		constexpr bool is_double_click(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
-		constexpr vector_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
+		constexpr vector2_int double_click_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
 		constexpr bool is_drag_start(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
@@ -88,7 +88,7 @@ namespace hades
 		template<bool Drag, bool DoubleClick>
 		constexpr bool is_drag_end(const mouse_button_state<Drag, DoubleClick> &mouse_state) noexcept;
 		template<bool Drag, bool DoubleClick>
-		constexpr vector_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
+		constexpr vector2_int drag_start_pos(const mouse_button_state<Drag, DoubleClick>& mouse_state) noexcept;
 	}
 
 	//optional function for registering common input methods

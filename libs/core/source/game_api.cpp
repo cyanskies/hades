@@ -253,7 +253,7 @@ namespace hades
 			return render_data_ptr->render_output->create_sprite();
 		}
 		
-		id_t create(const resources::animation* a, time_point t, layer_t l, vector_float position, vector_float size)
+		id_t create(const resources::animation* a, time_point t, layer_t l, vector2_float position, vector2_float size)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
@@ -265,7 +265,7 @@ namespace hades
 			return time_point{ time_cast<nanoseconds>(resources::animation_functions::get_duration(*a) * p) };
 		}
 
-		id_t create(const resources::animation* a, float progress, layer_t l, vector_float position, vector_float size)
+		id_t create(const resources::animation* a, float progress, layer_t l, vector2_float position, vector2_float size)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
@@ -286,28 +286,28 @@ namespace hades
 			return render_data_ptr->render_output->sprite_exists(id);
 		}
 
-		void set(id_t id, const resources::animation* a, time_point t, layer_t l, vector_float p, vector_float s)
+		void set(id_t id, const resources::animation* a, time_point t, layer_t l, vector2_float p, vector2_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_sprite(id, a, t, l, p, s);
 		}
 
-		void set(id_t id, const resources::animation* a, float prog, layer_t l, vector_float p, vector_float s)
+		void set(id_t id, const resources::animation* a, float prog, layer_t l, vector2_float p, vector2_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_sprite(id, a, prog_time(prog, a), l, p, s);
 		}
 
-		void set(id_t id, time_point t, vector_float p, vector_float s)
+		void set(id_t id, time_point t, vector2_float p, vector2_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
 			render_data_ptr->render_output->set_sprite(id, t, p, s);
 		}
 
-		/*void set(id_t id, float t, vector_float p, vector_float s)
+		/*void set(id_t id, float t, vector2_float p, vector2_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);

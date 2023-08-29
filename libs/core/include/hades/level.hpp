@@ -32,8 +32,8 @@ namespace hades
 		{
 			//paralax controls the movement speed of the background relative to
 			//the world; 0.f is a static image, 1.f is no paralax
-			vector_float offset{};
-			vector_float parallax = { 1.f, 1.f };
+			vector2_float offset{};
+			vector2_float parallax = { 1.f, 1.f };
 			//if animation is smaller than the world then it will loop
 			unique_id animation = unique_id::zero;
 		};

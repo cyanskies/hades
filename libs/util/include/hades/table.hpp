@@ -14,7 +14,7 @@
 //intended usage is for pathfinding system, ability to add multiple cost maps together to get the sum cost for a specific tile
 
 namespace hades {
-	using table_index_t = vector_int;
+	using table_index_t = vector2_int;
 
 	template<typename T>
 	class basic_table 

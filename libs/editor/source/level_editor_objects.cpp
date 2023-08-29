@@ -131,7 +131,7 @@ namespace hades
 	}
 
 	//TODO: make into member function
-	static vector_float get_safe_size(const object_instance &o)
+	static vector2_float get_safe_size(const object_instance &o)
 	{
 		const auto size = get_size(o);
 		if (size.x == 0.f || size.y == 0.f)
@@ -218,11 +218,11 @@ namespace hades
 		return l;
 	}
 
-	void level_editor_objects_impl::level_resize(vector_int size, vector_int offset)
+	void level_editor_objects_impl::level_resize(vector2_int size, vector2_int offset)
 	{
-		const auto offset_f = static_cast<vector_float>(offset);
+		const auto offset_f = static_cast<vector2_float>(offset);
 
-		_level_limit = static_cast<vector_float>(size);
+		_level_limit = static_cast<vector2_float>(size);
 		const auto new_world_limit = rect_float{
 			{}, _level_limit
 		};
@@ -272,8 +272,8 @@ namespace hades
 	{
 		static_assert(std::is_invocable_v<Func, const resources::object*>);
 
-		constexpr auto button_size = vector_float{ 25.f, 25.f };
-		constexpr auto button_scale_diff = vector_float{ 8.f, 6.f };
+		constexpr auto button_size = vector2_float{ 25.f, 25.f };
+		constexpr auto button_scale_diff = vector2_float{ 8.f, 6.f };
 		constexpr auto button_size_no_img = button_size + button_scale_diff;
 
 		const auto name_curve = get_name_curve();
@@ -411,7 +411,7 @@ namespace hades
 		_sprites.apply();
 	}
 
-	constexpr bool within_level(vector_float pos, vector_float size, vector_float level_size) noexcept
+	constexpr bool within_level(vector2_float pos, vector2_float size, vector2_float level_size) noexcept
 	{
 		return is_within(pos, { {0.f, 0.f}, level_size });
 	}
@@ -419,7 +419,7 @@ namespace hades
 	//TODO: remove some params, pass in the snapped position in pos, if needed
 	//		no need for all the grid settings stuff
 	template<typename Object>
-	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector_float pos, vector_float level_limit,
+	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector2_float pos, vector2_float level_limit,
 		const Object &o, const resources::level_editor_object_settings &s, bool snap, float cell_size)
 	{
 		const auto size = get_safe_size(o);
@@ -557,7 +557,7 @@ namespace hades
 
 		if (_brush_type == brush_type::object_selector
 			&& _show_objects 
-			&& within_level(pos, vector_float{}, _level_limit))
+			&& within_level(pos, vector2_float{}, _level_limit))
 		{
 			const auto id = object_at(pos, _quad_selection.value(), _objects.objects);
 			if (id == bad_entity) // nothing under cursor
@@ -584,7 +584,7 @@ namespace hades
 
 	void level_editor_objects_impl::on_drag_start(mouse_pos pos)
 	{
-		if (!within_level(pos, vector_float{}, _level_limit))
+		if (!within_level(pos, vector2_float{}, _level_limit))
 			return;
 
 		if (_brush_type == brush_type::object_selector
@@ -780,7 +780,7 @@ namespace hades
 		return;
 	}
 
-	bool level_editor_objects_impl::_try_place_object(vector_float pos, editor_object_instance o)
+	bool level_editor_objects_impl::_try_place_object(vector2_float pos, editor_object_instance o)
 	{
 		const auto size = get_size(o);
 

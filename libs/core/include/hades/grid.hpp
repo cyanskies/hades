@@ -17,7 +17,7 @@ namespace hades
 	public:
 		struct grid_properties
 		{
-			vector_float grid_size{};
+			vector2_float grid_size{};
 			float cell_size{};
 			colour line_colour{};
 			float line_thickness{ 1.f };
@@ -31,7 +31,7 @@ namespace hades
 			return;
 		}
 
-		void set_size(vector_float);
+		void set_size(vector2_float);
 		void set_cell_size(float);
 		void set_line_thickness(float);
 		void set_colour(colour);

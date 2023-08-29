@@ -48,7 +48,7 @@ void hades::level_editor_grid::level_load(const level &l)
 		calculate_grid_size(*_grid_vars.step), colours::white });
 }
 
-void hades::level_editor_grid::level_resize(vector_int s, vector_int)
+void hades::level_editor_grid::level_resize(vector2_int s, vector2_int)
 {
 	_grid.set_size({static_cast<float>(s.x), static_cast<float>(s.y)});
 }

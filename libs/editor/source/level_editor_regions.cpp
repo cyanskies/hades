@@ -306,7 +306,7 @@ namespace hades
 
 		const auto snap_pos = snap_to_grid(m, _grid);
 
-		const auto pos = vector_float{
+		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
 			std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
 		};
@@ -447,7 +447,7 @@ namespace hades
 	{
 		const auto snap_pos = snap_to_grid(m, _grid);
 
-		const auto pos = vector_float{
+		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
 			std::clamp(snap_pos.y, 0.f, static_cast<float>(_level_limits.y))
 		};

@@ -45,8 +45,8 @@ namespace hades
 		struct sprite
 		{
 			sprite_id id = bad_sprite_id;
-			vector_float position{};
-			vector_float size{};
+			vector2_float position{};
+			vector2_float size{};
 			layer_t layer{};
 			const resources::animation *animation = nullptr;
 			time_point animation_progress;
@@ -91,19 +91,19 @@ namespace hades
 		//NOTE: functions that accept sprite_id can throw sprite_batch_invalid_id
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *a, time_point t,
-			sprite_utility::layer_t l, vector_float p, vector_float s);
+			sprite_utility::layer_t l, vector2_float p, vector2_float s);
 		bool exists(sprite_id id) const noexcept;
 		void destroy_sprite(sprite_id id);
 
 		void set_sprite(sprite_id, const resources::animation* a, time_point t,
-			sprite_utility::layer_t l, vector_float p, vector_float s);
-		void set_sprite(sprite_id, time_point t, vector_float p, vector_float s);
-		void set_position(sprite_id id, vector_float pos);
+			sprite_utility::layer_t l, vector2_float p, vector2_float s);
+		void set_sprite(sprite_id, time_point t, vector2_float p, vector2_float s);
+		void set_position(sprite_id id, vector2_float pos);
 		void set_animation(sprite_id id, const resources::animation *a, time_point t);
 		void set_animation(sprite_id id, time_point t);
-		void set_position_animation(sprite_id, vector_float pos, const resources::animation* a, time_point t);
+		void set_position_animation(sprite_id, vector2_float pos, const resources::animation* a, time_point t);
 		void set_layer(sprite_id id, sprite_utility::layer_t l);
-		void set_size(sprite_id id, vector_float size);
+		void set_size(sprite_id id, vector2_float size);
 		
 		//NOTE: the position of the layer_t in the vector
 		// indicates it's layer_index for draw

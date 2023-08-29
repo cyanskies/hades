@@ -21,8 +21,8 @@ namespace hades
 
 		struct entity_info
 		{
-			const linear_curve<vector_float>& position;
-			const vector_float size;
+			const linear_curve<vector2_float>& position;
+			const vector2_float size;
 			const resources::animation* anim = nullptr;
 		};
 

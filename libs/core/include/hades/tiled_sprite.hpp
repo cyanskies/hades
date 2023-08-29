@@ -29,8 +29,8 @@ namespace hades
 		void set_animation(const resources::animation*, time_point, dont_regen_t) noexcept;
 
 		// throws: bad_alloc
-		void set_size(vector_float);
-		void set_size(vector_float, dont_regen_t) noexcept;
+		void set_size(vector2_float);
+		void set_size(vector2_float, dont_regen_t) noexcept;
 		resources::animation_frame get_current_frame() const noexcept;
 
 		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
@@ -43,7 +43,7 @@ namespace hades
 		const resources::animation* _animation{ nullptr };
 		quad_buffer _quad_buffer{ sf::VertexBuffer::Usage::Dynamic };
 		resources::animation_frame _frame;
-		vector_float _size{};
+		vector2_float _size{};
 	};
 }
 

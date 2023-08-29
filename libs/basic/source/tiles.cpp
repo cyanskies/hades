@@ -541,15 +541,15 @@ namespace hades
 		return pixels / tile_size;
 	}
 
-	tile_position to_tiles(vector_int pixels, resources::tile_size_t tile_size)
+	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size)
 	{
 		assert(tile_size != 0);
-		return pixels / integer_cast<vector_int::value_type>(tile_size);
+		return pixels / integer_cast<vector2_int::value_type>(tile_size);
 	}
 
-	tile_position to_tiles(vector_float real_pixels, resources::tile_size_t tile_size)
+	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size)
 	{
-		return to_tiles(static_cast<vector_int>(real_pixels), tile_size);
+		return to_tiles(static_cast<vector2_int>(real_pixels), tile_size);
 	}
 
 	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept
@@ -557,7 +557,7 @@ namespace hades
 		return tiles * tile_size;
 	}
 
-	vector_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept
+	vector2_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept
 	{
 		return tiles * integer_cast<tile_position::value_type>(tile_size);
 	}
@@ -863,7 +863,7 @@ namespace hades
 		return m;
 	}
 
-	void resize_map_relative(tile_map &m, vector_int top_left, vector_int bottom_right, const resources::tile &t)
+	void resize_map_relative(tile_map &m, vector2_int top_left, vector2_int bottom_right, const resources::tile &t)
 	{
         const auto current_height = integer_cast<int32>(m.tiles.size()) / m.width;
 		const auto current_width = m.width;
@@ -871,7 +871,7 @@ namespace hades
 		const auto new_height = current_height - top_left.y + bottom_right.y;
 		const auto new_width = current_width - top_left.x + bottom_right.x;
 
-		const auto size = vector_int{
+		const auto size = vector2_int{
 			integer_cast<int32>(new_width),
 			integer_cast<int32>(new_height)
 		};
@@ -879,17 +879,17 @@ namespace hades
 		resize_map(m, size, { -top_left.x, -top_left.y }, t);
 	}
 
-	void resize_map_relative(tile_map &t, vector_int top_left, vector_int bottom_right)
+	void resize_map_relative(tile_map &t, vector2_int top_left, vector2_int bottom_right)
 	{
 		const auto& empty_tile = resources::get_empty_tile();
 		resize_map_relative(t, top_left, bottom_right, empty_tile);
 	}
 
-	void resize_map(tile_map &m, const vector_int size, const vector_int offset, const resources::tile &t)
+	void resize_map(tile_map &m, const vector2_int size, const vector2_int offset, const resources::tile &t)
 	{
 		const auto tile = make_tile_id(m, t);
 
-		auto new_tilemap = table_reduce_view{ vector_int{},
+		auto new_tilemap = table_reduce_view{ vector2_int{},
 			size, tile, [](auto&&, auto&& tile_id) noexcept -> tile_id_t {
 				return tile_id;
 		} };
@@ -903,7 +903,7 @@ namespace hades
 		const auto arr_size = size.x * size.y;
 		tiles.reserve(arr_size);
 
-		for (auto i = vector_int::value_type{}; i < arr_size; ++i)
+		for (auto i = vector2_int::value_type{}; i < arr_size; ++i)
 			tiles.emplace_back(new_tilemap[i]);
 
 		m.tiles = std::move(tiles);
@@ -912,7 +912,7 @@ namespace hades
 		return;
 	}
 
-	void resize_map(tile_map &t, vector_int size, vector_int offset)
+	void resize_map(tile_map &t, vector2_int size, vector2_int offset)
 	{
 		const auto& empty_tile = resources::get_empty_tile();
 		resize_map(t, size, offset, empty_tile);

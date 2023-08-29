@@ -22,8 +22,8 @@ namespace hades
 			struct background_layer
 			{
 				unique_id anim = unique_id::zero;
-				vector_float offset{ 0.f, 0.f };
-				vector_float parallax{ 1.f, 1.f };
+				vector2_float offset{ 0.f, 0.f };
+				vector2_float parallax{ 1.f, 1.f };
 			};
 
 			colour col = colours::black;
@@ -47,7 +47,7 @@ namespace hades
 		level level_new(level l) const override;
 		void level_load(const level&) override;
 		level level_save(level l) const override;
-		void level_resize(vector_int s, vector_int o) override;
+		void level_resize(vector2_int s, vector2_int o) override;
 
 		void gui_update(gui&, editor_windows&) override;
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;

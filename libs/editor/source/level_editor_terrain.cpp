@@ -157,14 +157,14 @@ namespace hades
 		return l;
 	}
 
-	void level_editor_terrain::level_resize(vector_int s, vector_int o)
+	void level_editor_terrain::level_resize(vector2_int s, vector2_int o)
 	{
 		terrain_map map = _map.get_map(); // make copy of map
 		const auto new_size_tiles = to_tiles(s, _tile_size);
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
 		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain);
-		auto empty_map = make_map(new_size_tiles + vector_int{ 1, 1 }, map.terrainset, _empty_terrain);
+		auto empty_map = make_map(new_size_tiles + vector2_int{ 1, 1 }, map.terrainset, _empty_terrain);
 		_clear_preview.create(std::move(empty_map));
 		_map.create(std::move(map));
 		_resize.terrain = _empty_terrain;

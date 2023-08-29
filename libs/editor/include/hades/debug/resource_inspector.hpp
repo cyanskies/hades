@@ -93,9 +93,9 @@ namespace hades::data
 		};
 
 		void _list_resources_from_data_file(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
-			data_manager&, unique_id, vector_float&);
+			data_manager&, unique_id, vector2_float&);
 		void _list_resources_from_group(resource_tree_state::group_iter first, resource_tree_state::group_iter last, gui& g,
-			data_manager&, unique_id, vector_float&);
+			data_manager&, unique_id, vector2_float&);
 		std::unique_ptr<resource_editor> _make_resource_editor(std::string_view resource_type);
 		void _refresh(data_manager&);
 		void _resource_tree(gui&, data::data_manager&);

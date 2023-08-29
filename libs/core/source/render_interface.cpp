@@ -12,7 +12,7 @@ namespace hades
 	}
 	
 	render_interface::sprite_id render_interface::create_sprite(const resources::animation *a,
-		time_point t, sprite_layer l, vector_float p, vector_float s)
+		time_point t, sprite_layer l, vector2_float p, vector2_float s)
 	{
 		return _sprite_batch.create_sprite(a, t, l, p, s);
 	}
@@ -36,7 +36,7 @@ namespace hades
 		return;
 	}
 
-	void render_interface::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_layer l, vector_float position, vector_float size)
+	void render_interface::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_layer l, vector2_float position, vector2_float size)
 	{
 		try
 		{
@@ -48,7 +48,7 @@ namespace hades
 		}
 	}
 
-	void render_interface::set_sprite(sprite_id id, time_point t, vector_float p, vector_float s)
+	void render_interface::set_sprite(sprite_id id, time_point t, vector2_float p, vector2_float s)
 	{
 		_sprite_batch.set_sprite(id, t, p, s);
 	}
@@ -95,7 +95,7 @@ namespace hades
 		return;
 	}
 
-	void render_interface::set_position(sprite_id id, vector_float p)
+	void render_interface::set_position(sprite_id id, vector2_float p)
 	{
 		try
 		{
@@ -109,7 +109,7 @@ namespace hades
 		return;
 	}
 
-	void render_interface::set_size(sprite_id id, vector_float s)
+	void render_interface::set_size(sprite_id id, vector2_float s)
 	{
 		try
 		{

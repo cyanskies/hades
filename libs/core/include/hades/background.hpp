@@ -20,8 +20,8 @@ namespace hades::resources
 		struct layer
 		{
             resource_link<animation> anim;
-			vector_float offset{ 0.f, 0.f };
-			vector_float parallax{ 0.f, 0.f };
+			vector2_float offset{ 0.f, 0.f };
+			vector2_float parallax{ 0.f, 0.f };
 		};
 
 		void load(data::data_manager&) final override;
@@ -43,20 +43,20 @@ namespace hades
 		struct background_layer
 		{
 			const resources::animation *animation = nullptr;
-			vector_float offset{ 0.f, 0.f };
-			vector_float parallax{ 0.f, 0.f };
+			vector2_float offset{ 0.f, 0.f };
+			vector2_float parallax{ 0.f, 0.f };
 			tiled_sprite sprite;
 		};
 
 		background() = default;
 		background(const resources::background&);
-		background(vector_float size, const std::vector<layer>& = std::vector<layer>{}, colour = colours::black);
+		background(vector2_float size, const std::vector<layer>& = std::vector<layer>{}, colour = colours::black);
 		
 		background(const background&) = default;
 		background &operator=(const background&) = default;
 
 		void set_colour(colour) noexcept;
-		void set_size(vector_float) noexcept;
+		void set_size(vector2_float) noexcept;
 		// throws: data::resource_error if the animation cannot be found
 		void add(layer);
 		void clear() noexcept;
@@ -72,7 +72,7 @@ namespace hades
 	private:
 		sf::RectangleShape _backdrop;
 		std::vector<background_layer> _layers;
-		vector_float _size{};
+		vector2_float _size{};
 	};
 }
 

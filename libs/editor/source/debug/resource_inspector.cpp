@@ -1835,7 +1835,7 @@ namespace hades::data
 		resource_tree_state::group_iter first,
 		resource_tree_state::group_iter last,
 		gui& g,	data_manager& d, unique_id mod,
-		vector_float& rect_max)
+		vector2_float& rect_max)
 	{
 		while (first != last)
 		{
@@ -1867,7 +1867,7 @@ namespace hades::data
 		resource_tree_state::group_iter first,
 		resource_tree_state::group_iter last,
 		gui& g, data_manager& d, unique_id mod,
-		vector_float& rect_max)
+		vector2_float& rect_max)
 	{
 		while (first != last)
 		{

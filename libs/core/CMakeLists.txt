@@ -25,6 +25,7 @@ set(HADES_CORE_SRC
 	source/render_interface.cpp
 	source/save_load_api.cpp
 	source/sf_input.cpp
+	source/shader.cpp
 	source/sprite_batch.cpp
 	source/state.cpp
 	source/terrain_map.cpp
@@ -63,6 +64,7 @@ set(HADES_CORE_SRC
 	include/hades/sf_input.hpp
 	include/hades/sf_streams.hpp
 	include/hades/sf_time.hpp
+	include/hades/shader.hpp
 	include/hades/sprite_batch.hpp
 	include/hades/state.hpp
 	include/hades/terrain_map.hpp
@@ -76,6 +78,7 @@ set(HADES_CORE_SRC
 	include/hades/detail/game_system.inl
 	include/hades/detail/level_interface.inl
 	include/hades/detail/mouse_input.inl
+	include/hades/detail/shader.inl
 	include/hades/detail/state.inl
 )
 

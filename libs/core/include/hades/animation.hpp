@@ -9,13 +9,21 @@
 #include "hades/colour.hpp"
 // TODO: create data_fwd header, we only include this for try_get_return and get_error
 // NOTE: now we need it for resource link too
+//		could be used in a few other places too
 #include "hades/data.hpp" 
 #include "hades/rectangle_math.hpp"
+#include "hades/shader.hpp"
 #include "hades/uniqueid.hpp"
 #include "hades/time.hpp"
 
 namespace hades::resources
 {
+	class animation_no_shader : public data::resource_error
+	{
+	public:
+		using resource_error::resource_error;
+	};
+
 	//struct shader;
 	struct animation_frame
 	{
@@ -62,11 +70,14 @@ namespace hades::resources
 		const std::vector<animation_frame>& get_animation_frames(const animation&) noexcept;
 		void set_animation_frames(animation&, std::vector<animation_frame>);
 		void set_duration(animation&, time_duration) noexcept;
-		vector_float get_minimum_offset(const animation&) noexcept;
+		vector2_float get_minimum_offset(const animation&) noexcept;
 		// calculates the total area the animation might cover
 		// accounting for origin offsets and scale changes
-		rect_float get_bounding_area(const animation&, vector_float size) noexcept;
-		// const shader* get_shader(const animation&) noexcept;
+		rect_float get_bounding_area(const animation&, vector2_float size) noexcept;
+		bool has_shader(const animation&) noexcept;
+		// THROWS: animation_no_shader if the animation doesn't have a shader
+		//	or hasn't been loaded properly
+		shader_proxy get_shader_proxy(const animation&);
 	}
 
 	namespace animation_group_functions
@@ -102,9 +113,9 @@ namespace hades
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
 	poly_quad make_quad_colour(rect_float quad, colour) noexcept;
-	poly_quad make_quad_line(vector_float start, vector_float end, float thickness, colour) noexcept;
-	poly_quad make_quad_animation(vector_float pos, const resources::animation_frame&) noexcept;
-	poly_quad make_quad_animation(vector_float pos, vector_float size, const resources::animation_frame&) noexcept;
+	poly_quad make_quad_line(vector2_float start, vector2_float end, float thickness, colour) noexcept;
+	poly_quad make_quad_animation(vector2_float pos, const resources::animation_frame&) noexcept;
+	poly_quad make_quad_animation(vector2_float pos, vector2_float size, const resources::animation_frame&) noexcept;
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;
 
 	//functions for updating vertex data

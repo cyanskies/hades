@@ -89,7 +89,7 @@ namespace hades::data
 	{
 		using Type = std::decay_t<decltype(res)>;
 		auto storage = _get_hive<Type>();
-		return storage->hive.set(res);
+		return storage->hive.set(std::move(res));
 	}
 
 	template<Resource T>

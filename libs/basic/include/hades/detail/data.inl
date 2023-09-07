@@ -91,8 +91,8 @@ namespace hades
 				{
 					auto res = *get_r;
 					assert(res.id == target);
-					//res.id = target;
 					res.mod = *mod;
+					res.loaded = false;
 					res.data_file = _current_data_file();
 					r = _set<Type>(std::move(res), group);
 				}

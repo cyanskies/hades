@@ -105,7 +105,7 @@ namespace hades
 	constexpr bool is_resource_v = std::is_base_of_v<resources::resource_base, T>;
 
 	template<typename T>
-	concept Resource = is_resource_v<T>;
+	concept Resource = is_resource_v<T> && std::copy_constructible<T>;
 }
 
 #endif // !HADES_RESOURCE_BASE_HPP

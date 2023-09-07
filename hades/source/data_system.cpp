@@ -428,9 +428,9 @@ namespace hades::data
 			}
 
 			//if this resource name has a parser then load it
-			auto &parser = _resourceParsers[type];
-			if (parser)
-				std::invoke(parser, mod, *header, *this);
+			auto parser = _resourceParsers.find(type);
+			if (parser != end(_resourceParsers) && parser->second)
+				std::invoke(parser->second, mod, *header, *this);
 		}
 
 		return;

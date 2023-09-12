@@ -411,7 +411,7 @@ namespace hades
 		_sprites.apply();
 	}
 
-	constexpr bool within_level(vector2_float pos, vector2_float size, vector2_float level_size) noexcept
+	constexpr bool within_level(vector2_float pos, vector2_float, vector2_float level_size) noexcept
 	{
 		return is_within(pos, { {0.f, 0.f}, level_size });
 	}

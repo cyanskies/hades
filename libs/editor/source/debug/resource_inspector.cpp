@@ -1287,7 +1287,7 @@ namespace hades::data
 					return;
 				};
 
-				const auto rem_base = [this](data::data_manager& d, unique_id id) {
+				const auto rem_base = [this](data::data_manager&, unique_id id) {
 					const auto base = std::ranges::find(_obj->base, id);
 					_obj->base.erase(base);
 					return;

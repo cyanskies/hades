@@ -8,8 +8,8 @@ namespace hades::data::detail
 	void move_erased_hive(erased_hive::mem_t& source, erased_hive::mem_t& target) noexcept
 	{
 		using Hive = erased_hive::hive_t<T>;
-		auto obj = std::launder(reinterpret_cast<Hive*>(&source));
-		new (&target) Hive{ std::move(*obj) };
+		auto obj = reinterpret_cast<Hive*>(&source);
+		new (static_cast<void*>(&target)) Hive{std::move(*obj)};
 		return;
 	}
 
@@ -17,8 +17,8 @@ namespace hades::data::detail
 	void move_assign_erased_hive(erased_hive::mem_t& source, erased_hive::mem_t& target) noexcept
 	{
 		using Hive = erased_hive::hive_t<T>;
-		auto src = std::launder(reinterpret_cast<Hive*>(&source));
-		auto trgt = std::launder(reinterpret_cast<Hive*>(&target));
+		auto src = reinterpret_cast<Hive*>(&source);
+		auto trgt = reinterpret_cast<Hive*>(&target);
 		*trgt = std::move(*src);
 		return;
 	}
@@ -27,7 +27,7 @@ namespace hades::data::detail
 	void destroy_erased_hive(erased_hive::mem_t& mem) noexcept
 	{
 		using Hive = erased_hive::hive_t<T>;
-		auto obj = std::launder(reinterpret_cast<Hive*>(&mem));
+		auto obj = reinterpret_cast<Hive*>(&mem);
 		obj->~Hive();
 		return;
 	}
@@ -49,7 +49,8 @@ namespace hades::data
 		: _index{ typeid(T) }
 #endif
 	{
-		new(&_mem) hive_t<T>{};
+		static_assert(sizeof(hive_t<T>) <= sizeof(mem_t));
+		new(static_cast<void*>(&_mem)) hive_t<T>{};
 		_move = detail::move_erased_hive<T>;
 		_move_assign = detail::move_assign_erased_hive<T>;
 		_destroy = detail::destroy_erased_hive<T>;
@@ -60,7 +61,7 @@ namespace hades::data
 	Resource auto* erased_hive::set(Resource auto res)
 	{
 		assert(typeid(std::decay_t<decltype(res)>) == _index);
-		auto hive = std::launder(reinterpret_cast<hive_t<std::decay_t<decltype(res)>>*>(&_mem));
+		auto hive = reinterpret_cast<hive_t<std::decay_t<decltype(res)>>*>(&_mem);
 		assert(res.id != unique_zero || res.mod != unique_zero);
 		assert(!detail::erased_hive_elm_exists(*hive, res.id, res.mod));
 		auto iter = hive->emplace(std::move(res));
@@ -71,7 +72,7 @@ namespace hades::data
 	void erased_hive::erase(unique_id id, unique_id mod) noexcept
 	{
 		assert(typeid(T) == _index);
-		auto hive = std::launder(reinterpret_cast<hive_t<T>*>(&_mem));
+		auto hive = reinterpret_cast<hive_t<T>*>(&_mem);
 		auto beg = begin(*hive);
 		auto end = std::end(*hive);
 		while (beg != end)

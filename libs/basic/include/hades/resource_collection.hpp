@@ -31,12 +31,16 @@ namespace hades::data
 			return;
 		}
 
+		erased_hive(const erased_hive&) = delete;
+
 		erased_hive& operator=(erased_hive&& rhs) noexcept
 		{
 			assert(_index == rhs._index);
 			std::invoke(_move_assign, rhs._mem, _mem);
 			return *this;
 		}
+
+		erased_hive& operator=(const erased_hive&) = delete;
 
 		~erased_hive() noexcept
 		{
@@ -54,7 +58,7 @@ namespace hades::data
 		using mem_t = std::array<std::byte, sizeof(hive_t<int>)>;
 
 	private:
-		mem_t _mem;
+		alignas(std::max_align_t) mem_t _mem;
 		void(*_move)(mem_t&, mem_t&);
 		void(*_move_assign)(mem_t&, mem_t&);
 		void(*_destroy)(mem_t&);

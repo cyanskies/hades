@@ -64,7 +64,7 @@ namespace hades::resources
 		bool is_loaded(const animation&) noexcept;
 		unique_id get_id(const animation&) noexcept;
 		resource_base* get_resource_base(animation&) noexcept;
-		std::vector<unique_id> get_id(const std::vector<const animation*>&) noexcept;
+		std::vector<unique_id> get_id(const std::vector<const animation*>&);
 		const texture* get_texture(const animation&) noexcept;
 		time_duration get_duration(const animation&) noexcept;
 		const std::vector<animation_frame>& get_animation_frames(const animation&) noexcept;
@@ -76,7 +76,7 @@ namespace hades::resources
 		rect_float get_bounding_area(const animation&, vector2_float size) noexcept;
 		bool has_shader(const animation&) noexcept;
 		// THROWS: animation_no_shader if the animation doesn't have a shader
-		//	or hasn't been loaded properly
+		//	or hasn't been loaded properly; use has_shader to check
 		shader_proxy get_shader_proxy(const animation&);
 	}
 
@@ -117,9 +117,6 @@ namespace hades
 	poly_quad make_quad_animation(vector2_float pos, const resources::animation_frame&) noexcept;
 	poly_quad make_quad_animation(vector2_float pos, vector2_float size, const resources::animation_frame&) noexcept;
 	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;
-
-	//functions for updating vertex data
-	//using poly_raw = poly_quad::pointer;
 
 	void register_animation_resource(data::data_manager&);
 }

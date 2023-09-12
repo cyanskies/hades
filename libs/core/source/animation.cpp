@@ -28,7 +28,7 @@ namespace hades::resources
 {
 	struct animation;
 	static void load_animation(animation&, data::data_manager&);
-	//TODO: add field for fragment shaders
+	
 	struct animation : public resource_type<std::vector<animation_frame>>
 	{
 		void load(data::data_manager& d) final override
@@ -42,7 +42,8 @@ namespace hades::resources
 		resource_link<texture> tex;
 		time_duration duration = time_duration::zero();
 		resource_link<shader> shader;
-		shader_uniform_map shader_uniforms;
+		shader_uniform_map shader_uniforms_unloaded;
+		shader_uniform_map shader_uniforms; // this is the uniform list merged with those from the shader
 		std::optional<shader_proxy> proxy;
 	};
 
@@ -200,11 +201,11 @@ namespace hades::resources::animation_functions
 		return &a;
 	}
 
-	std::vector<unique_id> get_id(const std::vector<const animation*>& a) noexcept
+	std::vector<unique_id> get_id(const std::vector<const animation*>& a)
 	{
 		auto ret = std::vector<unique_id>{};
 		ret.reserve(size(a));
-		std::transform(begin(a), end(a), back_inserter(ret), [](const animation* a) noexcept {
+		std::transform(begin(a), end(a), back_inserter(ret), [](const animation* a) {
 			assert(a);
 			return a->id;
 		});
@@ -510,19 +511,20 @@ namespace hades::resources
 		//		loop: bool
 		//		frames:
 		//			- [x, y, w, h, scalex, scaley, offx, offy, d]
-		//			the third parameter onward is optional
+		//			// the third parameter onward is optional
 		// alt		- 
 		//			    pos: [x, y]
 		//				size: [w, h]
 		//				scale: [x, y] //float, default [1.f, 1.f]
 		//				offset: [x, y] //float, default [0, 0]
-		//				duration: default 1.f
-		//			
-		
+		//				duration: // relative duration default 1.f
+		//		shader: name
+		//		shader-uniforms:
+		//			name:
+		//				type:
+		//				value:
 
 		using namespace std::string_view_literals;
-        //constexpr auto resource_type = "animation"sv;
-
 		const auto animations = n.get_children();
 
 		for (const auto &a : animations)
@@ -563,9 +565,24 @@ namespace hades::resources
 			}//for frames
 
 			//normalise the frame durations
-			normalise_durations(frame_list); // NOTE: this is broke
+			normalise_durations(frame_list);
 
 			std::swap(anim->value, frame_list);
+
+			//parse shader settings
+			if (const auto shader_node = a->get_child("shader"sv); shader_node)
+			{
+				if (const auto shdr_name_node = shader_node->get_child(); shdr_name_node)
+				{
+					const auto shdr_name = shdr_name_node->to_scalar<unique_id>();
+					anim->shader = shader_functions::make_resource_link(d, shdr_name, id);
+
+					if (const auto uniforms = a->get_child("shader-uniforms"sv); uniforms)
+						anim->shader_uniforms_unloaded = hades::detail::parse_shader_uniform_defaults(*uniforms, d, id);
+				}
+				else
+					log_warning(std::format("expected shader name when parsing animation: {}"sv, name));
+			} // if shader
 		}//for animations
 	}//parse animations
 
@@ -598,16 +615,31 @@ namespace hades::resources
 		return;
 	}
 
-	static void load_animation(animation&a, data::data_manager &d)
+	static void load_animation(animation& a, data::data_manager &d)
 	{
 		using namespace std::string_literals;
 		if (!a.tex)
-			log_warning("Failed to load animation: " + d.get_as_string(a.id) + ", missing texture"s);
-		else if (!texture_functions::get_is_loaded(a.tex.get()))
 		{
-			//data->get will lazy load texture
-			texture_functions::get_resource(d, a.tex.id());
+			log_warning("Failed to load animation: " + d.get_as_string(a.id) + ", missing texture"s);
+			return;
 		}
+		
+		if (!texture_functions::get_is_loaded(a.tex.get()))
+			texture_functions::get_resource(d, a.tex.id());
+
+		// load shader
+		if (a.shader) // shaders are optional
+		{
+			auto shdr = shader_functions::get_resource(d, a.shader.id());
+			a.shader_uniforms = shader_functions::get_uniforms(*shdr);
+			for (const auto& [name, value] : a.shader_uniforms_unloaded)
+				a.shader_uniforms.emplace(name, value);
+
+			a.proxy.emplace(shdr, &a.shader_uniforms);
+		}
+
+		a.loaded = true;
+		return;
 	}
 
 	static void load_anim_group(animation_group& r, data::data_manager& d)

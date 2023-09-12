@@ -65,6 +65,24 @@ namespace hades
 	};
 
 	template<typename T>
+	struct is_basic_vector : std::false_type {};
+
+	template<typename T, std::size_t N>
+	struct is_basic_vector<basic_vector<T, N>> : std::true_type {};
+
+	template<typename T>
+	constexpr auto is_basic_vector_v = is_basic_vector<T>::value;
+
+	template<typename T>
+	struct basic_vector_size;
+
+	template<typename T, std::size_t N>
+	struct basic_vector_size<basic_vector<T, N>> : std::integral_constant<std::size_t, N> {};
+
+	template<typename T>
+	constexpr auto basic_vector_size_v = basic_vector_size<T>::value;
+
+	template<typename T>
 	using vector2 = basic_vector<T, 2>;
 	template<typename T>
 	using vector3 = basic_vector<T, 3>;

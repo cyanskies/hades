@@ -43,7 +43,7 @@ namespace hades::resources
 	};
 
 	// shader uniform types
-	enum class uniform_type_list {
+	enum class uniform_type_list : uint8 {
 		float_t, begin = float_t, vector2f, vector3f, vector4f,
 		int_t, vector2i, vector3i, vector4i,
 		matrix3, matrix4,
@@ -60,12 +60,12 @@ namespace hades::resources
 		vector3<float>,
 		vector4<float>,
 		int,
-		vector2<int>,
+		vector2_int,
 		vector3<int>,
 		vector4<int>,
 		sf::Glsl::Mat3,
 		sf::Glsl::Mat4,
-		const texture*,
+		resource_link<texture>,
 		sf::Shader::CurrentTextureType // render state texture
 	>;
 
@@ -132,12 +132,19 @@ namespace hades::resources
 		shader* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
 		bool is_loaded(const shader&) noexcept;
 		unique_id get_id(const shader&) noexcept;
+		std::vector<unique_id> get_id(const std::vector<const shader*>&);
 		resource_base* get_resource_base(shader&) noexcept;
-		std::vector<unique_id> get_id(const std::vector<const shader*>&) noexcept;
 
 		// returns the underlying sf::Shader
 		sf::Shader& get_shader(shader&) noexcept;
 		const shader_uniform_map& get_uniforms(const shader&) noexcept;
+		// THROWS: shader_error if the shader hasnt been loaded
+		shader_proxy get_shader_proxy(const shader&);
+
+		void set_vertex(shader&, std::string) noexcept;
+		void set_geometry(shader&, std::string) noexcept;
+		void set_fragment(shader&, std::string) noexcept;
+		void set_uniforms(shader&, shader_uniform_map) noexcept;
 	}
 }
 
@@ -148,6 +155,12 @@ namespace hades
 	// to_string(matrix)
 	// to_string(current_tex_type)
 	// to_string(shdr)
+}
+
+namespace hades::detail
+{
+	// parses the shader uniform default values, as listed as part of an animation
+	resources::shader_uniform_map parse_shader_uniform_defaults(const data::parser_node&, data::data_manager&, unique_id res);
 }
 
 #include "hades/detail/shader.inl"

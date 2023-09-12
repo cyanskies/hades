@@ -26,7 +26,7 @@ namespace hades::resources
 		case uniform_type_list::matrix4:
 			return static_cast<void>(f.template operator()<sf::Glsl::Mat4>());
 		case uniform_type_list::texture:
-			return static_cast<void>(f.template operator()<const texture*>());
+			return static_cast<void>(f.template operator()<resource_link<texture>>());
 		}
 
 		throw unexpected_uniform{ "Unrecognised uniform type" };
@@ -59,6 +59,7 @@ namespace hades::resources
 		
 		auto& shad = shader_functions::get_shader(*_shader);
 
+		// convert our types into sfml types that the shader can use
 		if constexpr (std::same_as<T, vector2_float>)
 			shad.setUniform(iter->first, sf::Glsl::Vec2{ t.x, t.y });
 		else if constexpr (std::same_as<T, vector3<float>>)

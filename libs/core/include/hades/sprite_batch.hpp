@@ -32,8 +32,9 @@ namespace hades
 		struct sprite_settings
 		{
 			layer_t layer;
+			// animations don't have to match, but texture, shader and uniforms must
 			const resources::texture* texture;
-			//const resources::shader *shader;
+			std::optional<resources::shader_proxy> shader_proxy; // stores uniforms and ref to shader
 		};
 
 		bool operator==(const sprite_settings &lhs, const sprite_settings &rhs);
@@ -47,9 +48,9 @@ namespace hades
 			sprite_id id = bad_sprite_id;
 			vector2_float position{};
 			vector2_float size{};
-			layer_t layer{};
 			const resources::animation *animation = nullptr;
 			time_point animation_progress;
+			sprite_settings settings;
 		};
 
 		bool operator==(const sprite &lhs, const sprite &rhs) noexcept;
@@ -128,9 +129,8 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, index_t layer_index, const sf::RenderStates& states = sf::RenderStates{}) const;
 
-	private:
 		// stores the sprites id and it's position in both the sprites info and quad batch arrays
-		struct sprite_pos 
+		struct sprite_pos
 		{
 			sprite_id id;
 			index_t index; // index into _vertex and _sprites
@@ -143,10 +143,13 @@ namespace hades
 			std::vector<sprite_id> sprites;
 		};
 
-		template<typename Func>
-		void _apply_changes(sprite_id, Func&& f);
+	private:
+		void _apply_changes();
 		void _add_sprite(sprite_utility::sprite);
+		// removes sprite from its current batch and then places it back in the correct batch
+		void _reseat_sprite(sprite_id, sprite_pos&, index_t);
 		index_t _find_sprite(sprite_id) const;
+		sprite_utility::sprite& _get_sprite(sprite_id);
 		sprite_utility::sprite _remove_sprite(sprite_id, index_t current_batch, index_t buffer_index);
 		
 		std::vector<sprite_utility::batch> _sprites; // stores sprite information(pos, size, anim time, etc.)
@@ -158,55 +161,6 @@ namespace hades
 	inline void swap(sprite_batch& l, sprite_batch& r) noexcept
 	{
 		l.swap(r);
-		return;
-	}
-
-	template<typename Func>
-	void sprite_batch::_apply_changes(sprite_id id, Func&& f)
-	{
-		namespace animf = resources::animation_functions;
-		static_assert(std::is_nothrow_invocable_r_v<sprite_utility::sprite, Func, sprite_utility::sprite>,
-			"Func must accept a sprite and return a sprite as noexcept");
-
-		const auto index = _find_sprite(id);
-	
-		auto& s_batch = _sprites[index];
-		auto& v_batch = _vertex[index];
-
-		const auto s_index = [id, &v_batch]() {
-			for (auto i = index_t{}; i < std::size(v_batch.sprites); ++i)
-			{
-				if (v_batch.sprites[i] == id)
-					return i;
-			}
-			return std::size(v_batch.sprites);
-		}();
-		assert(s_index != std::size(v_batch.sprites));
-
-		auto s = s_batch.sprites[s_index];
-		assert(s.id == id);
-
-		s = std::invoke(std::forward<Func>(f), s);
-		s_batch.sprites[s_index] = s;
-
-		const auto new_settings = sprite_utility::sprite_settings{ s.layer,
-			s.animation ? animf::get_texture(*s.animation) : nullptr };
-		if (new_settings == s_batch.settings)
-		{
-			if (s.animation)
-			{
-				const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
-				_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, frame), s_index);
-			}
-			else
-				_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::white), s_index);
-			return;
-		}
-	
-		//if we reach here, then we need to move to a new batch
-		_remove_sprite(id, index, s_index);
-		_add_sprite(s);
-		
 		return;
 	}
 }

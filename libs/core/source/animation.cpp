@@ -141,6 +141,8 @@ namespace hades::resources
 		}
 		w.end_map();
 
+		// TODO: serialise shader
+
 		return;
 	}
 }
@@ -269,6 +271,11 @@ namespace hades::resources::animation_functions
 	bool has_shader(const animation& a) noexcept
 	{
 		return a.shader.is_linked();
+	}
+
+	unique_id get_shader_id(const animation& a) noexcept
+	{
+		return a.shader.is_linked() ? a.shader.id() : unique_zero;
 	}
 
 	shader_proxy get_shader_proxy(const animation& a)
@@ -635,7 +642,7 @@ namespace hades::resources
 			for (const auto& [name, value] : a.shader_uniforms_unloaded)
 				a.shader_uniforms.emplace(name, value);
 
-			a.proxy.emplace(shdr, &a.shader_uniforms);
+			a.proxy.emplace(shdr, a.shader_uniforms);
 		}
 
 		a.loaded = true;

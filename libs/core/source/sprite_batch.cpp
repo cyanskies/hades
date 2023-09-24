@@ -41,7 +41,6 @@ namespace hades
 		}
 
 		_ids.clear();
-
 		return;
 	}
 
@@ -85,7 +84,23 @@ namespace hades
 		const auto id = increment(_id_count);
 		assert(id != bad_sprite_id);
 
-		_add_sprite({ id, p, s, l, a, t });
+		auto spri = sprite{ id, p, s, a, t };
+
+		spri.settings.layer = l;
+
+		if (a)
+		{
+			spri.settings.texture = resources::animation_functions::get_texture(*a);
+			if (resources::animation_functions::has_shader(*a))
+				spri.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+		}
+		else
+		{
+			spri.settings.texture = {};
+			spri.settings.shader_proxy = {};
+		}
+
+		_add_sprite(std::move(spri));
 
 		return id;
 	}
@@ -99,6 +114,18 @@ namespace hades
 		}
 
 		return false;
+	}
+
+	static sprite_batch::index_t find_id_index(sprite_id id, const std::vector<sprite_batch::sprite_pos>& ids)
+	{
+		const auto end = std::size(ids);
+		for (auto i = std::size_t{}; i < end; ++i)
+		{
+			if (ids[i].id == id)
+				return i;
+		}
+
+		return size(ids);
 	}
 
 	void sprite_batch::destroy_sprite(sprite_id id)
@@ -131,106 +158,116 @@ namespace hades
 		v_batch.buffer.pop_back();
 	
 		//remove from id list
-		for (auto i = std::size_t{}; i < std::size(_ids); ++i)
-		{
-			if (_ids[i].id == id)
-			{
-				const auto back = std::size(_ids) - 1;
-				std::swap(_ids[i], _ids[back]);
-				_ids.pop_back();
-				break;
-			}
-		}
+		auto id_index = find_id_index(id, _ids);
+		assert(id_index != std::numeric_limits<index_t>::max());
 
+		const auto back = std::size(_ids) - 1;
+		std::swap(_ids[id_index], _ids[back]);
+		_ids.pop_back();
 		return;
 	}
 
 	void sprite_batch::set_animation(sprite_id id, const resources::animation *a, time_point t)
 	{
-		_apply_changes(id, [a, t](sprite s) noexcept {
-			s.animation = a;
-			s.animation_progress = t;
-			return s;
-		});
+		auto& s = _get_sprite(id);
+		s.animation = a;
 
+		if (a)
+		{
+			s.settings.texture = resources::animation_functions::get_texture(*a);
+			if (resources::animation_functions::has_shader(*a))
+				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+		}
+		else
+		{
+			s.settings.texture = {};
+			s.settings.shader_proxy = {};
+		}
+
+		s.animation_progress = t;
 		return;
 	}
 
 	void sprite_batch::set_animation(sprite_id id, time_point t)
 	{
-		_apply_changes(id, [t](sprite s) noexcept {
-			s.animation_progress = t;
-			return s;
-			});
-
+		auto& s = _get_sprite(id);
+		s.animation_progress = t;
 		return;
 	}
 
 	void sprite_batch::set_position_animation(sprite_id id, vector2_float pos, const resources::animation* a, time_point t)
 	{
-		_apply_changes(id, [pos, a, t](sprite s) noexcept {
-			s.position = pos;
-			s.animation = a;
-			s.animation_progress = t;
-			return s;
-		});
+		auto& s = _get_sprite(id);
+		s.position = pos;
+		s.animation = a;
 
+		if (a)
+		{
+			s.settings.texture = resources::animation_functions::get_texture(*a);
+			if (resources::animation_functions::has_shader(*a))
+				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+		}
+		else
+		{
+			s.settings.texture = {};
+			s.settings.shader_proxy = {};
+		}
+
+		s.animation_progress = t;
 		return;
 	}
 
 	void sprite_batch::set_layer(typename sprite_batch::sprite_id id, sprite_utility::layer_t l)
 	{
-		_apply_changes(id, [l](sprite s) noexcept {
-			s.layer = l;
-			return s;
-		});
-
+		auto& s = _get_sprite(id);
+		s.settings.layer = l;
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float s)
+	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float siz)
 	{
-		_apply_changes(id, [a, t, l, p, siz = s](sprite s) noexcept {
-			s.animation = a;
-			s.animation_progress = t;
-			s.layer = l;
-			s.position = p;
-			s.size = siz;
-			return s;
-		});
+		auto& s = _get_sprite(id);
+		s.animation = a;
 
+		if (a)
+		{
+			s.settings.texture = resources::animation_functions::get_texture(*a);
+			if (resources::animation_functions::has_shader(*a))
+				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+		}
+		else
+		{
+			s.settings.texture = {};
+			s.settings.shader_proxy = {};
+		}
+
+		s.animation_progress = t;
+		s.settings.layer = l;
+		s.position = p;
+		s.size = siz;
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, time_point t, vector2_float p, vector2_float s)
+	void sprite_batch::set_sprite(sprite_id id, time_point t, vector2_float p, vector2_float siz)
 	{
-		_apply_changes(id, [t, p , siz = s](sprite s) noexcept {
-			s.animation_progress = t;
-			s.position = p;
-			s.size = siz;
-			return s;
-		});
-
+		auto& s = _get_sprite(id);
+		s.animation_progress = t;
+		s.position = p;
+		s.size = siz;
 		return;
 	}
 
 	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector2_float pos)
 	{
-		_apply_changes(id, [pos](sprite s) noexcept {
-			s.position = pos;
-			return s;
-		});
-
+		auto& s = _get_sprite(id);
+		s.position = pos;
 		return;
 	}
 
 	void sprite_batch::set_size(typename sprite_batch::sprite_id id, vector2_float size)
 	{
-		_apply_changes(id, [size](sprite s) noexcept {
-			s.size = size;
-			return s;
-		});
-
+		auto& s = _get_sprite(id);
+		s.size = size;
 		return;
 	}
 
@@ -262,6 +299,8 @@ namespace hades
 
 	void sprite_batch::apply()
 	{
+		_apply_changes();
+
 		for (auto& v : _vertex)
 			v.buffer.apply();
 		return;
@@ -280,9 +319,11 @@ namespace hades
 	{
 		assert(layer_index < std::size(_sprites));
 		auto s = states;
-
-		if(_sprites[layer_index].settings.texture)
+		auto& settings = _sprites[layer_index].settings;
+		if(settings.texture)
 			s.texture = &resources::texture_functions::get_sf_texture(_sprites[layer_index].settings.texture);
+		if (settings.shader_proxy)
+			s.shader = settings.shader_proxy->get_shader();
 		target.draw(_vertex[layer_index].buffer, s);
 		return;
 	}
@@ -298,76 +339,141 @@ namespace hades
 		throw sprite_batch_invalid_id{ "tried to find a sprite that isnt in the batch" };
 	}
 
-	//remove a sprite from its current batch,
-	sprite sprite_batch::_remove_sprite(sprite_id id, index_t current, index_t index)
+	sprite_utility::sprite& sprite_batch::_get_sprite(sprite_id id)
 	{
-		auto& s_batch = _sprites[current];
-		auto& v_batch = _vertex[current];
+		const auto index = _find_sprite(id);
+		auto& s_batch = _sprites[index];
+		auto iter = std::ranges::find(s_batch.sprites, id, &sprite_utility::sprite::id);
+		assert(iter != end(s_batch.sprites)); // _find_sprite should have thrown if the sprite is missing
+		return *iter;
+	}
+
+	// removes sprite data from batches without erasing the id data
+	static sprite_utility::sprite remove_sprite(sprite_batch::index_t index, sprite_batch::index_t buffer_index,
+		std::vector<sprite_utility::batch>& sprites, std::vector<sprite_batch::vert_batch>& verts)
+	{
+		auto& s_batch = sprites[index];
+		auto& v_batch = verts[index];
 
 		const auto last = std::size(v_batch.sprites) - 1;
 
-		const auto s = s_batch.sprites[index];
+		const auto s = std::move(s_batch.sprites[buffer_index]);
 
 		//remove sprite
-		if (index != last)
-		{
-			std::swap(s_batch.sprites[index], s_batch.sprites[last]);
-			std::swap(v_batch.sprites[index], v_batch.sprites[last]);
-			v_batch.buffer.swap(index, last);
-		}
+		std::swap(s_batch.sprites[buffer_index], s_batch.sprites[last]);
+		std::swap(v_batch.sprites[buffer_index], v_batch.sprites[last]);
+		v_batch.buffer.swap(buffer_index, last);
 
 		s_batch.sprites.pop_back();
 		v_batch.sprites.pop_back();
 		v_batch.buffer.pop_back();
-	
-		//reinsert
-		const auto id_index = [id, &_ids = _ids]() {
-			for (auto i = std::size_t{}; i < std::size(_ids); ++i)
-			{
-				if (_ids[i].id == id)
-					return i;
-			}
-			return std::size(_ids);
-		}();
-		assert(id_index != std::size(_ids));
-
-		const auto id_last = std::size(_ids) - 1;
-		std::swap(_ids[id_index], _ids[id_last]);
-		_ids.pop_back();
-	
 		return s;
 	}
 
-	void sprite_batch::_add_sprite(sprite s)
+	//remove a sprite from its current batch,
+	sprite sprite_batch::_remove_sprite(sprite_id id, index_t current, index_t index)
+	{
+		const auto s = remove_sprite(current, index, _sprites, _vertex);
+		
+		//remove from id list
+		auto id_index = find_id_index(id, _ids);
+		assert(id_index < size(_ids));
+
+		const auto back = std::size(_ids) - 1;
+		std::swap(_ids[id_index], _ids[back]);
+		_ids.pop_back();
+		return s;
+	}
+
+	void sprite_batch::_apply_changes()
+	{
+		namespace animf = resources::animation_functions;
+		for (auto& sprite : _ids)
+		{
+			const auto id = sprite.id;
+			const auto index = sprite.index;
+						
+			auto& s_batch = _sprites[index];
+			auto& v_batch = _vertex[index];
+
+			// find sprite batch
+			const auto s_index = [id, &v_batch]() {
+				for (auto i = index_t{}; i < std::size(v_batch.sprites); ++i)
+				{
+					if (v_batch.sprites[i] == id)
+						return i;
+				}
+				return std::size(v_batch.sprites);
+			}();
+			assert(s_index != std::size(v_batch.sprites));
+
+			// NOTE: this reference may be invalidated below
+			//		don't access it after moving the sprite
+			const auto& s = s_batch.sprites[s_index];
+			assert(s.id == id);
+
+			if (s.settings == s_batch.settings)
+			{
+				// NOTE: this code is duplicated in insert_sprite
+				if (s.animation)
+				{
+					const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
+					_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, frame), s_index);
+				}
+				else
+					_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::white), s_index);
+			}
+			else
+			{
+				//if we reach here, then we need to move to a new batch
+				_reseat_sprite(id, sprite, s_index);
+			}
+		}
+		return;
+	}
+
+	// inserts a sprite into the sprite and vertex arrays
+	static sprite_batch::index_t insert_sprite(sprite s,
+		std::vector<sprite_utility::batch>& sprites, std::vector<sprite_batch::vert_batch>& verts)
 	{
 		namespace anims = resources::animation_functions;
-		const auto settings = sprite_settings{ s.layer,
-			s.animation ? anims::get_texture(*s.animation) : nullptr };
-		const index_t index = find_batch(settings, _sprites);
+		const auto index = find_batch(s.settings, sprites);
 
 		//no batch matches the desired settings
-		if (index == std::size(_sprites))
+		if (index == std::size(sprites))
 		{
 			if (s.animation && !anims::is_loaded(*s.animation))
 				anims::get_resource(anims::get_id(*s.animation)); // force lazy load
 
-			_sprites.emplace_back(settings, std::vector<sprite_utility::sprite>{});
-			_vertex.emplace_back();
+			sprites.emplace_back(s.settings, std::vector<sprite_utility::sprite>{});
+			verts.emplace_back();
 		}
 
-		_ids.emplace_back(sprite_pos{ s.id, index });
-
-		_sprites[index].sprites.emplace_back(s);
-		if (s.animation)
+		const auto& spr = sprites[index].sprites.emplace_back(std::move(s));
+		// NOTE: this code is duplicated in _apply_changes
+		if (spr.animation)
 		{
-			const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
-			_vertex[index].buffer.append(make_quad_animation(s.position, s.size, frame));
+			const auto& frame = animation::get_frame(*spr.animation, spr.animation_progress);
+			verts[index].buffer.append(make_quad_animation(spr.position, spr.size, frame));
 		}
 		else
-			_vertex[index].buffer.append(make_quad_colour({ s.position, s.size }, colours::white));
+			verts[index].buffer.append(make_quad_colour({ spr.position, spr.size }, colours::white));
 
-		_vertex[index].sprites.emplace_back(s.id);
+		verts[index].sprites.emplace_back(spr.id);
+		return index;
+	}
 
+	void sprite_batch::_add_sprite(sprite s)
+	{
+		const auto index = insert_sprite(std::move(s), _sprites, _vertex);
+		_ids.emplace_back(sprite_pos{ s.id, index });
+		return;
+	}
+
+	void sprite_batch::_reseat_sprite(sprite_id, sprite_pos& pos, index_t buffer_index)
+	{
+		auto s = remove_sprite(pos.index, buffer_index, _sprites, _vertex);
+		pos.index = insert_sprite(std::move(s), _sprites, _vertex);
 		return;
 	}
 }

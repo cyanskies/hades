@@ -29,9 +29,8 @@ namespace hades::resources
 		shader() = default;
 		// NOTE: Custom copy contructor needed because sf::Shader is non-copyable;
 		//		 and proxy holds ptrs to this object and the uniforms subobject
-		shader(const shader& rhs)
-			: vertex{ rhs.vertex }, geometry{ rhs.geometry }, fragment{ rhs.fragment },
-			uniforms{ rhs.uniforms }
+		shader(const shader& rhs) : resource_type{ rhs }, vertex{ rhs.vertex },
+			geometry{ rhs.geometry }, fragment{ rhs.fragment },	uniforms{ rhs.uniforms }
 		{
 			loaded = false;
 			return;
@@ -39,6 +38,13 @@ namespace hades::resources
 
 		void load(data::data_manager&) final override
 		{
+			proxy.emplace(this, uniforms);
+			if (sf::Shader::isAvailable() == false)
+			{
+				log_warning("This device does not support shaders"sv);
+				return;
+			}
+
 			auto shaders = shaders_provided::none;
 			if (!empty(vertex))
 				shaders |= shaders_provided::vert;
@@ -76,7 +82,6 @@ namespace hades::resources
 				return;
 			}
 
-			proxy.emplace(this, &uniforms);
 			loaded = true;
 			return;
 		}
@@ -89,75 +94,69 @@ namespace hades::resources
 		std::optional<shader_proxy> proxy;
 	};
 
-	shader_proxy::shader_proxy(shader* s, const shader_uniform_map* u)
-		: _shader{ s }, _uniforms{ u }
+	shader_proxy::shader_proxy(shader* s, shader_uniform_map u)
+		: _shader{ s }, _uniforms{ std::move(u) }
 	{
 		assert(s);
-		assert(u);
-		_uniform_set.resize(size(*_uniforms), false);
 		return;
 	}
 
-	struct uniform_visitor
+	void shader_proxy::set_uniforms(const shader_uniform_map& uniforms)
 	{
-		shader_proxy& proxy;
-		std::string_view name;
-
-		void operator()(std::monostate)
-		{}
-
-		void operator()(const auto& value)
+		for (const auto& [key, value] : uniforms)
 		{
-			proxy.set_uniform(name, value);
-			return;
+			auto uni = _uniforms.find(key);
+			if (uni == end(_uniforms) ||
+				uni->second.type != value.type)
+				assert(false); // TODO: error logging; throw failed_to_set_uniform
+
+			uni->second = value;
 		}
-	};
 
-	void shader_proxy::start_uniforms()
+		return;
+	}
+
+	const sf::Shader* shader_proxy::get_shader() const
 	{
-		auto iter = begin(*_uniforms);
-		const auto end = std::end(*_uniforms);
-
-		auto iter2 = begin(_uniform_set);
-		const auto end2 = std::end(_uniform_set);
-		assert(size(*_uniforms) == size(_uniform_set));
-
-		while (iter != end)
+		auto& shad = _shader->sf_shader;
+		for (const auto& [name, uni] : _uniforms)
 		{
-			if (!std::holds_alternative<std::monostate>(iter->second.value))
+			if (!std::holds_alternative<std::monostate>(uni.value))
 			{
-				std::visit(uniform_visitor{ *this, iter->first }, iter->second.value);
-				*iter2 = true;
+				std::visit([&](auto&& t) {
+					using T = std::decay_t<decltype(t)>;
+					if constexpr (std::same_as<T, std::monostate>)
+					{
+						assert(false);
+						//cpp23 std::unreachable
+						// throw failed to set uniform
+						log_error("monostate in shader"sv);
+						return;
+					}
+					else if constexpr (std::same_as<T, vector2_float>)
+						shad.setUniform(name, sf::Glsl::Vec2{ t.x, t.y });
+					else if constexpr (std::same_as<T, vector3<float>>)
+						shad.setUniform(name, sf::Glsl::Vec3{ t.x, t.y, t.z });
+					else if constexpr (std::same_as<T, vector4<float>>)
+						shad.setUniform(name, sf::Glsl::Vec4{ t.x, t.y, t.z, t.w });
+					else if constexpr (std::same_as<T, vector2_int>)
+						shad.setUniform(name, sf::Glsl::Ivec2{ t.x, t.y });
+					else if constexpr (std::same_as<T, vector3<int>>)
+						shad.setUniform(name, sf::Glsl::Ivec3{ t.x, t.y, t.z });
+					else if constexpr (std::same_as<T, vector4<int>>)
+						shad.setUniform(name, sf::Glsl::Ivec4{ t.x, t.y, t.z, t.w });
+					else if constexpr (std::same_as<std::decay_t<T>, texture*>)
+						shad.setUniform(name, texture_functions::get_sf_texture(*t));
+					else
+						shad.setUniform(name, t);
+					return;
+					}, uni.value);
 			}
-
-			++iter;
-			++iter2;
+			else
+				;// TODO: log warning, uniform not set // throw failed to set uniform
 		}
 
-		return;
-	}
-
-	void shader_proxy::end_uniforms() const
-	{
-		auto iter = begin(_uniform_set);
-		const auto end = std::end(_uniform_set);
-		while (iter != end)
-		{
-			if (!*iter)
-			{
-				const auto dist = distance(begin(_uniform_set), iter);
-				auto iter2 = std::next(begin(*_uniforms), dist);
-				throw uniform_not_set{ std::format("Shader cannot be used, render system didn't set uniform: {}", iter2->first) };
-			}
-			++iter;
-		}
-
-		return;
-	}
-
-	const sf::Shader& shader_proxy::get_shader() const
-	{
-		return _shader->sf_shader;
+		return &shad;
 	}
 }
 

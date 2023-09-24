@@ -75,9 +75,12 @@ namespace hades::resources
 		// accounting for origin offsets and scale changes
 		rect_float get_bounding_area(const animation&, vector2_float size) noexcept;
 		bool has_shader(const animation&) noexcept;
+		// returns unique_id::zero if no shader
+		unique_id get_shader_id(const animation&) noexcept;
 		// THROWS: animation_no_shader if the animation doesn't have a shader
 		//	or hasn't been loaded properly; use has_shader to check
 		shader_proxy get_shader_proxy(const animation&);
+		const shader_uniform_map& get_animation_uniforms(const animation&) noexcept;
 	}
 
 	namespace animation_group_functions

@@ -51,8 +51,12 @@ namespace hades::resources
 		end
 	};
 
+	string uniform_type_to_string(uniform_type_list);
+
 	template<typename Func>
 	void call_with_uniform_type(uniform_type_list, Func&& f);
+	template<typename T>
+	uniform_type_list get_uniform_type_enum();
 
 	using uniform_type_pack = std::tuple<
 		float,
@@ -103,23 +107,17 @@ namespace hades::resources
 	class shader_proxy
 	{
 	public:
-		shader_proxy(shader* s, const shader_uniform_map* u);
-
-		void start_uniforms();
-
+		shader_proxy(shader* s, shader_uniform_map u);
 		// THROWS: unexpected_uniform, uniform_wrong_type
 		template<uniform_type T>
-		void set_uniform(std::string_view, const T&);
+		void set_uniform(std::string_view, T);
+		void set_uniforms(const shader_uniform_map&);
 
-		// THROWS: uniform_not_set
-		void end_uniforms() const;
-
-		const sf::Shader& get_shader() const;
+		const sf::Shader* get_shader() const;
 
 	private:
-		std::vector<bool> _uniform_set; // checked uniforms in debug mode
-		const shader_uniform_map* _uniforms;
-		shader* _shader;
+		shader_uniform_map _uniforms;
+		mutable shader* _shader;
 	};
 	
 	namespace shader_functions

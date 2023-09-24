@@ -333,8 +333,6 @@ namespace hades
 		// so make it
 		if (layer_index == no_index)
 		{
-			
-
 			const auto end = std::end(_object_layers);
 			auto iter = std::begin(_object_layers);
 

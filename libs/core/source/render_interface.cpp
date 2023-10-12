@@ -12,9 +12,9 @@ namespace hades
 	}
 	
 	render_interface::sprite_id render_interface::create_sprite(const resources::animation *a,
-		time_point t, sprite_layer l, vector2_float p, vector2_float s)
+		time_point t, sprite_layer l, vector2_float p, vector2_float s, const resources::shader_uniform_map* u)
 	{
-		return _sprite_batch.create_sprite(a, t, l, p, s);
+		return _sprite_batch.create_sprite(a, t, l, p, s, u);
 	}
 
 	bool render_interface::sprite_exists(sprite_id id) const noexcept
@@ -36,11 +36,13 @@ namespace hades
 		return;
 	}
 
-	void render_interface::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_layer l, vector2_float position, vector2_float size)
+	void render_interface::set_sprite(sprite_id id, const resources::animation* a,
+		time_point t, sprite_layer l, vector2_float position, vector2_float size,
+		const resources::shader_uniform_map* u)
 	{
 		try
 		{
-			_sprite_batch.set_sprite(id, a, t, l, position, size);
+			_sprite_batch.set_sprite(id, a, t, l, position, size, u);
 		}
 		catch (const sprite_batch_invalid_id& e)
 		{

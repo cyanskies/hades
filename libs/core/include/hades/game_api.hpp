@@ -202,9 +202,11 @@ namespace hades
 
 		id_t create();
 		id_t create(const resources::animation*, time_point,
-			layer_t, vector2_float position, vector2_float size);
+			layer_t, vector2_float position, vector2_float size,
+			const resources::shader_uniform_map* = {});
 		id_t create(const resources::animation*, float progress, layer_t,
-			vector2_float position, vector2_float size);
+			vector2_float position, vector2_float size,
+			const resources::shader_uniform_map* = {});
 
 		void destroy(id_t);
 
@@ -212,9 +214,11 @@ namespace hades
 
 		//replace all the sprite data for id
 		void set(id_t, const resources::animation*, time_point,
-			layer_t, vector2_float position, vector2_float size);
+			layer_t, vector2_float position, vector2_float size,
+			const resources::shader_uniform_map* = {});
 		void set(id_t, const resources::animation*, float progress,
-			layer_t, vector2_float position, vector2_float size);
+			layer_t, vector2_float position, vector2_float size,
+			const resources::shader_uniform_map* = {});
 		//update the commonly changing data
 		void set(id_t, time_point, vector2_float position, vector2_float size);
 		void set(id_t, float progress, vector2_float position, vector2_float size);

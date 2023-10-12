@@ -89,6 +89,13 @@ namespace hades::resources
 		{
 			using type = std::variant<std::monostate, Ts...>;
 		};
+
+		template<std::size_t Columns, std::size_t Rows>
+		bool matrix_eq(const sf::priv::Matrix<Columns, Rows>& lhs, const sf::priv::Matrix<Columns, Rows>& rhs)
+		{
+			return std::equal(std::begin(lhs.array), std::end(lhs.array),
+				std::begin(rhs.array));
+		}
 	}
 
 	using uniform_variant = detail::variant_from_tuple<uniform_type_pack>::type;
@@ -98,6 +105,35 @@ namespace hades::resources
 		uniform_type_list type = uniform_type_list::end;
 		uniform_variant value;
 	};
+
+	inline bool operator==(const uniform& lhs, const uniform& rhs) noexcept
+	{
+		if (lhs.type == rhs.type
+			&& lhs.value.index() == rhs.value.index())
+		{
+			return std::visit([]<typename Ty, typename Ty2>(const Ty & lhs, const Ty2 & rhs) noexcept {
+				using T = std::decay_t<Ty>;
+				using T2 = std::decay_t<Ty2>;
+				//equality tests for sfml types that don't have quality operators
+				if constexpr (!std::same_as<T, T2>)
+					return false;
+				else if constexpr (std::same_as<T, sf::Glsl::Mat3> ||
+					std::same_as<T, sf::Glsl::Mat4>)
+				{
+					return detail::matrix_eq(lhs, rhs);
+				}
+				else if constexpr (std::same_as<T, sf::Shader::CurrentTextureType>
+					|| std::same_as<T, std::monostate>)
+				{
+					return true;
+				}
+				else
+					return lhs == rhs;
+			}, lhs.value, rhs.value);
+		}
+		
+		return false;
+	}
 
 	using shader_uniform_map = map_string<uniform>;
 	
@@ -114,6 +150,12 @@ namespace hades::resources
 		void set_uniforms(const shader_uniform_map&);
 
 		const sf::Shader* get_shader() const;
+
+		bool operator==(const shader_proxy& rhs) const noexcept
+		{
+			return _shader == rhs._shader
+				&& _uniforms == rhs._uniforms;
+		}
 
 	private:
 		shader_uniform_map _uniforms;

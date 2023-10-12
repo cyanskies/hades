@@ -59,14 +59,14 @@ namespace hades
 
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *, time_point,
-			sprite_layer, vector2_float position, vector2_float size);
+			sprite_layer, vector2_float position, vector2_float size, const resources::shader_uniform_map* = {});
 
 		bool sprite_exists(sprite_id) const noexcept;
 		//NOTE: functions that accept sprite_id or drawable_id can throw render_instance_invalid_id
 		void destroy_sprite(sprite_id);
 
 		void set_sprite(sprite_id, const resources::animation*, time_point,
-			sprite_layer, vector2_float position, vector2_float size);
+			sprite_layer, vector2_float position, vector2_float size, const resources::shader_uniform_map* = {});
 		void set_sprite(sprite_id, time_point, vector2_float position, vector2_float size);
 		void set_animation(sprite_id, const resources::animation *, time_point);
 		void set_animation(sprite_id, time_point);

@@ -18,8 +18,8 @@ namespace hades
 		bool operator==(const sprite_settings &lhs, const sprite_settings &rhs)
 		{
 			return lhs.layer == rhs.layer
-				&& lhs.texture == rhs.texture;
-				//&& lhs.shader == rhs.shader;
+				&& lhs.texture == rhs.texture
+				&& lhs.shader_proxy == rhs.shader_proxy;
 		}
 
 		bool operator==(const sprite &lhs, const sprite &rhs) noexcept
@@ -53,7 +53,7 @@ namespace hades
 		return;
 	}
 
-	static sprite_batch::index_t find_batch(const sprite_utility::sprite_settings s, const std::vector<sprite_utility::batch> &v) noexcept
+	static sprite_batch::index_t find_batch(const sprite_utility::sprite_settings& s, const std::vector<sprite_utility::batch> &v) noexcept
 	{
 		auto index = std::size(v);
 		for (auto i = std::size_t{}; i != std::size(v); ++i)
@@ -79,7 +79,7 @@ namespace hades
 	}
 
 	typename sprite_batch::sprite_id sprite_batch::create_sprite(const resources::animation *a, time_point t,
-		sprite_utility::layer_t l, vector2_float p, vector2_float s)
+		sprite_utility::layer_t l, vector2_float p, vector2_float s, const resources::shader_uniform_map *u)
 	{
 		const auto id = increment(_id_count);
 		assert(id != bad_sprite_id);
@@ -92,7 +92,13 @@ namespace hades
 		{
 			spri.settings.texture = resources::animation_functions::get_texture(*a);
 			if (resources::animation_functions::has_shader(*a))
+			{
 				spri.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+				if (u)
+					spri.settings.shader_proxy->set_uniforms(*u);
+			}
+			else
+				spri.settings.shader_proxy = {};
 		}
 		else
 		{
@@ -177,6 +183,8 @@ namespace hades
 			s.settings.texture = resources::animation_functions::get_texture(*a);
 			if (resources::animation_functions::has_shader(*a))
 				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+			else
+				s.settings.shader_proxy = {};
 		}
 		else
 		{
@@ -206,6 +214,8 @@ namespace hades
 			s.settings.texture = resources::animation_functions::get_texture(*a);
 			if (resources::animation_functions::has_shader(*a))
 				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+			else
+				s.settings.shader_proxy = {};
 		}
 		else
 		{
@@ -224,7 +234,9 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a, time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float siz)
+	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a,
+		time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float siz,
+		const resources::shader_uniform_map *u)
 	{
 		auto& s = _get_sprite(id);
 		s.animation = a;
@@ -233,7 +245,13 @@ namespace hades
 		{
 			s.settings.texture = resources::animation_functions::get_texture(*a);
 			if (resources::animation_functions::has_shader(*a))
+			{
 				s.settings.shader_proxy = resources::animation_functions::get_shader_proxy(*a);
+				if (u)
+					s.settings.shader_proxy->set_uniforms(*u);
+			}
+			else
+				s.settings.shader_proxy = {};
 		}
 		else
 		{

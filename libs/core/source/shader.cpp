@@ -145,8 +145,8 @@ namespace hades::resources
 						shad.setUniform(name, sf::Glsl::Ivec3{ t.x, t.y, t.z });
 					else if constexpr (std::same_as<T, vector4<int>>)
 						shad.setUniform(name, sf::Glsl::Ivec4{ t.x, t.y, t.z, t.w });
-					else if constexpr (std::same_as<std::decay_t<T>, texture*>)
-						shad.setUniform(name, texture_functions::get_sf_texture(*t));
+					else if constexpr (std::same_as<std::decay_t<T>, resource_link<texture>>)
+						shad.setUniform(name, texture_functions::get_sf_texture(t.get()));
 					else
 						shad.setUniform(name, t);
 					return;
@@ -317,6 +317,13 @@ namespace hades
 		return {}; // unprovided is also fine
 	}
 
+	namespace detail
+	{
+		template<bool RequireValue = false>
+		static resources::shader_uniform_map parse_shader_uniform_defaults_impl(
+			const data::parser_node&, data::data_manager&, unique_id);
+	}
+
 	void parse_shaders(hades::unique_id mod, const hades::data::parser_node& node, hades::data::data_manager& d)
 	{
 		//shaders:
@@ -367,7 +374,7 @@ namespace hades
 			//uniforms
 			if (const auto uniforms_node = shader_node->get_child("uniforms"sv); uniforms_node)
 			{
-				auto uniforms = hades::detail::parse_shader_uniform_defaults(*uniforms_node, d, id);
+				auto uniforms = hades::detail::parse_shader_uniform_defaults_impl(*uniforms_node, d, id);
 				shader_functions::set_uniforms(*shdr, std::move(uniforms));
 			}
 			else
@@ -379,8 +386,7 @@ namespace hades
 
 	void register_shader_resource(data::data_manager& d)
 	{
-		// TODO: parser for shader types
-		d.register_resource_type(shader_str, nullptr);
+		d.register_resource_type(shader_str, parse_shaders);
 		return;
 	}
 }
@@ -475,8 +481,8 @@ namespace hades::detail
 		}
 	};
 
-	template<bool RequireValue = false>
-	resources::shader_uniform_map parse_shader_uniform_defaults_impl(
+	template<bool RequireValue>
+	static resources::shader_uniform_map parse_shader_uniform_defaults_impl(
 		const data::parser_node& shader_uniforms, data::data_manager& d, unique_id source)
 	{
 		//	shader-uniforms:
@@ -494,7 +500,7 @@ namespace hades::detail
 				"type"sv, uniform_type_list::end, uniform_type_from_string);
 			if (type == uniform_type_list::end)
 			{
-				log_error(std::format("Invalid type while parsing uniform: {}", d.get_as_string(name)));
+				log_error(std::format("Invalid type while parsing uniform: {}, for resource: {}", d.get_as_string(name), d.get_as_string(source)));
 				continue;
 			}
 
@@ -505,7 +511,7 @@ namespace hades::detail
 			{
 				if constexpr (RequireValue)
 				{
-					log_error(std::format("Invalid value while parsing uniform: {}", d.get_as_string(name)));
+					log_error(std::format("Missing value while parsing uniform: {}, for resource: {}", d.get_as_string(name), d.get_as_string(source)));
 					continue;
 				}
 			}

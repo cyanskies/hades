@@ -640,7 +640,15 @@ namespace hades::resources
 			auto shdr = shader_functions::get_resource(d, a.shader.id());
 			a.shader_uniforms = shader_functions::get_uniforms(*shdr);
 			for (const auto& [name, value] : a.shader_uniforms_unloaded)
-				a.shader_uniforms.emplace(name, value);
+			{
+				if (std::holds_alternative<resource_link<texture>>(value.value))
+				{
+					auto& tex_link = std::get<resource_link<texture>>(value.value);
+					texture_functions::get_resource(d, tex_link.id());
+				}
+
+				a.shader_uniforms.insert_or_assign(name, value);
+			}
 
 			a.proxy.emplace(shdr, a.shader_uniforms);
 		}

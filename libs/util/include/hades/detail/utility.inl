@@ -290,7 +290,7 @@ namespace hades
 	}
 
 	template<typename Index2D, typename T>
-	constexpr Index2D to_2d_index(T i, T w)
+	constexpr Index2D to_2d_index(const T i, const T w)
 	{
 		assert(w != 0);
 
@@ -301,7 +301,7 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr std::pair<T, T> to_2d_index(T i, T w)
+	constexpr std::pair<T, T> to_2d_index(const T i, const T w)
 	{
 		return to_2d_index<std::pair<T, T>>(i, w);
 	}

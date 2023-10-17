@@ -14,10 +14,13 @@ namespace hades
 	// can return an empty string if no such location exists
 	std::filesystem::path user_custom_file_directory();
 	std::filesystem::path standard_file_directory();
+
 	// This directory is used for per user config files.
 	// can return the ./config dir or some specilised user dir
 	std::filesystem::path user_config_directory();
 	std::filesystem::path standard_config_directory();
+
+	// TODO: cache directory
 
 	// This is the dir that would be used for save files
 	std::filesystem::path user_save_directory();

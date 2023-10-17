@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 3.23)
+
+project(hades LANGUAGES CXX)
+
 add_subdirectory(deps)
 add_subdirectory(libs)
 add_subdirectory(app)

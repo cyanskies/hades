@@ -127,10 +127,9 @@ namespace hades
 	constexpr std::make_unsigned_t<T> unsigned_cast(T value)
 	{
 		using U = std::make_unsigned_t<T>;
-
 		if constexpr (std::is_unsigned_v<T>)
 			return value;
-		else if (value >= T{})
+		else if (std::in_range<U>(value))
 			return static_cast<U>(value);
 		else
 			throw overflow_error{ "overflow_error; tried to cast a negative value to unsigned" };
@@ -143,10 +142,10 @@ namespace hades
 
 		if constexpr (std::is_unsigned_v<T>)
 			return value;
-		else if (value > T{})
-			return static_cast<U>(value);
-		else
+		else if (std::cmp_less(value, 0))
 			return U{};
+		else
+			return static_cast<U>(value);
 	}
 
 	template<typename T>
@@ -155,10 +154,10 @@ namespace hades
 		using S = std::make_signed_t<T>;
 		if constexpr (std::is_signed_v<T>)
 			return value;
-		else if (value > static_cast<T>(std::numeric_limits<S>::max()))
-			throw overflow_error{ "overflow_error; value was too large for signed type" };
-		else
+		else if (std::in_range<S>(value))
 			return static_cast<S>(value);
+		else
+			throw overflow_error{ "overflow_error; value was too large for signed type" };
 	}
 
 	template<typename T>
@@ -167,7 +166,7 @@ namespace hades
 		using S = std::make_signed_t<T>;
 		if constexpr (std::is_signed_v<T>)
 			return value;
-		else if (value > static_cast<T>(std::numeric_limits<S>::max()))
+		else if (std::cmp_greater(value, std::numeric_limits<S>::max()))
 			return std::numeric_limits<S>::max();
 		else
 			return static_cast<S>(value);
@@ -192,69 +191,15 @@ namespace hades
 	}
 
 	template<typename T, typename U>
-	constexpr T size_cast(U i)
-	{
-		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
-			"size_cast only supports integers");
-
-		static_assert(std::is_signed_v<T> == std::is_signed_v<U>,
-			"size_cast integers must both be signed, or both unsigned");
-
-		if constexpr (sizeof(T) >= sizeof(U))
-			return i;
-		else
-		{
-			//only need to check min value if integer types are signed
-			if constexpr (std::is_signed_v<T>)
-				if (i < static_cast<U>(std::numeric_limits<T>::min()))
-					throw overflow_error{ "overflow_error value is smaller than target type can hold" };
-			
-			//check max value
-			if (i > static_cast<U>(std::numeric_limits<T>::max()))
-				throw overflow_error{ "overflow_error value is larger than target type can hold" };
-
-			return static_cast<T>(i);
-		}
-	}
-	
-	template<typename T, typename U>
-	constexpr T size_clamp_cast(U i) noexcept
-	{
-		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
-			"size_cast only supports integers");
-
-		static_assert(std::is_signed_v<T> == std::is_signed_v<U>,
-			"size_cast integers must both be signed, or both unsigned");
-
-		if constexpr (sizeof(T) >= sizeof(U))
-			return i;
-		else
-		{
-			//only need to check min value if integer types are signed
-			if constexpr (std::is_signed_v<T>)
-				if (i < static_cast<U>(std::numeric_limits<T>::min()))
-					return std::numeric_limits<T>::min();
-
-			//check max value
-			if (i > static_cast<U>(std::numeric_limits<T>::max()))
-				return std::numeric_limits<T>::max();
-
-			return static_cast<T>(i);
-		}
-	}
-
-	template<typename T, typename U>
 	constexpr T integer_cast(U i)
 	{
 		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
 			"integer_cast only supports integers");
 
-		if constexpr (std::is_same_v<T, U>)
-			return i;
-		else if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
-			return size_cast<T>(i);
+		if (std::in_range<T>(i))
+			return static_cast<T>(i);
 		else
-			return size_cast<T>(sign_swap_cast(i));
+			throw overflow_error{ "value is outside the range of the target type" };
 	}
 
 	template<typename T, typename U>
@@ -263,12 +208,12 @@ namespace hades
 		static_assert(std::is_integral_v<T> && std::is_integral_v<U>,
 			"integer_clamp_cast only supports integers");
 
-		if constexpr (std::is_same_v<T, U>)
-			return i;
-		else if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
-			return size_clamp_cast<T>(i);
+		if (std::cmp_greater(i, std::numeric_limits<T>::max()))
+			return std::numeric_limits<T>::max();
+		else if(std::cmp_less(i, std::numeric_limits<T>::min()))
+			return std::numeric_limits<T>::min();
 		else
-			return size_clamp_cast<T>(sign_swap_clamp_cast(i));
+			return static_cast<T>(i);
 	}
 
 	template<typename Index2D, typename T>

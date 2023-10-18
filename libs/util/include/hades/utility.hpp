@@ -115,12 +115,6 @@ namespace hades {
 	template<typename T>
 	constexpr auto sign_swap_clamp_cast(T value) noexcept;
 
-	template<typename T, typename U>
-	constexpr T size_cast(U);
-
-	template<typename T, typename U>
-	constexpr T size_clamp_cast(U) noexcept;
-
 	//converts one integer type to another
 	//throws overflow_error if the value doesn't fit in the new range
 	template<typename T, typename U>

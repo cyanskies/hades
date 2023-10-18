@@ -8,6 +8,7 @@
 
 #include "hades/string.hpp"
 #include "hades/types.hpp"
+#include "hades/vector_math.hpp"
 
 //https://www.color-hex.com/ has shade tables for hex colours
 
@@ -29,6 +30,16 @@ namespace hades
 			constexpr auto arr = std::array{ &colour::r, &colour::g, &colour::b, &colour::a };
 			assert(i < size(arr));
 			return std::invoke(arr[i], this);
+		}
+
+		constexpr vector4<float> to_vec4() const noexcept
+		{
+			return vector4<float>{
+				r / 255.f,
+				g / 255.f,
+				b / 255.f,
+				a / 255.f
+			};
 		}
 
 		value_type r = 0;

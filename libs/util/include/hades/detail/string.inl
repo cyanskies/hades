@@ -54,7 +54,7 @@ namespace hades
 		const auto end = in.find_last_not_of(' ');
 
 		if (start == end)
-			return in;
+			return in.substr(start, 1);
 
 		return in.substr(start, end - start + 1);
 	}

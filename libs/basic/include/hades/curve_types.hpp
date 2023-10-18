@@ -22,7 +22,7 @@ namespace hades
 	enum class curve_variable_type {
 		int_t, begin = int_t, /*int64_t, int64 was used to hold times before time_d was fixed */ float_t, vec2_float, bool_t,
 		string, object_ref, unique, colour, time_d, collection_int, collection_float,
-		collection_object_ref, collection_unique, collection_colour, collection_time_d, error, end = error
+		collection_object_ref, collection_unique, /*collection_colour,*/ collection_time_d, error, end = error
 	};
 
 	string to_string(curve_variable_type) noexcept;
@@ -73,7 +73,7 @@ namespace hades::curve_types
 	using collection_float = std::vector<float_t>;
 	using collection_object_ref = std::vector<object_ref>;
 	using collection_unique = std::vector<unique>;
-	using collection_colour = std::vector<colour>;
+	//using collection_colour = std::vector<colour>;
 	using collection_time_d = std::vector<time_d>;
 
 	using type_pack = std::tuple<
@@ -91,7 +91,7 @@ namespace hades::curve_types
 		collection_float,
 		collection_object_ref,
 		collection_unique,
-		collection_colour,
+		//collection_colour,
 		collection_time_d
 	>;
 

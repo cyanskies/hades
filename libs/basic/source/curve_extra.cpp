@@ -55,8 +55,8 @@ namespace hades::resources
 			return curve_variable_type::collection_object_ref;
 		else if (s == "collection-unique"sv)
 			return curve_variable_type::collection_unique;
-		else if (s == "collection-colour"sv)
-			return curve_variable_type::collection_colour;
+		/*else if (s == "collection-colour"sv)
+			return curve_variable_type::collection_colour;*/
 		else if (s == "collection-time"sv)
 			return curve_variable_type::collection_time_d;
 		else
@@ -115,8 +115,8 @@ namespace hades::resources
 		case curve_variable_type::collection_unique:
 			default_value.emplace<collection_unique>();
 			break;
-		case curve_variable_type::collection_colour:
-			default_value.emplace<collection_colour>();
+		/*case curve_variable_type::collection_colour:
+			default_value.emplace<collection_colour>();*/
 			break;
 		case curve_variable_type::collection_time_d:
 			default_value.emplace<collection_time_d>();
@@ -252,8 +252,8 @@ namespace hades::resources
 			return std::holds_alternative<collection_object_ref>(v);
 		case curve_variable_type::collection_unique:
 			return std::holds_alternative<collection_unique>(v);
-		case curve_variable_type::collection_colour:
-			return std::holds_alternative<collection_colour>(v);
+		/*case curve_variable_type::collection_colour:
+			return std::holds_alternative<collection_colour>(v);*/
 		case curve_variable_type::collection_time_d:
 			return std::holds_alternative<collection_time_d>(v);
 		case curve_variable_type::error:
@@ -377,6 +377,35 @@ namespace hades::resources
                     v = n.to_sequence<ValueType>(data::make_uid);
 				else
                     v = n.to_sequence<ValueType>();
+			}
+			else if constexpr (std::same_as<T, colour>)
+			{
+				try
+				{
+					if (n.is_sequence())
+					{
+						const auto vec = n.to_sequence<uint8>();
+						if (size(vec) < 3)
+							throw bad_conversion{ "a colour must have at least red, green and blue components." };
+
+						if (size(vec) > 3) //alpha is also present
+							v = { vec[0], vec[1], vec[2], vec[3] };
+						else // alpha defaults to uint8 max
+							v = { vec[0], vec[1], vec[2] };
+					}
+					else
+					{
+						const auto value = n.get_child();
+						v = from_string<colour>(value->to_string());
+					}
+				}
+				catch (const bad_conversion&)
+				{
+					// TODO: log warning
+					// leave default value
+					//v = { 255, 0, 255 }; // megenta error col
+					return;
+				}
 			}
 			else
 			{

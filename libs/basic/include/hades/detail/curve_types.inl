@@ -34,8 +34,8 @@ inline hades::string hades::to_string(hades::curve_variable_type t) noexcept
 		return "collection-obj-ref"s;
 	case curve_variable_type::collection_unique:
 		return "collection-unique"s;
-	case curve_variable_type::collection_colour:
-		return "collection-colour"s;
+	/*case curve_variable_type::collection_colour:
+		return "collection-colour"s;*/
 	case curve_variable_type::collection_time_d:
 		return "collection-time-d"s;
 	case curve_variable_type::error:
@@ -58,8 +58,8 @@ constexpr hades::curve_variable_type hades::curve_collection_element_type(curve_
 		return ty::object_ref;
 	case ty::collection_unique:
 		return ty::unique;
-	case ty::collection_colour:
-		return ty::colour;
+	/*case ty::collection_colour:
+		return ty::colour;*/
 	case ty::collection_time_d:
 		return ty::time_d;
 	}

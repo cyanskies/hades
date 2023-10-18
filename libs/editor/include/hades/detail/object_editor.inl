@@ -67,9 +67,9 @@ namespace hades::obj_ui
 		auto ret = false;
 		auto arr = std::array{
 			integer_cast<int>(value[0]),
-				integer_cast<int>(value[1]),
-				integer_cast<int>(value[2]),
-				integer_cast<int>(value[3])
+			integer_cast<int>(value[1]),
+			integer_cast<int>(value[2]),
+			integer_cast<int>(value[3])
 		};
 
 		if (disabled)

@@ -115,7 +115,11 @@ namespace hades::data
 
 		bool is_sequence() const noexcept override
 		{
-			return _type == yaml_type::SEQUENCE;
+			return _type == yaml_type::SEQUENCE ||
+				_type == yaml_type::MAP &&
+				std::ranges::all_of(get_children(), [](const auto& node) {
+				return !node->is_map();
+					});
 		}
 
 	private:

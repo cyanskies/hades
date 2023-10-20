@@ -26,7 +26,7 @@ namespace hades::resources
 
 		void load(data::data_manager&) final override;
 
-        colour fill_colour = colours::black;
+        colour fill_colour = colours::from_name(colours::names::black);
 		std::vector<layer> layers;
 	};
 }
@@ -50,7 +50,7 @@ namespace hades
 
 		background() = default;
 		background(const resources::background&);
-		background(vector2_float size, const std::vector<layer>& = std::vector<layer>{}, colour = colours::black);
+		background(vector2_float size, const std::vector<layer>& = std::vector<layer>{}, colour = colours::from_name(colours::names::black));
 		
 		background(const background&) = default;
 		background &operator=(const background&) = default;

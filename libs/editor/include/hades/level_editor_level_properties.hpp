@@ -26,7 +26,7 @@ namespace hades
 				vector2_float parallax{ 1.f, 1.f };
 			};
 
-			colour col = colours::black;
+			colour col = colours::from_name(colours::names::black);
 			std::vector<background_layer> layers;
 		};
 

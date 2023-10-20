@@ -72,11 +72,9 @@ namespace hades::resources
 		if(mips != def.mips)		w.write("mips"sv, mips);
 		if (alpha)
 		{
-			const auto iter = std::ranges::find(colours::all_colours, alpha);
-			if (iter != end(colours::all_colours))
+			if (const auto col = colours::to_name(*alpha); col != colours::names::end)
 			{
-				const auto name = next(begin(colours::all_colour_names), distance(begin(colours::all_colours), iter));
-				w.write("alpha-mask"sv, *name);
+				w.write("alpha-mask"sv, colours::to_string(col));
 			}
 			else
 			{
@@ -188,9 +186,10 @@ namespace hades
 			height = 32u;
 
 		static std::size_t counter = 0;
-		constexpr auto size = std::size(colours::all_colours);
+		constexpr auto size = integer_cast<std::size_t>(enum_type(colours::names::end));
 		auto tex = generate_checkerboard_texture(width, height, std::min<texture_size_t>(width / 8, height / 8),
-			colours::all_colours[counter++ % size], colours::black); // TODO: new colour array for bad colours
+			colours::from_name(colours::names{ integer_cast<std::underlying_type_t<colours::names>>(counter++ % size) }),
+			colours::from_name(colours::names::black)); // TODO: new colour array for bad colours
 		tex.setRepeated(true);
 		return tex;
 	}
@@ -241,19 +240,20 @@ namespace hades
 				if (alpha->is_sequence())
 				{
 					const auto rgb = alpha->to_sequence<uint8>();
+					// TODO: error if rgb doesn't have enough elements
+					assert(size(rgb) == 3); // temp
 					tex->alpha = colour{ rgb[0], rgb[1], rgb[2] };
 				}
 				else
 				{
 					const auto col_name = alpha->to_string();
-					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
+					try
 					{
-						if (colours::all_colour_names[i] == col_name)
-						{
-							assert(i < size(colours::all_colours));
-							tex->alpha = colours::all_colours[i];
-							break;
-						}
+						tex->alpha = from_string<colour>(col_name);
+					}
+					catch (const bad_conversion& e)
+					{
+						log_warning(std::format("{}, while parsing alpha-mask for texture: {}", e.what(), name));
 					}
 				}
 			}

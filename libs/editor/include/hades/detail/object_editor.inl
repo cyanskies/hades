@@ -64,29 +64,11 @@ namespace hades::obj_ui
 	inline bool edit_curve_value(gui& g, std::string_view name,
 		curve_edit_cache&, bool disabled, curve_types::colour& value, Callback = {})
 	{
-		auto ret = false;
-		auto arr = std::array{
-			integer_cast<int>(value[0]),
-			integer_cast<int>(value[1]),
-			integer_cast<int>(value[2]),
-			integer_cast<int>(value[3])
-		};
-
 		if (disabled)
 			g.begin_disabled();
-		if (g.input(name, arr))
-		{
-			value = {
-				integer_clamp_cast<uint8>(arr[0]),
-				integer_clamp_cast<uint8>(arr[1]),
-				integer_clamp_cast<uint8>(arr[2]),
-				integer_clamp_cast<uint8>(arr[3])
-			};
-			ret = true;
-		}
+		const auto ret = g.colour_edit(name, value);
 		if (disabled)
 			g.end_disabled();
-
 		return ret;
 	}
 

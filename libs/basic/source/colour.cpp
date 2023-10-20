@@ -1006,4 +1006,47 @@ namespace hades
 			(c.a != std::numeric_limits<colour::value_type>::max() ? (", a:" + to_string(c.a)) : "") + 
 			"]";
 	}
+
+	namespace colours
+	{
+		names to_name(colour c) noexcept
+		{
+			const auto iter = std::ranges::find(colour_values, c);
+			if (iter != end(colour_values))
+			{
+				const auto dist = std::distance(begin(colour_values), iter);
+				const auto index = integer_cast<std::underlying_type_t<names>>(dist);
+				if(index < enum_type(names::end))
+					return names{ index };
+			}
+
+			return names::end;
+		}
+
+		colour from_name(names n)
+		{
+			const auto index = integer_cast<std::size_t>(enum_type(n));
+			if (index < size(colour_values))
+				return colour_values[index];
+			throw bad_conversion{ "unrecognised colour enum" };
+		}
+
+		std::string_view to_string(names n)
+		{
+			const auto index = integer_cast<std::size_t>(enum_type(n));
+			if (index < size(colour_names))
+				return colour_names[index];
+			throw bad_conversion{ "unrecognised colour enum" };
+		}
+
+		names name_from_string(std::string_view s) noexcept
+		{
+			for (auto i = std::size_t{}; i < size(colour_names); ++i)
+			{
+				if (s == colour_names[i])
+					return names{ integer_cast<std::underlying_type_t<names>>(i) };
+			}
+			return names::end;
+		}
+	}
 }

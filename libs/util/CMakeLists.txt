@@ -23,16 +23,6 @@ set(HADES_UTIL_HEADERS
 	./include/hades/value_guard.hpp
 	./include/hades/vector_math.hpp
 	./include/hades/zip.hpp
-)
-
-target_sources(hades-util 
-	PRIVATE
-	./source/async.cpp
-	./source/string.cpp
-	./source/time.cpp
-	PUBLIC FILE_SET headers TYPE HEADERS
-	FILES "${HADES_UTIL_HEADERS}"
-	PUBLIC
 	./include/hades/detail/any_map.inl
 	./include/hades/detail/collision_grid.inl
 	./include/hades/detail/line_math.inl
@@ -45,4 +35,13 @@ target_sources(hades-util
 	./include/hades/detail/utility.inl
 	./include/hades/detail/vector_math.inl
 	./include/hades/detail/zip.inl
+)
+
+target_sources(hades-util 
+	PRIVATE
+	./source/async.cpp
+	./source/string.cpp
+	./source/time.cpp
+	PUBLIC FILE_SET headers TYPE HEADERS
+	FILES "${HADES_UTIL_HEADERS}"
 )

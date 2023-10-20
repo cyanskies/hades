@@ -846,13 +846,36 @@ namespace hades
 		return ImGui::InputTextMultiline(to_string(label).data(), &buffer, {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	void gui::colour_editor_options(colour_edit_settings s)
+	void gui::colour_editor_options(colour_edit_flags s)
 	{
 		_active_assert();
 		ImGui::SetColorEditOptions(static_cast<ImGuiColorEditFlags>(s));
 	}
 
-	bool gui::colour_picker3(std::string_view label, std::array<uint8, 3>& colour, colour_edit_flags f)
+	bool gui::colour_edit(std::string_view label, colour& c, colour_edit_flags flags)
+	{
+		std::array<float, 4> f{
+			c.r / 255.f,
+			c.g / 255.f,
+			c.b / 255.f,
+			c.a / 255.f
+		};
+
+		const auto r = ImGui::ColorEdit4(label, f.data(), static_cast<ImGuiColorEditFlags>(flags));
+		if (r)
+		{
+			c = colour{
+				integral_cast<uint8>(f[0] * 255),
+				integral_cast<uint8>(f[1] * 255),
+				integral_cast<uint8>(f[2] * 255),
+				integral_cast<uint8>(f[3] * 255)
+			};
+		}
+
+		return r;
+	}
+
+	bool gui::colour_picker(std::string_view label, std::array<uint8, 3>& colour, colour_edit_flags f)
 	{
 		std::array<float, 3> float_col{ 0.f };
 		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)noexcept ->float {
@@ -870,7 +893,7 @@ namespace hades
 		return r;
 	}
 
-	bool gui::colour_picker4(std::string_view label, std::array<uint8, 4>& colour, colour_edit_flags f)
+	bool gui::colour_picker(std::string_view label, std::array<uint8, 4>& colour, colour_edit_flags f)
 	{
 		std::array<float, 4> float_col{ 0.f };
 		std::transform(std::begin(colour), std::end(colour), std::begin(float_col), [](auto &col)noexcept->float {
@@ -883,6 +906,29 @@ namespace hades
 			std::transform(std::begin(float_col), std::end(float_col), std::begin(colour), [](auto col)noexcept->uint8 {
 				return static_cast<uint8>(col * 255);
 			});
+		}
+
+		return r;
+	}
+
+	bool gui::colour_picker(std::string_view label, colour& c, colour_edit_flags flags)
+	{
+		std::array<float, 4> f{ 
+			c.r / 255.f,
+			c.g / 255.f,
+			c.b / 255.f,
+			c.a / 255.f
+		};
+
+		const auto r = ImGui::ColorPicker4(label, f.data(), static_cast<ImGuiColorEditFlags>(flags));
+		if (r)
+		{
+			c = colour{
+				integral_cast<uint8>(f[0] * 255),
+				integral_cast<uint8>(f[1] * 255),
+				integral_cast<uint8>(f[2] * 255),
+				integral_cast<uint8>(f[3] * 255)
+			};
 		}
 
 		return r;

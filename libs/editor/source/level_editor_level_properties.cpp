@@ -165,7 +165,7 @@ namespace hades
 
 			g.text("background_colour"sv);
 			constexpr auto picker_flags = gui::colour_edit_flags::no_label;
-			if (g.colour_picker3("backdrop colour"sv, colour, picker_flags))
+			if (g.colour_picker("backdrop colour"sv, colour, picker_flags))
 			{
 				col.r = colour[0];
 				col.g = colour[1];
@@ -289,7 +289,7 @@ namespace hades
 		_background.set_size({ static_cast<float>(l.map_x),
 							  static_cast<float>(l.map_y) });
 
-		_background.set_colour(colours::black);
+		_background.set_colour(colours::from_name(colours::names::black));
 
 		_player_input = l.player_input_script;
 		_ai_input = l.ai_input_script;

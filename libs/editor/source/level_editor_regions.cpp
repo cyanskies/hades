@@ -168,7 +168,7 @@ namespace hades
 					const auto colour = region.shape.getFillColor();
 					auto col = std::array{ colour.r, colour.g, colour.b, colour.a };
 					static_assert(std::is_same_v<uint8, decltype(col)::value_type>);
-					if (g.colour_picker4("colour"sv, col))
+					if (g.colour_picker("colour"sv, col))
 						region.shape.setFillColor({ col[0], col[1], col[2], col[3] });
 
 					g.pop_id();

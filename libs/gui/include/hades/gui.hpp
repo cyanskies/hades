@@ -464,18 +464,14 @@ namespace hades
 			none = ImGuiColorEditFlags_None,
 			no_alpha = ImGuiColorEditFlags_NoAlpha,
 			no_picker = ImGuiColorEditFlags_NoPicker,
-			no_options = ImGuiColorEditFlags_NoOptions,  
+			no_options = ImGuiColorEditFlags_NoOptions,
 			no_preview = ImGuiColorEditFlags_NoSmallPreview,
 			no_inputs = ImGuiColorEditFlags_NoInputs,
 			no_tooltip = ImGuiColorEditFlags_NoTooltip,
 			no_label = ImGuiColorEditFlags_NoLabel,
-			no_side_preview = ImGuiColorEditFlags_NoSidePreview, 
+			no_side_preview = ImGuiColorEditFlags_NoSidePreview,
 			no_drag_drop = ImGuiColorEditFlags_NoDragDrop,
-		};
 
-		enum class colour_edit_settings : ImGuiColorEditFlags
-		{
-			none = ImGuiColorEditFlags_None,
 			alpha_bar = ImGuiColorEditFlags_AlphaBar,
 			alpha_preview = ImGuiColorEditFlags_AlphaPreview,
 			alpha_preview_half = ImGuiColorEditFlags_AlphaPreviewHalf,
@@ -486,17 +482,19 @@ namespace hades
 			format_uint8 = ImGuiColorEditFlags_Uint8,
 			format_float = ImGuiColorEditFlags_Float,
 			hue_bar = ImGuiColorEditFlags_PickerHueBar,
-			hue_wheel = ImGuiColorEditFlags_PickerHueWheel
-			//TODO: input rgb
-			//TODO: input hsv
+			hue_wheel = ImGuiColorEditFlags_PickerHueWheel,
+
+			restore_default = ImGuiColorEditFlags_DefaultOptions_
 		};
 
 		//3/4, 3 = rgb, 4 = rbga
 		//edit creates a preview square the summons a picker dialog
 		//picker creates a picker widget
-		void colour_editor_options(colour_edit_settings);
-		bool colour_picker3(std::string_view label, std::array<uint8, 3> &colour, colour_edit_flags = colour_edit_flags::none);
-		bool colour_picker4(std::string_view label, std::array<uint8, 4> &colour, colour_edit_flags = colour_edit_flags::none);
+		void colour_editor_options(colour_edit_flags);
+		bool colour_edit(std::string_view label, colour& colour, colour_edit_flags = colour_edit_flags::none);
+		bool colour_picker(std::string_view label, std::array<uint8, 3> &colour, colour_edit_flags = colour_edit_flags::none);
+		bool colour_picker(std::string_view label, std::array<uint8, 4> &colour, colour_edit_flags = colour_edit_flags::none);
+		bool colour_picker(std::string_view label, colour& colour, colour_edit_flags = colour_edit_flags::none);
 
 		//TODO: update
 		enum class tree_node_flags : ImGuiTreeNodeFlags

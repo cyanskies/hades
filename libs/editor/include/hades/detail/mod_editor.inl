@@ -196,7 +196,7 @@ namespace hades
 				if (_new_mod.exists)
 				{
 					_gui.same_line();
-					_gui.text_coloured("mod with this name already exists"sv, colours::red);
+					_gui.text_coloured("mod with this name already exists"sv, colours::from_name(colours::names::red));
 				}
 			}
 			_gui.window_end();
@@ -243,7 +243,7 @@ namespace hades
 				if (_save_as_window.exists)
 				{
 					_gui.same_line();
-					_gui.text_coloured("A mod with this name already exists, overwrite?"sv, colours::red);
+					_gui.text_coloured("A mod with this name already exists, overwrite?"sv, colours::from_name(colours::names::red));
 				}
 			}
 			_gui.window_end();
@@ -370,7 +370,7 @@ namespace hades
 
 			if (_new_res_window.exists)
 			{
-				g.text_coloured("Resource name is already used"sv, colours::red);
+				g.text_coloured("Resource name is already used"sv, colours::from_name(colours::names::red));
 				g.begin_disabled();
 			}
 

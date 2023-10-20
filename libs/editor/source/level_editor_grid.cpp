@@ -45,7 +45,7 @@ hades::grid_vars hades::get_console_grid_vars()
 void hades::level_editor_grid::level_load(const level &l)
 {
 	_grid.set_all({ {static_cast<float>(l.map_x), static_cast<float>(l.map_y)},
-		calculate_grid_size(*_grid_vars.step), colours::white });
+		calculate_grid_size(*_grid_vars.step), colours::from_name(colours::names::white) });
 }
 
 void hades::level_editor_grid::level_resize(vector2_int s, vector2_int)

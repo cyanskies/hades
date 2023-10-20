@@ -55,7 +55,7 @@ namespace hades
 		object_data objects;
 
 		//backgrounds
-		colour background_colour = colours::black;
+		colour background_colour = colours::from_name(colours::names::black);
 		std::vector<background_layer> background_layers;
 		
 		//trigger regions

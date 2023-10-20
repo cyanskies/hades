@@ -439,7 +439,7 @@ namespace hades
 					_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, frame), s_index);
 				}
 				else
-					_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::white), s_index);
+					_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::from_name(colours::names::white)), s_index);
 			}
 			else
 			{
@@ -475,7 +475,7 @@ namespace hades
 			verts[index].buffer.append(make_quad_animation(spr.position, spr.size, frame));
 		}
 		else
-			verts[index].buffer.append(make_quad_colour({ spr.position, spr.size }, colours::white));
+			verts[index].buffer.append(make_quad_colour({ spr.position, spr.size }, colours::from_name(colours::names::white)));
 
 		verts[index].sprites.emplace_back(spr.id);
 		return index;

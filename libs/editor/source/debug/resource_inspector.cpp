@@ -308,7 +308,7 @@ namespace hades::data
 			if (_alpha_set)
 				_alpha = { a->r, a->g, a->b };
 			else
-				_alpha.fill({});
+				_alpha = {};
 
 			_repeat = tex::get_repeat(_texture);
 			_source = _texture_base->source.generic_string();
@@ -378,7 +378,12 @@ namespace hades::data
 
 				g.separator_horizontal();
 
-				assert(_alpha_combo_index < size(colours::all_colour_names));
+				// temp: need to add colour picker to gui
+				g.begin_disabled();
+				g.combo_begin("Alpha-colour"sv, "", gui::combo_flags::no_preview);
+				g.end_disabled();
+
+				/*assert(_alpha_combo_index < size(colours::all_colour_names));
 				if (g.combo_begin("Alpha colour"sv, colours::all_colour_names[_alpha_combo_index], gui::combo_flags::no_preview))
 				{
 					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
@@ -394,10 +399,9 @@ namespace hades::data
 						}
 					}
 					g.combo_end();
-				}
+				}*/
 
-				if (const auto current_alpha = _alpha; 
-					g.input_scalar("Alpha rgb"sv, _alpha) && current_alpha != _alpha)
+				if (g.colour_edit("Alpha mask", _alpha))
 				{
 					_alpha_set = true;
 					mod = true;
@@ -405,7 +409,7 @@ namespace hades::data
 
 				if(g.button("Remove custom alpha"sv))
 				{
-					_alpha.fill({});
+					_alpha = {};
 					_alpha_set = false;
 					mod = true;
 				}
@@ -426,7 +430,7 @@ namespace hades::data
 				if (mod)
 				{
 					if (_alpha_set)
-						resources::texture_functions::set_alpha_colour(*_texture, { _alpha[0], _alpha[1], _alpha[2] });
+						resources::texture_functions::set_alpha_colour(*_texture, _alpha);
 					else
 						resources::texture_functions::clear_alpha(*_texture);
 
@@ -526,7 +530,7 @@ namespace hades::data
 						_texture_source_window.source != _source);
 
 					if (!good_ext)
-						g.text_coloured("file extensions must match"sv, colours::red);
+						g.text_coloured("file extensions must match"sv, colours::from_name(colours::names::red));
 
 					if (!applyable)
 							g.begin_disabled();
@@ -617,7 +621,7 @@ namespace hades::data
 		source_window _texture_source_window;
 		ImGuiFileDialog _file_dialog;
 
-		std::array<uint8, 3> _alpha;
+		colour _alpha;
 		bool _alpha_set = false;
 		std::size_t _alpha_combo_index = std::size_t{};
 		std::array<texture_size_t, 2> _requested_size;
@@ -694,7 +698,7 @@ namespace hades::data
 						_source != _old_source);
 
 					if (!good_ext)
-						g.text_coloured("file extensions must match"sv, colours::red);
+						g.text_coloured("file extensions must match"sv, colours::from_name(colours::names::red));
 
 					if (!applyable)
 						g.begin_disabled();
@@ -886,7 +890,7 @@ namespace hades::data
 
 							const auto was_invalid = std::ranges::count(_anim_list, name, &entry_t::name) > 1;
 							if (was_invalid)
-								g.push_colour(gui::colour_target::frame_background, colours::dark_red);
+								g.push_colour(gui::colour_target::frame_background, colours::from_name(colours::names::firebrick));
 							// must be unique
 							if(g.input("##name"sv, name) 
 								&& std::ranges::count(_anim_list, name, &entry_t::name) == 1)
@@ -909,7 +913,7 @@ namespace hades::data
 								});
 
 							if (was_invalid)
-								g.push_colour(gui::colour_target::frame_background, colours::dark_red);
+								g.push_colour(gui::colour_target::frame_background, colours::from_name(colours::names::firebrick));
 							if (g.input_text("##value"sv, value, gui::input_text_flags::callback_completion, text_callback)
 								&& std::ranges::any_of(anim_names, [&value](const auto& str)->bool{
 									return str == value;

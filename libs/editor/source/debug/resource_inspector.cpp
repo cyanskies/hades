@@ -378,29 +378,6 @@ namespace hades::data
 
 				g.separator_horizontal();
 
-				// temp: need to add colour picker to gui
-				g.begin_disabled();
-				g.combo_begin("Alpha-colour"sv, "", gui::combo_flags::no_preview);
-				g.end_disabled();
-
-				/*assert(_alpha_combo_index < size(colours::all_colour_names));
-				if (g.combo_begin("Alpha colour"sv, colours::all_colour_names[_alpha_combo_index], gui::combo_flags::no_preview))
-				{
-					for (auto i = std::size_t{}; i < size(colours::all_colour_names); ++i)
-					{
-						if (g.selectable(colours::all_colour_names[i], _alpha_combo_index == i))
-						{
-							_alpha_combo_index = i;
-							assert(_alpha_combo_index < size(colours::all_colours));
-							const auto& col = colours::all_colours[i];
-							_alpha = { col.r, col.g, col.b };
-							_alpha_set = true;
-							mod = true;
-						}
-					}
-					g.combo_end();
-				}*/
-
 				if (g.colour_edit("Alpha mask", _alpha))
 				{
 					_alpha_set = true;

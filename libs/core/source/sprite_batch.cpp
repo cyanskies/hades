@@ -318,6 +318,7 @@ namespace hades
 	void sprite_batch::apply()
 	{
 		_apply_changes();
+		_remove_empty_batch();
 
 		for (auto& v : _vertex)
 			v.buffer.apply();
@@ -406,6 +407,7 @@ namespace hades
 	void sprite_batch::_apply_changes()
 	{
 		namespace animf = resources::animation_functions;
+		
 		for (auto& sprite : _ids)
 		{
 			const auto id = sprite.id;
@@ -447,6 +449,34 @@ namespace hades
 				_reseat_sprite(id, sprite, s_index);
 			}
 		}
+
+		return;
+	}
+
+	void sprite_batch::_remove_empty_batch() noexcept
+	{
+		// find first empty batch
+		const auto iter = std::ranges::find_if(_sprites, [](const auto& s) {
+			return empty(s.sprites);
+			});
+
+		if (iter == end(_sprites))
+			return;
+
+		// remove batch
+		const auto index = std::distance(begin(_sprites), iter);
+		const auto vert_iter = std::next(begin(_vertex), index);
+		_sprites.erase(iter);
+		_vertex.erase(vert_iter);
+
+		// fix indicies
+		for (auto& s : _ids)
+		{
+			assert(s.index != index);
+			if (std::cmp_greater(s.index, index))
+				--s.index;
+		}
+
 		return;
 	}
 

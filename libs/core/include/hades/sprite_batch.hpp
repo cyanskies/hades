@@ -145,6 +145,7 @@ namespace hades
 
 	private:
 		void _apply_changes();
+		void _remove_empty_batch() noexcept; // remove the first empty batch
 		void _add_sprite(sprite_utility::sprite);
 		// removes sprite from its current batch and then places it back in the correct batch
 		void _reseat_sprite(sprite_id, sprite_pos&, index_t);

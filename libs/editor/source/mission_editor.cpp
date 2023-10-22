@@ -10,7 +10,7 @@ namespace hades
 	{
 		console::create_property(cvars::editor_mission_ext, cvars::default_value::editor_mission_ext);
 		console::create_property(cvars::editor_lock_player_object_type, cvars::default_value::editor_lock_player_object_type);
-
+		
 		create_level_editor_console_vars();
 		return;
 	}
@@ -24,7 +24,11 @@ namespace hades
 
 	void mission_editor_t::init()
 	{
-		_obj_ui.emplace(&_objects);
+		_obj_ui.emplace(&_objects,
+			[&](object_instance& o) {
+				on_add_object(o);
+				return;
+			});
 		
 		if (_mission_src == path{})
 		{
@@ -255,6 +259,7 @@ namespace hades
 							{
 								const auto obj = data::get<resources::object>(object_id);
 								auto o = make_instance(obj);
+								on_add_object(o);
 								p.object = _obj_ui.value().add(std::move(o));
 							}
 							catch (const data::resource_null&)

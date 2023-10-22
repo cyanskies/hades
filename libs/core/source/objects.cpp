@@ -1011,6 +1011,17 @@ namespace hades
 		set_curve(o, *siz, v);
 	}
 
+	const tag_list& get_tags(const object_instance& o)
+	{
+		assert(o.obj_type);
+		return get_tags(*o.obj_type);
+	}
+
+	const tag_list& get_tags(const resources::object& o)
+	{
+		return resources::object_functions::get_tags(o);
+	}
+
 	template<typename Object, typename GetCurve>
 	static inline resources::curve_types::unique get_vec_unique_impl(const Object &o, GetCurve get_vec_curve)
 	{

@@ -106,10 +106,13 @@ namespace hades
 	}
 
 	level_editor_objects_impl::level_editor_objects_impl()
-		: _obj_ui{ &_objects, [this](editor_object_instance* o) {
+		: _obj_ui{ &_objects, nullptr, // on add
+			// on change
+			[this](editor_object_instance* o) {
 				assert(o);
 				return _update_changed_obj(*o);
-			} ,
+			},
+			// on remove
 			[this](entity_id id) {
 				_remove_object_callback(id);
 				return;
@@ -374,7 +377,9 @@ namespace hades
 					activate_brush();
 					_brush_type = brush_type::object_place;
 					_held_object = make_instance(o);
-					set_curve(*_held_object, *get_player_owner_curve(), _object_owner);
+					const auto player_owner = get_player_owner_curve();
+					if(has_curve(*_held_object, *player_owner))
+						set_curve(*_held_object, *player_owner, _object_owner);
 
 					if (_grid.auto_mode)
 						set_grid_settings_for_object_type(_grid, *_held_object);
@@ -418,9 +423,8 @@ namespace hades
 
 	//TODO: remove some params, pass in the snapped position in pos, if needed
 	//		no need for all the grid settings stuff
-	template<typename Object>
-	std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector2_float pos, vector2_float level_limit,
-		const Object &o, const resources::level_editor_object_settings &s, bool snap, float cell_size)
+	static std::variant<sf::Sprite, sf::RectangleShape> make_held_preview(vector2_float pos, vector2_float level_limit,
+		const level_editor_objects_impl::editor_object_instance &o, const resources::level_editor_object_settings &s, bool snap, float cell_size)
 	{
 		const auto size = get_safe_size(o);
 
@@ -801,8 +805,8 @@ namespace hades
 			else
 				set_position(o, pos);
 
-			_update_changed_obj(o);
 			on_object_place(o);
+			_update_changed_obj(o);
 
 			const auto end = std::end(_objects.objects);
 

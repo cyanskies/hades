@@ -62,6 +62,7 @@ namespace hades
 		// generate the starting state for a new mission
 		virtual mission new_mission();
 		virtual unique_id default_new_player_object() const noexcept; // TODO: make this into a console property?
+		virtual void on_add_object(object_instance&) {} // NOTE: default impl does nothing
 
 	private:
 		struct players_window_state_t
@@ -162,7 +163,7 @@ namespace hades
 
 		//objects
 		using obj_data = obj_ui::object_data<object_instance>;
-		using obj_ui = object_editor<obj_data>;
+		using obj_ui = object_editor<obj_data, std::function<void(object_instance&)>>;
 		obj_data _objects;
 		std::optional<obj_ui> _obj_ui;
 	};

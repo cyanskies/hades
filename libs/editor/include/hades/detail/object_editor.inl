@@ -452,10 +452,11 @@ namespace hades::obj_ui
 
 namespace hades
 {
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_editor(ObjectData* d,
-		OnChange on_change, OnRemove on_remove, CurveGuiCallback curve_gui_callback)
-		: _data{ d }, _on_change{ on_change }, _on_remove{ on_remove }, _curve_edit_callback{ curve_gui_callback }
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::object_editor(ObjectData* d,
+		OnAdd on_add, OnChange on_change, OnRemove on_remove, CurveGuiCallback curve_gui_callback)
+		: _data{ d }, _on_change{ on_change }, _on_remove{ on_remove }, _on_add{ on_add },
+		_curve_edit_callback{ curve_gui_callback }
 	{
 		using namespace std::string_view_literals;
 		const auto objects = data::get_all_names_for_type("objects"sv);
@@ -465,8 +466,8 @@ namespace hades
 			});
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::show_object_list_buttons(gui& g)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::show_object_list_buttons(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;
@@ -516,7 +517,12 @@ namespace hades
 				const auto& o_type = _object_types[_next_added_object_base - 1];
 				// NOTE: need to force load the object type
 				data::get<resources::object>(o_type.obj->id);
-				add(make_instance(o_type.obj));
+				auto inst = make_instance(o_type.obj);
+
+				if constexpr (on_add_callback)
+					std::invoke(_on_add, inst);
+
+				add(std::move(inst));
 			}
 		}
 		else
@@ -535,8 +541,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline bool object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_list_gui(gui& g)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline bool object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::object_list_gui(gui& g)
 	{
 		using namespace std::string_view_literals;
 		
@@ -581,8 +587,8 @@ namespace hades
 		return sel;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::object_properties(gui& g)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::object_properties(gui& g)
 	{
 		using namespace std::string_view_literals;
 		if (!_data->valid_ref(_selected))
@@ -601,8 +607,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::set_selected(object_ref_t ref) noexcept
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::set_selected(object_ref_t ref) noexcept
 	{
 		if (!_data->valid_ref(ref))
 		{
@@ -640,8 +646,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline auto object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::add(object_instance o) -> object_ref_t
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline auto object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::add(object_instance o) -> object_ref_t
 		requires can_add_objects
 	{
 		const auto new_obj = _data->add(std::move(o));
@@ -649,8 +655,8 @@ namespace hades
 		return new_obj;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::erase(object_ref_t ref)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::erase(object_ref_t ref)
 	{
 		if constexpr (on_remove_callback)
 			std::invoke(_on_remove, ref);
@@ -659,8 +665,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::_edit_name(gui& g, const object_t o)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::_edit_name(gui& g, const object_t o)
 	{
 		using namespace std::string_view_literals;
 
@@ -691,8 +697,8 @@ namespace hades
 		return;
 	}
 
-	template<typename ObjectData, typename OnChange, typename OnRemove, typename CurveGuiCallback>
-	inline void object_editor<ObjectData, OnChange, OnRemove, CurveGuiCallback>::_property_editor(gui& g)
+	template<typename ObjectData, typename OnAdd, typename OnChange, typename OnRemove, typename CurveGuiCallback>
+	inline void object_editor<ObjectData, OnAdd, OnChange, OnRemove, CurveGuiCallback>::_property_editor(gui& g)
 	{
 		using namespace std::string_view_literals;
 		using namespace std::string_literals;

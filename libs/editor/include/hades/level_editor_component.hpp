@@ -75,7 +75,8 @@ namespace hades
 		//generic callbacks, these are always available
 		using activate_brush_f = std::function<void(void)>;
 		using get_tags_at_f = std::function<tag_list(rect_float)>;
-		using get_players_return_type = std::vector<std::pair<unique_id, const object_instance*>>;
+		using player_reference = std::pair<unique_id, const object_instance*>;
+		using get_players_return_type = std::vector<player_reference>;
 		using get_players_f = std::function<get_players_return_type(void)>;
 
 		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers>

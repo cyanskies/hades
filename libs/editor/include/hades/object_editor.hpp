@@ -165,8 +165,8 @@ namespace hades
 		};
 	}
 
-	template<typename ObjectData, typename OnChange = nullptr_t, typename OnRemove = nullptr_t,
-			typename CurveGuiCallback = detail::default_curve_editor_callback>
+	template<typename ObjectData, typename OnAdd = nullptr_t, typename OnChange = nullptr_t,
+		typename OnRemove = nullptr_t, typename CurveGuiCallback = detail::default_curve_editor_callback>
 		class object_editor
 	{
 	public:
@@ -176,6 +176,10 @@ namespace hades
 		using curve_t = typename data_type::curve_t;
 
 		static constexpr bool default_curve_callback = std::is_same_v<CurveGuiCallback, detail::default_curve_editor_callback>;
+
+		static constexpr bool on_add_callback = std::is_invocable_v<OnAdd, object_instance&>;
+		static_assert(std::is_same_v<OnAdd, nullptr_t> || on_add_callback,
+			"If the OnChange callback is provided it must have the following signiture: auto OnAdd(object_instance&)");
 
 		static constexpr bool on_change_callback = std::is_invocable_v<OnChange, object_t&>;
 		static_assert(std::is_same_v<OnChange, nullptr_t> || on_change_callback,
@@ -195,7 +199,7 @@ namespace hades
 		static constexpr bool show_hidden = data_type::show_hidden;
 
 		//constructor
-		object_editor(data_type*, OnChange = nullptr, OnRemove = nullptr,
+		object_editor(data_type*, OnAdd = nullptr, OnChange = nullptr, OnRemove = nullptr,
 			CurveGuiCallback = detail::default_curve_editor_callback{});
 
 		void show_object_list_buttons(gui&);
@@ -278,6 +282,7 @@ namespace hades
 		//callbacks
 		OnChange _on_change{};
 		OnRemove _on_remove{};
+		OnAdd _on_add{};
 		CurveGuiCallback _curve_edit_callback{};
 
 		// Edit state

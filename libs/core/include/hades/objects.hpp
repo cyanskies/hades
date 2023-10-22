@@ -219,6 +219,8 @@ namespace hades
 	resources::curve_types::vec2_float get_size(const object_instance &o);
 	resources::curve_types::vec2_float get_size(const resources::object &o);
 	void set_size(object_instance &o, resources::curve_types::vec2_float v);
+	const tag_list& get_tags(const object_instance&);
+	const tag_list& get_tags(const resources::object&);
 
 	unique_id get_collision_groups(const object_instance &o);
 	unique_id get_collision_groups(const resources::object &o);

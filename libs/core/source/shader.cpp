@@ -39,11 +39,7 @@ namespace hades::resources
 		void load(data::data_manager&) final override
 		{
 			proxy.emplace(this, uniforms);
-			if (sf::Shader::isAvailable() == false)
-			{
-				log_warning("This device does not support shaders"sv);
-				return;
-			}
+			assert(sf::Shader::isAvailable());
 
 			auto shaders = shaders_provided::none;
 			if (!empty(vertex))

@@ -472,7 +472,7 @@ namespace hades
 		// fix indicies
 		for (auto& s : _ids)
 		{
-			assert(s.index != index);
+			assert(std::cmp_not_equal(s.index, index));
 			if (std::cmp_greater(s.index, index))
 				--s.index;
 		}

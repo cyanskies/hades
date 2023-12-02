@@ -36,6 +36,14 @@ namespace hades
 		using create_resource_function =           /*     Manager           Id                 Mod Id        */
 			std::function<resources::resource_base*(data::data_manager&, unique_id, unique_id)>;
 
+		struct new_resource_window
+		{
+			string name = "new_resource";
+			std::size_t type_index = {};
+			bool exists = false;
+			bool open = false;
+		};
+
 	protected:
 		void register_resource_type(std::string type, create_resource_function func);
 
@@ -81,14 +89,6 @@ namespace hades
 		{
 			normal,// for creating or loading a mod on top of the normal game
 			already_loaded // for editing one of the mods that was loaded on startup
-		};
-
-		struct new_resource_window
-		{
-			string name = "new_resource";
-			std::size_t type_index = {};
-			bool exists = false;
-			bool open = false;
 		};
 
 		ResourceInspector _inspector;

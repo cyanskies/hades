@@ -84,8 +84,18 @@ namespace hades
 	namespace detail
 	{
 		bool mod_exists(std::string_view name) noexcept;
-	}
 
+		template<debug::is_resource_inspector ResourceInspector>
+		void new_res_window_check_name(typename mod_editor_impl<ResourceInspector>::new_resource_window& win,
+			const unique_id mod, data::data_manager& d)
+		{
+			const auto id = d.get_uid(win.name);
+			const auto res = d.try_get_resource(id, mod);
+			win.exists = res != nullptr;
+			return;
+		}
+	}
+	
 	template<debug::is_resource_inspector ResourceInspector>
 	void mod_editor_impl<ResourceInspector>::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
 	{
@@ -162,6 +172,7 @@ namespace hades
 				{
 					_new_res_window = new_resource_window{};
 					_new_res_window.open = true;
+					detail::new_res_window_check_name<ResourceInspector>(_new_res_window, _current_mod, data_man);
 				}
 
 				const auto res_open = _inspector.is_resource_open();
@@ -345,9 +356,7 @@ namespace hades
 		{
 			if (g.input("name"sv, _new_res_window.name))
 			{
-				const auto id = d.get_uid(_new_res_window.name);
-				const auto res = d.try_get_resource(id, _current_mod);
-				_new_res_window.exists = res != nullptr;
+				detail::new_res_window_check_name<ResourceInspector>(_new_res_window, _current_mod, d);
 			}
 
 			const auto begin = std::begin(_create_resource_funcs);

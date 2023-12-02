@@ -1,100 +1,35 @@
 #ifndef HADES_RESOURCE_COLLECTION_HPP
 #define HADES_RESOURCE_COLLECTION_HPP
 
-#include <array>
-#include <typeindex>
-#include <vector>
-
-#pragma warning(push, 0)
-#pragma warning(disable: 28182)
-#include "plf_colony.h"
-#pragma warning(pop)
+#include <map>
 
 #include "hades/resource_base.hpp"
 #include "hades/uniqueid.hpp"
 
 namespace hades::data
 {
-	class erased_hive
-	{
-	public:
-		template<Resource T>
-		erased_hive(const T*);
-		
-		erased_hive(erased_hive&& rhs) noexcept
-            : _move{ rhs._move }, _move_assign{ rhs._move_assign }, _destroy{ rhs._destroy }
-#ifndef NDEBUG
-			, _index{ rhs._index }
-#endif
-		{
-			std::invoke(_move, rhs._mem, _mem);
-			return;
-		}
-
-		erased_hive(const erased_hive&) = delete;
-
-		erased_hive& operator=(erased_hive&& rhs) noexcept
-		{
-			assert(_index == rhs._index);
-			std::invoke(_move_assign, rhs._mem, _mem);
-			return *this;
-		}
-
-		erased_hive& operator=(const erased_hive&) = delete;
-
-		~erased_hive() noexcept
-		{
-			std::invoke(_destroy, _mem);
-		}
-
-		Resource auto* set(Resource auto);
-		template<Resource T>
-		void erase(unique_id id, unique_id mod) noexcept;
-
-		template<typename T>
-		using hive_t = plf::colony<T>;
-		// all colonies are the same size
-		static_assert(sizeof(hive_t<int>) == sizeof(hive_t<std::array<int, 500>>));
-		using mem_t = std::array<std::byte, sizeof(hive_t<int>)>;
-
-	private:
-		alignas(std::max_align_t) mem_t _mem;
-		void(*_move)(mem_t&, mem_t&);
-		void(*_move_assign)(mem_t&, mem_t&);
-		void(*_destroy)(mem_t&);
-
-#ifndef NDEBUG
-		std::type_index _index;
-#endif
-	};
-
 	class resource_collection
 	{
 	public:
 		// throws if the id/mod combination already has a value
-		Resource auto* set(Resource auto res);
+		Resource auto* set(Resource auto res)
+		{
+			auto ptr = std::make_unique<decltype(res)>(std::move(res));
+			auto ret = ptr.get();
+			const auto [iter, good] = _res.try_emplace({ ret->id, ret->mod }, std::move(ptr));
+			if (!good)
+				throw data::resource_name_already_used{ "Attempted to create a resource with an id that has already been used" };
+			return ret;
+		}
+
 		void erase(unique_id id, unique_id mod) noexcept
 		{
-			for (auto& hive : _hives)
-				std::invoke(hive.erase, hive.hive, id, mod);
-			return;
+			_res.erase({ id, mod });
 		}
 
 	private:
-		struct hive_storage
-		{
-			std::type_index type;
-			void(*erase)(erased_hive&, unique_id, unique_id) noexcept;
-			erased_hive hive;
-		};
-
-		template<Resource T>
-		hive_storage* _get_hive();
-
-		std::vector<hive_storage> _hives;
+		std::map<std::pair<unique_id, unique_id>, std::unique_ptr<resources::resource_base>> _res;
 	};
 }
-
-#include "hades/detail/resource_collection.inl"
 
 #endif //!HADES_RESOURCE_COLLECTION_HPP

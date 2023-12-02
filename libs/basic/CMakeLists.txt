@@ -55,7 +55,6 @@ set(HADES_BASIC_SRC
 	include/hades/detail/game_loop.inl
 	include/hades/detail/input.inl
 	include/hades/detail/parser.inl
-	include/hades/detail/resource_collection.inl
 	include/hades/detail/terrain.inl
 	include/hades/detail/tiles.inl
 	include/hades/detail/writer.inl
@@ -63,7 +62,6 @@ set(HADES_BASIC_SRC
 
 set(HADES_BASIC_LIBS
 	hades-util
-	plf-colony
 	minizip
 )
 

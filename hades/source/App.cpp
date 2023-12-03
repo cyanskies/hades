@@ -188,8 +188,6 @@ namespace hades
 
 		data.update_all_links();
 
-		_window.resetGLStates();
-
 		//if hades main handles any of the commands then they will be removed from 'commands'
 		if (app_main)
 			std::invoke(app_main, _states, _input, commands);
@@ -204,12 +202,12 @@ namespace hades
 		for (auto &c : commands)
 			_console.run_command(c);
 
-		//create  the normal window
+		//create the normal window
 		if (!_console.run_command(command{ "vid_reinit"sv }))
 		{
 			LOGERROR("Error setting video, falling back to default"sv);
 			_console.run_command(command{ "vid_default"sv });
-			_console.run_command(command{ "vid_reinit"sv });
+			_console.run_command(command{ "vid_reinit"sv }); // TODO: if this fails then throw an error
 		}
 
 		//create the debug view and gui settings

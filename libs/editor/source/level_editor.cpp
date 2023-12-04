@@ -352,24 +352,27 @@ namespace hades::detail
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
 
 		// TODO: these should be part of the minimap
-		if (_gui.button("reset rotation"))
+		if (_rotate_enabled->load())
 		{
-			// reset world view to correct non-rotated position
-			const auto& centre = _world_view.getCenter();
-			const auto point = _world_transform.getInverse().transformPoint(centre);
-			_world_view.setCenter(point);
+			if (_gui.button("reset rotation"))
+			{
+				// reset world view to correct non-rotated position
+				const auto& centre = _world_view.getCenter();
+				const auto point = _world_transform.getInverse().transformPoint(centre);
+				_world_view.setCenter(point);
 
-			_world_transform = {};
-		}
+				_world_transform = {};
+			}
 
-		if (_gui.slider_float("Rotate", _rotate_widget, -5.f, 5.f))
-		{
-			const auto& centre = _world_view.getCenter();
-			const auto point = _world_transform.getInverse().transformPoint(centre);
-			_world_transform.rotate(sf::degrees(_rotate_widget), point);
+			if (_gui.slider_float("Rotate", _rotate_widget, -5.f, 5.f))
+			{
+				const auto& centre = _world_view.getCenter();
+				const auto point = _world_transform.getInverse().transformPoint(centre);
+				_world_transform.rotate(sf::degrees(_rotate_widget), point);
+			}
+			else
+				_rotate_widget = {};
 		}
-		else
-			_rotate_widget = {};
 
 		_gui.window_end();
 

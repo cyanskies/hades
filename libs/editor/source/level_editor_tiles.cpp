@@ -4,11 +4,23 @@
 #include "hades/mouse_input.hpp"
 #include "hades/tiles.hpp"
 
+using namespace std::string_view_literals;
+
 namespace hades
 {
 	void register_level_editor_tiles_resources(data::data_manager &d)
 	{
 		register_tile_map_resources(d);
+	}
+
+	level_editor_tiles::level_editor_tiles()
+		: _settings{ resources::get_tile_settings() }
+	{
+		// load all tilesets
+		for (auto& t : _settings->tilesets)
+		{
+			data::get<resources::tileset>(t.id());
+		}
 	}
 
 	level level_editor_tiles::level_new(level l) const
@@ -79,48 +91,34 @@ namespace hades
 		_tiles = mutable_tile_map{ map };
 	}
 
-	template<typename OnClick>
-	static void add_tile_buttons(gui &g, float toolbox_width, const std::vector<resources::tile> &tiles, OnClick on_click)
+	template<unary_operator<void, const resources::tile*> OnClick>
+	static void add_tile_buttons(gui &g, const std::span<const resources::tile> tiles, float tile_size_f, OnClick on_click)
 	{
 		static_assert(std::is_invocable_v<OnClick, resources::tile*>);
 
-		constexpr auto button_size = vector2_float{ 25.f, 25.f };
+		constexpr auto button_size = gui::vector2{ 25.f, 25.f };
 
-		const auto tile_size = static_cast<float>(resources::get_tile_settings()->tile_size);
-
-		g.indent();
-
-		const auto indent_amount = g.get_item_rect_max().x;
-
-		auto x2 = 0.f;
-		for (const auto &t : tiles)
+		for (const auto& t : tiles)
 		{
-			const auto new_x2 = x2 + button_size.x;
-			if (indent_amount + new_x2 < toolbox_width)
-				g.layout_horizontal();
-			else
-				g.indent();
-
 			const auto x = static_cast<float>(t.left),
 				y = static_cast<float>(t.top);
 
 			const auto tex_coords = rect_float{
 				x,
 				y,
-				tile_size,
-				tile_size
+				tile_size_f,
+				tile_size_f
 			};
 
-			assert(t.tex);
-			using namespace std::string_view_literals;
 			//need to push a prefix to avoid the id clashing from the same texture
 			g.push_id(&t);
-			if (g.image_button("###tile_button"sv, * t.tex, tex_coords, button_size))
+			const auto siz = g.calculate_button_size({}, button_size);
+			g.same_line_wrapping(siz.x);
+			if (g.image_button("###tile_button"sv, *t.tex, tex_coords, button_size))
 				std::invoke(on_click, &t);
 			g.pop_id();
-
-			x2 = g.get_item_rect_max().x;
 		}
+		return;
 	}
 
 	void level_editor_tiles::gui_update(gui &g, editor_windows &w)
@@ -129,12 +127,6 @@ namespace hades
 
 		if (g.main_toolbar_begin())
 		{
-			/*if (g.toolbar_button("tiles"sv))
-			{
-				activate_brush();
-				_tile = nullptr;
-			};*/
-
 			//TODO: a good way to indicate drawing with the tile eraser?
 			if (g.toolbar_button("tiles eraser"sv))
 			{
@@ -145,10 +137,10 @@ namespace hades
 
 		g.main_toolbar_end();
 
+		const auto tile_size_f = float_cast(_settings->tile_size);
+
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
-			const auto toolbox_width = g.get_item_rect_max().x;
-
 			if (g.collapsing_header("tiles"sv))
 			{
 				constexpr auto draw_shapes = std::array{
@@ -179,27 +171,20 @@ namespace hades
 				};
 
 				//each tileset
-				for (const auto tileset : _settings->tilesets)
+				//the tiles from a terrain wont appear here unless
+				//they are listed under the tiles: tag in the terrain
+				for (const auto& tileset : _settings->tilesets)
 				{
-					const auto name = data::get_as_string(tileset->id);
+					const auto& name = data::get_as_string(tileset->id);
 
 					g.indent();
 					if (g.collapsing_header(name))
-						add_tile_buttons(g,toolbox_width, tileset->tiles, on_click);
+						add_tile_buttons(g, tileset->tiles, tile_size_f, on_click);
 				}
 			}
 		}
-
 		g.window_end();
-		//create tile picker
-		//main toolbox
-
-		//draw size
-		//draw shape
-
-		//tiles
-		// organised by tileset
-
+		
 		if (w.new_level && g.window_begin(editor::gui_names::new_level))
 		{
 			auto dialog_pos = g.window_position().x;
@@ -236,7 +221,7 @@ namespace hades
 					_new_options.tile = t;
 				};
 
-				add_tile_buttons(g, dialog_pos + dialog_size, _new_options.tileset->tiles, on_click);
+				add_tile_buttons(g, _new_options.tileset->tiles, tile_size_f, on_click);
 			}
 			
 			g.window_end();

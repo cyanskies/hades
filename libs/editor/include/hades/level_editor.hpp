@@ -63,29 +63,33 @@ namespace hades::detail
 		virtual void _component_on_drag_start(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag_end(brush_index_t, vector2_float) = 0;
-		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t) = 0;
+		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) = 0;
 		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector2_float world_position) = 0;
 		virtual void _handle_component_setup() = 0;
 		void _set_active_brush(std::size_t index) noexcept;
 		virtual void _update_component_gui(gui&, level_editor_component::editor_windows&) = 0;
 
 	private:
-		//current window size
-		float _window_width = 0.f, _window_height = 0.f;
-		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
+		sf::View _gui_view;
+		sf::View _world_view;
+
+		sf::Transform _world_transform;
 
 		console::property_int _camera_height;
+		console::property_bool _rotate_enabled;
 		console::property_int _toolbox_width;
 		console::property_int _toolbox_auto_width;
 
 		console::property_int _scroll_margin;
 		console::property_float _scroll_rate;
+		
+		//current window size
+		float _rotate_widget = {};
+		float _window_width = 0.f, _window_height = 0.f;
+		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
 
 		//level width, height
 		level_size_t _level_x = 0, _level_y = 0;
-
-		sf::View _gui_view;
-		sf::View _world_view;
 
 	private:
 		struct new_level_opt
@@ -160,7 +164,7 @@ namespace hades
 		void _component_on_drag_start(brush_index_t, vector2_float) override;
 		void _component_on_drag(brush_index_t, vector2_float) override;
 		void _component_on_drag_end(brush_index_t, vector2_float) override;
-		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t) override;
+		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) override;
 		void _generate_brush_preview(brush_index_t, time_duration, vector2_float) override;
 		void _handle_component_setup() override;
 		void _update_component_gui(gui&, level_editor_component::editor_windows&) override;
@@ -206,6 +210,8 @@ namespace hades::cvars
 	// n acts as if tiles size were multiplied by 'n'
 	constexpr auto editor_level_force_whole_tiles = "editor_level_force_whole_tiles";
 	constexpr auto editor_level_default_size = "editor_level_default_size";
+
+	constexpr auto editor_rotate_world = "editor_rotate_world";
 }
 
 namespace hades::cvars::default_value
@@ -223,6 +229,8 @@ namespace hades::cvars::default_value
 
 	constexpr auto editor_level_force_whole_tiles = 0;
 	constexpr auto editor_level_default_size = 512;
+
+	constexpr auto editor_rotate_world = true;
 }
 
 #include "hades/detail/level_editor.inl"

@@ -26,8 +26,6 @@ namespace hades
 		register_tiles_resources(d, tex_funcs::make_resource_link);
 
 		//add texture to error tile
-		//const auto settings = resources::get_tile_settings();
-		//const auto &error_tile = resources::get_error_tile();
 		const auto settings = 
 			d.find_or_create<resources::tile_settings>(resources::get_tile_settings_id(), unique_id::zero);
 		assert(settings);
@@ -55,7 +53,7 @@ namespace hades
 	}
 
 	//=========================================//
-	//					immutable_tile_map				   //
+	//			immutable_tile_map			   //
 	//=========================================//
 
 	immutable_tile_map::immutable_tile_map(const tile_map &map)
@@ -149,9 +147,6 @@ namespace hades
 			return;
 
 		auto current_tex = map.front().texture;
-		std::vector<sf::Vertex> v_array;
-		v_array.reserve(map.size() * std::tuple_size_v<poly_quad>);
-
 		auto quads = quad_buffer{ usage };
 		quads.reserve(size(map));
 

@@ -17,6 +17,8 @@ namespace hades
 			circle
 		};
 
+		level_editor_tiles();
+
 		level level_new(level l) const override;
 		void level_load(const level&) override;
 		level level_save(level l) const override;
@@ -43,7 +45,7 @@ namespace hades
 		vector2<level_size_t> _level_size;
 		draw_shape _shape{ draw_shape::square };
 		int _size{};
-		const resources::tile_settings *_settings{ resources::get_tile_settings() };
+		const resources::tile_settings *_settings;
 		const resources::tile *_tile = nullptr;
 		mutable_tile_map _tiles;
 		mutable_tile_map _empty_preview;

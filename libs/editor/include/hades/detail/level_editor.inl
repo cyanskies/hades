@@ -131,18 +131,19 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target, time_duration delta_time, brush_index_t active_brush)
+	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target,
+		time_duration delta_time, brush_index_t active_brush, sf::RenderStates s)
 	{
-		tuple_for_each(_editor_components, [&target, &delta_time](auto &&v) {
-			v.draw(target, delta_time, sf::RenderStates{});
+		tuple_for_each(_editor_components, [&target, &delta_time, &s](auto &&v) {
+			v.draw(target, delta_time, s);
 		});
 
 		//draw brush preview
 		if (active_brush == invalid_brush)
 			return;
 
-		tuple_index_invoke(_editor_components, active_brush, [&target, &delta_time](auto &&v) {
-			v.draw_brush_preview(target, delta_time, sf::RenderStates{});
+		tuple_index_invoke(_editor_components, active_brush, [&target, &delta_time, &s](auto &&v) {
+			v.draw_brush_preview(target, delta_time, s);
 		});
 	}
 

@@ -28,6 +28,8 @@ namespace hades
 		_empty_terrainset = _settings->empty_terrainset.get();
 		_tile_size = _settings->tile_size;
 
+		// TODO: need to load all terrainsets(current code only incidently loads the default terrainset
+
 		//default terrain set
 		const auto terrainset_name = console::get_string(cvars::editor_default_terrainset, cvars::default_value::editor_default_terrainset);
 		if (!empty(terrainset_name->load()))

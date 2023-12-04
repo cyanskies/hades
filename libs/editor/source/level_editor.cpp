@@ -26,6 +26,8 @@ namespace hades::detail
 	{
 		_camera_height = console::get_int(cvars::editor_camera_height_px,
 			cvars::default_value::editor_camera_height_px);
+		_rotate_enabled = console::get_bool(cvars::editor_rotate_world,
+			cvars::default_value::editor_rotate_world);
 		_toolbox_width = console::get_int(cvars::editor_toolbox_width,
 			cvars::default_value::editor_toolbox_width);
 		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width,
@@ -78,14 +80,18 @@ namespace hades::detail
 		return _gui.handle_event(e);
 	}
 
-	static void clamp_camera(sf::View &camera, vector2_float min, vector2_float max)
+	static void clamp_camera(sf::View &camera, const sf::Transform& transform, vector2_float min, vector2_float max)
 	{
 		const auto& pos = camera.getCenter();
+		const auto inverse_transform = transform.getInverse();
+		const auto point = inverse_transform.transformPoint(pos);
 
-		const auto new_x = std::clamp(pos.x, min.x, max.x);
-		const auto new_y = std::clamp(pos.y, min.y, max.y);
+		const auto new_x = std::clamp(point.x, min.x, max.x);
+		const auto new_y = std::clamp(point.y, min.y, max.y);
 
-		camera.setCenter({ new_x, new_y });
+		const auto new_pos = transform.transformPoint({ new_x, new_y });
+
+		camera.setCenter(new_pos);
 	}
 
 	void level_editor_impl::reinit()
@@ -107,7 +113,7 @@ namespace hades::detail
 		_gui_view.reset({ {}, { _window_width, _window_height } });
 
 		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_width, _window_height);
-		clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
+		clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
 		_gui.set_display_size({ _window_width, _window_height });
 		_background.setSize({ _window_width, _window_height });
 		const auto background_colour = sf::Color{200u, 200u, 200u, 255u};
@@ -147,26 +153,35 @@ namespace hades::detail
 				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
-				clamp_camera(_world_view, { 0.f, 0.f }, { static_cast<float>(_level_x), static_cast<float>(_level_y) });
+
+				clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level_x), static_cast<float>(_level_y) });
 			}
 
 			const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
+			const auto level_mouse_pos_sf = _world_transform.getInverse().transformPoint({ world_mouse_pos.x, world_mouse_pos.y });
+			const auto level_mouse_pos = vector2_float{ level_mouse_pos_sf.x, level_mouse_pos_sf.y };
 
 			if (_active_brush != invalid_brush)
-				_generate_brush_preview(_active_brush, dt, world_mouse_pos);
+				_generate_brush_preview(_active_brush, dt, level_mouse_pos);
 
 			const auto mouse_left = actions.find(input::mouse_left);
 			assert(mouse_left != std::end(actions));
 			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
 
 			if (mouse::is_click(_mouse_left))
-				_component_on_click(_active_brush, world_mouse_pos);
+				_component_on_click(_active_brush, level_mouse_pos);
 			else if (mouse::is_drag_start(_mouse_left))
-				_component_on_drag_start(_active_brush, mouse::to_world_coords(t, _mouse_left.click_pos, _world_view));
+			{
+				const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
+				const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
+				const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
+
+				_component_on_drag_start(_active_brush, drag_start_level);
+			}
 			else if (mouse::is_dragging(_mouse_left))
-				_component_on_drag(_active_brush, world_mouse_pos);
+				_component_on_drag(_active_brush, level_mouse_pos);
 			else if (mouse::is_drag_end(_mouse_left))
-				_component_on_drag_end(_active_brush, world_mouse_pos);
+				_component_on_drag_end(_active_brush, level_mouse_pos);
 		}
 
 		_update_gui(dt);
@@ -176,18 +191,21 @@ namespace hades::detail
 	{
 		rt.setView(_gui_view);
 		rt.draw(_background);
-
 		rt.setView(_world_view);
-		_gui.activate_context();
-		_draw_components(rt, dt, _active_brush);
+
+		_draw_components(rt, dt, _active_brush, _world_transform);
 
 		rt.setView(_gui_view);
+		_gui.activate_context();
 		rt.draw(_gui);
 	}
 
 	level_editor_impl::get_players_return_type level_editor_impl::get_players() const
 	{
-		return _mission_editor->get_players();
+		if (_mission_editor)
+			return _mission_editor->get_players();
+		else
+			return {};
 	}
 
 	void level_editor_impl::_set_active_brush(std::size_t index) noexcept
@@ -332,6 +350,27 @@ namespace hades::detail
 		assert(toolbox_created);
 		//store toolbox x2 for use in the input update
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
+
+		// TODO: these should be part of the minimap
+		if (_gui.button("reset rotation"))
+		{
+			// reset world view to correct non-rotated position
+			const auto& centre = _world_view.getCenter();
+			const auto point = _world_transform.getInverse().transformPoint(centre);
+			_world_view.setCenter(point);
+
+			_world_transform = {};
+		}
+
+		if (_gui.slider_float("Rotate", _rotate_widget, -5.f, 5.f))
+		{
+			const auto& centre = _world_view.getCenter();
+			const auto point = _world_transform.getInverse().transformPoint(centre);
+			_world_transform.rotate(sf::degrees(_rotate_widget), point);
+		}
+		else
+			_rotate_widget = {};
+
 		_gui.window_end();
 
 		//windows
@@ -601,6 +640,8 @@ void hades::create_editor_console_variables()
 
 	console::create_property(cvars::editor_level_force_whole_tiles, cvars::default_value::editor_level_force_whole_tiles);
 	console::create_property(cvars::editor_level_default_size, cvars::default_value::editor_level_default_size);
+
+	console::create_property(cvars::editor_rotate_world, cvars::default_value::editor_rotate_world);
 }
 
 void hades::register_level_editor_resources(data::data_manager &d)

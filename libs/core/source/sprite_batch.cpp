@@ -79,12 +79,12 @@ namespace hades
 	}
 
 	typename sprite_batch::sprite_id sprite_batch::create_sprite(const resources::animation *a, time_point t,
-		sprite_utility::layer_t l, vector2_float p, vector2_float s, const resources::shader_uniform_map *u)
+		sprite_utility::layer_t l, vector2_float p, float r, vector2_float s, const resources::shader_uniform_map *u)
 	{
 		const auto id = increment(_id_count);
 		assert(id != bad_sprite_id);
 
-		auto spri = sprite{ id, p, s, a, t };
+		auto spri = sprite{ id, p, r, s, a, t };
 
 		spri.settings.layer = l;
 
@@ -203,10 +203,11 @@ namespace hades
 		return;
 	}
 
-	void sprite_batch::set_position_animation(sprite_id id, vector2_float pos, const resources::animation* a, time_point t)
+	void sprite_batch::set_position_animation(sprite_id id, vector2_float pos, float r, const resources::animation* a, time_point t)
 	{
 		auto& s = _get_sprite(id);
 		s.position = pos;
+		s.rotation = r;
 		s.animation = a;
 
 		if (a)
@@ -235,8 +236,8 @@ namespace hades
 	}
 
 	void sprite_batch::set_sprite(sprite_id id, const resources::animation* a,
-		time_point t, sprite_utility::layer_t l, vector2_float p, vector2_float siz,
-		const resources::shader_uniform_map *u)
+		time_point t, sprite_utility::layer_t l, vector2_float p, float r,
+		vector2_float siz, const resources::shader_uniform_map *u)
 	{
 		auto& s = _get_sprite(id);
 		s.animation = a;
@@ -262,23 +263,26 @@ namespace hades
 		s.animation_progress = t;
 		s.settings.layer = l;
 		s.position = p;
+		s.rotation = r;
 		s.size = siz;
 		return;
 	}
 
-	void sprite_batch::set_sprite(sprite_id id, time_point t, vector2_float p, vector2_float siz)
+	void sprite_batch::set_sprite(sprite_id id, time_point t, vector2_float p, float r, vector2_float siz)
 	{
 		auto& s = _get_sprite(id);
 		s.animation_progress = t;
 		s.position = p;
+		s.rotation = r;
 		s.size = siz;
 		return;
 	}
 
-	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector2_float pos)
+	void sprite_batch::set_position(typename sprite_batch::sprite_id id, vector2_float pos, float r)
 	{
 		auto& s = _get_sprite(id);
 		s.position = pos;
+		s.rotation = r;
 		return;
 	}
 
@@ -404,6 +408,30 @@ namespace hades
 		return s;
 	}
 
+	static poly_quad create_sprite_quad(const sprite_utility::sprite& s) noexcept
+	{
+		auto quad = [&]()->poly_quad {
+			if (s.animation)
+			{
+				const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
+				return make_quad_animation(s.position, s.size, frame);
+			}
+			else
+				return make_quad_colour({ s.position, s.size }, colours::from_name(colours::names::white));
+		}();
+
+		const auto half_size = s.size / 2.f;
+		const auto centre = s.position + half_size;
+		
+		auto transf = sf::Transform{};
+		transf.rotate(sf::degrees(s.rotation), { centre.x, centre.y });
+
+		for (auto& v : quad)
+			transf.transformPoint(v.position);
+
+		return quad;
+	}
+
 	void sprite_batch::_apply_changes()
 	{
 		namespace animf = resources::animation_functions;
@@ -433,21 +461,9 @@ namespace hades
 			assert(s.id == id);
 
 			if (s.settings == s_batch.settings)
-			{
-				// NOTE: this code is duplicated in insert_sprite
-				if (s.animation)
-				{
-					const auto& frame = animation::get_frame(*s.animation, s.animation_progress);
-					_vertex[index].buffer.replace(make_quad_animation(s.position, s.size, frame), s_index);
-				}
-				else
-					_vertex[index].buffer.replace(make_quad_colour({ s.position, s.size }, colours::from_name(colours::names::white)), s_index);
-			}
-			else
-			{
-				//if we reach here, then we need to move to a new batch
+				_vertex[index].buffer.replace(create_sprite_quad(s), s_index);
+			else //if we reach here, then we need to move to a new batch
 				_reseat_sprite(id, sprite, s_index);
-			}
 		}
 
 		return;
@@ -498,15 +514,8 @@ namespace hades
 		}
 
 		const auto& spr = sprites[index].sprites.emplace_back(std::move(s));
-		// NOTE: this code is duplicated in _apply_changes
-		if (spr.animation)
-		{
-			const auto& frame = animation::get_frame(*spr.animation, spr.animation_progress);
-			verts[index].buffer.append(make_quad_animation(spr.position, spr.size, frame));
-		}
-		else
-			verts[index].buffer.append(make_quad_colour({ spr.position, spr.size }, colours::from_name(colours::names::white)));
-
+		
+		verts[index].buffer.append(create_sprite_quad(spr));
 		verts[index].sprites.emplace_back(spr.id);
 		return index;
 	}

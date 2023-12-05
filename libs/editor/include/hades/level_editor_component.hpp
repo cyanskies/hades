@@ -78,15 +78,17 @@ namespace hades
 		using player_reference = std::pair<unique_id, const object_instance*>;
 		using get_players_return_type = std::vector<player_reference>;
 		using get_players_f = std::function<get_players_return_type(void)>;
+		using get_world_rotation_f = std::function<float(void)>;
 
-		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers>
+		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers, typename GetWorldRotation>
 		void install_callbacks(ActivateBrush ab, GetTerrainTagsAt get_terrain_tags,
-			GetObjTagsAt get_obj_tags, GetPlayers get_players)
+			GetObjTagsAt get_obj_tags, GetPlayers get_players, GetWorldRotation get_world_rotate)
 		{
 			_activate_brush = ab;
 			_get_terrain_tags_at = get_terrain_tags;
 			_get_object_tags_at = get_obj_tags;
 			_get_players = get_players;
+			_get_world_rotation = get_world_rotate;
 		}
 
 		void activate_brush() noexcept
@@ -123,6 +125,11 @@ namespace hades
 			return {};
 		}
 
+		float get_world_rotation() const
+		{
+			return std::invoke(_get_world_rotation);
+		}
+
 		//compoenents can throw new_level_editor_error
 		// if they with to prevent creation of a new level,
 		virtual level level_new(level l) const { return l; }
@@ -149,6 +156,8 @@ namespace hades
 		virtual void on_drag(mouse_pos) {};
 		virtual void on_drag_end(mouse_pos) {};
 
+		virtual void on_world_rotate(float) {};
+
 		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {};
 
 		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {};
@@ -158,6 +167,7 @@ namespace hades
 		get_tags_at_f _get_terrain_tags_at;
 		get_tags_at_f _get_object_tags_at;
 		get_players_f _get_players;
+		get_world_rotation_f _get_world_rotation;
 	};
 }
 

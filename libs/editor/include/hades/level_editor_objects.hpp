@@ -62,6 +62,8 @@ namespace hades
 		void on_drag(mouse_pos) override final;
 		void on_drag_end(mouse_pos) override final;
 
+		void on_world_rotate(float) override final;
+
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override final;
 
 	protected:

@@ -131,6 +131,14 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_rotate(float f)
+	{
+		tuple_for_each(_editor_components, [f](auto &&v) {
+			v.on_world_rotate(f);
+		});
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target,
 		time_duration delta_time, brush_index_t active_brush, sf::RenderStates s)
 	{
@@ -175,11 +183,16 @@ namespace hades
 				return get_players();
 			};
 
+			auto get_world_rotation_fn = [this]() {
+				return _get_world_rot();
+			};
+
 			c.install_callbacks(
 				activate_brush,
 				get_terrain_tags_at,
 				get_object_tags_at,
-				get_players_fn
+				get_players_fn,
+				get_world_rotation_fn
 			);
 		});
 	}

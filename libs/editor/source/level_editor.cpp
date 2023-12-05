@@ -361,14 +361,21 @@ namespace hades::detail
 				const auto point = _world_transform.getInverse().transformPoint(centre);
 				_world_view.setCenter(point);
 
+				const auto old_rotate = _accumulated_rotation;
+				
 				_world_transform = {};
+				_accumulated_rotation = {}; 
+				
+				_component_on_rotate(old_rotate);
 			}
 
 			if (_gui.slider_float("Rotate", _rotate_widget, -5.f, 5.f))
 			{
 				const auto& centre = _world_view.getCenter();
 				const auto point = _world_transform.getInverse().transformPoint(centre);
+				_accumulated_rotation += _rotate_widget;
 				_world_transform.rotate(sf::degrees(_rotate_widget), point);
+				_component_on_rotate(_rotate_widget);
 			}
 			else
 				_rotate_widget = {};

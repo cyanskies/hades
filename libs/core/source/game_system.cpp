@@ -94,7 +94,7 @@ namespace hades
 
 				const auto sprite_id = render::sprite::create(ent.anim,
 					time, render_interface::sprite_layer{},
-					ent.position.get(time), ent.size);
+					ent.position.get(time), {}, ent.size);
 
 				dat.emplace_back(entity.id, sprite_id);
 			}
@@ -117,7 +117,7 @@ namespace hades
 					const auto ent = get_some_entity_info(entity);
 					const auto& s_id = sprite;
 					render_output->set_sprite(s_id, time,
-						ent.position.get(time), ent.size);
+						ent.position.get(time), {}, ent.size);
 				}
 			}
 			return;

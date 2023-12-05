@@ -254,11 +254,11 @@ namespace hades
 		}
 		
 		id_t create(const resources::animation* a, time_point t, layer_t l,
-			vector2_float position, vector2_float size, const resources::shader_uniform_map* u)
+			vector2_float position, float r, vector2_float size, const resources::shader_uniform_map* u)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
-			return render_data_ptr->render_output->create_sprite(a, t, l, position, size, u);
+			return render_data_ptr->render_output->create_sprite(a, t, l, position, r, size, u);
 		}
 
 		static time_point prog_time(float p, const resources::animation* a)
@@ -267,11 +267,11 @@ namespace hades
 		}
 
 		id_t create(const resources::animation* a, float progress, layer_t l,
-			vector2_float position, vector2_float size, const resources::shader_uniform_map* u)
+			vector2_float position, float r, vector2_float size, const resources::shader_uniform_map* u)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
-			return render_data_ptr->render_output->create_sprite(a, prog_time(progress, a), l, position, size, u);
+			return render_data_ptr->render_output->create_sprite(a, prog_time(progress, a), l, position, r, size, u);
 		}
 
 		void destroy(id_t id)
@@ -289,34 +289,27 @@ namespace hades
 		}
 
 		void set(id_t id, const resources::animation* a, time_point t, layer_t l,
-			vector2_float p, vector2_float s, const resources::shader_uniform_map* u)
+			vector2_float p, float r, vector2_float s, const resources::shader_uniform_map* u)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_sprite(id, a, t, l, p, s, u);
+			render_data_ptr->render_output->set_sprite(id, a, t, l, p, r, s, u);
 		}
 
 		void set(id_t id, const resources::animation* a, float prog, layer_t l,
-			vector2_float p, vector2_float s, const resources::shader_uniform_map* u)
+			vector2_float p, float r, vector2_float s, const resources::shader_uniform_map* u)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_sprite(id, a, prog_time(prog, a), l, p, s, u);
+			render_data_ptr->render_output->set_sprite(id, a, prog_time(prog, a), l, p, r, s, u);
 		}
 
-		void set(id_t id, time_point t, vector2_float p, vector2_float s)
+		void set(id_t id, time_point t, vector2_float p, float r, vector2_float s)
 		{
 			auto render_data_ptr = detail::get_render_data_ptr();
 			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_sprite(id, t, p, s);
+			render_data_ptr->render_output->set_sprite(id, t, p, r, s);
 		}
-
-		/*void set(id_t id, float t, vector2_float p, vector2_float s)
-		{
-			auto render_data_ptr = detail::get_render_data_ptr();
-			assert(render_data_ptr->render_output);
-			render_data_ptr->render_output->set_sprite(id, prog_time(t, a), p, s);
-		}*/
 
 		void set_animation(id_t id, const resources::animation* a, time_point t)
 		{

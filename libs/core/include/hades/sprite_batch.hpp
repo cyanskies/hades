@@ -47,6 +47,7 @@ namespace hades
 		{
 			sprite_id id = bad_sprite_id;
 			vector2_float position{};
+			float rotation{};
 			vector2_float size{};
 			const resources::animation *animation = nullptr;
 			time_point animation_progress;
@@ -92,17 +93,17 @@ namespace hades
 		//NOTE: functions that accept sprite_id can throw sprite_batch_invalid_id
 		sprite_id create_sprite();
 		sprite_id create_sprite(const resources::animation *a, time_point t,
-			sprite_utility::layer_t l, vector2_float p, vector2_float s, const resources::shader_uniform_map *u = {});
+			sprite_utility::layer_t l, vector2_float p, float r, vector2_float s, const resources::shader_uniform_map *u = {});
 		bool exists(sprite_id id) const noexcept;
 		void destroy_sprite(sprite_id id);
 
 		void set_sprite(sprite_id, const resources::animation* a, time_point t,
-			sprite_utility::layer_t l, vector2_float p, vector2_float s, const resources::shader_uniform_map *u = {});
-		void set_sprite(sprite_id, time_point t, vector2_float p, vector2_float s);
-		void set_position(sprite_id id, vector2_float pos);
+			sprite_utility::layer_t l, vector2_float p, float r, vector2_float s, const resources::shader_uniform_map *u = {});
+		void set_sprite(sprite_id, time_point t, vector2_float p, float r, vector2_float s);
+		void set_position(sprite_id id, vector2_float pos, float r);
 		void set_animation(sprite_id id, const resources::animation *a, time_point t);
 		void set_animation(sprite_id id, time_point t);
-		void set_position_animation(sprite_id, vector2_float pos, const resources::animation* a, time_point t);
+		void set_position_animation(sprite_id, vector2_float pos, float r, const resources::animation* a, time_point t);
 		void set_layer(sprite_id id, sprite_utility::layer_t l);
 		void set_size(sprite_id id, vector2_float size);
 		

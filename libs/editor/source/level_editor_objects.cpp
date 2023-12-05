@@ -655,6 +655,13 @@ namespace hades
 		}
 	}
 
+	void level_editor_objects_impl::on_world_rotate(float)
+	{
+		for (auto& obj : std::ranges::subrange(_objects.objects_begin(), _objects.objects_end()))
+			create_update_object_sprite(obj, _sprites);
+		return;
+	}
+
 	void level_editor_objects_impl::draw(sf::RenderTarget &t, time_duration, sf::RenderStates s)
 	{
 		if (_show_objects)
@@ -709,7 +716,7 @@ namespace hades
 		const auto animation = get_random_animation(o);
 
 		s.set_animation(o.sprite_id, animation, {});
-		s.set_position(o.sprite_id, position);
+		s.set_position(o.sprite_id, position, {});
 		s.set_size(o.sprite_id, size);
 		return;
 	}

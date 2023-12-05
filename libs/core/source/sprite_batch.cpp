@@ -427,7 +427,7 @@ namespace hades
 		transf.rotate(sf::degrees(s.rotation), { centre.x, centre.y });
 
 		for (auto& v : quad)
-			transf.transformPoint(v.position);
+			v.position = transf.transformPoint(v.position);
 
 		return quad;
 	}

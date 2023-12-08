@@ -87,13 +87,16 @@ namespace hades::resources
 	struct terrain_settings final : tile_settings
 	{
 		void load(data::data_manager&) final override;
-		// this doesn't require a serialise function, its covered by tile_settings
+		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};
-		resource_link<terrain> background_terrain = {};
+		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
+		std::uint8_t height_default = {};
+		std::uint8_t height_min = std::numeric_limits<std::uint8_t>::min();
+		std::uint8_t height_max = std::numeric_limits<std::uint8_t>::max();
 	};
 
 	unique_id get_background_terrain_id() noexcept;
@@ -142,6 +145,7 @@ namespace hades
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
 		std::vector<terrain_id_t> terrain_vertex;
+		std::vector<std::uint8_t> heightmap;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
@@ -156,7 +160,7 @@ namespace hades
 	//		with write_raw_map(m.tile_layer, ...);
 	void write_raw_terrain_map(const raw_terrain_map &m, data::writer &w);
 	// TODO: return a named struct
-	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
+	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<std::uint8_t>, std::vector<raw_map>>
 		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size);
 
 	struct terrain_map
@@ -166,6 +170,9 @@ namespace hades
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;
+		//vertex of height
+		std::vector<std::uint8_t> heightmap;
+		// tiles exist between every 4 vertex
 		std::vector<tile_map> terrain_layers;
 	
 		tile_map tile_layer;

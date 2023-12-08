@@ -77,15 +77,24 @@ namespace hades
 	{
 		//tile-settings:
 		//  tile-size: 32
-
-		// TODO: why dont we parse the error and empty tileset?
-		//		need to update the serialise function if this changes
+		//	error-tileset: uid
+		//	empty-tileset: uid
 
 		const auto id = d.get_uid(tile_settings_name);
 		auto s = d.find_or_create<resources::tile_settings>(id, mod, tile_settings_name);
 		assert(s);
 
 		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
+
+		const auto error_tset = data::parse_tools::get_unique(n, "error-tileset"sv, unique_zero);
+		if (error_tset)
+			s->error_tileset = d.make_resource_link<resources::tileset>(error_tset, id);
+		
+		const auto empty_tset = data::parse_tools::get_unique(n, "empty-tileset"sv, unique_zero);
+		if (empty_tset)
+			s->empty_tileset = d.make_resource_link<resources::tileset>(empty_tset, id);
+
+		return;
 	}
 
 	static void add_tiles_to_tileset(std::vector<resources::tile> &tile_list,
@@ -373,6 +382,11 @@ namespace hades::resources
 		//  tile-size: 32
 
 		w.write("tile-size"sv, tile_size);
+		if (error_tileset)
+			w.write("error-tileset"sv, d.get_as_string(error_tileset.id()));
+		if (empty_tileset)
+			w.write("empty-tileset"sv, d.get_as_string(empty_tileset.id()));
+
 		return;
 	}
 

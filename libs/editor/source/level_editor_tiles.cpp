@@ -187,8 +187,6 @@ namespace hades
 		
 		if (w.new_level && g.window_begin(editor::gui_names::new_level))
 		{
-			auto dialog_pos = g.window_position().x;
-			auto dialog_size = g.get_item_rect_max().x;
 			//select default tile
 			auto tilesets = _settings->tilesets;
 			tilesets.push_back(_settings->empty_tileset);

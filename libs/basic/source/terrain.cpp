@@ -276,6 +276,7 @@ namespace hades
 	using namespace std::string_view_literals;
 	constexpr auto terrainset_str = "terrainset"sv;
 	constexpr auto terrain_vertex_str = "terrain-vertex"sv;
+	constexpr auto terrain_height_str = "vertex-height"sv;
 	constexpr auto terrain_layers_str = "terrain-layers"sv;
 
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
@@ -291,6 +292,8 @@ namespace hades
 
 		const auto compressed = zip::deflate(m.terrain_vertex);
 		w.write(terrain_vertex_str, base64_encode(compressed));
+		const auto compressed_height = zip::deflate(m.heightmap);
+		w.write(terrain_height_str, base64_encode(compressed_height));
 
 		w.start_sequence(terrain_layers_str); 
 		for (const auto &l : m.terrain_layers)
@@ -303,13 +306,14 @@ namespace hades
 		w.end_sequence();
 	}
 
-	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<raw_map>>
+	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<std::uint8_t>, std::vector<raw_map>>
 		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size)
 	{
 		//terrain:
 		//	terrainset:
 		//  vertex_encoding:
 		//	terrain_vertex:
+		//	vertex_height:
 		//	terrain_layers:
 
 		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
@@ -328,6 +332,21 @@ namespace hades
 				terrain_vertex = zip::inflate<terrain_id_t>(bytes, vert_size * sizeof(terrain_id_t));
 			}
 		}
+
+		auto terrain_height = std::vector<std::uint8_t>{};
+
+		if (auto height_node = p.get_child(terrain_height_str);
+			height_node)
+		{
+			if (height_node->is_sequence())
+				terrain_height = height_node->to_sequence<std::uint8_t>();
+			else
+			{
+				const auto map_encoded = height_node->to_string();
+				const auto bytes = base64_decode<std::byte>(map_encoded);
+				terrain_height = zip::inflate<std::uint8_t>(bytes, vert_size * sizeof(std::uint8_t));
+			}
+		}
 		
 		auto layers = std::vector<raw_map>{};
 
@@ -335,7 +354,7 @@ namespace hades
 		for (const auto& l : layer_node->get_children())
 			layers.emplace_back(read_raw_map(*l, layer_size));
 
-		return { terrainset, terrain_vertex, layers };
+		return { terrainset, terrain_vertex, terrain_height, layers };
 	}
 
 	terrain_map to_terrain_map(const raw_terrain_map &r)
@@ -896,6 +915,20 @@ namespace hades::resources
 		return;
 	}
 
+	void terrain_settings::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		tile_settings::serialise(d, w);
+
+		if(height_min != std::numeric_limits<std::uint8_t>::min())
+			w.write("height-min"sv, height_min);
+		if(height_max != std::numeric_limits<std::uint8_t>::max())
+			w.write("height-max"sv, height_max);
+		if (height_default != std::uint8_t{})
+			w.write("height-default"sv, height_default);
+
+		return;
+	}
+
 	// if anyone asks for the 'none' type just give them the empty tile
 	template<class U = std::vector<tile>, class W>
 	U& get_transition(transition_tile_type type, W& t)
@@ -1171,13 +1204,41 @@ namespace hades::resources
 	{
 		//tile-settings:
 		//  tile-size: 32
-		//	error-tileset
+		//	error-tileset: uid
+		//	empty-tileset: uid
+		//  empty_terrain: uid
+		//	empty_terrainset: uid
+		//  height-default: uint8
+		//	height-min: uint8
+		//	height-max: uint8
 
         //const auto id = d.get_uid(resources::get_tile_settings_name());
 		auto s = d.find_or_create<resources::terrain_settings>(id::terrain_settings, mod, terrain_settings_str);
 		assert(s);
 
 		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
+
+		const auto error_tset = data::parse_tools::get_unique(n, "error-tileset"sv, unique_zero);
+		if (error_tset)
+			s->error_tileset = d.make_resource_link<resources::tileset>(error_tset, id::terrain_settings);
+
+		const auto empty_tset = data::parse_tools::get_unique(n, "empty-tileset"sv, unique_zero);
+		if (empty_tset)
+			s->empty_tileset = d.make_resource_link<resources::tileset>(empty_tset, id::terrain_settings);
+
+		const auto empty_terrain = data::parse_tools::get_unique(n, "empty-terrain"sv, unique_zero);
+		if (empty_terrain)
+			s->empty_terrain = d.make_resource_link<resources::terrain>(empty_terrain, id::terrain_settings);
+
+		const auto empty_terrainset = data::parse_tools::get_unique(n, "empty-terrainset"sv, unique_zero);
+		if (empty_terrainset)
+			s->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_terrainset, id::terrain_settings);
+
+		s->height_default = data::parse_tools::get_scalar(n, "height-default"sv, s->height_default);
+		s->height_min = data::parse_tools::get_scalar(n, "height-min"sv, s->height_min);
+		s->height_max = data::parse_tools::get_scalar(n, "height-max"sv, s->height_max);
+
+		return;
 	}
 
 	const terrain_settings *get_terrain_settings()

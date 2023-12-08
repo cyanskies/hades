@@ -11,7 +11,7 @@ namespace hades
 {
 	void register_terrain_map_resources(data::data_manager&);
 
-	class immutable_terrain_map  final : public sf::Drawable
+	class [[deprecated]] immutable_terrain_map  final : public sf::Drawable
 	{
 	public:
 		immutable_terrain_map() = default;
@@ -45,15 +45,43 @@ namespace hades
 
 		// TODO: split this into place_tile/terrain and generate layers
 		//		this will allow us to use the non-allocating tile_position functions
-		void place_tile(const std::vector<tile_position>&, const resources::tile&);
-		void place_terrain(const std::vector<terrain_vertex_position>&, const resources::terrain*);
+		void place_tile(tile_position, const resources::tile&);
+		void place_terrain(terrain_vertex_position, const resources::terrain*);
+		void raise_height(terrain_vertex_position, std::uint8_t);
+		void lower_height(terrain_vertex_position, std::uint8_t);
+
+		void generate_layers();
 
 		const terrain_map &get_map() const noexcept;
 
+	public:
+		struct texture_layer
+		{
+			const resources::texture* texture = nullptr;
+			quad_buffer quads;
+		};
+
+		struct world_layer
+		{
+			std::vector<texture_layer> tex_layers;
+			std::vector<bool> dirty_buffers;
+		};
+
 	private:
+
+		static world_layer _create_layer(const tile_map&, std::vector<std::uint8_t>);
+
 		terrain_map _map;
-		mutable_tile_map _tile_layer;
-		std::vector<mutable_tile_map> _terrain_layers;
+		world_layer _tile_layer;
+		std::vector<world_layer> _terrain_layers;
+
+		rect_float _local_bounds;
+
+		//mutable_tile_map _tile_layer;
+		//std::vector<mutable_tile_map> _terrain_layers;
+
+		// TODO: local_bounds
+		// TODO: quad_buffer for cliff verts
 	};
 }
 

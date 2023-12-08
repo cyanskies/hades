@@ -28,7 +28,10 @@ namespace hades
 		_empty_terrainset = _settings->empty_terrainset.get();
 		_tile_size = _settings->tile_size;
 
-		// TODO: need to load all terrainsets(current code only incidently loads the default terrainset
+		// load all terrain sets
+		std::ranges::for_each(_settings->terrainsets, [](auto id) {
+			data::get<resources::terrainset>(id);
+			}, &resources::terrainset::id);
 
 		//default terrain set
 		const auto terrainset_name = console::get_string(cvars::editor_default_terrainset, cvars::default_value::editor_default_terrainset);
@@ -98,6 +101,7 @@ namespace hades
 	{
 		auto map_raw = raw_terrain_map{ l.terrainset,
 			l.terrain_vertex,
+			l.height_vertex,
 			l.terrain_layers,
 			l.tile_map_layer
 		};

@@ -80,7 +80,6 @@ namespace hades::resources
 		// THROWS: animation_no_shader if the animation doesn't have a shader
 		//	or hasn't been loaded properly; use has_shader to check
 		shader_proxy get_shader_proxy(const animation&);
-		const shader_uniform_map& get_animation_uniforms(const animation&) noexcept;
 	}
 
 	namespace animation_group_functions
@@ -119,7 +118,7 @@ namespace hades
 	poly_quad make_quad_line(vector2_float start, vector2_float end, float thickness, colour) noexcept;
 	poly_quad make_quad_animation(vector2_float pos, const resources::animation_frame&) noexcept;
 	poly_quad make_quad_animation(vector2_float pos, vector2_float size, const resources::animation_frame&) noexcept;
-	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad) noexcept;
+	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad, std::array<colour, 4> = {}) noexcept;
 
 	void register_animation_resource(data::data_manager&);
 }

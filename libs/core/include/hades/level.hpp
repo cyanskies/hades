@@ -76,6 +76,7 @@ namespace hades
 		//terrain map
 		unique_id terrainset = unique_id::zero;
 		std::vector<terrain_id_t> terrain_vertex;
+		std::vector<std::uint8_t> height_vertex;
 		std::vector<raw_map> terrain_layers;
 	};
 	

@@ -85,6 +85,7 @@ namespace hades
 			const auto raw_map = raw_terrain_map{
 				sv.source.terrainset,
 				sv.source.terrain_vertex,
+				sv.source.height_vertex,
 				sv.source.terrain_layers,
 				sv.source.tile_map_layer
 			};

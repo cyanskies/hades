@@ -120,8 +120,9 @@ namespace hades
 		w.end_map();
 
 		w.start_map(level_terrain_str);
+		// TODO: the tile layer isn't being written
 		const auto raw = raw_terrain_map{ l.terrainset,
-            l.terrain_vertex, l.terrain_layers,
+            l.terrain_vertex, l.height_vertex, l.terrain_layers,
             {}
 		};
 
@@ -179,7 +180,7 @@ namespace hades
 
 		const auto terrain = level_node.get_child(level_terrain_str);
 		if (terrain)
-			std::tie(l.terrainset, l.terrain_vertex, l.terrain_layers) = 
+			std::tie(l.terrainset, l.terrain_vertex, l.height_vertex, l.terrain_layers) = 
 			read_raw_terrain_map(*terrain, layer_size,
 				(static_cast<size_t>(l.map_x / tile_size) + 1) * (static_cast<std::size_t>(l.map_y / tile_size) + 1));
 

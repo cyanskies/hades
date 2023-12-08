@@ -5,6 +5,7 @@
 #include "hades/data.hpp"
 #include "hades/logging.hpp"
 #include "hades/parser.hpp"
+#include "hades/rectangle_math.hpp"
 #include "hades/sf_color.hpp"
 #include "hades/string.hpp"
 #include "hades/texture.hpp"
@@ -807,22 +808,25 @@ namespace hades
 		});
 	}
 
-	poly_quad make_quad_animation(const rect_float quad, const rect_float texture_quad) noexcept
+	poly_quad make_quad_animation(const rect_float quad, const rect_float texture_quad, std::array<colour, 4> colours) noexcept
 	{
 		const auto quad_right_x = quad.x + quad.width;
 		const auto quad_bottom_y = quad.y + quad.height;
 		const auto tex_right_x = texture_quad.x + texture_quad.width;
 		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
 
+		auto sf_col = std::array<sf::Color, 4>{};
+		std::ranges::transform(colours, begin(sf_col), to_sf_color);
+
 		return poly_quad{
 			//first triangle
-			sf::Vertex{ {quad.x, quad.y}, { texture_quad.x, texture_quad.y } }, //top left
-			sf::Vertex{ { quad_right_x, quad.y }, { tex_right_x, texture_quad.y } }, //top right
-			sf::Vertex{ { quad.x, quad_bottom_y }, { texture_quad.x, tex_bottom_y } }, //bottom left
+			sf::Vertex{ {quad.x, quad.y},					sf_col[enum_type(rect_corners::top_left)],		{ texture_quad.x, texture_quad.y } }, //top left
+			sf::Vertex{ { quad_right_x, quad.y },			sf_col[enum_type(rect_corners::top_right)],		{ tex_right_x, texture_quad.y } }, //top right
+			sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[enum_type(rect_corners::bottom_left)],	{ texture_quad.x, tex_bottom_y } }, //bottom left
 			//second triangle
-			sf::Vertex{ { quad_right_x, quad.y },{ tex_right_x, texture_quad.y } }, //top right
-			sf::Vertex{ { quad_right_x, quad_bottom_y },  { tex_right_x, tex_bottom_y } }, //bottom right
-			sf::Vertex{ { quad.x, quad_bottom_y },  { texture_quad.x, tex_bottom_y } } //bottom left
+			sf::Vertex{ { quad_right_x, quad.y },			sf_col[enum_type(rect_corners::top_right)],		{ tex_right_x, texture_quad.y } }, //top right
+			sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[enum_type(rect_corners::bottom_right)],	{ tex_right_x, tex_bottom_y } }, //bottom right
+			sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[enum_type(rect_corners::bottom_left)],	{ texture_quad.x, tex_bottom_y } } //bottom left
 		};
 	}
 

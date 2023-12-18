@@ -175,6 +175,12 @@ namespace hades
 		return;
 	}
 
+	void quad_buffer::draw(sf::RenderTarget& rt, std::size_t first_quad, std::size_t quad_count, const sf::RenderStates& states) const
+	{
+		rt.draw(_buffer, first_quad * quad_vert_count, quad_count * quad_vert_count, states);
+		return;
+	}
+
 	void quad_buffer::shrink_to_fit()
 	{
 		_verts.shrink_to_fit();

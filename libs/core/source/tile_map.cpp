@@ -180,7 +180,7 @@ namespace hades
 			};
 
 			//set vertex position and tex coordinates
-			quads.append(make_quad_animation(quad_rect, text_rect));
+			quads.append(make_quad_animation(position(quad_rect), size(quad_rect), text_rect));
 		}
 
 		texture_layers.emplace_back(texture_layer{ current_tex, std::move(quads) });
@@ -409,7 +409,7 @@ namespace hades
 			float_cast(tile_size)
 		};
 
-		l.quads.append(make_quad_animation(quad_rect, tex_rect));
+		l.quads.append(make_quad_animation(position(quad_rect), size(quad_rect), tex_rect));
 		_dirty_buffers[i] = true;
 		return;
 	}

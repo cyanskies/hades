@@ -42,6 +42,9 @@ namespace hades
 		std::size_t capacity() const noexcept;
 		void reserve(std::size_t);
 		void apply();
+
+		void draw(sf::RenderTarget&, std::size_t first_quad, std::size_t quad_count, const sf::RenderStates& states) const;
+
 		// shink the vector and buffer size, to only the memory needed
 		// good for static data
 		void shrink_to_fit();

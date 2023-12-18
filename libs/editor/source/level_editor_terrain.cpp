@@ -146,8 +146,8 @@ namespace hades
 		auto empty_map = make_map(size, map.terrainset, _empty_terrain);
 
 		_current.terrain_set = map.terrainset;
-		_map.create(std::move(map));
-		_clear_preview.create(std::move(empty_map));
+		_map.reset(std::move(map));
+		_clear_preview.reset(std::move(empty_map));
 		return;
 	}
 
@@ -171,8 +171,8 @@ namespace hades
 
 		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain);
 		auto empty_map = make_map(new_size_tiles + vector2_int{ 1, 1 }, map.terrainset, _empty_terrain);
-		_clear_preview.create(std::move(empty_map));
-		_map.create(std::move(map));
+		_clear_preview.reset(std::move(empty_map));
+		_map.reset(std::move(map));
 		_resize.terrain = _empty_terrain;
 	}
 
@@ -411,12 +411,19 @@ namespace hades
 		//		this is common with the bottom layer terrain
 		_preview = _clear_preview;
 
+		// TODO: opti
 		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
 
 		if (_brush == brush_type::draw_terrain)
-			_preview.place_terrain(positions, _current.terrain);
+		{
+			for(auto pos : positions)
+				_preview.place_terrain(pos, _current.terrain);
+		}
 		else if (_brush == brush_type::draw_tile)
-			_preview.place_tile(positions, _tile);
+		{
+			for (auto pos : positions)
+				_preview.place_tile(pos, _tile);
+		}
 
 		//TODO: draw some kind of indicator for erasing using place tile
 	}
@@ -451,14 +458,24 @@ namespace hades
 
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
+		//TODO: opti
 		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
 
 		if (_brush == brush_type::draw_terrain)
-			_map.place_terrain(positions, _current.terrain);
+		{
+			for (auto pos : positions)
+				_map.place_terrain(pos, _current.terrain);
+		}
 		else if (_brush == brush_type::draw_tile)
-			_map.place_tile(positions, _tile);
+		{
+			for (auto pos : positions)
+				_map.place_tile(pos, _tile);
+		}
 		else if (_brush == brush_type::erase)
-			_map.place_terrain(positions, _empty_terrain);
+		{
+			for (auto pos : positions)
+				_map.place_terrain(pos, _empty_terrain);
+		}
 	}
 
 	void level_editor_terrain::on_drag(mouse_pos p)
@@ -468,11 +485,13 @@ namespace hades
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
+		_map.apply();
 		r.draw(_map, s);
 	}
 
 	void level_editor_terrain::draw_brush_preview(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
+		_preview.apply();
 		r.draw(_preview, s);
 	}
 }

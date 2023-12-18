@@ -11,7 +11,7 @@ namespace hades
 {
 	void register_terrain_map_resources(data::data_manager&);
 
-	class [[deprecated]] immutable_terrain_map  final : public sf::Drawable
+	class immutable_terrain_map  final : public sf::Drawable
 	{
 	public:
 		immutable_terrain_map() = default;
@@ -29,59 +29,55 @@ namespace hades
 		std::vector<immutable_tile_map> _terrain_layers;
 	};
 
-	class mutable_terrain_map  final : public sf::Drawable
+	class mutable_terrain_map final : public sf::Drawable
 	{
 	public:
-		mutable_terrain_map() = default;
+		mutable_terrain_map();
 		mutable_terrain_map(const mutable_terrain_map&) = default;
 		mutable_terrain_map(terrain_map);
 
-		void create(terrain_map);
-		void update(terrain_map);
+		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
+		
+		void place_tile(const tile_position, const resources::tile&);
+		void place_terrain(const terrain_vertex_position, const resources::terrain*);
 
+		void apply();
 		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
 
-		rect_float get_local_bounds() const noexcept;
+		rect_float get_local_bounds() const noexcept
+		{
+			return _local_bounds;
+		}
 
-		// TODO: split this into place_tile/terrain and generate layers
-		//		this will allow us to use the non-allocating tile_position functions
-		void place_tile(tile_position, const resources::tile&);
-		void place_terrain(terrain_vertex_position, const resources::terrain*);
-		void raise_height(terrain_vertex_position, std::uint8_t);
-		void lower_height(terrain_vertex_position, std::uint8_t);
-
-		void generate_layers();
-
-		const terrain_map &get_map() const noexcept;
+		const terrain_map& get_map() const noexcept
+		{
+			return _map;
+		}
 
 	public:
-		struct texture_layer
+		// internal structures
+		struct map_tile
 		{
-			const resources::texture* texture = nullptr;
-			quad_buffer quads;
+			tile_index_t index; 
+			resources::tile_size_t left, top;
+			std::uint8_t texture = {};
+			std::uint8_t layer = {};
 		};
 
-		struct world_layer
+		struct map_info
 		{
-			std::vector<texture_layer> tex_layers;
-			std::vector<bool> dirty_buffers;
+			std::vector<map_tile> tile_info;
+			std::vector<resources::resource_link<resources::texture>> texture_table;
 		};
 
 	private:
-
-		static world_layer _create_layer(const tile_map&, std::vector<std::uint8_t>);
-
+		map_info _info;
+		quad_buffer _quads;
+		bool _needs_apply = false;
+		rect_float _local_bounds = {};
 		terrain_map _map;
-		world_layer _tile_layer;
-		std::vector<world_layer> _terrain_layers;
-
-		rect_float _local_bounds;
-
-		//mutable_tile_map _tile_layer;
-		//std::vector<mutable_tile_map> _terrain_layers;
-
-		// TODO: local_bounds
-		// TODO: quad_buffer for cliff verts
+		resources::shader_uniform_map _uniforms;
+		resources::shader_proxy _shader;
 	};
 }
 

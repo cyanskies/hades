@@ -104,7 +104,7 @@ namespace hades
 				if (y == vertex_y)
 					size.y *= y_part;
 
-				const auto quad = make_quad_animation({ position, size }, { tex_pos, size });
+				const auto quad = make_quad_animation(position, size, { tex_pos, size });
 				_quad_buffer.append(quad);
 			}
 		}

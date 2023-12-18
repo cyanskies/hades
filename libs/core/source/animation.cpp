@@ -791,25 +791,22 @@ namespace hades
 		};
 	}
 
-	poly_quad make_quad_animation(const vector2_float p, const resources::animation_frame &f) noexcept
+	poly_quad make_quad_animation(const vector2_float pos, const std::optional<vector2_float> opt_size, const resources::animation_frame& f, std::array<colour, 4> c) noexcept
 	{
-		return make_quad_animation(p, {f.w, f.h}, f);
-	}
-
-	poly_quad make_quad_animation(const vector2_float pos, const vector2_float size, const resources::animation_frame& f) noexcept
-	{
+		const auto size = opt_size.value_or(vector2_float{ f.w, f.h });
 		const auto offset = vector2_float{ f.off_x * f.scale_w, f.off_y * f.scale_h };
 		const auto scaled_size = vector2_float{ size.x * f.scale_w, size.y * f.scale_h };
 
-		return make_quad_animation(rect_t{ pos - offset, scaled_size }, {
-            f.w < 0 ? f.x + std::abs(f.w) : f.x,
-            f.h < 0 ? f.y + std::abs(f.h) : f.y,
-			f.w, f.h 
-		});
+		return make_quad_animation(pos - offset, scaled_size, rect_float{
+			f.w < 0 ? f.x + std::abs(f.w) : f.x,
+			f.h < 0 ? f.y + std::abs(f.h) : f.y,
+			f.w, f.h
+			}, c);
 	}
 
-	poly_quad make_quad_animation(const rect_float quad, const rect_float texture_quad, std::array<colour, 4> colours) noexcept
+	poly_quad make_quad_animation(const vector2_float pos, const vector2_float size, const rect_float texture_quad, std::array<colour, 4> colours) noexcept
 	{
+		const auto quad = rect_float{ pos, size };
 		const auto quad_right_x = quad.x + quad.width;
 		const auto quad_bottom_y = quad.y + quad.height;
 		const auto tex_right_x = texture_quad.x + texture_quad.width;

@@ -91,6 +91,7 @@ namespace hades::resources
 
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};
+		// TODO: undeprecate, draw the background whereever this terrain is
 		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;

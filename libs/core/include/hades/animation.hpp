@@ -112,13 +112,30 @@ namespace hades::animation
 
 namespace hades
 {
+	namespace detail
+	{
+		constexpr auto quad_colour_white = std::array<colour, 4>{
+			colour{ 255,255,255 },
+			colour{ 255,255,255 },
+			colour{ 255,255,255 },
+			colour{ 255,255,255 }
+		};
+	}
+
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
 	poly_quad make_quad_colour(rect_float quad, colour) noexcept;
 	poly_quad make_quad_line(vector2_float start, vector2_float end, float thickness, colour) noexcept;
-	poly_quad make_quad_animation(vector2_float pos, const resources::animation_frame&) noexcept;
-	poly_quad make_quad_animation(vector2_float pos, vector2_float size, const resources::animation_frame&) noexcept;
-	poly_quad make_quad_animation(rect_float quad, rect_float texture_quad, std::array<colour, 4> = {}) noexcept;
+	poly_quad make_quad_animation(vector2_float pos, std::optional<vector2_float> size, const resources::animation_frame&, std::array<colour, 4>) noexcept;
+	inline poly_quad make_quad_animation(vector2_float pos, std::optional<vector2_float> size, const resources::animation_frame& f, colour c = { 255,255,255 }) noexcept
+	{
+		return make_quad_animation(pos, size, f, { c, c, c, c });
+	}
+	poly_quad make_quad_animation(vector2_float pos, vector2_float size, rect_float texture_quad, std::array<colour, 4>) noexcept;
+	inline poly_quad make_quad_animation(vector2_float pos, vector2_float size, rect_float texture_quad, colour c = { 255,255,255 }) noexcept
+	{
+		return make_quad_animation(pos, size, texture_quad, { c, c, c, c });
+	}
 
 	void register_animation_resource(data::data_manager&);
 }

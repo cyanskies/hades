@@ -1,18 +1,19 @@
 #include "hades/terrain_map.hpp"
 
 #include "SFML/Graphics/RenderTarget.hpp"
+#include "SFML/OpenGL.hpp"
 
 #include "hades/shader.hpp"
 
 using namespace std::string_literals;
 using namespace std::string_view_literals;
 
-//textures[int(gl_Color.r)]
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 const auto fragment_source = R"(uniform sampler2D tex;
 void main()
 {{
 	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
+	gl_FragDepth = gl_Color.r / 255.0f;
 }})"s;
 
 auto terrain_map_shader_id = hades::unique_zero;
@@ -142,12 +143,6 @@ namespace hades
 				tex_index = tex_size;
 			}
 
-			if (i == 0)
-			{
-				log(std::format("top-left tile:\ntile-id: {}\nleft: {}\ntop: {}\nlayer: {}",
-					t, tile.left, tile.top, index));
-			}
-
 			// add tile to the tile list
 			info.tile_info.emplace_back(integer_cast<tile_index_t>(i), tile.left, tile.top, integer_cast<std::uint8_t>(tex_index), index);
 		}
@@ -168,11 +163,10 @@ namespace hades
 		{
 			auto i = std::size_t{};
 			const auto s = size(_map.terrain_layers);
-			log("generate map");
 			for (; i < s; ++i)
 				generate_layer(i, _info, _map.terrain_layers[i]);
 
-			generate_layer(i, _info, _map.tile_layer);
+			generate_layer({}, _info, _map.tile_layer);
 		}
 		catch (const overflow_error&)
 		{
@@ -183,7 +177,7 @@ namespace hades
 			log_warning(e.what());
 		}
 
-		std::ranges::sort(_info.tile_info, std::ranges::greater{}, &map_tile::layer);
+		std::ranges::sort(_info.tile_info, {}, &map_tile::texture);
 
 		_quads.clear();
 		_quads.reserve(size(_info.tile_info));
@@ -227,6 +221,19 @@ namespace hades
 		const auto beg = begin(_info.tile_info);
 		const auto ed = end(_info.tile_info);
 		auto it = beg;
+
+#define DEPTH 1
+#if DEPTH
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_ALPHA_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+		glDepthRange(1.0f, 0.0f);
+		glAlphaFunc(GL_GREATER, 0.0f);
+		glClearDepth(1.0f);
+		glClear(GL_DEPTH_BUFFER_BIT);
+#endif
+
 		while (it != ed)
 		{
 			auto tex = it->texture;
@@ -238,6 +245,13 @@ namespace hades
 			s.texture = &resources::texture_functions::get_sf_texture(_info.texture_table[tex].get());
 			_quads.draw(t, index, last - index, s);
 		}
+
+#if DEPTH
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_ALPHA_TEST);
+		glDepthMask(GL_FALSE);
+#endif
+
 		return;
 	}
 

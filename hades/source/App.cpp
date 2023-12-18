@@ -502,9 +502,10 @@ namespace hades
 					window_type |= sf::Style::Resize;
 
 				const auto game_vanity = _console.getString(cvars::game_vanity_name);
+				const auto context = sf::ContextSettings{ 24 }; // 24-bit depth buffer
 				log_debug("recreating window"sv);
 
-                _window.create(mode, game_vanity->load(), integer_cast<std::uint32_t>(window_type));
+                _window.create(mode, game_vanity->load(), integer_cast<std::uint32_t>(window_type), context);
 				//restore vsync settings
 				_window.setFramerateLimit(0);
 				_window.setVerticalSyncEnabled(_framelimit.vsync);

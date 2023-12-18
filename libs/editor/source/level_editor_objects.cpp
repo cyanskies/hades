@@ -117,7 +117,8 @@ namespace hades
 				_remove_object_callback(id);
 				return;
 			} 
-		}
+		},
+		_held_preview{ sf::RectangleShape{} }
 	{
 		if (object_settings_id != unique_id::zero)
 			_settings = data::get<resources::level_editor_object_settings>(object_settings_id);
@@ -210,7 +211,7 @@ namespace hades
 
 		_brush_type = brush_type::object_selector;
 		_held_object = std::nullopt;
-		_held_preview = sf::Sprite{};
+		_held_preview = sf::RectangleShape{};
 	}
 
 	level level_editor_objects_impl::level_save(level l) const
@@ -429,7 +430,7 @@ namespace hades
 		const auto size = get_safe_size(o);
 
 		if (!within_level(pos, size, level_limit))
-			return std::variant<sf::Sprite, sf::RectangleShape>{};
+			return std::variant<sf::Sprite, sf::RectangleShape>{ sf::RectangleShape{} };
 
 		const auto obj_pos = snap ? mouse::snap_to_grid(pos, cell_size) : pos;
 
@@ -451,7 +452,10 @@ namespace hades
 		{
 			//make sprite
 			const auto anim = anims[0];
-			auto sprite = sf::Sprite{};
+			// TODO: animation func that just returns a new sprite, to avoid duplicating this texture lookup
+			const auto anim_tex = resources::animation_functions::get_texture(*anim);
+			const auto& sf_tex = resources::texture_functions::get_sf_texture(anim_tex);
+			auto sprite = sf::Sprite{ sf_tex };
 			animation::apply(*anim, time_point{}, sprite);
 			const auto bounds = sprite.getLocalBounds();
 			sprite.setScale({ size.x / bounds.width, size.y / bounds.height });
@@ -780,7 +784,7 @@ namespace hades
 		}
 
 		_held_object.reset();
-		_held_preview = sf::Sprite{};
+		_held_preview = sf::RectangleShape{};
 
 		return;
 	}

@@ -34,11 +34,8 @@ namespace hades
 			shape.setSize({ r.bounds.width, r.bounds.height });
 			shape.setFillColor({ r.display_colour.r, r.display_colour.g, r.display_colour.b, r.display_colour.a });
 
-			auto text = sf::Text{};
-			text.setString(r.name);
-			text.setCharacterSize(char_size);
+			auto text = sf::Text{ _font->value, r.name, char_size };
 			text.setPosition({ r.bounds.x, r.bounds.y });
-			text.setFont(_font->value);
 
 			_regions.emplace_back(region{ shape, text });
 		}
@@ -315,7 +312,9 @@ namespace hades
 			&& snap_pos == pos)
 		{
 			const auto r_size = _regions.size();
-			auto &r = _regions.emplace_back();
+			using namespace std::string_view_literals;
+			auto& r = _regions.emplace_back(sf::RectangleShape{},
+				sf::Text{ _font->value, std::format("Region{}"sv, ++_new_region_name_counter), char_size});
 
 			r.shape.setPosition({ pos.x,pos.y });
 			const auto size = _region_min_size->load();
@@ -323,11 +322,6 @@ namespace hades
 
 			const auto region_colour = sf::Color::Blue - sf::Color{ 0, 0, 0, 255 / 2 };
 			r.shape.setFillColor(region_colour);
-			
-			using namespace std::string_literals;
-			r.name.setFont(_font->value);
-			r.name.setCharacterSize(char_size);
-			r.name.setString("Region"s + to_string(++_new_region_name_counter));
 			r.name.setPosition({ pos.x, pos.y });
 
 			_on_selected(r_size);

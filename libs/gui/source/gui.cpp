@@ -184,11 +184,11 @@ namespace hades
 			[[fallthrough]];
 		case sf::Event::MouseButtonReleased:
 			io.AddMouseSourceEvent(ImGuiMouseSource::ImGuiMouseSource_Mouse);
-			io.AddMouseButtonEvent(e.mouseButton.button, e.type == sf::Event::MouseButtonPressed);
+			io.AddMouseButtonEvent(enum_type(e.mouseButton.button), e.type == sf::Event::MouseButtonPressed);
 			return io.WantCaptureMouse;
 		case sf::Event::MouseWheelScrolled:
 			io.AddMouseSourceEvent(ImGuiMouseSource::ImGuiMouseSource_Mouse);
-			if (e.mouseWheelScroll.wheel == 0)
+			if (e.mouseWheelScroll.wheel == sf::Mouse::Wheel::Vertical)
 				io.AddMouseWheelEvent({}, static_cast<float>(e.mouseWheelScroll.delta));
 			else
 				io.AddMouseWheelEvent(static_cast<float>(e.mouseWheelScroll.delta), {});

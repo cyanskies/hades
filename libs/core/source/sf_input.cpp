@@ -168,7 +168,7 @@ namespace hades
 	{
 		auto is_match = [](const sf::Event &e) {
 			if (e.type == sf::Event::MouseWheelScrolled)
-				return e.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel;
+				return e.mouseWheelScroll.wheel == sf::Mouse::Wheel::Vertical;
 
 			return false;
 		};
@@ -309,8 +309,8 @@ namespace hades
 		// wheelbutton
 		interpreter_map.insert({ "mousemiddle", mouse_button<sf::Mouse::Button::Middle>(win) });
 		// mouse extra buttons
-		interpreter_map.insert({ "mouse_x1", mouse_button<sf::Mouse::Button::XButton1>(win) });
-		interpreter_map.insert({ "mouse_x2", mouse_button<sf::Mouse::Button::XButton2>(win) });
+		interpreter_map.insert({ "mouse_x1", mouse_button<sf::Mouse::Button::Extra1>(win) });
+		interpreter_map.insert({ "mouse_x2", mouse_button<sf::Mouse::Button::Extra2>(win) });
 		//mouse axis
 		interpreter_map.insert({ "mouse", mouse_pos(win) });
 		interpreter_map.insert({ "mousewheel", mouse_wheel(win) });

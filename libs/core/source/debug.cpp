@@ -67,7 +67,8 @@ namespace hades::debug
 
 	text_overlay_manager::text_overlay_manager() :
 		_font{ data::get<resources::font>(resources::default_font_id()) },
-		_char_size{ console::get_int(cvars::console_charsize, cvars::default_value::console_charsize) }
+		_char_size{ console::get_int(cvars::console_charsize, cvars::default_value::console_charsize) },
+		_display{ _font->value }
 	{}
 
 	text_overlay* text_overlay_manager::create_overlay(std::unique_ptr<text_overlay> overlay)

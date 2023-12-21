@@ -42,7 +42,8 @@ namespace hades
 			no_brush,
 			erase,
 			draw_tile,
-			draw_terrain
+			draw_terrain,
+			raise_terrain,
 		};
 
 		struct level_options

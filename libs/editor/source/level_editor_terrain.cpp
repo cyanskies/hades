@@ -143,7 +143,7 @@ namespace hades
 
 		auto map = to_terrain_map(map_raw);
 		//TODO: if size != to level xy, then resize the map
-		auto empty_map = make_map(size, map.terrainset, _empty_terrain);
+		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset, _empty_terrain);
 
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));
@@ -388,44 +388,40 @@ namespace hades
 		}
 	}
 
-	static std::vector<tile_position> get_tile_positions(level_editor_terrain::mouse_pos p,
-		resources::tile_size_t tile_size, level_editor_terrain::draw_shape shape, int size)
+	template<typename Func>
+	static void for_each_position(level_editor_terrain::mouse_pos p,
+		resources::tile_size_t tile_size, level_editor_terrain::draw_shape shape,
+		int size, tile_position world_size, Func &&f)
 	{
 		const auto draw_pos = tile_position{
 			static_cast<tile_position::value_type>(p.x / tile_size),
 			static_cast<tile_position::value_type>(p.y / tile_size)
 		};
 
-		// TODO: don't use the allocating make_position funcs
-		if (shape == level_editor_terrain::draw_shape::rect)
-			return make_position_square(draw_pos, size);
-		else if (shape == level_editor_terrain::draw_shape::circle)
-			return make_position_circle(draw_pos, size);
+		if (!within_world(draw_pos, world_size))
+			return;
 
-		return std::vector<tile_position>{};
+		if (shape == level_editor_terrain::draw_shape::rect)
+			return for_each_safe_position_rect(draw_pos, tile_position{ size, size }, world_size, f);
+		else if (shape == level_editor_terrain::draw_shape::circle)
+			return for_each_safe_position_circle(draw_pos, size, world_size, f);
+
+		return;
 	}
 
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
-		// NOTE: preview is ugly when drawing a terrain that doesn't have transitions
-		//		this is common with the bottom layer terrain
 		_preview = _clear_preview;
 
-		// TODO: opti
-		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
-
-		if (_brush == brush_type::draw_terrain)
-		{
-			for(auto pos : positions)
-				_preview.place_terrain(pos, _current.terrain);
-		}
-		else if (_brush == brush_type::draw_tile)
-		{
-			for (auto pos : positions)
+		const auto func = [&](const tile_position pos) {
+			if (_brush == brush_type::draw_terrain || _brush == brush_type::erase)
+				_preview.place_terrain(pos, _settings->editor_terrain ? _settings->editor_terrain.get() : _current.terrain);
+			else if (_brush == brush_type::draw_tile)
 				_preview.place_tile(pos, _tile);
-		}
+		};
 
-		//TODO: draw some kind of indicator for erasing using place tile
+		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
+		return;
 	}
 
 	tag_list level_editor_terrain::get_terrain_tags_at_location(rect_float location) const
@@ -458,24 +454,17 @@ namespace hades
 
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
-		//TODO: opti
-		const auto positions = get_tile_positions(p, _settings->tile_size, _shape, _size);
-
-		if (_brush == brush_type::draw_terrain)
-		{
-			for (auto pos : positions)
+		auto func = [&](const tile_position pos) {
+			if (_brush == brush_type::draw_terrain)
 				_map.place_terrain(pos, _current.terrain);
-		}
-		else if (_brush == brush_type::draw_tile)
-		{
-			for (auto pos : positions)
+			else if (_brush == brush_type::draw_tile)
 				_map.place_tile(pos, _tile);
-		}
-		else if (_brush == brush_type::erase)
-		{
-			for (auto pos : positions)
+			else if (_brush == brush_type::erase)
 				_map.place_terrain(pos, _empty_terrain);
-		}
+		};
+
+		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
+		return;
 	}
 
 	void level_editor_terrain::on_drag(mouse_pos p)

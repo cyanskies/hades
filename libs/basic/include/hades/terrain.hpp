@@ -89,8 +89,10 @@ namespace hades::resources
 		void load(data::data_manager&) final override;
 		void serialise(const data::data_manager&, data::writer&) const final override;
 
+		resource_link<terrain> editor_terrain = {};
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};
+		resource_link<terrainset> editor_terrainset = {};
 		// TODO: undeprecate, draw the background whereever this terrain is
 		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;

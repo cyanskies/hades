@@ -19,17 +19,63 @@ namespace hades
 			{
 				for (auto x = tile_index_t{}; x < size.x; ++x)
 				{
-					if (const auto x_val = pos_x + x, y_val = pos_y + y;
-						y_val * map_width >= max_index || // off the bottom of the map
-						x_val >= map_width) // off the right edge
+					if (within_world({ pos_x + x, pos_y + y }, { map_width, max_index / map_width }))
+						std::invoke(f, pos + x + y * map_width);
+					else
 					{
 						if constexpr(PassInvalid)
 							std::invoke(f, bad_tile_index);
-					}
-					else
-						std::invoke(f, pos + x + y * map_width);
+					}	
 				}
 			}
+			return;
+		}
+
+		template<bool PassInvalid = true, unary_operator<void, tile_position> Func>
+		void for_each_position_circle_impl(const tile_position p, const tile_index_t radius, const tile_position world_size, Func&& f)
+			noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		{
+			const auto rad = integer_cast<tile_position::value_type>(radius);
+
+			const auto top = tile_position{ 0, -rad };
+			const auto bottom = tile_position{ 0, rad };
+
+			const auto call_on_position = [&f, world_size](tile_position pos) 
+				noexcept(std::is_nothrow_invocable_v<Func, tile_position>) {
+				if (within_world(pos, world_size))
+					std::invoke(f, pos);
+				else
+				{
+					if constexpr (PassInvalid)
+						std::invoke(f, bad_tile_position);
+				}
+			};
+
+			std::invoke(call_on_position, top + p);
+
+			const auto r2 = rad * rad;
+			for (auto y = top.y + 1; y < bottom.y; ++y)
+			{
+				//find x for every y between the top and bottom of the circle
+
+				//x2 + y2 = r2
+				//x2 = r2 - y2
+				//x = sqrt(r2 - y2)
+				const auto y2 = y * y;
+				const auto a = r2 - y2;
+				assert(a >= 0);
+				const auto x_root = std::sqrt(static_cast<float>(a));
+				const auto x_float = std::trunc(x_root);
+
+				const auto x_int = std::abs(static_cast<tile_position::value_type>(x_float));
+				const auto bounds = std::array{ -x_int, x_int };
+
+				//push the entire line of the circle into out
+				for (auto x = bounds[0]; x <= bounds[1]; x++)
+					std::invoke(call_on_position, tile_position{ x + p.x, y + p.y });
+			}
+
+			std::invoke(call_on_position, bottom + p);
 			return;
 		}
 
@@ -51,16 +97,13 @@ namespace hades
 					if (x == 0 && y == 0)
 						continue; // don't call on the middle
 
-					if (const auto x_val = pos_x + x, y_val = pos_y + y;
-						y_val * map_width >= max_index || // off the bottom of the map
-						x_val >= map_width || // off the right edge
-						x_val < 0 || y_val < 0) // off the top and left
+					if (within_world({ pos_x + x, pos_y + y }, {map_width, max_index/map_width}))
+						std::invoke(f, pos + x + y * map_width);
+					else
 					{
 						if constexpr (PassInvalid)
 							std::invoke(f, bad_tile_index);
-					}
-					else
-						std::invoke(f, pos + x + y * map_width);
+					}	
 				}
 			}
 			return;
@@ -85,9 +128,7 @@ namespace hades
 			auto d = dir::north;
 
 			const auto outside_world =  [map_width, max_index] (tile_index_t pos_x, tile_index_t pos_y) noexcept {
-				return pos_x < 0 || pos_y < 0 ||
-					pos_x > map_width ||
-					pos_x * pos_y > max_index;
+				return !within_world({ pos_x, pos_y }, { map_width, max_index / map_width });
 			};
 
 			const auto test_edge = [&] () noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>) {
@@ -176,6 +217,14 @@ namespace hades
 		}
 	}
 
+	constexpr bool within_world(const tile_position p, const tile_position w) noexcept
+	{
+		return p.y >= 0 && // off the top of the map
+			p.y * w.x < (w.x * w.y) && // off the bottom of the map
+			p.x >= 0 && /// off the left of the map
+			p.x < w.x; // off the right of the map
+	}
+
 	template<typename Func>
 	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_position_rect(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
@@ -204,6 +253,20 @@ namespace hades
 
 		return detail::for_each_index_rect_impl<false>(hades::to_tile_index(position, world_size.x),
 			size, world_size.x, world_size.x * world_size.y, func);
+	}
+
+	template<unary_operator<void, tile_position> Func>
+	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_circle_impl(middle, radius, world_size, f);
+	}
+
+	template<unary_operator<void, tile_position> Func>
+	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) 
+		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_circle_impl<false>(middle, radius, world_size, f);
 	}
 
 	template<typename Func>

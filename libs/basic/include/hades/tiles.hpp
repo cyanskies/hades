@@ -271,6 +271,8 @@ namespace hades
 	void place_tile(tile_map&, const std::vector<tile_position>&, tile_id_t);
 	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&);
 
+	constexpr bool within_world(tile_position position, tile_position world_size) noexcept;
+
 	//helpers to create a list of positions in a desired shape
 	//TODO: move to general game logic
 	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size);
@@ -288,6 +290,11 @@ namespace hades
 	template<typename Func>
 	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_safe_position_rect(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+
+	template<unary_operator<void, tile_position> Func>
+	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func &&f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<unary_operator<void, tile_position> Func>
+	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
 	template<typename Func>
 	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect(const tile_index_t pos,
@@ -333,7 +340,6 @@ namespace hades
 		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
 	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
-
 }
 
 #include "hades/detail/tiles.inl"

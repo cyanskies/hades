@@ -10,7 +10,8 @@
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"
 
-hades::unique_id background_terrain_id = {};
+auto background_terrain_id = hades::unique_zero;
+auto editor_terrainset_id = hades::unique_zero;
 
 namespace hades::resources
 {
@@ -82,6 +83,10 @@ namespace hades
 		empty_tset->terrains.emplace_back(terrain_settings->empty_terrain);
 
 		terrain_settings->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id, id::terrain_settings);
+
+		editor_terrainset_id = make_unique_id();
+		auto editor_terrainset = d.find_or_create<resources::terrainset>(editor_terrainset_id, {}, terrainsets_str);
+		terrain_settings->editor_terrainset = d.make_resource_link<resources::terrainset>(editor_terrainset_id, id::terrain_settings);
 
 		// the exact same as empty tile
 		// since its now used as 'air' tiles for higher layers
@@ -896,14 +901,23 @@ namespace hades::resources
 		detail::load_tile_settings(s, d);
 
 		//load terrains
+		if (s.editor_terrain)
+		{
+			d.get<terrain>(s.editor_terrain.id());
+			// replace editor terrainset with the editor terrain
+			auto tset = d.get<terrainset>(s.editor_terrainset.id());
+			tset->terrains.clear();
+			tset->terrains.emplace_back(d.make_resource_link<terrain>(s.editor_terrain.id(), s.editor_terrainset.id()));
+		}
+
 		if (s.empty_terrain)
-			d.get<terrain>(s.empty_terrain->id);
+			d.get<terrain>(s.empty_terrain.id());
 
 		for (const auto& t : s.terrains)
-			d.get<terrain>(t->id);
+			d.get<terrain>(t.id());
 
 		for (const auto& t : s.terrainsets)
-			d.get<terrainset>(t->id);
+			d.get<terrainset>(t.id());
 
 		s.loaded = true;
 		return;
@@ -925,6 +939,9 @@ namespace hades::resources
 			w.write("height-max"sv, height_max);
 		if (height_default != std::uint8_t{})
 			w.write("height-default"sv, height_default);
+
+		if (editor_terrain)
+			w.write("editor-terrain"sv, d.get_as_string(editor_terrain.id()));
 
 		return;
 	}
@@ -1061,6 +1078,8 @@ namespace hades::resources
 		//	tile_count:
 		//	layout: //either war3, a single unique_id, or a set of tile_count unique_ids
 
+		// TODO: strengthen the error checking here
+
 		using namespace std::string_view_literals;
 		using namespace data::parse_tools;
 
@@ -1074,6 +1093,7 @@ namespace hades::resources
 		{
 			// TODO: need to abort this terrain group
 			LOGERROR("a terrain group must provide tiles-per-row");
+			// TODO: throw something
 		}
 
 		const auto left = get_scalar<tile_size_t>(p, "left"sv, 0);
@@ -1139,7 +1159,7 @@ namespace hades::resources
 		//			}
 
 		const auto terrains_list = p.get_children();
-		auto settings = d.get<resources::terrain_settings>(id::terrain_settings);
+		auto settings = d.get<resources::terrain_settings>(id::terrain_settings, data::no_load);
 		assert(settings);
 
 		const auto tile_size = settings->tile_size;
@@ -1206,8 +1226,9 @@ namespace hades::resources
 		//  tile-size: 32
 		//	error-tileset: uid
 		//	empty-tileset: uid
-		//  empty_terrain: uid
-		//	empty_terrainset: uid
+		//  editor-terrain: uid
+		//  empty-terrain: uid
+		//	empty-terrainset: uid
 		//  height-default: uint8
 		//	height-min: uint8
 		//	height-max: uint8
@@ -1225,6 +1246,10 @@ namespace hades::resources
 		const auto empty_tset = data::parse_tools::get_unique(n, "empty-tileset"sv, unique_zero);
 		if (empty_tset)
 			s->empty_tileset = d.make_resource_link<resources::tileset>(empty_tset, id::terrain_settings);
+
+		const auto editor_terrain = data::parse_tools::get_unique(n, "editor-terrain"sv, unique_zero);
+		if (editor_terrain)
+			s->editor_terrain = d.make_resource_link<resources::terrain>(editor_terrain, id::terrain_settings);
 
 		const auto empty_terrain = data::parse_tools::get_unique(n, "empty-terrain"sv, unique_zero);
 		if (empty_terrain)

@@ -40,10 +40,19 @@ namespace hades
 	private:
 		enum class brush_type {
 			no_brush,
+			// clear tile only
 			erase,
+			// art only
 			draw_tile,
+			// terrain vertex
 			draw_terrain,
+			// terrain height
 			raise_terrain,
+			lower_terrain,
+			// cliffs
+			raise_cliff,
+			lower_cliff,
+			erase_cliff,
 		};
 
 		struct level_options
@@ -66,7 +75,7 @@ namespace hades
 		//brush settings
 		brush_type _brush = brush_type::no_brush;
 		draw_shape _shape = draw_shape::rect;
-		int _size = 0;
+		int _size = 1;
 
 		//brush preview
 		mutable_terrain_map _clear_preview;

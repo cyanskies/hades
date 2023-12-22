@@ -245,7 +245,7 @@ namespace hades
 					g.combo_end();
 				}
 
-				constexpr auto size_min = int{ 0 };
+				constexpr auto size_min = int{ 1 };
 				constexpr auto size_max = int{ 6 };
 
 				g.input_scalar("drawing size"sv, _size);

@@ -4,6 +4,8 @@
 #include "hades/properties.hpp"
 #include "hades/terrain.hpp"
 
+#include "hades/random.hpp" // temp; for generating heightmaps
+
 namespace hades
 {
 	using namespace std::string_literals;
@@ -89,6 +91,14 @@ namespace hades
 
 		const auto map = make_map(size, _new_options.terrain_set, _new_options.terrain);
 		const auto raw = to_raw_terrain_map(map);
+
+		// generate random height values
+		auto height = std::vector<uint8>{};
+		height.resize(std::size(raw.terrain_vertex));
+		for (auto i = std::size_t{}; i < std::size(height); ++i)
+			height[i] = integer_cast<std::uint8_t>(random(0, 255));
+
+		l.height_vertex = std::move(height);
 		l.terrainset = raw.terrainset;
 		l.terrain_layers = raw.terrain_layers;
 		l.tile_map_layer = raw.tile_layer;
@@ -182,6 +192,14 @@ namespace hades
 
 		if (g.main_toolbar_begin())
 		{
+			if (g.toolbar_button("show terrain height"sv))
+			{
+				const auto enabled = !_map.is_height_enabled();
+				_map.set_height_enabled(enabled);
+				_preview.set_height_enabled(enabled);
+				_clear_preview.set_height_enabled(enabled);
+			}
+			
 			if (g.toolbar_button("terrain eraser"sv))
 			{
 				activate_brush();

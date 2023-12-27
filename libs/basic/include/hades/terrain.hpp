@@ -198,6 +198,9 @@ namespace hades
 	// size of the map expressed in vertex
 	terrain_vertex_position get_vertex_size(const terrain_map&);
 
+	// index the array using rectangle_math.hpp::hades::rect_corners
+	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t terrain_width) noexcept;
+
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{
 		return from_tile_index(i, t.tile_layer);

@@ -37,7 +37,13 @@ namespace hades
 		mutable_terrain_map(terrain_map);
 
 		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
-		
+
+		void set_height_enabled(bool b) noexcept
+		{
+			_show_height = b;
+			return;
+		}
+
 		void place_tile(const tile_position, const resources::tile&);
 		void place_terrain(const terrain_vertex_position, const resources::terrain*);
 
@@ -54,12 +60,19 @@ namespace hades
 			return _map;
 		}
 
+		bool is_height_enabled() const noexcept
+		{
+			return _show_height;
+		}
+
 	public:
 		// internal structures
 		struct map_tile
 		{
 			tile_index_t index; 
-			resources::tile_size_t left, top;
+			std::array<std::uint8_t, 4> height = {};
+			resources::tile_size_t left;
+			resources::tile_size_t top;
 			std::uint8_t texture = {};
 			std::uint8_t layer = {};
 		};
@@ -74,10 +87,12 @@ namespace hades
 		map_info _info;
 		quad_buffer _quads;
 		bool _needs_apply = false;
+		bool _show_height = false;
 		rect_float _local_bounds = {};
 		terrain_map _map;
 		resources::shader_uniform_map _uniforms;
 		resources::shader_proxy _shader;
+		resources::shader_proxy _shader_no_height;
 	};
 }
 

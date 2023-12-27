@@ -240,6 +240,12 @@ namespace hades
 			return false;
 		}
 
+		if (std::size(r.terrain_vertex) != std::size(r.heightmap))
+		{
+			LOGWARNING("raw map terrain vertex list should be the same length as the terrain heightmap.");
+			return false;
+		}
+
 		if (!std::empty(r.terrain_layers))
 		{
 			if (std::any_of(std::begin(r.terrain_layers), std::end(r.terrain_layers), [size](auto &&l) {
@@ -370,6 +376,7 @@ namespace hades
 		auto m = terrain_map{};
 
 		m.terrainset = data::get<resources::terrainset>(r.terrainset);
+		m.heightmap = r.heightmap;
 		
 		//tile layer is required to be valid
 		m.tile_layer = to_tile_map(r.tile_layer);
@@ -437,6 +444,7 @@ namespace hades
 		auto m = raw_terrain_map{};
 
 		m.terrainset = t.terrainset->id;
+		m.heightmap = t.heightmap;
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
@@ -470,6 +478,7 @@ namespace hades
 		auto map = terrain_map{};
 		map.terrainset = terrainset;
         map.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
+		map.heightmap.resize(std::size(map.terrain_vertex), {});
 
 		const auto empty_layer = make_map(size, resources::get_empty_tile());
 
@@ -500,6 +509,7 @@ namespace hades
 		}
 
 		map.tile_layer = empty_layer;
+		assert(is_valid(to_raw_terrain_map(map)));
 
 		return map;
 	}
@@ -517,6 +527,13 @@ namespace hades
 	tile_position get_vertex_size(const terrain_map& t)
 	{
 		return get_size(t.tile_layer) + tile_position{1, 1};
+	}
+
+	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const terrain_index_t terrain_width) noexcept
+	{
+		const auto index = to_tile_index(tile_index, terrain_width);
+
+		return { index, index + 1, index + 1 + terrain_width, index + terrain_width };
 	}
 
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p) noexcept

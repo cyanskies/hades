@@ -801,6 +801,276 @@ namespace hades
 		}
 		return;
 	}
+
+	namespace
+	{
+		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
+		// Warper.cs
+		constexpr std::array<float, 16> compute_dest_mat(
+			const float x0,
+			const float y0,
+			const float x1,
+			const float y1,
+			const float x2,
+			const float y2,
+			const float x3,
+			const float y3) noexcept
+		{
+			const float dx1 = x1 - x2, dy1 = y1 - y2;
+			const float dx2 = x3 - x2, dy2 = y3 - y2;
+			const float sx = x0 - x1 + x2 - x3;
+			const float sy = y0 - y1 + y2 - y3;
+			const float g = (sx * dy2 - dx2 * sy) / (dx1 * dy2 - dx2 * dy1);
+			const float h = (dx1 * sy - sx * dy1) / (dx1 * dy2 - dx2 * dy1);
+			const float a = x1 - x0 + g * x1;
+			const float b = x3 - x0 + h * x3;
+			const float c = x0;
+			const float d = y1 - y0 + g * y1;
+			const float e = y3 - y0 + h * y3;
+			const float f = y0;
+
+			return std::array<float, 16>{
+				a, d, 0, g,
+				b, e, 0, h,
+				0, 0, 1, 0,
+				c, f, 0, 1
+			};
+		}
+
+		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
+		// Warper.cs
+		static constexpr std::array<float, 16> compute_src_mat(
+			const float x0,
+			const float y0,
+			const float x1,
+			const float y1,
+			const float x2,
+			const float y2,
+			const float x3,
+			const float y3) noexcept
+		{
+			auto mat = compute_dest_mat(x0, y0, x1, y1, x2, y2, x3, y3);
+
+			// invert through adjoint
+			const float a = mat[0], d = mat[1],	/* ignore */		g = mat[3];
+			const float b = mat[4], e = mat[5],	/* 3rd col*/		h = mat[7];
+			/* ignore 3rd row */
+			const float c = mat[12], f = mat[13];
+
+			const float A = e - f * h;
+			const float B = c * h - b;
+			const float C = b * f - c * e;
+			const float D = f * g - d;
+			const float E = a - c * g;
+			const float F = c * d - a * f;
+			const float G = d * h - e * g;
+			const float H = b * g - a * h;
+			const float I = a * e - b * d;
+
+			const float idet = 1.0f / (a * A + b * D + c * G);
+
+			mat[0] = A * idet;	mat[1] = D * idet;	mat[2] = 0;		mat[3] = G * idet;
+			mat[4] = B * idet;	mat[5] = E * idet;	mat[6] = 0;		mat[7] = H * idet;
+			mat[8] = 0;			mat[9] = 0;			mat[10] = 1;	mat[11] = 0;
+			mat[12] = C * idet;	mat[13] = F * idet;	mat[14] = 0;	mat[15] = I * idet;
+
+			return mat;
+		}
+
+		// src: RayLib::RayMath::MatrixMultiply
+		constexpr std::array<float, 16> matrix_multiply(const std::array<float, 16>& left, const std::array<float, 16>& right) noexcept
+		{
+			return std::array<float, 16>{
+				left[0]	* right[0] + left[1] * right[4] + left[2] * right[8] + left[3] * right[12],
+				left[0] * right[1] + left[1] * right[5] + left[2] * right[9] + left[3] * right[13],
+				left[0] * right[2] + left[1] * right[6] + left[2] * right[10] + left[3] * right[14],
+				left[0] * right[3] + left[1] * right[7] + left[2] * right[11] + left[3] * right[15],
+				left[4] * right[0] + left[5] * right[4] + left[6] * right[8] + left[7] * right[12],
+				left[4] * right[1] + left[5] * right[5] + left[6] * right[9] + left[7] * right[13],
+				left[4] * right[2] + left[5] * right[6] + left[6] * right[10] + left[7] * right[14],
+				left[4] * right[3] + left[5] * right[7] + left[6] * right[11] + left[7] * right[15],
+				left[8] * right[0] + left[9] * right[4] + left[10] * right[8] + left[11] * right[12],
+				left[8] * right[1] + left[9] * right[5] + left[10] * right[9] + left[11] * right[13],
+				left[8] * right[2] + left[9] * right[6] + left[10] * right[10] + left[11] * right[14],
+				left[8] * right[3] + left[9] * right[7] + left[10] * right[11] + left[11] * right[15],
+				left[12] * right[0] + left[13] * right[4] + left[14] * right[8] + left[15] * right[12],
+				left[12] * right[1] + left[13] * right[5] + left[14] * right[9] + left[15] * right[13],
+				left[12] * right[2] + left[13] * right[6] + left[14] * right[10] + left[15] * right[14],
+				left[12] * right[3] + left[13] * right[7] + left[14] * right[11] + left[15] * right[15]
+			};
+		}
+
+		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
+		// Warper.cs
+		constexpr vector2_float normalise_quad_point(const vector2_float p, const std::array<vector2_float, 4> quad) noexcept
+		{
+			const auto src_mat = compute_src_mat(
+				quad[0].x, quad[0].y,
+				quad[1].x, quad[1].y,
+				quad[2].x, quad[2].y,
+				quad[3].x, quad[3].y);
+			constexpr auto dest_mat = compute_dest_mat(
+				0.f, 0.f,
+				1.f, 0.f,
+				1.f, 1.f,
+				0.f, 1.f);
+
+			const auto mat = matrix_multiply(src_mat, dest_mat);
+
+			const auto& srcX = p.x;
+			const auto& srcY = p.y;
+
+			constexpr float z = 0; // maybe unused
+			const auto result_0 = (srcX * mat[0] + srcY * mat[4] + z * mat[8] + 1 * mat[12]);
+			const auto result_1 = (srcX * mat[1] + srcY * mat[5] + z * mat[9] + 1 * mat[13]);
+			// auto result_2 = (srcX * mat[2] + srcY * mat[6] + z * mat[10] + 1 * mat[14]); // maybe unused
+			const auto result_3 = (srcX * mat[3] + srcY * mat[7] + z * mat[11] + 1 * mat[15]);
+			return { result_0 / result_3,
+					result_1 / result_3 };
+		}
+
+		// Based on PointInTriangle from: https://stackoverflow.com/a/20861130
+		constexpr bool point_in_tri(const vector2_float p, const vector2_float p0, const vector2_float p1, const vector2_float p2) noexcept
+		{
+			const auto s = (p0.x - p2.x) * (p.y - p2.y) - (p0.y - p2.y) * (p.x - p2.x);
+			const auto t = (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
+
+			if ((s < 0) != (t < 0) && s != 0 && t != 0)
+				return false;
+
+			const auto d = (p2.x - p1.x) * (p.y - p1.y) - (p2.y - p1.y) * (p.x - p1.x);
+			return d == 0 || (d < 0) == (s + t <= 0);
+		}
+
+		vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
+			const vector2_float height_dir, const rect_corners c,
+			const std::array<terrain_index_t, 4> index, const std::vector<std::uint8_t>& heightmap) noexcept
+		{
+			auto ret = static_cast<vector2_float>(pos) * tile_sizef;
+
+			switch (c)
+			{
+			case rect_corners::top_right:
+				ret.x += tile_sizef;
+				break;
+			case rect_corners::bottom_right:
+				ret.x += tile_sizef;
+				[[fallthrough]];
+			case rect_corners::bottom_left:
+				ret.y += tile_sizef;
+				break;
+			}
+
+			const auto h = float_cast(heightmap[index[enum_type(c)]]);
+			ret += height_dir * h;
+			return ret;
+		}
+	}
+
+	// project 'p' onto the flat version of 'map'
+	vector2_float project_onto_terrain(vector2_float p, float rot,
+		const resources::tile_size_t tile_size, const terrain_map& map)
+	{
+		const auto tile_sizef = float_cast(tile_size);
+		const auto norm_p = p / tile_sizef;
+
+		// walk over tiles using DDA as shown here: https://www.youtube.com/watch?v=NbSee-XM7WA
+		// and here: https://lodev.org/cgtutor/raycasting.html
+
+		constexpr auto rotation_offset = 270.f;
+		auto advance_dir = to_vector(pol_vector2_t<float>{ to_radians(rot + rotation_offset), 1.f });
+		const auto height_dir = advance_dir * -1;
+
+		auto tile_check = tile_position{
+			integral_cast<tile_position::value_type>(norm_p.x, round_towards_zero_tag),
+			integral_cast<tile_position::value_type>(norm_p.y, round_towards_zero_tag)
+		};
+
+		const auto step = vector2_float{
+			abs(1.f / advance_dir.x),
+			abs(1.f / advance_dir.y)
+		};
+
+		auto dist = vector2_float{
+			advance_dir.x < 0.f ? (norm_p.x - tile_check.x) * step.x : (tile_check.x + 1.f - norm_p.x) * step.x,
+			advance_dir.y < 0.f ? (norm_p.y - tile_check.y) * step.y : (tile_check.y + 1.f - norm_p.y) * step.y
+		};
+
+		const auto tile_step = tile_position{
+			advance_dir.x < 0.f ? -1 : 1,
+			advance_dir.y < 0.f ? -1 : 1
+		};
+
+		const auto terrain_width = get_width(map);
+
+		// quad vertex for the last hit quad
+		auto last_tile = bad_tile_position;
+		auto last_quad = std::array<vector2_float, 4>{};
+
+		// go from 'p'  in the direction of advance dir, checking each tile to see if it is under the mouse
+		// end after reaching the edge of the map
+		const auto world_size = get_size(map);
+
+		// we may have clicked above the map, but under high terrain, 
+		// so run the algo until we reach the end of the world
+		// if the loop go's on for too long then we're probably too far away or
+		// coming from the wrong angle, so bail if sentinel gets to large.
+		{
+			const auto limit = (255 / tile_size) + 1;
+			auto sentinel = unsigned{};
+			while (!within_world(tile_check, world_size) && std::cmp_less(sentinel++, limit))
+			{
+				if (dist.x < dist.y)
+				{
+					dist.x += step.x;
+					tile_check.x += tile_step.x;
+				}
+				else
+				{
+					dist.y += step.y;
+					tile_check.y += tile_step.y;
+				}
+			}
+		}
+
+		while (within_world(tile_check, world_size))
+		{
+			// get index for accessing heightmap
+			const auto terr_index = to_terrain_index(tile_check, terrain_width);
+
+			// generate quad vertex
+			const auto quad = std::array<vector2_float, 4>{
+				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_left, terr_index, map.heightmap),
+					make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_right, terr_index, map.heightmap),
+					make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_right, terr_index, map.heightmap),
+					make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_left, terr_index, map.heightmap)
+			};
+
+			// test for hit
+			if (point_in_tri(p, quad[0], quad[1], quad[2]) ||
+				point_in_tri(p, quad[2], quad[3], quad[0]))
+			{
+				last_tile = tile_check;
+				last_quad = quad;
+			}
+
+			// update for next tile
+			if (dist.x < dist.y)
+			{
+				dist.x += step.x;
+				tile_check.x += tile_step.x;
+			}
+			else
+			{
+				dist.y += step.y;
+				tile_check.y += tile_step.y;
+			}
+		}
+
+		// calculate pos within the hit quad
+		const auto normalised_pos = normalise_quad_point(p, last_quad);
+		return (static_cast<vector2_float>(last_tile) + normalised_pos) * tile_sizef;
+	}
 }
 
 namespace hades::resources

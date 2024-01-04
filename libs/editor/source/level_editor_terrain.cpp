@@ -95,8 +95,13 @@ namespace hades
 		// generate random height values
 		auto height = std::vector<uint8>{};
 		height.resize(std::size(raw.terrain_vertex));
+
+		constexpr auto variance = 20;
+		const auto height_low = _settings->height_default - variance;
+		const auto height_high = height_low + variance * 2;
+
 		for (auto i = std::size_t{}; i < std::size(height); ++i)
-			height[i] = integer_cast<std::uint8_t>(random(0, 255));
+			height[i] = integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
 
 		l.height_vertex = std::move(height);
 		l.terrainset = raw.terrainset;
@@ -154,6 +159,7 @@ namespace hades
 		auto map = to_terrain_map(map_raw);
 		//TODO: if size != to level xy, then resize the map
 		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset, _empty_terrain);
+		empty_map.heightmap = map.heightmap;
 
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));
@@ -268,6 +274,23 @@ namespace hades
 
 				g.input_scalar("drawing size"sv, _size);
 				_size = std::clamp(_size, size_min, size_max);
+			}
+
+			if (g.collapsing_header("height"sv))
+			{
+				g.slider_scalar("Amount"sv, _height_strength, 1, 10);
+
+				if (g.button("Raise"sv))
+				{
+					activate_brush();
+					_brush = brush_type::raise_terrain;
+				}
+
+				if (g.button("Lower"sv))
+				{
+					activate_brush();
+					_brush = brush_type::lower_terrain;
+				}
 			}
 
 			if (g.collapsing_header("tiles"sv))
@@ -432,11 +455,25 @@ namespace hades
 		_preview = _clear_preview;
 
 		const auto func = [&](const tile_position pos) {
-			if (_brush == brush_type::draw_terrain || _brush == brush_type::erase)
+			switch (_brush)
+			{
+			case brush_type::erase:
+				[[fallthrough]];
+			case brush_type::raise_terrain:
+				[[fallthrough]];
+			case brush_type::lower_terrain:
+				[[fallthrough]];
+			case brush_type::draw_terrain:
 				_preview.place_terrain(pos, _settings->editor_terrain ? _settings->editor_terrain.get() : _current.terrain);
-			else if (_brush == brush_type::draw_tile)
+				break;
+			case brush_type::draw_tile:
 				_preview.place_tile(pos, _tile);
+				break;
+			}	
 		};
+
+		const auto rot = get_world_rotation();
+		p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
 
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
@@ -473,14 +510,30 @@ namespace hades
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		auto func = [&](const tile_position pos) {
-			if (_brush == brush_type::draw_terrain)
+			switch (_brush)
+			{
+			case brush_type::draw_terrain:
 				_map.place_terrain(pos, _current.terrain);
-			else if (_brush == brush_type::draw_tile)
-				_map.place_tile(pos, _tile);
-			else if (_brush == brush_type::erase)
+				break;
+			case brush_type::draw_tile:
+				_map.place_tile(pos, _tile);;
+				break;
+			case brush_type::erase:
 				_map.place_terrain(pos, _empty_terrain);
+				break;
+			case brush_type::raise_terrain:
+				_map.raise_terrain(pos, _height_strength);
+				_clear_preview.raise_terrain(pos, _height_strength);
+				break;
+			case brush_type::lower_terrain:
+				_map.lower_terrain(pos, _height_strength);
+				_clear_preview.lower_terrain(pos, _height_strength);
+				break;
+			}	
 		};
 
+		const auto rot = get_world_rotation();
+		p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
 	}
@@ -493,12 +546,14 @@ namespace hades
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
 		_map.apply();
+		_map.set_world_rotation(get_world_rotation());
 		r.draw(_map, s);
 	}
 
 	void level_editor_terrain::draw_brush_preview(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
 		_preview.apply();
+		_preview.set_world_rotation(get_world_rotation());
 		r.draw(_preview, s);
 	}
 }

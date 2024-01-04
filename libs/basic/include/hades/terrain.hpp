@@ -262,6 +262,10 @@ namespace hades
 
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t);
 	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t);
+
+	// project 'p' onto the flat version of 'map'
+	world_vector_t project_onto_terrain(world_vector_t p, float rot,
+		const resources::tile_size_t tile_size, const terrain_map& map);
 }
 
 #include "hades/detail/terrain.inl"

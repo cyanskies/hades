@@ -8,13 +8,15 @@ namespace hades
 	template<typename T>
 	constexpr auto to_radians(T degrees) noexcept
 	{
-		return (degrees * std::numbers::pi_v<std::conditional_t<std::floating_point<T>, T, float>>) / 180;
+		constexpr auto ratio = std::numbers::pi_v<std::conditional_t<std::floating_point<T>, T, float>> / 180;
+		return degrees * ratio;
 	}
 
 	template<std::floating_point Float>
 	constexpr auto to_degrees(Float radians) noexcept
 	{
-		auto degs = (radians * 180.f) / std::numbers::pi_v<Float>;
+		constexpr auto ratio = 180.f / std::numbers::pi_v<Float>;
+		auto degs = radians * ratio;
 		if (degs < 0)
 			return degs + 360;
 		return degs;

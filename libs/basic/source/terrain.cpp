@@ -529,7 +529,7 @@ namespace hades
 		return get_size(t.tile_layer) + tile_position{1, 1};
 	}
 
-	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const terrain_index_t terrain_width) noexcept
+	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width) noexcept
 	{
 		const auto index = to_tile_index(tile_index, terrain_width);
 
@@ -776,6 +776,30 @@ namespace hades
 				place_terrain_internal(m, p, t);
 
 		update_tile_layers(m, positions);
+	}
+
+	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount)
+	{
+		if (within_map(m, p))
+		{
+			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
+			const auto current = m.heightmap[index];
+			const auto compound = integer_cast<int>(current) + integer_cast<int>(amount);
+			m.heightmap[index] = integer_clamp_cast<std::uint8_t>(compound);
+		}
+		return;
+	}
+
+	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount)
+	{
+		if (within_map(m, p))
+		{
+			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
+			const auto current = m.heightmap[index];
+			const auto compound = integer_cast<int>(current) - integer_cast<int>(amount);
+			m.heightmap[index] = integer_clamp_cast<std::uint8_t>(compound);
+		}
+		return;
 	}
 }
 

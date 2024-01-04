@@ -44,8 +44,20 @@ namespace hades
 			return;
 		}
 
-		void place_tile(const tile_position, const resources::tile&);
-		void place_terrain(const terrain_vertex_position, const resources::terrain*);
+		void set_world_rotation(float);
+
+		void place_tile(tile_position, const resources::tile&);
+		void place_terrain(terrain_vertex_position, const resources::terrain*);
+
+		void raise_terrain(terrain_vertex_position, uint8_t amount);
+		void lower_terrain(terrain_vertex_position, uint8_t amount);
+
+		void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
+		{
+			assert(size(height) == size(_map.heightmap));
+			_map.heightmap = height;
+			return;
+		}
 
 		void apply();
 		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
@@ -87,7 +99,7 @@ namespace hades
 		map_info _info;
 		quad_buffer _quads;
 		bool _needs_apply = false;
-		bool _show_height = false;
+		bool _show_height = true;
 		rect_float _local_bounds = {};
 		terrain_map _map;
 		resources::shader_uniform_map _uniforms;

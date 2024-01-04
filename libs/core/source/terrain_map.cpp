@@ -10,25 +10,30 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
+uniform vec2 screen_up;
 void main()
 {{
+	// copy input so we can modify it
+	vec4 vert = gl_Vertex;
+    // add pseudo height in direction of 'screen_up'
+    {}
     // transform the vertex position
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-	// add pseudo height
-	{}
-    // transform the texture coordinates
+	gl_Position = gl_ModelViewProjectionMatrix * vert;
+	// transform the texture coordinates
     gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
     // forward the vertex color
     gl_FrontColor = gl_Color;
 }})";
 
-constexpr auto vertex_add_height = "gl_Position.y += gl_Color.g;";
+constexpr auto vertex_add_height = "vert.xy += screen_up * (float(gl_Color.g) * 255);";
 constexpr auto vertex_no_height = "";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 constexpr auto fragment_source = R"(uniform sampler2D tex;
+uniform float rotation;
 void main()
 {{
+	// depth
 	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
 	gl_FragDepth = {} (gl_Color.r / 255.0f);
 }})";
@@ -48,6 +53,28 @@ namespace hades
 		register_texture_resource(d);
 		register_terrain_resources(d, resources::texture_functions::make_resource_link);
 
+		auto uniforms = resources::shader_uniform_map{
+				{
+					"tex"s, // current texture
+					resources::uniform{
+						resources::uniform_type_list::texture,
+						sf::Shader::CurrentTexture
+					}
+				},{
+					"screen_up"s, // unit vector pointing towards the top of the screen
+					resources::uniform{
+						resources::uniform_type_list::vector2f,
+						{} // { 0.f, 0.f }
+					}
+				}/*,{
+					"world_scale"s, // magnitude of length of the world along 'screen'
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				}*/
+		};
+
 		{ // make normal terrain shader
 			terrain_map_shader_id = make_unique_id();
 
@@ -56,21 +83,11 @@ namespace hades
 
 			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_add_height_depth));
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
-
-			auto uniforms = resources::shader_uniform_map{
-				{
-					"tex"s,
-					resources::uniform{
-						resources::uniform_type_list::texture,
-						sf::Shader::CurrentTexture
-					}
-				}
-			};
-
-			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
+			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
 		}
 
 		{ // make flat terrain shader
+			// TODO: how to draw cliffs in flat mode?
 			terrain_map_shader_no_height_id = make_unique_id();
 
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_id);
@@ -78,17 +95,6 @@ namespace hades
 
 			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_no_height_depth));
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
-
-			auto uniforms = resources::shader_uniform_map{
-				{
-					"tex"s,
-					resources::uniform{
-						resources::uniform_type_list::texture,
-						sf::Shader::CurrentTexture
-					}
-				}
-			};
-
 			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
 	}
@@ -324,6 +330,15 @@ namespace hades
 		return;
 	}
 
+	void mutable_terrain_map::set_world_rotation(const float rot)
+	{
+		const auto rads = to_radians(rot + 90.f); // up vector
+		const auto vec = to_vector(pol_vector2_t<float>{ rads, 1.f });
+		_shader.set_uniform("screen_up"sv, vec);
+		_shader_no_height.set_uniform("screen_up"sv, vec);
+		return;
+	}
+
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)
 	{
 		hades::place_tile(_map, p, t);
@@ -334,6 +349,20 @@ namespace hades
 	void mutable_terrain_map::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
 	{
 		hades::place_terrain(_map, p, t);
+		_needs_apply = true;
+		return;
+	}
+
+	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const uint8_t amount)
+	{
+		hades::raise_terrain(_map, p, amount);
+		_needs_apply = true;
+		return;
+	}
+
+	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const uint8_t amount)
+	{
+		hades::lower_terrain(_map, p, amount);
 		_needs_apply = true;
 		return;
 	}

@@ -192,13 +192,13 @@ namespace hades
 	}
 
 	template<typename T>
-	vector2<T> to_vector(pol_vector_t<T> v)
+	vector2<T> to_vector(pol_vector2_t<T> v)
 	{
 		return { vector::x_comp(v), vector::y_comp(v) };
 	}
 
 	template<typename T>
-	pol_vector_t<T> to_rad_vector(vector2<T> v)
+	pol_vector2_t<T> to_pol_vector(vector2<T> v)
 	{
 		return { vector::angle(v), vector::magnitude(v) };
 	}
@@ -254,15 +254,16 @@ namespace hades
 		}
 
 		template<typename T>
-		T x_comp(pol_vector_t<T> v) noexcept
+		T x_comp(pol_vector2_t<T> v) noexcept
 		{
 			return v.m * std::cos(v.a);
 		}
 
 		template<typename T>
-		T y_comp(pol_vector_t<T> v) noexcept
+		T y_comp(pol_vector2_t<T> v) noexcept
 		{
-			return v.m * std::sin(v.a);
+			// NOTE: flip y because of SFML coordinate system
+			return v.m * std::sin(v.a) * -1;
 		}
 
 		template<typename T>

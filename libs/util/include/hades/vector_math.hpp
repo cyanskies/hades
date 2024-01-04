@@ -200,18 +200,17 @@ namespace hades
 	template<typename T>
 	constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
 
-	//TODO: polar vector type
 	template<typename T>
-	struct pol_vector_t
+	struct pol_vector2_t
 	{
 		T a, m; // angle, magnitude
 	};
 
 	template<typename T>
-	vector2<T> to_vector(pol_vector_t<T> v);
+	vector2<T> to_vector(pol_vector2_t<T> v);
 
-	template<typename T> // TODO: rename to_pol_vector2
-	pol_vector_t<T> to_rad_vector(vector2<T>);
+	template<typename T>
+	pol_vector2_t<T> to_pol_vector(vector2<T>);
 
 	namespace vector
 	{
@@ -234,10 +233,10 @@ namespace hades
 		[[nodiscard]] auto angle(vector2<T>, vector2<T>) noexcept;
 
 		template<typename T>
-		T x_comp(pol_vector_t<T>) noexcept;
+		T x_comp(pol_vector2_t<T>) noexcept;
 
 		template<typename T>
-		T y_comp(pol_vector_t<T>) noexcept;
+		T y_comp(pol_vector2_t<T>) noexcept;
 
 		//changes the length of a vector to match the provided length
 		template<typename T>

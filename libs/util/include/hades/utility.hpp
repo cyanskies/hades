@@ -117,12 +117,12 @@ namespace hades {
 
 	//converts one integer type to another
 	//throws overflow_error if the value doesn't fit in the new range
-	template<typename T, typename U>
+	template<typename T = int, typename U>
 	constexpr T integer_cast(U);
 
 	//converts one integer type to another
 	// clamps stored value to representable range
-	template<typename T, typename U>
+	template<typename T = int, typename U>
 	constexpr T integer_clamp_cast(U) noexcept;
 
 	template<typename Index2D, typename T>

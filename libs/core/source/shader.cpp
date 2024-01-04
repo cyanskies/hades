@@ -6,8 +6,21 @@
 using namespace std::string_view_literals;
 constexpr auto shader_str = "shaders"sv;
 
+constexpr auto type_strings = std::array{
+			"float"sv, "vec2"sv, "vec3"sv, "vec4"sv,
+			"int"sv, "ivec2"sv, "ivec3"sv, "ivec4"sv,
+			"mat3"sv, "mat4"sv,
+			"texture"sv
+};
+
 namespace hades::resources
 {
+	string uniform_type_to_string(uniform_type_list t)
+	{
+		static_assert(size(type_strings) == enum_type(uniform_type_list::end));
+		return string{ type_strings[enum_type(t)] };
+	}
+
 	enum class shaders_provided : std::uint8_t {
 		none = 0,
 		vert = 1,
@@ -266,13 +279,6 @@ namespace hades
 {
 	static constexpr resources::uniform_type_list uniform_type_from_string(std::string_view s)
 	{
-		constexpr auto type_strings = std::array{
-			"float"sv, "vec2"sv, "vec3"sv, "vec4"sv,
-			"int"sv, "ivec2"sv, "ivec3"sv, "ivec4"sv,
-			"mat3"sv, "mat4"sv,
-			"texture"sv
-		};
-
 		using resources::uniform_type_list;
 		static_assert(size(type_strings) == enum_type(uniform_type_list::end));
 

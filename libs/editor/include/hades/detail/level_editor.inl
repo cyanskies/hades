@@ -139,6 +139,25 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_height_toggle(bool b)
+	{
+		tuple_for_each(_editor_components, &level_editor_component::on_height_toggle, b);
+	}
+
+	template<typename ...Components>
+	const terrain_map* basic_level_editor<Components...>::_component_peek_terrain()
+	{
+		const auto terrains = tuple_transform(_editor_components, &level_editor_component::peek_terrain);
+		for (const auto t : terrains)
+		{
+			if (t)
+				return t;
+		}
+		
+		return {};
+	}
+
+	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target,
 		time_duration delta_time, brush_index_t active_brush, sf::RenderStates s)
 	{

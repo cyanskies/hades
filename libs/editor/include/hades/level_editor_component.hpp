@@ -158,6 +158,15 @@ namespace hades
 
 		virtual void on_world_rotate(float) {};
 
+		// tells the component whether it should render with height on or not
+		virtual void on_height_toggle(bool) {};
+
+		// only one component should provide terrain
+		virtual const terrain_map* peek_terrain() const 
+		{
+			return {};
+		}
+
 		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {};
 
 		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {};

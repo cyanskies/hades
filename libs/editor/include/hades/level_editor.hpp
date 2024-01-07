@@ -64,6 +64,8 @@ namespace hades::detail
 		virtual void _component_on_drag(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag_end(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_rotate(float) = 0;
+		virtual void _component_height_toggle(bool) = 0;
+		virtual const terrain_map* _component_peek_terrain() = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) = 0;
 		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector2_float world_position) = 0;
 		virtual void _handle_component_setup() = 0;
@@ -145,6 +147,7 @@ namespace hades::detail
 
 		//currently active brush
 		brush_index_t _active_brush = invalid_brush;
+		bool _height_enabled = true;
 	};
 }
 
@@ -171,7 +174,10 @@ namespace hades
 		void _component_on_drag_start(brush_index_t, vector2_float) override;
 		void _component_on_drag(brush_index_t, vector2_float) override;
 		void _component_on_drag_end(brush_index_t, vector2_float) override;
-		void _component_on_rotate(float) override;
+		void _component_on_rotate(float) override; 
+		void _component_height_toggle(bool) override;
+		const terrain_map* _component_peek_terrain() override;
+
 		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) override;
 		void _generate_brush_preview(brush_index_t, time_duration, vector2_float) override;
 		void _handle_component_setup() override;

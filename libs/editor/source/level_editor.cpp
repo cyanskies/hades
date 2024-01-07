@@ -161,27 +161,37 @@ namespace hades::detail
 			const auto level_mouse_pos_sf = _world_transform.getInverse().transformPoint({ world_mouse_pos.x, world_mouse_pos.y });
 			const auto level_mouse_pos = vector2_float{ level_mouse_pos_sf.x, level_mouse_pos_sf.y };
 
+			const auto terrain_map = _component_peek_terrain();
+
+			const auto adapted_mouse_pos = terrain_map && _height_enabled ?
+				project_onto_terrain(level_mouse_pos, _get_world_rot(), _tile_settings->tile_size, *terrain_map)
+				: level_mouse_pos;
+
 			if (_active_brush != invalid_brush)
-				_generate_brush_preview(_active_brush, dt, level_mouse_pos);
+				_generate_brush_preview(_active_brush, dt, adapted_mouse_pos);
 
 			const auto mouse_left = actions.find(input::mouse_left);
 			assert(mouse_left != std::end(actions));
 			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
 
 			if (mouse::is_click(_mouse_left))
-				_component_on_click(_active_brush, level_mouse_pos);
+				_component_on_click(_active_brush, adapted_mouse_pos);
 			else if (mouse::is_drag_start(_mouse_left))
 			{
 				const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
 				const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
 				const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
 
-				_component_on_drag_start(_active_brush, drag_start_level);
+				const auto adapted_drag_start = terrain_map && _height_enabled ?
+					project_onto_terrain(drag_start_level, _get_world_rot(), _tile_settings->tile_size, *terrain_map)
+					: drag_start_level;
+
+				_component_on_drag_start(_active_brush, adapted_drag_start);
 			}
 			else if (mouse::is_dragging(_mouse_left))
-				_component_on_drag(_active_brush, level_mouse_pos);
+				_component_on_drag(_active_brush, adapted_mouse_pos);
 			else if (mouse::is_drag_end(_mouse_left))
-				_component_on_drag_end(_active_brush, level_mouse_pos);
+				_component_on_drag_end(_active_brush, adapted_mouse_pos);
 		}
 
 		_update_gui(dt);
@@ -327,9 +337,16 @@ namespace hades::detail
 		//make toolbar
 		const auto toolbar_created = _gui.main_toolbar_begin();
 		assert(toolbar_created);
-		std::ignore = toolbar_created;
 		const auto toolbar_y2 = _gui.window_position().y + _gui.window_size().y;
 		_top_min = static_cast<int32>(toolbar_y2);
+		if (toolbar_created)
+		{
+			if (_gui.toolbar_button("Toggle Height"sv))
+			{
+				_height_enabled = !_height_enabled;
+				_component_height_toggle(_height_enabled);
+			}
+		}
 		_gui.main_toolbar_end();
 
 		//make toolbox window

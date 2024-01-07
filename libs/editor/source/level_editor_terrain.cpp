@@ -197,15 +197,7 @@ namespace hades
 		using namespace std::string_view_literals;
 
 		if (g.main_toolbar_begin())
-		{
-			if (g.toolbar_button("show terrain height"sv))
-			{
-				const auto enabled = !_map.is_height_enabled();
-				_map.set_height_enabled(enabled);
-				_preview.set_height_enabled(enabled);
-				_clear_preview.set_height_enabled(enabled);
-			}
-			
+		{			
 			if (g.toolbar_button("terrain eraser"sv))
 			{
 				activate_brush();
@@ -477,10 +469,6 @@ namespace hades
 			}	
 		};
 
-		const auto rot = get_world_rotation();
-		if(_map.is_height_enabled())
-			p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
-
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
 	}
@@ -538,13 +526,6 @@ namespace hades
 			}	
 		};
 
-		// TODO: move this into the level_editor_impl
-		//		same with the above code in brush_preview
-		//		every component will have to offset(except regions?)
-		//		Should add grid snapping too
-		const auto rot = get_world_rotation();
-		if (_map.is_height_enabled())
-			p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
 	}
@@ -552,6 +533,14 @@ namespace hades
 	void level_editor_terrain::on_drag(mouse_pos p)
 	{
 		on_click(p);
+	}
+
+	void level_editor_terrain::on_height_toggle(bool b) noexcept
+	{
+		_map.set_height_enabled(b);
+		_preview.set_height_enabled(b);
+		_clear_preview.set_height_enabled(b);
+		return;
 	}
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)

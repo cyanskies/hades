@@ -34,6 +34,13 @@ namespace hades
 		void on_click(mouse_pos) override;
 		void on_drag(mouse_pos) override;
 
+		void on_height_toggle(bool) noexcept override;
+
+		const terrain_map* peek_terrain() const noexcept override
+		{
+			return &_map.get_map();
+		}
+
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 

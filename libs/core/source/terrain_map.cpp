@@ -220,6 +220,12 @@ namespace hades
 		return;
 	}
 
+	// layer constants
+	constexpr auto grid_layer = 0;
+	constexpr auto cliff_layer = 2; // also the world edge skirt if we add one(might just add enough of a margin to hide the world edge)
+	constexpr auto tile_layer = 1;
+	constexpr auto protected_layers = std::max({ grid_layer, tile_layer, cliff_layer });
+
 	static const resources::texture* generate_grid(const terrain_map& map,
 		const resources::terrain_settings &settings, const float tile_sizef,
 		quad_buffer& quads)
@@ -247,11 +253,10 @@ namespace hades
 			corner_height[bottom_left] = map.heightmap[indicies[bottom_left]];
 
 			std::array<colour, 4> colours;
-			constexpr auto grid_layer = 0;
 			colours.fill(colour{ grid_layer, 255, 255 });
 
-			for (auto i = std::size_t{}; i < size(corner_height); ++i)
-				colours[i].g = corner_height[i];
+			for (auto j = std::size_t{}; j < size(corner_height); ++j)
+				colours[j].g = corner_height[j];
 
 			const auto world_pos = vector2_float{
 				float_cast(pos.x) * tile_sizef,
@@ -279,19 +284,14 @@ namespace hades
 		_info.tile_info.clear();
 		_info.texture_table.clear();
 
-		constexpr auto grid_layer = 0;
-		constexpr auto tile_layer = 1;
-		constexpr auto cliff_layer = 2; // also the world edge skirt if we add one(might just add enough of a margin to hide the world edge)
-		constexpr auto protected_layers = std::max({ grid_layer, tile_layer, cliff_layer });
-
 		try
 		{
 			const auto width = get_width(_map);
 			auto i = std::size_t{};
 			const auto s = size(_map.terrain_layers);
 			// NOTE: layer 0 is reserved for the grid
-			//		layer 1 is reserved for tile_layer
-			//		layer 2 is reserved for cliffs
+			//		layer 2 is reserved for tile_layer
+			//		layer 1 is reserved for cliffs
 			for (; i < s; ++i)
 				generate_layer(i + protected_layers, _info, _map.terrain_layers[i], _map.heightmap, width);
 
@@ -345,7 +345,7 @@ namespace hades
 		// cliffs begin
 
 		// grid - split from the rest of the quad buffer so it can be toggled off and on
-		const auto _grid_start = _quads.size();
+		_grid_start = _quads.size();
 		_grid_tex = generate_grid(_map, *_settings, tile_sizef, _quads);
 
 		_quads.apply();

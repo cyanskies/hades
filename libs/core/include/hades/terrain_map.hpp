@@ -63,6 +63,8 @@ namespace hades
 		void raise_terrain(terrain_vertex_position, uint8_t amount);
 		void lower_terrain(terrain_vertex_position, uint8_t amount);
 
+		//void create_cliff(terrain_vertex_position, terrain_vertex_position)
+
 		void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{
 			assert(size(height) == size(_map.heightmap));

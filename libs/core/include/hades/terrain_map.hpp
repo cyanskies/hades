@@ -44,6 +44,17 @@ namespace hades
 			return;
 		}
 
+		void show_grid(bool b) noexcept
+		{
+			_show_grid = b;
+			return;
+		}
+
+		bool show_grid() const noexcept
+		{
+			return _show_grid;
+		}
+
 		void set_world_rotation(float);
 
 		void place_tile(tile_position, const resources::tile&);
@@ -81,7 +92,7 @@ namespace hades
 		// internal structures
 		struct map_tile
 		{
-			tile_index_t index; 
+			tile_index_t index;
 			std::array<std::uint8_t, 4> height = {};
 			resources::tile_size_t left;
 			resources::tile_size_t top;
@@ -96,15 +107,19 @@ namespace hades
 		};
 
 	private:
-		map_info _info;
-		quad_buffer _quads;
-		bool _needs_apply = false;
-		bool _show_height = true;
-		rect_float _local_bounds = {};
 		terrain_map _map;
-		resources::shader_uniform_map _uniforms;
+		quad_buffer _quads;
+		map_info _info;
 		resources::shader_proxy _shader;
 		resources::shader_proxy _shader_no_height;
+		resources::shader_uniform_map _uniforms;
+		rect_float _local_bounds = {};
+		const resources::terrain_settings* _settings = {};
+		const resources::texture* _grid_tex = {};
+		std::size_t _grid_start = {};
+		bool _show_grid = false;
+		bool _needs_apply = false;
+		bool _show_height = true;
 	};
 }
 

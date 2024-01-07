@@ -101,7 +101,7 @@ namespace hades
 		const auto height_high = height_low + variance * 2;
 
 		for (auto i = std::size_t{}; i < std::size(height); ++i)
-			height[i] = integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
+			height[i] = integer_clamp_cast<std::uint8_t>(random(0, 5));
 
 		l.height_vertex = std::move(height);
 		l.terrainset = raw.terrainset;
@@ -210,6 +210,11 @@ namespace hades
 			{
 				activate_brush();
 				_brush = brush_type::erase;
+			}
+
+			if (g.toolbar_button("terrain grid"sv))
+			{
+				_map.show_grid(!_map.show_grid());
 			}
 		}
 
@@ -473,7 +478,8 @@ namespace hades
 		};
 
 		const auto rot = get_world_rotation();
-		p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
+		if(_map.is_height_enabled())
+			p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
 
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
@@ -532,8 +538,13 @@ namespace hades
 			}	
 		};
 
+		// TODO: move this into the level_editor_impl
+		//		same with the above code in brush_preview
+		//		every component will have to offset(except regions?)
+		//		Should add grid snapping too
 		const auto rot = get_world_rotation();
-		p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
+		if (_map.is_height_enabled())
+			p = project_onto_terrain(p, rot, _settings->tile_size, _map.get_map());
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
 		return;
 	}

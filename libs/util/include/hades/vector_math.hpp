@@ -47,7 +47,7 @@ namespace hades
 		static_assert(Size < 5, "basic_vector only supports up to vector4");
 		using value_type = T;
 
-		constexpr std::size_t size() noexcept;
+		[[nodiscard]] constexpr std::size_t size() noexcept;
 
 		constexpr basic_vector& operator+=(const basic_vector& rhs) noexcept;
 		constexpr basic_vector& operator-=(const basic_vector& rhs) noexcept;
@@ -61,7 +61,7 @@ namespace hades
 		constexpr const T& operator[](std::size_t i) const noexcept;
 
 		template<typename U>
-		explicit constexpr operator basic_vector<U, Size>() const noexcept;
+		[[nodiscard]] explicit constexpr operator basic_vector<U, Size>() const noexcept;
 	};
 
 	template<typename T>
@@ -98,7 +98,7 @@ namespace hades
 	static_assert(std::is_trivial_v<vector4<int32>>);
 
 	template<std::floating_point Float, std::size_t N>
-	constexpr basic_vector<Float, N> lerp(basic_vector<Float, N> a, basic_vector<Float, N> b, Float t) noexcept
+	[[nodiscard]] constexpr basic_vector<Float, N> lerp(basic_vector<Float, N> a, basic_vector<Float, N> b, Float t) noexcept
 	{
 		using std::lerp;
 		if constexpr (N < 3)
@@ -128,7 +128,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	inline constexpr bool float_near_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, int32 units_after_decimal = 2) noexcept
+	[[nodiscard]] inline constexpr bool float_near_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, int32 units_after_decimal = 2) noexcept
 	{
 		auto ret = float_near_equal(a.x, b.x, units_after_decimal) && float_near_equal(a.y, b.y, units_after_decimal);
 		if constexpr (N > 2)
@@ -139,7 +139,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_nearest_t = round_nearest_tag) noexcept
+	[[nodiscard]] bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_nearest_t = round_nearest_tag) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x) && float_rounded_equal(a.y, b.y);
 		if constexpr (N > 2)
@@ -150,7 +150,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_down_t) noexcept
+	[[nodiscard]] bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_down_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_down_tag) && float_rounded_equal(a.y, b.y, round_down_tag);
 		if constexpr (N > 2)
@@ -161,7 +161,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_up_t) noexcept
+	[[nodiscard]] bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_up_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_up_tag) && float_rounded_equal(a.y, b.y, round_up_tag);
 		if constexpr (N > 2)
@@ -172,7 +172,7 @@ namespace hades
 	}
 
 	template<typename Float, std::size_t N, std::enable_if_t<std::is_floating_point_v<Float>, int> = 0>
-	bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_towards_zero_t) noexcept
+	[[nodiscard]] bool float_rounded_equal(basic_vector<Float, N> a, basic_vector<Float, N> b, detail::round_towards_zero_t) noexcept
 	{
 		auto ret = float_rounded_equal(a.x, b.x, round_towards_zero_tag) && float_rounded_equal(a.y, b.y, round_towards_zero_tag);
 		if constexpr (N > 2)
@@ -183,70 +183,104 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
-	constexpr bool operator==(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
+	[[nodiscard]] constexpr bool operator==(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
 
 	template<typename T, std::size_t N>
-	constexpr bool operator!=(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
+	[[nodiscard]] constexpr bool operator!=(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
 
 	template<typename T>
-	constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
+	[[nodiscard]] constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
 
 	template<typename T>
-	constexpr vector2<T> operator-(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
+	[[nodiscard]] constexpr vector2<T> operator-(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
 
 	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
-	constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept;
+	[[nodiscard]] constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept;
 
 	template<typename T>
-	constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
+	[[nodiscard]] constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
 
-	template<typename T>
-	struct pol_vector2_t
+	namespace detail
 	{
-		T a, m; // angle, magnitude
+		template<typename T>
+		struct vector_theta_magnitude_component
+		{
+			T theta, magnitude;
+		};
+
+		template<typename T>
+		struct vector_phi_component
+		{
+			T phi;
+		};
+
+		struct vector_phi_component_empty {};
+	}
+
+	template<typename T, std::size_t Size = 2>
+	struct basic_pol_vector : public detail::vector_theta_magnitude_component<T>,
+		public std::conditional_t<3 < Size, detail::vector_phi_component<T>, detail::vector_phi_component_empty>
+	{
+		static_assert(Size > 1, "basic_pol_vector doesn't support 1d vectors");
+		static_assert(Size < 4, "basic_pol_vector only supports up to vector3");
+		using value_type = T;
+
+		[[nodiscard]] constexpr std::size_t size() noexcept;
 	};
 
 	template<typename T>
-	vector2<T> to_vector(pol_vector2_t<T> v);
+	using pol_vector2_t = basic_pol_vector<T>;
 
-	template<typename T>
-	pol_vector2_t<T> to_pol_vector(vector2<T>);
+	template<typename T, std::size_t Size>
+	[[nodiscard]] constexpr basic_vector<T, Size> to_vector(basic_pol_vector<T, Size> v) noexcept;
+
+	template<typename T, std::size_t Size>
+	[[nodiscard]] constexpr basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size>) noexcept;
 
 	namespace vector
 	{
 		//returns the length of the vector
-		template<typename T>
-		T magnitude(vector2<T>);
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr auto magnitude(basic_vector<T, Size>) noexcept;
 
-		template<typename T>
-		constexpr T magnitude_squared(vector2<T> v) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr T magnitude_squared(basic_vector<T, Size>) noexcept;
 
-		//returns the angle of the vector compared to the vector [1, 0]
+		//returns the angle_theta of the vector compared to the vector [1, 0]
 		// returns in degrees
 		// TODO: return in radians
-		template<typename T>
-		[[nodiscard]] auto angle(vector2<T>) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr auto angle_theta(basic_vector<T, Size>) noexcept;
 
-		// returns the angle between the two vectors
+		// NOTE: unlike above, returns angle in radians
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		[[nodiscard]] constexpr auto angle_phi(basic_vector<T, Size>) noexcept;
+
+		// returns the angle_theta between the two vectors
 		// returns in radians
 		template<typename T>
 		[[nodiscard]] auto angle(vector2<T>, vector2<T>) noexcept;
 
-		template<typename T>
-		T x_comp(pol_vector2_t<T>) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr T x_comp(basic_pol_vector<T, Size>) noexcept;
 
-		template<typename T>
-		T y_comp(pol_vector2_t<T>) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr T y_comp(basic_pol_vector<T, Size>) noexcept;
+
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		[[nodiscard]] constexpr T z_comp(basic_pol_vector<T, Size>) noexcept;
 
 		//changes the length of a vector to match the provided length
-		template<typename T>
-		vector2<T> resize(vector2<T>, T length) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr basic_vector<T, Size> resize(basic_vector<T, Size>, T length) noexcept;
+
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr basic_vector<T, Size> unit(basic_vector<T, Size>) noexcept;
 
 		template<typename T>
-		vector2<T> unit(vector2<T>) noexcept;
-
-		template<typename T>
-		T distance(vector2<T>, vector2<T>) noexcept;
+		auto distance(vector2<T>, vector2<T>) noexcept;
 
 		template<typename T>
 		constexpr vector2<T> reverse(vector2<T>) noexcept;

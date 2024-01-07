@@ -58,8 +58,8 @@ namespace hades::resources
 		else if constexpr (std::same_as<T, resource_link<texture>> ||
 			std::same_as<T, sf::Shader::CurrentTextureType>)
 			return uniform_type_list::texture;
-
-		return uniform_type_list::end;
+		else
+			return uniform_type_list::end;
 	}
 
 	template<uniform_type T>

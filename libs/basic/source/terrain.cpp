@@ -65,8 +65,7 @@ namespace hades
 		//so that tiles can use them as tilesets without knowing
 		//that they're really terrains
 		id::terrain_settings = d.get_uid(resources::get_tile_settings_name());
-		auto terrain_settings = d.find_or_create<resources::terrain_settings>(id::terrain_settings, {}, terrain_settings_str);
-
+		auto terrain_settings_res = d.find_or_create<resources::terrain_settings>(id::terrain_settings, {}, terrain_settings_str);
 		const auto empty_tileset_id = d.get_uid(resources::get_empty_tileset_name());
 		auto empty = d.find_or_create<resources::terrain>(empty_tileset_id, {}, terrains_str);
 		
@@ -75,18 +74,18 @@ namespace hades
 			v.emplace_back(resources::tile{ {}, 0u, 0u, empty });
 		});
 		
-		terrain_settings->empty_terrain = d.make_resource_link<resources::terrain>(empty_tileset_id, id::terrain_settings);
-		terrain_settings->empty_tileset = d.make_resource_link<resources::tileset>(empty_tileset_id, id::terrain_settings);
+		terrain_settings_res->empty_terrain = d.make_resource_link<resources::terrain>(empty_tileset_id, id::terrain_settings);
+		terrain_settings_res->empty_tileset = d.make_resource_link<resources::tileset>(empty_tileset_id, id::terrain_settings);
 
 		const auto empty_tset_id = d.get_uid(resources::get_empty_terrainset_name());
 		auto empty_tset = d.find_or_create<resources::terrainset>(empty_tset_id, {}, terrainsets_str);
-		empty_tset->terrains.emplace_back(terrain_settings->empty_terrain);
+		empty_tset->terrains.emplace_back(terrain_settings_res->empty_terrain);
 
-		terrain_settings->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id, id::terrain_settings);
+		terrain_settings_res->empty_terrainset = d.make_resource_link<resources::terrainset>(empty_tset_id, id::terrain_settings);
 
 		editor_terrainset_id = make_unique_id();
-		auto editor_terrainset = d.find_or_create<resources::terrainset>(editor_terrainset_id, {}, terrainsets_str);
-		terrain_settings->editor_terrainset = d.make_resource_link<resources::terrainset>(editor_terrainset_id, id::terrain_settings);
+		const auto editor_terrainset = d.find_or_create<resources::terrainset>(editor_terrainset_id, {}, terrainsets_str);
+		terrain_settings_res->editor_terrainset = d.make_resource_link<resources::terrainset>(editor_terrainset->id, id::terrain_settings);
 
 		// the exact same as empty tile
 		// since its now used as 'air' tiles for higher layers
@@ -101,7 +100,7 @@ namespace hades
 			return;
 		});
 
-		terrain_settings->background_terrain = d.make_resource_link<resources::terrain>(background_terrain_id, id::terrain_settings);
+		terrain_settings_res->background_terrain = d.make_resource_link<resources::terrain>(background_terrain_id, id::terrain_settings);
 
 
 		//register tile resources
@@ -778,26 +777,28 @@ namespace hades
 		update_tile_layers(m, positions);
 	}
 
-	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount)
+	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
+		assert(ts);
 		if (within_map(m, p))
 		{
 			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
 			const auto current = m.heightmap[index];
 			const auto compound = integer_cast<int>(current) + integer_cast<int>(amount);
-			m.heightmap[index] = integer_clamp_cast<std::uint8_t>(compound);
+			m.heightmap[index] = std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 		}
 		return;
 	}
 
-	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount)
+	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
+		assert(ts);
 		if (within_map(m, p))
 		{
 			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
 			const auto current = m.heightmap[index];
 			const auto compound = integer_cast<int>(current) - integer_cast<int>(amount);
-			m.heightmap[index] = integer_clamp_cast<std::uint8_t>(compound);
+			m.heightmap[index] = std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 		}
 		return;
 	}
@@ -1014,7 +1015,7 @@ namespace hades
 		// we may have clicked above the map, but under high terrain, 
 		// so run the algo until we reach the end of the world
 		// if the loop go's on for too long then we're probably too far away or
-		// coming from the wrong angle, so bail if sentinel gets to large.
+		// coming from the wrong angle_theta, so bail if sentinel gets to large.
 		{
 			const auto limit = (255 / tile_size) + 1;
 			auto sentinel = unsigned{};
@@ -1562,6 +1563,10 @@ namespace hades::resources
 		if (editor_terrain)
 			s->editor_terrain = d.make_resource_link<resources::terrain>(editor_terrain, id::terrain_settings);
 
+		const auto grid_terrain = data::parse_tools::get_unique(n, "grid-terrain"sv, unique_zero);
+		if (grid_terrain)
+			s->grid_terrain = d.make_resource_link<resources::terrain>(grid_terrain, id::terrain_settings);
+
 		const auto empty_terrain = data::parse_tools::get_unique(n, "empty-terrain"sv, unique_zero);
 		if (empty_terrain)
 			s->empty_terrain = d.make_resource_link<resources::terrain>(empty_terrain, id::terrain_settings);
@@ -1579,9 +1584,7 @@ namespace hades::resources
 
 	const terrain_settings *get_terrain_settings()
 	{
-		auto t = data::get<terrain_settings>(id::terrain_settings);
-		assert(t);
-		return t;
+		return data::get<terrain_settings>(id::terrain_settings);
 	}
 
 	std::string_view get_empty_terrainset_name() noexcept

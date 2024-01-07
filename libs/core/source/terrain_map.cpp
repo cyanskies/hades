@@ -133,6 +133,7 @@ namespace hades
 	//==================================//
 
 	mutable_terrain_map::mutable_terrain_map() : 
+		_settings{ resources::get_terrain_settings() },
 		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) },
 		_shader_no_height{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_id)) }
 	{}
@@ -173,7 +174,7 @@ namespace hades
 		const auto index = integer_cast<std::uint8_t>(layer_index);
 
 		const auto s = size(map.tiles);
-		for (auto i = std::size_t{}; i < s; ++i)
+		for (auto i = tile_index_t{}; i < s; ++i)
 		{
 			const auto& t = map.tiles[i];
 			const auto tile = get_tile(map, t);
@@ -219,6 +220,56 @@ namespace hades
 		return;
 	}
 
+	static const resources::texture* generate_grid(const terrain_map& map,
+		const resources::terrain_settings &settings, const float tile_sizef,
+		quad_buffer& quads)
+	{
+		const auto s = size(map.tile_layer.tiles);
+		assert(settings.grid_terrain);
+		const auto& grid_tiles = resources::get_transitions(*settings.grid_terrain, resources::transition_tile_type::all);
+		assert(!empty(grid_tiles));
+		const auto grid_tile = grid_tiles.front();
+		const auto width = get_width(map);
+		for (auto i = tile_index_t{}; i < s; ++i)
+		{
+			const auto pos = from_tile_index(i, width - 1);
+			const auto indicies = to_terrain_index(pos, width);
+
+			constexpr auto top_left = enum_type(rect_corners::top_left),
+				top_right = enum_type(rect_corners::top_right),
+				bottom_right = enum_type(rect_corners::bottom_right),
+				bottom_left = enum_type(rect_corners::bottom_left);
+
+			std::array<std::uint8_t, 4> corner_height;
+			corner_height[top_left] = map.heightmap[indicies[top_left]];
+			corner_height[top_right] = map.heightmap[indicies[top_right]];
+			corner_height[bottom_right] = map.heightmap[indicies[bottom_right]];
+			corner_height[bottom_left] = map.heightmap[indicies[bottom_left]];
+
+			std::array<colour, 4> colours;
+			constexpr auto grid_layer = 0;
+			colours.fill(colour{ grid_layer, 255, 255 });
+
+			for (auto i = std::size_t{}; i < size(corner_height); ++i)
+				colours[i].g = corner_height[i];
+
+			const auto world_pos = vector2_float{
+				float_cast(pos.x) * tile_sizef,
+				float_cast(pos.y) * tile_sizef
+			};
+			const auto tex_coords = rect_float{
+				float_cast(grid_tile.left),
+				float_cast(grid_tile.top),
+				tile_sizef,
+				tile_sizef
+			};
+
+			const auto quad = make_quad_animation(world_pos, { tile_sizef, tile_sizef }, tex_coords, colours);
+			quads.append(quad);
+		}
+		return grid_tile.tex.get();
+	}
+
 	void mutable_terrain_map::apply()
 	{
 		if (!_needs_apply)
@@ -228,16 +279,23 @@ namespace hades
 		_info.tile_info.clear();
 		_info.texture_table.clear();
 
+		constexpr auto grid_layer = 0;
+		constexpr auto tile_layer = 1;
+		constexpr auto cliff_layer = 2; // also the world edge skirt if we add one(might just add enough of a margin to hide the world edge)
+		constexpr auto protected_layers = std::max({ grid_layer, tile_layer, cliff_layer });
+
 		try
 		{
 			const auto width = get_width(_map);
-
 			auto i = std::size_t{};
 			const auto s = size(_map.terrain_layers);
+			// NOTE: layer 0 is reserved for the grid
+			//		layer 1 is reserved for tile_layer
+			//		layer 2 is reserved for cliffs
 			for (; i < s; ++i)
-				generate_layer(i, _info, _map.terrain_layers[i], _map.heightmap, width);
+				generate_layer(i + protected_layers, _info, _map.terrain_layers[i], _map.heightmap, width);
 
-			generate_layer({}, _info, _map.tile_layer, _map.heightmap, width);
+			generate_layer(tile_layer, _info, _map.tile_layer, _map.heightmap, width);
 		}
 		catch (const overflow_error&)
 		{
@@ -250,11 +308,13 @@ namespace hades
 
 		std::ranges::sort(_info.tile_info, {}, &map_tile::texture);
 
+		std::ranges::stable_sort(_info.tile_info, std::greater{}, &map_tile::layer);
+
 		_quads.clear();
 		_quads.reserve(size(_info.tile_info));
 
-		const auto& settings = *resources::get_terrain_settings();
-		const auto tile_size = settings.tile_size;
+		assert(_settings);
+		const auto tile_size = _settings->tile_size;
 		const auto tile_sizef = float_cast(tile_size);
 		const auto width = _map.tile_layer.width;
 
@@ -282,7 +342,21 @@ namespace hades
 			_quads.append(quad);
 		}
 
+		// cliffs begin
+
+		// grid - split from the rest of the quad buffer so it can be toggled off and on
+		const auto _grid_start = _quads.size();
+		_grid_tex = generate_grid(_map, *_settings, tile_sizef, _quads);
+
 		_quads.apply();
+
+		//Shadowing ideas
+		//There must be a better way than raycasting.
+		//My first thought was to smear the height map data along the projected sun direction.
+		//Places where the smeared image 'height' value is above the unaltered version is in shadow.
+
+		//Cliffs
+		// add to quadmap and store start index of cliffs
 
 		_needs_apply = false;
 		return;
@@ -321,6 +395,12 @@ namespace hades
 			_quads.draw(t, index, last - index, s);
 		}
 
+		if (_show_grid && _grid_tex)
+		{
+			s.texture = &resources::texture_functions::get_sf_texture(_grid_tex);
+			_quads.draw(t, _grid_start, _quads.size() - _grid_start, s);
+		}
+
 #if DEPTH
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_ALPHA_TEST);
@@ -355,14 +435,14 @@ namespace hades
 
 	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const uint8_t amount)
 	{
-		hades::raise_terrain(_map, p, amount);
+		hades::raise_terrain(_map, p, amount, _settings);
 		_needs_apply = true;
 		return;
 	}
 
 	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const uint8_t amount)
 	{
-		hades::lower_terrain(_map, p, amount);
+		hades::lower_terrain(_map, p, amount, _settings);
 		_needs_apply = true;
 		return;
 	}

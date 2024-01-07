@@ -191,16 +191,28 @@ namespace hades
 		return { lhs.x / rhs, lhs.y / rhs };
 	}
 
-	template<typename T>
-	vector2<T> to_vector(pol_vector2_t<T> v)
+	template<typename T, std::size_t Size>
+	constexpr std::size_t basic_pol_vector<T, Size>::size() noexcept
 	{
-		return { vector::x_comp(v), vector::y_comp(v) };
+		return Size;
 	}
 
-	template<typename T>
-	pol_vector2_t<T> to_pol_vector(vector2<T> v)
+	template<typename T, std::size_t Size>
+	constexpr basic_vector<T, Size> to_vector(basic_pol_vector<T, Size> v) noexcept
 	{
-		return { vector::angle(v), vector::magnitude(v) };
+		auto out = basic_vector<T, Size>{ vector::x_comp(v), vector::y_comp(v) };
+		if constexpr (Size > 2)
+			out.z = vector::z_comp(v);
+		return out;
+	}
+
+	template<typename T, std::size_t Size>
+	constexpr basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size> v) noexcept
+	{
+		auto out = basic_pol_vector<T, Size>{ vector::angle_theta(v), vector::magnitude(v) };
+		if constexpr (Size > 2)
+			out.phi = vector::angle_phi(v);
+		return out;
 	}
 
 	template<typename T, std::size_t N>
@@ -217,32 +229,60 @@ namespace hades
 
 	namespace vector
 	{
-		template<typename T>
-		T magnitude(vector2<T> v)
+		template<typename T, std::size_t Size>
+		constexpr auto magnitude(const basic_vector<T, Size> v) noexcept
 		{
-			const auto mag = std::hypot(v.x, v.y);
-			//hypot returns either float or double
-			if constexpr (std::is_integral_v<T>)
-				return integral_cast<T>(mag);
+			if constexpr (Size == 2)
+				return std::hypot(v.x, v.y);
+			else if constexpr (Size < 4)
+				return std::hypot(v.x, v.y, v.z);
 			else
-				return float_cast<T>(mag);
+			{
+				return std::sqrt(magnitude_squared(v));
+			}
 		}
 
-		template<typename T>
-		constexpr T magnitude_squared(vector2<T> v) noexcept
+		template<typename T, std::size_t Size>
+		constexpr T magnitude_squared(const basic_vector<T, Size> v) noexcept
 		{
-			return v.x*v.x + v.y*v.y;
+			static_assert(Size < 5);
+			auto out = v.x * v.x + v.y * v.y;
+			if constexpr (Size > 2)
+				out += v.z * v.z;
+			if constexpr (Size > 3)
+				out += v.w * v.w;
+
+			return out;
 		}
 
-		template<typename T>
-		auto angle(vector2<T> v) noexcept
+		template<typename T, std::size_t Size>
+		constexpr auto angle_theta(const basic_vector<T, Size> v) noexcept
 		{
+			static_assert(Size < 4);
 			//NOTE: y is inverted because opengl
 			if constexpr (std::is_floating_point_v<T>)
 				return to_degrees(std::atan2(v.y * -1.f, v.x));
 			else
 				return to_degrees(std::atan2(static_cast<float>(v.y) * -1.f,
 					static_cast<float>(v.x)));
+		}
+
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		constexpr auto angle_phi(const basic_vector<T, Size> v) noexcept
+		{
+			static_assert(Size < 4);
+
+			if constexpr (std::is_floating_point_v<T>)
+			{
+				constexpr auto z_over_mag = v.z / magnitude(v);
+				return std::acos(z_over_mag);
+			}
+			else
+			{
+				const auto float_vec = static_cast<basic_vector<float, Size>>(v);
+				return angle_phi(float_vec);
+			}
 		}
 
 		template<typename T>
@@ -253,34 +293,58 @@ namespace hades
 			return std::atan2(determinant, d);
 		}
 
-		template<typename T>
-		T x_comp(pol_vector2_t<T> v) noexcept
+		template<typename T, std::size_t Size>
+		constexpr T x_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
-			return v.m * std::cos(v.a);
+			auto out = v.magnitude * std::cos(v.theta);
+
+			if constexpr (Size > 2)
+			{
+				out *= std::sin(v.phi);
+			}
+			
+			static_assert(Size < 4);
+			return out;
 		}
 
-		template<typename T>
-		T y_comp(pol_vector2_t<T> v) noexcept
+		template<typename T, std::size_t Size>
+		constexpr T y_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
 			// NOTE: flip y because of SFML coordinate system
-			return v.m * std::sin(v.a) * -1;
+			auto out = v.magnitude * std::sin(v.theta) * -1;
+
+			if constexpr (Size > 2)
+			{
+				out *= std::sin(v.phi);
+			}
+
+			static_assert(Size < 4);
+			return out;
 		}
 
-		template<typename T>
-		vector2<T> resize(vector2<T> v, T length) noexcept
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		constexpr T z_comp(const basic_pol_vector<T, Size> v) noexcept
+		{
+			static_assert(Size < 4);
+			return std::cos(v.phi);
+		}
+
+		template<typename T, std::size_t Size>
+		constexpr basic_vector<T, Size> resize(const basic_vector<T, Size> v, const T length) noexcept
 		{
 			return unit(v) * length;
 		}
 
-		template<typename T>
-		vector2<T> unit(vector2<T> v) noexcept
+		template<typename T, std::size_t Size>
+		constexpr basic_vector<T, Size> unit(const basic_vector<T, Size> v) noexcept
 		{
-			const auto inverse_root = 1 / std::sqrt(magnitude_squared(v));
+			const auto inverse_root = 1 / magnitude(v);
 			return v * inverse_root;
 		}
 
 		template<typename T>
-		T distance(vector2<T> a, vector2<T> b) noexcept
+		auto distance(vector2<T> a, vector2<T> b) noexcept
 		{
 			const auto ab = a - b;
 			return magnitude(ab);

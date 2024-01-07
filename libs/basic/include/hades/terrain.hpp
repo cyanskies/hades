@@ -90,15 +90,17 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		resource_link<terrain> editor_terrain = {};
+		resource_link<terrain> grid_terrain = {};
 		resource_link<terrain> empty_terrain = {};
 		resource_link<terrainset> empty_terrainset = {};
 		resource_link<terrainset> editor_terrainset = {};
+		vector3<float> sun_direction = {};
 		// TODO: undeprecate, draw the background whereever this terrain is
 		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
-		std::uint8_t height_default = {};
-		std::uint8_t height_min = std::numeric_limits<std::uint8_t>::min();
+		std::uint8_t height_default = 50;
+		std::uint8_t height_min = 0;
 		std::uint8_t height_max = std::numeric_limits<std::uint8_t>::max();
 	};
 
@@ -168,8 +170,7 @@ namespace hades
 
 	struct terrain_map
 	{
-		//a terrainset lists the terrain types that can be used in a level
-		const resources::terrainset *terrainset = nullptr;
+		tile_map tile_layer;
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;
@@ -178,7 +179,8 @@ namespace hades
 		// tiles exist between every 4 vertex
 		std::vector<tile_map> terrain_layers;
 	
-		tile_map tile_layer;
+		//a terrainset lists the terrain types that can be used in a level
+		const resources::terrainset* terrainset = nullptr;
 	};
 
 	//converts a raw map into a tile map
@@ -260,8 +262,8 @@ namespace hades
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*);
 
-	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t);
-	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t);
+	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
+	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 
 	// project 'p' onto the flat version of 'map'
 	world_vector_t project_onto_terrain(world_vector_t p, float rot,

@@ -54,8 +54,8 @@ namespace hades
 
 	private:
 		static constexpr auto _prim_type = sf::PrimitiveType::Triangles;
-		std::vector<sf::Vertex> _verts;
 		sf::VertexBuffer _buffer{ _prim_type, sf::VertexBuffer::Usage::Stream };
+		std::vector<sf::Vertex> _verts;
 	};
 }
 

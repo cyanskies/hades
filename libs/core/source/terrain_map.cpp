@@ -10,17 +10,21 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
+#version 110
 uniform vec2 screen_up;
 void main()
 {{
 	// copy input so we can modify it
 	vec4 vert = gl_Vertex;
+	// TODO: pass world coord of vert into out params
     // add pseudo height in direction of 'screen_up'
     {}
     // transform the vertex position
 	gl_Position = gl_ModelViewProjectionMatrix * vert;
 	// transform the texture coordinates
     gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+
+	
     // forward the vertex color
     gl_FrontColor = gl_Color;
 }})";
@@ -29,16 +33,20 @@ constexpr auto vertex_add_height = "vert.xy += screen_up * (float(gl_Color.g) * 
 constexpr auto vertex_no_height = "";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-constexpr auto fragment_source = R"(uniform sampler2D tex;
+constexpr auto fragment_source = R"(
+#version 110
+uniform sampler2D tex;
 uniform float rotation;
 void main()
 {{
+	// TODO: get world coord from in var and lookup height map
 	// depth
 	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
-	gl_FragDepth = {} (gl_Color.r / 255.0f);
+	// add fragment depth for terrain height rendering
+	{}
 }})";
 
-constexpr auto fragment_add_height_depth = "((255.f - gl_Color.g) / 255.f) +";
+constexpr auto fragment_add_height_depth = "gl_FragDepth = ((255.f - gl_Color.g) / 255.f);";
 constexpr auto fragment_no_height_depth = "";
 
 auto terrain_map_shader_id = hades::unique_zero;

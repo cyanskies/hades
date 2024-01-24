@@ -8,7 +8,7 @@ set(HADES_CORE_SRC
 	source/core_curves.cpp
 	source/core_resources.cpp
 	source/debug.cpp
-	source/draw_clamp.cpp
+	source/draw_tools.cpp
 	source/export_curves.cpp
 	source/font.cpp
 	source/game_api.cpp
@@ -42,7 +42,7 @@ set(HADES_CORE_SRC
 	include/hades/core_resources.hpp
 	include/hades/debug.hpp
 	include/hades/drawable.hpp
-	include/hades/draw_clamp.hpp
+	include/hades/draw_tools.hpp
 	include/hades/export_curves.hpp
 	include/hades/font.hpp
 	include/hades/game_api.hpp

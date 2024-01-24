@@ -1,9 +1,10 @@
-#ifndef HADES_DRAW_CLAMP_HPP
-#define HADES_DRAW_CLAMP_HPP
+#ifndef HADES_DRAW_TOOLS_HPP
+#define HADES_DRAW_TOOLS_HPP
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/Rect.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
+#include "SFML/OpenGL.hpp"
 
 #include "hades/rectangle_math.hpp"
 
@@ -63,6 +64,40 @@ namespace hades
 		const sf::Drawable &_drawable;
 		const rect_int &_region;
 	};
+
+	namespace depth_buffer
+	{
+		inline void setup() noexcept
+		{
+			glDepthFunc(GL_LEQUAL);
+			glDepthRange(1.0f, 0.0f);
+			glAlphaFunc(GL_GREATER, 0.0f);
+			return;
+		}
+
+		inline void enable() noexcept
+		{
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_ALPHA_TEST);
+			glDepthMask(GL_TRUE);
+			return;
+		}
+
+		inline void disable() noexcept
+		{
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_ALPHA_TEST);
+			glDepthMask(GL_FALSE);
+			return;
+		}
+
+		inline void clear() noexcept
+		{
+			glClearDepth(1.0f);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			return;
+		}	
+	}
 }
 
 #endif //!HADES_DRAW_CLAMP_HPP

@@ -1,5 +1,6 @@
 #include "hades/terrain_map.hpp"
 
+#include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/OpenGL.hpp"
 
@@ -10,7 +11,7 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
-#version 110
+#version 120
 uniform vec2 screen_up;
 void main()
 {{
@@ -23,8 +24,6 @@ void main()
 	gl_Position = gl_ModelViewProjectionMatrix * vert;
 	// transform the texture coordinates
     gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-
-	
     // forward the vertex color
     gl_FrontColor = gl_Color;
 }})";
@@ -34,7 +33,7 @@ constexpr auto vertex_no_height = "";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 constexpr auto fragment_source = R"(
-#version 110
+#version 120
 uniform sampler2D tex;
 uniform float rotation;
 void main()
@@ -283,6 +282,32 @@ namespace hades
 		return grid_tile.tex.get();
 	}
 
+	static void generate_shadowmap(const float sun_angle, const terrain_map& map)
+	{
+		// TODO: clean up type usage here, hightmap can be indexed with size_t
+		//		but img can only be indexed with unsigned
+		const auto vert_size = get_vertex_size(map);
+
+		auto img = sf::Image{};
+		img.create(sf::Vector2u{ integer_cast<unsigned>(vert_size.x), integer_cast<unsigned>(vert_size.y) }, nullptr);
+		
+		const auto h_end = size(map.heightmap);
+		const auto u_width = integer_cast<std::uint32_t>(vert_size.x);
+		for (auto i = std::size_t{}; i < h_end; ++i)
+		{
+			auto h = map.heightmap[i];
+			auto index = to_2d_index(integer_cast<std::uint32_t>(i), u_width);
+			
+			while (index.first < u_width)
+			{
+				const auto ind = to_1d_index(index, u_width);
+				auto h2 = map.heightmap[i];
+				img.setPixel({ index.first, index.second }, sf::Color::Blue);
+			}
+
+		}
+	}
+
 	void mutable_terrain_map::apply()
 	{
 		if (!_needs_apply)
@@ -358,6 +383,8 @@ namespace hades
 
 		_quads.apply();
 
+		//generate_shadowmap(_sun_angle, _map);
+		
 		//Shadowing ideas
 		//There must be a better way than raycasting.
 		//My first thought was to smear the height map data along the projected sun direction.
@@ -425,6 +452,12 @@ namespace hades
 		_shader.set_uniform("screen_up"sv, vec);
 		_shader_no_height.set_uniform("screen_up"sv, vec);
 		return;
+	}
+
+	void mutable_terrain_map::set_sun_angle(float degrees)
+	{
+		_sun_angle = std::clamp(degrees, 0.f, 180.f);
+		_needs_apply = true;
 	}
 
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)

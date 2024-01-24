@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_TUPLE_HPP
 #define HADES_UTIL_TUPLE_HPP
 
+#include <cassert>
 #include <tuple>
 #include <type_traits>
 

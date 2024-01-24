@@ -7,8 +7,8 @@
 #include <stdexcept>
 #include <utility>
 
-
 #include "hades/types.hpp"
+#include "hades/tuple.hpp"
 
 // TODO: break this header up into smaller groups
 
@@ -125,11 +125,8 @@ namespace hades {
 	template<typename T = int, typename U>
 	constexpr T integer_clamp_cast(U) noexcept;
 
-	template<typename Index2D, typename T>
+	template<typename T, tuple Index2D = std::pair<T, T>>
 	constexpr T to_1d_index(Index2D pos, T array_width);
-
-	template<typename T>
-	constexpr T to_1d_index(std::pair<T, T> index, T array_width);
 
 	template<typename Index2D, typename T>
 	constexpr Index2D to_2d_index(T index, T array_width);

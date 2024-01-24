@@ -216,22 +216,29 @@ namespace hades
 			return static_cast<T>(i);
 	}
 
-	template<typename Index2D, typename T>
+	template<typename T, typename Index2D>
 	constexpr T to_1d_index(Index2D pos, T array_width)
 	{
-		return to_1d_index({ integer_cast<T>(pos.x), integer_cast<T>(pos.y) }, array_width);
+		return to_1d_index(std::pair{ integer_cast<T>(pos.x), integer_cast<T>(pos.y) }, array_width);
 	}
 	
-	template<typename T>
-	constexpr T to_1d_index(std::pair<T, T> index, T w)
+	template<typename T, tuple Index2D>
+	constexpr T to_1d_index(const Index2D index, const T w)
 	{
+		const auto& first = std::get<0>(index);
+		const auto& second = std::get<1>(index);
+
+		static_assert(std::same_as<decltype(first), decltype(second)> &&
+			std::same_as<std::decay_t<T>, std::decay_t<decltype(first)>>,
+			"Index type must match width type");
+
 		if constexpr (std::is_signed_v<T>)
 		{
-			if (index.first < 0 || index.second < 0)
+			if (first < 0 || second < 0)
 				throw std::invalid_argument{ "cannot caculate 1d index in negative space" };
 		}
 
-		return index.second * w + index.first;
+		return second * w + first;
 	}
 
 	template<typename Index2D, typename T>

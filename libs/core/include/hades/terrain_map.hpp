@@ -55,7 +55,8 @@ namespace hades
 			return _show_grid;
 		}
 
-		void set_world_rotation(float);
+		void set_world_rotation(float degrees);
+		void set_sun_angle(float degrees);
 
 		void place_tile(tile_position, const resources::tile&);
 		void place_terrain(terrain_vertex_position, const resources::terrain*);
@@ -119,6 +120,7 @@ namespace hades
 		const resources::terrain_settings* _settings = {};
 		const resources::texture* _grid_tex = {};
 		std::size_t _grid_start = {};
+		float _sun_angle = 135.f;
 		bool _show_grid = false;
 		bool _needs_apply = false;
 		bool _show_height = true;

@@ -16,7 +16,7 @@
 #include "hades/animation.hpp"
 #include "hades/colour.hpp"
 #include "hades/data.hpp"
-#include "hades/draw_clamp.hpp"
+#include "hades/draw_tools.hpp"
 #include "hades/font.hpp"
 #include "hades/standard_paths.hpp"
 #include "hades/texture.hpp"

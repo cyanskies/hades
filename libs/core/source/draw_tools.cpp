@@ -1,4 +1,4 @@
-#include "hades/draw_clamp.hpp"
+#include "hades/draw_tools.hpp"
 
 #include "SFML/System/Angle.hpp"
 #include "SFML/Graphics/Drawable.hpp"

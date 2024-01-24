@@ -12,27 +12,26 @@ using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
 #version 120
-uniform vec2 screen_up;
 uniform vec2 camera_source;
 varying vec2 vertex_position;
 
 void main()
 {{
 	// copy input so we can modify it
-	vec4 vert = gl_Vertex;
+	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
 	// store world position of vertex for fragment shader
-	vertex_position = (gl_ModelViewMatrix * vert).xy - camera_source;
+	vertex_position = vert.xy - camera_source;
 	// add pseudo height in direction of 'screen_up'
     {}
     // transform the vertex position
-	gl_Position = gl_ModelViewProjectionMatrix * vert;
+	gl_Position = gl_ProjectionMatrix * vert;
 	// transform the texture coordinates
     gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
     // forward the vertex color
     gl_FrontColor = gl_Color;
 }})";
 
-constexpr auto vertex_add_height = "vert.xy += screen_up * (float(gl_Color.g) * 255);";
+constexpr auto vertex_add_height = "vert.y -= (float(gl_Color.g) * 255);";
 constexpr auto vertex_no_height = "";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
@@ -72,12 +71,6 @@ namespace hades
 					resources::uniform{
 						resources::uniform_type_list::texture,
 						sf::Shader::CurrentTexture
-					}
-				},{
-					"screen_up"s, // unit vector pointing towards the top of the screen
-					resources::uniform{
-						resources::uniform_type_list::vector2f,
-						{} // { 0.f, 0.f }
 					}
 				},{
 					"camera_source"s,
@@ -471,15 +464,11 @@ namespace hades
 
 	void mutable_terrain_map::set_world_rotation(const float rot)
 	{
-		// up vector for adding height to vertex
-		const auto up_radians = to_radians(rot + 90.f); // up vector
-		const auto up_vec = to_vector(pol_vector2_t<float>{ up_radians, 1.f });
-
 		// data for depth calculation
 		const auto world_size = size(_local_bounds);
 		const auto world_centre = (world_size * _settings->tile_size) / 2.f;
 		const auto cam_up = to_radians(90.f);
-		const auto down_rads = to_radians(/*rot + */270.f);
+		const auto down_rads = to_radians(270.f);
 		const auto radius = vector::distance(world_vector_t{}, world_centre);
 		const auto cam_source = to_vector(pol_vector2_t<float>{ down_rads, radius }) + world_centre;
 		const auto cam_end = to_vector(pol_vector2_t<float>{ cam_up, radius }) + world_centre;
@@ -488,13 +477,11 @@ namespace hades
 		const auto depth_max = vector::magnitude(depth_pane);
 		const auto divisor = 1.f / vector::magnitude_squared(depth_pane);
 
-		_shader.set_uniform("screen_up"sv, up_vec);
 		_shader.set_uniform("camera_source"sv, cam_source);
 		_shader.set_uniform("depth_pane"sv, depth_pane);
 		_shader.set_uniform("projection_divisor"sv, divisor);
 		_shader.set_uniform("depth_max"sv, depth_max);
 
-		_shader_no_height.set_uniform("screen_up"sv, up_vec);
 		_shader_no_height.set_uniform("camera_source"sv, cam_source);
 		_shader_no_height.set_uniform("depth_pane"sv, depth_pane);
 		_shader_no_height.set_uniform("projection_divisor"sv, divisor);

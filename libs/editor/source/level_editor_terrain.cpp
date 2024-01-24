@@ -208,6 +208,11 @@ namespace hades
 			{
 				_map.show_grid(!_map.show_grid());
 			}
+
+			if (g.toolbar_button("terrain depth"sv))
+			{
+				_map.draw_depth_buffer(!_map.draw_depth_buffer());
+			}
 		}
 
 		g.main_toolbar_end();

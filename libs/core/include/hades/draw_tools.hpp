@@ -67,13 +67,7 @@ namespace hades
 
 	namespace depth_buffer
 	{
-		inline void setup() noexcept
-		{
-			glDepthFunc(GL_LEQUAL);
-			glDepthRange(1.0f, 0.0f);
-			glAlphaFunc(GL_GREATER, 0.0f);
-			return;
-		}
+		void setup() noexcept;
 
 		inline void enable() noexcept
 		{

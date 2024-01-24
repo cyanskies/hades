@@ -55,4 +55,18 @@ namespace hades
 
 		glDisable(GL_SCISSOR_TEST);
 	}
+
+	namespace depth_buffer
+	{
+		void setup() noexcept
+		{
+			enable();
+			glDepthFunc(GL_LEQUAL);
+			glDepthRange(1.0f, 0.0f);
+			glAlphaFunc(GL_GREATER, 0.0f);
+			clear();
+			disable();
+			return;
+		}
+	}
 }

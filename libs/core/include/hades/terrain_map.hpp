@@ -44,6 +44,17 @@ namespace hades
 			return;
 		}
 
+		void draw_depth_buffer(bool b) noexcept
+		{
+			_debug_depth = b;
+			return;
+		}
+
+		bool draw_depth_buffer() noexcept
+		{
+			return _debug_depth;
+		}
+
 		void show_grid(bool b) noexcept
 		{
 			_show_grid = b;
@@ -114,8 +125,10 @@ namespace hades
 		quad_buffer _quads;
 		map_info _info;
 		resources::shader_proxy _shader;
+		resources::shader_proxy _shader_debug_depth;
 		resources::shader_proxy _shader_no_height;
-		resources::shader_uniform_map _uniforms;
+		resources::shader_proxy _shader_no_height_debug_depth;
+		//resources::shader_uniform_map _uniforms;
 		rect_float _local_bounds = {};
 		const resources::terrain_settings* _settings = {};
 		const resources::texture* _grid_tex = {};
@@ -124,6 +137,7 @@ namespace hades
 		bool _show_grid = false;
 		bool _needs_apply = false;
 		bool _show_height = true;
+		bool _debug_depth = false;
 	};
 }
 

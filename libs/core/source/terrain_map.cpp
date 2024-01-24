@@ -4,6 +4,7 @@
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/OpenGL.hpp"
 
+#include "hades/draw_tools.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/shader.hpp"
 
@@ -12,15 +13,14 @@ using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
 #version 120
-uniform vec2 camera_source;
-varying vec2 vertex_position;
+varying float model_view_vertex_y;
 
 void main()
 {{
 	// copy input so we can modify it
 	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
 	// store world position of vertex for fragment shader
-	vertex_position = vert.xy - camera_source;
+	model_view_vertex_y = vert.y;
 	// add pseudo height in direction of 'screen_up'
     {}
     // transform the vertex position
@@ -38,23 +38,31 @@ constexpr auto vertex_no_height = "";
 constexpr auto fragment_source = R"(
 #version 120
 uniform sampler2D tex;
-uniform vec2 depth_pane;
-uniform float projection_divisor;
-uniform float depth_max;
-varying vec2 vertex_position;
+uniform float y_offset;
+uniform float y_range;
+varying float model_view_vertex_y;
 
 void main()
 {{
 	// TODO: get position from in var and lookup height map
-	// depth
-	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
-	// calculate fragment position along depth axis
-	vec2 projected = depth_pane * dot(vertex_position, depth_pane) * projection_divisor;
-	gl_FragDepth = length(projected) / depth_max;
+	//		for shadowing and normal lighting cal
+
+	// calculate fragment depth along y axis
+	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
+	// frag colour
+	{}
 }})";
 
+constexpr auto fragment_tex = "uniform sampler2D tex;";
+constexpr auto fragment_no_tex = "";
+
+constexpr auto fragment_normal_color = "gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);";
+constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;";
+
 auto terrain_map_shader_id = hades::unique_zero;
+auto terrain_map_shader_debug_id = hades::unique_zero;
 auto terrain_map_shader_no_height_id = hades::unique_zero;
+auto terrain_map_shader_no_height_debug_id = hades::unique_zero;
 
 namespace hades
 {
@@ -73,25 +81,13 @@ namespace hades
 						sf::Shader::CurrentTexture
 					}
 				},{
-					"camera_source"s,
-					resources::uniform{
-						resources::uniform_type_list::vector2f,
-						{} // { 0.f, 0.f }
-					}
-				},{
-					"depth_pane"s,
-					resources::uniform{
-						resources::uniform_type_list::vector2f,
-						{} // { 0.f, 0.f }
-					}
-				},{
-					"projection_divisor"s,
+					"y_offset"s,
 					resources::uniform{
 						resources::uniform_type_list::float_t,
 						{} // 0.f
 					}
 				},{
-					"depth_max"s,
+					"y_range"s,
 					resources::uniform{
 						resources::uniform_type_list::float_t,
 						{} // 0.f
@@ -99,17 +95,31 @@ namespace hades
 				}
 		};
 
-		{ // make normal terrain shader
+		if(terrain_map_shader_id == unique_zero)
+		{ // make heightmap terrain shader
 			terrain_map_shader_id = make_unique_id();
 
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, fragment_source);
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
 			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
 		}
 
+		if (terrain_map_shader_debug_id == unique_zero)
+		{ // make heightmap debug terrain shader
+			terrain_map_shader_debug_id = make_unique_id();
+
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_debug_id);
+			assert(shader);
+
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
+			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
+			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
+		}
+
+		if (terrain_map_shader_no_height_id == unique_zero)
 		{ // make flat terrain shader
 			// TODO: how to draw cliffs in flat mode?
 			terrain_map_shader_no_height_id = make_unique_id();
@@ -117,7 +127,19 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, fragment_source);
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
+			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
+			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
+		}
+
+		if (terrain_map_shader_no_height_debug_id == unique_zero)
+		{ // make flat debug terrain shader
+			terrain_map_shader_no_height_debug_id = make_unique_id();
+
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_debug_id);
+			assert(shader);
+
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
 			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
@@ -158,8 +180,10 @@ namespace hades
 
 	mutable_terrain_map::mutable_terrain_map() : 
 		_settings{ resources::get_terrain_settings() },
-		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) },
-		_shader_no_height{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_id)) }
+		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) }, 
+		_shader_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_id)) },
+		_shader_no_height{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_id)) },
+		_shader_no_height_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_debug_id)) }
 	{}
 
 	mutable_terrain_map::mutable_terrain_map(terrain_map t) : mutable_terrain_map{}
@@ -185,7 +209,7 @@ namespace hades
 		return;
 	}
 
-	class terrain_map_texture_limit_exceeded : public runtime_error
+	class [[deprecated]] terrain_map_texture_limit_exceeded : public runtime_error
 	{
 	public:
 		using runtime_error::runtime_error;
@@ -417,23 +441,23 @@ namespace hades
 	void mutable_terrain_map::draw(sf::RenderTarget& t, const sf::RenderStates& states) const
 	{
 		assert(!_needs_apply);
+		auto show_height = &_shader;
+		auto no_height = &_shader_no_height;
+		if (_debug_depth)
+		{
+			show_height = &_shader_debug_depth;
+			no_height = &_shader_no_height_debug_depth;
+		}
+
 		auto s = states;
-		s.shader = _show_height ? _shader.get_shader() : _shader_no_height.get_shader();
+		s.shader = _show_height ? show_height->get_shader() : no_height->get_shader();
 		const auto beg = begin(_info.tile_info);
 		const auto ed = end(_info.tile_info);
 		auto it = beg;
 
-#define DEPTH 1 // enable depth testing
-#if DEPTH
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_ALPHA_TEST);
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LEQUAL);
-		glDepthRange(1.0f, 0.0f);
-		glAlphaFunc(GL_GREATER, 0.0f);
-		glClearDepth(1.0f);
-		glClear(GL_DEPTH_BUFFER_BIT);
-#endif
+		depth_buffer::setup();
+		depth_buffer::clear();
+		depth_buffer::enable();
 
 		while (it != ed)
 		{
@@ -453,39 +477,25 @@ namespace hades
 			_quads.draw(t, _grid_start, _quads.size() - _grid_start, s);
 		}
 
-#if DEPTH
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_ALPHA_TEST);
-		glDepthMask(GL_FALSE);
-#endif
-
+		depth_buffer::disable();
 		return;
 	}
 
 	void mutable_terrain_map::set_world_rotation(const float rot)
 	{
-		// data for depth calculation
-		const auto world_size = size(_local_bounds);
-		const auto world_centre = (world_size * _settings->tile_size) / 2.f;
-		const auto cam_up = to_radians(90.f);
-		const auto down_rads = to_radians(270.f);
-		const auto radius = vector::distance(world_vector_t{}, world_centre);
-		const auto cam_source = to_vector(pol_vector2_t<float>{ down_rads, radius }) + world_centre;
-		const auto cam_end = to_vector(pol_vector2_t<float>{ cam_up, radius }) + world_centre;
+		auto t = sf::Transform{};
+		t.rotate(sf::degrees(rot));
+		auto& l = _local_bounds;
+		auto t_rect = t.transformRect(sf::FloatRect{ {l.x, l.y}, {l.width, l.height} });
 
-		const auto depth_pane = cam_end - cam_source;
-		const auto depth_max = vector::magnitude(depth_pane);
-		const auto divisor = 1.f / vector::magnitude_squared(depth_pane);
+		auto y_offset = t_rect.top;
+		auto y_range = t_rect.height - y_offset;
 
-		_shader.set_uniform("camera_source"sv, cam_source);
-		_shader.set_uniform("depth_pane"sv, depth_pane);
-		_shader.set_uniform("projection_divisor"sv, divisor);
-		_shader.set_uniform("depth_max"sv, depth_max);
-
-		_shader_no_height.set_uniform("camera_source"sv, cam_source);
-		_shader_no_height.set_uniform("depth_pane"sv, depth_pane);
-		_shader_no_height.set_uniform("projection_divisor"sv, divisor);
-		_shader_no_height.set_uniform("depth_max"sv, depth_max);
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
+		{
+			shdr->set_uniform("y_offset"sv, y_offset);
+			shdr->set_uniform("y_range"sv, y_range);
+		}
 		return;
 	}
 

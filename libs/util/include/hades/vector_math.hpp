@@ -240,8 +240,9 @@ namespace hades
 	namespace vector
 	{
 		//returns the length of the vector
+		// NOTE: cannot be constexpr until cpp26(std::hypot)
 		template<typename T, std::size_t Size>
-		[[nodiscard]] constexpr auto magnitude(basic_vector<T, Size>) noexcept;
+		[[nodiscard]] auto magnitude(basic_vector<T, Size>) noexcept;
 
 		template<typename T, std::size_t Size>
 		[[nodiscard]] constexpr T magnitude_squared(basic_vector<T, Size>) noexcept;

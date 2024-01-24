@@ -13,12 +13,16 @@ using namespace std::string_view_literals;
 const auto vertex_source = R"(
 #version 120
 uniform vec2 screen_up;
+uniform vec2 camera_source;
+varying vec2 vertex_position;
+
 void main()
 {{
 	// copy input so we can modify it
 	vec4 vert = gl_Vertex;
-	// TODO: pass world coord of vert into out params
-    // add pseudo height in direction of 'screen_up'
+	// store world position of vertex for fragment shader
+	vertex_position = (gl_ModelViewMatrix * vert).xy - camera_source;
+	// add pseudo height in direction of 'screen_up'
     {}
     // transform the vertex position
 	gl_Position = gl_ModelViewProjectionMatrix * vert;
@@ -35,18 +39,20 @@ constexpr auto vertex_no_height = "";
 constexpr auto fragment_source = R"(
 #version 120
 uniform sampler2D tex;
-uniform float rotation;
+uniform vec2 depth_pane;
+uniform float projection_divisor;
+uniform float depth_max;
+varying vec2 vertex_position;
+
 void main()
 {{
-	// TODO: get world coord from in var and lookup height map
+	// TODO: get position from in var and lookup height map
 	// depth
 	gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);
-	// add fragment depth for terrain height rendering
-	{}
+	// calculate fragment position along depth axis
+	vec2 projected = depth_pane * dot(vertex_position, depth_pane) * projection_divisor;
+	gl_FragDepth = length(projected) / depth_max;
 }})";
-
-constexpr auto fragment_add_height_depth = "gl_FragDepth = ((255.f - gl_Color.g) / 255.f);";
-constexpr auto fragment_no_height_depth = "";
 
 auto terrain_map_shader_id = hades::unique_zero;
 auto terrain_map_shader_no_height_id = hades::unique_zero;
@@ -73,13 +79,31 @@ namespace hades
 						resources::uniform_type_list::vector2f,
 						{} // { 0.f, 0.f }
 					}
-				}/*,{
-					"world_scale"s, // magnitude of length of the world along 'screen'
+				},{
+					"camera_source"s,
+					resources::uniform{
+						resources::uniform_type_list::vector2f,
+						{} // { 0.f, 0.f }
+					}
+				},{
+					"depth_pane"s,
+					resources::uniform{
+						resources::uniform_type_list::vector2f,
+						{} // { 0.f, 0.f }
+					}
+				},{
+					"projection_divisor"s,
 					resources::uniform{
 						resources::uniform_type_list::float_t,
 						{} // 0.f
 					}
-				}*/
+				},{
+					"depth_max"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				}
 		};
 
 		{ // make normal terrain shader
@@ -88,7 +112,7 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_add_height_depth));
+			shdr_funcs::set_fragment(*shader, fragment_source);
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
 			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
 		}
@@ -100,7 +124,7 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_no_height_depth));
+			shdr_funcs::set_fragment(*shader, fragment_source);
 			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
 			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
@@ -447,17 +471,41 @@ namespace hades
 
 	void mutable_terrain_map::set_world_rotation(const float rot)
 	{
-		const auto rads = to_radians(rot + 90.f); // up vector
-		const auto vec = to_vector(pol_vector2_t<float>{ rads, 1.f });
-		_shader.set_uniform("screen_up"sv, vec);
-		_shader_no_height.set_uniform("screen_up"sv, vec);
+		// up vector for adding height to vertex
+		const auto up_radians = to_radians(rot + 90.f); // up vector
+		const auto up_vec = to_vector(pol_vector2_t<float>{ up_radians, 1.f });
+
+		// data for depth calculation
+		const auto world_size = size(_local_bounds);
+		const auto world_centre = (world_size * _settings->tile_size) / 2.f;
+		const auto cam_up = to_radians(90.f);
+		const auto down_rads = to_radians(/*rot + */270.f);
+		const auto radius = vector::distance(world_vector_t{}, world_centre);
+		const auto cam_source = to_vector(pol_vector2_t<float>{ down_rads, radius }) + world_centre;
+		const auto cam_end = to_vector(pol_vector2_t<float>{ cam_up, radius }) + world_centre;
+
+		const auto depth_pane = cam_end - cam_source;
+		const auto depth_max = vector::magnitude(depth_pane);
+		const auto divisor = 1.f / vector::magnitude_squared(depth_pane);
+
+		_shader.set_uniform("screen_up"sv, up_vec);
+		_shader.set_uniform("camera_source"sv, cam_source);
+		_shader.set_uniform("depth_pane"sv, depth_pane);
+		_shader.set_uniform("projection_divisor"sv, divisor);
+		_shader.set_uniform("depth_max"sv, depth_max);
+
+		_shader_no_height.set_uniform("screen_up"sv, up_vec);
+		_shader_no_height.set_uniform("camera_source"sv, cam_source);
+		_shader_no_height.set_uniform("depth_pane"sv, depth_pane);
+		_shader_no_height.set_uniform("projection_divisor"sv, divisor);
+		_shader_no_height.set_uniform("depth_max"sv, depth_max);
 		return;
 	}
 
 	void mutable_terrain_map::set_sun_angle(float degrees)
 	{
 		_sun_angle = std::clamp(degrees, 0.f, 180.f);
-		_needs_apply = true;
+		_needs_apply = true; // needs to recalculate shadow map(maybe just do it here and now)
 	}
 
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)

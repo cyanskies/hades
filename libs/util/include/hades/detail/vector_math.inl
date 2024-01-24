@@ -230,7 +230,7 @@ namespace hades
 	namespace vector
 	{
 		template<typename T, std::size_t Size>
-		constexpr auto magnitude(const basic_vector<T, Size> v) noexcept
+		auto magnitude(const basic_vector<T, Size> v) noexcept
 		{
 			if constexpr (Size == 2)
 				return std::hypot(v.x, v.y);
@@ -346,7 +346,7 @@ namespace hades
 		template<typename T>
 		auto distance(vector2<T> a, vector2<T> b) noexcept
 		{
-			const auto ab = a - b;
+			const auto ab = b - a;
 			return magnitude(ab);
 		}
 
@@ -392,7 +392,7 @@ namespace hades
 		constexpr vector2<T> project(vector2<T> vector, vector2<T> axis) noexcept
 		{
 			assert(axis != vector2<T>());
-			return axis * (dot(vector, axis) / magnitude_squared(axis));
+			return axis * dot(vector, axis) * (1 / magnitude_squared(axis));
 		}
 
 		template<typename T>

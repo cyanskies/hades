@@ -14,6 +14,8 @@ namespace hades
 	{
 	public:
 		enum class draw_shape {
+			vertex,
+			edge,
 			rect,
 			circle
 		};
@@ -60,6 +62,7 @@ namespace hades
 			raise_cliff,
 			lower_cliff,
 			erase_cliff,
+			debug_brush // used for testing
 		};
 
 		struct level_options
@@ -83,7 +86,7 @@ namespace hades
 		brush_type _brush = brush_type::no_brush;
 		draw_shape _shape = draw_shape::rect;
 		int _size = 1;
-		int _height_strength = 1;
+		std::uint8_t _height_strength = 1;
 
 		//brush preview
 		mutable_terrain_map _clear_preview;

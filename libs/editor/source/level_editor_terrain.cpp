@@ -101,7 +101,7 @@ namespace hades
 		const auto height_high = height_low + variance * 2;
 
 		for (auto i = std::size_t{}; i < std::size(height); ++i)
-			height[i] = integer_clamp_cast<std::uint8_t>(random(0, 5));
+			height[i] = integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
 
 		l.height_vertex = std::move(height);
 		l.terrainset = raw.terrainset;
@@ -251,17 +251,20 @@ namespace hades
 			if (g.collapsing_header("map drawing settings"sv))
 			{
 				constexpr auto draw_shapes = std::array{
+					"vertex"sv,
+					"edge"sv,
 					"square"sv,
 					"circle"sv
 				};
 
 				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_shape)]))
 				{
-					if (g.selectable(draw_shapes[0], _shape == draw_shape::rect))
-						_shape = draw_shape::rect;
-
-					if (g.selectable(draw_shapes[1], _shape == draw_shape::circle))
-						_shape = draw_shape::circle;
+					for (auto i = std::size_t{}; i < size(draw_shapes); ++i)
+					{
+						const auto shape = draw_shape{ integer_cast<std::underlying_type_t<draw_shape>>(i) };
+						if (g.selectable(draw_shapes[i], _shape == shape))
+							_shape = shape;
+					}
 
 					g.combo_end();
 				}
@@ -427,9 +430,9 @@ namespace hades
 	}
 
 	template<typename Func>
-	static void for_each_position(level_editor_terrain::mouse_pos p,
-		resources::tile_size_t tile_size, level_editor_terrain::draw_shape shape,
-		int size, tile_position world_size, Func &&f)
+	static void for_each_position(const level_editor_terrain::mouse_pos p,
+		const resources::tile_size_t tile_size, const level_editor_terrain::draw_shape shape,
+		int size, const tile_position world_size, Func &&f)
 	{
 		const auto draw_pos = tile_position{
 			static_cast<tile_position::value_type>(p.x / tile_size),
@@ -439,10 +442,24 @@ namespace hades
 		if (!within_world(draw_pos, world_size))
 			return;
 
-		if (shape == level_editor_terrain::draw_shape::rect)
+		using draw_shape = level_editor_terrain::draw_shape;
+
+		switch (shape)
+		{
+		case draw_shape::vertex:
+			// round to nearest vertex(in map)
+			return for_each_safe_position_rect(draw_pos, tile_position{ 1, 1 }, world_size, f);
+		case draw_shape::edge:
+		{
+
+			return;
+		}
+		case draw_shape::rect:
+			++size;
 			return for_each_safe_position_rect(draw_pos, tile_position{ size, size }, world_size, f);
-		else if (shape == level_editor_terrain::draw_shape::circle)
+		case draw_shape::circle:
 			return for_each_safe_position_circle(draw_pos, size, world_size, f);
+		}
 
 		return;
 	}

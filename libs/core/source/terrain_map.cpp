@@ -252,7 +252,7 @@ namespace hades
 
 	static void generate_layer(const std::size_t layer_index,
 		mutable_terrain_map::map_info& info, const tile_map& map,
-		const std::vector<std::uint8_t>& heightmap, const terrain_index_t world_width)
+		const terrain_map& world, const terrain_index_t world_width)
 	{
 		const auto index = integer_cast<std::uint8_t>(layer_index);
 
@@ -285,17 +285,7 @@ namespace hades
 			const auto pos = from_tile_index(i, world_width - 1);
 			const auto indicies = to_terrain_index(pos, world_width);
 
-			constexpr auto top_left = enum_type(rect_corners::top_left),
-				top_right = enum_type(rect_corners::top_right),
-				bottom_right = enum_type(rect_corners::bottom_right),
-				bottom_left = enum_type(rect_corners::bottom_left);
-
-			std::array<std::uint8_t, 4> corner_height;
-			corner_height[top_left]		= heightmap[indicies[top_left]];
-			corner_height[top_right]	= heightmap[indicies[top_right]];
-			corner_height[bottom_right] = heightmap[indicies[bottom_right]];
-			corner_height[bottom_left]	= heightmap[indicies[bottom_left]];
-
+			const auto corner_height = get_height_at(pos, world);
 			// add tile to the tile list
 			info.tile_info.emplace_back(integer_cast<tile_index_t>(i), corner_height, tile.left, tile.top, integer_cast<std::uint8_t>(tex_index), index);
 		}
@@ -322,18 +312,7 @@ namespace hades
 		for (auto i = tile_index_t{}; i < s; ++i)
 		{
 			const auto pos = from_tile_index(i, width - 1);
-			const auto indicies = to_terrain_index(pos, width);
-
-			constexpr auto top_left = enum_type(rect_corners::top_left),
-				top_right = enum_type(rect_corners::top_right),
-				bottom_right = enum_type(rect_corners::bottom_right),
-				bottom_left = enum_type(rect_corners::bottom_left);
-
-			std::array<std::uint8_t, 4> corner_height;
-			corner_height[top_left] = map.heightmap[indicies[top_left]];
-			corner_height[top_right] = map.heightmap[indicies[top_right]];
-			corner_height[bottom_right] = map.heightmap[indicies[bottom_right]];
-			corner_height[bottom_left] = map.heightmap[indicies[bottom_left]];
+			const auto corner_height = get_height_at(pos, map);
 
 			const auto world_pos = vector2_float{
 				float_cast(pos.x) * tile_sizef,
@@ -432,9 +411,9 @@ namespace hades
 			//		layer 2 is reserved for tile_layer
 			//		layer 1 is reserved for cliffs
 			for (; i < s; ++i)
-				generate_layer(i + protected_layers, _info, _map.terrain_layers[i], _map.heightmap, width);
+				generate_layer(i + protected_layers, _info, _map.terrain_layers[i], _map, width);
 
-			generate_layer(tile_layer, _info, _map.tile_layer, _map.heightmap, width);
+			generate_layer(tile_layer, _info, _map.tile_layer, _map, width);
 		}
 		catch (const overflow_error&)
 		{
@@ -484,7 +463,7 @@ namespace hades
 			const auto normal = vector::cross(u, v);
 
 			std::array<colour, 4> colours;
-			colours.fill(colour{ 255, 255, 255 });
+			colours.fill(colour{});
 
 			for (auto i = std::size_t{}; i < size(tile.height); ++i)
 				colours[i].r = tile.height[i];

@@ -961,8 +961,7 @@ namespace hades
 		}
 
 		vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
-			const vector2_float height_dir, const rect_corners c,
-			const std::array<terrain_index_t, 4> index, const std::vector<std::uint8_t>& heightmap) noexcept
+			const vector2_float height_dir, const rect_corners c, const std::array<std::uint8_t, 4> heightmap) noexcept
 		{
 			auto ret = static_cast<vector2_float>(pos) * tile_sizef;
 
@@ -979,7 +978,7 @@ namespace hades
 				break;
 			}
 
-			const auto h = float_cast(heightmap[index[enum_type(c)]]);
+			const auto h = float_cast(heightmap[enum_type(c)]);
 			ret += height_dir * h;
 			return ret;
 		}
@@ -1054,14 +1053,14 @@ namespace hades
 		while (within_world(tile_check, world_size))
 		{
 			// get index for accessing heightmap
-			const auto terr_index = to_terrain_index(tile_check, terrain_width);
+			const auto height_arr = get_height_at(tile_check, map);
 
 			// generate quad vertex
 			const auto quad = std::array<vector2_float, 4>{
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_left, terr_index, map.heightmap),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_right, terr_index, map.heightmap),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_right, terr_index, map.heightmap),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_left, terr_index, map.heightmap)
+				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_left, height_arr),
+				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_right, height_arr),
+				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_right, height_arr),
+				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_left, height_arr)
 			};
 
 			// test for hit

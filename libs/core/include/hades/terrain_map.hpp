@@ -3,6 +3,7 @@
 
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
+#include "SFML/Graphics/Texture.hpp"
 
 #include "hades/terrain.hpp"
 #include "hades/tile_map.hpp"
@@ -50,7 +51,7 @@ namespace hades
 			return;
 		}
 
-		bool draw_depth_buffer() noexcept
+		bool draw_depth_buffer() const noexcept
 		{
 			return _debug_depth;
 		}
@@ -121,6 +122,89 @@ namespace hades
 		};
 
 	private:
+		class auto_texture_ptr
+		{
+		public:
+			auto_texture_ptr() noexcept = default;
+			auto_texture_ptr(std::unique_ptr<sf::Texture> t) noexcept
+				: _ptr{ std::move(t) }
+			{}
+
+			auto_texture_ptr(const auto_texture_ptr& p)
+				: _ptr{ p._ptr ? std::make_unique<sf::Texture>(*p._ptr) : std::unique_ptr<sf::Texture>{} }
+			{}
+			auto_texture_ptr(auto_texture_ptr&&) noexcept = default;
+
+			auto_texture_ptr& operator=(const auto_texture_ptr& p)
+			{
+				_ptr = p._ptr ? std::make_unique<sf::Texture>(*p._ptr) : std::unique_ptr<sf::Texture>{};
+				return *this;
+			}
+			auto_texture_ptr& operator=(auto_texture_ptr&&) noexcept = default;
+
+			sf::Texture* operator->() noexcept
+			{
+				return _ptr.get();
+			}
+
+			sf::Texture& operator*() noexcept
+			{
+				return *_ptr;
+			}
+
+			operator bool() const noexcept
+			{
+				return _ptr.get();
+			}
+
+		private:
+			std::unique_ptr<sf::Texture> _ptr;
+		};
+
+		// token that defaults to true when copied or moved
+		class boolean_token
+		{
+		public:
+			boolean_token() noexcept = default;
+			boolean_token(bool b) noexcept
+				: _val{ b }
+			{}
+
+			boolean_token(const boolean_token&) noexcept
+				: _val{ true }
+			{}
+
+			boolean_token(boolean_token&&) noexcept
+				: _val{ true }
+			{}
+			
+			boolean_token& operator=(const boolean_token&) noexcept
+			{
+				_val = true;
+				return *this;
+			}
+
+			boolean_token& operator=(bool b) noexcept
+			{
+				_val = b;
+				return *this;
+			}
+
+			boolean_token& operator=(boolean_token&&) noexcept
+			{
+				_val = true;
+				return *this;
+			}
+
+			operator bool() const noexcept
+			{
+				return _val;
+			}
+
+		private:
+			bool _val = true;
+		};
+
 		terrain_map _map;
 		quad_buffer _quads;
 		map_info _info;
@@ -128,14 +212,14 @@ namespace hades
 		resources::shader_proxy _shader_debug_depth;
 		resources::shader_proxy _shader_no_height;
 		resources::shader_proxy _shader_no_height_debug_depth;
-		//resources::shader_uniform_map _uniforms;
 		rect_float _local_bounds = {};
 		const resources::terrain_settings* _settings = {};
 		const resources::texture* _grid_tex = {};
 		std::size_t _grid_start = {};
-		float _sun_angle = 135.f;
+		auto_texture_ptr _sunlight_table;
+		float _sun_angle = to_radians(135.f);
 		bool _show_grid = false;
-		bool _needs_apply = false;
+		boolean_token _needs_apply = false;
 		bool _show_height = true;
 		bool _debug_depth = false;
 	};

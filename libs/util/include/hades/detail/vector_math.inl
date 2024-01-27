@@ -173,10 +173,11 @@ namespace hades
 		return { lhs.x + rhs.x, lhs.y + rhs.y };
 	}
 
-	template<typename T>
-	constexpr vector2<T> operator-(const vector2<T> &lhs, const vector2<T> &rhs) noexcept
+	template<typename T, std::size_t N>
+	constexpr basic_vector<T, N> operator-(const basic_vector<T, N>& lhs, const basic_vector<T, N>& rhs) noexcept
 	{
-		return { lhs.x - rhs.x, lhs.y - rhs.y };
+		auto ret = lhs;
+		return ret -= rhs;
 	}
 
 	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int>>
@@ -286,7 +287,7 @@ namespace hades
 		}
 
 		template<typename T>
-		[[nodiscard]] auto angle(vector2<T> a, vector2<T> b) noexcept
+		auto angle(vector2<T> a, vector2<T> b) noexcept
 		{
 			const auto d = dot(a, b);
 			const auto determinant = a.x * b.y - a.y * b.x;
@@ -310,8 +311,7 @@ namespace hades
 		template<typename T, std::size_t Size>
 		constexpr T y_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
-			// NOTE: flip y because of SFML coordinate system
-			auto out = v.magnitude * std::sin(v.theta) * -1;
+			auto out = v.magnitude * std::sin(v.theta);
 
 			if constexpr (Size > 2)
 			{
@@ -386,6 +386,19 @@ namespace hades
 		constexpr T dot(vector2<T> a, vector2<T> b) noexcept
 		{
 			return a.x * b.x + a.y * b.y;
+		}
+
+		template<typename T>
+		constexpr basic_vector<T, 3> cross(basic_vector<T, 3> a, basic_vector<T, 3> b) noexcept
+		{
+			//Nx = UyVz - UzVy
+			//Ny = UzVx - UxVz
+			//Nz = UxVy - UyVx
+			return basic_vector<T, 3>{ 
+				a.y * b.z - a.z * b.y,
+				a.z * b.x - a.x * b.z,
+				a.x * b.y - a.y * b.x
+			};
 		}
 
 		template <typename T>

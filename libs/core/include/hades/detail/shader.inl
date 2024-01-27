@@ -56,6 +56,7 @@ namespace hades::resources
 		else if constexpr (std::same_as<T, sf::Glsl::Mat4>)
 			return uniform_type_list::matrix4;
 		else if constexpr (std::same_as<T, resource_link<texture>> ||
+			std::same_as < T, sf::Texture*> ||
 			std::same_as<T, sf::Shader::CurrentTextureType>)
 			return uniform_type_list::texture;
 		else

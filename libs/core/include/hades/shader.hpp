@@ -70,6 +70,7 @@ namespace hades::resources
 		sf::Glsl::Mat3,
 		sf::Glsl::Mat4,
 		resource_link<texture>,
+		sf::Texture*, // non-resource texture
 		sf::Shader::CurrentTextureType // render state texture
 	>;
 

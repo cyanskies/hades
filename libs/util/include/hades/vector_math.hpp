@@ -57,8 +57,8 @@ namespace hades
 		//scalar division
 		constexpr basic_vector& operator/=(const T rhs) noexcept;
 
-		constexpr T& operator[](std::size_t i) noexcept;
-		constexpr const T& operator[](std::size_t i) const noexcept;
+		[[nodiscard]] constexpr T& operator[](std::size_t i) noexcept;
+		[[nodiscard]] constexpr const T& operator[](std::size_t i) const noexcept;
 
 		template<typename U>
 		[[nodiscard]] explicit constexpr operator basic_vector<U, Size>() const noexcept;
@@ -191,8 +191,8 @@ namespace hades
 	template<typename T>
 	[[nodiscard]] constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
 
-	template<typename T>
-	[[nodiscard]] constexpr vector2<T> operator-(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
+	template<typename T, std::size_t N>
+	[[nodiscard]] constexpr basic_vector<T, N> operator-(const basic_vector<T, N>&lhs, const basic_vector<T, N>&rhs) noexcept;
 
 	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
 	[[nodiscard]] constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept;
@@ -302,6 +302,10 @@ namespace hades
 
 		template<typename T>
 		constexpr T dot(vector2<T> a, vector2<T> b) noexcept;
+
+		// NOTE: cross is only meaningly defined for 3d and 7d vectors(we aren't going to support 7d vectors lol)
+		template<typename T>
+		constexpr basic_vector<T, 3> cross(basic_vector<T, 3> a, basic_vector<T, 3> b) noexcept;
 
 		template <typename T>
 		constexpr vector2<T> project(vector2<T> vector, vector2<T> axis) noexcept;

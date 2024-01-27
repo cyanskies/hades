@@ -67,6 +67,8 @@ namespace hades
 		template<typename T>
 		constexpr polygon_quad_t<T> to_poly(const rect_t<T>&) noexcept;
 
+		// calculate normal: https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+
 		//moves the position of the poly and translates the vertex
 		//the total location of all vertex stays the same,
 		//but the position will have moved to the location passed in

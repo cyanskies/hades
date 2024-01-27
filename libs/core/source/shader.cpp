@@ -156,6 +156,11 @@ namespace hades::resources
 						shad.setUniform(name, sf::Glsl::Ivec4{ t.x, t.y, t.z, t.w });
 					else if constexpr (std::same_as<std::decay_t<T>, resource_link<texture>>)
 						shad.setUniform(name, texture_functions::get_sf_texture(t.get()));
+					else if constexpr (std::same_as<T, sf::Texture*>)
+					{
+						assert(t);
+						shad.setUniform(name, *t);
+					}
 					else
 						shad.setUniform(name, t);
 					return;

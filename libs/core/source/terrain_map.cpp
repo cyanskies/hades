@@ -1,5 +1,7 @@
 #include "hades/terrain_map.hpp"
 
+#include <numbers>
+
 #include "SFML/Graphics/Image.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/OpenGL.hpp"
@@ -13,10 +15,15 @@ using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
 #version 120
+uniform vec2 world_size;
+uniform float tile_size;
+varying vec2 position;
 varying float model_view_vertex_y;
 
 void main()
 {{
+	// pass position along for shadowmapping
+	position = (gl_Vertex.xy / tile_size) / world_size;
 	// copy input so we can modify it
 	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
 	// store world position of vertex for fragment shader
@@ -31,15 +38,17 @@ void main()
     gl_FrontColor = gl_Color;
 }})";
 
-constexpr auto vertex_add_height = "vert.y -= (float(gl_Color.g) * 255);";
-constexpr auto vertex_no_height = "";
+constexpr auto vertex_add_height = "vert.y -= (float(gl_Color.r) * 255);";
+constexpr auto vertex_no_height = "// NOTE: height disabled";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 constexpr auto fragment_source = R"(
 #version 120
 uniform sampler2D tex;
+uniform sampler2D sunlight_map;
 uniform float y_offset;
 uniform float y_range;
+varying vec2 position;
 varying float model_view_vertex_y;
 
 void main()
@@ -49,20 +58,19 @@ void main()
 
 	// calculate fragment depth along y axis
 	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
+	// shadow info
+	float shadow_height = texture2D(sunlight_map, position).r;
 	// frag colour
 	{}
 }})";
 
-constexpr auto fragment_tex = "uniform sampler2D tex;";
-constexpr auto fragment_no_tex = "";
+constexpr auto fragment_normal_color = "gl_FragColor = mix(texture2D(tex, gl_TexCoord[0].xy), vec4(0, 0, 0, 1), float(gl_Color.r <= shadow_height) * 0.5f);";
+constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;sunlight_map;";
 
-constexpr auto fragment_normal_color = "gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);";
-constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;";
-
-auto terrain_map_shader_id = hades::unique_zero;
-auto terrain_map_shader_debug_id = hades::unique_zero;
-auto terrain_map_shader_no_height_id = hades::unique_zero;
-auto terrain_map_shader_no_height_debug_id = hades::unique_zero;
+static auto terrain_map_shader_id = hades::unique_zero;
+static auto terrain_map_shader_debug_id = hades::unique_zero;
+static auto terrain_map_shader_no_height_id = hades::unique_zero;
+static auto terrain_map_shader_no_height_debug_id = hades::unique_zero;
 
 namespace hades
 {
@@ -91,6 +99,23 @@ namespace hades
 					resources::uniform{
 						resources::uniform_type_list::float_t,
 						{} // 0.f
+					}
+				},{
+					"tile_size"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				},{
+					"world_size"s,
+					resources::uniform{
+						resources::uniform_type_list::vector2f,
+						{} // (0, 0)
+					}
+				},{
+					"sunlight_map"s,
+					resources::uniform{
+						resources::uniform_type_list::texture
 					}
 				}
 		};
@@ -183,7 +208,8 @@ namespace hades
 		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) }, 
 		_shader_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_id)) },
 		_shader_no_height{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_id)) },
-		_shader_no_height_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_debug_id)) }
+		_shader_no_height_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_debug_id)) },
+		_sunlight_table{ std::make_unique<sf::Texture>() }
 	{}
 
 	mutable_terrain_map::mutable_terrain_map(terrain_map t) : mutable_terrain_map{}
@@ -204,16 +230,25 @@ namespace hades
 			float_cast((tiles.size() / width) * tile_size)
 		};
 
+		const auto terrain_size = static_cast<vector2<unsigned int>>(get_vertex_size(t));
+		if (!_sunlight_table->create({ terrain_size.x, terrain_size.y }))
+		{
+			throw runtime_error{
+				std::format("Unable to create texture for terrain shadowmap. Size was: ({}, {})"sv,
+				terrain_size.x, terrain_size.y)
+			};
+		}
+
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
+		{
+			shdr->set_uniform("tile_size"sv, float_cast(_settings->tile_size));
+			shdr->set_uniform("world_size"sv, static_cast<vector2_float>(terrain_size));
+		}
+
 		_map = std::move(t);
 		_needs_apply = true;
 		return;
 	}
-
-	class [[deprecated]] terrain_map_texture_limit_exceeded : public runtime_error
-	{
-	public:
-		using runtime_error::runtime_error;
-	};
 
 	static void generate_layer(const std::size_t layer_index,
 		mutable_terrain_map::map_info& info, const tile_map& map,
@@ -300,12 +335,6 @@ namespace hades
 			corner_height[bottom_right] = map.heightmap[indicies[bottom_right]];
 			corner_height[bottom_left] = map.heightmap[indicies[bottom_left]];
 
-			std::array<colour, 4> colours;
-			colours.fill(colour{ grid_layer, 255, 255 });
-
-			for (auto j = std::size_t{}; j < size(corner_height); ++j)
-				colours[j].g = corner_height[j];
-
 			const auto world_pos = vector2_float{
 				float_cast(pos.x) * tile_sizef,
 				float_cast(pos.y) * tile_sizef
@@ -317,36 +346,72 @@ namespace hades
 				tile_sizef
 			};
 
+			std::array<colour, 4> colours; // uninitialised
+			colours.fill(colour{});
+
+			for (auto j = std::size_t{}; j < size(corner_height); ++j)
+				colours[j].r = corner_height[j];
+
 			const auto quad = make_quad_animation(world_pos, { tile_sizef, tile_sizef }, tex_coords, colours);
 			quads.append(quad);
 		}
 		return grid_tile.tex.get();
 	}
 
-	static void generate_shadowmap(const float sun_angle, const terrain_map& map)
+	static void generate_shadow_row(const std::uint8_t sun_rise, const terrain_map& map,
+		const terrain_index_t row_begin, const terrain_index_t row_end, sf::Image& img, const unsigned int img_y)
 	{
-		// TODO: clean up type usage here, hightmap can be indexed with size_t
+		assert(img.getSize().y >= img_y &&
+			img.getSize().x >= integer_cast<unsigned int>(row_end - row_begin));
+		const auto get_max_height = [&map](terrain_index_t i) noexcept {
+			const auto [h1, h2, h3, h4] = get_height_at(i, map);
+			return std::max({ h1, h2, h3, h4 });
+			};
+
+		auto x = unsigned int{};
+		auto h = get_max_height(row_begin);
+
+		img.setPixel({ x++, img_y }, sf::Color{ h, 0, 0, 255 });
+
+		while (std::cmp_less(row_begin + x, row_end))
+		{
+			if (h < sun_rise)
+				h = {};
+			else
+				h -= sun_rise;
+			
+			const auto h2 = get_max_height(row_begin + x);
+			if (h2 > h)
+				h = h2;
+			
+			img.setPixel({ x, img_y }, sf::Color{ h, 0, 0, 255 });
+			++x;
+		}
+		return;
+	}
+
+	static sf::Image generate_shadowmap(const float sun_angle_radian, const float tile_size, const terrain_map& map)
+	{
+		// TODO: clean up type usage here, heightmap can be indexed with size_t
 		//		but img can only be indexed with unsigned
 		const auto vert_size = get_vertex_size(map);
 
 		auto img = sf::Image{};
-		img.create(sf::Vector2u{ integer_cast<unsigned>(vert_size.x), integer_cast<unsigned>(vert_size.y) }, nullptr);
+		img.create(sf::Vector2u{ integer_cast<unsigned>(vert_size.x), integer_cast<unsigned>(vert_size.y) }, sf::Color::Black);
 		
-		const auto h_end = size(map.heightmap);
-		const auto u_width = integer_cast<std::uint32_t>(vert_size.x);
-		for (auto i = std::size_t{}; i < h_end; ++i)
-		{
-			auto h = map.heightmap[i];
-			auto index = to_2d_index(integer_cast<std::uint32_t>(i), u_width);
-			
-			while (index.first < u_width)
-			{
-				const auto ind = to_1d_index(index, u_width);
-				auto h2 = map.heightmap[i];
-				img.setPixel({ index.first, index.second }, sf::Color::Blue);
-			}
+		// find the y distance between tile_size x
+		const auto sun_unit_vect = to_vector(pol_vector2_t<float>{ sun_angle_radian + std::numbers::pi_v<float>, 1.f });
+		const auto sun_step_mag = std::sqrt(1 + std::pow(sun_unit_vect.x / sun_unit_vect.y, 2.f));
+		const auto sun_vector = sun_unit_vect * sun_step_mag * tile_size;
+		const auto sun_rise = integral_cast<std::uint8_t>(std::abs(sun_vector.y));
 
+		for (auto i = terrain_index_t{}; i < vert_size.y; ++i)
+		{
+			const auto row_begin = vert_size.x * i;
+			generate_shadow_row(sun_rise, map, row_begin, row_begin + vert_size.x, img, integer_cast<unsigned int>(i));
 		}
+
+		return img;
 	}
 
 	void mutable_terrain_map::apply()
@@ -375,10 +440,6 @@ namespace hades
 		{
 			log_warning("terrain map has too many terrain layers (> 255)"sv);
 		}
-		catch (const terrain_map_texture_limit_exceeded& e)
-		{
-			log_warning(e.what());
-		}
 
 		std::ranges::sort(_info.tile_info, {}, &map_tile::texture);
 
@@ -406,11 +467,27 @@ namespace hades
 				tile_sizef
 			};
 
+			constexpr auto top_left = enum_type(rect_corners::top_left),
+				top_right = enum_type(rect_corners::top_right),
+				//bottom_right = enum_type(rect_corners::bottom_right),
+				bottom_left = enum_type(rect_corners::bottom_left);
+
+			// calculate normal
+			// we only need to calculate normal for one of the triangles
+			const auto p1 = vector3<float>{ pos.x, pos.y, float_cast(tile.height[top_left]) };
+			const auto p2 = vector3<float>{ pos.x + tile_sizef, pos.y, float_cast(tile.height[top_right]) };
+			const auto p3 = vector3<float>{ pos.x, pos.y + tile_sizef, float_cast(tile.height[bottom_left]) };
+
+			const auto u = p2 - p1;
+			const auto v = p3 - p1;
+
+			const auto normal = vector::cross(u, v);
+
 			std::array<colour, 4> colours;
-			colours.fill(colour{ tile.layer, 255, 255 });
+			colours.fill(colour{ 255, 255, 255 });
 
 			for (auto i = std::size_t{}; i < size(tile.height); ++i)
-				colours[i].g = tile.height[i];
+				colours[i].r = tile.height[i];
 
 			const auto quad = make_quad_animation(pos, { tile_sizef, tile_sizef }, tex_coords, colours);
 			_quads.append(quad);
@@ -424,8 +501,15 @@ namespace hades
 
 		_quads.apply();
 
-		//generate_shadowmap(_sun_angle, _map);
+		const auto shadow_map = generate_shadowmap(_sun_angle, tile_sizef, _map);
+		assert(shadow_map.getSize() == _sunlight_table->getSize());
+		_sunlight_table->update(shadow_map);
 		
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
+		{
+			shdr->set_uniform("sunlight_map"sv, &*_sunlight_table);
+		}
+
 		//Shadowing ideas
 		//There must be a better way than raycasting.
 		//My first thought was to smear the height map data along the projected sun direction.
@@ -501,8 +585,8 @@ namespace hades
 
 	void mutable_terrain_map::set_sun_angle(float degrees)
 	{
-		_sun_angle = std::clamp(degrees, 0.f, 180.f);
-		_needs_apply = true; // needs to recalculate shadow map(maybe just do it here and now)
+		_sun_angle = to_radians(std::clamp(degrees, 0.f, 180.f));
+		_needs_apply = true;
 	}
 
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)

@@ -176,6 +176,10 @@ namespace hades
 		std::vector<const resources::terrain*> terrain_vertex;
 		//vertex of height
 		std::vector<std::uint8_t> heightmap;
+		// TODO: tilemap of height
+		//std::vector<std::array<std::uint8_t, 4>> heightmap2;
+
+
 		// tiles exist between every 4 vertex
 		std::vector<tile_map> terrain_layers;
 	
@@ -202,7 +206,7 @@ namespace hades
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width) noexcept;
-
+	
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{
 		return from_tile_index(i, t.tile_layer);
@@ -228,6 +232,13 @@ namespace hades
 	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end);
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position);
+
+	// index the array using rectangle_math.hpp::hades::rect_corners
+	// returns the height in the 4 corners of the tile
+	std::array<std::uint8_t, 4> get_height_at(tile_position tile_index, const terrain_map& map) noexcept;
+	// returns the different heights from each quadrant of the vertex
+	std::array<std::uint8_t, 4> get_height_at(terrain_index_t terrain_index, const terrain_map& map) noexcept;
+
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
 
 	//NOTE: the result of this function may contain duplicates
@@ -262,6 +273,7 @@ namespace hades
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*);
 
+	// TODO: need to fix for cliffs
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 

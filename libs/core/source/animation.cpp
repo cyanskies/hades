@@ -749,19 +749,21 @@ namespace hades::animation
 
 namespace hades
 {
-	poly_quad make_quad_colour(rect_float quad, colour c) noexcept
+	poly_quad make_quad_colour(rect_float quad, std::array<colour, 4> c) noexcept
 	{
-		const auto col = to_sf_color(c);
+		auto sf_col = std::array<sf::Color, 4>{};
+		std::ranges::transform(c, begin(sf_col), to_sf_color);
+
 
 		return poly_quad{
 			//first triangle
-			sf::Vertex{ {quad.x, quad.y}, col }, //top left
-			sf::Vertex{ {quad.x + quad.width, quad.y}, col }, //top right
-			sf::Vertex{ {quad.x, quad.y + quad.height}, col }, //bottom left
+			sf::Vertex{ {quad.x, quad.y},								sf_col[enum_type(rect_corners::top_left)] }, //top left
+			sf::Vertex{ {quad.x + quad.width, quad.y},					sf_col[enum_type(rect_corners::top_right)] }, //top right
+			sf::Vertex{ {quad.x, quad.y + quad.height},					sf_col[enum_type(rect_corners::bottom_left)] }, //bottom left
 			//second triangle
-			sf::Vertex{ { quad.x + quad.width, quad.y }, col }, //top right
-			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height }, col }, //bottom right
-			sf::Vertex{ { quad.x, quad.y + quad.height }, col } //bottom left
+			sf::Vertex{ { quad.x + quad.width, quad.y },				sf_col[enum_type(rect_corners::top_right)] }, //top right
+			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height },	sf_col[enum_type(rect_corners::bottom_right)] }, //bottom right
+			sf::Vertex{ { quad.x, quad.y + quad.height },				sf_col[enum_type(rect_corners::bottom_left)] } //bottom left
 		};
 	}
 

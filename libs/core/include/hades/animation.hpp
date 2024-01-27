@@ -124,7 +124,11 @@ namespace hades
 
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
-	poly_quad make_quad_colour(rect_float quad, colour) noexcept;
+	poly_quad make_quad_colour(rect_float quad, std::array<colour, 4>) noexcept;
+	inline poly_quad make_quad_colour(rect_float quad, colour c) noexcept
+	{
+		return make_quad_colour(quad, { c, c, c, c });
+	}
 	poly_quad make_quad_line(vector2_float start, vector2_float end, float thickness, colour) noexcept;
 	poly_quad make_quad_animation(vector2_float pos, std::optional<vector2_float> size, const resources::animation_frame&, std::array<colour, 4>) noexcept;
 	inline poly_quad make_quad_animation(vector2_float pos, std::optional<vector2_float> size, const resources::animation_frame& f, colour c = { 255,255,255 }) noexcept

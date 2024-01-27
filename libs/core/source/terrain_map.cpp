@@ -15,21 +15,20 @@ using namespace std::string_view_literals;
 
 const auto vertex_source = R"(
 #version 120
-uniform vec2 world_size;
-uniform float tile_size;
-varying vec2 position;
+{}
+uniform float height_multiplier;
 varying float model_view_vertex_y;
 
 void main()
 {{
 	// pass position along for shadowmapping
-	position = (gl_Vertex.xy / tile_size) / world_size;
+	{}
 	// copy input so we can modify it
 	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
 	// store world position of vertex for fragment shader
 	model_view_vertex_y = vert.y;
 	// add pseudo height in direction of 'screen_up'
-    {}
+    vert.y -= (float(gl_Color.r) * 255) * height_multiplier;
     // transform the vertex position
 	gl_Position = gl_ProjectionMatrix * vert;
 	// transform the texture coordinates
@@ -38,39 +37,53 @@ void main()
     gl_FrontColor = gl_Color;
 }})";
 
-constexpr auto vertex_add_height = "vert.y -= (float(gl_Color.r) * 255);";
-constexpr auto vertex_no_height = "// NOTE: height disabled";
+constexpr auto vertex_shadow_uniforms = "uniform vec2 world_size;uniform float tile_size;varying vec2 position;";
+constexpr auto vertex_no_shadow_uniforms = "";
+constexpr auto vertex_shadow_position = "position = (gl_Vertex.xy / tile_size) / world_size;";
+constexpr auto vertex_no_shadow_position = "// NOTE: not calculating shadowmapping position";
 
 //https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 constexpr auto fragment_source = R"(
 #version 120
 uniform sampler2D tex;
+uniform float y_offset;
+uniform float y_range;
+varying float model_view_vertex_y;
+
+void main()
+{{
+	// calculate fragment depth along y axis
+	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
+	// frag colour
+	{}
+}})";
+
+constexpr auto fragment_normal_color = "gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);";
+constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;";
+
+constexpr auto shadow_fragment_source = R"(
+#version 120
 uniform sampler2D sunlight_map;
 uniform float y_offset;
 uniform float y_range;
 varying vec2 position;
 varying float model_view_vertex_y;
 
+vec4 transparent = vec4(0.f, 0.f, 0.f, 0.f);
+
 void main()
 {{
-	// TODO: get position from in var and lookup height map
-	//		for shadowing and normal lighting cal
-
 	// calculate fragment depth along y axis
 	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
 	// shadow info
 	float shadow_height = texture2D(sunlight_map, position).r;
 	// frag colour
-	{}
+	gl_FragColor = mix(transparent, vec4(0, 0, 0, 1), float(gl_Color.r <= shadow_height) * 0.3f);
 }})";
-
-constexpr auto fragment_normal_color = "gl_FragColor = mix(texture2D(tex, gl_TexCoord[0].xy), vec4(0, 0, 0, 1), float(gl_Color.r <= shadow_height) * 0.5f);";
-constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;sunlight_map;";
 
 static auto terrain_map_shader_id = hades::unique_zero;
 static auto terrain_map_shader_debug_id = hades::unique_zero;
-static auto terrain_map_shader_no_height_id = hades::unique_zero;
-static auto terrain_map_shader_no_height_debug_id = hades::unique_zero;
+static auto terrain_map_shader_shadows_lighting = hades::unique_zero;
 
 namespace hades
 {
@@ -80,13 +93,66 @@ namespace hades
 	{
 		register_texture_resource(d);
 		register_terrain_resources(d, resources::texture_functions::make_resource_link);
-
+		
 		auto uniforms = resources::shader_uniform_map{
 				{
 					"tex"s, // current texture
 					resources::uniform{
 						resources::uniform_type_list::texture,
 						sf::Shader::CurrentTexture
+					}
+				},{
+					"height_multiplier"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				},{
+					"y_offset"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				},{
+					"y_range"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
+					}
+				}
+		};
+
+		if(terrain_map_shader_id == unique_zero)
+		{ // make heightmap terrain shader
+			terrain_map_shader_id = make_unique_id();
+
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_id);
+			assert(shader);
+
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
+			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_shadow_uniforms, vertex_no_shadow_position));
+			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
+		}
+
+		if (terrain_map_shader_debug_id == unique_zero)
+		{ // make heightmap debug terrain shader
+			terrain_map_shader_debug_id = make_unique_id();
+
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_debug_id);
+			assert(shader);
+
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
+			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_shadow_uniforms, vertex_no_shadow_position));
+			shdr_funcs::set_uniforms(*shader, std::move(uniforms)); // copy uniforms(we move it later)
+		}
+
+		uniforms.clear();
+		uniforms = resources::shader_uniform_map{
+				{
+					"height_multiplier"s,
+					resources::uniform{
+						resources::uniform_type_list::float_t,
+						{} // 0.f
 					}
 				},{
 					"y_offset"s,
@@ -120,52 +186,16 @@ namespace hades
 				}
 		};
 
-		if(terrain_map_shader_id == unique_zero)
-		{ // make heightmap terrain shader
-			terrain_map_shader_id = make_unique_id();
+		// terrain shadow rendering shader
+		if (terrain_map_shader_shadows_lighting == unique_zero)
+		{
+			terrain_map_shader_shadows_lighting = make_unique_id();
 
-			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_id);
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_shadows_lighting);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
-			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
-			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
-		}
-
-		if (terrain_map_shader_debug_id == unique_zero)
-		{ // make heightmap debug terrain shader
-			terrain_map_shader_debug_id = make_unique_id();
-
-			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_debug_id);
-			assert(shader);
-
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
-			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_add_height));
-			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
-		}
-
-		if (terrain_map_shader_no_height_id == unique_zero)
-		{ // make flat terrain shader
-			// TODO: how to draw cliffs in flat mode?
-			terrain_map_shader_no_height_id = make_unique_id();
-
-			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_id);
-			assert(shader);
-
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
-			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
-			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
-		}
-
-		if (terrain_map_shader_no_height_debug_id == unique_zero)
-		{ // make flat debug terrain shader
-			terrain_map_shader_no_height_debug_id = make_unique_id();
-
-			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_no_height_debug_id);
-			assert(shader);
-
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
-			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_no_height));
+			shdr_funcs::set_fragment(*shader, shadow_fragment_source);
+			shdr_funcs::set_vertex(*shader, std::format(vertex_source, vertex_shadow_uniforms, vertex_shadow_position));
 			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
 	}
@@ -207,8 +237,7 @@ namespace hades
 		_settings{ resources::get_terrain_settings() },
 		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) }, 
 		_shader_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_id)) },
-		_shader_no_height{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_id)) },
-		_shader_no_height_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_no_height_debug_id)) },
+		_shader_shadows_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_shadows_lighting)) },
 		_sunlight_table{ std::make_unique<sf::Texture>() }
 	{}
 
@@ -219,9 +248,8 @@ namespace hades
 
 	void mutable_terrain_map::reset(terrain_map t)
 	{
-		const auto& settings = *resources::get_terrain_settings();
-		const auto tile_size = settings.tile_size;
-		const auto width = t.tile_layer.width;
+		const auto& tile_size = _settings->tile_size;
+		const auto& width = t.tile_layer.width;
 		const auto& tiles = t.tile_layer.tiles;
 
 		_local_bounds = rect_float{
@@ -229,6 +257,9 @@ namespace hades
 			float_cast(width * tile_size),
 			float_cast((tiles.size() / width) * tile_size)
 		};
+
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
+			shdr->set_uniform("height_multiplier"sv, _show_height * 1.f);
 
 		const auto terrain_size = static_cast<vector2<unsigned int>>(get_vertex_size(t));
 		if (!_sunlight_table->create({ terrain_size.x, terrain_size.y }))
@@ -239,14 +270,22 @@ namespace hades
 			};
 		}
 
-		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
-		{
-			shdr->set_uniform("tile_size"sv, float_cast(_settings->tile_size));
-			shdr->set_uniform("world_size"sv, static_cast<vector2_float>(terrain_size));
-		}
+		_shader_shadows_lighting.set_uniform("tile_size"sv, float_cast(tile_size));
+		_shader_shadows_lighting.set_uniform("world_size"sv, static_cast<vector2_float>(get_vertex_size(t)));
 
 		_map = std::move(t);
+
+		set_world_rotation(0.f);
+
 		_needs_apply = true;
+		return;
+	}
+
+	void mutable_terrain_map::set_height_enabled(bool b) noexcept
+	{
+		_show_height = b;
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
+			shdr->set_uniform("height_multiplier"sv, _show_height * 1.f);
 		return;
 	}
 
@@ -369,7 +408,8 @@ namespace hades
 		return;
 	}
 
-	static sf::Image generate_shadowmap(const float sun_angle_radian, const float tile_size, const terrain_map& map)
+	static sf::Image generate_shadowmap(const float sun_angle_radian, const float tile_size,
+		const terrain_map& map)
 	{
 		// TODO: clean up type usage here, heightmap can be indexed with size_t
 		//		but img can only be indexed with unsigned
@@ -446,6 +486,41 @@ namespace hades
 				tile_sizef
 			};
 
+			std::array<colour, 4> colours;
+			colours.fill(colour{});
+
+			for (auto i = std::size_t{}; i < size(tile.height); ++i)
+				colours[i].r = tile.height[i];
+
+			const auto quad = make_quad_animation(pos, { tile_sizef, tile_sizef }, tex_coords, colours);
+			_quads.append(quad);
+		}
+
+		// cliffs begin
+		//Cliffs
+		// add to quadmap and store start index of cliffs
+
+		// shadows
+		// TODO: set shadow strength based on the angle of the sun
+		_shadow_start = std::size(_quads);
+		const auto shadow_map = generate_shadowmap(_sun_angle, tile_sizef, _map);
+		assert(shadow_map.getSize() == _sunlight_table->getSize());
+		_sunlight_table->update(shadow_map);
+
+		_shadow_tile_info.clear();
+		std::ranges::transform(_info.tile_info, std::inserter(_shadow_tile_info, end(_shadow_tile_info)),
+			[](const map_tile& m) noexcept {
+				return shadow_tile{ m.index, m.height };
+			});
+
+		for (const auto& tile : _shadow_tile_info)
+		{
+			const auto [x, y] = to_2d_index(tile.index, width);
+			const auto pos = vector2_float{
+				float_cast(x) * tile_sizef,
+				float_cast(y) * tile_sizef
+			};
+			
 			constexpr auto top_left = enum_type(rect_corners::top_left),
 				top_right = enum_type(rect_corners::top_right),
 				//bottom_right = enum_type(rect_corners::bottom_right),
@@ -468,34 +543,17 @@ namespace hades
 			for (auto i = std::size_t{}; i < size(tile.height); ++i)
 				colours[i].r = tile.height[i];
 
-			const auto quad = make_quad_animation(pos, { tile_sizef, tile_sizef }, tex_coords, colours);
+			const auto quad = make_quad_colour({ pos, { tile_sizef, tile_sizef } }, colours);
 			_quads.append(quad);
 		}
 
-		// cliffs begin
+		_shader_shadows_lighting.set_uniform("sunlight_map"sv, &*_sunlight_table);
 
-		// grid - split from the rest of the quad buffer so it can be toggled off and on
-		_grid_start = _quads.size();
+		// grid
+		_grid_start = std::size(_quads);
 		_grid_tex = generate_grid(_map, *_settings, tile_sizef, _quads);
 
 		_quads.apply();
-
-		const auto shadow_map = generate_shadowmap(_sun_angle, tile_sizef, _map);
-		assert(shadow_map.getSize() == _sunlight_table->getSize());
-		_sunlight_table->update(shadow_map);
-		
-		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
-		{
-			shdr->set_uniform("sunlight_map"sv, &*_sunlight_table);
-		}
-
-		//Shadowing ideas
-		//There must be a better way than raycasting.
-		//My first thought was to smear the height map data along the projected sun direction.
-		//Places where the smeared image 'height' value is above the unaltered version is in shadow.
-
-		//Cliffs
-		// add to quadmap and store start index of cliffs
 
 		_needs_apply = false;
 		return;
@@ -504,16 +562,9 @@ namespace hades
 	void mutable_terrain_map::draw(sf::RenderTarget& t, const sf::RenderStates& states) const
 	{
 		assert(!_needs_apply);
-		auto show_height = &_shader;
-		auto no_height = &_shader_no_height;
-		if (_debug_depth)
-		{
-			show_height = &_shader_debug_depth;
-			no_height = &_shader_no_height_debug_depth;
-		}
-
+		
 		auto s = states;
-		s.shader = _show_height ? show_height->get_shader() : no_height->get_shader();
+		s.shader = _debug_depth ? _shader_debug_depth.get_shader() : _shader.get_shader();
 		const auto beg = begin(_info.tile_info);
 		const auto ed = end(_info.tile_info);
 		auto it = beg;
@@ -534,8 +585,21 @@ namespace hades
 			_quads.draw(t, index, last - index, s);
 		}
 
+		//cliffs
+		//TODO:
+
+		//shadows
+		if (_show_shadows)
+		{
+			const auto pop_shader = s.shader;
+			s.shader = _shader_shadows_lighting.get_shader();
+			_quads.draw(t, _shadow_start, _grid_start - _shadow_start, s);
+			s.shader = pop_shader;
+		}
+
 		if (_show_grid && _grid_tex)
 		{
+			
 			s.texture = &resources::texture_functions::get_sf_texture(_grid_tex);
 			_quads.draw(t, _grid_start, _quads.size() - _grid_start, s);
 		}
@@ -554,7 +618,7 @@ namespace hades
 		auto y_offset = t_rect.top;
 		auto y_range = t_rect.height - y_offset;
 
-		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_no_height, &_shader_no_height_debug_depth })
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
 		{
 			shdr->set_uniform("y_offset"sv, y_offset);
 			shdr->set_uniform("y_range"sv, y_range);

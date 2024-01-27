@@ -39,11 +39,7 @@ namespace hades
 
 		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
 
-		void set_height_enabled(bool b) noexcept
-		{
-			_show_height = b;
-			return;
-		}
+		void set_height_enabled(bool b) noexcept;
 
 		void draw_depth_buffer(bool b) noexcept
 		{
@@ -54,6 +50,17 @@ namespace hades
 		bool draw_depth_buffer() const noexcept
 		{
 			return _debug_depth;
+		}
+
+		void show_shadows(bool b) noexcept
+		{
+			_show_shadows = b;
+			return;
+		}
+
+		bool show_shadows() const noexcept
+		{
+			return _show_shadows;
 		}
 
 		void show_grid(bool b) noexcept
@@ -113,6 +120,17 @@ namespace hades
 			resources::tile_size_t top;
 			std::uint8_t texture = {};
 			std::uint8_t layer = {};
+		};
+
+		struct shadow_tile
+		{
+			bool operator<(const shadow_tile& rhs) const noexcept
+			{
+				return index < rhs.index;
+			}
+
+			tile_index_t index;
+			std::array<std::uint8_t, 4> height = {};
 		};
 
 		struct map_info
@@ -210,17 +228,19 @@ namespace hades
 		map_info _info;
 		resources::shader_proxy _shader;
 		resources::shader_proxy _shader_debug_depth;
-		resources::shader_proxy _shader_no_height;
-		resources::shader_proxy _shader_no_height_debug_depth;
+		resources::shader_proxy _shader_shadows_lighting;
 		rect_float _local_bounds = {};
 		const resources::terrain_settings* _settings = {};
 		const resources::texture* _grid_tex = {};
+		std::size_t _shadow_start = {};
 		std::size_t _grid_start = {};
+		std::set<shadow_tile> _shadow_tile_info;
 		auto_texture_ptr _sunlight_table;
 		float _sun_angle = to_radians(135.f);
 		bool _show_grid = false;
 		boolean_token _needs_apply = false;
 		bool _show_height = true;
+		bool _show_shadows = true;
 		bool _debug_depth = false;
 	};
 }

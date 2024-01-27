@@ -995,7 +995,7 @@ namespace hades
 		// walk over tiles using DDA as shown here: https://www.youtube.com/watch?v=NbSee-XM7WA
 		// and here: https://lodev.org/cgtutor/raycasting.html
 
-		constexpr auto rotation_offset = 270.f;
+		constexpr auto rotation_offset = 90.f;
 		auto advance_dir = to_vector(pol_vector2_t<float>{ to_radians(rot + rotation_offset), 1.f });
 		const auto height_dir = advance_dir * -1;
 

@@ -16,6 +16,7 @@ using namespace std::string_view_literals;
 const auto vertex_source = R"(
 #version 120
 {}
+uniform mat4 rotation_matrix;
 uniform float height_multiplier;
 varying float model_view_vertex_y;
 
@@ -23,11 +24,11 @@ void main()
 {{
 	// pass position along for shadowmapping
 	{}
+	// store world position of vertex for fragment shader
+	model_view_vertex_y = (rotation_matrix * gl_Vertex).y;
 	// copy input so we can modify it
 	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
-	// store world position of vertex for fragment shader
-	model_view_vertex_y = vert.y;
-	// add pseudo height in direction of 'screen_up'
+	// move vertex up to simulate height
     vert.y -= (float(gl_Color.r) * 255) * height_multiplier;
     // transform the vertex position
 	gl_Position = gl_ProjectionMatrix * vert;
@@ -102,6 +103,12 @@ namespace hades
 						sf::Shader::CurrentTexture
 					}
 				},{
+					"rotation_matrix"s,
+					resources::uniform{
+						resources::uniform_type_list::matrix4,
+						sf::Glsl::Mat4{ sf::Transform::Identity } // 0.f
+					}
+				},{
 					"height_multiplier"s,
 					resources::uniform{
 						resources::uniform_type_list::float_t,
@@ -149,6 +156,12 @@ namespace hades
 		uniforms.clear();
 		uniforms = resources::shader_uniform_map{
 				{
+					"rotation_matrix"s,
+					resources::uniform{
+						resources::uniform_type_list::matrix4,
+						sf::Glsl::Mat4{ sf::Transform::Identity } // 0.f
+					}
+				},{
 					"height_multiplier"s,
 					resources::uniform{
 						resources::uniform_type_list::float_t,
@@ -618,8 +631,11 @@ namespace hades
 		auto y_offset = t_rect.top;
 		auto y_range = t_rect.height - y_offset;
 
+		auto matrix = sf::Glsl::Mat4{ t };
+
 		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
 		{
+			shdr->set_uniform("rotation_matrix"sv, matrix);
 			shdr->set_uniform("y_offset"sv, y_offset);
 			shdr->set_uniform("y_range"sv, y_range);
 		}

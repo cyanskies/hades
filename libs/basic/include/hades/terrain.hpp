@@ -111,17 +111,18 @@ namespace hades::resources
 
 	std::string_view get_empty_terrainset_name() noexcept;
 
-	// exceptions: these three can through resource_error
-	const terrain *get_empty_terrain();
-	const terrain* get_background_terrain();
+	// exceptions: these three can throw resource_error
+	//const terrain *get_empty_terrain();
+	[[nodiscard]] const terrain* get_empty_terrain(const terrain_settings&);
+	[[deprecated]] const terrain* get_background_terrain();
 	//NOTE: used for maps with no tile terrains
 	// returns a terrainset only holding the empty terrain
-	const terrainset* get_empty_terrainset();
+	[[deprecated]] const terrainset* get_empty_terrainset();
 	
-	std::vector<tile> &get_transitions(terrain&, transition_tile_type);
-	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type);
+	std::vector<tile> &get_transitions(terrain&, transition_tile_type, const resources::terrain_settings&);
+	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type, const resources::terrain_settings&);
 
-	tile get_random_tile(const terrain&, transition_tile_type);
+	tile get_random_tile(const terrain&, transition_tile_type, const resources::terrain_settings&);
 }
 
 namespace hades
@@ -196,7 +197,7 @@ namespace hades
 	//type for positioning vertex in a terrain map
 	using terrain_vertex_position = tile_position;
 
-	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*);
+	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*, const resources::terrain_settings&);
 
 	terrain_index_t get_width(const terrain_map&);
 	//returns the size of the map expressed in tiles
@@ -205,6 +206,7 @@ namespace hades
 	terrain_vertex_position get_vertex_size(const terrain_map&);
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
+	[[nodiscard]]
 	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width) noexcept;
 	
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
@@ -231,7 +233,7 @@ namespace hades
 	template<typename  Iter1, typename Iter2>
 	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end);
 
-	tile_corners get_terrain_at_tile(const terrain_map&, tile_position);
+	tile_corners get_terrain_at_tile(const terrain_map&, tile_position, const resources::terrain_settings&);
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	// returns the height in the 4 corners of the tile
@@ -251,13 +253,14 @@ namespace hades
 	// new areas will be set to terrain*
 	// TODO: replace vector2_int with tile_position
 	void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right,
-		const resources::terrain*);
+		const resources::terrain*, std::uint8_t height, const resources::terrain_settings&);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right);
+	[[deprecated]] void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right);
 	//as above, places current map content at offset
-	void resize_map(terrain_map&, vector2_int size, vector2_int offset, const resources::terrain*);
-	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map(terrain_map&, vector2_int size, vector2_int offset);
+	void resize_map(terrain_map&, vector2_int size, vector2_int offset, const resources::terrain*,
+		std::uint8_t height, const resources::terrain_settings& s);
+	//as above, new tiles will be set as if tile& was resources::get_empty_tile()
+	[[deprecated]] void resize_map(terrain_map&, vector2_int size, vector2_int offset);
 
 	// TODO: investigate where this is used, add for_each_adjacent_tile
 	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
@@ -265,13 +268,13 @@ namespace hades
 
 	//for editing a terrain map
 	//use the make_position_* functions from tiles.hpp
-	void place_tile(terrain_map&, tile_position, const resources::tile&);
+	void place_tile(terrain_map&, tile_position, const resources::tile&, const resources::terrain_settings&);
 	//positions outside the map will be ignored
-	void place_tile(terrain_map&, const std::vector<tile_position>&, const resources::tile&);
+	void place_tile(terrain_map&, const std::vector<tile_position>&, const resources::tile&, const resources::terrain_settings&);
 
-	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*);
+	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*, const resources::terrain_settings&);
 	//positions outside the map will be ignored
-	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*);
+	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*, const resources::terrain_settings&);
 
 	// TODO: need to fix for cliffs
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);

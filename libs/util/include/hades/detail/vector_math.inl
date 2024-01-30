@@ -7,7 +7,6 @@
 #include <tuple>
 #include <type_traits>
 
-#include "hades/math.hpp"
 #include "hades/tuple.hpp"
 #include "hades/utility.hpp"
 
@@ -210,9 +209,10 @@ namespace hades
 	template<typename T, std::size_t Size>
 	constexpr basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size> v) noexcept
 	{
-		auto out = basic_pol_vector<T, Size>{ vector::angle_theta(v), vector::magnitude(v) };
+		const auto mag = vector::magnitude(v);
+		auto out = basic_pol_vector<T, Size>{ vector::angle_theta_degrees(v), mag };
 		if constexpr (Size > 2)
-			out.phi = vector::angle_phi(v);
+			out.phi = vector::angle_phi(v, mag);
 		return out;
 	}
 
@@ -260,29 +260,28 @@ namespace hades
 		constexpr auto angle_theta(const basic_vector<T, Size> v) noexcept
 		{
 			static_assert(Size < 4);
-			//NOTE: y is inverted because opengl
 			if constexpr (std::is_floating_point_v<T>)
-				return to_degrees(std::atan2(v.y * -1.f, v.x));
+				return to_degrees(std::atan2(v.y, v.x));
 			else
-				return to_degrees(std::atan2(static_cast<float>(v.y) * -1.f,
+				return to_degrees(std::atan2(static_cast<float>(v.y),
 					static_cast<float>(v.x)));
 		}
 
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
-		constexpr auto angle_phi(const basic_vector<T, Size> v) noexcept
+		constexpr auto angle_phi(const basic_vector<T, Size> v, std::optional<T> mag) noexcept
 		{
 			static_assert(Size < 4);
 
 			if constexpr (std::is_floating_point_v<T>)
 			{
-				constexpr auto z_over_mag = v.z / magnitude(v);
+				constexpr auto z_over_mag = v.z / mag.value_or(magnitude(v));
 				return std::acos(z_over_mag);
 			}
 			else
 			{
 				const auto float_vec = static_cast<basic_vector<float, Size>>(v);
-				return angle_phi(float_vec);
+				return angle_phi(float_vec, mag);
 			}
 		}
 

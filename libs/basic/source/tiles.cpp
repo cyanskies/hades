@@ -416,8 +416,14 @@ namespace hades::resources
 	const tile& get_empty_tile()
 	{
 		const auto s = get_tile_settings();
-		assert(s->empty_tileset);
-		const auto tset = s->empty_tileset;
+		assert(s);
+		return get_empty_tile(*s);
+	}
+
+	const tile& get_empty_tile(const tile_settings& s)
+	{
+		assert(s.empty_tileset);
+		const auto tset = s.empty_tileset;
 		assert(!tset->tiles.empty());
 		return tset->tiles.front();
 	}
@@ -516,22 +522,22 @@ namespace hades
 		return map;
 	}
 
-	tile_position from_tile_index(tile_index_t i, tile_index_t w) noexcept
+	tile_position from_tile_index(tile_index_t i, tile_index_t w)
 	{
 		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(w));
 	}
 
-	tile_index_t to_tile_index(tile_position p, tile_index_t w) noexcept
+	tile_index_t to_tile_index(tile_position p, tile_index_t w)
 	{
 		return integer_cast<tile_index_t>(to_1d_index(p, w));
 	}
 
-	tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept
+	tile_position from_tile_index(tile_index_t i, const tile_map& t)
 	{
 		return from_tile_index(i, t.width);
 	}
 
-	tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept
+	tile_index_t to_tile_index(tile_position p, const tile_map& t)
 	{
 		return to_tile_index(p, t.width);
 	}
@@ -686,30 +692,24 @@ namespace hades
 		return m;
 	}
 
-	static bool is_in_tileset(const resources::tileset &tileset, const resources::tile &t) noexcept
+	[[nodiscard]]
+	static const resources::tileset *get_parent_tileset(const resources::tile &t, const resources::tile_settings& s)
 	{
-		for (const auto &tile : tileset.tiles)
-			if (tile == t)
-				return true;
+		const auto is_in_tileset = [](const resources::tileset& tileset, const resources::tile& t) noexcept -> bool {
+			return std::ranges::find(tileset.tiles, t) != end(tileset.tiles);
+			};
 
-		return false;
-	}
-
-	const resources::tileset *get_parent_tileset(const resources::tile &t)
-	{
-		const auto s = resources::get_tile_settings();
-		
-		for (const auto tileset : s->tilesets)
+		for (const auto& tileset : s.tilesets)
 			if (is_in_tileset(*tileset, t))
 				return tileset.get();
 
 		//check if in empty
-		if (is_in_tileset(*s->empty_tileset, t))
-			return s->empty_tileset.get();
+		if (is_in_tileset(*s.empty_tileset, t))
+			return s.empty_tileset.get();
 
 		//check error
-		if (is_in_tileset(*s->error_tileset, t))
-			return s->error_tileset.get();
+		if (is_in_tileset(*s.error_tileset, t))
+			return s.error_tileset.get();
 
 		return nullptr;
 	}
@@ -807,7 +807,9 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this tile_map" };
 	}
 
-	tile_id_t make_tile_id(tile_map &m, const resources::tile &t)
+	//returns a tile id usable for that tile_map, adds the needed tileset to the map
+	// exceptions: tileset_not_found, tileset_error
+	[[nodiscard]] static tile_id_t make_tile_id(tile_map &m, const resources::tile &t, const resources::tile_settings& s)
 	{
 		std::size_t offset{};
 
@@ -825,7 +827,7 @@ namespace hades
 			offset += std::size(tileset->tiles);
 		};
 
-		const auto tileset = get_parent_tileset(t);
+		const auto tileset = get_parent_tileset(t, s);
 
 		if (!tileset)
 			throw tileset_not_found{ "unable to find a tileset containing this tile" };
@@ -861,7 +863,7 @@ namespace hades
 		return get_tags(tile);
 	}
 
-	tile_map make_map(tile_position s, const resources::tile &t)
+	tile_map make_map(tile_position s, const resources::tile &t, const resources::tile_settings& settings)
 	{
 		if (s.x < 0 || s.y < 0)
 			throw invalid_argument{ "cannot make a tile map with a negative size" };
@@ -869,7 +871,7 @@ namespace hades
 		auto m = tile_map{};
 		m.width = s.x;
 
-		const auto index = make_tile_id(m, t);
+		const auto index = make_tile_id(m, t, settings);
 
 		const auto length = integer_cast<std::size_t>(s.x * s.y);
 		m.tiles = std::vector<tile_id_t>(length, index);
@@ -877,7 +879,8 @@ namespace hades
 		return m;
 	}
 
-	void resize_map_relative(tile_map &m, vector2_int top_left, vector2_int bottom_right, const resources::tile &t)
+	void resize_map_relative(tile_map &m, vector2_int top_left, vector2_int bottom_right,
+		const resources::tile &t, const resources::tile_settings& s)
 	{
         const auto current_height = integer_cast<int32>(m.tiles.size()) / m.width;
 		const auto current_width = m.width;
@@ -890,18 +893,18 @@ namespace hades
 			integer_cast<int32>(new_height)
 		};
 
-		resize_map(m, size, { -top_left.x, -top_left.y }, t);
+		resize_map(m, size, { -top_left.x, -top_left.y }, t, s);
 	}
 
-	void resize_map_relative(tile_map &t, vector2_int top_left, vector2_int bottom_right)
+	void resize_map_relative(tile_map &t, vector2_int top_left, vector2_int bottom_right, const resources::tile_settings& s)
 	{
-		const auto& empty_tile = resources::get_empty_tile();
-		resize_map_relative(t, top_left, bottom_right, empty_tile);
+		const auto& empty_tile = resources::get_empty_tile(s);
+		resize_map_relative(t, top_left, bottom_right, empty_tile, s);
 	}
 
-	void resize_map(tile_map &m, const vector2_int size, const vector2_int offset, const resources::tile &t)
+	void resize_map(tile_map &m, const vector2_int size, const vector2_int offset, const resources::tile &t, const resources::tile_settings& s)
 	{
-		const auto tile = make_tile_id(m, t);
+		const auto tile = make_tile_id(m, t, s);
 
 		auto new_tilemap = table_reduce_view{ vector2_int{},
 			size, tile, [](auto&&, auto&& tile_id) noexcept -> tile_id_t {
@@ -926,10 +929,10 @@ namespace hades
 		return;
 	}
 
-	void resize_map(tile_map &t, vector2_int size, vector2_int offset)
+	void resize_map(tile_map &t, vector2_int size, vector2_int offset, const resources::tile_settings& s)
 	{
-		const auto& empty_tile = resources::get_empty_tile();
-		resize_map(t, size, offset, empty_tile);
+		const auto& empty_tile = resources::get_empty_tile(s);
+		resize_map(t, size, offset, empty_tile, s);
 	}
 
 	void place_tile(tile_map &m, tile_position p, tile_id_t t)
@@ -948,9 +951,9 @@ namespace hades
 		m.tiles[index] = t;
 	}
 
-	void place_tile(tile_map &m, tile_position p, const resources::tile &t)
+	void place_tile(tile_map &m, tile_position p, const resources::tile &t, const resources::tile_settings& s)
 	{
-		const auto id = make_tile_id(m, t);
+		const auto id = make_tile_id(m, t, s);
 		place_tile(m, p, id);
 	}
 
@@ -960,9 +963,9 @@ namespace hades
 			place_tile(m, pos, t);
 	}
 
-	void place_tile(tile_map &m, const std::vector<tile_position> &p, const resources::tile &t)
+	void place_tile(tile_map &m, const std::vector<tile_position> &p, const resources::tile &t, const resources::tile_settings& s)
 	{
-		const auto id = make_tile_id(m, t);
+		const auto id = make_tile_id(m, t, s);
 		place_tile(m, p, id);
 	}
 

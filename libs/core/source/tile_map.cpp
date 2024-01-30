@@ -239,7 +239,9 @@ namespace hades
 		if (_tiles.width == 0)
 			throw tile_map_error{ "tried to place tile on empty tile_map" };
 
-		hades::place_tile(_tiles, positions, t);
+		const auto settings = resources::get_tile_settings();
+		assert(settings);
+		hades::place_tile(_tiles, positions, t, *settings);
 		
         const auto level_y = integer_cast<tile_index_t>(_tiles.tiles.size()) / _tiles.width;
         const auto level_x = _tiles.width;

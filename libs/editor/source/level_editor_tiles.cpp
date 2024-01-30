@@ -37,9 +37,9 @@ namespace hades
 				to_string(tile_size) + "], will be adjusted to the a valid value");
 
 		const auto &tile = 
-			_new_options.tile ? *_new_options.tile : resources::get_empty_tile();
+			_new_options.tile ? *_new_options.tile : resources::get_empty_tile(*_settings);
 
-		const auto map = make_map(size, tile);
+		const auto map = make_map(size, tile, *_settings);
 		l.tile_map_layer = to_raw_map(map);
 
 		return l;
@@ -61,7 +61,7 @@ namespace hades
 			LOGWARNING("loaded map size must be a multiple of tile size: [" + 
 				to_string(tile_size) + "], level will be adjusted to a valid value");
 
-		const auto empty_map = make_map(size, resources::get_empty_tile());
+		const auto empty_map = make_map(size, resources::get_empty_tile(*_settings), *_settings);
 		_empty_preview.create(empty_map);
 
 		if (l.tile_map_layer.tiles.empty())
@@ -87,7 +87,7 @@ namespace hades
 		const auto new_size_tiles = to_tiles(s, _settings->tile_size);
 		const auto offset_tiles = to_tiles(o, _settings->tile_size);
 		_level_size = new_size_tiles;
-		resize_map(map, new_size_tiles, offset_tiles);
+		resize_map(map, new_size_tiles, offset_tiles, *_settings);
 		_tiles = mutable_tile_map{ map };
 	}
 

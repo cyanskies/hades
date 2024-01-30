@@ -89,7 +89,7 @@ namespace hades
 			signed_cast(l.map_y / _settings->tile_size)
 		};
 
-		const auto map = make_map(size, _new_options.terrain_set, _new_options.terrain);
+		const auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
 		const auto raw = to_raw_terrain_map(map);
 
 		// generate random height values
@@ -158,12 +158,14 @@ namespace hades
 
 		auto map = to_terrain_map(map_raw);
 		//TODO: if size != to level xy, then resize the map
-		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset, _empty_terrain);
+		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset,
+			_empty_terrain, *_settings);
 		empty_map.heightmap = map.heightmap;
 
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));
 		_clear_preview.reset(std::move(empty_map));
+		_clear_preview.show_shadows(false);
 		return;
 	}
 
@@ -185,8 +187,9 @@ namespace hades
 		const auto new_size_tiles = to_tiles(s, _tile_size);
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
-		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain);
-		auto empty_map = make_map(new_size_tiles + vector2_int{ 1, 1 }, map.terrainset, _empty_terrain);
+		// TODO: ui to select new height
+		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain, _settings->height_default, *_settings);
+		auto empty_map = make_map(new_size_tiles + vector2_int{ 1, 1 }, map.terrainset, _empty_terrain, *_settings);
 		_clear_preview.reset(std::move(empty_map));
 		_map.reset(std::move(map));
 		_resize.terrain = _empty_terrain;

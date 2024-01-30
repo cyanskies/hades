@@ -283,6 +283,8 @@ namespace hades
 			};
 		}
 
+		_sunlight_table->setSmooth(true);
+
 		_shader_shadows_lighting.set_uniform("tile_size"sv, float_cast(tile_size));
 		_shader_shadows_lighting.set_uniform("world_size"sv, static_cast<vector2_float>(get_vertex_size(t)));
 
@@ -357,7 +359,7 @@ namespace hades
 	{
 		const auto s = size(map.tile_layer.tiles);
 		assert(settings.grid_terrain);
-		const auto& grid_tiles = resources::get_transitions(*settings.grid_terrain, resources::transition_tile_type::all);
+		const auto& grid_tiles = resources::get_transitions(*settings.grid_terrain, resources::transition_tile_type::all, settings);
 		assert(!empty(grid_tiles));
 		const auto grid_tile = grid_tiles.front();
 		const auto width = get_width(map);
@@ -470,6 +472,7 @@ namespace hades
 		}
 		catch (const overflow_error&)
 		{
+			// TODO: this doesnt seem to be a problem anymore
 			log_warning("terrain map has too many terrain layers (> 255)"sv);
 		}
 
@@ -549,6 +552,8 @@ namespace hades
 			const auto v = p3 - p1;
 
 			const auto normal = vector::cross(u, v);
+
+			//const auto pol = vector::angle_phi
 
 			std::array<colour, 4> colours;
 			colours.fill(colour{});
@@ -650,14 +655,14 @@ namespace hades
 
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)
 	{
-		hades::place_tile(_map, p, t);
+		hades::place_tile(_map, p, t, *_settings);
 		_needs_apply = true;
 		return;
 	}
 
 	void mutable_terrain_map::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
 	{
-		hades::place_terrain(_map, p, t);
+		hades::place_terrain(_map, p, t, *_settings);
 		_needs_apply = true;
 		return;
 	}

@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "hades/math.hpp"
 #include "hades/string.hpp"
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
@@ -252,11 +253,16 @@ namespace hades
 		// TODO: return in radians
 		template<typename T, std::size_t Size>
 		[[nodiscard]] constexpr auto angle_theta(basic_vector<T, Size>) noexcept;
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr auto angle_theta_degrees(basic_vector<T, Size> v) noexcept
+		{
+			return to_degrees(angle_theta(v));
+		}
 
 		// NOTE: unlike above, returns angle in radians
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
-		[[nodiscard]] constexpr auto angle_phi(basic_vector<T, Size>) noexcept;
+		[[nodiscard]] constexpr auto angle_phi(basic_vector<T, Size>, std::optional<T> magnitude = {}) noexcept;
 
 		// returns the angle_theta between the two vectors
 		// returns in radians

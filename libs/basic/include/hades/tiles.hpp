@@ -130,7 +130,8 @@ namespace hades::resources
 	const tile_settings *get_tile_settings();
 	tile_size_t get_tile_size();
 	const tile& get_error_tile();
-	const tile& get_empty_tile();
+	[[deprecated]] const tile& get_empty_tile();
+	[[nodiscard]] const tile& get_empty_tile(const tile_settings&);
 
 	unique_id get_tile_settings_id() noexcept;
 }
@@ -195,12 +196,12 @@ namespace hades
 	//TODO: make many of these noexcept and constexpr
 
 	// index type is storable in the curve system
-	tile_position from_tile_index(tile_index_t, tile_index_t map_width) noexcept;
-	tile_index_t to_tile_index(tile_position, tile_index_t map_width) noexcept;
-	tile_position from_tile_index(tile_index_t, const tile_map&) noexcept;
-	tile_index_t to_tile_index(tile_position, const tile_map&) noexcept;
+	tile_position from_tile_index(tile_index_t, tile_index_t map_width);
+	tile_index_t to_tile_index(tile_position, tile_index_t map_width);
+	tile_position from_tile_index(tile_index_t, const tile_map&);
+	tile_index_t to_tile_index(tile_position, const tile_map&);
 
-	//tile to pixel consersions
+	//tile to pixel conversions
 	//convert pixel mesurement to tile measurement
 	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept; 
 	//convert pixel position to tilemap position
@@ -221,9 +222,6 @@ namespace hades
 	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
 	raw_map to_raw_map(const tile_map&);
 
-	//returns nullptr on failure
-	const resources::tileset *get_parent_tileset(const resources::tile&);
-
 	//get tile from raw_map
 	// exceptions: tile_not_found, tileset_not_found
 	resources::tile get_tile(const raw_map&, tile_id_t);
@@ -237,10 +235,7 @@ namespace hades
 	//gets the tile id in a format appropriate for storing in tile map
 	// exceptions: tile_not_found
 	tile_id_t get_tile_id(const tile_map&, const resources::tile&);
-	//returns a tile id usable for that tile_map, adds the needed tileset to the map
-	// exceptions: tileset_not_found
-	tile_id_t make_tile_id(tile_map&, const resources::tile&);
-
+	
 	const tag_list &get_tags(const resources::tile&);
 
 	//for getting information out of a tile map
@@ -248,7 +243,7 @@ namespace hades
 	const tag_list &get_tags_at(const tile_map&, tile_position);
 
 	// exceptions: tileset_not_found
-	tile_map make_map(tile_position size, const resources::tile&);
+	[[nodiscard]] tile_map make_map(tile_position size, const resources::tile&, const resources::tile_settings&);
 
 	//set the vectors relative to the current size
 	//eg, to expand the map in all directions
@@ -256,20 +251,20 @@ namespace hades
 	// tiles that fall outside the new size are erased
 	// new areas will be set to tile&
 	void resize_map_relative(tile_map&, vector2_int top_left, vector2_int bottom_right,
-		const resources::tile&);
+		const resources::tile&, const resources::tile_settings&);
 	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map_relative(tile_map&, vector2_int top_left, vector2_int bottom_right);
+	void resize_map_relative(tile_map&, vector2_int top_left, vector2_int bottom_right, const resources::tile_settings&);
 	//as above, places current map content at offset
-	void resize_map(tile_map&, vector2_int size, vector2_int offset, const resources::tile&);
-	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	void resize_map(tile_map&, vector2_int size, vector2_int offset);
+	void resize_map(tile_map&, vector2_int size, vector2_int offset, const resources::tile&, const resources::tile_settings&);
+	//as above, new tiles will be set as if tile& was resources::get_empty_tile()
+	void resize_map(tile_map&, vector2_int size, vector2_int offset, const resources::tile_settings&);
 
 	//for editing a tile map
 	void place_tile(tile_map&, tile_position, tile_id_t);
-	void place_tile(tile_map&, tile_position, const resources::tile&);
+	void place_tile(tile_map&, tile_position, const resources::tile&, const resources::tile_settings&);
 	//positions outside the map will be ignored
 	void place_tile(tile_map&, const std::vector<tile_position>&, tile_id_t);
-	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&);
+	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&, const resources::tile_settings&);
 
 	constexpr bool within_world(tile_position position, tile_position world_size) noexcept;
 

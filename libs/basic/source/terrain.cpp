@@ -1033,7 +1033,7 @@ namespace hades
 		constexpr auto rotation_offset = 270.f;
 		auto advance_dir = to_vector(pol_vector2_t<float>{ to_radians(rot + rotation_offset), 1.f });
 		advance_dir.y *= -1.f;
-		const auto height_dir = advance_dir * -1;
+		const auto height_dir = advance_dir * -1.f;
 
 		auto tile_check = tile_position{
 			integral_cast<tile_position::value_type>(norm_p.x, round_towards_zero_tag),

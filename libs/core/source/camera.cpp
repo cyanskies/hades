@@ -9,11 +9,9 @@ namespace hades::camera
 {
 	void variable_width(sf::View &v, float static_height, float width, float height) noexcept
 	{
-		const auto ratio = width / height;
-
-		//set the view
-		const auto size = sf::Vector2f{ static_height * ratio, static_height };
+		const auto size = sf::Vector2f{ calculate_width(static_height, width, height), static_height};
 		v.setSize(size);
+		return;
 	}
 
 	void move(sf::View& v, const vector2_float move, const rect_int rect) noexcept

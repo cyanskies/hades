@@ -70,7 +70,7 @@ namespace hades
 
 	namespace detail
 	{
-		template<typename T, std::enable_if_t<gui_supported_types<T>, int> = 0>
+		template<gui_supported_type T>
 		constexpr ImGuiDataType get_imgui_data_type() noexcept
 		{
 			if constexpr (std::is_same_v<T, int8>)
@@ -96,6 +96,15 @@ namespace hades
 			else
 				return ImGuiDataType_COUNT;
 		}
+
+		template<detail::gui_supported_type T>
+		constexpr const char* imgui_scalar_fmt() noexcept
+		{
+			if constexpr (std::floating_point<T>)
+				return "%.3f";
+			else if constexpr (std::integral<T>)
+				return "%d";
+		}
 	}
 
 	template<std::size_t N, std::enable_if_t<N < 5, int>>
@@ -114,7 +123,7 @@ namespace hades
 			else if constexpr (N == 4)
 				return ImGui::SliderFloat4;
 		}();
-		return std::invoke(slider_float_n, to_string(label).c_str(), v.data(), min, max, to_string(format).c_str(), enum_type(flags));
+		return std::invoke(slider_float_n, label, v.data(), min, max, to_string(format).c_str(), enum_type(flags));
 	}
 
 	template<std::size_t N, std::enable_if_t< N < 5, int>>
@@ -133,20 +142,37 @@ namespace hades
 			else if constexpr (N == 4)
 				return ImGui::SliderInt4;
 		}();
-		return std::invoke(slider_int_n, to_string(label).c_str(), v.data(), min, max, to_string(format).c_str(), enum_type(flags));
+		return std::invoke(slider_int_n, label, v.data(), min, max, to_string(format).c_str(), enum_type(flags));
 	}
 
-	template<typename T, typename U, std::enable_if_t<detail::gui_supported_types<T>, int>>
-	bool gui::slider_scalar(std::string_view label, T &v, U min, U max, std::string_view fmt, slider_flags f)
+	template<detail::gui_supported_type T>
+	bool gui::slider_scalar(std::string_view label, T &v, T min, T max, const std::string& fmt, slider_flags f)
 	{
-		static_assert(std::is_convertible_v<U, T>, "The types of min and max must be convertible to T");
 		_active_assert();
+		return ImGui::SliderScalar(label, detail::get_imgui_data_type<T>(),
+			&v, &min, &max,
+			!empty(fmt) ? to_string(fmt).c_str() : detail::imgui_scalar_fmt<T>(),
+			enum_type(f));
+	}
 
-		auto min_t = integer_cast<T>(min);
-		auto max_t = integer_cast<T>(max);
+	template<detail::gui_supported_type T, std::size_t N>
+	bool gui::slider_scalar(std::string_view label, std::array<T, N>& v, T min, T max, const std::string& fmt, slider_flags f)
+	{
+		_active_assert();
+		return ImGui::SliderScalarN(label, detail::get_imgui_data_type<T>(),
+			v.data, integer_cast<int>(N), &min, &max,
+			!empty(fmt) ? to_string(fmt).c_str() : detail::imgui_scalar_fmt<T>(),
+			enum_type(f));
+	}
 
-		return ImGui::SliderScalar(to_string(label).c_str(), detail::get_imgui_data_type<T>(),
-			&v, &min_t, &max_t, !empty(fmt) ? to_string(fmt).c_str() : nullptr, enum_type(f));
+	template<detail::gui_supported_type T>
+	bool gui::vertical_slider_scalar(std::string_view label, const vector2& size, T& v, T min, T max, const std::string& fmt, slider_flags f)
+	{
+		_active_assert();
+		return ImGui::VSliderScalar(label, { size.x, size.y }, detail::get_imgui_data_type<T>(),
+			&v, &min, &max,
+			!empty(fmt) ? to_string(fmt).c_str() : detail::imgui_scalar_fmt<T>(),
+			enum_type(f));
 	}
 
 	namespace detail
@@ -187,7 +213,7 @@ namespace hades
 		template<typename T, std::size_t Size>
 		inline bool input_imp(gui &g, std::string_view l, std::array<T, Size> &v, gui::input_text_flags f)
 		{
-			static_assert(detail::gui_supported_types<T>, "Detected gui::input() as an array input, but the array type isn't supported");
+			static_assert(detail::gui_supported_type<T>, "Detected gui::input() as an array input, but the array type isn't supported");
 			constexpr auto step = static_cast<T>(1);
 			return g.input_scalar<T>(l, v, step, step, f);
 		}
@@ -256,7 +282,7 @@ namespace hades
 		return ImGui::InputTextMultiline(to_string(label).data(), buffer.data(), buffer.size(), {size.x, size.y}, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int>>
+	template<detail::gui_supported_type T>
 	inline bool gui::input_scalar(std::string_view label, T &v, std::optional<T> step, std::optional<T> step_fast, input_text_flags f)
 	{
 		_active_assert();
@@ -274,7 +300,7 @@ namespace hades
 		return ImGui::InputScalar(to_string(label).data(), type, &v, step_ptr, step_fast_ptr, format, static_cast<ImGuiInputTextFlags>(f));
 	}
 
-	template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int>>
+	template<detail::gui_supported_type T, std::size_t N>
 	bool gui::input_scalar(std::string_view label, std::array<T, N>& v, std::optional<T> step, std::optional<T> step_fast, input_text_flags f)
 	{
 		_active_assert();

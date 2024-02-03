@@ -131,7 +131,7 @@ namespace hades
 			if (g.toolbar_button("tiles eraser"sv))
 			{
 				activate_brush();
-				_tile = &resources::get_empty_tile();
+				_tile = &resources::get_empty_tile(*_settings);
 			}
 		}
 
@@ -212,7 +212,7 @@ namespace hades
 			}
 
 			if (_new_options.tileset == _settings->empty_tileset.get())
-				_new_options.tile = &resources::get_empty_tile();
+				_new_options.tile = &resources::get_empty_tile(*_settings);
 			else if (_new_options.tileset != nullptr)
 			{
 				auto on_click = [this](const resources::tile *t){

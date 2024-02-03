@@ -4,6 +4,7 @@
 #include <cmath>
 #include <format>
 #include <numbers>
+#include <numeric>
 #include <tuple>
 #include <type_traits>
 
@@ -64,48 +65,6 @@ namespace hades
 		if constexpr (Size > 3)
 			this->w /= rhs;
 		return *this;
-	}
-
-	template<typename T, std::size_t Size>
-	constexpr T& basic_vector<T, Size>::operator[](std::size_t i) noexcept
-	{
-		assert(i < Size);
-		if constexpr (Size < 3)
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y };
-			return std::invoke(arr[i], this);
-		}
-		else if constexpr (Size == 3)
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z };
-			return std::invoke(arr[i], this);
-		}
-		else
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z, &basic_vector::w };
-			return std::invoke(arr[i], this);
-		}
-	}
-
-	template<typename T, std::size_t Size>
-	constexpr const T& basic_vector<T, Size>::operator[](std::size_t i) const noexcept
-	{
-		assert(i < Size);
-		if constexpr (Size < 3)
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y };
-			return std::invoke(arr[i], this);
-		}
-		else if constexpr (Size == 3)
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z };
-			return std::invoke(arr[i], this);
-		}
-		else
-		{
-			constexpr auto arr = std::array{ &basic_vector::x, &basic_vector::y, &basic_vector::z, &basic_vector::w };
-			return std::invoke(arr[i], this);
-		}
 	}
 
 	template<typename T, std::size_t Size>
@@ -179,10 +138,17 @@ namespace hades
 		return ret -= rhs;
 	}
 
-	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int>>
-	constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept
+	template<typename T, std::size_t N, typename U>
+		requires std::convertible_to<U, T>
+	[[nodiscard]] constexpr basic_vector<T, N> operator*(const basic_vector<T, N>& lhs, const U rhs) noexcept
 	{
-		return { lhs.x * rhs, lhs.y * rhs };
+		const auto r = T{ rhs };
+		auto out = basic_vector<T, N>{ lhs.x * r, lhs.y * r };
+		if constexpr (N > 2)
+			out.z *= r;
+		if constexpr (N > 3)
+			out.w *= r;
+		return out;
 	}
 
 	template<typename T>
@@ -381,14 +347,27 @@ namespace hades
 			return { x, y };
 		}
 
-		template<typename T>
-		constexpr T dot(vector2<T> a, vector2<T> b) noexcept
+		template<typename T, std::size_t Size>
+		constexpr T dot(const basic_vector<T, Size> a, const basic_vector<T, Size> b) noexcept
 		{
-			return a.x * b.x + a.y * b.y;
+			auto a_arr = std::array<T, Size>{ a.x, a.y };
+			auto b_arr = std::array<T, Size>{ b.x, b.y };
+			if constexpr (Size > 2)
+			{
+				a_arr[2] = a.z;
+				b_arr[2] = b.z;
+			}
+			if constexpr( Size > 3)
+			{
+				a_arr[3] = a.w;
+				b_arr[3] = b.w;
+			}
+
+			return std::inner_product(begin(a_arr), end(a_arr), begin(b_arr), T{});
 		}
 
 		template<typename T>
-		constexpr basic_vector<T, 3> cross(basic_vector<T, 3> a, basic_vector<T, 3> b) noexcept
+		constexpr basic_vector<T, 3> cross(const basic_vector<T, 3> a, const basic_vector<T, 3> b) noexcept
 		{
 			//Nx = UyVz - UzVy
 			//Ny = UzVx - UxVz

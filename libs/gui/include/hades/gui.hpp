@@ -33,17 +33,17 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
-		constexpr bool gui_supported_types =
-			std::is_same_v<T, int8> ||
-			std::is_same_v<T, uint8> ||
-			std::is_same_v<T, int16> ||
-			std::is_same_v<T, uint16> ||
-			std::is_same_v<T, int32> ||
-			std::is_same_v<T, uint32> ||
-			std::is_same_v<T, int64> ||
-			std::is_same_v<T, uint64> ||
-			std::is_same_v<T, float> ||
-			std::is_same_v<T, double>;
+		concept gui_supported_type =
+			std::same_as<T, std::int8_t> ||
+			std::same_as<T, std::uint8_t> ||
+			std::same_as<T, std::int16_t> ||
+			std::same_as<T, std::uint16_t> ||
+			std::same_as<T, std::int32_t> ||
+			std::same_as<T, std::uint32_t> ||
+			std::same_as<T, std::int64_t> ||
+			std::same_as<T, std::uint64_t> ||
+			std::same_as<T, float> ||
+			std::same_as<T, double>;
 
 		template<typename T>
 		struct valid_input_scalar_t : std::false_type
@@ -314,6 +314,7 @@ namespace hades
 		bool invisible_button(std::string_view label, const vector2& size = { 0.f, 0.f });
 		bool arrow_button(std::string_view label, direction);
 		// TODO: use hades::colour
+		void image(const sf::Texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::texture&, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector2 size, time_point time, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
 		void image(const resources::animation&, const vector2 size, int32 frame = {}, const sf::Color& tint_colour = sf::Color::White, const sf::Color& border_colour = sf::Color::Transparent);
@@ -398,15 +399,20 @@ namespace hades
 
 		// format can be used to decorate the value;
 		// format follows printf rules
-		bool slider_float(std::string_view label, float& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
+		[[deprecated]] bool slider_float(std::string_view label, float& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
 		template<std::size_t N, std::enable_if_t< N < 5, int> = 0>
-		bool slider_float(std::string_view label, std::array<float, N>& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
-		bool slider_int(std::string_view label, int& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
+		[[deprecated]] bool slider_float(std::string_view label, std::array<float, N>& v, float min, float max, slider_flags = slider_flags::none, std::string_view format = { "%.3f" });
+		[[deprecated]] bool slider_int(std::string_view label, int& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
 		template<std::size_t N, std::enable_if_t< N < 5, int> = 0>
-		bool slider_int(std::string_view label, std::array<int, N>& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
+		[[deprecated]] bool slider_int(std::string_view label, std::array<int, N>& v, int min, int max, slider_flags = slider_flags::none, std::string_view format = { "%d" });
 
-		template<typename T, typename U, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
-		bool slider_scalar(std::string_view label, T &v, U min, U max, std::string_view = {}, slider_flags = slider_flags::none);
+		template<detail::gui_supported_type T>
+		bool slider_scalar(std::string_view label, T &v, T min, T max, const std::string& = {}, slider_flags = slider_flags::none);
+		template<detail::gui_supported_type T, std::size_t N>
+		bool slider_scalar(std::string_view label, std::array<T, N>& v, T min, T max, const std::string& = {}, slider_flags = slider_flags::none);
+		template<detail::gui_supported_type T>
+		bool vertical_slider_scalar(std::string_view label, const vector2& size, T& v, T min, T max, const std::string & = {}, slider_flags = slider_flags::none);
+		
 		//vslider = vertical sliders
 
 		enum class input_text_flags : ImGuiInputTextFlags
@@ -454,9 +460,9 @@ namespace hades
 		bool input_text_multiline(std::string_view label, std::string &buffer, const vector2 &size = {0.f, 0.f}, input_text_flags = input_text_flags::none);
 		
 		// TODO: change step and step fast to U, as in slider_scalar above
-		template<typename T, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
+		template<detail::gui_supported_type T>
 		bool input_scalar(std::string_view label, T &v, std::optional<T> step = static_cast<T>(1), std::optional<T> step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
-		template<typename T, std::size_t N, std::enable_if_t<detail::gui_supported_types<T>, int> = 0>
+		template<detail::gui_supported_type T, std::size_t N>
 		bool input_scalar(std::string_view label, std::array<T, N>& v, std::optional<T> step = static_cast<T>(1), std::optional<T> step_fast = static_cast<T>(1), input_text_flags = input_text_flags::none);
 		
 		enum class colour_edit_flags : ImGuiColorEditFlags

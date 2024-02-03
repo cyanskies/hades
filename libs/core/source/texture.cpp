@@ -467,9 +467,7 @@ namespace hades
 
 			vector2<texture_size_t> get_size(const texture& t) noexcept
 			{
-				const auto width = t.width == 0 ? t.actual_width : t.width;
-				const auto height = t.height == 0 ? t.actual_height : t.height;
-				return { width, height };
+				return { t.actual_width, t.actual_height };
 			}
 
 			bool load_from_file(texture& t, const std::filesystem::path& p)

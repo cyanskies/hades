@@ -58,9 +58,6 @@ namespace hades
 		//scalar division
 		constexpr basic_vector& operator/=(const T rhs) noexcept;
 
-		[[nodiscard]] constexpr T& operator[](std::size_t i) noexcept;
-		[[nodiscard]] constexpr const T& operator[](std::size_t i) const noexcept;
-
 		template<typename U>
 		[[nodiscard]] explicit constexpr operator basic_vector<U, Size>() const noexcept;
 	};
@@ -195,8 +192,9 @@ namespace hades
 	template<typename T, std::size_t N>
 	[[nodiscard]] constexpr basic_vector<T, N> operator-(const basic_vector<T, N>&lhs, const basic_vector<T, N>&rhs) noexcept;
 
-	template<typename T, typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
-	[[nodiscard]] constexpr vector2<T> operator*(const vector2<T> &lhs, U rhs) noexcept;
+	template<typename T, std::size_t N, typename U>
+		requires std::convertible_to<U, T>
+	[[nodiscard]] constexpr basic_vector<T, N> operator*(const basic_vector<T, N>& lhs, U rhs) noexcept;
 
 	template<typename T>
 	[[nodiscard]] constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
@@ -204,23 +202,29 @@ namespace hades
 	namespace detail
 	{
 		template<typename T>
+		struct vector_theta_component
+		{
+			T theta;
+		};
+
+		template<typename T>
 		struct vector_theta_magnitude_component
 		{
 			T theta, magnitude;
 		};
 
 		template<typename T>
-		struct vector_phi_component
+		struct vector_phi_magnitude_component
 		{
-			T phi;
+			T phi, magnitude;
 		};
 
-		struct vector_phi_component_empty {};
+		struct vector_phi_magnitude_component_empty {};
 	}
 
 	template<typename T, std::size_t Size = 2>
-	struct basic_pol_vector : public detail::vector_theta_magnitude_component<T>,
-		public std::conditional_t<3 < Size, detail::vector_phi_component<T>, detail::vector_phi_component_empty>
+	struct basic_pol_vector : public std::conditional_t<Size < 3, detail::vector_theta_magnitude_component<T>, detail::vector_theta_component<T>>,
+		public std::conditional_t<2 < Size, detail::vector_phi_magnitude_component<T>, detail::vector_phi_magnitude_component_empty>
 	{
 		static_assert(Size > 1, "basic_pol_vector doesn't support 1d vectors");
 		static_assert(Size < 4, "basic_pol_vector only supports up to vector3");
@@ -306,8 +310,12 @@ namespace hades
 		template<typename T>
 		constexpr vector2<T> clamp(vector2<T> value, vector2<T> min, vector2<T> max) noexcept;
 
-		template<typename T>
-		constexpr T dot(vector2<T> a, vector2<T> b) noexcept;
+		// dot: for unit vectors returns a value in range [-1.f, 1.f]
+		//	-1 indicates vectors pointing in opposite directions
+		//	0 indicates vectors that are perpendicular
+		//	1 indicates vectors that are parallel
+ 		template<typename T, std::size_t Size>
+		constexpr T dot(basic_vector<T, Size> a, basic_vector<T, Size> b) noexcept;
 
 		// NOTE: cross is only meaningly defined for 3d and 7d vectors(we aren't going to support 7d vectors lol)
 		template<typename T>

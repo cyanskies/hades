@@ -99,8 +99,8 @@ namespace hades::resources
 		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
-		std::uint8_t height_default = 50;
-		std::uint8_t height_min = 0;
+		std::uint8_t height_default = 100;
+		std::uint8_t height_min = 0; // TODO: shadows seem to break on terrain height 0, needs investigation
 		std::uint8_t height_max = std::numeric_limits<std::uint8_t>::max();
 	};
 

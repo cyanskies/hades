@@ -33,6 +33,9 @@ namespace hades::detail
 		_toolbox_auto_width = console::get_int(cvars::editor_toolbox_auto_width,
 			cvars::default_value::editor_toolbox_auto_width);
 
+		_view_height = console::get_int(cvars::editor_camera_height_px,
+			cvars::default_value::editor_camera_height_px);
+
 		_scroll_margin = console::get_int(cvars::editor_scroll_margin_size, 
 			cvars::default_value::editor_scroll_margin_size);
 		_scroll_rate = console::get_float(cvars::editor_scroll_rate, 
@@ -96,15 +99,13 @@ namespace hades::detail
 
 	void level_editor_impl::reinit()
 	{
-		const auto width = console::get_int(cvars::video_width,
+		const auto video_width = console::get_int(cvars::video_width,
 			cvars::default_value::video_width);
-		const auto height = console::get_int(cvars::video_height,
+		const auto video_height = console::get_int(cvars::video_height,
 			cvars::default_value::video_height);
-		const auto view_height = console::get_int(cvars::editor_camera_height_px,
-			cvars::default_value::editor_camera_height_px);
 
-		_window_width = static_cast<float>(*width);
-		_window_height = static_cast<float>(*height);
+		_window_width = static_cast<float>(*video_width);
+		_window_height = static_cast<float>(*video_height);
 
 		_new_level_options.width = _level->map_x;
 		_new_level_options.height = _level->map_y;
@@ -112,8 +113,8 @@ namespace hades::detail
 		_gui.activate_context();
 		_gui_view.reset({ {}, { _window_width, _window_height } });
 
-		camera::variable_width(_world_view, static_cast<float>(*view_height), _window_width, _window_height);
-		clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
+		_recalculate_camera();
+
 		_gui.set_display_size({ _window_width, _window_height });
 		_background.setSize({ _window_width, _window_height });
 		const auto background_colour = sf::Color{200u, 200u, 200u, 255u};
@@ -240,6 +241,23 @@ namespace hades::detail
 		reinit();
 	}
 
+	void level_editor_impl::_recalculate_camera()
+	{
+		auto view_height = static_cast<float>(*_view_height) * _zoom;
+		camera::variable_width(_world_view, view_height, _window_width, _window_height);
+		clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
+		log(std::format("x: {}; y: {};", _world_view.getSize().x, _world_view.getSize().y));
+
+		//chunk size calculation
+		auto default_w = camera::calculate_width(static_cast<float>(*_view_height), _window_width, _window_height);
+		const auto max_zoom = 3.f;
+		const auto chunk_count = 4;
+		auto chunk_size = std::max(view_height * max_zoom, default_w * max_zoom) / 2.f; //view is observed from centre
+		chunk_size += 10.f;
+
+		return;
+	}
+
 	void level_editor_impl::_save()
 	{
 		level new_level{};
@@ -363,41 +381,75 @@ namespace hades::detail
 		}(*_toolbox_width, *_toolbox_auto_width, _window_width);
 
 		_gui.next_window_size({ toolbox_size, _window_height - toolbar_y2 });
-		const auto toolbox_created = _gui.window_begin(editor::gui_names::toolbox, gui::window_flags::panel);
+		const auto toolbox_created = _gui.window_begin(editor::gui_names::toolbox,
+			gui::window_flags::panel | gui::window_flags::no_bring_to_front_on_focus);
 		assert(toolbox_created);
 		//store toolbox x2 for use in the input update
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
+		_gui.window_end();
 
-		// TODO: these should be part of the minimap
-		if (_rotate_enabled->load())
+		// minimap window
+		if (_gui.window_begin("###level_editor_minimap"sv))
 		{
-			if (_gui.button("reset rotation"))
-			{
-				// reset world view to correct non-rotated position
-				const auto& centre = _world_view.getCenter();
-				const auto point = _world_transform.getInverse().transformPoint(centre);
-				_world_view.setCenter(point);
+			// minimap window is made up of three sections
 
-				const auto old_rotate = _accumulated_rotation;
-				
-				_world_transform = {};
-				_accumulated_rotation = {}; 
-				
-				_component_on_rotate(old_rotate);
+			// top section is the minimap
+			// to the side of the minimap is the zoom slider
+			// at the bottom is the rotation slider
+
+			if (_gui.begin_table("###minimap_table"sv, 2, gui::table_flags::no_borders_in_body))
+			{
+				_gui.table_setup_column("###test"sv, gui::table_column_flags::width_fixed);
+
+				if (_gui.table_next_column())
+				{
+					//_gui.image()
+					_gui.text("minimap"sv);
+					_gui.dummy({ 160.f, 160.f });
+				}
+
+				if (_gui.table_next_column())
+				{
+					// zoom slider
+					_gui.text("zoom"sv);
+					_gui.layout_vertical();
+					if (_gui.vertical_slider_scalar("###zoom_level_slider"sv, { 18, 160 }, _zoom, 2.f, 0.1f, {}))
+						_recalculate_camera();
+				}
+
+				_gui.end_table();
 			}
 
-			if (_gui.slider_float("Rotate", _rotate_widget, -5.f, 5.f))
+			if (_rotate_enabled->load())
 			{
-				const auto& centre = _world_view.getCenter();
-				const auto point = _world_transform.getInverse().transformPoint(centre);
-				_accumulated_rotation += _rotate_widget;
-				_world_transform.rotate(sf::degrees(_rotate_widget), point);
-				_component_on_rotate(_rotate_widget);
+				if (_gui.button("reset rotation"))
+				{
+					// reset world view to correct non-rotated position
+					const auto& centre = _world_view.getCenter();
+					const auto point = _world_transform.getInverse().transformPoint(centre);
+					_world_view.setCenter(point);
+
+					const auto old_rotate = _accumulated_rotation;
+
+					_world_transform = {};
+					_accumulated_rotation = {};
+
+					_component_on_rotate(old_rotate);
+				}
+
+				if (_gui.slider_scalar("Rotate", _rotate_widget, -5.f, 5.f))
+				{
+					const auto& centre = _world_view.getCenter();
+					const auto point = _world_transform.getInverse().transformPoint(centre);
+					_accumulated_rotation += _rotate_widget;
+					_world_transform.rotate(sf::degrees(_rotate_widget), point);
+					_component_on_rotate(_rotate_widget);
+				}
+				else
+					_rotate_widget = {};
 			}
-			else
-				_rotate_widget = {};
 		}
-
+		
 		_gui.window_end();
 
 		//windows

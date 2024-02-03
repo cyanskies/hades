@@ -214,10 +214,10 @@ namespace hades::data
 			g.next_window_size({}, gui::set_condition_enum::first_use);
 			if (g.window_begin("Animation preview", gui::window_flags::no_collapse))
 			{
-				g.slider_float("Scale"sv, _scale, 0.5f, 50.f, gui::slider_flags::logarithmic);
+				g.slider_scalar("Scale"sv, _scale, 0.5f, 50.f, {}, gui::slider_flags::logarithmic);
 				if (!_play)
 					g.begin_disabled();
-				g.slider_float("Speed"sv, _play_speed, 0.1f, 5.f);
+				g.slider_scalar("Speed"sv, _play_speed, 0.1f, 5.f);
 				if (g.is_item_hovered())
 					g.tooltip("Ctrl + Click to enter value"sv);
 				if (!_play)
@@ -226,7 +226,7 @@ namespace hades::data
 				g.checkbox("Play animation"sv, _play);
 				if (_play)
 					g.begin_disabled();
-				g.slider_int("Frame"s, _current_frame, 0, std::max(integer_cast<int32>(size(_anim_frames)) - 1, 0), gui::slider_flags::no_input);
+				g.slider_scalar("Frame"sv, _current_frame, 0, std::max(integer_cast<int32>(size(_anim_frames)) - 1, 0), {}, gui::slider_flags::no_input);
 				if (_play)
 					g.end_disabled();
 				if (g.child_window_begin("##anim-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
@@ -431,7 +431,7 @@ namespace hades::data
 			
 			if (g.window_begin("Texture preview", gui::window_flags::no_collapse))
 			{
-				g.slider_float("Scale"sv, _scale, 0.5f, 50.f, gui::slider_flags::logarithmic);
+				g.slider_scalar("Scale"sv, _scale, 0.5f, 50.f, {}, gui::slider_flags::logarithmic);
 				if (g.child_window_begin("##tex-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
 				{
 					const auto float_size = gui::vector2{ float_cast(_size[0]), float_cast(_size[1]) };

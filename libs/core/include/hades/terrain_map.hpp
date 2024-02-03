@@ -242,7 +242,27 @@ namespace hades
 		bool _show_height = true;
 		bool _show_shadows = true;
 		bool _debug_depth = false;
+
+		private:
 	};
+
+	class terrain_mini_map final : public sf::Drawable, public sf::Transformable
+	{
+	public:
+		terrain_mini_map() noexcept = default;
+
+		void set_size(const vector2_float s);
+		void update(const terrain_map&);
+
+	protected:
+		void draw(sf::RenderTarget&, const sf::RenderStates&) const override;
+
+	private:
+		vector2_float _size;
+		quad_buffer  _quad;
+		std::unique_ptr<sf::Texture> _texture;
+	};
+
 }
 
 #endif // !HADES_TERRAIN_MAP_HPP

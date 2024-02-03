@@ -70,7 +70,8 @@ uniform float y_range;
 varying vec2 position;
 varying float model_view_vertex_y;
 
-vec4 transparent = vec4(0.f, 0.f, 0.f, 0.f);
+vec4 sun_colour = vec4(1.f, 1.f, .6f, .2f);
+vec4 shadow_col = vec4(0, 0, 0, 0.3f);
 
 void main()
 {{
@@ -78,8 +79,9 @@ void main()
 	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
 	// shadow info
 	float shadow_height = texture2D(sunlight_map, position).r;
+	vec4 light_col = vec4(sun_colour.rgb, mix(0.f, sun_colour.a, gl_Color.g));
 	// frag colour
-	gl_FragColor = mix(transparent, vec4(0, 0, 0, 1), float(gl_Color.r <= shadow_height) * 0.3f);
+	gl_FragColor = mix(light_col, shadow_col, float(gl_Color.r < shadow_height) * 1.f);
 }})";
 
 static auto terrain_map_shader_id = hades::unique_zero;
@@ -529,6 +531,8 @@ namespace hades
 				return shadow_tile{ m.index, m.height };
 			});
 
+		const auto sun_vect = to_vector(basic_pol_vector<float, 3>{ 0.f, _sun_angle, 1.f });
+
 		for (const auto& tile : _shadow_tile_info)
 		{
 			const auto [x, y] = to_2d_index(tile.index, width);
@@ -544,6 +548,7 @@ namespace hades
 
 			// calculate normal
 			// we only need to calculate normal for one of the triangles
+			// TODO: calculate normal for each  vertex, by adverageing the normals of adjacent tris
 			const auto p1 = vector3<float>{ pos.x, pos.y, float_cast(tile.height[top_left]) };
 			const auto p2 = vector3<float>{ pos.x + tile_sizef, pos.y, float_cast(tile.height[top_right]) };
 			const auto p3 = vector3<float>{ pos.x, pos.y + tile_sizef, float_cast(tile.height[bottom_left]) };
@@ -551,12 +556,12 @@ namespace hades
 			const auto u = p2 - p1;
 			const auto v = p3 - p1;
 
-			const auto normal = vector::cross(u, v);
-
-			//const auto pol = vector::angle_phi
-
+			const auto normal = vector::unit(vector::cross(u, v));
+			const auto dot = vector::dot(normal, sun_vect);
+			const auto light_val = dot < 0.f ? integral_clamp_cast<std::uint8_t>(dot * 255.f * -1.f) : std::uint8_t{};
+			
 			std::array<colour, 4> colours;
-			colours.fill(colour{});
+			colours.fill(colour{ {}, light_val });
 
 			for (auto i = std::size_t{}; i < size(tile.height); ++i)
 				colours[i].r = tile.height[i];
@@ -678,6 +683,40 @@ namespace hades
 	{
 		hades::lower_terrain(_map, p, amount, _settings);
 		_needs_apply = true;
+		return;
+	}
+
+	void terrain_mini_map::set_size(const vector2_float s)
+	{
+		_size = s;
+		_quad.clear();
+		_quad.append(make_quad_animation({}, s, rect_float{ {}, s }));
+		_quad.apply();
+		return;
+	}
+
+	void terrain_mini_map::update(const terrain_map& map)
+	{
+		auto img = sf::Image{};
+		img.create({ integral_cast<unsigned>(_size.x), integral_cast<unsigned>(_size.y) }, sf::Color::Black);
+		const auto& terrain = map.terrain_vertex;
+
+		// fill img with map data
+		// TODO:
+
+		if (!_texture)
+			_texture = std::make_unique<sf::Texture>();
+
+		auto success = _texture->loadFromImage(img);
+		return;
+	}
+
+	void terrain_mini_map::draw(sf::RenderTarget& rt, const sf::RenderStates& state) const
+	{
+		auto s = state;
+		s.transform *= getTransform();
+		s.texture = _texture.get();
+		rt.draw(_quad, s);
 		return;
 	}
 }

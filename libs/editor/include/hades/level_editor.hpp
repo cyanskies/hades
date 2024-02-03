@@ -4,6 +4,8 @@
 #include <string_view>
 #include <tuple>
 
+#include "SFML/Graphics/RenderTexture.hpp"
+
 #include "hades/gui.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"
@@ -88,12 +90,15 @@ namespace hades::detail
 		console::property_int _toolbox_width;
 		console::property_int _toolbox_auto_width;
 
+		console::property_int _view_height;
+
 		console::property_int _scroll_margin;
 		console::property_float _scroll_rate;
 		
 		//current window size
 		float _rotate_widget = {};
 		float _accumulated_rotation = {};
+		float _zoom = 1.f;
 		float _window_width = 0.f, _window_height = 0.f;
 		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
 
@@ -116,6 +121,7 @@ namespace hades::detail
 
 		bool _mission_mode() const;
 		void _load(level*);
+		void _recalculate_camera();
 		void _save();
 		void _update_gui(time_duration);
 
@@ -147,6 +153,9 @@ namespace hades::detail
 
 		//currently active brush
 		brush_index_t _active_brush = invalid_brush;
+		terrain_mini_map _minimap; 
+		sf::RenderTexture _minimap_render_texture;
+
 		bool _height_enabled = true;
 	};
 }

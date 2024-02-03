@@ -662,7 +662,7 @@ namespace hades
 		return ImGui::ArrowButton(label, static_cast<ImGuiDir>(d));
 	}
 
-	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour, const sf::Color &border_colour)
+	void gui::image(const sf::Texture& t, const rect_float& text_coords, const vector2& size, const sf::Color& tint_colour, const sf::Color& border_colour)
 	{
 		_active_assert();
 
@@ -671,8 +671,7 @@ namespace hades
 			width = text_coords.width,
 			height = text_coords.height;
 
-		namespace tex = resources::texture_functions;
-		const auto [tex_width, tex_height] = tex::get_size(t);
+		const auto [tex_width, tex_height] = t.getSize();
 
 		ImGui::Image(&t,
 			{ size.x, size.y },
@@ -680,6 +679,14 @@ namespace hades
 			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
 			to_imvec4(tint_colour),
 			to_imvec4(border_colour));
+	}
+
+
+	void gui::image(const resources::texture &t, const rect_float &text_coords, const vector2 &size, const sf::Color &tint_colour, const sf::Color &border_colour)
+	{
+		_active_assert();
+		image(resources::texture_functions::get_sf_texture(&t), text_coords, size, tint_colour, border_colour);
+		return;
 	}
 
 	void gui::image(const resources::animation &a, const vector2 size, const time_point time,
@@ -712,7 +719,7 @@ namespace hades
 		namespace tex = resources::texture_functions;
 		const auto [tex_width, tex_height] = tex::get_size(texture);
 
-		return ImGui::ImageButton(id, &texture, 
+		return ImGui::ImageButton(id, &tex::get_sf_texture(&texture),
 			{ size.x, size.y },
 			{ x / tex_width, y / tex_height }, // normalised coords
 			{ (x + width) / tex_width,  (y + height) / tex_height }, // absolute pos for bottom right corner, also normalised
@@ -740,7 +747,7 @@ namespace hades
 		if (flip_y)
 			std::swap(uv0.y, uv1.y);
 
-		return ImGui::ImageButton(id, texture,
+		return ImGui::ImageButton(id, &resources::texture_functions::get_sf_texture(texture),
 			{ size.x, size.y }, uv0, uv1,
 			to_imvec4(background_colour),
 			to_imvec4(tint_colour));
@@ -1026,7 +1033,7 @@ namespace hades
 		next_window_size({ _main_toolbar_info.width, 0.f });
 
 		using namespace std::string_view_literals;
-		const auto r = window_begin("##main_toolbar"sv, window_flags::panel);
+		const auto r = window_begin("##main_toolbar"sv, window_flags::panel | window_flags::no_bring_to_front_on_focus);
 		return r;
 	}
 
@@ -1396,7 +1403,7 @@ namespace hades
 		auto vertex_array = std::vector<sf::Vertex>{};
 
 		//for each entry in the draw list
-		std::ranges::for_each(draw_data->CmdLists, [&target, &vertex_array, draw_data, states, view_height](ImDrawList *draw_list) {
+		std::ranges::for_each(draw_data->CmdLists, [&target, &vertex_array, draw_data, states, view_height](ImDrawList* draw_list) {
 			const auto index_first = draw_list->IdxBuffer.Data;
 
 			//for each command
@@ -1411,9 +1418,10 @@ namespace hades
 					vector2_float texture_size = { 1.f, 1.f };
 					if (cmd.TextureId)
 					{
-						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
+						const auto texture = cmd.TextureId;
 						assert(texture);
-						texture_size = static_cast<vector2_float>(tex::get_size(*texture));
+						const auto size = texture->getSize();
+						texture_size = vector2_float{ float_cast(size.x), float_cast(size.y) };
 					}
 
 					//get the verts from the draw list that are associated with
@@ -1435,9 +1443,9 @@ namespace hades
 					//draw with texture
 					if (cmd.TextureId)
 					{
-						const auto texture = static_cast<const resources::texture*>(cmd.TextureId);
+						const auto texture = cmd.TextureId;
 						assert(texture);
-						state.texture = &tex::get_sf_texture(texture);
+						state.texture = texture;
 					}
 
 					const auto x = cmd.ClipRect.x - draw_data->DisplayPos.x;
@@ -1514,10 +1522,10 @@ namespace hades
 		if (border_col.w > 0.0f)
 		{
 			window->DrawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(border_col), 0.0f);
-			window->DrawList->AddImage(texture, image_bb.Min + ImVec2(1, 1), image_bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
+			window->DrawList->AddImage(&resources::texture_functions::get_sf_texture(texture), image_bb.Min + ImVec2(1, 1), image_bb.Max - ImVec2(1, 1), uv0, uv1, ImGui::GetColorU32(tint_col));
 		}
 		else
-			window->DrawList->AddImage(texture, image_bb.Min, image_bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
+			window->DrawList->AddImage(&resources::texture_functions::get_sf_texture(texture), image_bb.Min, image_bb.Max, uv0, uv1, ImGui::GetColorU32(tint_col));
 
 		return;
 	}
@@ -1580,7 +1588,7 @@ namespace hades
 		}
 		else
 		{
-			_font_atlas->SetTexID(t);
+			_font_atlas->SetTexID(&texture);
 			texture.update(texture_data);
 			//apply correct settings
 			tex::set_settings(t,

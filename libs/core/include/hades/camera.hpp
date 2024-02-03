@@ -11,6 +11,12 @@ namespace sf
 
 namespace hades::camera
 {
+	constexpr float calculate_width(float static_height, float width, float height) noexcept
+	{
+		const auto ratio = width / height;
+		return static_height * ratio;
+	}
+
 	void variable_width(sf::View&, float static_height, float width, float height) noexcept;
 	void move(sf::View&, vector2_float, rect_int) noexcept;
 }

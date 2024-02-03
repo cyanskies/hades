@@ -286,7 +286,7 @@ namespace hades
 
 			if (g.collapsing_header("height"sv))
 			{
-				g.slider_scalar("Amount"sv, _height_strength, 1, 10);
+				g.slider_scalar("Amount"sv, _height_strength, std::uint8_t{ 1 }, std::uint8_t{ 10 });
 
 				if (g.button("Raise"sv))
 				{

@@ -58,6 +58,16 @@ namespace hades
 	}
 
 	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_reinit(vector2_float window, vector2_float view)
+	{
+		tuple_for_each(_editor_components, [window, view](auto&& c) {
+			c.on_reinit(window, view);
+			return;
+			});
+		return;
+	}
+
+	template<typename ...Components>
 	inline tag_list basic_level_editor<Components...>::_component_get_object_tags_at_location(rect_float area) const
 	{
 		auto func = [](auto &&c, rect_float rect)->tag_list {
@@ -136,6 +146,14 @@ namespace hades
 		tuple_for_each(_editor_components, [f](auto &&v) {
 			v.on_world_rotate(f);
 		});
+	}
+
+	template<typename ...Components>
+	inline void basic_level_editor<Components...>::_component_on_screen_move(rect_float r)
+	{
+		tuple_for_each(_editor_components, [r](auto&& v) {
+			v.on_screen_move(r);
+			});
 	}
 
 	template<typename ...Components>

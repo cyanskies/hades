@@ -15,17 +15,40 @@ namespace hades
 			assert(size.y >= 0);
 			const auto pos_y = pos / map_width;
 			const auto pos_x = pos - pos_y * map_width;
+			const auto world_size = tile_position{ map_width, max_index / map_width };
 			for (auto y = tile_index_t{}; y < size.y; ++y)
 			{
 				for (auto x = tile_index_t{}; x < size.x; ++x)
 				{
-					if (within_world({ pos_x + x, pos_y + y }, { map_width, max_index / map_width }))
+					if (within_world({ pos_x + x, pos_y + y }, world_size))
 						std::invoke(f, pos + x + y * map_width);
 					else
 					{
 						if constexpr(PassInvalid)
 							std::invoke(f, bad_tile_index);
 					}	
+				}
+			}
+			return;
+		}
+
+		template<bool PassInvalid = true, std::invocable<tile_position> Func>
+		void for_each_pos_rect_impl(const tile_position pos,
+			tile_position size, const tile_position world_size, Func&& f)
+			noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		{
+			const auto& [pos_x, pos_y] = pos;
+			for (auto y = tile_index_t{}; y < size.y; ++y)
+			{
+				for (auto x = tile_index_t{}; x < size.x; ++x)
+				{
+					if (within_world({ pos_x + x, pos_y + y }, world_size))
+						std::invoke(f, tile_position{ pos_x + x, pos_y + y });
+					else
+					{
+						if constexpr (PassInvalid)
+							std::invoke(f, bad_tile_position);
+					}
 				}
 			}
 			return;
@@ -225,34 +248,18 @@ namespace hades
 			p.x < w.x; // off the right of the map
 	}
 
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_position_rect(const tile_position position,
-		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	template<std::invocable<tile_position> Func>
+	void for_each_position_rect(const tile_position position, const tile_position size,
+		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		const auto func = [&f, width = world_size.x](tile_index_t i) {
-			static_assert(std::is_invocable_v<std::decay_t<decltype(f)>, tile_position>);
-			const auto tile = i == bad_tile_index ? bad_tile_position : hades::from_tile_index(i, width);
-			std::invoke(f, tile);
-			return;
-		};
-
-		return detail::for_each_index_rect_impl(hades::to_tile_index(position, world_size.x),
-			size, world_size.x, world_size.x * world_size.y, func);
+		return detail::for_each_pos_rect_impl(position, size, world_size, f);
 	}
 
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_safe_position_rect(const tile_position position,
-		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_rect(const tile_position position, const tile_position size,
+		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		const auto func = [&f, width = world_size.x](tile_index_t i) {
-			static_assert(std::is_invocable_v<std::decay_t<decltype(f)>, tile_position>);
-			const auto tile = from_tile_index(i, width);
-			std::invoke(f, tile);
-			return;
-		};
-
-		return detail::for_each_index_rect_impl<false>(hades::to_tile_index(position, world_size.x),
-			size, world_size.x, world_size.x * world_size.y, func);
+		return detail::for_each_pos_rect_impl<false>(position, size, world_size, f);
 	}
 
 	template<unary_operator<void, tile_position> Func>

@@ -118,21 +118,6 @@ namespace hades
 	void quad_buffer::reserve(std::size_t size)
 	{
 		_verts.reserve(size * quad_vert_count);
-		if (size > (_buffer.getVertexCount() / quad_vert_count))
-		{
-			auto sb = std::stringbuf{};
-			const auto prev = sf::err().rdbuf(&sb);
-			if (_buffer.create(size * quad_vert_count))
-			{
-				if (!_buffer.update(_verts.data(), std::size(_verts), 0))
-					LOGWARNING("Failed to update vertex buffer. "s + sb.str());
-			}
-			else
-				LOGERROR("Unable to create vertex buffer. "s + sb.str());
-
-            sf::err().rdbuf(prev);
-		}
-
 		return;
 	}
 

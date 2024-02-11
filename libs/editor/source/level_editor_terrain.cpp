@@ -1,6 +1,8 @@
 #include "hades/level_editor_terrain.hpp"
 
+#include "hades/camera.hpp"
 #include "hades/gui.hpp"
+#include "hades/level_editor.hpp"
 #include "hades/properties.hpp"
 #include "hades/terrain.hpp"
 
@@ -21,7 +23,8 @@ namespace hades
 	}
 
 	level_editor_terrain::level_editor_terrain() :
-		_settings{resources::get_terrain_settings()}
+		_settings{ resources::get_terrain_settings() },
+		_view_height{ console::get_int(cvars::editor_camera_height_px, cvars::default_value::editor_camera_height_px) }
 	{
 		assert(!empty(_settings->empty_tileset.get()->tiles));
 		_empty_tile = _settings->empty_tileset.get()->tiles[0];
@@ -526,6 +529,19 @@ namespace hades
 		return out;
 	}
 
+	void level_editor_terrain::on_reinit(vector2_float window_size, vector2_float view_size)
+	{
+		auto view_height = static_cast<float>(*_view_height) * editor::zoom_max;
+		auto default_w = camera::calculate_width(static_cast<float>(*_view_height), window_size.x, window_size.y);
+		const auto max_zoom = 3.f;
+		const auto chunk_count = 4;
+		auto chunk_size = std::max(view_height * max_zoom, default_w * max_zoom) / 2.f; //view is observed from centre
+		chunk_size += 10.f;
+		//_map.set_chunk_size(integral_cast<std::size_t>(chunk_size, round_up_tag));
+
+		//also do screen move
+	}
+
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		auto func = [&](const tile_position pos) {
@@ -558,6 +574,15 @@ namespace hades
 	void level_editor_terrain::on_drag(mouse_pos p)
 	{
 		on_click(p);
+	}
+
+
+	void level_editor_terrain::on_screen_move(rect_float r)
+	{
+		_map.set_world_region(r);
+		_clear_preview.set_world_region(r);
+		_preview.set_world_region(r);
+		return;
 	}
 
 	void level_editor_terrain::on_height_toggle(bool b) noexcept

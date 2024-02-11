@@ -279,12 +279,12 @@ namespace hades
 	// Prefer this over the above functions, as it won't allocate
 	// safe versions wont check pass invalid tiles along to Func
 	// non-safe versions func needs to handle being passed bad_tile_poistion/bad_tile_index
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_position_rect(const tile_position position,
-		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_position>> for_each_safe_position_rect(const tile_position position,
-		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<std::invocable<tile_position> Func>
+	void for_each_position_rect(const tile_position position, const tile_position size,
+		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_rect(const tile_position position, const tile_position size,
+		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
 	template<unary_operator<void, tile_position> Func>
 	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func &&f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);

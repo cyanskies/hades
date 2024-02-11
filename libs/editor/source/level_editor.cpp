@@ -88,13 +88,20 @@ namespace hades::detail
 		const auto& pos = camera.getCenter();
 		const auto inverse_transform = transform.getInverse();
 		const auto point = inverse_transform.transformPoint(pos);
-
 		const auto new_x = std::clamp(point.x, min.x, max.x);
 		const auto new_y = std::clamp(point.y, min.y, max.y);
 
 		const auto new_pos = transform.transformPoint({ new_x, new_y });
 
 		camera.setCenter(new_pos);
+	}
+
+	static rect_float transform_world_rect(const rect_float rect, const sf::Transform& transform) noexcept
+	{
+		const auto inverse_transform = transform.getInverse();
+		const auto sf_rect = sf::FloatRect{ { rect.x, rect.y }, { rect.width, rect.height } };
+		const auto transform_rect = inverse_transform.transformRect(sf_rect);
+		return { transform_rect.left, transform_rect.top, transform_rect.width, transform_rect.height };
 	}
 
 	void level_editor_impl::reinit()
@@ -119,6 +126,12 @@ namespace hades::detail
 		_background.setSize({ _window_width, _window_height });
 		const auto background_colour = sf::Color{200u, 200u, 200u, 255u};
 		_background.setFillColor(background_colour);
+
+		const auto view_size = _world_view.getSize();
+		_component_on_reinit({ _window_width, _window_height }, { view_size.x, view_size.y });
+		const auto pos = _world_view.getCenter() - view_size / 2.f;
+		_component_on_screen_move({ {pos.x, pos.y}, { view_size.x, view_size.y } });
+		return;
 	}
 
 	level level_editor_impl::get_level() const
@@ -154,8 +167,11 @@ namespace hades::detail
 				else if (mouse_position->y_axis > static_cast<int32>(_window_height) - margin)
 					_world_view.move({ 0.f, rate });
 
-
 				clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level_x), static_cast<float>(_level_y) });
+
+				const auto& view_size = _world_view.getSize();
+				const auto pos = _world_view.getCenter() - view_size / 2.f;
+				_component_on_screen_move(transform_world_rect({ {pos.x, pos.y}, { view_size.x, view_size.y } }, _world_transform));
 			}
 
 			const auto world_mouse_pos = mouse::to_world_coords(t, { mouse_position->x_axis, mouse_position->y_axis }, _world_view);
@@ -243,18 +259,9 @@ namespace hades::detail
 
 	void level_editor_impl::_recalculate_camera()
 	{
-		auto view_height = static_cast<float>(*_view_height) * _zoom;
+		const auto view_height = static_cast<float>(*_view_height) * _zoom;
 		camera::variable_width(_world_view, view_height, _window_width, _window_height);
 		clamp_camera(_world_view, _world_transform, { 0.f, 0.f }, { static_cast<float>(_level->map_x), static_cast<float>(_level->map_y) });
-		log(std::format("x: {}; y: {};", _world_view.getSize().x, _world_view.getSize().y));
-
-		//chunk size calculation
-		auto default_w = camera::calculate_width(static_cast<float>(*_view_height), _window_width, _window_height);
-		const auto max_zoom = 3.f;
-		const auto chunk_count = 4;
-		auto chunk_size = std::max(view_height * max_zoom, default_w * max_zoom) / 2.f; //view is observed from centre
-		chunk_size += 10.f;
-
 		return;
 	}
 
@@ -413,8 +420,9 @@ namespace hades::detail
 					// zoom slider
 					_gui.text("zoom"sv);
 					_gui.layout_vertical();
-					if (_gui.vertical_slider_scalar("###zoom_level_slider"sv, { 18, 160 }, _zoom, 2.f, 0.1f, {}))
+					if (_gui.vertical_slider_scalar("###zoom_level_slider"sv, { 18, 160 }, _zoom, editor::zoom_max, 0.1f, {}))
 						_recalculate_camera();
+					// TODO: on screen move
 				}
 
 				_gui.end_table();

@@ -494,6 +494,7 @@ namespace hades
 			const auto index = get_terrain_id(terrainset, t);
 
 			const auto end = std::size(terrainset->terrains);
+			map.terrain_layers.reserve(std::size(terrainset->terrains));
 			for (auto i = std::size_t{}; i < end; ++i)
 			{
 				if (i == index)
@@ -996,6 +997,26 @@ namespace hades
 			return d == 0 || (d < 0) == (s + t <= 0);
 		}
 
+		struct barycentric_point
+		{
+			float u, v, w;
+		};
+
+		constexpr barycentric_point to_barycentric(const vector2_float p, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
+		{
+			const auto t = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y);
+			const auto u = ((p2.y - p3.y) * (p.x - p3.x) + (p3.x - p2.x) * (p.y - p3.y)) / t;
+			const auto v = ((p3.y - p1.y) * (p.x - p3.x) + (p1.x - p3.x) * (p.y - p3.y)) / t;
+			const auto w = 1.f - u - v;
+			return { u, v, w };
+		}
+
+		constexpr vector2_float from_barycentric(const barycentric_point b, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
+		{
+			const auto& [u, v, w] = b;
+			return { u * p1.x + v * p2.x + w * p3.x, u * p1.y + v * p2.y + w * p3.y };
+		}
+
 		vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
 			const vector2_float height_dir, const rect_corners c, const std::array<std::uint8_t, 4> heightmap) noexcept
 		{
@@ -1059,6 +1080,7 @@ namespace hades
 
 		// quad vertex for the last hit quad
 		auto last_tile = bad_tile_position;
+		auto last_tri = std::array<vector2_float, 3>{};
 		auto last_quad = std::array<vector2_float, 4>{};
 
 		// go from 'p'  in the direction of advance dir, checking each tile to see if it is under the mouse
@@ -1101,8 +1123,9 @@ namespace hades
 			};
 
 			// test for hit
-			if (point_in_tri(p, quad[0], quad[1], quad[2]) ||
-				point_in_tri(p, quad[2], quad[3], quad[0]))
+			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
+			if (point_in_tri(p, quad[0], quad[1], quad[3]) ||
+				point_in_tri(p, quad[1], quad[2], quad[3]))
 			{
 				last_tile = tile_check;
 				last_quad = quad;
@@ -1122,8 +1145,9 @@ namespace hades
 		}
 
 		// calculate pos within the hit quad
+		// TODO: use barycentric coords here
 		const auto normalised_pos = normalise_quad_point(p, last_quad);
-		return (static_cast<vector2_float>(last_tile) + normalised_pos) * tile_sizef;
+		return (static_cast<vector2_float>(last_tile)/* + normalised_pos*/) * tile_sizef;
 	}
 }
 

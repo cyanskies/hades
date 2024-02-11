@@ -34,6 +34,8 @@ namespace hades::editor
 	using namespace std::string_view_literals;
 	constexpr auto new_level_name = "A brand new level"sv;
 	constexpr auto new_level_description = "An empty level, ready to be filled with content"sv;
+
+	constexpr auto zoom_max = 3.f;
 }
 
 namespace hades
@@ -150,16 +152,19 @@ namespace hades
 		virtual tag_list get_terrain_tags_at_location(rect_float) const { return {}; }
 		virtual tag_list get_object_tags_at_location(rect_float) const { return {}; }
 
-		virtual void on_click(mouse_pos) {};
-		
-		virtual void on_drag_start(mouse_pos) {};
-		virtual void on_drag(mouse_pos) {};
-		virtual void on_drag_end(mouse_pos) {};
+		virtual void on_reinit(vector2_float /*window_size*/, vector2_float /*view_size*/) {}
 
-		virtual void on_world_rotate(float) {};
+		virtual void on_click(mouse_pos) {}
+	
+		virtual void on_drag_start(mouse_pos) {}
+		virtual void on_drag(mouse_pos) {}
+		virtual void on_drag_end(mouse_pos) {}
+
+		virtual void on_world_rotate(float) {}
+		virtual void on_screen_move(rect_float /*view_area*/) {}
 
 		// tells the component whether it should render with height on or not
-		virtual void on_height_toggle(bool) {};
+		virtual void on_height_toggle(bool) {}
 
 		// only one component should provide terrain
 		virtual const terrain_map* peek_terrain() const 
@@ -167,9 +172,9 @@ namespace hades
 			return {};
 		}
 
-		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {};
+		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {}
 
-		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {};
+		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {}
 
 	private:
 		activate_brush_f _activate_brush;

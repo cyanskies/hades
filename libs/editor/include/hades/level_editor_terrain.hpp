@@ -3,6 +3,7 @@
 
 #include "hades/data.hpp"
 #include "hades/level_editor_component.hpp"
+#include "hades/properties.hpp"
 #include "hades/terrain_map.hpp"
 
 namespace hades
@@ -33,8 +34,12 @@ namespace hades
 
 		tag_list get_terrain_tags_at_location(rect_float) const override;
 
+		void on_reinit(vector2_float window_size, vector2_float view_size) override;
+
 		void on_click(mouse_pos) override;
 		void on_drag(mouse_pos) override;
+
+		void on_screen_move(rect_float r) override;
 
 		void on_height_toggle(bool) noexcept override;
 
@@ -77,6 +82,8 @@ namespace hades
 			const resources::terrain* terrain = nullptr;
 		};
 
+		console::property_int _view_height;
+
 		resources::tile _empty_tile;
 		const resources::terrain * _empty_terrain;
 		const resources::terrainset* _empty_terrainset;
@@ -89,8 +96,8 @@ namespace hades
 		std::uint8_t _height_strength = 1;
 
 		//brush preview
-		mutable_terrain_map _clear_preview;
-		mutable_terrain_map _preview;
+		mutable_terrain_map2 _clear_preview;
+		mutable_terrain_map2 _preview;
 
 		//selected tile/terrain
 		resources::tile _tile = resources::bad_tile;
@@ -99,7 +106,7 @@ namespace hades
 
 		const resources::terrain_settings *_settings = nullptr;
 		level_options _new_options;
-		mutable_terrain_map _map;
+		mutable_terrain_map2 _map;
 	};
 }
 

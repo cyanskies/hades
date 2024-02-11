@@ -61,11 +61,13 @@ namespace hades::detail
 		virtual void _component_on_load(const level&) = 0;
 		virtual level _component_on_save(level) const = 0;
 		virtual void _component_on_resize(vector2_int, vector2_int) = 0;
+		virtual void _component_on_reinit(vector2_float, vector2_float) = 0;
 		virtual void _component_on_click(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag_start(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_drag_end(brush_index_t, vector2_float) = 0;
 		virtual void _component_on_rotate(float) = 0;
+		virtual void _component_on_screen_move(rect_float) = 0;
 		virtual void _component_height_toggle(bool) = 0;
 		virtual const terrain_map* _component_peek_terrain() = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) = 0;
@@ -175,6 +177,7 @@ namespace hades
 		void _component_on_load(const level&) override;
 		level _component_on_save(level) const override;
 		void _component_on_resize(vector2_int, vector2_int) override;
+		void _component_on_reinit(vector2_float, vector2_float) override;
 		//returns the sum of tags reported by components for that location
 		//may contain duplicates
 		tag_list _component_get_object_tags_at_location(rect_float) const;
@@ -183,7 +186,8 @@ namespace hades
 		void _component_on_drag_start(brush_index_t, vector2_float) override;
 		void _component_on_drag(brush_index_t, vector2_float) override;
 		void _component_on_drag_end(brush_index_t, vector2_float) override;
-		void _component_on_rotate(float) override; 
+		void _component_on_rotate(float) override;
+		void _component_on_screen_move(rect_float) override;
 		void _component_height_toggle(bool) override;
 		const terrain_map* _component_peek_terrain() override;
 

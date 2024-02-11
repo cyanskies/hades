@@ -266,6 +266,7 @@ namespace hades
 	void place_tile(tile_map&, const std::vector<tile_position>&, tile_id_t);
 	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&, const resources::tile_settings&);
 
+	// check if tile is within tilemap
 	constexpr bool within_world(tile_position position, tile_position world_size) noexcept;
 
 	//helpers to create a list of positions in a desired shape

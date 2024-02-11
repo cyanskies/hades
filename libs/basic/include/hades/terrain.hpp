@@ -219,7 +219,9 @@ namespace hades
 		return to_tile_index(p, t.tile_layer);
 	}
 
+	// check if vertex is within map
 	bool within_map(terrain_vertex_position map_size, terrain_vertex_position position) noexcept;
+	// check if vertex is within map
 	bool within_map(const terrain_map&, terrain_vertex_position position);
 
 	//index tile_corners using rect_corners from math.hpp

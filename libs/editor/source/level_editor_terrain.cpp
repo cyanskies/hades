@@ -259,6 +259,12 @@ namespace hades
 
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
+			if (g.collapsing_header("sun settings"sv))
+			{
+				if (g.slider_scalar("Sun angle"sv, _sun_angle, 180.f, 0.f))
+					_map.set_sun_angle(_sun_angle);
+			}
+
 			if (g.collapsing_header("map drawing settings"sv))
 			{
 				constexpr auto draw_shapes = std::array{
@@ -450,6 +456,7 @@ namespace hades
 			static_cast<tile_position::value_type>(p.y / tile_size)
 		};
 
+		// TODO: within_map
 		if (!within_world(draw_pos, world_size))
 			return;
 
@@ -497,7 +504,7 @@ namespace hades
 			}	
 		};
 
-		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
+		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()) + tile_position{ 1, 1 }, func);
 		return;
 	}
 
@@ -567,7 +574,7 @@ namespace hades
 			}	
 		};
 
-		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()), func);
+		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()) + tile_position{ 1, 1 }, func);
 		return;
 	}
 

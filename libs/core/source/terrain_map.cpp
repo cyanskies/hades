@@ -955,7 +955,7 @@ namespace hades
 
 	static std::array<std::uint8_t, 4> calculate_vert_shadow(tile_position p, const tile_position dir,
 		const std::uint8_t sun_rise, const std::uint8_t sun_dist, const terrain_map& m,
-		const tile_position map_size, const tile_index_t map_size_x) noexcept
+		const tile_position map_size) noexcept
 	{
 		auto height = std::array<std::uint8_t, 4>{};
 		for (auto i = std::size_t{}; i < sun_dist; ++i)
@@ -976,7 +976,7 @@ namespace hades
 		return height;
 	}
 
-	static std::tuple<std::uint8_t, std::uint8_t> calculate_vertex_normal(const terrain_vertex_position& p)
+	static std::tuple<std::uint8_t, std::uint8_t> calculate_vertex_normal(const terrain_vertex_position&)
 	{
 		return {};
 	}
@@ -986,14 +986,14 @@ namespace hades
 	{
 		const auto& sun_angle_radian = shared.sun_angle_radians;
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto sun_unit_vect = to_vector(pol_vector2_t<float>{ sun_angle_radian + std::numbers::pi_v<float>, 1.f });
-		const auto sun_step_mag = std::sqrt(1 + std::pow(sun_unit_vect.x / sun_unit_vect.y, 2.f));
+		const auto sun_unit_vect = to_vector(pol_vector2_t<float>{ sun_angle_radian /*+ std::numbers::pi_v<float>*/, 1.f });
+		const auto sun_step_mag = sun_unit_vect.x == 0.f ? 1 : std::sqrt(1 + std::pow(sun_unit_vect.y / sun_unit_vect.x, 2.f));
 		const auto sun_vector = sun_unit_vect * sun_step_mag * tile_sizef;
 		
 		// difference in height over x
-		const auto sun_rise = integral_cast<std::uint8_t>(std::abs(sun_vector.y));
+		const auto sun_rise = integral_clamp_cast<std::uint8_t>(std::abs(sun_vector.y));
 		// max x difference that could effect height
-		const auto sun_dist = std::uint8_t{ 255 };// integral_cast<std::uint8_t>(std::abs(sun_vector.y) / 255.f);
+		const auto sun_dist = sun_vector.y == 0.f ? std::uint8_t{} : integral_clamp_cast<std::uint8_t>(255.f / std::abs(sun_vector.y));
 		const auto sun_hidden = sun_angle_radian > std::numbers::pi_v<float> || sun_angle_radian < 0.f;
 		const auto sun_90 = sun_angle_radian == std::numbers::pi_v<float> / 2.f;
 		const auto sun_left = sun_angle_radian > std::numbers::pi_v<float> / 2.f;
@@ -1027,7 +1027,7 @@ namespace hades
 				else if (sun_hidden)
 					return { 255, 255, 255, 255 };
 				else
-					return calculate_vert_shadow(pos, dir, sun_rise, sun_dist, shared.map, map_size_tiles, map_width_verts);
+					return calculate_vert_shadow(pos, dir, sun_rise, sun_dist, shared.map, map_size_tiles);
 			}();
 
 			std::array<colour, 4> colours;
@@ -1342,6 +1342,9 @@ namespace hades
 
 	void mutable_terrain_map2::set_sun_angle(float degrees)
 	{
+		if (degrees == 0.f)
+			degrees = 0.01f;
+
 		_shared.sun_angle_radians = to_radians(degrees);
 		_needs_update = true;
 		return;
@@ -1392,7 +1395,7 @@ namespace hades
 	{
 		auto img = sf::Image{};
 		img.create({ integral_cast<unsigned>(_size.x), integral_cast<unsigned>(_size.y) }, sf::Color::Black);
-		const auto& terrain = map.terrain_vertex;
+		//const auto& terrain = map.terrain_vertex;
 
 		// fill img with map data
 		// TODO:
@@ -1400,7 +1403,7 @@ namespace hades
 		if (!_texture)
 			_texture = std::make_unique<sf::Texture>();
 
-		auto success = _texture->loadFromImage(img);
+		//auto success = _texture->loadFromImage(img);
 		return;
 	}
 

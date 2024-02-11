@@ -105,6 +105,7 @@ namespace hades
 		level_resize_options _resize;
 
 		const resources::terrain_settings *_settings = nullptr;
+		float _sun_angle = 135.f; // TODO: default sun angle cvar
 		level_options _new_options;
 		mutable_terrain_map2 _map;
 	};

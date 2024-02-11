@@ -1076,8 +1076,6 @@ namespace hades
 			advance_dir.y < 0.f ? -1 : 1
 		};
 
-		const auto terrain_width = get_width(map);
-
 		// quad vertex for the last hit quad
 		auto last_tile = bad_tile_position;
 		auto last_tri = std::array<vector2_float, 3>{};
@@ -1124,6 +1122,7 @@ namespace hades
 
 			// test for hit
 			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
+			// TODO: store last hit TRI instead, then we can properly denormalise to flat tris
 			if (point_in_tri(p, quad[0], quad[1], quad[3]) ||
 				point_in_tri(p, quad[1], quad[2], quad[3]))
 			{

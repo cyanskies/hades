@@ -574,6 +574,8 @@ namespace hades
 			}	
 		};
 
+		// NOTE: expand map size by one again, since the tile based for_each_safe_pos is written around tiles not vertex
+		//		(it uses < operators for the right and bottom limits, but we would need it to behave like <=
 		for_each_position(p, _settings->tile_size, _shape, _size, get_size(_map.get_map()) + tile_position{ 1, 1 }, func);
 		return;
 	}

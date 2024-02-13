@@ -9,6 +9,7 @@
 #include "hades/draw_tools.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/shader.hpp"
+#include "hades/table.hpp"
 
 using namespace std::string_literals;
 using namespace std::string_view_literals;
@@ -82,6 +83,7 @@ void main()
 	//vec4 light_col = vec4(sun_colour.rgb, mix(0.f, sun_colour.a, shadow_height));
 	// frag colour
 	gl_FragColor = mix(vec4(0.f, 0.f, 0.f, 0.f) , shadow_col, float(frag_height < shadow_height) * 1.f);
+	//gl_FragColor = vec4(0.f, 1.f - shadow_height, 0.f, 1.f);
 })";
 
 static auto terrain_map_shader_id = hades::unique_zero;
@@ -782,7 +784,7 @@ namespace hades
 	struct map_tile
 	{
 		tile_position position;
-		std::array<std::uint8_t, 4> height = {};
+		//std::array<std::uint8_t, 4> height = {};
 		resources::tile_size_t left;
 		resources::tile_size_t top;
 		std::uint8_t texture = {};
@@ -819,9 +821,8 @@ namespace hades
 				tex_index = tex_size;
 			}
 
-			const auto corner_height = get_height_at(pos, shared.map);
 			// add tile to the tile list
-			tile_buffer.emplace_back(pos, corner_height, tile.left, tile.top, integer_cast<std::uint8_t>(tex_index));
+			tile_buffer.emplace_back(pos, tile.left, tile.top, integer_cast<std::uint8_t>(tex_index));
 			return;
 			});
 
@@ -860,11 +861,13 @@ namespace hades
 				tile_sizef
 			};
 
+			const auto corner_height = get_height_at(tile.position, shared.map);
+
 			std::array<colour, 4> colours;
 			colours.fill(colour{});
 
-			for (auto i = std::size_t{}; i < size(tile.height); ++i)
-				colours[i].r = tile.height[i];
+			for (auto i = std::size_t{}; i < size(corner_height); ++i)
+				colours[i].r = corner_height[i];
 
 			const auto quad = make_quad_animation(pos, { tile_sizef, tile_sizef }, tex_coords, colours);
 			shared.quads.append(quad);
@@ -921,37 +924,34 @@ namespace hades
 		return;
 	}
 
-	/*static void generate_shadow_row(const std::uint8_t sun_rise, const terrain_map& map,
-		const terrain_index_t row_begin, const terrain_index_t row_end, sf::Image& img, const unsigned int img_y)
+	struct shadow_info
 	{
-		assert(img.getSize().y >= img_y &&
-			img.getSize().x >= integer_cast<unsigned int>(row_end - row_begin));
-		const auto get_max_height = [&map](terrain_index_t i) noexcept {
-			const auto [h1, h2, h3, h4] = get_height_at(i, map);
-			return std::max({ h1, h2, h3, h4 });
-			};
+		std::uint8_t shadow;
+	};
 
-		auto x = unsigned int{};
-		auto h = get_max_height(row_begin);
+	static void generate_shadow_row(tile_position p, table<shadow_info>& table,
+		const tile_position dir, const std::uint8_t sun_rise, const terrain_map& map,
+		const std::uint32_t row_length, const std::int32_t world_width)
+	{
+		auto h = std::uint8_t{};
 
-		img.setPixel({ x++, img_y }, sf::Color{ h, 0, 0, 255 });
-
-		while (std::cmp_less(row_begin + x, row_end))
+		table[p] = shadow_info{ h };
+		for (auto i = std::uint32_t{}; i < row_length; ++i)
 		{
 			if (h < sun_rise)
 				h = {};
 			else
 				h -= sun_rise;
 
-			const auto h2 = get_max_height(row_begin + x);
-			if (h2 > h)
-				h = h2;
-
-			img.setPixel({ x, img_y }, sf::Color{ h, 0, 0, 255 });
-			++x;
+			const auto index = to_1d_index(p, world_width);
+			const auto h2 = std::ranges::max(get_height_at(index, map));
+			h = std::max(h, h2);
+						
+			table[p] = shadow_info{ h };
+			p += dir;
 		}
 		return;
-	}*/
+	}
 
 	static std::array<std::uint8_t, 4> calculate_vert_shadow(tile_position p, const tile_position dir,
 		const std::uint8_t sun_rise, const std::uint8_t sun_dist, const terrain_map& m,
@@ -976,7 +976,87 @@ namespace hades
 		return height;
 	}
 
-	static std::tuple<std::uint8_t, std::uint8_t> calculate_vertex_normal(const terrain_vertex_position&)
+	static constexpr std::array<std::uint8_t, 4> push_shadows_from_left(const std::array<std::uint8_t, 4>& current,
+		const std::array<std::uint8_t, 4>& next, const std::uint8_t sun_rise) noexcept
+	{
+		const std::uint8_t l0 = current[1];
+		const std::uint8_t l3 = current[2];
+		const std::uint8_t l1 = l0 < sun_rise ? 0 : l0 - sun_rise;
+		const std::uint8_t l2 = l3 < sun_rise ? 0 : l3 - sun_rise;
+
+		const std::uint8_t n1 = next[0] < sun_rise ? 0 : next[0] - sun_rise;
+		const std::uint8_t n2 = next[3] < sun_rise ? 0 : next[3] - sun_rise;
+
+		return {
+			std::max(l0, next[0]),
+			std::max(l1, n1),
+			std::max(l2, n2),
+			std::max(l3, next[3])
+		};
+	}
+
+	static constexpr std::array<std::uint8_t, 4> push_shadows_from_right(const std::array<std::uint8_t, 4>& current,
+		const std::array<std::uint8_t, 4>& next, const std::uint8_t sun_rise) noexcept
+	{
+		const std::uint8_t l1 = current[0];
+		const std::uint8_t l2 = current[3];
+		const std::uint8_t l0 = l1 < sun_rise ? 0 : l1 - sun_rise;
+		const std::uint8_t l3 = l2 < sun_rise ? 0 : l2 - sun_rise;
+
+		const std::uint8_t n0 = next[1] < sun_rise ? 0 : next[1] - sun_rise;
+		const std::uint8_t n3 = next[2] < sun_rise ? 0 : next[2] - sun_rise;
+
+		return {
+			std::max(l0, n0),
+			std::max(l1, next[1]),
+			std::max(l2, next[2]),
+			std::max(l3, n3)
+		};
+	}
+
+	struct lighting_info
+	{
+		std::array<std::uint8_t, 4> height;
+		std::array<std::uint8_t, 4> shadow_height;
+		std::array<std::uint8_t, 2> tri_normals_theta;
+		std::array<std::uint8_t, 2> tri_normals_phi;
+	};
+
+	template<typename Func>
+	static void calculate_lighting_tile_row(tile_position p, table<lighting_info>&table, const tile_position dir,
+		const std::uint8_t sun_rise, const terrain_map& m, const float tile_sizef,
+		const std::uint32_t row_length, Func push_shadows) noexcept
+	{
+		auto shadow_h = get_height_at(p, m);
+		for (auto i = std::size_t{}; i < row_length; ++i)
+		{
+			const auto h = get_height_at(p, m);
+			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
+			table[p] = lighting_info{ h, shadow_h };
+
+			// calc triange normals
+
+			p += dir;
+		}
+
+		/*while (std::cmp_less(row_begin + x, row_end))
+		{
+			if (h < sun_rise)
+				h = {};
+			else
+				h -= sun_rise;
+
+			const auto h2 = get_max_height(row_begin + x);
+			if (h2 > h)
+				h = h2;
+
+			img.setPixel({ x, img_y }, sf::Color{ h, 0, 0, 255 });
+			++x;
+		}*/
+		return;
+	}
+
+	static std::array<std::array<std::uint8_t, 2>, 4> calculate_vertex_normal(const tile_position&)
 	{
 		return {};
 	}
@@ -986,20 +1066,22 @@ namespace hades
 	{
 		const auto& sun_angle_radian = shared.sun_angle_radians;
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto sun_unit_vect = to_vector(pol_vector2_t<float>{ sun_angle_radian /*+ std::numbers::pi_v<float>*/, 1.f });
+		const auto sun_unit_vect = to_vector(pol_vector2_t<float>{ sun_angle_radian, 1.f });
+		const auto alt_mag = sun_unit_vect.y / sun_unit_vect.x;
+		const auto next_y = sun_unit_vect.y * alt_mag * (tile_sizef - sun_unit_vect.x);
 		const auto sun_step_mag = sun_unit_vect.x == 0.f ? 1 : std::sqrt(1 + std::pow(sun_unit_vect.y / sun_unit_vect.x, 2.f));
 		const auto sun_vector = sun_unit_vect * sun_step_mag * tile_sizef;
 		
 		// difference in height over x
-		const auto sun_rise = integral_clamp_cast<std::uint8_t>(std::abs(sun_vector.y));
+		const auto sun_rise = integral_clamp_cast<std::uint8_t>(std::abs(/*sun_vector.y*/ next_y));
 		// max x difference that could effect height
-		const auto sun_dist = sun_vector.y == 0.f ? std::uint8_t{} : integral_clamp_cast<std::uint8_t>(255.f / std::abs(sun_vector.y));
+		const auto sun_dist = next_y == 0.f ? std::uint8_t{} : integral_clamp_cast<std::uint8_t>(255.f / std::abs(next_y));
 		const auto sun_hidden = sun_angle_radian > std::numbers::pi_v<float> || sun_angle_radian < 0.f;
 		const auto sun_90 = sun_angle_radian == std::numbers::pi_v<float> / 2.f;
 		const auto sun_left = sun_angle_radian > std::numbers::pi_v<float> / 2.f;
 
 		const auto dir = [](bool left) noexcept {
-			if (left)
+			if (!left)
 				return tile_position{ -1, 0 };
 			else
 				return tile_position{ 1, 0 };
@@ -1010,8 +1092,21 @@ namespace hades
 
 		shared.start_lighting = shared.quads.size();
 
-		// generate shadowmap for region
-		// generate normalmap for region
+		auto table_area2 = terrain_area;
+		table_area2.x = std::max(table_area2.x - sun_dist, 0);
+		table_area2.y = std::max(table_area2.y - 1, 0);
+		table_area2.width = std::min(table_area2.width + sun_dist, map_size_tiles.x);
+		table_area2.height = std::min(table_area2.height, map_size_tiles.y);
+
+		auto t = table<lighting_info>{ position(table_area2), size(table_area2), {} };
+		// iterate over tiles
+		const auto row_length = table_area2.width;
+		const auto shadow_func = sun_left ? push_shadows_from_left : push_shadows_from_right;
+		for (auto y = std::int32_t{}; y < table_area2.height; ++y)
+		{
+			const auto x_val = sun_left ? table_area2.x : row_length + table_area2.x - 1;
+			calculate_lighting_tile_row({ x_val, y + table_area2.y }, t, dir, sun_rise, shared.map, tile_sizef, row_length, shadow_func);
+		}
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			//const auto index = to_1d_index(pos, map_size_tiles.x);
@@ -1021,22 +1116,17 @@ namespace hades
 				float_cast(pos.y) * tile_sizef
 			};
 
-			const auto shadow_height = [&]()->std::array<std::uint8_t, 4> {
-				if (sun_90)
-					return { 0, 0, 0, 0 };
-				else if (sun_hidden)
-					return { 255, 255, 255, 255 };
-				else
-					return calculate_vert_shadow(pos, dir, sun_rise, sun_dist, shared.map, map_size_tiles);
-			}();
+			const auto& light_info = t[pos];
 
 			std::array<colour, 4> colours;
 			colours.fill(colour{});
 
 			for (auto i = std::size_t{}; i < size(corner_height); ++i)
 			{
-				colours[i].r = corner_height[i];
-				colours[i].g = shadow_height[i];
+				colours[i].r = light_info.height[i];
+				colours[i].g = light_info.shadow_height[i];
+				//colours[i].b = /*normal theta*/
+				//colours[i].a = /*normal phi*/
 			}
 
 			const auto quad = make_quad_colour({ position, { tile_sizef, tile_sizef } }, colours);

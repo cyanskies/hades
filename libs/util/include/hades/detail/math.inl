@@ -1,6 +1,7 @@
 #include "hades/math.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <numbers>
 
 namespace hades
@@ -20,6 +21,26 @@ namespace hades
 		if (degs < 0)
 			return degs + 360;
 		return degs;
+	}
+
+	template<typename T>
+		requires std::integral<T> || std::floating_point<T>
+	constexpr T normalise(const T value, const T start, const T end) noexcept
+	{
+		assert(start != end);
+		const auto width = end - start;			  // 
+		const auto offsetValue = value - start;   // value relative to 0
+		auto val_over_width = offsetValue / width;
+		if constexpr (std::floating_point<T>)
+			val_over_width = std::floor(val_over_width);
+		return (offsetValue - (val_over_width * width)) + start;
+	}
+
+	template<std::floating_point T>
+	constexpr T remap(T value, T start, T end, T new_start, T new_end) noexcept
+	{
+		assert(start != end);
+		return new_start + (new_end - new_start) * ((value - start) / (end - start));
 	}
 
 	template<typename T>

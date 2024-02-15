@@ -167,6 +167,8 @@ namespace hades
 
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));
+		_map.set_sun_angle(_sun_angle); // TODO: temp
+		// _sun_angle = get_sun_angle(map);
 		_clear_preview.reset(std::move(empty_map));
 		_clear_preview.show_shadows(false);
 		return;

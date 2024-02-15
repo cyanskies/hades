@@ -590,7 +590,7 @@ namespace hades
 		return get_terrain_at_tile(m.terrain_vertex, w, p, s);
 	}
 
-	std::array<std::uint8_t, 4> get_height_at(tile_position tile_index, const terrain_map& map) noexcept
+	std::array<std::uint8_t, 4> get_height_at(const tile_position tile_index, const terrain_map& map) noexcept
 	{
 		const auto indices = to_terrain_index(tile_index, get_width(map));
 		return {
@@ -601,7 +601,7 @@ namespace hades
 		};
 	}
 
-	std::array<std::uint8_t, 4> get_height_at(terrain_index_t terrain_index, const terrain_map& map) noexcept
+	std::array<std::uint8_t, 4> get_height_at(const terrain_index_t terrain_index, const terrain_map& map) noexcept
 	{
 		auto height = map.heightmap[terrain_index];
 		return { height, height, height, height };
@@ -1123,6 +1123,8 @@ namespace hades
 			// test for hit
 			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
 			// TODO: store last hit TRI instead, then we can properly denormalise to flat tris
+			// TODO: triangle type
+			// NOTE: this is the canonical vertex order for triangles in the terrain system
 			if (point_in_tri(p, quad[0], quad[1], quad[3]) ||
 				point_in_tri(p, quad[1], quad[2], quad[3]))
 			{

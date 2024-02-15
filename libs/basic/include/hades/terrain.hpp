@@ -171,15 +171,23 @@ namespace hades
 
 	struct terrain_map
 	{
+		// triangle types:
+		// quad is made of two triangles starting with the triangle that
+		// defines the left edge of the quad
+		static constexpr auto triangle_downhill = true;
+		static constexpr auto triangle_uphill = false; // default triangle type
+
 		tile_map tile_layer;
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;
 		//vertex of height
 		std::vector<std::uint8_t> heightmap;
+		std::vector<bool> triangle_type;
 		// TODO: tilemap of height
 		//std::vector<std::array<std::uint8_t, 4>> heightmap2;
 
+		// TODO: sun_angle
 
 		// tiles exist between every 4 vertex
 		std::vector<tile_map> terrain_layers;
@@ -279,6 +287,9 @@ namespace hades
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*, const resources::terrain_settings&);
 
 	// TODO: need to fix for cliffs
+	// TODO: must target a tile so that it can disabiguate when a cliff is present
+	//		these are find, they can just fail for cliff areas
+	//		Need to make a new one that picks vertex for a tile
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 

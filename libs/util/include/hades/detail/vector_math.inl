@@ -125,10 +125,11 @@ namespace hades
 		return !(lhs == rhs);
 	}
 
-	template<typename T>
-	constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept
+	template<typename T, std::size_t N>
+	constexpr basic_vector<T, N> operator+(const basic_vector<T, N>& lhs, const basic_vector<T, N>& rhs) noexcept
 	{
-		return { lhs.x + rhs.x, lhs.y + rhs.y };
+		auto ret = lhs;
+		return ret += rhs;
 	}
 
 	template<typename T, std::size_t N>
@@ -140,21 +141,18 @@ namespace hades
 
 	template<typename T, std::size_t N, typename U>
 		requires std::convertible_to<U, T>
-	[[nodiscard]] constexpr basic_vector<T, N> operator*(const basic_vector<T, N>& lhs, const U rhs) noexcept
+	[[nodiscard]] constexpr basic_vector<T, N> operator*(basic_vector<T, N> lhs, const U rhs) noexcept
 	{
 		const auto r = T{ rhs };
-		auto out = basic_vector<T, N>{ lhs.x * r, lhs.y * r };
-		if constexpr (N > 2)
-			out.z *= r;
-		if constexpr (N > 3)
-			out.w *= r;
-		return out;
+		return lhs *= r;
 	}
 
-	template<typename T>
-	constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept
+	template<typename T, std::size_t N, typename U>
+		requires std::convertible_to<U, T>
+	[[nodiscard]] constexpr basic_vector<T, N> operator/(basic_vector<T, N> lhs, const U rhs) noexcept
 	{
-		return { lhs.x / rhs, lhs.y / rhs };
+		const auto r = T{ rhs };
+		return lhs /= r;
 	}
 
 	template<typename T, std::size_t Size>
@@ -176,9 +174,9 @@ namespace hades
 	constexpr basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size> v) noexcept
 	{
 		const auto mag = vector::magnitude(v);
-		auto out = basic_pol_vector<T, Size>{ vector::angle_theta_degrees(v), mag };
+		auto out = basic_pol_vector<T, Size>{ vector::angle_theta(v), mag };
 		if constexpr (Size > 2)
-			out.phi = vector::angle_phi(v, mag);
+			out.phi = vector::angle_phi(v, { mag });
 		return out;
 	}
 
@@ -200,12 +198,12 @@ namespace hades
 		auto magnitude(const basic_vector<T, Size> v) noexcept
 		{
 			if constexpr (Size == 2)
-				return std::hypot(v.x, v.y);
+				return std::hypot(v.x, v.y); // hypot doesnt throw
 			else if constexpr (Size < 4)
 				return std::hypot(v.x, v.y, v.z);
 			else
 			{
-				return std::sqrt(magnitude_squared(v));
+				return std::sqrt(magnitude_squared(v)); // sqrt doesnt throw
 			}
 		}
 
@@ -227,10 +225,26 @@ namespace hades
 		{
 			static_assert(Size < 4);
 			if constexpr (std::is_floating_point_v<T>)
-				return to_degrees(std::atan2(v.y, v.x));
+			{
+				if (v.y == T{} &&
+					v.x == T{})
+					return T{};
+				return std::atan2(v.y, v.x);
+			}
 			else
-				return to_degrees(std::atan2(static_cast<float>(v.y),
-					static_cast<float>(v.x)));
+			{
+				if (v.y == T{} &&
+					v.x == T{})
+					return float{};
+				return std::atan2(static_cast<float>(v.y),
+					static_cast<float>(v.x));
+			}
+		}
+
+		template<typename T, std::size_t Size>
+		constexpr T angle_theta(const basic_pol_vector<T, Size> v) noexcept
+		{
+			return v.theta;
 		}
 
 		template<typename T, std::size_t Size>
@@ -241,8 +255,10 @@ namespace hades
 
 			if constexpr (std::is_floating_point_v<T>)
 			{
-				constexpr auto z_over_mag = v.z / mag.value_or(magnitude(v));
-				return std::acos(z_over_mag);
+				const auto mag2 = mag.value_or(magnitude(v));
+				if (mag2 == 0.f)
+					return T{};
+				return std::acos(v.z / mag2);
 			}
 			else
 			{
@@ -250,6 +266,14 @@ namespace hades
 				return angle_phi(float_vec, mag);
 			}
 		}
+
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		constexpr T angle_phi(const basic_pol_vector<T, Size> v) noexcept
+		{
+			return v.phi;
+		}
+
 
 		template<typename T>
 		auto angle(vector2<T> a, vector2<T> b) noexcept
@@ -315,10 +339,10 @@ namespace hades
 			return magnitude(ab);
 		}
 
-		template<typename T>
-		constexpr vector2<T> reverse(vector2<T> v) noexcept
+		template<typename T, std::size_t N>
+		[[nodiscard]] constexpr basic_vector<T, N> reverse(const basic_vector<T, N> v) noexcept
 		{
-			return { -v.x, -v.y };
+			return v * -1;
 		}
 
 		template<typename T>

@@ -186,18 +186,19 @@ namespace hades
 	template<typename T, std::size_t N>
 	[[nodiscard]] constexpr bool operator!=(const basic_vector<T, N> &lhs, const basic_vector<T, N> &rhs) noexcept;
 
-	template<typename T>
-	[[nodiscard]] constexpr vector2<T> operator+(const vector2<T> &lhs, const vector2<T> &rhs) noexcept;
-
+	template<typename T, std::size_t N>
+	[[nodiscard]] constexpr basic_vector<T, N> operator+(const basic_vector<T, N>& lhs, const basic_vector<T, N>& rhs) noexcept;
+	
 	template<typename T, std::size_t N>
 	[[nodiscard]] constexpr basic_vector<T, N> operator-(const basic_vector<T, N>&lhs, const basic_vector<T, N>&rhs) noexcept;
 
 	template<typename T, std::size_t N, typename U>
 		requires std::convertible_to<U, T>
-	[[nodiscard]] constexpr basic_vector<T, N> operator*(const basic_vector<T, N>& lhs, U rhs) noexcept;
+	[[nodiscard]] constexpr basic_vector<T, N> operator*(basic_vector<T, N> lhs, U rhs) noexcept;
 
-	template<typename T>
-	[[nodiscard]] constexpr vector2<T> operator/(const vector2<T> &lhs, T rhs) noexcept;
+	template<typename T, std::size_t N, typename U>
+		requires std::convertible_to<U, T>
+	[[nodiscard]] constexpr basic_vector<T, N> operator/(basic_vector<T, N> lhs, U rhs) noexcept;
 
 	namespace detail
 	{
@@ -222,6 +223,8 @@ namespace hades
 		struct vector_phi_magnitude_component_empty {};
 	}
 
+	// NOTE: according to mathematical convention, the magnitude should be the first element,
+	//		this implementation has it as the last element.
 	template<typename T, std::size_t Size = 2>
 	struct basic_pol_vector : public std::conditional_t<Size < 3, detail::vector_theta_magnitude_component<T>, detail::vector_theta_component<T>>,
 		public std::conditional_t<2 < Size, detail::vector_phi_magnitude_component<T>, detail::vector_phi_magnitude_component_empty>
@@ -252,11 +255,11 @@ namespace hades
 		template<typename T, std::size_t Size>
 		[[nodiscard]] constexpr T magnitude_squared(basic_vector<T, Size>) noexcept;
 
-		//returns the angle_theta of the vector compared to the vector [1, 0]
-		// returns in degrees
-		// TODO: return in radians
+		// returns the angle_theta of the vector compared to the vector [1, 0]
 		template<typename T, std::size_t Size>
-		[[nodiscard]] constexpr auto angle_theta(basic_vector<T, Size>) noexcept;
+		[[nodiscard]] constexpr auto angle_theta(basic_vector<T, Size>) noexcept; 
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr T angle_theta(basic_pol_vector<T, Size>) noexcept;
 		template<typename T, std::size_t Size>
 		[[nodiscard]] constexpr auto angle_theta_degrees(basic_vector<T, Size> v) noexcept
 		{
@@ -267,6 +270,9 @@ namespace hades
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
 		[[nodiscard]] constexpr auto angle_phi(basic_vector<T, Size>, std::optional<T> magnitude = {}) noexcept;
+		template<typename T, std::size_t Size>
+			requires (Size > 2)
+		[[nodiscard]] constexpr T angle_phi(basic_pol_vector<T, Size>) noexcept;
 
 		// returns the angle_theta between the two vectors
 		// returns in radians
@@ -293,8 +299,8 @@ namespace hades
 		template<typename T>
 		auto distance(vector2<T>, vector2<T>) noexcept;
 
-		template<typename T>
-		constexpr vector2<T> reverse(vector2<T>) noexcept;
+		template<typename T, std::size_t N>
+		[[nodiscard]] constexpr basic_vector<T, N> reverse(basic_vector<T, N>) noexcept;
 
 		template<typename T>
 		vector2<T> abs(vector2<T>) noexcept;

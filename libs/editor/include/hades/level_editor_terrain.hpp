@@ -96,8 +96,8 @@ namespace hades
 		std::uint8_t _height_strength = 1;
 
 		//brush preview
-		mutable_terrain_map2 _clear_preview;
-		mutable_terrain_map2 _preview;
+		mutable_terrain_map _clear_preview;
+		mutable_terrain_map _preview;
 
 		//selected tile/terrain
 		resources::tile _tile = resources::bad_tile;
@@ -107,7 +107,7 @@ namespace hades
 		const resources::terrain_settings *_settings = nullptr;
 		float _sun_angle = 135.f; // TODO: default sun angle cvar
 		level_options _new_options;
-		mutable_terrain_map2 _map;
+		mutable_terrain_map _map;
 	};
 }
 

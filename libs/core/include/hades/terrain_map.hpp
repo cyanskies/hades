@@ -30,12 +30,12 @@ namespace hades
 		std::vector<immutable_tile_map> _terrain_layers;
 	};
 
-	class mutable_terrain_map2 final : public sf::Drawable
+	class mutable_terrain_map final : public sf::Drawable
 	{
 	public:
-		mutable_terrain_map2();
-		mutable_terrain_map2(const mutable_terrain_map2&) = default;
-		mutable_terrain_map2(terrain_map);
+		mutable_terrain_map();
+		mutable_terrain_map(const mutable_terrain_map&) = default;
+		mutable_terrain_map(terrain_map);
 
 		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
 

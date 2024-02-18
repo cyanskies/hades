@@ -859,6 +859,10 @@ namespace hades
 
 	namespace
 	{
+		// TODO: the matrix projection functions no longer need to be here, but
+		//		may be useful in the future, they should be moved to rectangle_math or just math
+		//		a counterpart for normalise_quad_point should also be added.
+
 		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
 		// Warper.cs
 		constexpr std::array<float, 16> compute_dest_mat(
@@ -894,7 +898,7 @@ namespace hades
 
 		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
 		// Warper.cs
-		static constexpr std::array<float, 16> compute_src_mat(
+		constexpr std::array<float, 16> compute_src_mat(
 			const float x0,
 			const float y0,
 			const float x1,
@@ -984,6 +988,8 @@ namespace hades
 					result_1 / result_3 };
 		}
 
+		// TODO: might be time to add a triangle_math header
+		// 
 		// Based on PointInTriangle from: https://stackoverflow.com/a/20861130
 		constexpr bool point_in_tri(const vector2_float p, const vector2_float p0, const vector2_float p1, const vector2_float p2) noexcept
 		{
@@ -997,10 +1003,20 @@ namespace hades
 			return d == 0 || (d < 0) == (s + t <= 0);
 		}
 
+		constexpr bool point_in_tri(const vector2_float p, const std::array<vector2_float, 3>& tri) noexcept
+		{
+			return point_in_tri(p, tri[0], tri[1], tri[2]);
+		}
+
 		struct barycentric_point
 		{
 			float u, v, w;
 		};
+
+		constexpr bool operator==(const barycentric_point& lhs, const barycentric_point& rhs) noexcept
+		{
+			return std::tie(lhs.u, lhs.v, lhs.w) == std::tie(rhs.u, rhs.v, rhs.w);
+		}
 
 		constexpr barycentric_point to_barycentric(const vector2_float p, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
 		{
@@ -1011,14 +1027,24 @@ namespace hades
 			return { u, v, w };
 		}
 
+		constexpr barycentric_point to_barycentric(const vector2_float p, const std::array<vector2_float, 3> &tri) noexcept
+		{
+			return to_barycentric(p, tri[0], tri[1], tri[2]);
+		}
+
 		constexpr vector2_float from_barycentric(const barycentric_point b, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
 		{
 			const auto& [u, v, w] = b;
 			return { u * p1.x + v * p2.x + w * p3.x, u * p1.y + v * p2.y + w * p3.y };
 		}
 
-		vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
-			const vector2_float height_dir, const rect_corners c, const std::array<std::uint8_t, 4> heightmap) noexcept
+		constexpr vector2_float from_barycentric(const barycentric_point b, const std::array<vector2_float, 3> &tri) noexcept
+		{
+			return from_barycentric(b, tri[0], tri[1], tri[2]);
+		}
+
+		constexpr vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
+			const rect_corners c) noexcept
 		{
 			auto ret = static_cast<vector2_float>(pos) * tile_sizef;
 
@@ -1034,10 +1060,69 @@ namespace hades
 				ret.y += tile_sizef;
 				break;
 			}
-
-			const auto h = float_cast(heightmap[enum_type(c)]);
-			ret += height_dir * h;
 			return ret;
+		}
+
+		constexpr std::array<vector2_float, 3> add_point_height(std::array<vector2_float, 3> pos,
+			const vector2_float height_dir, const rect_corners a,
+			const rect_corners b, const rect_corners c,
+			const std::array<std::uint8_t, 4> heightmap) noexcept
+		{
+			pos[0] += height_dir * float_cast(heightmap[enum_type(a)]);
+			pos[1] += height_dir * float_cast(heightmap[enum_type(b)]);
+			pos[2] += height_dir * float_cast(heightmap[enum_type(c)]);
+			return pos;
+		}
+
+		struct tris
+		{
+			std::array<vector2_float, 3> left_tri, right_tri;
+			std::array<vector2_float, 3> flat_left_tri, flat_right_tri;
+		};
+
+		constexpr tris get_quad_triangles(const tile_position pos, const float tile_sizef,
+			const vector2_float height_dir, const std::array<std::uint8_t, 4> heightmap) noexcept
+		{
+			tris out; // uninitialized
+			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
+				make_quad_point(pos, tile_sizef, rect_corners::top_right),
+				make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
+			out.flat_right_tri = { out.flat_left_tri[1],
+				make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
+				out.flat_left_tri[2] };
+
+			out.left_tri = add_point_height(out.flat_left_tri, height_dir,
+				rect_corners::top_left, rect_corners::top_right, rect_corners::bottom_left,
+				heightmap);
+			out.right_tri = add_point_height(out.flat_right_tri, height_dir,
+				rect_corners::top_right, rect_corners::bottom_right, rect_corners::bottom_left,
+				heightmap);
+			return out;
+		}
+
+		// returns true if left is lower than right
+		bool lowest_tri(const std::array<vector2_float, 3>& left,
+			const std::array<vector2_float, 3>& right, float rot) noexcept
+		{
+			auto lowest = std::numeric_limits<float>::max();
+			auto left_point = false;
+			auto current_point = true;
+			const auto cos_theta = std::cos(rot);
+			const auto sin_theta = std::sin(rot);
+			const auto check_lowest = [&](const vector2_float &p) {
+				const auto y = p.y * cos_theta + p.x * sin_theta;
+				if (y < lowest)
+				{
+					lowest = y;
+					left_point = current_point;
+				}
+				return;
+				};
+
+			std::ranges::for_each(left, check_lowest);
+			current_point = false;
+			std::ranges::for_each(right, check_lowest);
+			return left_point;
 		}
 	}
 
@@ -1077,10 +1162,9 @@ namespace hades
 		};
 
 		// quad vertex for the last hit quad
-		auto last_tile = bad_tile_position;
+		auto bary_point = barycentric_point{};
 		auto last_tri = std::array<vector2_float, 3>{};
-		auto last_quad = std::array<vector2_float, 4>{};
-
+		
 		// go from 'p'  in the direction of advance dir, checking each tile to see if it is under the mouse
 		// end after reaching the edge of the map
 		const auto world_size = get_size(map);
@@ -1113,23 +1197,33 @@ namespace hades
 			const auto height_arr = get_height_at(tile_check, map);
 
 			// generate quad vertex
-			const auto quad = std::array<vector2_float, 4>{
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_left, height_arr),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::top_right, height_arr),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_right, height_arr),
-				make_quad_point(tile_check, tile_sizef, height_dir, rect_corners::bottom_left, height_arr)
-			};
+			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_arr);
 
 			// test for hit
 			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
 			// TODO: store last hit TRI instead, then we can properly denormalise to flat tris
 			// TODO: triangle type
 			// NOTE: this is the canonical vertex order for triangles in the terrain system
-			if (point_in_tri(p, quad[0], quad[1], quad[3]) ||
-				point_in_tri(p, quad[1], quad[2], quad[3]))
+			auto left_hit = point_in_tri(p, quad_triangles.left_tri),
+				right_hit = point_in_tri(p, quad_triangles.right_tri);
+
+			if (left_hit && right_hit)
 			{
-				last_tile = tile_check;
-				last_quad = quad;
+				if (lowest_tri(quad_triangles.flat_left_tri, quad_triangles.flat_right_tri, rot))
+					right_hit = false;
+				else
+					left_hit = false;
+			}
+			
+			if (left_hit)
+			{
+				bary_point = to_barycentric(p, quad_triangles.left_tri);
+				last_tri = quad_triangles.flat_left_tri;
+			}
+			else if (right_hit)
+			{
+				bary_point = to_barycentric(p, quad_triangles.right_tri);
+				last_tri = quad_triangles.flat_right_tri;
 			}
 
 			// update for next tile
@@ -1145,10 +1239,10 @@ namespace hades
 			}
 		}
 
-		// calculate pos within the hit quad
-		// TODO: use barycentric coords here
-		const auto normalised_pos = normalise_quad_point(p, last_quad);
-		return (static_cast<vector2_float>(last_tile)/* + normalised_pos*/) * tile_sizef;
+		if (bary_point == barycentric_point{})
+			return p;
+		// calculate pos within the hit tri
+		return from_barycentric(bary_point, last_tri);
 	}
 }
 

@@ -173,7 +173,7 @@ namespace hades
 	{
 		// triangle types:
 		// quad is made of two triangles starting with the triangle that
-		// defines the left edge of the quad
+		// defines the left edge of the quad, so each quad has a left and right triangle
 		static constexpr auto triangle_downhill = true;
 		static constexpr auto triangle_uphill = false; // default triangle type
 
@@ -273,8 +273,8 @@ namespace hades
 	[[deprecated]] void resize_map(terrain_map&, vector2_int size, vector2_int offset);
 
 	// TODO: investigate where this is used, add for_each_adjacent_tile
-	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
-	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
+	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
+	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
 
 	//for editing a terrain map
 	//use the make_position_* functions from tiles.hpp

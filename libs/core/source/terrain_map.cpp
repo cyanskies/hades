@@ -254,7 +254,7 @@ namespace hades
 	//		mutable_terrain_map			//
 	//==================================//
 
-	mutable_terrain_map2::mutable_terrain_map2() :
+	mutable_terrain_map::mutable_terrain_map() :
 		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) },
 		_shader_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_id)) },
 		_shader_shadows_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_shadows_lighting)) }
@@ -262,12 +262,12 @@ namespace hades
 		_shared.settings = resources::get_terrain_settings();
 	}
 
-	mutable_terrain_map2::mutable_terrain_map2(terrain_map t) : mutable_terrain_map2{}
+	mutable_terrain_map::mutable_terrain_map(terrain_map t) : mutable_terrain_map{}
 	{
 		reset(std::move(t));
 	}
 
-	void mutable_terrain_map2::reset(terrain_map t)
+	void mutable_terrain_map::reset(terrain_map t)
 	{
 		const auto& tile_size = _shared.settings->tile_size;
 		const auto& width = t.tile_layer.width;
@@ -292,7 +292,7 @@ namespace hades
 
 	constexpr auto bad_chunk_size = std::numeric_limits<std::size_t>::max();
 
-	void mutable_terrain_map2::set_world_region(rect_float r) noexcept
+	void mutable_terrain_map::set_world_region(rect_float r) noexcept
 	{
 		// expand visible area to cover for terrain height
 		r.x -= 255.f;
@@ -311,7 +311,7 @@ namespace hades
 		return;
 	}
 
-	/*void mutable_terrain_map2::set_chunk_size(std::size_t s) noexcept
+	/*void mutable_terrain_map::set_chunk_size(std::size_t s) noexcept
 	{
 		const auto d = std::div(s, _settings->tile_size);
 		const auto new_size = d.quot + d.rem;
@@ -321,7 +321,7 @@ namespace hades
 		return;
 	}*/
 
-	void mutable_terrain_map2::set_height_enabled(bool b) noexcept
+	void mutable_terrain_map::set_height_enabled(bool b) noexcept
 	{
 		_show_height = b;
 		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
@@ -338,7 +338,7 @@ namespace hades
 		std::uint8_t texture = {};
 	};
 
-	static void generate_layer(mutable_terrain_map2::shared_data& shared,
+	static void generate_layer(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const tile_map& map,
 		const rect_int terrain_area)
 	{
@@ -379,7 +379,7 @@ namespace hades
 
 		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
 		
-		auto current_region = mutable_terrain_map2::vertex_region{ 
+		auto current_region = mutable_terrain_map::vertex_region{ 
 			shared.quads.size(),
 			{},
 			tile_buffer.front().texture 
@@ -432,7 +432,7 @@ namespace hades
 	//constexpr auto tile_layer = 1;
 	//constexpr auto protected_layers = std::max({ grid_layer, tile_layer, cliff_layer });
 
-	static void generate_grid(mutable_terrain_map2::shared_data& shared,
+	static void generate_grid(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
 		assert(shared.settings->grid_terrain);
@@ -472,8 +472,8 @@ namespace hades
 		return;
 	}
 
-	static constexpr std::array<std::uint8_t, 4> full_bright(const std::array<std::uint8_t, 4>& current,
-		const std::array<std::uint8_t, 4>& next, const std::uint8_t sun_rise) noexcept
+	static constexpr std::array<std::uint8_t, 4> full_bright(const std::array<std::uint8_t, 4>&,
+		const std::array<std::uint8_t, 4>&, const std::uint8_t) noexcept
 	{
 		constexpr auto min = std::uint8_t{};
 
@@ -482,8 +482,8 @@ namespace hades
 		};
 	}
 
-	static constexpr std::array<std::uint8_t, 4> full_dark(const std::array<std::uint8_t, 4>& current,
-		const std::array<std::uint8_t, 4>& next, const std::uint8_t sun_rise) noexcept
+	static constexpr std::array<std::uint8_t, 4> full_dark(const std::array<std::uint8_t, 4>&,
+		const std::array<std::uint8_t, 4>&, const std::uint8_t) noexcept
 	{
 		constexpr auto max = std::numeric_limits<std::uint8_t>::max();
 
@@ -667,7 +667,7 @@ namespace hades
 		};
 	}
 
-	static void generate_lighting(mutable_terrain_map2::shared_data& shared,
+	static void generate_lighting(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
 		const auto& sun_angle_radian = shared.sun_angle_radians;
@@ -748,7 +748,7 @@ namespace hades
 		return;
 	}
 
-	static void generate_chunk(mutable_terrain_map2::shared_data& shared,
+	static void generate_chunk(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area,
 		const bool shadows, const bool grid)
 	{
@@ -771,7 +771,7 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map2::apply()
+	void mutable_terrain_map::apply()
 	{
 		if (!_needs_update)
 			return;
@@ -793,7 +793,7 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map2::draw(sf::RenderTarget& t, const sf::RenderStates& states) const
+	void mutable_terrain_map::draw(sf::RenderTarget& t, const sf::RenderStates& states) const
 	{
 		assert(!_needs_update);
 
@@ -833,7 +833,7 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map2::set_world_rotation(const float rot)
+	void mutable_terrain_map::set_world_rotation(const float rot)
 	{
 		auto t = sf::Transform{};
 		t.rotate(sf::degrees(rot));
@@ -854,7 +854,7 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map2::set_sun_angle(float degrees)
+	void mutable_terrain_map::set_sun_angle(float degrees)
 	{
 		if (degrees == 0.f)
 			degrees = 0.01f;
@@ -870,28 +870,28 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map2::place_tile(const tile_position p, const resources::tile& t)
+	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)
 	{
 		hades::place_tile(_shared.map, p, t, *_shared.settings);
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map2::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
+	void mutable_terrain_map::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
 	{
 		hades::place_terrain(_shared.map, p, t, *_shared.settings);
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map2::raise_terrain(const terrain_vertex_position p, const uint8_t amount)
+	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const uint8_t amount)
 	{
 		hades::raise_terrain(_shared.map, p, amount, _shared.settings);
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map2::lower_terrain(const terrain_vertex_position p, const uint8_t amount)
+	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const uint8_t amount)
 	{
 		hades::lower_terrain(_shared.map, p, amount, _shared.settings);
 		_needs_update = true;

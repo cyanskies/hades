@@ -440,7 +440,6 @@ namespace hades
 		assert(!empty(grid_tiles));
 		const auto& grid_tile = grid_tiles.front();
 		shared.grid_tex = grid_tile.tex.get();
-		shared.start_grid = shared.quads.size();
 
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		const auto map_size_tiles = get_size(shared.map.tile_layer);
@@ -693,8 +692,6 @@ namespace hades
 
 		const auto map_size_tiles = get_size(shared.map.tile_layer);
 		
-		shared.start_lighting = shared.quads.size();
-
 		auto table_area = terrain_area;
 		table_area.x = std::max(table_area.x - sun_dist, 0);
 		table_area.y = std::max(table_area.y - 1, 0);
@@ -762,8 +759,11 @@ namespace hades
 		{
 			generate_layer(shared, tile_buffer, shared.map.tile_layer, terrain_area);
 			// generate cliffs quad_layer_count * (s + 1)
+			shared.start_lighting = shared.quads.size();
 			if(shadows)
 				generate_lighting(shared, terrain_area);
+
+			shared.start_grid = shared.quads.size();
 			if(grid)
 				generate_grid(shared, terrain_area);
 		}

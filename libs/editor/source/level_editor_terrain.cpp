@@ -159,7 +159,7 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
-		auto map = to_terrain_map(map_raw);
+		auto map = to_terrain_map(std::move(map_raw));
 		//TODO: if size != to level xy, then resize the map
 		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset,
 			_empty_terrain, *_settings);

@@ -370,16 +370,19 @@ namespace hades
 		return { terrainset, terrain_vertex, terrain_height, layers };
 	}
 
-	terrain_map to_terrain_map(const raw_terrain_map &r)
+	template<typename Raw>
+		requires std::same_as<raw_terrain_map, std::decay_t<Raw>>
+	terrain_map to_terrain_map_impl(Raw &&r)
 	{
-		if(!is_valid(r))
+		if (!is_valid(r))
 			throw terrain_error{ "raw terrain map is not valid" };
 
 		auto m = terrain_map{};
 
 		m.terrainset = data::get<resources::terrainset>(r.terrainset);
-		m.heightmap = r.heightmap;
-		
+		m.heightmap = std::forward<Raw>(r).heightmap;
+		m.triangle_type = std::forward<Raw>(r).triangle_type;
+
 		//tile layer is required to be valid
 		m.tile_layer = to_tile_map(r.tile_layer);
 		const auto size = get_size(m.tile_layer);
@@ -390,17 +393,17 @@ namespace hades
 		const auto empty = settings->empty_terrain.get();
 		//if the terrain_vertex isn't present, then fill with empty
 		if (std::empty(r.terrain_vertex))
-            m.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), empty);
+			m.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), empty);
 		else
 		{
 			std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
 				std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_id_t t) {
-				if (t == terrain_id_t{})
-					return empty;
+					if (t == terrain_id_t{})
+						return empty;
 
-				assert(t <= std::size(terrains));
-				return terrains[t - 1u].get();
-			});
+					assert(t <= std::size(terrains));
+					return terrains[t - 1u].get();
+				});
 		}
 
 		// if the terrain layers are empty then generate them
@@ -420,13 +423,12 @@ namespace hades
 				});
 				assert(terrain != end(l.tilesets));
 
-				const auto raw_layer = std::find_if(begin(r.terrain_layers), end(r.terrain_layers), [t = (*terrain)->id](auto& l){
+				const auto raw_layer = std::find_if(begin(r.terrain_layers), end(r.terrain_layers), [t = (*terrain)->id](auto& l) {
 					return std::any_of(begin(l.tilesets), end(l.tilesets), [t](auto& tileset) {
 						return std::get<unique_id>(tileset) == t;
+						});
 					});
-				});
-
-				if (raw_layer == end(r.terrain_layers))
+								if (raw_layer == end(r.terrain_layers))
 				{
 					//missing layer
 					//a new layer will have already been generated
@@ -437,17 +439,31 @@ namespace hades
 			}
 		}
 
+		// TODO: this is a very expensive assert
 		assert(is_valid(to_raw_terrain_map(m)));
 
 		return m;
 	}
 
-	raw_terrain_map to_raw_terrain_map(const terrain_map &t)
+	terrain_map to_terrain_map(const raw_terrain_map &r)
+	{
+		return to_terrain_map_impl(r);
+	}
+
+	terrain_map to_terrain_map(raw_terrain_map&& r)
+	{
+		return to_terrain_map_impl(std::move(r));
+	}
+
+	template<typename Map>
+		requires std::same_as<terrain_map, std::decay_t<Map>>
+	static raw_terrain_map to_raw_terrain_map_impl(Map &&t)
 	{
 		auto m = raw_terrain_map{};
 
 		m.terrainset = t.terrainset->id;
-		m.heightmap = t.heightmap;
+		m.heightmap = std::forward<Map>(t).heightmap;
+		m.triangle_type = std::forward<Map>(t).triangle_type;
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
@@ -462,17 +478,34 @@ namespace hades
 		for (auto i = terrain_id_t{}; i < std::size(t.terrainset->terrains); ++i)
 			t_map.emplace(t.terrainset->terrains[i].get(), i + 1u);
 
+		m.terrain_vertex.reserve(size(t.terrain_vertex));
 		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
-			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain *t) {
-			return t_map.at(t);
-		});
+			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain* t) {
+				return t_map.at(t);
+			});
 
-		m.tile_layer = to_raw_map(t.tile_layer);
+		m.tile_layer = to_raw_map(std::forward<Map>(t).tile_layer);
 
-		std::transform(std::begin(t.terrain_layers), std::end(t.terrain_layers),
-			std::back_inserter(m.terrain_layers), to_raw_map);
+		for (auto&& tl : std::forward<Map>(t).terrain_layers)
+			m.terrain_layers.emplace_back(to_raw_map(std::forward<std::remove_reference_t<decltype(tl)>>(tl)));
+
+		if constexpr (std::is_rvalue_reference_v<decltype(t)>)
+		{
+			t.terrain_layers.clear();
+			t.terrain_vertex.clear();
+		}
 
 		return m;
+	}
+
+	raw_terrain_map to_raw_terrain_map(const terrain_map &t)
+	{
+		return to_raw_terrain_map_impl(t);
+	}
+
+	raw_terrain_map to_raw_terrain_map(terrain_map&& t)
+	{
+		return to_raw_terrain_map_impl(std::move(t));
 	}
 
 	terrain_map make_map(tile_position size, const resources::terrainset *terrainset,

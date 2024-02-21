@@ -221,7 +221,7 @@ namespace hades
 	tile_map to_tile_map(const raw_map&);
 	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
 	raw_map to_raw_map(const tile_map&);
-
+	raw_map to_raw_map(tile_map&&);
 	//get tile from raw_map
 	// exceptions: tile_not_found, tileset_not_found
 	resources::tile get_tile(const raw_map&, tile_id_t);

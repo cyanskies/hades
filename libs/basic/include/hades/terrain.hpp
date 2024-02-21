@@ -199,8 +199,10 @@ namespace hades
 	//converts a raw map into a tile map
 	// exceptions: tileset_not_found, terrain_error, terrain_layers_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
+	terrain_map to_terrain_map(raw_terrain_map&&);
 	//the reverse of the above, only throws standard exceptions(eg. bad_alloc)
 	raw_terrain_map to_raw_terrain_map(const terrain_map&);
+	raw_terrain_map to_raw_terrain_map(terrain_map&&);
 
 	//type for positioning vertex in a terrain map
 	using terrain_vertex_position = tile_position;

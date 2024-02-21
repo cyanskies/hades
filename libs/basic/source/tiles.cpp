@@ -668,28 +668,46 @@ namespace hades
 		return t;
 	}
 
-	raw_map to_raw_map(const tile_map &t)
+	template<typename Map>
+		requires std::same_as<tile_map, std::decay_t<Map>>
+	static raw_map to_raw_map_impl(Map&& t)
 	{
 		//we cant save a jagged map
-        if (t.tiles.size() % integer_cast<std::size_t>(t.width) != 0)
+		if (t.tiles.size() % integer_cast<std::size_t>(t.width) != 0)
 			throw tile_error{ "tile_map is in an invalid state" };
 
 		//the tiles id's and width will be unchanged
 		raw_map m;
-		m.tiles = t.tiles;
+		m.tiles = std::forward<Map>(t).tiles;
 		m.width = t.width;
 
 		//the starting id for each tileset is the size
 		// of all preceeding tilesets
-		decltype(t.tiles.size()) starting_id{};
+		decltype(m.tiles.size()) starting_id{};
 		m.tilesets.reserve(t.tilesets.size());
-		for (const auto &tileset : t.tilesets)
+		for (const auto& tileset : t.tilesets)
 		{
 			m.tilesets.emplace_back(tileset->id, starting_id);
 			starting_id += tileset->tiles.size();
 		}
 
+		if constexpr (std::is_rvalue_reference_v<decltype(t)>)
+		{
+			t.width = {};
+			t.tilesets.clear();
+		}
+
 		return m;
+	}
+
+	raw_map to_raw_map(const tile_map &t)
+	{
+		return to_raw_map_impl(t);
+	}
+
+	raw_map to_raw_map(tile_map&& t)
+	{
+		return to_raw_map_impl(std::move(t));
 	}
 
 	[[nodiscard]]

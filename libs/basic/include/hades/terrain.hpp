@@ -152,6 +152,7 @@ namespace hades
 		//if empty, then should be filled with empty vertex
 		std::vector<terrain_id_t> terrain_vertex;
 		std::vector<std::uint8_t> heightmap;
+		std::vector<bool> triangle_type;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
@@ -174,18 +175,36 @@ namespace hades
 		// triangle types:
 		// quad is made of two triangles starting with the triangle that
 		// defines the left edge of the quad, so each quad has a left and right triangle
+		// for uphill:
+		//		triangle 1:
+		//				1: top-left
+		//				2: top-right
+		//				3: bottom-left
+		//		triangle 2:
+		//				4: top-right
+		//				5: bottom-right
+		//				6: bottom-left
+		//
+		// for downhill:
+		//		triangle 1:
+		//				1: top-left
+		//				2: bottom-right
+		//				3: bottom-left
+		//		triangle 2:
+		//				4: top-left
+		//				5: top-right
+		//				6: bottom-right
 		static constexpr auto triangle_downhill = true;
-		static constexpr auto triangle_uphill = false; // default triangle type
+		static constexpr auto triangle_uphill = false;
+		static constexpr auto triangle_default = triangle_uphill;
 
 		tile_map tile_layer;
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;
-		//vertex of height
+		// tile vertex of height (6 vertex per tile)
 		std::vector<std::uint8_t> heightmap;
-		std::vector<bool> triangle_type;
-		// TODO: tilemap of height
-		//std::vector<std::array<std::uint8_t, 4>> heightmap2;
+		std::vector<bool> triangle_type; // per tile
 
 		// TODO: sun_angle
 
@@ -196,6 +215,19 @@ namespace hades
 		const resources::terrainset* terrainset = nullptr;
 	};
 
+	// converts triangle pair indexes [0-5] to equivilent quad indexes [0-3]
+	constexpr std::size_t triangle_index_to_quad_index(std::size_t, bool tri_type) noexcept;
+	// access a triangle pair range [0-5] using quad indexes[0-3] 
+	// 'Func' is called to merge triangle elements
+	// where multiple values are available for a quad corner
+	template<std::ranges::random_access_range Range,
+		std::invocable<typename Range::value_type, typename Range::value_type> Func>
+		requires requires(const Range& r, Func &&f, std::size_t i, typename Range::value_type v)
+	{
+		r[i];
+		{ f(v, v) } -> std::same_as<typename Range::value_type>;
+	}
+	typename Range::value_type access_triangles_as_quad(const Range&, bool tri_type, std::size_t index, Func&& descriminator);
 	//converts a raw map into a tile map
 	// exceptions: tileset_not_found, terrain_error, terrain_layers_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
@@ -214,6 +246,8 @@ namespace hades
 	tile_position get_size(const terrain_map&);
 	// size of the map expressed in vertex
 	terrain_vertex_position get_vertex_size(const terrain_map&);
+	// throws: terrain_error if map sizes differ
+	void copy_heightmap(terrain_map& target, const terrain_map& src);
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	[[nodiscard]]
@@ -247,11 +281,19 @@ namespace hades
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position, const resources::terrain_settings&);
 
+	struct triangle_height_data
+	{
+		// contains height for both triangles
+		std::array<std::uint8_t, 6> height;
+		bool triangle_type;
+	};
+	// returns height arranged into two triangles
+	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&) noexcept;
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	// returns the height in the 4 corners of the tile
-	std::array<std::uint8_t, 4> get_height_at(tile_position tile_index, const terrain_map& map) noexcept;
+	[[deprecated]] std::array<std::uint8_t, 4> get_height_at(tile_position tile_index, const terrain_map& map) noexcept;
 	// returns the different heights from each quadrant of the vertex
-	std::array<std::uint8_t, 4> get_height_at(terrain_index_t terrain_index, const terrain_map& map) noexcept;
+	std::uint8_t get_max_height_at(terrain_index_t, const terrain_map&) noexcept;
 
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
 
@@ -290,10 +332,12 @@ namespace hades
 
 	// TODO: need to fix for cliffs
 	// TODO: must target a tile so that it can disabiguate when a cliff is present
-	//		these are find, they can just fail for cliff areas
+	//		these are fine, they can just fail for cliff areas
 	//		Need to make a new one that picks vertex for a tile
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
+
+	void set_height_at(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 
 	// project 'p' onto the flat version of 'map'
 	world_vector_t project_onto_terrain(world_vector_t p, float rot,

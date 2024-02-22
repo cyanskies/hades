@@ -8,6 +8,7 @@
 
 #include "hades/draw_tools.hpp"
 #include "hades/rectangle_math.hpp"
+#include "hades/sf_color.hpp"
 #include "hades/shader.hpp"
 #include "hades/table.hpp"
 
@@ -329,6 +330,60 @@ namespace hades
 		return;
 	}
 
+	static poly_quad make_terrain_triangles(vector2_float pos, float tile_size,
+		const triangle_height_data& h, rect_float texture_quad,
+		const std::array<std::uint8_t, 4> &shadow_h = {}, 
+		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
+	{
+		const auto quad = rect_float{ pos, { tile_size, tile_size } };
+		const auto quad_right_x = quad.x + quad.width;
+		const auto quad_bottom_y = quad.y + quad.height;
+		const auto tex_right_x = texture_quad.x + texture_quad.width;
+		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
+
+		auto sf_col = std::array<sf::Color, 6>{};
+		for (auto i = std::uint8_t{}; i < 6; ++i)
+		{
+			const auto& normal = normals[triangle_index_to_quad_index(i, h.triangle_type)];
+			sf_col[i] = sf::Color{
+				h.height[i],
+				shadow_h[triangle_index_to_quad_index(i, h.triangle_type)],
+				normal[0], // theta
+				normal[1]};// phi
+		}
+		
+		if (h.triangle_type == terrain_map::triangle_uphill)
+		{
+			// uphill triangulation, first triangle edges against the left and top sides of the quad
+			//						second triangle edges against the right and bottom sides of the quad
+			return poly_quad{
+				//first triangle
+				sf::Vertex{ {quad.x, quad.y},					sf_col[0], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { quad_right_x, quad.y },			sf_col[1], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
+				//second triangle
+				sf::Vertex{ { quad_right_x, quad.y },			sf_col[3], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[4], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[5], { texture_quad.x, tex_bottom_y } }	//bottom left
+			};
+		}
+		else
+		{
+			// uphill triangulation, first triangle edges against the left and bottom sides of the quad
+			//						second triangle edges against the right and top sides of the quad
+			return poly_quad{
+				//first triangle
+				sf::Vertex{ {quad.x, quad.y},					sf_col[0], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[1], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
+				//second triangle
+				sf::Vertex{ {quad.x, quad.y},					sf_col[3], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { quad_right_x, quad.y },			sf_col[4], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[5], { tex_right_x, tex_bottom_y } },		//bottom right
+			};
+		}
+	}
+
 	struct map_tile
 	{
 		tile_position position;
@@ -409,15 +464,8 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto corner_height = get_height_at(tile.position, shared.map);
-
-			std::array<colour, 4> colours;
-			colours.fill(colour{});
-
-			for (auto i = std::size_t{}; i < size(corner_height); ++i)
-				colours[i].r = corner_height[i];
-
-			const auto quad = make_quad_animation(pos, { tile_sizef, tile_sizef }, tex_coords, colours);
+			const auto triangle_height = get_height_for_triangles(tile.position, shared.map);
+			const auto quad = make_terrain_triangles(pos, tile_sizef, triangle_height, tex_coords);
 			shared.quads.append(quad);
 		}
 
@@ -452,19 +500,14 @@ namespace hades
 		};
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-			const auto corner_height = get_height_at(pos, shared.map);
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
 				float_cast(pos.y) * tile_sizef
 			};
 
-			std::array<colour, 4> colours;
-			colours.fill(colour{});
+			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto quad = make_terrain_triangles(position, tile_sizef, triangle_height, tex_coords);
 
-			for (auto i = std::size_t{}; i < size(corner_height); ++i)
-				colours[i].r = corner_height[i];
-
-			const auto quad = make_quad_animation(position, { tile_sizef, tile_sizef }, tex_coords, colours);
 			shared.quads.append(quad);
 			return;
 			});
@@ -558,10 +601,28 @@ namespace hades
 			return vector::cross(u, v);
 		};
 		
-		auto shadow_h = get_height_at(p, m);
+		const auto max_val = [](auto a, auto b) {
+			return std::max(a, b);
+			};
+
+		const auto shadow_tris = get_height_for_triangles(p, m);
+		auto shadow_h = std::array{
+			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 0, max_val),
+			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 1, max_val),
+			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 2, max_val),
+			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 3, max_val),
+		};
+
 		for (auto i = std::uint32_t{}; i < row_length; ++i)
 		{
-			const auto h = get_height_at(p, m);
+			const auto h_tris = get_height_for_triangles(p, m);
+			const auto h = std::array{
+				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 0, max_val),
+				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 1, max_val),
+				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 2, max_val),
+				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 3, max_val),
+			};
+			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
 			
 			// calc triange normals
@@ -717,7 +778,6 @@ namespace hades
 		}
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-			const auto corner_height = get_height_at(pos, shared.map);
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
 				float_cast(pos.y) * tile_sizef
@@ -726,18 +786,9 @@ namespace hades
 			const auto& light_info = light_table[pos];
 			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
-			std::array<colour, 4> colours;
-			colours.fill(colour{});
+			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto quad = make_terrain_triangles(position, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
 
-			for (auto i = std::size_t{}; i < size(corner_height); ++i)
-			{
-				colours[i].r = light_info.height[i];
-				colours[i].g = light_info.shadow_height[i];
-				colours[i].b = normals[i][0]; /*normal theta*/
-				colours[i].a = normals[i][1]; /*normal phi*/
-			}
-
-			const auto quad = make_quad_colour({ position, { tile_sizef, tile_sizef } }, colours);
 			shared.quads.append(quad);
 			return;
 		});

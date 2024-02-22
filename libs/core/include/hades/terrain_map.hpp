@@ -91,7 +91,7 @@ namespace hades
 
 		//void create_cliff(terrain_vertex_position, terrain_vertex_position)
 
-		void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
+		[[deprecated]] void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{
 			assert(size(height) == size(_shared.map.heightmap));
 			_shared.map.heightmap = height;

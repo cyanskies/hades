@@ -570,6 +570,14 @@ namespace hades
 		return get_size(t.tile_layer) + tile_position{ 1, 1 };
 	}
 
+	void copy_heightmap(terrain_map& target, const terrain_map& src)
+	{
+		if (size(target.heightmap) != size(src.heightmap))
+			throw terrain_error{ "Tried to copy heightmaps between incompatible maps" };
+		target.heightmap = src.heightmap;
+		return;
+	}
+
 	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width) noexcept
 	{
 		const auto index = to_tile_index(tile_index, terrain_width);
@@ -623,6 +631,21 @@ namespace hades
 		return get_terrain_at_tile(m.terrain_vertex, w, p, s);
 	}
 
+	triangle_height_data get_height_for_triangles(tile_position p, const terrain_map& m) noexcept
+	{
+		const auto indices = to_terrain_index(p, get_width(m));
+		return triangle_height_data{
+			std::array<std::uint8_t, 6>{
+				m.heightmap[indices[0]],
+				m.heightmap[indices[1]],
+				m.heightmap[indices[3]],
+				m.heightmap[indices[1]],
+				m.heightmap[indices[2]],
+				m.heightmap[indices[3]],
+		}, terrain_map::triangle_default
+		};
+	}
+
 	std::array<std::uint8_t, 4> get_height_at(const tile_position tile_index, const terrain_map& map) noexcept
 	{
 		const auto indices = to_terrain_index(tile_index, get_width(map));
@@ -634,10 +657,10 @@ namespace hades
 		};
 	}
 
-	std::array<std::uint8_t, 4> get_height_at(const terrain_index_t terrain_index, const terrain_map& map) noexcept
+	std::uint8_t get_max_height_at(const terrain_index_t terrain_index, const terrain_map& map) noexcept
 	{
-		auto height = map.heightmap[terrain_index];
-		return { height, height, height, height };
+		assert(size(map.heightmap) > terrain_index);
+		return map.heightmap[terrain_index];
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
@@ -886,6 +909,17 @@ namespace hades
 			const auto current = m.heightmap[index];
 			const auto compound = integer_cast<int>(current) - integer_cast<int>(amount);
 			m.heightmap[index] = std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
+		}
+		return;
+	}
+
+	void set_height_at(terrain_map& m, const terrain_vertex_position p, const std::uint8_t h, const resources::terrain_settings* ts)
+	{
+		assert(ts);
+		if (within_map(m, p))
+		{
+			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
+			m.heightmap[index] = std::clamp(h, ts->height_min, ts->height_max);
 		}
 		return;
 	}
@@ -1198,7 +1232,7 @@ namespace hades
 		auto bary_point = barycentric_point{};
 		auto last_tri = std::array<vector2_float, 3>{};
 		
-		// go from 'p'  in the direction of advance dir, checking each tile to see if it is under the mouse
+		// go from 'p' in the direction of advance dir, checking each tile to see if it is under the mouse
 		// end after reaching the edge of the map
 		const auto world_size = get_size(map);
 
@@ -1234,12 +1268,12 @@ namespace hades
 
 			// test for hit
 			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
-			// TODO: store last hit TRI instead, then we can properly denormalise to flat tris
 			// TODO: triangle type
 			// NOTE: this is the canonical vertex order for triangles in the terrain system
 			auto left_hit = point_in_tri(p, quad_triangles.left_tri),
 				right_hit = point_in_tri(p, quad_triangles.right_tri);
 
+			// If we hit both tris in a quad, prioritise the tri with the closest point to the camera.
 			if (left_hit && right_hit)
 			{
 				if (lowest_tri(quad_triangles.flat_left_tri, quad_triangles.flat_right_tri, rot))
@@ -1272,6 +1306,7 @@ namespace hades
 			}
 		}
 
+		// mouse not over the terrain
 		if (bary_point == barycentric_point{})
 			return p;
 		// calculate pos within the hit tri

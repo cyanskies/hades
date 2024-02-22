@@ -67,7 +67,7 @@ namespace hades
 		}
 	}
 
-	level level_editor_terrain::level_new(level l) const
+	level level_editor_terrain::level_new(level current) const
 	{
 		if (!_new_options.terrain_set ||
 			!_new_options.terrain)
@@ -77,8 +77,8 @@ namespace hades
 			throw new_level_editor_error{ msg };
 		}
 
-		if (l.map_x % _settings->tile_size != 0 ||
-			l.map_y % _settings->tile_size != 0)
+		if (current.map_x % _settings->tile_size != 0 ||
+			current.map_y % _settings->tile_size != 0)
 		{
 			const auto msg = "level size must be a multiple of tile size("s
 				+ to_string(_settings->tile_size) +")"s;
@@ -88,29 +88,31 @@ namespace hades
 		}
 				
 		const auto size = tile_position{
-			signed_cast(l.map_x / _settings->tile_size),
-			signed_cast(l.map_y / _settings->tile_size)
+			signed_cast(current.map_x / _settings->tile_size),
+			signed_cast(current.map_y / _settings->tile_size)
 		};
 
-		const auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
-		const auto raw = to_raw_terrain_map(map);
-
-		// generate random height values
-		auto height = std::vector<uint8>{};
-		height.resize(std::size(raw.terrain_vertex));
-
+		auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
+		
 		constexpr auto variance = 20;
 		const auto height_low = _settings->height_default - variance;
 		const auto height_high = height_low + variance * 2;
 
-		for (auto i = std::size_t{}; i < std::size(height); ++i)
-			height[i] = integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
+		const auto vert_size = get_vertex_size(map);
+		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) {
+			set_height_at(map, p, integer_clamp_cast<std::uint8_t>(random(height_low, height_high)), _settings);
+			return;
+			});
 
-		l.height_vertex = std::move(height);
-		l.terrainset = raw.terrainset;
-		l.terrain_layers = raw.terrain_layers;
-		l.tile_map_layer = raw.tile_layer;
-		l.terrain_vertex = raw.terrain_vertex;
+		auto raw = to_raw_terrain_map(std::move(map));
+
+		auto l = std::move(current);
+		l.height_vertex = std::move(raw.heightmap);
+		l.triangle_type = std::move(raw.triangle_type);
+		l.terrainset = std::move(raw.terrainset);
+		l.terrain_layers = std::move(raw.terrain_layers);
+		l.tile_map_layer = std::move(raw.tile_layer);
+		l.terrain_vertex = std::move(raw.terrain_vertex);
 
 		return l;
 	}
@@ -120,6 +122,7 @@ namespace hades
 		auto map_raw = raw_terrain_map{ l.terrainset,
 			l.terrain_vertex,
 			l.height_vertex,
+			l.triangle_type,
 			l.terrain_layers,
 			l.tile_map_layer
 		};
@@ -163,7 +166,7 @@ namespace hades
 		//TODO: if size != to level xy, then resize the map
 		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset,
 			_empty_terrain, *_settings);
-		empty_map.heightmap = map.heightmap;
+		copy_heightmap(empty_map, map);
 
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));

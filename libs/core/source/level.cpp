@@ -122,7 +122,7 @@ namespace hades
 		w.start_map(level_terrain_str);
 		// TODO: the tile layer isn't being written
 		const auto raw = raw_terrain_map{ l.terrainset,
-            l.terrain_vertex, l.height_vertex, l.terrain_layers,
+            l.terrain_vertex, l.height_vertex, l.triangle_type, l.terrain_layers,
             {}
 		};
 

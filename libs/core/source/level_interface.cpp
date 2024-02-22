@@ -86,6 +86,7 @@ namespace hades
 				sv.source.terrainset,
 				sv.source.terrain_vertex,
 				sv.source.height_vertex,
+				sv.source.triangle_type,
 				sv.source.terrain_layers,
 				sv.source.tile_map_layer
 			};

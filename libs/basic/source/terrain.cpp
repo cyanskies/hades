@@ -1131,13 +1131,12 @@ namespace hades
 		}
 
 		constexpr std::array<vector2_float, 3> add_point_height(std::array<vector2_float, 3> pos,
-			const vector2_float height_dir, const rect_corners a,
-			const rect_corners b, const rect_corners c,
-			const std::array<std::uint8_t, 4> heightmap) noexcept
+			const vector2_float height_dir, std::size_t height_index_offset,
+			const triangle_height_data& heightmap) noexcept
 		{
-			pos[0] += height_dir * float_cast(heightmap[enum_type(a)]);
-			pos[1] += height_dir * float_cast(heightmap[enum_type(b)]);
-			pos[2] += height_dir * float_cast(heightmap[enum_type(c)]);
+			pos[0] += height_dir * float_cast(heightmap.height[height_index_offset]);
+			pos[1] += height_dir * float_cast(heightmap.height[height_index_offset + 1]);
+			pos[2] += height_dir * float_cast(heightmap.height[height_index_offset + 2]);
 			return pos;
 		}
 
@@ -1148,22 +1147,32 @@ namespace hades
 		};
 
 		constexpr tris get_quad_triangles(const tile_position pos, const float tile_sizef,
-			const vector2_float height_dir, const std::array<std::uint8_t, 4> heightmap) noexcept
+			const vector2_float height_dir, const triangle_height_data& heightmap) noexcept
 		{
 			tris out; // uninitialized
-			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
-				make_quad_point(pos, tile_sizef, rect_corners::top_right),
-				make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
-			out.flat_right_tri = { out.flat_left_tri[1],
-				make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
-				out.flat_left_tri[2] };
+			if (heightmap.triangle_type == terrain_map::triangle_uphill)
+			{
+				out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
+					make_quad_point(pos, tile_sizef, rect_corners::top_right),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
+				out.flat_right_tri = { out.flat_left_tri[1],
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
+					out.flat_left_tri[2] };
+			}
+			else
+			{
+				out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
+				out.flat_right_tri = { out.flat_left_tri[1],
+					make_quad_point(pos, tile_sizef, rect_corners::top_right),
+					out.flat_left_tri[2] };
+			}
 
 			out.left_tri = add_point_height(out.flat_left_tri, height_dir,
-				rect_corners::top_left, rect_corners::top_right, rect_corners::bottom_left,
-				heightmap);
+				0, heightmap);
 			out.right_tri = add_point_height(out.flat_right_tri, height_dir,
-				rect_corners::top_right, rect_corners::bottom_right, rect_corners::bottom_left,
-				heightmap);
+				3, heightmap);
 			return out;
 		}
 
@@ -1261,14 +1270,12 @@ namespace hades
 		while (within_world(tile_check, world_size))
 		{
 			// get index for accessing heightmap
-			const auto height_arr = get_height_at(tile_check, map);
-
+			const auto height_info = get_height_for_triangles(tile_check, map);
 			// generate quad vertex
-			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_arr);
+			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_info);
 
 			// test for hit
 			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
-			// TODO: triangle type
 			// NOTE: this is the canonical vertex order for triangles in the terrain system
 			auto left_hit = point_in_tri(p, quad_triangles.left_tri),
 				right_hit = point_in_tri(p, quad_triangles.right_tri);

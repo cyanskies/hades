@@ -126,13 +126,13 @@ namespace hades {
 	constexpr T integer_clamp_cast(U) noexcept;
 
 	template<typename T, tuple Index2D = std::pair<T, T>>
-	constexpr T to_1d_index(Index2D pos, T array_width);
+	constexpr T to_1d_index(Index2D pos, T array_width) noexcept(!std::is_signed_v<T>);
 
 	template<typename Index2D, typename T>
-	constexpr Index2D to_2d_index(T index, T array_width);
+	constexpr Index2D to_2d_index(T index, T array_width) noexcept;
 
 	template<typename T>
-	constexpr std::pair<T, T> to_2d_index(T index, T array_width);
+	constexpr std::pair<T, T> to_2d_index(T index, T array_width) noexcept;
 
 	//convert Enum value to underlying type
 	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>

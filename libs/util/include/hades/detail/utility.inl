@@ -217,13 +217,13 @@ namespace hades
 	}
 
 	template<typename T, typename Index2D>
-	constexpr T to_1d_index(Index2D pos, T array_width)
+	constexpr T to_1d_index(Index2D pos, T array_width) noexcept(!std::is_signed_v<T>)
 	{
 		return to_1d_index(std::pair{ integer_cast<T>(pos.x), integer_cast<T>(pos.y) }, array_width);
 	}
 	
 	template<typename T, tuple Index2D>
-	constexpr T to_1d_index(const Index2D index, const T w)
+	constexpr T to_1d_index(const Index2D index, const T w) noexcept(!std::is_signed_v<T>)
 	{
 		const auto& first = std::get<0>(index);
 		const auto& second = std::get<1>(index);
@@ -242,7 +242,7 @@ namespace hades
 	}
 
 	template<typename Index2D, typename T>
-	constexpr Index2D to_2d_index(const T i, const T w)
+	constexpr Index2D to_2d_index(const T i, const T w) noexcept
 	{
 		assert(w != 0);
 
@@ -253,7 +253,7 @@ namespace hades
 	}
 
 	template<typename T>
-	constexpr std::pair<T, T> to_2d_index(const T i, const T w)
+	constexpr std::pair<T, T> to_2d_index(const T i, const T w) noexcept
 	{
 		return to_2d_index<std::pair<T, T>>(i, w);
 	}

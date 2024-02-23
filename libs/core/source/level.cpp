@@ -22,7 +22,6 @@ namespace hades
 	static constexpr auto level_load_str = "on-load-script"sv;
 	static constexpr auto level_scripts_input = "player-input"sv;
 
-	static constexpr auto level_tiles_layer_str = "tile-layer"sv;
 	static constexpr auto level_terrain_str = "terrain"sv;
 
 	static void write_regions_from_level(const level &l, data::writer &w)
@@ -115,18 +114,8 @@ namespace hades
 			w.write(level_scripts_input, l.player_input_script);
 
 		//write terrain info
-		w.start_map(level_tiles_layer_str);
-		write_raw_map(l.tile_map_layer, w);
-		w.end_map();
-
 		w.start_map(level_terrain_str);
-		// TODO: the tile layer isn't being written
-		const auto raw = raw_terrain_map{ l.terrainset,
-            l.terrain_vertex, l.height_vertex, l.triangle_type, l.terrain_layers,
-            {}
-		};
-
-		write_raw_terrain_map(raw, w);
+		write_raw_terrain_map(l.terrain, w);
 		w.end_map();
 		//write trigger data
 		write_regions_from_level(l, w);
@@ -174,14 +163,9 @@ namespace hades
 		const auto tile_size = resources::get_tile_size();
 		const auto layer_size = (l.map_x / tile_size) * (l.map_y / tile_size);
 
-		const auto tiles = level_node.get_child(level_tiles_layer_str);
-		if (tiles)
-			l.tile_map_layer = read_raw_map(*tiles, layer_size);
-
 		const auto terrain = level_node.get_child(level_terrain_str);
 		if (terrain)
-			std::tie(l.terrainset, l.terrain_vertex, l.height_vertex, l.terrain_layers) = 
-			read_raw_terrain_map(*terrain, layer_size,
+			l.terrain = read_raw_terrain_map(*terrain, layer_size,
 				(static_cast<size_t>(l.map_x / tile_size) + 1) * (static_cast<std::size_t>(l.map_y / tile_size) + 1));
 
 		return l;

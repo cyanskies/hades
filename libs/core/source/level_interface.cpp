@@ -80,18 +80,9 @@ namespace hades
         static_cast<world_unit_t>(sv.source.map_y) },
           _player_input{ get_if_player_input(sv) }
 	{
-		if (!std::empty(sv.source.tile_map_layer.tiles))
+		if (!std::empty(sv.source.terrain.tile_layer.tiles))
 		{
-			const auto raw_map = raw_terrain_map{
-				sv.source.terrainset,
-				sv.source.terrain_vertex,
-				sv.source.height_vertex,
-				sv.source.triangle_type,
-				sv.source.terrain_layers,
-				sv.source.tile_map_layer
-			};
-
-			_terrain = to_terrain_map(raw_map);
+			_terrain = to_terrain_map(sv.source.terrain);
 		}
 
 		_state.next_id = sv.objects.next_id;

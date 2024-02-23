@@ -79,4 +79,20 @@ namespace hades
 
 		throw invalid_argument{ "index out of range for access_triangles_as_quad" };
 	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_adjacent_tile(const terrain_vertex_position p, const terrain_map& map, Func&& f) noexcept
+	{
+		const auto start = p - terrain_vertex_position{ 1, 1 };
+		for_each_position_rect(start, tile_position{ 1, 1 }, get_size(map), std::forward<Func>(f));
+		return;
+	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_adjacent_tile(terrain_vertex_position p, const terrain_map& map, Func&& f) noexcept
+	{
+		const auto start = p - terrain_vertex_position{ 1, 1 };
+		for_each_safe_position_rect(start, tile_position{ 1, 1 }, get_size(map), std::forward<Func>(f));
+		return;
+	}
 }

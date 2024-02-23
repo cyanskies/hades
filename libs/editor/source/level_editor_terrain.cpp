@@ -104,28 +104,15 @@ namespace hades
 			return;
 			});
 
-		auto raw = to_raw_terrain_map(std::move(map));
-
-		auto l = std::move(current);
-		l.height_vertex = std::move(raw.heightmap);
-		l.triangle_type = std::move(raw.triangle_type);
-		l.terrainset = std::move(raw.terrainset);
-		l.terrain_layers = std::move(raw.terrain_layers);
-		l.tile_map_layer = std::move(raw.tile_layer);
-		l.terrain_vertex = std::move(raw.terrain_vertex);
+		auto l = level{ std::move(current) };
+		l.terrain = to_raw_terrain_map(std::move(map));
 
 		return l;
 	}
 
 	void level_editor_terrain::level_load(const level &l)
 	{
-		auto map_raw = raw_terrain_map{ l.terrainset,
-			l.terrain_vertex,
-			l.height_vertex,
-			l.triangle_type,
-			l.terrain_layers,
-			l.tile_map_layer
-		};
+		auto map_raw = l.terrain;
 
 		//check the scale and size of the map
 		assert(_settings);
@@ -179,13 +166,7 @@ namespace hades
 
 	level level_editor_terrain::level_save(level l) const
 	{
-		auto raw = to_raw_terrain_map(_map.get_map());
-
-		l.tile_map_layer = std::move(raw.tile_layer);
-		l.terrainset = raw.terrainset;
-		l.terrain_vertex = std::move(raw.terrain_vertex);
-		l.terrain_layers = std::move(raw.terrain_layers);
-
+		l.terrain = to_raw_terrain_map(_map.get_map());
 		return l;
 	}
 

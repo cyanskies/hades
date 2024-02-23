@@ -640,7 +640,7 @@ namespace hades
 
 			table[p] = lighting_info{ lighting_info::normal{ vector::angle_theta(normal_a), vector::angle_phi(normal_a) },
 				lighting_info::normal{ vector::angle_theta(normal_b), vector::angle_phi(normal_b) },
-				h, shadow_h, terrain_map::triangle_uphill };
+				h, shadow_h, h_tris.triangle_type };
 
 			p += dir;
 		}

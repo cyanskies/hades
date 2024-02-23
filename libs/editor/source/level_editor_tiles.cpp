@@ -40,7 +40,7 @@ namespace hades
 			_new_options.tile ? *_new_options.tile : resources::get_empty_tile(*_settings);
 
 		const auto map = make_map(size, tile, *_settings);
-		l.tile_map_layer = to_raw_map(map);
+		l.terrain.tile_layer = to_raw_map(map);
 
 		return l;
 	}
@@ -64,12 +64,12 @@ namespace hades
 		const auto empty_map = make_map(size, resources::get_empty_tile(*_settings), *_settings);
 		_empty_preview.create(empty_map);
 
-		if (l.tile_map_layer.tiles.empty())
+		if (l.terrain.tile_layer.tiles.empty())
 			_tiles.create(empty_map);
 		else
 		{
 			//TODO: if size != to level xy, then resize the map
-			const auto map = to_tile_map(l.tile_map_layer);
+			const auto map = to_tile_map(l.terrain.tile_layer);
 			_tiles.create(map);
 		}
 	}
@@ -77,7 +77,7 @@ namespace hades
 	level level_editor_tiles::level_save(level l) const
 	{
 		const auto map = _tiles.get_map();
-		l.tile_map_layer = to_raw_map(map);
+		l.terrain.tile_layer = to_raw_map(map);
 		return l;
 	}
 

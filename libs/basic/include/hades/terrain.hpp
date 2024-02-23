@@ -163,12 +163,9 @@ namespace hades
 	bool is_valid(const raw_terrain_map&);
 	bool is_valid(const raw_terrain_map&, vector2_int level_size, resources::tile_size_t tile_size);
 
-	//NOTE: doesn't write the tile layer, this must be done seperately
-	//		with write_raw_map(m.tile_layer, ...);
 	void write_raw_terrain_map(const raw_terrain_map &m, data::writer &w);
-	// TODO: return a named struct
-	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<std::uint8_t>, std::vector<raw_map>>
-		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size);
+	
+	raw_terrain_map read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size);
 
 	struct terrain_map
 	{
@@ -198,6 +195,13 @@ namespace hades
 		static constexpr auto triangle_uphill = false;
 		static constexpr auto triangle_default = triangle_uphill;
 
+		struct cliff_info
+		{
+			bool diag : 1,
+				bottom : 1,
+				right : 1;
+		};
+
 		tile_map tile_layer;
 
 		//vertex of terrain
@@ -205,6 +209,7 @@ namespace hades
 		// tile vertex of height (6 vertex per tile)
 		std::vector<std::uint8_t> heightmap;
 		std::vector<bool> triangle_type; // per tile
+		std::vector<cliff_info> cliffs;
 
 		// TODO: sun_angle
 
@@ -251,7 +256,7 @@ namespace hades
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	[[nodiscard]]
-	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width) noexcept;
+	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width);
 	
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{
@@ -288,12 +293,22 @@ namespace hades
 		bool triangle_type;
 	};
 	// returns height arranged into two triangles
-	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&) noexcept;
+	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&);
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	// returns the height in the 4 corners of the tile
-	[[deprecated]] std::array<std::uint8_t, 4> get_height_at(tile_position tile_index, const terrain_map& map) noexcept;
-	// returns the different heights from each quadrant of the vertex
-	std::uint8_t get_max_height_at(terrain_index_t, const terrain_map&) noexcept;
+	std::array<std::uint8_t, 4> get_max_height_at_edges(tile_position tile_index, const terrain_map& map);
+	
+	// NOTE: cliffs are *owned* by the tile they are attached too
+	//		eg: a tile owns cliffs that pass through its middle, and
+	//			cliffs to it's right and bottom
+	// This info is used mostly for rendering
+	/*struct cliff_data
+	{
+		bool diag_cliff_a, diag_cliff_b
+	};
+	cliff_data get_cliff_info(tile_position, const terrain_map&);*/
+	// returns true if a cliff splits a tile accross the middle(between the two triangles that make up a tile quad)
+	bool is_tile_split(tile_position, const terrain_map& map);
 
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
 
@@ -316,9 +331,12 @@ namespace hades
 	//as above, new tiles will be set as if tile& was resources::get_empty_tile()
 	[[deprecated]] void resize_map(terrain_map&, vector2_int size, vector2_int offset);
 
-	// TODO: investigate where this is used, add for_each_adjacent_tile
-	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
-	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);
+	template<std::invocable<tile_position> Func>
+	void for_each_adjacent_tile(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_adjacent_tile(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
+	/*[[deprecated("use for_each_adjacent_tile instead")]] std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
+	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);*/
 
 	//for editing a terrain map
 	//use the make_position_* functions from tiles.hpp

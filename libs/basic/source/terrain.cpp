@@ -291,6 +291,7 @@ namespace hades
 	constexpr auto terrain_vertex_str = "terrain-vertex"sv;
 	constexpr auto terrain_height_str = "vertex-height"sv;
 	constexpr auto terrain_layers_str = "terrain-layers"sv;
+	constexpr auto level_tiles_layer_str = "tile-layer"sv;
 
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
 	{
@@ -315,12 +316,16 @@ namespace hades
 			write_raw_map(l, w);
 			w.end_map();
 		}
-
 		w.end_sequence();
+
+		w.start_map(level_tiles_layer_str);
+		write_raw_map(m.tile_layer, w);
+		w.end_map();
+
+		assert(false && "need to write triangle and cliff data");
 	}
 
-	std::tuple<unique_id, std::vector<terrain_id_t>, std::vector<std::uint8_t>, std::vector<raw_map>>
-		read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size)
+	raw_terrain_map read_raw_terrain_map(const data::parser_node &p, std::size_t layer_size, std::size_t vert_size)
 	{
 		//terrain:
 		//	terrainset:
@@ -328,9 +333,12 @@ namespace hades
 		//	terrain_vertex:
 		//	vertex_height:
 		//	terrain_layers:
+		//	cliff_info:
+		//	triangle_shape:
 
-		const auto terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
+		raw_terrain_map out; // uninitialized
 
+		out.terrainset = data::parse_tools::get_unique(p, terrainset_str, unique_zero);
 		auto terrain_vertex = std::vector<terrain_id_t>{};
 
 		if (auto vertex_node = p.get_child(terrain_vertex_str); 
@@ -345,6 +353,8 @@ namespace hades
 				terrain_vertex = zip::inflate<terrain_id_t>(bytes, vert_size * sizeof(terrain_id_t));
 			}
 		}
+
+		out.terrain_vertex = std::move(terrain_vertex);
 
 		auto terrain_height = std::vector<std::uint8_t>{};
 
@@ -361,13 +371,19 @@ namespace hades
 			}
 		}
 		
+		out.heightmap = std::move(terrain_height);
+
 		auto layers = std::vector<raw_map>{};
 
 		const auto layer_node = p.get_child(terrain_layers_str);
 		for (const auto& l : layer_node->get_children())
 			layers.emplace_back(read_raw_map(*l, layer_size));
 
-		return { terrainset, terrain_vertex, terrain_height, layers };
+		out.terrain_layers = std::move(layers);
+
+		out.tile_layer = read_raw_map(p, layer_size);
+
+		return out;
 	}
 
 	template<typename Raw>
@@ -516,9 +532,13 @@ namespace hades
 
 		auto map = terrain_map{};
 		map.terrainset = terrainset;
-        map.terrain_vertex = std::vector<const resources::terrain*>(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
-		map.heightmap.resize(std::size(map.terrain_vertex), {});
+        map.terrain_vertex.resize(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
+		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
+		map.heightmap.resize(tile_count * 6, s.height_default);
+		map.triangle_type.resize(tile_count, terrain_map::triangle_default);
 
+		constexpr auto no_cliffs = terrain_map::cliff_info{ false, false, false };
+		map.cliffs.resize(tile_count, no_cliffs);
 		const auto empty_layer = make_map(size, resources::get_empty_tile(s), s);
 
 		if (t != resources::get_empty_terrain(s))
@@ -578,7 +598,7 @@ namespace hades
 		return;
 	}
 
-	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width) noexcept
+	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width)
 	{
 		const auto index = to_tile_index(tile_index, terrain_width);
 		return { index, index + 1, index + 1 + terrain_width, index + terrain_width };
@@ -631,7 +651,7 @@ namespace hades
 		return get_terrain_at_tile(m.terrain_vertex, w, p, s);
 	}
 
-	triangle_height_data get_height_for_triangles(tile_position p, const terrain_map& m) noexcept
+	triangle_height_data get_height_for_triangles(tile_position p, const terrain_map& m)
 	{
 		const auto indices = to_terrain_index(p, get_width(m));
 		return triangle_height_data{
@@ -646,21 +666,19 @@ namespace hades
 		};
 	}
 
-	std::array<std::uint8_t, 4> get_height_at(const tile_position tile_index, const terrain_map& map) noexcept
+	std::array<std::uint8_t, 4> get_max_height_at_edges(const tile_position tile_index, const terrain_map& map)
 	{
-		const auto indices = to_terrain_index(tile_index, get_width(map));
-		return {
-			map.heightmap[indices[0]],
-			map.heightmap[indices[1]],
-			map.heightmap[indices[2]],
-			map.heightmap[indices[3]]
-		};
-	}
+		const auto max = [](auto&& l, auto&& r) constexpr noexcept {
+			return std::max(l, r);
+			};
 
-	std::uint8_t get_max_height_at(const terrain_index_t terrain_index, const terrain_map& map) noexcept
-	{
-		assert(size(map.heightmap) > terrain_index);
-		return map.heightmap[terrain_index];
+		const auto tris = get_height_for_triangles(tile_index, map);
+		return {
+			access_triangles_as_quad(tris.height, tris.triangle_type, 0, max),
+			access_triangles_as_quad(tris.height, tris.triangle_type, 1, max),
+			access_triangles_as_quad(tris.height, tris.triangle_type, 2, max),
+			access_triangles_as_quad(tris.height, tris.triangle_type, 3, max),
+		};
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)

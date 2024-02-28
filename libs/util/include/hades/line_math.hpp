@@ -21,6 +21,22 @@ namespace hades
 		template<typename T>
 		std::array<line_t<T>, 4> from_rect(rect_t<T>);
 
+		// ax + by + c =
+		template<typename T>
+		struct equation
+		{
+			T a, b, c;
+		};
+
+		template<typename T>
+		constexpr equation<T> to_equation(line_t<T>) noexcept;
+
+		template<typename T>
+		constexpr bool above(point_t<T>, line_t<T>) noexcept;
+
+		template<typename T>
+		constexpr T distance(point_t<T>, line_t<T>) noexcept;
+
 		//returns the intersect point for the two lines
 		//returns nothing if the lines are parellel
 		template<typename T>

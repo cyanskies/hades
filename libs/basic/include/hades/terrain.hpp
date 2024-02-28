@@ -146,13 +146,28 @@ namespace hades
 
 	struct raw_terrain_map
 	{
+		enum class cliff_type : std::uint8_t {
+			none = 0b0000000, 
+			middle = 0b0000001, // middle indicates both vertex are in middle of cliff
+			end_top_left = 0b0000010, // top is for right cliffs, left otherwise
+			end_bottom_right = 0b0000011, // bottom is for right cliffs, right otherwise
+		};
+
+		struct cliff_info
+		{
+			bool triangle_type : 1,
+				diag : 2,
+				bottom : 2,
+				right : 2;
+		};
+
 		unique_id terrainset;
 		//terrain vertex are id starting at 1
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
 		std::vector<terrain_id_t> terrain_vertex;
 		std::vector<std::uint8_t> heightmap;
-		std::vector<bool> triangle_type;
+		std::vector<cliff_info> cliffs;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
@@ -194,13 +209,10 @@ namespace hades
 		static constexpr auto triangle_downhill = true;
 		static constexpr auto triangle_uphill = false;
 		static constexpr auto triangle_default = triangle_uphill;
+		static constexpr auto triangle_left = true;
+		static constexpr auto triangle_right = false;
 
-		struct cliff_info
-		{
-			bool diag : 1,
-				bottom : 1,
-				right : 1;
-		};
+		using cliff_info = raw_terrain_map::cliff_info;
 
 		tile_map tile_layer;
 
@@ -208,8 +220,7 @@ namespace hades
 		std::vector<const resources::terrain*> terrain_vertex;
 		// tile vertex of height (6 vertex per tile)
 		std::vector<std::uint8_t> heightmap;
-		std::vector<bool> triangle_type; // per tile
-		std::vector<cliff_info> cliffs;
+		std::vector<cliff_info> cliffs; // per tile
 
 		// TODO: sun_angle
 
@@ -221,7 +232,11 @@ namespace hades
 	};
 
 	// converts triangle pair indexes [0-5] to equivilent quad indexes [0-3]
-	constexpr std::size_t triangle_index_to_quad_index(std::size_t, bool tri_type) noexcept;
+	constexpr rect_corners triangle_index_to_quad_index(std::uint8_t, bool tri_type) noexcept;
+	// reverse of above
+	constexpr auto bad_triangle_index = std::numeric_limits<std::uint8_t>::max();
+	// second element may be bad_triangle_index
+	constexpr std::pair<std::uint8_t, std::uint8_t> quad_index_to_triangle_index(rect_corners, bool tri_type) noexcept;
 	// access a triangle pair range [0-5] using quad indexes[0-3] 
 	// 'Func' is called to merge triangle elements
 	// where multiple values are available for a quad corner
@@ -232,7 +247,16 @@ namespace hades
 		r[i];
 		{ f(v, v) } -> std::same_as<typename Range::value_type>;
 	}
-	typename Range::value_type access_triangles_as_quad(const Range&, bool tri_type, std::size_t index, Func&& descriminator);
+	typename Range::value_type read_triangles_as_quad(const Range&, bool tri_type, std::size_t index, Func&& descriminator);
+
+	template<std::ranges::random_access_range Range,
+		std::invocable<typename Range::value_type&> Func>
+		requires requires(Range& r, Func&& f, std::size_t i, typename Range::value_type v)
+	{
+		{ r[i] } -> std::same_as<std::remove_const_t<typename Range::value_type&>>;
+	}
+	void invoke_on_triangle_corner(Range&, bool tri_type, rect_corners c, Func&& f);
+
 	//converts a raw map into a tile map
 	// exceptions: tileset_not_found, terrain_error, terrain_layers_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
@@ -302,11 +326,11 @@ namespace hades
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
 	// This info is used mostly for rendering
-	/*struct cliff_data
-	{
-		bool diag_cliff_a, diag_cliff_b
-	};
-	cliff_data get_cliff_info(tile_position, const terrain_map&);*/
+	const terrain_map::cliff_info& get_cliff_info(tile_position, const terrain_map&);
+
+	// return all adjacent cliffs to this tile
+	// index array using rectangle_math.hpp::hades::rect_edges
+	std::array<bool, 4> get_adjacent_cliffs(tile_position, const terrain_map&);
 	// returns true if a cliff splits a tile accross the middle(between the two triangles that make up a tile quad)
 	bool is_tile_split(tile_position, const terrain_map& map);
 
@@ -335,8 +359,23 @@ namespace hades
 	void for_each_adjacent_tile(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
 	template<std::invocable<tile_position> Func>
 	void for_each_safe_adjacent_tile(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
-	/*[[deprecated("use for_each_adjacent_tile instead")]] std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position);
-	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position>&);*/
+
+	struct triangle_info
+	{
+		tile_position tile;
+		rect_corners corner;
+		bool triangle;
+		bool triangle_type; // uphill, downhill
+	};
+
+	// only called once for each unique triangle vertex
+	// TODO: add support for cliffs
+	template<std::invocable<triangle_info> Func>
+	void for_each_adjacent_triangle(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
+	template<std::invocable<triangle_info> Func>
+	void for_each_adjacent_triangle(tile_position, rect_corners, const terrain_map&, Func&& f) noexcept;
+	template<std::invocable<triangle_info> Func>
+	void for_each_adjacent_triangle(triangle_info, const terrain_map&, Func&& f) noexcept;
 
 	//for editing a terrain map
 	//use the make_position_* functions from tiles.hpp
@@ -348,6 +387,13 @@ namespace hades
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*, const resources::terrain_settings&);
 
+	template<std::invocable<std::uint8_t> Func>
+		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
+	void change_terrain_height2(terrain_map&, terrain_vertex_position, std::int16_t amount, Func&&);
+	// change all corners
+	// for changing a specfic vertex
+	[[deprecated]] void change_terrain_height(terrain_map&, tile_position, bool triangle, rect_corners, std::int16_t amount, const resources::terrain_settings*);
+	void set_terrain_height(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 	// TODO: need to fix for cliffs
 	// TODO: must target a tile so that it can disabiguate when a cliff is present
 	//		these are fine, they can just fail for cliff areas

@@ -20,6 +20,30 @@ namespace hades::line
 	}
 
 	template<typename T>
+	constexpr equation<T> to_equation(const line_t<T> l) noexcept
+	{
+		return { 
+			l.s.y - l.e.y,
+			l.e.x - l.s.x,
+			(l.s.x - l.e.x) * l.s.y + (l.e.y - l.s.y) * l.s.x
+		};
+	}
+
+	template<typename T>
+	constexpr bool above(const point_t<T> p, const line_t<T> l) noexcept
+	{
+		const auto s = (l.e.y - l.s.y) * p.x + (l.s.x - l.e.x) * p.y + (l.e.x * l.s.y - l.s.x * l.e.y);
+		return s >= 0;
+	}
+
+	template<typename T>
+	constexpr T distance(const point_t<T> p, const line_t<T> l) noexcept
+	{
+		const auto e = to_equation(l);
+		return std::abs(e.a * p.x + e.b * p.y + e.c) / std::hypot(e.a, e.b);
+	}
+
+	template<typename T>
 	std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second)
 	{
 		//based on the determinants algorithm

@@ -88,14 +88,23 @@ namespace hades
 	template<typename T>
 	constexpr rect_t<T> normalise(rect_t<T>) noexcept;
 
-	//NOTE: the layout of rect_coners is depended on by other code.
-	enum class rect_corners : std::size_t {
+	//NOTE: the layout of rect_coners and rect_edges is depended on by other code.
+	enum class rect_corners : std::uint8_t {
 		first,
 		top_left = first,
 		top_right,
 		bottom_right,
 		bottom_left,
 		last
+	};
+
+	enum class rect_edges : std::uint8_t {
+		begin,
+		top = begin,
+		right,
+		bottom,
+		left,
+		end
 	};
 
 	template<typename T>

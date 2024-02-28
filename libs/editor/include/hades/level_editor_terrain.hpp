@@ -18,7 +18,25 @@ namespace hades
 			vertex,
 			edge,
 			rect,
-			circle
+			circle,
+		};
+
+		enum class brush_type {
+			no_brush,
+			// clear tile only
+			erase,
+			// art only
+			draw_tile,
+			// terrain vertex
+			draw_terrain,
+			// terrain height
+			raise_terrain,
+			lower_terrain,
+			// cliffs
+			raise_cliff, // add cliff
+			//lower_cliff,
+			erase_cliff,
+			debug_brush // used for testing
 		};
 
 		level_editor_terrain();
@@ -52,24 +70,6 @@ namespace hades
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
-		enum class brush_type {
-			no_brush,
-			// clear tile only
-			erase,
-			// art only
-			draw_tile,
-			// terrain vertex
-			draw_terrain,
-			// terrain height
-			raise_terrain,
-			lower_terrain,
-			// cliffs
-			raise_cliff,
-			lower_cliff,
-			erase_cliff,
-			debug_brush // used for testing
-		};
-
 		struct level_options
 		{
 			const resources::terrainset *terrain_set = nullptr;

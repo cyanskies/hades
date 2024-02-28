@@ -1,6 +1,7 @@
 #include "hades/terrain.hpp"
 
 #include <map>
+#include <span>
 
 #include "hades/data.hpp"
 #include "hades/deflate.hpp"
@@ -9,6 +10,8 @@
 #include "hades/table.hpp"
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"
+
+constexpr auto empty_cliff = hades::terrain_map::cliff_info{ false, false, false, false };
 
 auto background_terrain_id = hades::unique_zero;
 auto editor_terrainset_id = hades::unique_zero;
@@ -233,7 +236,7 @@ namespace hades
             size.y + 1
 		};
 
-		const auto vertex_length = terrain_size.x * terrain_size.y;
+		const auto vertex_length = integer_cast<std::size_t>(terrain_size.x) * integer_cast<std::size_t>(terrain_size.y);
 
 		if (!std::empty(r.terrain_vertex) &&
 			integer_cast<decltype(vertex_length)>(std::size(r.terrain_vertex)) != vertex_length)
@@ -242,9 +245,16 @@ namespace hades
 			return false;
 		}
 
-		if (std::size(r.terrain_vertex) != std::size(r.heightmap))
+		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
+		if (std::size(r.heightmap) != tile_count * 6)
 		{
-			LOGWARNING("raw map terrain vertex list should be the same length as the terrain heightmap.");
+			LOGWARNING("Heightmap must contain 6 samples for each tile.");
+			return false;
+		}
+
+		if (std::size(r.cliffs) != tile_count)
+		{
+			LOGWARNING("tile information must exist for each tile");
 			return false;
 		}
 
@@ -308,6 +318,8 @@ namespace hades
 		w.write(terrain_vertex_str, base64_encode(compressed));
 		const auto compressed_height = zip::deflate(m.heightmap);
 		w.write(terrain_height_str, base64_encode(compressed_height));
+
+		// TODO: triangles and cliffs
 
 		w.start_sequence(terrain_layers_str); 
 		for (const auto &l : m.terrain_layers)
@@ -373,6 +385,9 @@ namespace hades
 		
 		out.heightmap = std::move(terrain_height);
 
+		// TODO: triangles
+		//			cliffs
+
 		auto layers = std::vector<raw_map>{};
 
 		const auto layer_node = p.get_child(terrain_layers_str);
@@ -397,7 +412,7 @@ namespace hades
 
 		m.terrainset = data::get<resources::terrainset>(r.terrainset);
 		m.heightmap = std::forward<Raw>(r).heightmap;
-		m.triangle_type = std::forward<Raw>(r).triangle_type;
+		m.cliffs = std::forward<Raw>(r).cliffs;
 
 		//tile layer is required to be valid
 		m.tile_layer = to_tile_map(r.tile_layer);
@@ -479,7 +494,7 @@ namespace hades
 
 		m.terrainset = t.terrainset->id;
 		m.heightmap = std::forward<Map>(t).heightmap;
-		m.triangle_type = std::forward<Map>(t).triangle_type;
+		m.cliffs = std::forward<Map>(t).cliffs;
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
@@ -535,10 +550,7 @@ namespace hades
         map.terrain_vertex.resize(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
 		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
 		map.heightmap.resize(tile_count * 6, s.height_default);
-		map.triangle_type.resize(tile_count, terrain_map::triangle_default);
-
-		constexpr auto no_cliffs = terrain_map::cliff_info{ false, false, false };
-		map.cliffs.resize(tile_count, no_cliffs);
+		map.cliffs.resize(tile_count, empty_cliff);
 		const auto empty_layer = make_map(size, resources::get_empty_tile(s), s);
 
 		if (t != resources::get_empty_terrain(s))
@@ -625,8 +637,7 @@ namespace hades
 
 	const resources::terrain *get_corner(const tile_corners &t, rect_corners c) noexcept
 	{
-		static_assert(std::is_same_v<std::size_t, std::underlying_type_t<rect_corners>>);
-		return t[static_cast<std::size_t>(c)];
+		return t[enum_type(c)];
 	}
 
 	resources::transition_tile_type get_transition_type(const std::array<bool, 4u> &arr)
@@ -651,18 +662,15 @@ namespace hades
 		return get_terrain_at_tile(m.terrain_vertex, w, p, s);
 	}
 
-	triangle_height_data get_height_for_triangles(tile_position p, const terrain_map& m)
+	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m)
 	{
-		const auto indices = to_terrain_index(p, get_width(m));
+		const auto index = to_tile_index(p, m);
+		const auto h = detail::get_triangle_height(index, m);
+		const auto& c = get_cliff_info(p, m);
 		return triangle_height_data{
 			std::array<std::uint8_t, 6>{
-				m.heightmap[indices[0]],
-				m.heightmap[indices[1]],
-				m.heightmap[indices[3]],
-				m.heightmap[indices[1]],
-				m.heightmap[indices[2]],
-				m.heightmap[indices[3]],
-		}, terrain_map::triangle_default
+				h[0], h[1], h[2], h[3] ,h[4], h[5],
+		}, c.triangle_type
 		};
 	}
 
@@ -674,11 +682,43 @@ namespace hades
 
 		const auto tris = get_height_for_triangles(tile_index, map);
 		return {
-			access_triangles_as_quad(tris.height, tris.triangle_type, 0, max),
-			access_triangles_as_quad(tris.height, tris.triangle_type, 1, max),
-			access_triangles_as_quad(tris.height, tris.triangle_type, 2, max),
-			access_triangles_as_quad(tris.height, tris.triangle_type, 3, max),
+			read_triangles_as_quad(tris.height, tris.triangle_type, 0, max),
+			read_triangles_as_quad(tris.height, tris.triangle_type, 1, max),
+			read_triangles_as_quad(tris.height, tris.triangle_type, 2, max),
+			read_triangles_as_quad(tris.height, tris.triangle_type, 3, max),
 		};
+	}
+
+	const terrain_map::cliff_info& get_cliff_info(const tile_position p, const terrain_map& m)
+	{
+		const auto ind = to_tile_index(p, m);
+		assert(ind < size(m.cliffs));
+		return m.cliffs[ind];
+	}
+
+	std::array<bool, 4> get_adjacent_cliffs(tile_position p, const terrain_map& m)
+	{
+		const auto find_cliffs = [](const tile_position p, const terrain_map& m)-> const terrain_map::cliff_info& {
+			if (p.x < 0 || p.y < 0)
+				return empty_cliff;
+
+			return get_cliff_info(p, m);
+			};
+
+		const auto& cliffs_below = get_cliff_info(p, m);
+
+		return {
+			find_cliffs(p - tile_position{0, 1}, m).bottom, // top
+			cliffs_below.right,
+			cliffs_below.bottom,
+			find_cliffs(p - tile_position{1, 0}, m).right, // left
+		};
+	}
+
+	bool is_tile_split(tile_position p, const terrain_map& m)
+	{
+		const auto& cliff = get_cliff_info(p, m);
+		return cliff.diag;
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
@@ -905,40 +945,107 @@ namespace hades
 		update_tile_layers(m, positions, settings);
 	}
 
+	constexpr std::optional<std::uint8_t> get_triangle_height_index(const bool triangle,
+		rect_corners c, const terrain_map::cliff_info& t) noexcept
+	{
+		switch (c)
+		{
+		case rect_corners::top_left:
+			if (t.triangle_type == terrain_map::triangle_uphill
+				&& triangle == terrain_map::triangle_left)
+				return std::uint8_t{ 0 };
+			else
+			{
+				if (triangle == terrain_map::triangle_left)
+					return std::uint8_t{ 0 };
+				else
+					return std::uint8_t{ 3 };
+			}
+			break;
+		case rect_corners::top_right:
+			if (t.triangle_type == terrain_map::triangle_downhill &&
+				triangle == terrain_map::triangle_right)
+				return std::uint8_t{ 4 };
+			else
+			{
+				if (triangle == terrain_map::triangle_left)
+					return std::uint8_t{ 1 };
+				else
+					return std::uint8_t{ 3 };
+			}
+			break;
+		case rect_corners::bottom_right:
+			if (t.triangle_type == terrain_map::triangle_uphill &&
+				triangle == terrain_map::triangle_right)
+				return std::uint8_t{ 4 };
+			else
+			{
+				if (triangle == terrain_map::triangle_left)
+					return std::uint8_t{ 1 };
+				else
+					return std::uint8_t{ 5 };
+			}
+			break;
+		case rect_corners::bottom_left:
+			if (t.triangle_type == terrain_map::triangle_downhill &&
+				triangle == terrain_map::triangle_left)
+				return std::uint8_t{ 2 };
+			else
+			{
+				if (triangle == terrain_map::triangle_left)
+					return std::uint8_t{ 2 };
+				else
+					return std::uint8_t{ 5 };
+			}
+			break;
+		}
+
+		return std::nullopt;
+	}
+
+	void change_terrain_height(terrain_map& m, const tile_position p, const bool triangle,
+		rect_corners c, std::int16_t amount, const resources::terrain_settings* s)
+	{
+		const auto i = to_tile_index(p, m);
+		auto t = detail::get_triangle_height(i, m);
+		const auto& tile_data = get_cliff_info(p, m);
+		const auto index = get_triangle_height_index(triangle, c, tile_data);
+		if (index)
+		{
+			const auto current = t[index.value()];
+			t[index.value()] = std::clamp(integer_clamp_cast<std::uint8_t>(integer_cast<std::int16_t>(current) + amount),
+				s->height_min, s->height_max);
+		}
+		return;
+	}
+
 	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		if (within_map(m, p))
-		{
-			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
-			const auto current = m.heightmap[index];
-			const auto compound = integer_cast<int>(current) + integer_cast<int>(amount);
-			m.heightmap[index] = std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
-		}
+		change_terrain_height2(m, p, [amount, ts](const std::uint8_t h) noexcept {
+			const auto compound = integer_cast<std::int16_t>(h) + integer_cast<std::int16_t>(amount);
+			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
+			});
 		return;
 	}
 
 	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		if (within_map(m, p))
-		{
-			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
-			const auto current = m.heightmap[index];
-			const auto compound = integer_cast<int>(current) - integer_cast<int>(amount);
-			m.heightmap[index] = std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
-		}
+		change_terrain_height2(m, p, [amount, ts](const std::uint8_t h) noexcept {
+			const auto compound = integer_cast<std::int16_t>(h) - integer_cast<std::int16_t>(amount);
+			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
+			});
 		return;
 	}
 
-	void set_height_at(terrain_map& m, const terrain_vertex_position p, const std::uint8_t h, const resources::terrain_settings* ts)
+	void set_height_at(terrain_map& m, const terrain_vertex_position p, std::uint8_t h, const resources::terrain_settings* ts)
 	{
-		assert(ts);
-		if (within_map(m, p))
-		{
-			const auto index = integer_cast<std::size_t>(to_1d_index(p, get_width(m)));
-			m.heightmap[index] = std::clamp(h, ts->height_min, ts->height_max);
-		}
+		assert(ts); 
+		h = std::clamp(h, ts->height_min, ts->height_max);
+		change_terrain_height2(m, p, [h](const std::uint8_t) noexcept {
+			return h;
+			});
 		return;
 	}
 

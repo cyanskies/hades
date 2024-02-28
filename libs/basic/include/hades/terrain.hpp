@@ -237,26 +237,7 @@ namespace hades
 	constexpr auto bad_triangle_index = std::numeric_limits<std::uint8_t>::max();
 	// second element may be bad_triangle_index
 	constexpr std::pair<std::uint8_t, std::uint8_t> quad_index_to_triangle_index(rect_corners, bool tri_type) noexcept;
-	// access a triangle pair range [0-5] using quad indexes[0-3] 
-	// 'Func' is called to merge triangle elements
-	// where multiple values are available for a quad corner
-	template<std::ranges::random_access_range Range,
-		std::invocable<typename Range::value_type, typename Range::value_type> Func>
-		requires requires(const Range& r, Func &&f, std::size_t i, typename Range::value_type v)
-	{
-		r[i];
-		{ f(v, v) } -> std::same_as<typename Range::value_type>;
-	}
-	typename Range::value_type read_triangles_as_quad(const Range&, bool tri_type, std::size_t index, Func&& descriminator);
-
-	template<std::ranges::random_access_range Range,
-		std::invocable<typename Range::value_type&> Func>
-		requires requires(Range& r, Func&& f, std::size_t i, typename Range::value_type v)
-	{
-		{ r[i] } -> std::same_as<std::remove_const_t<typename Range::value_type&>>;
-	}
-	void invoke_on_triangle_corner(Range&, bool tri_type, rect_corners c, Func&& f);
-
+	
 	//converts a raw map into a tile map
 	// exceptions: tileset_not_found, terrain_error, terrain_layers_error
 	terrain_map to_terrain_map(const raw_terrain_map&);
@@ -320,8 +301,8 @@ namespace hades
 	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&);
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	// returns the height in the 4 corners of the tile
-	std::array<std::uint8_t, 4> get_max_height_at_edges(tile_position tile_index, const terrain_map& map);
-	
+	std::array<std::uint8_t, 4> get_max_height_in_corners(tile_position tile_index, const terrain_map& map);
+	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data&) noexcept;
 	// NOTE: cliffs are *owned* by the tile they are attached too
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
@@ -360,23 +341,6 @@ namespace hades
 	template<std::invocable<tile_position> Func>
 	void for_each_safe_adjacent_tile(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
 
-	struct triangle_info
-	{
-		tile_position tile;
-		rect_corners corner;
-		bool triangle;
-		bool triangle_type; // uphill, downhill
-	};
-
-	// only called once for each unique triangle vertex
-	// TODO: add support for cliffs
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(terrain_vertex_position, const terrain_map&, Func&& f) noexcept;
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(tile_position, rect_corners, const terrain_map&, Func&& f) noexcept;
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(triangle_info, const terrain_map&, Func&& f) noexcept;
-
 	//for editing a terrain map
 	//use the make_position_* functions from tiles.hpp
 	void place_tile(terrain_map&, tile_position, const resources::tile&, const resources::terrain_settings&);
@@ -389,11 +353,8 @@ namespace hades
 
 	template<std::invocable<std::uint8_t> Func>
 		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
-	void change_terrain_height2(terrain_map&, terrain_vertex_position, std::int16_t amount, Func&&);
-	// change all corners
-	// for changing a specfic vertex
-	[[deprecated]] void change_terrain_height(terrain_map&, tile_position, bool triangle, rect_corners, std::int16_t amount, const resources::terrain_settings*);
-	void set_terrain_height(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
+	void change_terrain_height(terrain_map&, terrain_vertex_position, Func&&);
+	
 	// TODO: need to fix for cliffs
 	// TODO: must target a tile so that it can disabiguate when a cliff is present
 	//		these are fine, they can just fail for cliff areas

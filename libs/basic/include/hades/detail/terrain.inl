@@ -46,6 +46,8 @@ namespace hades
 			0, 2, 3, 0, 1, 2
 		};
 
+		assert(i < 6);
+
 		if (tri_type == terrain_map::triangle_uphill)
 			return rect_corners{ uphill[i] };
 		else
@@ -67,104 +69,12 @@ namespace hades
 			std::pair{ std::uint8_t{ 2 }, bad_triangle_index },	// bottom-left
 		};
 
+		assert(c < rect_corners::last);
+
 		if (tri_type == terrain_map::triangle_uphill)
 			return uphill[enum_type(c)];
 		else
 			return downhill[enum_type(c)];
-	}
-
-	template<std::ranges::random_access_range Range,
-		std::invocable<typename Range::value_type, typename Range::value_type> Func>
-		requires requires(const Range& r, Func&& f, std::size_t i, typename Range::value_type v)
-	{
-		r[i];
-		{ f(v, v) } -> std::same_as<typename Range::value_type>;
-	}
-	typename Range::value_type read_triangles_as_quad(const Range& r, const bool tri_type, const std::size_t i, Func&& f)
-	{
-		if (tri_type == terrain_map::triangle_uphill)
-		{
-			switch (i)
-			{
-			case 0:
-				return r[0];
-			case 1:
-				return std::invoke(f, r[1], r[3]);
-			case 2:
-				return r[4];
-			case 3:
-				return std::invoke(f, r[2], r[5]);
-			}
-		}
-		else
-		{
-			switch (i)
-			{
-			case 0:
-				return std::invoke(f, r[0], r[3]);
-			case 1:
-				return r[4];
-			case 2:
-				return std::invoke(f, r[1], r[5]);
-			case 3:
-				return r[2];
-			}
-		}
-
-		throw invalid_argument{ "index out of range for read_triangles_as_quad" };
-	}
-
-	template<std::ranges::random_access_range Range,
-		std::invocable<typename Range::value_type&> Func>
-		requires requires(Range& r, Func&& f, std::size_t i, typename Range::value_type v)
-	{
-		{ r[i] } -> std::same_as<std::remove_const_t<typename Range::value_type&>>;
-	}
-	void invoke_on_triangle_corner(Range& r, bool tri_type, rect_corners c, Func&& f)
-	{
-		const auto i = enum_type(c);
-		if (tri_type == terrain_map::triangle_uphill)
-		{
-			switch (i)
-			{
-			case 0:
-				std::invoke(f, r[0]);
-				return;
-			case 1:
-				std::invoke(f, r[1]);
-				std::invoke(f, r[3]);
-				return;
-			case 2:
-				std::invoke(f, r[4]);
-				return;
-			case 3:
-				std::invoke(f, r[2]); 
-				std::invoke(f, r[5]);
-				return;
-			}
-		}
-		else
-		{
-			switch (i)
-			{
-			case 0:
-				std::invoke(f, r[0]);
-				std::invoke(f, r[3]);
-				return;
-			case 1:
-				std::invoke(f, r[4]);
-				return;
-			case 2:
-				std::invoke(f, r[1]);
-				std::invoke(f, r[5]);
-				return;
-			case 3:
-				std::invoke(f, r[2]);
-				return;
-			}
-		}
-
-		throw invalid_argument{ "index out of range for invoke_on_triangle_corner" };
 	}
 
 	template<std::invocable<tile_position> Func>
@@ -183,110 +93,8 @@ namespace hades
 		return;
 	}
 
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(terrain_vertex_position v, const terrain_map& m, Func&& f) noexcept
-	{ 
-		const auto size = get_size(m);
-
-		if (v.x == 0 && v.y == size.y) //bottom left
-			for_each_adjacent_triangle(v - tile_position{ 0, 1 }, rect_corners::bottom_left, m, std::forward<Func>(f));
-		else if (v.x == size.x && v.y == 0) //top right
-			for_each_adjacent_triangle(v - tile_position{ 1, 0 }, rect_corners::top_right, m, std::forward<Func>(f));
-		else if (v.x == 0 || v.y == 0) // top and left edges
-			for_each_adjacent_triangle(v, rect_corners::top_left, m, std::forward<Func>(f));
-		else // rest of map
-			for_each_adjacent_triangle(v - tile_position{ 1, 1 }, rect_corners::bottom_right, m, std::forward<Func>(f));
-		return;
-	}
-
 	namespace detail
 	{
-		// perform for_each adjacent 
-		template<std::invocable<triangle_info> Func>
-		void for_each_adjacent_triangle(triangle_info t, const terrain_map& m, Func&& f) noexcept
-		{
-
-		}
-
-		// perform for_each_adjacent tri only on this tile
-		template<std::invocable<triangle_info> Func>
-		void for_each_adjacent_triangle_impl(tile_position p, rect_corners c, const terrain_map& m, Func& f) noexcept
-		{
-			const auto& t_info = get_cliff_info(p, m);
-			const auto uphill = t_info.triangle_type == terrain_map::triangle_uphill;
-
-			// there is a very apparent pattern here, possible to reduce this code?
-			switch (c)
-			{
-			case rect_corners::top_left:
-			{
-				if (uphill)
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-				else
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				}
-			}
-			case rect_corners::top_right:
-			{
-				if (uphill)
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				}
-				else
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				}
-			}
-			case rect_corners::bottom_right:
-			{
-				if (uphill)
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				else
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				}
-			}
-			case rect_corners::bottom_left:
-			{
-				if (uphill)
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_right });
-				}
-				else
-				{
-					std::invoke(f, triangle_info{ p, c, terrain_map::triangle_left });
-				}
-			}
-			}
-		}
-	}
-
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(tile_position p, rect_corners c, const terrain_map&, Func&& f) noexcept
-	{
-		// 
-
-	}
-
-	template<std::invocable<triangle_info> Func>
-	void for_each_adjacent_triangle(triangle_info t, const terrain_map& m, Func&& f) noexcept
-	{
-
-	}
-
-	namespace detail
-	{
-		template<std::invocable<std::uint8_t> Func>
-			requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
-		void change_terrain_height_corner_impl(terrain_map& m, tile_position p, rect_corners c, std::int16_t amount, Func f)
-		{
-		}
-
 		template<std::invocable<std::uint8_t> Func>
 			requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
 		void change_terrain_height_impl(terrain_map& m, tile_position p, rect_corners c, Func& f)
@@ -307,10 +115,9 @@ namespace hades
 
 	template<std::invocable<std::uint8_t> Func>
 		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
-	void change_terrain_height2(terrain_map& m, tile_position p, rect_corners c, Func&& f)
+	void change_terrain_height(terrain_map& m, tile_position p, rect_corners c, Func&& f)
 	{
 		// call each of the tiles adjacent to this corner to perform the height change
-
 		const auto size = get_size(m);
 
 		constexpr auto corners = std::array{
@@ -387,19 +194,19 @@ namespace hades
 
 	template<std::invocable<std::uint8_t> Func>
 		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
-	void change_terrain_height2(terrain_map& m, terrain_vertex_position v, Func&& f)
+	void change_terrain_height(terrain_map& m, terrain_vertex_position v, Func&& f)
 	{
 		// find a tile and corner and pass along to the next func
 		const auto size = get_size(m);
 
 		if (v.x == 0 && v.y == size.y) //bottom left
-			change_terrain_height2(m, v - tile_position{ 0, 1 }, rect_corners::bottom_left, std::forward<Func>(f));
+			change_terrain_height(m, v - tile_position{ 0, 1 }, rect_corners::bottom_left, std::forward<Func>(f));
 		else if (v.x == size.x && v.y == 0) //top right
-			change_terrain_height2(m, v - tile_position{ 1, 0 }, rect_corners::top_right, std::forward<Func>(f));
+			change_terrain_height(m, v - tile_position{ 1, 0 }, rect_corners::top_right, std::forward<Func>(f));
 		else if (v.x == 0 || v.y == 0) // top and left edges
-			change_terrain_height2(m, v, rect_corners::top_left, std::forward<Func>(f));
+			change_terrain_height(m, v, rect_corners::top_left, std::forward<Func>(f));
 		else // rest of map
-			change_terrain_height2(m, v - tile_position{ 1, 1 }, rect_corners::bottom_right, std::forward<Func>(f));
+			change_terrain_height(m, v - tile_position{ 1, 1 }, rect_corners::bottom_right, std::forward<Func>(f));
 		return;
 	}
 }

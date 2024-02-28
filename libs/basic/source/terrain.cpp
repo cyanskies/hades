@@ -674,18 +674,39 @@ namespace hades
 		};
 	}
 
-	std::array<std::uint8_t, 4> get_max_height_at_edges(const tile_position tile_index, const terrain_map& map)
+	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map)
 	{
-		const auto max = [](auto&& l, auto&& r) constexpr noexcept {
-			return std::max(l, r);
-			};
-
 		const auto tris = get_height_for_triangles(tile_index, map);
+		return get_max_height_in_corners(tris);
+	}
+
+	namespace detail
+	{
+		// access a triangle pair range [0-5] using quad indexes[0-3] 
+		// 'Func' is called to merge triangle elements
+		// where multiple values are available for a quad corner
+		template<std::invocable<std::uint8_t, std::uint8_t> Func>
+		std::uint8_t read_triangles_as_quad(const triangle_height_data& t, rect_corners c, Func&& f) 
+						noexcept(std::is_nothrow_invocable_v<Func, std::uint8_t, std::uint8_t>)
+		{
+			const auto [first, second] = quad_index_to_triangle_index(c, t.triangle_type);
+			if (second != bad_triangle_index)
+				return std::invoke(f, t.height[first], t.height[second]);
+
+			return t.height[first];
+		}
+	}
+
+	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept
+	{
+		using max_func = const std::uint8_t& (*)(const std::uint8_t&, const std::uint8_t&) noexcept;
+		constexpr max_func max = &std::max<std::uint8_t>;
+		
 		return {
-			read_triangles_as_quad(tris.height, tris.triangle_type, 0, max),
-			read_triangles_as_quad(tris.height, tris.triangle_type, 1, max),
-			read_triangles_as_quad(tris.height, tris.triangle_type, 2, max),
-			read_triangles_as_quad(tris.height, tris.triangle_type, 3, max),
+			detail::read_triangles_as_quad(tris, rect_corners::top_left, max),
+			detail::read_triangles_as_quad(tris, rect_corners::top_right, max),
+			detail::read_triangles_as_quad(tris, rect_corners::bottom_right, max),
+			detail::read_triangles_as_quad(tris, rect_corners::bottom_left, max),
 		};
 	}
 
@@ -945,84 +966,10 @@ namespace hades
 		update_tile_layers(m, positions, settings);
 	}
 
-	constexpr std::optional<std::uint8_t> get_triangle_height_index(const bool triangle,
-		rect_corners c, const terrain_map::cliff_info& t) noexcept
-	{
-		switch (c)
-		{
-		case rect_corners::top_left:
-			if (t.triangle_type == terrain_map::triangle_uphill
-				&& triangle == terrain_map::triangle_left)
-				return std::uint8_t{ 0 };
-			else
-			{
-				if (triangle == terrain_map::triangle_left)
-					return std::uint8_t{ 0 };
-				else
-					return std::uint8_t{ 3 };
-			}
-			break;
-		case rect_corners::top_right:
-			if (t.triangle_type == terrain_map::triangle_downhill &&
-				triangle == terrain_map::triangle_right)
-				return std::uint8_t{ 4 };
-			else
-			{
-				if (triangle == terrain_map::triangle_left)
-					return std::uint8_t{ 1 };
-				else
-					return std::uint8_t{ 3 };
-			}
-			break;
-		case rect_corners::bottom_right:
-			if (t.triangle_type == terrain_map::triangle_uphill &&
-				triangle == terrain_map::triangle_right)
-				return std::uint8_t{ 4 };
-			else
-			{
-				if (triangle == terrain_map::triangle_left)
-					return std::uint8_t{ 1 };
-				else
-					return std::uint8_t{ 5 };
-			}
-			break;
-		case rect_corners::bottom_left:
-			if (t.triangle_type == terrain_map::triangle_downhill &&
-				triangle == terrain_map::triangle_left)
-				return std::uint8_t{ 2 };
-			else
-			{
-				if (triangle == terrain_map::triangle_left)
-					return std::uint8_t{ 2 };
-				else
-					return std::uint8_t{ 5 };
-			}
-			break;
-		}
-
-		return std::nullopt;
-	}
-
-	void change_terrain_height(terrain_map& m, const tile_position p, const bool triangle,
-		rect_corners c, std::int16_t amount, const resources::terrain_settings* s)
-	{
-		const auto i = to_tile_index(p, m);
-		auto t = detail::get_triangle_height(i, m);
-		const auto& tile_data = get_cliff_info(p, m);
-		const auto index = get_triangle_height_index(triangle, c, tile_data);
-		if (index)
-		{
-			const auto current = t[index.value()];
-			t[index.value()] = std::clamp(integer_clamp_cast<std::uint8_t>(integer_cast<std::int16_t>(current) + amount),
-				s->height_min, s->height_max);
-		}
-		return;
-	}
-
 	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		change_terrain_height2(m, p, [amount, ts](const std::uint8_t h) noexcept {
+		change_terrain_height(m, p, [amount, ts](const std::uint8_t h) noexcept {
 			const auto compound = integer_cast<std::int16_t>(h) + integer_cast<std::int16_t>(amount);
 			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 			});
@@ -1032,7 +979,7 @@ namespace hades
 	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		change_terrain_height2(m, p, [amount, ts](const std::uint8_t h) noexcept {
+		change_terrain_height(m, p, [amount, ts](const std::uint8_t h) noexcept {
 			const auto compound = integer_cast<std::int16_t>(h) - integer_cast<std::int16_t>(amount);
 			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 			});
@@ -1043,7 +990,7 @@ namespace hades
 	{
 		assert(ts); 
 		h = std::clamp(h, ts->height_min, ts->height_max);
-		change_terrain_height2(m, p, [h](const std::uint8_t) noexcept {
+		change_terrain_height(m, p, [h](const std::uint8_t) noexcept {
 			return h;
 			});
 		return;

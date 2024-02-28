@@ -344,10 +344,10 @@ namespace hades
 		auto sf_col = std::array<sf::Color, 6>{};
 		for (auto i = std::uint8_t{}; i < 6; ++i)
 		{
-			const auto& normal = normals[triangle_index_to_quad_index(i, h.triangle_type)];
+			const auto& normal = normals[enum_type(triangle_index_to_quad_index(i, h.triangle_type))];
 			sf_col[i] = sf::Color{
 				h.height[i],
-				shadow_h[triangle_index_to_quad_index(i, h.triangle_type)],
+				shadow_h[enum_type(triangle_index_to_quad_index(i, h.triangle_type))],
 				normal[0], // theta
 				normal[1]};// phi
 		}
@@ -606,28 +606,17 @@ namespace hades
 			};
 
 		const auto shadow_tris = get_height_for_triangles(p, m);
-		auto shadow_h = std::array{
-			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 0, max_val),
-			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 1, max_val),
-			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 2, max_val),
-			access_triangles_as_quad(shadow_tris.height, shadow_tris.triangle_type, 3, max_val),
-		};
+		auto shadow_h = get_max_height_in_corners(shadow_tris);
 
 		for (auto i = std::uint32_t{}; i < row_length; ++i)
 		{
 			const auto h_tris = get_height_for_triangles(p, m);
-			const auto h = std::array{
-				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 0, max_val),
-				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 1, max_val),
-				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 2, max_val),
-				access_triangles_as_quad(h_tris.height, h_tris.triangle_type, 3, max_val),
-			};
+			const auto h = get_max_height_in_corners(h_tris);
 			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
 			
 			// calc triange normals
 			// uphill triangles
-			// TODO: select triangle type
 			const auto posf = static_cast<vector2_float>(p) * tile_sizef;
 			const auto normal_a = triangle_normal(
 				{ posf.x, posf.y, float_cast(h[top_left]) },

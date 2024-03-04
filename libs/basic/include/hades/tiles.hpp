@@ -271,43 +271,51 @@ namespace hades
 
 	//helpers to create a list of positions in a desired shape
 	//TODO: move to general game logic
-	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size);
-	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size);
-	std::vector<tile_position> make_position_rect(tile_position, tile_position size);
-	std::vector<tile_position> make_position_circle(tile_position middle, tile_index_t radius);
-	std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
+	[[deprecated]] std::vector<tile_position> make_position_square(tile_position position, tile_index_t size);
+	[[deprecated]] std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size);
+	[[deprecated]] std::vector<tile_position> make_position_rect(tile_position, tile_position size);
+	[[deprecated]] std::vector<tile_position> make_position_circle(tile_position middle, tile_index_t radius);
+	[[deprecated]] std::array<tile_position, 9> make_position_9patch(tile_position middle) noexcept;
 
 	// Prefer this over the above functions, as it won't allocate
 	// safe versions wont check pass invalid tiles along to Func
 	// non-safe versions func needs to handle being passed bad_tile_poistion/bad_tile_index
 	template<std::invocable<tile_position> Func>
-	void for_each_position_rect(const tile_position position, const tile_position size,
-		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	void for_each_position_rect(tile_position position, tile_position size,
+		tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 	template<std::invocable<tile_position> Func>
-	void for_each_safe_position_rect(const tile_position position, const tile_position size,
-		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	void for_each_safe_position_rect(tile_position position, tile_position size,
+		tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
-	template<unary_operator<void, tile_position> Func>
+	template<std::invocable<tile_position> Func>
 	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func &&f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
-	template<unary_operator<void, tile_position> Func>
+	template<std::invocable<tile_position> Func>
 	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect(const tile_index_t pos,
-		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+	template<std::invocable<tile_position> Func>
+	void for_each_position_line(tile_position start, tile_position end, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_line(tile_position start, tile_position end, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+
+	template<std::invocable<tile_position> Func>
+	void for_each_position_diagonal(tile_position start, tile_position end, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_diagonal(tile_position start, tile_position end, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+
+	template<std::invocable<tile_index_t> Func>
+	void for_each_index_rect(const tile_index_t pos, tile_position size,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_safe_index_rect(const tile_index_t pos,
-		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+	template<std::invocable<tile_index_t> Func>
+	void for_each_safe_index_rect(const tile_index_t pos, tile_position size,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
 
-	template<typename Func>
-		requires std::is_invocable_v<Func, tile_index_t>
+	template<std::invocable<tile_index_t> Func>
 	void for_each_safe_index_9_patch(const tile_index_t pos,
 		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
-	template<typename Func>
-		requires std::is_invocable_v<Func, tile_index_t>
+	template<std::invocable<tile_index_t> Func>
 	void for_each_index_9_patch(const tile_index_t pos,
 		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
@@ -319,21 +327,19 @@ namespace hades
 		continue_expanding = false
 	};
 
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
+	template<invocable_r<for_each_expanding_return, tile_position> Func>
+	[[deprecated]]
 	void for_each_safe_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
+	template<invocable_r<for_each_expanding_return, tile_position> Func>
+	[[deprecated]]
 	void for_each_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
+	template<invocable_r<for_each_expanding_return, tile_index_t> Func>
 	void for_each_safe_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
+	template<invocable_r<for_each_expanding_return, tile_index_t> Func>
 	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>);
 }

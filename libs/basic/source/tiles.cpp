@@ -987,32 +987,42 @@ namespace hades
 		place_tile(m, p, id);
 	}
 
-	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size)
-	{
-		const auto int_size = integer_cast<int32>(size);
-
-		return make_position_rect(position, { int_size, int_size });
-	}
-
-	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size)
-	{
-		const auto int_half_size = integer_cast<int32>(half_size);
-		return make_position_square({ middle.x - int_half_size, middle.y - int_half_size }, int_half_size * 2);
-	}
-
-	std::vector<tile_position> make_position_rect(tile_position position, tile_position size)
+	static std::vector<tile_position> make_position_rect_impl(tile_position position, tile_position size)
 	{
 		if (size == tile_position{})
 			return { position };
 
 		auto positions = std::vector<tile_position>{};
-        positions.reserve(integer_cast<std::size_t>(size.x * size.y));
+		positions.reserve(integer_cast<std::size_t>(size.x * size.y));
 
 		for (int32 y = 0; y < size.y; ++y)
 			for (int32 x = 0; x < size.x; ++x)
 				positions.emplace_back(tile_position{ position.x + x, position.y + y });
 
 		return positions;
+	}
+
+	static std::vector<tile_position> make_position_square_impl(tile_position position, tile_index_t size)
+	{
+		const auto int_size = integer_cast<int32>(size);
+
+		return make_position_rect_impl(position, { int_size, int_size });
+	}
+
+	std::vector<tile_position> make_position_square(tile_position position, tile_index_t size)
+	{
+		return make_position_square_impl(position, size);
+	}
+
+	std::vector<tile_position> make_position_square_from_centre(tile_position middle, tile_index_t half_size)
+	{
+		const auto int_half_size = integer_cast<int32>(half_size);
+		return make_position_square_impl({ middle.x - int_half_size, middle.y - int_half_size }, int_half_size * 2);
+	}
+
+	std::vector<tile_position> make_position_rect(tile_position position, tile_position size)
+	{
+		return make_position_rect_impl(position, size);
 	}
 
 	std::vector<tile_position> make_position_circle(tile_position p, tile_index_t radius)

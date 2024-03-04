@@ -4,9 +4,9 @@ namespace hades
 {
 	namespace detail
 	{
-		template<bool PassInvalid = true, typename Func>
-		std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect_impl(const tile_index_t pos,
-			tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+		template<bool PassInvalid = true, std::invocable<tile_index_t> Func>
+		void for_each_index_rect_impl(const tile_index_t pos, tile_position size,
+			const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 			noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 		{
 			static_assert(std::is_invocable_v<Func, tile_index_t>);
@@ -33,9 +33,8 @@ namespace hades
 		}
 
 		template<bool PassInvalid = true, std::invocable<tile_position> Func>
-		void for_each_pos_rect_impl(const tile_position pos,
-			tile_position size, const tile_position world_size, Func&& f)
-			noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		void for_each_pos_rect_impl(const tile_position pos, const tile_position size, 
+			const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 		{
 			const auto& [pos_x, pos_y] = pos;
 			for (auto y = tile_index_t{}; y < size.y; ++y)
@@ -54,9 +53,9 @@ namespace hades
 			return;
 		}
 
-		template<bool PassInvalid = true, unary_operator<void, tile_position> Func>
-		void for_each_position_circle_impl(const tile_position p, const tile_index_t radius, const tile_position world_size, Func&& f)
-			noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		template<bool PassInvalid = true, std::invocable<tile_position> Func>
+		void for_each_position_circle_impl(const tile_position p, const tile_index_t radius,
+			const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 		{
 			const auto rad = integer_cast<tile_position::value_type>(radius);
 
@@ -102,8 +101,7 @@ namespace hades
 			return;
 		}
 
-		template<bool PassInvalid = true, typename Func>
-			requires std::is_invocable_v<Func, tile_index_t>
+		template<bool PassInvalid = true, std::invocable<tile_index_t> Func>
 		void for_each_index_9_patch_impl(const tile_index_t pos,
 			const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 			noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
@@ -132,8 +130,7 @@ namespace hades
 			return;
 		}
 
-		template<bool PassInvalid = true, typename Func>
-			requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
+		template<bool PassInvalid = true, invocable_r<for_each_expanding_return, tile_index_t> Func>
 		void for_each_expanding_index_impl(const tile_index_t pos,
 			const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 			noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
@@ -252,49 +249,129 @@ namespace hades
 	void for_each_position_rect(const tile_position position, const tile_position size,
 		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		return detail::for_each_pos_rect_impl(position, size, world_size, f);
+		return detail::for_each_pos_rect_impl(position, size, world_size, std::forward<Func>(f));
 	}
 
 	template<std::invocable<tile_position> Func>
 	void for_each_safe_position_rect(const tile_position position, const tile_position size,
 		const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		return detail::for_each_pos_rect_impl<false>(position, size, world_size, f);
+		return detail::for_each_pos_rect_impl<false>(position, size, world_size, std::forward<Func>(f));
 	}
 
-	template<unary_operator<void, tile_position> Func>
+	template<std::invocable<tile_position> Func>
 	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		return detail::for_each_position_circle_impl(middle, radius, world_size, f);
+		return detail::for_each_position_circle_impl(middle, radius, world_size, std::forward<Func>(f));
 	}
 
-	template<unary_operator<void, tile_position> Func>
+	template<std::invocable<tile_position> Func>
 	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) 
 		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
-		return detail::for_each_position_circle_impl<false>(middle, radius, world_size, f);
+		return detail::for_each_position_circle_impl<false>(middle, radius, world_size, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_safe_index_rect(const tile_index_t pos,
-		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+	namespace detail
+	{
+		template<bool PassInvalid = true, std::invocable<tile_position> Func>
+		void for_each_position_line_impl(tile_position start, const tile_position end, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		{
+			// axis aligned lines
+			assert(start.x == end.x ||
+				start.y == end.y);
+
+			auto diff = tile_position{};
+			if (start.x == end.x)
+			{
+				assert(start.y != end.y);
+				diff.y = start.y < end.y ? 1 : -1;
+			}
+			else
+			{
+				assert(start.x != end.x);
+				diff.y = start.x < end.x ? 1 : -1;
+			}
+
+			while (start != end)
+			{
+				if (within_world(start, world_size))
+					std::invoke(f, start);
+				else if constexpr (PassInvalid)
+					std::invoke(f, bad_tile_position);
+
+				start += diff;
+			}
+			return;
+		}
+
+		template<bool PassInvalid = true, std::invocable<tile_position> Func>
+		void for_each_position_diagonal_impl(tile_position start, const tile_position end, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		{
+			const auto x = start.x - end.x;
+			const auto y = start.y - end.y;
+			assert(abs(x) == abs(y));
+
+			const auto diff = tile_position{
+				x / abs(x),
+				y / abs(y)
+			};
+
+			while (start != end)
+			{
+				if (within_world(start, world_size))
+					std::invoke(f, start);
+				else if constexpr (PassInvalid)
+					std::invoke(f, bad_tile_position);
+
+				start += diff;
+			}
+			return;
+		}
+	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_position_line(const tile_position start, const tile_position end, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_line_impl(start, end, world_size, std::forward<Func>(f));
+	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_line(const tile_position start, const tile_position end, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_line_impl<false>(start, end, world_size, std::forward<Func>(f));
+	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_position_diagonal(tile_position const start, tile_position const end, tile_position const world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_diagonal_impl(start, end, world_size, std::forward<Func>(f));
+	}
+
+	template<std::invocable<tile_position> Func>
+	void for_each_safe_position_diagonal(const tile_position start, const tile_position end, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+	{
+		return detail::for_each_position_diagonal_impl<false>(start, end, world_size, std::forward<Func>(f));
+	}
+
+	template<std::invocable<tile_index_t> Func>
+	void for_each_safe_index_rect(const tile_index_t pos, tile_position size,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
 		return detail::for_each_index_rect_impl<false>(pos, size, map_width, max_index, std::forward<Func>(f));
 	}
 
-
-	template<typename Func>
-	std::enable_if_t<std::is_invocable_v<Func, tile_index_t>> for_each_index_rect(const tile_index_t pos,
-		tile_position size, const tile_index_t map_width, const tile_index_t max_index, Func&& f)
+	template<std::invocable<tile_index_t> Func>
+	void for_each_index_rect(const tile_index_t pos, tile_position size,
+		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
 		return detail::for_each_index_rect_impl(pos, size, map_width, max_index, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-		requires std::is_invocable_v<Func, tile_index_t>
+	template<std::invocable<tile_index_t> Func>
 	void for_each_safe_index_9_patch(const tile_index_t pos,
 		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
@@ -302,8 +379,7 @@ namespace hades
 		return detail::for_each_index_9_patch_impl<false>(pos, map_width, max_index, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-		requires std::is_invocable_v<Func, tile_index_t>
+	template<std::invocable<tile_index_t> Func>
 	void for_each_index_9_patch(const tile_index_t pos,
 		const tile_index_t map_width, const tile_index_t max_index, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
@@ -311,8 +387,7 @@ namespace hades
 		return detail::for_each_index_9_patch_impl(pos, map_width, max_index, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
+	template<invocable_r<for_each_expanding_return, tile_position> Func>
 	void for_each_safe_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
@@ -324,11 +399,10 @@ namespace hades
 		};
 
 		return detail::for_each_expanding_index_impl<false>(hades::to_tile_index(position, world_size.x),
-			size, world_size.x, world_size.x * world_size.y, func);
+			size, world_size.x, world_size.x * world_size.y, std::forward<Func>(f));
 	}
 	
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_position>
+	template<invocable_r<for_each_expanding_return, tile_position> Func>
 	void for_each_expanding_position(const tile_position position,
 		const tile_position size, const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
 	{
@@ -340,19 +414,17 @@ namespace hades
 		};
 
 		return detail::for_each_expanding_index_impl(hades::to_tile_index(position, world_size.x),
-			size, world_size.x, world_size.x * world_size.y, func);
+			size, world_size.x, world_size.x * world_size.y, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
+	template<invocable_r<for_each_expanding_return, tile_index_t> Func>
 	void for_each_safe_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{
 		return detail::for_each_expanding_index_impl<false>(pos, map_width, max_index, std::forward<Func>(f));
 	}
 
-	template<typename Func>
-		requires std::is_invocable_r_v<for_each_expanding_return, Func, tile_index_t>
+	template<invocable_r<for_each_expanding_return, tile_index_t> Func>
 	void for_each_expanding_index(const tile_index_t pos, const tile_index_t map_width,
 		const tile_index_t max_index, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_index_t>)
 	{

@@ -205,8 +205,8 @@ namespace hades
 		level_editor_level_props,
 		level_editor_terrain,
 		level_editor_objects,
-		level_editor_regions,
-		level_editor_grid
+		level_editor_regions/*,
+		level_editor_grid*/ // this is handled by the terrain component now
 	>;
 
 	// these register all the needed resources and console vars to use the 

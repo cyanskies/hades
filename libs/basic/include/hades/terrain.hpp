@@ -307,7 +307,7 @@ namespace hades
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
 	// This info is used mostly for rendering
-	const terrain_map::cliff_info& get_cliff_info(tile_position, const terrain_map&);
+	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&);
 
 	// return all adjacent cliffs to this tile
 	// index array using rectangle_math.hpp::hades::rect_edges
@@ -364,8 +364,17 @@ namespace hades
 
 	void set_height_at(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 
+	void swap_triangle_type(terrain_map&, tile_position);
+
+	bool is_cliff(const terrain_map&, tile_position);
+
+	// returns true if add cliff would work on this edge
+	bool can_add_cliff();
+	void add_cliff();
+	void remove_cliff();
+
 	// project 'p' onto the flat version of 'map'
-	world_vector_t project_onto_terrain(world_vector_t p, float rot,
+	world_vector_t project_onto_terrain(world_vector_t p, float rot_degrees,
 		const resources::tile_size_t tile_size, const terrain_map& map);
 }
 

@@ -710,23 +710,35 @@ namespace hades
 		};
 	}
 
-	const terrain_map::cliff_info& get_cliff_info(const tile_position p, const terrain_map& m)
+	static const terrain_map::cliff_info& get_cliff_info(const tile_index_t ind, const terrain_map& m)
 	{
-		const auto ind = to_tile_index(p, m);
 		assert(ind < size(m.cliffs));
 		return m.cliffs[ind];
 	}
 
+	static void set_cliff_info(const tile_index_t ind, terrain_map& m, const terrain_map::cliff_info c)
+	{
+		assert(ind < size(m.cliffs));
+		m.cliffs[ind] = c;
+		return;
+	}
+
+	terrain_map::cliff_info get_cliff_info(const tile_position p, const terrain_map& m)
+	{
+		const auto ind = to_tile_index(p, m);
+		return get_cliff_info(ind, m);
+	}
+
 	std::array<bool, 4> get_adjacent_cliffs(tile_position p, const terrain_map& m)
 	{
-		const auto find_cliffs = [](const tile_position p, const terrain_map& m)-> const terrain_map::cliff_info& {
+		const auto find_cliffs = [](const tile_position p, const terrain_map& m) {
 			if (p.x < 0 || p.y < 0)
 				return empty_cliff;
 
 			return get_cliff_info(p, m);
 			};
 
-		const auto& cliffs_below = get_cliff_info(p, m);
+		const auto cliffs_below = get_cliff_info(p, m);
 
 		return {
 			find_cliffs(p - tile_position{0, 1}, m).bottom, // top
@@ -852,7 +864,7 @@ namespace hades
 		resize_map(m, size, offset, terrain, settings->height_default, *settings);
 	}
 
-	std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)
+	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)
 	{
 		return {
 			//top row
@@ -864,7 +876,7 @@ namespace hades
 		};
 	}
 
-	std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position> &v)
+	[[deprecated]] std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position> &v)
 	{
 		auto out = std::vector<tile_position>{};
 
@@ -993,6 +1005,35 @@ namespace hades
 		change_terrain_height(m, p, [h](const std::uint8_t) noexcept {
 			return h;
 			});
+		return;
+	}
+
+	void swap_triangle_type(terrain_map& m, const tile_position p)
+	{
+		const auto index = to_tile_index(p, m);
+		auto h = detail::get_triangle_height(index, m);
+		auto c = get_cliff_info(p, m);
+		// we should never do this if a tile contains a cliff
+		assert(!c.diag);
+		c.triangle_type = !c.triangle_type;
+		if (c.triangle_type == terrain_map::triangle_uphill)
+		{
+			assert(h[0] == h[3] &&
+				h[1] == h[5]);
+			h[3] = h[4];
+			std::swap(h[1], h[4]);
+			h[5] = h[2];
+		}
+		else
+		{
+			assert(h[1] == h[3] &&
+				h[2] == h[5]);
+			h[5] = h[4];
+			std::swap(h[1], h[4]);
+			h[3] = h[0];
+		}
+		
+		set_cliff_info(index, m, c);
 		return;
 	}
 

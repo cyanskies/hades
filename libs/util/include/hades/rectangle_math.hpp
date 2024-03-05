@@ -107,6 +107,13 @@ namespace hades
 		end
 	};
 
+	enum class rect_diag : std::uint8_t {
+		begin,
+		uphill = begin,
+		downhill,
+		end
+	};
+
 	template<typename T>
 	constexpr std::array<vector2<T>, 4> corners(rect_t<T>) noexcept;
 

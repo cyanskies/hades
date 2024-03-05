@@ -88,6 +88,7 @@ namespace hades
 
 		void raise_terrain(terrain_vertex_position, uint8_t amount);
 		void lower_terrain(terrain_vertex_position, uint8_t amount);
+		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
 
 		//void create_cliff(terrain_vertex_position, terrain_vertex_position)
 

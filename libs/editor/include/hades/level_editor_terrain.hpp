@@ -14,14 +14,14 @@ namespace hades
 	class level_editor_terrain final : public level_editor_component
 	{
 	public:
-		enum class draw_shape {
+		enum class draw_shape : std::uint8_t {
 			vertex,
 			edge,
 			rect,
 			circle,
 		};
 
-		enum class brush_type {
+		enum class brush_type : std::uint8_t {
 			no_brush,
 			// clear tile only
 			erase,
@@ -32,6 +32,7 @@ namespace hades
 			// terrain height
 			raise_terrain,
 			lower_terrain,
+			set_terrain_height,
 			// cliffs
 			raise_cliff, // add cliff
 			//lower_cliff,
@@ -94,6 +95,8 @@ namespace hades
 		draw_shape _shape = draw_shape::rect;
 		int _size = 1;
 		std::uint8_t _height_strength = 1;
+		std::uint8_t _set_height = 1; // TODO:
+		std::uint8_t _cliff_default_height;
 
 		//brush preview
 		mutable_terrain_map _clear_preview;

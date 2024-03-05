@@ -938,6 +938,13 @@ namespace hades
 		return;
 	}
 
+	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position p, const std::uint8_t h)
+	{
+		set_height_at(_shared.map, p, h, _shared.settings);
+		_needs_update = true;
+		return;
+	}
+
 	//==================================//
 	//		  terrain_mini_map			//
 	//==================================//

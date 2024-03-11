@@ -945,6 +945,27 @@ namespace hades
 		return;
 	}
 
+	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)
+	{
+		hades::set_height_for_triangles(p, _shared.map, t);
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::set_cliff_info_tmp(tile_position p, terrain_map::cliff_info c) // TODO: temp remove
+	{
+		hades::set_cliff_info_tmp(p, _shared.map, c);
+		_needs_update = true;
+		return;
+	}
+
+
+	void mutable_terrain_map::swap_triangle_type(const tile_position p)
+	{
+		hades::swap_triangle_type(_shared.map, p);
+		return;
+	}
+
 	//==================================//
 	//		  terrain_mini_map			//
 	//==================================//
@@ -958,7 +979,7 @@ namespace hades
 		return;
 	}
 
-	void terrain_mini_map::update(const terrain_map& map)
+	void terrain_mini_map::update(const terrain_map&)
 	{
 		auto img = sf::Image{};
 		img.create({ integral_cast<unsigned>(_size.x), integral_cast<unsigned>(_size.y) }, sf::Color::Black);

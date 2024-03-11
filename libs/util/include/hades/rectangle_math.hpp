@@ -104,11 +104,13 @@ namespace hades
 		right,
 		bottom,
 		left,
+		uphill,
+		downhill,
 		end
 	};
 
 	enum class rect_diag : std::uint8_t {
-		begin,
+		begin = rect_edges::uphill,
 		uphill = begin,
 		downhill,
 		end

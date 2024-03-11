@@ -11,6 +11,35 @@ namespace hades
 	void register_level_editor_terrain_resources(data::data_manager&);
 	void create_level_editor_terrain_variables();
 
+	class tile_mutator final
+	{
+	public:
+		void select_tile(const tile_position p) noexcept
+		{
+			_tile = p;
+			return;
+		}
+
+		tile_position current_tile() const noexcept
+		{
+			return _tile;
+		}
+
+		// returns true to activate tile selection mode
+		bool update_gui(gui&, mutable_terrain_map& map, mutable_terrain_map& preview);
+
+		void open() noexcept
+		{
+			_open = true;
+			return;
+		}
+
+	private:
+		tile_position _tile = bad_tile_position;
+		std::uint8_t _set_height = {};
+		bool _open = false;
+	};
+
 	class level_editor_terrain final : public level_editor_component
 	{
 	public:
@@ -25,6 +54,7 @@ namespace hades
 			no_brush,
 			// clear tile only
 			erase,
+			select_tile,
 			// art only
 			draw_tile,
 			// terrain vertex
@@ -85,6 +115,7 @@ namespace hades
 
 		console::property_int _view_height;
 
+		tile_mutator _tile_mutator;
 		resources::tile _empty_tile;
 		const resources::terrain * _empty_terrain;
 		const resources::terrainset* _empty_terrainset;

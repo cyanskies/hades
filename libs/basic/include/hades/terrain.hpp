@@ -146,6 +146,7 @@ namespace hades
 
 	struct raw_terrain_map
 	{
+		// TODO: remove
 		enum class cliff_type : std::uint8_t {
 			none = 0b0000000, 
 			middle = 0b0000001, // middle indicates both vertex are in middle of cliff
@@ -156,7 +157,7 @@ namespace hades
 		struct cliff_info
 		{
 			bool triangle_type : 1,
-				diag : 2,
+				diag : 2, // TODO: we only need 1 bit for these
 				bottom : 2,
 				right : 2;
 		};
@@ -278,6 +279,8 @@ namespace hades
 	// check if vertex is within map
 	bool within_map(const terrain_map&, terrain_vertex_position position);
 
+	bool edge_of_map(terrain_vertex_position map_size, terrain_vertex_position position) noexcept;
+
 	//index tile_corners using rect_corners from math.hpp
 	using tile_corners = std::array<const resources::terrain*, 4u>;
 	const resources::terrain *get_corner(const tile_corners&, rect_corners) noexcept;
@@ -299,6 +302,7 @@ namespace hades
 	};
 	// returns height arranged into two triangles
 	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&);
+	void set_height_for_triangles(tile_position, terrain_map&, triangle_height_data); // TODO: temp remove
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	// returns the height in the 4 corners of the tile
 	std::array<std::uint8_t, 4> get_max_height_in_corners(tile_position tile_index, const terrain_map& map);
@@ -307,11 +311,12 @@ namespace hades
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
 	// This info is used mostly for rendering
-	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&);
+	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&) noexcept;
+	void set_cliff_info_tmp(tile_position, terrain_map&, terrain_map::cliff_info); // TODO: temp remove
 
 	// return all adjacent cliffs to this tile
 	// index array using rectangle_math.hpp::hades::rect_edges
-	std::array<bool, 4> get_adjacent_cliffs(tile_position, const terrain_map&);
+	std::array<bool, 4> get_adjacent_cliffs(tile_position, const terrain_map&) noexcept;
 	// returns true if a cliff splits a tile accross the middle(between the two triangles that make up a tile quad)
 	bool is_tile_split(tile_position, const terrain_map& map);
 
@@ -355,22 +360,29 @@ namespace hades
 		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
 	void change_terrain_height(terrain_map&, terrain_vertex_position, Func&&);
 	
+	// for a particular vertex, calls the appropriate number of Func calls to fix up the height
+	template<typename Func>
+	void for_each_height_vertex(tile_position, rect_corners, tile_position world_size, Func&&);
+
 	// TODO: need to fix for cliffs
 	// TODO: must target a tile so that it can disabiguate when a cliff is present
 	//		these are fine, they can just fail for cliff areas
 	//		Need to make a new one that picks vertex for a tile
 	void raise_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
 	void lower_terrain(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
-
 	void set_height_at(terrain_map&, terrain_vertex_position, std::uint8_t, const resources::terrain_settings*);
+
+	void raise_terrain(terrain_map&, tile_position, bool triangle, rect_corners, std::uint8_t, const resources::terrain_settings*);
 
 	void swap_triangle_type(terrain_map&, tile_position);
 
 	bool is_cliff(const terrain_map&, tile_position);
 
 	// returns true if add cliff would work on this edge
-	bool can_add_cliff();
+	bool can_add_cliff(const terrain_map&, tile_position, rect_edges);
+	// add a cliff in this position if possible
 	void add_cliff();
+	// remove a cliff from this position, if present
 	void remove_cliff();
 
 	// project 'p' onto the flat version of 'map'

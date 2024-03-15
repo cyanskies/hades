@@ -758,12 +758,12 @@ namespace hades
 		return poly_quad{
 			//first triangle
 			sf::Vertex{ {quad.x, quad.y},								sf_col[enum_type(rect_corners::top_left)] }, //top left
-			sf::Vertex{ {quad.x + quad.width, quad.y},					sf_col[enum_type(rect_corners::top_right)] }, //top right
 			sf::Vertex{ {quad.x, quad.y + quad.height},					sf_col[enum_type(rect_corners::bottom_left)] }, //bottom left
+			sf::Vertex{ {quad.x + quad.width, quad.y},					sf_col[enum_type(rect_corners::top_right)] }, //top right
 			//second triangle
 			sf::Vertex{ { quad.x + quad.width, quad.y },				sf_col[enum_type(rect_corners::top_right)] }, //top right
+			sf::Vertex{ { quad.x, quad.y + quad.height },				sf_col[enum_type(rect_corners::bottom_left)] }, //bottom left
 			sf::Vertex{ { quad.x + quad.width, quad.y + quad.height },	sf_col[enum_type(rect_corners::bottom_right)] }, //bottom right
-			sf::Vertex{ { quad.x, quad.y + quad.height },				sf_col[enum_type(rect_corners::bottom_left)] } //bottom left
 		};
 	}
 
@@ -784,12 +784,12 @@ namespace hades
 		return hades::poly_quad{
 			//first triangle
 			sf::Vertex{ {a.x, a.y}, col },
-			sf::Vertex{ {b.x, b.y}, col },
 			sf::Vertex{ {c.x, c.y}, col },
+			sf::Vertex{ {b.x, b.y}, col },
 			//second triangle
 			sf::Vertex{ {c.x, c.y}, col },
+			sf::Vertex{ {a.x, a.y}, col },
 			sf::Vertex{ {d.x, d.y}, col },
-			sf::Vertex{ {a.x, a.y}, col }
 		};
 	}
 
@@ -820,12 +820,12 @@ namespace hades
 		return poly_quad{
 			//first triangle
 			sf::Vertex{ {quad.x, quad.y},					sf_col[enum_type(rect_corners::top_left)],		{ texture_quad.x, texture_quad.y } }, //top left
-			sf::Vertex{ { quad_right_x, quad.y },			sf_col[enum_type(rect_corners::top_right)],		{ tex_right_x, texture_quad.y } }, //top right
 			sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[enum_type(rect_corners::bottom_left)],	{ texture_quad.x, tex_bottom_y } }, //bottom left
+			sf::Vertex{ { quad_right_x, quad.y },			sf_col[enum_type(rect_corners::top_right)],		{ tex_right_x, texture_quad.y } }, //top right
 			//second triangle
 			sf::Vertex{ { quad_right_x, quad.y },			sf_col[enum_type(rect_corners::top_right)],		{ tex_right_x, texture_quad.y } }, //top right
+			sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[enum_type(rect_corners::bottom_left)],	{ texture_quad.x, tex_bottom_y } }, //bottom left
 			sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[enum_type(rect_corners::bottom_right)],	{ tex_right_x, tex_bottom_y } }, //bottom right
-			sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[enum_type(rect_corners::bottom_left)],	{ texture_quad.x, tex_bottom_y } } //bottom left
 		};
 	}
 

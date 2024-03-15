@@ -136,6 +136,8 @@ namespace hades
 		auto tex = d.find_or_create<resources::texture>(error_texture_id, {}, textures_str);
 		tex->width = 32;
 		tex->height = 32;
+		tex->actual_width = 32;
+		tex->actual_height = 32;
 		tex->repeat = true;
 
 		d.register_resource_type("textures"sv, parse_texture);
@@ -530,6 +532,13 @@ namespace hades
 				}
 
 				t->loaded = loaded;
+				if (loaded)
+				{
+					const auto act_size = t->value.getSize();
+					t->actual_width = integer_clamp_cast<texture_size_t>(act_size.x);
+					t->actual_height = integer_clamp_cast<texture_size_t>(act_size.y);
+				}
+
 				return;
 			}
 		}

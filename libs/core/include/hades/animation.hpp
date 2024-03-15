@@ -122,6 +122,18 @@ namespace hades
 		};
 	}
 
+	// quad is made of two triangles starting with the triangle that
+	// defines the left edge of the quad, so each quad has a left and right triangle
+	// for uphill:
+	//		triangle 0:
+	//				0: top-left
+	//				1: bottom-left
+	//				2: top-right
+	//		triangle 1:
+	//				0: top-right
+	//				1: bottom-left
+	//				2: bottom-right
+
 	constexpr static auto quad_vert_count = std::size_t{ 6 };
 	using poly_quad = std::array<sf::Vertex, quad_vert_count>;
 	poly_quad make_quad_colour(rect_float quad, std::array<colour, 4>) noexcept;

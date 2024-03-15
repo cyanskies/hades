@@ -1427,7 +1427,6 @@ namespace hades
 					//get the verts from the draw list that are associated with
 					//this command
 					vertex_array.clear();
-					vertex_array.reserve(cmd.ElemCount);
 					const auto v_offset = cmd.VtxOffset;
 					const auto index_begin = std::next(index_first, cmd.IdxOffset);
 					const auto index_end = std::next(index_begin, cmd.ElemCount);

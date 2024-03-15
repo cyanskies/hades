@@ -195,20 +195,32 @@ namespace hades
 
 	//TODO: make many of these noexcept and constexpr
 
-	// index type is storable in the curve system
-	tile_position from_tile_index(tile_index_t, tile_index_t map_width);
-	tile_index_t to_tile_index(tile_position, tile_index_t map_width);
-	tile_position from_tile_index(tile_index_t, const tile_map&);
-	tile_index_t to_tile_index(tile_position, const tile_map&);
+	// NOTE: tile_index_t is storable in the curve system
+	constexpr inline tile_position from_tile_index(tile_index_t i, tile_index_t w) noexcept
+	{
+		return to_2d_index<tile_position>(i, integer_clamp_cast<tile_index_t>(w));
+	}
+	constexpr inline tile_index_t to_tile_index(tile_position p, tile_index_t w) noexcept
+	{
+		return integer_clamp_cast<tile_index_t>(to_1d_index(p, w));
+	}
+	constexpr inline tile_position from_tile_index(tile_index_t i, const tile_map& t) noexcept
+	{
+		return from_tile_index(i, t.width);
+	}
+	constexpr inline tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept
+	{
+		return to_tile_index(p, t.width);
+	}
 
 	//tile to pixel conversions
 	//convert pixel mesurement to tile measurement
-	int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept; 
+	[[deprecated]] int32 to_tiles(int32 pixels, resources::tile_size_t tile_size) noexcept; 
 	//convert pixel position to tilemap position
-	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size);
-	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size);
+	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size) noexcept;
+	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size) noexcept;
 	//reverse of the two above functions
-	int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept;
+	[[deprecated]] int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept;
 	vector2_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept;
 
 	//throws tile_error, if the tile_map is malformed
@@ -224,10 +236,10 @@ namespace hades
 	raw_map to_raw_map(tile_map&&);
 	//get tile from raw_map
 	// exceptions: tile_not_found, tileset_not_found
-	resources::tile get_tile(const raw_map&, tile_id_t);
+	const resources::tile& get_tile(const raw_map&, tile_id_t);
 	//get tile from tile map
 	// exceptions: tile_not_found
-	resources::tile get_tile(const tile_map&, tile_id_t);
+	const resources::tile& get_tile(const tile_map&, tile_id_t);
 
 	//gets the tile id in a format appropriate for storing in a raw map
 	// exceptions: tileset_not_found and tile_not_found
@@ -239,7 +251,8 @@ namespace hades
 	const tag_list &get_tags(const resources::tile&);
 
 	//for getting information out of a tile map
-	resources::tile get_tile_at(const tile_map&, tile_position);
+	const resources::tile& get_tile_at(const tile_map& t, tile_index_t);
+	const resources::tile& get_tile_at(const tile_map&, tile_position);
 	const tag_list &get_tags_at(const tile_map&, tile_position);
 
 	// exceptions: tileset_not_found
@@ -262,6 +275,7 @@ namespace hades
 	//for editing a tile map
 	void place_tile(tile_map&, tile_position, tile_id_t);
 	void place_tile(tile_map&, tile_position, const resources::tile&, const resources::tile_settings&);
+	void place_tile(tile_map&, tile_index_t, const resources::tile&, const resources::tile_settings&);
 	//positions outside the map will be ignored
 	void place_tile(tile_map&, const std::vector<tile_position>&, tile_id_t);
 	void place_tile(tile_map&, const std::vector<tile_position>&, const resources::tile&, const resources::tile_settings&);

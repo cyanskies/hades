@@ -105,7 +105,6 @@ namespace hades
 
 		terrain_settings_res->background_terrain = d.make_resource_link<resources::terrain>(background_terrain_id, id::terrain_settings);
 
-
 		//register tile resources
 		register_tiles_resources(d, func);
 
@@ -115,7 +114,6 @@ namespace hades
 		d.register_resource_type(resources::get_tile_settings_name(), resources::parse_terrain_settings);
 		d.register_resource_type(terrain_settings_str, resources::parse_terrain_settings);
 		d.register_resource_type(resources::get_tilesets_name(), resources::parse_terrain);
-		//d.register_resource_type("terrain"sv, resources::parse_terrain);
 		d.register_resource_type(terrainsets_str, resources::parse_terrainset);
 	}
 
@@ -252,7 +250,7 @@ namespace hades
 			return false;
 		}
 
-		if (std::size(r.cliffs) != tile_count)
+		if (std::size(r.cliff_data) != tile_count)
 		{
 			LOGWARNING("tile information must exist for each tile");
 			return false;
@@ -265,6 +263,15 @@ namespace hades
 			}))
 			{
 				LOGWARNING("raw terrain map, if tile data for terrain layers is present, then those layers must be the same size as the tile-layer");
+				return false;
+			}
+		}
+
+		if (!std::empty(r.cliffs.tiles))
+		{
+			if(std::size(r.cliffs.tiles) != std::size(r.tile_layer.tiles) * 4)
+			{
+				LOGWARNING("raw terrain map, if tile data for cliffs is present, then this layer must be 4 times the size as the tile-layer");
 				return false;
 			}
 		}
@@ -302,6 +309,7 @@ namespace hades
 	constexpr auto terrain_height_str = "vertex-height"sv;
 	constexpr auto terrain_layers_str = "terrain-layers"sv;
 	constexpr auto level_tiles_layer_str = "tile-layer"sv;
+	constexpr auto level_cliff_layer_str = "cliff-layer"sv;
 
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
 	{
@@ -332,6 +340,10 @@ namespace hades
 
 		w.start_map(level_tiles_layer_str);
 		write_raw_map(m.tile_layer, w);
+		w.end_map();
+
+		w.start_map(level_cliff_layer_str);
+		write_raw_map(m.cliffs, w);
 		w.end_map();
 
 		assert(false && "need to write triangle and cliff data");
@@ -385,8 +397,10 @@ namespace hades
 		
 		out.heightmap = std::move(terrain_height);
 
-		// TODO: triangles
+		// TODO: cliff_data
+		//  triangles
 		//			cliffs
+		//
 
 		auto layers = std::vector<raw_map>{};
 
@@ -395,10 +409,67 @@ namespace hades
 			layers.emplace_back(read_raw_map(*l, layer_size));
 
 		out.terrain_layers = std::move(layers);
+		if(const auto tile_node = p.get_child(level_tiles_layer_str); tile_node)
+			out.tile_layer = read_raw_map(*tile_node, layer_size);
 
-		out.tile_layer = read_raw_map(p, layer_size);
+		if (const auto cliff_node = p.get_child(level_cliff_layer_str); cliff_node)
+			out.cliffs = read_raw_map(*cliff_node, layer_size * 4);
 
 		return out;
+	}
+
+	// generate tiles for the cliffs
+	static tile_map generate_cliff_layer(const terrain_map& map,
+		const resources::terrain_settings& s)
+	{
+		const auto world_size_tiles = get_size(map) * 4;
+		const auto& empty = resources::get_empty_tile(s);
+
+		if (!map.terrainset->cliff_terrain)
+			return make_map(world_size_tiles, empty, s);
+
+		const auto& cliff_terrain = *map.terrainset->cliff_terrain.get();
+		
+		auto layer = make_map(world_size_tiles, empty, s);
+		const auto size = integer_cast<tile_index_t>(std::size(map.cliff_data));
+		for (auto i = tile_index_t{}; i < size; ++i)
+		{
+			const auto tile_pos = from_tile_index(i, map);
+
+			const auto our_cliffs = get_cliff_info(i, map);
+			const auto cliff_corners = get_cliffs_corners(tile_pos, map);
+			
+			const auto index = i * 4;
+			using tile_type = terrain_map::cliff_layer_layout;
+			// top of tile
+			const auto top_trans = get_transition_type(cliff_corners);
+			if (top_trans != resources::transition_tile_type::none)
+			{
+				const auto& top_tile = resources::get_random_tile(cliff_terrain, top_trans, s);
+				place_tile(layer, index + enum_type(tile_type::surface), top_tile, s);
+			}
+
+			// diag
+			if (our_cliffs.diag)
+			{
+				const auto& tile = resources::get_random_tile(cliff_terrain, resources::transition_tile_type::all, s);
+				place_tile(layer, index + enum_type(tile_type::diag), tile, s);
+			}
+			// right
+			if (our_cliffs.right)
+			{
+				const auto& tile = resources::get_random_tile(cliff_terrain, resources::transition_tile_type::all, s);
+				place_tile(layer, index + enum_type(tile_type::right), tile, s);
+			}
+			// bottom
+			if (our_cliffs.bottom)
+			{
+				const auto& tile = resources::get_random_tile(cliff_terrain, resources::transition_tile_type::all, s);
+				place_tile(layer, index + enum_type(tile_type::bottom), tile, s);
+			}
+		}
+
+		return layer;
 	}
 
 	template<typename Raw>
@@ -412,7 +483,7 @@ namespace hades
 
 		m.terrainset = data::get<resources::terrainset>(r.terrainset);
 		m.heightmap = std::forward<Raw>(r).heightmap;
-		m.cliffs = std::forward<Raw>(r).cliffs;
+		m.cliff_data = std::forward<Raw>(r).cliff_data;
 
 		//tile layer is required to be valid
 		m.tile_layer = to_tile_map(r.tile_layer);
@@ -421,6 +492,13 @@ namespace hades
 		const auto settings = resources::get_terrain_settings();
 		assert(settings);
 
+		// cliff data is also required to be valid
+		if(empty(r.cliffs.tiles))
+			m.cliffs = generate_cliff_layer(m, *settings);
+		else
+			m.cliffs = to_tile_map(r.cliffs);
+
+		
 		const auto empty = settings->empty_terrain.get();
 		//if the terrain_vertex isn't present, then fill with empty
 		if (std::empty(r.terrain_vertex))
@@ -494,7 +572,7 @@ namespace hades
 
 		m.terrainset = t.terrainset->id;
 		m.heightmap = std::forward<Map>(t).heightmap;
-		m.cliffs = std::forward<Map>(t).cliffs;
+		m.cliff_data = std::forward<Map>(t).cliff_data;
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
@@ -516,6 +594,7 @@ namespace hades
 			});
 
 		m.tile_layer = to_raw_map(std::forward<Map>(t).tile_layer);
+		m.cliffs = to_raw_map(std::forward<Map>(t).cliffs);
 
 		for (auto&& tl : std::forward<Map>(t).terrain_layers)
 			m.terrain_layers.emplace_back(to_raw_map(std::forward<std::remove_reference_t<decltype(tl)>>(tl)));
@@ -539,7 +618,7 @@ namespace hades
 		return to_raw_terrain_map_impl(std::move(t));
 	}
 
-	terrain_map make_map(tile_position size, const resources::terrainset *terrainset,
+	terrain_map make_map(const tile_position size, const resources::terrainset *terrainset,
 		const resources::terrain *t, const resources::terrain_settings& s)
 	{
 		assert(terrainset);
@@ -550,8 +629,13 @@ namespace hades
         map.terrain_vertex.resize(integer_cast<std::size_t>((size.x + 1) * (size.y + 1)), t);
 		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
 		map.heightmap.resize(tile_count * 6, s.height_default);
-		map.cliffs.resize(tile_count, empty_cliff);
-		const auto empty_layer = make_map(size, resources::get_empty_tile(s), s);
+		map.cliff_data.resize(tile_count, empty_cliff);
+
+		const auto& empty_tile = resources::get_empty_tile(s);
+		const auto empty_layer = make_map(size, empty_tile, s);
+
+		// empty cliff layer should just be empty tiles
+		map.cliffs = make_map(size * 2, empty_tile, s);
 
 		if (t != resources::get_empty_terrain(s))
 		{
@@ -610,7 +694,7 @@ namespace hades
 		return;
 	}
 
-	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width)
+	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width) noexcept
 	{
 		const auto index = to_tile_index(tile_index, terrain_width);
 		return { index, index + 1, index + 1 + terrain_width, index + terrain_width };
@@ -648,7 +732,7 @@ namespace hades
 		return t[enum_type(c)];
 	}
 
-	resources::transition_tile_type get_transition_type(const std::array<bool, 4u> &arr)
+	resources::transition_tile_type get_transition_type(const std::array<bool, 4u> &arr) noexcept
 	{
 		auto type = uint8{};
 
@@ -731,16 +815,101 @@ namespace hades
 		};
 	}
 
-	static terrain_map::cliff_info get_cliff_info(const tile_index_t ind, const terrain_map& m) noexcept
+	std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data& tris) noexcept
 	{
-		assert(ind < size(m.cliffs));
-		return m.cliffs[ind];
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[0],
+				tris.height[1]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[3],
+				tris.height[4]
+			};
+		}
+	}
+
+	std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data& tris) noexcept
+	{
+		return {
+			tris.height[0],
+			tris.height[2]
+		};
+	}
+
+	std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[3],
+				tris.height[4]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[4],
+				tris.height[5]
+			};
+		}
+	}
+
+	std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[5],
+				tris.height[4]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[1],
+				tris.height[2]
+			};
+		}
+	}
+
+	std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[2],
+				tris.height[1],
+				tris.height[5],
+				tris.height[3]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[0],
+				tris.height[1],
+				tris.height[3],
+				tris.height[5]
+			};
+		}
+	}
+
+	terrain_map::cliff_info get_cliff_info(const tile_index_t ind, const terrain_map& m) noexcept
+	{
+		assert(ind < size(m.cliff_data));
+		return m.cliff_data[ind];
 	}
 
 	static void set_cliff_info(const tile_index_t ind, terrain_map& m, const terrain_map::cliff_info c) noexcept
 	{
-		assert(ind < size(m.cliffs));
-		m.cliffs[ind] = c;
+		assert(ind < size(m.cliff_data));
+		m.cliff_data[ind] = c;
+		m.cliffs = generate_cliff_layer(m, *resources::get_terrain_settings());
 		return;
 	}
 
@@ -756,7 +925,7 @@ namespace hades
 		return set_cliff_info(ind, m, c);
 	}
 
-	std::array<bool, 4> get_adjacent_cliffs(tile_position p, const terrain_map& m) noexcept
+	std::array<bool, 4> get_adjacent_cliffs(const tile_position p, const terrain_map& m) noexcept
 	{
 		const auto find_cliffs = [](const tile_position p, const terrain_map& m) noexcept {
 			if (p.x < 0 || p.y < 0)
@@ -765,14 +934,55 @@ namespace hades
 			return get_cliff_info(p, m);
 			};
 
-		const auto cliffs_below = get_cliff_info(p, m);
+		const auto our_cliffs = get_cliff_info(p, m);
+
+		const auto above = find_cliffs(p - tile_position{ 0, 1 }, m);
+		const auto left = find_cliffs(p - tile_position{ 1, 0 }, m);
 
 		return {
-			find_cliffs(p - tile_position{0, 1}, m).bottom, // top
-			cliffs_below.right,
-			cliffs_below.bottom,
-			find_cliffs(p - tile_position{1, 0}, m).right, // left
+			above.bottom, // top
+			our_cliffs.right,
+			our_cliffs.bottom,
+			left.right, // left
 		};
+	}
+
+	std::array<bool, 4> get_cliffs_corners(const tile_position p, const terrain_map& m) noexcept
+	{
+		// TODO: this needs to include checks against adjacent tiles, 
+		//			perhaps an extra function needs to do 
+
+		// see for_each_tile_corner
+
+		const auto find_cliffs = [](const tile_position p, const terrain_map& m) noexcept {
+			if (p.x < 0 || p.y < 0)
+				return empty_cliff;
+
+			return get_cliff_info(p, m);
+			};
+
+		const auto our_cliffs = get_cliff_info(p, m);
+		const auto above = find_cliffs(p - tile_position{ 0, 1 }, m);
+		const auto left = find_cliffs(p - tile_position{ 1, 0 }, m);
+
+		if (our_cliffs.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				above.bottom || left.right,								// top left
+				above.bottom || our_cliffs.right || our_cliffs.diag,	// top right
+				our_cliffs.bottom || our_cliffs.right,					// bottom right
+				our_cliffs.bottom || left.right || our_cliffs.diag,		// bottom left
+			};
+		}
+		else
+		{
+			return {
+				above.bottom || left.right || our_cliffs.diag,				// top left
+				above.bottom || our_cliffs.right,							// top right
+				our_cliffs.bottom || our_cliffs.right || our_cliffs.diag,	// bottom right
+				our_cliffs.bottom || left.right								// bottom left
+			};
+		}
 	}
 
 	bool is_tile_split(tile_position p, const terrain_map& m)
@@ -2029,7 +2239,9 @@ namespace hades::resources
 	static void parse_terrainset(unique_id mod, const data::parser_node &n, data::data_manager &d)
 	{
 		//terrainsets:
-		//	name: [terrains, terrains, terrains] // not a mergable sequence, this will overwrite
+		//	name: 
+		//		terrain: [terrains, terrains, terrains] // not a mergable sequence, this will overwrite
+		//		cliff: cliff-terrain-id
 
 		auto settings = d.find_or_create<terrain_settings>(resources::get_tile_settings_id(), mod, terrain_settings_str);
 
@@ -2042,12 +2254,15 @@ namespace hades::resources
 
 			auto t = d.find_or_create<terrainset>(id, mod, terrainsets_str);
 
-			auto unique_list = terrainset_n->to_sequence<resources::resource_link<terrain>>([id, &d](std::string_view s) {
+			t->terrains = data::parse_tools::get_sequence(*terrainset_n, "terrains"sv, t->terrains, [id, &d](std::string_view s) {
 				const auto i = d.get_uid(s);
 				return d.make_resource_link<terrain>(i, id);
 			});
 
-			std::swap(unique_list, t->terrains);
+			t->cliff_terrain = data::parse_tools::get_scalar(*terrainset_n, "cliff"sv, t->cliff_terrain, [id, &d](std::string_view s) {
+				const auto i = d.get_uid(s);
+				return d.make_resource_link<terrain>(i, id);
+			});
 
 			settings->terrainsets.emplace_back(d.make_resource_link<terrainset>(id, resources::get_tile_settings_id()));
 		}

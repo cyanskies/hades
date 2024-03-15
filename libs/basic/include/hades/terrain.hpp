@@ -80,6 +80,7 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const override;
 
 		std::vector<resource_link<terrain>> terrains;
+		resource_link<terrain> cliff_terrain;
 	};
 
 	struct terrain_settings_t {};
@@ -162,18 +163,21 @@ namespace hades
 				right : 2;
 		};
 
-		unique_id terrainset;
+		raw_map tile_layer;
+		raw_map cliffs;
+
 		//terrain vertex are id starting at 1
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
 		std::vector<terrain_id_t> terrain_vertex;
 		std::vector<std::uint8_t> heightmap;
-		std::vector<cliff_info> cliffs;
+		std::vector<cliff_info> cliff_data;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
 
-		raw_map tile_layer;
+		unique_id terrainset;
+
 	};
 
 	bool is_valid(const raw_terrain_map&);
@@ -213,15 +217,21 @@ namespace hades
 		static constexpr auto triangle_left = true;
 		static constexpr auto triangle_right = false;
 
+		enum class cliff_layer_layout : std::uint8_t {
+			surface, diag, right, bottom
+		};
+
 		using cliff_info = raw_terrain_map::cliff_info;
 
 		tile_map tile_layer;
+		// should be 4 times the size of tile_layer ( surface tile, diagonal tile, right tile, bottom tile )
+		tile_map cliffs;
 
 		//vertex of terrain
 		std::vector<const resources::terrain*> terrain_vertex;
 		// tile vertex of height (6 vertex per tile)
 		std::vector<std::uint8_t> heightmap;
-		std::vector<cliff_info> cliffs; // per tile
+		std::vector<cliff_info> cliff_data; // per tile
 
 		// TODO: sun_angle
 
@@ -262,7 +272,7 @@ namespace hades
 
 	// index the array using rectangle_math.hpp::hades::rect_corners
 	[[nodiscard]]
-	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width);
+	std::array<terrain_index_t, 4> to_terrain_index(tile_position tile_index , terrain_index_t map_width) noexcept;
 	
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{
@@ -287,10 +297,10 @@ namespace hades
 
 	//pass a array indicating which corners have terrain in them
 	//the array should be indexed according to rect_corners in math.hpp
-	resources::transition_tile_type get_transition_type(const std::array<bool, 4u>&);
+	resources::transition_tile_type get_transition_type(const std::array<bool, 4u>&) noexcept;
 	//Iter1 and Iter 2 must point to terrain*
 	template<typename  Iter1, typename Iter2>
-	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end);
+	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end) noexcept;
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position, const resources::terrain_settings&);
 
@@ -307,16 +317,28 @@ namespace hades
 	// returns the height in the 4 corners of the tile
 	std::array<std::uint8_t, 4> get_max_height_in_corners(tile_position tile_index, const terrain_map& map);
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data&) noexcept;
+	// returns the height at both edges of an edge (left/top first)
+	std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data&) noexcept;
+	std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data&) noexcept;
+	std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
+	std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
+	// as above, but left triangle first and right triangle second
+	std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data&) noexcept;
+
 	// NOTE: cliffs are *owned* by the tile they are attached too
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
 	// This info is used mostly for rendering
+	terrain_map::cliff_info get_cliff_info(tile_index_t, const terrain_map&) noexcept;
 	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&) noexcept;
 	void set_cliff_info_tmp(tile_position, terrain_map&, terrain_map::cliff_info); // TODO: temp remove
 
 	// return all adjacent cliffs to this tile
 	// index array using rectangle_math.hpp::hades::rect_edges
 	std::array<bool, 4> get_adjacent_cliffs(tile_position, const terrain_map&) noexcept;
+	// index array using rectangle_math.hpp::hades::rect_corners
+	std::array<bool, 4> get_cliffs_corners(const tile_position p, const terrain_map& m) noexcept;
+
 	// returns true if a cliff splits a tile accross the middle(between the two triangles that make up a tile quad)
 	bool is_tile_split(tile_position, const terrain_map& map);
 

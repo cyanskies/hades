@@ -7,6 +7,7 @@
 #include "SFML/OpenGL.hpp"
 
 #include "hades/draw_tools.hpp"
+#include "hades/logging.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/sf_color.hpp"
 #include "hades/shader.hpp"
@@ -312,16 +313,6 @@ namespace hades
 		return;
 	}
 
-	/*void mutable_terrain_map::set_chunk_size(std::size_t s) noexcept
-	{
-		const auto d = std::div(s, _settings->tile_size);
-		const auto new_size = d.quot + d.rem;
-		if (_chunk_size != new_size)
-			_chunk_size = new_size;
-
-		return;
-	}*/
-
 	void mutable_terrain_map::set_height_enabled(bool b) noexcept
 	{
 		_show_height = b;
@@ -330,14 +321,50 @@ namespace hades
 		return;
 	}
 
-	static poly_quad make_terrain_triangles(vector2_float pos, float tile_size,
-		const triangle_height_data& h, rect_float texture_quad,
-		const std::array<std::uint8_t, 4> &shadow_h = {}, 
-		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
+	static constexpr std::array<vector2_float, 6> make_triangle_positions(const vector2_float pos,
+		const float tile_size, const bool triangle_type) noexcept
 	{
 		const auto quad = rect_float{ pos, { tile_size, tile_size } };
 		const auto quad_right_x = quad.x + quad.width;
 		const auto quad_bottom_y = quad.y + quad.height;
+		
+		if (triangle_type == terrain_map::triangle_uphill)
+		{
+			// uphill triangulation, first triangle edges against the left and top sides of the quad
+			//						second triangle edges against the right and bottom sides of the quad
+			return {
+				//first triangle
+				vector2_float{ quad.x, quad.y },				//top left
+				vector2_float{ quad_right_x, quad.y },			//top right
+				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+				//second triangle
+				vector2_float{ quad_right_x, quad.y },			//top right
+				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
+				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+			};
+		}
+		else
+		{
+			// downhill triangulation, first triangle edges against the left and bottom sides of the quad
+			//						second triangle edges against the right and top sides of the quad
+			return {
+				//first triangle
+				vector2_float{ quad.x, quad.y },				//top left
+				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
+				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+				//second triangle
+				vector2_float{ quad.x, quad.y },				//top left
+				vector2_float{ quad_right_x, quad.y },			//top right
+				vector2_float{ quad_right_x, quad_bottom_y }	//bottom right
+			};
+		}
+	}
+
+	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p, float tile_size,
+		const triangle_height_data& h, rect_float texture_quad,
+		const std::array<std::uint8_t, 4> &shadow_h = {}, 
+		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
+	{
 		const auto tex_right_x = texture_quad.x + texture_quad.width;
 		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
 
@@ -358,89 +385,71 @@ namespace hades
 			//						second triangle edges against the right and bottom sides of the quad
 			return poly_quad{
 				//first triangle
-				sf::Vertex{ {quad.x, quad.y},					sf_col[0], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { quad_right_x, quad.y },			sf_col[1], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
+				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
 				//second triangle
-				sf::Vertex{ { quad_right_x, quad.y },			sf_col[3], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[4], { tex_right_x, tex_bottom_y } },		//bottom right
-				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[5], { texture_quad.x, tex_bottom_y } }	//bottom left
+				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { texture_quad.x, tex_bottom_y } }	//bottom left
 			};
 		}
 		else
 		{
-			// uphill triangulation, first triangle edges against the left and bottom sides of the quad
+			// downhill triangulation, first triangle edges against the left and bottom sides of the quad
 			//						second triangle edges against the right and top sides of the quad
 			return poly_quad{
 				//first triangle
-				sf::Vertex{ {quad.x, quad.y},					sf_col[0], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[1], { tex_right_x, tex_bottom_y } },		//bottom right
-				sf::Vertex{ { quad.x, quad_bottom_y },			sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
-				//second triangle
-				sf::Vertex{ {quad.x, quad.y},					sf_col[3], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { quad_right_x, quad.y },			sf_col[4], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { quad_right_x, quad_bottom_y },	sf_col[5], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
+				//second triangle			  ,
+				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { texture_quad.x, texture_quad.y } },//top left
+				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_right_x, texture_quad.y } },	//top right
+				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x, tex_bottom_y } },		//bottom right
 			};
 		}
 	}
 
+	static std::uint8_t get_texture_index(const resources::resource_link<resources::texture>& tex,
+		std::vector<resources::resource_link<resources::texture>>& texture_table)
+	{
+		constexpr auto max_index = std::numeric_limits<std::size_t>::max();
+		const auto table_size = size(texture_table);
+		if (std::cmp_equal(table_size, max_index))
+		{
+			log_warning("Terrain map has exceeded the per map texture limit (255)"sv);
+			return max_index;
+		}
+
+		const auto tex_size = integer_clamp_cast<std::uint8_t>(table_size);
+		for (auto j = std::uint8_t{}; j < tex_size; ++j)
+		{
+			if (texture_table[j] == tex)
+				return j;
+		}
+
+		texture_table.emplace_back(tex);
+		return tex_size;
+	}
+
 	struct map_tile
 	{
-		tile_position position;
-		//std::array<std::uint8_t, 4> height = {};
+		std::array<world_vector_t, 6> positions;
+		triangle_height_data height;
 		resources::tile_size_t left;
 		resources::tile_size_t top;
 		std::uint8_t texture = {};
 	};
 
-	static void generate_layer(mutable_terrain_map::shared_data& shared,
-		std::vector<map_tile>& tile_buffer,	const tile_map& map,
-		const rect_int terrain_area)
+	static void make_layer_regions(mutable_terrain_map::shared_data& shared, 
+		const std::vector<map_tile>& tile_buffer, const float tile_sizef)
 	{
-		tile_buffer.clear();
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-			const auto index = to_1d_index(pos, map_size_tiles.x);
-			const auto& t = map.tiles[index];
-			const auto tile = get_tile(map, t);
-			if (!tile.tex)
-				return;
-
-			// get a index for the texture
-			auto tex_index = std::numeric_limits<std::size_t>::max();
-			const auto tex_size = size(shared.texture_table);
-			for (auto j = std::size_t{}; j < tex_size; ++j)
-			{
-				if (shared.texture_table[j] == tile.tex)
-				{
-					tex_index = j;
-					break;
-				}
-			}
-
-			if (tex_index > tex_size)
-			{
-				shared.texture_table.emplace_back(tile.tex);
-				tex_index = tex_size;
-			}
-
-			// add tile to the tile list
-			tile_buffer.emplace_back(pos, tile.left, tile.top, integer_cast<std::uint8_t>(tex_index));
-			return;
-			});
-
-		if (empty(tile_buffer))
-			return;
-
-		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
-		
-		auto current_region = mutable_terrain_map::vertex_region{ 
+		auto current_region = mutable_terrain_map::vertex_region{
 			shared.quads.size(),
 			{},
-			tile_buffer.front().texture 
+			tile_buffer.front().texture
 		};
-
-		const auto tile_sizef = float_cast(shared.settings->tile_size);
 
 		for (const auto& tile : tile_buffer)
 		{
@@ -452,11 +461,6 @@ namespace hades
 				current_region.texture_index = tile.texture;
 			}
 
-			const auto [x, y] = tile.position;
-			const auto pos = vector2_float{
-				float_cast(x) * tile_sizef,
-				float_cast(y) * tile_sizef
-			};
 			const auto tex_coords = rect_float{
 				float_cast(tile.left),
 				float_cast(tile.top),
@@ -464,13 +468,198 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(tile.position, shared.map);
-			const auto quad = make_terrain_triangles(pos, tile_sizef, triangle_height, tex_coords);
+			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords);
 			shared.quads.append(quad);
 		}
 
 		current_region.end_index = shared.quads.size();
 		shared.regions.emplace_back(current_region);
+		return;
+	}
+
+	static void generate_layer(mutable_terrain_map::shared_data& shared,
+		std::vector<map_tile>& tile_buffer,	const tile_map& map,
+		const rect_int terrain_area)
+	{
+		tile_buffer.clear();
+		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+			const auto& tile = get_tile_at(map, pos);
+			if (!tile.tex)
+				return;
+
+			const auto [x, y] = pos;
+			const auto pos_f = vector2_float{
+				float_cast(x) * tile_sizef,
+				float_cast(y) * tile_sizef
+			};
+
+			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto positions = make_triangle_positions(pos_f, tile_sizef, triangle_height.triangle_type);
+			// get a index for the texture
+			const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
+			// add tile to the tile list
+			tile_buffer.emplace_back(positions, triangle_height, tile.left, tile.top, tex_index);
+			return;
+		});
+
+		if (empty(tile_buffer))
+			return;
+
+		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
+		
+		make_layer_regions(shared, tile_buffer, tile_sizef);
+		return;
+	}
+
+	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
+		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
+	{
+		tile_buffer.clear();
+		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+			const auto index = to_1d_index(pos, map_size_tiles.x);
+			const auto cliff_index = index * 4;
+			using tile_type = terrain_map::cliff_layer_layout;
+			const auto& surface_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::surface));
+			
+			const auto [x, y] = pos;
+			const auto pos_f = vector2_float{
+				float_cast(x) * tile_sizef,
+				float_cast(y) * tile_sizef
+			};
+
+			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+
+			// surface tile
+			if (surface_tile.tex)
+			{
+				const auto positions = make_triangle_positions(pos_f, tile_sizef, triangle_height.triangle_type);
+				// get a index for the texture
+				const auto tex_index = get_texture_index(surface_tile.tex, shared.texture_table);
+				// add tile to the tile list
+				tile_buffer.emplace_back(positions, triangle_height, surface_tile.left, surface_tile.top, tex_index);
+			}
+			
+			const auto cliffs = get_cliff_info(pos, shared.map);
+
+			// diag cliff
+			const auto& diag_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::diag));
+			if (diag_tile.tex && cliffs.diag)
+			{
+				/*auto pos_f = vector2_float{
+					float_cast(pos.x) * tile_sizef,
+					float_cast(pos.y) * tile_sizef
+				};*/
+
+				if (cliffs.triangle_type == terrain_map::triangle_uphill)
+				{
+
+				}
+				else
+				{
+
+				}
+			}
+
+			// right cliff
+			const auto& right_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::right));
+			if (right_tile.tex && cliffs.right && pos.x < map_size_tiles.x)
+			{
+				const auto height_top = get_height_for_right_edge(triangle_height);
+				const auto next_height = get_height_for_triangles(pos + tile_position{ 1, 0 }, shared.map);
+				const auto height_bottom = get_height_for_left_edge(next_height);
+
+				const auto tris = triangle_height_data{
+					{
+						height_top[1], height_top[0], height_bottom[1],
+						height_top[0], height_bottom[0], height_bottom[1]
+					},
+					terrain_map::triangle_uphill
+				};
+
+				const auto tex_index = get_texture_index(right_tile.tex, shared.texture_table);
+
+				// left and right points, when looking at the face of the cliff
+				// actually the top-right and bottom-right points of the surface tile
+				const auto r_pos_right = vector2_float{
+					pos_f.x + tile_sizef,
+					pos_f.y
+				};
+
+				const auto r_pos_left = vector2_float{
+					pos_f.x + tile_sizef,
+					pos_f.y + tile_sizef
+				};
+
+				const auto positions = std::array{
+					//first triangle
+					r_pos_left,		//top left
+					r_pos_right, 	//top right
+					r_pos_left,		//bottom left
+					//second triangle
+					r_pos_right,	//top right
+					r_pos_right,	//bottom right
+					r_pos_left,		//bottom left
+				};
+
+				tile_buffer.emplace_back(positions, tris, right_tile.left, right_tile.top, tex_index);
+			}
+			
+			// bottom cliff
+			const auto& bottom_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::bottom));
+			if (bottom_tile.tex && cliffs.bottom && pos.y < map_size_tiles.y)
+			{
+				const auto height_top = get_height_for_bottom_edge(triangle_height);
+				const auto next_height = get_height_for_triangles(pos + tile_position{ 0, 1 }, shared.map);
+				const auto height_bottom = get_height_for_top_edge(next_height);
+
+				const auto tris = triangle_height_data{
+					{
+						height_top[0], height_top[1], height_bottom[0],
+						height_top[1], height_bottom[1], height_bottom[0]
+					},
+					terrain_map::triangle_uphill
+				};
+
+				const auto tex_index = get_texture_index(bottom_tile.tex, shared.texture_table);
+
+				// left and right points, when looking at the face of the cliff
+				// actually the bottom-left and bottom-right points of the surface tile
+				const auto r_pos_left = vector2_float{
+					pos_f.x,
+					pos_f.y + tile_sizef
+				};
+
+				const auto r_pos_right = vector2_float{
+					pos_f.x + tile_sizef,
+					pos_f.y + tile_sizef
+				};
+
+				const auto positions = std::array{
+					//first triangle
+					r_pos_left,		//top left
+					r_pos_right, 	//top right
+					r_pos_left,		//bottom left
+					//second triangle
+					r_pos_right,	//top right
+					r_pos_right,	//bottom right
+					r_pos_left,		//bottom left
+				};
+
+				tile_buffer.emplace_back(positions, tris, bottom_tile.left, bottom_tile.top, tex_index);
+			}
+			return;
+			});
+
+		if (empty(tile_buffer))
+			return;
+
+		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
+
+		make_layer_regions(shared, tile_buffer, tile_sizef);
 		return;
 	}
 
@@ -506,7 +695,8 @@ namespace hades
 			};
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map);
-			const auto quad = make_terrain_triangles(position, tile_sizef, triangle_height, tex_coords);
+			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+			const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
 
 			shared.quads.append(quad);
 			return;
@@ -663,7 +853,7 @@ namespace hades
 			return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
 		};
 
-		const auto get_cell = [&](const tile_position& p) -> lighting_info {
+		const auto get_cell = [&](const tile_position& p) noexcept -> lighting_info {
 			if (!within_world(p, world_size))
 				return lighting_info{};
 
@@ -733,7 +923,7 @@ namespace hades
 		const auto sun_90 = sun_angle_radian == std::numbers::pi_v<float> / 2.f;
 		const auto sun_left = sun_angle_radian > std::numbers::pi_v<float> / 2.f;
 
-		const auto dir = [](bool left) noexcept {
+		const auto dir = [](bool left) constexpr noexcept {
 			if (!left)
 				return tile_position{ -1, 0 };
 			else
@@ -776,9 +966,12 @@ namespace hades
 			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map);
-			const auto quad = make_terrain_triangles(position, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
+			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
 
 			shared.quads.append(quad);
+
+			// TODO: generate lighting over cliffs too
 			return;
 		});
 
@@ -797,14 +990,15 @@ namespace hades
 		//generate tiled layer
 		if (!empty(shared.map.tile_layer.tiles))
 		{
+			generate_cliffs(shared, tile_buffer, terrain_area);
 			generate_layer(shared, tile_buffer, shared.map.tile_layer, terrain_area);
-			// generate cliffs quad_layer_count * (s + 1)
+
 			shared.start_lighting = shared.quads.size();
-			if(shadows)
+			if (shadows)
 				generate_lighting(shared, terrain_area);
 
 			shared.start_grid = shared.quads.size();
-			if(grid)
+			if (grid)
 				generate_grid(shared, terrain_area);
 		}
 
@@ -850,9 +1044,6 @@ namespace hades
 			s.texture = &resources::texture_functions::get_sf_texture(_shared.texture_table[region.texture_index].get());
 			_shared.quads.draw(t, region.start_index, region.end_index - region.start_index, s);
 		}
-
-		//cliffs
-		//TODO:
 
 		//shadows
 		if (_show_shadows)

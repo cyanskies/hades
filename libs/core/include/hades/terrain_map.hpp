@@ -127,7 +127,7 @@ namespace hades
 	public:
 		struct vertex_region
 		{
-			// redo these with smaller sizes
+			// TODO: redo these with smaller sizes
 			std::size_t start_index;
 			std::size_t end_index;
 			std::uint8_t texture_index;

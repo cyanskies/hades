@@ -3,7 +3,7 @@
 namespace hades
 {
 	template<typename  Iter1, typename Iter2>
-	resources::transition_tile_type get_transition_type(tile_corners corners, Iter1 begin, Iter2 end)
+	resources::transition_tile_type get_transition_type(tile_corners corners, Iter1 begin, Iter2 end) noexcept
 	{
 		//transitions are selected between any terrain and the empty terrain
 		const auto has_terrain = [begin, end](const resources::terrain *t)->bool {

@@ -522,26 +522,6 @@ namespace hades
 		return map;
 	}
 
-	tile_position from_tile_index(tile_index_t i, tile_index_t w)
-	{
-		return to_2d_index<tile_position>(i, integer_cast<tile_index_t>(w));
-	}
-
-	tile_index_t to_tile_index(tile_position p, tile_index_t w)
-	{
-		return integer_cast<tile_index_t>(to_1d_index(p, w));
-	}
-
-	tile_position from_tile_index(tile_index_t i, const tile_map& t)
-	{
-		return from_tile_index(i, t.width);
-	}
-
-	tile_index_t to_tile_index(tile_position p, const tile_map& t)
-	{
-		return to_tile_index(p, t.width);
-	}
-
 	template<typename T>
 	static tile_position get_size_impl(const T &t)
 	{
@@ -561,13 +541,13 @@ namespace hades
 		return pixels / tile_size;
 	}
 
-	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size)
+	tile_position to_tiles(vector2_int pixels, resources::tile_size_t tile_size) noexcept
 	{
 		assert(tile_size != 0);
-		return pixels / integer_cast<vector2_int::value_type>(tile_size);
+		return pixels / integer_clamp_cast<vector2_int::value_type>(tile_size);
 	}
 
-	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size)
+	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size) noexcept
 	{
 		return to_tiles(static_cast<vector2_int>(real_pixels), tile_size);
 	}
@@ -732,7 +712,7 @@ namespace hades
 		return nullptr;
 	}
 
-	resources::tile get_tile(const raw_map &r, tile_id_t t)
+	const resources::tile& get_tile(const raw_map &r, tile_id_t t)
 	{
 		try
 		{
@@ -756,7 +736,7 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this raw_map" };
 	}
 
-	resources::tile get_tile(const tile_map &m, tile_id_t t)
+	const resources::tile& get_tile(const tile_map &m, tile_id_t t)
 	{
 		auto start = std::size_t{};
 
@@ -868,11 +848,15 @@ namespace hades
 		return t.source->tags;
 	}
 
-	resources::tile get_tile_at(const tile_map &t, tile_position p)
+	const resources::tile& get_tile_at(const tile_map& t, const tile_index_t index)
 	{
-		const auto index = integer_cast<std::size_t>(to_tile_index(p, t));
-		assert(index < size(t.tiles));
+		assert(index < size(t.tiles) && index >= 0);
 		return get_tile(t, t.tiles[index]);
+	}
+
+	const resources::tile& get_tile_at(const tile_map &t, const tile_position p)
+	{
+		return get_tile_at(t, to_tile_index(p, t));
 	}
 
 	const tag_list &get_tags_at(const tile_map &t, tile_position p)
@@ -953,26 +937,39 @@ namespace hades
 		resize_map(t, size, offset, empty_tile, s);
 	}
 
+	static void place_tile(tile_map& m, tile_index_t i, tile_id_t t) noexcept
+	{
+		assert(i >= 0);
+		if (i >= m.tiles.size())
+			return;
+
+		m.tiles[i] = t;
+	}
+
 	void place_tile(tile_map &m, tile_position p, tile_id_t t)
 	{
 		if (p.x < 0 ||
-			p.y < 0)
+			p.y < 0 ||
+			p.x >= m.width)
 			return;
 
 		//TODO: check that tile_id is within the maps id range(valid tile)
 
 		//ignore placements outside of the map
-        const auto index = integer_cast<std::size_t>(to_1d_index(p, m.width));
-        if (p.x >= m.width || index >= m.tiles.size())
-			return;
-
-		m.tiles[index] = t;
+        const auto index = to_1d_index(p, m.width);
+		place_tile(m, index, t);
 	}
 
 	void place_tile(tile_map &m, tile_position p, const resources::tile &t, const resources::tile_settings& s)
 	{
 		const auto id = make_tile_id(m, t, s);
 		place_tile(m, p, id);
+	}
+
+	void place_tile(tile_map& m, tile_index_t i, const resources::tile& t, const resources::tile_settings& s)
+	{
+		const auto id = make_tile_id(m, t, s);
+		place_tile(m, i, id);
 	}
 
 	void place_tile(tile_map &m, const std::vector<tile_position> &p, tile_id_t t)

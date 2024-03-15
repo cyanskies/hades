@@ -189,6 +189,8 @@ namespace hades
 
 	struct terrain_map
 	{
+		// TODO: this is clockwise triangle ordering (opengl uses counter clockwise by convention)
+		//			we should change this in case we ever encounter face culling issues
 		// triangle types:
 		// quad is made of two triangles starting with the triangle that
 		// defines the left edge of the quad, so each quad has a left and right triangle

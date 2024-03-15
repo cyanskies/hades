@@ -549,18 +549,75 @@ namespace hades
 			const auto& diag_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::diag));
 			if (diag_tile.tex && cliffs.diag)
 			{
-				/*auto pos_f = vector2_float{
-					float_cast(pos.x) * tile_sizef,
-					float_cast(pos.y) * tile_sizef
-				};*/
+				const auto h = get_height_for_diag_edge(triangle_height);
+
+				const auto left_low = std::midpoint(h[0], h[1]) < std::midpoint(h[2], h[3]);
+
+				const auto low = {
+					std::min(h[0], h[2]), std::min(h[1], h[3])
+				};
+
+				const auto high = {
+					std::max(h[0], h[2]), std::max(h[1], h[3])
+				};
+
+				auto r_pos_right = vector2_float{};
+				auto r_pos_left = vector2_float{};
 
 				if (cliffs.triangle_type == terrain_map::triangle_uphill)
 				{
+					r_pos_right = vector2_float{
+						pos_f.x + tile_sizef,
+						pos_f.y
+					};
 
+					r_pos_left = vector2_float{
+						pos_f.x,
+						pos_f.y + tile_sizef
+					};
 				}
 				else
 				{
+					r_pos_right = vector2_float{
+						pos_f.x + tile_sizef,
+						pos_f.y + tile_sizef
+					};
 
+					r_pos_left = pos_f;
+				}
+
+				auto positions = std::array<vector2_float, 6>{};
+				// if left tri is low and downhill
+				// or left tri is high and uphill
+				if (left_low && cliffs.triangle_type == terrain_map::triangle_downhill ||
+					!left_low && cliffs.triangle_type == terrain_map::triangle_uphill)
+				{
+					positions = {
+						//first triangle
+						r_pos_left,		//top left
+						r_pos_right, 	//top right
+						r_pos_left,		//bottom left
+						//second triangle
+						r_pos_right,	//top right
+						r_pos_right,	//bottom right
+						r_pos_left,		//bottom left
+					};
+				}
+				else
+				{
+					// reverse winding when tile is facing north
+					assert(left_low && cliffs.triangle_type == terrain_map::triangle_uphill ||
+						!left_low && cliffs.triangle_type == terrain_map::triangle_downhill);
+					positions = {
+						//first triangle
+						r_pos_right,	//top left
+						r_pos_left, 	//top right
+						r_pos_right,	//bottom left
+						//second triangle
+						r_pos_left,		//top right
+						r_pos_left,		//bottom right
+						r_pos_right,	//bottom left
+					};
 				}
 			}
 
@@ -568,6 +625,7 @@ namespace hades
 			const auto& right_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::right));
 			if (right_tile.tex && cliffs.right && pos.x < map_size_tiles.x)
 			{
+				// TODO: reverse winding if cliff is left facing
 				const auto height_top = get_height_for_right_edge(triangle_height);
 				const auto next_height = get_height_for_triangles(pos + tile_position{ 1, 0 }, shared.map);
 				const auto height_bottom = get_height_for_left_edge(next_height);
@@ -612,6 +670,7 @@ namespace hades
 			const auto& bottom_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::bottom));
 			if (bottom_tile.tex && cliffs.bottom && pos.y < map_size_tiles.y)
 			{
+				// TODO: reverse winding if cliff it top facing
 				const auto height_top = get_height_for_bottom_edge(triangle_height);
 				const auto next_height = get_height_for_triangles(pos + tile_position{ 0, 1 }, shared.map);
 				const auto height_bottom = get_height_for_top_edge(next_height);
@@ -662,12 +721,6 @@ namespace hades
 		make_layer_regions(shared, tile_buffer, tile_sizef);
 		return;
 	}
-
-	// layer constants
-	//constexpr auto grid_layer = 0;
-	//constexpr auto cliff_layer = 2; // also the world edge skirt if we add one(might just add enough of a margin to hide the world edge)
-	//constexpr auto tile_layer = 1;
-	//constexpr auto protected_layers = std::max({ grid_layer, tile_layer, cliff_layer });
 
 	static void generate_grid(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)

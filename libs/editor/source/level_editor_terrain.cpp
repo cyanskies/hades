@@ -52,12 +52,12 @@ namespace hades
 
 				auto block_switch = cliff_info.diag;
 				if (cliff_info.triangle_type == terrain_map::triangle_uphill &&
-					(h.height[1] != h.height[3] ||
-						h.height[2] != h.height[5]))
+					(h.height[2] != h.height[3] ||
+						h.height[1] != h.height[4]))
 					block_switch = true;
 				else if (cliff_info.triangle_type == terrain_map::triangle_downhill &&
 					(h.height[0] != h.height[3] ||
-						h.height[1] != h.height[5]))
+						h.height[2] != h.height[4]))
 					block_switch = true;
 				
 				if (block_switch)

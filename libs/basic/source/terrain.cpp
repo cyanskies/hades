@@ -821,23 +821,23 @@ namespace hades
 		{
 			return {
 				tris.height[0],
-				tris.height[1]
+				tris.height[2]
 			};
 		}
 		else
 		{
 			return {
 				tris.height[3],
-				tris.height[4]
+				tris.height[5]
 			};
 		}
 	}
 
 	std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data& tris) noexcept
-	{
+	{	
 		return {
 			tris.height[0],
-			tris.height[2]
+			tris.height[1]
 		};
 	}
 
@@ -847,14 +847,14 @@ namespace hades
 		{
 			return {
 				tris.height[3],
-				tris.height[4]
+				tris.height[5]
 			};
 		}
 		else
 		{
 			return {
-				tris.height[4],
-				tris.height[5]
+				tris.height[5],
+				tris.height[4]
 			};
 		}
 	}
@@ -864,8 +864,8 @@ namespace hades
 		if (tris.triangle_type == terrain_map::triangle_uphill)
 		{
 			return {
-				tris.height[5],
-				tris.height[4]
+				tris.height[4],
+				tris.height[5]
 			};
 		}
 		else
@@ -882,9 +882,9 @@ namespace hades
 		if (tris.triangle_type == terrain_map::triangle_uphill)
 		{
 			return {
-				tris.height[2],
 				tris.height[1],
-				tris.height[5],
+				tris.height[2],
+				tris.height[4],
 				tris.height[3]
 			};
 		}
@@ -892,9 +892,9 @@ namespace hades
 		{
 			return {
 				tris.height[0],
-				tris.height[1],
+				tris.height[2],
 				tris.height[3],
-				tris.height[5]
+				tris.height[4]
 			};
 		}
 	}
@@ -1256,18 +1256,20 @@ namespace hades
 		if (c.triangle_type == terrain_map::triangle_uphill)
 		{
 			assert(h[0] == h[3] &&
-				h[1] == h[5]);
-			h[3] = h[4];
-			std::swap(h[1], h[4]);
-			h[5] = h[2];
+				h[2] == h[4]);
+
+			h[4] = h[1];
+			h[3] = h[5];
+			std::swap(h[5], h[2]);
 		}
 		else
 		{
-			assert(h[1] == h[3] &&
-				h[2] == h[5]);
-			h[5] = h[4];
-			std::swap(h[1], h[4]);
+			assert(h[2] == h[3] &&
+				h[1] == h[4]);
+
 			h[3] = h[0];
+			h[4] = h[5];
+			std::swap(h[5], h[2]);
 		}
 		
 		set_cliff_info(index, m, c);
@@ -1411,135 +1413,6 @@ namespace hades
 
 	namespace
 	{
-		// TODO: the matrix projection functions no longer need to be here, but
-		//		may be useful in the future, they should be moved to rectangle_math or just math
-		//		a counterpart for normalise_quad_point should also be added.
-
-		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
-		// Warper.cs
-		constexpr std::array<float, 16> compute_dest_mat(
-			const float x0,
-			const float y0,
-			const float x1,
-			const float y1,
-			const float x2,
-			const float y2,
-			const float x3,
-			const float y3) noexcept
-		{
-			const float dx1 = x1 - x2, dy1 = y1 - y2;
-			const float dx2 = x3 - x2, dy2 = y3 - y2;
-			const float sx = x0 - x1 + x2 - x3;
-			const float sy = y0 - y1 + y2 - y3;
-			const float g = (sx * dy2 - dx2 * sy) / (dx1 * dy2 - dx2 * dy1);
-			const float h = (dx1 * sy - sx * dy1) / (dx1 * dy2 - dx2 * dy1);
-			const float a = x1 - x0 + g * x1;
-			const float b = x3 - x0 + h * x3;
-			const float c = x0;
-			const float d = y1 - y0 + g * y1;
-			const float e = y3 - y0 + h * y3;
-			const float f = y0;
-
-			return std::array<float, 16>{
-				a, d, 0, g,
-				b, e, 0, h,
-				0, 0, 1, 0,
-				c, f, 0, 1
-			};
-		}
-
-		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
-		// Warper.cs
-		constexpr std::array<float, 16> compute_src_mat(
-			const float x0,
-			const float y0,
-			const float x1,
-			const float y1,
-			const float x2,
-			const float y2,
-			const float x3,
-			const float y3) noexcept
-		{
-			auto mat = compute_dest_mat(x0, y0, x1, y1, x2, y2, x3, y3);
-
-			// invert through adjoint
-			const float a = mat[0], d = mat[1],	/* ignore */		g = mat[3];
-			const float b = mat[4], e = mat[5],	/* 3rd col*/		h = mat[7];
-			/* ignore 3rd row */
-			const float c = mat[12], f = mat[13];
-
-			const float A = e - f * h;
-			const float B = c * h - b;
-			const float C = b * f - c * e;
-			const float D = f * g - d;
-			const float E = a - c * g;
-			const float F = c * d - a * f;
-			const float G = d * h - e * g;
-			const float H = b * g - a * h;
-			const float I = a * e - b * d;
-
-			const float idet = 1.0f / (a * A + b * D + c * G);
-
-			mat[0] = A * idet;	mat[1] = D * idet;	mat[2] = 0;		mat[3] = G * idet;
-			mat[4] = B * idet;	mat[5] = E * idet;	mat[6] = 0;		mat[7] = H * idet;
-			mat[8] = 0;			mat[9] = 0;			mat[10] = 1;	mat[11] = 0;
-			mat[12] = C * idet;	mat[13] = F * idet;	mat[14] = 0;	mat[15] = I * idet;
-
-			return mat;
-		}
-
-		// src: RayLib::RayMath::MatrixMultiply
-		constexpr std::array<float, 16> matrix_multiply(const std::array<float, 16>& left, const std::array<float, 16>& right) noexcept
-		{
-			return std::array<float, 16>{
-				left[0]	* right[0] + left[1] * right[4] + left[2] * right[8] + left[3] * right[12],
-				left[0] * right[1] + left[1] * right[5] + left[2] * right[9] + left[3] * right[13],
-				left[0] * right[2] + left[1] * right[6] + left[2] * right[10] + left[3] * right[14],
-				left[0] * right[3] + left[1] * right[7] + left[2] * right[11] + left[3] * right[15],
-				left[4] * right[0] + left[5] * right[4] + left[6] * right[8] + left[7] * right[12],
-				left[4] * right[1] + left[5] * right[5] + left[6] * right[9] + left[7] * right[13],
-				left[4] * right[2] + left[5] * right[6] + left[6] * right[10] + left[7] * right[14],
-				left[4] * right[3] + left[5] * right[7] + left[6] * right[11] + left[7] * right[15],
-				left[8] * right[0] + left[9] * right[4] + left[10] * right[8] + left[11] * right[12],
-				left[8] * right[1] + left[9] * right[5] + left[10] * right[9] + left[11] * right[13],
-				left[8] * right[2] + left[9] * right[6] + left[10] * right[10] + left[11] * right[14],
-				left[8] * right[3] + left[9] * right[7] + left[10] * right[11] + left[11] * right[15],
-				left[12] * right[0] + left[13] * right[4] + left[14] * right[8] + left[15] * right[12],
-				left[12] * right[1] + left[13] * right[5] + left[14] * right[9] + left[15] * right[13],
-				left[12] * right[2] + left[13] * right[6] + left[14] * right[10] + left[15] * right[14],
-				left[12] * right[3] + left[13] * right[7] + left[14] * right[11] + left[15] * right[15]
-			};
-		}
-
-		// matrix projection functions based on: https://code.google.com/archive/p/wiimotetuio/
-		// Warper.cs
-		constexpr vector2_float normalise_quad_point(const vector2_float p, const std::array<vector2_float, 4> quad) noexcept
-		{
-			const auto src_mat = compute_src_mat(
-				quad[0].x, quad[0].y,
-				quad[1].x, quad[1].y,
-				quad[2].x, quad[2].y,
-				quad[3].x, quad[3].y);
-			constexpr auto dest_mat = compute_dest_mat(
-				0.f, 0.f,
-				1.f, 0.f,
-				1.f, 1.f,
-				0.f, 1.f);
-
-			const auto mat = matrix_multiply(src_mat, dest_mat);
-
-			const auto& srcX = p.x;
-			const auto& srcY = p.y;
-
-			constexpr float z = 0; // maybe unused
-			const auto result_0 = (srcX * mat[0] + srcY * mat[4] + z * mat[8] + 1 * mat[12]);
-			const auto result_1 = (srcX * mat[1] + srcY * mat[5] + z * mat[9] + 1 * mat[13]);
-			// auto result_2 = (srcX * mat[2] + srcY * mat[6] + z * mat[10] + 1 * mat[14]); // maybe unused
-			const auto result_3 = (srcX * mat[3] + srcY * mat[7] + z * mat[11] + 1 * mat[15]);
-			return { result_0 / result_3,
-					result_1 / result_3 };
-		}
-
 		// TODO: might be time to add a triangle_math header
 		// 
 		// Based on PointInTriangle from: https://stackoverflow.com/a/20861130
@@ -1616,12 +1489,11 @@ namespace hades
 		}
 
 		constexpr std::array<vector2_float, 3> add_point_height(std::array<vector2_float, 3> pos,
-			const vector2_float height_dir, std::size_t height_index_offset,
-			const triangle_height_data& heightmap) noexcept
+			const vector2_float height_dir, const std::span<const std::uint8_t, 3> heightmap) noexcept
 		{
-			pos[0] += height_dir * float_cast(heightmap.height[height_index_offset]);
-			pos[1] += height_dir * float_cast(heightmap.height[height_index_offset + 1]);
-			pos[2] += height_dir * float_cast(heightmap.height[height_index_offset + 2]);
+			pos[0] += height_dir * float_cast(heightmap[0]);
+			pos[1] += height_dir * float_cast(heightmap[1]);
+			pos[2] += height_dir * float_cast(heightmap[2]);
 			return pos;
 		}
 
@@ -1638,31 +1510,30 @@ namespace hades
 			if (heightmap.triangle_type == terrain_map::triangle_uphill)
 			{
 				out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
-					make_quad_point(pos, tile_sizef, rect_corners::top_right),
-					make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
-				out.flat_right_tri = { out.flat_left_tri[1],
-					make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
-					out.flat_left_tri[2] };
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left),
+					make_quad_point(pos, tile_sizef, rect_corners::top_right) };
+				out.flat_right_tri = { out.flat_left_tri[2], out.flat_left_tri[1],
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right) };
 			}
 			else
 			{
 				out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
-					make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
-					make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
-				out.flat_right_tri = { out.flat_left_tri[1],
-					make_quad_point(pos, tile_sizef, rect_corners::top_right),
-					out.flat_left_tri[2] };
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right) };
+				out.flat_right_tri = { out.flat_left_tri[0], out.flat_left_tri[2],
+					make_quad_point(pos, tile_sizef, rect_corners::top_right) };
 			}
 
+			const auto begin = std::begin(heightmap.height);
 			out.left_tri = add_point_height(out.flat_left_tri, height_dir,
-				0, heightmap);
+				std::span<const std::uint8_t, 3>{ begin, 3u });
 			out.right_tri = add_point_height(out.flat_right_tri, height_dir,
-				3, heightmap);
+				std::span<const std::uint8_t, 3>{ std::next(begin, 3), 3u });
 			return out;
 		}
 
 		// returns true if left is lower than right
-		bool lowest_tri(const std::array<vector2_float, 3>& left,
+		static bool lowest_tri(const std::array<vector2_float, 3>& left,
 			const std::array<vector2_float, 3>& right, float rot) noexcept
 		{
 			auto lowest = std::numeric_limits<float>::max();

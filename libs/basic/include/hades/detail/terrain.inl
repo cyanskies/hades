@@ -40,10 +40,12 @@ namespace hades
 	constexpr rect_corners triangle_index_to_quad_index(const std::uint8_t i, const bool tri_type) noexcept
 	{
 		constexpr auto uphill = std::array<std::uint8_t, 6>{
-			0, 1, 3, 1, 2, 3
+			/*0, 1, 2, 3, 4, 5*/
+			  0, 3, 1, 1, 3, 2
 		};
 		constexpr auto downhill = std::array<std::uint8_t, 6>{
-			0, 2, 3, 0, 1, 2
+			/*0, 1, 2, 3, 4, 5*/
+			  0, 3, 2, 0, 2, 1
 		};
 
 		assert(i < 6);
@@ -58,15 +60,15 @@ namespace hades
 	{
 		constexpr auto uphill = std::array<std::pair<std::uint8_t, std::uint8_t>, 4>{
 			std::pair{ std::uint8_t{ 0 }, bad_triangle_index },	// top-left
-			std::pair{ std::uint8_t{ 1 }, std::uint8_t{ 3 } },	// top-right
-			std::pair{ std::uint8_t{ 4 }, bad_triangle_index },	// bottom-right
-			std::pair{ std::uint8_t{ 2 }, std::uint8_t{ 5} },	// bottom-left
+			std::pair{ std::uint8_t{ 2 }, std::uint8_t{ 3 } },	// top-right
+			std::pair{ std::uint8_t{ 5 }, bad_triangle_index },	// bottom-right
+			std::pair{ std::uint8_t{ 1 }, std::uint8_t{ 4 } },	// bottom-left
 		};
 		constexpr auto downhill = std::array<std::pair<std::uint8_t, std::uint8_t>, 4>{
 			std::pair{ std::uint8_t{ 0 }, std::uint8_t{ 3 } },	// top-left
-			std::pair{ std::uint8_t{ 4 }, bad_triangle_index },	// top-right
-			std::pair{ std::uint8_t{ 1 }, std::uint8_t{ 5 } },	// bottom-right
-			std::pair{ std::uint8_t{ 2 }, bad_triangle_index },	// bottom-left
+			std::pair{ std::uint8_t{ 5 }, bad_triangle_index },	// top-right
+			std::pair{ std::uint8_t{ 2 }, std::uint8_t{ 4 } },	// bottom-right
+			std::pair{ std::uint8_t{ 1 }, bad_triangle_index },	// bottom-left
 		};
 
 		assert(c < rect_corners::last);

@@ -86,7 +86,7 @@ void main()
 	vec3 normal = normalize(denormal);
 
 	float cos_angle = clamp(dot(normal, sun_direction), 0.f, 1.f);
-	vec4 light_col = vec4(mix(vec3(0.f, 0.f, 0.f), sun_colour.rgb, cos_angle), sun_colour.a);
+	vec4 light_col = vec4(mix(vec3(0.f, 0.f, 0.f), sun_colour.rgb, 1.f - cos_angle), sun_colour.a);
 	vec4 shadow_col = mix(vec4(0.f, 0.f, 0.f, 0.f) , shadow_col, float(frag_height < shadow_height) * 1.f);
 	// frag colour
 	gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));
@@ -335,12 +335,12 @@ namespace hades
 			return {
 				//first triangle
 				vector2_float{ quad.x, quad.y },				//top left
-				vector2_float{ quad_right_x, quad.y },			//top right
 				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+				vector2_float{ quad_right_x, quad.y },			//top right
 				//second triangle
 				vector2_float{ quad_right_x, quad.y },			//top right
-				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
 				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
 			};
 		}
 		else
@@ -350,21 +350,22 @@ namespace hades
 			return {
 				//first triangle
 				vector2_float{ quad.x, quad.y },				//top left
-				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
 				vector2_float{ quad.x, quad_bottom_y },			//bottom left
+				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
 				//second triangle
 				vector2_float{ quad.x, quad.y },				//top left
+				vector2_float{ quad_right_x, quad_bottom_y },	//bottom right
 				vector2_float{ quad_right_x, quad.y },			//top right
-				vector2_float{ quad_right_x, quad_bottom_y }	//bottom right
 			};
 		}
 	}
 
 	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p, float tile_size,
-		const triangle_height_data& h, rect_float texture_quad,
+		const triangle_height_data& h, rect_float texture_quad, bool invert_tex = false,
 		const std::array<std::uint8_t, 4> &shadow_h = {}, 
 		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
 	{
+		const auto& tex_left_x = texture_quad.x;
 		const auto tex_right_x = texture_quad.x + texture_quad.width;
 		const auto tex_bottom_y = texture_quad.y + texture_quad.height;
 
@@ -381,18 +382,36 @@ namespace hades
 		
 		if (h.triangle_type == terrain_map::triangle_uphill)
 		{
-			// uphill triangulation, first triangle edges against the left and top sides of the quad
-			//						second triangle edges against the right and bottom sides of the quad
-			return poly_quad{
-				//first triangle
-				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
-				//second triangle
-				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_right_x, tex_bottom_y } },		//bottom right
-				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { texture_quad.x, tex_bottom_y } }	//bottom left
-			};
+			if (!invert_tex)
+			{
+				// uphill triangulation, first triangle edges against the left and top sides of the quad
+				//						second triangle edges against the right and bottom sides of the quad
+				return poly_quad{
+					//first triangle
+					sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { tex_left_x,	texture_quad.y } },	//top left
+					sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_left_x,	tex_bottom_y } },	//bottom left
+					sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,	texture_quad.y } },	//top right
+					//second triangle
+					sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_right_x,	texture_quad.y } },	//top right
+					sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_left_x,	tex_bottom_y } },	//bottom left		
+					sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,	tex_bottom_y } },	//bottom right
+				};
+			}
+			else
+			{
+				// inverted tex coords for reverse cliff faces
+				// NOTE: The left triangle has swapped, and is now the previous right triangle
+				return poly_quad{
+					//first triangle
+					sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { tex_right_x,	texture_quad.y } },	//top left
+					sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_left_x,	texture_quad.y } },	//top right
+					sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,	tex_bottom_y } },	//bottom left
+					//second triangle
+					sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_left_x,	texture_quad.y } },	//top right
+					sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_left_x,	tex_bottom_y } },	//bottom right		
+					sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,	tex_bottom_y } },	//bottom left
+				};
+			}
 		}
 		else
 		{
@@ -400,13 +419,13 @@ namespace hades
 			//						second triangle edges against the right and top sides of the quad
 			return poly_quad{
 				//first triangle
-				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_right_x, tex_bottom_y } },		//bottom right
-				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { texture_quad.x, tex_bottom_y } },	//bottom left
+				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { texture_quad.x,	texture_quad.y } },	//top left
+				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { texture_quad.x,	tex_bottom_y } },	//bottom left	
+				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,		tex_bottom_y } },	//bottom right
 				//second triangle			  ,
-				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { texture_quad.x, texture_quad.y } },//top left
-				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_right_x, texture_quad.y } },	//top right
-				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x, tex_bottom_y } },		//bottom right
+				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { texture_quad.x,	texture_quad.y } },	//top left
+				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_right_x,		tex_bottom_y } },	//bottom right
+				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,		texture_quad.y } },	//top right
 			};
 		}
 	}
@@ -414,7 +433,7 @@ namespace hades
 	static std::uint8_t get_texture_index(const resources::resource_link<resources::texture>& tex,
 		std::vector<resources::resource_link<resources::texture>>& texture_table)
 	{
-		constexpr auto max_index = std::numeric_limits<std::size_t>::max();
+		constexpr auto max_index = std::numeric_limits<std::uint8_t>::max();
 		const auto table_size = size(texture_table);
 		if (std::cmp_equal(table_size, max_index))
 		{
@@ -440,6 +459,7 @@ namespace hades
 		resources::tile_size_t left;
 		resources::tile_size_t top;
 		std::uint8_t texture = {};
+		bool invert_texture = false;
 	};
 
 	static void make_layer_regions(mutable_terrain_map::shared_data& shared, 
@@ -468,7 +488,7 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords);
+			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords, tile.invert_texture);
 			shared.quads.append(quad);
 		}
 
@@ -513,6 +533,27 @@ namespace hades
 		return;
 	}
 
+	// swap a tile facing, so it doesnt get culled
+	// cliffs are all uphill be default, so this makes them into reversed
+	// downhill quads
+	static constexpr void swap_cliff_winding(map_tile& t) noexcept
+	{
+		assert(t.height.triangle_type == terrain_map::triangle_uphill);
+
+		constexpr auto swap_winding = []<typename T>(std::array<T, 6>& a) noexcept {
+			std::swap(a[1], a[2]);
+			std::swap(a[4], a[5]);
+			return;
+		};
+
+		swap_winding(t.height.height);
+		swap_winding(t.positions);
+
+		t.invert_texture = !t.invert_texture;
+
+		return;
+	}
+
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
@@ -549,15 +590,15 @@ namespace hades
 			const auto& diag_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::diag));
 			if (diag_tile.tex && cliffs.diag)
 			{
+				const auto tex_index = get_texture_index(diag_tile.tex, shared.texture_table);
 				const auto h = get_height_for_diag_edge(triangle_height);
-
 				const auto left_low = std::midpoint(h[0], h[1]) < std::midpoint(h[2], h[3]);
 
-				const auto low = {
+				const auto low = std::array{
 					std::min(h[0], h[2]), std::min(h[1], h[3])
 				};
 
-				const auto high = {
+				const auto high = std::array{
 					std::max(h[0], h[2]), std::max(h[1], h[3])
 				};
 
@@ -586,39 +627,40 @@ namespace hades
 					r_pos_left = pos_f;
 				}
 
-				auto positions = std::array<vector2_float, 6>{};
-				// if left tri is low and downhill
-				// or left tri is high and uphill
-				if (left_low && cliffs.triangle_type == terrain_map::triangle_downhill ||
-					!left_low && cliffs.triangle_type == terrain_map::triangle_uphill)
-				{
-					positions = {
-						//first triangle
-						r_pos_left,		//top left
-						r_pos_right, 	//top right
-						r_pos_left,		//bottom left
-						//second triangle
-						r_pos_right,	//top right
-						r_pos_right,	//bottom right
-						r_pos_left,		//bottom left
-					};
-				}
-				else
-				{
-					// reverse winding when tile is facing north
-					assert(left_low && cliffs.triangle_type == terrain_map::triangle_uphill ||
-						!left_low && cliffs.triangle_type == terrain_map::triangle_downhill);
-					positions = {
-						//first triangle
-						r_pos_right,	//top left
-						r_pos_left, 	//top right
-						r_pos_right,	//bottom left
-						//second triangle
-						r_pos_left,		//top right
-						r_pos_left,		//bottom right
-						r_pos_right,	//bottom left
-					};
-				}
+				const auto reverse_winding = !(left_low && cliffs.triangle_type == terrain_map::triangle_downhill ||
+					!left_low && cliffs.triangle_type == terrain_map::triangle_uphill);
+
+				const auto positions = std::array{
+					//first triangle
+					r_pos_left,		//top left
+					r_pos_left,		//bottom left
+					r_pos_right, 	//top right
+					//second triangle
+					r_pos_right,	//top right
+					r_pos_left,		//bottom left
+					r_pos_right,	//bottom right
+				};
+
+				const auto tris = triangle_height_data{
+					{
+						high[0], low[0], high[1],
+						high[1], low[0], low[1]
+					},
+					terrain_map::triangle_uphill
+				};
+
+				auto tile = map_tile{
+					positions,
+					tris,
+					diag_tile.left,
+					diag_tile.top,
+					tex_index
+				};
+
+				if (reverse_winding)
+					swap_cliff_winding(tile);
+
+				tile_buffer.emplace_back(tile);
 			}
 
 			// right cliff
@@ -632,8 +674,8 @@ namespace hades
 
 				const auto tris = triangle_height_data{
 					{
-						height_top[1], height_top[0], height_bottom[1],
-						height_top[0], height_bottom[0], height_bottom[1]
+						height_top[1], height_bottom[1], height_top[0],
+						height_top[0], height_bottom[1], height_bottom[0]
 					},
 					terrain_map::triangle_uphill
 				};
@@ -655,12 +697,12 @@ namespace hades
 				const auto positions = std::array{
 					//first triangle
 					r_pos_left,		//top left
-					r_pos_right, 	//top right
 					r_pos_left,		//bottom left
+					r_pos_right, 	//top right
 					//second triangle
 					r_pos_right,	//top right
-					r_pos_right,	//bottom right
 					r_pos_left,		//bottom left
+					r_pos_right,	//bottom right
 				};
 
 				tile_buffer.emplace_back(positions, tris, right_tile.left, right_tile.top, tex_index);
@@ -677,8 +719,8 @@ namespace hades
 
 				const auto tris = triangle_height_data{
 					{
-						height_top[0], height_top[1], height_bottom[0],
-						height_top[1], height_bottom[1], height_bottom[0]
+						height_top[0], height_bottom[0], height_top[1],
+						height_top[1], height_bottom[0], height_bottom[1]
 					},
 					terrain_map::triangle_uphill
 				};
@@ -700,12 +742,12 @@ namespace hades
 				const auto positions = std::array{
 					//first triangle
 					r_pos_left,		//top left
-					r_pos_right, 	//top right
 					r_pos_left,		//bottom left
+					r_pos_right, 	//top right
 					//second triangle
 					r_pos_right,	//top right
-					r_pos_right,	//bottom right
 					r_pos_left,		//bottom left
+					r_pos_right,	//bottom right
 				};
 
 				tile_buffer.emplace_back(positions, tris, bottom_tile.left, bottom_tile.top, tex_index);
@@ -859,16 +901,16 @@ namespace hades
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
 			
 			// calc triange normals
-			// uphill triangles
+			// uphill triangles TODO: choose correct triangle type
 			const auto posf = static_cast<vector2_float>(p) * tile_sizef;
 			const auto normal_a = triangle_normal(
 				{ posf.x, posf.y, float_cast(h[top_left]) },
-				{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) },
-				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) });
+				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
+				{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
 			const auto normal_b = triangle_normal(
 				{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) },
-				{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) },
-				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) });
+				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
+				{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
 
 			table[p] = lighting_info{ lighting_info::normal{ vector::angle_theta(normal_a), vector::angle_phi(normal_a) },
 				lighting_info::normal{ vector::angle_theta(normal_b), vector::angle_phi(normal_b) },
@@ -899,6 +941,7 @@ namespace hades
 	static std::array<std::array<std::uint8_t, 2>, 4> calculate_vertex_normal(const tile_position& p,
 		const table<lighting_info>& table, const lighting_info& centre, const tile_position& world_size)
 	{
+		// returns the normal for the left triangle and then right triangle
 		const auto to_uint_normal = [](const lighting_info::normal norm) constexpr noexcept -> std::array<std::uint8_t, 2> {
 			constexpr auto pi = std::numbers::pi_v<float>;
 			const auto theta = (norm.theta / (pi * 2.f)) * 255.f;
@@ -1020,7 +1063,7 @@ namespace hades
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map);
 			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
+			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, {}, light_info.shadow_height, normals);
 
 			shared.quads.append(quad);
 
@@ -1087,6 +1130,7 @@ namespace hades
 		auto s = states;
 		s.shader = _debug_depth ? _shader_debug_depth.get_shader() : _shader.get_shader();
 		
+		glEnable(GL_CULL_FACE);
 		depth_buffer::setup();
 		depth_buffer::clear();
 		depth_buffer::enable();
@@ -1113,6 +1157,7 @@ namespace hades
 			_shared.quads.draw(t, _shared.start_grid, _shared.quads.size() - _shared.start_grid, s);
 		}
 
+		glDisable(GL_CULL_FACE);
 		depth_buffer::disable();
 		return;
 	}

@@ -148,7 +148,7 @@ namespace hades
 	struct raw_terrain_map
 	{
 		// TODO: remove
-		enum class cliff_type : std::uint8_t {
+		enum class [[deprecated]] cliff_type : std::uint8_t {
 			none = 0b0000000, 
 			middle = 0b0000001, // middle indicates both vertex are in middle of cliff
 			end_top_left = 0b0000010, // top is for right cliffs, left otherwise
@@ -195,24 +195,24 @@ namespace hades
 		// quad is made of two triangles starting with the triangle that
 		// defines the left edge of the quad, so each quad has a left and right triangle
 		// for uphill:
-		//		triangle 1:
-		//				1: top-left
+		//		triangle 0:
+		//				0: top-left
+		//				1: bottom-left
 		//				2: top-right
-		//				3: bottom-left
-		//		triangle 2:
-		//				4: top-right
-		//				5: bottom-right
-		//				6: bottom-left
+		//		triangle 1:
+		//				0: top-right
+		//				1: bottom-left
+		//				2: bottom-right
 		//
 		// for downhill:
-		//		triangle 1:
-		//				1: top-left
+		//		triangle 0:
+		//				0: top-left
+		//				1: bottom-left
 		//				2: bottom-right
-		//				3: bottom-left
-		//		triangle 2:
-		//				4: top-left
-		//				5: top-right
-		//				6: bottom-right
+		//		triangle 1:
+		//				0: top-left
+		//				1: bottom-right
+		//				2: top-right
 		static constexpr auto triangle_downhill = true;
 		static constexpr auto triangle_uphill = false;
 		static constexpr auto triangle_default = triangle_uphill;

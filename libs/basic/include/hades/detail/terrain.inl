@@ -28,7 +28,7 @@ namespace hades
 	{
 		template<typename Map>
 			requires std::same_as<std::decay_t<Map>, terrain_map>
-		auto get_triangle_height(const tile_index_t i, Map& m)
+		auto get_triangle_height(const tile_index_t i, Map& m) noexcept
 		{
 			assert(std::cmp_greater_equal(m.heightmap.size(), (integer_cast<std::ptrdiff_t>(i) * 6) + 6));
 			auto beg = std::next(std::begin(m.heightmap), integer_cast<std::ptrdiff_t>(i) * 6);
@@ -77,6 +77,90 @@ namespace hades
 			return uphill[enum_type(c)];
 		else
 			return downhill[enum_type(c)];
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[0],
+				tris.height[2]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[3],
+				tris.height[5]
+			};
+		}
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data& tris) noexcept
+	{
+		return {
+			tris.height[0],
+			tris.height[1]
+		};
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[3],
+				tris.height[5]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[5],
+				tris.height[4]
+			};
+		}
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[4],
+				tris.height[5]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[1],
+				tris.height[2]
+			};
+		}
+	}
+
+	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept
+	{
+		if (tris.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tris.height[1],
+				tris.height[2],
+				tris.height[4],
+				tris.height[3]
+			};
+		}
+		else
+		{
+			return {
+				tris.height[0],
+				tris.height[2],
+				tris.height[3],
+				tris.height[4]
+			};
+		}
 	}
 
 	template<std::invocable<tile_position> Func>

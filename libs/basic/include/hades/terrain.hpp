@@ -320,12 +320,12 @@ namespace hades
 	std::array<std::uint8_t, 4> get_max_height_in_corners(tile_position tile_index, const terrain_map& map);
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data&) noexcept;
 	// returns the height at both edges of an edge (left/top first)
-	std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data&) noexcept;
-	std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data&) noexcept;
-	std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
-	std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
 	// as above, but left triangle first and right triangle second
-	std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept;
 
 	// NOTE: cliffs are *owned* by the tile they are attached too
 	//		eg: a tile owns cliffs that pass through its middle, and

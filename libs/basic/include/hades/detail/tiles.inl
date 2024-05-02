@@ -53,17 +53,34 @@ namespace hades
 			return;
 		}
 
-		template<bool PassInvalid = true, std::invocable<tile_position> Func>
+		template<bool PassInvalid = true, invocable_for_each_circle Func>
 		void for_each_position_circle_impl(const tile_position p, const tile_index_t radius,
-			const tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+			const tile_position world_size, Func&& f) noexcept(noexcept_invocable_for_each_circle<Func>)
 		{
 			const auto rad = integer_cast<tile_position::value_type>(radius);
 
 			const auto top = tile_position{ 0, -rad };
 			const auto bottom = tile_position{ 0, rad };
 
-			const auto call_on_position = [&f, world_size](tile_position pos) 
-				noexcept(std::is_nothrow_invocable_v<Func, tile_position>) {
+			const auto max_dist = vector::magnitude_squared(static_cast<vector2_float>(bottom - p));
+
+			const auto do_call = [&f, centre = p, radius, max_dist](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
+				if constexpr (std::invocable<Func, tile_position, float>)
+				{
+					if (pos == bad_tile_position)
+						std::invoke(f, pos, 0.f);
+					else
+					{
+						const auto dist = vector::magnitude_squared(static_cast<vector2_float>(pos - centre));
+						const auto strength = 1.f - dist / max_dist;
+						std::invoke(f, pos, strength);
+					}
+				}
+				else
+					std::invoke(f, pos);
+			};
+
+			const auto call_on_position = [f = do_call, world_size](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
 				if (within_world(pos, world_size))
 					std::invoke(f, pos);
 				else
@@ -189,7 +206,6 @@ namespace hades
 				return false;
 			};
 
-
 			while (true)
 			{
 				switch (d)
@@ -259,16 +275,16 @@ namespace hades
 		return detail::for_each_pos_rect_impl<false>(position, size, world_size, std::forward<Func>(f));
 	}
 
-	template<std::invocable<tile_position> Func>
+	template<invocable_for_each_circle Func>
 	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f)
-		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		noexcept(noexcept_invocable_for_each_circle<Func>)
 	{
 		return detail::for_each_position_circle_impl(middle, radius, world_size, std::forward<Func>(f));
 	}
 
-	template<std::invocable<tile_position> Func>
+	template<invocable_for_each_circle Func>
 	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) 
-		noexcept(std::is_nothrow_invocable_v<Func, tile_position>)
+		noexcept(noexcept_invocable_for_each_circle<Func>)
 	{
 		return detail::for_each_position_circle_impl<false>(middle, radius, world_size, std::forward<Func>(f));
 	}

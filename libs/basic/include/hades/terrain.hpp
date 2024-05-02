@@ -380,13 +380,19 @@ namespace hades
 	//positions outside the map will be ignored
 	void place_terrain(terrain_map&, const std::vector<terrain_vertex_position>&, const resources::terrain*, const resources::terrain_settings&);
 
-	template<std::invocable<std::uint8_t> Func>
-		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(terrain_map&, terrain_vertex_position, Func&&);
 	
 	// for a particular vertex, calls the appropriate number of Func calls to fix up the height
 	template<typename Func>
 	void for_each_height_vertex(tile_position, rect_corners, tile_position world_size, Func&&);
+
+	struct sub_vertex_target
+	{
+		tile_position position;
+		rect_corners corner;
+		bool triangle;
+	};
 
 	// TODO: need to fix for cliffs
 	// TODO: must target a tile so that it can disabiguate when a cliff is present

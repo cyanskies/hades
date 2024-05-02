@@ -189,6 +189,7 @@ namespace hades
 	private:
 		//std::function cannot hold non-copyable
 		//wrap packaged task in this lying wrapper
+		// TODO: cpp23 move_only_function
 		template<typename Task>
 		struct false_copyable
 		{

@@ -181,8 +181,7 @@ namespace hades
 
 	namespace detail
 	{
-		template<std::invocable<std::uint8_t> Func>
-			requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
+		template<invocable_r<std::uint8_t, std::uint8_t> Func>
 		void change_terrain_height_impl(terrain_map& m, tile_position p, rect_corners c, Func& f)
 		{
 			const auto index = to_tile_index(p, m);
@@ -199,8 +198,8 @@ namespace hades
 		}
 	}
 
-	template<std::invocable<std::uint8_t> Func>
-		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
+
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(terrain_map& m, tile_position p, rect_corners c, Func&& f)
 	{
 		// call each of the tiles adjacent to this corner to perform the height change
@@ -278,8 +277,7 @@ namespace hades
 		throw terrain_error{ "Called change terrain height with an invalid corner" };
 	}
 
-	template<std::invocable<std::uint8_t> Func>
-		requires std::same_as<std::invoke_result_t<Func, std::uint8_t>, std::uint8_t>
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(terrain_map& m, terrain_vertex_position v, Func&& f)
 	{
 		// find a tile and corner and pass along to the next func

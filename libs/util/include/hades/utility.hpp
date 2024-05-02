@@ -150,6 +150,11 @@ namespace hades {
 	template<typename Func>
 	decltype(auto) make_finally(Func&& f);
 
+	// overloaded func for merging lambdas into functors with overloads
+	// See example on: https://en.cppreference.com/w/cpp/utility/variant/visit
+	template<class... Ts>
+	struct overloaded : Ts... { using Ts::operator()...; };
+
 	//remove_duplicates: removes all duplicates from the container
 	// can remove only a subrange, or use custom comparitors
 	template<typename Container, typename Iter, typename Less = std::less<>, typename Equal = std::equal_to<>>

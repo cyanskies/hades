@@ -355,15 +355,13 @@ namespace hades
 					_map.set_sun_angle(_sun_angle);
 			}
 
-			if (g.collapsing_header("map drawing settings"sv))
+			if (g.collapsing_header("tile and terrain drawing settings"sv))
 			{
 				constexpr auto draw_shapes = std::array{
 					"vertex"sv,
 					"edge"sv,
 					"square"sv,
 					"circle"sv,
-					"vert_cliff"sv,
-					"edge_cliff"sv,
 				};
 
 				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_shape)]))
@@ -568,8 +566,10 @@ namespace hades
 		}
 	}
 
+	// optionally std::invocable<Func, triangle_info> and or std::invocable<Func, tile_position, float> as well
+	// these support inter cell targets and fading strength circle shapes
 	template<typename Func>
-	concept invoke_position = std::invocable<Func, tile_position>;// || std::invocable<Func, triangle_info>;
+	concept invoke_position = std::invocable<Func, tile_position>;
 
 	template<invoke_position Func>
 	static void for_each_safe_diag(terrain_vertex_position position, const terrain_vertex_position diff,
@@ -657,7 +657,7 @@ namespace hades
 		}();
 
 		const auto world_size = get_size(map);
-		const auto world_vertex_size = world_size +tile_position{ 1, 1 };
+		const auto world_vertex_size = world_size + tile_position{ 1, 1 };
 
 		const auto draw_pos_f = world_vector_t{
 			p.x / float_cast(tile_size),
@@ -876,7 +876,7 @@ namespace hades
 
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
-		auto func = [&](const tile_position pos) {
+		const auto basic_func = [&](const tile_position pos) {
 			switch (_brush)
 			{
 			case brush_type::draw_terrain:
@@ -906,9 +906,29 @@ namespace hades
 			}	
 		};
 
+		const auto height_func = [&](const tile_position pos, float str) {
+			const auto amount = _height_strength * str;
+
+			switch (_brush)
+			{
+			case brush_type::raise_terrain:
+				_map.raise_terrain(pos, amount);
+				_clear_preview.raise_terrain(pos, amount);
+				break;
+			case brush_type::lower_terrain:
+				_map.lower_terrain(pos, amount);
+				_clear_preview.lower_terrain(pos, amount);
+				break;
+			default:
+				std::invoke(basic_func, pos);
+			}
+			};
+
+		const auto ovrld = overloaded{ basic_func, height_func };
+		
 		// NOTE: expand map size by one again, since the tile based for_each_safe_pos is written around tiles not vertex
 		//		(it uses < operators for the right and bottom limits, but we would need it to behave like <=
-		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), func);
+		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), ovrld);
 		return;
 	}
 

@@ -5,6 +5,7 @@
 
 #include "hades/App.hpp"
 #include "hades/archive.hpp"
+//#include "hades/capabilities.hpp"
 #include "hades/Console.hpp"
 #include "hades/files.hpp"
 #include "hades/logging.hpp"
@@ -13,7 +14,7 @@
 
 using namespace std::string_view_literals;
 
-void try_write_log()
+static void try_write_log()
 {
 	if (hades::console::is_logging())
 	{
@@ -99,6 +100,10 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 		app.postInit(commands, app_fn);
 		app.run();
 	}
+	//catch (const capability_missing_error& e)
+	//{
+	//	// TODO: need a user facing explanation here
+	//}
 	catch (const std::exception& e)
 	{
 		hades::log_error("Unhandled exception"sv);

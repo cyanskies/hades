@@ -301,10 +301,19 @@ namespace hades
 	void for_each_safe_position_rect(tile_position position, tile_position size,
 		tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
 
-	template<std::invocable<tile_position> Func>
-	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func &&f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
-	template<std::invocable<tile_position> Func>
-	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);
+	// this function accepts a tile position, and optionally a strength value [0, 1]
+	template<typename Func> 
+	concept invocable_for_each_circle = std::invocable<Func, tile_position, float> || std::invocable<Func, tile_position>;
+	template<invocable_for_each_circle Func>
+	constexpr auto noexcept_invocable_for_each_circle = 
+		(std::is_nothrow_invocable_v<Func, tile_position, float> && std::is_nothrow_invocable_v<Func, tile_position>) ||
+		(!std::invocable<Func, tile_position, float> && std::is_nothrow_invocable_v<Func, tile_position>) ||
+		(!std::invocable<Func, tile_position> && std::is_nothrow_invocable_v<Func, tile_position, float>);
+
+	template<invocable_for_each_circle Func>
+	void for_each_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func &&f) noexcept(noexcept_invocable_for_each_circle<Func>);
+	template<invocable_for_each_circle Func>
+	void for_each_safe_position_circle(tile_position middle, tile_index_t radius, tile_position world_size, Func&& f) noexcept(noexcept_invocable_for_each_circle<Func>);
 
 	template<std::invocable<tile_position> Func>
 	void for_each_position_line(tile_position start, tile_position end, tile_position world_size, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_position>);

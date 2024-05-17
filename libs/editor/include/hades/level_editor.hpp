@@ -102,6 +102,7 @@ namespace hades::detail
 		float _accumulated_rotation = {};
 		float _zoom = 1.f;
 		float _window_width = 0.f, _window_height = 0.f;
+		// TODO: remove this min values and associated logic 
 		int32 _left_min = 0, _top_min = 0; // minimum values for world interaction(represents the edge of the UI)
 
 		//level width, height
@@ -211,7 +212,7 @@ namespace hades
 
 	// these register all the needed resources and console vars to use the 
 	// level_editor defined above
-	//NOTE: it is always safe to register or create the same resources, or console var twice
+	// NOTE: it is always safe to register or create the same resources, or console var twice
 	void register_level_editor_resources(data::data_manager&);
 	void create_level_editor_console_vars();
 }

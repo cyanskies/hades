@@ -158,9 +158,9 @@ namespace hades
 		struct cliff_info
 		{
 			bool triangle_type : 1,
-				diag : 2, // TODO: we only need 1 bit for these
-				bottom : 2,
-				right : 2;
+				diag : 1,
+				bottom : 1,
+				right : 1;
 		};
 
 		raw_map tile_layer;
@@ -406,7 +406,7 @@ namespace hades
 
 	void swap_triangle_type(terrain_map&, tile_position);
 
-	bool is_cliff(const terrain_map&, tile_position);
+	bool is_cliff(const terrain_map&, tile_position) noexcept;
 
 	// returns true if add cliff would work on this edge
 	bool can_add_cliff(const terrain_map&, tile_position, rect_edges);

@@ -16,7 +16,10 @@ namespace hades::detail
 {
 	level_editor_impl::level_editor_impl()
 		: _level_ptr{std::make_unique<level>()}
-	{}
+	{
+		_level = _level_ptr.get();
+		return;
+	}
 
 	level_editor_impl::level_editor_impl(const mission_editor_t* m, level* l)
 		: _mission_editor{m}, _level{l}
@@ -58,7 +61,7 @@ namespace hades::detail
 		if (_mission_mode())
 		{
 			if (_level->map_x == 0 ||
-				_level->map_y == 0)
+				_level->map_y == 0) // test for new level
 			{
 				_level->map_x = size;
 				_level->map_y = size;
@@ -67,7 +70,6 @@ namespace hades::detail
 		}
 		else
 		{
-			_level = _level_ptr.get();
 			_level->map_x = size;
 			_level->map_y = size;
 			*_level = _component_on_new(std::move(*_level));

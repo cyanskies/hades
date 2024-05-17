@@ -13,34 +13,35 @@ namespace hades
 	template<typename T>
 	struct line_t
 	{
+		// TODO: start, end
 		vector2<T> s, e;
 	};
 
 	namespace line
 	{
 		template<typename T>
-		std::array<line_t<T>, 4> from_rect(rect_t<T>);
+		[[nodiscard]] constexpr std::array<line_t<T>, 4> from_rect(rect_t<T>) noexcept;
 
-		// ax + by + c =
 		template<typename T>
 		struct equation
 		{
+			// ax + by + c
 			T a, b, c;
 		};
 
 		template<typename T>
-		constexpr equation<T> to_equation(line_t<T>) noexcept;
+		[[nodiscard]] constexpr equation<T> to_equation(line_t<T>) noexcept;
 
 		template<typename T>
-		constexpr bool above(point_t<T>, line_t<T>) noexcept;
+		[[nodiscard]] constexpr bool above(point_t<T>, line_t<T>) noexcept;
 
 		template<typename T>
-		constexpr T distance(point_t<T>, line_t<T>) noexcept;
+		[[nodiscard]] constexpr T distance(point_t<T>, line_t<T>) noexcept;
 
 		//returns the intersect point for the two lines
 		//returns nothing if the lines are parellel
 		template<typename T>
-		std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second);
+		[[nodiscard]] constexpr std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second) noexcept;
 	}
 }
 

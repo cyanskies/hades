@@ -120,6 +120,10 @@ namespace hades
 					map.set_height_for_triangles(_tile, h);
 					preview.set_height_for_triangles(_tile, h);
 				}
+
+				const auto tile_id = to_tile_index(_tile, map.get_map());
+				g.text(std::format("Tile Index: {}\nTile Pos: (x: {}, y: {})\nis_cliff: {}"sv,
+					tile_id, _tile.x, _tile.y, is_cliff(map.get_map(), _tile)));
 			}
 		}
 		g.window_end();
@@ -569,7 +573,7 @@ namespace hades
 	// optionally std::invocable<Func, triangle_info> and or std::invocable<Func, tile_position, float> as well
 	// these support inter cell targets and fading strength circle shapes
 	template<typename Func>
-	concept invoke_position = std::invocable<Func, tile_position>;
+	concept invoke_position = std::invocable<Func, tile_position> || /* std::invocable<Func, triangle_info> ||*/ std::invocable<Func, tile_position, float>;
 
 	template<invoke_position Func>
 	static void for_each_safe_diag(terrain_vertex_position position, const terrain_vertex_position diff,
@@ -631,9 +635,52 @@ namespace hades
 	/*std::optional<triangle_info> triangle;
 	auto triangle_mode = false;*/
 
+	[[nodiscard]] static constexpr rect_edges pick_edge(const vector2_float frac_pos) noexcept
+	{
+		constexpr auto diag_close_dist = 0.1f;
+		constexpr auto diag_far_dist = 0.2f;
+		if (line::distance(frac_pos, uphill) < diag_close_dist &&
+			line::distance(frac_pos, downhill) > diag_far_dist)
+		{
+			return rect_edges::uphill;
+		}
+		else if (line::distance(frac_pos, downhill) < diag_close_dist &&
+			line::distance(frac_pos, uphill) > diag_far_dist)
+		{
+			return rect_edges::downhill;
+		}
+
+		if (line::above(frac_pos, downhill))
+		{
+			// top and right
+			if (!line::above(frac_pos, uphill))
+				return rect_edges::right;
+			return rect_edges::top;
+		}
+		else
+		{
+			//bottom and left
+			if (line::above(frac_pos, uphill))
+				return rect_edges::left;
+			return rect_edges::bottom;
+		}
+	}
+
+	// iterate over edges that already or could have cliffs created on them
 	template<typename Func>
-	static void do_height_edge(Func&&)
+	static void do_raise_cliff(Func&&)
 	{}
+
+	// iterate over edges that currently have cliffs
+	template<typename Func>
+	static void do_erase_cliff(Func&&)
+	{}
+
+	// iterate over edges that currently have cliffs
+	// except for the end points that dont lie on world edges
+	/*template<typename Func>
+	static void do_height_cliff(Func&&)
+	{}*/
 
 	using brush_t = level_editor_terrain::brush_type;
 	template<invoke_position Func>
@@ -642,20 +689,6 @@ namespace hades
 		const brush_t brush, int size, const terrain_map& map,
 		Func&& f) //		  ^^^^^ TODO: make this uint16_t
 	{
-		const auto height_brush = [brush]() {
-			switch (brush)
-			{
-			case brush_t::raise_terrain:
-			case brush_t::lower_terrain:
-			case brush_t::set_terrain_height:
-			case brush_t::raise_cliff:
-			case brush_t::erase_cliff:
-				return true;
-			default:
-				return false;
-			}
-		}();
-
 		const auto world_size = get_size(map);
 		const auto world_vertex_size = world_size + tile_position{ 1, 1 };
 
@@ -682,55 +715,38 @@ namespace hades
 				std::round(draw_pos_f.y)
 		});
 
+		// If the user is drawing or erasing cliffs then pass over to the special cliff functions
+		// TODO: do cliff top and bottom height along edges too(might need to be a seperate tool entirely)
+		switch (brush)
+		{
+		case brush_t::raise_cliff:
+			return do_raise_cliff(std::forward<Func>(f));
+		case brush_t::erase_cliff:
+			return do_erase_cliff(std::forward<Func>(f));
+		default:
+			; // other brushes are handled by the following switch (shape)
+		}
+
 		using draw_shape = level_editor_terrain::draw_shape;
 		switch (shape)
 		{
 		case draw_shape::vertex:
-			/*switch (brush)
-			{
-			case brush_t::raise_terrain:
-			case brush_t::lower_terrain:
-			case brush_t::set_terrain_height:
-			case brush_t::raise_cliff:
-			case brush_t::erase_cliff:
-				return for_each_position_height(p, tile_size, shape, brush, size, map, std::forward<Func>(f));
-			}*/
-
 			return for_each_safe_position_rect(vertex, terrain_vertex_position{1, 1}, world_vertex_size, f);
 		case draw_shape::edge:
 		{
 			//edge picking target
-			// Do diagonal edges
-			constexpr auto diag_close_dist = 0.1f;
-			constexpr auto diag_far_dist = 0.2f;
-			if (line::distance(frac_pos, uphill) < diag_close_dist &&
-				line::distance(frac_pos, downhill) > diag_far_dist)
+			const auto edge = pick_edge(frac_pos);
+
+			// handle diag cases
+			switch (edge)
 			{
+			case rect_edges::uphill:
 				return do_diag_edge(tile_pos, frac_pos, terrain_map::triangle_uphill, size, world_vertex_size, std::forward<Func>(f));
-			}
-			else if (line::distance(frac_pos, downhill) < diag_close_dist &&
-					line::distance(frac_pos, uphill) > diag_far_dist)
-			{
+			case rect_edges::downhill:
 				return do_diag_edge(tile_pos, frac_pos, terrain_map::triangle_downhill, size, world_vertex_size, std::forward<Func>(f));
+			default:
+				; // let the rect of the function handle the other cases
 			}
-
-			const auto edge = [&]() {
-				if (line::above(frac_pos, downhill))
-				{
-					// top and right
-					if (!line::above(frac_pos, uphill))
-						return rect_edges::right;
-					return rect_edges::top;
-				}
-				else
-				{
-					//bottom and left
-					if (line::above(frac_pos, uphill))
-						return rect_edges::left;
-					return rect_edges::bottom;
-
-				}
-			}();
 
 			auto pos = tile_pos;
 			auto siz = terrain_vertex_position{ 1, 1 };
@@ -769,32 +785,26 @@ namespace hades
 				}
 			}
 
-			return for_each_safe_position_rect(pos, siz, world_vertex_size, f);
+			return for_each_safe_position_rect(pos, siz, world_vertex_size, std::forward<Func>(f));
 		}
 		case draw_shape::rect:
 			// expand the size of the rect when doing terrain drawing
 			switch (brush)
 			{
 			case brush_t::draw_tile:
+				[[fallthrough]];
 			case brush_t::select_tile:
 				break;
 			default:
 				++size;
 			}
 
-			return for_each_safe_position_rect(tile_pos, terrain_vertex_position{ size, size }, world_size, f);
+			return for_each_safe_position_rect(tile_pos, terrain_vertex_position{ size, size }, world_size, std::forward<Func>(f));
 		case draw_shape::circle:
-			return for_each_safe_position_circle(tile_pos, size, world_size, f);
+			return for_each_safe_position_circle(tile_pos, size, world_size, std::forward<Func>(f));
 		}
 
 		return;
-	}
-
-	// convert draw shape depending on brush type
-	// maybe we dont actually need this
-	constexpr level_editor_terrain::draw_shape preprocess_shape(level_editor_terrain::draw_shape s, level_editor_terrain::brush_type b) noexcept
-	{
-		return {};
 	}
 
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)

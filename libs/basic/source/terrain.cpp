@@ -1192,6 +1192,12 @@ namespace hades
 		return;
 	}
 
+	bool is_cliff(const terrain_map& m, tile_position p) noexcept
+	{
+		const auto c = get_cliff_info(p, m);
+		return c.bottom || c.diag || c.right;
+	}
+
 	// TODO: maybe move this into terrain.hpp
 	//		and adopt the safe/unsafe impl style
 	template<std::invocable<tile_position, rect_corners> Func>
@@ -1323,6 +1329,12 @@ namespace hades
 		if(s_count == 0 &&
 			f_count == 1)
 			return true;
+
+		// TODO: detect if we are connecting the ends of two cliffs together(this is a valid cliff position)
+		//		may already work, needs testing
+		/*if (f_count == 1 &&
+			s_count == 1)
+			return true;*/
 		
 		return false;
 	}

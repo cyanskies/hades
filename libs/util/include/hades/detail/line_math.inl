@@ -7,7 +7,7 @@
 namespace hades::line
 {
 	template<typename T>
-	std::array<line_t<T>, 4> from_rect(rect_t<T> r)
+	constexpr std::array<line_t<T>, 4> from_rect(const rect_t<T> r) noexcept
 	{
 		const auto c = corners(r);
 
@@ -44,7 +44,7 @@ namespace hades::line
 	}
 
 	template<typename T>
-	std::optional<vector2<T>> intersect(line_t<T> first, line_t<T> second)
+	constexpr std::optional<vector2<T>> intersect(const line_t<T> first, const line_t<T> second) noexcept
 	{
 		//based on the determinants algorithm
 		const auto x1 = first.s.x,

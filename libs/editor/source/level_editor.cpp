@@ -85,7 +85,8 @@ namespace hades::detail
 		return _gui.handle_event(e);
 	}
 
-	static void clamp_camera(sf::View &camera, const sf::Transform& transform, vector2_float min, vector2_float max)
+	// TODO: deprecate this
+	static void clamp_camera(sf::View &camera, const sf::Transform& transform, const vector2_float min, const vector2_float max) noexcept
 	{
 		const auto& pos = camera.getCenter();
 		const auto inverse_transform = transform.getInverse();
@@ -155,6 +156,8 @@ namespace hades::detail
 			const auto under_ui = mouse_position->x_axis < _left_min
 				|| mouse_position->y_axis < _top_min;
 
+			// TODO: rewrite the scrolling
+			//		use the camera header more
 			if (!under_ui)
 			{
 				const auto rate = static_cast<float>(*_scroll_rate);

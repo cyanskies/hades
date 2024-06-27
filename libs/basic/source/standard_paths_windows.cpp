@@ -13,42 +13,38 @@
 #include "hades/types.hpp"
 #include "hades/utility.hpp"
 
-hades::types::string utf16_to_utf8(std::wstring input)
+static std::filesystem::path utf16_to_utf8(const PWSTR input)
 {
-	assert(!input.empty());
+	assert(input);
 
 	//get buffer size by omitting output param
-	const auto buffer_size = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
-	std::vector<char> buffer(buffer_size);
+	const auto buffer_size = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
+	assert(buffer_size != 0);
+	const auto buffer = std::make_unique_for_overwrite<char[]>(buffer_size);
+	
 	//write output into buffer
-
-	assert(buffer_size == hades::integer_cast<int>(size(buffer)));
-	const auto size = std::size(buffer);
-	const auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, buffer.data(), hades::integer_cast<int>(size), NULL, NULL);
+	const auto written_amount = WideCharToMultiByte(CP_UTF8, 0, input, -1, buffer.get(), buffer_size, NULL, NULL);
 	assert(written_amount == buffer_size);
 	std::ignore = written_amount;
 
-	return hades::types::string{ buffer.data() };
+	return std::filesystem::path{ buffer.get()};
 }
 
 //uses standard functions to get a named directory in windows.
 // for list of valid KNOWN FOLDER ID's:
 //https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457(v=vs.85).aspx
-std::filesystem::path windows_directory(REFKNOWNFOLDERID target)
+static std::filesystem::path windows_directory(REFKNOWNFOLDERID target)
 {
 	PWSTR path = NULL;
-	auto result = SHGetKnownFolderPath(target, 0, NULL, &path);
+	const auto result = SHGetKnownFolderPath(target, 0, NULL, &path);
+	const auto finally = hades::make_finally([path]() noexcept {
+		CoTaskMemFree(path);
+	});
 
 	if(result != S_OK)
-	{
-		assert(false);
 		throw std::logic_error("invalid arg or invalid folder ID in getUserCustomFileDirectory on windows");
-	}
 
-	std::wstring str(path);
-
-	CoTaskMemFree(path);
-	return utf16_to_utf8(str);
+	return utf16_to_utf8(path);
 }
 
 namespace hades
@@ -80,7 +76,7 @@ namespace hades
 		if (*portable)
 			return standard_config_directory();
 		else
-			return windows_directory(FOLDERID_Documents) / game() / "config/";
+			return windows_directory(FOLDERID_Documents) / game() / standard_config_directory();
 	}
 
 	std::filesystem::path user_save_directory()
@@ -91,6 +87,6 @@ namespace hades
 		if (*portable)
 			return standard_save_directory();
 		else
-			return windows_directory(FOLDERID_SavedGames) / game();
+			return windows_directory(FOLDERID_SavedGames) / game() / standard_save_directory();
 	}
 }

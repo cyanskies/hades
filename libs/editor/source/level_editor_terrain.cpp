@@ -168,12 +168,17 @@ namespace hades
 				_new_options.terrain_set = _settings->terrainsets.front().get();
 		}
 
+		// TODO: throw if terrainset == nullptr
+		// remove check below
+
 		if (_new_options.terrain_set &&
 			_new_options.terrain == nullptr &&
 			!empty(_new_options.terrain_set->terrains))
 		{
 			_new_options.terrain = _new_options.terrain_set->terrains.front().get();
 		}
+
+		//TODO: throw if terrain == nullptr
 	}
 
 	level level_editor_terrain::level_new(level current) const
@@ -324,7 +329,7 @@ namespace hades
 
 		const auto tile_size_f = float_cast(_tile_size);
 
-		const auto make_terrain_button_wrapped = [this, &g, tile_size_f](auto&& terrain, auto&& func) {
+		const auto make_terrain_button_wrapped = [this, &g, tile_size_f, button_size](auto&& terrain, auto&& func) {
 			if (empty(terrain->tiles))
 				return;
 

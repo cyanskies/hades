@@ -28,8 +28,9 @@ namespace hades
 	//Calls function on each element of tuple with 
 	//that element and args... as functions argument
 	//can optionally have std::size_t index as an argument after the element
-	// function(elm, args...)
-	// function(elm, std::size_t, args...)
+	// Func can accept the following params:
+	//		function(elm, args...)
+	//		function(elm, std::size_t, args...)
 	template<tuple Tup, typename Func, typename ...Args>
 		requires (detail::is_tuple_for_each_invokable<Tup, Func, Args...>(std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<Tup>>>()))
 	constexpr void tuple_for_each(Tup&& t, Func&& function, Args&& ...args)
@@ -52,7 +53,8 @@ namespace hades
 
 	//calls function on the tuple element at index
 	//index can be specified at runtime.
-	// function(elm, args...)
+	// Func can accept the following params:
+	//		function(elm, args...)
 	template<tuple Tup, typename Func, typename ...Args>
 	constexpr void tuple_index_invoke(Tup&& t, std::size_t index, Func&& function, Args&& ...args)
 		noexcept(noexcept(detail::for_index_impl<0, std::tuple_size_v<std::remove_reference_t<Tup>>>(t, index, std::forward<Func>(function), std::forward<Args>(args)...)))

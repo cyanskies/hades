@@ -11,6 +11,7 @@ namespace hades
 {
 	template<tuple Components, typename Func, typename ...Args>
 	inline void level_editor_do_tuple_work(Components& t, const std::size_t i, Func&& f, Args&&... args)
+		noexcept(noexcept(tuple_index_invoke(std::forward<Components>(t), i, std::forward<Func>(f), std::forward<Args>(args)...)))
 	{
 		//if no brush is set, then do nothing
 		if (i > std::tuple_size_v<std::remove_reference_t<Components>>)

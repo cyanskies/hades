@@ -68,7 +68,7 @@ namespace hades
 	template<typename Event>
 	inline typename input_event_system_t<Event>::action_set input_event_system_t<Event>::input_state() const
 	{
-		auto out = action_set{};
+		auto out = action_set{}; // TODO: store this action_set somewhere and just share it, we don't want to realloc it every game tick
 		auto iter = std::begin(_action_input);
 		const auto end = std::end(_action_input);
 

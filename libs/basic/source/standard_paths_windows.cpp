@@ -42,7 +42,7 @@ static std::filesystem::path windows_directory(REFKNOWNFOLDERID target)
 	});
 
 	if(result != S_OK)
-		throw std::logic_error("invalid arg or invalid folder ID in getUserCustomFileDirectory on windows");
+		throw std::logic_error("invalid arg or invalid folder ID passed to SHGetKnownFolderPath");
 
 	return utf16_to_utf8(path);
 }

@@ -19,19 +19,11 @@ namespace hades
 	using event_match_function = typename input_event_system::event_interpreter::event_match_function;
 	using event_function = typename input_event_system::event_interpreter::event_function;
 	
-	using interpreter_funcs = std::tuple<event_match_function, event_function, input_interpreter::function>;
+	using interpreter_funcs = std::tuple<event_match_function, event_function>;
 
 	template<sf::Keyboard::Key k>
-	interpreter_funcs keyboard()
+	static interpreter_funcs keyboard()
 	{
-        /*
-		auto realtime = [](action prev)->action {
-			const auto pressed = sf::Keyboard::isKeyPressed(k);
-			if (prev.active == pressed)
-				return prev;
-			return make_action(pressed);
-        };*/
-
 		auto is_match = [](const sf::Event &e)->bool {
 			if (e.type == sf::Event::KeyPressed ||
 				e.type == sf::Event::KeyReleased)
@@ -40,38 +32,31 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [](bool handled, const sf::Event &e, action)->action {
-			if (handled)
-				return make_action(false);
-			
+		auto event_check = [](const sf::Event &e, action)->action {
 			if (e.type == sf::Event::KeyPressed)
 				return make_action(true); //TODO: encode modifier key state in the x,y params
 
 			return make_action(false); // KeyReleased
 		};
 
-		return { is_match, event_check, nullptr /*realtime*/};
+		return { is_match, event_check };
 	}
 
-	bool in_window(sf::Vector2i pos, const sf::Window &window)
+	static bool in_window(sf::Vector2i pos, const sf::Window &window) noexcept
 	{
 		auto size = window.getSize();
 		return sf::IntRect{ {}, { integer_cast<int>(size.x), integer_cast<int>(size.y) } }.contains(pos);
 	}
 
-	interpreter_funcs mouse_pos(const sf::Window &window)
+	static interpreter_funcs mouse_pos(const sf::Window &window)
 	{
 		auto is_match = [](const sf::Event &e)->bool {
 			return e.type == sf::Event::MouseMoved;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action) {
+		auto event_check = [&window](const sf::Event &e, action) {
 			action a;
-
-			if (!handled)
-				a.active = in_window({ e.mouseMove.x, e.mouseMove.y }, window);
-			else
-				a.active = false;
+			a.active = in_window({ e.mouseMove.x, e.mouseMove.y }, window);
 
 			const auto mouse_move = vector::clamp(vector2<int>{ e.mouseMove.x, e.mouseMove.y },
 				{ 0, 0 },
@@ -83,30 +68,11 @@ namespace hades
 			return a;
 		};
 
-        /*
-		auto realtime_check = [&window](action) {
-			action a;
-
-			auto mpos = sf::Mouse::getPosition(window);
-			auto size = window.getSize();
-			a.active = sf::IntRect{ {}, static_cast<sf::Vector2i>(size) }.contains(mpos);
-
-			const auto mouse_pos = vector::clamp(basic_vector<int>{ mpos.x, mpos.y },
-				{ 0, 0 },
-				{ static_cast<types::int32>(size.x),
-				static_cast<types::int32>(size.y) });
-
-			a.x_axis = mouse_pos.x;
-			a.y_axis = mouse_pos.y;
-
-			return a;
-        };*/
-
-		return { is_match, event_check, nullptr /*realtime_check*/};
+		return { is_match, event_check };
 	}
 
 	template<sf::Mouse::Button b>
-	interpreter_funcs mouse_button(const sf::Window &window)
+	static interpreter_funcs mouse_button(const sf::Window &window)
 	{
 		auto is_match = [](const sf::Event &e) {
 			if (e.type == sf::Event::MouseButtonPressed ||
@@ -116,10 +82,10 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action) {
+		auto event_check = [&window](const sf::Event &e, action) {
 			action a;
 
-			if (!handled && e.type == sf::Event::MouseButtonPressed)
+			if (e.type == sf::Event::MouseButtonPressed)
 			{
 				a.active = in_window({ e.mouseButton.x, e.mouseButton.y }, window);
 				const auto mouse_pos = vector::clamp(vector2<int>{e.mouseButton.x, e.mouseButton.y},
@@ -132,7 +98,6 @@ namespace hades
 			}
 			else if (e.type == sf::Event::MouseButtonReleased)
 			{
-				a.active = false;
 				const auto pos = vector::clamp(vector2<int>{e.mouseButton.x, e.mouseButton.y},
 					{ 0, 0 },
 					{ static_cast<types::int32>(window.getSize().x),
@@ -144,27 +109,10 @@ namespace hades
 			return a;
 		};
 
-        /*
-		auto realtime_check = [&window](action) {
-			action a;
-
-			const auto m_pos = sf::Mouse::getPosition(window);
-			a.active = sf::Mouse::isButtonPressed(b) && in_window(m_pos, window);; 
-			const auto size = window.getSize();
-			const auto pos = vector::clamp(basic_vector<int>{m_pos.x, m_pos.y},
-				{ 0, 0 },
-				{ static_cast<types::int32>(size.x),
-				static_cast<types::int32>(size.y) });
-			a.x_axis = pos.x;
-			a.y_axis = pos.y;
-
-			return a;
-        };*/
-
-		return {is_match, event_check, nullptr};
+		return { is_match, event_check };
 	}
 
-	interpreter_funcs mouse_wheel(const sf::Window &window)
+	static interpreter_funcs mouse_wheel(const sf::Window &window)
 	{
 		auto is_match = [](const sf::Event &e) {
 			if (e.type == sf::Event::MouseWheelScrolled)
@@ -173,19 +121,16 @@ namespace hades
 			return false;
 		};
 
-		auto event_check = [&window](bool handled, const sf::Event &e, action) {
+		auto event_check = [&window](const sf::Event &e, action) {
 			action a;
-
-			if (!handled && e.type == sf::Event::MouseWheelScrolled)
-			{
-				a.active = in_window({ e.mouseWheelScroll.x, e.mouseWheelScroll.y }, window);
-				a.y_axis = static_cast<int32>(e.mouseWheelScroll.delta * 100);
-			}
+			assert(e.type == sf::Event::MouseWheelScrolled);
+			a.active = in_window({ e.mouseWheelScroll.x, e.mouseWheelScroll.y }, window);
+			a.y_axis = static_cast<int32>(e.mouseWheelScroll.delta * 100);
 
 			return a;
 		};
 
-		return { is_match, event_check, nullptr };
+		return { is_match, event_check };
 	}
 
 	void register_sfml_input(const sf::Window &win, input_event_system &sys)
@@ -338,6 +283,6 @@ namespace hades
 		*/
 
 		for (const auto &inter : interpreter_map)
-			sys.add_interpreter(inter.first, std::get<0>(inter.second), std::get<1>(inter.second), std::get<2>(inter.second));
+			sys.add_interpreter(inter.first, std::get<0>(inter.second), std::get<1>(inter.second));
 	}
 }

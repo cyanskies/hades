@@ -16,7 +16,7 @@ bool gui_state::handle_event(const hades::event &windowEvent)
 	return _gui.handle_event(windowEvent);
 }
 
-void gui_state::update(hades::time_duration deltaTime, const sf::RenderTarget&, hades::input_system::action_set)
+void gui_state::update(hades::time_duration deltaTime, const sf::RenderTarget&, const hades::input_system::action_set&)
 {
 	_gui.update(deltaTime);
 	_gui.frame_begin();

@@ -54,7 +54,7 @@ namespace hades
 		return _gui.handle_event(e);
 	}
 
-    void mission_editor_t::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
+    void mission_editor_t::update(time_duration dt, const sf::RenderTarget&, const input_system::action_set&)
 	{
 		_editor_time += dt;
 		_update_gui(dt);

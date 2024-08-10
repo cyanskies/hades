@@ -100,7 +100,6 @@ namespace hades
 		/// Member Data
 		////////////////////////////////////////////////////////////
 		input_event_system _input;							///< Used by the console to provide bindable input.
-		std::vector<input_event_system::checked_event> _event_buffer; ///< Buffer for per-tick event storage
 		Console _console;									///< The appcations debug console.
 		hades::data::data_system _dataMan;					///< The applications resource loader
 		StateManager _states;								///< The statemanager holds, ticks, and cleans up all of the game states.

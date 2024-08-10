@@ -97,7 +97,7 @@ namespace hades
 	}
 	
 	template<debug::is_resource_inspector ResourceInspector>
-	void mod_editor_impl<ResourceInspector>::update(time_duration dt, const sf::RenderTarget&, input_system::action_set)
+	void mod_editor_impl<ResourceInspector>::update(time_duration dt, const sf::RenderTarget&, const input_system::action_set&)
 	{
 		_gui.activate_context();
 		_gui.update(dt);

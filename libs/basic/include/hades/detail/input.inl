@@ -14,7 +14,7 @@ namespace hades
 		in.event_check = e;
 		in.is_match = m;
 
-		_event_interpreters.insert(in);
+		_event_interpreters.insert({ in, {} });
 	}
 
 	template<typename Event>
@@ -42,33 +42,27 @@ namespace hades
 	namespace detail
 	{
 		template<typename Event>
-		static action check_events(const typename input_event_system_t<Event>::event_interpreter& interpreter,
-			const std::vector<typename input_event_system_t<Event>::checked_event>& events, action a)
-		{
-			for (const auto& e : events)
-			{
-				const auto& this_event = e.event;
-				//check every event against this interpreter
-				if (std::invoke(interpreter.is_match, this_event))
-					a = std::invoke(interpreter.event_check, e.handled, this_event, a);
-			}
+		static action check_event(const typename input_event_system_t<Event>::event_interpreter& interpreter,
+			const typename input_event_system_t<Event>::event e, action a)
+		{ 
+			if (std::invoke(interpreter.is_match, e))
+				return std::invoke(interpreter.event_check, e, a);
 			return a;
 		}
 	}
 
 	template<typename Event>
-	void input_event_system_t<Event>::generate_state(const std::vector<typename input_event_system_t<Event>::checked_event> &events)
+	void input_event_system_t<Event>::insert_event(const typename input_event_system_t<Event>::event e)
 	{
-		input_system::generate_state();
-
 		for (auto& [i, a] : _event_interpreters)
-			a = detail::check_events<Event>(i, events, a);
+			a = detail::check_event<Event>(i, e, a);
 	}
 	
 	template<typename Event>
-	inline typename input_event_system_t<Event>::action_set input_event_system_t<Event>::input_state() const
+	inline const typename input_event_system_t<Event>::action_set& input_event_system_t<Event>::input_state()
 	{
-		auto out = action_set{}; // TODO: store this action_set somewhere and just share it, we don't want to realloc it every game tick
+		auto& out = _action_set;
+		out.clear();
 		auto iter = std::begin(_action_input);
 		const auto end = std::end(_action_input);
 

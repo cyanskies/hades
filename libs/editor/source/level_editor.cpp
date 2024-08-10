@@ -142,7 +142,7 @@ namespace hades::detail
 		return *_level;
 	}
 
-	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &t, input_system::action_set actions)
+	void level_editor_impl::update(time_duration dt, const sf::RenderTarget &t, const input_system::action_set& actions)
 	{
 		_total_run_time += dt;
 

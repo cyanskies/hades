@@ -318,8 +318,8 @@ namespace hades
 			const auto dt = time_duration{ seconds{ 1 } } / tick_rate->load();
 
 			auto on_tick = [this, dt, state = activeState]() {
+				_input.generate_state();
 				handleEvents(state);
-				_input.generate_state(_event_buffer);
 				state->update(dt, _window, _input.input_state());
 			};
 
@@ -409,12 +409,10 @@ namespace hades
 
 	void App::handleEvents(state *activeState)
 	{
-		_event_buffer.clear();
 		using event = input_event_system::event;
 		auto e = event{};
 		while (_window.pollEvent(e))
 		{
-			bool handled = false;
 			//window events
 			if (e.type == event::Closed) // if the app is closed, then disappear without a fuss
 			{
@@ -446,13 +444,10 @@ namespace hades
 			else
 			{
 				_gui->activate_context();
-				if (_gui->handle_event(e)) // check debug overlay ui
-					handled = true; 
-				else if (activeState->handle_event(e)) // check state raw event
-					handled = true;
-
-				if(handled == false) // TODO: pass directly to input system?
-					_event_buffer.emplace_back(input_event_system::checked_event{ handled, e });
+				if (_gui->handle_event(e) || activeState->handle_event(e)) // check state raw event
+					continue;
+				else
+					_input.insert_event(e);
 			}
 		}
 

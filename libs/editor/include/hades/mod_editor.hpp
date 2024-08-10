@@ -29,7 +29,7 @@ namespace hades
 
 		void init() override;
 		bool handle_event(const event&) override;
-		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
+		void update(time_duration, const sf::RenderTarget&, const input_system::action_set&) override;
 		void draw(sf::RenderTarget&, time_duration) override;
 		void reinit() override;
 

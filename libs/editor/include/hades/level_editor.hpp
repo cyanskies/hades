@@ -50,7 +50,7 @@ namespace hades::detail
 
 		level get_level() const;
 
-		void update(time_duration, const sf::RenderTarget&, input_system::action_set) override;
+		void update(time_duration, const sf::RenderTarget&, const input_system::action_set&) override;
 		void draw(sf::RenderTarget&, time_duration) override;
 
 		using get_players_return_type = level_editor_component::get_players_return_type;

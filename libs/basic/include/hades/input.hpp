@@ -118,7 +118,8 @@ namespace hades
 		constexpr input_event_interpreter(interpreter_id id) : id(id) {}
 
 		interpreter_id id = interpreter_id::zero;
-		using event_function = std::function<action(bool, const event&, action)>;
+		// TODO: cpp23 the whole insert_event function chain could become noexcept with move_only_function and noexcept functions
+		using event_function = std::function<action(const event&, action)>; // TODO: remove bool param(its always false)
 		event_function event_check{};
 		using event_match_function = bool(*)(const event&);
 		event_match_function is_match{};
@@ -190,10 +191,10 @@ namespace hades
 		//save binding config, //this only works for bindable actions
 		void generate_state(); //runs all the action test functions, including custom ones
 		using action_set = std::set<action, action_compare>; // TODO: review usage of set //TODO flat set
-		// TODO: pass storage as param, dont allocate a whole set every single tick
-		action_set input_state() const;
+		const action_set& input_state();
 
 	protected:
+		action_set _action_set;
 		//a map of interpretors to actions, this is used for generateStat
 		using input_map = std::multimap<action_id, input_interpreter::interpreter_id>;
 		input_map _action_input;
@@ -219,19 +220,13 @@ namespace hades
         using event_interpreter = input_event_interpreter<Event>;
 		using event_interpreter_set = std::unordered_map<event_interpreter, action>;
 
-		struct checked_event
-		{
-            bool handled;
-            Event event;
-		};
-
 		//adds a new input interpretor
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e);
 		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e, input_interpreter::function f);
 
-		// TODO: allow sending one event at a time
-		void generate_state(const std::vector<checked_event>&); //runs all the action test functions, including custom ones
-		action_set input_state() const;
+		using input_system::generate_state; // calculate real-time state
+		void insert_event(event); // update state based on events
+		const action_set& input_state(); // update and access the current actions state
 	private:
 		event_interpreter_set _event_interpreters;
 	};

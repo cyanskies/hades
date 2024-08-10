@@ -83,7 +83,7 @@ bool simple_instance_state::handle_event(const hades::event&)
 	return false;
 }
 
-void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarget&, hades::input_system::action_set a)
+void simple_instance_state::update(hades::time_duration dt, const sf::RenderTarget&, const hades::input_system::action_set&)
 {
 	_server->update(dt);
 }

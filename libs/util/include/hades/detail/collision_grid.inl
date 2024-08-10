@@ -20,7 +20,7 @@ namespace hades
 		const auto height_count = world_rect.height / cell_sizef;
 		_cell_count = static_cast<std::size_t>(std::round(height_count)) * _cells_per_row;
 
-		_nodes.resize(_cell_count);
+		_nodes.resize(_cell_count, node{ {}, bad_node });
 		return;
 	}
 
@@ -87,14 +87,14 @@ namespace hades
 		auto index = bad_node;
 		if (empty(_empty_index))
 		{
-			_nodes.emplace_back(node{ k });
+			_nodes.emplace_back(node{ k, bad_node });
 			index = size(_nodes) - 1;
 		}
 		else
 		{
 			index = _empty_index.back();
 			_empty_index.pop_back();
-			_nodes[index] = node{ k };
+			_nodes[index] = node{ k, bad_node };
 		}
 
 		//insert at the start of the forward list

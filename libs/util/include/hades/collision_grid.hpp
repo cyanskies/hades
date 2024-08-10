@@ -33,11 +33,11 @@ namespace hades
 	private:
 		static constexpr std::size_t bad_node =
 			std::numeric_limits<std::size_t>::max();
-
+	
 		struct node
 		{
 			key_type key;
-			std::size_t next = bad_node;
+			std::size_t next;
 		};
 
 		void _append(std::size_t cell, key_type k);

@@ -12,6 +12,8 @@
 #include "hades/uniqueid.hpp"
 #include "hades/vector_math.hpp"
 
+using namespace std::string_view_literals;
+
 namespace hades
 {
 	using id_type = input_interpreter::interpreter_id;
@@ -137,128 +139,130 @@ namespace hades
 	{
 		//TODO: use key symbols instead of names where appropriate
 		// eg "-" instead of "dash"
+		const auto insert = [&sys](std::pair<std::string_view, interpreter_funcs> f) {
+			sys.add_interpreter(f.first, std::move(std::get<0>(f.second)), std::move(std::get<1>(f.second)));
+		};
 
-		std::map<types::string, interpreter_funcs> interpreter_map;
 		//=====keyboard keys=====
 		//alpha
-		interpreter_map.insert({ "a", keyboard<sf::Keyboard::A>() });
-		interpreter_map.insert({ "b", keyboard<sf::Keyboard::B>() });
-		interpreter_map.insert({ "c", keyboard<sf::Keyboard::C>() });
-		interpreter_map.insert({ "d", keyboard<sf::Keyboard::D>() });
-		interpreter_map.insert({ "e", keyboard<sf::Keyboard::E>() });
-		interpreter_map.insert({ "f", keyboard<sf::Keyboard::F>() });
-		interpreter_map.insert({ "g", keyboard<sf::Keyboard::G>() });
-		interpreter_map.insert({ "h", keyboard<sf::Keyboard::H>() });
-		interpreter_map.insert({ "i", keyboard<sf::Keyboard::I>() });
-		interpreter_map.insert({ "j", keyboard<sf::Keyboard::J>() });
-		interpreter_map.insert({ "k", keyboard<sf::Keyboard::K>() });
-		interpreter_map.insert({ "l", keyboard<sf::Keyboard::L>() });
-		interpreter_map.insert({ "m", keyboard<sf::Keyboard::M>() });
-		interpreter_map.insert({ "n", keyboard<sf::Keyboard::N>() });
-		interpreter_map.insert({ "o", keyboard<sf::Keyboard::O>() });
-		interpreter_map.insert({ "p", keyboard<sf::Keyboard::P>() });
-		interpreter_map.insert({ "q", keyboard<sf::Keyboard::Q>() });
-		interpreter_map.insert({ "r", keyboard<sf::Keyboard::R>() });
-		interpreter_map.insert({ "s", keyboard<sf::Keyboard::S>() });
-		interpreter_map.insert({ "t", keyboard<sf::Keyboard::T>() });
-		interpreter_map.insert({ "u", keyboard<sf::Keyboard::U>() });
-		interpreter_map.insert({ "v", keyboard<sf::Keyboard::V>() });
-		interpreter_map.insert({ "w", keyboard<sf::Keyboard::W>() });
-		interpreter_map.insert({ "x", keyboard<sf::Keyboard::X>() });
-		interpreter_map.insert({ "y", keyboard<sf::Keyboard::Y>() });
-		interpreter_map.insert({ "z", keyboard<sf::Keyboard::Z>() });
+		insert({ "a"sv, keyboard<sf::Keyboard::A>() });
+		insert({ "b"sv, keyboard<sf::Keyboard::B>() });
+		insert({ "c"sv, keyboard<sf::Keyboard::C>() });
+		insert({ "d"sv, keyboard<sf::Keyboard::D>() });
+		insert({ "e"sv, keyboard<sf::Keyboard::E>() });
+		insert({ "f"sv, keyboard<sf::Keyboard::F>() });
+		insert({ "g"sv, keyboard<sf::Keyboard::G>() });
+		insert({ "h"sv, keyboard<sf::Keyboard::H>() });
+		insert({ "i"sv, keyboard<sf::Keyboard::I>() });
+		insert({ "j"sv, keyboard<sf::Keyboard::J>() });
+		insert({ "k"sv, keyboard<sf::Keyboard::K>() });
+		insert({ "l"sv, keyboard<sf::Keyboard::L>() });
+		insert({ "m"sv, keyboard<sf::Keyboard::M>() });
+		insert({ "n"sv, keyboard<sf::Keyboard::N>() });
+		insert({ "o"sv, keyboard<sf::Keyboard::O>() });
+		insert({ "p"sv, keyboard<sf::Keyboard::P>() });
+		insert({ "q"sv, keyboard<sf::Keyboard::Q>() });
+		insert({ "r"sv, keyboard<sf::Keyboard::R>() });
+		insert({ "s"sv, keyboard<sf::Keyboard::S>() });
+		insert({ "t"sv, keyboard<sf::Keyboard::T>() });
+		insert({ "u"sv, keyboard<sf::Keyboard::U>() });
+		insert({ "v"sv, keyboard<sf::Keyboard::V>() });
+		insert({ "w"sv, keyboard<sf::Keyboard::W>() });
+		insert({ "x"sv, keyboard<sf::Keyboard::X>() });
+		insert({ "y"sv, keyboard<sf::Keyboard::Y>() });
+		insert({ "z"sv, keyboard<sf::Keyboard::Z>() });
 		//numeric
-		interpreter_map.insert({ "0", keyboard<sf::Keyboard::Num0>() });
-		interpreter_map.insert({ "1", keyboard<sf::Keyboard::Num1>() });
-		interpreter_map.insert({ "2", keyboard<sf::Keyboard::Num2>() });
-		interpreter_map.insert({ "3", keyboard<sf::Keyboard::Num3>() });
-		interpreter_map.insert({ "4", keyboard<sf::Keyboard::Num4>() });
-		interpreter_map.insert({ "5", keyboard<sf::Keyboard::Num5>() });
-		interpreter_map.insert({ "6", keyboard<sf::Keyboard::Num6>() });
-		interpreter_map.insert({ "7", keyboard<sf::Keyboard::Num7>() });
-		interpreter_map.insert({ "8", keyboard<sf::Keyboard::Num8>() });
-		interpreter_map.insert({ "9", keyboard<sf::Keyboard::Num9>() });
+		insert({ "0"sv, keyboard<sf::Keyboard::Num0>() });
+		insert({ "1"sv, keyboard<sf::Keyboard::Num1>() });
+		insert({ "2"sv, keyboard<sf::Keyboard::Num2>() });
+		insert({ "3"sv, keyboard<sf::Keyboard::Num3>() });
+		insert({ "4"sv, keyboard<sf::Keyboard::Num4>() });
+		insert({ "5"sv, keyboard<sf::Keyboard::Num5>() });
+		insert({ "6"sv, keyboard<sf::Keyboard::Num6>() });
+		insert({ "7"sv, keyboard<sf::Keyboard::Num7>() });
+		insert({ "8"sv, keyboard<sf::Keyboard::Num8>() });
+		insert({ "9"sv, keyboard<sf::Keyboard::Num9>() });
 		//control
-		interpreter_map.insert({ "escape", keyboard<sf::Keyboard::Escape>() });
-		interpreter_map.insert({ "lcontrol", keyboard<sf::Keyboard::LControl>() });
-		interpreter_map.insert({ "lshift", keyboard<sf::Keyboard::LShift>() });
-		interpreter_map.insert({ "lalt", keyboard<sf::Keyboard::LAlt>() });
-		//i.insert({ "lsystem", keyboard<sf::Keyboard::LSystem>() }); //don't rebind system key
-		interpreter_map.insert({ "rcontrol", keyboard<sf::Keyboard::RControl>() });
-		interpreter_map.insert({ "rshift", keyboard<sf::Keyboard::RShift>() });
-		interpreter_map.insert({ "ralt", keyboard<sf::Keyboard::RAlt>() });
-		//i.insert({ "rsystem", keyboard<sf::Keyboard::RSystem>() });
-		interpreter_map.insert({ "menu", keyboard<sf::Keyboard::Menu>() });
+		insert({ "escape"sv, keyboard<sf::Keyboard::Escape>() });
+		insert({ "lcontrol"sv, keyboard<sf::Keyboard::LControl>() });
+		insert({ "lshift"sv, keyboard<sf::Keyboard::LShift>() });
+		insert({ "lalt"sv, keyboard<sf::Keyboard::LAlt>() });
+		//i.insert({ "lsystem"sv, keyboard<sf::Keyboard::LSystem>() }); //don't rebind system key
+		insert({ "rcontrol"sv, keyboard<sf::Keyboard::RControl>() });
+		insert({ "rshift"sv, keyboard<sf::Keyboard::RShift>() });
+		insert({ "ralt"sv, keyboard<sf::Keyboard::RAlt>() });
+		//i.insert({ "rsystem"sv, keyboard<sf::Keyboard::RSystem>() });
+		insert({ "menu"sv, keyboard<sf::Keyboard::Menu>() });
 		//special
-		interpreter_map.insert({ "lbracket", keyboard<sf::Keyboard::LBracket>() });
-		interpreter_map.insert({ "rbracket", keyboard<sf::Keyboard::RBracket>() });
-		interpreter_map.insert({ "semicolon", keyboard<sf::Keyboard::Semicolon>() });
-		interpreter_map.insert({ "comma", keyboard<sf::Keyboard::Comma>() });
-		interpreter_map.insert({ "period", keyboard<sf::Keyboard::Period>() });
-		interpreter_map.insert({ "quote", keyboard<sf::Keyboard::Apostrophe>()});
-		interpreter_map.insert({ "slash", keyboard<sf::Keyboard::Slash>() });
-		interpreter_map.insert({ "backslash", keyboard<sf::Keyboard::Backslash>() });
-		//i.insert({ "tilde", keyboard<sf::Keyboard::Tilde>() }); // Reserved for engine usage
-		interpreter_map.insert({ "equal", keyboard<sf::Keyboard::Equal>() });
-		interpreter_map.insert({ "dash", keyboard<sf::Keyboard::Hyphen>() });
-		interpreter_map.insert({ "space", keyboard<sf::Keyboard::Space>() });
-		interpreter_map.insert({ "return", keyboard<sf::Keyboard::Enter>() });
-		interpreter_map.insert({ "backspace", keyboard<sf::Keyboard::Backspace>() });
-		interpreter_map.insert({ "tab", keyboard<sf::Keyboard::Tab>() });
-		interpreter_map.insert({ "pageup", keyboard<sf::Keyboard::PageUp>() });
-		interpreter_map.insert({ "pagedown", keyboard<sf::Keyboard::PageDown>() });
-		interpreter_map.insert({ "end", keyboard<sf::Keyboard::End>() });
-		interpreter_map.insert({ "home", keyboard<sf::Keyboard::Home>() });
-		interpreter_map.insert({ "insert", keyboard<sf::Keyboard::Insert>() });
-		interpreter_map.insert({ "delete", keyboard<sf::Keyboard::Delete>() });
-		interpreter_map.insert({ "add", keyboard<sf::Keyboard::Add>() });
+		insert({ "lbracket"sv, keyboard<sf::Keyboard::LBracket>() });
+		insert({ "rbracket"sv, keyboard<sf::Keyboard::RBracket>() });
+		insert({ "semicolon"sv, keyboard<sf::Keyboard::Semicolon>() });
+		insert({ "comma"sv, keyboard<sf::Keyboard::Comma>() });
+		insert({ "period"sv, keyboard<sf::Keyboard::Period>() });
+		insert({ "quote"sv, keyboard<sf::Keyboard::Apostrophe>()});
+		insert({ "slash"sv, keyboard<sf::Keyboard::Slash>() });
+		insert({ "backslash"sv, keyboard<sf::Keyboard::Backslash>() });
+		//i.insert({ "tilde"sv, keyboard<sf::Keyboard::Tilde>() }); // Reserved for engine usage
+		insert({ "equal"sv, keyboard<sf::Keyboard::Equal>() });
+		insert({ "dash"sv, keyboard<sf::Keyboard::Hyphen>() });
+		insert({ "space"sv, keyboard<sf::Keyboard::Space>() });
+		insert({ "return"sv, keyboard<sf::Keyboard::Enter>() });
+		insert({ "backspace"sv, keyboard<sf::Keyboard::Backspace>() });
+		insert({ "tab"sv, keyboard<sf::Keyboard::Tab>() });
+		insert({ "pageup"sv, keyboard<sf::Keyboard::PageUp>() });
+		insert({ "pagedown"sv, keyboard<sf::Keyboard::PageDown>() });
+		insert({ "end"sv, keyboard<sf::Keyboard::End>() });
+		insert({ "home"sv, keyboard<sf::Keyboard::Home>() });
+		insert({ "insert"sv, keyboard<sf::Keyboard::Insert>() });
+		insert({ "delete"sv, keyboard<sf::Keyboard::Delete>() });
+		insert({ "add"sv, keyboard<sf::Keyboard::Add>() });
 		//numpad
-		interpreter_map.insert({ "subtract", keyboard<sf::Keyboard::Subtract>() });
-		interpreter_map.insert({ "multiply", keyboard<sf::Keyboard::Multiply>() });
-		interpreter_map.insert({ "divide", keyboard<sf::Keyboard::Divide>() });
-		interpreter_map.insert({ "left", keyboard<sf::Keyboard::Left>() });
-		interpreter_map.insert({ "right", keyboard<sf::Keyboard::Right>() });
-		interpreter_map.insert({ "up", keyboard<sf::Keyboard::Up>() });
-		interpreter_map.insert({ "down", keyboard<sf::Keyboard::Down>() });
-		interpreter_map.insert({ "num0", keyboard<sf::Keyboard::Numpad0>() });
-		interpreter_map.insert({ "num1", keyboard<sf::Keyboard::Numpad1>() });
-		interpreter_map.insert({ "num2", keyboard<sf::Keyboard::Numpad2>() });
-		interpreter_map.insert({ "num3", keyboard<sf::Keyboard::Numpad3>() });
-		interpreter_map.insert({ "num4", keyboard<sf::Keyboard::Numpad4>() });
-		interpreter_map.insert({ "num5", keyboard<sf::Keyboard::Numpad5>() });
-		interpreter_map.insert({ "num6", keyboard<sf::Keyboard::Numpad6>() });
-		interpreter_map.insert({ "num7", keyboard<sf::Keyboard::Numpad7>() });
-		interpreter_map.insert({ "num8", keyboard<sf::Keyboard::Numpad8>() });
-		interpreter_map.insert({ "num9", keyboard<sf::Keyboard::Numpad9>() });
-		interpreter_map.insert({ "f1", keyboard<sf::Keyboard::F1>() });
-		interpreter_map.insert({ "f2", keyboard<sf::Keyboard::F2>() });
-		interpreter_map.insert({ "f3", keyboard<sf::Keyboard::F3>() });
-		interpreter_map.insert({ "f4", keyboard<sf::Keyboard::F4>() });
-		interpreter_map.insert({ "f5", keyboard<sf::Keyboard::F5>() });
-		interpreter_map.insert({ "f6", keyboard<sf::Keyboard::F6>() });
-		interpreter_map.insert({ "f7", keyboard<sf::Keyboard::F7>() });
-		interpreter_map.insert({ "f8", keyboard<sf::Keyboard::F8>() });
-		interpreter_map.insert({ "f9", keyboard<sf::Keyboard::F9>() });
-		interpreter_map.insert({ "f10", keyboard<sf::Keyboard::F10>() });
-		interpreter_map.insert({ "f11", keyboard<sf::Keyboard::F11>() });
-		interpreter_map.insert({ "f12", keyboard<sf::Keyboard::F12>() });
+		insert({ "subtract"sv, keyboard<sf::Keyboard::Subtract>() });
+		insert({ "multiply"sv, keyboard<sf::Keyboard::Multiply>() });
+		insert({ "divide"sv, keyboard<sf::Keyboard::Divide>() });
+		insert({ "left"sv, keyboard<sf::Keyboard::Left>() });
+		insert({ "right"sv, keyboard<sf::Keyboard::Right>() });
+		insert({ "up"sv, keyboard<sf::Keyboard::Up>() });
+		insert({ "down"sv, keyboard<sf::Keyboard::Down>() });
+		insert({ "num0"sv, keyboard<sf::Keyboard::Numpad0>() });
+		insert({ "num1"sv, keyboard<sf::Keyboard::Numpad1>() });
+		insert({ "num2"sv, keyboard<sf::Keyboard::Numpad2>() });
+		insert({ "num3"sv, keyboard<sf::Keyboard::Numpad3>() });
+		insert({ "num4"sv, keyboard<sf::Keyboard::Numpad4>() });
+		insert({ "num5"sv, keyboard<sf::Keyboard::Numpad5>() });
+		insert({ "num6"sv, keyboard<sf::Keyboard::Numpad6>() });
+		insert({ "num7"sv, keyboard<sf::Keyboard::Numpad7>() });
+		insert({ "num8"sv, keyboard<sf::Keyboard::Numpad8>() });
+		insert({ "num9"sv, keyboard<sf::Keyboard::Numpad9>() });
+		insert({ "f1"sv, keyboard<sf::Keyboard::F1>() });
+		insert({ "f2"sv, keyboard<sf::Keyboard::F2>() });
+		insert({ "f3"sv, keyboard<sf::Keyboard::F3>() });
+		insert({ "f4"sv, keyboard<sf::Keyboard::F4>() });
+		insert({ "f5"sv, keyboard<sf::Keyboard::F5>() });
+		insert({ "f6"sv, keyboard<sf::Keyboard::F6>() });
+		insert({ "f7"sv, keyboard<sf::Keyboard::F7>() });
+		insert({ "f8"sv, keyboard<sf::Keyboard::F8>() });
+		insert({ "f9"sv, keyboard<sf::Keyboard::F9>() });
+		insert({ "f10"sv, keyboard<sf::Keyboard::F10>() });
+		insert({ "f11"sv, keyboard<sf::Keyboard::F11>() });
+		insert({ "f12"sv, keyboard<sf::Keyboard::F12>() });
 		// Extended function keys (not available on most keyboards)
-		//interpreter_map.insert({ "f13", keyboard<sf::Keyboard::F13>() });
-		//interpreter_map.insert({ "f14", keyboard<sf::Keyboard::F14>() });
-		//interpreter_map.insert({ "f15", keyboard<sf::Keyboard::F15>() });
+		//insert({ "f13"sv, keyboard<sf::Keyboard::F13>() });
+		//insert({ "f14"sv, keyboard<sf::Keyboard::F14>() });
+		//insert({ "f15"sv, keyboard<sf::Keyboard::F15>() });
 		//pause
-		interpreter_map.insert({ "pause", keyboard<sf::Keyboard::Pause>() });
+		insert({ "pause"sv, keyboard<sf::Keyboard::Pause>() });
 		//======mouse buttons=======
-		interpreter_map.insert({ "mouseleft", mouse_button<sf::Mouse::Button::Left>(win) });
-		interpreter_map.insert({ "mouseright", mouse_button<sf::Mouse::Button::Right>(win) });
+		insert({ "mouseleft"sv, mouse_button<sf::Mouse::Button::Left>(win) });
+		insert({ "mouseright"sv, mouse_button<sf::Mouse::Button::Right>(win) });
 		// wheelbutton
-		interpreter_map.insert({ "mousemiddle", mouse_button<sf::Mouse::Button::Middle>(win) });
+		insert({ "mousemiddle"sv, mouse_button<sf::Mouse::Button::Middle>(win) });
 		// mouse extra buttons
-		interpreter_map.insert({ "mouse_x1", mouse_button<sf::Mouse::Button::Extra1>(win) });
-		interpreter_map.insert({ "mouse_x2", mouse_button<sf::Mouse::Button::Extra2>(win) });
+		insert({ "mouse_x1"sv, mouse_button<sf::Mouse::Button::Extra1>(win) });
+		insert({ "mouse_x2"sv, mouse_button<sf::Mouse::Button::Extra2>(win) });
 		//mouse axis
-		interpreter_map.insert({ "mouse", mouse_pos(win) });
-		interpreter_map.insert({ "mousewheel", mouse_wheel(win) });
+		insert({ "mouse"sv, mouse_pos(win) });
+		insert({ "mousewheel"sv, mouse_wheel(win) });
 		//mouseMoveRelative
 		//=====joy buttons=====
 		//TODO: impliment for joystick
@@ -281,8 +285,5 @@ namespace hades
 			return a;
 		} } });
 		*/
-
-		for (const auto &inter : interpreter_map)
-			sys.add_interpreter(inter.first, std::get<0>(inter.second), std::get<1>(inter.second));
 	}
 }

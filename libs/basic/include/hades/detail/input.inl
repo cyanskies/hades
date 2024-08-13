@@ -5,16 +5,16 @@ namespace hades
 	template<typename Event>
 	void input_event_system_t<Event>::add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e)
 	{
-		input_interpreter::interpreter_id id{};
+		const auto id = make_unique_id();
 		_add_interpreter_name(name, id);
 
 		event_interpreter in{};
 		in.id = id;
 		assert(e && m);
-		in.event_check = e;
-		in.is_match = m;
+		in.event_check = std::move(e);
+		in.is_match = std::move(m);
 
-		_event_interpreters.insert({ in, {} });
+		_event_interpreters.insert({ std::move(in), {} });
 	}
 
 	template<typename Event>

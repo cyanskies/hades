@@ -30,13 +30,11 @@ namespace hades
 
 	void input_system::add_interpreter(std::string_view name, input_interpreter::function f)
 	{
-		input_interpreter::interpreter_id id{};
+		const auto id = make_unique_id();
 		_add_interpreter_name(name, id);
 
-		input_interpreter in{ f };
-		in.id = id;
-
-		_interpreters.insert({ in, {} });
+		input_interpreter in{ id, std::move(f) };
+		_interpreters.insert({ std::move(in), {} });
 	}
 
 	bool input_system::bind(input_system::action_id action, std::string_view interpretor)

@@ -87,6 +87,7 @@ namespace hades
 	struct input_interpreter
 	{
 		using interpreter_id = unique_id;
+		// NOTE: function is not permitted to throw
 		using function = std::function<action(action)>;
 
 		interpreter_id id = interpreter_id::zero;
@@ -175,16 +176,16 @@ namespace hades
 		void add_interpreter(std::string_view name, input_interpreter::function f);
 
 		//binds an action to an interpretor
-		bool bind(action_id, std::string_view);
+		[[nodiscard]] bool bind(action_id, std::string_view);
 		//unbinds a specific interpretor from an action
-		void unbind(action_id, std::string_view);
+		void unbind(action_id, std::string_view) noexcept;
 		//unbinds all interpretors from an action
-		void unbind(action_id); 
+		void unbind(action_id) noexcept; 
 		//load bindings config
 		//save binding config, //this only works for bindable actions
-		void generate_state(); //runs all the action test functions, including custom ones
+		void generate_state() noexcept; //runs all the action test functions, including custom ones
 		using action_set = std::set<action, action_compare>; // TODO: review usage of set //TODO flat set
-		const action_set& input_state();
+		[[nodiscard]] const action_set& input_state();
 
 	protected:
 		action_set _action_set;
@@ -209,17 +210,16 @@ namespace hades
 	{
 	public:
         using event = Event;
-		//using checked_event = std::tuple<bool, event>;
-        using event_interpreter = input_event_interpreter<Event>;
+        using event_interpreter = input_event_interpreter<event>;
 		using event_interpreter_set = std::unordered_map<event_interpreter, action>;
 
 		//adds a new input interpretor
-		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e);
-		void add_interpreter(std::string_view name, typename event_interpreter::event_match_function m, typename event_interpreter::event_function e, input_interpreter::function f);
+		void add_interpreter(std::string_view name, event_interpreter::event_match_function m, event_interpreter::event_function e);
+		void add_interpreter(std::string_view name, event_interpreter::event_match_function m, event_interpreter::event_function e, input_interpreter::function f);
 
 		using input_system::generate_state; // calculate real-time state
 		void insert_event(event); // update state based on events
-		const action_set& input_state(); // update and access the current actions state
+		[[nodiscard]] const action_set& input_state(); // update and access the current actions state
 	private:
 		event_interpreter_set _event_interpreters;
 	};

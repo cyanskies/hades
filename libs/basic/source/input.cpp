@@ -42,7 +42,7 @@ namespace hades
 		if (_bindable.find(action) == _bindable.end())
 			return false;
 
-		auto inter = _interpreter_names.find(interpretor);
+		const auto inter = _interpreter_names.find(interpretor);
 		if (inter == std::end(_interpreter_names))
 			return false;
 
@@ -50,9 +50,9 @@ namespace hades
 		return true;
 	}
 
-	void input_system::unbind(input_system::action_id action, std::string_view input)
+	void input_system::unbind(input_system::action_id action, std::string_view input) noexcept
 	{
-		auto inter = _interpreter_names.find(input);
+		const auto inter = _interpreter_names.find(input);
 		if (inter == std::end(_interpreter_names))
 			return;
 
@@ -62,20 +62,20 @@ namespace hades
 		while (iter != end)
 		{
 			//if the binding is for the named input
-			if (iter->second == iter->second)
+			if (iter->second == inter->second)
 				iter = _action_input.erase(iter);
 			else
 				++iter;
 		}
 	}
 
-	void input_system::unbind(input_system::action_id action)
+	void input_system::unbind(input_system::action_id action) noexcept
 	{
 		const auto[begin, end] = _action_input.equal_range(action);
 		_action_input.erase(begin, end);
 	}
 
-	void input_system::generate_state()
+	void input_system::generate_state() noexcept
 	{
 		for (auto& [i, a] : _interpreters)
 			a = std::invoke(i.input_check, a);
@@ -90,7 +90,9 @@ namespace hades
 		const auto end = std::end(_action_input);
 
 		const auto get_action = [&](input_interpreter::interpreter_id i)->action {
-			return _interpreters.find({ i })->second;
+			const auto iter = _interpreters.find({ i });
+			assert(iter != std::end(_interpreters));
+			return iter->second;
 		};
 
 		while (iter != end)

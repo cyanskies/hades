@@ -180,18 +180,6 @@ namespace hades
 		return out;
 	}
 
-	template<typename T, std::size_t N>
-	string vector_to_string(basic_vector<T, N> v)
-	{
-		using namespace std::string_view_literals;
-		if constexpr (N < 3)
-			return std::format("[{}, {}]"sv, v.x, v.y);
-		else if constexpr(N == 3)
-			return std::format("[{}, {}, {}]"sv, v.x, v.y, v.z);
-		else if constexpr (N > 3)
-			return std::format("[{}, {}, {}, {}]"sv, v.x, v.y, v.z, v.w);
-	}
-
 	namespace vector
 	{
 		template<typename T, std::size_t Size>
@@ -333,10 +321,17 @@ namespace hades
 		}
 
 		template<typename T>
-		auto distance(vector2<T> a, vector2<T> b) noexcept
+		[[nodiscard]] auto distance(const vector2<T> a, const vector2<T> b) noexcept
 		{
 			const auto ab = b - a;
 			return magnitude(ab);
+		}
+
+		template<typename T>
+		[[nodiscard]] auto distance_squared(const vector2<T> a, const vector2<T> b) noexcept
+		{
+			const auto ab = b - a;
+			return magnitude_squared(ab);
 		}
 
 		template<typename T, std::size_t N>
@@ -418,4 +413,39 @@ namespace hades
 			return vector - sub;
 		}
 	}
+
+	template<typename T, std::size_t N>
+	string vector_to_string(const basic_vector<T, N> v)
+	{
+		return std::format("{}", v);
+	}
 }
+
+template<typename T, std::size_t N, typename CharT>
+struct std::formatter<hades::basic_vector<T, N>, CharT>
+{
+	template<class ParseContext>
+	constexpr ParseContext::iterator parse(ParseContext& ctx)
+	{
+		auto it = ctx.begin();
+		if (it == ctx.end())
+			return it;
+		
+		if (*it != '}')
+			throw std::format_error("Invalid format args for hades::basic_vector");
+
+		return it;
+	}
+
+	template<class FmtContext>
+	FmtContext::iterator format(const hades::basic_vector<T, N> v, FmtContext& ctx) const
+	{
+		using namespace std::string_view_literals;
+		if constexpr (N < 3)
+			return std::format_to(ctx.out(), "[{}, {}]"sv, v.x, v.y);
+		else if constexpr (N == 3)
+			return std::format_to(ctx.out(), "[{}, {}, {}]"sv, v.x, v.y, v.z);
+		else if constexpr (N > 3)
+			return std::format_to(ctx.out(), "[{}, {}, {}, {}]"sv, v.x, v.y, v.z, v.w);
+	}
+};

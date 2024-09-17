@@ -540,7 +540,7 @@ namespace hades
 	};
 
 	// swap a tile facing, so it doesnt get culled
-	// cliffs are all uphill be default, so this makes them into reversed
+	// cliffs are all uphill by default, so this makes them into reversed
 	// downhill quads
 	template<typename T>
 		requires std::same_as<T, map_tile> || std::same_as<T, basic_map_tile>

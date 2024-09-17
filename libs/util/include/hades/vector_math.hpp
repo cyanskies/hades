@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_VECTOR_MATH_HPP
 #define HADES_UTIL_VECTOR_MATH_HPP
 
+#include <format>
 #include <optional>
 #include <tuple>
 #include <type_traits>
@@ -297,7 +298,10 @@ namespace hades
 		[[nodiscard]] constexpr basic_vector<T, Size> unit(basic_vector<T, Size>) noexcept;
 
 		template<typename T>
-		auto distance(vector2<T>, vector2<T>) noexcept;
+		[[nodiscard]] auto distance(vector2<T>, vector2<T>) noexcept;
+
+		template<typename T>
+		[[nodiscard]] auto distance_squared(vector2<T>, vector2<T>) noexcept;
 
 		template<typename T, std::size_t N>
 		[[nodiscard]] constexpr basic_vector<T, N> reverse(basic_vector<T, N>) noexcept;
@@ -337,6 +341,9 @@ namespace hades
 	template<typename T, std::size_t N>
 	string vector_to_string(basic_vector<T, N>);
 }
+
+template<typename T, std::size_t N, typename CharT> 
+struct std::formatter<hades::basic_vector<T, N>, CharT>;
 
 #include "hades/detail/vector_math.inl"
 

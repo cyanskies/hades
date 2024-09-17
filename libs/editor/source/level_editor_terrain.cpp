@@ -122,8 +122,8 @@ namespace hades
 				}
 
 				const auto tile_id = to_tile_index(_tile, map.get_map());
-				g.text(std::format("Tile Index: {}\nTile Pos: (x: {}, y: {})\nis_cliff: {}"sv,
-					tile_id, _tile.x, _tile.y, is_cliff(map.get_map(), _tile)));
+				g.text(std::format("Tile Index: {}\nTile Pos: (x: {}, y: {})\nis_tile_cliff: {}"sv,
+					tile_id, _tile.x, _tile.y, is_tile_cliff(map.get_map(), _tile)));
 			}
 		}
 		g.window_end();
@@ -575,10 +575,13 @@ namespace hades
 		}
 	}
 
+	template<typename Func>
+	concept invoke_edge = std::invocable<Func, const tile_edge&> && std::invocable<Func, const tile_edge&, const tile_edge&>;
+
 	// optionally std::invocable<Func, triangle_info> and or std::invocable<Func, tile_position, float> as well
 	// these support inter cell targets and fading strength circle shapes
 	template<typename Func>
-	concept invoke_position = std::invocable<Func, tile_position> || /* std::invocable<Func, triangle_info> ||*/ std::invocable<Func, tile_position, float>;
+	concept invoke_position = std::invocable<Func, tile_position>;// || invoke_edge<Func> || invocable_for_each_circle<Func>;
 
 	template<invoke_position Func>
 	static void for_each_safe_diag(terrain_vertex_position position, const terrain_vertex_position diff,
@@ -640,41 +643,109 @@ namespace hades
 	/*std::optional<triangle_info> triangle;
 	auto triangle_mode = false;*/
 
-	[[nodiscard]] static constexpr rect_edges pick_edge(const vector2_float frac_pos) noexcept
+	[[nodiscard]] static constexpr tile_edge pick_edge(const tile_position pos, const vector2_float frac_pos) noexcept
 	{
 		constexpr auto diag_close_dist = 0.1f;
 		constexpr auto diag_far_dist = 0.2f;
 		if (line::distance(frac_pos, uphill) < diag_close_dist &&
 			line::distance(frac_pos, downhill) > diag_far_dist)
 		{
-			return rect_edges::uphill;
+			return { pos, rect_edges::uphill, vector::distance_squared({0.f, 0.f}, frac_pos) < vector::distance_squared({1.f, 1.f}, frac_pos) };
 		}
 		else if (line::distance(frac_pos, downhill) < diag_close_dist &&
 			line::distance(frac_pos, uphill) > diag_far_dist)
 		{
-			return rect_edges::downhill;
+			return { pos, rect_edges::downhill, vector::distance_squared({0.f, 1.f}, frac_pos) < vector::distance_squared({1.f, 0.f}, frac_pos) };
 		}
 
 		if (line::above(frac_pos, downhill))
 		{
 			// top and right
 			if (!line::above(frac_pos, uphill))
-				return rect_edges::right;
-			return rect_edges::top;
+				return { pos, rect_edges::right };
+			return { pos, rect_edges::top };
 		}
 		else
 		{
 			//bottom and left
 			if (line::above(frac_pos, uphill))
-				return rect_edges::left;
-			return rect_edges::bottom;
+				return { pos, rect_edges::left };
+			return { pos, rect_edges::bottom };
 		}
 	}
 
+	template<invoke_edge Func>
+	static void follow_cliffable(const tile_edge &previous_edge, const terrain_vertex_position vert_pos,
+		const terrain_map& map, int dist, Func&& f)
+	{
+		if (dist == 0)
+			return;
+
+		const auto next_edge = get_next_edge(vert_pos, previous_edge, map);
+		if (!next_edge)
+			return;
+		std::invoke(f, *next_edge);
+		const auto [first, second] = get_edge_vertex(*next_edge);
+		const auto next_vert = first == vert_pos ? second : first;
+		return follow_cliffable(*next_edge, next_vert, map, dist -1, std::forward<Func>(f));
+	}
+
 	// iterate over edges that already or could have cliffs created on them
-	template<typename Func>
-	static void do_raise_cliff(Func&&)
-	{}
+	template<invoke_edge Func>
+	static void follow_cliffable_edges(const tile_position tile_pos,
+		const vector2_float frac_pos, const terrain_map& map, const int max_dist,
+		Func&& f)
+	{
+		// if there is a cliff nearby then extend it
+		// if there are no cliffs then try to create a two edge cliff around nearest vertex
+		// then extend the cliff on either side up to max_dist tiles
+		// follow along cliffs or edges that could become cliffs, in both directions
+		
+		const auto t_edge = pick_edge(tile_pos, frac_pos);
+		const auto [first, second] = get_edge_vertex(t_edge);
+
+		const auto try_extend_cliff = [&map, &f](const tile_edge t_edge, const terrain_vertex_position vert) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>) -> std::optional<tile_edge>  {
+			auto e = get_next_cliff(vert, t_edge, map);
+			if (!e)
+			{
+				e = get_next_edge(vert, t_edge, map);
+				if (e)
+					std::invoke(f, *e);
+			}
+
+			return e;
+			};
+
+		if (can_add_cliff(map, t_edge) || is_cliff(tile_pos, t_edge.edge, map))
+		{
+			std::invoke(f, t_edge);
+		}
+		else if (const auto extra_edge = can_start_cliff(map, t_edge); extra_edge)
+		{
+			std::invoke(f, t_edge, *extra_edge);
+			// TODO: fixup first and second vertex positions
+		}
+
+		const auto follow_cliff_edges = [max_dist, &map, &f, &try_extend_cliff](tile_edge t_edge, terrain_vertex_position vert) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>) {
+			auto dist = decltype(max_dist){};
+			while (dist++ < max_dist)
+			{
+				auto e = try_extend_cliff(t_edge, vert);
+				if (!e)
+					break;
+
+				t_edge = *e;
+				auto [first, second] = get_edge_vertex(t_edge);
+				vert = first == vert ? second : first;
+			}
+			return;
+		};
+
+		follow_cliff_edges(t_edge, first);
+		follow_cliff_edges(t_edge, second);
+		
+		return;
+	}
 
 	// iterate over edges that currently have cliffs
 	template<typename Func>
@@ -722,25 +793,41 @@ namespace hades
 
 		// If the user is drawing or erasing cliffs then pass over to the special cliff functions
 		// TODO: do cliff top and bottom height along edges too(might need to be a seperate tool entirely)
-		switch (brush)
+		if constexpr (invoke_edge<Func>)
 		{
-		case brush_t::raise_cliff:
-			return do_raise_cliff(std::forward<Func>(f));
-		case brush_t::erase_cliff:
-			return do_erase_cliff(std::forward<Func>(f));
-		default:
-			; // other brushes are handled by the following switch (shape)
+			switch (brush)
+			{
+			case brush_t::raise_cliff: //							   v TODO: this should be cliff_length or size
+				return follow_cliffable_edges(tile_pos, frac_pos, map, 3, std::forward<Func>(f));
+			case brush_t::erase_cliff:
+				return do_erase_cliff(std::forward<Func>(f));
+			default:
+				; // other brushes are handled by the following switch (shape)
+			}
+		}
+		else 
+		{
+			switch (brush)
+			{
+			case brush_t::raise_cliff:
+				[[fallthrough]];
+			case brush_t::erase_cliff:
+				throw std::logic_error{ "Never call this function without providing an overload for cliff function calls" };
+				// assert(false);
+			default:
+				; // other brushes are handled by the following switch (shape)
+			}
 		}
 
 		using draw_shape = level_editor_terrain::draw_shape;
 		switch (shape)
 		{
 		case draw_shape::vertex:
-			return for_each_safe_position_rect(vertex, terrain_vertex_position{1, 1}, world_vertex_size, f);
+			return for_each_safe_position_rect(vertex, terrain_vertex_position{ 1, 1 }, world_vertex_size, f);
 		case draw_shape::edge:
 		{
 			//edge picking target
-			const auto edge = pick_edge(frac_pos);
+			const auto edge = pick_edge(tile_pos, frac_pos).edge;
 
 			// handle diag cases
 			switch (edge)
@@ -841,11 +928,27 @@ namespace hades
 			}	
 		};
 
+		const auto cliff_func = [&](const tile_edge& e) {
+			const tile_position &pos = e.position;
+			const rect_edges &edge = e.edge;
+			const auto terrain = _settings->editor_terrain ? _settings->editor_terrain.get() : _current.terrain;
+			const auto [first, second] = get_edge_vertex(e);
+			_preview.place_terrain(first, terrain);
+			_preview.place_terrain(second, terrain);
+			return;
+		};
+
+		const auto start_cliff_func = [&](const tile_edge& e1, const tile_edge& e2) {
+			cliff_func(e1);
+			cliff_func(e2);
+			return;
+			};
+
 		if (_brush == brush_type::select_tile &&
 			_tile_mutator.current_tile() != bad_tile_position)
 			_preview.place_tile(_tile_mutator.current_tile(), _tile);
 
-		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), func);
+		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), overloaded{ func, cliff_func, start_cliff_func });
 		return;
 	}
 
@@ -921,7 +1024,7 @@ namespace hades
 			}	
 		};
 
-		const auto height_func = [&](const tile_position pos, float str) {
+		const auto height_func = [&](const tile_position pos, const float str) {
 			const auto amount = _height_strength * str;
 
 			switch (_brush)
@@ -937,12 +1040,30 @@ namespace hades
 			default:
 				std::invoke(basic_func, pos);
 			}
+		};
+
+		const auto cliff_func = [&](const tile_edge& edge) {
+			static tile_edge last_edge = {};
+			if (last_edge != edge)
+			{
+				auto msg = std::format("can_add_cliff: {}", can_add_cliff(_map.get_map(), edge));
+				log(std::move(msg));
+			}
+
+			// try create cliff on edge
+			//const auto cliff = get_cliff_info({}, _map.get_map());
+			return;
+		};
+
+		const auto start_cliff_func = [&](const tile_edge& edge1, const tile_edge& edge2) {
+			static tile_edge last_edge = {};
+			if (last_edge != edge1 && last_edge != edge2)
+				log("can_start_cliff: true");
+			return;
 			};
 
-		const auto ovrld = overloaded{ basic_func, height_func };
+		const auto ovrld = overloaded{ basic_func, height_func, cliff_func, start_cliff_func };
 		
-		// NOTE: expand map size by one again, since the tile based for_each_safe_pos is written around tiles not vertex
-		//		(it uses < operators for the right and bottom limits, but we would need it to behave like <=
 		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), ovrld);
 		return;
 	}

@@ -191,3 +191,27 @@ namespace hades
 		return false;
 	}
 }
+
+template<typename CharT>
+struct std::formatter<hades::rect_edges, CharT> : std::formatter<std::basic_string_view<CharT>, CharT>
+{
+	template<class FmtContext>
+	FmtContext::iterator format(const hades::rect_edges re, FmtContext& ctx) const
+	{
+		using namespace std::string_view_literals;
+		constexpr auto strings = std::array{
+			"top"sv,
+			"right"sv,
+			"bottom"sv,
+			"left"sv,
+			"uphill"sv,
+			"downhill"sv,
+			"end"sv
+		};
+
+		static_assert(size(strings) == static_cast<std::size_t>(hades::rect_edges::end) + 1);
+
+		assert(re <= hades::rect_edges::end);
+		return std::formatter<std::basic_string_view<CharT>, CharT>::format(strings[hades::enum_type(re)], ctx);
+	}
+};

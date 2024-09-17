@@ -2,6 +2,7 @@
 #define HADES_UTIL_RECT_MATH_HPP
 
 #include <array>
+#include <format>
 #include <type_traits>
 
 #include "hades/types.hpp"
@@ -99,8 +100,8 @@ namespace hades
 	};
 
 	enum class rect_edges : std::uint8_t {
-		begin,
-		top = begin,
+		top,
+		begin = top,
 		right,
 		bottom,
 		left,
@@ -109,9 +110,9 @@ namespace hades
 		end
 	};
 
-	enum class rect_diag : std::uint8_t {
-		begin = rect_edges::uphill,
-		uphill = begin,
+	enum class [[deprecated]] rect_diag : std::uint8_t {
+		uphill = rect_edges::uphill,
+		begin = uphill,
 		downhill,
 		end
 	};
@@ -132,6 +133,9 @@ namespace hades
 	template<typename T>
 	constexpr bool is_within(rect_t<T> first, rect_t<T> second) noexcept;
 }
+
+template<typename CharT>
+struct std::formatter<hades::rect_edges, CharT>;
 
 #include "hades/detail/rectangle_math.inl"
 

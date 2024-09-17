@@ -179,6 +179,36 @@ namespace hades
 		return;
 	}
 
+	template<std::invocable<tile_position, rect_corners> Func>
+	static void for_each_safe_adjacent_corner(const terrain_map& m, const terrain_vertex_position p, Func&& f)
+		noexcept(std::is_nothrow_invocable_v<Func, tile_position, rect_corners>)
+	{
+		constexpr auto corners = std::array{
+			rect_corners::top_left,
+			rect_corners::top_right,
+			rect_corners::bottom_right,
+			rect_corners::bottom_left
+		};
+
+		const auto positions = std::array{
+			p,
+			p - tile_position{ 1, 0 },
+			p - tile_position{ 1, 1 },
+			p - tile_position{ 0, 1 }
+		};
+
+		const auto world_size = get_size(m);
+		constexpr auto size = std::size(corners);
+
+		for (auto i = std::uint8_t{}; i != size; ++i)
+		{
+			if (within_map(world_size, positions[i]))
+				std::invoke(f, positions[i], corners[i]);
+		}
+
+		return;
+	}
+
 	namespace detail
 	{
 		template<invocable_r<std::uint8_t, std::uint8_t> Func>
@@ -197,7 +227,6 @@ namespace hades
 			return;
 		}
 	}
-
 
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(terrain_map& m, tile_position p, rect_corners c, Func&& f)

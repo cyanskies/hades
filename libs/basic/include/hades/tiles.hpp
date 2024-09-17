@@ -200,7 +200,7 @@ namespace hades
 	{
 		return to_2d_index<tile_position>(i, integer_clamp_cast<tile_index_t>(w));
 	}
-	constexpr inline tile_index_t to_tile_index(tile_position p, tile_index_t w) noexcept
+	constexpr inline tile_index_t to_tile_index(tile_position p, tile_index_t w)
 	{
 		return integer_clamp_cast<tile_index_t>(to_1d_index(p, w));
 	}
@@ -208,7 +208,7 @@ namespace hades
 	{
 		return from_tile_index(i, t.width);
 	}
-	constexpr inline tile_index_t to_tile_index(tile_position p, const tile_map& t) noexcept
+	constexpr inline tile_index_t to_tile_index(tile_position p, const tile_map& t)
 	{
 		return to_tile_index(p, t.width);
 	}

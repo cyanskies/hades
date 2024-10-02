@@ -31,7 +31,7 @@ namespace hades
 		//This allows the current state to finish before transfering or for a loading state to be added between the two.
 		void pushUnder(std::unique_ptr<state> state);
 
-		//deactivates the statemanager, this will drop all states, and drop utility handles to the console and resource manager
+		//deactivates the statemanager: this will drop all states
 		void drop();
 
 	private:

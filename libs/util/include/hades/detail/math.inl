@@ -7,14 +7,14 @@
 namespace hades
 {
 	template<typename T>
-	constexpr auto to_radians(T degrees) noexcept
+	[[nodiscard]] constexpr auto to_radians(T degrees) noexcept
 	{
 		constexpr auto ratio = std::numbers::pi_v<std::conditional_t<std::floating_point<T>, T, float>> / 180;
 		return degrees * ratio;
 	}
 
 	template<std::floating_point Float>
-	constexpr auto to_degrees(Float radians) noexcept
+	[[nodiscard]] constexpr auto to_degrees(Float radians) noexcept
 	{
 		constexpr auto ratio = 180.f / std::numbers::pi_v<Float>;
 		auto degs = radians * ratio;
@@ -25,7 +25,7 @@ namespace hades
 
 	template<typename T>
 		requires std::integral<T> || std::floating_point<T>
-	constexpr T normalise(const T value, const T start, const T end) noexcept
+	[[nodiscard]] constexpr T normalise(const T value, const T start, const T end) noexcept
 	{
 		assert(start != end);
 		const auto width = end - start;			  // 
@@ -37,26 +37,26 @@ namespace hades
 	}
 
 	template<std::floating_point T>
-	constexpr T remap(T value, T start, T end, T new_start, T new_end) noexcept
+	[[nodiscard]] constexpr T remap(T value, T start, T end, T new_start, T new_end) noexcept
 	{
 		assert(start != end);
 		return new_start + (new_end - new_start) * ((value - start) / (end - start));
 	}
 
 	template<typename T>
-	constexpr T clamp(T value, T min, T max) noexcept
+	[[nodiscard]] constexpr T clamp(T value, T min, T max) noexcept
 	{
 		return std::clamp(value, std::min(min, max), std::max(min, max));
 	}
 
 	template<typename T>
-	bool is_within(T value, T min, T max)
+	[[nodiscard]] constexpr bool is_within(T value, T min, T max) noexcept
 	{
-		return value >= std::min(min, max) && value < std::max(min, max);
+		return value >= std::min(min, max) && value <= std::max(min, max);
 	}
 
 	template<typename T>
-	bool range_within(T first_min, T first_max, T second_min, T second_max)
+	[[nodiscard]] constexpr bool range_within(T first_min, T first_max, T second_min, T second_max) noexcept
 	{
 		return std::max(first_min, first_max) >= std::min(second_min, second_max)
 			&& std::min(first_min, first_max) <= std::max(second_min, second_max);

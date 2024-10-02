@@ -78,7 +78,8 @@ namespace hades
 		//record the console as the engine command line
 		console::system_object = &_console;
 		//record the thread pool as the proccess shared pool
-		detail::set_shared_thread_pool(&_thread_pool);
+		
+		detail::set_shared_thread_pool(&_thread_pool.emplace());
 
 		//load default console settings
 		create_core_console_variables();
@@ -312,6 +313,7 @@ namespace hades
 			if (!activeState)
 			{
 				log_debug("all states ended");
+				_shutdown();
 				break;
 			}
 
@@ -386,15 +388,12 @@ namespace hades
 			//assert_floating_point_exceptions();
 			#endif
 		}
-
-#ifdef HADES_QUICK_EXIT
-		log_debug("all states closed"sv);
-		_shutdown();
-#endif	
+		return;
 	}
 
 	void App::cleanUp()
 	{
+		// TODO: move all this into shutdown
 		//close the client window
 		if(_window.isOpen())
 			_window.close();
@@ -619,6 +618,8 @@ namespace hades
 				const auto& path = args.front();
 
 				//compress in a seperate thread to let the UI continue updating
+				// TODO: don't detach, we need to join this properly somewhere
+				//		use the async system
 				std::thread t([path]() {
 					try 
 					{
@@ -648,6 +649,7 @@ namespace hades
 				const auto& path = args.front();
 
 				//run uncompress func in a seperate thread to spare the UI
+				// TODO: don't detach, we need to join this properly somewhere
 				std::thread t([path]() {
 					try 
 					{
@@ -747,8 +749,10 @@ namespace hades
 	void App::_shutdown()
 	{
 #ifdef HADES_QUICK_EXIT
+		_window.close();
 		_states.drop(); // destroy gamestates, so they can call shutdown funcs
 		_gui.reset(); // destroy gui so it calls shutdown funcs
+		_thread_pool.reset();
 		std::quick_exit(EXIT_SUCCESS);
 #else
 		_window.close();

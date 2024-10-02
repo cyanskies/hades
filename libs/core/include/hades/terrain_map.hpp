@@ -87,17 +87,20 @@ namespace hades
 		void place_terrain(terrain_vertex_position, const resources::terrain*);
 
 		// basic height editing
-		void raise_terrain(terrain_vertex_position, uint8_t amount);
+		void raise_terrain(terrain_vertex_position, std::uint8_t amount);
+		void raise_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void lower_terrain(terrain_vertex_position, uint8_t amount);
+		void lower_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
+		void set_terrain_height(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void set_height_for_triangles(tile_position, triangle_height_data); // TODO: remove, temp func
 		void set_cliff_info_tmp(tile_position, terrain_map::cliff_info); // TODO: temp remove
 
 		// advanced height editing
 		void swap_triangle_type(tile_position);
 
-		//void create_cliff(terrain_vertex_position, terrain_vertex_position)
-
+		void add_cliff(tile_edge, tile_edge, std::uint8_t height);
+		
 		[[deprecated]] void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{
 			assert(size(height) == size(_shared.map.heightmap));

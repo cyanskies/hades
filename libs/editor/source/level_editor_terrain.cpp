@@ -26,7 +26,7 @@ namespace hades
 
 	bool tile_mutator::update_gui(gui& g, mutable_terrain_map& map, mutable_terrain_map& preview)
 	{
-		constexpr auto triangle_strings = std::array<std::string_view, 6>{
+		constexpr auto triangle_strings = std::array{
 			"Vertex: 0"sv, 
 			"Vertex: 1"sv,
 			"Vertex: 2"sv,
@@ -88,7 +88,13 @@ namespace hades
 				ch_height = false;
 				if (g.button(cliff_info.diag ? "Remove Diag Cliff"sv : "Add Diag Cliff"sv))
 				{
+					// TODO: this is aweful
 					cliff_info.diag = !cliff_info.diag;
+					cliff_info.diag_uphill = cliff_info.diag_downhill = false;
+					if (h.triangle_type == terrain_map::triangle_uphill && cliff_info.diag)
+						cliff_info.diag_uphill = cliff_info.diag;
+					else if(cliff_info.diag)
+						cliff_info.diag_downhill = cliff_info.diag;
 					ch_height = true;
 				}
 
@@ -576,11 +582,14 @@ namespace hades
 	}
 
 	template<typename Func>
+	concept invoke_vertex = std::invocable<Func, const tile_position, const rect_corners, const bool /*left_triangle*/>;
+
+	template<typename Func>
 	concept invoke_edge = std::invocable<Func, const tile_edge&> && std::invocable<Func, const tile_edge&, const tile_edge&>;
 
 	// optionally std::invocable<Func, triangle_info> and or std::invocable<Func, tile_position, float> as well
 	// these support inter cell targets and fading strength circle shapes
-	template<typename Func>
+	template<typename Func> // Effectively invoke_tile
 	concept invoke_position = std::invocable<Func, tile_position>;// || invoke_edge<Func> || invocable_for_each_circle<Func>;
 
 	template<invoke_position Func>
@@ -671,6 +680,46 @@ namespace hades
 			if (line::above(frac_pos, uphill))
 				return { pos, rect_edges::left };
 			return { pos, rect_edges::bottom };
+		}
+	}
+
+	// pick the closest vertex and correct triangle
+	[[nodiscard]] static constexpr detail::specific_vertex pick_specific_vertex(const tile_position pos, const vector2_float frac_pos, const bool triangle_type) noexcept
+	{
+		constexpr auto min_distance = vector::magnitude_squared(vector2_float{ 0.5f, 0.5f });
+		using enum rect_corners;
+
+		assert(is_within(frac_pos, { 0.f, 0.f, 1.f, 1.f }));
+
+		if (triangle_type == terrain_map::triangle_uphill)
+		{
+			//top_left
+			if (vector::distance_squared({ 0.f, 0.f }, frac_pos) <= min_distance)
+				return { pos, top_left, terrain_map::triangle_left };
+			// bottom_right
+			if (vector::distance_squared({ 1.f, 1.f }, frac_pos) < min_distance)
+				return { pos, bottom_right, terrain_map::triangle_right };
+			const auto triangle = line::above(frac_pos, uphill);
+			// top_right
+			if (vector::distance_squared({ 1.f, 0.f }, frac_pos) < min_distance)
+				return { pos, top_right, triangle };
+			// bottom_left
+			return { pos, bottom_left, triangle };
+		}
+		else
+		{
+			// top_right
+			if (vector::distance_squared({ 1.f, 0.f }, frac_pos) < min_distance)
+				return { pos, top_right, terrain_map::triangle_right };
+			// bottom_left
+			if (vector::distance_squared({ 0.f, 1.f }, frac_pos) < min_distance)
+				return { pos, bottom_left, terrain_map::triangle_left };
+			const auto triangle = !line::above(frac_pos, downhill);
+			//top_left
+			if (vector::distance_squared({ 0.f, 0.f }, frac_pos) <= min_distance)
+				return { pos, top_left, triangle };
+			// bottom_right
+			return { pos, bottom_right, triangle };
 		}
 	}
 
@@ -774,8 +823,8 @@ namespace hades
 		};
 
 		const auto trunc_pos = world_vector_t{
-				std::trunc(draw_pos_f.x),
-				std::trunc(draw_pos_f.y)
+				std::floor(draw_pos_f.x),
+				std::floor(draw_pos_f.y)
 		};
 
 		// tile_pos
@@ -823,7 +872,15 @@ namespace hades
 		switch (shape)
 		{
 		case draw_shape::vertex:
-			return for_each_safe_position_rect(vertex, terrain_vertex_position{ 1, 1 }, world_vertex_size, f);
+			if constexpr (invoke_vertex<Func>)
+			{
+				const auto cliff_info = get_cliff_info(tile_pos, map);
+				const auto [position, corner, left_tri] = pick_specific_vertex(tile_pos, frac_pos, cliff_info.triangle_type);
+				std::invoke(f, position, corner, left_tri);
+				return;
+			}
+			else
+				return for_each_safe_position_rect(vertex, terrain_vertex_position{ 1, 1 }, world_vertex_size, f);
 		case draw_shape::edge:
 		{
 			//edge picking target
@@ -899,6 +956,22 @@ namespace hades
 		return;
 	}
 
+	[[nodiscard]] static constexpr terrain_vertex_position to_vertex(const tile_position pos, const rect_corners corner) noexcept
+	{
+		using enum rect_corners;
+		switch (corner)
+		{
+		case top_right:
+			return pos + tile_position{ 1, 0 };
+		case bottom_left:
+			return pos + tile_position{ 0, 1 };
+		case bottom_right:
+			return pos + tile_position{ 1, 1 };
+		default:
+			return pos;
+		}
+	}
+
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
 		_preview = _clear_preview;
@@ -928,6 +1001,12 @@ namespace hades
 			}	
 		};
 
+		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool) {
+			const auto vert = to_vertex(pos, corners);
+			return func(vert);
+			};
+
+
 		const auto cliff_func = [&](const tile_edge& e) {
 			const tile_position &pos = e.position;
 			const rect_edges &edge = e.edge;
@@ -948,7 +1027,8 @@ namespace hades
 			_tile_mutator.current_tile() != bad_tile_position)
 			_preview.place_tile(_tile_mutator.current_tile(), _tile);
 
-		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), overloaded{ func, cliff_func, start_cliff_func });
+		for_each_position(p, _settings->tile_size, _shape, _brush, _size,
+			_map.get_map(), overloaded{ func, vert_func, cliff_func, start_cliff_func });
 		return;
 	}
 
@@ -1024,6 +1104,28 @@ namespace hades
 			}	
 		};
 
+		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool left_triangle) {
+			switch (_brush)
+			{
+			case brush_type::raise_terrain:
+				_map.raise_terrain(pos, corners, left_triangle, _height_strength);
+				_clear_preview.raise_terrain(pos, corners, left_triangle, _height_strength);
+				return;
+			case brush_type::lower_terrain:
+				_map.lower_terrain(pos, corners, left_triangle, _height_strength);
+				_clear_preview.lower_terrain(pos, corners, left_triangle, _height_strength);
+				return;
+			case brush_type::set_terrain_height:
+				_map.set_terrain_height(pos, corners, left_triangle, _set_height);
+				_clear_preview.set_terrain_height(pos, corners, left_triangle, _set_height);
+				return;
+			}
+
+			assert(false);
+			//const auto vert = to_vertex(pos, corners);
+			//return func(vert);
+			};
+
 		const auto height_func = [&](const tile_position pos, const float str) {
 			const auto amount = _height_strength * str;
 
@@ -1056,13 +1158,11 @@ namespace hades
 		};
 
 		const auto start_cliff_func = [&](const tile_edge& edge1, const tile_edge& edge2) {
-			static tile_edge last_edge = {};
-			if (last_edge != edge1 && last_edge != edge2)
-				log("can_start_cliff: true");
+			_map.add_cliff(edge1, edge2, 15);
 			return;
 			};
 
-		const auto ovrld = overloaded{ basic_func, height_func, cliff_func, start_cliff_func };
+		const auto ovrld = overloaded{ basic_func, height_func, vert_func, cliff_func, start_cliff_func };
 		
 		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), ovrld);
 		return;

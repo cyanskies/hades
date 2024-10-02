@@ -1299,16 +1299,34 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const uint8_t amount)
+	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const std::uint8_t amount)
 	{
 		hades::raise_terrain(_shared.map, p, amount, _shared.settings);
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const uint8_t amount)
+	void mutable_terrain_map::raise_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
+	{
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t h) {
+			return integer_clamp_cast<std::uint8_t>(h + amount);
+			});
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const std::uint8_t amount)
 	{
 		hades::lower_terrain(_shared.map, p, amount, _shared.settings);
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::lower_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
+	{
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t h) {
+			return integer_clamp_cast<std::uint8_t>(h - amount);
+			});
 		_needs_update = true;
 		return;
 	}
@@ -1316,6 +1334,15 @@ namespace hades
 	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position p, const std::uint8_t h)
 	{
 		set_height_at(_shared.map, p, h, _shared.settings);
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::set_terrain_height(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
+	{
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t) {
+			return amount;
+			});
 		_needs_update = true;
 		return;
 	}
@@ -1334,10 +1361,17 @@ namespace hades
 		return;
 	}
 
-
 	void mutable_terrain_map::swap_triangle_type(const tile_position p)
 	{
 		hades::swap_triangle_type(_shared.map, p);
+		return;
+	}
+
+	void mutable_terrain_map::add_cliff(tile_edge e1, tile_edge e2, std::uint8_t height)
+	{
+		assert(_shared.settings);
+		hades::add_cliff(e1, e2, height, _shared.map, *_shared.settings);
+		_needs_update = true;
 		return;
 	}
 

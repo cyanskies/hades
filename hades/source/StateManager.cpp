@@ -4,9 +4,8 @@
 
 namespace hades
 {
-	StateManager::StateManager() noexcept {}
-
-	StateManager::~StateManager() noexcept {}
+	StateManager::StateManager() noexcept = default;
+	StateManager::~StateManager() noexcept = default;
 
 	state *StateManager::getActiveState()
 	{

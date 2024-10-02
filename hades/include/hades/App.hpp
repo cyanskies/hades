@@ -65,7 +65,7 @@ namespace hades
 		/// \brief Closes the Window and ends any lingering states.
 		///
 		////////////////////////////////////////////////////////////
-		void cleanUp();
+		[[deprecated]] void cleanUp();
 	private:
 
 		////////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ namespace hades
 		Console _console;									///< The appcations debug console.
 		hades::data::data_system _dataMan;					///< The applications resource loader
 		StateManager _states;								///< The statemanager holds, ticks, and cleans up all of the game states.
-		thread_pool _thread_pool;							///< App provided shared thread pool
+		std::optional<thread_pool> _thread_pool;							///< App provided shared thread pool
 		
 		sf::View _overlay_view;								///< View for the debug overlays, matches screen resolution
 		debug::overlay_manager _overlay_manager;			///< Manager for debug gui overlays

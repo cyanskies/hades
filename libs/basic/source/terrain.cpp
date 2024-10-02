@@ -795,10 +795,12 @@ namespace hades
 						noexcept(std::is_nothrow_invocable_v<Func, std::uint8_t, std::uint8_t>)
 		{
 			const auto [first, second] = quad_index_to_triangle_index(c, t.triangle_type);
-			if (second != bad_triangle_index)
+			if (second != bad_triangle_index && first != bad_triangle_index)
 				return std::invoke(f, t.height[first], t.height[second]);
-
-			return t.height[first];
+			else if (second != bad_triangle_index)
+				return t.height[second];
+			else
+				return t.height[first];
 		}
 	}
 
@@ -825,6 +827,7 @@ namespace hades
 	{
 		assert(ind < size(m.cliff_data));
 		m.cliff_data[ind] = c;
+		// TODO: only do this for nearby tiles
 		m.cliffs = generate_cliff_layer(m, *resources::get_terrain_settings());
 		return;
 	}
@@ -860,8 +863,8 @@ namespace hades
 			our_cliffs.right,
 			our_cliffs.bottom,
 			left.right, // left
-			our_cliffs.diag && our_cliffs.triangle_type == terrain_map::triangle_uphill,
-			our_cliffs.diag && our_cliffs.triangle_type == terrain_map::triangle_downhill,
+			our_cliffs.diag_uphill,
+			our_cliffs.diag_downhill,
 		};
 	}
 
@@ -898,6 +901,7 @@ namespace hades
 		const auto above = find_cliffs(p - tile_position{ 0, 1 }, m);
 		const auto left = find_cliffs(p - tile_position{ 1, 0 }, m);
 
+		// TODO: maybe able to make this simpler using .diag_uphill and .diag_downhill
 		if (our_cliffs.triangle_type == terrain_map::triangle_uphill)
 		{
 			return {
@@ -1258,7 +1262,7 @@ namespace hades
 	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		change_terrain_height(m, p, [amount, ts](const std::uint8_t h) noexcept {
+		change_terrain_height_bad(m, p, *ts, [amount, ts](const std::uint8_t h) noexcept {
 			const auto compound = integer_cast<std::int16_t>(h) + integer_cast<std::int16_t>(amount);
 			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 			});
@@ -1268,7 +1272,7 @@ namespace hades
 	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
 	{
 		assert(ts);
-		change_terrain_height(m, p, [amount, ts](const std::uint8_t h) noexcept {
+		change_terrain_height_bad(m, p, *ts, [amount, ts](const std::uint8_t h) noexcept {
 			const auto compound = integer_cast<std::int16_t>(h) - integer_cast<std::int16_t>(amount);
 			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
 			});
@@ -1279,7 +1283,7 @@ namespace hades
 	{
 		assert(ts); 
 		h = std::clamp(h, ts->height_min, ts->height_max);
-		change_terrain_height(m, p, [h](const std::uint8_t) noexcept {
+		change_terrain_height_bad(m, p, *ts, [h](const std::uint8_t) noexcept {
 			return h;
 			});
 		return;
@@ -1440,6 +1444,7 @@ namespace hades
 					std::invoke(f, tile_edge{ next_pos, rect_edges::top });
 				};
 
+			// TODO: the diag checks can be turned into a single check with diag_downhill etc.
 			switch (corner)
 			{
 			case rect_corners::top_left:
@@ -1734,7 +1739,7 @@ namespace hades
 			return info.right;
 		case rect_edges::bottom:
 			return info.bottom;
-		case rect_edges::uphill:
+		case rect_edges::uphill: // TODO: we shouldn't need to second half of these checks
 			return info.diag_uphill || (info.triangle_type == terrain_map::triangle_uphill && info.diag);
 		case rect_edges::downhill:
 			return info.diag_downhill || (info.triangle_type == terrain_map::triangle_downhill && info.diag);
@@ -1743,8 +1748,58 @@ namespace hades
 		}
 	}
 
-	void add_cliff(const tile_edge e, const std::uint8_t h, terrain_map& m)
+	static void add_cliff_impl(const tile_edge e, const std::uint8_t height_diff,
+		terrain_map& m, const resources::terrain_settings& s)
 	{
+		using enum rect_edges;
+
+		const auto sub_height = [height_diff](const std::uint8_t h) noexcept {
+			const auto ret = h - height_diff;
+			return integer_clamp_cast<std::uint8_t>(ret);
+			};
+
+		const auto add_height = [height_diff](const std::uint8_t h) noexcept {
+			const auto ret = h + height_diff;
+			return integer_clamp_cast<std::uint8_t>(ret);
+			};
+
+		switch (e.edge)
+		{
+		case top:
+		{
+			// tag the cliff
+			const auto tile_above = e.position - tile_position{ 0, 1 };
+			const auto tile_above_index = to_tile_index(tile_above, m);
+			auto cliff_inf = get_cliff_info(tile_above_index, m);
+			cliff_inf.bottom = true;
+			set_cliff_info(tile_above_index, m, cliff_inf);
+
+			// add the height
+			change_terrain_height_bad(m, tile_above, s, sub_height);
+			// 
+		} break;
+		/*case left:
+		case right:
+		case bottom:
+		case uphill:
+		case downhill:*/
+		}
+
+		return;
+	}
+
+	void add_cliff(const tile_edge e, const std::uint8_t h, terrain_map& m, const resources::terrain_settings& s)
+	{
+		return;
+	}
+
+	void add_cliff(const tile_edge e1, const tile_edge e2, const std::uint8_t add_height, terrain_map& m, const resources::terrain_settings& s)
+	{
+		// So here's the deal
+		// 1: dbl check that its valid to set e1 and e2
+		add_cliff_impl(e1, add_height, m, s);
+		add_cliff_impl(e2, add_height, m, s);
+		// TODO:
 		return;
 	}
 

@@ -254,6 +254,7 @@ namespace hades
 		[[nodiscard]] auto magnitude(basic_vector<T, Size>) noexcept;
 
 		template<typename T, std::size_t Size>
+			requires std::is_
 		[[nodiscard]] constexpr T magnitude_squared(basic_vector<T, Size>) noexcept;
 
 		// returns the angle_theta of the vector compared to the vector [1, 0]

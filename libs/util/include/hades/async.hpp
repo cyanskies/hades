@@ -14,7 +14,7 @@
 
 // NOTE: current implementation suffers with async functions starting their own async funcs
 //	this results in eating up stack for each additional layer. Something to keep in mind.
-//	ei. Dont use async recursively in a heavy manner.
+//	ie. Dont use async recursively in a heavy manner.
 
 namespace hades
 {
@@ -187,8 +187,8 @@ namespace hades
 		}
 
 	private:
-		//std::function cannot hold non-copyable
-		//wrap packaged task in this lying wrapper
+		// std::function cannot hold non-copyable
+		// wrap packaged task in this lying wrapper
 		// TODO: cpp23 move_only_function
 		template<typename Task>
 		struct false_copyable

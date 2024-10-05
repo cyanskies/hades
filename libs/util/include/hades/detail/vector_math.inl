@@ -69,6 +69,7 @@ namespace hades
 
 	template<typename T, std::size_t Size>
 	template<typename U>
+	[[nodiscard]]
 	inline constexpr basic_vector<T, Size>::operator basic_vector<U, Size>() const noexcept
 	{
 		constexpr auto cast_func = [](auto val) {
@@ -156,13 +157,14 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
+	[[nodiscard]]
 	constexpr std::size_t basic_pol_vector<T, Size>::size() noexcept
 	{
 		return Size;
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr basic_vector<T, Size> to_vector(basic_pol_vector<T, Size> v) noexcept
+	basic_vector<T, Size> to_vector(basic_pol_vector<T, Size> v) noexcept
 	{
 		auto out = basic_vector<T, Size>{ vector::x_comp(v), vector::y_comp(v) };
 		if constexpr (Size > 2)
@@ -171,7 +173,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t Size>
-	constexpr basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size> v) noexcept
+	basic_pol_vector<T, Size> to_pol_vector(basic_vector<T, Size> v) noexcept
 	{
 		const auto mag = vector::magnitude(v);
 		auto out = basic_pol_vector<T, Size>{ vector::angle_theta(v), mag };
@@ -209,7 +211,7 @@ namespace hades
 		}
 
 		template<typename T, std::size_t Size>
-		constexpr auto angle_theta(const basic_vector<T, Size> v) noexcept
+		auto angle_theta(const basic_vector<T, Size> v) noexcept
 		{
 			static_assert(Size < 4);
 			if constexpr (std::is_floating_point_v<T>)
@@ -237,7 +239,7 @@ namespace hades
 
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
-		constexpr auto angle_phi(const basic_vector<T, Size> v, std::optional<T> mag) noexcept
+		auto angle_phi(const basic_vector<T, Size> v, std::optional<T> mag) noexcept
 		{
 			static_assert(Size < 4);
 
@@ -262,7 +264,6 @@ namespace hades
 			return v.phi;
 		}
 
-
 		template<typename T>
 		auto angle(vector2<T> a, vector2<T> b) noexcept
 		{
@@ -272,7 +273,7 @@ namespace hades
 		}
 
 		template<typename T, std::size_t Size>
-		constexpr T x_comp(const basic_pol_vector<T, Size> v) noexcept
+		T x_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
 			auto out = v.magnitude * std::cos(v.theta);
 
@@ -286,7 +287,7 @@ namespace hades
 		}
 
 		template<typename T, std::size_t Size>
-		constexpr T y_comp(const basic_pol_vector<T, Size> v) noexcept
+		T y_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
 			auto out = v.magnitude * std::sin(v.theta);
 
@@ -301,20 +302,20 @@ namespace hades
 
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
-		constexpr T z_comp(const basic_pol_vector<T, Size> v) noexcept
+		T z_comp(const basic_pol_vector<T, Size> v) noexcept
 		{
 			static_assert(Size < 4);
 			return std::cos(v.phi);
 		}
 
 		template<typename T, std::size_t Size>
-		constexpr basic_vector<T, Size> resize(const basic_vector<T, Size> v, const T length) noexcept
+		basic_vector<T, Size> resize(const basic_vector<T, Size> v, const T length) noexcept
 		{
 			return unit(v) * length;
 		}
 
 		template<typename T, std::size_t Size>
-		constexpr basic_vector<T, Size> unit(const basic_vector<T, Size> v) noexcept
+		basic_vector<T, Size> unit(const basic_vector<T, Size> v) noexcept
 		{
 			const auto inverse_root = 1 / magnitude(v);
 			return v * inverse_root;
@@ -328,7 +329,7 @@ namespace hades
 		}
 
 		template<typename T>
-		[[nodiscard]] auto distance_squared(const vector2<T> a, const vector2<T> b) noexcept
+		[[nodiscard]] constexpr auto distance_squared(const vector2<T> a, const vector2<T> b) noexcept
 		{
 			const auto ab = b - a;
 			return magnitude_squared(ab);
@@ -358,8 +359,9 @@ namespace hades
 			return { v.y, -v.x };
 		}
 
+		// constexpr blocked by std::min and std::max
 		template<typename T>
-		constexpr vector2<T> clamp(vector2<T> val, vector2<T> min, vector2<T> max) noexcept
+		vector2<T> clamp(vector2<T> val, vector2<T> min, vector2<T> max) noexcept
 		{
 			const auto x = std::clamp(val.x, std::min(min.x, max.x), std::max(min.x, max.x));
 			const auto y = std::clamp(val.y, std::min(min.y, max.y), std::max(min.y, max.y));
@@ -415,6 +417,7 @@ namespace hades
 	}
 
 	template<typename T, std::size_t N>
+	[[nodiscard]]
 	string vector_to_string(const basic_vector<T, N> v)
 	{
 		return std::format("{}", v);

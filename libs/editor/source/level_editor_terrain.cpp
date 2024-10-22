@@ -216,12 +216,13 @@ namespace hades
 		
 		constexpr auto variance = 20;
 		const auto height_low = _settings->height_default - variance;
-		const auto height_high = height_low + variance * 2;
+		const auto height_high = height_low + variance;
 
 		const auto vert_size = get_vertex_size(map);
-		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) {
-			set_height_at(map, p, integer_clamp_cast<std::uint8_t>(random(height_low, height_high)), _settings);
-			return;
+		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) -> void {
+			return change_terrain_height(p, map, *_settings, [&](const std::uint8_t) noexcept -> std::uint8_t {
+				return integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
+				});
 			});
 
 		auto l = level{ std::move(current) };
@@ -634,8 +635,8 @@ namespace hades
 		return for_each_safe_diag(vert, diff, size + 1, world_size, std::forward<Func>(f));
 	}
 
-	constexpr auto downhill = line_t<float>{ {0.f, 0.f}, { 1.f, 1.f } };
-	constexpr auto uphill = line_t<float>{ { 0.f, 1.f }, { 1.f, 0.f } };
+	constexpr auto downhill_line = line_t<float>{ {0.f, 0.f}, { 1.f, 1.f } };
+	constexpr auto uphill_line = line_t<float>{ { 0.f, 1.f }, { 1.f, 0.f } };
 
 	// raise/lower terrain; create/destroy cliffs
 	// for raise/lower terrain
@@ -654,30 +655,31 @@ namespace hades
 
 	[[nodiscard]] static constexpr tile_edge pick_edge(const tile_position pos, const vector2_float frac_pos) noexcept
 	{
+		// TODO: tweak these values so that the picking isn't so tempermental
 		constexpr auto diag_close_dist = 0.1f;
 		constexpr auto diag_far_dist = 0.2f;
-		if (line::distance(frac_pos, uphill) < diag_close_dist &&
-			line::distance(frac_pos, downhill) > diag_far_dist)
+		if (line::distance(frac_pos, uphill_line) < diag_close_dist &&
+			line::distance(frac_pos, downhill_line) > diag_far_dist)
 		{
 			return { pos, rect_edges::uphill, vector::distance_squared({0.f, 0.f}, frac_pos) < vector::distance_squared({1.f, 1.f}, frac_pos) };
 		}
-		else if (line::distance(frac_pos, downhill) < diag_close_dist &&
-			line::distance(frac_pos, uphill) > diag_far_dist)
+		else if (line::distance(frac_pos, downhill_line) < diag_close_dist &&
+			line::distance(frac_pos, uphill_line) > diag_far_dist)
 		{
 			return { pos, rect_edges::downhill, vector::distance_squared({0.f, 1.f}, frac_pos) < vector::distance_squared({1.f, 0.f}, frac_pos) };
 		}
 
-		if (line::above(frac_pos, downhill))
+		if (line::above(frac_pos, downhill_line))
 		{
 			// top and right
-			if (!line::above(frac_pos, uphill))
+			if (!line::above(frac_pos, uphill_line))
 				return { pos, rect_edges::right };
 			return { pos, rect_edges::top };
 		}
 		else
 		{
 			//bottom and left
-			if (line::above(frac_pos, uphill))
+			if (line::above(frac_pos, uphill_line))
 				return { pos, rect_edges::left };
 			return { pos, rect_edges::bottom };
 		}
@@ -699,7 +701,7 @@ namespace hades
 			// bottom_right
 			if (vector::distance_squared({ 1.f, 1.f }, frac_pos) < min_distance)
 				return { pos, bottom_right, terrain_map::triangle_right };
-			const auto triangle = line::above(frac_pos, uphill);
+			const auto triangle = line::above(frac_pos, uphill_line);
 			// top_right
 			if (vector::distance_squared({ 1.f, 0.f }, frac_pos) < min_distance)
 				return { pos, top_right, triangle };
@@ -714,7 +716,7 @@ namespace hades
 			// bottom_left
 			if (vector::distance_squared({ 0.f, 1.f }, frac_pos) < min_distance)
 				return { pos, bottom_left, terrain_map::triangle_left };
-			const auto triangle = !line::above(frac_pos, downhill);
+			const auto triangle = !line::above(frac_pos, downhill_line);
 			//top_left
 			if (vector::distance_squared({ 0.f, 0.f }, frac_pos) <= min_distance)
 				return { pos, top_left, triangle };
@@ -765,14 +767,13 @@ namespace hades
 			return e;
 			};
 
-		if (can_add_cliff(map, t_edge) || is_cliff(tile_pos, t_edge.edge, map))
+		if (can_add_cliff(map, t_edge))
 		{
 			std::invoke(f, t_edge);
 		}
 		else if (const auto extra_edge = can_start_cliff(map, t_edge); extra_edge)
 		{
 			std::invoke(f, t_edge, *extra_edge);
-			// TODO: fixup first and second vertex positions
 		}
 
 		const auto follow_cliff_edges = [max_dist, &map, &f, &try_extend_cliff](tile_edge t_edge, terrain_vertex_position vert) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>) {
@@ -956,7 +957,7 @@ namespace hades
 		return;
 	}
 
-	[[nodiscard]] static constexpr terrain_vertex_position to_vertex(const tile_position pos, const rect_corners corner) noexcept
+	[[nodiscard, deprecated("use: to_vertex_position")]] static constexpr terrain_vertex_position to_vertex(const tile_position pos, const rect_corners corner) noexcept
 	{
 		using enum rect_corners;
 		switch (corner)
@@ -1002,7 +1003,7 @@ namespace hades
 		};
 
 		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool) {
-			const auto vert = to_vertex(pos, corners);
+			const auto vert = to_vertex_position(pos, corners);
 			return func(vert);
 			};
 
@@ -1127,7 +1128,7 @@ namespace hades
 			};
 
 		const auto height_func = [&](const tile_position pos, const float str) {
-			const auto amount = _height_strength * str;
+			const auto amount = integral_clamp_cast<std::uint8_t>(_height_strength * str);
 
 			switch (_brush)
 			{

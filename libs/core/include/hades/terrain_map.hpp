@@ -93,13 +93,17 @@ namespace hades
 		void lower_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
 		void set_terrain_height(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
+		[[deprecated]]
 		void set_height_for_triangles(tile_position, triangle_height_data); // TODO: remove, temp func
+		[[deprecated]]
 		void set_cliff_info_tmp(tile_position, terrain_map::cliff_info); // TODO: temp remove
 
 		// advanced height editing
-		void swap_triangle_type(tile_position);
+		[[deprecated]]
+		void swap_triangle_type(tile_position); // pretty sure we don't need this
 
 		void add_cliff(tile_edge, tile_edge, std::uint8_t height);
+		// add_cliff(tile_edge, std::uint8_t height) // TODO:
 		
 		[[deprecated]] void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{

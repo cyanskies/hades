@@ -235,7 +235,7 @@ namespace hades
 		if constexpr (std::is_signed_v<T>)
 		{
 			if (first < 0 || second < 0)
-				throw std::invalid_argument{ "cannot caculate 1d index in negative space" };
+				throw std::invalid_argument{ "cannot calculate 1d index in negative space" };
 		}
 
 		return second * w + first;

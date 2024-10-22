@@ -2,6 +2,7 @@
 
 #include <map>
 #include <span>
+#include <string>
 
 #include "hades/data.hpp"
 #include "hades/deflate.hpp"
@@ -10,6 +11,9 @@
 #include "hades/table.hpp"
 #include "hades/tiles.hpp"
 #include "hades/writer.hpp"
+
+using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 constexpr auto empty_cliff = hades::terrain_map::cliff_info{ false, false, false, false };
 
@@ -52,8 +56,6 @@ namespace hades
 				return {};
 			});
 	}
-
-	using namespace std::string_view_literals;
 
 	constexpr auto terrain_settings_str = "terrain-settings"sv;
 	constexpr auto terrainsets_str = "terrainsets"sv;
@@ -109,7 +111,6 @@ namespace hades
 		register_tiles_resources(d, func);
 
 		//replace the tileset and tile settings parsers
-		using namespace std::string_view_literals;
 		//register tile resources
 		d.register_resource_type(resources::get_tile_settings_name(), resources::parse_terrain_settings);
 		d.register_resource_type(terrain_settings_str, resources::parse_terrain_settings);
@@ -126,7 +127,7 @@ namespace hades
 			if (set->terrains[i].get() == t)
 				return integer_cast<terrain_id_t>(i);
 
-		throw terrain_error{"tried to index a terrain that isn't in this terrain set"};
+		throw terrain_error{ "tried to index a terrain that isn't in this terrain set"s };
 	}
 
 	static tile_corners make_empty_corners(const resources::terrain_settings& s)
@@ -252,7 +253,7 @@ namespace hades
 
 		if (std::size(r.cliff_data) != tile_count)
 		{
-			LOGWARNING("tile information must exist for each tile");
+			LOGWARNING("tile cliff information must exist for each tile");
 			return false;
 		}
 
@@ -303,7 +304,6 @@ namespace hades
 		return true;
 	}
 
-	using namespace std::string_view_literals;
 	constexpr auto terrainset_str = "terrainset"sv;
 	constexpr auto terrain_vertex_str = "terrain-vertex"sv;
 	constexpr auto terrain_height_str = "vertex-height"sv;
@@ -319,7 +319,6 @@ namespace hades
 		//terrain vertex
 		// tile layers
 
-		using namespace std::string_view_literals;
 		w.write(terrainset_str, m.terrainset);
 
 		const auto compressed = zip::deflate(m.terrain_vertex);
@@ -472,6 +471,7 @@ namespace hades
 		return layer;
 	}
 
+	// TODO: require terrain_settings as a parameter
 	template<typename Raw>
 		requires std::same_as<raw_terrain_map, std::decay_t<Raw>>
 	terrain_map to_terrain_map_impl(Raw &&r)
@@ -564,6 +564,7 @@ namespace hades
 		return to_terrain_map_impl(std::move(r));
 	}
 
+	// TODO: require terrain settings as a parameter
 	template<typename Map>
 		requires std::same_as<terrain_map, std::decay_t<Map>>
 	static raw_terrain_map to_raw_terrain_map_impl(Map &&t)
@@ -694,12 +695,6 @@ namespace hades
 		return;
 	}
 
-	std::array<terrain_index_t, 4> to_terrain_index(const tile_position tile_index, const tile_index_t terrain_width)
-	{
-		const auto index = to_tile_index(tile_index, terrain_width);
-		return { index, index + 1, index + 1 + terrain_width, index + terrain_width };
-	}
-
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p) noexcept
 	{
 		if (p.x < 0 ||
@@ -758,24 +753,18 @@ namespace hades
 	{
 		const auto index = to_tile_index(p, m);
 		const auto h = detail::get_triangle_height(index, m);
-		const auto& c = get_cliff_info(p, m);
-		return triangle_height_data{
-			std::array<std::uint8_t, 6>{
-				h[0], h[1], h[2], h[3] ,h[4], h[5],
-		}, c.triangle_type
-		};
+		const auto& c = get_cliff_info(index, m);
+		triangle_height_data ret [[indeterminate]];
+		std::ranges::copy(h, begin(ret.height));
+		ret.triangle_type = c.triangle_type;
+		return ret;
 	}
 
 	void set_height_for_triangles(const tile_position p, terrain_map& m, const triangle_height_data t)
 	{
 		const auto index = to_tile_index(p, m);
 		auto h = detail::get_triangle_height(index, m);
-		h[0] = t.height[0];
-		h[1] = t.height[1];
-		h[2] = t.height[2];
-		h[3] = t.height[3];
-		h[4] = t.height[4];
-		h[5] = t.height[5];
+		std::ranges::copy(t.height, begin(h));
 		return;
 	}
 
@@ -790,7 +779,7 @@ namespace hades
 		// access a triangle pair range [0-5] using quad indexes[0-3] 
 		// 'Func' is called to merge triangle elements
 		// where multiple values are available for a quad corner
-		template<std::invocable<std::uint8_t, std::uint8_t> Func>
+		template<invocable_r<const std::uint8_t&, std::uint8_t, std::uint8_t> Func>
 		std::uint8_t read_triangles_as_quad(const triangle_height_data& t, rect_corners c, Func&& f) 
 						noexcept(std::is_nothrow_invocable_v<Func, std::uint8_t, std::uint8_t>)
 		{
@@ -828,6 +817,7 @@ namespace hades
 		assert(ind < size(m.cliff_data));
 		m.cliff_data[ind] = c;
 		// TODO: only do this for nearby tiles
+		// TODO: look into getting settings as a parameter
 		m.cliffs = generate_cliff_layer(m, *resources::get_terrain_settings());
 		return;
 	}
@@ -1028,19 +1018,19 @@ namespace hades
 			return {};
 	}
 
-	bool is_tile_split(tile_position p, const terrain_map& m)
+	bool is_tile_split(const tile_position p, const terrain_map& m)
 	{
 		const auto& cliff = get_cliff_info(p, m);
 		return cliff.diag;
 	}
 
-	const resources::terrain *get_vertex(const terrain_map &m, terrain_vertex_position p)
+	const resources::terrain *get_vertex(const terrain_map &m, const terrain_vertex_position p)
 	{
 		const auto index = to_1d_index(p, get_width(m));
         return m.terrain_vertex[integer_cast<std::size_t>(index)];
 	}
 
-	tag_list get_tags_at(const terrain_map &m, tile_position p)
+	tag_list get_tags_at(const terrain_map &m, const tile_position p)
 	{
 		const auto settings = resources::get_terrain_settings();
 		assert(settings);
@@ -1059,8 +1049,8 @@ namespace hades
 		return out;
 	}
 
-	void resize_map_relative(terrain_map& m, vector2_int top_left, vector2_int bottom_right,
-		const resources::terrain* t, std::uint8_t height, const resources::terrain_settings& s)
+	void resize_map_relative(terrain_map& m, const vector2_int top_left, const vector2_int bottom_right,
+		const resources::terrain* t, const std::uint8_t height, const resources::terrain_settings& s)
 	{
         const auto current_height = integer_cast<tile_index_t>(m.tile_layer.tiles.size()) / m.tile_layer.width;
 		const auto current_width = m.tile_layer.width;
@@ -1076,6 +1066,7 @@ namespace hades
 		resize_map(m, size, { -top_left.x, -top_left.y }, t, height, s);
 	}
 
+	[[deprecated]]
 	void resize_map_relative(terrain_map& m, vector2_int top_left, vector2_int bottom_right)
 	{
 		const auto settings = resources::get_terrain_settings();
@@ -1084,8 +1075,8 @@ namespace hades
 		resize_map_relative(m, top_left, bottom_right, terrain, settings->height_default, *settings);
 	}
 
-	void resize_map(terrain_map& m, vector2_int s, vector2_int o,
-		const resources::terrain* t, std::uint8_t height, const resources::terrain_settings& settings)
+	void resize_map(terrain_map& m, const vector2_int s, const vector2_int o,
+		const resources::terrain* t, const std::uint8_t height, const resources::terrain_settings& settings)
 	{
 		const auto old_size = get_vertex_size(m);
 		//resize tile layer
@@ -1136,6 +1127,7 @@ namespace hades
 		return;
 	}
 
+	[[deprecated]]
 	void resize_map(terrain_map& m, vector2_int size, vector2_int offset)
 	{
 		const auto settings = resources::get_terrain_settings();
@@ -1175,17 +1167,20 @@ namespace hades
 
 	//NOTE: we cannot know if the tiles have transparent sections 
 	// in them, so the terrainmap goes unchanged
-	void place_tile(terrain_map &m, tile_position p, const resources::tile &t, const resources::terrain_settings& s)
+	void place_tile(terrain_map &m, const tile_position p, const resources::tile &t,
+		const resources::terrain_settings& s)
 	{
 		place_tile(m.tile_layer, p, t, s);
 	}
 
-	void place_tile(terrain_map &m, const std::vector<tile_position> &p, const resources::tile &t, const resources::terrain_settings& s)
+	void place_tile(terrain_map &m, const std::vector<tile_position> &p,
+		const resources::tile &t, const resources::terrain_settings& s)
 	{
 		place_tile(m.tile_layer, p, t, s);
 	}
 
-	static void place_terrain_internal(terrain_map &m, terrain_vertex_position p, const resources::terrain *t)
+	static void place_terrain_internal(terrain_map &m, const terrain_vertex_position p,
+		const resources::terrain *t)
 	{
 		assert(t);
 		const auto index = to_1d_index(p, get_width(m));
@@ -1240,6 +1235,7 @@ namespace hades
 	void place_terrain(terrain_map &m, terrain_vertex_position p, const resources::terrain *t,
 		const resources::terrain_settings& s)
 	{
+		// TODO: check t is non null
 		if (within_map(m, p))
 		{
 			place_terrain_internal(m, p, t);
@@ -1251,6 +1247,7 @@ namespace hades
 	void place_terrain(terrain_map &m, const std::vector<terrain_vertex_position> &positions,
 		const resources::terrain *t, const resources::terrain_settings& settings)
 	{
+		// TODO: check t is non null
 		const auto s = get_vertex_size(m);
 		for (const auto& p : positions)
 			if (within_map(s, p))
@@ -1259,48 +1256,19 @@ namespace hades
 		update_tile_layers(m, positions, settings);
 	}
 
-	void raise_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
-	{
-		assert(ts);
-		change_terrain_height_bad(m, p, *ts, [amount, ts](const std::uint8_t h) noexcept {
-			const auto compound = integer_cast<std::int16_t>(h) + integer_cast<std::int16_t>(amount);
-			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
-			});
-		return;
-	}
-
-	void lower_terrain(terrain_map& m, const terrain_vertex_position p, const std::uint8_t amount, const resources::terrain_settings* ts)
-	{
-		assert(ts);
-		change_terrain_height_bad(m, p, *ts, [amount, ts](const std::uint8_t h) noexcept {
-			const auto compound = integer_cast<std::int16_t>(h) - integer_cast<std::int16_t>(amount);
-			return std::clamp(integer_clamp_cast<std::uint8_t>(compound), ts->height_min, ts->height_max);
-			});
-		return;
-	}
-
-	void set_height_at(terrain_map& m, const terrain_vertex_position p, std::uint8_t h, const resources::terrain_settings* ts)
-	{
-		assert(ts); 
-		h = std::clamp(h, ts->height_min, ts->height_max);
-		change_terrain_height_bad(m, p, *ts, [h](const std::uint8_t) noexcept {
-			return h;
-			});
-		return;
-	}
-
+	// TODO: mark static, internal only
 	void swap_triangle_type(terrain_map& m, const tile_position p)
 	{
 		const auto index = to_tile_index(p, m);
 		auto h = detail::get_triangle_height(index, m);
 		auto c = get_cliff_info(p, m);
 		// we should never do this if a tile contains a cliff
-		assert(!c.diag && !c.diag_downhill && !c.diag_uphill);
+		assert(!c.diag && !c.diag_downhill && !c.diag_uphill); // TODO: throw terrain error (or logic_error)
 		c.triangle_type = !c.triangle_type;
 		if (c.triangle_type == terrain_map::triangle_uphill)
 		{
 			assert(h[0] == h[3] &&
-				h[2] == h[4]);
+				h[2] == h[4]); // TODO: throw terrain_error
 
 			h[4] = h[1];
 			h[3] = h[5];
@@ -1309,7 +1277,7 @@ namespace hades
 		else
 		{
 			assert(h[2] == h[3] &&
-				h[1] == h[4]);
+				h[1] == h[4]); // TODO: throw terrain_error
 
 			h[3] = h[0];
 			h[4] = h[5];
@@ -1348,6 +1316,86 @@ namespace hades
 		}
 	}
 
+	namespace detail
+	{
+		// if hint is first element, iterate over list in reverse
+		// if hint is the last element then iterator over in order
+		constexpr auto search_orders = std::array<std::array<tile_edge, 8>, 4>{
+			std::array<tile_edge, 8>{
+				// 0
+				tile_edge{ {},						rect_edges::top},
+				// 45
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::uphill },
+				// 315
+				tile_edge{ {},						rect_edges::downhill},
+				// 90
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::left },
+				// 270
+				tile_edge{ {},						rect_edges::left},
+				// 135
+				tile_edge{ tile_position{ -1, -1 },	rect_edges::downhill },
+				// 225
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::uphill },
+				// 180
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::top }
+			},	
+			std::array<tile_edge, 8>{
+				// 45
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::uphill },
+				// 0
+				tile_edge{ {},						rect_edges::top },
+				// 90
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::left },
+				// 315
+				tile_edge{ {},						rect_edges::downhill },
+				// 135
+				tile_edge{ tile_position{ -1, -1 },	rect_edges::downhill },
+				// 270
+				tile_edge{ {},						rect_edges::left },
+				// 180
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::top },
+				// 225
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::uphill }
+			},
+			std::array<tile_edge, 8>{
+				// 90
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::left },
+				// 45
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::uphill },
+				// 135
+				tile_edge{ tile_position{ -1, -1 },	rect_edges::downhill },
+				// 0
+				tile_edge{ {},						rect_edges::top },
+				// 180
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::top },
+				// 315
+				tile_edge{ {},						rect_edges::downhill },
+				// 225
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::uphill },
+				// 270
+				tile_edge{ {},						rect_edges::left }
+			},
+			std::array<tile_edge, 8>{
+				// 135
+				tile_edge{ tile_position{ -1, -1 },	rect_edges::downhill },
+				// 90
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::left },
+				// 180
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::top },
+				// 45
+				tile_edge{ tile_position{ 0, -1 },	rect_edges::uphill },
+				// 225
+				tile_edge{ tile_position{ -1, 0 },	rect_edges::uphill },
+				// 0
+				tile_edge{ {},						rect_edges::top },
+				// 270
+				tile_edge{ {},						rect_edges::left },
+				// 315
+				tile_edge{ {},						rect_edges::downhill }
+			}
+		};
+	}
+
 	template<std::invocable<tile_edge> Func>
 	static void for_each_adjacent_edge(const terrain_vertex_position p,
 		std::optional<tile_edge> hint, Func&& f) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>)
@@ -1355,47 +1403,56 @@ namespace hades
 		// make the seach order as though hint is the edge pointing to the left of 'p'
 		// (the 180 degree edge)
 		// we want to seach the edges opposite from the hint edge first
-		auto search_order = std::array{
-			// 0
-			tile_edge{ p , rect_edges::top },
-			// 45
-			tile_edge{ p - tile_position{ 0, 1 } , rect_edges::uphill},
-			// 315
-			tile_edge{ p , rect_edges::downhill },
-			// 90
-			tile_edge{ p - tile_position{ 0 ,1 } , rect_edges::left},
-			// 270
-			tile_edge{ p , rect_edges::left },
-			// 135
-			tile_edge{ p - tile_position{ 1, 1 } , rect_edges::downhill},
-			// 225
-			tile_edge{ p - tile_position{ 1, 0 }, rect_edges::uphill},
-			// 180
-			tile_edge{ p - tile_position{ 1, 0 } , rect_edges::top},
-		};
+		const std::array<tile_edge, 8>* search_order = &detail::search_orders.front();
+		auto reverse = false;
 
 		// if hint was provided, then rotate the search order until hint
 		// is on the left (180 degrees)
 		if (hint)
 		{
 			const auto &hint_val = *hint;
-			const auto hint_edge1 = tile_edge{ hint_val.position, hint_val.edge };
+			const auto hint_edge1 = tile_edge{ hint_val.position - p, hint_val.edge };
 			const auto hint_edge2 = swap_cliff_facing(hint_edge1);
-			const auto hint_iter = std::ranges::find_if(search_order, [&hint_edge1, &hint_edge2](const auto edge) {
-				return edge == hint_edge1 || edge == hint_edge2;
-				});
 
-			if(hint_iter != end(search_order) && *hint_iter != search_order.back())
-				std::ranges::rotate(search_order, next(hint_iter));
+			for (const auto& pattern : detail::search_orders)
+			{
+				if (pattern[0] == hint_edge1 ||
+					pattern[0] == hint_edge2)
+				{
+					search_order = &pattern;
+					reverse = true;
+					break;
+				}
+				else if (pattern[7] == hint_edge1 ||
+					pattern[7] == hint_edge2)
+				{
+					search_order = &pattern;
+					reverse = false;
+					break;
+				}
+			}
 		}
 
+		auto passthrough = [&p, &f](tile_edge e) {
+			e.position += p;
+			return std::invoke(f, e);
+			};
+
 		// call 'f' with each edge(except the hint edge)
-		std::for_each(begin(search_order), prev(end(search_order)), f);
-
-		// only call on the default hint edge if we didn't provide a hint
-		if (!hint)
-			std::invoke(f, search_order.back());
-
+		if (reverse)
+		{
+			std::for_each(rbegin(*search_order), prev(rend(*search_order)), passthrough);
+			// only call on the default hint edge if we didn't provide a hint
+			if (!hint)
+				std::invoke(f, search_order->front());
+		}
+		else
+		{
+			std::for_each(begin(*search_order), prev(end(*search_order)), passthrough);
+			// only call on the default hint edge if we didn't provide a hint
+			if (!hint)
+				std::invoke(f, search_order->back());
+		}
 		return;
 	}
 
@@ -1498,7 +1555,8 @@ namespace hades
 		return;
 	}
 
-	static std::uint8_t count_adjacent_cliffs(const terrain_map& m, const terrain_vertex_position p)
+	// NOTE: used in terrain.inl
+	std::uint8_t detail::count_adjacent_cliffs(const terrain_map& m, const terrain_vertex_position p)
 	{
 		auto count = std::uint8_t{};
 		for_each_adjacent_cliff(m, p, [&count](const tile_edge) noexcept {
@@ -1510,8 +1568,10 @@ namespace hades
 
 	enum class adjacent_cliff_return : std::uint8_t {
 		no_cliffs,
+		begin = no_cliffs,
 		single_cliff,
-		too_many_cliffs
+		too_many_cliffs,
+		end
 	};
 
 	static std::tuple<adjacent_cliff_return, tile_edge> get_adjacent_cliff(const terrain_map& m, const terrain_vertex_position p)
@@ -1536,7 +1596,121 @@ namespace hades
 		return { no_cliffs, {} };
 	}
 
+	// returns a valid specific vertex for the passed vertex
+	[[deprecated]]
+	static detail::specific_vertex get_any_specific(const terrain_map& m, const terrain_vertex_position p)
+	{
+		const auto size = get_size(m);
+		if (!within_world(p, size + tile_position{ 1, 1 }))
+			throw terrain_error{ "vertex is outside the map" };
+
+		const auto y_bottom = p.y > size.y;
+		
+		auto tile = p;
+		auto corner = rect_corners::last;
+		auto triangle = terrain_map::triangle_left;
+	
+		if (p.x == 0)
+		{
+			if (y_bottom)
+			{
+				tile -= tile_position{ 0, 1, };
+				corner = rect_corners::bottom_left;
+			}
+			else
+			{
+				corner = rect_corners::top_left;
+			}
+		}
+		else
+		{
+			tile -= tile_position{ 1, 0 };
+			triangle = terrain_map::triangle_right;
+			if (y_bottom)
+			{
+				tile -= tile_position{ 0, 1, };
+				corner = rect_corners::bottom_right;
+			}
+			else
+			{
+				corner = rect_corners::top_right;
+			}
+		}
+
+		return { tile, corner, triangle };
+	}
+
+	// returns true if all the specific vertex are the same height
+	static bool is_flat_cliff(const terrain_map& m, const terrain_vertex_position p)
+	{
+		auto height = std::optional<std::uint8_t>{};
+		auto ret = true;
+		auto compare = [&height, &ret](const std::uint8_t h) noexcept {
+			if (!height)
+				height = h; 
+			else if(*height != h)
+				ret = false;
+			return;
+			};
+
+		for_each_safe_adjacent_corner(m, p, [&m, &compare](const tile_position p, const rect_corners c) {
+			const auto tris = get_height_for_triangles(p, m);
+			const auto [first, second] = quad_index_to_triangle_index(c, tris.triangle_type);
+			switch (c)
+			{
+			default:
+				log_warning("Invalid corner value passed to functor from for_each_safe_adjacent_corner"sv);
+				[[fallthrough]];
+			case rect_corners::top_left:
+				compare(tris.height[first]);
+				if (tris.triangle_type == terrain_map::triangle_downhill)
+					compare(tris.height[second]);
+				break;
+			case rect_corners::top_right:
+				compare(tris.height[second]);
+				if (tris.triangle_type == terrain_map::triangle_uphill)
+					compare(tris.height[first]);
+				break;
+			case rect_corners::bottom_right:
+				compare(tris.height[second]);
+				if (tris.triangle_type == terrain_map::triangle_downhill)
+					compare(tris.height[first]);
+				break;
+			case rect_corners::bottom_left:
+				compare(tris.height[first]);
+				if (tris.triangle_type == terrain_map::triangle_uphill)
+					compare(tris.height[second]);
+				break;
+			}
+			return;
+			});
+		return ret;
+	}
+
+	// returns true if this is the kind of cliff that should have the same height
+	// at both sides; usually cliff ends, that don't also touch the world border
+	static bool should_be_flat_cliff(const terrain_map& m, const terrain_vertex_position p)
+	{
+		const auto count = detail::count_adjacent_cliffs(m, p);
+		switch (count)
+		{
+		case 0:
+			return true;
+		case 1:
+		{
+			const auto size = get_vertex_size(m);
+			// a cliff won't be flat when it meets the worlds edge
+			return !edge_of_map(size, p);
+		}
+		case 2:
+			[[fallthrough]];
+		default:
+			return false;
+		}
+	}
+
 	// return the two vertex that define the start and end of an edge
+	// TODO: deprecate in favor of get_specific_vertex_from_edge?
 	std::pair<terrain_vertex_position, terrain_vertex_position>
 		get_edge_vertex(const tile_edge& edge) noexcept
 	{
@@ -1644,87 +1818,224 @@ namespace hades
 		return is_clockwise(f, v) != is_clockwise(s, v);
 	}
 
+	namespace detail
+	{
+		static constexpr bool is_cliff_impl(const terrain_map::cliff_info info, const rect_edges e) noexcept;
+
+		struct can_add_cliff_return
+		{
+			bool already_exists : 1;
+			bool f_is_world_edge : 1, s_is_world_edge : 1;
+			adjacent_cliff_return f_cliff : 2;
+			adjacent_cliff_return s_cliff : 2;
+		};
+
+		static std::optional<can_add_cliff_return> can_add_cliff_impl(const terrain_map& m, const tile_edge t_edge)
+		{
+			const auto normal_edge = normalise(t_edge);
+
+			if (const auto w_size = get_size(m); !within_world(normal_edge.position, w_size))
+				return {}; // outside the world
+
+			const auto info = get_cliff_info(normal_edge.position, m);
+			if (detail::is_cliff_impl(info, normal_edge.edge)) // Rule 6
+				return can_add_cliff_return{ true };
+
+			if ((t_edge.edge == rect_edges::downhill ||
+				t_edge.edge == rect_edges::uphill) &&
+				(info.diag_downhill || info.diag_uphill)) // Rule 5
+			{
+				return {};
+			}
+
+			const auto vert_size = get_vertex_size(m);
+			// Each cliff is defined by two verticies
+			const auto verts = get_edge_vertex(t_edge);
+
+			const auto f_map_edge = edge_of_map(vert_size, verts.first);
+			const auto s_map_edge = edge_of_map(vert_size, verts.second);
+
+			// can't cliff along the edge of the world
+			if (f_map_edge && s_map_edge) // Rule 3
+				return {};
+
+			const auto [f_cliff, f_edge] = get_adjacent_cliff(m, verts.first);
+			const auto [s_cliff, s_edge] = get_adjacent_cliff(m, verts.second);
+
+			using enum adjacent_cliff_return;
+
+			if (s_cliff == single_cliff && // Rule 4
+				!compatible_cliff_edges(t_edge, s_edge, verts.second))
+				return {};
+
+			if (f_cliff == single_cliff && // Rule 4
+				!compatible_cliff_edges(t_edge, f_edge, verts.first))
+				return {};
+
+			// start a new cliff touching the worlds edge
+			// only a single cliff can connect to a world edge vertex
+			if (f_map_edge && f_cliff > no_cliffs) // Rule 1.a
+				return {};
+			if (s_map_edge && s_cliff > no_cliffs) // Rule 1.a
+				return {};
+
+			if (f_cliff == too_many_cliffs || // Rule 1
+				s_cliff == too_many_cliffs)
+				return {};
+
+			assert(f_cliff < end);
+			assert(s_cliff < end);
+			return can_add_cliff_return{ false, f_map_edge, s_map_edge, f_cliff, s_cliff };
+		}
+	}
+
+	// === Cliff Placement Rules ===
+	//	1.	A vertex can only have max 2 adjacent cliff.
+	//	1. a) A world edge vertex can only have 1 adjacent cliff.
+	//	2.	Minimum cliff length is 2 edges.
+	//	2. a) A cliff that touches the world edge is permitted to be only a single edge long.
+	//  3.	Both verticies of a cliff cannot be world edge verticies
+	//	4.	Two cliff edges that share a vertex must pass the compatible_cliff_edges test.
+	//	5.	A tile cannot have more than one diagonal cliff edge (ie. an uphill and downhill cliff)
+	//		even though those cliffs may not share any verticies.
+	//	6.	A cliff can be placed over an identical cliff (nothing is changed).
+
 	bool can_add_cliff(const terrain_map& m, const tile_edge t_edge)
 	{
-		const auto& p = t_edge.position;
-		const auto& e = t_edge.edge;
-
-		const auto vert_size = get_vertex_size(m);
-		// cliffs must exist in lines
-		// only two cliff edges are allowed to touch a vertex
-		const auto verts = get_edge_vertex({ p, e });
-
-		const auto f_map_edge = edge_of_map(vert_size, verts.first);
-		const auto s_map_edge = edge_of_map(vert_size, verts.second);
-
-		const auto [f_cliff, f_edge] = get_adjacent_cliff(m, verts.first);
-		const auto [s_cliff, s_edge] = get_adjacent_cliff(m, verts.second);
-
-		const auto f_count = count_adjacent_cliffs(m, verts.first);
-		const auto s_count = count_adjacent_cliffs(m, verts.second);
-
-		// can't cliff along the edge of the world
-		if (f_map_edge && s_map_edge)
+		// covers rules 1, 3, 4, 5 and 6
+		const auto ret = detail::can_add_cliff_impl(m, t_edge);
+		if (!ret)
 			return false;
+
+		if (ret->already_exists)
+			return true;
 
 		using enum adjacent_cliff_return;
 
-		// start a new cliff touching the worlds edge
-		if (f_map_edge && s_cliff == no_cliffs)
-			return true;
-		if (s_map_edge && f_cliff == no_cliffs)
-			return true;
+		// at least one edge must already be a cliff // Rule 2 && 2.a
+		if (!(ret->f_is_world_edge || ret->s_is_world_edge) &&
+			ret->f_cliff == no_cliffs && ret->s_cliff == no_cliffs)
+			return false;
 
-		if (f_cliff == no_cliffs &&
-			s_cliff == single_cliff &&
-			compatible_cliff_edges(t_edge, s_edge, verts.second))
-			return true;
-		if (s_cliff == no_cliffs &&
-			f_cliff == single_cliff &&
-			compatible_cliff_edges(t_edge, f_edge, verts.first))
-			return true;
-
-		if (f_cliff == single_cliff &&
-			s_cliff == single_cliff && 
-			compatible_cliff_edges(t_edge, s_edge, verts.second) &&
-			compatible_cliff_edges(t_edge, f_edge, verts.first))
-			return true;
-
-		return false;
+		return true;
 	}
 
 	std::optional<tile_edge> can_start_cliff(const terrain_map& m, tile_edge e)
 	{
-		// starting area must not have any cliffs nearby
-		if (!no_cliffs(m, e.position, e.edge))
+		const auto can_add_e = detail::can_add_cliff_impl(m, e);
+		if (!can_add_e)
 			return {};
+		// NOTE: since can_add_e is true, we must be compatible with any adjacent cliffs
 
 		// we also need to find at least one other cliffable
 		// edge to create the cliff with
+		auto existing_edge = std::optional<tile_edge>{};
 		auto out_edge = std::optional<tile_edge>{};
-		const auto check_for_cliffs = [&out_edge, &m](const auto e) {
-			if (!out_edge && !is_cliff(e.position, e.edge, m))
-				out_edge = e;
-		};
+		terrain_vertex_position shared_vertex [[indeterminate]];
+		const auto check_for_cliffs = [&existing_edge, &out_edge, &shared_vertex, &m, e](const auto edge) {
+			if (existing_edge)
+				return;
+			const auto can_add_e = detail::can_add_cliff_impl(m, edge);
+			if (!can_add_e)
+				return;
+
+			if (can_add_e->already_exists)
+				existing_edge = edge;
+			else if (!out_edge)
+			{
+				if (compatible_cliff_edges(edge, e, shared_vertex))
+					out_edge = edge;
+				else
+					out_edge = swap_cliff_facing(edge);
+			}
+			return;
+			};
 
 		const auto [vert1, vert2] = get_edge_vertex(e);
+		shared_vertex = vert1;
 		for_each_adjacent_edge(vert1, e, check_for_cliffs);
-		if (!out_edge)
+		if (!existing_edge) // an existing edge is always prioritised over a compatible edge
+		{
+			shared_vertex = vert2;
 			for_each_adjacent_edge(vert2, e, check_for_cliffs);
+		}
+
+		if (existing_edge)
+			return existing_edge;
 		return out_edge;
+	}
+
+	bool can_add_or_start_cliff(const terrain_map& m, const tile_edge e1, const tile_edge e2)
+	{
+		// undefined bahaviour if both params are the same edge
+		assert(e1 != e2);
+		assert(e1 != swap_cliff_facing(e2));
+
+		// both edges must share a vertex
+		const terrain_vertex_position shared_vert = [&]() noexcept {
+			const auto [e1_v1, e1_v2] = get_edge_vertex(e1);
+			const auto [e2_v1, e2_v2] = get_edge_vertex(e2);
+			if (e1_v1 == e2_v1 ||
+				e1_v1 == e2_v2)
+				return e1_v1;
+			if (e1_v2 == e2_v1 ||
+				e1_v2 == e2_v2)
+				return e1_v2;
+			return bad_tile_position;
+			}();
+
+		// failed to find a shared vertex
+		if (shared_vert == bad_tile_position)
+			return false; // TODO: maybe throw here, this represents a major bug in the code that called this function
+
+		if (!compatible_cliff_edges(e1, e2, shared_vert))
+			return false;
+
+		const auto map_size = get_vertex_size(m);
+		const auto shared_edge = edge_of_map(map_size, shared_vert);
+
+		// The edge can only be touched by a single cliff
+		if (shared_edge)
+			return false;
+
+		const auto can_add_e1 = detail::can_add_cliff_impl(m, e1);
+		const auto can_add_e2 = detail::can_add_cliff_impl(m, e2);
+
+		return can_add_e1 && can_add_e2;
 	}
 
 	bool no_cliffs(const terrain_map& m, const tile_position p, const rect_edges e)
 	{
 		const auto verts = get_edge_vertex({ p, e });
 
-		const auto f_count = count_adjacent_cliffs(m, verts.first);
-		const auto s_count = count_adjacent_cliffs(m, verts.second);
+		const auto f_count = detail::count_adjacent_cliffs(m, verts.first);
+		const auto s_count = detail::count_adjacent_cliffs(m, verts.second);
 
 		return f_count == 0 &&
 			s_count == 0;
 	}
 
+	namespace detail
+	{
+		static constexpr bool is_cliff_impl(const terrain_map::cliff_info info, const rect_edges e) noexcept
+		{
+			switch (e)
+			{
+			case rect_edges::right:
+				return info.right;
+			case rect_edges::bottom:
+				return info.bottom;
+			case rect_edges::uphill: // TODO: we shouldn't need to second half of these checks
+				return info.diag_uphill || (info.triangle_type == terrain_map::triangle_uphill && info.diag);
+			case rect_edges::downhill:
+				return info.diag_downhill || (info.triangle_type == terrain_map::triangle_downhill && info.diag);
+			default:
+				return false;
+			}
+		}
+	}
+
+	// TODO: make this static and deprecate the declaration in the header
 	bool is_cliff(const tile_position t, const rect_edges e, const terrain_map& m)
 	{
 		const auto edge = normalise(tile_edge{ t, e });
@@ -1733,56 +2044,162 @@ namespace hades
 			return false;
 
 		const auto info = get_cliff_info(edge.position, m);
-		switch (edge.edge)
-		{
-		case rect_edges::right:
-			return info.right;
-		case rect_edges::bottom:
-			return info.bottom;
-		case rect_edges::uphill: // TODO: we shouldn't need to second half of these checks
-			return info.diag_uphill || (info.triangle_type == terrain_map::triangle_uphill && info.diag);
-		case rect_edges::downhill:
-			return info.diag_downhill || (info.triangle_type == terrain_map::triangle_downhill && info.diag);
-		default:
-			return false;
-		}
+		return detail::is_cliff_impl(info, edge.edge);
 	}
 
-	static void add_cliff_impl(const tile_edge e, const std::uint8_t height_diff,
-		terrain_map& m, const resources::terrain_settings& s)
+	bool is_cliff(const tile_edge e, const terrain_map& m)
+	{
+		return is_cliff(e.position, e.edge, m);
+	}
+
+	// returns the two specific vertex defining the high end of the cliff
+	static constexpr std::pair<detail::specific_vertex, detail::specific_vertex> get_specific_vertex_from_edge(const tile_edge e, const bool triangle_type) noexcept
 	{
 		using enum rect_edges;
+		using enum rect_corners;
 
-		const auto sub_height = [height_diff](const std::uint8_t h) noexcept {
-			const auto ret = h - height_diff;
-			return integer_clamp_cast<std::uint8_t>(ret);
+		static_assert(terrain_map::triangle_downhill == terrain_map::triangle_left);
+		// NOTE: terrain_map::downhill == terrain_map::left_triangle
+		//			so we can select the correct triangle with triangle_type or !triangle_type
+
+		switch (e.edge)
+		{
+		case top:
+			return {
+				detail::specific_vertex{ e.position, top_left, !triangle_type },
+				detail::specific_vertex{ e.position, top_right, !triangle_type }
 			};
+		case left:
+			return {
+				detail::specific_vertex{ e.position, top_left, terrain_map::triangle_left },
+				detail::specific_vertex{ e.position, bottom_left, terrain_map::triangle_left }
+			};
+		case right:
+			return {
+				detail::specific_vertex{ e.position, top_right, terrain_map::triangle_right },
+				detail::specific_vertex{ e.position, bottom_right, terrain_map::triangle_right }
+			};
+		case bottom:
+			return {
+				detail::specific_vertex{ e.position, bottom_left, triangle_type },
+				detail::specific_vertex{ e.position, bottom_right, triangle_type }
+			};
+		case uphill:
+			return {
+				detail::specific_vertex{ e.position, bottom_left, e.left_triangle },
+				detail::specific_vertex{ e.position, top_right, e.left_triangle }
+			};
+		case downhill:
+			return {
+				detail::specific_vertex{ e.position, top_left, e.left_triangle },
+				detail::specific_vertex{ e.position, bottom_right, e.left_triangle }
+			};
+		default:
+			assert(false);
+		}
+		
+		return { detail::bad_specific_vertex, detail::bad_specific_vertex };
+	}
+
+	static void add_cliff_impl(const tile_edge e, std::uint8_t height_diff,
+		terrain_map& m, const resources::terrain_settings& s)
+	{
+		// This function operates under the assumption that it is valid to 
+		// add the cliff 'e'
+		assert(detail::can_add_cliff_impl(m, e));
 
 		const auto add_height = [height_diff](const std::uint8_t h) noexcept {
 			const auto ret = h + height_diff;
 			return integer_clamp_cast<std::uint8_t>(ret);
 			};
 
+		using enum rect_edges;
+		// record the triangle type here so it can be used when applying the height change
+		bool triangle_type [[indeterminate]];
+		auto pos = e.position;
+		// Tag the edge as a cliff and store the triangle type for when we
+		// change the height
 		switch (e.edge)
 		{
 		case top:
+			pos -= tile_position{ 0, 1 };
+			if (pos.y < 0)
+				throw terrain_error{ "attempted to create a cliff outside the map borders"s };
+			[[fallthrough]];
+		case bottom:
 		{
-			// tag the cliff
-			const auto tile_above = e.position - tile_position{ 0, 1 };
-			const auto tile_above_index = to_tile_index(tile_above, m);
+			const auto tile_above_index = to_tile_index(pos, m);
 			auto cliff_inf = get_cliff_info(tile_above_index, m);
 			cliff_inf.bottom = true;
 			set_cliff_info(tile_above_index, m, cliff_inf);
-
-			// add the height
-			change_terrain_height_bad(m, tile_above, s, sub_height);
-			// 
+			triangle_type = cliff_inf.triangle_type;
 		} break;
-		/*case left:
+		case left:
+			pos -= tile_position{ 1, 0 }; 
+			if (pos.x < 0)
+				throw terrain_error{ "attempted to create a cliff outside the map borders"s };
+			[[fallthrough]];
 		case right:
-		case bottom:
+		{
+			const auto tile_index = to_tile_index(pos, m);
+			auto cliff_inf = get_cliff_info(tile_index, m);
+			cliff_inf.right = true;
+			set_cliff_info(tile_index, m, cliff_inf);
+			triangle_type = cliff_inf.triangle_type;
+		} break;
+		default:
+			log_warning("Unexpected edge type in add_cliff_impl, defaulting to uphill"s);
+			//TODO: just throw logic error here
+			[[fallthrough]];
 		case uphill:
-		case downhill:*/
+		{
+			const auto tile_index = to_tile_index(e.position, m);
+			auto cliff_inf = get_cliff_info(tile_index, m);
+			if (cliff_inf.triangle_type != terrain_map::triangle_uphill)
+			{
+				swap_triangle_type(m, e.position);
+				cliff_inf = get_cliff_info(tile_index, m);
+			}
+			cliff_inf.diag = cliff_inf.diag_uphill = true;
+			set_cliff_info(tile_index, m, cliff_inf);
+			triangle_type = terrain_map::triangle_uphill;
+		} break;
+		case downhill:
+		{
+			const auto tile_index = to_tile_index(e.position, m);
+			auto cliff_inf = get_cliff_info(tile_index, m);
+			if (cliff_inf.triangle_type != terrain_map::triangle_downhill)
+			{
+				swap_triangle_type(m, e.position);
+				cliff_inf = get_cliff_info(tile_index, m);
+			}
+			cliff_inf.diag = cliff_inf.diag_downhill = true;
+			set_cliff_info(tile_index, m, cliff_inf);
+			triangle_type = terrain_map::triangle_downhill;
+		}
+		}
+
+		const auto specific_verts = get_specific_vertex_from_edge(e, triangle_type);
+
+		const auto vertex1 = to_vertex_position(specific_verts.first);
+		const auto vertex2 = to_vertex_position(specific_verts.second);
+
+		const auto v1_is_flat = is_flat_cliff(m, vertex1);
+		const auto v1_should_be_flat = should_be_flat_cliff(m, vertex1);
+
+		if (v1_is_flat && !v1_should_be_flat)
+		{
+			const auto& [tile_pos, corner, tri] = specific_verts.first;
+			change_terrain_height(tile_pos, corner, tri, m, s, add_height);
+		}
+
+		const auto v2_is_flat = is_flat_cliff(m, vertex2);
+		const auto v2_should_be_flat = should_be_flat_cliff(m, vertex2);
+
+		if (v2_is_flat && !v2_should_be_flat)
+		{
+			const auto& [tile_pos, corner, tri] = specific_verts.second;
+			change_terrain_height(tile_pos, corner, tri, m, s, add_height);
 		}
 
 		return;
@@ -1790,16 +2207,16 @@ namespace hades
 
 	void add_cliff(const tile_edge e, const std::uint8_t h, terrain_map& m, const resources::terrain_settings& s)
 	{
+		assert(can_add_cliff(m, e));
+		add_cliff_impl(e, h, m, s);
 		return;
 	}
 
 	void add_cliff(const tile_edge e1, const tile_edge e2, const std::uint8_t add_height, terrain_map& m, const resources::terrain_settings& s)
 	{
-		// So here's the deal
-		// 1: dbl check that its valid to set e1 and e2
+		assert(can_add_or_start_cliff(m, e1, e2));
 		add_cliff_impl(e1, add_height, m, s);
 		add_cliff_impl(e2, add_height, m, s);
-		// TODO:
 		return;
 	}
 
@@ -1951,7 +2368,7 @@ namespace hades
 	}
 
 	// project 'p' onto the flat version of 'map'
-	vector2_float project_onto_terrain(const vector2_float p, float rot,
+	vector2_float project_onto_terrain(const vector2_float p, const float rot,
 		const resources::tile_size_t tile_size, const terrain_map& map)
 	{
 		const auto tile_sizef = float_cast(tile_size);
@@ -2017,6 +2434,11 @@ namespace hades
 
 		while (within_world(tile_check, world_size))
 		{
+			// TODO: check cliffs for each tile as well,
+			//			- will require getting height from neighbouring tiles
+			//			- will need to replace left_hit/right_hit with an array of tris
+			//			- absent cliffs can just be degenerate triangles
+			
 			// get index for accessing heightmap
 			const auto height_info = get_height_for_triangles(tile_check, map);
 			// generate quad vertex
@@ -2094,7 +2516,7 @@ namespace hades::resources
 		return;
 	}
 
-	//short transition names, same values an order as the previous list
+	//short transition names, same values and order as the previous list
 	// this is the format output by the terrain serialise func
 	constexpr auto transition_short_names = std::array{
 		"n"sv, // causes a tile skip
@@ -2588,6 +3010,7 @@ namespace hades::resources
 		return data::get<terrain_settings>(id::terrain_settings);
 	}
 
+	// TODO: constexpr
 	std::string_view get_empty_terrainset_name() noexcept
 	{
 		using namespace::std::string_view_literals;

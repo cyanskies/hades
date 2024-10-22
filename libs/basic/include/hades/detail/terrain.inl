@@ -29,6 +29,7 @@ namespace hades
 	namespace detail
 	{
 		// Returns an editable span into a tiles height
+		// Undefined behaviour if 'i' is invalid
 		template<typename Map>
 			requires std::same_as<std::decay_t<Map>, terrain_map>
 		auto get_triangle_height(const tile_index_t i, Map& m) noexcept
@@ -83,6 +84,41 @@ namespace hades
 			return uphill[enum_type(c)];
 		else
 			return downhill[enum_type(c)];
+	}
+
+	[[nodiscard]]
+	constexpr terrain_vertex_position to_vertex_position(const tile_position p, const rect_corners c) noexcept
+	{
+		using enum rect_corners;
+		switch (c)
+		{
+		default:
+			[[fallthrough]];
+		case top_left:
+			return p;
+		case top_right:
+			return p + tile_position{ 1, 0 };
+		case bottom_left:
+			return p + tile_position{ 0, 1 };
+		case bottom_right:
+			return p + tile_position{ 1, 1 };
+		}
+	}
+
+	// NOTE: specific_vertex defined here so to_vertex_position can use it
+	namespace detail
+	{
+		// Targets a vertex in a specific triangle
+		using specific_vertex = std::tuple<tile_position, rect_corners, bool>;
+		constexpr auto bad_specific_vertex = specific_vertex{ bad_tile_position, rect_corners::last, {} };
+	}
+
+	[[nodiscard]]
+	constexpr terrain_vertex_position to_vertex_position(detail::specific_vertex sv) noexcept
+	{
+		const auto pos = std::get<0>(sv);
+		const auto corner = std::get<1>(sv);
+		return to_vertex_position(pos, corner);
 	}
 
 	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data& tris) noexcept
@@ -189,6 +225,7 @@ namespace hades
 	static void for_each_safe_adjacent_corner(const terrain_map& m, const terrain_vertex_position p, Func&& f)
 		noexcept(std::is_nothrow_invocable_v<Func, tile_position, rect_corners>)
 	{
+		// the corner in each of the below tiles that points to our vertex
 		constexpr auto corners = std::array{
 			rect_corners::top_left,
 			rect_corners::top_right,
@@ -196,6 +233,7 @@ namespace hades
 			rect_corners::bottom_left
 		};
 
+		// each tile adjacent to this vertex
 		const auto positions = std::array{
 			p,
 			p - tile_position{ 1, 0 },
@@ -217,144 +255,19 @@ namespace hades
 
 	namespace detail
 	{
-		template<invocable_r<std::uint8_t, std::uint8_t> Func>
-		void change_terrain_height_bad_impl(terrain_map& m, tile_position p, rect_corners c, const std::uint8_t height_min, const std::uint8_t height_max, Func& f)
+		// NOTE: speific_vertex is defined higher in the file
+		[[nodiscard]]
+		inline constexpr bool is_bad(const specific_vertex& v) noexcept
 		{
-			const auto index = to_tile_index(p, m);
-			auto height = get_triangle_height(index, m);
-
-			const auto& t_info = get_cliff_info(p, m);
-			const auto [first, second] = quad_index_to_triangle_index(c, t_info.triangle_type);
-			if(first != bad_triangle_index)
-				height[first] = std::clamp(std::invoke(f, height[first]), height_min, height_max);
-			if (second != bad_triangle_index)
-				height[second] = std::clamp(std::invoke(f, height[second]), height_min, height_max);
-
-			return;
-		}
-	}
-
-	template<invocable_r<std::uint8_t, std::uint8_t> Func>
-	void change_terrain_height_bad(terrain_map& m, tile_position p, rect_corners c,
-		const std::uint8_t height_min, const std::uint8_t height_max, Func&& f)
-	{
-		// call each of the tiles adjacent to this corner to perform the height change
-		const auto size = get_size(m);
-
-		constexpr auto corners = std::array{
-				rect_corners::bottom_right,
-				rect_corners::bottom_left,
-				rect_corners::top_left,
-				rect_corners::top_right
-		};
-
-		auto check_tiles = [&](const std::array<tile_position, 4> &tiles) {
-			for (auto i = std::uint8_t{}; i < std::size(tiles); ++i)
-			{
-				const auto pos = p + tiles[i];
-				if (within_world(pos, size))
-					detail::change_terrain_height_bad_impl(m, pos, corners[i], height_min, height_max, f);
-			}
-			return;
-		};
-		
-		switch (c)
-		{
-		case rect_corners::top_left:
-		{
-			constexpr auto tiles = std::array{
-				tile_position{ -1, -1 },
-				tile_position{ 0, -1 },
-				tile_position{ 0, 0 },
-				tile_position{ -1, 0 },
-			};
-
-			check_tiles(tiles);
-			return;
-		}
-		case rect_corners::top_right:
-		{
-			constexpr auto tiles = std::array{
-				tile_position{ 0, -1 },
-				tile_position{ 1, -1 },
-				tile_position{ 1, 0 },
-				tile_position{ 0, 0 },
-			};
-
-			check_tiles(tiles);
-			return;
-		}
-		case rect_corners::bottom_right:
-		{
-			constexpr auto tiles = std::array{
-				tile_position{ 0, 0 },
-				tile_position{ 1, 0 },
-				tile_position{ 1, 1 },
-				tile_position{ 0, 1 },
-			};
-
-			check_tiles(tiles);
-			return;
-		}
-		case rect_corners::bottom_left:
-		{
-			constexpr auto tiles = std::array{
-				tile_position{ -1, 0 },
-				tile_position{ 0, 0 },
-				tile_position{ 0, 1 },
-				tile_position{ -1, 1 },
-			};
-
-			check_tiles(tiles);
-			return;
-		}
+			return std::get<0>(v) == bad_tile_position;
 		}
 
-		throw terrain_error{ "Called change terrain height with an invalid corner" };
-	}
-
-	template<invocable_r<std::uint8_t, std::uint8_t> Func>
-	void change_terrain_height_bad(terrain_map& m, terrain_vertex_position v, const resources::terrain_settings& settings, Func&& f)
-	{
-		// find a tile and corner and pass along to the next func
-		const auto size = get_size(m);
-		const auto h_min = settings.height_min;
-		const auto h_max = settings.height_max;
-		if (v.x == 0 && v.y == size.y) //bottom left
-			change_terrain_height_bad(m, v - tile_position{ 0, 1 }, rect_corners::bottom_left, h_min, h_max, std::forward<Func>(f));
-		else if (v.x == size.x && v.y == 0) //top right
-			change_terrain_height_bad(m, v - tile_position{ 1, 0 }, rect_corners::top_right, h_min, h_max, std::forward<Func>(f));
-		else if (v.x == 0 || v.y == 0) // top and left edges
-			change_terrain_height_bad(m, v, rect_corners::top_left, h_min, h_max, std::forward<Func>(f));
-		else // rest of map
-			change_terrain_height_bad(m, v - tile_position{ 1, 1 }, rect_corners::bottom_right, h_min, h_max, std::forward<Func>(f));
-		return;
-	}
-
-	namespace detail
-	{
-		using specific_vertex = std::tuple<tile_position, rect_corners, bool>;
-		// returns next clockwise vertex, or the same vertex if none exists
-		// stops if the next vertex is split by a cliff.
+		// returns next clockwise vertex
+		// if BlockOnCliff is true, then returns the parameter if the next
+		// vertex is on the other side of a cliff.
 		// A specific vertex is the individual height value for part of a vertex
-
-		// this is actually useless
-		enum class specific_vertex_clockwise_order_enum 
-		{
-			top_left_tri2,		// downhill only
-			begin = top_left_tri2,
-			top_left,
-			top_right_tri2,		// uphill only
-			top_right,
-			bottom_right,
-			bottom_right_tri2,	// downhill only
-			bottom_left,
-			bottom_left_tri2,	// uphill only
-			end
-		};
-
-		// TODO: possibly move this impl into terrain.cpp and same for next_specific_vertex_anti_clockwise
-		inline specific_vertex next_specific_vertex_clockwise(const specific_vertex v, const terrain_map& m)
+		template<bool BlockOnCliff = true>
+		inline specific_vertex next_specific_vertex_clockwise(const specific_vertex v, const tile_position world_size, const terrain_map& m)
 		{
 			using enum rect_corners;
 			const auto& [pos, corner, left_tri] = v;
@@ -368,20 +281,28 @@ namespace hades
 				if (left_tri)
 				{
 					const auto next_tile = pos - tile_position{ 1, 0 };
-					const auto next_info = get_cliff_info(next_tile, m);
-					if (next_info.right)
-						return v;
+					if (next_tile.x < 0)
+						return bad_specific_vertex;
 
-					constexpr auto next_tri = right_triangle;
-					return { next_tile, top_right, next_tri };
+					if constexpr (BlockOnCliff)
+					{
+						const auto next_info = get_cliff_info(next_tile, m);
+						if (next_info.right)
+							return bad_specific_vertex;
+					}
+
+					return { next_tile, top_right, right_triangle };
 				}
 				else
 				{
 					assert(!uphill); // no right triangle for this corner in uphill
-					if (!cliff_info.diag_downhill)
-						return { pos, corner, left_triangle };
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag_downhill)
+							return bad_specific_vertex;
+					}
 
-					return v;
+					return { pos, corner, left_triangle };
 				}
 			case top_right:
 				// TODO: this if statement looks a little wiggly
@@ -389,9 +310,15 @@ namespace hades
 				if (left_tri || !uphill)
 				{
 					const auto next_tile = pos - tile_position{ 0, 1 };
+					if (next_tile.y < 0)
+						return bad_specific_vertex;
+
 					const auto next_info = get_cliff_info(next_tile, m);
-					if (next_info.bottom) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (next_info.bottom) // blocked by cliff
+							return bad_specific_vertex;
+					}
 
 					const auto next_tri = next_info.triangle_type == terrain_map::triangle_downhill;
 					return { next_tile, bottom_right, next_tri };
@@ -399,8 +326,11 @@ namespace hades
 				else if (uphill) // right tri and uphill triangle
 				{
 					assert(!left_tri);
-					if (cliff_info.diag)
-						return v; // blocked by cliff
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag)
+							return bad_specific_vertex; // blocked by cliff
+					}
 
 					// move to left tri
 					return { pos, corner, left_triangle };
@@ -408,44 +338,60 @@ namespace hades
 				else
 				{
 					//assert(false); // unreachable
-					throw logic_error{"unreachable"};
-					return {};
+					throw logic_error{ "unreachable" };
 				}
 			case bottom_right:
 				if (left_tri)
 				{
 					assert(!uphill);
 					// move to right tri
-					if (cliff_info.diag)
+					if constexpr (BlockOnCliff)
 					{
-						assert(cliff_info.diag_downhill);
-						return v;
+						if (cliff_info.diag)
+						{
+							assert(cliff_info.diag_downhill);
+							return bad_specific_vertex;
+						}
 					}
 
 					return { pos, corner, right_triangle };
 				}
 				else
 				{
-					if (cliff_info.right) // blocked by cliffs
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.right) // blocked by cliffs
+							return bad_specific_vertex;
+					}
 					const auto next_tile = pos + tile_position{ 1, 0 };
+					if (next_tile.x >= world_size.x)
+						return bad_specific_vertex;
+
 					return { next_tile, bottom_left, left_triangle };
 				}
 			case bottom_left:
 				if (left_tri && uphill)
 				{
 					// move to right tri
-					if (cliff_info.diag)
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag)
+							return bad_specific_vertex;
+					}
 					return { pos, corner, right_triangle };
-				}
-				else if(cliff_info.bottom)
-				{
-					return v;
 				}
 				else
 				{
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.bottom)
+							return v;
+					}
+
 					const auto next_tile = pos + tile_position{ 0, 1 };
+					if (next_tile.y >= world_size.y)
+						return bad_specific_vertex;
+						
 					const auto next_info = get_cliff_info(next_tile, m);
 					const auto next_tri = next_info.triangle_type == terrain_map::triangle_uphill;
 					return { next_tile, top_left, next_tri };
@@ -455,7 +401,8 @@ namespace hades
 			}
 		}
 
-		inline specific_vertex next_specific_vertex_anti_clockwise(const specific_vertex v, const terrain_map& m)
+		template<bool BlockOnCliff = true>
+		inline specific_vertex next_specific_vertex_anti_clockwise(const specific_vertex v, const tile_position world_size, const terrain_map& m)
 		{
 			using enum rect_corners;
 			const auto& [pos, corner, left_tri] = v;
@@ -468,17 +415,25 @@ namespace hades
 			case top_left:
 				if (left_tri && !uphill)
 				{
-					if (cliff_info.diag) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					return { pos, corner, right_triangle };
 				}
 				else
 				{
 					const auto next_tile = pos - tile_position{ 0, 1 };
-					const auto next_info = get_cliff_info(next_tile, m);
-					if (next_info.bottom) // blocked by cliff
-						return v;
+					if (next_tile.y < 0)
+						return bad_specific_vertex;
 
+					const auto next_info = get_cliff_info(next_tile, m);
+					if constexpr (BlockOnCliff)
+					{
+						if (next_info.bottom) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					const auto next_tri = next_info.triangle_type == terrain_map::triangle_downhill;
 					return { next_tile, bottom_left, next_tri };
 				}
@@ -487,18 +442,27 @@ namespace hades
 				{
 					// go to next tile
 					const auto next_tile = pos - tile_position{ 1, 0 };
-					const auto next_info = get_cliff_info(next_tile, m);
-					if (next_info.right) // blocked by cliff
-						return v;
+					if (next_tile.x < 0)
+						return bad_specific_vertex;
+
+					if constexpr (BlockOnCliff)
+					{
+						const auto next_info = get_cliff_info(next_tile, m);
+						if (next_info.right) // blocked by cliff
+							return bad_specific_vertex;
+					}
 
 					return { next_tile, bottom_right, right_triangle };
 				}
-				else 
+				else
 				{
 					// move to left tri
 					assert(uphill); // there is no right_triangle for this corner in downhill
-					if (cliff_info.diag) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					return { pos, corner, left_triangle };
 				}
 			case bottom_right:
@@ -506,41 +470,57 @@ namespace hades
 				//		I feel like their is a better way to write this
 				if (left_tri || uphill)
 				{
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.bottom) // blocked by cliff
+							return bad_specific_vertex;
+					}
+
 					// go to next tile
 					const auto next_tile = pos + tile_position{ 0, 1 };
-					if (cliff_info.bottom) // blocked by cliff
-						return v;
+					if (next_tile.y >= world_size.y)
+						return bad_specific_vertex;
 
 					const auto next_info = get_cliff_info(next_tile, m);
 					const auto next_tri = next_info.triangle_type == terrain_map::triangle_uphill;
 					return { next_tile, top_right, next_tri };
 				}
-				else if(!left_tri)
+				else if (!left_tri)
 				{
 					assert(!uphill); // right_tri only exists for downhill on this corner
-					if (cliff_info.diag) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					return { pos, corner, left_triangle };
 				}
 				else
 				{
 					//assert(false); // unreachable
 					throw logic_error{ "unreachable" };
-					return {};
 				}
 			case top_right:
 				if (left_tri)
 				{
 					assert(uphill); // downhill doesn't have a right_tri on this corner
-					if (cliff_info.diag) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.diag) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					return { pos, corner, right_triangle };
 				}
-				else 
+				else
 				{
-					if (cliff_info.right) // blocked by cliff
-						return v;
+					if constexpr (BlockOnCliff)
+					{
+						if (cliff_info.right) // blocked by cliff
+							return bad_specific_vertex;
+					}
 					const auto next_tile = pos + tile_position{ 1, 0 };
+					if (next_tile.x >= world_size.x)
+						return bad_specific_vertex;
 					return { next_tile, top_left, left_triangle };
 				}
 			default:
@@ -548,22 +528,138 @@ namespace hades
 			}
 		}
 
-		template<invocable_r<std::uint8_t, std::uint8_t> Func>
-		void change_terrain_vertex_height_impl(terrain_map& m, const specific_vertex& vertex, const tile_position world_size, const std::uint8_t height_min, const std::uint8_t height_max, Func& f)
+		// returns the height of a specific vertex
+		inline std::uint8_t get_specific_height(const terrain_map& m, const specific_vertex& vertex)
 		{
 			const auto& [p, c, t] = vertex;
-
-			if (!within_world(p, world_size))
-				return;
-
 			const auto index = to_tile_index(p, m);
-			auto height = get_triangle_height(index, m);
-
+			const auto height = get_triangle_height(index, m);
 			const auto& t_info = get_cliff_info(p, m);
 			const auto [first, second] = quad_index_to_triangle_index(c, t_info.triangle_type);
 			const auto vertex_index = t ? first : second;
+			return height[vertex_index];
+		}
 
-			height[vertex_index] = std::clamp(std::invoke(f, height[vertex_index]), height_min, height_max);
+		inline void set_specific_height(terrain_map& m, const specific_vertex& vertex, const std::uint8_t new_h)
+		{
+			const auto& [p, c, t] = vertex;
+			const auto index = to_tile_index(p, m);
+			const auto height = get_triangle_height(index, m);
+			const auto& t_info = get_cliff_info(p, m);
+			const auto [first, second] = quad_index_to_triangle_index(c, t_info.triangle_type);
+			const auto vertex_index = t ? first : second;
+			height[vertex_index] = new_h;
+			return;
+		}
+
+		std::uint8_t count_adjacent_cliffs(const terrain_map& m, const terrain_vertex_position p);
+
+		template<bool BlockOnCliff = true, invocable_r<std::uint8_t, std::uint8_t> Func>
+		void change_terrain_height_impl(const tile_position tile, const rect_corners corner,
+			const bool left_triangle, terrain_map& m, const resources::terrain_settings& settings, Func&& f)
+		{
+			// check world limits
+			const auto size = get_size(m);
+			if (!within_world(tile, size))
+				throw terrain_error{ "Invalid argument passed to change_terrain_height: 'tile' was outside the map" };
+
+			const auto min_h = settings.height_min;
+			const auto max_h = settings.height_max;
+			const auto cliff_diff_min = settings.cliff_height_min;
+
+			const auto specific_start = detail::specific_vertex{ tile, corner, left_triangle };
+
+			// array of verticies to update
+			auto verts = []() consteval {
+				std::array<detail::specific_vertex, 8> out [[indeterminate]];
+				out.fill(detail::bad_specific_vertex);
+				return out;
+				}();
+
+			auto output_iter = std::begin(verts);
+			*output_iter++ = specific_start;
+
+			const auto start_h = detail::get_specific_height(m, specific_start);
+			auto new_h = std::clamp(std::invoke(f, start_h), min_h, max_h);
+			auto otherside_h = std::optional<std::uint8_t>{};
+			auto specific_next = detail::next_specific_vertex_clockwise<BlockOnCliff>(specific_start, size, m);
+
+			// rotate clockwise
+			while (!detail::is_bad(specific_next) &&
+				specific_next != specific_start)
+			{
+				*output_iter++ = specific_next;
+				assert(detail::get_specific_height(m, specific_next) == start_h);
+				specific_next = detail::next_specific_vertex_clockwise<BlockOnCliff>(specific_next, size, m);
+			}
+
+			// we bumped into a cliff or world edge (is_edge below will be true)
+			if (detail::is_bad(specific_next))
+			{
+				const auto vert_pos = to_vertex_position(std::get<0>(specific_start), std::get<1>(specific_start));
+				const auto adj_cliffs = count_adjacent_cliffs(m, vert_pos);
+				const terrain_vertex_position map_size_vertex = get_vertex_size(m);
+				const auto is_edge = edge_of_map(map_size_vertex, vert_pos);
+				const auto has_cliffs = adj_cliffs == 2 || (adj_cliffs == 1 && is_edge);
+				if constexpr (BlockOnCliff)
+				{
+					// check height on otherside of the cliff
+					if (has_cliffs)
+					{
+						const auto otherside = detail::next_specific_vertex_clockwise<false>(*std::prev(output_iter), size, m);
+						if (!detail::is_bad(otherside)) // wasn't actually a cliff, must be the worlds edge
+							otherside_h = detail::get_specific_height(m, *std::prev(output_iter));
+					}
+				}
+
+				// rotate anticlockwise
+				specific_next = detail::next_specific_vertex_anti_clockwise<BlockOnCliff>(specific_start, size, m);
+				// NOTE: We don't need to check against specific_start, we only
+				//		go anti clockwise if the previous direction hit a cliff.
+				//		We are guaranteed to hit a cliff at some point in this loop
+				while (!detail::is_bad(specific_next))
+				{
+					*output_iter++ = specific_next;
+					assert(detail::get_specific_height(m, specific_next) == start_h);
+					specific_next = detail::next_specific_vertex_anti_clockwise(specific_next, size, m);
+				}
+
+				if constexpr (BlockOnCliff)
+				{
+					// check other cliff
+					if (!otherside_h && has_cliffs)
+					{
+						const auto otherside = detail::next_specific_vertex_clockwise<false>(*std::prev(output_iter), size, m);
+						if (!detail::is_bad(otherside)) // next may just be the worlds edge
+							otherside_h = detail::get_specific_height(m, *std::prev(output_iter));
+					}
+				}
+			}
+
+			if constexpr (BlockOnCliff)
+			{
+				// check cliff height distance
+				if (otherside_h)
+				{
+					// try to make sure difference between otherside_h and new_h is larger than 
+					// cliff_min_distance
+					const auto diff = new_h - *otherside_h;
+					if (std::cmp_less(std::abs(diff), cliff_diff_min))
+					{
+						if (diff < 0)
+							new_h = integer_clamp_cast<std::uint8_t>(*otherside_h - cliff_diff_min);
+						else
+							new_h = integer_clamp_cast<std::uint8_t>(*otherside_h + cliff_diff_min);
+					}
+				}
+			}
+
+			// set height on each specific_vert
+			std::for_each(std::begin(verts), output_iter, [new_h, &m](const detail::specific_vertex& v) {
+				detail::set_specific_height(m, v, new_h);
+				return;
+				});
+
 			return;
 		}
 	}
@@ -571,48 +667,36 @@ namespace hades
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(const tile_position tile, const rect_corners corner, const bool left_triangle, terrain_map& m, const resources::terrain_settings& settings, Func&& f)
 	{
-		// check world limits
-		const auto size = get_size(m);
-		if (!within_world(tile, size))
-			throw terrain_error{ "Invalid argument passed to change_terrain_height: 'tile' was outside the map" };
+		return detail::change_terrain_height_impl<true>(tile, corner, left_triangle, m, settings, f);
+	}
 
-		const auto min_h = settings.height_min;
-		const auto max_h = settings.height_max;
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
+	void change_terrain_height(const terrain_vertex_position vertex, terrain_map& m, const resources::terrain_settings& settings, Func&& f)
+	{
+		// adjust input and corner so we can address every vertex
+		const auto world_size = get_size(m);
+		auto position = tile_position{ vertex };
+		auto corner = rect_corners::top_left;
+		auto left_tri = true;
 
-		const auto specific_start = detail::specific_vertex{ tile, corner, left_triangle };
-		// change the central target
-		detail::change_terrain_vertex_height_impl(m, specific_start, size, min_h, max_h, f);
-
-		auto specific_next = detail::next_specific_vertex_clockwise(specific_start, m);
-		auto specific_current = specific_start;
-
-		// rotate clockwise
-		while (specific_next != specific_current &&
-			specific_next != specific_start)
+		if (position == world_size)
 		{
-			detail::change_terrain_vertex_height_impl(m, specific_next, size, min_h, max_h, f);
-			specific_current = specific_next;
-			specific_next = detail::next_specific_vertex_clockwise(specific_current, m);
+			position -= tile_position{ 1, 1 };
+			corner = rect_corners::bottom_right;
+			left_tri = false;
+		}
+		else if (position.x == world_size.x)
+		{
+			--position.x;
+			corner = rect_corners::top_right;
+			left_tri = false;
+		}
+		else if (position.y == world_size.y)
+		{
+			--position.y;
+			corner = rect_corners::bottom_left;
 		}
 
-		// rotate anti-clockwise
-		if (specific_next != specific_start || // if(specific_next == start, then we made the full rotation
-			// vv All the specific_* are the same, means we got blocked before making any rotation
-			(specific_next == specific_start && 
-			specific_next == specific_current))
-		{
-			specific_current = specific_start;
-			specific_next = detail::next_specific_vertex_anti_clockwise(specific_current, m);
-			// NOTE: We don't need to check against specific_start, we only
-			//		go anti clockwise if the previous direction hit a cliff.
-			//		We are guaranteed to hit a cliff at some point in this loop
-			while (specific_next != specific_current)
-			{
-				detail::change_terrain_vertex_height_impl(m, specific_next, size, min_h, max_h, f);
-				specific_current = specific_next;
-				specific_next = detail::next_specific_vertex_anti_clockwise(specific_current, m);
-			}
-		}
-		return;
+		return detail::change_terrain_height_impl<false>(position, corner, left_tri, m, settings, f);
 	}
 }

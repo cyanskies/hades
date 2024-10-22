@@ -1299,54 +1299,85 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::raise_terrain(const terrain_vertex_position p, const std::uint8_t amount)
+	// TODO: move this and sub_height_functor into terrain.inl hades::detail
+	//			for all the varius functions that use it.
+	struct add_height_functor
 	{
-		hades::raise_terrain(_shared.map, p, amount, _shared.settings);
+		const std::uint8_t amount;
+
+		constexpr std::uint8_t operator()(const std::uint8_t h) noexcept
+		{
+			return integer_clamp_cast<std::uint8_t>(h + amount);
+		}
+	};
+
+	void mutable_terrain_map::raise_terrain(const terrain_vertex_position v, const std::uint8_t amount)
+	{
+		change_terrain_height(v, _shared.map, *_shared.settings, add_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
 	void mutable_terrain_map::raise_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t h) {
-			return integer_clamp_cast<std::uint8_t>(h + amount);
-			});
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, add_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map::lower_terrain(const terrain_vertex_position p, const std::uint8_t amount)
+	// TODO: move this and add_height_functor into terrain.inl hades::detail
+	//			for all the varius functions that use it.
+	struct sub_height_functor
 	{
-		hades::lower_terrain(_shared.map, p, amount, _shared.settings);
+		const std::uint8_t amount;
+
+		constexpr std::uint8_t operator()(const std::uint8_t h) noexcept
+		{
+			return integer_clamp_cast<std::uint8_t>(h - amount);
+		}
+	};
+
+	void mutable_terrain_map::lower_terrain(const terrain_vertex_position v, const std::uint8_t amount)
+	{
+		change_terrain_height(v, _shared.map, *_shared.settings, sub_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
 	void mutable_terrain_map::lower_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t h) {
-			return integer_clamp_cast<std::uint8_t>(h - amount);
-			});
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, sub_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position p, const std::uint8_t h)
+	// TODO: move this into terrain.inl hades::detail
+	//			for all the varius functions that use it.
+	struct set_height_functor
 	{
-		set_height_at(_shared.map, p, h, _shared.settings);
+		const std::uint8_t height;
+
+		constexpr std::uint8_t operator()(const std::uint8_t) noexcept
+		{
+			return height;
+		}
+	};
+
+	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position v, const std::uint8_t h)
+	{
+		change_terrain_height(v, _shared.map, *_shared.settings, set_height_functor{ h });
 		_needs_update = true;
 		return;
 	}
 
 	void mutable_terrain_map::set_terrain_height(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, [amount](const std::uint8_t) {
-			return amount;
-			});
+		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, set_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
+	[[deprecated]]
 	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)
 	{
 		hades::set_height_for_triangles(p, _shared.map, t);
@@ -1354,6 +1385,7 @@ namespace hades
 		return;
 	}
 
+	[[deprecated]]
 	void mutable_terrain_map::set_cliff_info_tmp(tile_position p, terrain_map::cliff_info c) // TODO: temp remove
 	{
 		hades::set_cliff_info_tmp(p, _shared.map, c);

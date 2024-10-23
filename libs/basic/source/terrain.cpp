@@ -1830,7 +1830,8 @@ namespace hades
 			adjacent_cliff_return s_cliff : 2;
 		};
 
-		static std::optional<can_add_cliff_return> can_add_cliff_impl(const terrain_map& m, const tile_edge t_edge)
+		static std::optional<can_add_cliff_return> can_add_cliff_impl(const terrain_map& m,
+			const tile_edge t_edge, std::optional<terrain_vertex_position> assumed_cliff = {})
 		{
 			const auto normal_edge = normalise(t_edge);
 
@@ -1859,8 +1860,8 @@ namespace hades
 			if (f_map_edge && s_map_edge) // Rule 3
 				return {};
 
-			const auto [f_cliff, f_edge] = get_adjacent_cliff(m, verts.first);
-			const auto [s_cliff, s_edge] = get_adjacent_cliff(m, verts.second);
+			auto [f_cliff, f_edge] = get_adjacent_cliff(m, verts.first);
+			auto [s_cliff, s_edge] = get_adjacent_cliff(m, verts.second);
 
 			using enum adjacent_cliff_return;
 
@@ -1885,6 +1886,19 @@ namespace hades
 
 			assert(f_cliff < end);
 			assert(s_cliff < end);
+
+			// if we passed a vertex to use as an assumption
+			// then fudge the empty cliff as a single cliff
+			// that way we can map out were a line of cliffs would
+			// be able to be placed
+			if (assumed_cliff)
+			{
+				if (*assumed_cliff == verts.first && f_cliff == no_cliffs)
+					f_cliff = single_cliff;
+				else if (*assumed_cliff == verts.second && s_cliff == no_cliffs)
+					s_cliff = single_cliff;
+			}
+
 			return can_add_cliff_return{ false, f_map_edge, s_map_edge, f_cliff, s_cliff };
 		}
 	}
@@ -1900,10 +1914,10 @@ namespace hades
 	//		even though those cliffs may not share any verticies.
 	//	6.	A cliff can be placed over an identical cliff (nothing is changed).
 
-	bool can_add_cliff(const terrain_map& m, const tile_edge t_edge)
+	bool can_add_cliff(const terrain_map& m, const tile_edge t_edge, std::optional<terrain_vertex_position> vert)
 	{
 		// covers rules 1, 3, 4, 5 and 6
-		const auto ret = detail::can_add_cliff_impl(m, t_edge);
+		const auto ret = detail::can_add_cliff_impl(m, t_edge, vert);
 		if (!ret)
 			return false;
 
@@ -2106,12 +2120,7 @@ namespace hades
 	{
 		// This function operates under the assumption that it is valid to 
 		// add the cliff 'e'
-		assert(detail::can_add_cliff_impl(m, e));
-
-		const auto add_height = [height_diff](const std::uint8_t h) noexcept {
-			const auto ret = h + height_diff;
-			return integer_clamp_cast<std::uint8_t>(ret);
-			};
+		//assert(detail::can_add_cliff_impl(m, e)); // we can't do this check because the create_cliff func will temperarily create a flat cliff, which breaks this logic
 
 		using enum rect_edges;
 		// record the triangle type here so it can be used when applying the height change
@@ -2187,6 +2196,8 @@ namespace hades
 		const auto v1_is_flat = is_flat_cliff(m, vertex1);
 		const auto v1_should_be_flat = should_be_flat_cliff(m, vertex1);
 
+		const auto add_height = detail::add_height_functor{ height_diff };
+
 		if (v1_is_flat && !v1_should_be_flat)
 		{
 			const auto& [tile_pos, corner, tri] = specific_verts.first;
@@ -2207,14 +2218,12 @@ namespace hades
 
 	void add_cliff(const tile_edge e, const std::uint8_t h, terrain_map& m, const resources::terrain_settings& s)
 	{
-		assert(can_add_cliff(m, e));
 		add_cliff_impl(e, h, m, s);
 		return;
 	}
 
 	void add_cliff(const tile_edge e1, const tile_edge e2, const std::uint8_t add_height, terrain_map& m, const resources::terrain_settings& s)
 	{
-		assert(can_add_or_start_cliff(m, e1, e2));
 		add_cliff_impl(e1, add_height, m, s);
 		add_cliff_impl(e2, add_height, m, s);
 		return;

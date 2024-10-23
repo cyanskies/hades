@@ -214,7 +214,7 @@ namespace hades
 
 		auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
 		
-		constexpr auto variance = 20;
+		constexpr auto variance = 3;
 		const auto height_low = _settings->height_default - variance;
 		const auto height_high = height_low + variance;
 
@@ -426,7 +426,8 @@ namespace hades
 
 			if (g.collapsing_header("cliffs"))
 			{
-				g.slider_scalar("Cliff height"sv, _cliff_default_height, std::uint8_t{ 5 }, std::uint8_t{ 15 });
+				
+				g.slider_scalar("Cliff height"sv, _cliff_default_height, _settings->cliff_height_min, std::uint8_t{ 20 });
 
 				if (g.button("Create Cliff"sv))
 				{
@@ -760,8 +761,10 @@ namespace hades
 			if (!e)
 			{
 				e = get_next_edge(vert, t_edge, map);
-				if (e)
+				if (e && can_add_cliff(map, *e, vert))
 					std::invoke(f, *e);
+				else
+					e = {};
 			}
 
 			return e;
@@ -847,8 +850,8 @@ namespace hades
 		{
 			switch (brush)
 			{
-			case brush_t::raise_cliff: //							   v TODO: this should be cliff_length or size
-				return follow_cliffable_edges(tile_pos, frac_pos, map, 3, std::forward<Func>(f));
+			case brush_t::raise_cliff:
+				return follow_cliffable_edges(tile_pos, frac_pos, map, size, std::forward<Func>(f));
 			case brush_t::erase_cliff:
 				return do_erase_cliff(std::forward<Func>(f));
 			default:
@@ -1146,20 +1149,12 @@ namespace hades
 		};
 
 		const auto cliff_func = [&](const tile_edge& edge) {
-			static tile_edge last_edge = {};
-			if (last_edge != edge)
-			{
-				auto msg = std::format("can_add_cliff: {}", can_add_cliff(_map.get_map(), edge));
-				log(std::move(msg));
-			}
-
-			// try create cliff on edge
-			//const auto cliff = get_cliff_info({}, _map.get_map());
+			_map.add_cliff(edge, _cliff_default_height);
 			return;
 		};
 
 		const auto start_cliff_func = [&](const tile_edge& edge1, const tile_edge& edge2) {
-			_map.add_cliff(edge1, edge2, 15);
+			_map.add_cliff(edge1, edge2, _cliff_default_height);
 			return;
 			};
 

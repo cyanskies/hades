@@ -103,7 +103,7 @@ namespace hades
 		void swap_triangle_type(tile_position); // pretty sure we don't need this
 
 		void add_cliff(tile_edge, tile_edge, std::uint8_t height);
-		// add_cliff(tile_edge, std::uint8_t height) // TODO:
+		void add_cliff(tile_edge, std::uint8_t height);
 		
 		[[deprecated]] void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{

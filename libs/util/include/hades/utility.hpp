@@ -18,7 +18,7 @@ namespace hades {
 	concept unary_operator = std::is_invocable_r_v<Ret, Func, T>;
 
 	template<typename Func, typename Ret, typename ...Args>
-	concept invocable_r = requires (Func f, Args... args) {
+	concept invocable_r = requires (Func&& f, Args... args) {
 		{ std::invoke(f, args...) } -> std::same_as<Ret>;
 	};
 

@@ -39,6 +39,36 @@ namespace hades
 			using value_type = std::conditional_t<std::is_const_v<Map>, const std::uint8_t, std::uint8_t>;
 			return std::span<value_type, 6>{ beg, 6 };
 		}
+
+		struct add_height_functor
+		{
+			const std::uint8_t amount;
+
+			constexpr std::uint8_t operator()(const std::uint8_t h) const noexcept
+			{
+				return integer_clamp_cast<std::uint8_t>(h + amount);
+			}
+		};
+		
+		struct sub_height_functor
+		{
+			const std::uint8_t amount;
+
+			constexpr std::uint8_t operator()(const std::uint8_t h) const noexcept
+			{
+				return integer_clamp_cast<std::uint8_t>(h - amount);
+			}
+		};
+
+		struct set_height_functor
+		{
+			const std::uint8_t height;
+
+			constexpr std::uint8_t operator()(const std::uint8_t) const noexcept
+			{
+				return height;
+			}
+		};
 	}
 
 	// Converts base 6 triangle index's into quad corner indexes
@@ -385,7 +415,7 @@ namespace hades
 					if constexpr (BlockOnCliff)
 					{
 						if (cliff_info.bottom)
-							return v;
+							return bad_specific_vertex;
 					}
 
 					const auto next_tile = pos + tile_position{ 0, 1 };

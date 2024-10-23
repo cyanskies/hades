@@ -444,7 +444,7 @@ namespace hades
 		get_edge_vertex(const tile_edge&) noexcept;
 
 	// returns true if add cliff would work on this edge
-	bool can_add_cliff(const terrain_map&, tile_edge);
+	bool can_add_cliff(const terrain_map&, tile_edge, std::optional<terrain_vertex_position> assume_this_is_a_cliff = {});
 	// If a new cliff can be started in this location, then returns a tile edge
 	// that can be used as the other part of the new cliff.
 	std::optional<tile_edge> can_start_cliff(const terrain_map&, tile_edge);

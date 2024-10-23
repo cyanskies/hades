@@ -127,7 +127,7 @@ namespace hades
 		int _size = 1;
 		std::uint8_t _height_strength = 1;
 		std::uint8_t _set_height = 1; // TODO:
-		std::uint8_t _cliff_default_height;
+		std::uint8_t _cliff_default_height = 5;
 
 		//brush preview
 		mutable_terrain_map _clear_preview;

@@ -306,6 +306,43 @@ namespace hades
 		_resize.terrain = _empty_terrain;
 	}
 
+	// TODO: we should do this once when terrainset is set or changed and just store a vector of textures, strings and other data we need
+	template<std::invocable<const resources::terrain*, const std::string&> Func>
+	void make_terrain_buttons(gui& g, float tile_size_f, vector2_float button_size, const resources::terrain* terrain, Func&& func)
+	{
+		assert(terrain);
+		if (empty(terrain->tiles))
+			return;
+
+		const auto& t = terrain->tiles.front();
+
+		const auto x = static_cast<float>(t.left),
+			y = static_cast<float>(t.top);
+
+		const auto tex_coords = rect_float{
+			x,
+			y,
+			tile_size_f,
+			tile_size_f
+		};
+
+		//need to push a prefix to avoid the id clashing from the same texture
+		g.push_id(terrain);
+		const auto size = g.calculate_button_size({}, button_size);
+		g.same_line_wrapping(size.x);
+		const auto& str = data::get_as_string(terrain->id);
+		if (g.image_button("###terrain_button"sv, *t.tex, tex_coords, button_size))
+			std::invoke(func, terrain, str);
+		g.tooltip(str);
+		g.pop_id();
+		return;
+	};
+
+	constexpr auto terrain_button_size = gui::vector2{
+			25.f,
+			25.f
+	};
+
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
 	{
 		if (g.main_toolbar_begin())
@@ -313,7 +350,7 @@ namespace hades
 			if (g.toolbar_button("terrain eraser"sv))
 			{
 				activate_brush();
-				_brush = brush_type::erase;
+				_terrain_palette.brush = brush_type::erase;
 			}
 
 			if (g.toolbar_button("terrain grid"sv))
@@ -329,39 +366,7 @@ namespace hades
 
 		g.main_toolbar_end();
 
-		constexpr auto button_size = gui::vector2{
-			25.f,
-			25.f
-		};
-
 		const auto tile_size_f = float_cast(_tile_size);
-
-		const auto make_terrain_button_wrapped = [this, &g, tile_size_f, button_size](auto&& terrain, auto&& func) {
-			if (empty(terrain->tiles))
-				return;
-
-			const auto& t = terrain->tiles.front();
-
-			const auto x = static_cast<float>(t.left),
-				y = static_cast<float>(t.top);
-
-			const auto tex_coords = rect_float{
-				x,
-				y,
-				tile_size_f,
-				tile_size_f
-			};
-
-			//need to push a prefix to avoid the id clashing from the same texture
-			g.push_id(terrain.get());
-			const auto size = g.calculate_button_size({}, button_size);
-			g.same_line_wrapping(size.x);
-			if (g.image_button("###terrain_button"sv, *t.tex, tex_coords, button_size))
-				std::invoke(func, terrain.get());
-			g.tooltip(data::get_as_string(terrain->id));
-			g.pop_id();
-			return;
-		};
 
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
@@ -380,23 +385,23 @@ namespace hades
 					"circle"sv,
 				};
 
-				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_shape)]))
+				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_terrain_palette.shape)]))
 				{
 					for (auto i = std::size_t{}; i < size(draw_shapes); ++i)
 					{
 						const auto shape = draw_shape{ integer_cast<std::underlying_type_t<draw_shape>>(i) };
-						if (g.selectable(draw_shapes[i], _shape == shape))
-							_shape = shape;
+						if (g.selectable(draw_shapes[i], _terrain_palette.shape == shape))
+							_terrain_palette.shape = shape;
 					}
 
 					g.combo_end();
 				}
 
 				constexpr auto size_min = int{ 1 };
-				constexpr auto size_max = int{ 6 };
+				constexpr auto size_max = int{ 8 };
 
 				g.input_scalar("drawing size"sv, _size);
-				_size = std::clamp(_size, size_min, size_max);
+				_terrain_palette.draw_size = std::clamp(_size, size_min, size_max);
 			}
 
 			if (g.collapsing_header("height"sv))
@@ -406,13 +411,13 @@ namespace hades
 				if (g.button("Raise"sv))
 				{
 					activate_brush();
-					_brush = brush_type::raise_terrain;
+					_terrain_palette.brush = brush_type::raise_terrain;
 				}
 
 				if (g.button("Lower"sv))
 				{
 					activate_brush();
-					_brush = brush_type::lower_terrain;
+					_terrain_palette.brush = brush_type::lower_terrain;
 				}
 
 				g.slider_scalar("Set Height"sv, _set_height, _settings->height_min, _settings->height_max);
@@ -420,7 +425,7 @@ namespace hades
 				if (g.button("Set To"sv))
 				{
 					activate_brush();
-					_brush = brush_type::set_terrain_height;
+					_terrain_palette.brush = brush_type::set_terrain_height;
 				}
 			}
 
@@ -432,10 +437,11 @@ namespace hades
 				if (g.button("Create Cliff"sv))
 				{
 					activate_brush();
-					_brush = brush_type::raise_cliff;
+					_terrain_palette.brush = brush_type::raise_cliff;
 				}
 			}
 
+			// TODO: hide this in release mode?
 			if (g.collapsing_header("tiles"sv))
 			{
 				//each tileset
@@ -462,12 +468,12 @@ namespace hades
 
 							//need to push a prefix to avoid the id clashing from the same texture
 							g.push_id(&t);
-							const auto siz = g.calculate_button_size({}, button_size);
+							const auto siz = g.calculate_button_size({}, terrain_button_size);
 							g.same_line_wrapping(siz.x);
-							if (g.image_button("###tile_button"sv, *t.tex, tex_coords, button_size))
+							if (g.image_button("###tile_button"sv, *t.tex, tex_coords, terrain_button_size))
 							{
 								activate_brush();
-								_brush = brush_type::draw_tile;
+								_terrain_palette.brush = brush_type::draw_tile;
 								_tile = t;
 							}
 							g.pop_id();
@@ -483,7 +489,7 @@ namespace hades
 				if (g.button("empty"sv))
 				{
 					activate_brush();
-					_brush = brush_type::draw_terrain;
+					_terrain_palette.brush = brush_type::draw_terrain;
 					_current.terrain = _empty_terrain;
 				}
 
@@ -493,13 +499,19 @@ namespace hades
 				{
 					for (const auto& ter : _current.terrain_set->terrains)
 					{
-						make_terrain_button_wrapped(ter, [&](auto&& t) {
+						make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
 							activate_brush();
-							_brush = brush_type::draw_terrain;
+							_terrain_palette.brush = brush_type::draw_terrain;
+							_terrain_palette.brush_name = std::format("Terrain: {}", str);
 							_current.terrain = t;
 						});
 					}
 				}
+			}
+
+			if (g.collapsing_header("terrain_palette"))
+			{
+				_gui_terrain_palette(g);
 			}
 		}
 		g.window_end();
@@ -507,9 +519,9 @@ namespace hades
 		_tile_mutator.open();
 		if (_tile_mutator.update_gui(g, _map, _clear_preview))
 		{
-			_brush = brush_type::select_tile;
-			_shape = draw_shape::rect;
-			_size = 1;
+			_terrain_palette.brush = brush_type::select_tile;
+			_terrain_palette.shape = draw_shape::rect;
+			_terrain_palette.draw_size = 1;
 			constexpr auto transition_index = resources::transition_tile_type::all;
 			const auto &tiles = resources::get_transitions(*_settings->editor_terrain, transition_index, *_settings);
 			_tile = tiles.front();
@@ -548,7 +560,7 @@ namespace hades
 
 					for (const auto& ter : _new_options.terrain_set->terrains)
 					{
-						make_terrain_button_wrapped(ter, [&](auto&& t) {
+						make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
 							_new_options.terrain = t;
 							});
 					}
@@ -573,7 +585,7 @@ namespace hades
 			
 				for (const auto& ter : _current.terrain_set->terrains)
 				{
-					make_terrain_button_wrapped(ter, [&](auto&& t) {
+					make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
 						_resize.terrain = t;
 						});
 				}
@@ -981,7 +993,7 @@ namespace hades
 		_preview = _clear_preview;
 
 		const auto func = [&](const tile_position pos) {
-			switch (_brush)
+			switch (_terrain_palette.brush)
 			{
 			case brush_type::erase:
 				[[fallthrough]];
@@ -1027,11 +1039,11 @@ namespace hades
 			return;
 			};
 
-		if (_brush == brush_type::select_tile &&
+		if (_terrain_palette.brush == brush_type::select_tile &&
 			_tile_mutator.current_tile() != bad_tile_position)
 			_preview.place_tile(_tile_mutator.current_tile(), _tile);
 
-		for_each_position(p, _settings->tile_size, _shape, _brush, _size,
+		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size,
 			_map.get_map(), overloaded{ func, vert_func, cliff_func, start_cliff_func });
 		return;
 	}
@@ -1079,7 +1091,7 @@ namespace hades
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		const auto basic_func = [&](const tile_position pos) {
-			switch (_brush)
+			switch (_terrain_palette.brush)
 			{
 			case brush_type::draw_terrain:
 				_map.place_terrain(pos, _current.terrain);
@@ -1109,7 +1121,7 @@ namespace hades
 		};
 
 		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool left_triangle) {
-			switch (_brush)
+			switch (_terrain_palette.brush)
 			{
 			case brush_type::raise_terrain:
 				_map.raise_terrain(pos, corners, left_triangle, _height_strength);
@@ -1133,7 +1145,7 @@ namespace hades
 		const auto height_func = [&](const tile_position pos, const float str) {
 			const auto amount = integral_clamp_cast<std::uint8_t>(_height_strength * str);
 
-			switch (_brush)
+			switch (_terrain_palette.brush)
 			{
 			case brush_type::raise_terrain:
 				_map.raise_terrain(pos, amount);
@@ -1160,7 +1172,7 @@ namespace hades
 
 		const auto ovrld = overloaded{ basic_func, height_func, vert_func, cliff_func, start_cliff_func };
 		
-		for_each_position(p, _settings->tile_size, _shape, _brush, _size, _map.get_map(), ovrld);
+		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
 		return;
 	}
 
@@ -1197,5 +1209,118 @@ namespace hades
 		_preview.apply();
 		_preview.set_world_rotation(get_world_rotation());
 		r.draw(_preview, s);
+	}
+
+	namespace detail
+	{
+		struct size_selection
+		{
+			std::string_view button_label;
+			std::string_view title_label;
+			uint8_t value;
+		};
+
+		constexpr auto size_selections = std::array<size_selection, 5>{
+			size_selection{ "1"sv, "Size: 1"sv, 1 }, 
+			size_selection{ "2"sv, "Size: 2"sv, 2 },
+			size_selection{ "3"sv, "Size: 3"sv, 3 },
+			size_selection{ "5"sv, "Size: 5"sv, 5 },
+			size_selection{ "8"sv, "Size: 8"sv, 8 },
+		};
+
+		struct height_selection
+		{
+			std::string_view button_label;
+			std::string_view title_label;
+			brush_t brush;
+		};
+
+		constexpr auto height_selections = std::array<height_selection, 5>{
+			height_selection{ "Raise"sv,	"Height: Raise"sv,		brush_t::raise_terrain },
+			height_selection{ "Lower"sv,	"Height: Lower"sv,		brush_t::lower_terrain },
+			height_selection{ "Plateau"sv,	"Height: Plateau"sv,	brush_t::plateau_terrain },
+			height_selection{ "Noise"sv,	"Height: Noise"sv,		brush_t::add_height_noise },
+			height_selection{ "Smooth"sv,	"Height: Smooth"sv,		brush_t::smooth_height },
+		};
+	}
+
+	void level_editor_terrain::_gui_terrain_palette(gui& g)
+	{
+		g.radio_button("###terrain_activated", _terrain_palette.brush == brush_type::draw_terrain);
+		g.same_line();
+		if (_terrain_palette.brush == brush_type::draw_terrain)
+			g.separator_text(_terrain_palette.brush_name);
+		else
+			g.separator_text("Terrain"sv);
+		// if we have the empty terrainset then skip this,
+		// the menu would be useless anyway
+		if (_current.terrain_set != _empty_terrainset)
+		{
+			const auto tile_size_f = float_cast(_tile_size);
+			for (const auto& ter : _current.terrain_set->terrains)
+			{
+				make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
+					activate_brush();
+					_terrain_palette.brush = brush_type::draw_terrain;
+					_terrain_palette.brush_name = std::format("Terrain: {}", str);
+					_current.terrain = t;
+					});
+			}
+		}
+		g.separator_horizontal();
+
+		const auto cliff_mode = _terrain_palette.brush == brush_type::raise_cliff ||
+			//_terrain_palette.brush == brush_type::lower_cliff ||
+			//_terrain_palette.brush == brush_type::add_ramp ||
+			false;
+		g.radio_button("###cliff_activated", cliff_mode);
+		g.same_line();
+		if (cliff_mode)
+			g.separator_text(_terrain_palette.brush_name);
+		else
+			g.separator_text("Cliffs"sv);
+		g.button("make cliff");
+		g.separator_horizontal();
+
+		const auto height_mode = _terrain_palette.brush == brush_type::raise_terrain ||
+			_terrain_palette.brush == brush_type::lower_terrain ||
+			_terrain_palette.brush == brush_type::plateau_terrain ||
+			_terrain_palette.brush == brush_type::smooth_height ||
+			_terrain_palette.brush == brush_type::add_height_noise;
+		g.radio_button("###height_activated", height_mode);
+		g.same_line();
+		if (height_mode)
+			g.separator_text(_terrain_palette.brush_name);
+		else
+			g.separator_text("Height");
+		for (const auto& select : detail::height_selections)
+		{
+			if (g.button(select.button_label))
+			{
+				_terrain_palette.brush_name = select.title_label;
+				_terrain_palette.brush = select.brush;
+				activate_brush();
+			}
+			g.same_line();
+		}
+		g.new_line();
+		g.separator_horizontal();
+
+		g.text(_terrain_palette.size_label);
+		for (const auto& select : detail::size_selections)
+		{
+			if (g.button(select.button_label))
+			{
+				_terrain_palette.size_label = select.title_label;
+				_terrain_palette.draw_size = select.value;
+			}
+			g.same_line();
+		}
+		g.new_line();
+
+		g.text(_terrain_palette.shape_label);
+		g.button("Circle");
+		g.same_line();
+		g.button("Square");
 	}
 }

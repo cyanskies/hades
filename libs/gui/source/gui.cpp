@@ -529,6 +529,12 @@ namespace hades
 		ImGui::NewLine();
 	}
 
+	void gui::new_line()
+	{
+		_active_assert();
+		ImGui::NewLine();
+	}
+
 	void gui::vertical_spacing()
 	{
 		_active_assert();

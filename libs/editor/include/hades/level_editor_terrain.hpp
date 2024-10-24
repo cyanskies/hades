@@ -57,17 +57,21 @@ namespace hades
 			select_tile,
 			// art only
 			draw_tile,
-			// terrain vertex
+			// ==terrain vertex==
 			draw_terrain,
-			// terrain height
+			// ==terrain height settings==
 			raise_terrain,
 			lower_terrain,
-			set_terrain_height,
-			// cliffs
+			plateau_terrain, // copies height from starting area
+			add_height_noise, // create bumpiness
+			smooth_height, // average out the different heights
+			set_terrain_height [[deprecated]],
+			// ==cliffs==
 			raise_cliff, // add cliff
-			//lower_cliff,
-			erase_cliff,
-			debug_brush // used for testing
+			//lower_cliff, // this yeah
+			erase_cliff [[deprecated]],
+			// == unused==
+			debug_brush [[deprecated]] // used for testing
 		};
 
 		level_editor_terrain();
@@ -113,6 +117,18 @@ namespace hades
 			const resources::terrain* terrain = nullptr;
 		};
 
+		struct terrain_palette
+		{
+			std::string brush_name;
+			std::string_view size_label = "Size: 1",
+				shape_label = "Shape: Circle";
+			brush_type brush = brush_type::no_brush;
+			draw_shape shape = draw_shape::circle;
+			uint8_t draw_size = 1;
+		};
+
+		void _gui_terrain_palette(gui&);
+
 		console::property_int _view_height;
 
 		tile_mutator _tile_mutator;
@@ -122,9 +138,8 @@ namespace hades
 		resources::tile_size_t _tile_size;
 
 		//brush settings
-		brush_type _brush = brush_type::no_brush;
-		draw_shape _shape = draw_shape::rect;
-		int _size = 1;
+		terrain_palette _terrain_palette;
+		[[deprecated]] int _size = 1;
 		std::uint8_t _height_strength = 1;
 		std::uint8_t _set_height = 1; // TODO:
 		std::uint8_t _cliff_default_height = 5;

@@ -93,6 +93,31 @@ namespace hades
 		void lower_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
 		void set_terrain_height(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
+
+		enum class edit_target : bool 
+		{
+			vertex,
+			tile
+		};
+
+		void clear_edit_target() noexcept
+		{
+			_shared.edit_targets.clear();
+			_needs_update = true;
+		}
+
+		void set_edit_target_style(const edit_target style) noexcept
+		{
+			_shared.edit_target_style = style;
+			_needs_update = true;
+		}
+
+		void add_edit_target(tile_position p)
+		{
+			_shared.edit_targets.emplace_back(p);
+			_needs_update = true;
+		}
+
 		[[deprecated]]
 		void set_height_for_triangles(tile_position, triangle_height_data); // TODO: remove, temp func
 		[[deprecated]]
@@ -102,9 +127,6 @@ namespace hades
 		[[deprecated]]
 		void swap_triangle_type(tile_position); // pretty sure we don't need this
 
-		void add_cliff(tile_edge, tile_edge, std::uint8_t height);
-		void add_cliff(tile_edge, std::uint8_t height);
-		
 		[[deprecated]] void replace_heightmap(const std::vector<std::uint8_t>& height) noexcept
 		{
 			assert(size(height) == size(_shared.map.heightmap));
@@ -145,20 +167,25 @@ namespace hades
 			rect_float world_area = {};
 			terrain_map map;
 			quad_buffer quads;
-			const resources::terrain_settings* settings = {};
+			std::vector<tile_position> edit_targets;
 			// per chunk data
 			std::vector<vertex_region> regions;
 			std::size_t start_lighting;
 			std::size_t start_grid;
 			// end per chunk data
 			std::vector<resources::resource_link<resources::texture>> texture_table;
+			const resources::terrain_settings* settings = {};
 			const resources::texture* grid_tex = {};
+			const resources::texture* edit_tex = {};
 			rect_float local_bounds = {};
+			std::size_t start_edit;
 			float sun_angle_radians = {};
+			edit_target edit_target_style = edit_target::vertex;
 		};
 
 	private:
 		// token that defaults to true when copied or moved
+		// TODO: make terrain_map non-copyable and we won't need this
 		class boolean_token
 		{
 		public:
@@ -219,10 +246,10 @@ namespace hades
 		//std::array<chunk_info, 4> _chunks;
 		shared_data _shared;
 		boolean_token _needs_update = true;
-		bool _show_grid = false;
-		bool _show_height = true;
-		bool _show_shadows = true;
-		bool _debug_depth = false;
+		bool _show_grid : 1 = false;
+		bool _show_height : 1 = true;
+		bool _show_shadows : 1 = true;
+		bool _debug_depth : 1 = false;
 	};
 
 	class terrain_mini_map final : public sf::Drawable, public sf::Transformable

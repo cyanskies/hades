@@ -82,7 +82,8 @@ namespace hades
 	{
 		if (!std::empty(sv.source.terrain.tile_layer.tiles))
 		{
-			_terrain = to_terrain_map(sv.source.terrain);
+			const auto settings = resources::get_terrain_settings();
+			_terrain = to_terrain_map(sv.source.terrain, *settings);
 		}
 
 		_state.next_id = sv.objects.next_id;

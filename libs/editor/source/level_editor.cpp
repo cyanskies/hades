@@ -240,10 +240,16 @@ namespace hades::detail
 			return {};
 	}
 
-	void level_editor_impl::_set_active_brush(std::size_t index) noexcept
+	void level_editor_impl::_set_active_brush(const std::size_t index) noexcept
 	{
 		_active_brush = index;
 	}
+
+	bool level_editor_impl::_is_active_brush(const std::size_t index) const noexcept
+	{
+		return _active_brush == index;
+	}
+
 
 	bool level_editor_impl::_mission_mode() const
 	{

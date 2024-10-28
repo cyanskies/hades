@@ -76,17 +76,19 @@ namespace hades
 
 		//generic callbacks, these are always available
 		using activate_brush_f = std::function<void(void)>;
+		using is_active_brush_f = std::function<bool(void)>;
 		using get_tags_at_f = std::function<tag_list(rect_float)>;
 		using player_reference = std::pair<unique_id, const object_instance*>;
 		using get_players_return_type = std::vector<player_reference>;
 		using get_players_f = std::function<get_players_return_type(void)>;
 		using get_world_rotation_f = std::function<float(void)>;
 
-		template<typename ActivateBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers, typename GetWorldRotation>
-		void install_callbacks(ActivateBrush ab, GetTerrainTagsAt get_terrain_tags,
+		template<typename ActivateBrush, typename IsActiveBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers, typename GetWorldRotation>
+		void install_callbacks(ActivateBrush ab,IsActiveBrush is_active, GetTerrainTagsAt get_terrain_tags,
 			GetObjTagsAt get_obj_tags, GetPlayers get_players, GetWorldRotation get_world_rotate)
 		{
 			_activate_brush = ab;
+			_is_active_brush = is_active;
 			_get_terrain_tags_at = get_terrain_tags;
 			_get_object_tags_at = get_obj_tags;
 			_get_players = get_players;
@@ -96,6 +98,11 @@ namespace hades
 		void activate_brush() noexcept
 		{
 			std::invoke(_activate_brush);
+		}
+
+		bool is_active_brush() noexcept
+		{
+			return std::invoke(_is_active_brush);
 		}
 
 		get_players_return_type get_players() const
@@ -178,6 +185,7 @@ namespace hades
 
 	private:
 		activate_brush_f _activate_brush;
+		is_active_brush_f _is_active_brush;
 		get_tags_at_f _get_terrain_tags_at;
 		get_tags_at_f _get_object_tags_at;
 		get_players_f _get_players;

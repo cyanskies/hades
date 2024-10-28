@@ -185,6 +185,10 @@ namespace hades
 				_set_active_brush(index);
 			};
 
+			auto is_active = [this, index]() noexcept -> bool {
+				return _is_active_brush(index);
+			};
+
 			auto get_object_tags_at = [this](const rect_float area)->tag_list {
 				return _component_get_object_tags_at_location(area);
 			};
@@ -203,6 +207,7 @@ namespace hades
 
 			c.install_callbacks(
 				activate_brush,
+				is_active,
 				get_terrain_tags_at,
 				get_object_tags_at,
 				get_players_fn,

@@ -74,6 +74,7 @@ namespace hades::detail
 		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, vector2_float world_position) = 0;
 		virtual void _handle_component_setup() = 0;
 		void _set_active_brush(std::size_t index) noexcept;
+		bool _is_active_brush(std::size_t index) const noexcept;
 		virtual void _update_component_gui(gui&, level_editor_component::editor_windows&) = 0;
 
 		float _get_world_rot() const noexcept

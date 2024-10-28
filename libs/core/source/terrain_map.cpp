@@ -322,7 +322,7 @@ namespace hades
 	}
 
 	static constexpr std::array<vector2_float, 6> make_triangle_positions(const vector2_float pos,
-		const float tile_size, const bool triangle_type) noexcept
+		const float tile_size, const terrain_map::triangle_type triangle_type) noexcept
 	{
 		const auto quad = rect_float{ pos, { tile_size, tile_size } };
 		const auto quad_right_x = quad.x + quad.width;
@@ -414,6 +414,7 @@ namespace hades
 		}
 		else
 		{
+			// TODO:  backface tris?
 			// downhill triangulation, first triangle edges against the left and bottom sides of the quad
 			//						second triangle edges against the right and top sides of the quad
 			return poly_quad{
@@ -579,7 +580,7 @@ namespace hades
 		auto r_pos_right = vector2_float{};
 		auto r_pos_left = vector2_float{};
 
-		if (cliffs.triangle_type == terrain_map::triangle_uphill)
+		if (cliffs.triangle_type == enum_type(terrain_map::triangle_uphill))
 		{
 			r_pos_right = vector2_float{
 				pos_f.x + tile_sizef,
@@ -601,8 +602,8 @@ namespace hades
 			r_pos_left = pos_f;
 		}
 
-		const auto reverse_winding = !(left_low && cliffs.triangle_type == terrain_map::triangle_downhill ||
-			!left_low && cliffs.triangle_type == terrain_map::triangle_uphill);
+		const auto reverse_winding = !(left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_downhill) ||
+			!left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_uphill));
 
 		const auto positions = std::array{
 			//first triangle
@@ -755,7 +756,7 @@ namespace hades
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
 		tile_buffer.clear();
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto index = to_1d_index(pos, map_size_tiles.x);
@@ -953,7 +954,7 @@ namespace hades
 		std::array<normal, 2> tri_normals;
 		std::array<std::uint8_t, 4> height;
 		std::array<std::uint8_t, 4> shadow_height;
-		bool triangle_type;
+		terrain_map::triangle_type triangle_type;
 	};
 
 	template<typename Func>
@@ -1160,6 +1161,104 @@ namespace hades
 		return;
 	}
 
+	static void generate_edits(mutable_terrain_map::shared_data& shared)
+	{
+		assert(shared.settings->editor_terrain);
+		
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		const auto tile_sizef_half = tile_sizef / 2.f;
+		const auto map_size_tiles = get_size(shared.map.tile_layer);
+
+		if (shared.edit_target_style == mutable_terrain_map::edit_target::tile)
+		{
+			const auto& edit_tiles = resources::get_transitions(*shared.settings->editor_terrain, resources::transition_tile_type::all, *shared.settings);
+			assert(!empty(edit_tiles));
+			const auto& edit_tile = edit_tiles.front();
+			shared.edit_tex = edit_tile.tex.get();
+
+			const auto tex_coords = rect_float{
+				float_cast(edit_tile.left),
+				float_cast(edit_tile.top),
+				tile_sizef,
+				tile_sizef
+			};
+
+			for (const auto& pos : shared.edit_targets)
+			{
+				const auto position = vector2_float{
+					float_cast(pos.x) * tile_sizef,
+					float_cast(pos.y) * tile_sizef
+				};
+
+				const auto triangle_height = get_height_for_triangles(pos, shared.map);
+				const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
+
+				shared.quads.append(quad);
+			}
+		}
+		else // shared.edit_target_style == mutable_terrain_map::edit_target::vertex
+		{
+			auto get_tile = [&](auto&& tile_type)->const resources::tile& {
+				const auto& edit_tiles = resources::get_transitions(*shared.settings->editor_terrain, tile_type, *shared.settings);
+				assert(!empty(edit_tiles));
+				return edit_tiles.front();
+				};
+
+			const auto& top_left = get_tile(resources::transition_tile_type::top_left);
+			const auto& top_right = get_tile(resources::transition_tile_type::top_right);
+			const auto& bottom_left = get_tile(resources::transition_tile_type::bottom_left);
+			const auto& bottom_right = get_tile(resources::transition_tile_type::bottom_right);
+			shared.edit_tex = bottom_right.tex.get();
+
+			for (const auto& pos : shared.edit_targets)
+			{
+				// make a graphic in each adjacent tile
+				for_each_safe_adjacent_corner(shared.map, pos, [&](auto&& tile_pos, auto&& corner) {
+					const auto triangle_height = get_height_for_triangles(tile_pos, shared.map);
+					const auto position = vector2_float{
+						float_cast(tile_pos.x) * tile_sizef,
+						float_cast(tile_pos.y) * tile_sizef
+					};
+					const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+
+					resources::tile tile [[indeterminate]];
+
+					switch (corner)
+					{
+					default:
+						[[fallthrough]];
+					case rect_corners::top_left:
+						tile = top_left;
+						break;
+					case rect_corners::top_right:
+						tile = top_right;
+						break;
+					case rect_corners::bottom_left:
+						tile = bottom_left;
+						break;
+					case rect_corners::bottom_right:
+						tile = bottom_right;
+						break;
+					}
+
+					const auto tex_coords = rect_float{
+						float_cast(tile.left),
+						float_cast(tile.top),
+						tile_sizef,
+						tile_sizef
+					};
+
+					const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
+					shared.quads.append(quad);
+					return;
+				});
+			}
+		}
+
+		return;
+	}
+
 	static void generate_chunk(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area,
 		const bool shadows, const bool grid)
@@ -1169,21 +1268,15 @@ namespace hades
 		for (auto i = s; i > 0; --i)
 			generate_layer(shared, tile_buffer, shared.map.terrain_layers[i - 1], terrain_area);
 
-		//generate tiled layer
-		if (!empty(shared.map.tile_layer.tiles))
-		{
-			generate_cliffs(shared, tile_buffer, terrain_area);
-			generate_layer(shared, tile_buffer, shared.map.tile_layer, terrain_area);
+		generate_cliffs(shared, tile_buffer, terrain_area);
+		
+		shared.start_lighting = shared.quads.size();
+		if (shadows)
+			generate_lighting(shared, terrain_area);
 
-			shared.start_lighting = shared.quads.size();
-			if (shadows)
-				generate_lighting(shared, terrain_area);
-
-			shared.start_grid = shared.quads.size();
-			if (grid)
-				generate_grid(shared, terrain_area);
-		}
-
+		shared.start_grid = shared.quads.size();
+		if (grid)
+			generate_grid(shared, terrain_area);
 		return;
 	}
 
@@ -1203,6 +1296,11 @@ namespace hades
 		const auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
 		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, _show_shadows, _show_grid);
+
+		// generate map editor targets
+		// TODO: we might have to clear out the previous editor targets if they've changed
+		_shared.start_edit = _shared.quads.size();
+		generate_edits(_shared);
 
 		_shared.quads.apply();
 		_needs_update = false;
@@ -1240,9 +1338,11 @@ namespace hades
 		if (_show_grid && _shared.grid_tex)
 		{
 			s.texture = &resources::texture_functions::get_sf_texture(_shared.grid_tex);
-			_shared.quads.draw(t, _shared.start_grid, _shared.quads.size() - _shared.start_grid, s);
+			_shared.quads.draw(t, _shared.start_grid, _shared.start_edit - _shared.start_grid, s);
 		}
 
+		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);
+		_shared.quads.draw(t, _shared.start_edit, _shared.quads.size() - _shared.start_edit, s);
 		glDisable(GL_CULL_FACE);
 		depth_buffer::disable();
 		return;
@@ -1287,7 +1387,7 @@ namespace hades
 
 	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)
 	{
-		hades::place_tile(_shared.map, p, t, *_shared.settings);
+		//hades::place_tile(_shared.map, p, t, *_shared.settings);
 		_needs_update = true;
 		return;
 	}
@@ -1308,7 +1408,7 @@ namespace hades
 
 	void mutable_terrain_map::raise_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::add_height_functor{ amount });
+		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::add_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
@@ -1322,7 +1422,7 @@ namespace hades
 
 	void mutable_terrain_map::lower_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
+		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
@@ -1336,7 +1436,7 @@ namespace hades
 
 	void mutable_terrain_map::set_terrain_height(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
 	{
-		change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::set_height_functor{ amount });
+		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::set_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
@@ -1344,7 +1444,7 @@ namespace hades
 	[[deprecated]]
 	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)
 	{
-		hades::set_height_for_triangles(p, _shared.map, t);
+		//hades::set_height_for_triangles(p, _shared.map, t);
 		_needs_update = true;
 		return;
 	}
@@ -1352,33 +1452,16 @@ namespace hades
 	[[deprecated]]
 	void mutable_terrain_map::set_cliff_info_tmp(tile_position p, terrain_map::cliff_info c) // TODO: temp remove
 	{
-		hades::set_cliff_info_tmp(p, _shared.map, c);
+		//hades::set_cliff_info_tmp(p, _shared.map, c);
 		_needs_update = true;
 		return;
 	}
 
 	void mutable_terrain_map::swap_triangle_type(const tile_position p)
 	{
-		hades::swap_triangle_type(_shared.map, p);
+		//hades::swap_triangle_type(_shared.map, p);
 		return;
 	}
-
-	void mutable_terrain_map::add_cliff(tile_edge e1, tile_edge e2, std::uint8_t height)
-	{
-		assert(_shared.settings);
-		hades::add_cliff(e1, e2, height, _shared.map, *_shared.settings);
-		_needs_update = true;
-		return;
-	}
-
-	void mutable_terrain_map::add_cliff(tile_edge e, std::uint8_t height)
-	{
-		assert(_shared.settings);
-		hades::add_cliff(e, height, _shared.map, *_shared.settings);
-		_needs_update = true;
-		return;
-	}
-
 
 	//==================================//
 	//		  terrain_mini_map			//

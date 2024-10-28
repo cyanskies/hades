@@ -11,41 +11,12 @@ namespace hades
 	void register_level_editor_terrain_resources(data::data_manager&);
 	void create_level_editor_terrain_variables();
 
-	class tile_mutator final
-	{
-	public:
-		void select_tile(const tile_position p) noexcept
-		{
-			_tile = p;
-			return;
-		}
-
-		tile_position current_tile() const noexcept
-		{
-			return _tile;
-		}
-
-		// returns true to activate tile selection mode
-		bool update_gui(gui&, mutable_terrain_map& map, mutable_terrain_map& preview);
-
-		void open() noexcept
-		{
-			_open = true;
-			return;
-		}
-
-	private:
-		tile_position _tile = bad_tile_position;
-		std::uint8_t _set_height = {};
-		bool _open = false;
-	};
-
 	class level_editor_terrain final : public level_editor_component
 	{
 	public:
 		enum class draw_shape : std::uint8_t {
-			vertex,
-			edge,
+			vertex [[deprecated]],
+			edge [[deprecated]],
 			rect,
 			circle,
 		};
@@ -54,9 +25,9 @@ namespace hades
 			no_brush,
 			// clear tile only
 			erase,
-			select_tile,
+			select_tile [[deprecated]],
 			// art only
-			draw_tile,
+			draw_tile [[deprecated]],
 			// ==terrain vertex==
 			draw_terrain,
 			// ==terrain height settings==
@@ -68,8 +39,13 @@ namespace hades
 			set_terrain_height [[deprecated]],
 			// ==cliffs==
 			raise_cliff, // add cliff
-			//lower_cliff, // this yeah
+			lower_cliff,
+			plataeu_cliff,
+			add_ramp,
 			erase_cliff [[deprecated]],
+			// ==water==
+			raise_water,
+			lower_water,
 			// == unused==
 			debug_brush [[deprecated]] // used for testing
 		};
@@ -102,7 +78,6 @@ namespace hades
 		}
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
-		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
 	private:
 		struct level_options
@@ -131,10 +106,9 @@ namespace hades
 
 		console::property_int _view_height;
 
-		tile_mutator _tile_mutator;
-		resources::tile _empty_tile;
-		const resources::terrain * _empty_terrain;
-		const resources::terrainset* _empty_terrainset;
+		resources::tile _empty_tile [[deprecated]];
+		const resources::terrain * _empty_terrain [[deprecated]];
+		const resources::terrainset* _empty_terrainset [[deprecated]];
 		resources::tile_size_t _tile_size;
 
 		//brush settings
@@ -142,14 +116,10 @@ namespace hades
 		[[deprecated]] int _size = 1;
 		std::uint8_t _height_strength = 1;
 		std::uint8_t _set_height = 1; // TODO:
-		std::uint8_t _cliff_default_height = 5;
-
-		//brush preview
-		mutable_terrain_map _clear_preview;
-		mutable_terrain_map _preview;
+		[[deprecated]] std::uint8_t _cliff_default_height = 5;
 
 		//selected tile/terrain
-		resources::tile _tile = resources::bad_tile;
+		[[deprecated]] resources::tile _tile = resources::bad_tile;
 		level_options _current;
 		level_resize_options _resize;
 
@@ -162,7 +132,7 @@ namespace hades
 
 namespace hades::cvars
 {
-	constexpr auto editor_default_terrainset = "editor_default_terrinset";
+	constexpr auto editor_default_terrainset = "editor_default_terrainset";
 
 	namespace default_value
 	{

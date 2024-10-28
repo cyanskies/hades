@@ -24,119 +24,6 @@ namespace hades
 		return;
 	}
 
-	bool tile_mutator::update_gui(gui& g, mutable_terrain_map& map, mutable_terrain_map& preview)
-	{
-		constexpr auto triangle_strings = std::array{
-			"Vertex: 0"sv, 
-			"Vertex: 1"sv,
-			"Vertex: 2"sv,
-			"Vertex: 3"sv,
-			"Vertex: 4"sv,
-			"Vertex: 5"sv,
-		};
-
-		auto ret = false;
-		if (g.window_begin("Tile Edit"sv, _open))
-		{
-			if(g.button("Tile Selector"sv))
-				ret = true;
-
-			if (_tile != bad_tile_position)
-			{
-				auto cliff_info = get_cliff_info(_tile, map.get_map());
-				auto h = get_height_for_triangles(_tile, map.get_map());
-				if (cliff_info.triangle_type == terrain_map::triangle_uphill)
-					g.text("Triangle: Uphill"sv);
-				else
-					g.text("Triangle: Downhill"sv);
-
-				auto block_switch = cliff_info.diag;
-				if (cliff_info.triangle_type == terrain_map::triangle_uphill &&
-					(h.height[2] != h.height[3] ||
-						h.height[1] != h.height[4]))
-					block_switch = true;
-				else if (cliff_info.triangle_type == terrain_map::triangle_downhill &&
-					(h.height[0] != h.height[3] ||
-						h.height[2] != h.height[4]))
-					block_switch = true;
-				
-				if (block_switch)
-					g.begin_disabled();
-				if (g.button("Switch Triangle"sv))
-				{
-					map.swap_triangle_type(_tile);
-					preview.swap_triangle_type(_tile);
-				}
-				if (block_switch)
-					g.end_disabled();
-
-				auto ch_height = false;
-
-				for (auto i = std::uint8_t{}; i < size(h.height); ++i)
-				{
-					// TODO: min/max height
-					if (g.slider_scalar(triangle_strings[i], h.height[i], std::uint8_t{}, std::uint8_t{ 255 }))
-						ch_height = true;
-				}
-
-				if (ch_height)
-				{
-					map.set_height_for_triangles(_tile, h);
-					preview.set_height_for_triangles(_tile, h);
-				}
-
-				ch_height = false;
-				if (g.button(cliff_info.diag ? "Remove Diag Cliff"sv : "Add Diag Cliff"sv))
-				{
-					// TODO: this is aweful
-					cliff_info.diag = !cliff_info.diag;
-					cliff_info.diag_uphill = cliff_info.diag_downhill = false;
-					if (h.triangle_type == terrain_map::triangle_uphill && cliff_info.diag)
-						cliff_info.diag_uphill = cliff_info.diag;
-					else if(cliff_info.diag)
-						cliff_info.diag_downhill = cliff_info.diag;
-					ch_height = true;
-				}
-
-				if (g.button(cliff_info.right ? "Remove Right Cliff"sv : "Add Right Cliff"sv))
-				{
-					cliff_info.right = !cliff_info.right;
-					ch_height = true;
-				}
-
-				if (g.button(cliff_info.bottom ? "Remove Bottom Cliff"sv : "Add Bottom Cliff"sv))
-				{
-					cliff_info.bottom = !cliff_info.bottom;
-					ch_height = true;
-				}
-
-				if (ch_height)
-				{
-					map.set_cliff_info_tmp(_tile, cliff_info);
-					preview.set_cliff_info_tmp(_tile, cliff_info);
-				}
-
-				g.input_scalar("Set Tile Height"sv, _set_height);
-				if (g.button("Apply Height"sv))
-				{
-					std::ranges::for_each(h.height, [height = _set_height](auto& h) {
-						h = height;
-						return;
-						});
-					map.set_height_for_triangles(_tile, h);
-					preview.set_height_for_triangles(_tile, h);
-				}
-
-				const auto tile_id = to_tile_index(_tile, map.get_map());
-				g.text(std::format("Tile Index: {}\nTile Pos: (x: {}, y: {})\nis_tile_cliff: {}"sv,
-					tile_id, _tile.x, _tile.y, is_tile_cliff(map.get_map(), _tile)));
-			}
-		}
-		g.window_end();
-
-		return ret;
-	}
-
 	level_editor_terrain::level_editor_terrain() :
 		_settings{ resources::get_terrain_settings() },
 		_view_height{ console::get_int(cvars::editor_camera_height_px, cvars::default_value::editor_camera_height_px) }
@@ -226,7 +113,7 @@ namespace hades
 			});
 
 		auto l = level{ std::move(current) };
-		l.terrain = to_raw_terrain_map(std::move(map));
+		l.terrain = to_raw_terrain_map(std::move(map), *_settings);
 
 		return l;
 	}
@@ -270,7 +157,7 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
-		auto map = to_terrain_map(std::move(map_raw));
+		auto map = to_terrain_map(std::move(map_raw), *_settings);
 		
 		//TODO: if size != to level xy, then resize the map
 		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset,
@@ -281,14 +168,12 @@ namespace hades
 		_map.reset(std::move(map));
 		_map.set_sun_angle(_sun_angle); // TODO: temp
 		// _sun_angle = get_sun_angle(map);
-		_clear_preview.reset(std::move(empty_map));
-		_clear_preview.show_shadows(false);
 		return;
 	}
 
 	level level_editor_terrain::level_save(level l) const
 	{
-		l.terrain = to_raw_terrain_map(_map.get_map());
+		l.terrain = to_raw_terrain_map(_map.get_map(), *_settings);
 		return l;
 	}
 
@@ -300,15 +185,13 @@ namespace hades
 
 		// TODO: ui to select new height
 		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain, _settings->height_default, *_settings);
-		auto empty_map = make_map(new_size_tiles + vector2_int{ 1, 1 }, map.terrainset, _empty_terrain, *_settings);
-		_clear_preview.reset(std::move(empty_map));
 		_map.reset(std::move(map));
 		_resize.terrain = _empty_terrain;
 	}
 
 	// TODO: we should do this once when terrainset is set or changed and just store a vector of textures, strings and other data we need
 	template<std::invocable<const resources::terrain*, const std::string&> Func>
-	void make_terrain_buttons(gui& g, float tile_size_f, vector2_float button_size, const resources::terrain* terrain, Func&& func)
+	void make_terrain_button(gui& g, float tile_size_f, vector2_float button_size, const resources::terrain* terrain, Func&& func)
 	{
 		assert(terrain);
 		if (empty(terrain->tiles))
@@ -370,12 +253,14 @@ namespace hades
 
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
+			// TODO: move to level properties?
 			if (g.collapsing_header("sun settings"sv))
 			{
 				if (g.slider_scalar("Sun angle"sv, _sun_angle, 180.f, 0.f))
 					_map.set_sun_angle(_sun_angle);
 			}
 
+			#if 0 // Deprecated menus
 			if (g.collapsing_header("tile and terrain drawing settings"sv))
 			{
 				constexpr auto draw_shapes = std::array{
@@ -499,7 +384,7 @@ namespace hades
 				{
 					for (const auto& ter : _current.terrain_set->terrains)
 					{
-						make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
+						make_terrain_button(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
 							activate_brush();
 							_terrain_palette.brush = brush_type::draw_terrain;
 							_terrain_palette.brush_name = std::format("Terrain: {}", str);
@@ -508,6 +393,7 @@ namespace hades
 					}
 				}
 			}
+			#endif
 
 			if (g.collapsing_header("terrain_palette"))
 			{
@@ -515,18 +401,6 @@ namespace hades
 			}
 		}
 		g.window_end();
-		
-		_tile_mutator.open();
-		if (_tile_mutator.update_gui(g, _map, _clear_preview))
-		{
-			_terrain_palette.brush = brush_type::select_tile;
-			_terrain_palette.shape = draw_shape::rect;
-			_terrain_palette.draw_size = 1;
-			constexpr auto transition_index = resources::transition_tile_type::all;
-			const auto &tiles = resources::get_transitions(*_settings->editor_terrain, transition_index, *_settings);
-			_tile = tiles.front();
-			activate_brush();
-		}
 
 		if (w.new_level)
 		{
@@ -553,6 +427,9 @@ namespace hades
 
 				if (_new_options.terrain_set != nullptr)
 				{
+					// TODO: terrain_string_label, follow the same structure as the terrain palette titles
+					//		we can do this lookup once and store the title
+					// We should do this with all the new/resize dialog boxes
 					g.text(data::get_as_string(_new_options.terrain->id));
 
 					if (g.button("empty"sv))
@@ -560,7 +437,7 @@ namespace hades
 
 					for (const auto& ter : _new_options.terrain_set->terrains)
 					{
-						make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
+						make_terrain_button(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
 							_new_options.terrain = t;
 							});
 					}
@@ -585,7 +462,7 @@ namespace hades
 			
 				for (const auto& ter : _current.terrain_set->terrains)
 				{
-					make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
+					make_terrain_button(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, auto&& /*unused*/) noexcept {
 						_resize.terrain = t;
 						});
 				}
@@ -599,12 +476,17 @@ namespace hades
 	concept invoke_vertex = std::invocable<Func, const tile_position, const rect_corners, const bool /*left_triangle*/>;
 
 	template<typename Func>
-	concept invoke_edge = std::invocable<Func, const tile_edge&> && std::invocable<Func, const tile_edge&, const tile_edge&>;
+	concept invoke_edge = always_true_v<Func>;
+
+	struct vertex_tag_t {};
+	constexpr auto vertex_tag = vertex_tag_t{};
 
 	// optionally std::invocable<Func, triangle_info> and or std::invocable<Func, tile_position, float> as well
 	// these support inter cell targets and fading strength circle shapes
 	template<typename Func> // Effectively invoke_tile
-	concept invoke_position = std::invocable<Func, tile_position>;// || invoke_edge<Func> || invocable_for_each_circle<Func>;
+	concept invoke_position = std::invocable<Func, tile_position> && 
+		invocable_for_each_circle<Func> &&
+		std::invocable<Func, vertex_tag_t, terrain_vertex_position>;
 
 	template<invoke_position Func>
 	static void for_each_safe_diag(terrain_vertex_position position, const terrain_vertex_position diff,
@@ -624,7 +506,7 @@ namespace hades
 
 	template<invoke_position Func>
 	static void do_diag_edge(terrain_vertex_position vert, vector2_float frac_pos,
-		const bool triangle_type, const int size, const terrain_vertex_position world_size, Func&& f)
+		const terrain_map::triangle_type triangle_type, const int size, const terrain_vertex_position world_size, Func&& f)
 	{
 		if (frac_pos.x >= .5f)
 			++vert.x;
@@ -651,179 +533,8 @@ namespace hades
 	constexpr auto downhill_line = line_t<float>{ {0.f, 0.f}, { 1.f, 1.f } };
 	constexpr auto uphill_line = line_t<float>{ { 0.f, 1.f }, { 1.f, 0.f } };
 
-	// raise/lower terrain; create/destroy cliffs
-	// for raise/lower terrain
-	// use triangle vertex if the vertex is part of a cliff
-
-	// for create/destroy cliffs
-	// if create, only show target for continueing a existant cliff
-	// if destroy, only show target for existant cliff(if eraseing cliff would reduce the cliff length < 1), then show all points of the cliff
-
-	// if the vert we're targeting is part of a cliff,
-	// and we're raising or lowering terrain
-	// or erasing cliffs
-
-	/*std::optional<triangle_info> triangle;
-	auto triangle_mode = false;*/
-
-	[[nodiscard]] static constexpr tile_edge pick_edge(const tile_position pos, const vector2_float frac_pos) noexcept
-	{
-		// TODO: tweak these values so that the picking isn't so tempermental
-		constexpr auto diag_close_dist = 0.1f;
-		constexpr auto diag_far_dist = 0.2f;
-		if (line::distance(frac_pos, uphill_line) < diag_close_dist &&
-			line::distance(frac_pos, downhill_line) > diag_far_dist)
-		{
-			return { pos, rect_edges::uphill, vector::distance_squared({0.f, 0.f}, frac_pos) < vector::distance_squared({1.f, 1.f}, frac_pos) };
-		}
-		else if (line::distance(frac_pos, downhill_line) < diag_close_dist &&
-			line::distance(frac_pos, uphill_line) > diag_far_dist)
-		{
-			return { pos, rect_edges::downhill, vector::distance_squared({0.f, 1.f}, frac_pos) < vector::distance_squared({1.f, 0.f}, frac_pos) };
-		}
-
-		if (line::above(frac_pos, downhill_line))
-		{
-			// top and right
-			if (!line::above(frac_pos, uphill_line))
-				return { pos, rect_edges::right };
-			return { pos, rect_edges::top };
-		}
-		else
-		{
-			//bottom and left
-			if (line::above(frac_pos, uphill_line))
-				return { pos, rect_edges::left };
-			return { pos, rect_edges::bottom };
-		}
-	}
-
-	// pick the closest vertex and correct triangle
-	[[nodiscard]] static constexpr detail::specific_vertex pick_specific_vertex(const tile_position pos, const vector2_float frac_pos, const bool triangle_type) noexcept
-	{
-		constexpr auto min_distance = vector::magnitude_squared(vector2_float{ 0.5f, 0.5f });
-		using enum rect_corners;
-
-		assert(is_within(frac_pos, { 0.f, 0.f, 1.f, 1.f }));
-
-		if (triangle_type == terrain_map::triangle_uphill)
-		{
-			//top_left
-			if (vector::distance_squared({ 0.f, 0.f }, frac_pos) <= min_distance)
-				return { pos, top_left, terrain_map::triangle_left };
-			// bottom_right
-			if (vector::distance_squared({ 1.f, 1.f }, frac_pos) < min_distance)
-				return { pos, bottom_right, terrain_map::triangle_right };
-			const auto triangle = line::above(frac_pos, uphill_line);
-			// top_right
-			if (vector::distance_squared({ 1.f, 0.f }, frac_pos) < min_distance)
-				return { pos, top_right, triangle };
-			// bottom_left
-			return { pos, bottom_left, triangle };
-		}
-		else
-		{
-			// top_right
-			if (vector::distance_squared({ 1.f, 0.f }, frac_pos) < min_distance)
-				return { pos, top_right, terrain_map::triangle_right };
-			// bottom_left
-			if (vector::distance_squared({ 0.f, 1.f }, frac_pos) < min_distance)
-				return { pos, bottom_left, terrain_map::triangle_left };
-			const auto triangle = !line::above(frac_pos, downhill_line);
-			//top_left
-			if (vector::distance_squared({ 0.f, 0.f }, frac_pos) <= min_distance)
-				return { pos, top_left, triangle };
-			// bottom_right
-			return { pos, bottom_right, triangle };
-		}
-	}
-
-	template<invoke_edge Func>
-	static void follow_cliffable(const tile_edge &previous_edge, const terrain_vertex_position vert_pos,
-		const terrain_map& map, int dist, Func&& f)
-	{
-		if (dist == 0)
-			return;
-
-		const auto next_edge = get_next_edge(vert_pos, previous_edge, map);
-		if (!next_edge)
-			return;
-		std::invoke(f, *next_edge);
-		const auto [first, second] = get_edge_vertex(*next_edge);
-		const auto next_vert = first == vert_pos ? second : first;
-		return follow_cliffable(*next_edge, next_vert, map, dist -1, std::forward<Func>(f));
-	}
-
-	// iterate over edges that already or could have cliffs created on them
-	template<invoke_edge Func>
-	static void follow_cliffable_edges(const tile_position tile_pos,
-		const vector2_float frac_pos, const terrain_map& map, const int max_dist,
-		Func&& f)
-	{
-		// if there is a cliff nearby then extend it
-		// if there are no cliffs then try to create a two edge cliff around nearest vertex
-		// then extend the cliff on either side up to max_dist tiles
-		// follow along cliffs or edges that could become cliffs, in both directions
-		
-		const auto t_edge = pick_edge(tile_pos, frac_pos);
-		const auto [first, second] = get_edge_vertex(t_edge);
-
-		const auto try_extend_cliff = [&map, &f](const tile_edge t_edge, const terrain_vertex_position vert) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>) -> std::optional<tile_edge>  {
-			auto e = get_next_cliff(vert, t_edge, map);
-			if (!e)
-			{
-				e = get_next_edge(vert, t_edge, map);
-				if (e && can_add_cliff(map, *e, vert))
-					std::invoke(f, *e);
-				else
-					e = {};
-			}
-
-			return e;
-			};
-
-		if (can_add_cliff(map, t_edge))
-		{
-			std::invoke(f, t_edge);
-		}
-		else if (const auto extra_edge = can_start_cliff(map, t_edge); extra_edge)
-		{
-			std::invoke(f, t_edge, *extra_edge);
-		}
-
-		const auto follow_cliff_edges = [max_dist, &map, &f, &try_extend_cliff](tile_edge t_edge, terrain_vertex_position vert) noexcept(std::is_nothrow_invocable_v<Func, tile_edge>) {
-			auto dist = decltype(max_dist){};
-			while (dist++ < max_dist)
-			{
-				auto e = try_extend_cliff(t_edge, vert);
-				if (!e)
-					break;
-
-				t_edge = *e;
-				auto [first, second] = get_edge_vertex(t_edge);
-				vert = first == vert ? second : first;
-			}
-			return;
-		};
-
-		follow_cliff_edges(t_edge, first);
-		follow_cliff_edges(t_edge, second);
-		
-		return;
-	}
-
-	// iterate over edges that currently have cliffs
-	template<typename Func>
-	static void do_erase_cliff(Func&&)
-	{}
-
-	// iterate over edges that currently have cliffs
-	// except for the end points that dont lie on world edges
-	/*template<typename Func>
-	static void do_height_cliff(Func&&)
-	{}*/
-
 	using brush_t = level_editor_terrain::brush_type;
+	using brush_shape_t = level_editor_terrain::draw_shape;
 	template<invoke_position Func>
 	static void for_each_position(const level_editor_terrain::mouse_pos p,
 		const resources::tile_size_t tile_size, const level_editor_terrain::draw_shape shape,
@@ -844,129 +555,91 @@ namespace hades
 		};
 
 		// tile_pos
-		const auto tile_pos = static_cast<terrain_vertex_position>(trunc_pos);
+		auto tile_pos = static_cast<terrain_vertex_position>(trunc_pos);
 
 		if (!within_world(tile_pos, world_size))
 			return;
 
 		const auto frac_pos = draw_pos_f - trunc_pos;
 
-		const auto vertex = static_cast<terrain_vertex_position>(world_vector_t{
+		auto vertex = static_cast<terrain_vertex_position>(world_vector_t{
 				std::round(draw_pos_f.x),
 				std::round(draw_pos_f.y)
 		});
 
-		// If the user is drawing or erasing cliffs then pass over to the special cliff functions
-		// TODO: do cliff top and bottom height along edges too(might need to be a seperate tool entirely)
-		if constexpr (invoke_edge<Func>)
+		auto vertex_target = true;
+		switch (brush)
 		{
-			switch (brush)
-			{
-			case brush_t::raise_cliff:
-				return follow_cliffable_edges(tile_pos, frac_pos, map, size, std::forward<Func>(f));
-			case brush_t::erase_cliff:
-				return do_erase_cliff(std::forward<Func>(f));
-			default:
-				; // other brushes are handled by the following switch (shape)
-			}
-		}
-		else 
-		{
-			switch (brush)
-			{
-			case brush_t::raise_cliff:
-				[[fallthrough]];
-			case brush_t::erase_cliff:
-				throw std::logic_error{ "Never call this function without providing an overload for cliff function calls" };
-				// assert(false);
-			default:
-				; // other brushes are handled by the following switch (shape)
-			}
+		case brush_t::raise_cliff:
+			[[fallthrough]];
+		case brush_t::lower_cliff:
+			[[fallthrough]];
+		case brush_t::raise_water:
+			[[fallthrough]];
+		case brush_t::lower_water:
+			vertex_target = false;
 		}
 
 		using draw_shape = level_editor_terrain::draw_shape;
 		switch (shape)
 		{
-		case draw_shape::vertex:
-			if constexpr (invoke_vertex<Func>)
+		case draw_shape::rect:
+		{
+			auto rect_size = terrain_vertex_position{ 1, 1 };
+			switch (size)
 			{
-				const auto cliff_info = get_cliff_info(tile_pos, map);
-				const auto [position, corner, left_tri] = pick_specific_vertex(tile_pos, frac_pos, cliff_info.triangle_type);
-				std::invoke(f, position, corner, left_tri);
-				return;
+				// NOTE: starting values are already correct for case 1
+			case 2:
+				vertex -= terrain_vertex_position{ 1, 1 };
+				tile_pos -= terrain_vertex_position{ 1, 1 };
+				rect_size *= 3;
+				break;
+			case 3:
+				vertex -= terrain_vertex_position{ 2, 2 };
+				tile_pos -= terrain_vertex_position{ 2, 2 };
+				rect_size *= 5;
+				break;
+			case 5:
+				vertex -= terrain_vertex_position{ 4, 4 };
+				tile_pos -= terrain_vertex_position{ 4, 4 };
+				rect_size *= 9;
+				break;
+			case 8:
+				vertex -= terrain_vertex_position{ 7, 7 };
+				tile_pos -= terrain_vertex_position{ 7, 7 };
+				rect_size *= 15;
+				break;
+			}
+
+			if (vertex_target)
+			{
+				return for_each_safe_position_rect(vertex, rect_size, world_size + tile_position{ 1, 1 }, [&f](auto&& pos) {
+					std::invoke(f, vertex_tag, pos);
+					});
 			}
 			else
-				return for_each_safe_position_rect(vertex, terrain_vertex_position{ 1, 1 }, world_vertex_size, f);
-		case draw_shape::edge:
-		{
-			//edge picking target
-			const auto edge = pick_edge(tile_pos, frac_pos).edge;
-
-			// handle diag cases
-			switch (edge)
-			{
-			case rect_edges::uphill:
-				return do_diag_edge(tile_pos, frac_pos, terrain_map::triangle_uphill, size, world_vertex_size, std::forward<Func>(f));
-			case rect_edges::downhill:
-				return do_diag_edge(tile_pos, frac_pos, terrain_map::triangle_downhill, size, world_vertex_size, std::forward<Func>(f));
-			default:
-				; // let the rect of the function handle the other cases
-			}
-
-			auto pos = tile_pos;
-			auto siz = terrain_vertex_position{ 1, 1 };
-
-			switch (edge)
-			{
-			case rect_edges::top:
-				++siz.x;
-				break;
-			case rect_edges::right:
-				++pos.x;
-				++siz.y;
-				break;
-			case rect_edges::bottom:
-				++pos.y;
-				++siz.x;
-				break;
-			case rect_edges::left:
-				++siz.y;
-			}
-
-			const auto vertical = edge == rect_edges::left || edge == rect_edges::right;
-
-			if (size > 1)
-			{
-				--size;
-				if (vertical)
-				{
-					pos.y -= size - 1;
-					siz.y = size * 2 + 1;
-				}
-				else
-				{
-					pos.x -= size - 1;
-					siz.x = size * 2 + 1;
-				}
-			}
-
-			return for_each_safe_position_rect(pos, siz, world_vertex_size, std::forward<Func>(f));
+				return for_each_safe_position_rect(tile_pos, rect_size, world_size, std::forward<Func>(f));
 		}
-		case draw_shape::rect:
-			// expand the size of the rect when doing terrain drawing
+		case draw_shape::circle:
+		{
+			auto smooth_strength_circle = false;
 			switch (brush)
 			{
-			case brush_t::draw_tile:
+			case brush_t::raise_terrain:
 				[[fallthrough]];
-			case brush_t::select_tile:
-				break;
-			default:
-				++size;
+			case brush_t::lower_terrain:
+				smooth_strength_circle = true;
 			}
 
-			return for_each_safe_position_rect(tile_pos, terrain_vertex_position{ size, size }, world_size, std::forward<Func>(f));
-		case draw_shape::circle:
-			return for_each_safe_position_circle(tile_pos, size, world_size, std::forward<Func>(f));
+			if (vertex_target)
+			{
+				return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, [&f](auto&& pos) {
+					std::invoke(f, vertex_tag, pos);
+					});
+			}
+			else
+				return for_each_safe_position_circle(tile_pos, size - 1, world_size, std::forward<Func>(f));
+		}
 		}
 
 		return;
@@ -990,61 +663,28 @@ namespace hades
 
 	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
 	{
-		_preview = _clear_preview;
-
-		const auto func = [&](const tile_position pos) {
-			switch (_terrain_palette.brush)
-			{
-			case brush_type::erase:
-				[[fallthrough]];
-			case brush_type::raise_terrain:
-				[[fallthrough]];
-			case brush_type::lower_terrain:
-				[[fallthrough]];
-			case brush_type::set_terrain_height:
-				[[fallthrough]];
-			case brush_type::raise_cliff:
-				[[fallthrough]];
-			case brush_type::erase_cliff:
-				[[fallthrough]];
-			case brush_type::draw_terrain:
-				_preview.place_terrain(pos, _settings->editor_terrain ? _settings->editor_terrain.get() : _current.terrain);
-				break;
-			case brush_type::select_tile:
-			case brush_type::draw_tile:
-				_preview.place_tile(pos, _tile);
-				break;
-			}	
+		const auto tile_func = [&](const tile_position pos) {
+			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
+			_map.add_edit_target(pos);
 		};
 
-		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool) {
-			const auto vert = to_vertex_position(pos, corners);
-			return func(vert);
+		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
+			_map.set_edit_target_style(mutable_terrain_map::edit_target::vertex);
+			_map.add_edit_target(pos);
 			};
 
+		/*const auto vertex_func_strength = [&](const terrain_vertex_position pos, float strength) {
+			vertex_func(vertex_tag, pos);/*
+			};*/
 
-		const auto cliff_func = [&](const tile_edge& e) {
-			const tile_position &pos = e.position;
-			const rect_edges &edge = e.edge;
-			const auto terrain = _settings->editor_terrain ? _settings->editor_terrain.get() : _current.terrain;
-			const auto [first, second] = get_edge_vertex(e);
-			_preview.place_terrain(first, terrain);
-			_preview.place_terrain(second, terrain);
-			return;
-		};
-
-		const auto start_cliff_func = [&](const tile_edge& e1, const tile_edge& e2) {
-			cliff_func(e1);
-			cliff_func(e2);
-			return;
-			};
-
-		if (_terrain_palette.brush == brush_type::select_tile &&
+		/*if (_terrain_palette.brush == brush_type::select_tile &&
 			_tile_mutator.current_tile() != bad_tile_position)
-			_preview.place_tile(_tile_mutator.current_tile(), _tile);
+			_preview.place_tile(_tile_mutator.current_tile(), _tile);*/
+
+		_map.clear_edit_target();
 
 		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size,
-			_map.get_map(), overloaded{ func, vert_func, cliff_func, start_cliff_func });
+			_map.get_map(), overloaded{ tile_func, vertex_func });
 		return;
 	}
 
@@ -1090,7 +730,7 @@ namespace hades
 
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
-		const auto basic_func = [&](const tile_position pos) {
+		const auto tile_func = [&](const tile_position pos) {
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::draw_terrain:
@@ -1099,116 +739,75 @@ namespace hades
 			case brush_type::draw_tile:
 				_map.place_tile(pos, _tile);
 				break;
-			case brush_type::select_tile:
-				_tile_mutator.select_tile(pos);
-				break;
 			case brush_type::erase:
 				_map.place_terrain(pos, _empty_terrain);
 				break;
 			case brush_type::raise_terrain:
+				// TODO: FIXME: cannot edit height on right and bottom world edge
 				_map.raise_terrain(pos, _height_strength);
-				_clear_preview.raise_terrain(pos, _height_strength);
 				break;
 			case brush_type::lower_terrain:
 				_map.lower_terrain(pos, _height_strength);
-				_clear_preview.lower_terrain(pos, _height_strength);
 				break;
 			case brush_type::set_terrain_height:
 				_map.set_terrain_height(pos, _set_height);
-				_clear_preview.set_terrain_height(pos, _set_height);
 				break;
 			}	
 		};
 
-		const auto vert_func = [&](const tile_position pos, const rect_corners corners, const bool left_triangle) {
-			switch (_terrain_palette.brush)
-			{
-			case brush_type::raise_terrain:
-				_map.raise_terrain(pos, corners, left_triangle, _height_strength);
-				_clear_preview.raise_terrain(pos, corners, left_triangle, _height_strength);
-				return;
-			case brush_type::lower_terrain:
-				_map.lower_terrain(pos, corners, left_triangle, _height_strength);
-				_clear_preview.lower_terrain(pos, corners, left_triangle, _height_strength);
-				return;
-			case brush_type::set_terrain_height:
-				_map.set_terrain_height(pos, corners, left_triangle, _set_height);
-				_clear_preview.set_terrain_height(pos, corners, left_triangle, _set_height);
-				return;
-			}
-
-			assert(false);
-			//const auto vert = to_vertex(pos, corners);
-			//return func(vert);
+		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
+			//vertex_func(vertex_tag, pos);
+			return;
 			};
 
-		const auto height_func = [&](const tile_position pos, const float str) {
-			const auto amount = integral_clamp_cast<std::uint8_t>(_height_strength * str);
-
+		// NOTE: strength is only used for heightmap editing which targets vertex,
+		//			no need for a tile_func_strength
+		const auto vertex_func_strength = [&](const terrain_vertex_position pos, float strength) {
 			switch (_terrain_palette.brush)
 			{
-			case brush_type::raise_terrain:
-				_map.raise_terrain(pos, amount);
-				_clear_preview.raise_terrain(pos, amount);
-				break;
-			case brush_type::lower_terrain:
-				_map.lower_terrain(pos, amount);
-				_clear_preview.lower_terrain(pos, amount);
-				break;
 			default:
-				std::invoke(basic_func, pos);
+				return vertex_func(vertex_tag, pos);
+			case brush_type::raise_terrain:
+				[[fallthrough]];
+			case brush_type::lower_terrain:
+				[[fallthrough]];
 			}
-		};
 
-		const auto cliff_func = [&](const tile_edge& edge) {
-			_map.add_cliff(edge, _cliff_default_height);
-			return;
-		};
-
-		const auto start_cliff_func = [&](const tile_edge& edge1, const tile_edge& edge2) {
-			_map.add_cliff(edge1, edge2, _cliff_default_height);
 			return;
 			};
 
-		const auto ovrld = overloaded{ basic_func, height_func, vert_func, cliff_func, start_cliff_func };
-		
+		_map.clear_edit_target();
+
+		const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
 		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
 		return;
 	}
 
 	void level_editor_terrain::on_drag(mouse_pos p)
 	{
+		// TODO: need custom code here for plateaus
 		on_click(p);
 	}
 
 	void level_editor_terrain::on_screen_move(rect_float r)
 	{
 		_map.set_world_region(r);
-		_clear_preview.set_world_region(r);
-		_preview.set_world_region(r);
 		return;
 	}
 
 	void level_editor_terrain::on_height_toggle(bool b) noexcept
 	{
 		_map.set_height_enabled(b);
-		_preview.set_height_enabled(b);
-		_clear_preview.set_height_enabled(b);
 		return;
 	}
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
+		if (!is_active_brush())
+			_map.clear_edit_target();
 		_map.apply();
 		_map.set_world_rotation(get_world_rotation());
 		r.draw(_map, s);
-	}
-
-	void level_editor_terrain::draw_brush_preview(sf::RenderTarget &r, time_duration, sf::RenderStates s)
-	{
-		_preview.apply();
-		_preview.set_world_rotation(get_world_rotation());
-		r.draw(_preview, s);
 	}
 
 	namespace detail
@@ -1228,30 +827,56 @@ namespace hades
 			size_selection{ "8"sv, "Size: 8"sv, 8 },
 		};
 
-		struct height_selection
+		struct brush_selection
 		{
 			std::string_view button_label;
 			std::string_view title_label;
 			brush_t brush;
 		};
 
-		constexpr auto height_selections = std::array<height_selection, 5>{
-			height_selection{ "Raise"sv,	"Height: Raise"sv,		brush_t::raise_terrain },
-			height_selection{ "Lower"sv,	"Height: Lower"sv,		brush_t::lower_terrain },
-			height_selection{ "Plateau"sv,	"Height: Plateau"sv,	brush_t::plateau_terrain },
-			height_selection{ "Noise"sv,	"Height: Noise"sv,		brush_t::add_height_noise },
-			height_selection{ "Smooth"sv,	"Height: Smooth"sv,		brush_t::smooth_height },
+		constexpr auto height_selections = std::array<brush_selection, 5>{
+			brush_selection{ "Raise"sv,		"Height: Raise"sv,		brush_t::raise_terrain },
+			brush_selection{ "Lower"sv,		"Height: Lower"sv,		brush_t::lower_terrain },
+			brush_selection{ "Plateau"sv,	"Height: Plateau"sv,	brush_t::plateau_terrain },
+			brush_selection{ "Noise"sv,		"Height: Noise"sv,		brush_t::add_height_noise },
+			brush_selection{ "Smooth"sv,	"Height: Smooth"sv,		brush_t::smooth_height },
+		};
+
+		constexpr auto cliff_selections = std::array<brush_selection, 4>{
+			brush_selection{ "Raise"sv,		"Cliff: Raise"sv,	brush_t::raise_cliff },
+			brush_selection{ "Lower"sv,		"Cliff: Lower"sv,	brush_t::lower_cliff },
+			brush_selection{ "Plateau"sv,	"Cliff: Plateau"sv,	brush_t::plataeu_cliff },
+			brush_selection{ "Ramp"sv,		"Cliff: Ramp"sv,	brush_t::add_ramp }
+		};
+
+		constexpr auto water_selections = std::array<brush_selection, 2>{
+			brush_selection{ "Raise"sv,		"Water: Raise"sv,	brush_t::raise_water },
+			brush_selection{ "Lower"sv,		"Water: Lower"sv,	brush_t::lower_water }
+		};
+
+		struct shape_selection
+		{
+			std::string_view button_label;
+			std::string_view title_label;
+			brush_shape_t shape;
+		};
+
+		constexpr auto shape_selections = std::array<shape_selection, 2>{
+			shape_selection{ "Circle"sv, "Shape: Circle"sv,	brush_shape_t::circle },
+			shape_selection{ "Square"sv, "Shape: Square"sv,	brush_shape_t::rect }
 		};
 	}
 
 	void level_editor_terrain::_gui_terrain_palette(gui& g)
 	{
-		g.radio_button("###terrain_activated", _terrain_palette.brush == brush_type::draw_terrain);
+		// Terrain Tools
+		g.radio_button("###terrain_activated"sv, _terrain_palette.brush == brush_type::draw_terrain);
 		g.same_line();
 		if (_terrain_palette.brush == brush_type::draw_terrain)
 			g.separator_text(_terrain_palette.brush_name);
 		else
 			g.separator_text("Terrain"sv);
+		g.dummy();
 		// if we have the empty terrainset then skip this,
 		// the menu would be useless anyway
 		if (_current.terrain_set != _empty_terrainset)
@@ -1259,68 +884,104 @@ namespace hades
 			const auto tile_size_f = float_cast(_tile_size);
 			for (const auto& ter : _current.terrain_set->terrains)
 			{
-				make_terrain_buttons(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
+				make_terrain_button(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
 					activate_brush();
 					_terrain_palette.brush = brush_type::draw_terrain;
-					_terrain_palette.brush_name = std::format("Terrain: {}", str);
+					_terrain_palette.brush_name = std::format("Terrain: {}"sv, str);
 					_current.terrain = t;
 					});
 			}
 		}
 		g.separator_horizontal();
 
+		const auto brush_selector = [&](const std::span<const detail::brush_selection> selections) {
+			g.dummy();
+			for (const auto& select : selections)
+			{
+				const auto b_size = g.calculate_button_size(select.button_label);
+				g.same_line_wrapping(b_size.x);
+				g.push_id(enum_type(select.brush));
+				if (g.button(select.button_label))
+				{
+					_terrain_palette.brush_name = select.title_label;
+					_terrain_palette.brush = select.brush;
+					activate_brush();
+				}
+				g.pop_id();
+			}
+		};
+
+		// Cliff Tools
 		const auto cliff_mode = _terrain_palette.brush == brush_type::raise_cliff ||
-			//_terrain_palette.brush == brush_type::lower_cliff ||
-			//_terrain_palette.brush == brush_type::add_ramp ||
-			false;
-		g.radio_button("###cliff_activated", cliff_mode);
+			_terrain_palette.brush == brush_type::lower_cliff ||
+			_terrain_palette.brush == brush_type::plataeu_cliff ||
+			_terrain_palette.brush == brush_type::add_ramp;
+		g.radio_button("###cliff_activated"sv, cliff_mode);
 		g.same_line();
 		if (cliff_mode)
 			g.separator_text(_terrain_palette.brush_name);
 		else
 			g.separator_text("Cliffs"sv);
-		g.button("make cliff");
+		brush_selector(detail::cliff_selections);
 		g.separator_horizontal();
 
+		// Height Tools
 		const auto height_mode = _terrain_palette.brush == brush_type::raise_terrain ||
 			_terrain_palette.brush == brush_type::lower_terrain ||
 			_terrain_palette.brush == brush_type::plateau_terrain ||
 			_terrain_palette.brush == brush_type::smooth_height ||
 			_terrain_palette.brush == brush_type::add_height_noise;
-		g.radio_button("###height_activated", height_mode);
+		g.radio_button("###height_activated"sv, height_mode);
 		g.same_line();
 		if (height_mode)
 			g.separator_text(_terrain_palette.brush_name);
 		else
-			g.separator_text("Height");
-		for (const auto& select : detail::height_selections)
-		{
-			if (g.button(select.button_label))
-			{
-				_terrain_palette.brush_name = select.title_label;
-				_terrain_palette.brush = select.brush;
-				activate_brush();
-			}
-			g.same_line();
-		}
-		g.new_line();
+			g.separator_text("Height"sv);
+		brush_selector(detail::height_selections);
 		g.separator_horizontal();
 
+#if 1
+		// Water Tool
+		const auto water_mode = _terrain_palette.brush == brush_type::raise_water ||
+			_terrain_palette.brush == brush_type::lower_water;
+		g.radio_button("####water_activated", water_mode);
+		g.same_line();
+		if (water_mode)
+			g.separator_text(_terrain_palette.brush_name);
+		else
+			g.separator_text("Water"sv);
+		brush_selector(detail::water_selections);
+		g.separator_horizontal();
+#endif
+
+		// Size Selector
 		g.text(_terrain_palette.size_label);
+		g.dummy();
 		for (const auto& select : detail::size_selections)
 		{
+			const auto b_size = g.calculate_button_size(select.button_label);
+			g.same_line_wrapping(b_size.x);
 			if (g.button(select.button_label))
 			{
 				_terrain_palette.size_label = select.title_label;
 				_terrain_palette.draw_size = select.value;
 			}
-			g.same_line();
 		}
-		g.new_line();
 
+		// Drawing Shape
 		g.text(_terrain_palette.shape_label);
-		g.button("Circle");
-		g.same_line();
-		g.button("Square");
+		g.dummy();
+		for (const auto& select : detail::shape_selections)
+		{
+			const auto b_size = g.calculate_button_size(select.button_label);
+			g.same_line_wrapping(b_size.x);
+			if (g.button(select.button_label))
+			{
+				_terrain_palette.shape_label = select.title_label;
+				_terrain_palette.shape = select.shape;
+			}
+		}
+
+		return;
 	}
 }

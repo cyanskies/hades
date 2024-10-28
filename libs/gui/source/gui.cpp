@@ -514,9 +514,9 @@ namespace hades
 		_active_assert();
 		const auto& style = ImGui::GetStyle();
 		const auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-		auto last_button_x2 = ImGui::GetItemRectMax().x;
+		const auto last_button_x2 = ImGui::GetItemRectMax().x;
 		// expected position if next button was on same line
-		auto next_button_x2 = last_button_x2 + style.ItemSpacing.x + next_item_size_x; 
+		const auto next_button_x2 = last_button_x2 + style.ItemSpacing.x + next_item_size_x; 
 		if (next_button_x2 < window_visible_x2)
 			ImGui::SameLine(pos, width);
 
@@ -574,6 +574,7 @@ namespace hades
 
 	void gui::push_id(int32 i)
 	{
+		static_assert(std::same_as<int32, int>); // TODO: maybe we should just accept int to begin with
 		_active_assert();
 		ImGui::PushID(i);
 	}
@@ -721,6 +722,8 @@ namespace hades
 			y = text_coords.y,
 			width = text_coords.width,
 			height = text_coords.height;
+
+		// TODO: push ids for the tex coords?
 
 		namespace tex = resources::texture_functions;
 		const auto [tex_width, tex_height] = tex::get_size(texture);
@@ -1468,7 +1471,6 @@ namespace hades
 	void gui::_activate_context() noexcept
 	{
 		assert(_my_context);
-
 		ImGui::SetCurrentContext(_my_context.get());
 	}
 

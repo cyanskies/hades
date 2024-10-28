@@ -303,7 +303,7 @@ namespace hades
 
 	// this function accepts a tile position, and optionally a strength value [0, 1]
 	template<typename Func> 
-	concept invocable_for_each_circle = std::invocable<Func, tile_position, float> || std::invocable<Func, tile_position>;
+	concept invocable_for_each_circle = /*std::invocable<Func, tile_position, float>&&*/ std::invocable<Func, tile_position>;
 	template<invocable_for_each_circle Func>
 	constexpr auto noexcept_invocable_for_each_circle = 
 		(std::is_nothrow_invocable_v<Func, tile_position, float> && std::is_nothrow_invocable_v<Func, tile_position>) ||

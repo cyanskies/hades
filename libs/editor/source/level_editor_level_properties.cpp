@@ -151,7 +151,7 @@ namespace hades
 			if (g.button("Done"sv))
 				window.open = false;
 
-			g.layout_horizontal();
+			g.same_line();
 
 			if (g.button("Apply"sv))
 			{
@@ -190,7 +190,7 @@ namespace hades
 				}
 			}
 
-			g.layout_horizontal();
+			g.same_line();
 
 			if (g.button("add"sv))
 			{
@@ -215,7 +215,7 @@ namespace hades
 				}
 			}
 
-			g.layout_horizontal();
+			g.same_line();
 
 			if (g.button("remove"sv) && !std::empty(layers))
 			{

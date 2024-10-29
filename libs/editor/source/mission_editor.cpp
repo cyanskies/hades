@@ -165,10 +165,10 @@ namespace hades
 
 		if (!std::empty(_players))
 		{
-			_gui.layout_horizontal();
+			_gui.same_line();
 			if (_gui.button("edit...") && !std::empty(_players))
 				_player_window_state.edit_open = true;
-			_gui.layout_horizontal();
+			_gui.same_line();
 			if (_gui.button("remove"))
 			{
                 auto iter = std::next(std::begin(_players), signed_cast(_player_window_state.selected));
@@ -192,7 +192,7 @@ namespace hades
 				std::iter_swap(iter, std::prev(iter));
 				--_player_window_state.selected;
 			}
-			_gui.layout_horizontal();
+			_gui.same_line();
 			if (_gui.button("move down")
 				&& (_player_window_state.selected + 1) < std::size(_players))
 			{
@@ -203,7 +203,7 @@ namespace hades
 
 			if (!std::empty(_players) && _players[_player_window_state.selected].object != bad_entity)
 			{
-				_gui.layout_horizontal();
+				_gui.same_line();
 				if (_gui.button("select object"))
 				{
 					_obj_ui.value().set_selected(_players[_player_window_state.selected].object);
@@ -397,7 +397,7 @@ namespace hades
 		if (_gui.button("add..."))
 			add_level(s);
 
-		_gui.layout_horizontal();
+		_gui.same_line();
 		if (_gui.button("remove") && !std::empty(_levels))
 		{
 			const auto last = std::size(_levels) - 1u;
@@ -428,13 +428,13 @@ namespace hades
 		}
 
 		_gui.button("move up");
-		_gui.layout_horizontal();
+		_gui.same_line();
 		_gui.button("move down");
 
 		if (_gui.button("rename"))
 			rename_level(s, _levels);
 
-		_gui.layout_horizontal();
+		_gui.same_line();
 		if (_gui.button("edit...") && !std::empty(_levels))
 		{
 			assert(s.selected < std::size(_levels));
@@ -552,7 +552,7 @@ namespace hades
 			}
 		}
 
-		_gui.layout_horizontal();
+		_gui.same_line();
 		if (_gui.button("cancel"))
 			s.add_level_open = false;
 

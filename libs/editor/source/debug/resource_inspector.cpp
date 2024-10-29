@@ -105,7 +105,7 @@ namespace hades::data
 
 				auto mod = false;
 				g.text("Frames:"sv);
-				g.layout_horizontal();
+				g.same_line();
 				if (g.button("Add frame"sv))
 				{
 					_anim_frames.emplace_back();
@@ -122,7 +122,7 @@ namespace hades::data
 					{
 						g.push_id(&*iter);
 						g.text("Frame: "s + to_string(frame_count++));
-						g.layout_horizontal();
+						g.same_line();
 						if (iter == begin)
 							g.begin_disabled();
 						if (g.arrow_button("up"sv, gui::direction::up))
@@ -133,9 +133,9 @@ namespace hades::data
 						if (iter == begin)
 							g.end_disabled();
 
-						auto is_end = next(iter) == end;
+						const auto is_end = next(iter) == end;
 
-						g.layout_horizontal();
+						g.same_line();
 
 						if (is_end)
 							g.begin_disabled();
@@ -148,7 +148,7 @@ namespace hades::data
 						if (is_end)
 							g.end_disabled();
 
-						g.layout_horizontal();
+						g.same_line();
 						if (g.button("Remove Frame"sv))
 							delete_frame = iter;
 
@@ -1881,7 +1881,7 @@ namespace hades::data
 
 			if (mod != first->mod_id)
 			{
-				g.layout_horizontal();
+				g.same_line();
 				g.text_disabled(first->mod);
 			}
 

@@ -15,7 +15,7 @@ namespace hades
 		while (i < Count)
 		{
 			dummy();
-			layout_horizontal();
+			same_line();
 			++i;
 		}
 	}

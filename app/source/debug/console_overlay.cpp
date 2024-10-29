@@ -96,7 +96,7 @@ namespace hades::debug
 				g.set_keyboard_focus_here(-1);
 			}
 
-			g.layout_horizontal();
+			g.same_line();
 
             const auto mode = _log_mode->load();
 			const auto log_preview = [mode, &mode_names] {

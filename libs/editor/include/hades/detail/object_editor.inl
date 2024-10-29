@@ -336,7 +336,7 @@ namespace hades::obj_ui
 					changed = true;
 				}
 
-				g.layout_horizontal();
+				g.same_line();
 			}
 			g.window_end();
 
@@ -535,7 +535,7 @@ namespace hades
 		if (_next_added_object_base == std::size_t{})
 			g.end_disabled();
 
-		g.layout_horizontal();
+		g.same_line();
 		if (g.button("remove"sv) && _selected != data_type::nothing_selected)
 			erase(_selected);
 		return;

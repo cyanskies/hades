@@ -430,7 +430,7 @@ namespace hades::detail
 				{
 					// zoom slider
 					_gui.text("zoom"sv);
-					_gui.layout_vertical();
+					_gui.same_line();
 					if (_gui.vertical_slider_scalar("###zoom_level_slider"sv, { 18, 160 }, _zoom, editor::zoom_max, 0.1f, {}))
 						_recalculate_camera();
 					// TODO: on screen move
@@ -505,7 +505,7 @@ namespace hades::detail
 					}
 				}
 
-				_gui.layout_horizontal();
+				_gui.same_line();
 				if (_gui.button("Cancel"sv))
 					_window_flags.new_level = false;
 

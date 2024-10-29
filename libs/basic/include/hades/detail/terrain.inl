@@ -261,7 +261,7 @@ namespace hades
 	{
 		const auto index = to_vertex_index(vertex, m);
 		assert(index < size(m.heightmap));
-		m.heightmap[index] = std::invoke(f, m.heightmap[index]);
+		m.heightmap[index] = std::clamp(std::invoke(f, m.heightmap[index]), settings.height_min, settings.height_max);
 		return;
 	}
 }

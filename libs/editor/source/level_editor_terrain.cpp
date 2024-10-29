@@ -633,9 +633,22 @@ namespace hades
 
 			if (vertex_target)
 			{
-				return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, [&f](auto&& pos) {
+				auto vert_func = [&f](auto&& pos) {
 					std::invoke(f, vertex_tag, pos);
-					});
+				};
+
+				if constexpr (std::invocable<Func, terrain_vertex_position, float>)
+				{
+					auto strength_func = [f](const terrain_vertex_position pos, const float strength) {
+						std::invoke(f, pos, strength);
+						};
+
+					return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, overloaded{ vert_func, strength_func });
+				}
+				else
+				{
+					return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, vert_func);
+				}
 			}
 			else
 				return for_each_safe_position_circle(tile_pos, size - 1, world_size, std::forward<Func>(f));
@@ -645,23 +658,7 @@ namespace hades
 		return;
 	}
 
-	[[nodiscard, deprecated("use: to_vertex_position")]] static constexpr terrain_vertex_position to_vertex(const tile_position pos, const rect_corners corner) noexcept
-	{
-		using enum rect_corners;
-		switch (corner)
-		{
-		case top_right:
-			return pos + tile_position{ 1, 0 };
-		case bottom_left:
-			return pos + tile_position{ 0, 1 };
-		case bottom_right:
-			return pos + tile_position{ 1, 1 };
-		default:
-			return pos;
-		}
-	}
-
-	void level_editor_terrain::make_brush_preview(time_duration, mouse_pos p)
+	void level_editor_terrain::make_brush_preview(const time_duration, const mouse_pos p)
 	{
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
@@ -671,20 +668,13 @@ namespace hades
 		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::vertex);
 			_map.add_edit_target(pos);
-			};
-
-		/*const auto vertex_func_strength = [&](const terrain_vertex_position pos, float strength) {
-			vertex_func(vertex_tag, pos);/*
-			};*/
-
-		/*if (_terrain_palette.brush == brush_type::select_tile &&
-			_tile_mutator.current_tile() != bad_tile_position)
-			_preview.place_tile(_tile_mutator.current_tile(), _tile);*/
+		};
 
 		_map.clear_edit_target();
-
-		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size,
-			_map.get_map(), overloaded{ tile_func, vertex_func });
+		for_each_position(p, _settings->tile_size, _terrain_palette.shape,
+			_terrain_palette.brush, _terrain_palette.draw_size,	_map.get_map(),
+			overloaded{ tile_func, vertex_func });
+		
 		return;
 	}
 
@@ -710,7 +700,7 @@ namespace hades
 		for_each_position_rect({ loc.x, loc.y }, { loc.width, loc.height }, world_size, [&map, &out](const tile_position p) {
 			const auto tags = hades::get_tags_at(map, p);
 			out.insert(end(out), begin(tags), end(tags));
-			});
+		});
 
 		return out;
 	}
@@ -730,35 +720,34 @@ namespace hades
 
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
+		// called for cliff layer tools
 		const auto tile_func = [&](const tile_position pos) {
+			switch (_terrain_palette.brush)
+			{
+			case brush_type::raise_cliff:
+				break;
+			case brush_type::lower_cliff:
+				break;
+			/*case brush_type::raise_water:
+				break;
+			case brush_type::lower_water:
+				break;*/
+			}	
+		};
+
+		// called for static strength vertex targeting tools (terrain drawing, usually)
+		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::draw_terrain:
 				_map.place_terrain(pos, _current.terrain);
 				break;
-			case brush_type::draw_tile:
-				_map.place_tile(pos, _tile);
-				break;
-			case brush_type::erase:
-				_map.place_terrain(pos, _empty_terrain);
-				break;
-			case brush_type::raise_terrain:
-				// TODO: FIXME: cannot edit height on right and bottom world edge
-				_map.raise_terrain(pos, _height_strength);
-				break;
-			case brush_type::lower_terrain:
-				_map.lower_terrain(pos, _height_strength);
-				break;
-			case brush_type::set_terrain_height:
-				_map.set_terrain_height(pos, _set_height);
-				break;
-			}	
-		};
-
-		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
-			//vertex_func(vertex_tag, pos);
+			/*case brush_type::erase: // a special case of terrain drawing
+					_map.place_terrain(pos, _empty_terrain);
+				break;*/
+			}
 			return;
-			};
+		};
 
 		// NOTE: strength is only used for heightmap editing which targets vertex,
 		//			no need for a tile_func_strength
@@ -773,8 +762,11 @@ namespace hades
 				[[fallthrough]];
 			}
 
+			const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
+			_map.raise_terrain(pos, str);
+
 			return;
-			};
+		};
 
 		_map.clear_edit_target();
 

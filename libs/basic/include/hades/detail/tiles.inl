@@ -62,7 +62,7 @@ namespace hades
 			const auto top = tile_position{ 0, -rad };
 			const auto bottom = tile_position{ 0, rad };
 
-			const auto max_dist = vector::magnitude_squared(static_cast<vector2_float>(bottom - p));
+			const auto max_dist = vector::magnitude_squared(static_cast<vector2_float>(bottom));
 
 			const auto do_call = [&f, centre = p, radius, max_dist](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
 				if constexpr (std::invocable<Func, tile_position, float>)
@@ -80,17 +80,17 @@ namespace hades
 					std::invoke(f, pos);
 			};
 
-			const auto call_on_position = [f = do_call, world_size](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
+			const auto call_on_position = [do_call, world_size](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
 				if (within_world(pos, world_size))
-					std::invoke(f, pos);
+					do_call(pos);
 				else
 				{
 					if constexpr (PassInvalid)
-						std::invoke(f, bad_tile_position);
+						do_call(bad_tile_position);
 				}
 			};
 
-			std::invoke(call_on_position, top + p);
+			call_on_position(top + p);
 
 			const auto r2 = rad * rad;
 			for (auto y = top.y + 1; y < bottom.y; ++y)
@@ -111,10 +111,10 @@ namespace hades
 
 				//push the entire line of the circle into out
 				for (auto x = bounds[0]; x <= bounds[1]; x++)
-					std::invoke(call_on_position, tile_position{ x + p.x, y + p.y });
+					call_on_position(tile_position{ x + p.x, y + p.y });
 			}
 
-			std::invoke(call_on_position, bottom + p);
+			call_on_position(bottom + p);
 			return;
 		}
 

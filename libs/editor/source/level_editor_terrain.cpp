@@ -637,21 +637,20 @@ namespace hades
 					std::invoke(f, vertex_tag, pos);
 				};
 
-				if constexpr (std::invocable<Func, terrain_vertex_position, float>)
+				if (smooth_strength_circle)
 				{
-					auto strength_func = [f](const terrain_vertex_position pos, const float strength) {
-						std::invoke(f, pos, strength);
-						};
+					if constexpr (std::invocable<Func, terrain_vertex_position, float>)
+					{
+						auto strength_func = [f](const terrain_vertex_position pos, const float strength) {
+							std::invoke(f, pos, strength);
+							};
 
-					return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, overloaded{ vert_func, strength_func });
+						return for_each_safe_position_circle(vertex, size, world_size + tile_position{ 1, 1 }, overloaded{ vert_func, strength_func });
+					}
 				}
-				else
-				{
-					return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, vert_func);
-				}
+				return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, vert_func);
 			}
-			else
-				return for_each_safe_position_circle(tile_pos, size - 1, world_size, std::forward<Func>(f));
+			return for_each_safe_position_circle(tile_pos, size - 1, world_size, std::forward<Func>(f));
 		}
 		}
 
@@ -757,14 +756,16 @@ namespace hades
 			default:
 				return vertex_func(vertex_tag, pos);
 			case brush_type::raise_terrain:
-				[[fallthrough]];
+			{
+				const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
+				_map.raise_terrain(pos, str);
+			}break;
 			case brush_type::lower_terrain:
-				[[fallthrough]];
+			{
+				const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
+				_map.lower_terrain(pos, str);
+			}break;
 			}
-
-			const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
-			_map.raise_terrain(pos, str);
-
 			return;
 		};
 

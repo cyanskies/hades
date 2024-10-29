@@ -63,21 +63,29 @@ namespace hades
 			const auto bottom = tile_position{ 0, rad };
 
 			const auto max_dist = vector::magnitude_squared(static_cast<vector2_float>(bottom));
+			const auto valid_dist = !float_near_equal(max_dist, 0.f);
 
-			const auto do_call = [&f, centre = p, radius, max_dist](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
+			const auto do_call = [&f, centre = p, valid_dist, max_dist](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {
 				if constexpr (std::invocable<Func, tile_position, float>)
 				{
 					if (pos == bad_tile_position)
+					{
 						std::invoke(f, pos, 0.f);
-					else
+						return;
+					}
+					else if(valid_dist)
 					{
 						const auto dist = vector::magnitude_squared(static_cast<vector2_float>(pos - centre));
 						const auto strength = 1.f - dist / max_dist;
-						std::invoke(f, pos, strength);
+						if(!float_near_equal(strength, 0.f))
+						{
+							std::invoke(f, pos, strength);
+							return;
+						}
 					}
 				}
-				else
-					std::invoke(f, pos);
+				
+				std::invoke(f, pos);
 			};
 
 			const auto call_on_position = [do_call, world_size](tile_position pos) noexcept(noexcept_invocable_for_each_circle<Func>) {

@@ -650,7 +650,12 @@ namespace hades
 				}
 				return for_each_safe_position_circle(vertex, size - 1, world_size + tile_position{ 1, 1 }, vert_func);
 			}
-			return for_each_safe_position_circle(tile_pos, size - 1, world_size, std::forward<Func>(f));
+
+			const auto tile_func = [&f](const tile_position p) {
+				std::invoke(f, p);
+				};
+
+			return for_each_safe_position_circle(tile_pos, size - 1, world_size, tile_func);
 		}
 		}
 
@@ -720,12 +725,14 @@ namespace hades
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		// called for cliff layer tools
-		const auto tile_func = [&](const tile_position) {
+		const auto tile_func = [&](const tile_position p) {
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::raise_cliff:
+				_map.raise_cliff(p);
 				break;
 			case brush_type::lower_cliff:
+				_map.lower_cliff(p);
 				break;
 			/*case brush_type::raise_water:
 				break;

@@ -122,7 +122,8 @@ namespace hades
 					call_on_position(tile_position{ x + p.x, y + p.y });
 			}
 
-			call_on_position(bottom + p);
+			if(rad > 0) // if rad == 0, then top == bottom and we call on the same target twice
+				call_on_position(bottom + p);
 			return;
 		}
 

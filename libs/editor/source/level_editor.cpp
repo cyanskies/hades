@@ -186,7 +186,7 @@ namespace hades::detail
 			const auto terrain_map = _component_peek_terrain();
 
 			const auto adapted_mouse_pos = terrain_map && _height_enabled ?
-				project_onto_terrain(level_mouse_pos, _get_world_rot(), _tile_settings->tile_size, *terrain_map)
+				project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
 				: level_mouse_pos;
 
 			if (_active_brush != invalid_brush)
@@ -205,7 +205,7 @@ namespace hades::detail
 				const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
 
 				const auto adapted_drag_start = terrain_map && _height_enabled ?
-					project_onto_terrain(drag_start_level, _get_world_rot(), _tile_settings->tile_size, *terrain_map)
+					project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings)
 					: drag_start_level;
 
 				_component_on_drag_start(_active_brush, adapted_drag_start);
@@ -516,14 +516,14 @@ namespace hades::detail
 
 				if (force == 1)
 				{
-					width = _new_level_options.width / _tile_settings->tile_size;
-					height = _new_level_options.height / _tile_settings->tile_size;
+					width = _new_level_options.width / _terrain_settings->tile_size;
+					height = _new_level_options.height / _terrain_settings->tile_size;
 					_gui.text("Level Size(tiles): "sv);
 				}
 				else if (force > 1)
 				{
-					width = _new_level_options.width / (_tile_settings->tile_size * force);
-					height = _new_level_options.height / (_tile_settings->tile_size * force);
+					width = _new_level_options.width / (_terrain_settings->tile_size * force);
+					height = _new_level_options.height / (_terrain_settings->tile_size * force);
 					_gui.text("Level Size(tiles * "s + to_string(force) + "): "s);
 				}
 				else
@@ -534,8 +534,8 @@ namespace hades::detail
 
 				if (force > 0)
 				{
-					_new_level_options.width = width * _tile_settings->tile_size * force;
-					_new_level_options.height = height * _tile_settings->tile_size * force;
+					_new_level_options.width = width * _terrain_settings->tile_size * force;
+					_new_level_options.height = height * _terrain_settings->tile_size * force;
 				}
 				else
 				{
@@ -576,7 +576,7 @@ namespace hades::detail
 
 				if (force > 0)
 				{
-					const auto s = _resize_options.size / (integer_cast<int32>(_tile_settings->tile_size) * force);
+					const auto s = _resize_options.size / (integer_cast<int32>(_terrain_settings->tile_size) * force);
 					new_size = std::array{ s.x, s.y };
 				}
 
@@ -586,8 +586,8 @@ namespace hades::detail
 				if (force > 0)
 				{
 					_resize_options.size = { 
-						new_size[0] * _tile_settings->tile_size * force,
-						new_size[1] * _tile_settings->tile_size * force 
+						new_size[0] * _terrain_settings->tile_size * force,
+						new_size[1] * _terrain_settings->tile_size * force 
 					};
 				}
 				else
@@ -597,7 +597,7 @@ namespace hades::detail
 
 				if (force > 0)
 				{
-					const auto o = _resize_options.offset / (integer_cast<int32>(_tile_settings->tile_size) * force);
+					const auto o = _resize_options.offset / (integer_cast<int32>(_terrain_settings->tile_size) * force);
 					new_offset = std::array{ o.x, o.y };
 				}
 
@@ -607,8 +607,8 @@ namespace hades::detail
 				if (force > 0 )
 				{
 					_resize_options.offset = { 
-						new_offset[0] * _tile_settings->tile_size * force,
-						new_offset[1] * _tile_settings->tile_size * force
+						new_offset[0] * _terrain_settings->tile_size * force,
+						new_offset[1] * _terrain_settings->tile_size * force
 					};
 				}
 				else
@@ -626,8 +626,8 @@ namespace hades::detail
 				auto br = _resize_options.bottom_right;
 				if (force > 0)
 				{
-					tl = _resize_options.top_left / (integer_cast<int32>(_tile_settings->tile_size) * force);
-					br = _resize_options.bottom_right / (integer_cast<int32>(_tile_settings->tile_size) * force);
+					tl = _resize_options.top_left / (integer_cast<int32>(_terrain_settings->tile_size) * force);
+					br = _resize_options.bottom_right / (integer_cast<int32>(_terrain_settings->tile_size) * force);
 				}
 
 				if (_gui.input("expand left by"sv, tl.x))
@@ -641,8 +641,8 @@ namespace hades::detail
 
 				if (force > 0) 
 				{
-					_resize_options.top_left = tl * integer_cast<int32>(_tile_settings->tile_size) * force;
-					_resize_options.bottom_right = br * integer_cast<int32>(_tile_settings->tile_size) * force;
+					_resize_options.top_left = tl * integer_cast<int32>(_terrain_settings->tile_size) * force;
+					_resize_options.bottom_right = br * integer_cast<int32>(_terrain_settings->tile_size) * force;
 				}
 
 				if (changed)

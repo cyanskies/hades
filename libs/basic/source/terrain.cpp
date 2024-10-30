@@ -692,14 +692,18 @@ namespace hades
 		return;
 	}
 
-	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m)
+	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m, const resources::terrain_settings& s)
 	{
+		const auto tile_index = to_tile_index(p, m);
+		assert(s.cliff_height > 0);
+		const auto cliff_height = m.cliff_layer[tile_index] * s.cliff_height;
+
 		const auto index = to_vertex_index(p, m);
-		const auto tl = m.heightmap[index];
-		const auto tr = m.heightmap[integer_cast<std::size_t>(index) + 1];
+		const auto tl = integer_clamp_cast<std::uint8_t>(m.heightmap[index] + cliff_height);
+		const auto tr = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index) + 1] + cliff_height);
 		const auto index2 = index + m.width;
-		const auto bl = m.heightmap[index2];
-		const auto br = m.heightmap[integer_cast<std::size_t>(index2) + 1];
+		const auto bl = integer_clamp_cast<std::uint8_t>(m.heightmap[index2] + cliff_height);
+		const auto br = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index2) + 1] + cliff_height);
 		
 		triangle_height_data ret [[indeterminate]];
 		// interchange triangle_type along each axis
@@ -764,9 +768,10 @@ namespace hades
 			position.y == map_size.y;
 	}
 	
-	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map)
+	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index,
+		const terrain_map& map, const resources::terrain_settings& settings)
 	{
-		const auto tris = get_height_for_triangles(tile_index, map);
+		const auto tris = get_height_for_triangles(tile_index, map, settings);
 		return get_max_height_in_corners(tris);
 	}
 
@@ -1208,8 +1213,9 @@ namespace hades
 
 	// project 'p' onto the flat version of 'map'
 	vector2_float project_onto_terrain(const vector2_float p, const float rot,
-		const resources::tile_size_t tile_size, const terrain_map& map)
+		const terrain_map& map,	const resources::terrain_settings& settings)
 	{
+		const auto tile_size = settings.tile_size;
 		const auto tile_sizef = float_cast(tile_size);
 		const auto norm_p = p / tile_sizef;
 
@@ -1279,7 +1285,7 @@ namespace hades
 			//			- absent cliffs can just be degenerate triangles
 			
 			// get index for accessing heightmap
-			const auto height_info = get_height_for_triangles(tile_check, map);
+			const auto height_info = get_height_for_triangles(tile_check, map, settings);
 			// generate quad vertex
 			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_info);
 
@@ -1487,7 +1493,9 @@ namespace hades::resources
 		for (const auto& t : s.terrainsets)
 			d.get<terrainset>(t.id());
 
-		if (std::cmp_greater_equal(s.cliff_max * s.cliff_height + s.height_max, 255))
+		if (s.cliff_height == 0)
+			throw terrain_error{ "terrain-settings::cliff_height cannot be 0" };
+		else if (std::cmp_greater_equal(s.cliff_max * s.cliff_height + s.height_max, 255))
 			log_warning("Terrain Settings: height_max and cliff_max * cliff_height are too high; they should be less that 255 or the terrain renderer will overflow"sv);
 
 		s.loaded = true;
@@ -1868,6 +1876,11 @@ namespace hades::resources
 	const terrain_settings *get_terrain_settings()
 	{
 		return data::get<terrain_settings>(id::terrain_settings);
+	}
+
+	unique_id get_terrain_settings_id() noexcept
+	{
+		return id::terrain_settings;
 	}
 
 	// TODO: constexpr

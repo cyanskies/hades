@@ -114,6 +114,7 @@ namespace hades::resources
 	unique_id get_background_terrain_id() noexcept;
 
 	const terrain_settings *get_terrain_settings();
+	unique_id get_terrain_settings_id() noexcept;
 	const terrain *get_terrain(const resources::tile&);
 
 	std::string_view get_empty_terrainset_name() noexcept;
@@ -345,9 +346,10 @@ namespace hades
 	};
 
 	// returns height arranged into two triangles
-	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&);
+	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&, const resources::terrain_settings&);
 
-	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map);
+	// TODO: maybe deprecate the first overload
+	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map, const resources::terrain_settings&);
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept;
 
 	// returns the height at both end of an edge (left/top first)
@@ -414,11 +416,14 @@ namespace hades
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_height(terrain_vertex_position vert, terrain_map&, const resources::terrain_settings&, Func&&);
 
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
+	void change_terrain_cliff_layer(tile_position pos, terrain_map&, const resources::terrain_settings&, Func&&);
+
 	// TODO: change_cliff_layer
 
 	// project 'p' onto the flat version of 'map'
 	world_vector_t project_onto_terrain(world_vector_t p, float rot_degrees,
-		resources::tile_size_t tile_size, const terrain_map& map);
+		const terrain_map& map, const resources::terrain_settings&);
 }
 
 #include "hades/detail/terrain.inl"

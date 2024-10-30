@@ -264,4 +264,13 @@ namespace hades
 		m.heightmap[index] = std::clamp(std::invoke(f, m.heightmap[index]), settings.height_min, settings.height_max);
 		return;
 	}
+
+	template<invocable_r<std::uint8_t, std::uint8_t> Func>
+	void change_terrain_cliff_layer(const tile_position pos, terrain_map& m, const resources::terrain_settings& settings, Func&& f)
+	{
+		const auto index = to_tile_index(pos, m);
+		assert(index < size(m.cliff_layer));
+		m.cliff_layer[index] = std::clamp(std::invoke(f, m.cliff_layer[index]), settings.cliff_min, settings.cliff_max);
+		return;
+	}
 }

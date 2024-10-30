@@ -515,7 +515,7 @@ namespace hades
 				float_cast(y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto positions = make_triangle_positions(pos_f, tile_sizef, triangle_height.triangle_type);
 			// get a index for the texture
 			const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
@@ -563,6 +563,7 @@ namespace hades
 	}
 
 	// generate correct vertex positions for varius cliff types
+	[[deprecated]]
 	static constexpr basic_map_tile make_diag_cliff(const vector2_float& pos_f, const float tile_sizef,
 		const triangle_height_data& triangle_height, const terrain_map::cliff_info cliffs) noexcept
 	{
@@ -634,12 +635,13 @@ namespace hades
 		return tile;
 	}
 
+	// TODO: reduce params
 	static basic_map_tile make_right_cliff(const vector2_int& pos, const vector2_float& pos_f,
 		const float tile_sizef,	const triangle_height_data& triangle_height,
-		const terrain_map::cliff_info cliffs, const terrain_map& map) noexcept
+		const terrain_map::cliff_info cliffs, const terrain_map& map, const resources::terrain_settings& settings) noexcept
 	{
 		const auto height_top = get_height_for_right_edge(triangle_height);
-		const auto next_height = get_height_for_triangles(pos + tile_position{ 1, 0 }, map);
+		const auto next_height = get_height_for_triangles(pos + tile_position{ 1, 0 }, map, settings);
 		const auto height_bottom = get_height_for_left_edge(next_height);
 
 		const auto backface = std::midpoint(height_top[0], height_top[1]) < std::midpoint(height_bottom[0], height_bottom[1]);
@@ -693,12 +695,13 @@ namespace hades
 		return tile;
 	}
 
+	// TODO: reduce params
 	static basic_map_tile make_bottom_cliff(const vector2_int& pos, const vector2_float& pos_f,
 		const float tile_sizef,	const triangle_height_data& triangle_height,
-		const terrain_map::cliff_info cliffs, const terrain_map& map) noexcept
+		const terrain_map::cliff_info cliffs, const terrain_map& map, const resources::terrain_settings& settings) noexcept
 	{
 		const auto height_top = get_height_for_bottom_edge(triangle_height);
-		const auto next_height = get_height_for_triangles(pos + tile_position{ 0, 1 }, map);
+		const auto next_height = get_height_for_triangles(pos + tile_position{ 0, 1 }, map, settings);
 		const auto height_bottom = get_height_for_top_edge(next_height);
 
 		const auto backface = std::midpoint(height_top[0], height_top[1]) < std::midpoint(height_bottom[0], height_bottom[1]);
@@ -769,7 +772,7 @@ namespace hades
 				float_cast(pos.y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 
 			// surface tile
 			if (surface_tile.tex)
@@ -807,7 +810,7 @@ namespace hades
 			if (right_tile.tex && cliffs.right && pos.x < map_size_tiles.x)
 			{
 				const auto tex_index = get_texture_index(right_tile.tex, shared.texture_table);
-				const auto basic_tile = make_right_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map);
+				const auto basic_tile = make_right_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
 				
 				const auto tile = map_tile{ 
 					basic_tile.positions,
@@ -826,7 +829,7 @@ namespace hades
 			if (bottom_tile.tex && cliffs.bottom && pos.y < map_size_tiles.y)
 			{
 				const auto tex_index = get_texture_index(bottom_tile.tex, shared.texture_table);
-				const auto basic_tile = make_bottom_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map);
+				const auto basic_tile = make_bottom_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
 
 				const auto tile = map_tile{
 					basic_tile.positions,
@@ -876,7 +879,7 @@ namespace hades
 				float_cast(pos.y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
 			const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
 
@@ -957,10 +960,11 @@ namespace hades
 		terrain_map::triangle_type triangle_type;
 	};
 
+	// TODO: this has WAY to many params: just accept the shared object rather than parsing them all seperately
 	template<typename Func>
 	static void calculate_lighting_tile_row(tile_position p, table<lighting_info>&table, const tile_position dir,
 		const std::uint8_t sun_rise, const terrain_map& m, const float tile_sizef,
-		const std::uint32_t row_length, Func push_shadows) noexcept
+		const std::uint32_t row_length, const resources::terrain_settings& settings, Func push_shadows) noexcept
 	{
 		constexpr auto top_left = enum_type(rect_corners::top_left),
 			top_right = enum_type(rect_corners::top_right),
@@ -977,12 +981,12 @@ namespace hades
 			return std::max(a, b);
 			};
 
-		const auto shadow_tris = get_height_for_triangles(p, m);
+		const auto shadow_tris = get_height_for_triangles(p, m, settings);
 		auto shadow_h = get_max_height_in_corners(shadow_tris);
 
 		for (auto i = std::uint32_t{}; i < row_length; ++i)
 		{
-			const auto h_tris = get_height_for_triangles(p, m);
+			const auto h_tris = get_height_for_triangles(p, m, settings);
 			const auto h = get_max_height_in_corners(h_tris);
 			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
@@ -1136,7 +1140,8 @@ namespace hades
 		for (auto y = std::int32_t{}; y < table_area.height; ++y)
 		{
 			const auto x_val = sun_left ? table_area.x : row_length + table_area.x - 1;
-			calculate_lighting_tile_row({ x_val, y + table_area.y }, light_table, dir, sun_rise, shared.map, tile_sizef, row_length, shadow_func);
+			calculate_lighting_tile_row({ x_val, y + table_area.y }, light_table,
+				dir, sun_rise, shared.map, tile_sizef, row_length, *shared.settings, shadow_func);
 		}
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
@@ -1148,7 +1153,7 @@ namespace hades
 			const auto& light_info = light_table[pos];
 			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
 			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, {}, light_info.shadow_height, normals);
 
@@ -1189,7 +1194,7 @@ namespace hades
 					float_cast(pos.y) * tile_sizef
 				};
 
-				const auto triangle_height = get_height_for_triangles(pos, shared.map);
+				const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 				const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
 				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
 
@@ -1214,7 +1219,7 @@ namespace hades
 			{
 				// make a graphic in each adjacent tile
 				for_each_safe_adjacent_corner(shared.map, pos, [&](auto&& tile_pos, auto&& corner) {
-					const auto triangle_height = get_height_for_triangles(tile_pos, shared.map);
+					const auto triangle_height = get_height_for_triangles(tile_pos, shared.map, *shared.settings);
 					const auto position = vector2_float{
 						float_cast(tile_pos.x) * tile_sizef,
 						float_cast(tile_pos.y) * tile_sizef
@@ -1439,6 +1444,21 @@ namespace hades
 		_needs_update = true;
 		return;
 	}
+
+	void mutable_terrain_map::raise_cliff(const tile_position p)
+	{
+		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::add_height_functor{ 1 });
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::lower_cliff(const tile_position p)
+	{
+		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::sub_height_functor{ 1 });
+		_needs_update = true;
+		return;
+	}
+
 
 	[[deprecated]]
 	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)

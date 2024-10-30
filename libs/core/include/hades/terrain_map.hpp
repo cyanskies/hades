@@ -83,16 +83,23 @@ namespace hades
 		void set_world_rotation(float degrees);
 		void set_sun_angle(float degrees);
 
+		[[deprecated]]
 		void place_tile(tile_position, const resources::tile&);
 		void place_terrain(terrain_vertex_position, const resources::terrain*);
 
 		// basic height editing
 		void raise_terrain(terrain_vertex_position, std::uint8_t amount);
+		[[deprecated]]
 		void raise_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void lower_terrain(terrain_vertex_position, uint8_t amount);
+		[[deprecated]]
 		void lower_terrain(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
 		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
+		[[deprecated]]
 		void set_terrain_height(tile_position, rect_corners, bool left_tri, std::uint8_t amount);
+
+		void raise_cliff(tile_position);
+		void lower_cliff(tile_position);
 
 		enum class edit_target : bool 
 		{

@@ -720,7 +720,7 @@ namespace hades
 	void level_editor_terrain::on_click(mouse_pos p)
 	{
 		// called for cliff layer tools
-		const auto tile_func = [&](const tile_position pos) {
+		const auto tile_func = [&](const tile_position) {
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::raise_cliff:

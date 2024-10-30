@@ -1166,7 +1166,6 @@ namespace hades
 		assert(shared.settings->editor_terrain);
 		
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto tile_sizef_half = tile_sizef / 2.f;
 		const auto map_size_tiles = get_size(shared.map.tile_layer);
 
 		if (shared.edit_target_style == mutable_terrain_map::edit_target::tile)

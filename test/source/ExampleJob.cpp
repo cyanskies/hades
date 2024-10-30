@@ -16,7 +16,7 @@ struct needed_info
 	//return true;
 };
 
-bool exampleJob(needed_info data)
+bool exampleJob(needed_info)
 {
 	return true;
 }

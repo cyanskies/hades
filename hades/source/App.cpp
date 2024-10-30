@@ -388,7 +388,6 @@ namespace hades
 			//assert_floating_point_exceptions();
 			#endif
 		}
-		return;
 	}
 
 	void App::cleanUp()

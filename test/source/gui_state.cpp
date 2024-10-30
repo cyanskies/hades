@@ -24,7 +24,7 @@ void gui_state::update(hades::time_duration deltaTime, const sf::RenderTarget&, 
 	_gui.frame_end();
 }
 
-void gui_state::draw(sf::RenderTarget &target, hades::time_duration deltaTime)
+void gui_state::draw(sf::RenderTarget &target, hades::time_duration)
 {
 	target.setView(_view);
 	target.resetGLStates();

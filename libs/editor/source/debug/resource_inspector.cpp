@@ -1177,7 +1177,7 @@ namespace hades::data
 	// TODO: game-system editor: not configurable with the current editor
 	// TODO: level-scripts editor: not configurable with the current editor
 
-	void add_or_update_curve_on_object(hades::data::data_manager& d, 
+	static void add_or_update_curve_on_object(hades::data::data_manager& d, 
 		hades::resources::object& o, const hades::resources::curve* c,
 		const hades::resources::curve_default_value& value)
 	{
@@ -1268,7 +1268,7 @@ namespace hades::data
 					return;
 				};
 
-				const auto rem_base = [this](data::data_manager&, unique_id id) {
+				const auto rem_base = [this](const unique_id id) {
 					const auto base = std::ranges::find(_obj->base, id);
 					_obj->base.erase(base);
 					return;
@@ -1407,12 +1407,12 @@ namespace hades::data
 
 				g.separator_horizontal();
 
-				const auto add_system = [this](data::data_manager& d, unique_id id) {
+				const auto add_system = [this](data::data_manager& d, const unique_id id) {
 					_obj->systems.emplace_back(d.make_resource_link<resources::system>(id, _obj->id));
 					return;
 				};
 
-				const auto rem_system = [this](data::data_manager& d, unique_id id) {
+				const auto rem_system = [this](const unique_id id) {
 					const auto iter = std::ranges::find(_obj->systems, id);
 					_obj->systems.erase(iter);
 					return;
@@ -1425,12 +1425,12 @@ namespace hades::data
 
 				g.separator_horizontal();
 
-				const auto add_rsystem = [this](data::data_manager& d, unique_id id) {
+				const auto add_rsystem = [this](data::data_manager& d, const unique_id id) {
 					_obj->render_systems.emplace_back(d.make_resource_link<resources::render_system>(id, _obj->id));
 					return;
 				};
 
-				const auto rem_rsystem = [this](data::data_manager& d, unique_id id) {
+				const auto rem_rsystem = [this](const unique_id id) {
 					const auto iter = std::ranges::find(_obj->render_systems, id);
 					_obj->render_systems.erase(iter);
 					return;
@@ -1605,7 +1605,7 @@ namespace hades::data
 			return;
 		}
 
-		template<typename AddFunc, typename RemoveFunc>
+		template<std::invocable<data::data_manager&, unique_id> AddFunc, std::invocable<unique_id> RemoveFunc>
 		bool _update_list_ui(std::string_view label, resource_list& res,
 			data::data_manager& d, gui& g, AddFunc add, RemoveFunc remove)
 		{
@@ -1670,7 +1670,7 @@ namespace hades::data
 						const auto id_iter = std::ranges::find(res.attached_ids, id);
 						res.attached_ids.erase(id_iter);
 
-						std::invoke(remove, d, id);
+						std::invoke(remove, id);
 					}
 
 					if (!base_selected)

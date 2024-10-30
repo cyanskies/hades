@@ -354,7 +354,7 @@ namespace hades
 		template<typename Ty>
 		void parse_compressed_sequence(const data::parser_node& p, std::string_view target_str, std::vector<Ty>& out, std::size_t expected_size = {})
 		{
-			if (auto node = p.get_child(terrain_vertex_str);
+			if (auto node = p.get_child(target_str);
 				node)
 			{
 				if (node->is_sequence())

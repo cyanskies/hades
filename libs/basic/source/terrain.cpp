@@ -1454,7 +1454,7 @@ namespace hades::resources
 	void terrainset::serialise(const data::data_manager& d, data::writer& w) const
 	{
 		//terrainsets:
-		//	name: [terrains, terrains, terrains] // not a merable sequence, this will overwrite
+		//	name: [terrains, terrains, terrains] // not a mergable sequence, this will overwrite
 
 		w.write(d.get_as_string(id));
 		w.start_sequence();
@@ -1486,6 +1486,9 @@ namespace hades::resources
 
 		for (const auto& t : s.terrainsets)
 			d.get<terrainset>(t.id());
+
+		if (std::cmp_greater_equal(s.cliff_max * s.cliff_height + s.height_max, 255))
+			log_warning("Terrain Settings: height_max and cliff_max * cliff_height are too high; they should be less that 255 or the terrain renderer will overflow"sv);
 
 		s.loaded = true;
 		return;

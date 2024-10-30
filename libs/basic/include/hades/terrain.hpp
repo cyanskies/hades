@@ -101,12 +101,13 @@ namespace hades::resources
 		[[deprecated]] resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
-		std::uint8_t height_default = 100;
-		std::uint8_t height_min = 50; // TODO: shadows seem to break on terrain height 0, needs investigation
-		std::uint8_t height_max = 150;
+		// NOTE: cliff_max * cliff_height + height_max must be less the uint8_t max (255)
+		std::uint8_t height_default = 50;
+		std::uint8_t height_min = 1; // TODO: shadows seem to break on terrain height 0, needs investigation
+		std::uint8_t height_max = 130;
 		std::uint8_t cliff_default = 5;
 		std::uint8_t cliff_min = 1; // minimum height of a cliff(to prevent invisible cliffs)
-		std::uint8_t cliff_max = 10;
+		std::uint8_t cliff_max = 12;
 		std::uint8_t cliff_height = 10;
 	};
 

@@ -1,6 +1,7 @@
 #ifndef HADES_TERRAIN_HPP
 #define HADES_TERRAIN_HPP
 
+#include <bitset>
 #include <variant>
 
 #include "hades/resource_base.hpp"
@@ -290,6 +291,8 @@ namespace hades
 
 	// returns the row length of the terrain vertex data
 	terrain_index_t get_width(const terrain_map&) noexcept;
+	// returns the row length of the map in tiles
+	tile_index_t get_tile_width(const terrain_map&) noexcept;
 	// returns the size of the map expressed in tiles
 	tile_position get_size(const terrain_map&);
 	// size of the map expressed in vertex
@@ -370,8 +373,17 @@ namespace hades
 
 	// index array using rectangle_math.hpp::hades::rect_corners
 	// useful for deciding the surface tile near cliffs
+	[[deprecated]]
 	std::array<bool, 4> get_cliffs_corners(tile_position, const terrain_map&);
+
+	struct adjacent_cliffs
+	{
+		std::array<bool, 4> corners;
+		std::array<int8_t, 4> edges;
+	};
 	
+	adjacent_cliffs get_adjacent_cliffs(tile_position, const terrain_map&);
+
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
 
 	//NOTE: the result of this function may contain duplicates

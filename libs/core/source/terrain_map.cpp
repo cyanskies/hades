@@ -361,7 +361,7 @@ namespace hades
 	}
 
 	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p, float tile_size,
-		const triangle_height_data& h, rect_float texture_quad, bool backface_tex = false,
+		const triangle_height_data& h, rect_float texture_quad,
 		const std::array<std::uint8_t, 4> &shadow_h = {}, 
 		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
 	{
@@ -382,39 +382,19 @@ namespace hades
 		
 		if (h.triangle_type == terrain_map::triangle_uphill)
 		{
-			if (!backface_tex)
-			{
-				// uphill triangulation, first triangle edges against the left and top sides of the quad
-				//						second triangle edges against the right and bottom sides of the quad
-				return poly_quad{
-					//first triangle
-					sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { tex_left_x,	texture_quad.y } },	//top left
-					sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_left_x,	tex_bottom_y } },	//bottom left
-					sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,	texture_quad.y } },	//top right
-					//second triangle
-					sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_right_x,	texture_quad.y } },	//top right
-					sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_left_x,	tex_bottom_y } },	//bottom left		
-					sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,	tex_bottom_y } },	//bottom right
-				};
-			}
-			else
-			{
-				// inverted tex coords for reverse cliff faces
-				return poly_quad{
-					//first triangle
-					sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { tex_right_x,	texture_quad.y } },	//top left
-					sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_left_x,	texture_quad.y } },	//top right
-					sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,	tex_bottom_y } },	//bottom left
-					//second triangle
-					sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_left_x,	texture_quad.y } },	//top right
-					sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_left_x,	tex_bottom_y } },	//bottom right		
-					sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,	tex_bottom_y } },	//bottom left
-				};
-			}
+			return poly_quad{
+				//first triangle
+				sf::Vertex{ { p[0].x, p[0].y },	sf_col[0], { tex_left_x,	texture_quad.y	} },	//top left
+				sf::Vertex{ { p[1].x, p[1].y },	sf_col[1], { tex_left_x,	tex_bottom_y	} },	//bottom left 
+				sf::Vertex{ { p[2].x, p[2].y },	sf_col[2], { tex_right_x,	texture_quad.y	} },	//top right
+				//second triangle
+				sf::Vertex{ { p[3].x, p[3].y },	sf_col[3], { tex_right_x,	texture_quad.y	} },	//top right
+				sf::Vertex{ { p[4].x, p[4].y },	sf_col[4], { tex_left_x,	tex_bottom_y	} },	//bottom left		
+				sf::Vertex{ { p[5].x, p[5].y },	sf_col[5], { tex_right_x,	tex_bottom_y	} },	//bottom right
+			};
 		}
 		else
 		{
-			// TODO:  backface tris?
 			// downhill triangulation, first triangle edges against the left and bottom sides of the quad
 			//						second triangle edges against the right and top sides of the quad
 			return poly_quad{
@@ -430,19 +410,31 @@ namespace hades
 		}
 	}
 
-	static std::uint8_t get_texture_index(const resources::resource_link<resources::texture>& tex,
+	struct map_tile
+	{
+		std::array<world_vector_t, 6> positions;
+		triangle_height_data height;
+		resources::tile_size_t left;
+		resources::tile_size_t top;
+
+		using texture_index_t = std::uint8_t;
+
+		texture_index_t texture = {};
+	};
+
+	static map_tile::texture_index_t get_texture_index(const resources::resource_link<resources::texture>& tex,
 		std::vector<resources::resource_link<resources::texture>>& texture_table)
 	{
-		constexpr auto max_index = std::numeric_limits<std::uint8_t>::max();
+		constexpr auto max_index = std::numeric_limits<map_tile::texture_index_t>::max();
 		const auto table_size = size(texture_table);
 		if (std::cmp_equal(table_size, max_index))
 		{
-			log_warning("Terrain map has exceeded the per map texture limit (255)"sv);
+			log_warning(std::format("Terrain map has exceeded the per map texture limit ({})", max_index));
 			return max_index;
 		}
 
-		const auto tex_size = integer_clamp_cast<std::uint8_t>(table_size);
-		for (auto j = std::uint8_t{}; j < tex_size; ++j)
+		const auto tex_size = integer_clamp_cast<map_tile::texture_index_t>(table_size);
+		for (auto j = map_tile::texture_index_t{}; j < tex_size; ++j)
 		{
 			if (texture_table[j] == tex)
 				return j;
@@ -452,19 +444,11 @@ namespace hades
 		return tex_size;
 	}
 
-	struct map_tile
-	{
-		std::array<world_vector_t, 6> positions;
-		triangle_height_data height;
-		resources::tile_size_t left;
-		resources::tile_size_t top;
-		std::uint8_t texture = {};
-		bool backface_quad = false;
-	};
-
+	// never pass an empty tile_buffer to this func
 	static void make_layer_regions(mutable_terrain_map::shared_data& shared, 
-		const std::vector<map_tile>& tile_buffer, const float tile_sizef)
+		const std::span<const map_tile> tile_buffer, const float tile_sizef)
 	{
+		assert(!tile_buffer.empty());
 		auto current_region = mutable_terrain_map::vertex_region{
 			shared.quads.size(),
 			{},
@@ -488,7 +472,7 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords, tile.backface_quad);
+			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords);
 			shared.quads.append(quad);
 		}
 
@@ -502,6 +486,8 @@ namespace hades
 		const rect_int terrain_area)
 	{
 		tile_buffer.clear();
+		tile_buffer.reserve(integer_clamp_cast<std::size_t>(terrain_area.x) * integer_clamp_cast<std::size_t>(terrain_area.y));
+
 		const auto map_size_tiles = get_size(shared.map.tile_layer);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
@@ -528,7 +514,6 @@ namespace hades
 			return;
 
 		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
-		
 		make_layer_regions(shared, tile_buffer, tile_sizef);
 		return;
 	}
@@ -537,103 +522,104 @@ namespace hades
 	{
 		std::array<world_vector_t, 6> positions;
 		triangle_height_data height;
-		bool backface_quad = false;
 	};
 
 	// swap a tile facing, so it doesnt get culled
 	// cliffs are all uphill by default, so this makes them into reversed
 	// downhill quads
-	template<typename T>
-		requires std::same_as<T, map_tile> || std::same_as<T, basic_map_tile>
-	static constexpr void swap_cliff_winding(T& t) noexcept
-	{
-		assert(t.height.triangle_type == terrain_map::triangle_uphill);
+	//template<typename T>
+	//	requires std::same_as<T, map_tile> || std::same_as<T, basic_map_tile>
+	//[[deprecated]]
+	//static constexpr void swap_cliff_winding(T& t) noexcept
+	//{
+	//	assert(t.height.triangle_type == terrain_map::triangle_uphill);
 
-		constexpr auto swap_winding = []<typename T>(std::array<T, 6>& a) noexcept {
-			std::swap(a[1], a[2]);
-			std::swap(a[4], a[5]);
-			return;
-		};
+	//	constexpr auto swap_winding = []<typename T>(std::array<T, 6>& a) noexcept {
+	//		std::swap(a[1], a[2]);
+	//		std::swap(a[4], a[5]);
+	//		return;
+	//	};
 
-		swap_winding(t.height.height);
-		swap_winding(t.positions);
+	//	swap_winding(t.height.height);
+	//	swap_winding(t.positions);
 
-		t.backface_quad = !t.backface_quad;
-		return;
-	}
+	//	// deprecate
+	//	t.backface_quad = !t.backface_quad;
+	//	return;
+	//}
 
 	// generate correct vertex positions for varius cliff types
-	[[deprecated]]
-	static constexpr basic_map_tile make_diag_cliff(const vector2_float& pos_f, const float tile_sizef,
-		const triangle_height_data& triangle_height, const terrain_map::cliff_info cliffs) noexcept
-	{
-		const auto h = get_height_for_diag_edge(triangle_height);
-		const auto left_low = std::midpoint(h[0], h[1]) < std::midpoint(h[2], h[3]);
+	//[[deprecated]]
+	//static constexpr basic_map_tile make_diag_cliff(const vector2_float& pos_f, const float tile_sizef,
+	//	const triangle_height_data& triangle_height, const terrain_map::cliff_info cliffs) noexcept
+	//{
+	//	const auto h = get_height_for_diag_edge(triangle_height);
+	//	const auto left_low = std::midpoint(h[0], h[1]) < std::midpoint(h[2], h[3]);
 
-		const auto low = std::array{
-			std::min(h[0], h[2]), std::min(h[1], h[3])
-		};
+	//	const auto low = std::array{
+	//		std::min(h[0], h[2]), std::min(h[1], h[3])
+	//	};
 
-		const auto high = std::array{
-			std::max(h[0], h[2]), std::max(h[1], h[3])
-		};
+	//	const auto high = std::array{
+	//		std::max(h[0], h[2]), std::max(h[1], h[3])
+	//	};
 
-		auto r_pos_right = vector2_float{};
-		auto r_pos_left = vector2_float{};
+	//	auto r_pos_right = vector2_float{};
+	//	auto r_pos_left = vector2_float{};
 
-		if (cliffs.triangle_type == enum_type(terrain_map::triangle_uphill))
-		{
-			r_pos_right = vector2_float{
-				pos_f.x + tile_sizef,
-				pos_f.y
-			};
+	//	if (cliffs.triangle_type == enum_type(terrain_map::triangle_uphill))
+	//	{
+	//		r_pos_right = vector2_float{
+	//			pos_f.x + tile_sizef,
+	//			pos_f.y
+	//		};
 
-			r_pos_left = vector2_float{
-				pos_f.x,
-				pos_f.y + tile_sizef
-			};
-		}
-		else
-		{
-			r_pos_right = vector2_float{
-				pos_f.x + tile_sizef,
-				pos_f.y + tile_sizef
-			};
+	//		r_pos_left = vector2_float{
+	//			pos_f.x,
+	//			pos_f.y + tile_sizef
+	//		};
+	//	}
+	//	else
+	//	{
+	//		r_pos_right = vector2_float{
+	//			pos_f.x + tile_sizef,
+	//			pos_f.y + tile_sizef
+	//		};
 
-			r_pos_left = pos_f;
-		}
+	//		r_pos_left = pos_f;
+	//	}
 
-		const auto reverse_winding = !(left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_downhill) ||
-			!left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_uphill));
+	//	const auto reverse_winding = !(left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_downhill) ||
+	//		!left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_uphill));
 
-		const auto positions = std::array{
-			//first triangle
-			r_pos_left,		//top left
-			r_pos_left,		//bottom left
-			r_pos_right, 	//top right
-			//second triangle
-			r_pos_right,	//top right
-			r_pos_left,		//bottom left
-			r_pos_right,	//bottom right
-		};
+	//	const auto positions = std::array{
+	//		//first triangle
+	//		r_pos_left,		//top left
+	//		r_pos_left,		//bottom left
+	//		r_pos_right, 	//top right
+	//		//second triangle
+	//		r_pos_right,	//top right
+	//		r_pos_left,		//bottom left
+	//		r_pos_right,	//bottom right
+	//	};
 
-		const auto tris = triangle_height_data{
-			{
-				high[0], low[0], high[1],
-				high[1], low[0], low[1]
-			},
-			terrain_map::triangle_uphill
-		};
+	//	const auto tris = triangle_height_data{
+	//		{
+	//			high[0], low[0], high[1],
+	//			high[1], low[0], low[1]
+	//		},
+	//		terrain_map::triangle_uphill
+	//	};
 
-		auto tile = basic_map_tile{
-			positions,
-			tris
-		};
+	//	auto tile = basic_map_tile{
+	//		positions,
+	//		tris
+	//	};
 
-		if (reverse_winding)
-			swap_cliff_winding(tile);
-		return tile;
-	}
+	//	if (reverse_winding)
+	//		swap_cliff_winding(tile);
+	//	return tile;
+	//}
 
 	// TODO: reduce params
 	static basic_map_tile make_right_cliff(const vector2_int& pos, const vector2_float& pos_f,
@@ -690,8 +676,8 @@ namespace hades
 			tris
 		};
 
-		if (backface)
-			swap_cliff_winding(tile);
+		//if (backface)
+			//swap_cliff_winding(tile);
 		return tile;
 	}
 
@@ -750,44 +736,70 @@ namespace hades
 			tris
 		};
 
-		if (backface)
-			swap_cliff_winding(tile);
+		//if (backface)
+			//swap_cliff_winding(tile);
 		return tile;
+	}
+
+	static void generate_top_cliffs(mutable_terrain_map::shared_data& shared,
+		std::vector<map_tile>& tile_buffer, std::int8_t height_diff, triangle_height_data surface_height,
+		triangle_height_data top_height, std::array<world_vector_t, 6> positions)
+	{
+
 	}
 
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
+		if (!shared.map.terrainset || !shared.map.terrainset->cliff_terrain)
+		{
+			log_error("Missing cliff data"sv);
+			return;
+		}
+
 		tile_buffer.clear();
 		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		const auto cliff_terrain = shared.map.terrainset->cliff_terrain.get();
+
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto index = to_1d_index(pos, map_size_tiles.x);
 			const auto cliff_index = index * 4;
 			using tile_type = terrain_map::cliff_layer_layout;
-			const auto& surface_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::surface));
-			
-			const auto pos_f = vector2_float{
-				float_cast(pos.x) * tile_sizef,
-				float_cast(pos.y) * tile_sizef
-			};
+			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
+			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
+			const auto world_pos_f = static_cast<vector2_float>(world_pos);
+			const auto surface_triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
+			const auto surface_positions = make_triangle_positions(world_pos_f, tile_sizef, surface_triangle_height.triangle_type);
 
-			// surface tile
-			if (surface_tile.tex)
+			// we have to generate a surface tile
+			const auto surface_tile_type = get_transition_type(cliffs.corners);
+			if (surface_tile_type != resources::transition_tile_type::none)
 			{
-				const auto positions = make_triangle_positions(pos_f, tile_sizef, triangle_height.triangle_type);
-				// get a index for the texture
-				const auto tex_index = get_texture_index(surface_tile.tex, shared.texture_table);
-				// add tile to the tile list
-				tile_buffer.emplace_back(positions, triangle_height, surface_tile.left, surface_tile.top, tex_index);
+				const auto& tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
+				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
+				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, tex_index);
 			}
+
+			// top cliff
+			if (cliffs.edges[enum_type(rect_edges::top)] > 0)
+			{
+				// get triangle_height for tile above,
+				// mix and match the hight and position values to create the correct tile
+				const auto tile_above = pos - tile_position{ 0, 1 };
+				// cliff edges[top] should be 0 if the tile was outside the world.
+				assert(within_world(tile_above, get_size(shared.map)));
+
+				//auto [cliff_positions, cliff_heights] = make_top_cliff
+			}
+			// right cliff
+			// bottom cliff
+			// left cliff
 			
-			const auto cliffs = get_cliff_info(pos, shared.map);
 
 			// diag cliff
-			const auto& diag_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::diag));
+			/*const auto& diag_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::diag));
 			if (diag_tile.tex && cliffs.diag)
 			{
 				const auto tex_index = get_texture_index(diag_tile.tex, shared.texture_table);
@@ -803,45 +815,43 @@ namespace hades
 				};
 
 				tile_buffer.emplace_back(tile);
-			}
+			}*/
 
 			// right cliff
-			const auto& right_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::right));
-			if (right_tile.tex && cliffs.right && pos.x < map_size_tiles.x)
-			{
-				const auto tex_index = get_texture_index(right_tile.tex, shared.texture_table);
-				const auto basic_tile = make_right_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
-				
-				const auto tile = map_tile{ 
-					basic_tile.positions,
-					basic_tile.height,
-					right_tile.left,
-					right_tile.top,
-					tex_index,
-					basic_tile.backface_quad
-				};
+			//const auto& right_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::right));
+			//if (right_tile.tex && cliffs.right && pos.x < map_size_tiles.x)
+			//{
+			//	const auto tex_index = get_texture_index(right_tile.tex, shared.texture_table);
+			//	const auto basic_tile = make_right_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
+			//	
+			//	const auto tile = map_tile{ 
+			//		basic_tile.positions,
+			//		basic_tile.height,
+			//		right_tile.left,
+			//		right_tile.top,
+			//		tex_index
+			//	};
 
-				tile_buffer.emplace_back(tile);
-			}
-			
-			// bottom cliff
-			const auto& bottom_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::bottom));
-			if (bottom_tile.tex && cliffs.bottom && pos.y < map_size_tiles.y)
-			{
-				const auto tex_index = get_texture_index(bottom_tile.tex, shared.texture_table);
-				const auto basic_tile = make_bottom_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
+			//	tile_buffer.emplace_back(tile);
+			//}
+			//
+			//// bottom cliff
+			//const auto& bottom_tile = get_tile_at(shared.map.cliffs, cliff_index + enum_type(tile_type::bottom));
+			//if (bottom_tile.tex && cliffs.bottom && pos.y < map_size_tiles.y)
+			//{
+			//	const auto tex_index = get_texture_index(bottom_tile.tex, shared.texture_table);
+			//	const auto basic_tile = make_bottom_cliff(pos, pos_f, tile_sizef, triangle_height, cliffs, shared.map, *shared.settings);
 
-				const auto tile = map_tile{
-					basic_tile.positions,
-					basic_tile.height,
-					right_tile.left,
-					right_tile.top,
-					tex_index,
-					basic_tile.backface_quad
-				};
+			//	const auto tile = map_tile{
+			//		basic_tile.positions,
+			//		basic_tile.height,
+			//		right_tile.left,
+			//		right_tile.top,
+			//		tex_index
+			//	};
 
-				tile_buffer.emplace_back(tile);
-			}
+			//	tile_buffer.emplace_back(tile);
+			//}
 			return;
 		});
 
@@ -872,6 +882,8 @@ namespace hades
 				tile_sizef,
 				tile_sizef
 		};
+
+		// TODO: generate grid on cliff edges?
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto position = vector2_float{
@@ -1155,7 +1167,7 @@ namespace hades
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, {}, light_info.shadow_height, normals);
+			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
 
 			shared.quads.append(quad);
 
@@ -1294,9 +1306,10 @@ namespace hades
 
 		const auto tiled_area = static_cast<vector2_int>(size(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
+		// working buffer to sort tiles in
+		// TODO: store this in the terrain_map so we don't have to alloc every map update
 		auto tile_buffer = std::vector<hades::map_tile>{};
-		tile_buffer.reserve(integer_cast<std::size_t>(tiled_area.x) * integer_cast<std::size_t>(tiled_area.y));
-
+		
 		const auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
 		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, _show_shadows, _show_grid);

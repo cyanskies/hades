@@ -221,6 +221,7 @@ namespace hades
 	tile_position to_tiles(vector2_float real_pixels, resources::tile_size_t tile_size) noexcept;
 	//reverse of the two above functions
 	[[deprecated]] int32 to_pixels(int32 tiles, resources::tile_size_t tile_size) noexcept;
+	// TODO: rename to_world_units
 	vector2_int to_pixels(tile_position tiles, resources::tile_size_t tile_size) noexcept;
 
 	//throws tile_error, if the tile_map is malformed

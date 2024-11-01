@@ -668,6 +668,11 @@ namespace hades
 		return m.width;
 	}
 
+	tile_index_t get_tile_width(const terrain_map& m) noexcept
+	{
+		return m.width - 1;
+	}
+
 	tile_position get_size(const terrain_map& t)
 	{
 		if (t.width == 0 || t.terrain_vertex.empty())
@@ -794,6 +799,7 @@ namespace hades
 		}
 	}
 
+	[[deprected]]
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept
 	{
 		using max_func = const std::uint8_t& (*)(const std::uint8_t&, const std::uint8_t&) noexcept;
@@ -843,6 +849,53 @@ namespace hades
 
 		assert(false);
 		return {};
+	}
+
+	adjacent_cliffs get_adjacent_cliffs(const tile_position p, const terrain_map& m)
+	{
+		const auto tile_width = get_tile_width(m);
+		const auto index = to_tile_index(p, m);
+		const auto our_layer = m.cliff_layer[index];
+		const auto world_size = get_size(m);
+		
+		const auto adjacent_tiles = std::array<tile_position, 4>{
+			p - tile_position{ 0, 1 },
+			p + tile_position{ 1, 0 },
+			p + tile_position{ 0, 1 },
+			p - tile_position{ 1, 0 }
+		};
+
+		const auto to_cliff_layer = [&](const auto pos) {
+			if (within_world(pos, world_size))
+			{
+				const auto i = to_tile_index(pos, m);
+				const auto cliff_layer = m.cliff_layer[i];
+				return integer_clamp_cast<std::int8_t>(our_layer - cliff_layer);
+			}
+			return std::int8_t{};
+		};
+
+		adjacent_cliffs out [[indeterminate]];
+		std::ranges::transform(adjacent_tiles, std::begin(out.edges), to_cliff_layer);
+
+		const auto adjacent_diag = std::array<tile_position, 4>{
+			p + tile_position{ -1, -1 }, // top_left
+			p + tile_position{ 1, -1 }, // top_right
+			p + tile_position{ 1, 1 }, // bottom_right
+			p + tile_position{ -1, 1 } // bottom_left
+		};
+
+		std::array<int8_t, 4> diag_cliffs [[indeterminate]];
+		std::ranges::transform(adjacent_diag, std::begin(diag_cliffs), to_cliff_layer);
+
+		out.corners = {
+			out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::top_left)] != 0,
+			out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::top_right)] != 0,
+			out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_right)] != 0,
+			out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_left)] != 0
+		};
+
+		return out;
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, const terrain_vertex_position p)

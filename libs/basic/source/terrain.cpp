@@ -870,7 +870,7 @@ namespace hades
 			{
 				const auto i = to_tile_index(pos, m);
 				const auto cliff_layer = m.cliff_layer[i];
-				return integer_clamp_cast<std::int8_t>(our_layer - cliff_layer);
+				return integer_clamp_cast<std::int8_t>(cliff_layer - our_layer);
 			}
 			return std::int8_t{};
 		};

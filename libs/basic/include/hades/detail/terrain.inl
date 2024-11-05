@@ -271,6 +271,7 @@ namespace hades
 		const auto index = to_tile_index(pos, m);
 		assert(index < size(m.cliff_layer));
 		m.cliff_layer[index] = std::clamp(std::invoke(f, m.cliff_layer[index]), settings.cliff_min, settings.cliff_max);
+		clear_ramp(pos, m);
 		return;
 	}
 }

@@ -106,8 +106,9 @@ namespace hades
 		bottom,
 		left,
 		uphill,
+		end = uphill,
 		downhill,
-		end
+		end_diag
 	};
 
 	enum class [[deprecated]] rect_diag : std::uint8_t {

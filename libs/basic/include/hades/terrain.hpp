@@ -103,9 +103,12 @@ namespace hades::resources
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
 		// NOTE: cliff_max * cliff_height + height_max must be less than uint8_t max (255)
-		std::uint8_t height_default = 50;
+		//		these limits are currently implemeentation dependent
+		//		they will be more generous once we write a custom frontend
+		//		to replace SFML
+		std::uint8_t height_default = 31;
 		std::uint8_t height_min = 1; // TODO: shadows seem to break on terrain height 0, needs investigation
-		std::uint8_t height_max = 130;
+		std::uint8_t height_max = 62;
 		std::uint8_t cliff_default = 5;
 		std::uint8_t cliff_min = 1; // minimum height of a cliff(to prevent invisible cliffs)
 		std::uint8_t cliff_max = 12;
@@ -172,8 +175,12 @@ namespace hades
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
 		std::vector<terrain_id_t> terrain_vertex;
-		std::vector<std::uint8_t> heightmap;
-		std::vector<std::uint8_t> cliff_layer;
+		using vertex_height_t = std::uint8_t;
+		std::vector<vertex_height_t> heightmap;
+		using cliff_layer_t = std::uint8_t;
+		std::vector<cliff_layer_t> cliff_layer;
+		using ramp_layer_t = std::bitset<4>;
+		std::vector<ramp_layer_t> ramp_layer;
 		[[deprecated]] std::vector<cliff_info> cliff_data;
 
 		//if empty, then should be generated
@@ -247,9 +254,14 @@ namespace hades
 		// Tile vertex of height (6 vertex per tile)
 		// Since adjacent tiles don't share vertex height,
 		// this is 6 times the size of tile_layer
-		std::vector<std::uint8_t> heightmap;
+		using vertex_height_t = raw_terrain_map::vertex_height_t;
+		std::vector<vertex_height_t> heightmap;
 		// Cliff layer per tile
-		std::vector<std::uint8_t> cliff_layer;
+		using cliff_layer_t = raw_terrain_map::cliff_layer_t;
+		std::vector<cliff_layer_t> cliff_layer;
+		// Ramp flag per tile
+		using ramp_layer_t = raw_terrain_map::ramp_layer_t;
+		std::vector<ramp_layer_t> ramp_layer;
 		// TODO: water level std::vector<std::uint8_t> water_level;
 		// Cliff info is stored per tile.
 		// Same size as tile_layer
@@ -352,7 +364,9 @@ namespace hades
 	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&, const resources::terrain_settings&);
 
 	// TODO: maybe deprecate the first overload
+	[[deprecated]]
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map, const resources::terrain_settings&);
+	[[deprecated]]
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept;
 
 	// returns the height at both end of an edge (left/top first)
@@ -367,7 +381,9 @@ namespace hades
 	//		eg: a tile owns cliffs that pass through its middle, and
 	//			cliffs to it's right and bottom
 	// This info is used mostly for rendering
+	[[deprecated]]
 	terrain_map::cliff_info get_cliff_info(tile_index_t, const terrain_map&) noexcept;
+	[[deprecated]]
 	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&);
 
 
@@ -383,6 +399,15 @@ namespace hades
 	};
 	
 	adjacent_cliffs get_adjacent_cliffs(tile_position, const terrain_map&);
+
+	enum class ramp_type : std::int8_t {
+		no_ramp = 0,
+		uphill = 1,
+		downhill = -1
+	};
+
+	// index with rect_edges
+	std::array<ramp_type, 4> get_adjacent_ramps(tile_position, const terrain_map&);
 
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);
 
@@ -430,6 +455,11 @@ namespace hades
 
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_cliff_layer(tile_position pos, terrain_map&, const resources::terrain_settings&, Func&&);
+
+	// returns true for each bit if a ramp can be added to that tile(index using rect_edges)
+	terrain_map::ramp_layer_t can_add_ramp(tile_position, const terrain_map&);
+	void place_ramp(tile_position, terrain_map&);
+	void clear_ramp(tile_position, terrain_map&);
 
 	// TODO: change_cliff_layer
 

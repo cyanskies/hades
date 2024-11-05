@@ -741,29 +741,6 @@ namespace hades
 		return tile;
 	}
 
-	static map_tile make_cliff_tile(const std::array<world_vector_t, 6> positions,
-		const std::array<std::uint8_t, 2> top_edge,
-		const std::array<std::uint8_t, 2> bottom_edge,
-		const resources::tile_size_t tile_left,
-		const resources::tile_size_t tile_top, 
-		const map_tile::texture_index_t tex_index)
-	{
-		triangle_height_data new_height [[indeterminate]];
-		new_height.triangle_type = terrain_map::triangle_uphill;
-		new_height.height = {
-			// first tri
-			top_edge[0],
-			bottom_edge[0],
-			top_edge[1],
-			// second tri
-			top_edge[1],
-			bottom_edge[0],
-			bottom_edge[1]
-		};
-
-		return { positions, new_height, tile_left, tile_top, tex_index };
-	}
-
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
@@ -1568,6 +1545,11 @@ namespace hades
 		return;
 	}
 
+	void mutable_terrain_map::place_ramp(const tile_position p)
+	{
+		hades::place_ramp(p, _shared.map);
+		_needs_update = true;
+	}
 
 	[[deprecated]]
 	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)

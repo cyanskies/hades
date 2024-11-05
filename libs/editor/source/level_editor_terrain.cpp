@@ -159,11 +159,6 @@ namespace hades
 
 		auto map = to_terrain_map(std::move(map_raw), *_settings);
 		
-		//TODO: if size != to level xy, then resize the map
-		auto empty_map = make_map(size, _settings->editor_terrain ? _settings->editor_terrainset.get() : map.terrainset,
-			_empty_terrain, *_settings);
-		copy_heightmap(empty_map, map);
-
 		_current.terrain_set = map.terrainset;
 		_map.reset(std::move(map));
 		_map.set_sun_angle(_sun_angle); // TODO: temp
@@ -574,6 +569,8 @@ namespace hades
 			[[fallthrough]];
 		case brush_t::lower_cliff:
 			[[fallthrough]];
+		case brush_t::add_ramp:
+			[[fallthrough]];
 		case brush_t::raise_water:
 			[[fallthrough]];
 		case brush_t::lower_water:
@@ -666,7 +663,13 @@ namespace hades
 	{
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
-			_map.add_edit_target(pos);
+			if (_terrain_palette.brush == brush_type::add_ramp)
+			{
+				if (can_add_ramp(pos, _map.get_map()).any())
+					_map.add_edit_target(pos);
+			}
+			else
+				_map.add_edit_target(pos);
 		};
 
 		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
@@ -733,6 +736,9 @@ namespace hades
 				break;
 			case brush_type::lower_cliff:
 				_map.lower_cliff(p);
+				break;
+			case brush_type::add_ramp:
+				_map.place_ramp(p);
 				break;
 			/*case brush_type::raise_water:
 				break;

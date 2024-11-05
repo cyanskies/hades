@@ -209,9 +209,9 @@ struct std::formatter<hades::rect_edges, CharT> : std::formatter<std::basic_stri
 			"end"sv
 		};
 
-		static_assert(size(strings) == static_cast<std::size_t>(hades::rect_edges::end) + 1);
+		static_assert(size(strings) == static_cast<std::size_t>(hades::rect_edges::end_diag) + 1);
 
-		assert(re <= hades::rect_edges::end);
+		assert(re <= hades::rect_edges::end_diag);
 		return std::formatter<std::basic_string_view<CharT>, CharT>::format(strings[hades::enum_type(re)], ctx);
 	}
 };

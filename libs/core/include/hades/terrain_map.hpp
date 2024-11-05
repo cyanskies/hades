@@ -101,6 +101,8 @@ namespace hades
 		void raise_cliff(tile_position);
 		void lower_cliff(tile_position);
 
+		void place_ramp(tile_position);
+
 		enum class edit_target : bool 
 		{
 			vertex,

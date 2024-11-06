@@ -129,6 +129,8 @@ namespace hades::detail
 		void _save();
 		void _update_gui(time_duration);
 
+		std::string _mouse_pos_world;
+
 		bool _error_modal = false;
 		string _error_msg = "no error";
 

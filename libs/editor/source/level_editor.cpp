@@ -11,6 +11,10 @@
 #include "hades/properties.hpp"
 #include "hades/mouse_input.hpp"
 #include "hades/mission_editor.hpp"
+#include "hades/terrain.hpp"
+
+using namespace std::string_view_literals;
+using namespace std::string_literals;
 
 namespace hades::detail
 {
@@ -184,36 +188,53 @@ namespace hades::detail
 			const auto level_mouse_pos = vector2_float{ level_mouse_pos_sf.x, level_mouse_pos_sf.y };
 
 			const auto terrain_map = _component_peek_terrain();
-
-			const auto adapted_mouse_pos = terrain_map && _height_enabled ?
-				project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
-				: level_mouse_pos;
-
-			if (_active_brush != invalid_brush)
-				_generate_brush_preview(_active_brush, dt, adapted_mouse_pos);
-
-			const auto mouse_left = actions.find(input::mouse_left);
-			assert(mouse_left != std::end(actions));
-			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
-
-			if (mouse::is_click(_mouse_left))
-				_component_on_click(_active_brush, adapted_mouse_pos);
-			else if (mouse::is_drag_start(_mouse_left))
+			if (terrain_map)
 			{
-				const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
-				const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
-				const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
 
-				const auto adapted_drag_start = terrain_map && _height_enabled ?
-					project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings)
-					: drag_start_level;
+				const auto adapted_mouse_pos = terrain_map && _height_enabled ?
+					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
+					: level_mouse_pos;
 
-				_component_on_drag_start(_active_brush, adapted_drag_start);
+				const auto rounded_terrain_pos = tile_position{
+					integral_cast<tile_position::value_type>(adapted_mouse_pos.x, round_down_tag),
+					integral_cast<tile_position::value_type>(adapted_mouse_pos.y, round_down_tag)
+				};
+
+				const auto tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
+				//clamp to world limits
+				if (within_world(tile_pos, get_size(*terrain_map)))
+					_mouse_pos_world = std::format("Hovered Tile: {}", tile_pos);
+				else
+					_mouse_pos_world = "Hovered Tile: Outside World"sv;
+
+				if (_active_brush != invalid_brush)
+					_generate_brush_preview(_active_brush, dt, adapted_mouse_pos);
+
+				const auto mouse_left = actions.find(input::mouse_left);
+				assert(mouse_left != std::end(actions));
+				mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
+
+				if (mouse::is_click(_mouse_left))
+					_component_on_click(_active_brush, adapted_mouse_pos);
+				else if (mouse::is_drag_start(_mouse_left))
+				{
+					const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
+					const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
+					const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
+
+					const auto adapted_drag_start = terrain_map && _height_enabled ?
+						project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings)
+						: drag_start_level;
+
+					_component_on_drag_start(_active_brush, adapted_drag_start);
+				}
+				else if (mouse::is_dragging(_mouse_left))
+					_component_on_drag(_active_brush, adapted_mouse_pos);
+				else if (mouse::is_drag_end(_mouse_left))
+					_component_on_drag_end(_active_brush, adapted_mouse_pos);
 			}
-			else if (mouse::is_dragging(_mouse_left))
-				_component_on_drag(_active_brush, adapted_mouse_pos);
-			else if (mouse::is_drag_end(_mouse_left))
-				_component_on_drag_end(_active_brush, adapted_mouse_pos);
+			else
+				log_error("No terrain_map provided to level_editor_component::peek_terrain"sv);
 		}
 
 		_update_gui(dt);
@@ -305,9 +326,6 @@ namespace hades::detail
 		_gui.update(dt);
 		_gui.frame_begin();
 
-		using namespace std::string_view_literals;
-		using namespace std::string_literals;
-
 		constexpr auto error_str = "error"sv;
 
 		//FIXME: remove this bool, just call open_model directly
@@ -386,10 +404,11 @@ namespace hades::detail
 		_gui.main_toolbar_end();
 
 		//make toolbox window
-		assert(_toolbox_width);
-		assert(_toolbox_auto_width);
+		assert(_toolbox_width);			// remove
+		assert(_toolbox_auto_width);	// remove
 
 		_gui.next_window_position({ 0.f, toolbar_y2 });
+		// TODO: we don't need anything this complicated, let users resize width as they wish
 		const auto toolbox_size = [](int32 width, int32 auto_width, float window_width)->float {
 			constexpr auto auto_mode = cvars::default_value::editor_toolbox_width;
 			if (width == auto_mode)
@@ -403,7 +422,9 @@ namespace hades::detail
 			gui::window_flags::panel | gui::window_flags::no_bring_to_front_on_focus);
 		assert(toolbox_created);
 		//store toolbox x2 for use in the input update
+		// TODO: remove
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
+		_gui.text(_mouse_pos_world);
 		_gui.window_end();
 
 		// minimap window
@@ -715,7 +736,7 @@ namespace hades::detail
 
 		//TODO:
 		//make infobox
-		//make minimap
+		// scrollbars for map navigation
 
 		_update_component_gui(_gui, _window_flags);
 

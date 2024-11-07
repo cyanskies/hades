@@ -899,6 +899,22 @@ namespace hades
 		return static_cast<resources::transition_tile_type>(type);
 	}
 
+	resources::transition_tile_type get_transition_type(const std::bitset<4> b ) noexcept
+	{
+		auto type = std::underlying_type_t<resources::transition_tile_type>{};
+
+		if (b.test(enum_type(rect_corners::top_left)))
+			type += 8u;
+		if (b.test(enum_type(rect_corners::top_right)))
+			type += 1u;
+		if (b.test(enum_type(rect_corners::bottom_right)))
+			type += 2u;
+		if (b.test(enum_type(rect_corners::bottom_left)))
+			type += 4u;
+
+		return resources::transition_tile_type{ type };
+	}
+
 	tile_corners get_terrain_at_tile(const terrain_map &m, tile_position p, const resources::terrain_settings& s)
 	{
 		const auto w = get_width(m);
@@ -952,10 +968,10 @@ namespace hades
 			const auto world_size = get_size(m);
 			assert(within_world(p, world_size));
 			const auto start_index = to_tile_index(p, world_size.x);
-			const auto our_ramp = m.ramp_layer[start_index];
+			const auto our_ramp = std::bitset<4>{ m.ramp_layer[start_index] };
 
-			std::array<ramp_type, 4> ret [[indeterminate]];
-			ret.fill(ramp_type::no_ramp);
+			auto ret = std::array<ramp_type, 4>{};
+			static_assert(ramp_type{} == ramp_type::no_ramp, "Function expects default value in ret to be no_ramp");
 
 			const auto cliff_layer = m.cliff_layer[start_index];
 			for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
@@ -967,7 +983,7 @@ namespace hades
 					auto ramp_flags = true;
 					if constexpr (CheckRampFlag)
 					{
-						const auto next_ramp = m.ramp_layer[next_index].test(enum_type(reverse_edges[enum_type(i)]));
+						const auto next_ramp = std::bitset<4>{ m.ramp_layer[next_index] }.test(enum_type(reverse_edges[enum_type(i)]));
 						ramp_flags = our_ramp.test(enum_type(i)) && next_ramp;
 					}
 
@@ -1005,11 +1021,12 @@ namespace hades
 		const auto world_size = get_size(m);
 		const auto start_index = to_tile_index(p, m);
 		const auto our_layer = m.cliff_layer[start_index];
-		const auto our_ramp = m.ramp_layer[start_index];
+		const auto our_ramp = std::bitset<4>{ m.ramp_layer[start_index] };
 		const auto our_ramp_types = ramp::check_ramp_impl<true>(p, m);
 
 		// check edges
-		adjacent_cliffs out [[indeterminate]];
+		auto out = adjacent_cliffs{};
+		std::array<std::int8_t, 4> neighbours [[indeterminate]];
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
 			const auto pos = ramp::adj_tiles[enum_type(i)] + p;
@@ -1031,52 +1048,44 @@ namespace hades
 			if(our_ramp.test(enum_type(i)))
 				cliff = {};
 
-			out.edges[enum_type(i)] = cliff;
+			neighbours[enum_type(i)] = cliff;
+			out.edges.set(enum_type(i), cliff > 0);
 		}
 
-		// this function works well, but doesn't detect the gaps left by ramps
-		// and accidently fills the centre of ramps with cliff texture
-		//const auto tile_width = get_tile_width(m);
-		//const auto index = to_tile_index(p, m);
-		//const auto our_layer = m.cliff_layer[index];
-		//const auto world_size = get_size(m);
+		out.corners.set(enum_type(rect_corners::top_left), neighbours[enum_type(rect_edges::left)] != 0 || neighbours[enum_type(rect_edges::top)] != 0);
+		out.corners.set(enum_type(rect_corners::top_right), neighbours[enum_type(rect_edges::right)] != 0 || neighbours[enum_type(rect_edges::top)] != 0);
+		out.corners.set(enum_type(rect_corners::bottom_right), neighbours[enum_type(rect_edges::right)] != 0 || neighbours[enum_type(rect_edges::bottom)] != 0);
+		out.corners.set(enum_type(rect_corners::bottom_left), neighbours[enum_type(rect_edges::left)] != 0 || neighbours[enum_type(rect_edges::bottom)] != 0);
 
-		//const auto adjacent_tiles = std::array<tile_position, 4>{
-		//	p - tile_position{ 0, 1 },
-		//	p + tile_position{ 1, 0 },
-		//	p + tile_position{ 0, 1 },
-		//	p - tile_position{ 1, 0 }
+		if (our_ramp.any())
+			out.corners.set();
+
+		//const auto to_cliff_layer = [&](const auto pos)->bool noexcept {
+		//	if (within_world(pos, world_size))
+		//	{
+		//		const auto i = to_tile_index(pos, m);
+		//		const auto cliff_layer = m.cliff_layer[i];
+		//		return integer_clamp_cast<std::int8_t>(cliff_layer - our_layer) > 0;
+		//	}
+		//	return false;
 		//};
 
-		const auto to_cliff_layer = [&](const auto pos) {
-			if (within_world(pos, world_size))
-			{
-				const auto i = to_tile_index(pos, m);
-				const auto cliff_layer = m.cliff_layer[i];
-				return integer_clamp_cast<std::int8_t>(cliff_layer - our_layer);
-			}
-			return std::int8_t{};
-			};
+		//const auto adjacent_diag = std::array<tile_position, 4>{
+		//	p + tile_position{ -1, -1 }, // top_left
+		//	p + tile_position{ 1, -1 }, // top_right
+		//	p + tile_position{ 1, 1 }, // bottom_right
+		//	p + tile_position{ -1, 1 } // bottom_left
+		//};
 
-		//adjacent_cliffs out [[indeterminate]];
-		//std::ranges::transform(adjacent_tiles, std::begin(out.edges), to_cliff_layer);
+		//std::array<int8_t, 4> diag_cliffs [[indeterminate]];
+		//std::ranges::transform(adjacent_diag, std::begin(diag_cliffs), to_cliff_layer);
 
-		const auto adjacent_diag = std::array<tile_position, 4>{
-			p + tile_position{ -1, -1 }, // top_left
-			p + tile_position{ 1, -1 }, // top_right
-			p + tile_position{ 1, 1 }, // bottom_right
-			p + tile_position{ -1, 1 } // bottom_left
-		};
-
-		std::array<int8_t, 4> diag_cliffs [[indeterminate]];
-		std::ranges::transform(adjacent_diag, std::begin(diag_cliffs), to_cliff_layer);
-
-		out.corners = {
-			out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::top_left)] != 0,
-			out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::top_right)] != 0,
-			out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_right)] != 0,
-			out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_left)] != 0
-		};
+		//out.corners = {
+		//	out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::top_left)] != 0,
+		//	out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::top_right)] != 0,
+		//	out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_right)] != 0,
+		//	out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_left)] != 0
+		//};
 
 		return out;
 	}
@@ -1327,7 +1336,7 @@ namespace hades
 				return { ramp_type::no_ramp, false };
 			const auto index = to_tile_index(tile, w_size.x);
 			const auto cliff = m.cliff_layer[index];
-			const auto ramp = m.ramp_layer[index].test(enum_type(ramp::reverse_edges[enum_type(edge)]));
+			const auto ramp = std::bitset<4>{ m.ramp_layer[index] }.test(enum_type(ramp::reverse_edges[enum_type(edge)]));
 			return { ramp::to_ramp_type(start_cliff, cliff), ramp };
 		};
 
@@ -1407,21 +1416,31 @@ namespace hades
 
 	// we can only add a ramp on the tile if the two ramps are on opposite sides of the tile
 	//	or the adjacent tiles are both uphill or both downhill
-	terrain_map::ramp_layer_t can_add_ramp(const tile_position p, const terrain_map& m)
+	std::bitset<4> can_add_ramp(const tile_position p, const terrain_map& m)
 	{
 		const auto world_size = get_size(m);
 		const auto starting_index = to_tile_index(p, world_size.x);
 		const auto starting_layer = m.cliff_layer[starting_index];
 
-		auto ret = terrain_map::ramp_layer_t{};
+		auto ret = std::bitset<4>{};
 		constexpr auto end = ramp::adj_tiles.size();
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
 			if (can_ramp(i, p, m) && !can_ramp(ramp::reverse_edges[enum_type(i)], p, m)) // we can only ramp if it's valid to ramp from both sides
-				ret[enum_type(i)] = can_ramp_one_edge(ramp::reverse_edges[enum_type(i)], ramp::adj_tiles[enum_type(i)] + p, m);
+				ret.set(enum_type(i), can_ramp_one_edge(ramp::reverse_edges[enum_type(i)], ramp::adj_tiles[enum_type(i)] + p, m));
 		}
 
 		return ret;		
+	}
+
+	static void set_ramp_flag(std::span<terrain_map::ramp_layer_t> ramp_layer, const tile_index_t index, const rect_edges edge)
+	{
+		assert(index < size(ramp_layer));
+		auto& ramp = ramp_layer[index];
+		auto bset = std::bitset<4>{ ramp };
+		bset.set(enum_type(edge));
+		ramp = integer_cast<terrain_map::ramp_layer_t>(bset.to_ulong());
+		return;
 	}
 
 	void place_ramp(const tile_position p, terrain_map& m)
@@ -1433,10 +1452,10 @@ namespace hades
 		{
 			if (ramp.test(enum_type(i)))
 			{
-				m.ramp_layer[starting_index].set(enum_type(i));
+				set_ramp_flag(m.ramp_layer, starting_index, i);
 				const auto other_pos = ramp::adj_tiles[enum_type(i)] + p;
 				const auto other_index = to_tile_index(other_pos, world_size.x);
-				m.ramp_layer[other_index].set(enum_type(ramp::reverse_edges[enum_type(i)]));
+				set_ramp_flag(m.ramp_layer, other_index, ramp::reverse_edges[enum_type(i)]);
 			}
 		}
 		return;
@@ -1448,19 +1467,23 @@ namespace hades
 		assert(within_world(p, world_size));
 		const auto start_index = to_tile_index(p, world_size.x);
 		auto& ramp = m.ramp_layer[start_index];
-		
+		auto bset = std::bitset<4>{ ramp };
 		// clear any adjacent ramp tiles that were connected to this one
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
-			if (ramp.test(enum_type(i)))
+			if (bset.test(enum_type(i)))
 			{
 				const auto other_pos = ramp::adj_tiles[enum_type(i)] + p;
 				const auto other_index = to_tile_index(other_pos, world_size.x);
-				m.ramp_layer[other_index].reset(enum_type(i));
+				auto& other_ramp = m.ramp_layer[other_index];
+				auto other_bset = std::bitset<4>{ other_ramp };
+				other_bset.reset(enum_type(i));
+				other_ramp = integer_cast<terrain_map::ramp_layer_t>(other_bset.to_ulong());
 			}
 		}
 
-		ramp.reset();
+		bset.reset();
+		ramp = integer_cast<terrain_map::ramp_layer_t>(bset.to_ulong());
 		return;
 	}
 

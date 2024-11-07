@@ -790,7 +790,7 @@ namespace hades
 			};
 
 			// top cliff
-			if (cliffs.edges[enum_type(rect_edges::top)] > 0)
+			if (cliffs.edges[enum_type(rect_edges::top)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -824,7 +824,7 @@ namespace hades
 			}
 
 			// right cliff
-			if (cliffs.edges[enum_type(rect_edges::right)] > 0)
+			if (cliffs.edges[enum_type(rect_edges::right)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -858,7 +858,7 @@ namespace hades
 				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
 			}
 			// bottom cliff
-			if (cliffs.edges[enum_type(rect_edges::bottom)] > 0)
+			if (cliffs.edges[enum_type(rect_edges::bottom)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -892,7 +892,7 @@ namespace hades
 				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
 			}
 			// left cliff
-			if (cliffs.edges[enum_type(rect_edges::left)] > 0)
+			if (cliffs.edges[enum_type(rect_edges::left)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile

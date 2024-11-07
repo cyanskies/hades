@@ -179,7 +179,7 @@ namespace hades
 		std::vector<vertex_height_t> heightmap;
 		using cliff_layer_t = std::uint8_t;
 		std::vector<cliff_layer_t> cliff_layer;
-		using ramp_layer_t = std::bitset<4>;
+		using ramp_layer_t = std::uint8_t;
 		std::vector<ramp_layer_t> ramp_layer;
 		[[deprecated]] std::vector<cliff_info> cliff_data;
 
@@ -346,6 +346,7 @@ namespace hades
 	//pass a array indicating which corners have terrain in them
 	//the array should be indexed according to rect_corners in math.hpp
 	resources::transition_tile_type get_transition_type(const std::array<bool, 4u>&) noexcept;
+	resources::transition_tile_type get_transition_type(std::bitset<4>) noexcept;
 	//Iter1 and Iter 2 must point to terrain*
 	template<typename Iter1, typename Iter2>
 	resources::transition_tile_type get_transition_type(tile_corners, Iter1 begin, Iter2 end) noexcept;
@@ -394,8 +395,8 @@ namespace hades
 
 	struct adjacent_cliffs
 	{
-		std::array<bool, 4> corners;
-		std::array<int8_t, 4> edges;
+		std::bitset<4> corners;
+		std::bitset<4> edges;
 	};
 	
 	adjacent_cliffs get_adjacent_cliffs(tile_position, const terrain_map&);
@@ -457,7 +458,7 @@ namespace hades
 	void change_terrain_cliff_layer(tile_position pos, terrain_map&, const resources::terrain_settings&, Func&&);
 
 	// returns true for each bit if a ramp can be added to that tile(index using rect_edges)
-	terrain_map::ramp_layer_t can_add_ramp(tile_position, const terrain_map&);
+	std::bitset<4> can_add_ramp(tile_position, const terrain_map&);
 	void place_ramp(tile_position, terrain_map&);
 	void clear_ramp(tile_position, terrain_map&);
 

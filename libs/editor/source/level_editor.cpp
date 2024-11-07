@@ -190,7 +190,6 @@ namespace hades::detail
 			const auto terrain_map = _component_peek_terrain();
 			if (terrain_map)
 			{
-
 				const auto adapted_mouse_pos = terrain_map && _height_enabled ?
 					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
 					: level_mouse_pos;

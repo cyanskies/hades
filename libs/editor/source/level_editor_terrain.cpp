@@ -223,6 +223,20 @@ namespace hades
 
 	void level_editor_terrain::gui_update(gui &g, editor_windows &w)
 	{
+		if (g.main_menubar_begin())
+		{
+			if (g.menu_begin("view"sv))
+			{
+				if (auto ramps = _map.show_ramps(); g.menu_toggle_item("show ramp indicators"sv, ramps))
+					_map.show_ramps(ramps);
+				if (auto cliffs = _map.show_cliffs(); g.menu_toggle_item("show cliff indicators"sv, cliffs))
+					_map.show_cliffs(cliffs);
+				g.menu_end();
+			}
+			
+			g.main_menubar_end();
+		}
+
 		if (g.main_toolbar_begin())
 		{			
 			if (g.toolbar_button("terrain eraser"sv))
@@ -231,6 +245,7 @@ namespace hades
 				_terrain_palette.brush = brush_type::erase;
 			}
 
+			// TODO: move both of these into the view menu
 			if (g.toolbar_button("terrain grid"sv))
 			{
 				_map.show_grid(!_map.show_grid());
@@ -254,141 +269,6 @@ namespace hades
 				if (g.slider_scalar("Sun angle"sv, _sun_angle, 180.f, 0.f))
 					_map.set_sun_angle(_sun_angle);
 			}
-
-			#if 0 // Deprecated menus
-			if (g.collapsing_header("tile and terrain drawing settings"sv))
-			{
-				constexpr auto draw_shapes = std::array{
-					"vertex"sv,
-					"edge"sv,
-					"square"sv,
-					"circle"sv,
-				};
-
-				if (g.combo_begin("drawing shape"sv, draw_shapes[static_cast<std::size_t>(_terrain_palette.shape)]))
-				{
-					for (auto i = std::size_t{}; i < size(draw_shapes); ++i)
-					{
-						const auto shape = draw_shape{ integer_cast<std::underlying_type_t<draw_shape>>(i) };
-						if (g.selectable(draw_shapes[i], _terrain_palette.shape == shape))
-							_terrain_palette.shape = shape;
-					}
-
-					g.combo_end();
-				}
-
-				constexpr auto size_min = int{ 1 };
-				constexpr auto size_max = int{ 8 };
-
-				g.input_scalar("drawing size"sv, _size);
-				_terrain_palette.draw_size = std::clamp(_size, size_min, size_max);
-			}
-
-			if (g.collapsing_header("height"sv))
-			{
-				g.slider_scalar("Amount"sv, _height_strength, std::uint8_t{ 1 }, std::uint8_t{ 10 });
-
-				if (g.button("Raise"sv))
-				{
-					activate_brush();
-					_terrain_palette.brush = brush_type::raise_terrain;
-				}
-
-				if (g.button("Lower"sv))
-				{
-					activate_brush();
-					_terrain_palette.brush = brush_type::lower_terrain;
-				}
-
-				g.slider_scalar("Set Height"sv, _set_height, _settings->height_min, _settings->height_max);
-
-				if (g.button("Set To"sv))
-				{
-					activate_brush();
-					_terrain_palette.brush = brush_type::set_terrain_height;
-				}
-			}
-
-			if (g.collapsing_header("cliffs"))
-			{
-				
-				g.slider_scalar("Cliff height"sv, _cliff_default_height, _settings->cliff_height_min, std::uint8_t{ 20 });
-
-				if (g.button("Create Cliff"sv))
-				{
-					activate_brush();
-					_terrain_palette.brush = brush_type::raise_cliff;
-				}
-			}
-
-			// TODO: hide this in release mode?
-			if (g.collapsing_header("tiles"sv))
-			{
-				//each tileset
-				//the tiles from a terrain wont appear here unless
-				//they are listed under the tiles: tag in the terrain
-				for (const auto& tileset : _settings->tilesets)
-				{
-					const auto& name = data::get_as_string(tileset->id);
-
-					g.indent();
-					if (g.collapsing_header(name))
-					{
-						for (const auto &t : tileset->tiles)
-						{
-							const auto x = static_cast<float>(t.left),
-								y = static_cast<float>(t.top);
-
-							const auto tex_coords = rect_float{
-								x,
-								y,
-								tile_size_f,
-								tile_size_f
-							};
-
-							//need to push a prefix to avoid the id clashing from the same texture
-							g.push_id(&t);
-							const auto siz = g.calculate_button_size({}, terrain_button_size);
-							g.same_line_wrapping(siz.x);
-							if (g.image_button("###tile_button"sv, *t.tex, tex_coords, terrain_button_size))
-							{
-								activate_brush();
-								_terrain_palette.brush = brush_type::draw_tile;
-								_tile = t;
-							}
-							g.pop_id();
-						}
-					}
-				}
-			}
-
-			if (g.collapsing_header("terrain"sv))
-			{
-				assert(_current.terrain_set);
-
-				if (g.button("empty"sv))
-				{
-					activate_brush();
-					_terrain_palette.brush = brush_type::draw_terrain;
-					_current.terrain = _empty_terrain;
-				}
-
-				//if we have the empty terrainset then skip this,
-				// the menu would be useless anyway
-				if (_current.terrain_set != _empty_terrainset)
-				{
-					for (const auto& ter : _current.terrain_set->terrains)
-					{
-						make_terrain_button(g, tile_size_f, terrain_button_size, ter.get(), [&](auto&& t, const auto& str) {
-							activate_brush();
-							_terrain_palette.brush = brush_type::draw_terrain;
-							_terrain_palette.brush_name = std::format("Terrain: {}", str);
-							_current.terrain = t;
-						});
-					}
-				}
-			}
-			#endif
 
 			if (g.collapsing_header("terrain_palette"))
 			{

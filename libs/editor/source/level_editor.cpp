@@ -394,6 +394,7 @@ namespace hades::detail
 		_top_min = static_cast<int32>(toolbar_y2);
 		if (toolbar_created)
 		{
+			// TODO: move this into the view menu
 			if (_gui.toolbar_button("Toggle Height"sv))
 			{
 				_height_enabled = !_height_enabled;

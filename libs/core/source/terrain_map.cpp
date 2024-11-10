@@ -940,7 +940,12 @@ namespace hades
 	static void generate_grid(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
-		assert(shared.settings->grid_terrain);
+		if (!shared.settings->grid_terrain)
+		{
+			log_error("Grid terrain missing"sv);
+			return;
+		}
+
 		const auto& grid_tiles = resources::get_transitions(*shared.settings->grid_terrain, resources::transition_tile_type::all, *shared.settings);
 		assert(!empty(grid_tiles));
 		const auto& grid_tile = grid_tiles.front();
@@ -973,6 +978,120 @@ namespace hades
 			});
 		return;
 	}
+
+	// generates an icon over each of the ramp edges
+	static void generate_ramp(mutable_terrain_map::shared_data& shared,
+		const rect_int terrain_area)
+	{
+		if (!shared.settings->ramp_overlay_terrain)
+		{
+			log_error("Ramp debug terrain missing"sv);
+			return;
+		}
+		
+		const auto& top_tiles = resources::get_transitions(*shared.settings->ramp_overlay_terrain, resources::transition_tile_type::top_left_right, *shared.settings);
+		const auto& right_tiles = resources::get_transitions(*shared.settings->ramp_overlay_terrain, resources::transition_tile_type::top_right_bottom_right, *shared.settings);
+		const auto& bottom_tiles = resources::get_transitions(*shared.settings->ramp_overlay_terrain, resources::transition_tile_type::bottom_left_right, *shared.settings);
+		const auto& left_tiles = resources::get_transitions(*shared.settings->ramp_overlay_terrain, resources::transition_tile_type::top_left_bottom_left, *shared.settings);
+
+		if (top_tiles.empty() || right_tiles.empty() || bottom_tiles.empty() || left_tiles.empty())
+		{
+			log_error("Missing some tile types for ramp debug terrain"sv);
+			return;
+		}
+
+		const resources::tile &top = top_tiles.front(),
+			&right = right_tiles.front(), 
+			&bottom = bottom_tiles.front(),
+			&left = left_tiles.front();
+
+		if (top.tex != right.tex ||
+			top.tex != bottom.tex ||
+			top.tex != left.tex)
+		{
+			log_error("Ramp debug terrain tiles must all use the same texture"sv);
+			return;
+		}
+
+		shared.ramp_tex = top.tex.get();
+
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		const auto map_size_tiles = get_size(shared.map.tile_layer);
+
+		const auto tex_coords_top = rect_float{
+				float_cast(top.left),
+				float_cast(top.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_right = rect_float{
+				float_cast(right.left),
+				float_cast(right.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_bottom = rect_float{
+				float_cast(bottom.left),
+				float_cast(bottom.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_left = rect_float{
+				float_cast(left.left),
+				float_cast(left.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+
+			const auto index = to_tile_index(pos, map_size_tiles.x);
+			assert(index < std::size(shared.map.ramp_layer));
+			const auto ramp = std::bitset<4>{ shared.map.ramp_layer[index] };
+
+			if (ramp.none())
+				return;
+
+			const auto position = vector2_float{
+				float_cast(pos.x) * tile_sizef,
+				float_cast(pos.y) * tile_sizef
+			};
+
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
+			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+
+			if (ramp.test(enum_type(rect_edges::top)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_top);
+				shared.quads.append(quad);
+			}
+
+			if (ramp.test(enum_type(rect_edges::right)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_right);
+				shared.quads.append(quad);
+			}
+
+			if (ramp.test(enum_type(rect_edges::bottom)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_bottom);
+				shared.quads.append(quad);
+			}
+
+			if (ramp.test(enum_type(rect_edges::left)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_left);
+				shared.quads.append(quad);
+			}
+
+			return;
+			});
+		return;
+	}
+
 
 	static constexpr std::array<std::uint8_t, 4> full_bright(const std::array<std::uint8_t, 4>&,
 		const std::array<std::uint8_t, 4>&, const std::uint8_t) noexcept
@@ -1348,9 +1467,17 @@ namespace hades
 		return;
 	}
 
+	struct chunk_flags
+	{
+		bool shadows : 1;
+		bool grid : 1;
+		bool cliffs : 1;
+		bool ramps : 1;
+	};
+
 	static void generate_chunk(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area,
-		const bool shadows, const bool grid)
+		const chunk_flags flags)
 	{
 		//generate terrain layers
 		const auto s = size(shared.map.terrain_layers);
@@ -1360,12 +1487,16 @@ namespace hades
 		generate_cliffs(shared, tile_buffer, terrain_area);
 		
 		shared.start_lighting = shared.quads.size();
-		if (shadows)
+		if (flags.shadows)
 			generate_lighting(shared, terrain_area);
 
 		shared.start_grid = shared.quads.size();
-		if (grid)
+		if (flags.grid)
 			generate_grid(shared, terrain_area);
+
+		shared.start_ramp = shared.quads.size();
+		if (flags.ramps)
+			generate_ramp(shared, terrain_area);
 		return;
 	}
 
@@ -1377,6 +1508,8 @@ namespace hades
 		_shared.regions.clear();
 		_shared.quads.clear();
 
+		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff, _show_ramps };
+
 		const auto tiled_area = static_cast<vector2_int>(size(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
 		// working buffer to sort tiles in
@@ -1385,7 +1518,7 @@ namespace hades
 		
 		const auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
-		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, _show_shadows, _show_grid);
+		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, flags);
 
 		// generate map editor targets
 		// TODO: we might have to clear out the previous editor targets if they've changed
@@ -1428,7 +1561,13 @@ namespace hades
 		if (_show_grid && _shared.grid_tex)
 		{
 			s.texture = &resources::texture_functions::get_sf_texture(_shared.grid_tex);
-			_shared.quads.draw(t, _shared.start_grid, _shared.start_edit - _shared.start_grid, s);
+			_shared.quads.draw(t, _shared.start_grid, _shared.start_ramp - _shared.start_grid, s);
+		}
+
+		if (_show_ramps && _shared.ramp_tex)
+		{
+			s.texture = &resources::texture_functions::get_sf_texture(_shared.ramp_tex);
+			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_ramp, s);
 		}
 
 		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);

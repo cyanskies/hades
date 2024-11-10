@@ -1016,8 +1016,7 @@ namespace hades
 	bool gui::menu_toggle_item(std::string_view l, bool &selected, bool enabled)
 	{
 		_active_assert();
-		ImGui::MenuItem(l, nullptr, &selected, enabled);
-		return false;
+		return ImGui::MenuItem(l, nullptr, &selected, enabled);
 	}
 
 	constexpr auto toolbar_button_size = gui::vector2{ 25.f, 25.f };

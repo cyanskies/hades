@@ -80,6 +80,30 @@ namespace hades
 			return _show_grid;
 		}
 
+		void show_ramps(bool b) noexcept
+		{
+			_show_ramps = b;
+			_needs_update = true;
+			return;
+		}
+
+		bool show_ramps() const noexcept
+		{
+			return _show_ramps;
+		}
+
+		void show_cliffs(bool b) noexcept
+		{
+			_show_cliff = b;
+			_needs_update = true;
+			return;
+		}
+
+		bool show_cliffs() const noexcept
+		{
+			return _show_cliff;
+		}
+
 		void set_world_rotation(float degrees);
 		void set_sun_angle(float degrees);
 
@@ -181,10 +205,12 @@ namespace hades
 			std::vector<vertex_region> regions;
 			std::size_t start_lighting;
 			std::size_t start_grid;
+			std::size_t start_ramp;
 			// end per chunk data
 			std::vector<resources::resource_link<resources::texture>> texture_table;
 			const resources::terrain_settings* settings = {};
 			const resources::texture* grid_tex = {};
+			const resources::texture* ramp_tex = {};
 			const resources::texture* edit_tex = {};
 			rect_float local_bounds = {};
 			std::size_t start_edit;
@@ -259,6 +285,8 @@ namespace hades
 		bool _show_height : 1 = true;
 		bool _show_shadows : 1 = true;
 		bool _debug_depth : 1 = false;
+		bool _show_ramps : 1 = false;
+		bool _show_cliff : 1 = false;
 	};
 
 	class terrain_mini_map final : public sf::Drawable, public sf::Transformable

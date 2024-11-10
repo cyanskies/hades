@@ -92,10 +92,15 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const final override;
 
 		// TODO: these aren't loaded or searialised currently
-		resource_link<terrain> editor_terrain = {};
+		// Debug and editor terrains
+		resource_link<terrain> editor_terrain = {}; // for terrain selection
+		resource_link<terrain> ramp_overlay_terrain = {}; // for highlighting ramps in debug mode
+		resource_link<terrain> cliff_overlay_terrain = {}; // debug cliff edge detection
 		resource_link<terrain> grid_terrain = {};
 		resource_link<terrain> empty_terrain = {};
+		[[deprecated]] // maybe don't deprecate: could be a useful default
 		resource_link<terrainset> empty_terrainset = {};
+		[[deprecated]]
 		resource_link<terrainset> editor_terrainset = {};
 		
 		// TODO: undeprecate, draw the background whereever this terrain is
@@ -103,7 +108,7 @@ namespace hades::resources
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
 		// NOTE: cliff_max * cliff_height + height_max must be less than uint8_t max (255)
-		//		these limits are currently implemeentation dependent
+		//		these limits are currently implementation dependent
 		//		they will be more generous once we write a custom frontend
 		//		to replace SFML
 		std::uint8_t height_default = 31;
@@ -399,6 +404,7 @@ namespace hades
 		std::bitset<4> edges;
 	};
 	
+	// used for rendering cliffs around the tile and for adding cliff texture
 	adjacent_cliffs get_adjacent_cliffs(tile_position, const terrain_map&);
 
 	enum class ramp_type : std::int8_t {

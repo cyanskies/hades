@@ -734,46 +734,88 @@ namespace hades
 		return {};
 	}
 
+	namespace ramp
+	{
+		// defined below
+		// TODO: just move the whole function up here
+		static std::array<ramp_type, 4> adjacent_ramp_shared_vertex(const tile_position p, const terrain_map& m);
+	}
+
 	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m, const resources::terrain_settings& s)
 	{
 		const auto tile_index = to_tile_index(p, m);
 		assert(s.cliff_height > 0);
 		
 		const auto cliff_height = m.cliff_layer[tile_index] * s.cliff_height;
-
-		const auto index = to_vertex_index(p, m);
-		const auto tl = integer_clamp_cast<std::uint8_t>(m.heightmap[index] + cliff_height);
-		const auto tr = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index) + 1] + cliff_height);
-		const auto index2 = index + m.width;
-		const auto bl = integer_clamp_cast<std::uint8_t>(m.heightmap[index2] + cliff_height);
-		const auto br = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index2) + 1] + cliff_height);
-		
-		const auto ramps = get_adjacent_ramps(p, m);
 		const auto cliff_layer_half = s.cliff_height / 2;
 
-		const auto top_ramp_type = ramps[enum_type(rect_edges::top)];
-		const auto right_ramp_type = ramps[enum_type(rect_edges::right)];
-		const auto bottom_ramp_type = ramps[enum_type(rect_edges::bottom)];
-		const auto left_ramp_type = ramps[enum_type(rect_edges::left)];
+		std::array<std::uint8_t, 4> corner_heights [[indeterminate]];
 
-		const auto update_corner = [cliff_layer_half](const ramp_type a, const ramp_type b, const std::uint8_t corner_height) {
-			const auto merged_ramp = merge_ramps(a, b);
-			if (merged_ramp == ramp_type::uphill)
-				return integer_clamp_cast<std::uint8_t>(corner_height + cliff_layer_half);
-			else if (merged_ramp == ramp_type::downhill)
-				return integer_clamp_cast<std::uint8_t>(corner_height - cliff_layer_half);
+		// basic cliff height
+		const auto index = to_vertex_index(p, m);
+		corner_heights[enum_type(rect_corners::top_left)] = integer_clamp_cast<std::uint8_t>(m.heightmap[index] + cliff_height);
+		corner_heights[enum_type(rect_corners::top_right)] = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index) + 1] + cliff_height);
+		const auto index2 = index + m.width;
+		corner_heights[enum_type(rect_corners::bottom_left)] = integer_clamp_cast<std::uint8_t>(m.heightmap[index2] + cliff_height);
+		corner_heights[enum_type(rect_corners::bottom_right)] = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index2) + 1] + cliff_height);
+		
+		auto adjusted_corner_heights  = corner_heights;
 
-			return corner_height;
-		};
+		if (const auto our_ramp_flags = std::bitset<4>{ m.ramp_layer[tile_index] }; our_ramp_flags.any())
+		{
+			// adjust for our ramp type
+			const auto ramps = get_adjacent_ramps(p, m);
 
+			const auto top_ramp_type = ramps[enum_type(rect_edges::top)];
+			const auto right_ramp_type = ramps[enum_type(rect_edges::right)];
+			const auto bottom_ramp_type = ramps[enum_type(rect_edges::bottom)];
+			const auto left_ramp_type = ramps[enum_type(rect_edges::left)];
+
+			const auto update_with_ramp = [cliff_layer_half](const ramp_type a, const ramp_type b, const std::uint8_t corner_height) {
+				const auto merged_ramp = merge_ramps(a, b);
+				if (merged_ramp == ramp_type::uphill)
+					return integer_clamp_cast<std::uint8_t>(corner_height + cliff_layer_half);
+				else if (merged_ramp == ramp_type::downhill)
+					return integer_clamp_cast<std::uint8_t>(corner_height - cliff_layer_half);
+
+				return corner_height;
+				};
+
+			adjusted_corner_heights[enum_type(rect_corners::top_left)] = update_with_ramp(top_ramp_type, left_ramp_type, corner_heights[enum_type(rect_corners::top_left)]);
+			adjusted_corner_heights[enum_type(rect_corners::top_right)] = update_with_ramp(top_ramp_type, right_ramp_type, corner_heights[enum_type(rect_corners::top_right)]);
+			adjusted_corner_heights[enum_type(rect_corners::bottom_right)] = update_with_ramp(bottom_ramp_type, right_ramp_type, corner_heights[enum_type(rect_corners::bottom_right)]);
+			adjusted_corner_heights[enum_type(rect_corners::bottom_left)] = update_with_ramp(bottom_ramp_type, left_ramp_type, corner_heights[enum_type(rect_corners::bottom_left)]);
+		}
+		
+
+		{
+			// no ramps to our tile
+			// time to check adjacents
+			const auto adj_ramps = ramp::adjacent_ramp_shared_vertex(p, m);
+			for (auto i = rect_corners::begin; i < rect_corners::end; i = next(i))
+			{
+				switch (adj_ramps[enum_type(i)])
+				{
+				case ramp_type::uphill:
+					adjusted_corner_heights[enum_type(i)] = corner_heights[enum_type(i)] + cliff_layer_half;
+					break;
+				case ramp_type::downhill:
+					adjusted_corner_heights[enum_type(i)] = corner_heights[enum_type(i)] - cliff_layer_half;
+					break;
+				default:
+					break; // do nothing
+				}
+			}
+		}
+		
 		// TOP_LEFT corner
-		const auto final_tl = update_corner(top_ramp_type, left_ramp_type, tl);
+		const auto& final_tl = adjusted_corner_heights[enum_type(rect_corners::top_left)];
 		// TOP_RIGHT corner
-		const auto final_tr = update_corner(top_ramp_type, right_ramp_type, tr);
+		const auto& final_tr = adjusted_corner_heights[enum_type(rect_corners::top_right)];
 		// BOTTOM_RIGHT corner
-		const auto final_br = update_corner(bottom_ramp_type, right_ramp_type, br);
+		const auto& final_br = adjusted_corner_heights[enum_type(rect_corners::bottom_right)];
 		// BOTTOM_LEFT corner
-		const auto final_bl = update_corner(bottom_ramp_type, left_ramp_type, bl);
+		const auto& final_bl = adjusted_corner_heights[enum_type(rect_corners::bottom_left)];
 
 		triangle_height_data ret [[indeterminate]];
 		// interchange triangle_type along each axis
@@ -998,6 +1040,8 @@ namespace hades
 			return ret;
 		}
 
+		// NOTE: this doesnt account for adjacent ramps hiding the exposed edge
+		// this results in the exposed edge being rendered twice in functions that depend on get adjacent cliffs
 		static bool exposed_edge(const rect_edges e, const std::array<ramp_type, 4> r, ramp_type type) noexcept
 		{
 			using enum rect_edges;
@@ -1014,6 +1058,76 @@ namespace hades
 				return r[enum_type(top)] == type || r[enum_type(bottom)] == type;
 			}
 		}
+
+		constexpr auto adjacent_ramp_corner_checks = std::array<std::tuple<tile_position, tile_position>, 4>{
+			std::tuple{ tile_position{ 0, -1 }, tile_position{ -1, 0 } }, // top left
+			std::tuple{ tile_position{ 0, -1 }, tile_position{  1, 0 } }, // top right
+			std::tuple{ tile_position{ 0,  1 }, tile_position{  1, 0 } }, // bottom right
+			std::tuple{ tile_position{ 0,  1 }, tile_position{ -1, 0 } }, // bottom left
+		};
+
+		constexpr auto adjacent_ramp_edge_checks = std::array<std::tuple<rect_edges, rect_edges>, 4>{
+			std::tuple{ rect_edges::left,	rect_edges::top		}, // top left
+			std::tuple{ rect_edges::right,	rect_edges::top		}, // top right
+			std::tuple{ rect_edges::right,	rect_edges::bottom	}, // bottom right
+			std::tuple{ rect_edges::left,	rect_edges::bottom	}, // bottom left
+		};
+
+		// index return valure with rect_corners
+		static std::array<ramp_type, 4> adjacent_ramp_shared_vertex(const tile_position p, const terrain_map& m)
+		{
+			const auto world_size = get_size(m);
+			const auto start_index = to_tile_index(p, world_size.x);
+			const auto start_cliff = m.cliff_layer[start_index];
+
+			const auto check_ramp = [&](const tile_position offset, const rect_edges e)->ramp_type{
+				const auto pos = p + offset;
+				if (!within_world(pos, world_size))
+					return ramp_type::no_ramp;
+
+				const auto index = to_tile_index(pos, world_size.x);
+				const auto cliff = m.cliff_layer[index];
+				if (cliff != start_cliff)
+					return ramp_type::no_ramp;
+
+				const auto ramp = std::bitset<4>{ m.ramp_layer[index] };
+				if (!ramp.test(enum_type(e)))
+					return ramp_type::no_ramp;
+
+				const auto next_pos = adj_tiles[enum_type(e)] + pos;
+				// ramp flags must point towards tiles inside the world
+				assert(within_world(next_pos, world_size));
+
+				const auto next_index = to_tile_index(next_pos, world_size.x);
+				
+				const auto next_cliff = m.cliff_layer[next_index];
+				return to_ramp_type(cliff, next_cliff);
+			};
+
+			std::array<ramp_type, 4> out [[indeterminate]];
+			for (auto i = rect_corners::begin; i < rect_corners::end; i = next(i))
+			{
+				const auto [adj1, adj2] = adjacent_ramp_corner_checks[enum_type(i)];
+				const auto [edge1, edge2] = adjacent_ramp_edge_checks[enum_type(i)];
+				const auto ramp1 = check_ramp(adj1, edge1);
+				const auto ramp2 = check_ramp(adj2, edge2);
+				const auto merg1 = merge_ramps(ramp1, ramp2).value_or(ramp_type::no_ramp);
+
+				if (merg1 != ramp_type::no_ramp)
+				{
+					out[enum_type(i)] = merg1;
+					continue;
+				}
+
+				const auto adj3 = adj1 + adj2;
+				const auto ramp3 = check_ramp(adj3, reverse_edges[enum_type(edge1)]);
+				const auto ramp4 = check_ramp(adj3, reverse_edges[enum_type(edge2)]);
+				const auto merg2 = merge_ramps(ramp3, ramp4).value_or(ramp_type::no_ramp);
+				out[enum_type(i)] = merg2;
+			}
+
+			return out;
+		}
 	}
 
 	adjacent_cliffs get_adjacent_cliffs(const tile_position p, const terrain_map& m)
@@ -1023,6 +1137,20 @@ namespace hades
 		const auto our_layer = m.cliff_layer[start_index];
 		const auto our_ramp = std::bitset<4>{ m.ramp_layer[start_index] };
 		const auto our_ramp_types = ramp::check_ramp_impl<true>(p, m);
+
+		constexpr auto ramp_edge_check = std::array<std::tuple<rect_edges, rect_edges>, 4>{
+			std::tuple{ rect_edges::left,	rect_edges::right	},	// top
+			std::tuple{ rect_edges::top,	rect_edges::bottom	},	// right
+			std::tuple{ rect_edges::left,	rect_edges::right	},	// bottom
+			std::tuple{ rect_edges::top,	rect_edges::bottom	}	// left
+		};
+
+		constexpr auto corner_index = std::array<std::tuple<rect_corners, rect_corners>, 4>{
+			std::tuple{ rect_corners::top_left,		rect_corners::top_right		}, // top
+			std::tuple{ rect_corners::top_right,	rect_corners::bottom_right	}, // right
+			std::tuple{ rect_corners::bottom_left,	rect_corners::bottom_right	}, // bottom
+			std::tuple{ rect_corners::top_left,		rect_corners::bottom_left	}  // left
+		};
 
 		// check edges
 		auto out = adjacent_cliffs{};
@@ -1036,15 +1164,9 @@ namespace hades
 				const auto index = to_tile_index(pos, m);
 				const auto cliff_layer = m.cliff_layer[index];
 				cliff = integer_cast<std::int8_t>(cliff_layer - our_layer);
-
-				const auto ramp = ramp::check_ramp_impl<true>(pos, m);
-				if(ramp::exposed_edge(ramp::reverse_edges[enum_type(i)], ramp, ramp_type::uphill))
-					cliff = our_layer + 1;
 			}
-			
-			if (ramp::exposed_edge(i, our_ramp_types, ramp_type::downhill) && cliff >= 0)
-				cliff = our_layer + 1;
 
+			// don't count ramps as cliffs
 			if(our_ramp.test(enum_type(i)))
 				cliff = {};
 
@@ -1052,40 +1174,61 @@ namespace hades
 			out.edges.set(enum_type(i), cliff > 0);
 		}
 
-		out.corners.set(enum_type(rect_corners::top_left), neighbours[enum_type(rect_edges::left)] != 0 || neighbours[enum_type(rect_edges::top)] != 0);
-		out.corners.set(enum_type(rect_corners::top_right), neighbours[enum_type(rect_edges::right)] != 0 || neighbours[enum_type(rect_edges::top)] != 0);
-		out.corners.set(enum_type(rect_corners::bottom_right), neighbours[enum_type(rect_edges::right)] != 0 || neighbours[enum_type(rect_edges::bottom)] != 0);
-		out.corners.set(enum_type(rect_corners::bottom_left), neighbours[enum_type(rect_edges::left)] != 0 || neighbours[enum_type(rect_edges::bottom)] != 0);
+		const auto check_neighbours = [&](const auto a, const auto b) noexcept {
+			// return true if there is a cliff on this edge and not a ramp
+			return (neighbours[enum_type(a)] != 0 || neighbours[enum_type(b)] != 0);
+			};
 
-		if (our_ramp.any())
-			out.corners.set();
+		// set cliff texture based on above exposed cliff edges
+		if (check_neighbours(rect_edges::left, rect_edges::top))
+			out.corners.set(enum_type(rect_corners::top_left));
+		if(check_neighbours(rect_edges::right, rect_edges::top))
+			out.corners.set(enum_type(rect_corners::top_right));
+		if(check_neighbours(rect_edges::right, rect_edges::bottom))
+			out.corners.set(enum_type(rect_corners::bottom_right));
+		if(check_neighbours(rect_edges::left, rect_edges::bottom))
+			out.corners.set(enum_type(rect_corners::bottom_left));
 
-		//const auto to_cliff_layer = [&](const auto pos)->bool noexcept {
-		//	if (within_world(pos, world_size))
-		//	{
-		//		const auto i = to_tile_index(pos, m);
-		//		const auto cliff_layer = m.cliff_layer[i];
-		//		return integer_clamp_cast<std::int8_t>(cliff_layer - our_layer) > 0;
-		//	}
-		//	return false;
-		//};
+		constexpr auto adjacent_diag = std::array<tile_position, 4>{
+			tile_position{ -1, -1	}, // top_left
+			tile_position{ 1, -1	}, // top_right
+			tile_position{ 1,  1	}, // bottom_right
+			tile_position{ -1,  1	}  // bottom_left
+		};
 
-		//const auto adjacent_diag = std::array<tile_position, 4>{
-		//	p + tile_position{ -1, -1 }, // top_left
-		//	p + tile_position{ 1, -1 }, // top_right
-		//	p + tile_position{ 1, 1 }, // bottom_right
-		//	p + tile_position{ -1, 1 } // bottom_left
-		//};
+		constexpr auto adjacent_diag_checks = std::array<std::tuple<rect_edges, rect_edges>, 4>{
+			std::tuple{ rect_edges::top,	rect_edges::right	},
+			std::tuple{ rect_edges::top,	rect_edges::left	},
+			std::tuple{ rect_edges::bottom, rect_edges::left	},
+			std::tuple{ rect_edges::bottom, rect_edges::right	}
+		};
 
-		//std::array<int8_t, 4> diag_cliffs [[indeterminate]];
-		//std::ranges::transform(adjacent_diag, std::begin(diag_cliffs), to_cliff_layer);
+		const auto corner_ramps = ramp::adjacent_ramp_shared_vertex(p, m);
 
-		//out.corners = {
-		//	out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::top_left)] != 0,
-		//	out.edges[enum_type(rect_edges::top)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::top_right)] != 0,
-		//	out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::right)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_right)] != 0,
-		//	out.edges[enum_type(rect_edges::bottom)] != 0 || out.edges[enum_type(rect_edges::left)] != 0 || diag_cliffs[enum_type(rect_corners::bottom_left)] != 0
-		//};
+		for (auto i = rect_corners::begin; i < rect_corners::end; i = next(i))
+		{
+			const auto pos = adjacent_diag[enum_type(i)] + p;
+			if (within_world(pos, world_size))
+			{
+				const auto index = to_tile_index(pos, m);
+				const auto cliff_layer = m.cliff_layer[index];
+				const auto cliff = cliff_layer - our_layer;
+				
+				const auto [adj1, adj2] = adjacent_diag_checks[enum_type(i)];
+				const auto no_ramps = !(our_ramp.test(enum_type(adj1)) && our_ramp.test(enum_type(adj2)));
+
+				if (cliff != 0 && no_ramps && corner_ramps[enum_type(i)] == ramp_type::no_ramp)
+					out.corners.set(enum_type(i));
+
+				/*const auto ramp = ramp::check_ramp_impl<true>(pos, m);
+				if (ramp::exposed_edge(std::get<0>(adjacent_diag_checks[enum_type(i)]), ramp, ramp_type::uphill)	||
+					ramp::exposed_edge(std::get<0>(adjacent_diag_checks[enum_type(i)]), ramp, ramp_type::downhill)	||
+					ramp::exposed_edge(std::get<1>(adjacent_diag_checks[enum_type(i)]), ramp, ramp_type::uphill)	||
+					ramp::exposed_edge(std::get<1>(adjacent_diag_checks[enum_type(i)]), ramp, ramp_type::downhill)	||
+					cliff != 0)
+					out.corners.set(enum_type(i));*/	
+			}
+		}
 
 		return out;
 	}
@@ -1096,8 +1239,6 @@ namespace hades
 		return ramp::check_ramp_impl(p, m);
 	}
 
-	// TODO: move this to a templated impl that can toggle the ramp flag check, to implement
-	//		the function above without repeating all this code
 	std::array<ramp_type, 4> get_adjacent_ramps(const tile_position p, const terrain_map& m)
 	{
 		return ramp::check_ramp_impl<true>(p, m);
@@ -2241,6 +2382,8 @@ namespace hades::resources
 
 	static void parse_terrain_settings(unique_id mod, const data::parser_node& n, data::data_manager& d)
 	{
+		// TODO: this is quite out of date
+		//		mostly the terrains and terrainsets
 		//tile-settings:
 		//  tile-size: 32
 		//	error-tileset: uid
@@ -2272,6 +2415,14 @@ namespace hades::resources
 		const auto editor_terrain = data::parse_tools::get_unique(n, "editor-terrain"sv, unique_zero);
 		if (editor_terrain)
 			s->editor_terrain = d.make_resource_link<resources::terrain>(editor_terrain, id::terrain_settings);
+
+		const auto debug_cliffs = data::parse_tools::get_unique(n, "cliff-debug-terrain"sv, unique_zero);
+		if (debug_cliffs)
+			s->cliff_overlay_terrain = d.make_resource_link<resources::terrain>(debug_cliffs, id::terrain_settings);
+		
+		const auto debug_ramps = data::parse_tools::get_unique(n, "ramp-debug-terrain"sv, unique_zero);
+		if (debug_ramps)
+			s->ramp_overlay_terrain = d.make_resource_link<resources::terrain>(debug_ramps, id::terrain_settings);
 
 		const auto grid_terrain = data::parse_tools::get_unique(n, "grid-terrain"sv, unique_zero);
 		if (grid_terrain)

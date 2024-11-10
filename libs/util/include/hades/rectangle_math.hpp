@@ -91,12 +91,14 @@ namespace hades
 
 	//NOTE: the layout of rect_coners and rect_edges is depended on by other code.
 	enum class rect_corners : std::uint8_t {
-		first,
-		top_left = first,
+		top_left,
+		begin = top_left,
+		first [[deprecated]] = begin,
 		top_right,
 		bottom_right,
 		bottom_left,
-		last
+		end,
+		last [[deprecated]] = end,
 	};
 
 	enum class rect_edges : std::uint8_t {

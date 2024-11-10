@@ -398,14 +398,12 @@ namespace hades
 	[[deprecated]]
 	std::array<bool, 4> get_cliffs_corners(tile_position, const terrain_map&);
 
-	struct adjacent_cliffs
-	{
-		std::bitset<4> corners;
-		std::bitset<4> edges;
-	};
-	
+	using adjacent_cliffs = std::bitset<4>;
+	using cliff_corners = std::bitset<4>;
+
 	// used for rendering cliffs around the tile and for adding cliff texture
 	adjacent_cliffs get_adjacent_cliffs(tile_position, const terrain_map&);
+	cliff_corners get_cliff_corners(tile_position, const terrain_map&);
 
 	enum class ramp_type : std::int8_t {
 		no_ramp = 0,

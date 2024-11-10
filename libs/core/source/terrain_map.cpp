@@ -760,6 +760,7 @@ namespace hades
 			const auto cliff_index = index * 4;
 			using tile_type = terrain_map::cliff_layer_layout;
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
+			const auto cliff_corners = get_cliff_corners(pos, shared.map);
 
 			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
 			const auto world_pos_f = static_cast<vector2_float>(world_pos);
@@ -767,7 +768,7 @@ namespace hades
 			const auto surface_positions = make_triangle_positions(world_pos_f, tile_sizef, surface_triangle_height.triangle_type);
 
 			// we have to generate a surface tile
-			const auto surface_tile_type = get_transition_type(cliffs.corners);
+			const auto surface_tile_type = get_transition_type(cliff_corners);
 			if (surface_tile_type != resources::transition_tile_type::none)
 			{
 				const auto& tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
@@ -790,7 +791,7 @@ namespace hades
 			};
 
 			// top cliff
-			if (cliffs.edges[enum_type(rect_edges::top)])
+			if (cliffs[enum_type(rect_edges::top)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -824,7 +825,7 @@ namespace hades
 			}
 
 			// right cliff
-			if (cliffs.edges[enum_type(rect_edges::right)])
+			if (cliffs[enum_type(rect_edges::right)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -858,7 +859,7 @@ namespace hades
 				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
 			}
 			// bottom cliff
-			if (cliffs.edges[enum_type(rect_edges::bottom)])
+			if (cliffs[enum_type(rect_edges::bottom)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -892,7 +893,7 @@ namespace hades
 				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
 			}
 			// left cliff
-			if (cliffs.edges[enum_type(rect_edges::left)])
+			if (cliffs[enum_type(rect_edges::left)])
 			{
 				// get triangle_height for tile above,
 				// mix and match the hight and position values to create the correct tile
@@ -980,6 +981,7 @@ namespace hades
 	}
 
 	// generates an icon over each of the ramp edges
+	// TODO: a lot of the code for these debug views could be merged
 	static void generate_ramp(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
@@ -1047,7 +1049,6 @@ namespace hades
 		};
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-
 			const auto index = to_tile_index(pos, map_size_tiles.x);
 			assert(index < std::size(shared.map.ramp_layer));
 			const auto ramp = std::bitset<4>{ shared.map.ramp_layer[index] };
@@ -1164,30 +1165,33 @@ namespace hades
 			using tile_type = terrain_map::cliff_layer_layout;
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
 
+			if (cliffs.none())
+				return;
+
 			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
 			const auto world_pos_f = static_cast<vector2_float>(world_pos);
 			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto p = make_triangle_positions(world_pos_f, tile_sizef, triangle_height.triangle_type);
 
-			if (cliffs.edges.test(enum_type(rect_edges::top)))
+			if (cliffs.test(enum_type(rect_edges::top)))
 			{
 				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_top);
 				shared.quads.append(quad);
 			}
 
-			if (cliffs.edges.test(enum_type(rect_edges::right)))
+			if (cliffs.test(enum_type(rect_edges::right)))
 			{
 				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_right);
 				shared.quads.append(quad);
 			}
 
-			if (cliffs.edges.test(enum_type(rect_edges::bottom)))
+			if (cliffs.test(enum_type(rect_edges::bottom)))
 			{
 				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_bottom);
 				shared.quads.append(quad);
 			}
 
-			if (cliffs.edges.test(enum_type(rect_edges::left)))
+			if (cliffs.test(enum_type(rect_edges::left)))
 			{
 				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_left);
 				shared.quads.append(quad);

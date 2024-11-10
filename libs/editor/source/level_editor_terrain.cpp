@@ -238,7 +238,13 @@ namespace hades
 		}
 
 		if (g.main_toolbar_begin())
-		{			
+		{
+			if (g.toolbar_button("debug tool"sv))
+			{
+				activate_brush();
+				_terrain_palette.brush = brush_type::debug_brush;
+			}
+
 			if (g.toolbar_button("terrain eraser"sv))
 			{
 				activate_brush();
@@ -539,7 +545,7 @@ namespace hades
 		return;
 	}
 
-	void level_editor_terrain::make_brush_preview(const time_duration, const mouse_pos p)
+	void level_editor_terrain::make_brush_preview(const time_duration, const std::optional<mouse_pos> p)
 	{
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
@@ -558,10 +564,12 @@ namespace hades
 		};
 
 		_map.clear_edit_target();
-		for_each_position(p, _settings->tile_size, _terrain_palette.shape,
-			_terrain_palette.brush, _terrain_palette.draw_size,	_map.get_map(),
-			overloaded{ tile_func, vertex_func });
-		
+		if (p)
+		{
+			for_each_position(*p, _settings->tile_size, _terrain_palette.shape,
+				_terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(),
+				overloaded{ tile_func, vertex_func });
+		}
 		return;
 	}
 
@@ -605,8 +613,11 @@ namespace hades
 		//also do screen move
 	}
 
-	void level_editor_terrain::on_click(mouse_pos p)
+	void level_editor_terrain::on_click(std::optional<mouse_pos> p)
 	{
+		if (_terrain_palette.brush == brush_type::debug_brush)
+			return;
+
 		// called for cliff layer tools
 		const auto tile_func = [&](const tile_position p) {
 			switch (_terrain_palette.brush)
@@ -664,12 +675,15 @@ namespace hades
 
 		_map.clear_edit_target();
 
-		const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
-		for_each_position(p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
+		if (p)
+		{
+			const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
+			for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
+		}
 		return;
 	}
 
-	void level_editor_terrain::on_drag(mouse_pos p)
+	void level_editor_terrain::on_drag(std::optional<mouse_pos> p)
 	{
 		// TODO: need custom code here for plateaus
 		on_click(p);

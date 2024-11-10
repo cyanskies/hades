@@ -59,14 +59,14 @@ namespace hades
 
 		void gui_update(gui&, editor_windows&) override;
 
-		void make_brush_preview(time_duration, mouse_pos) override;
+		void make_brush_preview(time_duration, std::optional<mouse_pos>) override;
 
 		tag_list get_terrain_tags_at_location(rect_float) const override;
 
 		void on_reinit(vector2_float window_size, vector2_float view_size) override;
 
-		void on_click(mouse_pos) override;
-		void on_drag(mouse_pos) override;
+		void on_click(std::optional<mouse_pos>) override;
+		void on_drag(std::optional<mouse_pos>) override;
 
 		void on_screen_move(rect_float r) override;
 

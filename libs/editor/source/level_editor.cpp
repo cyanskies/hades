@@ -190,10 +190,11 @@ namespace hades::detail
 			const auto terrain_map = _component_peek_terrain();
 			if (terrain_map)
 			{
-				const auto adapted_mouse_pos = terrain_map && _height_enabled ?
+				const auto adapted_mouse_pos_opt = terrain_map && _height_enabled ?
 					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
 					: level_mouse_pos;
 
+				const auto adapted_mouse_pos = adapted_mouse_pos_opt.value_or(world_vector_t{});
 				const auto rounded_terrain_pos = tile_position{
 					integral_cast<tile_position::value_type>(adapted_mouse_pos.x, round_down_tag),
 					integral_cast<tile_position::value_type>(adapted_mouse_pos.y, round_down_tag)
@@ -202,19 +203,24 @@ namespace hades::detail
 				const auto tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
 				//clamp to world limits
 				if (within_world(tile_pos, get_size(*terrain_map)))
-					_mouse_pos_world = std::format("Hovered Tile: {}", tile_pos);
+					_mouse_pos_world = std::format("Hovered Tile: {}"sv, tile_pos);
 				else
 					_mouse_pos_world = "Hovered Tile: Outside World"sv;
 
+				if (adapted_mouse_pos_opt)
+					_mouse_pos_world_f = std::format("Hovered Point: {}"sv, *adapted_mouse_pos_opt);
+				else
+					_mouse_pos_world_f = "Hovered Point: Outside World"sv;
+
 				if (_active_brush != invalid_brush)
-					_generate_brush_preview(_active_brush, dt, adapted_mouse_pos);
+					_generate_brush_preview(_active_brush, dt, adapted_mouse_pos_opt);
 
 				const auto mouse_left = actions.find(input::mouse_left);
 				assert(mouse_left != std::end(actions));
 				mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
 
 				if (mouse::is_click(_mouse_left))
-					_component_on_click(_active_brush, adapted_mouse_pos);
+					_component_on_click(_active_brush, adapted_mouse_pos_opt);
 				else if (mouse::is_drag_start(_mouse_left))
 				{
 					const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
@@ -224,7 +230,6 @@ namespace hades::detail
 					const auto adapted_drag_start = terrain_map && _height_enabled ?
 						project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings)
 						: drag_start_level;
-
 					_component_on_drag_start(_active_brush, adapted_drag_start);
 				}
 				else if (mouse::is_dragging(_mouse_left))
@@ -425,6 +430,8 @@ namespace hades::detail
 		// TODO: remove
 		_left_min = static_cast<int32>(_gui.get_item_rect_max().x);
 		_gui.text(_mouse_pos_world);
+		_gui.text(std::format("Rotation: {}"sv, _accumulated_rotation));
+		_gui.text(_mouse_pos_world_f);
 		_gui.window_end();
 
 		// minimap window

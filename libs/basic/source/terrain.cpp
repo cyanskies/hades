@@ -1777,8 +1777,153 @@ namespace hades
 		}
 	}
 
+	static constexpr std::tuple<rect_edges, rect_edges> visible_cliffs(float rot) noexcept
+	{
+		while (rot < 0.f)
+			rot += 360.f;
+
+		while (rot > 360.f)
+			rot -= 360.f;
+
+		if (rot <= 90.f)
+			return std::tuple{ rect_edges::top, rect_edges::left };
+		else if (rot <= 180.f)
+			return std::tuple{ rect_edges::bottom, rect_edges::left };
+		else if (rot <= 270.f)
+			return std::tuple{ rect_edges::right, rect_edges::bottom };
+		else
+			return std::tuple{ rect_edges::top, rect_edges::right };
+	}
+
+	static const std::optional<tris> make_cliff_face(const rect_edges edge, const tile_position pos,
+		const adjacent_cliffs adj_cliffs, const world_vector_t height_dir,
+		const float tile_sizef, const terrain_map& m, const resources::terrain_settings& settings)
+	{
+		const auto adj_tile = ramp::adj_tiles[enum_type(edge)] + pos;
+		const auto w_size = get_size(m);
+		if (!within_world(adj_tile, w_size))
+			return {};
+
+		if (!adj_cliffs.test(enum_type(edge)))
+			return {};
+
+		tris out [[indeterminate]];
+
+		switch (edge)
+		{
+		default:
+			[[fallthrough]];
+		case rect_edges::top:
+			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
+					make_quad_point(pos, tile_sizef, rect_corners::top_left),
+					make_quad_point(pos, tile_sizef, rect_corners::top_right) };
+			break;
+		case rect_edges::right:
+			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_right),
+					make_quad_point(pos, tile_sizef, rect_corners::top_right),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right) };
+			break;
+		case rect_edges::bottom:
+			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_right),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left) };
+			break;
+
+		case rect_edges::left:
+			out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::bottom_left),
+					make_quad_point(pos, tile_sizef, rect_corners::bottom_left),
+					make_quad_point(pos, tile_sizef, rect_corners::top_left) };
+			break;
+		}
+
+		out.flat_right_tri = { out.flat_left_tri[2], out.flat_left_tri[0],
+				out.flat_left_tri[2] };
+
+		const auto bottom_height = get_height_for_triangles(pos, m, settings);
+		const auto top_height = get_height_for_triangles(adj_tile, m, settings);
+
+		std::array<std::uint8_t, 2> cliff_top [[indeterminate]],
+			cliff_bottom [[indeterminate]];
+
+		switch (edge)
+		{
+		default:
+			[[fallthrough]];
+		case rect_edges::top:
+			cliff_top = get_height_for_bottom_edge(top_height);
+			cliff_bottom = get_height_for_top_edge(bottom_height);
+			break;
+		case rect_edges::right:
+			cliff_top = get_height_for_left_edge(top_height);
+			cliff_bottom = get_height_for_right_edge(bottom_height);
+			break;
+		case rect_edges::bottom:
+			cliff_top = get_height_for_top_edge(top_height);
+			cliff_bottom = get_height_for_bottom_edge(bottom_height);
+			break;
+		case rect_edges::left:
+			cliff_top = get_height_for_right_edge(top_height);
+			cliff_bottom = get_height_for_left_edge(bottom_height);
+			break;
+		}
+		
+		out.left_tri[0] = out.flat_left_tri[0] + height_dir * float_cast(cliff_top[0]);
+		out.left_tri[1] = out.flat_left_tri[1] + height_dir * float_cast(cliff_bottom[0]);
+		out.left_tri[2] = out.flat_left_tri[2] + height_dir * float_cast(cliff_top[1]);
+
+		out.right_tri[0] = out.flat_right_tri[0] + height_dir * float_cast(cliff_top[0]);
+		out.right_tri[1] = out.flat_right_tri[1] + height_dir * float_cast(cliff_bottom[0]);
+		out.right_tri[2] = out.flat_right_tri[2] + height_dir * float_cast(cliff_bottom[1]);
+
+		return out;
+	}
+
+	static const std::tuple<std::optional<tris>, std::optional<tris>> make_cliff_faces(const tile_position tile_check,
+		const float rot, const world_vector_t height_dir, const float tile_sizef,
+		const terrain_map& m, const resources::terrain_settings& settings)
+	{
+		const auto [cliff1, cliff2] = visible_cliffs(rot);
+		const auto adj_cliffs = get_adjacent_cliffs(tile_check, m);
+		return { make_cliff_face(cliff1, tile_check, adj_cliffs, height_dir, tile_sizef, m, settings),
+			make_cliff_face(cliff2, tile_check, adj_cliffs, height_dir, tile_sizef, m, settings) };
+	}
+
+	static std::optional<std::tuple<barycentric_point, std::array<vector2_float, 3>>> 
+		check_quad(const world_vector_t p, const float rot, const tris quad_triangles) noexcept
+	{
+		// test for hit
+		// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
+		// NOTE: this is the canonical vertex order for triangles in the terrain system
+		auto left_hit = point_in_tri(p, quad_triangles.left_tri),
+			right_hit = point_in_tri(p, quad_triangles.right_tri);
+
+		// If we hit both tris in a quad, prioritise the tri with the closest point to the camera.
+		if (left_hit && right_hit)
+		{
+			if (lowest_tri(quad_triangles.flat_left_tri, quad_triangles.flat_right_tri, rot))
+				right_hit = false;
+			else
+				left_hit = false;
+		}
+
+		if (left_hit)
+		{
+			const auto bary_point = to_barycentric(p, quad_triangles.left_tri);
+			const auto tri = quad_triangles.flat_left_tri;
+			return std::tuple{ bary_point, tri };
+		}
+		else if (right_hit)
+		{
+			const auto bary_point = to_barycentric(p, quad_triangles.right_tri);
+			const auto tri = quad_triangles.flat_right_tri;
+			return std::tuple{ bary_point, tri };
+		}
+
+		return {};
+	}
+
 	// project 'p' onto the flat version of 'map'
-	vector2_float project_onto_terrain(const vector2_float p, const float rot,
+	std::optional<vector2_float> project_onto_terrain(const world_vector_t p, const float rot,
 		const terrain_map& map,	const resources::terrain_settings& settings)
 	{
 		const auto tile_size = settings.tile_size;
@@ -1855,30 +2000,25 @@ namespace hades
 			// generate quad vertex
 			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_info);
 
-			// test for hit
-			// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
-			// NOTE: this is the canonical vertex order for triangles in the terrain system
-			auto left_hit = point_in_tri(p, quad_triangles.left_tri),
-				right_hit = point_in_tri(p, quad_triangles.right_tri);
+			const auto quad_hit = check_quad(p, rot, quad_triangles);
+			if (quad_hit)
+				std::tie(bary_point, last_tri) = quad_hit.value();
+			else
+			{
+				const auto [cliff1, cliff2] = make_cliff_faces(tile_check, rot, height_dir, tile_sizef, map, settings);
+				if (cliff1)
+				{
+					const auto cliff_hit = check_quad(p, rot, *cliff1);
+					if(cliff_hit)
+						std::tie(bary_point, last_tri) = cliff_hit.value();
+				}
 
-			// If we hit both tris in a quad, prioritise the tri with the closest point to the camera.
-			if (left_hit && right_hit)
-			{
-				if (lowest_tri(quad_triangles.flat_left_tri, quad_triangles.flat_right_tri, rot))
-					right_hit = false;
-				else
-					left_hit = false;
-			}
-			
-			if (left_hit)
-			{
-				bary_point = to_barycentric(p, quad_triangles.left_tri);
-				last_tri = quad_triangles.flat_left_tri;
-			}
-			else if (right_hit)
-			{
-				bary_point = to_barycentric(p, quad_triangles.right_tri);
-				last_tri = quad_triangles.flat_right_tri;
+				if (cliff2)
+				{
+					const auto cliff_hit = check_quad(p, rot, *cliff2);
+					if (cliff_hit)
+						std::tie(bary_point, last_tri) = cliff_hit.value();
+				}
 			}
 
 			// update for next tile
@@ -1896,7 +2036,7 @@ namespace hades
 
 		// mouse not over the terrain
 		if (bary_point == barycentric_point{})
-			return p;
+			return {};
 		// calculate pos within the hit tri
 		return from_barycentric(bary_point, last_tri);
 	}

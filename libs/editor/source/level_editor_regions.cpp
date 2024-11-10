@@ -272,8 +272,11 @@ namespace hades
 		rects[static_cast<T>(line_index::left_bottom)] = l;
 	}
 
-	void level_editor_regions::on_click(mouse_pos m)
+	void level_editor_regions::on_click(std::optional<mouse_pos> m)
 	{
+		if (!m)
+			return;
+
 		if (_show_regions 
 			&& _brush == brush_type::region_selector
 			&& !_regions.empty())
@@ -285,7 +288,7 @@ namespace hades
 				const auto size = r.shape.getSize();
 				const auto rect = rect_float{ pos.x, pos.y, size.x, size.y };
 
-				return collision_test(rect, m);
+				return collision_test(rect, *m);
 			});
 
 			if (target == end)
@@ -296,12 +299,14 @@ namespace hades
 		}
 	}
 
-	void level_editor_regions::on_drag_start(mouse_pos m)
+	void level_editor_regions::on_drag_start(std::optional<mouse_pos> m)
 	{
+		if (!m)
+			return;
 		if (!_show_regions)
 			return;
 
-		const auto snap_pos = snap_to_grid(m, _grid);
+		const auto snap_pos = snap_to_grid(*m, _grid);
 
 		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
@@ -345,7 +350,7 @@ namespace hades
 						bounds.height
 					};
 
-					if (collision_test(rect, m))
+					if (collision_test(rect, *m))
 						return i;
 				}
 
@@ -382,7 +387,7 @@ namespace hades
 						global_bounds.height
 					};
 
-					if (collision_test(bounds, m))
+					if (collision_test(bounds, *m))
 					{
 						_on_drag_begin(i);
 						break;
@@ -437,9 +442,11 @@ namespace hades
 		return swap[static_cast<decltype(swap)::size_type>(d)];
 	}
 
-	void level_editor_regions::on_drag(mouse_pos m)
+	void level_editor_regions::on_drag(std::optional<mouse_pos> m)
 	{
-		const auto snap_pos = snap_to_grid(m, _grid);
+		if (!m)
+			return;
+		const auto snap_pos = snap_to_grid(*m, _grid);
 
 		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
@@ -560,7 +567,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_regions::on_drag_end(mouse_pos)
+	void level_editor_regions::on_drag_end(std::optional<mouse_pos>)
 	{
 		if (_brush == brush_type::region_move)
 			_brush = brush_type::region_selector;

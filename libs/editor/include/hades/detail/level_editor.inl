@@ -95,28 +95,28 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_click(const brush_index_t i, const vector2_float p)
+	inline void basic_level_editor<Components...>::_component_on_click(const brush_index_t i, const std::optional<vector2_float> p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, &level_editor_component::on_click, p);
 		return;
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag_start(const brush_index_t i, const vector2_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag_start(const brush_index_t i, const std::optional<vector2_float> p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, &level_editor_component::on_drag_start, p);
 		return;
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag(const brush_index_t i, const vector2_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag(const brush_index_t i, const std::optional<vector2_float> p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, &level_editor_component::on_drag, p);
 		return;
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_component_on_drag_end(const brush_index_t i, const vector2_float p)
+	inline void basic_level_editor<Components...>::_component_on_drag_end(const brush_index_t i, const std::optional<vector2_float> p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, &level_editor_component::on_drag_end, p);
 		return;
@@ -171,7 +171,7 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline void basic_level_editor<Components...>::_generate_brush_preview(const brush_index_t brush_index, const time_duration dt, const vector2_float world_position)
+	inline void basic_level_editor<Components...>::_generate_brush_preview(const brush_index_t brush_index, const time_duration dt, const std::optional<vector2_float> world_position)
 	{
 		level_editor_do_tuple_work(_editor_components, brush_index, &level_editor_component::make_brush_preview, dt, world_position);
 		return;

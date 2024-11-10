@@ -152,7 +152,7 @@ namespace hades
 		using mouse_pos = vector2_float;
 
 		//used to generate info for draw_brush_preview
-		virtual void make_brush_preview(time_duration, mouse_pos) {}
+		virtual void make_brush_preview(time_duration, std::optional<mouse_pos>) {}
 
 		//return any relevent tags for that location
 		// this is for components that implement terrain or object editing
@@ -161,11 +161,12 @@ namespace hades
 
 		virtual void on_reinit(vector2_float /*window_size*/, vector2_float /*view_size*/) {}
 
-		virtual void on_click(mouse_pos) {}
+		// optional is empty if the click or position is outside the world
+		virtual void on_click(std::optional<mouse_pos>) {}
 	
-		virtual void on_drag_start(mouse_pos) {}
-		virtual void on_drag(mouse_pos) {}
-		virtual void on_drag_end(mouse_pos) {}
+		virtual void on_drag_start(std::optional<mouse_pos>) {}
+		virtual void on_drag(std::optional<mouse_pos>) {}
+		virtual void on_drag_end(std::optional<mouse_pos>) {}
 
 		virtual void on_world_rotate(float) {}
 		virtual void on_screen_move(rect_float /*view_area*/) {}

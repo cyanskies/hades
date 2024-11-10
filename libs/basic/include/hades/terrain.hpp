@@ -466,10 +466,10 @@ namespace hades
 	void place_ramp(tile_position, terrain_map&);
 	void clear_ramp(tile_position, terrain_map&);
 
-	// TODO: change_cliff_layer
+	// TODO: project_onto_terrain needs to return aditional information about the hit
 
 	// project 'p' onto the flat version of 'map'
-	world_vector_t project_onto_terrain(world_vector_t p, float rot_degrees,
+	std::optional<world_vector_t> project_onto_terrain(world_vector_t p, float rot_degrees,
 		const terrain_map& map, const resources::terrain_settings&);
 }
 

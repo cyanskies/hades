@@ -206,11 +206,13 @@ namespace hades
 			std::size_t start_lighting;
 			std::size_t start_grid;
 			std::size_t start_ramp;
+			std::size_t start_cliff_debug;
 			// end per chunk data
 			std::vector<resources::resource_link<resources::texture>> texture_table;
 			const resources::terrain_settings* settings = {};
 			const resources::texture* grid_tex = {};
 			const resources::texture* ramp_tex = {};
+			const resources::texture* cliff_debug_tex = {};
 			const resources::texture* edit_tex = {};
 			rect_float local_bounds = {};
 			std::size_t start_edit;

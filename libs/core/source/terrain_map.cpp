@@ -1092,6 +1092,108 @@ namespace hades
 		return;
 	}
 
+	static void generate_cliff_debug(mutable_terrain_map::shared_data& shared,
+		const rect_int terrain_area)
+	{
+		if (!shared.settings->cliff_overlay_terrain)
+		{
+			log_error("Cliff debug terrain missing"sv);
+			return;
+		}
+
+		const auto& top_tiles = resources::get_transitions(*shared.settings->cliff_overlay_terrain, resources::transition_tile_type::top_left_right, *shared.settings);
+		const auto& right_tiles = resources::get_transitions(*shared.settings->cliff_overlay_terrain, resources::transition_tile_type::top_right_bottom_right, *shared.settings);
+		const auto& bottom_tiles = resources::get_transitions(*shared.settings->cliff_overlay_terrain, resources::transition_tile_type::bottom_left_right, *shared.settings);
+		const auto& left_tiles = resources::get_transitions(*shared.settings->cliff_overlay_terrain, resources::transition_tile_type::top_left_bottom_left, *shared.settings);
+
+		if (top_tiles.empty() || right_tiles.empty() || bottom_tiles.empty() || left_tiles.empty())
+		{
+			log_error("Missing some tile types for cliff debug terrain"sv);
+			return;
+		}
+
+		const resources::tile& top = top_tiles.front(),
+			& right = right_tiles.front(),
+			& bottom = bottom_tiles.front(),
+			& left = left_tiles.front();
+
+		if (top.tex != right.tex ||
+			top.tex != bottom.tex ||
+			top.tex != left.tex)
+		{
+			log_error("Cliff debug terrain tiles must all use the same texture"sv);
+			return;
+		}
+
+		shared.cliff_debug_tex = top.tex.get();
+
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		const auto map_size_tiles = get_size(shared.map.tile_layer);
+
+		const auto tex_coords_top = rect_float{
+				float_cast(top.left),
+				float_cast(top.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_right = rect_float{
+				float_cast(right.left),
+				float_cast(right.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_bottom = rect_float{
+				float_cast(bottom.left),
+				float_cast(bottom.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		const auto tex_coords_left = rect_float{
+				float_cast(left.left),
+				float_cast(left.top),
+				tile_sizef,
+				tile_sizef
+		};
+
+		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+			const auto index = to_1d_index(pos, map_size_tiles.x);
+			const auto cliff_index = index * 4;
+			using tile_type = terrain_map::cliff_layer_layout;
+			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
+
+			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
+			const auto world_pos_f = static_cast<vector2_float>(world_pos);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
+			const auto p = make_triangle_positions(world_pos_f, tile_sizef, triangle_height.triangle_type);
+
+			if (cliffs.edges.test(enum_type(rect_edges::top)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_top);
+				shared.quads.append(quad);
+			}
+
+			if (cliffs.edges.test(enum_type(rect_edges::right)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_right);
+				shared.quads.append(quad);
+			}
+
+			if (cliffs.edges.test(enum_type(rect_edges::bottom)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_bottom);
+				shared.quads.append(quad);
+			}
+
+			if (cliffs.edges.test(enum_type(rect_edges::left)))
+			{
+				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_left);
+				shared.quads.append(quad);
+			}
+		});
+	}
 
 	static constexpr std::array<std::uint8_t, 4> full_bright(const std::array<std::uint8_t, 4>&,
 		const std::array<std::uint8_t, 4>&, const std::uint8_t) noexcept
@@ -1497,6 +1599,10 @@ namespace hades
 		shared.start_ramp = shared.quads.size();
 		if (flags.ramps)
 			generate_ramp(shared, terrain_area);
+
+		shared.start_cliff_debug = shared.quads.size();
+		if (flags.cliffs)
+			generate_cliff_debug(shared, terrain_area);
 		return;
 	}
 
@@ -1567,7 +1673,13 @@ namespace hades
 		if (_show_ramps && _shared.ramp_tex)
 		{
 			s.texture = &resources::texture_functions::get_sf_texture(_shared.ramp_tex);
-			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_ramp, s);
+			_shared.quads.draw(t, _shared.start_ramp, _shared.start_cliff_debug - _shared.start_ramp, s);
+		}
+
+		if (_show_cliff && _shared.cliff_debug_tex)
+		{
+			s.texture = &resources::texture_functions::get_sf_texture(_shared.cliff_debug_tex);
+			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_cliff_debug, s);
 		}
 
 		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);

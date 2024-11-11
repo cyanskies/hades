@@ -408,7 +408,7 @@ namespace hades
 			rect_corners::bottom_right
 		};
 
-		assert(c < rect_corners::last);
+		assert(c < rect_corners::end);
 
 		return horizontal_swap[static_cast<decltype(horizontal_swap)::size_type>(c)];
 	}
@@ -423,7 +423,7 @@ namespace hades
 			rect_corners::top_left
 		};
 
-		assert(c < rect_corners::last);
+		assert(c < rect_corners::end);
 
 		return vertical_swap[static_cast<decltype(vertical_swap)::size_type>(c)];
 	}

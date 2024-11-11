@@ -223,8 +223,7 @@ namespace hades
 		}
 	}
 
-	immutable_terrain_map::immutable_terrain_map(const terrain_map& t) :
-		_tile_layer{ t.tile_layer }
+	immutable_terrain_map::immutable_terrain_map(const terrain_map& t)
 	{
 		for (const auto& l : t.terrain_layers)
 			_terrain_layers.emplace_back(l);
@@ -232,7 +231,6 @@ namespace hades
 
 	void immutable_terrain_map::create(const terrain_map& t)
 	{
-		_tile_layer.create(t.tile_layer);
 		_terrain_layers.clear();
 		for (const auto& l : t.terrain_layers)
 			_terrain_layers.emplace_back(l);
@@ -244,7 +242,7 @@ namespace hades
 			iter != std::rend(_terrain_layers); ++iter)
 			t.draw(*iter, s);
 
-		t.draw(_tile_layer, s);
+		//t.draw(_tile_layer, s);
 	}
 
 	rect_float immutable_terrain_map::get_local_bounds() const noexcept
@@ -272,8 +270,8 @@ namespace hades
 	void mutable_terrain_map::reset(terrain_map t)
 	{
 		const auto& tile_size = _shared.settings->tile_size;
-		const auto& width = t.tile_layer.width;
-		const auto& tiles = t.tile_layer.tiles;
+		const auto width = get_tile_width(t);
+		const auto& tiles = t.cliff_layer;
 
 		_shared.local_bounds = rect_float{
 			0.f, 0.f,
@@ -488,7 +486,7 @@ namespace hades
 		tile_buffer.clear();
 		tile_buffer.reserve(integer_clamp_cast<std::size_t>(terrain_area.x) * integer_clamp_cast<std::size_t>(terrain_area.y));
 
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto& tile = get_tile_at(map, pos);
@@ -516,229 +514,6 @@ namespace hades
 		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
 		make_layer_regions(shared, tile_buffer, tile_sizef);
 		return;
-	}
-
-	struct basic_map_tile
-	{
-		std::array<world_vector_t, 6> positions;
-		triangle_height_data height;
-	};
-
-	// swap a tile facing, so it doesnt get culled
-	// cliffs are all uphill by default, so this makes them into reversed
-	// downhill quads
-	//template<typename T>
-	//	requires std::same_as<T, map_tile> || std::same_as<T, basic_map_tile>
-	//[[deprecated]]
-	//static constexpr void swap_cliff_winding(T& t) noexcept
-	//{
-	//	assert(t.height.triangle_type == terrain_map::triangle_uphill);
-
-	//	constexpr auto swap_winding = []<typename T>(std::array<T, 6>& a) noexcept {
-	//		std::swap(a[1], a[2]);
-	//		std::swap(a[4], a[5]);
-	//		return;
-	//	};
-
-	//	swap_winding(t.height.height);
-	//	swap_winding(t.positions);
-
-	//	// deprecate
-	//	t.backface_quad = !t.backface_quad;
-	//	return;
-	//}
-
-	// generate correct vertex positions for varius cliff types
-	//[[deprecated]]
-	//static constexpr basic_map_tile make_diag_cliff(const vector2_float& pos_f, const float tile_sizef,
-	//	const triangle_height_data& triangle_height, const terrain_map::cliff_info cliffs) noexcept
-	//{
-	//	const auto h = get_height_for_diag_edge(triangle_height);
-	//	const auto left_low = std::midpoint(h[0], h[1]) < std::midpoint(h[2], h[3]);
-
-	//	const auto low = std::array{
-	//		std::min(h[0], h[2]), std::min(h[1], h[3])
-	//	};
-
-	//	const auto high = std::array{
-	//		std::max(h[0], h[2]), std::max(h[1], h[3])
-	//	};
-
-	//	auto r_pos_right = vector2_float{};
-	//	auto r_pos_left = vector2_float{};
-
-	//	if (cliffs.triangle_type == enum_type(terrain_map::triangle_uphill))
-	//	{
-	//		r_pos_right = vector2_float{
-	//			pos_f.x + tile_sizef,
-	//			pos_f.y
-	//		};
-
-	//		r_pos_left = vector2_float{
-	//			pos_f.x,
-	//			pos_f.y + tile_sizef
-	//		};
-	//	}
-	//	else
-	//	{
-	//		r_pos_right = vector2_float{
-	//			pos_f.x + tile_sizef,
-	//			pos_f.y + tile_sizef
-	//		};
-
-	//		r_pos_left = pos_f;
-	//	}
-
-	//	const auto reverse_winding = !(left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_downhill) ||
-	//		!left_low && cliffs.triangle_type == enum_type(terrain_map::triangle_uphill));
-
-	//	const auto positions = std::array{
-	//		//first triangle
-	//		r_pos_left,		//top left
-	//		r_pos_left,		//bottom left
-	//		r_pos_right, 	//top right
-	//		//second triangle
-	//		r_pos_right,	//top right
-	//		r_pos_left,		//bottom left
-	//		r_pos_right,	//bottom right
-	//	};
-
-	//	const auto tris = triangle_height_data{
-	//		{
-	//			high[0], low[0], high[1],
-	//			high[1], low[0], low[1]
-	//		},
-	//		terrain_map::triangle_uphill
-	//	};
-
-	//	auto tile = basic_map_tile{
-	//		positions,
-	//		tris
-	//	};
-
-	//	if (reverse_winding)
-	//		swap_cliff_winding(tile);
-	//	return tile;
-	//}
-
-	// TODO: reduce params
-	static basic_map_tile make_right_cliff(const vector2_int& pos, const vector2_float& pos_f,
-		const float tile_sizef,	const triangle_height_data& triangle_height,
-		const terrain_map::cliff_info cliffs, const terrain_map& map, const resources::terrain_settings& settings) noexcept
-	{
-		const auto height_top = get_height_for_right_edge(triangle_height);
-		const auto next_height = get_height_for_triangles(pos + tile_position{ 1, 0 }, map, settings);
-		const auto height_bottom = get_height_for_left_edge(next_height);
-
-		const auto backface = std::midpoint(height_top[0], height_top[1]) < std::midpoint(height_bottom[0], height_bottom[1]);
-
-		const auto low = std::array{
-			std::min(height_top[0], height_bottom[0]), std::min(height_top[1], height_bottom[1])
-		};
-
-		const auto high = std::array{
-			std::max(height_top[0], height_bottom[0]), std::max(height_top[1], height_bottom[1])
-		};
-
-		const auto tris = triangle_height_data{
-			{
-				high[1], low[1], high[0],
-				high[0], low[1], low[0]
-			},
-			terrain_map::triangle_uphill
-		};
-
-		// left and right points, when looking at the face of the cliff
-		// actually the top-right and bottom-right points of the surface tile
-		const auto r_pos_right = vector2_float{
-			pos_f.x + tile_sizef,
-			pos_f.y
-		};
-
-		const auto r_pos_left = vector2_float{
-			pos_f.x + tile_sizef,
-			pos_f.y + tile_sizef
-		};
-
-		const auto positions = std::array{
-			//first triangle
-			r_pos_left,		//top left
-			r_pos_left,		//bottom left
-			r_pos_right, 	//top right
-			//second triangle
-			r_pos_right,	//top right
-			r_pos_left,		//bottom left
-			r_pos_right,	//bottom right
-		};
-
-		auto tile = basic_map_tile{ 
-			positions,
-			tris
-		};
-
-		//if (backface)
-			//swap_cliff_winding(tile);
-		return tile;
-	}
-
-	// TODO: reduce params
-	static basic_map_tile make_bottom_cliff(const vector2_int& pos, const vector2_float& pos_f,
-		const float tile_sizef,	const triangle_height_data& triangle_height,
-		const terrain_map::cliff_info cliffs, const terrain_map& map, const resources::terrain_settings& settings) noexcept
-	{
-		const auto height_top = get_height_for_bottom_edge(triangle_height);
-		const auto next_height = get_height_for_triangles(pos + tile_position{ 0, 1 }, map, settings);
-		const auto height_bottom = get_height_for_top_edge(next_height);
-
-		const auto backface = std::midpoint(height_top[0], height_top[1]) < std::midpoint(height_bottom[0], height_bottom[1]);
-
-		const auto low = std::array{
-			std::min(height_top[0], height_bottom[0]), std::min(height_top[1], height_bottom[1])
-		};
-
-		const auto high = std::array{
-			std::max(height_top[0], height_bottom[0]), std::max(height_top[1], height_bottom[1])
-		};
-
-		const auto tris = triangle_height_data{
-			{
-				high[0], low[0], high[1],
-				high[1], low[0], low[1]
-			},
-			terrain_map::triangle_uphill
-		};
-
-		// left and right points, when looking at the face of the cliff
-		// actually the bottom-left and bottom-right points of the surface tile
-		const auto r_pos_left = vector2_float{
-			pos_f.x,
-			pos_f.y + tile_sizef
-		};
-
-		const auto r_pos_right = vector2_float{
-			pos_f.x + tile_sizef,
-			pos_f.y + tile_sizef
-		};
-
-		const auto positions = std::array{
-			//first triangle
-			r_pos_left,		//top left
-			r_pos_left,		//bottom left
-			r_pos_right, 	//top right
-			//second triangle
-			r_pos_right,	//top right
-			r_pos_left,		//bottom left
-			r_pos_right,	//bottom right
-		};
-
-		auto tile = basic_map_tile{
-			positions,
-			tris
-		};
-
-		//if (backface)
-			//swap_cliff_winding(tile);
-		return tile;
 	}
 
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
@@ -953,7 +728,7 @@ namespace hades
 		shared.grid_tex = grid_tile.tex.get();
 
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 
 		const auto tex_coords = rect_float{
 				float_cast(grid_tile.left),
@@ -1018,7 +793,7 @@ namespace hades
 		shared.ramp_tex = top.tex.get();
 
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 
 		const auto tex_coords_top = rect_float{
 				float_cast(top.left),
@@ -1129,7 +904,7 @@ namespace hades
 		shared.cliff_debug_tex = top.tex.get();
 
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 
 		const auto tex_coords_top = rect_float{
 				float_cast(top.left),
@@ -1427,7 +1202,7 @@ namespace hades
 				return tile_position{ 1, 0 };
 			}(sun_left);
 
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 		
 		auto table_area = terrain_area;
 		table_area.x = std::max(table_area.x - sun_dist, 0);
@@ -1481,7 +1256,7 @@ namespace hades
 		assert(shared.settings->editor_terrain);
 		
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto map_size_tiles = get_size(shared.map.tile_layer);
+		const auto map_size_tiles = get_size(shared.map);
 
 		if (shared.edit_target_style == mutable_terrain_map::edit_target::tile)
 		{
@@ -1730,13 +1505,6 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::place_tile(const tile_position p, const resources::tile& t)
-	{
-		//hades::place_tile(_shared.map, p, t, *_shared.settings);
-		_needs_update = true;
-		return;
-	}
-
 	void mutable_terrain_map::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
 	{
 		hades::place_terrain(_shared.map, p, t, *_shared.settings);
@@ -1751,13 +1519,6 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::raise_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
-	{
-		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::add_height_functor{ amount });
-		_needs_update = true;
-		return;
-	}
-
 	void mutable_terrain_map::lower_terrain(const terrain_vertex_position v, const std::uint8_t amount)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
@@ -1765,23 +1526,9 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::lower_terrain(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
-	{
-		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
-		_needs_update = true;
-		return;
-	}
-
 	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position v, const std::uint8_t h)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::set_height_functor{ h });
-		_needs_update = true;
-		return;
-	}
-
-	void mutable_terrain_map::set_terrain_height(const tile_position p, const rect_corners c, const bool left_tri, const std::uint8_t amount)
-	{
-		//change_terrain_height(p, c, left_tri, _shared.map, *_shared.settings, detail::set_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
@@ -1804,28 +1551,6 @@ namespace hades
 	{
 		hades::place_ramp(p, _shared.map);
 		_needs_update = true;
-	}
-
-	[[deprecated]]
-	void mutable_terrain_map::set_height_for_triangles(const tile_position p, const triangle_height_data t)
-	{
-		//hades::set_height_for_triangles(p, _shared.map, t);
-		_needs_update = true;
-		return;
-	}
-
-	[[deprecated]]
-	void mutable_terrain_map::set_cliff_info_tmp(tile_position p, terrain_map::cliff_info c) // TODO: temp remove
-	{
-		//hades::set_cliff_info_tmp(p, _shared.map, c);
-		_needs_update = true;
-		return;
-	}
-
-	void mutable_terrain_map::swap_triangle_type(const tile_position p)
-	{
-		//hades::swap_triangle_type(_shared.map, p);
-		return;
 	}
 
 	//==================================//

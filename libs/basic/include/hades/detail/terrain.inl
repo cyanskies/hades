@@ -96,7 +96,7 @@ namespace hades
 				std::pair{ std::uint8_t{ 1 }, bad_triangle_index },	// bottom-left
 		};
 
-		assert(c < rect_corners::last);
+		assert(c < rect_corners::end);
 
 		if (tri_type == terrain_map::triangle_uphill)
 			return uphill[enum_type(c)];

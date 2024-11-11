@@ -163,19 +163,6 @@ namespace hades
 
 	struct raw_terrain_map
 	{
-		struct [[deprecated]] cliff_info
-		{
-			bool triangle_type : 1,
-				diag : 1,
-				bottom : 1,
-				right : 1,
-				diag_uphill : 1,
-				diag_downhill : 1;
-		};
-
-		[[deprecated]] raw_map tile_layer;
-		[[deprecated]] raw_map cliffs;
-
 		//terrain vertex are id starting at 1
 		// 0 is reserved for the empty vertex
 		//if empty, then should be filled with empty vertex
@@ -186,7 +173,6 @@ namespace hades
 		std::vector<cliff_layer_t> cliff_layer;
 		using ramp_layer_t = std::uint8_t;
 		std::vector<ramp_layer_t> ramp_layer;
-		[[deprecated]] std::vector<cliff_info> cliff_data;
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
@@ -245,13 +231,10 @@ namespace hades
 			surface, diag, right, bottom
 		};
 
-		using cliff_info = raw_terrain_map::cliff_info;
-
-		// TODO: maybe deprecate
-		[[deprecated]] tile_map tile_layer;
+		// TODO: generate cliff tiles once
 		// Should be 4 times the size of tile_layer ( surface tile, diagonal tile, right tile, bottom tile )
 		// See: cliff_layer_layout
-		[[deprecated]] tile_map cliffs;
+		tile_map cliffs;
 
 		// Terrain vertex info.
 		// Same size as tile_layer, but with an extra column and row.
@@ -268,10 +251,6 @@ namespace hades
 		using ramp_layer_t = raw_terrain_map::ramp_layer_t;
 		std::vector<ramp_layer_t> ramp_layer;
 		// TODO: water level std::vector<std::uint8_t> water_level;
-		// Cliff info is stored per tile.
-		// Same size as tile_layer
-		[[deprecated]] std::vector<cliff_info> cliff_data;
-
 		// TODO: sun_angle
 
 		// Dynamically generated tile layers to represent the terrain vertex
@@ -307,6 +286,7 @@ namespace hades
 	terrain_map make_map(tile_position size, const resources::terrainset*, const resources::terrain*, const resources::terrain_settings&);
 
 	// returns the row length of the terrain vertex data
+	// TODO: rename get_vertex_width
 	terrain_index_t get_width(const terrain_map&) noexcept;
 	// returns the row length of the map in tiles
 	tile_index_t get_tile_width(const terrain_map&) noexcept;
@@ -369,10 +349,7 @@ namespace hades
 	// returns height arranged into two triangles
 	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&, const resources::terrain_settings&);
 
-	// TODO: maybe deprecate the first overload
-	[[deprecated]]
-	std::array<std::uint8_t, 4> get_max_height_in_corners(const tile_position tile_index, const terrain_map& map, const resources::terrain_settings&);
-	[[deprecated]]
+	[[deprecated]] // TODO: used in lighting generator
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept;
 
 	// returns the height at both end of an edge (left/top first)
@@ -382,21 +359,6 @@ namespace hades
 	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
 	// as above, but left triangle first and right triangle second
 	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept;
-
-	// NOTE: cliffs are *owned* by the tile they are attached too
-	//		eg: a tile owns cliffs that pass through its middle, and
-	//			cliffs to it's right and bottom
-	// This info is used mostly for rendering
-	[[deprecated]]
-	terrain_map::cliff_info get_cliff_info(tile_index_t, const terrain_map&) noexcept;
-	[[deprecated]]
-	terrain_map::cliff_info get_cliff_info(tile_position, const terrain_map&);
-
-
-	// index array using rectangle_math.hpp::hades::rect_corners
-	// useful for deciding the surface tile near cliffs
-	[[deprecated]]
-	std::array<bool, 4> get_cliffs_corners(tile_position, const terrain_map&);
 
 	using adjacent_cliffs = std::bitset<4>;
 	using cliff_corners = std::bitset<4>;
@@ -428,13 +390,9 @@ namespace hades
 	// TODO: replace vector2_int with tile_position
 	void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right,
 		const resources::terrain*, std::uint8_t height, const resources::terrain_settings&);
-	//as above, new tiles will be set as it tile& was resources::get_empty_tile()
-	[[deprecated]] void resize_map_relative(terrain_map&, vector2_int top_left, vector2_int bottom_right);
 	//as above, places current map content at offset
 	void resize_map(terrain_map&, vector2_int size, vector2_int offset, const resources::terrain*,
 		std::uint8_t height, const resources::terrain_settings& s);
-	//as above, new tiles will be set as if tile& was resources::get_empty_tile()
-	[[deprecated]] void resize_map(terrain_map&, vector2_int size, vector2_int offset);
 
 	// calls Func on each tile that borders the passed vertex
 	template<std::invocable<tile_position> Func>

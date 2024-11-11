@@ -28,8 +28,8 @@ namespace hades
 		_settings{ resources::get_terrain_settings() },
 		_view_height{ console::get_int(cvars::editor_camera_height_px, cvars::default_value::editor_camera_height_px) }
 	{
-		assert(!empty(_settings->empty_tileset.get()->tiles));
-		_empty_tile = _settings->empty_tileset.get()->tiles[0];
+		//assert(!empty(_settings->empty_tileset.get()->tiles));
+		//_empty_tile = _settings->empty_tileset.get()->tiles[0];
 		_empty_terrain = _settings->empty_terrain.get();
 		_resize.terrain = _empty_terrain;
 		_empty_terrainset = _settings->empty_terrainset.get();
@@ -132,21 +132,6 @@ namespace hades
 		};
 
 		assert(size.x >= 0 && size.y >= 0);
-
-		//change the raw map so it can be validly converted into a terrain_map
-		//generate a empty tile layer of the correct size
-		if (std::empty(map_raw.tile_layer.tiles) ||
-			map_raw.tile_layer.width == tile_index_t{})
-		{
-			map_raw.tile_layer.width = integer_cast<tile_index_t>(size.x);
-			map_raw.tile_layer.tilesets.clear();
-			map_raw.tile_layer.tilesets.emplace_back(resources::get_empty_tileset_id(), 0u);
-
- 			map_raw.tile_layer.tiles = std::vector<tile_id_t>(
-				static_cast<std::size_t>(size.x) * static_cast<std::size_t>(size.y),
-				tile_id_t{}
-			);
-		}
 
 		//if terrainset is empty then assign one
 		if (map_raw.terrainset == unique_id::zero)
@@ -353,12 +338,6 @@ namespace hades
 		}
 	}
 
-	template<typename Func>
-	concept invoke_vertex = std::invocable<Func, const tile_position, const rect_corners, const bool /*left_triangle*/>;
-
-	template<typename Func>
-	concept invoke_edge = always_true_v<Func>;
-
 	struct vertex_tag_t {};
 	constexpr auto vertex_tag = vertex_tag_t{};
 
@@ -368,51 +347,6 @@ namespace hades
 	concept invoke_position = std::invocable<Func, tile_position> && 
 		invocable_for_each_circle<Func> &&
 		std::invocable<Func, vertex_tag_t, terrain_vertex_position>;
-
-	template<invoke_position Func>
-	static void for_each_safe_diag(terrain_vertex_position position, const terrain_vertex_position diff,
-		int distance, const terrain_vertex_position world_size, Func&& f)
-	{
-		while (distance-- > 0)
-		{
-			std::invoke(f, position);
-			position += diff;
-
-			if (!within_world(position, world_size))
-				break;
-		}
-
-		return;
-	}
-
-	template<invoke_position Func>
-	static void do_diag_edge(terrain_vertex_position vert, vector2_float frac_pos,
-		const terrain_map::triangle_type triangle_type, const int size, const terrain_vertex_position world_size, Func&& f)
-	{
-		if (frac_pos.x >= .5f)
-			++vert.x;
-		if (frac_pos.y >= .5f)
-			++vert.y;
-
-		auto diff = terrain_vertex_position{ 1, 1 };
-		const auto half = size / 2;
-		vert.x -= half;
-		if (triangle_type == terrain_map::triangle_uphill)
-		{
-			vert.y += half;
-			diff.y = -1;
-		}
-		else
-			vert.y -= half;
-
-		// start
-		// length
-		// direction
-		return for_each_safe_diag(vert, diff, size + 1, world_size, std::forward<Func>(f));
-	}
-
-	constexpr auto downhill_line = line_t<float>{ {0.f, 0.f}, { 1.f, 1.f } };
-	constexpr auto uphill_line = line_t<float>{ { 0.f, 1.f }, { 1.f, 0.f } };
 
 	using brush_t = level_editor_terrain::brush_type;
 	using brush_shape_t = level_editor_terrain::draw_shape;
@@ -430,19 +364,11 @@ namespace hades
 			t.pixel_target.y / float_cast(tile_size)
 		};
 
-		const auto trunc_pos = world_vector_t{
-				std::floor(draw_pos_f.x),
-				std::floor(draw_pos_f.y)
-		};
-
 		// tile_pos
 		auto tile_pos = t.tile_target;
 
 		if (!within_world(tile_pos, world_size))
 			return;
-
-		// is this used
-		const auto frac_pos = draw_pos_f - trunc_pos;
 
 		auto vertex = static_cast<terrain_vertex_position>(world_vector_t{
 				std::round(draw_pos_f.x),

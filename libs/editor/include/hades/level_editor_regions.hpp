@@ -53,11 +53,11 @@ namespace hades
 
 		void gui_update(gui&, editor_windows&) override;
 
-		void on_click(std::optional<mouse_pos>) override;
+		void on_click(std::optional<terrain_target>) override;
 
-		void on_drag_start(std::optional<mouse_pos>) override;
-		void on_drag(std::optional<mouse_pos>) override;
-		void on_drag_end(std::optional<mouse_pos>) override;
+		void on_drag_start(std::optional<terrain_target>) override;
+		void on_drag(std::optional<terrain_target>) override;
+		void on_drag_end(std::optional<terrain_target>) override;
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override;

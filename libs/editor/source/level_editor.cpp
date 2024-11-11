@@ -190,17 +190,20 @@ namespace hades::detail
 			const auto terrain_map = _component_peek_terrain();
 			if (terrain_map)
 			{
-				const auto adapted_mouse_pos_opt = terrain_map && _height_enabled ?
-					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings)
-					: level_mouse_pos;
+				auto adapted_mouse_pos_opt =
+					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings);
 
-				const auto adapted_mouse_pos = adapted_mouse_pos_opt.value_or(world_vector_t{});
 				const auto rounded_terrain_pos = tile_position{
-					integral_cast<tile_position::value_type>(adapted_mouse_pos.x, round_down_tag),
-					integral_cast<tile_position::value_type>(adapted_mouse_pos.y, round_down_tag)
+					integral_cast<tile_position::value_type>(level_mouse_pos.x, round_down_tag),
+					integral_cast<tile_position::value_type>(level_mouse_pos.y, round_down_tag)
 				};
 
-				const auto tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
+				auto tile_pos = bad_tile_position;
+				if (_height_enabled && adapted_mouse_pos_opt)
+					tile_pos = adapted_mouse_pos_opt->tile_target;
+				else  if(!_height_enabled)
+					tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
+
 				//clamp to world limits
 				if (within_world(tile_pos, get_size(*terrain_map)))
 					_mouse_pos_world = std::format("Hovered Tile: {}"sv, tile_pos);
@@ -208,9 +211,15 @@ namespace hades::detail
 					_mouse_pos_world = "Hovered Tile: Outside World"sv;
 
 				if (adapted_mouse_pos_opt)
-					_mouse_pos_world_f = std::format("Hovered Point: {}"sv, *adapted_mouse_pos_opt);
+					_mouse_pos_world_f = std::format("Hovered Point: {}"sv, adapted_mouse_pos_opt->pixel_target);
 				else
 					_mouse_pos_world_f = "Hovered Point: Outside World"sv;
+
+				// fix up the terrain target for flat mode
+				if (!_height_enabled && within_world(tile_pos, get_size(*terrain_map)))
+					adapted_mouse_pos_opt = terrain_target{ level_mouse_pos, tile_pos, rect_edges::end };
+				else if (!_height_enabled)
+					adapted_mouse_pos_opt.reset();
 
 				if (_active_brush != invalid_brush)
 					_generate_brush_preview(_active_brush, dt, adapted_mouse_pos_opt);
@@ -227,15 +236,22 @@ namespace hades::detail
 					const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
 					const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
 
-					const auto adapted_drag_start = terrain_map && _height_enabled ?
-						project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings)
-						: drag_start_level;
-					_component_on_drag_start(_active_brush, adapted_drag_start);
+					if (_height_enabled)
+					{
+						const auto adapted_drag_start =
+							project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings);
+						_component_on_drag_start(_active_brush, adapted_drag_start);
+					}
+					else
+					{
+						const auto target = terrain_target{ drag_start_level, tile_pos, rect_edges::end };
+						_component_on_drag_start(_active_brush, target);
+					}
 				}
 				else if (mouse::is_dragging(_mouse_left))
-					_component_on_drag(_active_brush, adapted_mouse_pos);
+					_component_on_drag(_active_brush, adapted_mouse_pos_opt);
 				else if (mouse::is_drag_end(_mouse_left))
-					_component_on_drag_end(_active_brush, adapted_mouse_pos);
+					_component_on_drag_end(_active_brush, adapted_mouse_pos_opt);
 			}
 			else
 				log_error("No terrain_map provided to level_editor_component::peek_terrain"sv);

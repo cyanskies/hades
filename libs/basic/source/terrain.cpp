@@ -1878,14 +1878,15 @@ namespace hades
 		return out;
 	}
 
-	static const std::tuple<std::optional<tris>, std::optional<tris>> make_cliff_faces(const tile_position tile_check,
+	static const std::tuple<std::optional<tris>, std::optional<tris>, rect_edges, rect_edges> make_cliff_faces(const tile_position tile_check,
 		const float rot, const world_vector_t height_dir, const float tile_sizef,
 		const terrain_map& m, const resources::terrain_settings& settings)
 	{
 		const auto [cliff1, cliff2] = visible_cliffs(rot);
 		const auto adj_cliffs = get_adjacent_cliffs(tile_check, m);
 		return { make_cliff_face(cliff1, tile_check, adj_cliffs, height_dir, tile_sizef, m, settings),
-			make_cliff_face(cliff2, tile_check, adj_cliffs, height_dir, tile_sizef, m, settings) };
+			make_cliff_face(cliff2, tile_check, adj_cliffs, height_dir, tile_sizef, m, settings),
+			cliff1, cliff2 };
 	}
 
 	static std::optional<std::tuple<barycentric_point, std::array<vector2_float, 3>>> 
@@ -1923,7 +1924,7 @@ namespace hades
 	}
 
 	// project 'p' onto the flat version of 'map'
-	std::optional<vector2_float> project_onto_terrain(const world_vector_t p, const float rot,
+	std::optional<terrain_target> project_onto_terrain(const world_vector_t p, const float rot,
 		const terrain_map& map,	const resources::terrain_settings& settings)
 	{
 		const auto tile_size = settings.tile_size;
@@ -1961,6 +1962,8 @@ namespace hades
 		// quad vertex for the last hit quad
 		auto bary_point = barycentric_point{};
 		auto last_tri = std::array<vector2_float, 3>{};
+		auto tile_hit = tile_position{};
+		auto cliff_target = rect_edges::end;
 		
 		// go from 'p' in the direction of advance dir, checking each tile to see if it is under the mouse
 		// end after reaching the edge of the map
@@ -2002,22 +2005,33 @@ namespace hades
 
 			const auto quad_hit = check_quad(p, rot, quad_triangles);
 			if (quad_hit)
+			{
 				std::tie(bary_point, last_tri) = quad_hit.value();
+				tile_hit = tile_check;
+			}
 			else
 			{
-				const auto [cliff1, cliff2] = make_cliff_faces(tile_check, rot, height_dir, tile_sizef, map, settings);
+				const auto [cliff1, cliff2, edge1, edge2] = make_cliff_faces(tile_check, rot, height_dir, tile_sizef, map, settings);
 				if (cliff1)
 				{
 					const auto cliff_hit = check_quad(p, rot, *cliff1);
-					if(cliff_hit)
+					if (cliff_hit)
+					{
 						std::tie(bary_point, last_tri) = cliff_hit.value();
+						tile_hit = tile_check;
+						cliff_target = edge1;
+					}
 				}
 
 				if (cliff2)
 				{
 					const auto cliff_hit = check_quad(p, rot, *cliff2);
 					if (cliff_hit)
+					{
 						std::tie(bary_point, last_tri) = cliff_hit.value();
+						tile_hit = tile_check;
+						cliff_target = edge2;
+					}
 				}
 			}
 
@@ -2038,7 +2052,8 @@ namespace hades
 		if (bary_point == barycentric_point{})
 			return {};
 		// calculate pos within the hit tri
-		return from_barycentric(bary_point, last_tri);
+		const auto pixel = from_barycentric(bary_point, last_tri);
+		return terrain_target{ pixel, tile_hit, cliff_target };
 	}
 }
 

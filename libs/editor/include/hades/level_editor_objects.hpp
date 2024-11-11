@@ -52,15 +52,15 @@ namespace hades
 		void level_resize(vector2_int, vector2_int) override final;
 
 		void gui_update(gui&, editor_windows&) override final;
-		void make_brush_preview(time_duration, std::optional<mouse_pos>) override final;
+		void make_brush_preview(time_duration, std::optional<terrain_target>) override final;
 		void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) override final;
 
 		tag_list get_object_tags_at_location(rect_float) const override final;
 
-		void on_click(std::optional<mouse_pos>) override final;
-		void on_drag_start(std::optional<mouse_pos>) override final;
-		void on_drag(std::optional<mouse_pos>) override final;
-		void on_drag_end(std::optional<mouse_pos>) override final;
+		void on_click(std::optional<terrain_target>) override final;
+		void on_drag_start(std::optional<terrain_target>) override final;
+		void on_drag(std::optional<terrain_target>) override final;
+		void on_drag_end(std::optional<terrain_target>) override final;
 
 		void on_world_rotate(float) override final;
 

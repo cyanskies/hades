@@ -482,12 +482,12 @@ namespace hades
 		selection_rect = std::move(selector);
 	}
 
-	void level_editor_objects_impl::make_brush_preview(time_duration, std::optional<mouse_pos> p)
+	void level_editor_objects_impl::make_brush_preview(time_duration, std::optional<terrain_target> p)
 	{
 		if (!p)
 			return;
 
-		const auto pos = *p;
+		const auto pos = p->pixel_target;
 
 		switch (_brush_type)
 		{
@@ -564,14 +564,14 @@ namespace hades
 		return bad_entity;
 	}
 
-	void level_editor_objects_impl::on_click(std::optional<mouse_pos> p)
+	void level_editor_objects_impl::on_click(std::optional<terrain_target> p)
 	{
 		if (!p)
 			return;
 
 		assert(_brush_type != brush_type::object_drag);
 
-		const auto pos = *p;
+		const auto pos = p->pixel_target;
 
 		if (_brush_type == brush_type::object_selector
 			&& _show_objects 
@@ -600,11 +600,11 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects_impl::on_drag_start(std::optional<mouse_pos> p)
+	void level_editor_objects_impl::on_drag_start(std::optional<terrain_target> p)
 	{
 		if (!p)
 			return;
-		const auto pos = *p;
+		const auto pos = p->pixel_target;
 
 		if (!within_level(pos, vector2_float{}, _level_limit))
 			return;
@@ -626,11 +626,11 @@ namespace hades
 		}
 	}
 
-	void level_editor_objects_impl::on_drag(std::optional<mouse_pos> p)
+	void level_editor_objects_impl::on_drag(std::optional<terrain_target> p)
 	{
 		if (!p)
 			return;
-		auto pos = *p;
+		auto pos = p->pixel_target;
 
 		if (!_show_objects)
 			return;
@@ -651,14 +651,15 @@ namespace hades
 		//TODO: if object selector_selection rect stretch the rect
 	}
 
-	void level_editor_objects_impl::on_drag_end(std::optional<mouse_pos> pos)
+	void level_editor_objects_impl::on_drag_end(std::optional<terrain_target> pos)
 	{
 		if (!pos)
 			return;
 
 		if (_brush_type == brush_type::object_drag)
 		{
-			const auto snapped_pos = snap_to_grid(*pos, _grid);
+			// TODO: grid is tile aligned, just use tile_target
+			const auto snapped_pos = snap_to_grid(pos->pixel_target, _grid);
 
 			const auto id = _held_object->id;
 			if (_try_place_object(snapped_pos, *_held_object))

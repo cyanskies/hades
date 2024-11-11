@@ -272,7 +272,7 @@ namespace hades
 		rects[static_cast<T>(line_index::left_bottom)] = l;
 	}
 
-	void level_editor_regions::on_click(std::optional<mouse_pos> m)
+	void level_editor_regions::on_click(std::optional<terrain_target> m)
 	{
 		if (!m)
 			return;
@@ -288,7 +288,7 @@ namespace hades
 				const auto size = r.shape.getSize();
 				const auto rect = rect_float{ pos.x, pos.y, size.x, size.y };
 
-				return collision_test(rect, *m);
+				return collision_test(rect, m->pixel_target);
 			});
 
 			if (target == end)
@@ -299,14 +299,15 @@ namespace hades
 		}
 	}
 
-	void level_editor_regions::on_drag_start(std::optional<mouse_pos> m)
+	void level_editor_regions::on_drag_start(std::optional<terrain_target> m)
 	{
 		if (!m)
 			return;
 		if (!_show_regions)
 			return;
 
-		const auto snap_pos = snap_to_grid(*m, _grid);
+		// TODO: just use tile target
+		const auto snap_pos = snap_to_grid(m->pixel_target, _grid);
 
 		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
@@ -350,7 +351,7 @@ namespace hades
 						bounds.height
 					};
 
-					if (collision_test(rect, *m))
+					if (collision_test(rect, m->pixel_target))
 						return i;
 				}
 
@@ -387,7 +388,7 @@ namespace hades
 						global_bounds.height
 					};
 
-					if (collision_test(bounds, *m))
+					if (collision_test(bounds, m->pixel_target))
 					{
 						_on_drag_begin(i);
 						break;
@@ -442,11 +443,12 @@ namespace hades
 		return swap[static_cast<decltype(swap)::size_type>(d)];
 	}
 
-	void level_editor_regions::on_drag(std::optional<mouse_pos> m)
+	void level_editor_regions::on_drag(std::optional<terrain_target> m)
 	{
 		if (!m)
 			return;
-		const auto snap_pos = snap_to_grid(*m, _grid);
+		// TODO: just use tile_target
+		const auto snap_pos = snap_to_grid(m->pixel_target, _grid);
 
 		const auto pos = vector2_float{
 			std::clamp(snap_pos.x, 0.f, static_cast<float>(_level_limits.x)),
@@ -567,7 +569,7 @@ namespace hades
 		}
 	}
 
-	void level_editor_regions::on_drag_end(std::optional<mouse_pos>)
+	void level_editor_regions::on_drag_end(std::optional<terrain_target>)
 	{
 		if (_brush == brush_type::region_move)
 			_brush = brush_type::region_selector;

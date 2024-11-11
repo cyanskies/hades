@@ -417,7 +417,7 @@ namespace hades
 	using brush_t = level_editor_terrain::brush_type;
 	using brush_shape_t = level_editor_terrain::draw_shape;
 	template<invoke_position Func>
-	static void for_each_position(const level_editor_terrain::mouse_pos p,
+	static void for_each_position(const terrain_target t,
 		const resources::tile_size_t tile_size, const level_editor_terrain::draw_shape shape,
 		const brush_t brush, int size, const terrain_map& map,
 		Func&& f) //		  ^^^^^ TODO: make this uint16_t
@@ -426,8 +426,8 @@ namespace hades
 		const auto world_vertex_size = world_size + tile_position{ 1, 1 };
 
 		const auto draw_pos_f = world_vector_t{
-			p.x / float_cast(tile_size),
-			p.y / float_cast(tile_size)
+			t.pixel_target.x / float_cast(tile_size),
+			t.pixel_target.y / float_cast(tile_size)
 		};
 
 		const auto trunc_pos = world_vector_t{
@@ -436,11 +436,12 @@ namespace hades
 		};
 
 		// tile_pos
-		auto tile_pos = static_cast<terrain_vertex_position>(trunc_pos);
+		auto tile_pos = t.tile_target;
 
 		if (!within_world(tile_pos, world_size))
 			return;
 
+		// is this used
 		const auto frac_pos = draw_pos_f - trunc_pos;
 
 		auto vertex = static_cast<terrain_vertex_position>(world_vector_t{
@@ -545,7 +546,7 @@ namespace hades
 		return;
 	}
 
-	void level_editor_terrain::make_brush_preview(const time_duration, const std::optional<mouse_pos> p)
+	void level_editor_terrain::make_brush_preview(const time_duration, const std::optional<terrain_target> p)
 	{
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
@@ -613,7 +614,7 @@ namespace hades
 		//also do screen move
 	}
 
-	void level_editor_terrain::on_click(std::optional<mouse_pos> p)
+	void level_editor_terrain::on_click(std::optional<terrain_target> p)
 	{
 		if (_terrain_palette.brush == brush_type::debug_brush)
 			return;
@@ -683,7 +684,7 @@ namespace hades
 		return;
 	}
 
-	void level_editor_terrain::on_drag(std::optional<mouse_pos> p)
+	void level_editor_terrain::on_drag(std::optional<terrain_target> p)
 	{
 		// TODO: need custom code here for plateaus
 		on_click(p);

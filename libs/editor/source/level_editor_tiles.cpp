@@ -249,7 +249,7 @@ namespace hades
 		m.place_tile(positions, t);
 	}
 
-	void level_editor_tiles::make_brush_preview(time_duration, std::optional<mouse_pos> pos)
+	void level_editor_tiles::make_brush_preview(time_duration, std::optional<terrain_target> pos)
 	{
 		assert(_settings);
 		assert(_tile);
@@ -259,7 +259,7 @@ namespace hades
 		if (!pos)
 			return;
 
-		auto p = pos.value();
+		auto p = pos->pixel_target;
 
 		if (p.x < 0
 			|| p.y < 0)
@@ -272,16 +272,16 @@ namespace hades
 		draw_on(p, _settings->tile_size, *_tile, _shape, _preview, _size);
 	}
 
-	void level_editor_tiles::on_click(std::optional<mouse_pos> p)
+	void level_editor_tiles::on_click(std::optional<terrain_target> p)
 	{
 		if (!p)
 			return;
 		assert(_settings);
 		assert(_tile);
-		draw_on(*p, _settings->tile_size, *_tile, _shape, _tiles, _size);
+		draw_on(p->pixel_target, _settings->tile_size, *_tile, _shape, _tiles, _size);
 	}
 
-	void level_editor_tiles::on_drag(std::optional<mouse_pos> p)
+	void level_editor_tiles::on_drag(std::optional<terrain_target> p)
 	{
 		on_click(p);
 	}

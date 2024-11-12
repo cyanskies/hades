@@ -450,6 +450,8 @@ namespace hades
 			case brush_t::raise_terrain:
 				[[fallthrough]];
 			case brush_t::lower_terrain:
+				[[fallthrough]];
+			case brush_t::add_height_noise:
 				smooth_strength_circle = true;
 			}
 
@@ -594,19 +596,28 @@ namespace hades
 		// NOTE: strength is only used for heightmap editing which targets vertex,
 		//			no need for a tile_func_strength
 		const auto vertex_func_strength = [&](const terrain_vertex_position pos, float strength) {
+			using h_type = terrain_map::vertex_height_t;
+			using limits = std::numeric_limits<h_type>;
 			switch (_terrain_palette.brush)
 			{
-			default:
-				return vertex_func(vertex_tag, pos);
 			case brush_type::raise_terrain:
 			{
-				const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
+				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
 				_map.raise_terrain(pos, str);
 			}break;
 			case brush_type::lower_terrain:
 			{
-				const auto str = integral_cast<std::uint8_t>(_terrain_palette.draw_size * strength);
+				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
 				_map.lower_terrain(pos, str);
+			}break;
+			case brush_type::add_height_noise:
+			{
+				const auto h = get_vertex_height(pos, _map.get_map());
+				const auto noise = perlin(float_cast(pos.x) * 0.75f, float_cast(pos.y) * 0.75f);
+				const auto diff = noise * strength * _terrain_palette.draw_size;
+				const auto new_h_f = std::clamp(h + diff, float_cast(limits::min()), float_cast(limits::max()));
+				const auto new_h = integral_cast<std::uint8_t>(new_h_f);
+				_map.set_terrain_height(pos, new_h);
 			}break;
 			}
 			return;
@@ -948,8 +959,6 @@ namespace hades
 			on_click(t);
 			return true;
 		}
-
 		return false;
 	}
-
 }

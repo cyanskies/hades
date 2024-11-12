@@ -28,6 +28,7 @@ set(HADES_UTIL_HEADERS
 	./include/hades/detail/line_math.inl
 	./include/hades/detail/math.inl
 	./include/hades/detail/poly_math.inl
+	./include/hades/detail/random.inl
 	./include/hades/detail/string.inl
 	./include/hades/detail/rectangle_math.inl
 	./include/hades/detail/table.inl

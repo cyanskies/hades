@@ -72,6 +72,13 @@ namespace hades
 		std::advance(first, target);
 		return first;
 	}
+
+	[[nodiscard]]
+	// NOTE: becomes constexpr in cpp26(sin/cos)
+	// Inputs should be scaled eg. perlin(x * 0.5f, y * 0.5f);
+	inline float perlin(float x, float y) noexcept;
 }
+
+#include "hades/detail/random.inl"
 
 #endif // !HADES_UTIL_RANDOM_HPP

@@ -216,6 +216,11 @@ namespace hades
 					_map.show_ramps(ramps);
 				if (auto cliffs = _map.show_cliffs(); g.menu_toggle_item("show cliff indicators"sv, cliffs))
 					_map.show_cliffs(cliffs);
+				if (auto shadows = _map.show_shadows(); g.menu_toggle_item("draw shadows"sv, shadows))
+					_map.show_shadows(shadows);
+				if (auto depth = _map.draw_depth_buffer(); g.menu_toggle_item("draw depth buffer"sv, depth))
+					_map.draw_depth_buffer(depth);
+
 				g.menu_end();
 			}
 			
@@ -338,6 +343,19 @@ namespace hades
 		}
 	}
 
+	static terrain_vertex_position to_vertex_pos(const world_vector_t pixel_target, const float tile_size) noexcept
+	{
+		const auto draw_pos_f = world_vector_t{
+			pixel_target.x / tile_size,
+			pixel_target.y / tile_size
+		};
+
+		return static_cast<terrain_vertex_position>(world_vector_t{
+			std::round(draw_pos_f.x),
+			std::round(draw_pos_f.y)
+		});
+	}
+
 	struct vertex_tag_t {};
 	constexpr auto vertex_tag = vertex_tag_t{};
 
@@ -359,21 +377,13 @@ namespace hades
 		const auto world_size = get_size(map);
 		const auto world_vertex_size = world_size + tile_position{ 1, 1 };
 
-		const auto draw_pos_f = world_vector_t{
-			t.pixel_target.x / float_cast(tile_size),
-			t.pixel_target.y / float_cast(tile_size)
-		};
-
 		// tile_pos
 		auto tile_pos = t.tile_target;
 
 		if (!within_world(tile_pos, world_size))
 			return;
 
-		auto vertex = static_cast<terrain_vertex_position>(world_vector_t{
-				std::round(draw_pos_f.x),
-				std::round(draw_pos_f.y)
-		});
+		auto vertex = to_vertex_pos(t.pixel_target, float_cast(tile_size));
 
 		auto vertex_target = true;
 		switch (brush)
@@ -381,6 +391,8 @@ namespace hades
 		case brush_t::raise_cliff:
 			[[fallthrough]];
 		case brush_t::lower_cliff:
+			[[fallthrough]];
+		case brush_t::plataeu_cliff:
 			[[fallthrough]];
 		case brush_t::add_ramp:
 			[[fallthrough]];
@@ -610,10 +622,113 @@ namespace hades
 		return;
 	}
 
-	void level_editor_terrain::on_drag(std::optional<terrain_target> p)
+	struct on_drag_functor
 	{
-		// TODO: need custom code here for plateaus
-		on_click(p);
+		using brush_type = level_editor_terrain::brush_type;
+
+		mutable_terrain_map& map;
+		std::uint8_t stored_height;
+		brush_type brush;
+
+		void operator()(const tile_position p)
+		{
+			switch (brush)
+			{
+			case brush_type::raise_cliff:
+				[[fallthrough]];
+			case brush_type::lower_cliff:
+				[[fallthrough]];
+			case brush_type::plataeu_cliff:
+				map.set_cliff(p, stored_height);
+				break;
+			default:
+				log_error("Wrong brush passed to on_drag_functor(tile_position)"sv);
+			}
+
+			return;
+		}
+
+		void operator()(const vertex_tag_t, const terrain_vertex_position pos)
+		{
+			switch (brush)
+			{
+			case brush_type::plateau_terrain:
+				map.set_terrain_height(pos, stored_height);
+				break;
+			default:
+				log_error("Wrong brush passed to on_drag_functor(terrain_vertex_position)"sv);
+			}
+
+			return;
+		}
+	};
+
+	static std::uint8_t pick_next_height(const terrain_map& map,
+		const level_editor_terrain::brush_type brush, const terrain_target& t,
+		const resources::terrain_settings& s)
+	{
+		using enum level_editor_terrain::brush_type;
+		switch (brush)
+		{
+		case raise_cliff:
+		{
+			const auto h = get_cliff_layer(t.tile_target, map);
+			const auto next_h = h + 1;
+			const auto safe_h = std::clamp(next_h, integer_cast<decltype(next_h)>(s.cliff_min), integer_cast<decltype(next_h)>(s.cliff_max));
+			return integer_cast<std::uint8_t>(safe_h);
+		}
+		case lower_cliff:
+		{
+			const auto h = get_cliff_layer(t.tile_target, map);
+			const auto next_h = h - 1;
+			const auto safe_h = std::clamp(next_h, integer_cast<decltype(next_h)>(s.cliff_min), integer_cast<decltype(next_h)>(s.cliff_max));
+			return integer_cast<std::uint8_t>(safe_h);
+		}
+		case plateau_terrain:
+			return get_vertex_height(to_vertex_pos(t.pixel_target, float_cast(s.tile_size)), map);
+		case plataeu_cliff:
+			return get_cliff_layer(t.tile_target, map);;
+		}
+
+		throw level_editor_error{ "Failed to find map height while dragging"s };
+	}
+
+	void level_editor_terrain::on_drag_start(const std::optional<terrain_target> t)
+	{
+		if (!t)
+		{
+			_terrain_palette.drag_level.reset();
+			return;
+		}
+
+		if (_no_drag(t))
+			return;
+
+		_map.clear_edit_target();
+		const auto h = pick_next_height(_map.get_map(), _terrain_palette.brush, *t, *_settings);
+		_terrain_palette.drag_level = h;
+		auto functor = on_drag_functor{ _map, h, _terrain_palette.brush };
+		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), functor);
+		return;
+	}
+
+	void level_editor_terrain::on_drag(const std::optional<terrain_target> t)
+	{
+		if (!t)
+			return;
+		if (_no_drag(t))
+			return;
+
+		_map.clear_edit_target();
+
+		if(!_terrain_palette.drag_level)
+		{
+			const auto h = pick_next_height(_map.get_map(), _terrain_palette.brush, *t, *_settings);
+			_terrain_palette.drag_level = h;
+		}
+		auto functor = on_drag_functor{ _map, _terrain_palette.drag_level.value(), _terrain_palette.brush};
+		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), functor);
+		return;
 	}
 
 	void level_editor_terrain::on_screen_move(rect_float r)
@@ -811,4 +926,30 @@ namespace hades
 
 		return;
 	}
+
+	bool level_editor_terrain::_no_drag(std::optional<terrain_target> t)
+	{
+		using enum brush_type;
+		switch (_terrain_palette.brush)
+		{
+		case draw_terrain:
+			[[fallthrough]];
+		case raise_terrain:
+			[[fallthrough]];
+		case lower_terrain:
+			[[fallthrough]];
+		case add_ramp:
+			[[fallthrough]];
+		case add_height_noise:
+			[[fallthrough]];
+		case smooth_height:
+			[[fallthrough]];
+		case debug_brush:
+			on_click(t);
+			return true;
+		}
+
+		return false;
+	}
+
 }

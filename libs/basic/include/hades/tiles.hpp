@@ -258,6 +258,7 @@ namespace hades
 
 	// exceptions: tileset_not_found
 	[[nodiscard]] tile_map make_map(tile_position size, const resources::tile&, const resources::tile_settings&);
+	[[nodiscard]] tile_map make_map(tile_position size, std::span<const resources::tile>, const resources::tile_settings&);
 
 	//set the vectors relative to the current size
 	//eg, to expand the map in all directions

@@ -249,7 +249,12 @@ namespace hades::detail
 					}
 				}
 				else if (mouse::is_dragging(_mouse_left))
-					_component_on_drag(_active_brush, adapted_mouse_pos_opt);
+				{
+					if (_last_drag != adapted_mouse_pos_opt)
+						_component_on_drag(_active_brush, adapted_mouse_pos_opt);
+
+					_last_drag = adapted_mouse_pos_opt;
+				}
 				else if (mouse::is_drag_end(_mouse_left))
 					_component_on_drag_end(_active_brush, adapted_mouse_pos_opt);
 			}

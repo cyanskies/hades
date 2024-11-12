@@ -110,12 +110,13 @@ namespace hades
 		void place_terrain(terrain_vertex_position, const resources::terrain*);
 
 		// basic height editing
-		void raise_terrain(terrain_vertex_position, std::uint8_t amount);
-		void lower_terrain(terrain_vertex_position, uint8_t amount);
-		void set_terrain_height(terrain_vertex_position, std::uint8_t h);
+		void raise_terrain(terrain_vertex_position, terrain_map::vertex_height_t amount);
+		void lower_terrain(terrain_vertex_position, terrain_map::vertex_height_t amount);
+		void set_terrain_height(terrain_vertex_position, terrain_map::vertex_height_t h);
 		
 		void raise_cliff(tile_position);
 		void lower_cliff(tile_position);
+		void set_cliff(tile_position, terrain_map::cliff_layer_t);
 
 		void place_ramp(tile_position);
 

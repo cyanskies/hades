@@ -594,10 +594,12 @@ namespace hades
 			{
 				if (i == index)
 				{
+					const auto& tiles = resources::get_transitions(*terrainset->terrains[i],
+						resources::transition_tile_type::all, s);
+
 					map.terrain_layers.emplace_back(make_map(
 						size,
-						resources::get_random_tile(*terrainset->terrains[i],
-							resources::transition_tile_type::all, s),
+						tiles,
 						s
 					));
 				}
@@ -858,6 +860,20 @@ namespace hades
 	{
 		const auto w = get_width(m);
 		return get_terrain_at_tile(m.terrain_vertex, w, p, s);
+	}
+
+	terrain_map::vertex_height_t get_vertex_height(const terrain_vertex_position v, const terrain_map& m)
+	{
+		const auto index = to_vertex_index(v, m);
+		assert(index < size(m.heightmap));
+		return m.heightmap[index];
+	}
+
+	terrain_map::cliff_layer_t get_cliff_layer(const tile_position p, const terrain_map& m)
+	{
+		const auto index = to_tile_index(p, m);
+		assert(index < size(m.cliff_layer));
+		return m.cliff_layer[index];
 	}
 
 	[[deprected]]
@@ -2283,12 +2299,14 @@ namespace hades::resources
 		if (tile_count != -1)
 		{
 			const auto count = unsigned_cast(tile_count);
+			// take a copy of transitions, so that the iterators aren't invalidated while copying
+			const std::vector rng = transitions;
 			//copy the range until it is longer than tile_count
 			while (count > std::size(transitions))
-				std::copy(std::begin(transitions), std::end(transitions), std::back_inserter(transitions));
+				std::ranges::copy(rng, std::back_inserter(transitions));
 
 			//trim the vector back to tile_count length
-			assert(count < std::size(transitions));
+			assert(count <= std::size(transitions));
 			transitions.resize(count);
 		}
 
@@ -2509,7 +2527,16 @@ namespace hades::resources
 	tile get_random_tile(const terrain &t, transition_tile_type type, const resources::terrain_settings& s)
 	{
 		const auto& vec = get_transitions(t, type, s);
-		assert(!empty(vec));
+		if (empty(vec))
+			return s.error_tileset->tiles.front();
+		return *random_element(std::begin(vec), std::end(vec));
+	}
+
+	std::optional<tile> try_get_random_tile(const terrain& t, transition_tile_type type, const resources::terrain_settings& s)
+	{
+		const auto& vec = get_transitions(t, type, s);
+		if (empty(vec))
+			return {};
 		return *random_element(std::begin(vec), std::end(vec));
 	}
 }

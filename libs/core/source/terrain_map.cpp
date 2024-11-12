@@ -546,7 +546,7 @@ namespace hades
 			const auto surface_tile_type = get_transition_type(cliff_corners);
 			if (surface_tile_type != resources::transition_tile_type::none)
 			{
-				const auto& tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
+				const auto tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, tex_index);
 			}
@@ -1512,21 +1512,21 @@ namespace hades
 		return;
 	}
 
-	void mutable_terrain_map::raise_terrain(const terrain_vertex_position v, const std::uint8_t amount)
+	void mutable_terrain_map::raise_terrain(const terrain_vertex_position v, const terrain_map::vertex_height_t amount)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::add_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map::lower_terrain(const terrain_vertex_position v, const std::uint8_t amount)
+	void mutable_terrain_map::lower_terrain(const terrain_vertex_position v, const terrain_map::vertex_height_t amount)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
 		_needs_update = true;
 		return;
 	}
 
-	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position v, const std::uint8_t h)
+	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position v, const terrain_map::vertex_height_t h)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::set_height_functor{ h });
 		_needs_update = true;
@@ -1543,6 +1543,13 @@ namespace hades
 	void mutable_terrain_map::lower_cliff(const tile_position p)
 	{
 		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::sub_height_functor{ 1 });
+		_needs_update = true;
+		return;
+	}
+
+	void mutable_terrain_map::set_cliff(const tile_position p, const terrain_map::cliff_layer_t layer)
+	{
+		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::set_height_functor{ layer });
 		_needs_update = true;
 		return;
 	}

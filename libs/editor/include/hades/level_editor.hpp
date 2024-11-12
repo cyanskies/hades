@@ -141,6 +141,7 @@ namespace hades::detail
 		const mission_editor_t* _mission_editor = nullptr;
 		level *_level = nullptr;
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
+		std::optional<terrain_target> _last_drag;
 
 		//new level options
 		new_level_opt _new_level_options = {};

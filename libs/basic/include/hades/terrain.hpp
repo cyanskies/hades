@@ -140,6 +140,7 @@ namespace hades::resources
 	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type, const resources::terrain_settings&);
 
 	tile get_random_tile(const terrain&, transition_tile_type, const resources::terrain_settings&);
+	std::optional<tile> try_get_random_tile(const terrain&, transition_tile_type, const resources::terrain_settings&);
 }
 
 namespace hades
@@ -213,7 +214,6 @@ namespace hades
 		//				1: bottom-right
 		//				2: top-right
 		
-		// TODO: these should be an enum : bool
 		// triangle_type and selected_triangle
 		enum class triangle_type : bool {
 			triangle_downhill = true,
@@ -223,7 +223,9 @@ namespace hades
 		static constexpr auto triangle_downhill = triangle_type::triangle_downhill;
 		static constexpr auto triangle_uphill = triangle_type::triangle_uphill;
 		static constexpr auto triangle_default = triangle_type::triangle_default;
+		[[deprecated]]
 		static constexpr auto triangle_left = true;
+		[[deprecated]]
 		static constexpr auto triangle_right = false;
 
 		// Used to index into the cliff tile layer.
@@ -295,6 +297,7 @@ namespace hades
 	// size of the map expressed in vertex
 	terrain_vertex_position get_vertex_size(const terrain_map&);
 	// throws: terrain_error if map sizes differ
+	[[deprecated]]
 	void copy_heightmap(terrain_map& target, const terrain_map& src);
 
 	// get the vertex position of the corner of a tile
@@ -338,6 +341,9 @@ namespace hades
 
 	tile_corners get_terrain_at_tile(const terrain_map&, tile_position, const resources::terrain_settings&);
 
+	terrain_map::vertex_height_t get_vertex_height(terrain_vertex_position, const terrain_map&);
+	terrain_map::cliff_layer_t get_cliff_layer(tile_position, const terrain_map&);
+
 	struct triangle_height_data
 	{
 		// contains height for both triangles
@@ -358,6 +364,7 @@ namespace hades
 	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
 	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
 	// as above, but left triangle first and right triangle second
+	[[deprecated("Unused")]]
 	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept;
 
 	using adjacent_cliffs = std::bitset<4>;
@@ -424,13 +431,23 @@ namespace hades
 	void place_ramp(tile_position, terrain_map&);
 	void clear_ramp(tile_position, terrain_map&);
 
-	// TODO: project_onto_terrain needs to return aditional information about the hit
 	struct terrain_target
 	{
 		world_vector_t pixel_target;
 		tile_position tile_target;
 		rect_edges cliff_target;
 	};
+
+	constexpr bool operator==(const terrain_target& lhs, const terrain_target& rhs) noexcept
+	{
+		return std::tie(lhs.pixel_target, lhs.tile_target, lhs.cliff_target) ==
+			std::tie(rhs.pixel_target, rhs.tile_target, rhs.cliff_target);
+	}
+
+	constexpr bool operator!=(const terrain_target& lhs, const terrain_target& rhs) noexcept
+	{
+		return !(lhs == rhs);
+	}
 
 	// project 'p' onto the flat version of 'map'
 	std::optional<terrain_target> project_onto_terrain(world_vector_t p, float rot_degrees,

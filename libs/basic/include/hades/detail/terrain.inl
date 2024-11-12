@@ -185,6 +185,7 @@ namespace hades
 		}
 	}
 
+	[[deprecated]]
 	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept
 	{
 		if (tris.triangle_type == terrain_map::triangle_uphill)

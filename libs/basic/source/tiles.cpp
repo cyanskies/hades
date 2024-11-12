@@ -50,7 +50,7 @@ namespace hades
 
 		id::error_tileset = hades::data::make_uid(error_tileset_name);
 
-		const auto error_texture = d.get_uid("tile-error-texture"sv);
+		const auto error_texture = d.get_uid("error-texture"sv);
 		const auto texture = std::invoke(get_texture, d, error_texture, id::error_tileset);
 
 		//create error tileset and add a default error tile
@@ -877,6 +877,28 @@ namespace hades
 
 		const auto length = integer_cast<std::size_t>(s.x * s.y);
 		m.tiles = std::vector<tile_id_t>(length, index);
+		assert(m.tiles.size() == length);
+		return m;
+	}
+
+	tile_map make_map(tile_position s, const std::span<const resources::tile> tiles, const resources::tile_settings& settings)
+	{
+		if (s.x < 0 || s.y < 0)
+			throw invalid_argument{ "cannot make a tile map with a negative size" };
+		if (empty(tiles))
+			throw invalid_argument{ "map_map: tiles list cannot be empty" };
+
+		auto m = tile_map{};
+		m.width = s.x;
+
+		const auto length = integer_cast<std::size_t>(s.x * s.y); 
+		m.tiles = std::vector<tile_id_t>(length, tile_id_t{});
+
+		std::ranges::generate(m.tiles, [&] {
+			const auto t = random_element(begin(tiles), end(tiles));
+			return make_tile_id(m, *t, settings);
+		});
+
 		assert(m.tiles.size() == length);
 		return m;
 	}

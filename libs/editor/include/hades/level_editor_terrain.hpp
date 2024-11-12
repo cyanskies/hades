@@ -66,7 +66,9 @@ namespace hades
 		void on_reinit(vector2_float window_size, vector2_float view_size) override;
 
 		void on_click(std::optional<terrain_target>) override;
+		void on_drag_start(std::optional<terrain_target>) override;
 		void on_drag(std::optional<terrain_target>) override;
+		//void on_drag_end(std::optional<terrain_target>) override;
 
 		void on_screen_move(rect_float r) override;
 
@@ -100,9 +102,12 @@ namespace hades
 			brush_type brush = brush_type::no_brush;
 			draw_shape shape = draw_shape::circle;
 			uint8_t draw_size = 1;
+			// stores the target drag level when drawing with height and cliff tools
+			std::optional<uint8_t> drag_level;
 		};
 
 		void _gui_terrain_palette(gui&);
+		bool _no_drag(std::optional<terrain_target>);
 
 		console::property_int _view_height;
 

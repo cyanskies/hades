@@ -35,7 +35,7 @@ namespace hades
     // this is the wikipedia implementation of perlin (including above functions)
     // origional wikipedia comments are preserved
     [[nodiscard]]
-    inline float perlin(const float x, const float y) noexcept
+    inline float perlin_noise(const float x, const float y) noexcept
     {
         // Determine grid cell coordinates
         const auto x0 = static_cast<int>(std::floor(x));

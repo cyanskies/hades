@@ -452,6 +452,8 @@ namespace hades
 			case brush_t::lower_terrain:
 				[[fallthrough]];
 			case brush_t::add_height_noise:
+				[[fallthrough]];
+			case brush_t::smooth_height:
 				smooth_strength_circle = true;
 			}
 
@@ -559,6 +561,32 @@ namespace hades
 		if (_terrain_palette.brush == brush_type::debug_brush)
 			return;
 
+		_map.clear_edit_target();
+
+		if (!p)
+			return;
+
+		// Calculate average height under the brush if we're using
+		//	the smoothing tool
+		std::uint8_t avrg_height [[indeterminate]];
+		if (_terrain_palette.brush == brush_type::smooth_height)
+		{
+			auto height_sum = int{};
+			auto height_count = int{};
+			const auto sample_stub1 = [](const tile_position) {};
+			const auto sample_stub2 = [](const vertex_tag_t, const terrain_vertex_position) {};
+			const auto sample_collector = [&](const terrain_vertex_position pos, const float) {
+				using h_type = terrain_map::vertex_height_t;
+				using limits = std::numeric_limits<h_type>;
+				height_sum += get_vertex_height(pos, _map.get_map());
+				++height_count;
+			};
+
+			const auto overload = overloaded{ sample_stub1, sample_stub2, sample_collector };
+			for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), overload);
+			avrg_height = integer_clamp_cast<std::uint8_t>(height_sum / height_count);
+		}
+
 		// called for cliff layer tools
 		const auto tile_func = [&](const tile_position p) {
 			switch (_terrain_palette.brush)
@@ -595,7 +623,7 @@ namespace hades
 
 		// NOTE: strength is only used for heightmap editing which targets vertex,
 		//			no need for a tile_func_strength
-		const auto vertex_func_strength = [&](const terrain_vertex_position pos, float strength) {
+		const auto vertex_func_strength = [&](const terrain_vertex_position pos, const float strength) {
 			using h_type = terrain_map::vertex_height_t;
 			using limits = std::numeric_limits<h_type>;
 			switch (_terrain_palette.brush)
@@ -613,23 +641,39 @@ namespace hades
 			case brush_type::add_height_noise:
 			{
 				const auto h = get_vertex_height(pos, _map.get_map());
-				const auto noise = perlin(float_cast(pos.x) * 0.75f, float_cast(pos.y) * 0.75f);
+				const auto noise = perlin_noise(float_cast(pos.x) * 0.75f, float_cast(pos.y) * 0.75f);
 				const auto diff = noise * strength * _terrain_palette.draw_size;
 				const auto new_h_f = std::clamp(h + diff, float_cast(limits::min()), float_cast(limits::max()));
 				const auto new_h = integral_cast<std::uint8_t>(new_h_f);
 				_map.set_terrain_height(pos, new_h);
 			}break;
+			case brush_type::smooth_height:
+			{
+				const auto h = get_vertex_height(pos, _map.get_map());
+				const auto diff = avrg_height - h;
+				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
+				if (diff < 0)
+				{
+					if (std::cmp_less(h - str, avrg_height))
+						_map.set_terrain_height(pos, avrg_height);
+					else
+						_map.lower_terrain(pos, str);
+				}
+				else
+				{
+					if (std::cmp_greater(h + str, avrg_height))
+						_map.set_terrain_height(pos, avrg_height);
+					else
+						_map.raise_terrain(pos, str);
+				}
+			}break;
+
 			}
 			return;
 		};
 
-		_map.clear_edit_target();
-
-		if (p)
-		{
-			const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
-			for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
-		}
+		const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
+		for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
 		return;
 	}
 

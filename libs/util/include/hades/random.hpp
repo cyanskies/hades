@@ -76,7 +76,7 @@ namespace hades
 	[[nodiscard]]
 	// NOTE: becomes constexpr in cpp26(sin/cos)
 	// Inputs should be scaled eg. perlin(x * 0.5f, y * 0.5f);
-	inline float perlin(float x, float y) noexcept;
+	inline float perlin_noise(float x, float y) noexcept;
 }
 
 #include "hades/detail/random.inl"

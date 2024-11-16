@@ -937,7 +937,7 @@ namespace hades
 		brush_selector(detail::height_selections);
 		g.separator_horizontal();
 
-#if 1
+#if 0
 		// Water Tool
 		const auto water_mode = _terrain_palette.brush == brush_type::raise_water ||
 			_terrain_palette.brush == brush_type::lower_water;

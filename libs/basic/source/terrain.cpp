@@ -1496,7 +1496,7 @@ namespace hades
 				const auto other_index = to_tile_index(other_pos, world_size.x);
 				auto& other_ramp = m.ramp_layer[other_index];
 				auto other_bset = std::bitset<4>{ other_ramp };
-				other_bset.reset(enum_type(i));
+				other_bset.reset(enum_type(ramp::reverse_edges[enum_type(i)]));
 				other_ramp = integer_cast<terrain_map::ramp_layer_t>(other_bset.to_ulong());
 			}
 		}

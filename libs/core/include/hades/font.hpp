@@ -27,6 +27,8 @@ namespace hades
 
 			void serialise(std::ostream&) const final override;
 
+			//TODO: this is only here for IMGUI to load fonts with
+			//		find a way for the IMGUI font loader to get the file on demand
 			buffer source_buffer;
 		};
 	}

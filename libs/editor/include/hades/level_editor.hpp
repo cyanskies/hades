@@ -131,7 +131,10 @@ namespace hades::detail
 
 		std::string _mouse_pos_world;
 		std::string _mouse_pos_world_f;
-
+		// states the cliff layer under the mouse
+		// TODO: add a cliff layer overlay to terrain_map
+		//		need to add a region overlay to it anyway
+		std::string _cliff_layer; 
 		bool _error_modal = false;
 		string _error_msg = "no error";
 

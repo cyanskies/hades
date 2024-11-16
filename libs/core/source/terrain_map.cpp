@@ -1403,6 +1403,7 @@ namespace hades
 		
 		const auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
+		// TODO: clamp tile_start/area to regions in the game world
 		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, flags);
 
 		// generate map editor targets

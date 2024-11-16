@@ -206,9 +206,15 @@ namespace hades::detail
 
 				//clamp to world limits
 				if (within_world(tile_pos, get_size(*terrain_map)))
+				{
 					_mouse_pos_world = std::format("Hovered Tile: {}"sv, tile_pos);
+					_cliff_layer = std::format("Cliff Layer: {}", get_cliff_layer(tile_pos, *terrain_map));
+				}
 				else
+				{
 					_mouse_pos_world = "Hovered Tile: Outside World"sv;
+					_cliff_layer = "Cliff Layer: N/A"sv;
+				}
 
 				if (adapted_mouse_pos_opt)
 					_mouse_pos_world_f = std::format("Hovered Point: {}"sv, adapted_mouse_pos_opt->pixel_target);
@@ -453,6 +459,7 @@ namespace hades::detail
 		_gui.text(_mouse_pos_world);
 		_gui.text(std::format("Rotation: {}"sv, _accumulated_rotation));
 		_gui.text(_mouse_pos_world_f);
+		_gui.text(_cliff_layer);
 		_gui.window_end();
 
 		// minimap window

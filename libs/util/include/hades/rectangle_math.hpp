@@ -135,6 +135,10 @@ namespace hades
 	//returns true if the first rectangle is entirely within the second
 	template<typename T>
 	constexpr bool is_within(rect_t<T> first, rect_t<T> second) noexcept;
+
+	// returns a rect that contains of the passed rects
+	template<typename T>
+	constexpr rect_t<T> max_rect(rect_t<T> first, rect_t<T> second) noexcept;
 }
 
 template<typename CharT>

@@ -9,7 +9,6 @@ set(HADES_APP_SRC
 
 set(HADES_APP_LIBS
 	hades-core
-	hades-gui
 )
 
 hades_make_library(hades-app include "${HADES_APP_SRC}" "${HADES_APP_LIBS}")

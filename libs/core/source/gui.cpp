@@ -1379,12 +1379,58 @@ namespace hades
 		};
 	}
 
+	static std::tuple<sf::RenderStates, rect_float> generate_vertex(const ImDrawData* draw_data,
+		const ImDrawList* draw_list, const ImDrawCmd& cmd, const ImDrawIdx* index_first,
+		sf::RenderStates state,	std::vector<sf::Vertex>& vertex_array)
+	{
+		assert(draw_data);
+		assert(draw_list);
+		
+		//get the info needed to denormalise the tex coords.
+		//	used in to_vertex
+		vector2_float texture_size = { 1.f, 1.f };
+		if (cmd.TextureId)
+		{
+			const auto texture = cmd.TextureId;
+			assert(texture);
+			const auto size = texture->getSize();
+			texture_size = vector2_float{ float_cast(size.x), float_cast(size.y) };
+		}
+
+		//get the verts from the draw list that are associated with
+		//this command
+		const auto v_offset = cmd.VtxOffset;
+		const auto index_begin = std::next(index_first, cmd.IdxOffset);
+		const auto index_end = std::next(index_begin, cmd.ElemCount);
+		std::transform(index_begin, index_end, back_inserter(vertex_array),
+			[&](const auto index) {
+				// NOTE: sign cast the index calculation, ImVector uses signed indexes.
+				return to_vertex(draw_list->VtxBuffer[signed_cast(index + v_offset)], texture_size);
+			}
+		);
+
+		//draw with texture
+		if (cmd.TextureId)
+		{
+			const auto texture = cmd.TextureId;
+			assert(texture);
+			state.texture = texture;
+		}
+
+		const auto x = cmd.ClipRect.x - draw_data->DisplayPos.x;
+		const auto y = cmd.ClipRect.y - draw_data->DisplayPos.y;
+		const auto clip_region = rect_float{ x, y,
+			cmd.ClipRect.z - x,
+			cmd.ClipRect.w - y };
+
+		return { state, clip_region };
+	}
+
 	//NOTE: mixing gl commands in order to get clip clipping scissor glscissor
 	// this is done through the draw_clamp_region helper
 	void gui::draw(sf::RenderTarget & target, const sf::RenderStates &states) const
 	{
 		namespace tex = resources::texture_functions;
-		// TODO: to reduce errors, it might be best to simply activate our context
 		_active_assert();
 
 		ImGui::Render();
@@ -1403,52 +1449,14 @@ namespace hades
 			//for each command
 			for (const auto& cmd : draw_list->CmdBuffer)
 			{
+				vertex_array.clear();
 				if (cmd.UserCallback)
 					std::invoke(cmd.UserCallback, draw_list, &cmd);
 				else
 				{
-					//get the info needed to denormalise the tex coords.
-					//	used in to_vertex
-					vector2_float texture_size = { 1.f, 1.f };
-					if (cmd.TextureId)
-					{
-						const auto texture = cmd.TextureId;
-						assert(texture);
-						const auto size = texture->getSize();
-						texture_size = vector2_float{ float_cast(size.x), float_cast(size.y) };
-					}
-
-					//get the verts from the draw list that are associated with
-					//this command
-					vertex_array.clear();
-					const auto v_offset = cmd.VtxOffset;
-					const auto index_begin = std::next(index_first, cmd.IdxOffset);
-					const auto index_end = std::next(index_begin, cmd.ElemCount);
-					std::transform(index_begin, index_end, back_inserter(vertex_array), 
-						[&](const auto index) {
-                        // NOTE: sign cast the index calculation, ImVector uses signed indexes.
-                        return to_vertex(draw_list->VtxBuffer[signed_cast(index + v_offset)], texture_size);
-						}
-					);
-
-					auto state = states;
-
-					//draw with texture
-					if (cmd.TextureId)
-					{
-						const auto texture = cmd.TextureId;
-						assert(texture);
-						state.texture = texture;
-					}
-
-					const auto x = cmd.ClipRect.x - draw_data->DisplayPos.x;
-					const auto y = cmd.ClipRect.y - draw_data->DisplayPos.y;
-					const auto clip_region = rect_float{ x, y,
-						cmd.ClipRect.z - x,
-						cmd.ClipRect.w - y };
-
+					const auto& [state, clip_region] = generate_vertex(draw_data, draw_list, cmd, index_first, states, vertex_array);
 					target.draw(draw_clamp_region{ vector_drawable{ vertex_array, sf::PrimitiveType::Triangles }, clip_region }, state);
-				} //! else no usr callback
+				}
 			} // !for each cmd
 		});
 	}
@@ -1662,24 +1670,48 @@ namespace hades
 		return;
 	}
 
-	void gui_text_renderer::draw_text(std::string_view string, vector2_float pos, colour col)
+	void gui_text_renderer::draw_text(const std::string_view string, const vector2_float pos, const colour col)
 	{
 		const auto vec4_colour = to_imvec4(col);
 		_draw_list->AddText(_font, 0.f, { pos.x, pos.y }, ImGui::GetColorU32(vec4_colour), string);
 		return;
 	}
 
-	void gui_text_renderer::draw_text(std::string_view string, float size, vector2_float pos, colour col)
+	void gui_text_renderer::draw_text(const std::string_view string, const float size, const vector2_float pos, const colour col)
 	{
 		const auto vec4_colour = to_imvec4(col);
 		_draw_list->AddText(_font, size, { pos.x, pos.y }, ImGui::GetColorU32(vec4_colour), string);
 		return;
 	}
 
-	std::vector<sf::Vertex> gui_text_renderer::output_frame() const
+	gui_text_renderer::text_render_data gui_text_renderer::output_frame()
 	{
-		// copy draw here, should only ever be a single command
-		return {};
+		static auto draw_data = ImDrawData{};
+		draw_data.Clear();
+		draw_data.Valid = true;
+		draw_data.DisplayPos = ImGui::GetMainViewport()->Pos;
+		draw_data.DisplaySize = ImGui::GetMainViewport()->Size;
+		draw_data.FramebufferScale = ImVec2(1.0f, 1.0f);
+		draw_data.AddDrawList(_draw_list);
+
+		const auto index_first = _draw_list->IdxBuffer.Data;
+		const auto state = sf::RenderStates{};
+		auto vertex_array = std::vector<sf::Vertex>{};
+		auto clip_rect = rect_float{};
+
+		for (const auto &cmd : _draw_list->CmdBuffer)
+		{
+			// copy draw here, should only ever be a single command
+			const auto [r_state, next_rect] = generate_vertex(&draw_data, _draw_list, cmd, index_first, state, vertex_array);
+			clip_rect = max_rect(clip_rect, next_rect);
+			assert(r_state.texture == _atlas->TexID);
+		}
+
+		return text_render_data{
+			_atlas->TexID,
+			clip_rect,
+			vertex_array
+		};
 	}
 
 	gui_input_text_callback::gui_input_text_callback(ImGuiInputTextCallbackData* data) noexcept

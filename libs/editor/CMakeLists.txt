@@ -35,7 +35,6 @@ set(HADES_EDITOR_LIBS
 	hades-util 
 	hades-basic
 	hades-core
-	hades-gui
 	PRIVATE
 	imguifiledialog
 )

@@ -15,6 +15,7 @@ set(HADES_CORE_SRC
 	source/game_state.cpp
 	source/game_system.cpp
 	source/grid.cpp
+	source/gui.cpp
 	source/level.cpp
 	source/level_interface.cpp
 	source/level_scripts.cpp
@@ -50,6 +51,7 @@ set(HADES_CORE_SRC
 	include/hades/game_system.hpp
 	include/hades/game_system_resources.hpp
 	include/hades/grid.hpp
+	include/hades/gui.hpp
 	include/hades/level.hpp
 	include/hades/level_interface.hpp
 	include/hades/level_scripts.hpp
@@ -76,6 +78,7 @@ set(HADES_CORE_SRC
 	include/hades/detail/game_api.inl
 	include/hades/detail/game_state.inl
 	include/hades/detail/game_system.inl
+	include/hades/detail/gui.inl
 	include/hades/detail/level_interface.inl
 	include/hades/detail/mouse_input.inl
 	include/hades/detail/shader.inl
@@ -85,7 +88,8 @@ set(HADES_CORE_SRC
 set(HADES_CORE_LIBS 
 	hades-util 
 	hades-basic
-	sfml-graphics
+	SFML::Graphics
+	imgui
 	plf-colony
 )
 

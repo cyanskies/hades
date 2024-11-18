@@ -879,7 +879,15 @@ namespace hades
 		void new_frame();
 		void draw_text(std::string_view, vector2_float pos, colour = colours::from_name(colours::names::white));
 		void draw_text(std::string_view, float size, vector2_float pos, colour = colours::from_name(colours::names::white));
-		std::vector<sf::Vertex> output_frame() const;
+
+		struct text_render_data
+		{
+			const sf::Texture* texture;
+			rect_float clip_rect;
+			std::vector<sf::Vertex> verts;
+		};
+
+		text_render_data output_frame();
 
 	private:
 		ImDrawList* _draw_list;

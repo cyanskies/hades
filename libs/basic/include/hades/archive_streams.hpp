@@ -15,27 +15,26 @@
 #include "hades/utility.hpp"
 
 /// <summary>
-/// Low level stream utilities for compressed files and zip archives
+/// Low level stream utilities for compressed files and zip archives.
+/// This file is called archive_streams; but actually only implements filebufs
 /// </summary>
 
 namespace hades
 {
-	//buffer of bytes
-	// TODO: deprecate
-	using buffer = std::vector<std::byte>;
 	//NOTE: buffer sizes:
 	//					16kb(16384)
 	//					8kb(8192)
 	//					4kb(4096)
 	//					2kb(2048)
+	// TODO: move into detail
 	constexpr auto default_buffer_size = std::size_t{ 8192 };
 
 	namespace detail
 	{
 		template<typename CharT>
-		constexpr std::vector<CharT> make_default_buffer()
+		constexpr std::unique_ptr<CharT[]> make_default_buffer()
 		{
-			return std::vector<CharT>(default_buffer_size, CharT{});
+			return std::make_unique_for_overwrite<CharT[]>(default_buffer_size);
 		}
 	}
 }
@@ -314,8 +313,8 @@ namespace hades::zip
 		void _seek_beg() noexcept;
 		bool _start_zlib() noexcept;
 
-		std::vector<char_type> _get_area = hades::detail::make_default_buffer<char_type>();
-		std::vector<std::byte> _device_buffer = hades::detail::make_default_buffer<std::byte>();
+		std::unique_ptr<char_type[]> _get_area = hades::detail::make_default_buffer<char_type>();
+		std::unique_ptr<std::byte[]> _device_buffer = hades::detail::make_default_buffer<std::byte>();
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
 		detail::file_ptr _file;
 		std::streamsize _pos = {};
@@ -372,8 +371,8 @@ namespace hades::zip
 				return nullptr;
 			}
 
-			const auto beg = _put_area.data();
-			const auto end = beg + size(_put_area);
+			const auto beg = _put_area.get();
+			const auto end = beg + default_buffer_size;
 			setp(beg, end);
 
 			return this;
@@ -392,8 +391,8 @@ namespace hades::zip
 		void _empty_device_buffer(); 
 		bool _start_zlib() noexcept;
 
-		std::vector<char_type> _put_area = hades::detail::make_default_buffer<char_type>();
-		std::vector<std::byte> _device_buffer = hades::detail::make_default_buffer<std::byte>();
+		std::unique_ptr<char_type[]> _put_area = hades::detail::make_default_buffer<char_type>();
+		std::unique_ptr<std::byte[]> _device_buffer = hades::detail::make_default_buffer<std::byte>();
 		detail::z_stream_p _zip_stream = detail::make_z_stream();
 		detail::file_ptr _file;
 	};
@@ -419,9 +418,9 @@ namespace hades::zip
 			// fix up the access ptrs
 			auto ptr = rhs.gptr();
 			auto end = rhs.egptr();
-			auto ptr_offset = std::distance(rhs._get_area.data(), ptr);
-			auto end_offset = std::distance(rhs._get_area.data(), end);
-			auto beg = _get_area.data();
+			auto ptr_offset = std::distance(rhs._get_area.get(), ptr);
+			auto end_offset = std::distance(rhs._get_area.get(), end);
+			auto beg = _get_area.get();
 			setg(beg, beg + ptr_offset, beg + end_offset);
 			rhs.setg(nullptr, nullptr, nullptr);
 
@@ -597,7 +596,7 @@ namespace hades::zip
 		int_type _readsome();
 		std::size_t _pos() const noexcept;
 
-		std::vector<char_type> _get_area = hades::detail::make_default_buffer<char_type>();
+		std::unique_ptr<char_type[]> _get_area = hades::detail::make_default_buffer<char_type>();
 		unarchive _archive;
 	};
 
@@ -622,7 +621,7 @@ namespace hades::zip
 
             // measure the rhs put area usage
             const auto ptr = rhs.pptr();
-            const auto ptr_offset = integer_cast<int>(unsigned_cast(std::distance(rhs._put_area.data(), ptr)) / sizeof(char_type));
+            const auto ptr_offset = integer_cast<int>(unsigned_cast(std::distance(rhs._put_area.get(), ptr)) / sizeof(char_type));
 
             // clear the rhs area
             rhs.setp(nullptr, nullptr);
@@ -630,8 +629,8 @@ namespace hades::zip
             std::swap(_put_area, rhs._put_area);
 
             // calculate the new ptrs for our put area
-            auto beg = _put_area.data();
-			auto end = beg + size(_put_area);
+            auto beg = _put_area.get();
+			auto end = beg + default_buffer_size;
             setp(beg, end);
             // advance the put pointer to match rhs
             pbump(ptr_offset);
@@ -675,8 +674,8 @@ namespace hades::zip
 			assert(is_archive_open());
 			assert(!is_open());
 			zip::open_file(_archive, p);
-			auto beg = _put_area.data();
-			setp(beg, beg + size(_put_area));
+			auto beg = _put_area.get();
+			setp(beg, beg + default_buffer_size);
 			return this;
 		}
 
@@ -717,7 +716,7 @@ namespace hades::zip
 	private:
 		void _consume_buffer();
 
-		std::vector<char_type> _put_area = hades::detail::make_default_buffer<char_type>();
+		std::unique_ptr<char_type[]> _put_area = hades::detail::make_default_buffer<char_type>();
 		toarchive _archive;
 	};
 

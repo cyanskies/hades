@@ -92,17 +92,30 @@ namespace hades
 			return _show_ramps;
 		}
 
-		void show_cliffs(bool b) noexcept
+		void show_cliff_edges(bool b) noexcept
 		{
-			_show_cliff = b;
+			_show_cliff_edges = b;
 			_needs_update = true;
 			return;
 		}
 
-		bool show_cliffs() const noexcept
+		bool show_cliff_edges() const noexcept
 		{
-			return _show_cliff;
+			return _show_cliff_edges;
 		}
+
+		void show_cliff_layers(bool b) noexcept
+		{
+			_show_cliff_layers = b;
+			return;
+		}
+
+		bool show_cliff_layers() noexcept
+		{
+			return _show_cliff_layers;
+		}
+
+		// TODO: regions
 
 		void set_world_rotation(float degrees);
 		void set_sun_angle(float degrees);
@@ -264,7 +277,9 @@ namespace hades
 		bool _show_shadows : 1 = true;
 		bool _debug_depth : 1 = false;
 		bool _show_ramps : 1 = false;
-		bool _show_cliff : 1 = false;
+		bool _show_cliff_edges : 1 = false;
+		bool _show_cliff_layers : 1 = false;
+		bool _show_regions : 1 = false;
 	};
 
 	class terrain_mini_map final : public sf::Drawable, public sf::Transformable

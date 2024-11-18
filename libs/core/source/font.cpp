@@ -4,6 +4,7 @@
 
 #include "hades/files.hpp"
 #include "hades/parser.hpp"
+#include "hades/sf_streams.hpp"
 #include "hades/utility.hpp"
 #include "hades/writer.hpp"
 
@@ -20,14 +21,14 @@ namespace hades
 		d.register_resource_type("fonts"sv, parse_font);
 	}
 
-	void load_font(resources::font& font, data::data_manager &d)
+	static void load_font(resources::font& font, data::data_manager &d)
 	{
 		const auto& mod = d.get_mod(font.mod);
 
 		try
 		{
 			//we store the font memory for the gui class to use
-			font.source_buffer = files::raw_resource(mod, font.source);
+			auto font_strm = files::stream_resource(mod, font.source);
 			auto sb = std::stringbuf{};
 			const auto prev = sf::err().rdbuf(&sb);
 			const auto finally = make_finally([prev]() noexcept {
@@ -35,8 +36,11 @@ namespace hades
 				return;
 				});
 
-			if (!font.value.loadFromMemory(font.source_buffer.data(), font.source_buffer.size()))
+			auto strm_wrapper = sf_stream_wrapper{ std::move(font_strm) };
+			if (!font.value.loadFromStream(strm_wrapper))
 				throw data::resource_error{ sb.str() };
+
+			font.loaded = true;
 		}
 		catch (const files::file_error &e)
 		{
@@ -99,5 +103,18 @@ namespace hades::resources
 		const auto fstrm = files::stream_resource(data::get_mod(mod), source);
 		o << fstrm.rdbuf();
 		return;
+	}
+
+	namespace font_functions
+	{
+		font* find_or_create(data::data_manager& d, const unique_id id, const std::optional<unique_id> mod)
+		{
+			return d.find_or_create<font>(id, mod, "fonts"sv);
+		}
+
+		std::vector<std::byte> get_font_source_as_memory(const font& f) noexcept
+		{
+			return files::raw_resource(data::get_mod(f.mod), f.source);
+		}
 	}
 }

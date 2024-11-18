@@ -274,9 +274,9 @@ namespace hades::zip
 		// fix up the access ptrs
 		auto ptr = rhs.gptr();
 		auto end = rhs.egptr();
-		auto ptr_offset = std::distance(rhs._get_area.data(), ptr);
-		auto end_offset = std::distance(rhs._get_area.data(), end);
-		auto beg = _get_area.data();
+		auto ptr_offset = std::distance(rhs._get_area.get(), ptr);
+		auto end_offset = std::distance(rhs._get_area.get(), end);
+		auto beg = _get_area.get();
 		setg(beg, beg + ptr_offset, beg + end_offset);
 		rhs.setg(nullptr, nullptr, nullptr);
 
@@ -285,14 +285,14 @@ namespace hades::zip
 		//// fixup the zip stream ptrs
 		if (_zip_stream->z.next_in)
 		{
-			const auto in_distance = std::distance(static_cast<const char*>(rhs._get_area.data()), reinterpret_cast<const char*>(_zip_stream->z.next_in));
-			_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_get_area.data() + in_distance);
+			const auto in_distance = std::distance(static_cast<const char*>(rhs._get_area.get()), reinterpret_cast<const char*>(_zip_stream->z.next_in));
+			_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_get_area.get() + in_distance);
 		}
 
 		if (_zip_stream->z.next_out)
 		{
-			const auto out_distance = std::distance(rhs._device_buffer.data(), reinterpret_cast<std::byte*>(_zip_stream->z.next_out));
-			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data() + out_distance);
+			const auto out_distance = std::distance(rhs._device_buffer.get(), reinterpret_cast<std::byte*>(_zip_stream->z.next_out));
+			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.get() + out_distance);
 		}
 		return *this;
 	}
@@ -313,7 +313,7 @@ namespace hades::zip
 		if (ptr != end)
 			return traits_type::to_int_type(*ptr);
 
-		if(end != _get_area.data() + size(_get_area))
+		if(end != _get_area.get() + default_buffer_size)
 			return traits_type::eof();
 
 		return _fill_buffer();
@@ -331,31 +331,31 @@ namespace hades::zip
 		using z_uint = uInt;
 		using z_byte = Bytef;
 
-		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_get_area.data());
-		_zip_stream->z.avail_out = integer_cast<z_uint>(size(_get_area));
+		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_get_area.get());
+		_zip_stream->z.avail_out = integer_cast<z_uint>(default_buffer_size);
 
 		while (_zip_stream->z.avail_out > 0)
 		{
 			// fill device buffer
-			if (_zip_stream->z.avail_in < size(_device_buffer))
+			if (_zip_stream->z.avail_in < default_buffer_size)
 			{
-				const std::byte* buffer_end = _device_buffer.data() + size(_device_buffer);
+				const std::byte* buffer_end = _device_buffer.get() + default_buffer_size;
 
 				const auto next_in = std::move(reinterpret_cast<const std::byte*>(_zip_stream->z.next_in),
-					buffer_end, _device_buffer.data());
+					buffer_end, _device_buffer.get());
                 const auto dist = integer_cast<std::size_t>(std::distance(static_cast<const std::byte*>(next_in), buffer_end));
 				const auto read_amount = std::fread(next_in, sizeof(std::byte), dist, _file.get());
 				const auto new_buffer_end = next_in + read_amount;
-				_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_device_buffer.data(),
+				_zip_stream->z.avail_in = integer_cast<z_uint>(std::distance(_device_buffer.get(),
 					new_buffer_end));
-				_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_device_buffer.data());
+				_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_device_buffer.get());
 			}
 
 			const auto ret = ::inflate(&_zip_stream->z, Z_NO_FLUSH);
 			if (ret == Z_STREAM_END)
 			{
-				auto beg = _get_area.data();
-				auto end = _get_area.data() + (size(_get_area) - _zip_stream->z.avail_out);
+				auto beg = _get_area.get();
+				auto end = _get_area.get() + (default_buffer_size - _zip_stream->z.avail_out);
 				setg(beg, beg, end);
 				return traits_type::to_int_type(*beg);
 			}
@@ -382,8 +382,8 @@ namespace hades::zip
 			}
 		}
 
-		auto beg = _get_area.data();
-		auto end = _get_area.data() + size(_get_area);
+		auto beg = _get_area.get();
+		auto end = _get_area.get() + default_buffer_size;
 		setg(beg, beg, end);
 		return traits_type::to_int_type(*beg);
 	}
@@ -404,10 +404,10 @@ namespace hades::zip
 		_zip_stream->z.zfree = Z_NULL;
 		_zip_stream->z.opaque = Z_NULL;
 		_zip_stream->z.avail_in = 0;
-		_zip_stream->z.next_in = reinterpret_cast<Bytef*>(_device_buffer.data() + size(_device_buffer));
+		_zip_stream->z.next_in = reinterpret_cast<Bytef*>(_device_buffer.get() + default_buffer_size);
 
-		auto beg = _get_area.data();
-		auto ptr = beg + size(_get_area);
+		auto beg = _get_area.get();
+		auto ptr = beg + default_buffer_size;
 		setg(beg, ptr, ptr);
 		_pos = {};
 
@@ -423,16 +423,16 @@ namespace hades::zip
         using z_byte = Bytef;
 
         // fixup the zip stream ptrs
-        const auto in_distance = std::distance(static_cast<const char*>(rhs._put_area.data()),
+        const auto in_distance = std::distance(static_cast<const char*>(rhs._put_area.get()),
 			reinterpret_cast<const char*>(_zip_stream->z.next_in));
-        _zip_stream->z.next_in = reinterpret_cast<z_byte*>(_put_area.data() + in_distance);
-        const auto out_distance = std::distance(rhs._device_buffer.data(), reinterpret_cast<std::byte*>(_zip_stream->z.next_out));
-        _zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data() + out_distance);
+        _zip_stream->z.next_in = reinterpret_cast<z_byte*>(_put_area.get() + in_distance);
+        const auto out_distance = std::distance(rhs._device_buffer.get(), reinterpret_cast<std::byte*>(_zip_stream->z.next_out));
+        _zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.get() + out_distance);
 
 
         // fixup put area
         const auto ptr = rhs.pptr();
-        const auto ptr_offset = integer_cast<int>(unsigned_cast(std::distance(rhs._put_area.data(), ptr)) / sizeof(char_type));
+        const auto ptr_offset = integer_cast<int>(unsigned_cast(std::distance(rhs._put_area.get(), ptr)) / sizeof(char_type));
 
         // clear the rhs area
         rhs.setp(nullptr, nullptr);
@@ -440,8 +440,8 @@ namespace hades::zip
         std::swap(_put_area, rhs._put_area);
 
         // calculate the new ptrs for our put area
-        auto beg = _put_area.data();
-        auto end = beg + size(_put_area);
+        auto beg = _put_area.get();
+        auto end = beg + default_buffer_size;
         setp(beg, end);
         // advance the put pointer to match rhs
         pbump(ptr_offset);
@@ -488,7 +488,7 @@ namespace hades::zip
 		if (beg != ptr)
 			_deflate_some(Z_NO_FLUSH);
 
-		if (_zip_stream->z.avail_out != size(_device_buffer))
+		if (_zip_stream->z.avail_out != default_buffer_size)
 			_empty_device_buffer();
 
 		return {};
@@ -541,22 +541,22 @@ namespace hades::zip
 
 	void basic_out_compressed_filebuf<char>::_empty_device_buffer()
 	{
-		if (_zip_stream->z.avail_out != size(_device_buffer))
+		if (_zip_stream->z.avail_out != default_buffer_size)
 		{
 			using z_byte = Bytef;
 			using z_uint = uInt;
 
 			const auto device_end = reinterpret_cast<std::byte*>(_zip_stream->z.next_out);
-            const auto write_amount = integer_cast<std::size_t>(std::distance(_device_buffer.data(), device_end));
-			const auto out = fwrite(_device_buffer.data(), sizeof(std::byte), write_amount, _file.get());
+            const auto write_amount = integer_cast<std::size_t>(std::distance(_device_buffer.get(), device_end));
+			const auto out = fwrite(_device_buffer.get(), sizeof(std::byte), write_amount, _file.get());
 			if (out != integer_cast<std::size_t>(write_amount))
 				throw files::file_error{ "write error" };
 			const auto flush = fflush(_file.get());
 			if (flush != int{})
 				throw files::file_error{ "flush error" };
 
-			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data());
-			_zip_stream->z.avail_out = integer_cast<z_uint>(size(_device_buffer));
+			_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.get());
+			_zip_stream->z.avail_out = integer_cast<z_uint>(default_buffer_size);
 		}
 		return;
 	}
@@ -571,9 +571,9 @@ namespace hades::zip
 		_zip_stream->z.zfree = Z_NULL;
 		_zip_stream->z.opaque = Z_NULL;
 		_zip_stream->z.avail_in = 0;
-		_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_put_area.data());
-		_zip_stream->z.avail_out = integer_cast<z_uint>(size(_device_buffer));
-		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.data());
+		_zip_stream->z.next_in = reinterpret_cast<z_byte*>(_put_area.get());
+		_zip_stream->z.avail_out = integer_cast<z_uint>(default_buffer_size);
+		_zip_stream->z.next_out = reinterpret_cast<z_byte*>(_device_buffer.get());
 
 		return deflateInit(&_zip_stream->z, Z_BEST_COMPRESSION) == Z_OK;
 	}
@@ -591,7 +591,7 @@ namespace hades::zip
 	// fill the input buffer
 	basic_in_archived_filebuf<char>::int_type basic_in_archived_filebuf<char>::_readsome()
 	{
-		const auto ret = unzReadCurrentFile(_archive.handle, _get_area.data(), integer_cast<unsigned int>(size(_get_area)));
+		const auto ret = unzReadCurrentFile(_archive.handle, _get_area.get(), integer_cast<unsigned int>(default_buffer_size));
 
 		using namespace std::string_literals;
 
@@ -600,7 +600,7 @@ namespace hades::zip
 
 		if (ret != 0)
 		{
-			const auto beg = _get_area.data();
+			const auto beg = _get_area.get();
 			setg(beg, beg, beg + ret);
 			return traits_type::to_int_type(*beg);
 		}
@@ -619,12 +619,12 @@ namespace hades::zip
 		const auto beg = pbase(), ptr = pptr();
         if (beg != ptr)
 		{
-			auto ret = zipWriteInFileInZip(_archive.handle, _put_area.data(),
+			auto ret = zipWriteInFileInZip(_archive.handle, _put_area.get(),
 				integer_cast<unsigned int>(std::distance(beg, ptr)));
 			if (ret < 0)
 				throw archive_error{ "error writing archive"s };
 		}
-		setp(beg, beg + size(_put_area));
+		setp(beg, beg + default_buffer_size);
 		return;
 	}
 }

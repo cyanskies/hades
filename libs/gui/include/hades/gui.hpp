@@ -11,8 +11,10 @@
 #include "SFML/Graphics/Color.hpp"
 #include "SFML/Graphics/Drawable.hpp"
 #include "SFML/Graphics/RenderStates.hpp"
+#include "SFML/Graphics/Vertex.hpp"
 #include "SFML/Window/Event.hpp"
 
+#include "hades/colour.hpp"
 #include "hades/exceptions.hpp"
 #include "hades/rectangle_math.hpp"
 #include "hades/timers.hpp"
@@ -89,6 +91,7 @@ namespace hades
 		using gui_error::gui_error;
 	};
 
+	class gui_text_renderer;
 	class gui_input_text_callback;
 
 	template<detail::DragDropPayload T>
@@ -824,6 +827,8 @@ namespace hades
 
 		void draw(sf::RenderTarget& target, const sf::RenderStates& states = sf::RenderStates{}) const override;
 
+		gui_text_renderer make_text_renderer(const resources::font* = {});
+
 		static constexpr std::string_view version() noexcept
 		{
 			return IMGUI_VERSION;
@@ -846,6 +851,8 @@ namespace hades
 								   // still valid during contexts destructor.
 		using context_ptr = std::unique_ptr<detail::gui_context, detail::gui_context_deleter>;
 		context_ptr _my_context;
+		// Extra draw list used for generating text renders
+		std::unique_ptr<ImDrawList> _draw_list;
 
 		// used to help place the toolbar window in the correct location
 		struct toolbar_layout_info
@@ -859,6 +866,25 @@ namespace hades
 		//static font atlas will be shared for all instances of gui
 		static std::unique_ptr<ImFontAtlas> _font_atlas;
 		static std::unordered_map<const resources::font*, ImFont*> _fonts;
+		static const resources::font* _default_font; // resource reference for imgui default font
+	};
+
+	class gui_text_renderer
+	{
+	public:
+		gui_text_renderer(ImDrawList* draw_list, const ImFont* font, const ImFontAtlas* atlas) noexcept
+			: _draw_list{ draw_list }, _font{ font }, _atlas{ atlas }
+		{}
+
+		void new_frame();
+		void draw_text(std::string_view, vector2_float pos, colour = colours::from_name(colours::names::white));
+		void draw_text(std::string_view, float size, vector2_float pos, colour = colours::from_name(colours::names::white));
+		std::vector<sf::Vertex> output_frame() const;
+
+	private:
+		ImDrawList* _draw_list;
+		const ImFont* _font;
+		const ImFontAtlas* _atlas;
 	};
 
 	class gui_input_text_callback

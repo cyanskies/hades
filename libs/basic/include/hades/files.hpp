@@ -51,7 +51,7 @@ namespace hades::files
 	//reads file at path as a string
 	//will attempt to load from user_custom_file_directory first
 	string read_file(const std::filesystem::path& file_path);
-	buffer raw_file(const std::filesystem::path& file_path); // TODO: remove? including all its leaf functions
+	std::vector<std::byte> raw_file(const std::filesystem::path& file_path); // TODO: remove? including all its leaf functions
 	// as above, but checks the usersSaveDirectoryinstead
 	//reads save files and config files
 	string read_save(const std::filesystem::path& file_name);
@@ -67,6 +67,7 @@ namespace hades
 	//then the mods in user custom dir
 	//then overrides in the game dir
 	// then mods in the game dir
+	// NOTE: always opens in binary mode
 	class irfstream : public std::istream
 	{
 	public:
@@ -115,7 +116,7 @@ namespace hades
 namespace hades::files
 {
 	irfstream stream_resource(const data::mod&, const std::filesystem::path& path);
-	buffer raw_resource(const data::mod&, const std::filesystem::path& path);
+	std::vector<std::byte> raw_resource(const data::mod&, const std::filesystem::path& path);
 	string read_resource(const data::mod&, const std::filesystem::path& path);
 
 	//writes file_contents to the file at path,

@@ -9,7 +9,6 @@
 
 #include "SFML/Graphics/RenderTarget.hpp"
 #include "SFML/Graphics/Vertex.hpp"
-#include "SFML/Graphics/VertexArray.hpp"
 
 #include "SFML/System/Err.hpp"
 
@@ -241,7 +240,6 @@ namespace hades
 		_create_font(f);
 		return;
 	}
-
 
 	void gui::frame_begin()
 	{
@@ -1455,6 +1453,26 @@ namespace hades
 		});
 	}
 
+	gui_text_renderer gui::make_text_renderer(const resources::font* f)
+	{
+		_active_assert();
+
+		if (!f)
+			f = _default_font;
+
+		if (!f)
+			throw gui_error{ "Tried to call make_text_renderer from an uninitialised gui"s };
+
+		const auto font_iter = _fonts.find(f);
+		if (font_iter == end(_fonts))
+			throw gui_font_missing{ std::format("Font hasn't been created yet: {}"sv, data::get_as_string(f->id)) };
+
+		if (!_draw_list)
+			_draw_list = std::make_unique<ImDrawList>(ImGui::GetDrawListSharedData());
+
+		return gui_text_renderer{ _draw_list.get(), font_iter->second, _font_atlas.get() };
+	}
+
 	void gui::_activate_context() noexcept
 	{
 		assert(_my_context);
@@ -1531,27 +1549,62 @@ namespace hades
 		if (const auto font = _fonts.find(f); font != std::end(_fonts))
 			return font->second;
 
-		throw gui_font_missing{ "Font hasn't been created yet" };
+		throw gui_font_missing{ std::format("Font hasn't been created yet: {}"sv, data::get_as_string(f->id)) };
 	}
 
-	void gui::_create_font(const resources::font *f)
+	void gui::_create_font(const resources::font* f)
 	{
-		auto &f_atlas = *_font_atlas;
+		assert(f);
+		auto& f_atlas = *_font_atlas;
 		ImFontConfig cfg;
 		cfg.FontDataOwnedByAtlas = false;
-		const auto size = f->source_buffer.size();
-		const auto int_size = integer_cast<int>(size);
-		//const cast, because f_atlas demands control of the ptr
-		//though it won't actually do anything, since FontDataOwned is set to false
-		auto font = f_atlas.AddFontFromMemoryTTF(const_cast<std::byte*>(f->source_buffer.data()), int_size, 13.f, &cfg);
-		_generate_atlas();
-		_fonts.emplace(f, font);
+		const auto& name = data::get_as_string(f->id);
+		constexpr auto result_size = std::size(cfg.Name);
+		if (std::size(name) < result_size)
+		{
+			auto result = std::ranges::copy(name, cfg.Name);
+			*result.out = '\0';
+		}
+		else
+		{
+			std::ranges::copy_n(std::begin(name), result_size - 1, cfg.Name);
+			cfg.Name[result_size - 1] = '\0';
+		}
+
+		try 
+		{
+			auto file_buffer = resources::font_functions::get_font_source_as_memory(*f);
+			const auto int_size = integer_cast<int>(std::size(file_buffer));
+			//const cast, because f_atlas demands control of the ptr
+			//though it won't actually do anything, since FontDataOwned is set to false
+			auto font = f_atlas.AddFontFromMemoryTTF(file_buffer.data(), int_size, 13.f, &cfg);
+			_fonts.emplace(f, font);
+			_generate_atlas();
+		}
+		catch (std::exception& e)
+		{
+			//Some error prevented loading of a custom font
+			// log and record the default font in place of the custom font
+			log_warning(e.what());
+			auto font = _fonts.find(_default_font);
+			if (font == end(_fonts))
+				throw runtime_error{ "Unable to fall back on default font"s };
+			_fonts.emplace(f, font->second);
+		}
+
 		return;
 	}
 
 	void gui::_create_default_font()
 	{
-		_font_atlas->AddFontDefault();
+		auto default_font = _font_atlas->AddFontDefault();
+		const auto name = default_font->GetDebugName();
+		auto& data_man = data::detail::get_data_manager();
+		auto font_id = data_man.get_uid(name);
+		const auto font = resources::font_functions::find_or_create(data_man, font_id);
+		_fonts.emplace(font, default_font);
+		_default_font = font;
+
 		_generate_atlas();
 		return;
 	}
@@ -1599,6 +1652,35 @@ namespace hades
 	//gui::static objects
 	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
 	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;
+	const resources::font* gui::_default_font = {};
+
+	void gui_text_renderer::new_frame()
+	{
+		_draw_list->_ResetForNewFrame();
+		_draw_list->PushClipRectFullScreen();
+		_draw_list->PushTextureID(_atlas->TexID);
+		return;
+	}
+
+	void gui_text_renderer::draw_text(std::string_view string, vector2_float pos, colour col)
+	{
+		const auto vec4_colour = to_imvec4(col);
+		_draw_list->AddText(_font, 0.f, { pos.x, pos.y }, ImGui::GetColorU32(vec4_colour), string);
+		return;
+	}
+
+	void gui_text_renderer::draw_text(std::string_view string, float size, vector2_float pos, colour col)
+	{
+		const auto vec4_colour = to_imvec4(col);
+		_draw_list->AddText(_font, size, { pos.x, pos.y }, ImGui::GetColorU32(vec4_colour), string);
+		return;
+	}
+
+	std::vector<sf::Vertex> gui_text_renderer::output_frame() const
+	{
+		// copy draw here, should only ever be a single command
+		return {};
+	}
 
 	gui_input_text_callback::gui_input_text_callback(ImGuiInputTextCallbackData* data) noexcept
 		: _data{ data }

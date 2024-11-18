@@ -26,11 +26,14 @@ namespace hades
 			}
 
 			void serialise(std::ostream&) const final override;
-
-			//TODO: this is only here for IMGUI to load fonts with
-			//		find a way for the IMGUI font loader to get the file on demand
-			buffer source_buffer;
 		};
+
+		namespace font_functions
+		{
+			font* find_or_create(data::data_manager&, unique_id, std::optional<unique_id> mod = {});
+			// throws files::file_error if the file is missing or unreadable
+			std::vector<std::byte> get_font_source_as_memory(const font&) noexcept;
+		}
 	}
 }
 

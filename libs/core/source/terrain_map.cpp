@@ -1393,7 +1393,7 @@ namespace hades
 		_shared.regions.clear();
 		_shared.quads.clear();
 
-		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff, _show_ramps };
+		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_ramps };
 
 		const auto tiled_area = static_cast<vector2_int>(size(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
@@ -1456,7 +1456,7 @@ namespace hades
 			_shared.quads.draw(t, _shared.start_ramp, _shared.start_cliff_debug - _shared.start_ramp, s);
 		}
 
-		if (_show_cliff && _shared.cliff_debug_tex)
+		if (_show_cliff_edges && _shared.cliff_debug_tex)
 		{
 			s.texture = &resources::texture_functions::get_sf_texture(_shared.cliff_debug_tex);
 			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_cliff_debug, s);

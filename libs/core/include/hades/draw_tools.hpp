@@ -10,7 +10,7 @@
 
 namespace hades
 {
-	//clamps the drawable to a  world region
+	//clamps the drawable to a world region
 	//doesn't support view rotation or custom viewports
 	class draw_clamp_region : public sf::Drawable
 	{

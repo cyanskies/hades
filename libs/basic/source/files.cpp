@@ -240,29 +240,34 @@ namespace hades::files
 	template<typename ReturnType, typename Stream>
 	ReturnType from_stream(Stream& str)
 	{
-		if constexpr (std::is_same_v<ReturnType, string>)
+		str.exceptions(std::ios::badbit | std::ios::failbit);
+		try
 		{
-			auto str_stream = std::stringstream{};
-			str_stream << str.rdbuf();
-			return std::move(str_stream.str());
+			if constexpr (std::is_same_v<ReturnType, string>)
+			{
+				auto str_stream = std::ostringstream{};
+				str_stream << str.rdbuf();
+				return std::move(str_stream.str());
+			}
+			else if constexpr (std::is_same_v<ReturnType, std::vector<std::byte>>)
+			{
+				str.ignore(std::numeric_limits<std::streamsize>::max());
+				const auto size = integer_cast<std::size_t>(str.gcount());
+				auto out = std::vector<std::byte>(size, {});
+				str.get(reinterpret_cast<char*>(out.data()), size);
+				return out;
+			}
 		}
-		else if constexpr (std::is_same_v<ReturnType, buffer>)
+		catch (const std::ios_base::failure& e)
 		{
-			str.seekg({}, std::ios_base::end);
-			const auto size = str.tellg();
-			str.seekg({}, std::ios_base::beg);
-
-            // NOTE: fpos can be converted to streamoff but not size_t directly
-            auto out = buffer(integer_cast<std::size_t>(static_cast<std::streamoff>(size)), {});
-			str.get(reinterpret_cast<char*>(out.data()), size);
-			return out;
+			throw files::file_error{ e.what() };
 		}
 	}
 
-	buffer raw_resource(const data::mod& m, const fs::path& path)
+	std::vector<std::byte> raw_resource(const data::mod& m, const fs::path& path)
 	{
 		auto stream = stream_resource(m, path);
-		return from_stream<buffer>(stream);
+		return from_stream<std::vector<std::byte>>(stream);
 	}
 
 	string read_resource(const data::mod& m, const fs::path& path)
@@ -295,12 +300,12 @@ namespace hades::files
 		return {};
 	}
 
-	static buffer try_raw(const fs::path& first_path, const fs::path& second_path,
+	static std::vector<std::byte> try_raw(const fs::path& first_path, const fs::path& second_path,
 		const fs::path& file_name)
 	{
 		auto stream = try_stream(first_path, second_path, file_name);
 		if(stream.is_open())
-			return from_stream<buffer>(stream);
+			return from_stream<std::vector<std::byte>>(stream);
 		return {};
 	}
 
@@ -323,7 +328,7 @@ namespace hades::files
 		return try_read(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}
 
-	buffer raw_file(const fs::path& file_path)
+	std::vector<std::byte> raw_file(const fs::path& file_path)
 	{
 		return try_raw(hades::user_custom_file_directory(), fs::current_path(), file_path);
 	}

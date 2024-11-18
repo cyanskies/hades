@@ -132,7 +132,6 @@ namespace hades::files
 	//as above, calls UserConfigDir instead
 	void write_config(std::string_view);
 
-
 	std::vector<types::string> ListFilesInDirectory(std::string_view dir_path);
 }
 

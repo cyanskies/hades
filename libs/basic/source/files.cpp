@@ -243,17 +243,21 @@ namespace hades::files
 		str.exceptions(std::ios::badbit | std::ios::failbit);
 		try
 		{
+			// TODO: im not happy with these implementations
+			//		both paths here require copying byte by byte at some point
 			if constexpr (std::is_same_v<ReturnType, string>)
 			{
 				auto str_stream = std::ostringstream{};
 				str_stream << str.rdbuf();
-				return std::move(str_stream.str());
+				return std::move(str_stream).str();
 			}
 			else if constexpr (std::is_same_v<ReturnType, std::vector<std::byte>>)
 			{
 				str.ignore(std::numeric_limits<std::streamsize>::max());
 				const auto size = integer_cast<std::size_t>(str.gcount());
-				auto out = std::vector<std::byte>(size, {});
+				str.clear(); // clear eof triggered by .ignore
+				str.seekg(0, std::ios::beg);
+				auto out = std::vector<std::byte>(size);
 				str.get(reinterpret_cast<char*>(out.data()), size);
 				return out;
 			}

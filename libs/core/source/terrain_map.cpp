@@ -30,7 +30,7 @@ void main()
 	vec4 vert = gl_ModelViewMatrix * gl_Vertex;
 	// move vertex up to simulate height
     vert.y -= (float(gl_Color.r) * 255) * height_multiplier;
-    // transform the vertex position
+	// transform the vertex position
 	gl_Position = gl_ProjectionMatrix * vert;
 	// transform the texture coordinates
     gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
@@ -196,17 +196,6 @@ namespace hades
 						{} // (0.f, 0.f, 0.f)
 					}
 				}
-				//	"world_size"s,
-				//	resources::uniform{
-				//		resources::uniform_type_list::vector2f,
-				//		{} // (0, 0)
-				//	}
-				//},{
-				//	"sunlight_map"s,
-				//	resources::uniform{
-				//		resources::uniform_type_list::texture
-				//	}
-				//}
 		};
 
 		// terrain shadow rendering shader
@@ -223,33 +212,6 @@ namespace hades
 		}
 	}
 
-	immutable_terrain_map::immutable_terrain_map(const terrain_map& t)
-	{
-		for (const auto& l : t.terrain_layers)
-			_terrain_layers.emplace_back(l);
-	}
-
-	void immutable_terrain_map::create(const terrain_map& t)
-	{
-		_terrain_layers.clear();
-		for (const auto& l : t.terrain_layers)
-			_terrain_layers.emplace_back(l);
-	}
-
-	void immutable_terrain_map::draw(sf::RenderTarget& t, const sf::RenderStates& s) const
-	{
-		for (auto iter = std::rbegin(_terrain_layers);
-			iter != std::rend(_terrain_layers); ++iter)
-			t.draw(*iter, s);
-
-		//t.draw(_tile_layer, s);
-	}
-
-	rect_float immutable_terrain_map::get_local_bounds() const noexcept
-	{
-		return _tile_layer.get_local_bounds();
-	}
-
 	//==================================//
 	//		mutable_terrain_map			//
 	//==================================//
@@ -260,6 +222,13 @@ namespace hades
 		_shader_shadows_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_shadows_lighting)) }
 	{
 		_shared.settings = resources::get_terrain_settings();
+	}
+
+	mutable_terrain_map::mutable_terrain_map(const mutable_terrain_map&)
+		: mutable_terrain_map{}
+	{
+		assert(false);
+		throw logic_error{ "Never copy a mutable_terrain_map"};
 	}
 
 	mutable_terrain_map::mutable_terrain_map(terrain_map t) : mutable_terrain_map{}
@@ -1014,7 +983,7 @@ namespace hades
 
 			for (auto& vert : render.verts)
 			{
-				const auto col = bilinear_height(vert.position, world_pos_f, tile_sizef, quad_height) + 1.f;
+				const auto col = bilinear_height(vert.position, world_pos_f, tile_sizef, quad_height);
 				vert.color.r = integral_clamp_cast<std::uint8_t>(col, round_up_tag);
 			}
 
@@ -1485,7 +1454,7 @@ namespace hades
 		auto s = states;
 		s.shader = _debug_depth ? _shader_debug_depth.get_shader() : _shader.get_shader();
 		
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 		depth_buffer::setup();
 		depth_buffer::clear();
 		depth_buffer::enable();
@@ -1524,6 +1493,8 @@ namespace hades
 			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_cliff_debug, s);
 		}
 
+		glDisable(GL_CULL_FACE);
+
 		if (_show_cliff_layers && _shared.layer_tex)
 		{
 			s.texture = _shared.layer_tex;
@@ -1532,7 +1503,6 @@ namespace hades
 
 		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);
 		_shared.quads.draw(t, _shared.start_edit, _shared.quads.size() - _shared.start_edit, s);
-		//glDisable(GL_CULL_FACE);
 		depth_buffer::disable();
 		return;
 	}

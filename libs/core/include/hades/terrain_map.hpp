@@ -13,30 +13,18 @@ namespace hades
 {
 	void register_terrain_map_resources(data::data_manager&);
 
-	class [[deprecated]] immutable_terrain_map final : public sf::Drawable
-	{
-	public:
-		immutable_terrain_map() = default;
-		immutable_terrain_map(const immutable_terrain_map&) = default;
-		immutable_terrain_map(const terrain_map&);
-
-		void create(const terrain_map&);
-
-		void draw(sf::RenderTarget& target, const sf::RenderStates& states) const override;
-
-		rect_float get_local_bounds() const noexcept;
-
-	private:
-		immutable_tile_map _tile_layer;
-		std::vector<immutable_tile_map> _terrain_layers;
-	};
-
 	class mutable_terrain_map final : public sf::Drawable
 	{
 	public:
 		mutable_terrain_map();
-		mutable_terrain_map(const mutable_terrain_map&) = default;
+		// NOTE: mutable_terrain_map is non-copyable, we supply this
+		// to enable its storage in std::any; invocing this always throws logic_error
+		mutable_terrain_map(const mutable_terrain_map&); 
+		mutable_terrain_map(mutable_terrain_map&&) noexcept = default;
 		mutable_terrain_map(terrain_map);
+
+		mutable_terrain_map& operator=(mutable_terrain_map&) = delete;
+		mutable_terrain_map& operator=(mutable_terrain_map&&) noexcept = default;
 
 		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
 
@@ -287,6 +275,8 @@ namespace hades
 		bool _show_cliff_layers : 1 = false;
 		bool _show_regions : 1 = false;
 	};
+
+	constexpr auto moveable = std::is_nothrow_move_assignable_v< mutable_terrain_map>;
 
 	class terrain_mini_map final : public sf::Drawable, public sf::Transformable
 	{

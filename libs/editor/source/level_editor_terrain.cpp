@@ -216,6 +216,8 @@ namespace hades
 					_map.show_ramps(ramps);
 				if (auto cliffs = _map.show_cliff_edges(); g.menu_toggle_item("show cliff indicators"sv, cliffs))
 					_map.show_cliff_edges(cliffs);
+				if (auto layers = _map.show_cliff_layers(); g.menu_toggle_item("show cliff layer value"sv, layers))
+					_map.show_cliff_layers(layers);
 				if (auto shadows = _map.show_shadows(); g.menu_toggle_item("draw shadows"sv, shadows))
 					_map.show_shadows(shadows);
 				if (auto depth = _map.draw_depth_buffer(); g.menu_toggle_item("draw depth buffer"sv, depth))

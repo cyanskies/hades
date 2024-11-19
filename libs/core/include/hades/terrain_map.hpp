@@ -5,6 +5,7 @@
 #include "SFML/Graphics/RenderStates.hpp"
 #include "SFML/Graphics/Texture.hpp"
 
+#include "hades/gui.hpp"
 #include "hades/terrain.hpp"
 #include "hades/tile_map.hpp"
 
@@ -12,7 +13,7 @@ namespace hades
 {
 	void register_terrain_map_resources(data::data_manager&);
 
-	class immutable_terrain_map  final : public sf::Drawable
+	class [[deprecated]] immutable_terrain_map final : public sf::Drawable
 	{
 	public:
 		immutable_terrain_map() = default;
@@ -110,7 +111,7 @@ namespace hades
 			return;
 		}
 
-		bool show_cliff_layers() noexcept
+		bool show_cliff_layers() const noexcept
 		{
 			return _show_cliff_layers;
 		}
@@ -190,12 +191,14 @@ namespace hades
 			terrain_map map;
 			quad_buffer quads;
 			std::vector<tile_position> edit_targets;
+			gui gui = { "" }; // Don't generate .ini
 			// per chunk data
 			std::vector<vertex_region> regions;
 			std::size_t start_lighting;
 			std::size_t start_grid;
 			std::size_t start_ramp;
 			std::size_t start_cliff_debug;
+			sf::VertexBuffer cliff_layer_debug = { sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Static };
 			// end per chunk data
 			std::vector<resources::resource_link<resources::texture>> texture_table;
 			const resources::terrain_settings* settings = {};
@@ -203,6 +206,7 @@ namespace hades
 			const resources::texture* ramp_tex = {};
 			const resources::texture* cliff_debug_tex = {};
 			const resources::texture* edit_tex = {};
+			const sf::Texture* layer_tex = {};
 			rect_float local_bounds = {};
 			std::size_t start_edit;
 			float sun_angle_radians = {};
@@ -255,8 +259,10 @@ namespace hades
 			bool _val = true;
 		};
 
-		resources::shader_proxy _shader;
-		resources::shader_proxy _shader_debug_depth;
+		resources::shader_proxy _shader; // turns red channel into height
+		resources::shader_proxy _shader_debug_depth; // as above; draw depth buffer
+		// red channel into height, green channel into shadow height
+		// blue and alpha channel store normals
 		resources::shader_proxy _shader_shadows_lighting;
 
 	private:

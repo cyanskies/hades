@@ -877,14 +877,14 @@ namespace hades
 		{}
 
 		void new_frame();
+		vector2_float text_size(std::string_view, float size) const;
 		void draw_text(std::string_view, vector2_float pos, colour = colours::from_name(colours::names::white));
 		void draw_text(std::string_view, float size, vector2_float pos, colour = colours::from_name(colours::names::white));
 
 		struct text_render_data
 		{
-			const sf::Texture* texture;
-			rect_float clip_rect;
 			std::vector<sf::Vertex> verts;
+			const sf::Texture* texture;
 		};
 
 		text_render_data output_frame();

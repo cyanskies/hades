@@ -57,15 +57,20 @@ namespace hades
 
 		// save config path for this gui
 		auto &io = ImGui::GetIO();
-		const auto path = user_config_directory() / (empty(filename) ? default_config_name : filename);
-		if (const auto directory = path.parent_path(); !std::filesystem::exists(directory))
-			std::filesystem::create_directories(directory);
-		else if (!std::filesystem::is_directory(directory))
-			log_error("Unable to create directory for ui config: "s + std::filesystem::absolute(directory).generic_string());
+		if (!std::empty(filename))
+		{
+			const auto path = user_config_directory() / (empty(filename) ? default_config_name : filename);
+			if (const auto directory = path.parent_path(); !std::filesystem::exists(directory))
+				std::filesystem::create_directories(directory);
+			else if (!std::filesystem::is_directory(directory))
+				log_error("Unable to create directory for ui config: "s + std::filesystem::absolute(directory).generic_string());
 
-		assert(path.extension() == ".ini");
-		_ini_filename = path.generic_string();
-		io.IniFilename = _ini_filename.c_str();
+			assert(path.extension() == ".ini");
+			_ini_filename = path.generic_string();
+			io.IniFilename = _ini_filename.c_str();
+		}
+		else
+			io.IniFilename = nullptr;
 
 		using flags = ImGuiBackendFlags_;
 		io.BackendFlags |= flags::ImGuiBackendFlags_RendererHasVtxOffset;
@@ -440,7 +445,7 @@ namespace hades
 	}
 
 	template<typename Colour>
-	static inline ImVec4 to_imvec4(const Colour &c) noexcept
+	static constexpr inline ImVec4 to_imvec4(const Colour &c) noexcept
 	{
 		return { c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f };
 	}
@@ -1658,16 +1663,30 @@ namespace hades
 	}
 
 	//gui::static objects
-	std::unique_ptr<ImFontAtlas> gui::_font_atlas{ nullptr };
+	std::unique_ptr<ImFontAtlas> gui::_font_atlas = {};
 	std::unordered_map<const resources::font*, gui::font*> gui::_fonts;
 	const resources::font* gui::_default_font = {};
 
 	void gui_text_renderer::new_frame()
 	{
 		_draw_list->_ResetForNewFrame();
-		_draw_list->PushClipRectFullScreen();
+		using limit = std::numeric_limits<float>;
+		_draw_list->PushClipRect({ limit::min(), limit::min() }, { limit::max(), limit::max() });
+		//_draw_list->PushClipRectFullScreen();
 		_draw_list->PushTextureID(_atlas->TexID);
 		return;
+	}
+
+	vector2_float gui_text_renderer::text_size(const std::string_view str, const float font_size) const
+	{
+		if (empty(str))
+			return { 0.0f, font_size };
+
+		constexpr auto wrap_width = -1.0f;
+		ImVec2 text_size = _font->CalcTextSizeA(font_size, FLT_MAX, wrap_width, str);
+
+		text_size.x = std::ceil(text_size.x);
+		return { text_size.x, text_size.y };
 	}
 
 	void gui_text_renderer::draw_text(const std::string_view string, const vector2_float pos, const colour col)
@@ -1695,22 +1714,14 @@ namespace hades
 		draw_data.AddDrawList(_draw_list);
 
 		const auto index_first = _draw_list->IdxBuffer.Data;
-		const auto state = sf::RenderStates{};
 		auto vertex_array = std::vector<sf::Vertex>{};
-		auto clip_rect = rect_float{};
 
 		for (const auto &cmd : _draw_list->CmdBuffer)
-		{
-			// copy draw here, should only ever be a single command
-			const auto [r_state, next_rect] = generate_vertex(&draw_data, _draw_list, cmd, index_first, state, vertex_array);
-			clip_rect = max_rect(clip_rect, next_rect);
-			assert(r_state.texture == _atlas->TexID);
-		}
+			generate_vertex(&draw_data, _draw_list, cmd, index_first, {}, vertex_array);
 
 		return text_render_data{
+			std::move(vertex_array),
 			_atlas->TexID,
-			clip_rect,
-			vertex_array
 		};
 	}
 

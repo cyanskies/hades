@@ -531,9 +531,6 @@ namespace hades
 		const auto cliff_terrain = shared.map.terrainset->cliff_terrain.get();
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-			const auto index = to_1d_index(pos, map_size_tiles.x);
-			const auto cliff_index = index * 4;
-			using tile_type = terrain_map::cliff_layer_layout;
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
 			const auto cliff_corners = get_cliff_corners(pos, shared.map);
 
@@ -633,6 +630,7 @@ namespace hades
 
 				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
 			}
+
 			// bottom cliff
 			if (cliffs[enum_type(rect_edges::bottom)])
 			{
@@ -737,8 +735,6 @@ namespace hades
 				tile_sizef
 		};
 
-		// TODO: generate grid on cliff edges?
-
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
@@ -755,8 +751,6 @@ namespace hades
 		return;
 	}
 
-	// generates an icon over each of the ramp edges
-	// TODO: a lot of the code for these debug views could be merged
 	static void generate_ramp(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
@@ -935,11 +929,7 @@ namespace hades
 		};
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
-			const auto index = to_1d_index(pos, map_size_tiles.x);
-			const auto cliff_index = index * 4;
-			using tile_type = terrain_map::cliff_layer_layout;
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
-
 			if (cliffs.none())
 				return;
 
@@ -972,6 +962,73 @@ namespace hades
 				shared.quads.append(quad);
 			}
 		});
+	}
+
+	static float bilinear_height(sf::Vector2f pos, vector2_float tile_pos,
+		const float tile_size, const std::array<std::uint8_t, 4>& h) noexcept
+	{
+		const auto x = (pos.x - tile_pos.x) / tile_size;
+		const auto y = (pos.y - tile_pos.y) / tile_size;
+		const auto tl_h = float_clamp_cast(h[enum_type(rect_corners::top_left)]);
+		const auto tr_h = float_clamp_cast(h[enum_type(rect_corners::top_right)]);
+		const auto bl_h = float_clamp_cast(h[enum_type(rect_corners::bottom_left)]);
+		const auto br_h = float_clamp_cast(h[enum_type(rect_corners::bottom_right)]);
+
+		const auto tl = tl_h * (1 - x) * (1 - y);
+		const auto bl = bl_h * (1 - x) * y;
+		const auto tr = tr_h * x * (1 - y);
+		const auto br = br_h * x * y;
+		const auto val = tl + tr + bl + br;
+		return val;
+	}
+
+	static void generate_cliff_layer_debug(mutable_terrain_map::shared_data& shared,
+		const rect_int terrain_area)
+	{
+		constexpr auto text_size = 13.f;
+		const auto tile_sizef = float_cast(shared.settings->tile_size);
+		const auto half_tile = tile_sizef / 2.f;
+		const auto map_size_tiles = get_size(shared.map);
+
+		shared.gui.activate_context();
+		auto text_renderer = shared.gui.make_text_renderer();
+		auto out = std::vector<sf::Vertex>{};
+
+		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+			const auto cliff_layer = get_cliff_layer(pos, shared.map);
+			const auto cliff_layer_str = std::format("{}", integer_cast<unsigned int>(cliff_layer));
+
+			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
+			const auto world_pos_f = static_cast<vector2_float>(world_pos);
+			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
+			const auto quad_height = get_max_height_in_corners(triangle_height);
+
+			text_renderer.new_frame();
+			const auto txt_size = text_renderer.text_size(cliff_layer_str, text_size);
+			const auto half_size = txt_size / 2.f;
+			const auto final_pos = vector2_float{ world_pos_f.x + half_tile - half_size.x, world_pos_f.y + half_tile - half_size.y };
+			text_renderer.draw_text(cliff_layer_str, text_size, final_pos);
+			auto render = text_renderer.output_frame();
+			assert(!shared.layer_tex || shared.layer_tex == render.texture);
+			shared.layer_tex = render.texture;;
+
+			for (auto& vert : render.verts)
+			{
+				const auto col = bilinear_height(vert.position, world_pos_f, tile_sizef, quad_height) + 1.f;
+				vert.color.r = integral_clamp_cast<std::uint8_t>(col, round_up_tag);
+			}
+
+			out.insert(end(out), begin(render.verts), end(render.verts));
+		});
+
+		auto ret = shared.cliff_layer_debug.create(size(out));
+		if (!ret)
+			log_error("Failed to create vertex buffer for cliff later debug"sv);
+			
+		ret = shared.cliff_layer_debug.update(std::data(out));
+		if (!ret)
+			log_error("Failed to store cliff layer debug view in VertexBuffer"sv);
+		return;
 	}
 
 	static constexpr std::array<std::uint8_t, 4> full_bright(const std::array<std::uint8_t, 4>&,
@@ -1353,6 +1410,7 @@ namespace hades
 		bool shadows : 1;
 		bool grid : 1;
 		bool cliffs : 1;
+		bool layers : 1;
 		bool ramps : 1;
 	};
 
@@ -1382,6 +1440,10 @@ namespace hades
 		shared.start_cliff_debug = shared.quads.size();
 		if (flags.cliffs)
 			generate_cliff_debug(shared, terrain_area);
+
+		if (flags.layers)
+			generate_cliff_layer_debug(shared, terrain_area);
+
 		return;
 	}
 
@@ -1393,7 +1455,7 @@ namespace hades
 		_shared.regions.clear();
 		_shared.quads.clear();
 
-		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_ramps };
+		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_cliff_layers, _show_ramps };
 
 		const auto tiled_area = static_cast<vector2_int>(size(_shared.world_area) / float_cast(_shared.settings->tile_size));
 
@@ -1423,7 +1485,7 @@ namespace hades
 		auto s = states;
 		s.shader = _debug_depth ? _shader_debug_depth.get_shader() : _shader.get_shader();
 		
-		glEnable(GL_CULL_FACE);
+		//glEnable(GL_CULL_FACE);
 		depth_buffer::setup();
 		depth_buffer::clear();
 		depth_buffer::enable();
@@ -1462,9 +1524,15 @@ namespace hades
 			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_cliff_debug, s);
 		}
 
+		if (_show_cliff_layers && _shared.layer_tex)
+		{
+			s.texture = _shared.layer_tex;
+			t.draw(_shared.cliff_layer_debug, s);
+		}
+
 		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);
 		_shared.quads.draw(t, _shared.start_edit, _shared.quads.size() - _shared.start_edit, s);
-		glDisable(GL_CULL_FACE);
+		//glDisable(GL_CULL_FACE);
 		depth_buffer::disable();
 		return;
 	}

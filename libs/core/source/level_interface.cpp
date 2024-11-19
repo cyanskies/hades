@@ -80,7 +80,6 @@ namespace hades
         static_cast<world_unit_t>(sv.source.map_y) },
           _player_input{ get_if_player_input(sv) }
 	{
-		
 		const auto settings = resources::get_terrain_settings();
 		_terrain = to_terrain_map(sv.source.terrain, *settings);
 

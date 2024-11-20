@@ -77,7 +77,7 @@ void main()
 	float shadow_height = gl_Color.g;
 	float frag_height = gl_Color.r;
 	// lighting info
-	float theta = gl_Color.b * 2 * pi - pi; // [-pi, pi]
+	float theta = gl_Color.b * 2.f * pi - pi; // [-pi, pi]
 	float phi = gl_Color.a * pi; // [0, pi]
 	float sin_phi = sin(phi);
 
@@ -93,7 +93,7 @@ void main()
 }})";
 
 constexpr auto shadow_calc_colour = "gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));";
-constexpr auto shadow_render_normals = "gl_FragColor = vec4(denormal.rgb, 1.f);";
+constexpr auto shadow_render_normals = "gl_FragColor = vec4(normal.rgb, 1.f);";
 
 static auto terrain_map_shader_id = hades::unique_zero;
 static auto terrain_map_shader_debug_id = hades::unique_zero;
@@ -345,10 +345,15 @@ namespace hades
 		}
 	}
 
-	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p, float tile_size,
+	struct normal {
+		std::uint8_t theta,
+			phi;
+	};
+
+	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p,
 		const triangle_height_data& h, rect_float texture_quad,
 		const std::array<std::uint8_t, 4> &shadow_h = {}, 
-		const std::array<std::array<std::uint8_t, 2>, 4> &normals = {}) noexcept
+		const std::array<normal, 6> &normals = {}) noexcept
 	{
 		const auto& tex_left_x = texture_quad.x;
 		const auto tex_right_x = texture_quad.x + texture_quad.width;
@@ -357,12 +362,12 @@ namespace hades
 		auto sf_col = std::array<sf::Color, 6>{};
 		for (auto i = std::uint8_t{}; i < 6; ++i)
 		{
-			const auto& normal = normals[enum_type(triangle_index_to_quad_index(i, h.triangle_type))];
+			const auto& normal = normals[i];
 			sf_col[i] = sf::Color{
 				h.height[i],
 				shadow_h[enum_type(triangle_index_to_quad_index(i, h.triangle_type))],
-				normal[0], // theta
-				normal[1]};// phi
+				normal.theta, // theta
+				normal.phi };// phi
 		}
 		
 		if (h.triangle_type == terrain_map::triangle_uphill)
@@ -457,7 +462,7 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto quad = make_terrain_triangles(tile.positions, tile_sizef, tile.height, tex_coords);
+			const auto quad = make_terrain_triangles(tile.positions, tile.height, tex_coords);
 			shared.quads.append(quad);
 		}
 
@@ -730,7 +735,7 @@ namespace hades
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
+			const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
 
 			shared.quads.append(quad);
 			return;
@@ -822,25 +827,25 @@ namespace hades
 
 			if (ramp.test(enum_type(rect_edges::top)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_top);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_top);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::right)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_right);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_right);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::bottom)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_bottom);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_bottom);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::left)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_left);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_left);
 				shared.quads.append(quad);
 			}
 
@@ -927,25 +932,25 @@ namespace hades
 
 			if (cliffs.test(enum_type(rect_edges::top)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_top);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_top);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::right)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_right);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_right);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::bottom)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_bottom);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_bottom);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::left)))
 			{
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords_left);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_left);
 				shared.quads.append(quad);
 			}
 		});
@@ -1078,12 +1083,7 @@ namespace hades
 
 	struct lighting_info
 	{
-		struct normal {
-			float theta,
-				phi;
-		};
-
-		std::array<normal, 2> tri_normals;
+		std::array<vector3<float>, 2> tri_normals;
 		std::array<std::uint8_t, 4> height;
 		std::array<std::uint8_t, 4> shadow_height;
 		terrain_map::triangle_type triangle_type;
@@ -1103,7 +1103,7 @@ namespace hades
 		const auto triangle_normal = [](const vector3<float> p1, const vector3<float> p2, const vector3<float> p3) constexpr noexcept -> vector3<float> {
 			const auto u = p2 - p1;
 			const auto v = p3 - p1;
-			return vector::cross(u, v);
+			return vector::unit(vector::cross(u, v)) * -1.f; // flip normal
 		};
 		
 		const auto max_val = [](auto a, auto b) {
@@ -1132,8 +1132,7 @@ namespace hades
 				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
 				{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
 
-			table[p] = lighting_info{ lighting_info::normal{ vector::angle_theta(normal_a), vector::angle_phi(normal_a) },
-				lighting_info::normal{ vector::angle_theta(normal_b), vector::angle_phi(normal_b) },
+			table[p] = lighting_info{ { normal_a, normal_b },
 				h, shadow_h, h_tris.triangle_type };
 
 			p += dir;
@@ -1141,86 +1140,121 @@ namespace hades
 		return;
 	}
 
-	template<std::size_t N>
-	static constexpr lighting_info::normal mean_vector(const std::array<lighting_info::normal, N> vects) noexcept
+	/*template<std::size_t N>
+	static constexpr normal mean_vector(const std::array<vector3<float>, N> vects) noexcept
 	{	
-		const auto from_normal = [](const lighting_info::normal norm) constexpr noexcept -> vector3<float> {
-			const auto pol = basic_pol_vector<float, 3>{ norm.theta, norm.phi, 1.f };
-			return to_vector(pol);
-			};
-
 		constexpr auto n = float_cast(N);
-		const auto mean = std::transform_reduce(begin(vects), end(vects), vector3<float>{}, std::plus{}, from_normal) / n;
+		const auto mean = std::reduce(begin(vects), end(vects), vector3<float>{}, std::plus{}) / n;
 		const auto pol = vector::unit(to_pol_vector(mean));
 
-		constexpr auto pi = std::numbers::pi_v<float>;
 		return { 
 			pol.theta, pol.phi
 		};
-	}
+	}*/
 
-	static std::array<std::array<std::uint8_t, 2>, 4> calculate_vertex_normal(const tile_position& p,
-		const table<lighting_info>& table, const lighting_info& centre, const tile_position& world_size)
+	//static std::array<std::array<std::uint8_t, 2>, 4> calculate_vertex_normal(const tile_position& p,
+	//	const table<lighting_info>& table, const lighting_info& centre, const tile_position& world_size)
+	//{
+	//	// returns the normal for the left triangle and then right triangle
+	//	const auto to_uint_normal = [](const lighting_info::normal norm) constexpr noexcept -> std::array<std::uint8_t, 2> {
+	//		constexpr auto pi = std::numbers::pi_v<float>;
+	//		const auto theta = remap(norm.theta, -pi, pi, 0.f, 255.f);
+	//		const auto phi = remap(norm.phi, 0.f, pi, 0.f, 255.f);
+	//		return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
+	//	};
+
+	//	const auto get_cell = [&](const tile_position& p) noexcept -> lighting_info {
+	//		if (!within_world(p, world_size))
+	//			return lighting_info{};
+
+	//		return table[p];
+	//	};
+
+	//	// NOTE: tiles (x is 'centre'
+	//	//			Top row:	0, 1, 2
+	//	//			Middle row: 3, x, 4
+	//	//			bottom row: 5, 6, 7
+	//	const auto tiles = std::array{
+	//		get_cell(p + tile_position{ -1, -1 }), // 0
+	//		get_cell(p + tile_position{  0, -1 }), // 1
+	//		get_cell(p + tile_position{  1, -1 }), // 2
+	//		get_cell(p + tile_position{ -1,  0 }), // 3
+	//		get_cell(p + tile_position{  1,  0 }), // 4
+	//		get_cell(p + tile_position{ -1,  1 }), // 5
+	//		get_cell(p + tile_position{  0,  1 }), // 6
+	//		get_cell(p + tile_position{  1,  1 }), // 7
+	//	};
+
+	//	constexpr auto top_left = 0, top = 1, top_right = 2,
+	//					left = 3, right = 4, 
+	//					bottom_left = 5, bottom = 6, bottom_right = 7;
+
+	//	// TODO: triangle type
+	//	// average each of the contributing normals
+	//	const auto v0 = mean_vector(std::array{ centre.tri_normals[0],
+	//		tiles[top_left].tri_normals[1],
+	//		tiles[top].tri_normals[0], tiles[top].tri_normals[1],
+	//		tiles[left].tri_normals[0], tiles[left].tri_normals[1] });
+	//	const auto v1 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
+	//		tiles[top].tri_normals[1], 
+	//		tiles[top_right].tri_normals[0], tiles[top_right].tri_normals[1],
+	//		tiles[right].tri_normals[0] });
+	//	const auto v2 = mean_vector(std::array{ centre.tri_normals[1] ,
+	//		tiles[right].tri_normals[0], tiles[right].tri_normals[1],
+	//		tiles[bottom_right].tri_normals[0],
+	//		tiles[bottom].tri_normals[0], tiles[bottom].tri_normals[1]  });
+	//	const auto v3 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
+	//		tiles[bottom].tri_normals[0],
+	//		tiles[bottom_left].tri_normals[0], tiles[bottom_left].tri_normals[1],
+	//		tiles[left].tri_normals[1] });
+
+	//	return { 
+	//		to_uint_normal(v0),
+	//		to_uint_normal(v1),
+	//		to_uint_normal(v2),
+	//		to_uint_normal(v3),
+	//	};
+	//}
+
+	static std::array<normal, 6> calc_simple_normal(const lighting_info& info) noexcept
 	{
-		// returns the normal for the left triangle and then right triangle
-		const auto to_uint_normal = [](const lighting_info::normal norm) constexpr noexcept -> std::array<std::uint8_t, 2> {
+		const auto to_normal = [](const vector3<float> vec)->normal {
+			const auto pol = vector::unit(to_pol_vector(vec));
 			constexpr auto pi = std::numbers::pi_v<float>;
-			const auto theta = remap(norm.theta, -pi, pi, 0.f, 255.f);
-			const auto phi = remap(norm.phi, 0.f, pi, 0.f, 255.f);
+			const auto theta = remap(pol.theta, -pi, pi, 0.f, 255.f);
+			const auto phi = remap(pol.phi, 0.f, pi, 0.f, 255.f);
 			return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
 		};
 
-		const auto get_cell = [&](const tile_position& p) noexcept -> lighting_info {
-			if (!within_world(p, world_size))
-				return lighting_info{};
-
-			return table[p];
+		return {
+			to_normal(info.tri_normals[0]),
+			to_normal(info.tri_normals[0]),
+			to_normal(info.tri_normals[0]),
+			to_normal(info.tri_normals[1]),
+			to_normal(info.tri_normals[1]),
+			to_normal(info.tri_normals[1])
 		};
+	}
 
-		// NOTE: tiles (x is 'centre'
-		//			Top row:	0, 1, 2
-		//			Middle row: 3, x, 4
-		//			bottom row: 5, 6, 7
-		const auto tiles = std::array{
-			get_cell(p + tile_position{ -1, -1 }), // 0
-			get_cell(p + tile_position{  0, -1 }), // 1
-			get_cell(p + tile_position{  1, -1 }), // 2
-			get_cell(p + tile_position{ -1,  0 }), // 3
-			get_cell(p + tile_position{  1,  0 }), // 4
-			get_cell(p + tile_position{ -1,  1 }), // 5
-			get_cell(p + tile_position{  0,  1 }), // 6
-			get_cell(p + tile_position{  1,  1 }), // 7
-		};
+	// double check that our conversion funcs work
+	static void back_to_normal(const vector3<float> vec, const normal n)
+	{
+		const auto new_vec = vector::resize(vec, -1.f);
+		const auto new_pol = to_pol_vector(new_vec);
+		constexpr auto pi = std::numbers::pi_v<float>;
 
-		constexpr auto top_left = 0, top = 1, top_right = 2,
-						left = 3, right = 4, 
-						bottom_left = 5, bottom = 6, bottom_right = 7;
+		const auto thetaf = float_cast(n.theta) / 255.f;
+		const auto phif = float_cast(n.phi) / 255.f;
 
-		// TODO: triangle type
-		// average each of the contributing normals
-		const auto v0 = mean_vector(std::array{ centre.tri_normals[0],
-			tiles[top_left].tri_normals[1],
-			tiles[top].tri_normals[0], tiles[top].tri_normals[1],
-			tiles[left].tri_normals[0], tiles[left].tri_normals[1] });
-		const auto v1 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
-			tiles[top].tri_normals[1], 
-			tiles[top_right].tri_normals[0], tiles[top_right].tri_normals[1],
-			tiles[right].tri_normals[0] });
-		const auto v2 = mean_vector(std::array{ centre.tri_normals[1] ,
-			tiles[right].tri_normals[0], tiles[right].tri_normals[1],
-			tiles[bottom_right].tri_normals[0],
-			tiles[bottom].tri_normals[0], tiles[bottom].tri_normals[1]  });
-		const auto v3 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
-			tiles[bottom].tri_normals[0],
-			tiles[bottom_left].tri_normals[0], tiles[bottom_left].tri_normals[1],
-			tiles[left].tri_normals[1] });
+		float theta = thetaf * 2.f * pi - pi; // [-pi, pi]
+		//float phi = gl_Color.a * 2.f * pi - pi;	
+		//float theta = gl_Color.b * 360 - 180; // [0, pi]
+		float phi = phif * pi; // [0, pi]
+		float sin_phi = std::sin(phi);
 
-		return { 
-			to_uint_normal(v0),
-			to_uint_normal(v1),
-			to_uint_normal(v2),
-			to_uint_normal(v3),
-		};
+		// interpolation can denomalise the origional normal
+		auto denormal = vector3<float>{ std::cos(theta) * sin_phi, std::sin(theta) * sin_phi, std::cos(phi) };
+		auto normal = vector::unit(denormal);
 	}
 
 	static void generate_lighting(mutable_terrain_map::shared_data& shared,
@@ -1281,11 +1315,16 @@ namespace hades
 			};
 
 			const auto& light_info = light_table[pos];
-			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
+
+			const auto normals = calc_simple_normal(light_info);
+
+			back_to_normal(light_info.tri_normals[0], normals[0]);
+
+			//const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
 			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(positions, tile_sizef, triangle_height, {}, light_info.shadow_height, normals);
+			const auto quad = make_terrain_triangles(positions, triangle_height, {}, light_info.shadow_height, normals);
 
 			shared.quads.append(quad);
 
@@ -1326,7 +1365,7 @@ namespace hades
 
 				const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
 				const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-				const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
+				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
 
 				shared.quads.append(quad);
 			}
@@ -1383,7 +1422,7 @@ namespace hades
 						tile_sizef
 					};
 
-					const auto quad = make_terrain_triangles(p, tile_sizef, triangle_height, tex_coords);
+					const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
 					shared.quads.append(quad);
 					return;
 				});

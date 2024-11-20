@@ -876,7 +876,7 @@ namespace hades
 		return m.cliff_layer[index];
 	}
 
-	[[deprected]]
+	[[deprecated]]
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept
 	{
 		using max_func = const std::uint8_t& (*)(const std::uint8_t&, const std::uint8_t&) noexcept;
@@ -1055,7 +1055,6 @@ namespace hades
 		
 		// check edges
 		auto out = adjacent_cliffs{};
-		std::array<std::int8_t, 4> neighbours [[indeterminate]];
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
 			const auto pos = ramp::adj_tiles[enum_type(i)] + p;
@@ -1438,11 +1437,8 @@ namespace hades
 	std::bitset<4> can_add_ramp(const tile_position p, const terrain_map& m)
 	{
 		const auto world_size = get_size(m);
-		const auto starting_index = to_tile_index(p, world_size.x);
-		const auto starting_layer = m.cliff_layer[starting_index];
 
 		auto ret = std::bitset<4>{};
-		constexpr auto end = ramp::adj_tiles.size();
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
 			if (can_ramp(i, p, m) && !can_ramp(ramp::reverse_edges[enum_type(i)], p, m)) // we can only ramp if it's valid to ramp from both sides

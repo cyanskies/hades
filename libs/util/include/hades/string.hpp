@@ -1,6 +1,7 @@
 #ifndef HADES_UTIL_STRING_HPP
 #define HADES_UTIL_STRING_HPP
 
+#include <functional>
 #include <map>
 #include <set>
 #include <span>
@@ -57,7 +58,7 @@ namespace hades
 		static_assert(!std::is_same_v<Func, nullptr_t> || requires(T && ty) { { to_string(ty) } -> string_type; },
 			"This type needs a custom conversion function, or a new to_string overload needs to be defined for it.");
 		if constexpr (string_type<T> && std::same_as<Func, nullptr_t>)
-			return std::identity; // strings returned unchannged
+			return std::identity{}; // strings returned unchannged
 		else if constexpr (not_string_type<T> && std::same_as<Func, nullptr_t>)
 			return [](const T& ty) { return to_string(ty); }; // try default conversion func
 		else // use provided conversion func

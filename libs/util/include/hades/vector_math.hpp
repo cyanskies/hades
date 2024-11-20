@@ -257,6 +257,7 @@ namespace hades
 		[[nodiscard]] constexpr T magnitude_squared(basic_vector<T, Size>) noexcept;
 
 		// returns the angle_theta of the vector compared to the vector [1, 0]
+		// Returns theta in the range [-pi, pi]
 		template<typename T, std::size_t Size>
 		[[nodiscard]] auto angle_theta(basic_vector<T, Size>) noexcept; 
 		template<typename T, std::size_t Size>
@@ -267,7 +268,7 @@ namespace hades
 			return to_degrees(angle_theta(v));
 		}
 
-		// NOTE: unlike above, returns angle in radians
+		// returns phi in range [0, pi]
 		template<typename T, std::size_t Size>
 			requires (Size > 2)
 		[[nodiscard]] auto angle_phi(basic_vector<T, Size>, std::optional<T> magnitude = {}) noexcept;
@@ -296,6 +297,9 @@ namespace hades
 
 		template<typename T, std::size_t Size>
 		[[nodiscard]] basic_vector<T, Size> unit(basic_vector<T, Size>) noexcept;
+
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr basic_pol_vector<T, Size> unit(basic_pol_vector<T, Size>) noexcept;
 
 		template<typename T>
 		[[nodiscard]] auto distance(vector2<T>, vector2<T>) noexcept;

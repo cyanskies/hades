@@ -54,8 +54,8 @@ void main()
 	{}
 }})";
 
-constexpr auto fragment_normal_color = "gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);";
-constexpr auto fragment_depth_color = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;";
+constexpr auto fragment_normal_colour = "gl_FragColor = texture2D(tex, gl_TexCoord[0].xy);";
+constexpr auto fragment_depth_colour = "gl_FragColor = vec4(gl_FragDepth, gl_FragDepth, gl_FragDepth, 1.f);tex;";
 
 constexpr auto shadow_fragment_source = R"(
 #version 120
@@ -70,15 +70,15 @@ const vec4 shadow_col = vec4(0, 0, 0, 0.3f);
 const float pi = 3.1415926535897932384626433832795;
 
 void main()
-{
+{{
 	// calculate fragment depth along y axis
 	gl_FragDepth = 1.f - ((model_view_vertex_y - y_offset) / y_range);
 	// shadow info
 	float shadow_height = gl_Color.g;
 	float frag_height = gl_Color.r;
 	// lighting info
-	float theta = gl_Color.b * 2 * pi;
-	float phi = gl_Color.a * pi;
+	float theta = gl_Color.b * 2 * pi - pi; // [-pi, pi]
+	float phi = gl_Color.a * pi; // [0, pi]
 	float sin_phi = sin(phi);
 
 	// interpolation can denomalise the origional normal
@@ -89,12 +89,16 @@ void main()
 	vec4 light_col = vec4(mix(vec3(0.f, 0.f, 0.f), sun_colour.rgb, 1.f - cos_angle), sun_colour.a);
 	vec4 shadow_col = mix(vec4(0.f, 0.f, 0.f, 0.f) , shadow_col, float(frag_height < shadow_height) * 1.f);
 	// frag colour
-	gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));
-})";
+	{}
+}})";
+
+constexpr auto shadow_calc_colour = "gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));";
+constexpr auto shadow_render_normals = "gl_FragColor = vec4(denormal.rgb, 1.f);";
 
 static auto terrain_map_shader_id = hades::unique_zero;
 static auto terrain_map_shader_debug_id = hades::unique_zero;
 static auto terrain_map_shader_shadows_lighting = hades::unique_zero;
+static auto terrain_map_shader_debug_lighting = hades::unique_zero;
 
 namespace hades
 {
@@ -146,7 +150,7 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_color));
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_normal_colour));
 			shdr_funcs::set_vertex(*shader, vertex_source);
 			shdr_funcs::set_uniforms(*shader, uniforms); // copy uniforms(we move it later)
 		}
@@ -158,9 +162,9 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_debug_id);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_color));
+			shdr_funcs::set_fragment(*shader, std::format(fragment_source, fragment_depth_colour));
 			shdr_funcs::set_vertex(*shader, vertex_source);
-			shdr_funcs::set_uniforms(*shader, std::move(uniforms)); // copy uniforms(we move it later)
+			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
 
 		uniforms.clear();
@@ -206,7 +210,20 @@ namespace hades
 			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_shadows_lighting);
 			assert(shader);
 
-			shdr_funcs::set_fragment(*shader, shadow_fragment_source);
+			shdr_funcs::set_fragment(*shader, std::format(shadow_fragment_source, shadow_calc_colour));
+			shdr_funcs::set_vertex(*shader, vertex_source);
+			shdr_funcs::set_uniforms(*shader, uniforms);
+		}
+
+		// terrain shadow debug shader
+		if (terrain_map_shader_debug_lighting == unique_zero)
+		{
+			terrain_map_shader_debug_lighting = make_unique_id();
+
+			auto shader = shdr_funcs::find_or_create(d, terrain_map_shader_debug_lighting);
+			assert(shader);
+
+			shdr_funcs::set_fragment(*shader, std::format(shadow_fragment_source, shadow_render_normals));
 			shdr_funcs::set_vertex(*shader, vertex_source);
 			shdr_funcs::set_uniforms(*shader, std::move(uniforms));
 		}
@@ -219,7 +236,8 @@ namespace hades
 	mutable_terrain_map::mutable_terrain_map() :
 		_shader{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_id)) },
 		_shader_debug_depth{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_id)) },
-		_shader_shadows_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_shadows_lighting)) }
+		_shader_shadows_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_shadows_lighting)) },
+		_shader_debug_lighting{ shdr_funcs::get_shader_proxy(*shdr_funcs::get_resource(terrain_map_shader_debug_lighting)) }
 	{
 		_shared.settings = resources::get_terrain_settings();
 	}
@@ -248,7 +266,7 @@ namespace hades
 			float_cast((tiles.size() / width) * tile_size)
 		};
 
-		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting, &_shader_debug_lighting })
 			shdr->set_uniform("height_multiplier"sv, _show_height * 1.f);
 
 		_shared.map = std::move(t);
@@ -1130,13 +1148,14 @@ namespace hades
 			const auto pol = basic_pol_vector<float, 3>{ norm.theta, norm.phi, 1.f };
 			return to_vector(pol);
 			};
-		const auto mean = vector::unit(std::transform_reduce(begin(vects), end(vects), vector3<float>{}, std::plus{}, from_normal));
-		const auto pol = to_pol_vector(mean);
+
+		constexpr auto n = float_cast(N);
+		const auto mean = std::transform_reduce(begin(vects), end(vects), vector3<float>{}, std::plus{}, from_normal) / n;
+		const auto pol = vector::unit(to_pol_vector(mean));
 
 		constexpr auto pi = std::numbers::pi_v<float>;
-		constexpr auto pi2 = std::numbers::pi_v<float> * 2.f;
 		return { 
-			normalise(pol.theta, 0.f, pi2), normalise(pol.phi, 0.f, pi)
+			pol.theta, pol.phi
 		};
 	}
 
@@ -1146,8 +1165,8 @@ namespace hades
 		// returns the normal for the left triangle and then right triangle
 		const auto to_uint_normal = [](const lighting_info::normal norm) constexpr noexcept -> std::array<std::uint8_t, 2> {
 			constexpr auto pi = std::numbers::pi_v<float>;
-			const auto theta = (norm.theta / (pi * 2.f)) * 255.f;
-			const auto phi = (norm.phi / pi) * 255.f;
+			const auto theta = remap(norm.theta, -pi, pi, 0.f, 255.f);
+			const auto phi = remap(norm.phi, 0.f, pi, 0.f, 255.f);
 			return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
 		};
 
@@ -1470,7 +1489,7 @@ namespace hades
 		if (_show_shadows)
 		{
 			const auto pop_shader = s.shader;
-			s.shader = _shader_shadows_lighting.get_shader();
+			s.shader = _debug_shadows ? _shader_debug_lighting.get_shader() : _shader_shadows_lighting.get_shader();
 			_shared.quads.draw(t, _shared.start_lighting, _shared.start_grid - _shared.start_lighting, s);
 			s.shader = pop_shader;
 		}
@@ -1519,7 +1538,7 @@ namespace hades
 
 		auto matrix = sf::Glsl::Mat4{ t };
 
-		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting })
+		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting, &_shader_debug_lighting })
 		{
 			shdr->set_uniform("rotation_matrix"sv, matrix);
 			shdr->set_uniform("y_offset"sv, y_offset);

@@ -222,6 +222,8 @@ namespace hades
 					_map.show_shadows(shadows);
 				if (auto depth = _map.draw_depth_buffer(); g.menu_toggle_item("draw depth buffer"sv, depth))
 					_map.draw_depth_buffer(depth);
+				if (auto normals = _map.draw_normals_buffer(); g.menu_toggle_item("draw normal buffer"sv, normals))
+					_map.draw_normals_buffer(normals);
 
 				g.menu_end();
 			}

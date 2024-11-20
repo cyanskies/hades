@@ -45,6 +45,17 @@ namespace hades
 			return _debug_depth;
 		}
 
+		void draw_normals_buffer(bool b) noexcept
+		{
+			_debug_shadows = b;
+			return;
+		}
+
+		bool draw_normals_buffer() const noexcept
+		{
+			return _debug_shadows;
+		}
+
 		void show_shadows(bool b) noexcept
 		{
 			_show_shadows = b;
@@ -252,6 +263,7 @@ namespace hades
 		// red channel into height, green channel into shadow height
 		// blue and alpha channel store normals
 		resources::shader_proxy _shader_shadows_lighting;
+		resources::shader_proxy _shader_debug_lighting;
 
 	private:
 		/*struct chunk_info
@@ -270,6 +282,7 @@ namespace hades
 		bool _show_height : 1 = true;
 		bool _show_shadows : 1 = true;
 		bool _debug_depth : 1 = false;
+		bool _debug_shadows : 1 = true;
 		bool _show_ramps : 1 = false;
 		bool _show_cliff_edges : 1 = false;
 		bool _show_cliff_layers : 1 = false;

@@ -321,6 +321,13 @@ namespace hades
 			return v * inverse_root;
 		}
 
+		template<typename T, std::size_t Size>
+		[[nodiscard]] constexpr basic_pol_vector<T, Size> unit(basic_pol_vector<T, Size> p) noexcept
+		{
+			p.magnitude = 1.f;
+			return p;
+		}
+
 		template<typename T>
 		[[nodiscard]] auto distance(const vector2<T> a, const vector2<T> b) noexcept
 		{

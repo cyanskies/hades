@@ -282,7 +282,7 @@ namespace hades
 		bool _show_height : 1 = true;
 		bool _show_shadows : 1 = true;
 		bool _debug_depth : 1 = false;
-		bool _debug_shadows : 1 = true;
+		bool _debug_shadows : 1 = false;
 		bool _show_ramps : 1 = false;
 		bool _show_cliff_edges : 1 = false;
 		bool _show_cliff_layers : 1 = false;

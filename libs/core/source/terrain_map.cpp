@@ -1081,6 +1081,7 @@ namespace hades
 		};
 	}
 
+	// TODO: move this to header so we can store the lighting table memory for reuse
 	struct lighting_info
 	{
 		std::array<vector3<float>, 2> tri_normals;
@@ -1101,9 +1102,9 @@ namespace hades
 			bottom_left = enum_type(rect_corners::bottom_left);
 
 		const auto triangle_normal = [](const vector3<float> p1, const vector3<float> p2, const vector3<float> p3) constexpr noexcept -> vector3<float> {
-			const auto u = p2 - p1;
-			const auto v = p3 - p1;
-			return vector::unit(vector::cross(u, v)) * -1.f; // flip normal
+			const auto u = p1- p2;
+			const auto v = p3- p2;
+			return vector::unit(vector::cross(u, v));// *-1.f; // flip normal
 		};
 		
 		const auto max_val = [](auto a, auto b) {
@@ -1120,17 +1121,33 @@ namespace hades
 			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
 			
+			vector3<float> normal_a [[indeterminate]];
+			vector3<float> normal_b [[indeterminate]];
+
 			// calc triange normals
-			// uphill triangles TODO: choose correct triangle type
 			const auto posf = static_cast<vector2_float>(p) * tile_sizef;
-			const auto normal_a = triangle_normal(
-				{ posf.x, posf.y, float_cast(h[top_left]) },
-				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
-				{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
-			const auto normal_b = triangle_normal(
-				{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) },
-				{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
-				{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
+			if(h_tris.triangle_type == terrain_map::triangle_type::triangle_uphill)
+			{
+				normal_a = triangle_normal(
+					{ posf.x, posf.y, float_cast(h[top_left]) },
+					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
+					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
+				normal_b = triangle_normal(
+					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) },
+					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
+					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
+			}
+			else
+			{
+				normal_a = triangle_normal(
+					{ posf.x, posf.y, float_cast(h[top_left]) },
+					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
+					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
+				normal_b = triangle_normal(
+					{ posf.x, posf.y, float_cast(h[top_left]) },
+					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) },
+					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
+			}
 
 			table[p] = lighting_info{ { normal_a, normal_b },
 				h, shadow_h, h_tris.triangle_type };

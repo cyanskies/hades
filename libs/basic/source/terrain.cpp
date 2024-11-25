@@ -668,9 +668,16 @@ namespace hades
 
 	namespace ramp
 	{
+		enum height_change : std::int8_t {
+			lower_2 = -2,
+			lower,
+			none,
+			raise,
+			raise_2,
+		};
+
 		// defined below
-		// TODO: just move the whole function up here
-		static std::array<ramp_type, 4> adjacent_ramp_shared_vertex(const tile_position p, const terrain_map& m);
+		static std::array<height_change, 4> adjacent_ramp_shared_vertex(tile_position, const std::array<ramp_type, 4>&, const terrain_map&);
 	}
 
 	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m, const resources::terrain_settings& s)
@@ -691,48 +698,30 @@ namespace hades
 		corner_heights[enum_type(rect_corners::bottom_left)] = integer_clamp_cast<std::uint8_t>(m.heightmap[index2] + cliff_height);
 		corner_heights[enum_type(rect_corners::bottom_right)] = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index2) + 1] + cliff_height);
 		
-		auto adjusted_corner_heights  = corner_heights;
-
-		if (const auto our_ramp_flags = std::bitset<4>{ m.ramp_layer[tile_index] }; our_ramp_flags.any())
-		{
-			// adjust for our ramp type
-			const auto ramps = get_adjacent_ramps(p, m);
-
-			const auto top_ramp_type = ramps[enum_type(rect_edges::top)];
-			const auto right_ramp_type = ramps[enum_type(rect_edges::right)];
-			const auto bottom_ramp_type = ramps[enum_type(rect_edges::bottom)];
-			const auto left_ramp_type = ramps[enum_type(rect_edges::left)];
-
-			const auto update_with_ramp = [cliff_layer_half](const ramp_type a, const ramp_type b, const std::uint8_t corner_height) {
-				const auto merged_ramp = merge_ramps(a, b);
-				if (merged_ramp == ramp_type::uphill)
-					return integer_clamp_cast<std::uint8_t>(corner_height + cliff_layer_half);
-				else if (merged_ramp == ramp_type::downhill)
-					return integer_clamp_cast<std::uint8_t>(corner_height - cliff_layer_half);
-
-				return corner_height;
-				};
-
-			adjusted_corner_heights[enum_type(rect_corners::top_left)] = update_with_ramp(top_ramp_type, left_ramp_type, corner_heights[enum_type(rect_corners::top_left)]);
-			adjusted_corner_heights[enum_type(rect_corners::top_right)] = update_with_ramp(top_ramp_type, right_ramp_type, corner_heights[enum_type(rect_corners::top_right)]);
-			adjusted_corner_heights[enum_type(rect_corners::bottom_right)] = update_with_ramp(bottom_ramp_type, right_ramp_type, corner_heights[enum_type(rect_corners::bottom_right)]);
-			adjusted_corner_heights[enum_type(rect_corners::bottom_left)] = update_with_ramp(bottom_ramp_type, left_ramp_type, corner_heights[enum_type(rect_corners::bottom_left)]);
-		}
-		
-
+		auto adjusted_corner_heights = corner_heights;
+		const auto our_ramp_flags = std::bitset<4>{ m.ramp_layer[tile_index] };
+		// adjust for our ramp type
+		const auto ramps = get_adjacent_ramps(p, m);
+	
 		{
 			// no ramps to our tile
 			// time to check adjacents
-			const auto adj_ramps = ramp::adjacent_ramp_shared_vertex(p, m);
+			const auto adj_ramps = ramp::adjacent_ramp_shared_vertex(p, ramps, m);
 			for (auto i = rect_corners::begin; i < rect_corners::end; i = next(i))
 			{
 				switch (adj_ramps[enum_type(i)])
 				{
-				case ramp_type::uphill:
+				case ramp::height_change::raise:
 					adjusted_corner_heights[enum_type(i)] = integer_clamp_cast<std::uint8_t>(corner_heights[enum_type(i)] + cliff_layer_half);
 					break;
-				case ramp_type::downhill:
+				case ramp::height_change::lower:
 					adjusted_corner_heights[enum_type(i)] = integer_clamp_cast<std::uint8_t>(corner_heights[enum_type(i)] - cliff_layer_half);
+					break;
+				case ramp::height_change::lower_2:
+					adjusted_corner_heights[enum_type(i)] = integer_clamp_cast<std::uint8_t>(corner_heights[enum_type(i)] - s.cliff_height);
+					break;
+				case ramp::height_change::raise_2:
+					adjusted_corner_heights[enum_type(i)] = integer_clamp_cast<std::uint8_t>(corner_heights[enum_type(i)] + s.cliff_height);
 					break;
 				default:
 					break; // do nothing
@@ -920,69 +909,15 @@ namespace hades
 			}
 		}
 
-		template<bool CheckRampFlag = false>
-		static std::array<ramp_type, 4> check_ramp_impl(const tile_position p, const terrain_map& m)
-		{
-			const auto world_size = get_size(m);
-			assert(within_world(p, world_size));
-			const auto start_index = to_tile_index(p, world_size.x);
-			const auto our_ramp = std::bitset<4>{ m.ramp_layer[start_index] };
-
-			auto ret = std::array<ramp_type, 4>{};
-			static_assert(ramp_type{} == ramp_type::no_ramp, "Function expects default value in ret to be no_ramp");
-
-			const auto cliff_layer = m.cliff_layer[start_index];
-			for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
-			{
-				const auto pos = adj_tiles[enum_type(i)] + p;
-				if (within_world(pos, world_size))
-				{
-					const auto next_index = to_tile_index(pos, world_size.x);
-					auto ramp_flags = true;
-					if constexpr (CheckRampFlag)
-					{
-						const auto next_ramp = std::bitset<4>{ m.ramp_layer[next_index] }.test(enum_type(reverse_edges[enum_type(i)]));
-						ramp_flags = our_ramp.test(enum_type(i)) && next_ramp;
-					}
-
-					const auto next_cliff_layer = m.cliff_layer[next_index];
-					const auto ramp_type = to_ramp_type(cliff_layer, next_cliff_layer);
-
-					if (ramp_flags)
-						ret[enum_type(i)] = ramp_type;
-				}
-			}
-
-			return ret;
-		}
-
-		// NOTE: this doesnt account for adjacent ramps hiding the exposed edge
-		// this results in the exposed edge being rendered twice in functions that depend on get adjacent cliffs
-		static bool exposed_edge(const rect_edges e, const std::array<ramp_type, 4> r, ramp_type type) noexcept
-		{
-			using enum rect_edges;
-			switch (e)
-			{
-			default:
-				[[fallthrough]];
-			case top:
-				[[fallthrough]];
-			case bottom:
-				return r[enum_type(left)] == type || r[enum_type(right)] == type;
-			case left:
-			case right:
-				return r[enum_type(top)] == type || r[enum_type(bottom)] == type;
-			}
-		}
-
-		constexpr auto adjacent_ramp_corner_checks = std::array<std::tuple<tile_position, tile_position>, 4>{
-			std::tuple{ tile_position{ 0, -1 }, tile_position{ -1, 0 } }, // top left
-			std::tuple{ tile_position{ 0, -1 }, tile_position{  1, 0 } }, // top right
-			std::tuple{ tile_position{ 0,  1 }, tile_position{  1, 0 } }, // bottom right
-			std::tuple{ tile_position{ 0,  1 }, tile_position{ -1, 0 } }, // bottom left
+		constexpr auto diag_ramp_corner_checks = std::array<tile_position, 4>{
+			tile_position{ -1, -1 }, // top left
+			tile_position{  1, -1 }, // top right
+			tile_position{  1,  1 }, // bottom rig
+			tile_position{ -1,  1 }, // bottom left
 		};
 
-		constexpr auto adjacent_ramp_edge_checks = std::array<std::tuple<rect_edges, rect_edges>, 4>{
+		// edges facing towards to the current tile
+		constexpr auto our_ramp_edge_checks = std::array<std::tuple<rect_edges, rect_edges>, 4>{
 			std::tuple{ rect_edges::left,	rect_edges::top		}, // top left
 			std::tuple{ rect_edges::right,	rect_edges::top		}, // top right
 			std::tuple{ rect_edges::right,	rect_edges::bottom	}, // bottom right
@@ -990,56 +925,111 @@ namespace hades
 		};
 
 		// index return valure with rect_corners
-		static std::array<ramp_type, 4> adjacent_ramp_shared_vertex(const tile_position p, const terrain_map& m)
+		static std::array<height_change, 4> adjacent_ramp_shared_vertex(const tile_position p, const std::array<ramp_type, 4>& our_ramps, const terrain_map& m)
 		{
 			const auto world_size = get_size(m);
 			const auto start_index = to_tile_index(p, world_size.x);
 			const auto start_cliff = m.cliff_layer[start_index];
+			constexpr auto max_diff = std::numeric_limits<int>::max();
 
-			const auto check_ramp = [&](const tile_position offset, const rect_edges e)->ramp_type{
+			const auto check_ramp = [&](const tile_position offset, const rect_edges e)->std::tuple<ramp_type, int> {
 				const auto pos = p + offset;
 				if (!within_world(pos, world_size))
-					return ramp_type::no_ramp;
+					return { ramp_type::no_ramp, max_diff };
 
 				const auto index = to_tile_index(pos, world_size.x);
 				const auto cliff = m.cliff_layer[index];
-				if (cliff != start_cliff)
-					return ramp_type::no_ramp;
-
+				
 				const auto ramp = std::bitset<4>{ m.ramp_layer[index] };
 				if (!ramp.test(enum_type(e)))
-					return ramp_type::no_ramp;
+					return { ramp_type::no_ramp, max_diff };
 
 				const auto next_pos = adj_tiles[enum_type(e)] + pos;
 				// ramp flags must point towards tiles inside the world
 				assert(within_world(next_pos, world_size));
 
+				const auto diff = cliff - start_cliff;
 				const auto next_index = to_tile_index(next_pos, world_size.x);
-				
 				const auto next_cliff = m.cliff_layer[next_index];
-				return to_ramp_type(cliff, next_cliff);
+				return { to_ramp_type(cliff, next_cliff), diff };
 			};
 
-			std::array<ramp_type, 4> out [[indeterminate]];
+			constexpr auto apply_change = [](height_change& ch, const ramp_type e) noexcept {
+				switch (e)
+				{
+				default:
+					break;
+				case ramp_type::uphill:
+					ch = next(ch);
+					break;
+				case ramp_type::downhill:
+					ch = prev(ch);
+					break;
+				}
+				return;
+			};
+
+			std::array<height_change, 4> out [[indeterminate]];
 			for (auto i = rect_corners::begin; i < rect_corners::end; i = next(i))
 			{
-				const auto [adj1, adj2] = adjacent_ramp_corner_checks[enum_type(i)];
-				const auto [edge1, edge2] = adjacent_ramp_edge_checks[enum_type(i)];
-				const auto ramp1 = check_ramp(adj1, edge1);
-				const auto ramp2 = check_ramp(adj2, edge2);
-				const auto merg1 = merge_ramps(ramp1, ramp2).value_or(ramp_type::no_ramp);
+				auto change = height_change::none;
+				// the edges we need to check from our ramps
+				const auto [our_edge1, our_edge2] = our_ramp_edge_checks[enum_type(i)];
+				const auto our_ramp1 = our_ramps[enum_type(our_edge1)];
+				const auto our_ramp2 = our_ramps[enum_type(our_edge2)];
+				const auto our_merg = merge_ramps(our_ramp1, our_ramp2).value_or(ramp_type::no_ramp);
+				apply_change(change, our_merg);
 
-				if (merg1 != ramp_type::no_ramp)
+				const auto diag = diag_ramp_corner_checks[enum_type(i)];
+				const auto other_edge1 = reverse_edges[enum_type(our_edge1)];
+				const auto other_edge2 = reverse_edges[enum_type(our_edge2)];
+				const auto [ramp1, diff1] = check_ramp(diag, other_edge1);
+				const auto [ramp2, diff2] = check_ramp(diag, other_edge2);
+				const auto& diff = diff1 == max_diff ? diff2 : diff1;
+
+				const auto merg = merge_ramps(ramp1, ramp2).value_or(ramp_type::no_ramp);
+				switch(change)
 				{
-					out[enum_type(i)] = merg1;
-					continue;
+				case -1:
+					if (diff == 1)
+						change = next(change);
+					else if (diff == -1 && merg == our_merg)
+						change = prev(change);
+					break;
+				case 0:
+					if (diff == 0)
+						apply_change(change, merg);
+					else if (diff == 1 && merg == ramp_type::downhill)
+						change = next(change);
+					else if (diff == -1 && merg == ramp_type::uphill)
+						change = prev(change);
+					break;
+				case 1:
+					if (diff == 1 && merg == our_merg)
+						change = next(change);
+					else if (diff == -1)
+						change = prev(change);
+					break;
 				}
 
-				const auto adj3 = adj1 + adj2;
-				const auto ramp3 = check_ramp(adj3, reverse_edges[enum_type(edge1)]);
-				const auto ramp4 = check_ramp(adj3, reverse_edges[enum_type(edge2)]);
-				const auto merg2 = merge_ramps(ramp3, ramp4).value_or(ramp_type::no_ramp);
-				out[enum_type(i)] = merg2;
+				switch (change)
+				{
+				default:
+					out[enum_type(i)] = height_change::none;
+					break;
+				case -2:
+					out[enum_type(i)] = height_change::lower_2;
+					break;
+				case -1:
+					out[enum_type(i)] = height_change::lower;
+					break;
+				case 1:
+					out[enum_type(i)] = height_change::raise;
+					break;
+				case 2:
+					out[enum_type(i)] = height_change::raise_2;
+					break;
+				}
 			}
 
 			return out;
@@ -1151,14 +1141,35 @@ namespace hades
 		return out;
 	}
 
-	static std::array<ramp_type, 4> get_adjacent_possible_ramps(const tile_position p, const terrain_map& m)
-	{
-		return ramp::check_ramp_impl(p, m);
-	}
-
 	std::array<ramp_type, 4> get_adjacent_ramps(const tile_position p, const terrain_map& m)
 	{
-		return ramp::check_ramp_impl<true>(p, m);
+		const auto world_size = get_size(m);
+		assert(within_world(p, world_size));
+		const auto start_index = to_tile_index(p, world_size.x);
+		const auto our_ramp = std::bitset<4>{ m.ramp_layer[start_index] };
+
+		auto ret = std::array<ramp_type, 4>{};
+		static_assert(ramp_type{} == ramp_type::no_ramp, "Function expects default value in ret to be no_ramp");
+
+		const auto cliff_layer = m.cliff_layer[start_index];
+		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
+		{
+			const auto pos = ramp::adj_tiles[enum_type(i)] + p;
+			if (within_world(pos, world_size))
+			{
+				const auto next_index = to_tile_index(pos, world_size.x);
+				const auto next_ramp = std::bitset<4>{ m.ramp_layer[next_index] }.test(enum_type(ramp::reverse_edges[enum_type(i)]));
+				const auto ramp_flags = our_ramp.test(enum_type(i)) && next_ramp;
+
+				const auto next_cliff_layer = m.cliff_layer[next_index];
+				const auto ramp_type = ramp::to_ramp_type(cliff_layer, next_cliff_layer);
+
+				if (ramp_flags)
+					ret[enum_type(i)] = ramp_type;
+			}
+		}
+
+		return ret;
 	}
 
 	const resources::terrain *get_vertex(const terrain_map &m, const terrain_vertex_position p)
@@ -1251,6 +1262,7 @@ namespace hades
 		return;
 	}
 
+	// TODO: return an array
 	[[deprecated]] static std::vector<tile_position> get_adjacent_tiles(terrain_vertex_position p)
 	{
 		return {
@@ -1263,23 +1275,6 @@ namespace hades
 		};
 	}
 
-	[[deprecated]] static std::vector<tile_position> get_adjacent_tiles(const std::vector<terrain_vertex_position> &v)
-	{
-		auto out = std::vector<tile_position>{};
-
-		for (const auto& p : v)
-		{
-			const auto pos = get_adjacent_tiles(p);
-			out.insert(std::end(out), std::begin(pos), std::end(pos));
-		}
-
-		remove_duplicates(out, [](tile_position lhs, tile_position rhs) {
-			return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
-		});
-
-		return out;
-	}
-
 	static void place_terrain_internal(terrain_map &m, const terrain_vertex_position p,
 		const resources::terrain *t)
 	{
@@ -1288,6 +1283,7 @@ namespace hades
         m.terrain_vertex[integer_cast<std::size_t>(index)] = t;
 	}
 
+	// TODO: take a span
 	static void update_tile_layers_internal(terrain_map &m, const std::vector<tile_position> &positions,
 		const resources::terrain_settings& s)
 	{
@@ -1429,6 +1425,7 @@ namespace hades
 
 		const auto ramp_a = get_ramp(a), ramp_b = get_ramp(b);
 		const auto merg_a = merge_ramps(ramp_e, ramp_a), merg_b = merge_ramps(ramp_e, ramp_b);
+		
 		return merg_a == merg_b;
 	}
 

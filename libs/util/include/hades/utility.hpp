@@ -144,6 +144,9 @@ namespace hades {
 	constexpr std::underlying_type_t<Enum> enum_type(Enum e) noexcept;
 
 	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
+	constexpr Enum prev(Enum e) noexcept;
+
+	template<typename Enum, std::enable_if_t<std::is_enum_v<Enum>, int> = 0>
 	constexpr Enum next(Enum e) noexcept;
 
 	// returns an object that calls f when it goes out of scope

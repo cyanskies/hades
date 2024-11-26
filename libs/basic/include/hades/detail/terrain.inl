@@ -1,3 +1,5 @@
+#include "hades/terrain.hpp"
+
 #include <tuple>
 
 #include "hades/math.hpp"
@@ -66,11 +68,11 @@ namespace hades
 	{
 		constexpr auto uphill = std::array<std::uint8_t, 6>{
 			/*0, 1, 2, 3, 4, 5*/
-			0, 3, 1, 1, 3, 2
+			  0, 3, 1, 1, 3, 2
 		};
 		constexpr auto downhill = std::array<std::uint8_t, 6>{
 			/*0, 1, 2, 3, 4, 5*/
-			0, 3, 2, 0, 2, 1
+			  0, 3, 2, 0, 2, 1
 		};
 
 		assert(i < 6);
@@ -121,6 +123,14 @@ namespace hades
 		case bottom_right:
 			return p + tile_position{ 1, 1 };
 		}
+	}
+
+	constexpr terrain_map::triangle_type pick_triangle_type(const tile_position p) noexcept
+	{
+		if (p.y % 2 == 0)
+			return terrain_map::triangle_type{ p.x % 2 == 0 };
+		else
+			return terrain_map::triangle_type{ p.x % 2 != 0 };
 	}
 
 	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data& tris) noexcept
@@ -208,6 +218,37 @@ namespace hades
 		}
 	}
 
+	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const cell_height_data& c) noexcept
+	{
+		return {
+			c[enum_type(rect_corners::top_left)],
+			c[enum_type(rect_corners::top_right)]
+		};
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const cell_height_data& c) noexcept
+	{
+		return {
+			c[enum_type(rect_corners::top_left)],
+			c[enum_type(rect_corners::bottom_left)]
+		};
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const cell_height_data& c) noexcept
+	{
+		return {
+			c[enum_type(rect_corners::top_right)],
+			c[enum_type(rect_corners::bottom_right)]
+		};
+	}
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const cell_height_data& c) noexcept
+	{
+		return {
+			c[enum_type(rect_corners::bottom_left)],
+			c[enum_type(rect_corners::bottom_right)]
+		};
+	}
 
 	template<std::invocable<tile_position> Func>
 	void for_each_adjacent_tile(const terrain_vertex_position p, const terrain_map& map, Func&& f) noexcept

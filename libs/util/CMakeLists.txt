@@ -16,8 +16,9 @@ set(HADES_UTIL_HEADERS
 	./include/hades/strong_typedef.hpp
 	./include/hades/table.hpp
 	./include/hades/time.hpp
-	./include/hades/types.hpp
+	./include/hades/triangle_math.hpp
 	./include/hades/tuple.hpp
+	./include/hades/types.hpp
 	./include/hades/uniqueid.hpp
 	./include/hades/utility.hpp
 	./include/hades/value_guard.hpp
@@ -32,6 +33,7 @@ set(HADES_UTIL_HEADERS
 	./include/hades/detail/string.inl
 	./include/hades/detail/rectangle_math.inl
 	./include/hades/detail/table.inl
+	./include/hades/detail/triangle_math.inl
 	./include/hades/detail/tuple.inl
 	./include/hades/detail/utility.inl
 	./include/hades/detail/vector_math.inl

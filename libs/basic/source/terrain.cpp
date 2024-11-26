@@ -10,6 +10,7 @@
 #include "hades/random.hpp"
 #include "hades/table.hpp"
 #include "hades/tiles.hpp"
+#include "hades/triangle_math.hpp"
 #include "hades/writer.hpp"
 
 using namespace std::string_literals;
@@ -682,9 +683,38 @@ namespace hades
 
 	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m, const resources::terrain_settings& s)
 	{
+		const auto cell = get_height_for_cell(p, m, s);
+
+		const auto& final_tl = cell[enum_type(rect_corners::top_left)];
+		const auto& final_tr = cell[enum_type(rect_corners::top_right)];
+		const auto& final_br = cell[enum_type(rect_corners::bottom_right)];
+		const auto& final_bl = cell[enum_type(rect_corners::bottom_left)];
+
+		triangle_height_data ret [[indeterminate]];
+		ret.triangle_type = pick_triangle_type(p);
+
+		if (ret.triangle_type == terrain_map::triangle_uphill)
+		{
+			ret.height = {
+				final_tl, final_bl, final_tr,
+				final_tr, final_bl, final_br
+			};
+		}
+		else
+		{
+			ret.height = {
+				final_tl, final_bl, final_br,
+				final_tl, final_br, final_tr
+			};
+		}
+		return ret;
+	}
+
+	cell_height_data get_height_for_cell(tile_position p, const terrain_map& m, const resources::terrain_settings& s)
+	{
 		const auto tile_index = to_tile_index(p, m);
 		assert(s.cliff_height > 0);
-		
+
 		const auto cliff_height = m.cliff_layer[tile_index] * s.cliff_height;
 		const auto cliff_layer_half = s.cliff_height / 2;
 
@@ -697,12 +727,12 @@ namespace hades
 		const auto index2 = index + m.width;
 		corner_heights[enum_type(rect_corners::bottom_left)] = integer_clamp_cast<std::uint8_t>(m.heightmap[index2] + cliff_height);
 		corner_heights[enum_type(rect_corners::bottom_right)] = integer_clamp_cast<std::uint8_t>(m.heightmap[integer_cast<std::size_t>(index2) + 1] + cliff_height);
-		
+
 		auto adjusted_corner_heights = corner_heights;
 		const auto our_ramp_flags = std::bitset<4>{ m.ramp_layer[tile_index] };
 		// adjust for our ramp type
 		const auto ramps = get_adjacent_ramps(p, m);
-	
+
 		{
 			// no ramps to our tile
 			// time to check adjacents
@@ -728,7 +758,7 @@ namespace hades
 				}
 			}
 		}
-		
+
 		// TOP_LEFT corner
 		const auto& final_tl = adjusted_corner_heights[enum_type(rect_corners::top_left)];
 		// TOP_RIGHT corner
@@ -738,28 +768,7 @@ namespace hades
 		// BOTTOM_LEFT corner
 		const auto& final_bl = adjusted_corner_heights[enum_type(rect_corners::bottom_left)];
 
-		triangle_height_data ret [[indeterminate]];
-		// interchange triangle_type along each axis
-		if (p.y % 2 == 0)
-			ret.triangle_type = terrain_map::triangle_type{ p.x % 2 == 0 };
-		else
-			ret.triangle_type = terrain_map::triangle_type{ p.x % 2 != 0 };
-
-		if (ret.triangle_type == terrain_map::triangle_uphill)
-		{
-			ret.height = {
-				final_tl, final_bl, final_tr,
-				final_tr, final_bl, final_br
-			};
-		}
-		else
-		{
-			ret.height = {
-				final_tl, final_bl, final_br,
-				final_tl, final_br, final_tr
-			};
-		}
-		return ret;
+		return cell_height_data{ final_tl, final_tr, final_br, final_bl };
 	}
 
 	bool within_map(terrain_vertex_position s, terrain_vertex_position p) noexcept
@@ -1509,61 +1518,6 @@ namespace hades
 
 	namespace
 	{
-		// TODO: might be time to add a triangle_math header
-		// 
-		// Based on PointInTriangle from: https://stackoverflow.com/a/20861130
-		constexpr bool point_in_tri(const vector2_float p, const vector2_float p0, const vector2_float p1, const vector2_float p2) noexcept
-		{
-			const auto s = (p0.x - p2.x) * (p.y - p2.y) - (p0.y - p2.y) * (p.x - p2.x);
-			const auto t = (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
-
-			if ((s < 0) != (t < 0) && s != 0 && t != 0)
-				return false;
-
-			const auto d = (p2.x - p1.x) * (p.y - p1.y) - (p2.y - p1.y) * (p.x - p1.x);
-			return d == 0 || (d < 0) == (s + t <= 0);
-		}
-
-		constexpr bool point_in_tri(const vector2_float p, const std::array<vector2_float, 3>& tri) noexcept
-		{
-			return point_in_tri(p, tri[0], tri[1], tri[2]);
-		}
-
-		struct barycentric_point
-		{
-			float u, v, w;
-		};
-
-		constexpr bool operator==(const barycentric_point& lhs, const barycentric_point& rhs) noexcept
-		{
-			return std::tie(lhs.u, lhs.v, lhs.w) == std::tie(rhs.u, rhs.v, rhs.w);
-		}
-
-		constexpr barycentric_point to_barycentric(const vector2_float p, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
-		{
-			const auto t = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y);
-			const auto u = ((p2.y - p3.y) * (p.x - p3.x) + (p3.x - p2.x) * (p.y - p3.y)) / t;
-			const auto v = ((p3.y - p1.y) * (p.x - p3.x) + (p1.x - p3.x) * (p.y - p3.y)) / t;
-			const auto w = 1.f - u - v;
-			return { u, v, w };
-		}
-
-		constexpr barycentric_point to_barycentric(const vector2_float p, const std::array<vector2_float, 3> &tri) noexcept
-		{
-			return to_barycentric(p, tri[0], tri[1], tri[2]);
-		}
-
-		constexpr vector2_float from_barycentric(const barycentric_point b, const vector2_float p1, const vector2_float p2, const vector2_float p3) noexcept
-		{
-			const auto& [u, v, w] = b;
-			return { u * p1.x + v * p2.x + w * p3.x, u * p1.y + v * p2.y + w * p3.y };
-		}
-
-		constexpr vector2_float from_barycentric(const barycentric_point b, const std::array<vector2_float, 3> &tri) noexcept
-		{
-			return from_barycentric(b, tri[0], tri[1], tri[2]);
-		}
-
 		constexpr vector2_float make_quad_point(const tile_position pos, const float tile_sizef,
 			const rect_corners c) noexcept
 		{
@@ -1772,8 +1726,8 @@ namespace hades
 		// test for hit
 		// NOTE: be mindful of how quads are triangled in terrain_map/animation.hpp
 		// NOTE: this is the canonical vertex order for triangles in the terrain system
-		auto left_hit = point_in_tri(p, quad_triangles.left_tri),
-			right_hit = point_in_tri(p, quad_triangles.right_tri);
+		auto left_hit = is_within(p, quad_triangles.left_tri),
+			right_hit = is_within(p, quad_triangles.right_tri);
 
 		// If we hit both tris in a quad, prioritise the tri with the closest point to the camera.
 		if (left_hit && right_hit)
@@ -1869,12 +1823,7 @@ namespace hades
 		}
 
 		while (within_world(tile_check, world_size))
-		{
-			// TODO: check cliffs for each tile as well,
-			//			- will require getting height from neighbouring tiles
-			//			- will need to replace left_hit/right_hit with an array of tris
-			//			- absent cliffs can just be degenerate triangles
-			
+		{	
 			// get index for accessing heightmap
 			const auto height_info = get_height_for_triangles(tile_check, map, settings);
 			// generate quad vertex

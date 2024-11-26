@@ -351,8 +351,8 @@ namespace hades
 	};
 
 	static poly_quad make_terrain_triangles(std::array<vector2_float, 6> p,
-		const triangle_height_data& h, rect_float texture_quad,
-		const std::array<std::uint8_t, 4> &shadow_h = {}, 
+		const cell_height_data& h, const terrain_map::triangle_type triangle_type,
+		rect_float texture_quad, const std::array<std::uint8_t, 4> &shadow_h = {}, 
 		const std::array<normal, 6> &normals = {}) noexcept
 	{
 		const auto& tex_left_x = texture_quad.x;
@@ -362,15 +362,16 @@ namespace hades
 		auto sf_col = std::array<sf::Color, 6>{};
 		for (auto i = std::uint8_t{}; i < 6; ++i)
 		{
+			const auto q_index = enum_type(triangle_index_to_quad_index(i, triangle_type));
 			const auto& normal = normals[i];
 			sf_col[i] = sf::Color{
-				h.height[i],
-				shadow_h[enum_type(triangle_index_to_quad_index(i, h.triangle_type))],
+				h[q_index],
+				shadow_h[q_index],
 				normal.theta, // theta
 				normal.phi };// phi
 		}
 		
-		if (h.triangle_type == terrain_map::triangle_uphill)
+		if (triangle_type == terrain_map::triangle_uphill)
 		{
 			return poly_quad{
 				//first triangle
@@ -403,9 +404,10 @@ namespace hades
 	struct map_tile
 	{
 		std::array<world_vector_t, 6> positions;
-		triangle_height_data height;
+		cell_height_data height;
 		resources::tile_size_t left;
 		resources::tile_size_t top;
+		terrain_map::triangle_type type;
 
 		using texture_index_t = std::uint8_t;
 
@@ -462,7 +464,7 @@ namespace hades
 				tile_sizef
 			};
 
-			const auto quad = make_terrain_triangles(tile.positions, tile.height, tex_coords);
+			const auto quad = make_terrain_triangles(tile.positions, tile.height, tile.type, tex_coords);
 			shared.quads.append(quad);
 		}
 
@@ -491,12 +493,13 @@ namespace hades
 				float_cast(y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto positions = make_triangle_positions(pos_f, tile_sizef, triangle_height.triangle_type);
+			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto positions = make_triangle_positions(pos_f, tile_sizef, type);
 			// get a index for the texture
 			const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 			// add tile to the tile list
-			tile_buffer.emplace_back(positions, triangle_height, tile.left, tile.top, tex_index);
+			tile_buffer.emplace_back(positions, triangle_height, tile.left, tile.top, type, tex_index);
 			return;
 		});
 
@@ -528,8 +531,9 @@ namespace hades
 
 			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
 			const auto world_pos_f = static_cast<vector2_float>(world_pos);
-			const auto surface_triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto surface_positions = make_triangle_positions(world_pos_f, tile_sizef, surface_triangle_height.triangle_type);
+			const auto surface_triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto surface_positions = make_triangle_positions(world_pos_f, tile_sizef, type);
 
 			// we have to generate a surface tile
 			const auto surface_tile_type = get_transition_type(cliff_corners);
@@ -537,21 +541,16 @@ namespace hades
 			{
 				const auto tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, tex_index);
+				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, type, tex_index);
 			}
 
 			// set invert to true for the bottom and left cliffs
-			const auto make_cliff_height = [](auto&& top_height, auto&& bottom_height, const bool invert = false)->std::array<std::uint8_t, 6>{
-				return {
-					// first tri
+			const auto make_cliff_height = [](auto&& top_height, auto&& bottom_height, const bool invert = false)->cell_height_data{
+				return { 
 					top_height[static_cast<std::size_t>(invert)],
-					bottom_height[static_cast<std::size_t>(invert)],
 					top_height[static_cast<std::size_t>(!invert)],
-					// second tri
-					top_height[static_cast<std::size_t>(!invert)],
-					bottom_height[static_cast<std::size_t>(invert)],
-					bottom_height[static_cast<std::size_t>(!invert)]
-				};
+					bottom_height[static_cast<std::size_t>(!invert)],
+					bottom_height[static_cast<std::size_t>(invert)] };
 			};
 
 			// top cliff
@@ -565,14 +564,11 @@ namespace hades
 
 				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-				const auto top_height = get_height_for_triangles(tile_above, shared.map, *shared.settings);
+				const auto top_height = get_height_for_cell(tile_above, shared.map, *shared.settings);
 				const auto top_height_bottom_edge = get_height_for_bottom_edge(top_height);
 				const auto surface_height_top_edge = get_height_for_top_edge(surface_triangle_height);
 
-				const auto new_height = triangle_height_data{ 
-					make_cliff_height(top_height_bottom_edge, surface_height_top_edge),
-					terrain_map::triangle_uphill 
-				};
+				const auto new_height = make_cliff_height(top_height_bottom_edge, surface_height_top_edge);
 
 				const auto new_positions = std::array<world_vector_t, 6>{
 					// tri 1
@@ -585,7 +581,7 @@ namespace hades
 					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
 				};
 
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
+				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
 			}
 
 			// right cliff
@@ -600,14 +596,11 @@ namespace hades
 				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 
-				const auto right_height = get_height_for_triangles(tile_right, shared.map, *shared.settings);
+				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
 				const auto right_height_left_edge = get_height_for_left_edge(right_height);
 				const auto surface_height_right_edge = get_height_for_right_edge(surface_triangle_height);
 
-				const auto new_height = triangle_height_data{
-					make_cliff_height(right_height_left_edge, surface_height_right_edge),
-					terrain_map::triangle_uphill
-				};
+				const auto new_height = make_cliff_height(right_height_left_edge, surface_height_right_edge);
 
 				const auto new_positions = std::array<world_vector_t, 6>{
 					// tri 1
@@ -620,7 +613,7 @@ namespace hades
 					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
 				};
 
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
+				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
 			}
 
 			// bottom cliff
@@ -635,14 +628,11 @@ namespace hades
 				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 
-				const auto right_height = get_height_for_triangles(tile_right, shared.map, *shared.settings);
+				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
 				const auto bottom_height_top_edge = get_height_for_top_edge(right_height);
 				const auto surface_height_bottom_edge = get_height_for_bottom_edge(surface_triangle_height);
 
-				const auto new_height = triangle_height_data{
-					make_cliff_height(bottom_height_top_edge, surface_height_bottom_edge, true),
-					terrain_map::triangle_uphill
-				};
+				const auto new_height = make_cliff_height(bottom_height_top_edge, surface_height_bottom_edge, true);
 
 				const auto new_positions = std::array<world_vector_t, 6>{
 					// tri 1
@@ -655,7 +645,7 @@ namespace hades
 					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
 				};
 
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
+				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
 			}
 			// left cliff
 			if (cliffs[enum_type(rect_edges::left)])
@@ -669,14 +659,11 @@ namespace hades
 				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 
-				const auto right_height = get_height_for_triangles(tile_right, shared.map, *shared.settings);
+				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
 				const auto left_height_right_edge = get_height_for_right_edge(right_height);
 				const auto surface_height_left_edge = get_height_for_left_edge(surface_triangle_height);
 
-				const auto new_height = triangle_height_data{
-					make_cliff_height(left_height_right_edge, surface_height_left_edge, true),
-					terrain_map::triangle_uphill
-				};
+				const auto new_height = make_cliff_height(left_height_right_edge, surface_height_left_edge, true);
 
 				const auto new_positions = std::array<world_vector_t, 6>{
 					// tri 1
@@ -689,7 +676,7 @@ namespace hades
 					world_vector_t{ world_pos_f.x, world_pos_f.y },
 				};
 
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, tex_index);
+				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
 			}
 			return;
 		});
@@ -733,9 +720,10 @@ namespace hades
 				float_cast(pos.y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
+			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto p = make_triangle_positions(position, tile_sizef, type);
+			const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords);
 
 			shared.quads.append(quad);
 			return;
@@ -822,30 +810,31 @@ namespace hades
 				float_cast(pos.y) * tile_sizef
 			};
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto p = make_triangle_positions(position, tile_sizef, type);
 
 			if (ramp.test(enum_type(rect_edges::top)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_top);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_top);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::right)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_right);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_right);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::bottom)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_bottom);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_bottom);
 				shared.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::left)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_left);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_left);
 				shared.quads.append(quad);
 			}
 
@@ -927,30 +916,31 @@ namespace hades
 
 			const auto world_pos = to_pixels(pos, shared.settings->tile_size);
 			const auto world_pos_f = static_cast<vector2_float>(world_pos);
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto p = make_triangle_positions(world_pos_f, tile_sizef, triangle_height.triangle_type);
+			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto p = make_triangle_positions(world_pos_f, tile_sizef, type);
 
 			if (cliffs.test(enum_type(rect_edges::top)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_top);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_top);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::right)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_right);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_right);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::bottom)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_bottom);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_bottom);
 				shared.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::left)))
 			{
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords_left);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_left);
 				shared.quads.append(quad);
 			}
 		});
@@ -1015,7 +1005,7 @@ namespace hades
 
 		auto ret = shared.cliff_layer_debug.create(size(out));
 		if (!ret)
-			log_error("Failed to create vertex buffer for cliff later debug"sv);
+			log_error("Failed to create vertex buffer for cliff layer debug"sv);
 			
 		ret = shared.cliff_layer_debug.update(std::data(out));
 		if (!ret)
@@ -1157,81 +1147,89 @@ namespace hades
 		return;
 	}
 
-	/*template<std::size_t N>
+	template<std::size_t N>
 	static constexpr normal mean_vector(const std::array<vector3<float>, N> vects) noexcept
 	{	
 		constexpr auto n = float_cast(N);
 		const auto mean = std::reduce(begin(vects), end(vects), vector3<float>{}, std::plus{}) / n;
 		const auto pol = vector::unit(to_pol_vector(mean));
 
-		return { 
-			pol.theta, pol.phi
+		// returns the normal for the left triangle and then right triangle
+		const auto to_normal = [](const basic_pol_vector<float, 3> pol)->normal {
+			constexpr auto pi = std::numbers::pi_v<float>;
+			const auto theta = remap(pol.theta, -pi, pi, 0.f, 255.f);
+			const auto phi = remap(pol.phi, 0.f, pi, 0.f, 255.f);
+			return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
 		};
-	}*/
 
-	//static std::array<std::array<std::uint8_t, 2>, 4> calculate_vertex_normal(const tile_position& p,
-	//	const table<lighting_info>& table, const lighting_info& centre, const tile_position& world_size)
-	//{
-	//	// returns the normal for the left triangle and then right triangle
-	//	const auto to_uint_normal = [](const lighting_info::normal norm) constexpr noexcept -> std::array<std::uint8_t, 2> {
-	//		constexpr auto pi = std::numbers::pi_v<float>;
-	//		const auto theta = remap(norm.theta, -pi, pi, 0.f, 255.f);
-	//		const auto phi = remap(norm.phi, 0.f, pi, 0.f, 255.f);
-	//		return { integral_cast<std::uint8_t>(theta), integral_cast<std::uint8_t>(phi) };
-	//	};
+		return to_normal(pol);
+	}
 
-	//	const auto get_cell = [&](const tile_position& p) noexcept -> lighting_info {
-	//		if (!within_world(p, world_size))
-	//			return lighting_info{};
+	static std::array<normal, 6> calculate_vertex_normal(const tile_position& p,
+		const table<lighting_info>& table, const lighting_info& centre, const tile_position& world_size)
+	{
+		
 
-	//		return table[p];
-	//	};
+		const auto get_cell = [&](const tile_position& p) noexcept -> lighting_info {
+			if (!within_world(p, world_size))
+				return lighting_info{};
 
-	//	// NOTE: tiles (x is 'centre'
-	//	//			Top row:	0, 1, 2
-	//	//			Middle row: 3, x, 4
-	//	//			bottom row: 5, 6, 7
-	//	const auto tiles = std::array{
-	//		get_cell(p + tile_position{ -1, -1 }), // 0
-	//		get_cell(p + tile_position{  0, -1 }), // 1
-	//		get_cell(p + tile_position{  1, -1 }), // 2
-	//		get_cell(p + tile_position{ -1,  0 }), // 3
-	//		get_cell(p + tile_position{  1,  0 }), // 4
-	//		get_cell(p + tile_position{ -1,  1 }), // 5
-	//		get_cell(p + tile_position{  0,  1 }), // 6
-	//		get_cell(p + tile_position{  1,  1 }), // 7
-	//	};
+			return table[p];
+		};
 
-	//	constexpr auto top_left = 0, top = 1, top_right = 2,
-	//					left = 3, right = 4, 
-	//					bottom_left = 5, bottom = 6, bottom_right = 7;
+		// NOTE: tiles (x is 'centre'
+		//			Top row:	0, 1, 2
+		//			Middle row: 3, x, 4
+		//			bottom row: 5, 6, 7
+		const auto tiles = std::array{
+			get_cell(p + tile_position{ -1, -1 }), // 0
+			get_cell(p + tile_position{  0, -1 }), // 1
+			get_cell(p + tile_position{  1, -1 }), // 2
+			get_cell(p + tile_position{ -1,  0 }), // 3
+			get_cell(p + tile_position{  1,  0 }), // 4
+			get_cell(p + tile_position{ -1,  1 }), // 5
+			get_cell(p + tile_position{  0,  1 }), // 6
+			get_cell(p + tile_position{  1,  1 }), // 7
+		};
 
-	//	// TODO: triangle type
-	//	// average each of the contributing normals
-	//	const auto v0 = mean_vector(std::array{ centre.tri_normals[0],
-	//		tiles[top_left].tri_normals[1],
-	//		tiles[top].tri_normals[0], tiles[top].tri_normals[1],
-	//		tiles[left].tri_normals[0], tiles[left].tri_normals[1] });
-	//	const auto v1 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
-	//		tiles[top].tri_normals[1], 
-	//		tiles[top_right].tri_normals[0], tiles[top_right].tri_normals[1],
-	//		tiles[right].tri_normals[0] });
-	//	const auto v2 = mean_vector(std::array{ centre.tri_normals[1] ,
-	//		tiles[right].tri_normals[0], tiles[right].tri_normals[1],
-	//		tiles[bottom_right].tri_normals[0],
-	//		tiles[bottom].tri_normals[0], tiles[bottom].tri_normals[1]  });
-	//	const auto v3 = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
-	//		tiles[bottom].tri_normals[0],
-	//		tiles[bottom_left].tri_normals[0], tiles[bottom_left].tri_normals[1],
-	//		tiles[left].tri_normals[1] });
+		constexpr auto top_left = 0, top = 1, top_right = 2,
+						left = 3, right = 4, 
+						bottom_left = 5, bottom = 6, bottom_right = 7;
 
-	//	return { 
-	//		to_uint_normal(v0),
-	//		to_uint_normal(v1),
-	//		to_uint_normal(v2),
-	//		to_uint_normal(v3),
-	//	};
-	//}
+		// TODO: triangle type
+		// average each of the contributing normals
+		const auto tl = mean_vector(std::array{ centre.tri_normals[0],
+			tiles[top_left].tri_normals[1],
+			tiles[top].tri_normals[0], tiles[top].tri_normals[1],
+			tiles[left].tri_normals[0], tiles[left].tri_normals[1] });
+		const auto tr = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
+			tiles[top].tri_normals[1], 
+			tiles[top_right].tri_normals[0], tiles[top_right].tri_normals[1],
+			tiles[right].tri_normals[0] });
+		const auto br = mean_vector(std::array{ centre.tri_normals[1] ,
+			tiles[right].tri_normals[0], tiles[right].tri_normals[1],
+			tiles[bottom_right].tri_normals[0],
+			tiles[bottom].tri_normals[0], tiles[bottom].tri_normals[1]  });
+		const auto bl = mean_vector(std::array{ centre.tri_normals[0], centre.tri_normals[1],
+			tiles[bottom].tri_normals[0],
+			tiles[bottom_left].tri_normals[0], tiles[bottom_left].tri_normals[1],
+			tiles[left].tri_normals[1] });
+
+		if (centre.triangle_type == terrain_map::triangle_uphill)
+		{
+			return {
+				tl, bl, tr,
+				tr, bl, br
+			};
+		}
+		else
+		{
+			return {
+				tl, bl, br,
+				tl, br, tr
+			};
+		}
+	}
 
 	static std::array<normal, 6> calc_simple_normal(const lighting_info& info) noexcept
 	{
@@ -1333,15 +1331,16 @@ namespace hades
 
 			const auto& light_info = light_table[pos];
 
-			const auto normals = calc_simple_normal(light_info);
+			//const auto normals = calc_simple_normal(light_info);
 
-			back_to_normal(light_info.tri_normals[0], normals[0]);
+			//back_to_normal(light_info.tri_normals[0], normals[0]);
 
-			//const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
+			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
-			const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-			const auto positions = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-			const auto quad = make_terrain_triangles(positions, triangle_height, {}, light_info.shadow_height, normals);
+			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+			const auto type = pick_triangle_type(pos);
+			const auto positions = make_triangle_positions(position, tile_sizef, type);
+			const auto quad = make_terrain_triangles(positions, triangle_height, type, {}, light_info.shadow_height, normals);
 
 			shared.quads.append(quad);
 
@@ -1380,9 +1379,10 @@ namespace hades
 					float_cast(pos.y) * tile_sizef
 				};
 
-				const auto triangle_height = get_height_for_triangles(pos, shared.map, *shared.settings);
-				const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
-				const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
+				const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
+				const auto type = pick_triangle_type(pos);
+				const auto p = make_triangle_positions(position, tile_sizef, type);
+				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords);
 
 				shared.quads.append(quad);
 			}
@@ -1405,12 +1405,13 @@ namespace hades
 			{
 				// make a graphic in each adjacent tile
 				for_each_safe_adjacent_corner(shared.map, pos, [&](auto&& tile_pos, auto&& corner) {
-					const auto triangle_height = get_height_for_triangles(tile_pos, shared.map, *shared.settings);
+					const auto triangle_height = get_height_for_cell(tile_pos, shared.map, *shared.settings);
+					const auto type = pick_triangle_type(tile_pos);
 					const auto position = vector2_float{
 						float_cast(tile_pos.x) * tile_sizef,
 						float_cast(tile_pos.y) * tile_sizef
 					};
-					const auto p = make_triangle_positions(position, tile_sizef, triangle_height.triangle_type);
+					const auto p = make_triangle_positions(position, tile_sizef, type);
 
 					resources::tile tile [[indeterminate]];
 
@@ -1439,7 +1440,7 @@ namespace hades
 						tile_sizef
 					};
 
-					const auto quad = make_terrain_triangles(p, triangle_height, tex_coords);
+					const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords);
 					shared.quads.append(quad);
 					return;
 				});
@@ -1501,16 +1502,19 @@ namespace hades
 
 		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_cliff_layers, _show_ramps };
 
-		const auto tiled_area = static_cast<vector2_int>(size(_shared.world_area) / float_cast(_shared.settings->tile_size));
+		const auto tile_sizef = float_cast(_shared.settings->tile_size);
+		auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / tile_sizef);
+		tiled_start.x = std::max(0, tiled_start.x);
+		tiled_start.y = std::max(0, tiled_start.y);
+
+		const auto tiled_size = static_cast<vector2_int>(size(_shared.world_area) / tile_sizef);
 
 		// working buffer to sort tiles in
 		// TODO: store this in the terrain_map so we don't have to alloc every map update
 		auto tile_buffer = std::vector<hades::map_tile>{};
 		
-		const auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / float_cast(_shared.settings->tile_size));
-
 		// TODO: clamp tile_start/area to regions in the game world
-		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_area }, flags);
+		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_size }, flags);
 
 		// generate map editor targets
 		// TODO: we might have to clear out the previous editor targets if they've changed

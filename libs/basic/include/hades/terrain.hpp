@@ -344,6 +344,8 @@ namespace hades
 	terrain_map::vertex_height_t get_vertex_height(terrain_vertex_position, const terrain_map&);
 	terrain_map::cliff_layer_t get_cliff_layer(tile_position, const terrain_map&);
 
+	constexpr terrain_map::triangle_type pick_triangle_type(tile_position) noexcept;
+
 	struct triangle_height_data
 	{
 		// contains height for both triangles
@@ -353,19 +355,32 @@ namespace hades
 	};
 
 	// returns height arranged into two triangles
+	[[deprecated]]
 	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&, const resources::terrain_settings&);
+
+	using cell_height_data = std::array<std::uint8_t, 4>;
+	cell_height_data get_height_for_cell(tile_position, const terrain_map&, const resources::terrain_settings&);
 
 	[[deprecated]] // TODO: used in lighting generator
 	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept;
 
 	// returns the height at both end of an edge (left/top first)
+	[[deprecated]]
 	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data&) noexcept;
+	[[deprecated]]
 	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data&) noexcept;
+	[[deprecated]]
 	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
+	[[deprecated]]
 	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
 	// as above, but left triangle first and right triangle second
 	[[deprecated("Unused")]]
 	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept;
+
+	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const cell_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const cell_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const cell_height_data&) noexcept;
+	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const cell_height_data&) noexcept;
 
 	using adjacent_cliffs = std::bitset<4>;
 	using cliff_corners = std::bitset<4>;

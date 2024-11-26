@@ -193,12 +193,22 @@ namespace hades
 			std::vector<tile_position> edit_targets;
 			gui gui = { "" }; // Don't generate .ini
 			// per chunk data
+			enum update_flags {
+				all,
+				lighting,
+				grid,
+				ramp,
+				cliff_edge,
+				cliff_value,
+				end
+			};
 			std::vector<vertex_region> regions;
 			std::size_t start_lighting;
 			std::size_t start_grid;
 			std::size_t start_ramp;
 			std::size_t start_cliff_debug;
 			sf::VertexBuffer cliff_layer_debug = { sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Static };
+			std::bitset<enum_type(update_flags::end)> needs_update;
 			// end per chunk data
 			std::vector<resources::resource_link<resources::texture>> texture_table;
 			const resources::terrain_settings* settings = {};

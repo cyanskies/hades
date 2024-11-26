@@ -1674,6 +1674,12 @@ namespace hades
 		_needs_update = true;
 	}
 
+	void mutable_terrain_map::remove_ramp(const tile_position p)
+	{
+		clear_ramp(p, _shared.map);
+		_needs_update = true;
+	}
+
 	//==================================//
 	//		  terrain_mini_map			//
 	//==================================//

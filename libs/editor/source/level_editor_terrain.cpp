@@ -400,6 +400,8 @@ namespace hades
 			[[fallthrough]];
 		case brush_t::add_ramp:
 			[[fallthrough]];
+		case brush_t::remove_ramp:
+			[[fallthrough]];
 		case brush_t::raise_water:
 			[[fallthrough]];
 		case brush_t::lower_water:
@@ -496,13 +498,20 @@ namespace hades
 	{
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
-			if (_terrain_palette.brush == brush_type::add_ramp)
+			switch (_terrain_palette.brush)
 			{
+			case brush_type::add_ramp:
 				if (can_add_ramp(pos, _map.get_map()).any())
 					_map.add_edit_target(pos);
-			}
-			else
+				break;
+			case brush_type::remove_ramp:
+				{
+					if (get_ramps(pos, _map.get_map()).any())
+						_map.add_edit_target(pos);
+				} break;
+			default:
 				_map.add_edit_target(pos);
+			}
 		};
 
 		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
@@ -603,6 +612,9 @@ namespace hades
 				break;
 			case brush_type::add_ramp:
 				_map.place_ramp(p);
+				break;
+			case brush_type::remove_ramp:
+				_map.remove_ramp(p);
 				break;
 			/*case brush_type::raise_water:
 				break;
@@ -843,11 +855,12 @@ namespace hades
 			brush_selection{ "Smooth"sv,	"Height: Smooth"sv,		brush_t::smooth_height },
 		};
 
-		constexpr auto cliff_selections = std::array<brush_selection, 4>{
-			brush_selection{ "Raise"sv,		"Cliff: Raise"sv,	brush_t::raise_cliff },
-			brush_selection{ "Lower"sv,		"Cliff: Lower"sv,	brush_t::lower_cliff },
-			brush_selection{ "Plateau"sv,	"Cliff: Plateau"sv,	brush_t::plataeu_cliff },
-			brush_selection{ "Ramp"sv,		"Cliff: Ramp"sv,	brush_t::add_ramp }
+		constexpr auto cliff_selections = std::array<brush_selection, 5>{
+			brush_selection{ "Raise"sv,			"Cliff: Raise"sv,		brush_t::raise_cliff },
+			brush_selection{ "Lower"sv,			"Cliff: Lower"sv,		brush_t::lower_cliff },
+			brush_selection{ "Plateau"sv,		"Cliff: Plateau"sv,		brush_t::plataeu_cliff },
+			brush_selection{ "Ramp"sv,			"Cliff: Ramp"sv,		brush_t::add_ramp },
+			brush_selection{ "Remove Ramp"sv,	"Cliff: Remove Ramp"sv, brush_t::remove_ramp }
 		};
 
 		constexpr auto water_selections = std::array<brush_selection, 2>{
@@ -916,7 +929,8 @@ namespace hades
 		const auto cliff_mode = _terrain_palette.brush == brush_type::raise_cliff ||
 			_terrain_palette.brush == brush_type::lower_cliff ||
 			_terrain_palette.brush == brush_type::plataeu_cliff ||
-			_terrain_palette.brush == brush_type::add_ramp;
+			_terrain_palette.brush == brush_type::add_ramp ||
+			_terrain_palette.brush == brush_type::remove_ramp;
 		g.radio_button("###cliff_activated"sv, cliff_mode);
 		g.same_line();
 		if (cliff_mode)

@@ -132,6 +132,7 @@ namespace hades
 		void set_cliff(tile_position, terrain_map::cliff_layer_t);
 
 		void place_ramp(tile_position);
+		void remove_ramp(tile_position);
 
 		enum class edit_target : bool 
 		{

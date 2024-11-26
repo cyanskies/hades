@@ -381,6 +381,7 @@ namespace hades
 	};
 
 	// index with rect_edges
+	std::bitset<4> get_ramps(tile_position, const terrain_map&);
 	std::array<ramp_type, 4> get_adjacent_ramps(tile_position, const terrain_map&);
 
 	const resources::terrain *get_vertex(const terrain_map&, terrain_vertex_position);

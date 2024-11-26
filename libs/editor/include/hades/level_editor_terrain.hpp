@@ -42,6 +42,7 @@ namespace hades
 			lower_cliff,
 			plataeu_cliff,
 			add_ramp,
+			remove_ramp,
 			erase_cliff [[deprecated]],
 			// ==water==
 			raise_water,

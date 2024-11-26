@@ -1141,6 +1141,14 @@ namespace hades
 		return out;
 	}
 
+	std::bitset<4> get_ramps(const tile_position p, const terrain_map& m)
+	{
+		const auto world_size = get_size(m);
+		assert(within_world(p, world_size));
+		const auto start_index = to_tile_index(p, world_size.x);
+		return std::bitset<4>{ m.ramp_layer[start_index] };
+	}
+
 	std::array<ramp_type, 4> get_adjacent_ramps(const tile_position p, const terrain_map& m)
 	{
 		const auto world_size = get_size(m);

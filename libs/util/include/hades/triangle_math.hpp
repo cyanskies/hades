@@ -48,4 +48,4 @@ namespace hades
 
 #include "hades/detail/triangle_math.inl"
 
-#endif
+#endif // !HADES_TRIANGLE_MATH_HPP

@@ -1832,7 +1832,7 @@ namespace hades
 			const auto quad_hit = check_quad(p, rot, quad_triangles);
 			if (quad_hit)
 			{
-				std::tie(bary_point, last_tri) = quad_hit.value();
+				std::tie(bary_point, last_tri) = *quad_hit;
 				tile_hit = tile_check;
 			}
 			else
@@ -1843,7 +1843,7 @@ namespace hades
 					const auto cliff_hit = check_quad(p, rot, *cliff1);
 					if (cliff_hit)
 					{
-						std::tie(bary_point, last_tri) = cliff_hit.value();
+						std::tie(bary_point, last_tri) = *cliff_hit;
 						tile_hit = tile_check;
 						cliff_target = edge1;
 					}
@@ -1854,7 +1854,7 @@ namespace hades
 					const auto cliff_hit = check_quad(p, rot, *cliff2);
 					if (cliff_hit)
 					{
-						std::tie(bary_point, last_tri) = cliff_hit.value();
+						std::tie(bary_point, last_tri) = *cliff_hit;
 						tile_hit = tile_check;
 						cliff_target = edge2;
 					}

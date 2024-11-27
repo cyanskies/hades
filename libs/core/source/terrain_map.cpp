@@ -511,6 +511,150 @@ namespace hades
 		return;
 	}
 
+	static std::array<std::optional<map_tile>, 4> make_cliffs(const tile_position surface_pos, 
+		const vector2_float world_pos_f,
+		const std::array<vector2_float, 6>& surface_positions,
+		const cell_height_data surface_cell_height,
+		const terrain_map::triangle_type type,
+		const adjacent_cliffs cliffs,
+		const float tile_sizef,
+		const mutable_terrain_map::shared_data& shared)
+	{
+		constexpr auto tile_left = resources::tile_size_t{};
+		constexpr auto tile_top = tile_left;
+		constexpr auto tex_index = map_tile::texture_index_t{};
+
+		auto out = std::array<std::optional<map_tile>, 4>{};
+
+		// set invert to true for the bottom and left cliffs
+		const auto make_cliff_height = [](auto&& top_height, auto&& bottom_height, const bool invert = false)->cell_height_data {
+			return {
+				top_height[static_cast<std::size_t>(invert)],
+				top_height[static_cast<std::size_t>(!invert)],
+				bottom_height[static_cast<std::size_t>(!invert)],
+				bottom_height[static_cast<std::size_t>(invert)] 
+			};
+		};
+
+		// top cliff
+		if (cliffs[enum_type(rect_edges::top)])
+		{
+			// get triangle_height for tile above,
+			// mix and match the hight and position values to create the correct tile
+			const auto tile_above = surface_pos - tile_position{ 0, 1 };
+			// cliff edges[top] should be 0 if the tile was outside the world.
+			assert(within_world(tile_above, get_size(shared.map)));
+
+			const auto top_height = get_height_for_cell(tile_above, shared.map, *shared.settings);
+			const auto top_height_bottom_edge = get_height_for_bottom_edge(top_height);
+			const auto surface_height_top_edge = get_height_for_top_edge(surface_cell_height);
+
+			const auto new_height = make_cliff_height(top_height_bottom_edge, surface_height_top_edge);
+
+			const auto new_positions = std::array<world_vector_t, 6>{
+				// tri 1
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+				// tri 2
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+			};
+
+			out[enum_type(rect_edges::top)] = map_tile{ new_positions, new_height, tile_left, tile_top, terrain_map::triangle_type::triangle_uphill, tex_index };
+		}
+
+		// right cliff
+		if (cliffs[enum_type(rect_edges::right)])
+		{
+			// get triangle_height for tile above,
+			// mix and match the hight and position values to create the correct tile
+			const auto tile_right = surface_pos + tile_position{ 1, 0 };
+			// cliff edges[top] should be 0 if the tile was outside the world.
+			assert(within_world(tile_right, get_size(shared.map)));
+
+			const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
+			const auto right_height_left_edge = get_height_for_left_edge(right_height);
+			const auto surface_height_right_edge = get_height_for_right_edge(surface_cell_height);
+
+			const auto new_height = make_cliff_height(right_height_left_edge, surface_height_right_edge);
+
+			const auto new_positions = std::array<world_vector_t, 6>{
+				// tri 1
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+				// tri 2
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+			};
+
+			out[enum_type(rect_edges::right)] = map_tile{ new_positions, new_height, tile_left, tile_top, terrain_map::triangle_type::triangle_uphill, tex_index };
+		}
+
+		// bottom cliff
+		if (cliffs[enum_type(rect_edges::bottom)])
+		{
+			// get triangle_height for tile above,
+			// mix and match the hight and position values to create the correct tile
+			const auto tile_right = surface_pos + tile_position{ 0, 1 };
+			// cliff edges[top] should be 0 if the tile was outside the world.
+			assert(within_world(tile_right, get_size(shared.map)));
+
+			const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
+			const auto bottom_height_top_edge = get_height_for_top_edge(right_height);
+			const auto surface_height_bottom_edge = get_height_for_bottom_edge(surface_cell_height);
+
+			const auto new_height = make_cliff_height(bottom_height_top_edge, surface_height_bottom_edge, true);
+
+			const auto new_positions = std::array<world_vector_t, 6>{
+				// tri 1
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+				// tri 2
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+			};
+
+			out[enum_type(rect_edges::bottom)] = map_tile{ new_positions, new_height, tile_left, tile_top, terrain_map::triangle_type::triangle_uphill, tex_index };
+		}
+
+		// left cliff
+		if (cliffs[enum_type(rect_edges::left)])
+		{
+			// get triangle_height for tile above,
+			// mix and match the hight and position values to create the correct tile
+			const auto tile_right = surface_pos - tile_position{ 1, 0 };
+			// cliff edges[top] should be 0 if the tile was outside the world.
+			assert(within_world(tile_right, get_size(shared.map)));
+
+			const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
+			const auto left_height_right_edge = get_height_for_right_edge(right_height);
+			const auto surface_height_left_edge = get_height_for_left_edge(surface_cell_height);
+
+			const auto new_height = make_cliff_height(left_height_right_edge, surface_height_left_edge, true);
+
+			const auto new_positions = std::array<world_vector_t, 6>{
+				// tri 1
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+				// tri 2
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+				world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
+				world_vector_t{ world_pos_f.x, world_pos_f.y },
+			};
+
+			out[enum_type(rect_edges::left)] = map_tile{ new_positions, new_height, tile_left, tile_top, terrain_map::triangle_type::triangle_uphill, tex_index };
+		}
+
+		return out;
+	}
+
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
@@ -544,139 +688,20 @@ namespace hades
 				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, type, tex_index);
 			}
 
-			// set invert to true for the bottom and left cliffs
-			const auto make_cliff_height = [](auto&& top_height, auto&& bottom_height, const bool invert = false)->cell_height_data{
-				return { 
-					top_height[static_cast<std::size_t>(invert)],
-					top_height[static_cast<std::size_t>(!invert)],
-					bottom_height[static_cast<std::size_t>(!invert)],
-					bottom_height[static_cast<std::size_t>(invert)] };
-			};
-
-			// top cliff
-			if (cliffs[enum_type(rect_edges::top)])
+			const auto cliff_faces = make_cliffs(pos, world_pos_f,
+				surface_positions, surface_triangle_height, type, cliffs,
+				tile_sizef, shared);
+			for (const auto& cliff_face : cliff_faces)
 			{
-				// get triangle_height for tile above,
-				// mix and match the hight and position values to create the correct tile
-				const auto tile_above = pos - tile_position{ 0, 1 };
-				// cliff edges[top] should be 0 if the tile was outside the world.
-				assert(within_world(tile_above, get_size(shared.map)));
-
+				if (!cliff_face)
+					continue;
+				auto c = *cliff_face;
 				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-				const auto top_height = get_height_for_cell(tile_above, shared.map, *shared.settings);
-				const auto top_height_bottom_edge = get_height_for_bottom_edge(top_height);
-				const auto surface_height_top_edge = get_height_for_top_edge(surface_triangle_height);
-
-				const auto new_height = make_cliff_height(top_height_bottom_edge, surface_height_top_edge);
-
-				const auto new_positions = std::array<world_vector_t, 6>{
-					// tri 1
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-					// tri 2
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-				};
-
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
-			}
-
-			// right cliff
-			if (cliffs[enum_type(rect_edges::right)])
-			{
-				// get triangle_height for tile above,
-				// mix and match the hight and position values to create the correct tile
-				const auto tile_right = pos + tile_position{ 1, 0 };
-				// cliff edges[top] should be 0 if the tile was outside the world.
-				assert(within_world(tile_right, get_size(shared.map)));
-
-				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
-				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-
-				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
-				const auto right_height_left_edge = get_height_for_left_edge(right_height);
-				const auto surface_height_right_edge = get_height_for_right_edge(surface_triangle_height);
-
-				const auto new_height = make_cliff_height(right_height_left_edge, surface_height_right_edge);
-
-				const auto new_positions = std::array<world_vector_t, 6>{
-					// tri 1
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-					// tri 2
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-				};
-
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
-			}
-
-			// bottom cliff
-			if (cliffs[enum_type(rect_edges::bottom)])
-			{
-				// get triangle_height for tile above,
-				// mix and match the hight and position values to create the correct tile
-				const auto tile_right = pos + tile_position{ 0, 1 };
-				// cliff edges[top] should be 0 if the tile was outside the world.
-				assert(within_world(tile_right, get_size(shared.map)));
-
-				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
-				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-
-				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
-				const auto bottom_height_top_edge = get_height_for_top_edge(right_height);
-				const auto surface_height_bottom_edge = get_height_for_bottom_edge(surface_triangle_height);
-
-				const auto new_height = make_cliff_height(bottom_height_top_edge, surface_height_bottom_edge, true);
-
-				const auto new_positions = std::array<world_vector_t, 6>{
-					// tri 1
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-					// tri 2
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x + tile_sizef, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-				};
-
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
-			}
-			// left cliff
-			if (cliffs[enum_type(rect_edges::left)])
-			{
-				// get triangle_height for tile above,
-				// mix and match the hight and position values to create the correct tile
-				const auto tile_right = pos - tile_position{ 1, 0 };
-				// cliff edges[top] should be 0 if the tile was outside the world.
-				assert(within_world(tile_right, get_size(shared.map)));
-
-				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
-				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-
-				const auto right_height = get_height_for_cell(tile_right, shared.map, *shared.settings);
-				const auto left_height_right_edge = get_height_for_right_edge(right_height);
-				const auto surface_height_left_edge = get_height_for_left_edge(surface_triangle_height);
-
-				const auto new_height = make_cliff_height(left_height_right_edge, surface_height_left_edge, true);
-
-				const auto new_positions = std::array<world_vector_t, 6>{
-					// tri 1
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-					// tri 2
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-					world_vector_t{ world_pos_f.x, world_pos_f.y + tile_sizef },
-					world_vector_t{ world_pos_f.x, world_pos_f.y },
-				};
-
-				tile_buffer.emplace_back(new_positions, new_height, tile.left, tile.top, terrain_map::triangle_type::triangle_uphill, tex_index);
+				c.left = tile.left;
+				c.top = tile.top;
+				c.texture = tex_index;
+				tile_buffer.emplace_back(c);
 			}
 			return;
 		});

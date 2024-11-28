@@ -233,11 +233,6 @@ namespace hades
 			surface, diag, right, bottom
 		};
 
-		// TODO: generate cliff tiles once
-		// Should be 4 times the size of tile_layer ( surface tile, diagonal tile, right tile, bottom tile )
-		// See: cliff_layer_layout
-		tile_map cliffs;
-
 		// Terrain vertex info.
 		// Same size as tile_layer, but with an extra column and row.
 		std::vector<const resources::terrain*> terrain_vertex;
@@ -256,9 +251,13 @@ namespace hades
 		// TODO: sun_angle
 
 		// Dynamically generated tile layers to represent the terrain vertex
-		// Each is the same size as tile_layer
 		std::vector<tile_map> terrain_layers;
 	
+		// TODO: generate cliff tiles once
+		// Should be 4 times the size of tile_layer ( surface tile, diagonal tile, right tile, bottom tile )
+		// See: cliff_layer_layout
+		tile_map cliffs;
+
 		//a terrainset lists the terrain types that can be used in a level
 		const resources::terrainset* terrainset = nullptr;
 		// terrain_vertex width
@@ -266,12 +265,12 @@ namespace hades
 	};
 
 	// converts triangle pair indexes [0-5] to equivilent quad indexes [0-3]
-	constexpr rect_corners triangle_index_to_quad_index(std::uint8_t, terrain_map::triangle_type tri_type) noexcept;
+	constexpr rect_corners triangle_index_to_quad_index(std::uint8_t, terrain_map::triangle_type) noexcept;
 	// reverse of above
 	constexpr auto bad_triangle_index = std::numeric_limits<std::uint8_t>::max();
 	// Return: first is the specific vertex in left triangle, seconds is in right triangle
 	//			if a specific vertex doesn't exist in the triangle, the element will be bad_triangle_index
-	constexpr std::pair<std::uint8_t, std::uint8_t> quad_index_to_triangle_index(rect_corners, terrain_map::triangle_type tri_type) noexcept;
+	constexpr std::pair<std::uint8_t, std::uint8_t> quad_index_to_triangle_index(rect_corners, terrain_map::triangle_type) noexcept;
 	
 	// converts a raw map into a tile map
 	// exceptions: tileset_not_found, terrain_error, terrain_layers_error

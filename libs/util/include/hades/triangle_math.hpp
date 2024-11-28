@@ -5,10 +5,10 @@
 
 namespace hades
 {
-	template<typename T>
+	template<typename T, std::size_t N>
 	struct basic_triangle
 	{
-		basic_vector<T, 2> p1, p2, p3;
+		basic_vector<T, N> p1, p2, p3;
 	};
 
 	struct barycentric_point
@@ -22,24 +22,28 @@ namespace hades
 	}
 
 	[[nodiscard]]
-	constexpr barycentric_point to_barycentric(vector2_float, basic_triangle<float>) noexcept;
+	inline basic_vector<float, 3> triangle_normal(basic_triangle<float, 3>) noexcept;
 
+	// Barycentric functions only defined for 2d triangles
+	[[nodiscard]]
+	constexpr barycentric_point to_barycentric(vector2_float, basic_triangle<float, 2>) noexcept;
+	[[nodiscard]]
 	constexpr barycentric_point to_barycentric(const vector2_float p, const std::array<vector2_float, 3>& tri) noexcept
 	{
-		return to_barycentric(p, basic_triangle<float>{ tri[0], tri[1], tri[2] });
+		return to_barycentric(p, basic_triangle<float, 2>{ tri[0], tri[1], tri[2] });
 	}
 
 	[[nodiscard]]
-	constexpr vector2_float from_barycentric(barycentric_point, basic_triangle<float>) noexcept;
-
+	constexpr vector2_float from_barycentric(barycentric_point, basic_triangle<float, 2>) noexcept;
+	[[nodiscard]]
 	constexpr vector2_float from_barycentric(const barycentric_point b, const std::array<vector2_float, 3>& tri) noexcept
 	{
-		return from_barycentric(b, basic_triangle<float>{ tri[0], tri[1], tri[2] });
+		return from_barycentric(b, basic_triangle<float, 2>{ tri[0], tri[1], tri[2] });
 	}
 
 	template<typename T>
 	[[nodiscard]]
-	constexpr bool is_within(basic_vector<T, 2>, basic_triangle<T>) noexcept;
+	constexpr bool is_within(basic_vector<T, 2>, basic_triangle<T, 2>) noexcept;
 
 	template<typename T>
 	[[nodiscard]]

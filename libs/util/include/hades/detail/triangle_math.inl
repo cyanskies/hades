@@ -3,7 +3,18 @@
 namespace hades
 {
 	[[nodiscard]]
-	constexpr barycentric_point to_barycentric(const vector2_float p, const basic_triangle<float> tri) noexcept
+	inline basic_vector<float, 3> triangle_normal(const basic_triangle<float, 3> t) noexcept
+	{
+		const auto& p1 = t.p1;
+		const auto& p2 = t.p2;
+		const auto& p3 = t.p3;
+		const auto u = p1 - p2;
+		const auto v = p3 - p2;
+		return vector::unit(vector::cross(u, v));
+	}
+
+	[[nodiscard]]
+	constexpr barycentric_point to_barycentric(const vector2_float p, const basic_triangle<float, 2> tri) noexcept
 	{
 		const auto& p1 = tri.p1;
 		const auto& p2 = tri.p2;
@@ -16,19 +27,18 @@ namespace hades
 	}
 
 	[[nodiscard]]
-	constexpr vector2_float from_barycentric(const barycentric_point b, const basic_triangle<float> t) noexcept
+	constexpr vector2_float from_barycentric(const barycentric_point b, const basic_triangle<float, 2> t) noexcept
 	{
 		const auto& p1 = t.p1;
 		const auto& p2 = t.p2;
 		const auto& p3 = t.p3;
-
 		const auto& [u, v, w] = b;
 		return { u * p1.x + v * p2.x + w * p3.x, u * p1.y + v * p2.y + w * p3.y };
 	}
 
 	template<typename T>
 	[[nodiscard]]
-	constexpr bool is_within(const basic_vector<T, 2> p, const basic_triangle<T> tri) noexcept
+	constexpr bool is_within(const basic_vector<T, 2> p, const basic_triangle<T, 2> tri) noexcept
 	{
 		// Based on PointInTriangle from: https://stackoverflow.com/a/20861130
 		const auto& p0 = tri.p1;
@@ -49,6 +59,6 @@ namespace hades
 	[[nodiscard]]
 	constexpr bool is_within(basic_vector<T, 2> p, std::array<basic_vector<T, 2>, 3> tri) noexcept
 	{
-		return is_within(p, basic_triangle<T>{ tri[0], tri[1], tri[2] });
+		return is_within(p, basic_triangle<T, 2>{ tri[0], tri[1], tri[2] });
 	}
 }

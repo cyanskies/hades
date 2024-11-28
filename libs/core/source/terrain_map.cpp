@@ -94,7 +94,7 @@ void main()
 }})";
 
 constexpr auto shadow_calc_colour = "gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));";
-constexpr auto shadow_render_normals = "gl_FragColor = vec4(normal.rgb, 1.f);";
+constexpr auto shadow_render_normals = "gl_FragColor = vec4(0.5f * (normal.rgb + vec3(1.f, 1.f, 1.f)), 1.f);";
 
 static auto terrain_map_shader_id = hades::unique_zero;
 static auto terrain_map_shader_debug_id = hades::unique_zero;
@@ -1062,28 +1062,135 @@ namespace hades
 	{
 		using quad_normals = std::array<vector3<float>, 2>;
 		quad_normals tri_normals;
-		//std::array<std::optional<quad_normals>, 4> cliff_normals;
+		std::array<std::optional<quad_normals>, 4> cliff_normals;
 		std::array<std::uint8_t, 4> height;
 		std::array<std::uint8_t, 4> shadow_height;
 		terrain_map::triangle_type triangle_type;
 	};
 
-	// TODO: this has WAY to many params: just accept the shared object rather than parsing them all seperately
-	template<typename Func>
-	static void calculate_lighting_tile_row(tile_position p, table<lighting_info>&table, const tile_position dir,
-		const std::uint8_t sun_rise, const terrain_map& m, const float tile_sizef,
-		const std::uint32_t row_length, const resources::terrain_settings& settings, Func push_shadows) noexcept
+	static lighting_info::quad_normals calculate_quad_normals(const vector2_float posf,
+		const cell_height_data& h, const float tile_sizef, const terrain_map::triangle_type type) noexcept
 	{
 		constexpr auto top_left = enum_type(rect_corners::top_left),
 			top_right = enum_type(rect_corners::top_right),
 			bottom_right = enum_type(rect_corners::bottom_right),
 			bottom_left = enum_type(rect_corners::bottom_left);
+		constexpr float height_multiplier = 1.f; // This might need to be configurable in the future (its passed to the shader)
 
-		const auto triangle_normal = [](const vector3<float> p1, const vector3<float> p2, const vector3<float> p3) constexpr noexcept -> vector3<float> {
-			const auto u = p1- p2;
-			const auto v = p3- p2;
-			return vector::unit(vector::cross(u, v));// *-1.f; // flip normal
+		std::array<basic_triangle<float, 3>, 2> triangles [[indeterminate]];
+		if (type == terrain_map::triangle_type::triangle_uphill)
+		{
+			triangles[0] = {
+				{ posf.x,				posf.y,					height_multiplier * float_cast(h[top_left]) },
+				{ posf.x,				posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_left]) },
+				{ posf.x + tile_sizef,	posf.y,					height_multiplier * float_cast(h[top_right]) }
+			};
+			triangles[1] = {
+				{ posf.x + tile_sizef,	posf.y,					height_multiplier * float_cast(h[top_right]) },
+				{ posf.x,				posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_left]) },
+				{ posf.x + tile_sizef,	posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_right]) }
+			};
+		}
+		else
+		{
+			triangles[0] = {
+				{ posf.x,				posf.y,					height_multiplier * float_cast(h[top_left]) },
+				{ posf.x,				posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_left]) },
+				{ posf.x + tile_sizef,	posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_right]) }
+			};
+			triangles[1] = {
+				{ posf.x,				posf.y,					height_multiplier * float_cast(h[top_left]) },
+				{ posf.x + tile_sizef,	posf.y + tile_sizef,	height_multiplier * float_cast(h[bottom_right]) },
+				{ posf.x + tile_sizef,	posf.y,					height_multiplier * float_cast(h[top_right]) }
+			};
+		}
+
+		return {
+			triangle_normal(triangles[0]),
+			triangle_normal(triangles[1])
 		};
+	}
+
+	static std::array<std::optional<lighting_info::quad_normals>, 4> calculate_cliff_normals(
+		const tile_position surface_pos, const vector2_float posf, const cell_height_data& h,
+		const float tile_sizef, const mutable_terrain_map::shared_data& shared) noexcept
+	{
+		// TODO: could merge this with calculate_quad_normals above if we add a make_positions function to
+		//		handle the quad to triangle conversion
+		const auto make_normals = [](const std::array<vector2_float, 4>& posf, const cell_height_data& h, const terrain_map::triangle_type type)->lighting_info::quad_normals {
+				constexpr auto top_left = enum_type(rect_corners::top_left),
+					top_right = enum_type(rect_corners::top_right),
+					bottom_right = enum_type(rect_corners::bottom_right),
+					bottom_left = enum_type(rect_corners::bottom_left);
+				constexpr auto height_multiplier = 1.f;
+
+				const auto& tl = posf[top_left];
+				const auto& tr = posf[top_right];
+				const auto& br = posf[bottom_right];
+				const auto& bl = posf[bottom_left];
+
+				std::array<basic_triangle<float, 3>, 2> triangles [[indeterminate]];
+				if (type == terrain_map::triangle_type::triangle_uphill)
+				{
+					triangles[0] = {
+						{ tl.x, tl.y, height_multiplier * float_cast(h[top_left])},
+						{ bl.x, bl.y, height_multiplier * float_cast(h[bottom_left]) },
+						{ tr.x, tr.y, height_multiplier * float_cast(h[top_right]) }
+					};
+					triangles[1] = {
+						{ tr.x,	tr.y, height_multiplier * float_cast(h[top_right]) },
+						{ bl.x, bl.y, height_multiplier * float_cast(h[bottom_left]) },
+						{ br.x, br.y, height_multiplier * float_cast(h[bottom_right]) }
+					};
+				}
+				else
+				{
+					triangles[0] = {
+						{ tl.x, tl.y, height_multiplier * float_cast(h[top_left]) },
+						{ bl.x, bl.y, height_multiplier * float_cast(h[bottom_left]) },
+						{ br.x, br.y, height_multiplier * float_cast(h[bottom_right]) }
+					};
+					triangles[1] = {
+						{ tl.x, tl.y, height_multiplier * float_cast(h[top_left]) },
+						{ br.x, br.y, height_multiplier * float_cast(h[bottom_right]) },
+						{ tr.x, tr.y, height_multiplier * float_cast(h[top_right]) }
+					};
+				}
+
+				return {
+					triangle_normal(triangles[0]),
+					triangle_normal(triangles[1])
+				};
+			};
+
+		const auto type = pick_triangle_type(surface_pos);
+		auto out = std::array<std::optional<lighting_info::quad_normals>, 4>{};
+		const auto adj_cliffs = get_adjacent_cliffs(surface_pos, shared.map);
+		const auto cliffs = make_cliffs(surface_pos, posf, h, adj_cliffs, tile_sizef, shared);
+		for (auto i = rect_edges::begin; i != rect_edges::end; i = next(i))
+		{
+			if (cliffs[enum_type(i)])
+			{
+				const auto& pos = cliffs[enum_type(i)]->positions;
+				const auto& height = cliffs[enum_type(i)]->height;
+				out[enum_type(i)] = make_normals(pos, height, type);
+			}
+		}
+
+		return out;
+	}
+
+	// TODO: this has WAY to many params: just accept the shared object rather than parsing them all seperately
+	template<typename Func>
+	static void calculate_lighting_tile_row(tile_position p, table<lighting_info>&table, const tile_position dir,
+		const std::uint8_t sun_rise, const terrain_map& m, const float tile_sizef,
+		const std::uint32_t row_length, const resources::terrain_settings& settings,
+		const mutable_terrain_map::shared_data& shared, Func push_shadows) noexcept
+	{
+		constexpr auto top_left = enum_type(rect_corners::top_left),
+			top_right = enum_type(rect_corners::top_right),
+			bottom_right = enum_type(rect_corners::bottom_right),
+			bottom_left = enum_type(rect_corners::bottom_left);
 		
 		const auto max_val = [](auto a, auto b) {
 			return std::max(a, b);
@@ -1099,36 +1206,15 @@ namespace hades
 			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
 			
-			vector3<float> normal_a [[indeterminate]];
-			vector3<float> normal_b [[indeterminate]];
+			// TODO: to_world_vector
+			const auto posf = vector2_float{
+				float_cast(p.x) * tile_sizef,
+				float_cast(p.y) * tile_sizef
+			};
 
-			// calc triange normals
-			const auto posf = static_cast<vector2_float>(p) * tile_sizef;
-			if(h_tris.triangle_type == terrain_map::triangle_type::triangle_uphill)
-			{
-				normal_a = triangle_normal(
-					{ posf.x, posf.y, float_cast(h[top_left]) },
-					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
-					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
-				normal_b = triangle_normal(
-					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) },
-					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
-					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
-			}
-			else
-			{
-				normal_a = triangle_normal(
-					{ posf.x, posf.y, float_cast(h[top_left]) },
-					{ posf.x, posf.y + tile_sizef, float_cast(h[bottom_left]) },
-					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) });
-				normal_b = triangle_normal(
-					{ posf.x, posf.y, float_cast(h[top_left]) },
-					{ posf.x + tile_sizef, posf.y + tile_sizef, float_cast(h[bottom_right]) },
-					{ posf.x + tile_sizef, posf.y, float_cast(h[top_right]) });
-			}
-
-			table[p] = lighting_info{ { normal_a, normal_b },
-				h, shadow_h, h_tris.triangle_type };
+			const auto surface_normals = calculate_quad_normals(posf, h, tile_sizef, h_tris.triangle_type);
+			const auto cliff_normals = calculate_cliff_normals(p, posf, h, tile_sizef, shared);
+			table[p] = lighting_info{ surface_normals, cliff_normals, h, shadow_h, h_tris.triangle_type };
 
 			p += dir;
 		}
@@ -1217,7 +1303,7 @@ namespace hades
 		}
 	}
 
-	static std::array<tiny_normal, 6> calc_simple_normal(const lighting_info& info) noexcept
+	static std::array<tiny_normal, 6> calc_simple_normal(const lighting_info::quad_normals& tri_normals) noexcept
 	{
 		const auto to_normal = [](const vector3<float> vec)->tiny_normal {
 			const auto pol = vector::unit(to_pol_vector(vec));
@@ -1228,12 +1314,12 @@ namespace hades
 		};
 
 		return {
-			to_normal(info.tri_normals[0]),
-			to_normal(info.tri_normals[0]),
-			to_normal(info.tri_normals[0]),
-			to_normal(info.tri_normals[1]),
-			to_normal(info.tri_normals[1]),
-			to_normal(info.tri_normals[1])
+			to_normal(tri_normals[0]),
+			to_normal(tri_normals[0]),
+			to_normal(tri_normals[0]),
+			to_normal(tri_normals[1]),
+			to_normal(tri_normals[1]),
+			to_normal(tri_normals[1])
 		};
 	}
 
@@ -1306,10 +1392,11 @@ namespace hades
 		{
 			const auto x_val = sun_left ? table_area.x : row_length + table_area.x - 1;
 			calculate_lighting_tile_row({ x_val, y + table_area.y }, light_table,
-				dir, sun_rise, shared.map, tile_sizef, row_length, *shared.settings, shadow_func);
+				dir, sun_rise, shared.map, tile_sizef, row_length, *shared.settings, shared, shadow_func);
 		}
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+			// TODO: to_world_vector
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
 				float_cast(pos.y) * tile_sizef
@@ -1317,11 +1404,11 @@ namespace hades
 
 			const auto& light_info = light_table[pos];
 
-			//const auto normals = calc_simple_normal(light_info);
+			const auto normals = calc_simple_normal(light_info.tri_normals);
 
 			//back_to_normal(light_info.tri_normals[0], normals[0]);
 
-			const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
+			//const auto normals = calculate_vertex_normal(pos, light_table, light_info, map_size_tiles);
 
 			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
 			const auto type = pick_triangle_type(pos);
@@ -1331,6 +1418,22 @@ namespace hades
 			shared.quads.append(quad);
 
 			// TODO: generate lighting over cliffs too
+			const auto adj_cliffs = get_adjacent_cliffs(pos, shared.map);
+			const auto cliffs = make_cliffs(pos, position, triangle_height, adj_cliffs, tile_sizef, shared);
+			for (auto i = rect_edges::begin; i != rect_edges::end; i = next(i))
+			{
+				const auto index = enum_type(i);
+				if (!cliffs[index])
+					continue;
+
+				// if cliffs[index] is present, then cliff_normals must be aswell.
+				assert(light_info.cliff_normals[index]);
+				const auto cliff_normal = calc_simple_normal(*light_info.cliff_normals[index]);
+
+				const auto& c = *cliffs[index];
+				const auto cliff_quad = make_terrain_triangles(c.positions, c.height, type, {}, {}, cliff_normal);
+				shared.quads.append(cliff_quad);
+			}
 			return;
 		});
 

@@ -942,7 +942,8 @@ namespace hades
 		});
 	}
 
-	static float bilinear_height(const sf::Vector2f pos, const vector2_float tile_pos,
+	// TODO: we'll probably need this to draw units
+	/*static float bilinear_height(const sf::Vector2f pos, const vector2_float tile_pos,
 		const float tile_size, const std::array<std::uint8_t, 4>& h) noexcept
 	{
 		const auto x = (pos.x - tile_pos.x) / tile_size;
@@ -958,7 +959,7 @@ namespace hades
 		const auto br = br_h * x * y;
 		const auto val = tl + tr + bl + br;
 		return val;
-	}
+	}*/
 
 	static void generate_cliff_layer_debug(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
@@ -1163,27 +1164,20 @@ namespace hades
 		return out;
 	}
 
-	// TODO: this has WAY to many params: just accept the shared object rather than parsing them all seperately
 	template<typename Func>
 	static void calculate_lighting_tile_row(tile_position p, table<lighting_info>& table, const tile_position dir,
-		const std::uint8_t sun_rise, const terrain_map& m, const float tile_sizef,
-		const std::uint32_t row_length, const resources::terrain_settings& settings,
+		const std::uint8_t sun_rise, const float tile_sizef, const std::uint32_t row_length,
 		const mutable_terrain_map::shared_data& shared, Func push_shadows)
 	{
-		constexpr auto top_left = enum_type(rect_corners::top_left),
-			top_right = enum_type(rect_corners::top_right),
-			bottom_right = enum_type(rect_corners::bottom_right),
-			bottom_left = enum_type(rect_corners::bottom_left);
-
 		const auto max_val = [](auto a, auto b) {
 			return std::max(a, b);
 			};
 
-		auto shadow_h = get_height_for_cell(p, m, settings);
+		auto shadow_h = get_height_for_cell(p, shared.map, *shared.settings);
 	
 		for (auto i = std::uint32_t{}; i < row_length; ++i)
 		{
-			const auto h = get_height_for_cell(p, m, settings);
+			const auto h = get_height_for_cell(p, shared.map, *shared.settings);
 			const auto type = pick_triangle_type(p);
 			
 			shadow_h = std::invoke(push_shadows, shadow_h, h, sun_rise);
@@ -1331,27 +1325,6 @@ namespace hades
 		};
 	}
 
-	// double check that our conversion funcs work
-	static void back_to_normal(const vector3<float> vec, const tiny_normal n)
-	{
-		const auto new_vec = vector::resize(vec, -1.f);
-		const auto new_pol = to_pol_vector(new_vec);
-		constexpr auto pi = std::numbers::pi_v<float>;
-
-		const auto thetaf = float_cast(n.theta) / 255.f;
-		const auto phif = float_cast(n.phi) / 255.f;
-
-		float theta = thetaf * 2.f * pi - pi; // [-pi, pi]
-		//float phi = gl_Color.a * 2.f * pi - pi;	
-		//float theta = gl_Color.b * 360 - 180; // [0, pi]
-		float phi = phif * pi; // [0, pi]
-		float sin_phi = std::sin(phi);
-
-		// interpolation can denomalise the origional normal
-		auto denormal = vector3<float>{ std::cos(theta) * sin_phi, std::sin(theta) * sin_phi, std::cos(phi) };
-		auto normal = vector::unit(denormal);
-	}
-
 	static void generate_lighting(mutable_terrain_map::shared_data& shared,
 		const rect_int terrain_area)
 	{
@@ -1400,7 +1373,7 @@ namespace hades
 		{
 			const auto x_val = sun_left ? table_area.x : row_length + table_area.x - 1;
 			calculate_lighting_tile_row({ x_val, y + table_area.y }, light_table,
-				dir, sun_rise, shared.map, tile_sizef, row_length, *shared.settings, shared, shadow_func);
+				dir, sun_rise, tile_sizef, row_length, shared, shadow_func);
 		}
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
@@ -1423,7 +1396,6 @@ namespace hades
 			
 			shared.quads.append(quad);
 
-			// TODO: generate lighting over cliffs too
 			const auto adj_cliffs = get_adjacent_cliffs(pos, shared.map);
 			const auto cliffs = make_cliffs(pos, position, light_info.height, adj_cliffs, tile_sizef, shared);
 			for (auto i = rect_edges::begin; i != rect_edges::end; i = next(i))

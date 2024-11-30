@@ -28,8 +28,6 @@ namespace hades
 		_settings{ resources::get_terrain_settings() },
 		_view_height{ console::get_int(cvars::editor_camera_height_px, cvars::default_value::editor_camera_height_px) }
 	{
-		//assert(!empty(_settings->empty_tileset.get()->tiles));
-		//_empty_tile = _settings->empty_tileset.get()->tiles[0];
 		_empty_terrain = _settings->empty_terrain.get();
 		_resize.terrain = _empty_terrain;
 		_empty_terrainset = _settings->empty_terrainset.get();

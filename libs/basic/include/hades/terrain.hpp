@@ -81,7 +81,9 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const override;
 
 		std::vector<resource_link<terrain>> terrains;
+		// TODO: make a cliff type resource (stores the two types below) and support multiple cliff types?
 		resource_link<terrain> cliff_terrain;
+		resource_link<terrain> cliff_edge_terrain;
 	};
 
 	struct terrain_settings_t {};
@@ -98,13 +100,10 @@ namespace hades::resources
 		resource_link<terrain> cliff_overlay_terrain = {}; // debug cliff edge detection
 		resource_link<terrain> grid_terrain = {};
 		resource_link<terrain> empty_terrain = {};
-		[[deprecated]] // maybe don't deprecate: could be a useful default
 		resource_link<terrainset> empty_terrainset = {};
-		[[deprecated]]
-		resource_link<terrainset> editor_terrainset = {};
 		
-		// TODO: undeprecate, draw the background whereever this terrain is
-		[[deprecated]] resource_link<terrain> background_terrain = {};
+		// TODO: draw the background whereever this terrain is
+		resource_link<terrain> background_terrain = {};
 		std::vector<resource_link<terrain>> terrains;
 		std::vector<resource_link<terrainset>> terrainsets;
 		// NOTE: cliff_max * cliff_height + height_max must be less than uint8_t max (255)
@@ -131,10 +130,10 @@ namespace hades::resources
 	// exceptions: these three can throw resource_error
 	//const terrain *get_empty_terrain();
 	[[nodiscard]] const terrain* get_empty_terrain(const terrain_settings&);
-	[[deprecated]] const terrain* get_background_terrain();
+	const terrain* get_background_terrain();
 	//NOTE: used for maps with no tile terrains
 	// returns a terrainset only holding the empty terrain
-	[[deprecated]] const terrainset* get_empty_terrainset();
+	const terrainset* get_empty_terrainset();
 	
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type, const resources::terrain_settings&);
 	const std::vector<tile> &get_transitions(const terrain&, transition_tile_type, const resources::terrain_settings&);
@@ -218,16 +217,13 @@ namespace hades
 		enum class triangle_type : bool {
 			triangle_downhill = true,
 			triangle_uphill = false,
-			triangle_default = triangle_uphill
+			triangle_default [[deprecated]] = triangle_uphill
 		};
 		static constexpr auto triangle_downhill = triangle_type::triangle_downhill;
 		static constexpr auto triangle_uphill = triangle_type::triangle_uphill;
+		[[deprecated]]
 		static constexpr auto triangle_default = triangle_type::triangle_default;
-		[[deprecated]]
-		static constexpr auto triangle_left = true;
-		[[deprecated]]
-		static constexpr auto triangle_right = false;
-
+		
 		// Used to index into the cliff tile layer.
 		enum class cliff_layer_layout : std::uint8_t {
 			surface, diag, right, bottom
@@ -295,10 +291,7 @@ namespace hades
 	tile_position get_size(const terrain_map&);
 	// size of the map expressed in vertex
 	terrain_vertex_position get_vertex_size(const terrain_map&);
-	// throws: terrain_error if map sizes differ
-	[[deprecated]]
-	void copy_heightmap(terrain_map& target, const terrain_map& src);
-
+	
 	// get the vertex position of the corner of a tile
 	[[nodiscard]]
 	constexpr terrain_vertex_position to_vertex_position(tile_position, rect_corners) noexcept;
@@ -355,28 +348,8 @@ namespace hades
 		terrain_map::triangle_type triangle_type;
 	};
 
-	// returns height arranged into two triangles
-	[[deprecated]]
-	triangle_height_data get_height_for_triangles(tile_position, const terrain_map&, const resources::terrain_settings&);
-
 	using cell_height_data = std::array<std::uint8_t, 4>;
 	cell_height_data get_height_for_cell(tile_position, const terrain_map&, const resources::terrain_settings&);
-
-	[[deprecated]] // TODO: used in lighting generator
-	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept;
-
-	// returns the height at both end of an edge (left/top first)
-	[[deprecated]]
-	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const triangle_height_data&) noexcept;
-	[[deprecated]]
-	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const triangle_height_data&) noexcept;
-	[[deprecated]]
-	constexpr std::array<std::uint8_t, 2> get_height_for_right_edge(const triangle_height_data&) noexcept;
-	[[deprecated]]
-	constexpr std::array<std::uint8_t, 2> get_height_for_bottom_edge(const triangle_height_data&) noexcept;
-	// as above, but left triangle first and right triangle second
-	[[deprecated("Unused")]]
-	constexpr std::array<std::uint8_t, 4> get_height_for_diag_edge(const triangle_height_data& tris) noexcept;
 
 	constexpr std::array<std::uint8_t, 2> get_height_for_top_edge(const cell_height_data&) noexcept;
 	constexpr std::array<std::uint8_t, 2> get_height_for_left_edge(const cell_height_data&) noexcept;

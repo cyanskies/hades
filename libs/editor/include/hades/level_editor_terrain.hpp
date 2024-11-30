@@ -15,8 +15,6 @@ namespace hades
 	{
 	public:
 		enum class draw_shape : std::uint8_t {
-			vertex [[deprecated]],
-			edge [[deprecated]],
 			rect,
 			circle,
 		};
@@ -25,9 +23,6 @@ namespace hades
 			no_brush,
 			// clear tile only
 			erase,
-			select_tile [[deprecated]],
-			// art only
-			draw_tile [[deprecated]],
 			// ==terrain vertex==
 			draw_terrain,
 			// ==terrain height settings==
@@ -36,19 +31,17 @@ namespace hades
 			plateau_terrain, // copies height from starting area
 			add_height_noise, // create bumpiness
 			smooth_height, // average out the different heights
-			set_terrain_height [[deprecated]],
 			// ==cliffs==
-			raise_cliff, // add cliff
+			raise_cliff,
 			lower_cliff,
 			plataeu_cliff,
 			add_ramp,
 			remove_ramp,
-			erase_cliff [[deprecated]],
 			// ==water==
 			raise_water,
 			lower_water,
 			// == unused==
-			debug_brush [[deprecated]] // used for testing
+			debug_brush // used for testing
 		};
 
 		level_editor_terrain();
@@ -69,8 +62,7 @@ namespace hades
 		void on_click(std::optional<terrain_target>) override;
 		void on_drag_start(std::optional<terrain_target>) override;
 		void on_drag(std::optional<terrain_target>) override;
-		//void on_drag_end(std::optional<terrain_target>) override;
-
+		
 		void on_screen_move(rect_float r) override;
 
 		void on_height_toggle(bool) noexcept override;
@@ -102,9 +94,9 @@ namespace hades
 				shape_label = "Shape: Circle";
 			brush_type brush = brush_type::no_brush;
 			draw_shape shape = draw_shape::circle;
-			uint8_t draw_size = 1;
+			std::uint8_t draw_size = 1;
 			// stores the target drag level when drawing with height and cliff tools
-			std::optional<uint8_t> drag_level;
+			std::optional<std::uint8_t> drag_level;
 		};
 
 		void _gui_terrain_palette(gui&);
@@ -112,20 +104,13 @@ namespace hades
 
 		console::property_int _view_height;
 
-		resources::tile _empty_tile [[deprecated]];
-		const resources::terrain * _empty_terrain [[deprecated]];
-		const resources::terrainset* _empty_terrainset [[deprecated]];
+		const resources::terrain * _empty_terrain;
+		const resources::terrainset* _empty_terrainset;
 		resources::tile_size_t _tile_size;
 
 		//brush settings
 		terrain_palette _terrain_palette;
-		[[deprecated]] int _size = 1;
-		std::uint8_t _height_strength = 1;
-		std::uint8_t _set_height = 1; // TODO:
-		[[deprecated]] std::uint8_t _cliff_default_height = 5;
 
-		//selected tile/terrain
-		[[deprecated]] resources::tile _tile = resources::bad_tile;
 		level_options _current;
 		level_resize_options _resize;
 

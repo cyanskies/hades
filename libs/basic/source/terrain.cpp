@@ -645,14 +645,6 @@ namespace hades
 		return get_size(t) + tile_position{ 1, 1 };
 	}
 
-	void copy_heightmap(terrain_map& target, const terrain_map& src)
-	{
-		if (size(target.heightmap) != size(src.heightmap))
-			throw terrain_error{ "Tried to copy heightmaps between incompatible maps" };
-		target.heightmap = src.heightmap;
-		return;
-	}
-
 	// ramps must share a vertex or results will be undefined
 	static std::optional<ramp_type> merge_ramps(ramp_type a, ramp_type b) noexcept
 	{
@@ -679,35 +671,6 @@ namespace hades
 
 		// defined below
 		static std::array<height_change, 4> adjacent_ramp_shared_vertex(tile_position, const std::array<ramp_type, 4>&, const terrain_map&);
-	}
-
-	triangle_height_data get_height_for_triangles(const tile_position p, const terrain_map& m, const resources::terrain_settings& s)
-	{
-		const auto cell = get_height_for_cell(p, m, s);
-
-		const auto& final_tl = cell[enum_type(rect_corners::top_left)];
-		const auto& final_tr = cell[enum_type(rect_corners::top_right)];
-		const auto& final_br = cell[enum_type(rect_corners::bottom_right)];
-		const auto& final_bl = cell[enum_type(rect_corners::bottom_left)];
-
-		triangle_height_data ret [[indeterminate]];
-		ret.triangle_type = pick_triangle_type(p);
-
-		if (ret.triangle_type == terrain_map::triangle_uphill)
-		{
-			ret.height = {
-				final_tl, final_bl, final_tr,
-				final_tr, final_bl, final_br
-			};
-		}
-		else
-		{
-			ret.height = {
-				final_tl, final_bl, final_br,
-				final_tl, final_br, final_tr
-			};
-		}
-		return ret;
 	}
 
 	cell_height_data get_height_for_cell(tile_position p, const terrain_map& m, const resources::terrain_settings& s)
@@ -872,20 +835,6 @@ namespace hades
 		const auto index = to_tile_index(p, m);
 		assert(index < size(m.cliff_layer));
 		return m.cliff_layer[index];
-	}
-
-	[[deprecated]]
-	std::array<std::uint8_t, 4> get_max_height_in_corners(const triangle_height_data& tris) noexcept
-	{
-		using max_func = const std::uint8_t& (*)(const std::uint8_t&, const std::uint8_t&) noexcept;
-		constexpr max_func max = &std::max<std::uint8_t>;
-
-		return {
-			detail::read_triangles_as_quad(tris, rect_corners::top_left, max),
-			detail::read_triangles_as_quad(tris, rect_corners::top_right, max),
-			detail::read_triangles_as_quad(tris, rect_corners::bottom_right, max),
-			detail::read_triangles_as_quad(tris, rect_corners::bottom_left, max),
-		};
 	}
 
 	namespace ramp
@@ -1554,16 +1503,27 @@ namespace hades
 		};
 
 		constexpr tris get_quad_triangles(const tile_position pos, const float tile_sizef,
-			const vector2_float height_dir, const triangle_height_data& heightmap) noexcept
+			const vector2_float height_dir, const cell_height_data& heightmap) noexcept
 		{
 			tris out [[indeterminate]];
-			if (heightmap.triangle_type == terrain_map::triangle_uphill)
+			std::array<std::uint8_t, 6> tri_height [[indeterminate]];
+			const auto& tl = heightmap[enum_type(rect_corners::top_left)];
+			const auto& tr = heightmap[enum_type(rect_corners::top_right)];
+			const auto& br = heightmap[enum_type(rect_corners::bottom_right)];
+			const auto& bl = heightmap[enum_type(rect_corners::bottom_left)];
+
+			if (pick_triangle_type(pos) == terrain_map::triangle_uphill)
 			{
 				out.flat_left_tri = { make_quad_point(pos, tile_sizef, rect_corners::top_left),
 					make_quad_point(pos, tile_sizef, rect_corners::bottom_left),
 					make_quad_point(pos, tile_sizef, rect_corners::top_right) };
 				out.flat_right_tri = { out.flat_left_tri[2], out.flat_left_tri[1],
 					make_quad_point(pos, tile_sizef, rect_corners::bottom_right) };
+
+				tri_height = {
+					tl, bl, tr,
+					tr, bl, br
+				};
 			}
 			else
 			{
@@ -1572,9 +1532,14 @@ namespace hades
 					make_quad_point(pos, tile_sizef, rect_corners::bottom_right) };
 				out.flat_right_tri = { out.flat_left_tri[0], out.flat_left_tri[2],
 					make_quad_point(pos, tile_sizef, rect_corners::top_right) };
+
+				tri_height = {
+					tl, bl, br,
+					tl, br, tr
+				};
 			}
 
-			const auto begin = std::begin(heightmap.height);
+			const auto begin = std::begin(tri_height);
 			out.left_tri = add_point_height(out.flat_left_tri, height_dir,
 				std::span<const std::uint8_t, 3>{ begin, 3u });
 			out.right_tri = add_point_height(out.flat_right_tri, height_dir,
@@ -1670,8 +1635,8 @@ namespace hades
 		out.flat_right_tri = { out.flat_left_tri[2], out.flat_left_tri[0],
 				out.flat_left_tri[2] };
 
-		const auto bottom_height = get_height_for_triangles(pos, m, settings);
-		const auto top_height = get_height_for_triangles(adj_tile, m, settings);
+		const auto bottom_height = get_height_for_cell(pos, m, settings);
+		const auto top_height = get_height_for_cell(adj_tile, m, settings);
 
 		std::array<std::uint8_t, 2> cliff_top [[indeterminate]],
 			cliff_bottom [[indeterminate]];
@@ -1825,7 +1790,7 @@ namespace hades
 		while (within_world(tile_check, world_size))
 		{	
 			// get index for accessing heightmap
-			const auto height_info = get_height_for_triangles(tile_check, map, settings);
+			const auto height_info = get_height_for_cell(tile_check, map, settings);
 			// generate quad vertex
 			const auto quad_triangles = get_quad_triangles(tile_check, tile_sizef, height_dir, height_info);
 

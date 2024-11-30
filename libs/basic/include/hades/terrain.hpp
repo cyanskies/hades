@@ -302,6 +302,8 @@ namespace hades
 	// get the vertex position of the corner of a tile
 	[[nodiscard]]
 	constexpr terrain_vertex_position to_vertex_position(tile_position, rect_corners) noexcept;
+	[[nodiscard]]
+	constexpr std::array<terrain_vertex_position, 4> to_vertex_positions(tile_position) noexcept;
 
 	inline tile_position from_tile_index(tile_index_t i, const terrain_map& t) noexcept
 	{

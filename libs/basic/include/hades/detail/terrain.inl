@@ -125,6 +125,18 @@ namespace hades
 		}
 	}
 
+	[[nodiscard]]
+	constexpr std::array<terrain_vertex_position, 4> to_vertex_positions(const tile_position p) noexcept
+	{
+		return {
+			to_vertex_position(p, rect_corners::top_left),
+			to_vertex_position(p, rect_corners::top_right),
+			to_vertex_position(p, rect_corners::bottom_right),
+			to_vertex_position(p, rect_corners::bottom_left),
+		};
+	}
+
+
 	constexpr terrain_map::triangle_type pick_triangle_type(const tile_position p) noexcept
 	{
 		if (p.y % 2 == 0)

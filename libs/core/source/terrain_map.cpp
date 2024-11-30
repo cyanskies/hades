@@ -105,7 +105,6 @@ void main()
 constexpr auto shadow_calc_colour = "gl_FragColor = mix(light_col, shadow_col, float(frag_height < shadow_height));";
 constexpr auto shadow_render_normals = "gl_FragColor = vec4(0.5f * (normal.rgb + vec3(1.f, 1.f, 1.f)), 1.f);";
 
-constexpr auto g = static_cast<float>(true);
 static auto terrain_map_shader_id = hades::unique_zero;
 static auto terrain_map_shader_debug_id = hades::unique_zero;
 static auto terrain_map_shader_shadows_lighting = hades::unique_zero;
@@ -1420,13 +1419,13 @@ namespace hades
 			const auto triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
 			const auto type = pick_triangle_type(pos);
 			const auto positions = make_cell_positions(position, tile_sizef);
-			const auto quad = make_terrain_triangles(positions, triangle_height, type, {}, light_info.shadow_height, normals);
+			const auto quad = make_terrain_triangles(positions, light_info.height, type, {}, light_info.shadow_height, normals);
 			
 			shared.quads.append(quad);
 
 			// TODO: generate lighting over cliffs too
 			const auto adj_cliffs = get_adjacent_cliffs(pos, shared.map);
-			const auto cliffs = make_cliffs(pos, position, triangle_height, adj_cliffs, tile_sizef, shared);
+			const auto cliffs = make_cliffs(pos, position, light_info.height, adj_cliffs, tile_sizef, shared);
 			for (auto i = rect_edges::begin; i != rect_edges::end; i = next(i))
 			{
 				const auto index = enum_type(i);
@@ -1437,8 +1436,29 @@ namespace hades
 				assert(light_info.cliff_normals[index]);
 				const auto cliff_normal = calc_simple_normal(*light_info.cliff_normals[index]);
 
+				auto shdw = light_info.shadow_height;
+				switch (i)
+				{
+				case rect_edges::top:
+					shdw[enum_type(rect_corners::bottom_left)] = shdw[enum_type(rect_corners::top_left)];
+					shdw[enum_type(rect_corners::bottom_right)] = shdw[enum_type(rect_corners::top_right)];
+					break;
+				case rect_edges::right:
+					shdw[enum_type(rect_corners::top_left)] = shdw[enum_type(rect_corners::top_right)];
+					shdw[enum_type(rect_corners::bottom_left)] = shdw[enum_type(rect_corners::bottom_right)];
+					break;
+				case rect_edges::bottom:
+					shdw[enum_type(rect_corners::top_left)] = shdw[enum_type(rect_corners::bottom_left)];
+					shdw[enum_type(rect_corners::top_right)] = shdw[enum_type(rect_corners::bottom_right)];
+					break;
+				case rect_edges::left:
+					shdw[enum_type(rect_corners::top_right)] = shdw[enum_type(rect_corners::bottom_left)];
+					shdw[enum_type(rect_corners::bottom_right)] = shdw[enum_type(rect_corners::top_left)];
+					break;
+				}
+
 				const auto& c = *cliffs[index];
-				const auto cliff_quad = make_terrain_triangles(c.positions, c.height, type, {}, {}, cliff_normal);
+				const auto cliff_quad = make_terrain_triangles(c.positions, c.height, type, {}, shdw, cliff_normal);
 				shared.quads.append(cliff_quad);
 			}
 			return;

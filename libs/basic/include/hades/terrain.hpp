@@ -24,7 +24,7 @@ namespace hades::resources
 	//named based on which tile corners hold a terrain
 	// other corners are empty
 	//the order is important for the algorithm to work
-	enum class transition_tile_type : uint8 {
+	enum class transition_tile_type : std::uint8_t {
 		none, 
 		transition_begin = none,
 		top_right,
@@ -67,7 +67,8 @@ namespace hades::resources
 
 		//an array of tiles for each transition_type, except all(which should be an empty tile)
 		//use get_transitions() to access the correct element
-		std::array<std::vector<tile>, enum_type(transition_tile_type::all)> terrain_transition_tiles;
+		// NOTE: we don't need a vector for (all) so we do end -1
+		std::array<std::vector<tile>, enum_type(transition_tile_type::transition_end) - 1> terrain_transition_tiles;
 
 		//NOTE: also has access to std::vector<tile> tiles
 		// which contains all the tiles from the above lists as well
@@ -119,12 +120,14 @@ namespace hades::resources
 		std::uint8_t cliff_height = 16;
 	};
 
+	[[deprecated]]
 	unique_id get_background_terrain_id() noexcept;
 
 	const terrain_settings *get_terrain_settings();
+	[[deprecated]]
 	unique_id get_terrain_settings_id() noexcept;
-	const terrain *get_terrain(const resources::tile&);
-
+	
+	[[deprecated]]
 	std::string_view get_empty_terrainset_name() noexcept;
 
 	// exceptions: these three can throw resource_error
@@ -133,6 +136,7 @@ namespace hades::resources
 	const terrain* get_background_terrain();
 	//NOTE: used for maps with no tile terrains
 	// returns a terrainset only holding the empty terrain
+	[[deprecated]]
 	const terrainset* get_empty_terrainset();
 	
 	std::vector<tile> &get_transitions(terrain&, transition_tile_type, const resources::terrain_settings&);
@@ -216,13 +220,8 @@ namespace hades
 		// triangle_type and selected_triangle
 		enum class triangle_type : bool {
 			triangle_downhill = true,
-			triangle_uphill = false,
-			triangle_default [[deprecated]] = triangle_uphill
+			triangle_uphill = false
 		};
-		static constexpr auto triangle_downhill = triangle_type::triangle_downhill;
-		static constexpr auto triangle_uphill = triangle_type::triangle_uphill;
-		[[deprecated]]
-		static constexpr auto triangle_default = triangle_type::triangle_default;
 		
 		// Used to index into the cliff tile layer.
 		enum class cliff_layer_layout : std::uint8_t {
@@ -407,7 +406,7 @@ namespace hades
 	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*, const resources::terrain_settings&);
 	// place a specific terrain gfx on a tile, will also mark the adjacent vertex as this terrain
 	// TODO: implement
-	void place_terrain(terrain_map&, tile_position, const resources::tile&, const resources::terrain*, const resources::terrain_settings&);
+	//void place_terrain(terrain_map&, tile_position, const resources::tile&, const resources::terrain*, const resources::terrain_settings&);
 	
 	// update the height of a single terrain vertex
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>

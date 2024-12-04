@@ -77,7 +77,7 @@ namespace hades
 
 		assert(i < 6);
 
-		if (tri_type == terrain_map::triangle_uphill)
+		if (tri_type == terrain_map::triangle_type::triangle_uphill)
 			return rect_corners{ uphill[i] };
 		else
 			return rect_corners{ downhill[i] };
@@ -100,7 +100,7 @@ namespace hades
 
 		assert(c < rect_corners::end);
 
-		if (tri_type == terrain_map::triangle_uphill)
+		if (tri_type == terrain_map::triangle_type::triangle_uphill)
 			return uphill[enum_type(c)];
 		else
 			return downhill[enum_type(c)];
@@ -135,7 +135,6 @@ namespace hades
 			to_vertex_position(p, rect_corners::bottom_left),
 		};
 	}
-
 
 	constexpr terrain_map::triangle_type pick_triangle_type(const tile_position p) noexcept
 	{

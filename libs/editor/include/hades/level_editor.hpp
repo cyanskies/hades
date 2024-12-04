@@ -149,8 +149,7 @@ namespace hades::detail
 		//new level options
 		new_level_opt _new_level_options = {};
 		console::property_int _force_whole_tiles;
-		const resources::terrain_settings* _terrain_settings =
-			data::try_get<resources::terrain_settings>(resources::get_terrain_settings_id()).result;
+		const resources::terrain_settings* _terrain_settings = resources::get_terrain_settings();
 
 		resize_opt _resize_options = {};
 		string _load_level_mod;

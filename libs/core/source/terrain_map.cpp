@@ -359,7 +359,7 @@ namespace hades
 				normal.phi };// phi
 		}
 		
-		if (triangle_type == terrain_map::triangle_uphill)
+		if (triangle_type == terrain_map::triangle_type::triangle_uphill)
 		{
 			return poly_quad{
 				//first triangle

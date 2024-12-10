@@ -5,7 +5,6 @@
 
 #include "hades/App.hpp"
 #include "hades/archive.hpp"
-//#include "hades/capabilities.hpp"
 #include "hades/Console.hpp"
 #include "hades/files.hpp"
 #include "hades/logging.hpp"
@@ -87,9 +86,9 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 	if (commands.size() != command_length)
 		return EXIT_SUCCESS;
 
-	auto app = hades::App{};
+	auto app = std::make_unique<hades::App>();
 
-	app.init(game, resource_fn);
+	app->init(game, resource_fn);
 
 #ifdef HADES_QUICK_EXIT
 	std::at_quick_exit(try_write_log);
@@ -97,8 +96,8 @@ int hades::hades_main(int argc, char* argv[], std::string_view game,
 
 	try
 	{
-		app.postInit(commands, app_fn);
-		app.run();
+		app->postInit(commands, app_fn);
+		app->run();
 	}
 	//catch (const capability_missing_error& e)
 	//{

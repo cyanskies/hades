@@ -54,19 +54,17 @@ namespace hades::files
 	void ofstream::open(const std::filesystem::path& p)
 	{
 		if (*console::get_bool(cvars::file_deflate, cvars::default_value::file_deflate))
-			_stream = zip::out_compressed_filebuf{ p };
+		{
+			auto& buf = _stream.emplace<zip::out_compressed_filebuf>(p);
+			rdbuf(&buf);
+		}
 		else
 		{
-			auto buf = std::filebuf{};
+			auto& buf = _stream.emplace<std::filebuf>();
 			buf.open(p, std::ios_base::out | std::ios_base::binary);
-			_stream = std::move(buf);
+			rdbuf(&buf);
 		}
 
-		std::streambuf* str_ptr = std::visit([](auto&& stream) noexcept -> std::streambuf* {
-			return &stream;
-			}, _stream);
-
-		rdbuf(str_ptr);
 		return;
 	}
 
@@ -74,7 +72,6 @@ namespace hades::files
 	{
 		std::visit([](auto&& stream) {
 			stream.close();
-			return;
 			}, _stream);
 		return;
 	}
@@ -131,19 +128,14 @@ namespace hades
 	{
 		std::visit([](auto&& stream) {
 			stream.close();
-			return;
 		}, _stream);
 		return;
 	}
 
 	bool irfstream::is_open() const noexcept
 	{
-		return std::visit([](auto& stream) {
-			using T = std::decay_t<decltype(stream)>;
-			if constexpr (std::is_same_v<T, zip::in_archive_filebuf>)
-				return stream.is_open();
-			else
-				return stream.is_open();
+		return std::visit([](auto&& stream) {
+			return stream.is_open();
 			}, _stream);
 	}
 
@@ -171,8 +163,7 @@ namespace hades
 	
 	bool irfstream::_try_open_file(const fs::path& mod_path, const fs::path& file)
 	{
-		
-		const auto set_stream = [&, this]<typename T>(T && stream)noexcept {
+		const auto set_stream = [&, this]<typename T>(T&& stream)noexcept {
 			_stream = std::forward<T>(stream);
 			_mod_path = mod_path;
 			_rel_path = file;
@@ -249,7 +240,8 @@ namespace hades::files
 			{
 				auto str_stream = std::ostringstream{};
 				str_stream << str.rdbuf();
-				return std::move(str_stream).str();
+				ReturnType ret = std::move(str_stream).str();
+				return ret;
 			}
 			else if constexpr (std::is_same_v<ReturnType, std::vector<std::byte>>)
 			{
@@ -257,7 +249,7 @@ namespace hades::files
 				const auto size = integer_cast<std::size_t>(str.gcount());
 				str.clear(); // clear eof triggered by .ignore
 				str.seekg(0, std::ios::beg);
-				auto out = std::vector<std::byte>(size);
+				auto out = ReturnType(size);
 				str.get(reinterpret_cast<char*>(out.data()), size);
 				return out;
 			}

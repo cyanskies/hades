@@ -616,7 +616,6 @@ namespace hades::zip
 
 		basic_out_archived_filebuf& operator=(basic_out_archived_filebuf&& rhs) noexcept
 		{
-
             std::swap(_archive, rhs._archive);
 
             // measure the rhs put area usage

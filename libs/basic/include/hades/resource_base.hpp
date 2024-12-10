@@ -72,7 +72,7 @@ namespace hades
 			unique_id mod = unique_id::zero;
 			bool loaded = false;
 
-			// the file to write this resource to(eg. ./terrain/terrain(.yaml))
+			// the data file to write this resource to(eg. ./terrain/terrain(.yaml))
 			std::filesystem::path data_file;
 			// the path for this resource within a mod(eg. ./terrain/dirt.png)
 			// serialise(ostream&) will only be called if this isn't empty

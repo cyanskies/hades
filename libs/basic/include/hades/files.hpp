@@ -3,7 +3,8 @@
 
 #include <cassert>
 #include <filesystem>
-#include <fstream>
+#include <istream>
+#include <ostream>
 #include <variant>
 #include <vector>
 

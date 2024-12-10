@@ -37,27 +37,6 @@ namespace hades::zip
 		return archive_ext;
 	}
 
-	template<typename Integer>
-	static unsigned int CheckSizeLimits(Integer size)
-	{
-		if constexpr (std::is_signed_v<Integer>)
-		{
-			if (size < 0)
-				throw archive_error{ "Negative read size"s };
-		}
-
-		if (size > std::numeric_limits<unsigned int>::max())
-		{
-			//if this is being triggered then may need to start using the zip64 algorithm
-			auto message = "Read size was too large. Max read size is: "s
-				+ to_string(std::numeric_limits<unsigned int>::max()) + ", requested size was: "s
-				+ to_string(size);
-			throw archive_error{ message };
-		}
-
-		return integer_cast<unsigned int>(size);
-	}
-
 	iafstream::iafstream() noexcept
 		: std::istream{ &_stream }
 	{}
@@ -155,26 +134,7 @@ namespace hades::zip
 	izfstream::izfstream(const std::filesystem::path& p) 
 		: std::istream{ nullptr }
 	{
-		_stream = in_compressed_filebuf{ p };
-		rdbuf(&std::get<in_compressed_filebuf>(_stream));
-		if (!is_open())
-		{
-			// try normal file opening
-            auto file = std::filebuf{};
-            file.open(p, std::ios_base::in | std::ios_base::binary);
-            _stream = std::move(file);
-			rdbuf(&std::get<std::filebuf>(_stream));
-
-			if (!is_open())
-			{
-				setstate(badbit);
-				if (!std::filesystem::exists(p))
-					throw files::file_not_found{ "cannot find file: "s + p.generic_string() };
-				throw files::file_error{ "cannot open file: "s + p.generic_string() };
-			}
-		}
-
-		clear();
+		open(p);
 		return;
 	}
 
@@ -184,7 +144,6 @@ namespace hades::zip
 		*this = std::move(rhs);
 		return;
 	}
-
 
 	izfstream& izfstream::operator=(izfstream&& rhs) noexcept
 	{
@@ -204,18 +163,21 @@ namespace hades::zip
 	void izfstream::open(const std::filesystem::path& p)
 	{
 		assert(!is_open());
-		_stream = in_compressed_filebuf{ p };
-		rdbuf(&std::get<in_compressed_filebuf>(_stream));
-
-		if (!is_open())
 		{
-            auto file = std::filebuf{};
-            file.open(p, std::ios_base::in | std::ios_base::binary);
-            _stream = std::move(file);
-            rdbuf(&std::get<std::filebuf>(_stream));
+			auto& filebuff = _stream.emplace<in_compressed_filebuf>(p);
+			if (filebuff.is_open())
+			{
+				rdbuf(&filebuff);
+				clear();
+				return;
+			}
 		}
 
-		if (!is_open())
+        auto& filebuf = _stream.emplace<std::filebuf>();
+        filebuf.open(p, std::ios_base::in | std::ios_base::binary);
+        rdbuf(&filebuf);
+
+		if (!filebuf.is_open())
 		{
 			setstate(badbit);
 			if (!std::filesystem::exists(p))
@@ -320,7 +282,7 @@ namespace hades::zip
 			unzGetCurrentFileInfo(zip.handle, &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
 			auto name = std::vector<char>(info.size_filename);
-			unzGetCurrentFileInfo(zip.handle, &info, &name[0], info.size_filename, nullptr, 0, nullptr, 0);
+			unzGetCurrentFileInfo(zip.handle, &info, name.data(), info.size_filename, nullptr, 0, nullptr, 0);
 
 			types::string file_name(name.begin(), name.end());
 
@@ -356,7 +318,7 @@ namespace hades::zip
 		if (!fs::is_directory(path))
 			throw files::file_error{ "Path is not a directory: "s + path.generic_string() };
 
-		const auto archive_name = fs::path{ *--std::end(path) }.replace_extension(archive_ext);
+		const fs::path archive_name = fs::path{ *--std::end(path) }.replace_extension(archive_ext);
 		const auto parent_folder = path.parent_path();
 		const auto final_path = parent_folder / archive_name;
 

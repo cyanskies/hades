@@ -631,7 +631,7 @@ namespace hades
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
 		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
 	{
-		if (!shared.map.terrainset || !shared.map.terrainset->cliff_terrain)
+		if (!shared.map.terrainset || !shared.map.terrainset->cliff_type)
 		{
 			log_error("Missing cliff data"sv);
 			return;
@@ -640,7 +640,7 @@ namespace hades
 		tile_buffer.clear();
 		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto cliff_terrain = shared.map.terrainset->cliff_terrain.get();
+		const auto cliff_type = shared.map.terrainset->cliff_type.get();
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
@@ -655,19 +655,21 @@ namespace hades
 			const auto surface_tile_type = get_transition_type(cliff_corners);
 			if (surface_tile_type != resources::transition_tile_type::none)
 			{
-				const auto tile = resources::get_random_tile(*cliff_terrain, surface_tile_type, *shared.settings);
+				const auto surface_terrain = cliff_type->cliff_surface_terrain.get();
+				const auto tile = resources::get_random_tile(*surface_terrain, surface_tile_type, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, tex_index);
 			}
 
 			const auto cliff_faces = make_cliffs(pos, world_pos_f,
 				surface_triangle_height, cliffs, tile_sizef, shared);
+			const auto cliff_face_terrain = cliff_type->cliff_face_terrain.get();
 			for (const auto& cliff_face : cliff_faces)
 			{
 				if (!cliff_face)
 					continue;
 				auto c = *cliff_face;
-				const auto& tile = resources::get_random_tile(*cliff_terrain, resources::transition_tile_type::all, *shared.settings);
+				const auto& tile = resources::get_random_tile(*cliff_face_terrain, resources::transition_tile_type::all, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 				c.left = tile.left;
 				c.top = tile.top;

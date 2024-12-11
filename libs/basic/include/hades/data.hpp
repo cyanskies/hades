@@ -82,7 +82,10 @@ namespace hades
 
 			const T& operator*() const
 			{
-				return *_resource;
+				if (_resource)
+					return *_resource;
+				else
+					throw data::resource_null{ "Attempted to dereference an unlinked resource_link" };
 			}
 
 			const T* operator->() const
@@ -109,12 +112,21 @@ namespace hades
 
 			unique_id id() const noexcept
 			{
+				assert(_link);
 				return (*_link).id();
 			}
 
 			const T* get() const noexcept
 			{
-				return &**_link;
+				assert(_link);
+				try
+				{
+					return &**_link;
+				}
+				catch (const data::resource_null&)
+				{
+					return nullptr;
+				}
 			}
 
 			bool is_linked() const noexcept
@@ -124,11 +136,14 @@ namespace hades
 
 			const T& operator*() const
 			{
+				assert(_link);
+				// NOTE: resource_link_type will throw if unlinked
 				return **_link;
 			}
 
 			const resource_link_type<T>& operator->() const
 			{
+				assert(_link);
 				return *_link;
 			}
 

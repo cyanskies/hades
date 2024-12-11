@@ -74,6 +74,17 @@ namespace hades::resources
 		// which contains all the tiles from the above lists as well
 	};
 
+	struct cliff_style_t {};
+
+	struct cliff_style final : resource_type<cliff_style_t>
+	{
+		void load(data::data_manager&) final override;
+		void serialise(const data::data_manager&, data::writer&) const override;
+
+		resource_link<terrain> cliff_surface_terrain;
+		resource_link<terrain> cliff_face_terrain;
+	};
+
 	struct terrainset_t {};
 
 	struct terrainset final : resource_type<terrainset_t>
@@ -82,9 +93,8 @@ namespace hades::resources
 		void serialise(const data::data_manager&, data::writer&) const override;
 
 		std::vector<resource_link<terrain>> terrains;
-		// TODO: make a cliff type resource (stores the two types below) and support multiple cliff types?
-		resource_link<terrain> cliff_terrain;
-		resource_link<terrain> cliff_edge_terrain;
+		// TODO: turn this into a vector and support multiple cliff styles
+		resource_link<cliff_style> cliff_type;
 	};
 
 	struct terrain_settings_t {};

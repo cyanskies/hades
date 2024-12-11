@@ -24,6 +24,7 @@ namespace hades::resources
 	static void parse_terrain(unique_id, const data::parser_node&, data::data_manager&);
 	static void parse_terrainset(unique_id, const data::parser_node&, data::data_manager&);
 	static void parse_terrain_settings(unique_id, const data::parser_node&, data::data_manager&);
+	static void parse_cliff_styles(unique_id, const data::parser_node&, data::data_manager&);
 }
 
 namespace hades
@@ -59,6 +60,7 @@ namespace hades
 	constexpr auto terrain_settings_str = "terrain-settings"sv;
 	constexpr auto terrainsets_str = "terrainsets"sv;
 	constexpr auto terrains_str = "tilesets"sv;
+	constexpr auto cliff_styles_str = "cliff-types"sv;
 	constexpr auto empty_terrainset_str = "air-terrainset"sv;
 
 	void register_terrain_resources(data::data_manager &d, detail::make_texture_link_f func)
@@ -113,6 +115,7 @@ namespace hades
 		d.register_resource_type(terrain_settings_str, parse_terrain_settings);
 		d.register_resource_type(get_tilesets_name(), parse_terrain);
 		d.register_resource_type(terrainsets_str, parse_terrainset);
+		d.register_resource_type(cliff_styles_str, parse_cliff_styles);
 	}
 
 	static terrain_id_t get_terrain_id(const resources::terrainset *set, const resources::terrain *t)
@@ -1947,18 +1950,40 @@ namespace hades::resources
 		return;
 	}
 
-	static void load_terrainset(terrainset& terr, data::data_manager &d)
+	void cliff_style::load(data::data_manager& d)
 	{
-		for (const auto& t : terr.terrains)
-				d.get<terrain>(t->id);
+		d.get<terrain>(cliff_surface_terrain->id);
+		d.get<terrain>(cliff_face_terrain->id);
+		loaded = true;
+		return;
+	}
 
-		terr.loaded = true;
+	constexpr auto cliff_surface_terrain_str = "surface-terrain"sv;
+	constexpr auto cliff_face_terrain_str = "face-terrain"sv;
+
+	void cliff_style::serialise(const data::data_manager& d, data::writer& w) const
+	{
+		//cliff-styles:
+		//	name: 
+		//		surface-terrain: terrain
+		//		face-terrain: terrain
+
+		w.start_map(d.get_as_string(id));
+		w.write(cliff_face_terrain_str, cliff_face_terrain.id());
+		w.write(cliff_surface_terrain_str, cliff_surface_terrain.id());
+		w.end_map();
 		return;
 	}
 
 	void terrainset::load(data::data_manager& d)
 	{
-		load_terrainset(*this, d);
+		for (const auto& t : terrains)
+			d.get<terrain>(t->id);
+
+		if (cliff_type)
+			d.get<cliff_style>(cliff_type.id());
+
+		loaded = true;
 		return;
 	}
 
@@ -2306,9 +2331,9 @@ namespace hades::resources
 				return d.make_resource_link<terrain>(i, id);
 			});
 
-			t->cliff_terrain = data::parse_tools::get_scalar(*terrainset_n, "cliff"sv, t->cliff_terrain, [id, &d](std::string_view s) {
+			t->cliff_type = data::parse_tools::get_scalar(*terrainset_n, "cliff"sv, t->cliff_type, [id, &d](std::string_view s) {
 				const auto i = d.get_uid(s);
-				return d.make_resource_link<terrain>(i, id);
+				return d.make_resource_link<cliff_style>(i, id);
 			});
 
 			settings->terrainsets.emplace_back(d.make_resource_link<terrainset>(id, resources::get_tile_settings_id()));
@@ -2380,6 +2405,31 @@ namespace hades::resources
 		s->cliff_min = data::parse_tools::get_scalar(n, "cliff-min"sv, s->cliff_min);
 		s->cliff_max = data::parse_tools::get_scalar(n, "cliff-max"sv, s->cliff_max);
 		s->cliff_height = data::parse_tools::get_scalar(n, "cliff-height"sv, s->cliff_height);
+
+		return;
+	}
+
+	static void parse_cliff_styles(unique_id mod, const data::parser_node& n, data::data_manager& d)
+	{
+		//cliff-types:
+		//	name:
+		//		face-terrain: uid
+		//		surface-terrain: uid
+
+		for (const auto& type : n.get_children())
+		{
+			const auto name = type->to_string();
+			const auto id = d.get_uid(name);
+			auto new_style = d.find_or_create<cliff_style>(id, mod, cliff_styles_str);
+
+			const auto to_terrain_link = [id, &d](auto str) {
+				const auto i = d.get_uid(str);
+				return d.make_resource_link<terrain>(i, id);
+			};
+
+			new_style->cliff_face_terrain = data::parse_tools::get_scalar(*type, cliff_face_terrain_str, new_style->cliff_face_terrain, to_terrain_link);
+			new_style->cliff_surface_terrain = data::parse_tools::get_scalar(*type, cliff_surface_terrain_str, new_style->cliff_surface_terrain, to_terrain_link);
+		}
 
 		return;
 	}

@@ -254,6 +254,12 @@ namespace hades
 				return *this;
 			}
 
+			boolean_token& operator|=(bool b) noexcept
+			{
+				_val |= b;
+				return *this;
+			}
+
 			boolean_token& operator=(boolean_token&&) noexcept
 			{
 				_val = true;

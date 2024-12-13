@@ -248,7 +248,9 @@ namespace hades
 	//gets the tile id in a format appropriate for storing in tile map
 	// exceptions: tile_not_found
 	tile_id_t get_tile_id(const tile_map&, const resources::tile&);
-	
+	// get a new tile id, adds the tileset to the map if needed
+	[[nodiscard]] tile_id_t make_tile_id(tile_map& m, const resources::tile& t, const resources::tileset*);
+
 	const tag_list &get_tags(const resources::tile&);
 
 	//for getting information out of a tile map

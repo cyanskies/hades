@@ -219,6 +219,55 @@ namespace hades
 		return out;
 	}
 
+	static tile_map generate_cliff_layer(const terrain_map& map,
+		const tile_position world_size, const resources::terrain_settings& s)
+	{
+		const auto size = world_size.x * world_size.y * 5;
+		auto out = tile_map{};
+		const auto empty_terrain = resources::get_empty_terrain(s);
+		out.tilesets.emplace_back(empty_terrain);
+		const auto empty_id = get_tile_id(out, empty_terrain->tiles.front());
+		out.tiles.resize(size, empty_id);
+		out.width = size;
+
+		const auto cliff_type = map.terrainset->cliff_type.get();
+		const auto face_terrain = cliff_type->cliff_face_terrain.get();
+		const auto surface_terrain = cliff_type->cliff_surface_terrain.get();
+
+		for_each_position_rect({}, world_size, world_size, [&](const tile_position pos) {
+			using cliff_layout = terrain_map::cliff_layer_layout;
+			const auto index = integer_cast<std::size_t>(to_tile_index(pos, map)) * enum_type(cliff_layout::multiplier);
+			const auto indicies = std::array<std::size_t, 4>{
+				index + enum_type(cliff_layout::top),
+				index + enum_type(cliff_layout::right),
+				index + enum_type(cliff_layout::bottom),
+				index + enum_type(cliff_layout::left)
+			};
+
+			const auto surface_index = index + enum_type(cliff_layout::surface);
+
+			const auto cliffs = get_adjacent_cliffs(pos, map);
+			for (auto edge = rect_edges::begin; edge != rect_edges::end; edge = next(edge))
+			{
+				if (cliffs.test(enum_type(edge)))
+				{
+					const auto i = indicies[enum_type(edge)];
+					const auto tile = resources::get_random_tile(*face_terrain, resources::transition_tile_type::all, s);
+					const auto tile_id = make_tile_id(out, tile, face_terrain);
+					out.tiles[i] = tile_id;
+				}
+			}
+
+			const auto cliff_corners = get_cliff_corners(pos, map);
+			const auto surface_tile = get_transition_type(cliff_corners);
+			const auto tile = resources::get_random_tile(*surface_terrain, surface_tile, s);
+			const auto tile_id = make_tile_id(out, tile, surface_terrain);
+			out.tiles[surface_index] = tile_id;
+		});
+
+		return out;
+	}
+
 	static tile_position get_size(const raw_terrain_map& t)
 	{
 		if (t.width == 0 || t.terrain_vertex.empty())
@@ -324,8 +373,10 @@ namespace hades
 	constexpr auto terrainset_str = "terrainset"sv;
 	constexpr auto terrain_vertex_str = "terrain-vertex"sv;
 	constexpr auto terrain_height_str = "vertex-height"sv;
+	constexpr auto terrain_ramp_str = "ramp-layer"sv;
 	constexpr auto terrain_cliff_layer_str = "cliff-layer"sv;
 	constexpr auto terrain_layers_str = "terrain-layers"sv;
+	constexpr auto terrain_cliff_tiles_str = "cliff-tiles"sv;
 	constexpr auto terrain_vertex_width_str = "width"sv;
 
 	void write_raw_terrain_map(const raw_terrain_map & m, data::writer & w)
@@ -336,8 +387,10 @@ namespace hades
 		//	terrainset:
 		//	terrain_vertex:
 		//	vertex_height:
+		//	ramp-layer:
 		//	terrain_layers:
 		//  cliff_layers:
+		//	cliff-tiles:
 		//	width:
 
 		w.write(terrainset_str, m.terrainset);
@@ -354,6 +407,10 @@ namespace hades
 			const auto compressed_cliff_layer = zip::deflate(m.cliff_layer);
 			w.write(terrain_cliff_layer_str, base64_encode(compressed_cliff_layer));
 		}
+		{ 
+			const auto compressed_ramp_layer = zip::deflate(m.ramp_layer);
+			w.write(terrain_ramp_str, base64_encode(compressed_ramp_layer));
+		}
 
 		// write terrain tile layers
 		w.start_sequence(terrain_layers_str); 
@@ -364,6 +421,10 @@ namespace hades
 			w.end_map();
 		}
 		w.end_sequence();
+
+		w.start_map("cliff-tiles"sv);
+		write_raw_map(m.cliff_tiles, w);
+		w.end_map();
 
 		w.write(terrain_vertex_width_str, m.width);
 	}
@@ -400,8 +461,10 @@ namespace hades
 		//	terrainset:
 		//	terrain_vertex:
 		//	vertex_height:
+		//	ramp-layer:
 		//	terrain_layers:
 		//  cliff_layers:
+		//	cliff-tiles:
 		//	width:
 
 		raw_terrain_map out [[indeterminate]];
@@ -411,12 +474,17 @@ namespace hades
 		detail::parse_compressed_sequence(p, terrain_vertex_str, out.terrain_vertex, vert_size);
 		detail::parse_compressed_sequence(p, terrain_height_str, out.heightmap, vert_size);
 		detail::parse_compressed_sequence(p, terrain_cliff_layer_str, out.cliff_layer, layer_size);
+		detail::parse_compressed_sequence(p, terrain_ramp_str, out.ramp_layer, layer_size);
 
 		auto layers = std::vector<raw_map>{};
 		const auto layer_node = p.get_child(terrain_layers_str);
 		for (const auto& l : layer_node->get_children())
 			layers.emplace_back(read_raw_map(*l, layer_size));
 		out.terrain_layers = std::move(layers);
+
+		const auto cliff_tile_node = p.get_child(terrain_cliff_tiles_str);
+		if(cliff_tile_node)
+			out.cliff_tiles = read_raw_map(*cliff_tile_node, layer_size * 5);
 
 		out.width = data::parse_tools::get_scalar<terrain_index_t>(p, terrain_vertex_width_str, bad_tile_index);
 
@@ -428,7 +496,6 @@ namespace hades
 	terrain_map to_terrain_map_impl(Raw &&r, const resources::terrain_settings& settings)
 	{
 		// TODO: review this whole func
-
 		if (!is_valid(r))
 			throw terrain_error{ "raw terrain map is not valid" };
 
@@ -445,7 +512,7 @@ namespace hades
 		if (std::empty(m.ramp_layer))
 			m.ramp_layer = std::vector<ramp_layer_t>(std::size(m.cliff_layer), ramp_layer_t{}); // no ramps
 
-		const auto empty = settings.empty_terrain.get();
+		const auto empty = resources::get_empty_terrain(settings);
 		//if the terrain_vertex isn't present, then fill with empty
 		if (std::empty(r.terrain_vertex))
 			throw terrain_error{ "Malformed raw terrain map"s };
@@ -496,6 +563,10 @@ namespace hades
 		}
 
 		m.width = r.width;
+		if (std::empty(r.cliff_tiles.tiles))
+			m.cliff_tiles = generate_cliff_layer(m, size, settings);
+		else
+			m.cliff_tiles = to_tile_map(r.cliff_tiles);
 
 		assert(is_valid(to_raw_terrain_map(m, settings)));
 
@@ -522,6 +593,7 @@ namespace hades
 		m.heightmap = std::forward<Map>(t).heightmap;
 		m.cliff_layer = std::forward<Map>(t).cliff_layer;
 		m.ramp_layer = std::forward<Map>(t).ramp_layer;
+		m.cliff_tiles = to_raw_map(std::forward<Map>(t).cliff_tiles);
 
 		//build a replacement lookup table
 		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
@@ -587,9 +659,14 @@ namespace hades
 		const auto empty_layer = make_map(size, empty_tile, s);
 
 		// empty cliff layer should just be empty tiles
-		map.cliffs = make_map(size * 2, empty_tile, s);
+		const auto empty_terrain = resources::get_empty_terrain(s);
+		map.cliff_tiles.tilesets.emplace_back(empty_terrain);
+		const auto empty_id = get_tile_id(map.cliff_tiles, empty_terrain->tiles.front());
+		const auto cliff_width = tile_count * 5;
+		map.cliff_tiles.tiles.resize(cliff_width, empty_id);
+		map.cliff_tiles.width = integer_cast<tile_index_t>(cliff_width);
 
-		if (t != resources::get_empty_terrain(s))
+		if (t != empty_terrain)
 		{
 			//fill in the correct terrain layer
 			const auto index = get_terrain_id(terrainset, t);
@@ -1417,11 +1494,12 @@ namespace hades
 		return;
 	}
 
-	void place_ramp(const tile_position p, terrain_map& m)
+	bool place_ramp(const tile_position p, terrain_map& m, const resources::terrain_settings& s)
 	{
 		const auto ramp = can_add_ramp(p, m);
 		const auto world_size = get_size(m);
 		const auto starting_index = to_tile_index(p, world_size.x);
+		auto changed = false;
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
 			if (ramp.test(enum_type(i)))
@@ -1430,18 +1508,23 @@ namespace hades
 				const auto other_pos = ramp::adj_tiles[enum_type(i)] + p;
 				const auto other_index = to_tile_index(other_pos, world_size.x);
 				set_ramp_flag(m.ramp_layer, other_index, ramp::reverse_edges[enum_type(i)]);
+				changed = true;
 			}
 		}
-		return;
+
+		if(changed)
+			detail::regenerate_nearby_cliff_tiles(p, m, s);
+		return changed;
 	}
 
-	void clear_ramp(const tile_position p, terrain_map& m)
+	bool clear_ramp(const tile_position p, terrain_map& m, const resources::terrain_settings& s)
 	{
 		const auto world_size = get_size(m);
 		assert(within_world(p, world_size));
 		const auto start_index = to_tile_index(p, world_size.x);
 		auto& ramp = m.ramp_layer[start_index];
 		auto bset = std::bitset<4>{ ramp };
+		auto changed = false;
 		// clear any adjacent ramp tiles that were connected to this one
 		for (auto i = rect_edges::begin; i < rect_edges::end; i = next(i))
 		{
@@ -1453,12 +1536,16 @@ namespace hades
 				auto other_bset = std::bitset<4>{ other_ramp };
 				other_bset.reset(enum_type(ramp::reverse_edges[enum_type(i)]));
 				other_ramp = integer_cast<terrain_map::ramp_layer_t>(other_bset.to_ulong());
+				changed = true;
 			}
 		}
 
 		bset.reset();
 		ramp = integer_cast<terrain_map::ramp_layer_t>(bset.to_ulong());
-		return;
+
+		if(changed)
+			detail::regenerate_nearby_cliff_tiles(p, m, s);
+		return changed;
 	}
 
 	namespace

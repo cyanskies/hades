@@ -39,7 +39,7 @@ namespace hades::detail
 		using brush_index_t = std::size_t;
 		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
 
-		level_editor_impl();
+		explicit level_editor_impl(const std::filesystem::path& = {});
 		level_editor_impl(const mission_editor_t*, level*);
 
 		~level_editor_impl() noexcept override = default;

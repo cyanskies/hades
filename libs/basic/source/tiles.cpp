@@ -805,9 +805,36 @@ namespace hades
 		throw tile_not_found{ "tile is outside the bounds of the tilesets in this tile_map" };
 	}
 
+	[[nodiscard]] tile_id_t make_tile_id(tile_map& m, const resources::tile& t, const resources::tileset* t_set)
+	{
+		if (!t_set)
+			throw tileset_not_found{ "passed null tileset ptr to get_tile_id" };
+		std::size_t offset{};
+		auto found = false;
+		for (const auto tileset : m.tilesets)
+		{
+			if(const auto iter = std::ranges::find(tileset->tiles, t); iter != end(tileset->tiles))
+			{
+				// unexpected, but the tile is part of an existing tileset
+				const auto dist = integer_cast<std::size_t>(distance(begin(tileset->tiles), iter));
+				return offset + dist;	
+			}
+			
+			offset += size(tileset->tiles);
+		}
+
+		m.tilesets.emplace_back(t_set);
+		const auto iter = std::ranges::find(t_set->tiles, t);
+		if (iter == end(t_set->tiles))
+			throw tile_not_found{ "Tile passed to get_tile_id is not contained in provided tileset" };
+
+		const auto dist = integer_cast<std::size_t>(distance(begin(t_set->tiles), iter));
+		return offset + dist;
+	}
+
 	//returns a tile id usable for that tile_map, adds the needed tileset to the map
 	// exceptions: tileset_not_found, tileset_error
-	[[nodiscard]] static tile_id_t make_tile_id(tile_map &m, const resources::tile &t, const resources::tile_settings& s)
+	[[nodiscard]] tile_id_t make_tile_id(tile_map &m, const resources::tile &t, const resources::tile_settings& s)
 	{
 		std::size_t offset{};
 

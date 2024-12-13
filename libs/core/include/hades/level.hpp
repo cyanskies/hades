@@ -19,8 +19,8 @@ namespace hades
 	//load save from file
 	/*  void load level save()   */
 
-	constexpr auto level_ext = "lvl";
-	constexpr auto level_save_ext = "sav";
+	constexpr auto level_ext = ".lvl";
+	constexpr auto level_save_ext = ".sav";
 
 	// TODO: move to game types?
 	using level_size_t = hades::types::int32;
@@ -93,7 +93,7 @@ namespace hades
 
 	void serialise(const level&, data::writer&);
 	string serialise(const level&);
-	level deserialise_level(std::string_view);
+	[[deprecated]] level deserialise_level(std::string_view);
 	level deserialise_level(data::parser_node&);
 
 	level_save make_save_from_level(level l);

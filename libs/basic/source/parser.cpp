@@ -51,7 +51,7 @@ namespace hades::data
 		throw parser_exception{ "unable to find parser for ext: "s + ext.string() };
 	}
 
-	std::unique_ptr<parser_node> make_parser(std::istream& s, std::filesystem::path ext)
+	std::unique_ptr<parser_node> make_parser(std::istream& s, const std::filesystem::path ext)
 	{
 		if (ext.empty())
 		{

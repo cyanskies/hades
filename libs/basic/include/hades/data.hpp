@@ -116,17 +116,12 @@ namespace hades
 				return (*_link).id();
 			}
 
-			const T* get() const noexcept
+			// THROWS: resource_null
+			const T* get() const
 			{
 				assert(_link);
-				try
-				{
-					return &**_link;
-				}
-				catch (const data::resource_null&)
-				{
-					return nullptr;
-				}
+				// NOTE: resource_link_type will throw if unlinked
+				return &**_link;
 			}
 
 			bool is_linked() const noexcept
@@ -134,6 +129,7 @@ namespace hades
 				return _link;
 			}
 
+			// THROWS: resource_null
 			const T& operator*() const
 			{
 				assert(_link);

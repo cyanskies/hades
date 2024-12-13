@@ -190,6 +190,8 @@ namespace hades
 
 		//if empty, then should be generated
 		std::vector<raw_map> terrain_layers;
+		raw_map cliff_tiles;
+
 		unique_id terrainset;
 		// terrain_vertex width
 		terrain_index_t width = {};
@@ -235,7 +237,14 @@ namespace hades
 		
 		// Used to index into the cliff tile layer.
 		enum class cliff_layer_layout : std::uint8_t {
-			surface, diag, right, bottom
+			top = rect_edges::top,
+			right = rect_edges::right,
+			bottom = rect_edges::bottom,
+			left = rect_edges::left,
+			surface,
+			// multiply a normal index by multiplier before indexing the cliff tile array
+			// then add the offset from this array to get the target tile
+			multiplier 
 		};
 
 		// Terrain vertex info.
@@ -258,10 +267,9 @@ namespace hades
 		// Dynamically generated tile layers to represent the terrain vertex
 		std::vector<tile_map> terrain_layers;
 	
-		// TODO: generate cliff tiles once
-		// Should be 4 times the size of tile_layer ( surface tile, diagonal tile, right tile, bottom tile )
+		// Should be 5 times the size of tile_layer ( surface tile, cliff on each edge)
 		// See: cliff_layer_layout
-		tile_map cliffs;
+		tile_map cliff_tiles;
 
 		//a terrainset lists the terrain types that can be used in a level
 		const resources::terrainset* terrainset = nullptr;
@@ -414,7 +422,7 @@ namespace hades
 
 	// place terrain on a vertex (tiles will be generated automatically)
 	void place_terrain(terrain_map&, terrain_vertex_position, const resources::terrain*, const resources::terrain_settings&);
-	// place a specific terrain gfx on a tile, will also mark the adjacent vertex as this terrain
+	// place a specific terrain gfx on a tile, will also mark the correct adjacent vertex as this terrain
 	// TODO: implement
 	//void place_terrain(terrain_map&, tile_position, const resources::tile&, const resources::terrain*, const resources::terrain_settings&);
 	
@@ -427,8 +435,10 @@ namespace hades
 
 	// returns true for each bit if a ramp can be added to that tile(index using rect_edges)
 	std::bitset<4> can_add_ramp(tile_position, const terrain_map&);
-	void place_ramp(tile_position, terrain_map&);
-	void clear_ramp(tile_position, terrain_map&);
+	// returns true if the map was modified
+	bool place_ramp(tile_position, terrain_map&, const resources::terrain_settings&);
+	// returns true if the map was modified
+	bool clear_ramp(tile_position, terrain_map&, const resources::terrain_settings&);
 
 	struct terrain_target
 	{

@@ -641,6 +641,7 @@ namespace hades
 		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		const auto cliff_type = shared.map.terrainset->cliff_type.get();
+		const auto& empty_tile = resources::get_empty_tile(*shared.settings);
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
@@ -651,30 +652,34 @@ namespace hades
 			const auto surface_triangle_height = get_height_for_cell(pos, shared.map, *shared.settings);
 			const auto surface_positions = make_cell_positions(world_pos_f, tile_sizef);
 
-			// we have to generate a surface tile
-			const auto surface_tile_type = get_transition_type(cliff_corners);
-			if (surface_tile_type != resources::transition_tile_type::none)
+			using cliff_layout = terrain_map::cliff_layer_layout;
+			const auto base_index = integer_cast<std::size_t>(to_tile_index(pos, map_size_tiles.x) * enum_type(cliff_layout::multiplier));
+			const auto surface_index = base_index + enum_type(cliff_layout::surface);
+
+			assert(surface_index < size(shared.map.cliff_tiles.tiles));
+			if (const auto& tile = get_tile(shared.map.cliff_tiles, shared.map.cliff_tiles.tiles[surface_index]); tile != empty_tile)
 			{
-				const auto surface_terrain = cliff_type->cliff_surface_terrain.get();
-				const auto tile = resources::get_random_tile(*surface_terrain, surface_tile_type, *shared.settings);
 				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
 				tile_buffer.emplace_back(surface_positions, surface_triangle_height, tile.left, tile.top, tex_index);
 			}
 
 			const auto cliff_faces = make_cliffs(pos, world_pos_f,
 				surface_triangle_height, cliffs, tile_sizef, shared);
-			const auto cliff_face_terrain = cliff_type->cliff_face_terrain.get();
-			for (const auto& cliff_face : cliff_faces)
+			for(auto i = cliff_layout::top; i < cliff_layout::surface; i = next(i))
 			{
+				const auto& cliff_face = cliff_faces[enum_type(i)];
 				if (!cliff_face)
 					continue;
-				auto c = *cliff_face;
-				const auto& tile = resources::get_random_tile(*cliff_face_terrain, resources::transition_tile_type::all, *shared.settings);
-				const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
-				c.left = tile.left;
-				c.top = tile.top;
-				c.texture = tex_index;
-				tile_buffer.emplace_back(c);
+				map_tile c = *cliff_face;
+				const auto& tile = get_tile(shared.map.cliff_tiles, shared.map.cliff_tiles.tiles[base_index + enum_type(i)]);
+				if (tile != empty_tile)
+				{
+					const auto tex_index = get_texture_index(tile.tex, shared.texture_table);
+					c.left = tile.left;
+					c.top = tile.top;
+					c.texture = tex_index;
+					tile_buffer.emplace_back(c);
+				}
 			}
 			return;
 		});
@@ -1764,14 +1769,12 @@ namespace hades
 
 	void mutable_terrain_map::place_ramp(const tile_position p)
 	{
-		hades::place_ramp(p, _shared.map);
-		_needs_update = true;
+		_needs_update |= hades::place_ramp(p, _shared.map, *_shared.settings);
 	}
 
 	void mutable_terrain_map::remove_ramp(const tile_position p)
 	{
-		clear_ramp(p, _shared.map);
-		_needs_update = true;
+		_needs_update |= clear_ramp(p, _shared.map, *_shared.settings);
 	}
 
 	//==================================//

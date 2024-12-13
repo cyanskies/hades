@@ -18,10 +18,21 @@ using namespace std::string_literals;
 
 namespace hades::detail
 {
-	level_editor_impl::level_editor_impl()
-		: _level_ptr{std::make_unique<level>()}
+	level_editor_impl::level_editor_impl(const std::filesystem::path& p)
 	{
-		_level = _level_ptr.get();
+		if (std::empty(p))
+		{
+			_level_ptr = std::make_unique<level>();
+			_level = _level_ptr.get();
+		}
+		else
+		{
+			auto strm = files::stream_file(p);
+			const auto parser = data::make_parser(strm);
+			auto l = deserialise_level(*parser);
+			_level_ptr = std::make_unique<level>(std::move(l));
+			_level = _level_ptr.get();
+		}
 		return;
 	}
 
@@ -62,17 +73,9 @@ namespace hades::detail
 		_world_view.setCenter({});
 
 		_handle_component_setup();
-		if (_mission_mode())
-		{
-			if (_level->map_x == 0 ||
-				_level->map_y == 0) // test for new level
-			{
-				_level->map_x = size;
-				_level->map_y = size;
-				*_level = _component_on_new(std::move(*_level));
-			}
-		}
-		else
+
+		if (_level->map_x == 0 ||
+			_level->map_y == 0) // test for new level
 		{
 			_level->map_x = size;
 			_level->map_y = size;

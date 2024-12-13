@@ -233,13 +233,88 @@ namespace hades
 		return;
 	}
 
+	namespace detail
+	{
+		inline void regenerate_cliff_tiles(tile_position pos, terrain_map& m,
+			const resources::terrain* face_terrain, const resources::terrain* surface_terrain,
+			const resources::terrain_settings& settings)
+		{
+			assert(face_terrain);
+			assert(surface_terrain);
+
+			const auto& empty = resources::get_empty_tile(settings);
+			const auto empty_terrain = resources::get_empty_terrain(settings);
+			const auto empty_id = make_tile_id(m.cliff_tiles, empty, empty_terrain);
+
+			using cliff_layout = terrain_map::cliff_layer_layout;
+			const auto index = integer_cast<std::size_t>(to_tile_index(pos, m)) * enum_type(cliff_layout::multiplier);
+
+			const auto cliffs = get_adjacent_cliffs(pos, m);
+			for (auto i = cliff_layout::top; i != cliff_layout::surface; i = next(i))
+			{
+				const auto face_index = index + enum_type(i);
+				if (cliffs.test(enum_type(i)))
+				{
+					const auto tile = resources::get_random_tile(*face_terrain, resources::transition_tile_type::all, settings);
+					const auto tile_id = make_tile_id(m.cliff_tiles, tile, face_terrain);
+					m.cliff_tiles.tiles[face_index] = tile_id;
+				}
+				else
+				{
+					m.cliff_tiles.tiles[face_index] = empty_id;
+				}
+			}
+
+			const auto surface_index = index + enum_type(cliff_layout::surface);
+			const auto cliff_corners = get_cliff_corners(pos, m);
+			const auto surface_tile = get_transition_type(cliff_corners);
+			const auto tile = resources::get_random_tile(*surface_terrain, surface_tile, settings);
+			// NOTE: if surface_tile == NONE then get_random_tile returns empty_tile
+			//		we should technically be passing empty_terrain to make_tile_id
+			//		in this case, however empty_terrain will always be loaded in the tilemap
+			//		because we called make_tile_id with it above, so this call
+			//		will always succeed
+			const auto tile_id = make_tile_id(m.cliff_tiles, tile, surface_terrain);
+			m.cliff_tiles.tiles[surface_index] = tile_id;
+		}
+
+		inline void regenerate_nearby_cliff_tiles(const tile_position pos, terrain_map& m, const resources::terrain_settings& settings)
+		{
+			constexpr auto adj_tiles = std::array{
+				tile_position{ -1, -1 },	tile_position{ 0, -1},	tile_position{1, -1},
+				tile_position{ -1, 0 },		tile_position{0, 0,},	tile_position{1, 0},
+				tile_position{ -1, 1 },		tile_position{0, 1},	tile_position{1, 1}
+			};
+
+			const auto world_size = get_size(m);
+
+			assert(m.terrainset->cliff_type);
+			const auto cliff_terrain = m.terrainset->cliff_type.get();
+			const auto face_terrain = cliff_terrain->cliff_face_terrain.get();
+			const auto surface_terrain = cliff_terrain->cliff_surface_terrain.get();
+			// regen adjacent tiles
+			for (const auto& tile : adj_tiles)
+			{
+				const auto t = pos + tile;
+				if (within_world(t, world_size))
+					detail::regenerate_cliff_tiles(t, m, face_terrain, surface_terrain, settings);
+			}
+		}
+	}
+
 	template<invocable_r<std::uint8_t, std::uint8_t> Func>
 	void change_terrain_cliff_layer(const tile_position pos, terrain_map& m, const resources::terrain_settings& settings, Func&& f)
 	{
 		const auto index = to_tile_index(pos, m);
 		assert(index < size(m.cliff_layer));
-		m.cliff_layer[index] = std::clamp(std::invoke(f, m.cliff_layer[index]), settings.cliff_min, settings.cliff_max);
-		clear_ramp(pos, m);
+		const auto starting_layer = m.cliff_layer[index];
+		const auto our_layer = m.cliff_layer[index] = std::clamp(std::invoke(f, m.cliff_layer[index]), settings.cliff_min, settings.cliff_max);
+		if (starting_layer != our_layer)
+		{
+			clear_ramp(pos, m, settings);
+			detail::regenerate_nearby_cliff_tiles(pos, m, settings);
+		}
+
 		return;
 	}
 }

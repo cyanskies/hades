@@ -1011,6 +1011,8 @@ namespace hades
 			[[fallthrough]];
 		case add_ramp:
 			[[fallthrough]];
+		case remove_ramp:
+			[[fallthrough]];
 		case add_height_noise:
 			[[fallthrough]];
 		case smooth_height:

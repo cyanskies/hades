@@ -97,6 +97,8 @@ namespace hades
 			std::uint8_t draw_size = 1;
 			// stores the target drag level when drawing with height and cliff tools
 			std::optional<std::uint8_t> drag_level;
+			// store the settings used to generate the last draw preview
+			std::tuple<brush_type, draw_shape, std::uint8_t, std::optional<terrain_target>> last_preview;
 		};
 
 		void _gui_terrain_palette(gui&);

@@ -492,8 +492,15 @@ namespace hades
 		return;
 	}
 
-	void level_editor_terrain::make_brush_preview(const time_duration, const std::optional<terrain_target> p)
+	void level_editor_terrain::make_brush_preview(const time_duration, const std::optional<terrain_target> t)
 	{
+		// skip generating the preview if the inputs from the previous gen haven't changed
+		if (const auto preview = std::tuple{ _terrain_palette.brush, _terrain_palette.shape, _terrain_palette.draw_size, t };
+			preview == _terrain_palette.last_preview)
+			return;
+		else
+			_terrain_palette.last_preview = preview;
+
 		const auto tile_func = [&](const tile_position pos) {
 			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
 			switch (_terrain_palette.brush)
@@ -518,9 +525,9 @@ namespace hades
 		};
 
 		_map.clear_edit_target();
-		if (p)
+		if (t)
 		{
-			for_each_position(*p, _settings->tile_size, _terrain_palette.shape,
+			for_each_position(*t, _settings->tile_size, _terrain_palette.shape,
 				_terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(),
 				overloaded{ tile_func, vertex_func });
 		}

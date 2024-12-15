@@ -47,6 +47,8 @@ namespace hades
 	template<typename Event>
 	void input_event_system_t<Event>::insert_event(const typename input_event_system_t<Event>::event e)
 	{
+		// TODO: this scheme works well in most cases but fails for detecting mouse positions that should be inactive
+		//		eg. if the mouse is over ui, the event never reaches here, so we pass the previous active event instead
 		for (auto& [i, a] : _event_interpreters)
 			a = detail::check_event<Event>(i, e, a);
 	}

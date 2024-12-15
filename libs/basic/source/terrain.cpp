@@ -320,16 +320,21 @@ namespace hades
 		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
 		if (std::size(r.cliff_layer) != tile_count)
 		{
-			// NOTE: this is only a warning
-			// we can still try to load the map
-			log_warning("Cliff layer must have a sample for each tile"sv);
+			log_error("Cliff layer must have a sample for each tile"sv);
+			return false;
 		}
 
 		if (std::size(r.ramp_layer) != tile_count)
 		{
+			log_error("Ramp layer must have a sample for each tile"sv);
+			return false;
+		}
+
+		if (std::size(r.cliff_tiles.tiles) != tile_count * enum_type(terrain_map::cliff_layer_layout::multiplier))
+		{
 			// NOTE: this is only a warning
 			// we can still try to load the map
-			log_warning("Ramp layer must have a sample for each tile"sv);
+			log_warning("Cliff tilemap must have 5 samples per tile"sv);
 		}
 
 		if (!std::empty(r.terrain_layers))
@@ -495,7 +500,6 @@ namespace hades
 		requires std::same_as<raw_terrain_map, std::decay_t<Raw>>
 	terrain_map to_terrain_map_impl(Raw &&r, const resources::terrain_settings& settings)
 	{
-		// TODO: review this whole func
 		if (!is_valid(r))
 			throw terrain_error{ "raw terrain map is not valid" };
 
@@ -507,10 +511,14 @@ namespace hades
 		m.ramp_layer = std::forward<Raw>(r).ramp_layer;
 		
 		const auto size = get_size(r);
-
+		const auto tile_count = size.x * size.y;
 		using ramp_layer_t = terrain_map::ramp_layer_t;
-		if (std::empty(m.ramp_layer))
-			m.ramp_layer = std::vector<ramp_layer_t>(std::size(m.cliff_layer), ramp_layer_t{}); // no ramps
+		if (std::size(m.ramp_layer) != tile_count)
+			throw terrain_error{ "Malformed raw terrain map"s }; 
+		if(std::size(m.cliff_layer) != tile_count)
+			throw terrain_error{ "Malformed raw terrain map"s };
+		if(std::size(r.terrain_vertex) != std::size(m.heightmap))
+			throw terrain_error{ "Malformed raw terrain map"s };
 
 		const auto empty = resources::get_empty_terrain(settings);
 		//if the terrain_vertex isn't present, then fill with empty
@@ -567,6 +575,15 @@ namespace hades
 			m.cliff_tiles = generate_cliff_layer(m, size, settings);
 		else
 			m.cliff_tiles = to_tile_map(r.cliff_tiles);
+
+		const auto cliff_tile_count = tile_count * enum_type(terrain_map::cliff_layer_layout::multiplier);
+		if (std::size(m.cliff_tiles.tiles) != cliff_tile_count)
+		{
+			const auto& empty_tile = resources::get_empty_tile(settings);
+			const auto empty_id = make_tile_id(m.cliff_tiles, empty_tile, empty);
+			m.cliff_tiles.tiles.resize(cliff_tile_count, empty_id);
+			m.cliff_tiles.width = cliff_tile_count;
+		}
 
 		assert(is_valid(to_raw_terrain_map(m, settings)));
 
@@ -660,8 +677,7 @@ namespace hades
 
 		// empty cliff layer should just be empty tiles
 		const auto empty_terrain = resources::get_empty_terrain(s);
-		map.cliff_tiles.tilesets.emplace_back(empty_terrain);
-		const auto empty_id = get_tile_id(map.cliff_tiles, empty_terrain->tiles.front());
+		const auto empty_id = make_tile_id(map.cliff_tiles, empty_tile, empty_terrain);
 		const auto cliff_width = tile_count * 5;
 		map.cliff_tiles.tiles.resize(cliff_width, empty_id);
 		map.cliff_tiles.width = integer_cast<tile_index_t>(cliff_width);

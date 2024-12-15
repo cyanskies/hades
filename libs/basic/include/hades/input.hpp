@@ -113,7 +113,7 @@ namespace hades
 
 		interpreter_id id;
 		// TODO: cpp23 the whole insert_event function chain could become noexcept with move_only_function and noexcept functions
-		using event_function = std::function<action(const event&, action)>; // TODO: remove bool param(its always false)
+		using event_function = std::function<action(const event&, action)>; // TODO: restore bool param, we need a way to flag events as deactivated due to ui interaction
 		event_function event_check;
 		using event_match_function = bool(*)(const event&);
 		event_match_function is_match;

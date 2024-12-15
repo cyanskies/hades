@@ -295,6 +295,7 @@ namespace hades
 		//ticks per second, dt = 1 / tick_rate
 		const auto tick_rate = _console.getInt(cvars::client_tick_rate);
 		//const auto maxframetime = _console.getInt(cvars::client_max_tick); // NOTE: unused
+		// TODO: store the reporting info in a struct and just pass it to the stats debug tool
 		auto avg_tick_time = _console.getFloat(cvars::client_avg_tick_time);
 		auto max_tick_time = _console.getFloat(cvars::client_max_tick_time);
 		auto min_tick_time = _console.getFloat(cvars::client_min_tick_time);

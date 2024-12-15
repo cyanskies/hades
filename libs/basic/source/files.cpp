@@ -228,31 +228,27 @@ namespace hades::files
 		return irfstream{ { m.source }, path };
 	}
 
+	// Stream into a contigious memory buffer
+	// NOTE: assumes strm is still pointing to the start of the stream
 	template<typename ReturnType, typename Stream>
-	ReturnType from_stream(Stream& str)
+	ReturnType from_stream(Stream& strm)
 	{
-		str.exceptions(std::ios::badbit | std::ios::failbit);
 		try
 		{
-			// TODO: im not happy with these implementations
-			//		both paths here require copying byte by byte at some point
-			if constexpr (std::is_same_v<ReturnType, string>)
-			{
-				auto str_stream = std::ostringstream{};
-				str_stream << str.rdbuf();
-				ReturnType ret = std::move(str_stream).str();
-				return ret;
-			}
-			else if constexpr (std::is_same_v<ReturnType, std::vector<std::byte>>)
-			{
-				str.ignore(std::numeric_limits<std::streamsize>::max());
-				const auto size = integer_cast<std::size_t>(str.gcount());
-				str.clear(); // clear eof triggered by .ignore
-				str.seekg(0, std::ios::beg);
-				auto out = ReturnType(size);
-				str.get(reinterpret_cast<char*>(out.data()), size);
-				return out;
-			}
+			strm.exceptions(std::ios::badbit | std::ios::failbit);
+			// NOTE: ignore + gcount is the only standard and portable way to
+			//		get the size of a iostream, seekoff/tellg and similar solutions
+			//		work on all platforms, but fpos is not required to be a byte count
+			//		(eg. it could just be a unique bookmark value)
+			//		cstdio doesn't have this problem
+			strm.ignore(std::numeric_limits<std::streamsize>::max());
+			const auto size = integer_cast<std::size_t>(strm.gcount());
+			strm.seekg({}, std::ios::beg); // clears eofbit as of cpp11
+			
+			auto out = ReturnType{};
+			out.resize(size);
+			strm.read(reinterpret_cast<char*>(out.data()), size);
+			return out;
 		}
 		catch (const std::ios_base::failure& e)
 		{

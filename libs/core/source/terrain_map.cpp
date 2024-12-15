@@ -640,7 +640,6 @@ namespace hades
 		tile_buffer.clear();
 		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		const auto cliff_type = shared.map.terrainset->cliff_type.get();
 		const auto& empty_tile = resources::get_empty_tile(*shared.settings);
 
 		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {

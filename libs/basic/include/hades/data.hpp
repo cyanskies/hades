@@ -24,6 +24,14 @@ namespace hades
 
 	namespace resources
 	{
+		// thrown to report invalid resource links
+		// default constructed links shouldn't be passed around anyway
+		class resource_link_error : public logic_error
+		{
+		public:
+			using logic_error::logic_error;
+		};
+
 		// parser func accepts the current mod as unique_id
 		using parser_func = void(*)(unique_id, const data::parser_node&, data::data_manager&);
 		
@@ -88,7 +96,7 @@ namespace hades
 					throw data::resource_null{ "Attempted to dereference an unlinked resource_link" };
 			}
 
-			const T* operator->() const
+			const T* operator->() const noexcept
 			{
 				return _resource;
 			}
@@ -112,14 +120,16 @@ namespace hades
 
 			unique_id id() const noexcept
 			{
-				assert(_link);
+				if (!_link)
+					return unique_zero;
 				return (*_link).id();
 			}
 
 			// THROWS: resource_null
 			const T* get() const
 			{
-				assert(_link);
+				if (!_link)
+					throw resource_link_error{ "Tried to access a default constructed resource link" };
 				// NOTE: resource_link_type will throw if unlinked
 				return &**_link;
 			}
@@ -132,14 +142,16 @@ namespace hades
 			// THROWS: resource_null
 			const T& operator*() const
 			{
-				assert(_link);
+				if (!_link)
+					throw resource_link_error{ "Tried to access a default constructed resource link" };
 				// NOTE: resource_link_type will throw if unlinked
 				return **_link;
 			}
 
 			const resource_link_type<T>& operator->() const
 			{
-				assert(_link);
+				if (!_link)
+					throw resource_link_error{ "Tried to access a default constructed resource link" };
 				return *_link;
 			}
 

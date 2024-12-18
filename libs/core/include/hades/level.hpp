@@ -26,8 +26,11 @@ namespace hades
 	using level_size_t = hades::types::int32;
 	using rect_level = hades::rect_t<level_size_t>;
 
+	// TODO: templatize on map_type
 	struct level
 	{
+		using map_type = raw_terrain_map;
+
 		struct background_layer
 		{
 			//paralax controls the movement speed of the background relative to

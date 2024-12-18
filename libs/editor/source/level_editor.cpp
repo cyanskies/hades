@@ -190,85 +190,80 @@ namespace hades::detail
 			const auto level_mouse_pos_sf = _world_transform.getInverse().transformPoint({ world_mouse_pos.x, world_mouse_pos.y });
 			const auto level_mouse_pos = vector2_float{ level_mouse_pos_sf.x, level_mouse_pos_sf.y };
 
-			const auto terrain_map = _component_peek_terrain();
-			if (terrain_map)
+			const auto& terrain_map = _map->get_map();
+			auto adapted_mouse_pos_opt =
+				project_onto_terrain(level_mouse_pos, _get_world_rot(), terrain_map, *_terrain_settings);
+
+			const auto rounded_terrain_pos = tile_position{
+				integral_cast<tile_position::value_type>(level_mouse_pos.x, round_down_tag),
+				integral_cast<tile_position::value_type>(level_mouse_pos.y, round_down_tag)
+			};
+
+			auto tile_pos = bad_tile_position;
+			if (_height_enabled && adapted_mouse_pos_opt)
+				tile_pos = adapted_mouse_pos_opt->tile_target;
+			else  if(!_height_enabled)
+				tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
+
+			//clamp to world limits
+			if (within_world(tile_pos, get_size(terrain_map)))
 			{
-				auto adapted_mouse_pos_opt =
-					project_onto_terrain(level_mouse_pos, _get_world_rot(), *terrain_map, *_terrain_settings);
-
-				const auto rounded_terrain_pos = tile_position{
-					integral_cast<tile_position::value_type>(level_mouse_pos.x, round_down_tag),
-					integral_cast<tile_position::value_type>(level_mouse_pos.y, round_down_tag)
-				};
-
-				auto tile_pos = bad_tile_position;
-				if (_height_enabled && adapted_mouse_pos_opt)
-					tile_pos = adapted_mouse_pos_opt->tile_target;
-				else  if(!_height_enabled)
-					tile_pos = to_tiles(rounded_terrain_pos, _terrain_settings->tile_size);
-
-				//clamp to world limits
-				if (within_world(tile_pos, get_size(*terrain_map)))
-				{
-					_mouse_pos_world = std::format("Hovered Tile: {}"sv, tile_pos);
-					_cliff_layer = std::format("Cliff Layer: {}", get_cliff_layer(tile_pos, *terrain_map));
-				}
-				else
-				{
-					_mouse_pos_world = "Hovered Tile: Outside World"sv;
-					_cliff_layer = "Cliff Layer: N/A"sv;
-				}
-
-				if (adapted_mouse_pos_opt)
-					_mouse_pos_world_f = std::format("Hovered Point: {}"sv, adapted_mouse_pos_opt->pixel_target);
-				else
-					_mouse_pos_world_f = "Hovered Point: Outside World"sv;
-
-				// fix up the terrain target for flat mode
-				if (!_height_enabled && within_world(tile_pos, get_size(*terrain_map)))
-					adapted_mouse_pos_opt = terrain_target{ level_mouse_pos, tile_pos, rect_edges::end };
-				else if (!_height_enabled)
-					adapted_mouse_pos_opt.reset();
-
-				if (_active_brush != invalid_brush)
-					_generate_brush_preview(_active_brush, dt, adapted_mouse_pos_opt);
-
-				const auto mouse_left = actions.find(input::mouse_left);
-				assert(mouse_left != std::end(actions));
-				mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
-
-				if (mouse::is_click(_mouse_left))
-					_component_on_click(_active_brush, adapted_mouse_pos_opt);
-				else if (mouse::is_drag_start(_mouse_left))
-				{
-					const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
-					const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
-					const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
-
-					if (_height_enabled)
-					{
-						const auto adapted_drag_start =
-							project_onto_terrain(drag_start_level, _get_world_rot(), *terrain_map, *_terrain_settings);
-						_component_on_drag_start(_active_brush, adapted_drag_start);
-					}
-					else
-					{
-						const auto target = terrain_target{ drag_start_level, tile_pos, rect_edges::end };
-						_component_on_drag_start(_active_brush, target);
-					}
-				}
-				else if (mouse::is_dragging(_mouse_left))
-				{
-					if (_last_drag != adapted_mouse_pos_opt)
-						_component_on_drag(_active_brush, adapted_mouse_pos_opt);
-
-					_last_drag = adapted_mouse_pos_opt;
-				}
-				else if (mouse::is_drag_end(_mouse_left))
-					_component_on_drag_end(_active_brush, adapted_mouse_pos_opt);
+				_mouse_pos_world = std::format("Hovered Tile: {}"sv, tile_pos);
+				_cliff_layer = std::format("Cliff Layer: {}", get_cliff_layer(tile_pos, terrain_map));
 			}
 			else
-				log_error("No terrain_map provided to level_editor_component::peek_terrain"sv);
+			{
+				_mouse_pos_world = "Hovered Tile: Outside World"sv;
+				_cliff_layer = "Cliff Layer: N/A"sv;
+			}
+
+			if (adapted_mouse_pos_opt)
+				_mouse_pos_world_f = std::format("Hovered Point: {}"sv, adapted_mouse_pos_opt->pixel_target);
+			else
+				_mouse_pos_world_f = "Hovered Point: Outside World"sv;
+
+			// fix up the terrain target for flat mode
+			if (!_height_enabled && within_world(tile_pos, get_size(terrain_map)))
+				adapted_mouse_pos_opt = terrain_target{ level_mouse_pos, tile_pos, rect_edges::end };
+			else if (!_height_enabled)
+				adapted_mouse_pos_opt.reset();
+
+			if (_active_brush != invalid_brush)
+				_generate_brush_preview(_active_brush, dt, adapted_mouse_pos_opt);
+
+			const auto mouse_left = actions.find(input::mouse_left);
+			assert(mouse_left != std::end(actions));
+			mouse::update_button_state(*mouse_left, *mouse_position, _total_run_time, _mouse_left);
+
+			if (mouse::is_click(_mouse_left))
+				_component_on_click(_active_brush, adapted_mouse_pos_opt);
+			else if (mouse::is_drag_start(_mouse_left))
+			{
+				const auto drag_start_world = mouse::to_world_coords(t, _mouse_left.click_pos, _world_view);
+				const auto drag_start_level_sf = _world_transform.getInverse().transformPoint({ drag_start_world.x, drag_start_world.y });
+				const auto drag_start_level = vector2_float{ drag_start_level_sf.x, drag_start_level_sf.y };
+
+				if (_height_enabled)
+				{
+					const auto adapted_drag_start =
+						project_onto_terrain(drag_start_level, _get_world_rot(), terrain_map, *_terrain_settings);
+					_component_on_drag_start(_active_brush, adapted_drag_start);
+				}
+				else
+				{
+					const auto target = terrain_target{ drag_start_level, tile_pos, rect_edges::end };
+					_component_on_drag_start(_active_brush, target);
+				}
+			}
+			else if (mouse::is_dragging(_mouse_left))
+			{
+				if (_last_drag != adapted_mouse_pos_opt)
+					_component_on_drag(_active_brush, adapted_mouse_pos_opt);
+
+				_last_drag = adapted_mouse_pos_opt;
+			}
+			else if (mouse::is_drag_end(_mouse_left))
+				_component_on_drag_end(_active_brush, adapted_mouse_pos_opt);
 		}
 
 		_update_gui(dt);
@@ -305,6 +300,31 @@ namespace hades::detail
 		return _active_brush == index;
 	}
 
+	tag_list level_editor_impl::_get_terrain_tags_at_location(const rect_float location) const
+	{
+		constexpr auto snap_to_floor = [](float val, int mul)->float {
+			const auto diff = std::remainder(val, static_cast<float>(mul));
+			return std::trunc(val - diff);
+			};
+
+		const auto tile_size = signed_cast(_terrain_settings->tile_size);
+		const auto loc = rect_int{
+			static_cast<int>(snap_to_floor(location.x, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.y, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.width + tile_size, tile_size)) / tile_size,
+			static_cast<int>(snap_to_floor(location.height + tile_size, tile_size)) / tile_size,
+		};
+
+		const auto& map = _map->get_map();
+		const auto world_size = get_size(map);
+		auto out = tag_list{};
+		for_each_position_rect({ loc.x, loc.y }, { loc.width, loc.height }, world_size, [&map, &out](const tile_position p) {
+			const auto tags = hades::get_tags_at(map, p);
+			out.insert(end(out), begin(tags), end(tags));
+		});
+
+		return out;
+	}
 
 	bool level_editor_impl::_mission_mode() const
 	{

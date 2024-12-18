@@ -18,7 +18,7 @@ namespace hades
 	public:
 		mutable_terrain_map();
 		// NOTE: mutable_terrain_map is non-copyable, we supply this
-		// to enable its storage in std::any; invocing this always throws logic_error
+		// to enable its storage in std::any; invoking this always throws logic_error
 		mutable_terrain_map(const mutable_terrain_map&); 
 		mutable_terrain_map(mutable_terrain_map&&) noexcept = default;
 		mutable_terrain_map(terrain_map);

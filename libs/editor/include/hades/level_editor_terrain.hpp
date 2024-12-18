@@ -55,8 +55,6 @@ namespace hades
 
 		void make_brush_preview(time_duration, std::optional<terrain_target>) override;
 
-		tag_list get_terrain_tags_at_location(rect_float) const override;
-
 		void on_reinit(vector2_float window_size, vector2_float view_size) override;
 
 		void on_click(std::optional<terrain_target>) override;
@@ -66,11 +64,6 @@ namespace hades
 		void on_screen_move(rect_float r) override;
 
 		void on_height_toggle(bool) noexcept override;
-
-		const terrain_map* peek_terrain() const noexcept override
-		{
-			return &_map.get_map();
-		}
 
 		void draw(sf::RenderTarget&, time_duration, sf::RenderStates) override;
 
@@ -101,6 +94,11 @@ namespace hades
 			std::tuple<brush_type, draw_shape, std::uint8_t, std::optional<terrain_target>> last_preview;
 		};
 
+		void _store_map() noexcept
+		{
+			_map = &get_map();
+		}
+
 		void _gui_terrain_palette(gui&);
 		bool _no_drag(std::optional<terrain_target>);
 
@@ -119,7 +117,7 @@ namespace hades
 		const resources::terrain_settings *_settings = nullptr;
 		float _sun_angle = 135.f; // TODO: default sun angle cvar
 		level_options _new_options;
-		mutable_terrain_map _map;
+		mutable_terrain_map* _map = {};
 	};
 }
 

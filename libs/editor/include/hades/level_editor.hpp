@@ -33,11 +33,17 @@ namespace hades::detail
 	constexpr auto mouse_drag_enabled = true;
 	constexpr auto mouse_double_click_enabled = false;
 
+	// TODO: templatize level on the map type and then templatize this on level
+	//			this will let us support classical layered tilemaps in a more natural way
 	class level_editor_impl : public state
 	{
 	public:
 		using brush_index_t = std::size_t;
 		constexpr static auto invalid_brush = std::numeric_limits<brush_index_t>::max();
+
+		using level_type = level;
+		// conditional based on level::map_type
+		using map_type = mutable_terrain_map;
 
 		explicit level_editor_impl(const std::filesystem::path& = {});
 		level_editor_impl(const mission_editor_t*, level*);
@@ -48,6 +54,7 @@ namespace hades::detail
 		bool handle_event(const event&) override;
 		void reinit() override;
 
+		[[deprecated]]
 		level get_level() const;
 
 		void update(time_duration, const sf::RenderTarget&, const input_system::action_set&) override;
@@ -69,7 +76,6 @@ namespace hades::detail
 		virtual void _component_on_rotate(float) = 0;
 		virtual void _component_on_screen_move(rect_float) = 0;
 		virtual void _component_height_toggle(bool) = 0;
-		virtual const terrain_map* _component_peek_terrain() = 0;
 		virtual void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) = 0;
 		virtual void _generate_brush_preview(brush_index_t brush_index, time_duration, std::optional<terrain_target> world_position) = 0;
 		virtual void _handle_component_setup() = 0;
@@ -81,6 +87,14 @@ namespace hades::detail
 		{
 			return _accumulated_rotation;
 		}
+
+		map_type& _get_map() noexcept
+		{
+			assert(_map);
+			return *_map;
+		}
+
+		tag_list _get_terrain_tags_at_location(rect_float) const;
 
 	private:
 		sf::View _gui_view;
@@ -141,15 +155,17 @@ namespace hades::detail
 		level_editor_component::editor_windows _window_flags;
 		gui _gui = { "level_editor.ini" };
 		std::unique_ptr<level> _level_ptr; //used in level mode
+		// store map in a ptr so it has a stable address for the terrain component to keep
+		std::unique_ptr<map_type> _map = std::make_unique<map_type>();
 		const mission_editor_t* _mission_editor = nullptr;
 		level *_level = nullptr;
+		const resources::terrain_settings* _terrain_settings = resources::get_terrain_settings();
 		mouse::mouse_button_state<mouse_drag_enabled, mouse_double_click_enabled> _mouse_left;
 		std::optional<terrain_target> _last_drag;
 
 		//new level options
 		new_level_opt _new_level_options = {};
 		console::property_int _force_whole_tiles;
-		const resources::terrain_settings* _terrain_settings = resources::get_terrain_settings();
 
 		resize_opt _resize_options = {};
 		string _load_level_mod;
@@ -189,7 +205,6 @@ namespace hades
 		//returns the sum of tags reported by components for that location
 		//may contain duplicates
 		tag_list _component_get_object_tags_at_location(rect_float) const;
-		tag_list _component_get_terrain_tags_at_location(rect_float) const;
 		void _component_on_click(brush_index_t, std::optional<terrain_target>) override;
 		void _component_on_drag_start(brush_index_t, std::optional<terrain_target>) override;
 		void _component_on_drag(brush_index_t, std::optional<terrain_target>) override;
@@ -197,7 +212,6 @@ namespace hades
 		void _component_on_rotate(float) override;
 		void _component_on_screen_move(rect_float) override;
 		void _component_height_toggle(bool) override;
-		const terrain_map* _component_peek_terrain() override;
 
 		void _draw_components(sf::RenderTarget&, time_duration, brush_index_t, sf::RenderStates = {}) override;
 		void _generate_brush_preview(brush_index_t, time_duration, std::optional<terrain_target>) override;
@@ -213,8 +227,7 @@ namespace hades
 		level_editor_level_props,
 		level_editor_terrain,
 		level_editor_objects,
-		level_editor_regions/*,
-		level_editor_grid*/ // this is handled by the terrain component now
+		level_editor_regions
 	>;
 
 	// these register all the needed resources and console vars to use the 

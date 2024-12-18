@@ -21,7 +21,7 @@
 
 namespace hades
 {
-	//NOTE: buffer sizes:
+	// NOTE: buffer sizes:
 	//					16kb(16384)
 	//					8kb(8192)
 	//					4kb(4096)

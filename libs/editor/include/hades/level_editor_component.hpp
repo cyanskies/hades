@@ -9,6 +9,7 @@
 
 #include "hades/level.hpp"
 #include "hades/math.hpp"
+#include "hades/terrain_map.hpp"
 #include "hades/timers.hpp"
 #include "hades/types.hpp"
 #include "hades/vector_math.hpp"
@@ -72,6 +73,10 @@ namespace hades
 			bool save_level = false;
 		};
 
+		using level_type = level;
+		// conditional based on level::map_type
+		using map_type = mutable_terrain_map;
+
 		virtual ~level_editor_component() noexcept = default;
 
 		//generic callbacks, these are always available
@@ -82,10 +87,13 @@ namespace hades
 		using get_players_return_type = std::vector<player_reference>;
 		using get_players_f = std::function<get_players_return_type(void)>;
 		using get_world_rotation_f = std::function<float(void)>;
+		using get_map_f = std::function<map_type&()>;
 
-		template<typename ActivateBrush, typename IsActiveBrush, typename GetTerrainTagsAt, typename GetObjTagsAt, typename GetPlayers, typename GetWorldRotation>
+		template<typename ActivateBrush, typename IsActiveBrush, typename GetTerrainTagsAt,
+			typename GetObjTagsAt, typename GetPlayers, typename GetWorldRotation, typename GetMap>
 		void install_callbacks(ActivateBrush ab,IsActiveBrush is_active, GetTerrainTagsAt get_terrain_tags,
-			GetObjTagsAt get_obj_tags, GetPlayers get_players, GetWorldRotation get_world_rotate)
+			GetObjTagsAt get_obj_tags, GetPlayers get_players, GetWorldRotation get_world_rotate,
+			GetMap get_map)
 		{
 			_activate_brush = ab;
 			_is_active_brush = is_active;
@@ -93,33 +101,35 @@ namespace hades
 			_get_object_tags_at = get_obj_tags;
 			_get_players = get_players;
 			_get_world_rotation = get_world_rotate;
+			_get_map = get_map;
+			return;
 		}
 
 		void activate_brush() noexcept
 		{
-			std::invoke(_activate_brush);
+			_activate_brush();
 		}
 
 		bool is_active_brush() noexcept
 		{
-			return std::invoke(_is_active_brush);
+			return _is_active_brush();
 		}
 
 		get_players_return_type get_players() const
 		{
-			return std::invoke(_get_players);
+			return _get_players();
 		}
 
 		//searches all components
 		tag_list get_terrain_tags_at(rect_float r) const
 		{
-			return std::invoke(_get_terrain_tags_at, r);
+			return _get_terrain_tags_at(r);
 		}
 		
 		//searches all components
 		tag_list get_object_tags_at(rect_float r) const
 		{
-			return std::invoke(_get_object_tags_at, r);
+			return _get_object_tags_at(r);
 		}
 
 		//searches all components
@@ -128,7 +138,6 @@ namespace hades
 			auto a = get_terrain_tags_at(r);
 			const auto o = get_object_tags_at(r);
 
-			a.reserve(std::size(a) + std::size(o));
 			a.insert(std::end(a), std::begin(o), std::end(o));
 
 			return {};
@@ -136,7 +145,12 @@ namespace hades
 
 		float get_world_rotation() const
 		{
-			return std::invoke(_get_world_rotation);
+			return _get_world_rotation();
+		}
+
+		map_type& get_map() const
+		{
+			return _get_map();
 		}
 
 		//compoenents can throw new_level_editor_error
@@ -155,8 +169,8 @@ namespace hades
 		virtual void make_brush_preview(time_duration, std::optional<terrain_target>) {}
 
 		//return any relevent tags for that location
-		// this is for components that implement terrain or object editing
-		virtual tag_list get_terrain_tags_at_location(rect_float) const { return {}; }
+		// this is for components that implement object and region editing
+		// NOTE: terrain tags are hangled by the base level editor implementation
 		virtual tag_list get_object_tags_at_location(rect_float) const { return {}; }
 
 		virtual void on_reinit(vector2_float /*window_size*/, vector2_float /*view_size*/) {}
@@ -174,12 +188,6 @@ namespace hades
 		// tells the component whether it should render with height on or not
 		virtual void on_height_toggle(bool) {}
 
-		// only one component should provide terrain
-		virtual const terrain_map* peek_terrain() const 
-		{
-			return {};
-		}
-
 		virtual void draw(sf::RenderTarget&, time_duration, sf::RenderStates) {}
 
 		virtual void draw_brush_preview(sf::RenderTarget&, time_duration, sf::RenderStates) {}
@@ -191,6 +199,7 @@ namespace hades
 		get_tags_at_f _get_object_tags_at;
 		get_players_f _get_players;
 		get_world_rotation_f _get_world_rotation;
+		get_map_f _get_map;
 	};
 }
 

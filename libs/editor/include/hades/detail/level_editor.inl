@@ -78,23 +78,6 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	inline tag_list basic_level_editor<Components...>::_component_get_terrain_tags_at_location(const rect_float area) const
-	{
-		const auto results = tuple_transform(_editor_components, &level_editor_component::get_terrain_tags_at_location, area);
-
-		auto size = std::size_t{};
-		for (const auto& r : results)
-			size += std::size(r);
-
-		auto output = tag_list{};
-		output.reserve(size);
-		for (const auto& r : results)
-			output.insert(std::end(output), std::begin(r), std::end(r));
-
-		return output;
-	}
-
-	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_component_on_click(const brush_index_t i, const std::optional<terrain_target> p)
 	{
 		level_editor_do_tuple_work(_editor_components, i, &level_editor_component::on_click, p);
@@ -144,19 +127,6 @@ namespace hades
 	}
 
 	template<typename ...Components>
-	const terrain_map* basic_level_editor<Components...>::_component_peek_terrain()
-	{
-		const auto terrains = tuple_transform(_editor_components, &level_editor_component::peek_terrain);
-		for (const auto t : terrains)
-		{
-			if (t)
-				return t;
-		}
-		
-		return {};
-	}
-
-	template<typename ...Components>
 	inline void basic_level_editor<Components...>::_draw_components(sf::RenderTarget &target,
 		const time_duration delta_time, const brush_index_t active_brush, const sf::RenderStates s)
 	{
@@ -194,7 +164,7 @@ namespace hades
 			};
 
 			auto get_terrain_tags_at = [this](const rect_float area)->tag_list {
-				return _component_get_terrain_tags_at_location(area);
+				return _get_terrain_tags_at_location(area);
 			};
 
 			auto get_players_fn = [this]() {
@@ -205,13 +175,18 @@ namespace hades
 				return _get_world_rot();
 			};
 
+			auto get_map_fn = [this]()->map_type& {
+				return _get_map();
+			};
+
 			c.install_callbacks(
 				activate_brush,
 				is_active,
 				get_terrain_tags_at,
 				get_object_tags_at,
 				get_players_fn,
-				get_world_rotation_fn
+				get_world_rotation_fn,
+				get_map_fn
 			);
 		});
 		return;

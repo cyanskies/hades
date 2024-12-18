@@ -330,11 +330,11 @@ namespace hades
 			return false;
 		}
 
-		if (std::size(r.cliff_tiles.tiles) != tile_count * enum_type(terrain_map::cliff_layer_layout::multiplier))
+		// if cliff tiles are present, they must be the correct size
+		if (!std::empty(r.cliff_tiles.tiles) && std::size(r.cliff_tiles.tiles) != tile_count * enum_type(terrain_map::cliff_layer_layout::multiplier))
 		{
-			// NOTE: this is only a warning
-			// we can still try to load the map
-			log_warning("Cliff tilemap must have 5 samples per tile"sv);
+			log_error("Cliff tilemap must have 5 samples per tile"sv);
+			return false;
 		}
 
 		if (!std::empty(r.terrain_layers))

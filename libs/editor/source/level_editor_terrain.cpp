@@ -118,6 +118,7 @@ namespace hades
 
 	void level_editor_terrain::level_load(const level &l)
 	{
+		_store_map();
 		auto map_raw = l.terrain;
 
 		//check the scale and size of the map
@@ -140,30 +141,31 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
-		auto map = to_terrain_map(std::move(map_raw), *_settings);
+		auto t_map = to_terrain_map(std::move(map_raw), *_settings);
 		
-		_current.terrain_set = map.terrainset;
-		_map.reset(std::move(map));
-		_map.set_sun_angle(_sun_angle); // TODO: temp
+		_current.terrain_set = t_map.terrainset;
+		auto& map = get_map();
+		map.reset(std::move(t_map));
+		map.set_sun_angle(_sun_angle); // TODO: temp
 		// _sun_angle = get_sun_angle(map);
 		return;
 	}
 
 	level level_editor_terrain::level_save(level l) const
 	{
-		l.terrain = to_raw_terrain_map(_map.get_map(), *_settings);
+		l.terrain = to_raw_terrain_map(_map->get_map(), *_settings);
 		return l;
 	}
 
 	void level_editor_terrain::level_resize(vector2_int s, vector2_int o)
 	{
-		terrain_map map = _map.get_map(); // make copy of map
+		terrain_map map = _map->get_map(); // make copy of map
 		const auto new_size_tiles = to_tiles(s, _tile_size);
 		const auto offset_tiles = to_tiles(o, _tile_size);
 
 		// TODO: ui to select new height
 		resize_map(map, new_size_tiles, offset_tiles, _resize.terrain, _settings->height_default, *_settings);
-		_map.reset(std::move(map));
+		_map->reset(std::move(map));
 		_resize.terrain = _empty_terrain;
 	}
 
@@ -210,18 +212,18 @@ namespace hades
 		{
 			if (g.menu_begin("view"sv))
 			{
-				if (auto ramps = _map.show_ramps(); g.menu_toggle_item("show ramp indicators"sv, ramps))
-					_map.show_ramps(ramps);
-				if (auto cliffs = _map.show_cliff_edges(); g.menu_toggle_item("show cliff indicators"sv, cliffs))
-					_map.show_cliff_edges(cliffs);
-				if (auto layers = _map.show_cliff_layers(); g.menu_toggle_item("show cliff layer value"sv, layers))
-					_map.show_cliff_layers(layers);
-				if (auto shadows = _map.show_shadows(); g.menu_toggle_item("draw shadows"sv, shadows))
-					_map.show_shadows(shadows);
-				if (auto depth = _map.draw_depth_buffer(); g.menu_toggle_item("draw depth buffer"sv, depth))
-					_map.draw_depth_buffer(depth);
-				if (auto normals = _map.draw_normals_buffer(); g.menu_toggle_item("draw normal buffer"sv, normals))
-					_map.draw_normals_buffer(normals);
+				if (auto ramps = _map->show_ramps(); g.menu_toggle_item("show ramp indicators"sv, ramps))
+					_map->show_ramps(ramps);
+				if (auto cliffs = _map->show_cliff_edges(); g.menu_toggle_item("show cliff indicators"sv, cliffs))
+					_map->show_cliff_edges(cliffs);
+				if (auto layers = _map->show_cliff_layers(); g.menu_toggle_item("show cliff layer value"sv, layers))
+					_map->show_cliff_layers(layers);
+				if (auto shadows = _map->show_shadows(); g.menu_toggle_item("draw shadows"sv, shadows))
+					_map->show_shadows(shadows);
+				if (auto depth = _map->draw_depth_buffer(); g.menu_toggle_item("draw depth buffer"sv, depth))
+					_map->draw_depth_buffer(depth);
+				if (auto normals = _map->draw_normals_buffer(); g.menu_toggle_item("draw normal buffer"sv, normals))
+					_map->draw_normals_buffer(normals);
 
 				g.menu_end();
 			}
@@ -246,12 +248,12 @@ namespace hades
 			// TODO: move both of these into the view menu
 			if (g.toolbar_button("terrain grid"sv))
 			{
-				_map.show_grid(!_map.show_grid());
+				_map->show_grid(!_map->show_grid());
 			}
 
 			if (g.toolbar_button("terrain depth"sv))
 			{
-				_map.draw_depth_buffer(!_map.draw_depth_buffer());
+				_map->draw_depth_buffer(!_map->draw_depth_buffer());
 			}
 		}
 
@@ -265,7 +267,7 @@ namespace hades
 			if (g.collapsing_header("sun settings"sv))
 			{
 				if (g.slider_scalar("Sun angle"sv, _sun_angle, 180.f, 0.f))
-					_map.set_sun_angle(_sun_angle);
+					_map->set_sun_angle(_sun_angle);
 			}
 
 			if (g.collapsing_header("terrain_palette"))
@@ -502,63 +504,36 @@ namespace hades
 			_terrain_palette.last_preview = preview;
 
 		const auto tile_func = [&](const tile_position pos) {
-			_map.set_edit_target_style(mutable_terrain_map::edit_target::tile);
+			_map->set_edit_target_style(mutable_terrain_map::edit_target::tile);
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::add_ramp:
-				if (can_add_ramp(pos, _map.get_map()).any())
-					_map.add_edit_target(pos);
+				if (can_add_ramp(pos, _map->get_map()).any())
+					_map->add_edit_target(pos);
 				break;
 			case brush_type::remove_ramp:
 				{
-					if (get_ramps(pos, _map.get_map()).any())
-						_map.add_edit_target(pos);
+					if (get_ramps(pos, _map->get_map()).any())
+						_map->add_edit_target(pos);
 				} break;
 			default:
-				_map.add_edit_target(pos);
+				_map->add_edit_target(pos);
 			}
 		};
 
 		const auto vertex_func = [&](const vertex_tag_t, const terrain_vertex_position pos) {
-			_map.set_edit_target_style(mutable_terrain_map::edit_target::vertex);
-			_map.add_edit_target(pos);
+			_map->set_edit_target_style(mutable_terrain_map::edit_target::vertex);
+			_map->add_edit_target(pos);
 		};
 
-		_map.clear_edit_target();
+		_map->clear_edit_target();
 		if (t)
 		{
 			for_each_position(*t, _settings->tile_size, _terrain_palette.shape,
-				_terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(),
+				_terrain_palette.brush, _terrain_palette.draw_size, _map->get_map(),
 				overloaded{ tile_func, vertex_func });
 		}
 		return;
-	}
-
-	tag_list level_editor_terrain::get_terrain_tags_at_location(rect_float location) const
-	{
-		//TODO: maybe move this to utility?
-		constexpr auto snap_to_floor = [](float val, int mul)->float {
-			const auto diff = std::remainder(val, static_cast<float>(mul));
-			return std::trunc(val - diff);
-		};
-
-		const auto tile_size = signed_cast(_settings->tile_size);
-		const auto loc = rect_int{
-			static_cast<int>(snap_to_floor(location.x, tile_size)) / tile_size,
-			static_cast<int>(snap_to_floor(location.y, tile_size)) / tile_size,
-			static_cast<int>(snap_to_floor(location.width + tile_size, tile_size)) / tile_size,
-			static_cast<int>(snap_to_floor(location.height + tile_size, tile_size)) / tile_size,
-		};
-
-		const auto& map = _map.get_map();
-		const auto world_size = get_size(map);
-		auto out = tag_list{};
-		for_each_position_rect({ loc.x, loc.y }, { loc.width, loc.height }, world_size, [&map, &out](const tile_position p) {
-			const auto tags = hades::get_tags_at(map, p);
-			out.insert(end(out), begin(tags), end(tags));
-		});
-
-		return out;
 	}
 
 	void level_editor_terrain::on_reinit(vector2_float window_size, vector2_float view_size)
@@ -569,7 +544,7 @@ namespace hades
 		const auto chunk_count = 4;
 		auto chunk_size = std::max(view_height * max_zoom, default_w * max_zoom) / 2.f; //view is observed from centre
 		chunk_size += 10.f;
-		//_map.set_chunk_size(integral_cast<std::size_t>(chunk_size, round_up_tag));
+		//_map->set_chunk_size(integral_cast<std::size_t>(chunk_size, round_up_tag));
 
 		//also do screen move
 	}
@@ -579,7 +554,7 @@ namespace hades
 		if (_terrain_palette.brush == brush_type::debug_brush)
 			return;
 
-		_map.clear_edit_target();
+		_map->clear_edit_target();
 
 		if (!p)
 			return;
@@ -596,12 +571,12 @@ namespace hades
 			const auto sample_collector = [&](const terrain_vertex_position pos, const float) {
 				using h_type = terrain_map::vertex_height_t;
 				using limits = std::numeric_limits<h_type>;
-				height_sum += get_vertex_height(pos, _map.get_map());
+				height_sum += get_vertex_height(pos, _map->get_map());
 				++height_count;
 			};
 
 			const auto overload = overloaded{ sample_stub1, sample_stub2, sample_collector };
-			for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), overload);
+			for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map->get_map(), overload);
 			avrg_height = integer_clamp_cast<std::uint8_t>(height_sum / height_count);
 		}
 
@@ -610,16 +585,16 @@ namespace hades
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::raise_cliff:
-				_map.raise_cliff(p);
+				_map->raise_cliff(p);
 				break;
 			case brush_type::lower_cliff:
-				_map.lower_cliff(p);
+				_map->lower_cliff(p);
 				break;
 			case brush_type::add_ramp:
-				_map.place_ramp(p);
+				_map->place_ramp(p);
 				break;
 			case brush_type::remove_ramp:
-				_map.remove_ramp(p);
+				_map->remove_ramp(p);
 				break;
 			/*case brush_type::raise_water:
 				break;
@@ -633,10 +608,10 @@ namespace hades
 			switch (_terrain_palette.brush)
 			{
 			case brush_type::draw_terrain:
-				_map.place_terrain(pos, _current.terrain);
+				_map->place_terrain(pos, _current.terrain);
 				break;
 			/*case brush_type::erase: // a special case of terrain drawing
-					_map.place_terrain(pos, _empty_terrain);
+					_map->place_terrain(pos, _empty_terrain);
 				break;*/
 			}
 			return;
@@ -652,40 +627,40 @@ namespace hades
 			case brush_type::raise_terrain:
 			{
 				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
-				_map.raise_terrain(pos, str);
+				_map->raise_terrain(pos, str);
 			}break;
 			case brush_type::lower_terrain:
 			{
 				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
-				_map.lower_terrain(pos, str);
+				_map->lower_terrain(pos, str);
 			}break;
 			case brush_type::add_height_noise:
 			{
-				const auto h = get_vertex_height(pos, _map.get_map());
+				const auto h = get_vertex_height(pos, _map->get_map());
 				const auto noise = perlin_noise(float_cast(pos.x) * 0.75f, float_cast(pos.y) * 0.75f);
 				const auto diff = noise * strength * _terrain_palette.draw_size;
 				const auto new_h_f = std::clamp(h + diff, float_cast(limits::min()), float_cast(limits::max()));
 				const auto new_h = integral_cast<std::uint8_t>(new_h_f);
-				_map.set_terrain_height(pos, new_h);
+				_map->set_terrain_height(pos, new_h);
 			}break;
 			case brush_type::smooth_height:
 			{
-				const auto h = get_vertex_height(pos, _map.get_map());
+				const auto h = get_vertex_height(pos, _map->get_map());
 				const auto diff = avrg_height - h;
 				const auto str = integral_cast<h_type>(_terrain_palette.draw_size * strength);
 				if (diff < 0)
 				{
 					if (std::cmp_less(h - str, avrg_height))
-						_map.set_terrain_height(pos, avrg_height);
+						_map->set_terrain_height(pos, avrg_height);
 					else
-						_map.lower_terrain(pos, str);
+						_map->lower_terrain(pos, str);
 				}
 				else
 				{
 					if (std::cmp_greater(h + str, avrg_height))
-						_map.set_terrain_height(pos, avrg_height);
+						_map->set_terrain_height(pos, avrg_height);
 					else
-						_map.raise_terrain(pos, str);
+						_map->raise_terrain(pos, str);
 				}
 			}break;
 
@@ -694,7 +669,7 @@ namespace hades
 		};
 
 		const auto ovrld = overloaded{ tile_func, vertex_func, vertex_func_strength };
-		for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), ovrld);
+		for_each_position(*p, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map->get_map(), ovrld);
 		return;
 	}
 
@@ -780,11 +755,11 @@ namespace hades
 		if (_no_drag(t))
 			return;
 
-		_map.clear_edit_target();
-		const auto h = pick_next_height(_map.get_map(), _terrain_palette.brush, *t, *_settings);
+		_map->clear_edit_target();
+		const auto h = pick_next_height(_map->get_map(), _terrain_palette.brush, *t, *_settings);
 		_terrain_palette.drag_level = h;
-		auto functor = on_drag_functor{ _map, h, _terrain_palette.brush };
-		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), functor);
+		auto functor = on_drag_functor{ *_map, h, _terrain_palette.brush };
+		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map->get_map(), functor);
 		return;
 	}
 
@@ -795,37 +770,38 @@ namespace hades
 		if (_no_drag(t))
 			return;
 
-		_map.clear_edit_target();
+		_map->clear_edit_target();
 
 		if(!_terrain_palette.drag_level)
 		{
-			const auto h = pick_next_height(_map.get_map(), _terrain_palette.brush, *t, *_settings);
+			const auto h = pick_next_height(_map->get_map(), _terrain_palette.brush, *t, *_settings);
 			_terrain_palette.drag_level = h;
 		}
-		auto functor = on_drag_functor{ _map, _terrain_palette.drag_level.value(), _terrain_palette.brush};
-		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map.get_map(), functor);
+		auto functor = on_drag_functor{ *_map, _terrain_palette.drag_level.value(), _terrain_palette.brush};
+		for_each_position(*t, _settings->tile_size, _terrain_palette.shape, _terrain_palette.brush, _terrain_palette.draw_size, _map->get_map(), functor);
 		return;
 	}
 
 	void level_editor_terrain::on_screen_move(rect_float r)
 	{
-		_map.set_world_region(r);
+		_map->set_world_region(r);
 		return;
 	}
 
 	void level_editor_terrain::on_height_toggle(bool b) noexcept
 	{
-		_map.set_height_enabled(b);
+		_map->set_height_enabled(b);
 		return;
 	}
 
 	void level_editor_terrain::draw(sf::RenderTarget &r, time_duration, sf::RenderStates s)
 	{
+		auto& map = get_map();
 		if (!is_active_brush())
-			_map.clear_edit_target();
-		_map.apply();
-		_map.set_world_rotation(get_world_rotation());
-		r.draw(_map, s);
+			map.clear_edit_target();
+		map.apply();
+		map.set_world_rotation(get_world_rotation());
+		r.draw(map, s);
 	}
 
 	namespace detail

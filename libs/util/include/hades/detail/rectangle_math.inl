@@ -211,6 +211,25 @@ namespace hades
 			y2_max - y
 		};
 	}
+
+	template<typename T>
+	constexpr rect_t<T> min_rect(const rect_t<T> first, const rect_t<T> second) noexcept
+	{
+		const auto x = std::max(first.x, second.x);
+		const auto y = std::max(first.y, second.y);
+
+		const auto x2_first = first.x + first.width;
+		const auto x2_second = second.x + second.width;
+
+		const auto y2_first = first.y + first.height;
+		const auto y2_second = second.y + second.height;
+
+		return {
+			x, y,
+			std::min(x2_first, x2_second) - x,
+			std::min(y2_first, y2_second) - y
+		};
+	}
 }
 
 template<typename CharT>

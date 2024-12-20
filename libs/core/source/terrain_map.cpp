@@ -279,10 +279,13 @@ namespace hades
 		for (auto shdr : { &_shader, &_shader_debug_depth, &_shader_shadows_lighting, &_shader_debug_lighting })
 			shdr->set_uniform("height_multiplier"sv, _show_height * 1.f);
 
+		for (auto& chk : _shared.chunks)
+			chk.tile_bounds = {};
+
 		_shared.map = std::move(t);
 
 		set_world_rotation(0.f);
-		_needs_update = true;
+
 		// TODO: set sun angle
 		return;
 	}
@@ -296,15 +299,97 @@ namespace hades
 		r.y -= 255.f;
 		r.width += 255.f * 2.f;
 		r.height += 255.f * 2.f;
+		
+		r = min_rect(r, _shared.local_bounds);
 
-		if (is_within(r, _shared.world_area))
-			return;
+		const auto chunk_float = std::min(float_cast(_chunk_size), std::max(_shared.local_bounds.width, _shared.local_bounds.height));
+		const auto tile_size_f = float_cast(_shared.settings->tile_size);
+		const auto chunk_tiles = integral_clamp_cast<std::int32_t>(chunk_float / tile_size_f, round_up_tag);
+		auto cell_rect = rect_int{ 0, 0, chunk_tiles, chunk_tiles };
 
-		if (r != _shared.world_area)
+		auto view_rect_tiles = rect_int{
+			integral_cast<std::int32_t>(r.x / tile_size_f, round_up_tag),
+			integral_cast<std::int32_t>(r.y / tile_size_f, round_up_tag),
+			integral_cast<std::int32_t>(r.width / tile_size_f, round_up_tag),
+			integral_cast<std::int32_t>(r.height / tile_size_f, round_up_tag),
+		};
+
+		// disable chunks that are outside the view area
+		for (auto& chunk : _shared.chunks)
 		{
-			_needs_update = true;
-			_shared.world_area = r;
+			if (!intersects(chunk.tile_bounds, view_rect_tiles))
+				chunk.tile_bounds = {};
 		}
+
+		const auto max_y = std::min(view_rect_tiles.y + view_rect_tiles.height, integral_cast<std::int32_t>((_shared.local_bounds.y + _shared.local_bounds.height) / tile_size_f));
+		const auto max_x = std::min(view_rect_tiles.x + view_rect_tiles.width, integral_cast<std::int32_t>((_shared.local_bounds.x + _shared.local_bounds.width) / tile_size_f));
+
+		auto min_x = std::int32_t{};
+
+		while (!range_within(cell_rect.x, cell_rect.x + cell_rect.width, view_rect_tiles.x, view_rect_tiles.x + view_rect_tiles.width))
+		{
+			cell_rect.x += chunk_tiles;
+			min_x = cell_rect.x;
+		}
+
+		auto min_y = std::int32_t{};
+
+		while (!range_within(cell_rect.y, cell_rect.y + cell_rect.height, view_rect_tiles.y, view_rect_tiles.y + view_rect_tiles.height))
+		{
+			cell_rect.y += chunk_tiles;
+			min_y = cell_rect.y;
+		}
+
+		for (auto y = min_y; y < max_y; y += chunk_tiles)
+		{
+			cell_rect.y = y;
+			for (auto x = min_x; x < max_x; x += chunk_tiles)
+			{
+				cell_rect.x = x;
+
+				bool found_chunk = false;
+				for (auto& chunk : _shared.chunks)
+				{
+					if (chunk.tile_bounds == cell_rect)
+					{
+						found_chunk = true;
+						break;
+					}
+				}
+
+				if (found_chunk)
+					continue;
+
+				for (auto& chunk : _shared.chunks)
+				{
+					if (chunk.tile_bounds == rect_int{})
+					{
+						found_chunk = true;
+						chunk.tile_bounds = cell_rect;
+						chunk.needs_update = chunk_data::update_flags::all;
+						chunk.cliff_layer_update = _show_cliff_layers;
+						break;
+					}
+				}
+
+				if (found_chunk)
+					continue;
+
+				auto& chunk = _shared.chunks.emplace_back();
+				chunk.tile_bounds = cell_rect;
+				chunk.needs_update = chunk_data::update_flags::all;
+				chunk.cliff_layer_update = _show_cliff_layers;
+			}
+		}
+
+		_view_area = r;
+		return;
+	}
+
+	void mutable_terrain_map::set_chunk_size(std::size_t chunk_size)
+	{
+		_chunk_size = chunk_size;
+		set_world_region(_view_area);
 		return;
 	}
 
@@ -424,12 +509,12 @@ namespace hades
 	}
 
 	// never pass an empty tile_buffer to this func
-	static void make_layer_regions(mutable_terrain_map::shared_data& shared, 
+	static void make_layer_regions(mutable_terrain_map::chunk_data& chunk,
 		const std::span<const map_tile> tile_buffer, const float tile_sizef)
 	{
 		assert(!tile_buffer.empty());
 		auto current_region = mutable_terrain_map::vertex_region{
-			shared.quads.size(),
+			chunk.quads.size(),
 			{},
 			tile_buffer.front().texture
 		};
@@ -438,9 +523,9 @@ namespace hades
 		{
 			if (tile.texture != current_region.texture_index)
 			{
-				current_region.end_index = shared.quads.size() - 1;
-				shared.regions.emplace_back(current_region);
-				current_region.start_index = shared.quads.size();
+				current_region.end_index = chunk.quads.size() - 1;
+				chunk.regions.emplace_back(current_region);
+				current_region.start_index = chunk.quads.size();
 				current_region.texture_index = tile.texture;
 			}
 
@@ -457,24 +542,24 @@ namespace hades
 			};
 			const auto type = pick_triangle_type(tile_pos);
 			const auto quad = make_terrain_triangles(tile.positions, tile.height, type, tex_coords);
-			shared.quads.append(quad);
+			chunk.quads.append(quad);
 		}
 
-		current_region.end_index = shared.quads.size();
-		shared.regions.emplace_back(current_region);
+		current_region.end_index = chunk.quads.size();
+		chunk.regions.emplace_back(current_region);
 		return;
 	}
 
 	static void generate_layer(mutable_terrain_map::shared_data& shared,
-		std::vector<map_tile>& tile_buffer,	const tile_map& map,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk,
+		std::vector<map_tile>& tile_buffer,	const tile_map& map)
 	{
 		tile_buffer.clear();
-		tile_buffer.reserve(integer_clamp_cast<std::size_t>(terrain_area.x) * integer_clamp_cast<std::size_t>(terrain_area.y));
+		tile_buffer.reserve(integer_clamp_cast<std::size_t>(chunk.tile_bounds.x) * integer_clamp_cast<std::size_t>(chunk.tile_bounds.y));
 
 		const auto map_size_tiles = get_size(shared.map);
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto& tile = get_tile_at(map, pos);
 			if (!tile.tex)
 				return;
@@ -498,7 +583,7 @@ namespace hades
 			return;
 
 		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
-		make_layer_regions(shared, tile_buffer, tile_sizef);
+		make_layer_regions(chunk, tile_buffer, tile_sizef);
 		return;
 	}
 
@@ -629,7 +714,7 @@ namespace hades
 	}
 
 	static void generate_cliffs(mutable_terrain_map::shared_data& shared,
-		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk, std::vector<map_tile>& tile_buffer)
 	{
 		if (!shared.map.terrainset || !shared.map.terrainset->cliff_type)
 		{
@@ -642,7 +727,7 @@ namespace hades
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
 		const auto& empty_tile = resources::get_empty_tile(*shared.settings);
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
 			const auto cliff_corners = get_cliff_corners(pos, shared.map);
 
@@ -687,13 +772,13 @@ namespace hades
 			return;
 
 		std::ranges::sort(tile_buffer, {}, &map_tile::texture);
-		make_layer_regions(shared, tile_buffer, tile_sizef);
+		make_layer_regions(chunk, tile_buffer, tile_sizef);
 
 		return;
 	}
 
 	static void generate_grid(mutable_terrain_map::shared_data& shared,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk)
 	{
 		if (!shared.settings->grid_terrain)
 		{
@@ -716,7 +801,7 @@ namespace hades
 				tile_sizef
 		};
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
 				float_cast(pos.y) * tile_sizef
@@ -727,14 +812,14 @@ namespace hades
 			const auto p = make_cell_positions(position, tile_sizef);
 			const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords);
 
-			shared.quads.append(quad);
+			chunk.quads.append(quad);
 			return;
 			});
 		return;
 	}
 
 	static void generate_ramp(mutable_terrain_map::shared_data& shared,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk)
 	{
 		if (!shared.settings->ramp_overlay_terrain)
 		{
@@ -799,7 +884,7 @@ namespace hades
 				tile_sizef
 		};
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto index = to_tile_index(pos, map_size_tiles.x);
 			assert(index < std::size(shared.map.ramp_layer));
 			const auto ramp = std::bitset<4>{ shared.map.ramp_layer[index] };
@@ -819,25 +904,25 @@ namespace hades
 			if (ramp.test(enum_type(rect_edges::top)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_top);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::right)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_right);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::bottom)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_bottom);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (ramp.test(enum_type(rect_edges::left)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_left);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			return;
@@ -846,7 +931,7 @@ namespace hades
 	}
 
 	static void generate_cliff_debug(mutable_terrain_map::shared_data& shared,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk)
 	{
 		if (!shared.settings->cliff_overlay_terrain)
 		{
@@ -911,7 +996,7 @@ namespace hades
 				tile_sizef
 		};
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto cliffs = get_adjacent_cliffs(pos, shared.map);
 			if (cliffs.none())
 				return;
@@ -925,25 +1010,25 @@ namespace hades
 			if (cliffs.test(enum_type(rect_edges::top)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_top);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::right)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_right);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::bottom)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_bottom);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 
 			if (cliffs.test(enum_type(rect_edges::left)))
 			{
 				const auto quad = make_terrain_triangles(p, triangle_height, type, tex_coords_left);
-				shared.quads.append(quad);
+				chunk.quads.append(quad);
 			}
 		});
 	}
@@ -968,7 +1053,7 @@ namespace hades
 	}*/
 
 	static void generate_cliff_layer_debug(mutable_terrain_map::shared_data& shared,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk)
 	{
 		constexpr auto text_size = 13.f;
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
@@ -979,7 +1064,7 @@ namespace hades
 		auto text_renderer = shared.gui.make_text_renderer();
 		auto out = std::vector<sf::Vertex>{};
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			const auto cliff_layer = get_cliff_layer(pos, shared.map);
 			const auto cliff_layer_str = std::format("{}", integer_cast<unsigned int>(cliff_layer));
 
@@ -1005,11 +1090,11 @@ namespace hades
 			out.insert(end(out), begin(render.verts), end(render.verts));
 		});
 
-		auto ret = shared.cliff_layer_debug.create(size(out));
+		auto ret = chunk.cliff_layer_debug.create(size(out));
 		if (!ret)
 			log_error("Failed to create vertex buffer for cliff layer debug"sv);
 			
-		ret = shared.cliff_layer_debug.update(std::data(out));
+		ret = chunk.cliff_layer_debug.update(std::data(out));
 		if (!ret)
 			log_error("Failed to store cliff layer debug view in VertexBuffer"sv);
 		return;
@@ -1332,7 +1417,7 @@ namespace hades
 	}
 
 	static void generate_lighting(mutable_terrain_map::shared_data& shared,
-		const rect_int terrain_area)
+		mutable_terrain_map::chunk_data& chunk)
 	{
 		const auto& sun_angle_radian = shared.sun_angle_radians;
 		const auto tile_sizef = float_cast(shared.settings->tile_size);
@@ -1357,12 +1442,15 @@ namespace hades
 
 		const auto map_size_tiles = get_size(shared.map);
 		
-		auto table_area = terrain_area;
+		auto table_area = chunk.tile_bounds;
 		table_area.x = std::max(table_area.x - sun_dist, 0);
-		table_area.y = std::max(table_area.y - 1, 0);
-		table_area.width = std::min(table_area.width + sun_dist, map_size_tiles.x);
-		table_area.height = std::min(table_area.height, map_size_tiles.y);
+		table_area.y = std::max(table_area.y, 0);
+		const auto x2 = table_area.x + table_area.width + sun_dist;
+		const auto y2 = table_area.y + table_area.height;
+		table_area.width = std::min(x2, map_size_tiles.x) - table_area.x;
+		table_area.height = std::min(y2, map_size_tiles.y) - table_area.y;
 
+		// TODO: store this in shared alongside the tile_buffer
 		auto light_table = table<lighting_info>{ position(table_area), size(table_area), {} };
 		// iterate over tiles
 		const auto row_length = table_area.width;
@@ -1373,7 +1461,7 @@ namespace hades
 			else if (sun_90)
 				return full_bright;
 			return sun_left ? push_shadows_from_left : push_shadows_from_right;
-			}();
+		}();
 
 		for (auto y = std::int32_t{}; y < table_area.height; ++y)
 		{
@@ -1382,7 +1470,7 @@ namespace hades
 				dir, sun_rise, tile_sizef, row_length, shared, shadow_func);
 		}
 
-		for_each_safe_position_rect(position(terrain_area), size(terrain_area), map_size_tiles, [&](const tile_position pos) {
+		for_each_safe_position_rect(position(chunk.tile_bounds), size(chunk.tile_bounds), map_size_tiles, [&](const tile_position pos) {
 			// TODO: to_world_vector
 			const auto position = vector2_float{
 				float_cast(pos.x) * tile_sizef,
@@ -1400,7 +1488,7 @@ namespace hades
 			const auto positions = make_cell_positions(position, tile_sizef);
 			const auto quad = make_terrain_triangles(positions, light_info.height, type, {}, light_info.shadow_height, normals);
 			
-			shared.quads.append(quad);
+			chunk.quads.append(quad);
 
 			const auto adj_cliffs = get_adjacent_cliffs(pos, shared.map);
 			const auto cliffs = make_cliffs(pos, position, light_info.height, adj_cliffs, tile_sizef, shared);
@@ -1437,7 +1525,7 @@ namespace hades
 
 				const auto& c = *cliffs[index];
 				const auto cliff_quad = make_terrain_triangles(c.positions, c.height, type, {}, shdw, cliff_normal);
-				shared.quads.append(cliff_quad);
+				chunk.quads.append(cliff_quad);
 			}
 			return;
 		});
@@ -1554,34 +1642,52 @@ namespace hades
 	};
 
 	static void generate_chunk(mutable_terrain_map::shared_data& shared,
-		std::vector<map_tile>& tile_buffer,	const rect_int terrain_area,
+		std::vector<map_tile>& tile_buffer, mutable_terrain_map::chunk_data& chunk,
 		const chunk_flags flags)
 	{
-		//generate terrain layers
-		const auto s = size(shared.map.terrain_layers);
-		for (auto i = s; i > 0; --i)
-			generate_layer(shared, tile_buffer, shared.map.terrain_layers[i - 1], terrain_area);
+		using enum mutable_terrain_map::chunk_data::update_flags;
+		switch (chunk.needs_update)
+		{
+		case all:
+			chunk.regions.clear();
+			chunk.quads.clear();
 
-		generate_cliffs(shared, tile_buffer, terrain_area);
-		
-		shared.start_lighting = shared.quads.size();
-		if (flags.shadows)
-			generate_lighting(shared, terrain_area);
-
-		shared.start_grid = shared.quads.size();
-		if (flags.grid)
-			generate_grid(shared, terrain_area);
-
-		shared.start_ramp = shared.quads.size();
-		if (flags.ramps)
-			generate_ramp(shared, terrain_area);
-
-		shared.start_cliff_debug = shared.quads.size();
-		if (flags.cliffs)
-			generate_cliff_debug(shared, terrain_area);
-
-		if (flags.layers)
-			generate_cliff_layer_debug(shared, terrain_area);
+			//generate terrain layers
+			{
+				const auto s = size(shared.map.terrain_layers);
+				for (auto i = s; i > 0; --i)
+					generate_layer(shared, chunk, tile_buffer, shared.map.terrain_layers[i - 1]);
+			}
+			generate_cliffs(shared, chunk, tile_buffer);
+			chunk.start_lighting = chunk.quads.size();
+			[[fallthrough]];
+		case lighting:
+			if (chunk.quads.size() > chunk.start_lighting)
+				chunk.quads.resize(chunk.start_lighting);
+			if (flags.shadows)
+				generate_lighting(shared, chunk);
+			chunk.start_grid = chunk.quads.size();
+			[[fallthrough]];
+		case grid:
+			if (chunk.quads.size() > chunk.start_grid)
+				chunk.quads.resize(chunk.start_grid);
+			if (flags.grid)
+				generate_grid(shared, chunk);
+			chunk.start_ramp = chunk.quads.size();
+			[[fallthrough]];
+		case ramp:
+			if (chunk.quads.size() > chunk.start_ramp)
+				chunk.quads.resize(chunk.start_ramp);
+			if (flags.ramps)
+				generate_ramp(shared, chunk);
+			chunk.start_cliff_debug = chunk.quads.size();
+			[[fallthrough]];
+		case cliff_edge:
+			if (chunk.quads.size() > chunk.start_cliff_debug)
+				chunk.quads.resize(chunk.start_cliff_debug);
+			if (flags.cliffs)
+				generate_cliff_debug(shared, chunk);	
+		}
 
 		return;
 	}
@@ -1591,32 +1697,48 @@ namespace hades
 		if (!_needs_update)
 			return;
 
-		_shared.regions.clear();
-		_shared.quads.clear();
-
 		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_cliff_layers, _show_ramps };
 
 		const auto tile_sizef = float_cast(_shared.settings->tile_size);
-		auto tiled_start = static_cast<vector2_int>(position(_shared.world_area) / tile_sizef);
+		auto tiled_start = static_cast<vector2_int>(position(_shared.local_bounds) / tile_sizef);
 		tiled_start.x = std::max(0, tiled_start.x);
 		tiled_start.y = std::max(0, tiled_start.y);
 
-		const auto tiled_size = static_cast<vector2_int>(size(_shared.world_area) / tile_sizef);
+		const auto tiled_size = static_cast<vector2_int>(size(_shared.local_bounds) / tile_sizef);
 
 		// working buffer to sort tiles in
-		// TODO: store this in the terrain_map so we don't have to alloc every map update
 		auto tile_buffer = std::vector<hades::map_tile>{};
 		
-		// TODO: clamp tile_start/area to regions in the game world
-		generate_chunk(_shared, tile_buffer, { tiled_start, tiled_size }, flags);
+		for (auto& chk : _shared.chunks)
+		{
+			if (chk.tile_bounds != rect_int{})
+			{
+				if(chk.needs_update != chunk_data::update_flags::end)
+				{
+					generate_chunk(_shared, tile_buffer, chk, flags);
+					
+					chk.needs_update = chunk_data::update_flags::end;
+					chk.quads.apply();
+				}
 
-		// generate map editor targets
-		// TODO: we might have to clear out the previous editor targets if they've changed
-		_shared.start_edit = _shared.quads.size();
-		generate_edits(_shared);
+				if (chk.cliff_layer_update && flags.layers)
+				{
+					generate_cliff_layer_debug(_shared, chk);
+					chk.cliff_layer_update = false;
+				}
+			}
+		}
 
-		_shared.quads.apply();
-		_needs_update = false;
+		if (_needs_update)
+		{
+			// generate map editor targets
+			// TODO: we might have to clear out the previous editor targets if they've changed
+			_shared.start_edit = _shared.quads.size();
+			generate_edits(_shared);
+			//generate_regions
+			_shared.quads.apply();
+			_needs_update = false;
+		}
 		return;
 	}
 
@@ -1627,51 +1749,55 @@ namespace hades
 		auto s = states;
 		s.shader = _debug_depth ? _shader_debug_depth.get_shader() : _shader.get_shader();
 		
-		glEnable(GL_CULL_FACE);
 		depth_buffer::setup();
 		depth_buffer::clear();
 		depth_buffer::enable();
 
-		for (const auto& region : _shared.regions)
+		for (auto& chunk : _shared.chunks)
 		{
-			assert(size(_shared.texture_table) > region.texture_index);
-			s.texture = &resources::texture_functions::get_sf_texture(_shared.texture_table[region.texture_index].get());
-			_shared.quads.draw(t, region.start_index, region.end_index - region.start_index, s);
-		}
+			glEnable(GL_CULL_FACE);
 
-		//shadows
-		if (_show_shadows)
-		{
-			const auto pop_shader = s.shader;
-			s.shader = _debug_shadows ? _shader_debug_lighting.get_shader() : _shader_shadows_lighting.get_shader();
-			_shared.quads.draw(t, _shared.start_lighting, _shared.start_grid - _shared.start_lighting, s);
-			s.shader = pop_shader;
-		}
+			for (const auto& region : chunk.regions)
+			{
+				assert(size(_shared.texture_table) > region.texture_index);
+				s.texture = &resources::texture_functions::get_sf_texture(_shared.texture_table[region.texture_index].get());
+				chunk.quads.draw(t, region.start_index, region.end_index - region.start_index, s);
+			}
 
-		if (_show_grid && _shared.grid_tex)
-		{
-			s.texture = &resources::texture_functions::get_sf_texture(_shared.grid_tex);
-			_shared.quads.draw(t, _shared.start_grid, _shared.start_ramp - _shared.start_grid, s);
-		}
+			//shadows
+			if (_show_shadows)
+			{
+				const auto pop_shader = s.shader;
+				s.shader = _debug_shadows ? _shader_debug_lighting.get_shader() : _shader_shadows_lighting.get_shader();
+				chunk.quads.draw(t, chunk.start_lighting, chunk.start_grid - chunk.start_lighting, s);
+				s.shader = pop_shader;
+			}
 
-		if (_show_ramps && _shared.ramp_tex)
-		{
-			s.texture = &resources::texture_functions::get_sf_texture(_shared.ramp_tex);
-			_shared.quads.draw(t, _shared.start_ramp, _shared.start_cliff_debug - _shared.start_ramp, s);
-		}
+			if (_show_grid && _shared.grid_tex)
+			{
+				s.texture = &resources::texture_functions::get_sf_texture(_shared.grid_tex);
+				chunk.quads.draw(t, chunk.start_grid, chunk.start_ramp - chunk.start_grid, s);
+			}
 
-		if (_show_cliff_edges && _shared.cliff_debug_tex)
-		{
-			s.texture = &resources::texture_functions::get_sf_texture(_shared.cliff_debug_tex);
-			_shared.quads.draw(t, _shared.start_ramp, _shared.start_edit - _shared.start_cliff_debug, s);
-		}
+			if (_show_ramps && _shared.ramp_tex)
+			{
+				s.texture = &resources::texture_functions::get_sf_texture(_shared.ramp_tex);
+				chunk.quads.draw(t, chunk.start_ramp, chunk.start_cliff_debug - chunk.start_ramp, s);
+			}
 
-		glDisable(GL_CULL_FACE);
+			if (_show_cliff_edges && _shared.cliff_debug_tex)
+			{
+				s.texture = &resources::texture_functions::get_sf_texture(_shared.cliff_debug_tex);
+				chunk.quads.draw(t, chunk.start_cliff_debug, chunk.quads.size() - chunk.start_cliff_debug, s);
+			}
 
-		if (_show_cliff_layers && _shared.layer_tex)
-		{
-			s.texture = _shared.layer_tex;
-			t.draw(_shared.cliff_layer_debug, s);
+			glDisable(GL_CULL_FACE);
+
+			if (_show_cliff_layers && _shared.layer_tex)
+			{
+				s.texture = _shared.layer_tex;
+				t.draw(chunk.cliff_layer_debug, s);
+			}
 		}
 
 		s.texture = &resources::texture_functions::get_sf_texture(_shared.edit_tex);
@@ -1720,60 +1846,131 @@ namespace hades
 	void mutable_terrain_map::place_terrain(const terrain_vertex_position p, const resources::terrain* t)
 	{
 		hades::place_terrain(_shared.map, p, t, *_shared.settings);
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
+
 		return;
 	}
 
 	void mutable_terrain_map::raise_terrain(const terrain_vertex_position v, const terrain_map::vertex_height_t amount)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::add_height_functor{ amount });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(v, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
 		return;
 	}
 
 	void mutable_terrain_map::lower_terrain(const terrain_vertex_position v, const terrain_map::vertex_height_t amount)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::sub_height_functor{ amount });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(v, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
 		return;
 	}
 
 	void mutable_terrain_map::set_terrain_height(const terrain_vertex_position v, const terrain_map::vertex_height_t h)
 	{
 		change_terrain_height(v, _shared.map, *_shared.settings, detail::set_height_functor{ h });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(v, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
 		return;
 	}
 
 	void mutable_terrain_map::raise_cliff(const tile_position p)
 	{
 		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::add_height_functor{ 1 });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
 		return;
 	}
 
 	void mutable_terrain_map::lower_cliff(const tile_position p)
 	{
 		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::sub_height_functor{ 1 });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
 		return;
 	}
 
 	void mutable_terrain_map::set_cliff(const tile_position p, const terrain_map::cliff_layer_t layer)
 	{
 		change_terrain_cliff_layer(p, _shared.map, *_shared.settings, detail::set_height_functor{ layer });
-		_needs_update = true;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
+
 		return;
 	}
 
 	void mutable_terrain_map::place_ramp(const tile_position p)
 	{
-		_needs_update |= hades::place_ramp(p, _shared.map, *_shared.settings);
+		if (!hades::place_ramp(p, _shared.map, *_shared.settings))
+			return;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
+		return;
 	}
 
 	void mutable_terrain_map::remove_ramp(const tile_position p)
 	{
-		_needs_update |= clear_ramp(p, _shared.map, *_shared.settings);
+		if (!hades::clear_ramp(p, _shared.map, *_shared.settings))
+			return;
+		for (auto& chunk : _shared.chunks)
+		{
+			if (is_within(p, chunk.tile_bounds))
+			{
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::all);
+				break;
+			}
+		}
+		return;
 	}
 
 	//==================================//

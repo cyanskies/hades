@@ -97,6 +97,7 @@ namespace hades
 			signed_cast(current.map_y / _settings->tile_size)
 		};
 
+		// TODO: slow
 		auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
 		
 		constexpr auto variance = 3;
@@ -104,6 +105,7 @@ namespace hades
 		const auto height_high = height_low + variance;
 
 		const auto vert_size = get_vertex_size(map);
+		// TODO: slow
 		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) -> void {
 			return change_terrain_height(p, map, *_settings, [&](const std::uint8_t) noexcept -> std::uint8_t {
 				return integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
@@ -111,6 +113,7 @@ namespace hades
 			});
 
 		auto l = level{ std::move(current) };
+		//TODO: slow
 		l.terrain = to_raw_terrain_map(std::move(map), *_settings);
 
 		return l;
@@ -141,6 +144,7 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
+		// TODO: slow
 		auto t_map = to_terrain_map(std::move(map_raw), *_settings);
 		
 		_current.terrain_set = t_map.terrainset;
@@ -540,11 +544,9 @@ namespace hades
 	{
 		auto view_height = static_cast<float>(*_view_height) * editor::zoom_max;
 		auto default_w = camera::calculate_width(static_cast<float>(*_view_height), window_size.x, window_size.y);
-		const auto max_zoom = 3.f;
-		const auto chunk_count = 4;
-		auto chunk_size = std::max(view_height * max_zoom, default_w * max_zoom) / 2.f; //view is observed from centre
-		chunk_size += 10.f;
-		//_map->set_chunk_size(integral_cast<std::size_t>(chunk_size, round_up_tag));
+		constexpr auto chunk_count = 9;
+		const auto chunk_size = std::max(view_height, default_w * editor::zoom_max) / 3.f;
+		_map->set_chunk_size(integral_cast<std::size_t>(chunk_size, round_up_tag));
 
 		//also do screen move
 	}

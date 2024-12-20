@@ -252,10 +252,9 @@ namespace hades::cvars
 
 	//force_whole_tiles
 	// controls the limits for map creation and resize
-	// forces the new size to be a multiple of tile_size, or tile_size * n
+	// forces the new size in tiles rather than game units
 	// 0 off
 	// 1 on
-	// n acts as if tiles size were multiplied by 'n'
 	constexpr auto editor_level_force_whole_tiles = "editor_level_force_whole_tiles";
 	constexpr auto editor_level_default_size = "editor_level_default_size";
 

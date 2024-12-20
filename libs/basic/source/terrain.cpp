@@ -199,6 +199,7 @@ namespace hades
 			const auto corners = get_terrain_at_tile(v, w + 1, { integer_cast<int32>(x), integer_cast<int32>(y) }, s);
 			const auto type = get_transition_type(corners, first, last);
 			const auto tile = resources::get_random_tile(**first, type, s);
+			// TODO: slow
 			out.tiles.emplace_back(get_tile_id(out, tile));
 		}
 
@@ -537,11 +538,13 @@ namespace hades
 		}
 
 		// TODO: rewrite this entire terrain layer conversion system, it makes no sense
+		// TODO: slow
 		m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x, settings);
 
 		if (std::empty(r.terrain_layers))
 		{
 			// if the terrain layers are empty then generate them
+			// NOTE: this is being done twice because of the above
 			m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x, settings);
 		}
 		else
@@ -624,6 +627,7 @@ namespace hades
 			t_map.emplace(t.terrainset->terrains[i].get(), i + 1u);
 
 		m.terrain_vertex.reserve(size(t.terrain_vertex));
+		// TODO: slow
 		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
 			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain* t) {
 				return t_map.at(t);
@@ -712,6 +716,7 @@ namespace hades
 			map.terrain_layers = std::vector<tile_map>(std::size(terrainset->terrains), empty_layer);
 		}
 
+		// TODO: slow
 		assert(is_valid(to_raw_terrain_map(map, s)));
 
 		return map;

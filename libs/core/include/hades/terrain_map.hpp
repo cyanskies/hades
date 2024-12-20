@@ -28,9 +28,11 @@ namespace hades
 
 		void reset(terrain_map); // equiv to creating a new object of this class, except we retain our allocated memory
 
+		// changed viewed area
 		void set_world_region(rect_float) noexcept;
 
-		//void set_chunk_size(std::size_t) noexcept;
+		// forces a realloc of all current chunks
+		void set_chunk_size(std::size_t);
 
 		void set_height_enabled(bool b) noexcept;
 
@@ -59,7 +61,8 @@ namespace hades
 		void show_shadows(bool b) noexcept
 		{
 			_show_shadows = b;
-			_needs_update = true;
+			for (auto& chunk : _shared.chunks)
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::lighting);
 			return;
 		}
 
@@ -71,7 +74,8 @@ namespace hades
 		void show_grid(bool b) noexcept
 		{
 			_show_grid = b;
-			_needs_update = true;
+			for (auto& chunk : _shared.chunks)
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::grid);
 			return;
 		}
 
@@ -83,7 +87,8 @@ namespace hades
 		void show_ramps(bool b) noexcept
 		{
 			_show_ramps = b;
-			_needs_update = true;
+			for (auto& chunk : _shared.chunks)
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::ramp);
 			return;
 		}
 
@@ -95,7 +100,8 @@ namespace hades
 		void show_cliff_edges(bool b) noexcept
 		{
 			_show_cliff_edges = b;
-			_needs_update = true;
+			for (auto& chunk : _shared.chunks)
+				chunk.needs_update = std::min(chunk.needs_update, chunk_data::update_flags::cliff_edge);
 			return;
 		}
 
@@ -107,6 +113,8 @@ namespace hades
 		void show_cliff_layers(bool b) noexcept
 		{
 			_show_cliff_layers = b;
+			for (auto& chunk : _shared.chunks)
+				chunk.cliff_layer_update = true;
 			return;
 		}
 
@@ -176,6 +184,11 @@ namespace hades
 			return _show_height;
 		}
 
+		std::size_t chunk_count() const noexcept
+		{
+			return std::size(_shared.chunks);
+		}
+
 	public:
 		struct vertex_region
 		{
@@ -185,16 +198,10 @@ namespace hades
 			std::uint8_t texture_index;
 		};
 
-		struct shared_data
+		struct chunk_data
 		{
-			rect_float world_area = {};
-			terrain_map map;
-			quad_buffer quads;
-			std::vector<tile_position> edit_targets;
-			gui gui = { "" }; // Don't generate .ini
-			// per chunk data
-			enum update_flags {
-				all,
+			enum class update_flags : std::uint8_t {
+				all, // vertex regions
 				lighting,
 				grid,
 				ramp,
@@ -202,23 +209,39 @@ namespace hades
 				cliff_value,
 				end
 			};
+
+			quad_buffer quads;
+			// terrain and cliff data
 			std::vector<vertex_region> regions;
+			rect_int tile_bounds = {};
 			std::size_t start_lighting;
 			std::size_t start_grid;
 			std::size_t start_ramp;
 			std::size_t start_cliff_debug;
 			sf::VertexBuffer cliff_layer_debug = { sf::PrimitiveType::Triangles, sf::VertexBuffer::Usage::Static };
-			std::bitset<enum_type(update_flags::end)> needs_update;
-			// end per chunk data
+			update_flags needs_update;
+			bool cliff_layer_update;
+		};
+
+		struct shared_data
+		{
+			terrain_map map;
+			quad_buffer quads;
+			std::vector<tile_position> edit_targets;
+			gui gui = { "" }; // Don't generate .ini
+			std::vector<chunk_data> chunks;
 			std::vector<resources::resource_link<resources::texture>> texture_table;
 			const resources::terrain_settings* settings = {};
-			const resources::texture* grid_tex = {};
-			const resources::texture* ramp_tex = {};
-			const resources::texture* cliff_debug_tex = {};
+			// Debug textures
+			const resources::texture* grid_tex = {}; // grid overlay
+			const resources::texture* ramp_tex = {}; // ramp location overlay
+			const resources::texture* cliff_debug_tex = {}; // cliff edge overlay
+			const sf::Texture* layer_tex = {}; // cliff height overlay
+			// editor selection texture (and region display texture)
 			const resources::texture* edit_tex = {};
-			const sf::Texture* layer_tex = {};
+			// total local bounds of the terrain_map
 			rect_float local_bounds = {};
-			std::size_t start_edit;
+			std::size_t start_edit; // start index for editor selection
 			float sun_angle_radians = {};
 			edit_target edit_target_style = edit_target::vertex;
 		};
@@ -283,18 +306,11 @@ namespace hades
 		resources::shader_proxy _shader_debug_lighting;
 
 	private:
-		/*struct chunk_info
-		{
-			std::vector<vertex_region> regions;
-			rect_float area;
-			bool active = false;
-			bool needs_update;
-		};*/
-
-		//std::size_t _chunk_size = std::numeric_limits<std::size_t>::max(); // redo this with a smaller size
-		//std::array<chunk_info, 4> _chunks;
 		shared_data _shared;
-		boolean_token _needs_update = true;
+		// currently viewed area
+		rect_float _view_area = {};
+		std::size_t _chunk_size = std::numeric_limits<std::size_t>::max();
+		boolean_token _needs_update = true; // edits and regions
 		bool _show_grid : 1 = false;
 		bool _show_height : 1 = true;
 		bool _show_shadows : 1 = true;

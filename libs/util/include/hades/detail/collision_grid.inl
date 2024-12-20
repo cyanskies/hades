@@ -14,7 +14,7 @@ namespace hades
 		_world_y = world_rect.y;
 
 		// calculate the number of cells
-		const auto cell_sizef = static_cast<float>(cell_size);
+		const auto cell_sizef = float_cast(cell_size);
 		const auto row_count = world_rect.width / cell_sizef;
 		_cells_per_row = static_cast<std::size_t>(std::round(row_count));
 		const auto height_count = world_rect.height / cell_sizef;

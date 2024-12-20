@@ -20,6 +20,8 @@ namespace hades
 	template<typename T>
 	[[nodiscard]] constexpr bool is_within(T value, T min, T max) noexcept;
 
+	// TODO: rename range_intersects 
+	// returns true if the ranges overlap
 	template<typename T>
 	[[nodiscard]] constexpr bool range_within(T first_min, T first_max, T second_min, T second_max) noexcept;
 }

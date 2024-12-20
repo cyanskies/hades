@@ -115,10 +115,24 @@ namespace hades
 		return _verts.capacity() / quad_vert_count;
 	}
 
-	void quad_buffer::reserve(std::size_t size)
+	void quad_buffer::reserve(const std::size_t size)
 	{
 		_verts.reserve(size * quad_vert_count);
 		return;
+	}
+
+	void quad_buffer::resize(const std::size_t size/*, const poly_quad& def*/)
+	{
+		//const auto current_size = _verts.size();
+		_verts.resize(size * quad_vert_count);
+		//const auto new_size = _verts.size();
+
+		/*if (new_size > current_size)
+		{
+			auto poly_i = std::size_t{};
+			for (auto i = current_size, poly_i = std::size_t{}; i < new_size; ++i, poly_i = ++poly_i % quad_vert_count)
+				_verts[i] = def[poly_i];
+		}*/
 	}
 
 	void quad_buffer::apply()

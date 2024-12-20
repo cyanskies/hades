@@ -8,6 +8,7 @@
 #include "SFML/Graphics/Text.hpp"
 
 #include "hades/collision.hpp"
+#include "hades/colour.hpp"
 #include "hades/font.hpp"
 #include "hades/level.hpp"
 #include "hades/level_editor_component.hpp"

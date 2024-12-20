@@ -136,9 +136,13 @@ namespace hades
 	template<typename T>
 	constexpr bool is_within(rect_t<T> first, rect_t<T> second) noexcept;
 
-	// returns a rect that contains of the passed rects
+	// returns a rect that contains both the passed rects
 	template<typename T>
 	constexpr rect_t<T> max_rect(rect_t<T> first, rect_t<T> second) noexcept;
+
+	// returns the overlap of the two rects
+	template<typename T>
+	constexpr rect_t<T> min_rect(rect_t<T> first, rect_t<T> second) noexcept;
 }
 
 template<typename CharT>

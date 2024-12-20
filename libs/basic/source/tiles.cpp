@@ -921,9 +921,16 @@ namespace hades
 		const auto length = integer_cast<std::size_t>(s.x * s.y); 
 		m.tiles = std::vector<tile_id_t>(length, tile_id_t{});
 
+		auto tile_ids = std::vector<tile_id_t>{};
+		tile_ids.reserve(size(tiles));
+
+		std::ranges::transform(tiles, std::back_inserter(tile_ids), [&m, &settings](const auto& tile) {
+			return make_tile_id(m, tile, settings);
+			});
+
 		std::ranges::generate(m.tiles, [&] {
-			const auto t = random_element(begin(tiles), end(tiles));
-			return make_tile_id(m, *t, settings);
+			const auto t = random_element(begin(tile_ids), end(tile_ids));
+			return *t;
 		});
 
 		assert(m.tiles.size() == length);

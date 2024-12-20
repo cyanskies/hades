@@ -37,7 +37,7 @@ namespace hades
 			auto text = sf::Text{ _font->value, r.name, char_size };
 			text.setPosition({ r.bounds.x, r.bounds.y });
 
-			_regions.emplace_back(region{ shape, text });
+			_regions.emplace_back(shape, text);
 		}
 	}
 

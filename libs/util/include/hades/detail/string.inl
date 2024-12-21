@@ -68,6 +68,7 @@ namespace hades
 			return value ? "true"s : "false"s;
 		else
 		{
+			// NOTE: long long max is only 22 chars long
 			auto cstr = std::array<char, 30>{};
 			auto begin = cstr.data();
 			auto end = begin + size(cstr);

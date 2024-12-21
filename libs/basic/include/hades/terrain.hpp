@@ -247,6 +247,12 @@ namespace hades
 			multiplier 
 		};
 
+#ifndef NDEBUG
+		static constexpr tile_index_t max_size = 5000;
+#else
+		static constexpr tile_index_t max_size = 15000
+#endif
+
 		// Terrain vertex info.
 		// Same size as tile_layer, but with an extra column and row.
 		std::vector<const resources::terrain*> terrain_vertex;

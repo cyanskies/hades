@@ -17,27 +17,15 @@ namespace hades
 	template<typename Rep, typename Period>
 	using basic_duration = std::chrono::duration<Rep, Period>;
 
-	using nanoseconds = std::chrono::nanoseconds;
-	using microseconds = std::chrono::microseconds;
-	using milliseconds = std::chrono::milliseconds;
+	using std::chrono::nanoseconds;
+	using std::chrono::microseconds;
+	using std::chrono::milliseconds;
 	using milliseconds_float = basic_duration<float, milliseconds::period>;
-	using seconds = std::chrono::seconds;
+	using std::chrono::seconds;
 	using seconds_float = basic_duration<float, seconds::period>;
 
+	// TODO: rename to duration?
 	using time_duration = time_point::duration;
-
-	template<typename T> struct is_duration : std::false_type {};
-	template<typename Rep, typename Period>
-	struct is_duration<basic_duration<Rep, Period>> : std::true_type {};
-	template<typename T>
-	constexpr auto is_duration_v = is_duration<T>::value;
-
-	template<typename TargetDuration, typename Rep2, typename Period2,
-		typename = std::enable_if_t<is_duration_v<TargetDuration>>>
-		constexpr TargetDuration time_cast(const basic_duration<Rep2, Period2> & duration)
-	{
-		return std::chrono::duration_cast<TargetDuration>(duration);
-	}
 
 	float normalise_time(time_point, time_duration) noexcept;
 
@@ -48,13 +36,17 @@ namespace hades
 		nanos
 	};
 
+	// TODO: doesn't matter, should deprecated the hades::string using anyway
 	// NOTE: using std::string here, since pulling in string.hpp causes weird issues
 	// 	if string.hpp is included before to_string(time_duration) is declared, 
 	//  then other files have trouble finding to_string(duration) due to ADL;
 	//	The fact that this workaround works might be a MSVC bug.
 
+	// TODO: reimp using std::format
 	std::pair<std::string, duration_ratio> duration_to_string(time_duration);
+	// TODO: replace with pick_duration_ratio for use with std::format
 	std::string duration_to_string(time_duration, duration_ratio, int units_after_decimal = 2);
+	// TODO: reimp using std::format
 	std::string to_string(time_duration); // NOTE: ADL lookup cannot find this overload
 	time_duration duration_from_string(std::string_view) noexcept;
 }

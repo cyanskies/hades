@@ -80,10 +80,10 @@ namespace hades::data
 				g.input("Texture"sv, _tex_name);
 				g.end_disabled();
 
-				auto ms = time_cast<milliseconds>(_duration).count();
+				auto ms = duration_cast<milliseconds>(_duration).count();
 				if (g.input_scalar("Duration(ms)"sv, ms))
 				{
-					_duration = time_cast<time_duration>(milliseconds{ ms });
+					_duration = duration_cast<time_duration>(milliseconds{ ms });
 					anim::set_duration(*_anim, _duration);
 					generate_yaml(d);
 				}
@@ -239,7 +239,7 @@ namespace hades::data
 							const auto& io = ImGui::GetIO();
 							_time += io.DeltaTime * _play_speed;
 							const auto sec = seconds_float{ _time };
-							const auto time = time_point{ time_cast<time_duration>(sec) };
+							const auto time = time_point{ duration_cast<time_duration>(sec) };
 							g.image(*_anim, float_size * _scale, time, sf::Color::White, sf::Color::White);
 
 							//select correct frame in ui

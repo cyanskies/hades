@@ -44,7 +44,7 @@ namespace hades
 			}
 		}
 
-		constexpr auto max_accumulator_overflow = time_cast<time_duration>(seconds_float{ 0.25f });
+		constexpr auto max_accumulator_overflow = duration_cast<time_duration>(seconds_float{ 0.25f });
 		const auto capped_frame_time = frame_time > max_accumulator_overflow ?
 			max_accumulator_overflow : frame_time;
 

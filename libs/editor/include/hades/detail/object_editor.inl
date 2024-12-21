@@ -150,7 +150,7 @@ namespace hades::obj_ui
 			if (g.selectable("seconds"sv, ratio == duration_ratio::seconds))
 			{
 				++cache_entry.edit_generation;
-				const auto secs = time_cast<seconds>(value);
+				const auto secs = duration_cast<seconds>(value);
 				cache_entry.edit_buffer = to_string(secs.count());
 				ratio = duration_ratio::seconds;
 				ret = true;
@@ -159,7 +159,7 @@ namespace hades::obj_ui
 			if (g.selectable("milliseconds"sv, ratio == duration_ratio::millis))
 			{
 				++cache_entry.edit_generation;
-				const auto millis = time_cast<milliseconds>(value);
+				const auto millis = duration_cast<milliseconds>(value);
 				cache_entry.edit_buffer = to_string(millis.count());
 				ratio = duration_ratio::millis;
 				ret = true;
@@ -168,7 +168,7 @@ namespace hades::obj_ui
 			if (g.selectable("microseconds"sv, ratio == duration_ratio::micros))
 			{
 				++cache_entry.edit_generation;
-				const auto micros = time_cast<microseconds>(value);
+				const auto micros = duration_cast<microseconds>(value);
 				cache_entry.edit_buffer = to_string(micros.count());
 				ratio = duration_ratio::micros;
 				ret = true;
@@ -177,7 +177,7 @@ namespace hades::obj_ui
 			if (g.selectable("nanoseconds"sv, ratio == duration_ratio::nanos))
 			{
 				++cache_entry.edit_generation;
-				const auto nanos = time_cast<nanoseconds>(value);
+				const auto nanos = duration_cast<nanoseconds>(value);
 				cache_entry.edit_buffer = to_string(nanos.count());
 				ratio = duration_ratio::nanos;
 				ret = true;
@@ -194,22 +194,22 @@ namespace hades::obj_ui
 			case duration_ratio::seconds:
 			{
 				const auto secs = seconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(secs);
+				value = duration_cast<time_duration>(secs);
 			}break;
 			case duration_ratio::millis:
 			{
 				const auto millis = milliseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(millis);
+				value = duration_cast<time_duration>(millis);
 			}break;
 			case duration_ratio::micros:
 			{
 				const auto micros = microseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(micros);
+				value = duration_cast<time_duration>(micros);
 			}break;
 			case duration_ratio::nanos:
 			{
 				const auto nanos = nanoseconds{ from_string<int64>(cache_entry.edit_buffer) };
-				value = time_cast<time_duration>(nanos);
+				value = duration_cast<time_duration>(nanos);
 			}break;
 			default:
 				throw out_of_range_error{"out of range"};

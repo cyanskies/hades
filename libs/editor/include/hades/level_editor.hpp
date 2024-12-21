@@ -54,7 +54,6 @@ namespace hades::detail
 		bool handle_event(const event&) override;
 		void reinit() override;
 
-		[[deprecated]]
 		level get_level() const;
 
 		void update(time_duration, const sf::RenderTarget&, const input_system::action_set&) override;

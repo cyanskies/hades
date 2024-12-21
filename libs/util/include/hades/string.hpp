@@ -16,10 +16,12 @@
 
 namespace hades
 {
+	// TODO: deprecate
 	using string = std::string;
 
 	namespace types
 	{
+		// TODO: deprecate
 		using hades::string;
 	}
 

@@ -243,9 +243,9 @@ namespace hades
 			return;
 		}
 
-		const auto max_f = time_cast<milliseconds_float>(max_t);
-		const auto min_f = time_cast<milliseconds_float>(min_t);
-		const auto avg_f = time_cast<milliseconds_float>(accumulator / count);
+		const auto max_f = duration_cast<milliseconds_float>(max_t);
+		const auto min_f = duration_cast<milliseconds_float>(min_t);
+		const auto avg_f = duration_cast<milliseconds_float>(accumulator / count);
 		avg.store(avg_f.count());
 		min.store(min_f.count());
 		max.store(max_f.count());
@@ -366,22 +366,22 @@ namespace hades
 			
 			//frame time
 			using milliseconds_float = basic_duration<float, std::chrono::milliseconds::period>;
-			const auto frame_time_ms = time_cast<milliseconds_float>(game_loop_metrics.previous_frame_time);
+			const auto frame_time_ms = duration_cast<milliseconds_float>(game_loop_metrics.previous_frame_time);
 			last_frame_time->store(frame_time_ms.count());
 
 			//average frame time
-			const auto average_frame_time_ms = time_cast<milliseconds_float>(game_loop_metrics.average_frame_time);
+			const auto average_frame_time_ms = duration_cast<milliseconds_float>(game_loop_metrics.average_frame_time);
 			average_frame_time->store(average_frame_time_ms.count());
 
 			//total update time
-			const auto update_time = time_cast<milliseconds_float>(game_loop_metrics.update_duration);
+			const auto update_time = duration_cast<milliseconds_float>(game_loop_metrics.update_duration);
 			total_tick_time->store(update_time.count());
 
 			//tick count
 			frame_tick_count->store(integer_cast<int32>(game_loop_metrics.tick_count));
 		
 			//drawing time
-			const auto float_draw_time = time_cast<milliseconds_float>(game_loop_metrics.draw_duration);
+			const auto float_draw_time = duration_cast<milliseconds_float>(game_loop_metrics.draw_duration);
 			frame_draw_time->store(float_draw_time.count());
 
 			#ifndef NDEBUG

@@ -50,7 +50,7 @@ namespace hades::resources
 	std::string_view get_tilesets_name() noexcept;
 	std::string_view get_tile_settings_name() noexcept;
 	std::string_view get_empty_tileset_name() noexcept;
-	unique_id get_empty_tileset_id() noexcept;
+	[[deprecated]] unique_id get_empty_tileset_id() noexcept;
 	
 	//maximum tile size is capped by texture size
 	using tile_size_t = texture_size_t;
@@ -109,7 +109,6 @@ namespace hades::resources
 	protected:
 		// used by terrainsets to have the tile portion of their data serialised
 		void serialise_impl(const data::data_manager&, data::writer&) const;
-
 	};
 
 	struct tile_settings_t {};
@@ -125,13 +124,16 @@ namespace hades::resources
 		tile_size_t tile_size = {};
 	};
 
-	//exceptions: all three throw resource_error
-	// either as resource_null or resource_wrong_type
+	// throws: resource_null or resource_wrong_type
 	const tile_settings *get_tile_settings();
-	tile_size_t get_tile_size();
-	const tile& get_error_tile();
+	[[deprecated]] tile_size_t get_tile_size();
+	[[deprecated]] const tile& get_error_tile();
+	[[nodiscard]] const tile& get_error_tile(const tile_settings&) noexcept;
 	[[deprecated]] const tile& get_empty_tile();
-	[[nodiscard]] const tile& get_empty_tile(const tile_settings&);
+	[[nodiscard]] const tile& get_empty_tile(const tile_settings&) noexcept;
+
+	[[nodiscard]] const tileset* get_error_tileset(const tile_settings&) noexcept;
+	[[nodiscard]] const tileset* get_empty_tileset(const tile_settings&) noexcept;
 
 	unique_id get_tile_settings_id() noexcept;
 }
@@ -250,7 +252,7 @@ namespace hades
 	tile_id_t get_tile_id(const tile_map&, const resources::tile&);
 	// get a new tile id, adds the tileset to the map if needed
 	[[nodiscard]] tile_id_t make_tile_id(tile_map& m, const resources::tile& t, const resources::tileset*);
-
+	
 	const tag_list &get_tags(const resources::tile&);
 
 	//for getting information out of a tile map

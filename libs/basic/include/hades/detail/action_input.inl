@@ -1,6 +1,6 @@
 namespace hades
 {
-	constexpr time_duration double_tap_time = time_cast<time_duration>(seconds_float{ 0.30f });
+	constexpr time_duration double_tap_time = duration_cast<time_duration>(seconds_float{ 0.30f });
 
 	template<bool DoubleTap, bool Holdable>
 	constexpr inline void update_action_state(const action& a, const time_point& t, action_state<DoubleTap, Holdable>& s) noexcept

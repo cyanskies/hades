@@ -1,6 +1,7 @@
 #include "hades/tiles.hpp"
 
 #include <array>
+#include <execution>
 #include <numeric>
 
 #include "hades/data.hpp"
@@ -77,8 +78,8 @@ namespace hades
 	{
 		//tile-settings:
 		//  tile-size: 32
-		//	error-tileset: uid
-		//	empty-tileset: uid
+		// 	error-tileset: uid // hidden
+		//	empty-tileset: uid // hidden
 
 		const auto id = d.get_uid(tile_settings_name);
 		auto s = d.find_or_create<resources::tile_settings>(id, mod, tile_settings_name);
@@ -86,13 +87,13 @@ namespace hades
 
 		s->tile_size = data::parse_tools::get_scalar(n, "tile-size"sv, s->tile_size);
 
-		const auto error_tset = data::parse_tools::get_unique(n, "error-tileset"sv, unique_zero);
+		/*const auto error_tset = data::parse_tools::get_unique(n, "error-tileset"sv, unique_zero);
 		if (error_tset)
 			s->error_tileset = d.make_resource_link<resources::tileset>(error_tset, id);
 		
 		const auto empty_tset = data::parse_tools::get_unique(n, "empty-tileset"sv, unique_zero);
 		if (empty_tset)
-			s->empty_tileset = d.make_resource_link<resources::tileset>(empty_tset, id);
+			s->empty_tileset = d.make_resource_link<resources::tileset>(empty_tset, id);*/
 
 		return;
 	}
@@ -382,10 +383,11 @@ namespace hades::resources
 		//  tile-size: 32
 
 		w.write("tile-size"sv, tile_size);
-		if (error_tileset)
+		// the error and empty tilesets are internal and dont need to be stored
+		/*if (error_tileset)
 			w.write("error-tileset"sv, d.get_as_string(error_tileset.id()));
 		if (empty_tileset)
-			w.write("empty-tileset"sv, d.get_as_string(empty_tileset.id()));
+			w.write("empty-tileset"sv, d.get_as_string(empty_tileset.id()));*/
 
 		return;
 	}
@@ -405,12 +407,18 @@ namespace hades::resources
 	const tile& get_error_tile()
 	{
 		const auto s = get_tile_settings();
-		assert(s->error_tileset);
-		const auto tset = s->error_tileset;
+		assert(s); 
+		return get_error_tile(*s);
+	}
+
+	const tile& get_error_tile(const tile_settings& s) noexcept
+	{
+		assert(s.error_tileset); 
+		const auto &tset = s.error_tileset.get();
 		const auto begin = std::begin(tset->tiles);
 		const auto end = std::end(tset->tiles);
-		assert(begin != end);
-		return *random_element(begin, end);
+		assert(!empty(tset->tiles));
+		return tset->tiles.front();
 	}
 
 	const tile& get_empty_tile()
@@ -420,12 +428,24 @@ namespace hades::resources
 		return get_empty_tile(*s);
 	}
 
-	const tile& get_empty_tile(const tile_settings& s)
+	const tile& get_empty_tile(const tile_settings& s) noexcept
 	{
 		assert(s.empty_tileset);
 		const auto tset = s.empty_tileset;
 		assert(!tset->tiles.empty());
 		return tset->tiles.front();
+	}
+
+	const tileset* get_error_tileset(const tile_settings& s) noexcept
+	{
+		assert(s.error_tileset.is_linked());
+		return s.error_tileset.get();
+	}
+
+	const tileset* get_empty_tileset(const tile_settings& s) noexcept
+	{
+		assert(s.empty_tileset.is_linked());
+		return s.empty_tileset.get();
 	}
 
 	unique_id get_tile_settings_id() noexcept
@@ -632,8 +652,9 @@ namespace hades
 		auto t = tile_map{};
 		t.width = r.width;
 		//use the replacement table to swap out the tile ids
-		t.tiles.reserve(r.tiles.size());
-		std::transform(std::begin(r.tiles), std::end(r.tiles), std::back_inserter(t.tiles), [&tile_swap](auto &&t) {
+		t.tiles.resize(r.tiles.size());
+		std::transform(std::execution::par_unseq, std::begin(r.tiles), std::end(r.tiles),
+			std::begin(t.tiles), [&tile_swap](auto &&t) {
 			assert(t < tile_swap.size());
 			return tile_swap[t];
 		});

@@ -97,23 +97,23 @@ namespace hades
 			signed_cast(current.map_y / _settings->tile_size)
 		};
 
-		// TODO: slow
 		auto map = make_map(size, _new_options.terrain_set, _new_options.terrain, *_settings);
 		
 		constexpr auto variance = 3;
+		constexpr auto perlin_scale = 0.5f;
 		const auto height_low = _settings->height_default - variance;
 		const auto height_high = height_low + variance;
 
 		const auto vert_size = get_vertex_size(map);
-		// TODO: slow
+		// TODO: better solution for generating heightmap
+		//		perlin noise
 		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) -> void {
-			return change_terrain_height(p, map, *_settings, [&](const std::uint8_t) noexcept -> std::uint8_t {
-				return integer_clamp_cast<std::uint8_t>(random(height_low, height_high));
+			return change_terrain_height(p, map, *_settings, [&](const std::uint8_t h) noexcept -> std::uint8_t {
+				return integral_cast<std::uint8_t>(h + perlin_noise(float_cast(p.x) * perlin_scale, float_cast(p.y) * perlin_scale) * variance);
 				});
 			});
 
 		auto l = level{ std::move(current) };
-		//TODO: slow
 		l.terrain = to_raw_terrain_map(std::move(map), *_settings);
 
 		return l;
@@ -144,7 +144,6 @@ namespace hades
 				map_raw.terrainset = _settings->terrainsets.front()->id;
 		}
 
-		// TODO: slow
 		auto t_map = to_terrain_map(std::move(map_raw), *_settings);
 		
 		_current.terrain_set = t_map.terrainset;

@@ -34,21 +34,21 @@ namespace hades
 
 		if (count % nanos_in_second == 0)
 		{
-			const auto seconds_duration = time_cast<seconds>(d);
+			const auto seconds_duration = duration_cast<seconds>(d);
 			const auto seconds_count = seconds_duration.count();
 			return { to_string(seconds_count), duration_ratio::seconds };
 		}
 
 		if (count % nanos_in_milli == 0)
 		{
-			const auto milli_duration = time_cast<milliseconds>(d);
+			const auto milli_duration = duration_cast<milliseconds>(d);
 			const auto milli_count = milli_duration.count();
 			return { to_string(milli_count), duration_ratio::millis };
 		}
 
 		if (count % nanos_in_micro == 0)
 		{
-			const auto micro_duration = time_cast<microseconds>(d);
+			const auto micro_duration = duration_cast<microseconds>(d);
 			const auto micro_count = micro_duration.count();
 			return { to_string(micro_count), duration_ratio::micros };
 		}
@@ -58,13 +58,13 @@ namespace hades
 
 	string duration_to_string(time_duration d, duration_ratio r, int units_after_decimal)
 	{
-		const auto duration_f = time_cast<basic_duration<float, time_duration::period>>(d);
+		const auto duration_f = duration_cast<basic_duration<float, time_duration::period>>(d);
 		auto str = string{};
 		switch (r)
 		{
 		case duration_ratio::seconds:
 		{
-			const auto dir = time_cast<seconds_float>(duration_f);
+			const auto dir = duration_cast<seconds_float>(duration_f);
 			// TODO: cpp20, we can remove the string trimming at the end of the function
 			// //		and them merge the unit postfix into this switch statement
 			// str = std::format("%.*f"s, units_after_decimal, dir.count());
@@ -73,13 +73,13 @@ namespace hades
 		}
 		case duration_ratio::millis:
 		{
-			const auto dir = time_cast<milliseconds_float>(duration_f);
+			const auto dir = duration_cast<milliseconds_float>(duration_f);
 			str = to_string(dir.count());
 			break;
 		}
 		case duration_ratio::micros:
 		{
-			const auto dir = time_cast<basic_duration<float, microseconds::period>>(duration_f);
+			const auto dir = duration_cast<basic_duration<float, microseconds::period>>(duration_f);
 			str = to_string(dir.count());
 			break;
 		}
@@ -87,7 +87,7 @@ namespace hades
 			[[fallthrough]];
 		default:
 		{
-			const auto dir = time_cast<basic_duration<float, nanoseconds::period>>(duration_f);
+			const auto dir = duration_cast<basic_duration<float, nanoseconds::period>>(duration_f);
 			str = to_string(dir.count());
 		}
 		}
@@ -169,7 +169,7 @@ namespace hades
 		{
 			const auto second_count = from_string<seconds_float::rep>(s.substr(0, s_pos));
 			//hades::seconds_float is a float, needs time_cast to cast safely
-			return time_cast<time_duration>(seconds_float{ second_count });
+			return duration_cast<time_duration>(seconds_float{ second_count });
 		}
 
 		//default with no extention is ms

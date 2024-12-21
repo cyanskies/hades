@@ -1,5 +1,6 @@
 #include "hades/terrain.hpp"
 
+#include <execution>
 #include <map>
 #include <span>
 #include <string>
@@ -172,35 +173,76 @@ namespace hades
 		return out;
 	}
 
+	using make_terrain_index_map_return = std::array<std::vector<tile_id_t>, enum_type(resources::transition_tile_type::transition_end)>;
+	static make_terrain_index_map_return make_terrain_index_map(tile_map& map, const resources::terrain& terr, const resources::terrain_settings& s)
+	{
+		using tile_type = resources::transition_tile_type;
+		auto tile_ids = make_terrain_index_map_return{};
+		for (auto type = tile_type::transition_begin; type != tile_type::transition_end; type = next(type))
+		{
+			if (type == tile_type::none)
+				continue;
+			auto& v = tile_ids[enum_type(type)];
+			const auto& tiles = resources::get_transitions(terr, type, s);
+			v.reserve(size(tiles));
+			std::ranges::transform(tiles, std::back_inserter(v), [&](const resources::tile& t) {
+				return make_tile_id(map, t, &terr);
+				});
+		}
+		return tile_ids;
+	}
+
 	template<typename InputIt>
-	static tile_map generate_layer(const std::vector<const resources::terrain*> &v,
+	static tile_map generate_layer(const std::vector<const resources::terrain*> &verts,
 		tile_index_t w, InputIt first, InputIt last, const resources::terrain_settings& s)
 	{
 		//NOTE: w2 and h are 0 based, and one less than vertex width and height
 		//this is good, it means they are equal to the tile width/height
-		assert(!std::empty(v));
-		const auto vertex_h = integer_cast<tile_index_t>(size(v)) / (w + 1);
+		assert(!std::empty(verts));
+		const auto vertex_h = integer_cast<tile_index_t>(size(verts)) / (w + 1);
 		const auto h = vertex_h - 1;
 
 		auto out = tile_map{};
 		out.width = w;
 		out.tilesets = std::vector<const resources::tileset*>{
 			resources::get_empty_terrain(s),
+			resources::get_error_tileset(s),
 			first->get()
 		};
 
-		const auto size = w * h;
+		const auto error_id = get_tile_id(out, resources::get_error_tile(s));
+		const auto empty_id = get_tile_id(out, resources::get_empty_tile(s));
 
+		const auto tile_ids = make_terrain_index_map(out, **first, s);
+
+		const auto size = w * h;
+		out.tiles.resize(size, empty_id);
+
+		using tile_type = resources::transition_tile_type;
+		// TODO: some way to parallelize this; we need access to the index
+		//		so it might not be possible using a std solution
 		for (auto i = tile_index_t{}; i < size; ++i)
 		{
 			const auto [x, y] = to_2d_index(i, w);
 			assert(x < w);
 
-			const auto corners = get_terrain_at_tile(v, w + 1, { integer_cast<int32>(x), integer_cast<int32>(y) }, s);
+			const auto corners = get_terrain_at_tile(verts, w + 1, { integer_cast<int32>(x), integer_cast<int32>(y) }, s);
 			const auto type = get_transition_type(corners, first, last);
-			const auto tile = resources::get_random_tile(**first, type, s);
-			// TODO: slow
-			out.tiles.emplace_back(get_tile_id(out, tile));
+			if (type == tile_type::none)
+			{
+				out.tiles[i] = empty_id;
+				continue;
+			}
+
+			const auto& tiles = tile_ids[enum_type(type)];
+			if (empty(tiles))
+			{
+				out.tiles[i] = error_id;
+				continue;
+			}
+
+			const auto tile = *random_element(begin(tiles), end(tiles));
+			out.tiles[i] = tile;
 		}
 
 		return out;
@@ -210,12 +252,14 @@ namespace hades
 		const std::vector<const resources::terrain*> &v, tile_index_t width, const resources::terrain_settings& s)
 	{
 		auto out = std::vector<tile_map>{};
+		out.reserve(size(t->terrains));
 
 		const auto end = std::crend(t->terrains);
+		// TODO: good candidate for parallel
 		for (auto iter = std::crbegin(t->terrains); iter != end; ++iter)
 			out.emplace_back(generate_layer(v, width, iter, end, s));
 
-		std::reverse(std::begin(out), std::end(out));
+		std::ranges::reverse(out);
 
 		return out;
 	}
@@ -223,18 +267,31 @@ namespace hades
 	static tile_map generate_cliff_layer(const terrain_map& map,
 		const tile_position world_size, const resources::terrain_settings& s)
 	{
-		const auto size = world_size.x * world_size.y * 5;
+		const auto size = world_size.x * world_size.y * enum_type(terrain_map::cliff_layer_layout::multiplier);
 		auto out = tile_map{};
 		const auto empty_terrain = resources::get_empty_terrain(s);
-		out.tilesets.emplace_back(empty_terrain);
-		const auto empty_id = get_tile_id(out, empty_terrain->tiles.front());
-		out.tiles.resize(size, empty_id);
-		out.width = size;
-
+		const auto error_terrain = resources::get_error_tileset(s);
 		const auto cliff_type = map.terrainset->cliff_type.get();
 		const auto face_terrain = cliff_type->cliff_face_terrain.get();
 		const auto surface_terrain = cliff_type->cliff_surface_terrain.get();
 
+		out.tilesets = std::vector<const resources::tileset*>{
+			empty_terrain,
+			error_terrain,
+			face_terrain,
+			surface_terrain,
+		};
+
+		const auto error_id = get_tile_id(out, resources::get_error_tile(s));
+		const auto empty_id = get_tile_id(out, resources::get_empty_tile(s));
+
+		const auto face_tiles = make_terrain_index_map(out, *face_terrain, s);
+		const auto surface_tiles = make_terrain_index_map(out, *surface_terrain, s);
+		
+		out.tiles.resize(size, empty_id);
+		out.width = size;
+		
+		// TODO: invert this into a basic loop
 		for_each_position_rect({}, world_size, world_size, [&](const tile_position pos) {
 			using cliff_layout = terrain_map::cliff_layer_layout;
 			const auto index = integer_cast<std::size_t>(to_tile_index(pos, map)) * enum_type(cliff_layout::multiplier);
@@ -253,16 +310,27 @@ namespace hades
 				if (cliffs.test(enum_type(edge)))
 				{
 					const auto i = indicies[enum_type(edge)];
-					const auto tile = resources::get_random_tile(*face_terrain, resources::transition_tile_type::all, s);
-					const auto tile_id = make_tile_id(out, tile, face_terrain);
-					out.tiles[i] = tile_id;
+					auto& tile_list = face_tiles[enum_type(resources::transition_tile_type::all)];
+					if (!empty(tile_list))
+					{
+						const auto tile_id = *random_element(begin(tile_list), end(tile_list));
+						out.tiles[i] = tile_id;
+					}
 				}
 			}
 
 			const auto cliff_corners = get_cliff_corners(pos, map);
 			const auto surface_tile = get_transition_type(cliff_corners);
-			const auto tile = resources::get_random_tile(*surface_terrain, surface_tile, s);
-			const auto tile_id = make_tile_id(out, tile, surface_terrain);
+			if (surface_tile == resources::transition_tile_type::none)
+				return;
+
+			auto& tile_list = face_tiles[enum_type(surface_tile)];
+			if (empty(tile_list))
+			{
+				out.tiles[surface_index] = error_id;
+			}
+
+			const auto tile_id = *random_element(begin(tile_list), end(tile_list));
 			out.tiles[surface_index] = tile_id;
 		});
 
@@ -522,13 +590,15 @@ namespace hades
 			throw terrain_error{ "Malformed raw terrain map"s };
 
 		const auto empty = resources::get_empty_terrain(settings);
-		//if the terrain_vertex isn't present, then fill with empty
+		const auto error = resources::get_error_tileset(settings);
+		
 		if (std::empty(r.terrain_vertex))
 			throw terrain_error{ "Malformed raw terrain map"s };
 		else
 		{
-			std::transform(std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
-				std::back_inserter(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_id_t t) {
+			m.terrain_vertex.resize(std::size(r.terrain_vertex), nullptr);
+			std::transform(std::execution::par_unseq, std::begin(r.terrain_vertex), std::end(r.terrain_vertex),
+				std::begin(m.terrain_vertex), [empty, &terrains = m.terrainset->terrains](terrain_id_t t) {
 					if (t == terrain_id_t{})
 						return empty;
 
@@ -537,22 +607,18 @@ namespace hades
 				});
 		}
 
-		// TODO: rewrite this entire terrain layer conversion system, it makes no sense
-		// TODO: slow
-		m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x, settings);
-
 		if (std::empty(r.terrain_layers))
-		{
-			// if the terrain layers are empty then generate them
-			// NOTE: this is being done twice because of the above
 			m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x, settings);
-		}
 		else
 		{
+			// TODO: we need a way to just iterate through the expected layers generating them as needed
+			//			copy generate_terrain_layers but with modification
+			//m.terrain_layers.resize(size(m.terrainset));
+			m.terrain_layers = generate_terrain_layers(m.terrainset, m.terrain_vertex, size.x, settings);
 			for (auto& l : m.terrain_layers)
 			{
-				const auto terrain = std::find_if(begin(l.tilesets), end(l.tilesets), [empty](auto& t) {
-					return t != empty;
+				const auto terrain = std::find_if(begin(l.tilesets), end(l.tilesets), [empty, error](auto& t) {
+					return t != empty && t != error;
 				});
 				assert(terrain != end(l.tilesets));
 
@@ -616,21 +682,26 @@ namespace hades
 		m.cliff_tiles = to_raw_map(std::forward<Map>(t).cliff_tiles);
 
 		//build a replacement lookup table
-		auto t_map = std::map<const resources::terrain*, terrain_id_t>{};
-
+		auto t_map = std::vector<std::tuple<const resources::terrain*, terrain_id_t>>{};
+		t_map.reserve(size(t.terrainset->terrains));
 		const auto empty = resources::get_empty_terrain(s);
 		//add the empty terrain with the index 0
-		t_map.emplace(empty, terrain_id_t{});
+		t_map.emplace_back(empty, terrain_id_t{});
 
 		//add the rest of the terrains, offset the index by 1
 		for (auto i = terrain_id_t{}; i < std::size(t.terrainset->terrains); ++i)
-			t_map.emplace(t.terrainset->terrains[i].get(), i + 1u);
+			t_map.emplace_back(t.terrainset->terrains[i].get(), i + 1u);
 
-		m.terrain_vertex.reserve(size(t.terrain_vertex));
-		// TODO: slow
-		std::transform(std::begin(t.terrain_vertex), std::end(t.terrain_vertex),
-			std::back_inserter(m.terrain_vertex), [t_map](const resources::terrain* t) {
-				return t_map.at(t);
+		m.terrain_vertex.resize(size(t.terrain_vertex), std::numeric_limits<terrain_id_t>::max());
+		std::ranges::transform(t.terrain_vertex, std::begin(m.terrain_vertex),
+			[&t_map](const resources::terrain* t) {
+				for (auto& [terr, id] : t_map)
+				{
+					if (terr == t)
+						return id;
+				}
+				// TODO: throw
+				return std::numeric_limits<terrain_id_t>::max();
 			});
 
 		for (auto&& tl : std::forward<Map>(t).terrain_layers)
@@ -668,7 +739,11 @@ namespace hades
 
 		auto map = terrain_map{};
 		map.terrainset = terrainset;
-		const auto vertex_size = integer_cast<std::size_t>((size.x + 1) * (size.y + 1));
+		const auto vertex_size = (integer_cast<std::size_t>(size.x) + 1) * (integer_cast<std::size_t>(size.y) + 1);
+		constexpr auto max_size = terrain_map::max_size * terrain_map::max_size;
+		if (std::cmp_greater_equal(vertex_size, max_size))
+			throw terrain_error{ "Map exceeds maximum size" };
+
 		map.width = size.x + 1;
         map.terrain_vertex.resize(vertex_size, t);
 		const auto tile_count = integer_cast<std::size_t>(size.x) * integer_cast<std::size_t>(size.y);
@@ -682,7 +757,7 @@ namespace hades
 		// empty cliff layer should just be empty tiles
 		const auto empty_terrain = resources::get_empty_terrain(s);
 		const auto empty_id = make_tile_id(map.cliff_tiles, empty_tile, empty_terrain);
-		const auto cliff_width = tile_count * 5;
+		const auto cliff_width = tile_count * enum_type(terrain_map::cliff_layer_layout::multiplier);
 		map.cliff_tiles.tiles.resize(cliff_width, empty_id);
 		map.cliff_tiles.width = integer_cast<tile_index_t>(cliff_width);
 
@@ -716,7 +791,6 @@ namespace hades
 			map.terrain_layers = std::vector<tile_map>(std::size(terrainset->terrains), empty_layer);
 		}
 
-		// TODO: slow
 		assert(is_valid(to_raw_terrain_map(map, s)));
 
 		return map;

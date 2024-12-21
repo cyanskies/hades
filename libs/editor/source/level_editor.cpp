@@ -556,8 +556,17 @@ namespace hades::detail
 		{
 			if (_gui.window_begin(editor::gui_names::new_level, _window_flags.new_level))
 			{
+				constexpr auto max_size = terrain_map::max_size * terrain_map::max_size;
+				// Level max is around 46k * 46k tiles
+				const auto invalid_size = std::cmp_greater_equal(integer_cast<std::size_t>(_new_level_options.width / _terrain_settings->tile_size) *
+					integer_cast<std::size_t>(_new_level_options.height / _terrain_settings->tile_size), max_size);
+
+				if (invalid_size)
+					_gui.begin_disabled();
 				if (_gui.button("Create"sv))
 				{
+					log("Creating new level..."s);
+					const auto start_time = time_clock::now();
 					level l;
 					l.map_x = _new_level_options.width;
 					l.map_y = _new_level_options.height;
@@ -577,6 +586,8 @@ namespace hades::detail
 						}
 
 						_window_flags.new_level = false;
+						const auto duration = duration_cast<seconds_float>(time_clock::now() - start_time);
+						log(std::format("Creating new level... Complete! [{}]", duration));
 					}
 					catch (const new_level_editor_error &e)
 					{
@@ -584,6 +595,8 @@ namespace hades::detail
 						_error_msg = e.what();
 					}
 				}
+				if (invalid_size)
+					_gui.end_disabled();
 
 				_gui.same_line();
 				if (_gui.button("Cancel"sv))

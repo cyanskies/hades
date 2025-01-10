@@ -105,8 +105,6 @@ namespace hades
 		const auto height_high = height_low + variance;
 
 		const auto vert_size = get_vertex_size(map);
-		// TODO: better solution for generating heightmap
-		//		perlin noise
 		for_each_position_rect({}, vert_size, vert_size, [&](const tile_position p) -> void {
 			return change_terrain_height(p, map, *_settings, [&](const std::uint8_t h) noexcept -> std::uint8_t {
 				return integral_cast<std::uint8_t>(h + perlin_noise(float_cast(p.x) * perlin_scale, float_cast(p.y) * perlin_scale) * variance);

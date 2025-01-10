@@ -4,7 +4,7 @@
 namespace hades::detail
 {
     // NOTE: this becomes constexpr in cpp26 due to std::sin/cos
-    constexpr std::tuple<float, float> random_gradient(const int ix, const int iy) noexcept {
+    inline std::tuple<float, float> random_gradient(const int ix, const int iy) noexcept {
         // No precomputed gradients mean this works for any number of grid coordinates
         const unsigned w = 8 * sizeof(unsigned);
         const unsigned s = w / 2; // rotation width

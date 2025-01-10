@@ -247,6 +247,7 @@ namespace hades
 			multiplier 
 		};
 
+		// Can't go higher than this without putting the terrain data into chunks
 #ifndef NDEBUG
 		static constexpr tile_index_t max_size = 5000;
 #else

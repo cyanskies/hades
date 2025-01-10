@@ -1694,9 +1694,6 @@ namespace hades
 
 	void mutable_terrain_map::apply()
 	{
-		if (!_needs_update)
-			return;
-
 		const auto flags = chunk_flags{ _show_shadows, _show_grid, _show_cliff_edges, _show_cliff_layers, _show_ramps };
 
 		const auto tile_sizef = float_cast(_shared.settings->tile_size);

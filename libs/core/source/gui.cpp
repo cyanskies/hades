@@ -103,6 +103,8 @@ namespace hades
 		_main_toolbar_info.width = size.x;
 	}
 
+	constexpr auto bad_im_key = ImGuiKey{ std::numeric_limits<std::underlying_type_t<ImGuiKey>>::max() };
+
 	static constexpr ImGuiKey to_imgui_key(sf::Keyboard::Key k) noexcept
 	{
 		switch(k)
@@ -129,7 +131,7 @@ namespace hades
 		case sf::Keyboard::X: return ImGuiKey_X;
 		case sf::Keyboard::Y: return ImGuiKey_Y;
 		case sf::Keyboard::Z: return ImGuiKey_Z;
-		default: return ImGuiKey_COUNT;
+		default: return bad_im_key;
 		}
 	}
 
@@ -202,7 +204,7 @@ namespace hades
 		case sf::Event::KeyReleased:
 		{
 			const auto k = to_imgui_key(e.key.code);
-			if (k != ImGuiKey_COUNT)
+			if (k != bad_im_key)
 			{
 				io.AddKeyEvent(k, e.type == sf::Event::KeyPressed);
 				io.AddKeyEvent(ImGuiMod_Ctrl, e.key.control);
@@ -335,10 +337,10 @@ namespace hades
 		ImGui::End();
 	}
 
-	bool gui::child_window_begin(std::string_view name, vector2 size, bool border, window_flags flags)
+	bool gui::child_window_begin(std::string_view name, vector2 size, child_window_flags ch_flags, window_flags flags)
 	{
 		_active_assert();
-		return ImGui::BeginChild(name, { size.x, size.y }, border, static_cast<ImGuiWindowFlags>(flags));
+		return ImGui::BeginChild(name, { size.x, size.y }, static_cast<ImGuiChildFlags>(ch_flags), static_cast<ImGuiWindowFlags>(flags));
 	}
 
 	void gui::child_window_end()
@@ -510,12 +512,18 @@ namespace hades
 	{
 		_active_assert();
 		const auto& style = ImGui::GetStyle();
-		const auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-		const auto last_button_x2 = ImGui::GetItemRectMax().x;
-		// expected position if next button was on same line
-		const auto next_button_x2 = last_button_x2 + style.ItemSpacing.x + next_item_size_x; 
-		if (next_button_x2 < window_visible_x2)
-			ImGui::SameLine(pos, width);
+		//const auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX();
+		//const auto last_button_x2 = ImGui::GetItemRectMax().x; // TODO: dont look this up here(if bugs out for toolbars because we add items to different windows in different orders); we'll need to accept this as a parameter and log the last toolbar x2 somewhere else
+		//// expected position if next button was on same line
+		//const auto next_button_x2 = last_button_x2 + style.ItemSpacing.x + next_item_size_x; 
+		//if (next_button_x2 < window_visible_x2)
+		//	ImGui::SameLine(pos, width);
+		ImGui::SameLine(pos, width);
+		const auto next_button_x2 = style.ItemSpacing.x + next_item_size_x;
+		if (next_button_x2 < ImGui::GetContentRegionAvail().x)
+			return;
+		else
+			ImGui::NewLine();
 
 		return;
 	}
@@ -953,16 +961,36 @@ namespace hades
 		ImGui::TreePop();
 	}
 
-	bool gui::collapsing_header(std::string_view s, tree_node_flags f)
+	bool gui::collapsing_header_begin(std::string_view s, tree_node_flags f)
 	{
 		_active_assert();
-		return ImGui::CollapsingHeader(s, static_cast<ImGuiTreeNodeFlags>(f));
+		if (ImGui::CollapsingHeader(s, static_cast<ImGuiTreeNodeFlags>(f)))
+		{
+			ImGui::PushID(s);
+			ImGui::Dummy({});
+			return true;
+		}
+
+		return false;
 	}
 
-	bool gui::collapsing_header(std::string_view s, bool &open, tree_node_flags f)
+	bool gui::collapsing_header_begin(std::string_view s, bool &open, tree_node_flags f)
 	{
 		_active_assert();
-		return ImGui::CollapsingHeader(s, &open, static_cast<ImGuiTreeNodeFlags>(f));
+		if (ImGui::CollapsingHeader(s, &open, static_cast<ImGuiTreeNodeFlags>(f)))
+		{
+			ImGui::PushID(s);
+			ImGui::Dummy({});
+			return true;
+		}
+
+		return false;
+	}
+
+	void gui::collapsing_header_end()
+	{
+		_active_assert();
+		ImGui::PopID();
 	}
 
 	void gui::set_next_item_open(bool is_open, set_condition_enum e)
@@ -1028,6 +1056,7 @@ namespace hades
 	bool gui::main_toolbar_begin()
 	{
 		_active_assert();
+		// TODO: audit this stuff, storing the window rects like this is cursed
 		next_window_position({ 0.f, _main_toolbar_info.main_menubar_y2 });
 		next_window_size({ _main_toolbar_info.width, 0.f });
 

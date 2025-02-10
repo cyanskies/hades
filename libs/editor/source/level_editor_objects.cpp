@@ -347,7 +347,7 @@ namespace hades
 
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
-			if (g.collapsing_header("objects"sv))
+			if (g.collapsing_header_begin("objects"sv))
 			{
 				g.checkbox("show objects"sv, _show_objects);
 				g.checkbox("allow_intersection"sv, _allow_intersect);
@@ -388,26 +388,38 @@ namespace hades
 
 				g.indent();
 
-				if (g.collapsing_header("all"sv))
+				if (g.collapsing_header_begin("all"sv))
+				{
 					add_object_buttons(g, _object_types, on_click_object);
+					g.collapsing_header_end();
+				}
 
 				for (const auto& group : _settings->groups)
 				{
 					g.indent();
 
-					if (g.collapsing_header(std::get<string>(group)))
+					if (g.collapsing_header_begin(std::get<string>(group)))
+					{
 						add_object_buttons(g, std::get<std::vector<resources::resource_link<resources::object>>>(group), on_click_object);
+						g.collapsing_header_end();
+					}
 				}
+
+				g.collapsing_header_end();
 			}
 
-			if (g.collapsing_header("object list"sv))
+			if (g.collapsing_header_begin("object list"sv))
 			{
 				_obj_ui.show_object_list_buttons(g);
 				_obj_ui.object_list_gui(g);
+				g.collapsing_header_end();
 			}
 
-			if (g.collapsing_header("properties"sv))
+			if (g.collapsing_header_begin("properties"sv))
+			{
 				_obj_ui.object_properties(g);
+				g.collapsing_header_end();
+			}
 		}
 		g.window_end();
 

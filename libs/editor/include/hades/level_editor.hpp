@@ -182,6 +182,7 @@ namespace hades::detail
 		sf::RenderTexture _minimap_render_texture;
 
 		bool _height_enabled = true;
+		bool _show_demo_window = false;
 	};
 }
 

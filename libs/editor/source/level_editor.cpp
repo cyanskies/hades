@@ -816,6 +816,19 @@ namespace hades::detail
 
 		_update_component_gui(_gui, _window_flags);
 
+		if (_gui.main_menubar_begin())
+		{
+			if (_gui.menu_begin("Tools"))
+			{
+				_gui.menu_toggle_item("Imgui Demo", _show_demo_window);
+				_gui.menu_end();
+			}
+			_gui.main_menubar_end();
+		}
+
+		if (_show_demo_window)
+			_gui.show_demo_window();
+
 		_gui.frame_end();
 	}
 }

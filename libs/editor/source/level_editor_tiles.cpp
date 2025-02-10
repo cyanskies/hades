@@ -141,7 +141,7 @@ namespace hades
 
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
-			if (g.collapsing_header("tiles"sv))
+			if (g.collapsing_header_begin("tiles"sv))
 			{
 				constexpr auto draw_shapes = std::array{
 					"square"sv,
@@ -178,9 +178,13 @@ namespace hades
 					const auto& name = data::get_as_string(tileset->id);
 
 					g.indent();
-					if (g.collapsing_header(name))
+					if (g.collapsing_header_begin(name))
+					{
 						add_tile_buttons(g, tileset->tiles, tile_size_f, on_click);
+						g.collapsing_header_end();
+					}
 				}
+				g.collapsing_header_end();
 			}
 		}
 		g.window_end();

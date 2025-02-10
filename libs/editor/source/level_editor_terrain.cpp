@@ -265,15 +265,17 @@ namespace hades
 		if (g.window_begin(editor::gui_names::toolbox))
 		{
 			// TODO: move to level properties?
-			if (g.collapsing_header("sun settings"sv))
+			if (g.collapsing_header_begin("sun settings"sv))
 			{
 				if (g.slider_scalar("Sun angle"sv, _sun_angle, 180.f, 0.f))
 					_map->set_sun_angle(_sun_angle);
+				g.collapsing_header_end();
 			}
 
-			if (g.collapsing_header("terrain_palette"))
+			if (g.collapsing_header_begin("terrain_palette"))
 			{
 				_gui_terrain_palette(g);
+				g.collapsing_header_end();
 			}
 		}
 		g.window_end();

@@ -255,16 +255,18 @@ namespace hades::debug
 
 			if (g.window_begin("object inspector"sv, _open))
 			{
-				if (g.collapsing_header("properties"sv, gui::tree_node_flags::default_open))
+				if (g.collapsing_header_begin("properties"sv, gui::tree_node_flags::default_open))
 				{
 					_editor_ui.object_properties(g);
+					g.collapsing_header_end();
 				}
 				
-				if (g.collapsing_header("object list"sv, gui::tree_node_flags::default_open))
+				if (g.collapsing_header_begin("object list"sv, gui::tree_node_flags::default_open))
 				{
 					_editor_ui.show_object_list_buttons(g); 
 					if (_editor_ui.object_list_gui(g))
 						_sticky = false;
+					g.collapsing_header_end();
 				}
 			}
 			g.window_end();

@@ -229,7 +229,7 @@ namespace hades::data
 				g.slider_scalar("Frame"sv, _current_frame, 0, std::max(integer_cast<int32>(size(_anim_frames)) - 1, 0), {}, gui::slider_flags::no_input);
 				if (_play)
 					g.end_disabled();
-				if (g.child_window_begin("##anim-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
+				if (g.child_window_begin("##anim-preview"sv, {}, gui::child_window_flags::borders, gui::window_flags::horizontal_scrollbar))
 				{
 					if (integer_cast<std::size_t>(_current_frame) < size(_anim_frames))
 					{
@@ -432,7 +432,7 @@ namespace hades::data
 			if (g.window_begin("Texture preview", gui::window_flags::no_collapse))
 			{
 				g.slider_scalar("Scale"sv, _scale, 0.5f, 50.f, {}, gui::slider_flags::logarithmic);
-				if (g.child_window_begin("##tex-preview"sv, {}, false, gui::window_flags::horizontal_scrollbar))
+				if (g.child_window_begin("##tex-preview"sv, {}, {}, gui::window_flags::horizontal_scrollbar))
 				{
 					const auto float_size = gui::vector2{ float_cast(_size[0]), float_cast(_size[1]) };
 					ImVec2 pos = ImGui::GetCursorScreenPos();

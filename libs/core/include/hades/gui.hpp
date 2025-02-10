@@ -149,7 +149,6 @@ namespace hades
 			no_bring_to_front_on_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoBringToFrontOnFocus,
 			always_vertical_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar,
 			always_horizontal_scrollbar = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar,
-			always_use_window_padding = ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysUseWindowPadding,
 			no_nav_inputs = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavInputs,
 			no_nav_focus = ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus,
 			unsaved_document = ImGuiWindowFlags_::ImGuiWindowFlags_UnsavedDocument,
@@ -169,8 +168,21 @@ namespace hades
 		bool window_begin(std::string_view name, window_flags = window_flags::none);
 		void window_end();
 
+		enum class child_window_flags : ImGuiChildFlags {
+			none = ImGuiChildFlags_::ImGuiChildFlags_None,
+			borders = ImGuiChildFlags_::ImGuiChildFlags_Borders,   // Show an outer border and enable WindowPadding. (IMPORTANT: this is always == 1 == true for legacy reason)
+			always_use_window_padding = ImGuiChildFlags_::ImGuiChildFlags_AlwaysUseWindowPadding,   // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child windows because it makes more sense)
+			resize_x = ImGuiChildFlags_::ImGuiChildFlags_ResizeX,   // Allow resize from right border (layout direction). Enable .ini saving (unless ImGuiWindowFlags_NoSavedSettings passed to window flags)
+			resize_y = ImGuiChildFlags_::ImGuiChildFlags_ResizeY,   // Allow resize from bottom border (layout direction). "
+			auto_resize_x = ImGuiChildFlags_::ImGuiChildFlags_AutoResizeX,   // Enable auto-resizing width. Read "IMPORTANT: Size measurement" details above.
+			auto_resize_y = ImGuiChildFlags_::ImGuiChildFlags_AutoResizeY,   // Enable auto-resizing height. Read "IMPORTANT: Size measurement" details above.
+			always_auto_resize = ImGuiChildFlags_::ImGuiChildFlags_AlwaysAutoResize,   // Combined with AutoResizeX/AutoResizeY. Always measure size even when child is hidden, always return true, always disable clipping optimization! NOT RECOMMENDED.
+			framestyle = ImGuiChildFlags_::ImGuiChildFlags_FrameStyle,   // Style the child window like a framed item: use FrameBg, FrameRounding, FrameBorderSize, FramePadding instead of ChildBg, ChildRounding, ChildBorderSize, WindowPadding.
+			nav_flattened = ImGuiChildFlags_::ImGuiChildFlags_NavFlattened  // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or between sibling child windows.
+		};
+
 		//end must be called even if begin returns false
-		bool child_window_begin(std::string_view name, vector2 size = { 0.f ,0.f }, bool border = false, window_flags = window_flags::none);
+		bool child_window_begin(std::string_view name, vector2 size = { 0.f ,0.f }, child_window_flags ch_flags = {}, window_flags = {});
 		void child_window_end();
 
 		//window utilities
@@ -245,7 +257,7 @@ namespace hades
 			plot_histogram_hovered = ImGuiCol_::ImGuiCol_PlotHistogramHovered,
 			text_selected_background = ImGuiCol_::ImGuiCol_TextSelectedBg,
 			drag_drop_target = ImGuiCol_::ImGuiCol_DragDropTarget,
-			navigation_highlight = ImGuiCol_::ImGuiCol_NavHighlight,
+			navigation_cursor = ImGuiCol_::ImGuiCol_NavCursor,
 			navigation_window_highlight = ImGuiCol_::ImGuiCol_NavWindowingHighlight,
 			navigation_window_dim_background = ImGuiCol_::ImGuiCol_NavWindowingDimBg,
 			modal_window_dim_background = ImGuiCol_::ImGuiCol_ModalWindowDimBg,
@@ -300,13 +312,13 @@ namespace hades
 		void text_bullet(std::string_view);
 		void separator_text(std::string_view); // seperator horizontal with title
 
-		enum class direction : ImGuiDir
+		enum class direction : std::underlying_type_t<ImGuiDir>
 		{
-			none = ImGuiDir_::ImGuiDir_None,
-			left = ImGuiDir_::ImGuiDir_Left,
-			right = ImGuiDir_::ImGuiDir_Right,
-			up = ImGuiDir_::ImGuiDir_Up,
-			down = ImGuiDir_::ImGuiDir_Down
+			none = ImGuiDir::ImGuiDir_None,
+			left = ImGuiDir::ImGuiDir_Left,
+			right = ImGuiDir::ImGuiDir_Right,
+			up = ImGuiDir::ImGuiDir_Up,
+			down = ImGuiDir::ImGuiDir_Down
 		};
 
 		//widgets
@@ -337,7 +349,7 @@ namespace hades
 		enum class selectable_flag : ImGuiSelectableFlags
 		{
 			none = ImGuiSelectableFlags_::ImGuiSelectableFlags_None,
-			dont_close_popups = ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups,
+			dont_close_popups = ImGuiSelectableFlags_::ImGuiSelectableFlags_NoAutoClosePopups,
 			span_all_columns = ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns, //TODO: tables
 			allow_double_click = ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowDoubleClick,
 			disabled = ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled,
@@ -359,6 +371,7 @@ namespace hades
 			height_largest = ImGuiComboFlags_::ImGuiComboFlags_HeightLargest,
 			no_arrow_button = ImGuiComboFlags_::ImGuiComboFlags_NoArrowButton,
 			no_preview = ImGuiComboFlags_::ImGuiComboFlags_NoPreview,
+			width_fit_preview = ImGuiComboFlags_WidthFitPreview
 		};
 
 		//combobox
@@ -423,7 +436,9 @@ namespace hades
 			chars_hexidecimal = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsHexadecimal,
 			chars_uppercase = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsUppercase,
 			chars_no_blank = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank,
-			auto_select_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll,
+			auto_select_all = ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll, 
+			empty_ref_zero = ImGuiInputTextFlags_ParseEmptyRefVal,
+			display_zero_as_empty = ImGuiInputTextFlags_DisplayEmptyRefVal,
 			enter_returns_true = ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue,
 			callback_completion = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCompletion,
 			callback_history = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackHistory,
@@ -436,6 +451,7 @@ namespace hades
 			readonly = ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly,
 			password = ImGuiInputTextFlags_::ImGuiInputTextFlags_Password,
 			no_undo_redo = ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo,
+			elide_left = ImGuiInputTextFlags_ElideLeft, // prefer to show to right end of long strings (good for file paths)
 			chars_scientific = ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific,
 			callback_resize = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackResize,
 			callback_edit = ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackEdit,
@@ -479,8 +495,10 @@ namespace hades
 			no_side_preview = ImGuiColorEditFlags_NoSidePreview,
 			no_drag_drop = ImGuiColorEditFlags_NoDragDrop,
 
+			alpha_opaque = ImGuiColorEditFlags_AlphaOpaque,  
+			alpha_no_background = ImGuiColorEditFlags_AlphaNoBg,
+
 			alpha_bar = ImGuiColorEditFlags_AlphaBar,
-			alpha_preview = ImGuiColorEditFlags_AlphaPreview,
 			alpha_preview_half = ImGuiColorEditFlags_AlphaPreviewHalf,
 			format_hdr = ImGuiColorEditFlags_HDR,
 			format_rgb = ImGuiColorEditFlags_DisplayRGB,
@@ -524,8 +542,9 @@ namespace hades
 		//TODO: Tree
 		bool tree_node(std::string_view, tree_node_flags = tree_node_flags::none);
 		void tree_pop(); //  call if tree_node returns true
-		bool collapsing_header(std::string_view, tree_node_flags = tree_node_flags::none);
-		bool collapsing_header(std::string_view, bool &open, tree_node_flags = tree_node_flags::none); 
+		bool collapsing_header_begin(std::string_view, tree_node_flags = tree_node_flags::none);
+		bool collapsing_header_begin(std::string_view, bool &open, tree_node_flags = tree_node_flags::none);
+		void collapsing_header_end(); // call if collapsing_header_begin returns true
 		// set whether the next tree_node or collapsing_header should be open
 		void set_next_item_open(bool is_open, set_condition_enum = set_condition_enum::always);
 
@@ -590,10 +609,10 @@ namespace hades
 		void modal_end();
 		void close_current_modal();
 
-		enum class sort_direction : ImGuiSortDirection
+		enum class sort_direction : std::underlying_type_t<ImGuiSortDirection>
 		{
 			none = ImGuiSortDirection_None,
-			ascending =ImGuiSortDirection_Ascending,    // Ascending = 0->9, A->Z etc.
+			ascending = ImGuiSortDirection_Ascending,    // Ascending = 0->9, A->Z etc.
 			descending = ImGuiSortDirection_Descending	// Descending = 9->0, Z->A etc.
 		};
 
@@ -641,7 +660,8 @@ namespace hades
 			scroll_y = ImGuiTableFlags_ScrollY,  // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
 			// Sorting
 			sort_multi = ImGuiTableFlags_SortMulti,  // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
-			sort_tristate = ImGuiTableFlags_SortTristate
+			sort_tristate = ImGuiTableFlags_SortTristate,
+			highlight_hovered_column = ImGuiTableFlags_HighlightHoveredColumn
 		};
 
 		enum class table_row_flags : ImGuiTableRowFlags
@@ -672,6 +692,7 @@ namespace hades
 			prefer_sort_descending = ImGuiTableColumnFlags_PreferSortDescending,  // Make the initial sort direction Descending when first sorting on this column.
 			indent_enabled = ImGuiTableColumnFlags_IndentEnable,  // Use current Indent value when entering cell (default for column 0).
 			indent_disabled = ImGuiTableColumnFlags_IndentDisable,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.		
+			angled_header = ImGuiTableColumnFlags_AngledHeader
 		};
 
 		// Output status flags, read-only via TableGetColumnFlags()
@@ -742,7 +763,7 @@ namespace hades
 			source_extern = ImGuiDragDropFlags_SourceExtern,   
 			// Automatically expire the payload if the source cease to be submitted
 			// (otherwise payloads are persisting while being dragged)
-			source_auto_expire_payload = ImGuiDragDropFlags_SourceAutoExpirePayload,   
+			source_auto_expire_payload = ImGuiDragDropFlags_PayloadAutoExpire,
 			// AcceptDragDropPayload() flags
 			// AcceptDragDropPayload() will returns true even before the mouse button is released.
 			// You can then call IsDelivery() on the return value to test if the payload needs to be delivered.
@@ -872,7 +893,7 @@ namespace hades
 	class gui_text_renderer
 	{
 	public:
-		gui_text_renderer(ImDrawList* draw_list, const ImFont* font, const ImFontAtlas* atlas) noexcept
+		gui_text_renderer(ImDrawList* draw_list, ImFont* font, const ImFontAtlas* atlas) noexcept
 			: _draw_list{ draw_list }, _font{ font }, _atlas{ atlas }
 		{}
 
@@ -891,7 +912,7 @@ namespace hades
 
 	private:
 		ImDrawList* _draw_list;
-		const ImFont* _font;
+		ImFont* _font;
 		const ImFontAtlas* _atlas;
 	};
 

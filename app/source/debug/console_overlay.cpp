@@ -46,8 +46,7 @@ namespace hades::debug
 		{
 			const auto appearing = g.is_window_appearing(); //store when we are first opening
 
-			if (g.child_window_begin(child_window_name, {0.f, -g.get_frame_height_with_spacing()},
-				true))
+			if (g.child_window_begin(child_window_name, {0.f, -g.get_frame_height_with_spacing()}))
 			{
 				const auto auto_scroll = g.get_scroll_max_y() == g.get_scroll_y();
 				const auto max_zero = g.get_scroll_max_y() == 0; //scrollbar doesnt exist yet

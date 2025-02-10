@@ -104,7 +104,7 @@ namespace hades
 
 		if(g.window_begin(editor::gui_names::toolbox))
 		{
-			if (g.collapsing_header("regions"sv))
+			if (g.collapsing_header_begin("regions"sv))
 			{
 				constexpr auto listbox_str = "##region_list"sv;
 				constexpr auto region_to_string = [](const auto &r)->string {
@@ -118,9 +118,11 @@ namespace hades
 
 				if (g.listbox(listbox_str, index, _regions, region_to_string))
 					_on_selected(index);
+
+				g.collapsing_header_end();
 			}
 
-			if (g.collapsing_header("region properties"sv))
+			if (g.collapsing_header_begin("region properties"sv))
 			{
 				if(_edit.selected == region_edit::nothing_selected)
 				{
@@ -170,6 +172,8 @@ namespace hades
 
 					g.pop_id();
 				}
+
+				g.collapsing_header_end();
 			}
 		}
 		g.window_end();

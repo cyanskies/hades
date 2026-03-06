@@ -62,7 +62,8 @@ set(HADES_BASIC_SRC
 
 set(HADES_BASIC_LIBS
 	hades-util
-	minizip
+	ZLIB::ZLIBSTATIC
+	MINIZIP::minizipstatic
 )
 
 hades_make_library(hades-basic include "${HADES_BASIC_SRC}" "${HADES_BASIC_LIBS}")

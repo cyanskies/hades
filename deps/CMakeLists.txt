@@ -9,12 +9,22 @@ add_subdirectory(yaml-cpp)
 get_target_property(HADES_YAML_VERSION yaml-cpp VERSION)
 target_compile_definitions(yaml-cpp INTERFACE HADES_YAML_VERSION="${HADES_YAML_VERSION}")
 
+set(ZLIB_BUILD_TESTING OFF)
+set(ZLIB_BUILD_SHARED OFF)
+set(ZLIB_BUILD_STATIC ON)
+set(ZLIB_BUILD_MINIZIP ON)
+set(MINIZIP_BUILD_TESTING OFF)
+set(ZLIB_MINIZIP_BUILD_SHARED ON)
+set(ZLIB_MINIZIP_BUILD_STATIC ON)
+set(MINIZIP_BUILD_SHARED OFF)
+set(MINIZIP_BUILD_STATIC ON)
+
 add_subdirectory(zlib EXCLUDE_FROM_ALL)
 #fix for out of tree builds, zconf.h would only appear in #include <zconf.h>
 #but zlib tries to find include "zconf.h"
 #target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)
-target_include_directories(zlibstatic PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)
-add_subdirectory(zlib/contrib/minizip)
+#target_include_directories(zlibstatic PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/zlib)
+#add_subdirectory(zlib/contrib/minizip)
 
 add_subdirectory(plf_colony)
 
@@ -126,9 +136,6 @@ install(TARGETS ${FILEDIALOG_LIB}
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(
-	example #from zlib
-	minigzip #zib example
-	zlib
 	# yaml-cpp CI
 	Continuous
 	Experimental
